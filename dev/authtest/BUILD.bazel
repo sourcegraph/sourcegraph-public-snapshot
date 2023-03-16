@@ -2,6 +2,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_test")
 
 go_test(
     name = "authtest_test",
+    timeout = "short",
     srcs = [
         "code_intel_test.go",
         "main_test.go",

@@ -98,11 +98,20 @@ export const JOB_STATE_METADATA_MAPPING: Record<PermissionsSyncJobState, JobStat
     },
 }
 
-export const PermissionsSyncJobStatusBadge: React.FunctionComponent<{ state: PermissionsSyncJobState }> = ({
+interface PermissionsSyncJobStatusBadgeProps {
+    state: PermissionsSyncJobState
+    cancellationReason: string | null
+    failureMessage: string | null
+}
+
+export const PermissionsSyncJobStatusBadge: React.FunctionComponent<PermissionsSyncJobStatusBadgeProps> = ({
     state,
+    cancellationReason,
+    failureMessage,
 }) => (
     <Badge
         className={classNames(styles.statusContainer, 'mr-1')}
+        tooltip={cancellationReason ?? failureMessage ?? undefined}
         variant={JOB_STATE_METADATA_MAPPING[state].badgeVariant}
     >
         {state}

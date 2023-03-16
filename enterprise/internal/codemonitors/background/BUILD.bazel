@@ -51,6 +51,7 @@ go_library(
 
 go_test(
     name = "background_test",
+    timeout = "short",
     srcs = [
         "email_test.go",
         "slack_test.go",

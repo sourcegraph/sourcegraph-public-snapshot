@@ -2,7 +2,7 @@
   "private": true,
   "name": "@sourcegraph/vscode",
   "displayName": "Sourcegraph",
-  "version": "2.2.14",
+  "version": "2.2.15",
   "description": "Sourcegraph for VS Code",
   "publisher": "sourcegraph",
   "sideEffects": true,

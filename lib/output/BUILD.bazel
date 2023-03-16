@@ -47,6 +47,7 @@ go_library(
 
 go_test(
     name = "output_test",
+    timeout = "short",
     srcs = ["output_unix_test.go"],
     embed = [":output"],
     deps = select({

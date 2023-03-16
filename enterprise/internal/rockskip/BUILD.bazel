@@ -40,6 +40,7 @@ go_library(
 
 go_test(
     name = "rockskip_test",
+    timeout = "short",
     srcs = [
         "search_test.go",
         "server_test.go",

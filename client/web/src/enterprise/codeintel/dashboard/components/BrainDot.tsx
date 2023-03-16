@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 import { mdiBrain } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Button, Icon, Link } from '@sourcegraph/wildcard'
+import { Button, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { INDEX_COMPLETED_STATES, INDEX_FAILURE_STATES } from '../constants'
 import { useRepoCodeIntelStatus } from '../hooks/useRepoCodeIntelStatus'
@@ -61,7 +61,7 @@ export const BrainDot: React.FunctionComponent<BrainDotProps> = ({ repoName }) =
     }, [indexes, suggestedIndexers])
 
     return (
-        <>
+        <Tooltip content="View code intelligence summary">
             <Link to={`/${repoName}/-/code-graph/dashboard`}>
                 <Button
                     className={classNames('text-decoration-none', styles.braindot, dotStyle)}
@@ -70,6 +70,6 @@ export const BrainDot: React.FunctionComponent<BrainDotProps> = ({ repoName }) =
                     <Icon aria-hidden={true} svgPath={mdiBrain} />
                 </Button>
             </Link>
-        </>
+        </Tooltip>
     )
 }

@@ -21,6 +21,7 @@ go_library(
 
 go_test(
     name = "janitor_test",
+    timeout = "short",
     srcs = ["orphaned_vms_test.go"],
     embed = [":janitor"],
     deps = ["@com_github_google_go_cmp//cmp"],

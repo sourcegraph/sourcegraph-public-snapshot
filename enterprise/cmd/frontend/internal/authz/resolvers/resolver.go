@@ -131,7 +131,7 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		AccountIDs:  pendingBindIDs,
 	}
 
-	if err = txs.SetRepoPerms(ctx, p.RepoID, perms, authz.SourceAPI); err != nil {
+	if _, err = txs.SetRepoPerms(ctx, p.RepoID, perms, authz.SourceAPI); err != nil {
 		return nil, errors.Wrap(err, "set user repo permissions")
 	} else if _, err = txs.SetRepoPermissions(ctx, p); err != nil {
 		return nil, errors.Wrap(err, "set repository permissions")

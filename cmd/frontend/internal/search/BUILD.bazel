@@ -45,6 +45,7 @@ go_library(
 
 go_test(
     name = "search_test",
+    timeout = "short",
     srcs = [
         "decorate_test.go",
         "search_test.go",

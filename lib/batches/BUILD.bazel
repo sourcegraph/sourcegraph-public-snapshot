@@ -30,6 +30,7 @@ go_library(
 
 go_test(
     name = "batches_test",
+    timeout = "short",
     srcs = [
         "batch_spec_test.go",
         "changeset_spec_test.go",

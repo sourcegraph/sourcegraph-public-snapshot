@@ -46,6 +46,7 @@ go_library(
 
 go_test(
     name = "scim_test",
+    timeout = "short",
     srcs = [
         "user_create_test.go",
         "user_get_test.go",

@@ -27,6 +27,7 @@ go_library(
 
 go_test(
     name = "commit_test",
+    timeout = "short",
     srcs = ["commit_test.go"],
     embed = [":commit"],
     deps = [
