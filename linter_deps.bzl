@@ -148,7 +148,7 @@ def linter_dependencies():
     sum = "h1:6WHiuFL9FNjg8RljAaT7FNUuKDbvMqS1i5cr2OE2sLQ=",
   )
 
-  go_repository
+  go_repository(
     name = "com_github_kyoh86_exportloopref",
     importpath = "github.com/kyoh86/exportloopref",
     version = "v0.1.11",
