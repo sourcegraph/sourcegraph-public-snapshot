@@ -7,6 +7,7 @@ import {
     ChangesetSpecOperation,
     ChangesetState,
 } from '../../graphql-operations'
+import { BatchChangesWritePermission } from '../../rbac/constants'
 
 export function isValidChangesetReviewState(input: string): input is ChangesetReviewState {
     return Object.values<string>(ChangesetReviewState).includes(input)
@@ -25,7 +26,7 @@ export function isValidChangesetState(input: string): input is ChangesetState {
 }
 
 export const canWriteBatchChanges = (user: Pick<AuthenticatedUser, 'permissions'> | null): boolean =>
-    !!user && findIndex(user.permissions.nodes, permission => permission.displayName === 'BATCH_CHANGES#WRITE') !== -1
+    !!user && findIndex(user.permissions.nodes, permission => permission.displayName === BatchChangesWritePermission) !== -1
 
 export const NO_ACCESS_SOURCEGRAPH_COM = 'Batch changes are not available on Sourcegraph.com.'
 export const NO_ACCESS_BATCH_CHANGES_WRITE =
