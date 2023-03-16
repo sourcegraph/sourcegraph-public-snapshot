@@ -48,7 +48,7 @@ export const CreateBatchChangePage: React.FunctionComponent<React.PropsWithChild
                 headingElement={headingElement}
                 description={
                     <>
-                        Follow these steps to create a Batch Change. Need help? View the{' '}
+                        Follow these steps to create THE ULTIMATE Batch Change. Need help? View the{' '}
                         <Link to="/help/batch_changes" rel="noopener noreferrer" target="_blank">
                             documentation.
                         </Link>
