@@ -247,7 +247,7 @@ const LockedRoleNode: React.FunctionComponent<Pick<RoleNodeProps, 'node' | 'allP
                                 <SystemLabel />
                                 <Tooltip content="This role is locked. Its permissions are managed by Sourcegraph and cannot be modified.">
                                     <Icon
-                                        className="flex-shrink-0 text-muted"
+                                        className={styles.roleNodeLockedIcon}
                                         aria-label="Locked role"
                                         svgPath={mdiLock}
                                     />
