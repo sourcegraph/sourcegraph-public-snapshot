@@ -82,15 +82,15 @@ func GetRepositorySizeHistorgram(ctx context.Context, db database.DB) ([]RepoSiz
 
 	var results []RepoSizeBucket
 
-	baseQuery := "select coalesce(count(repo_size_bytes), 0) from gitserver_repos"
 	baseStore := basestore.NewWithHandle(db.Handle())
 
 	getCount := func(start int64, end *int64) (int64, bool, error) {
+		baseQuery := "select coalesce(count(repo_size_bytes), 0) from gitserver_repos where clone_status = 'cloned' "
 		upperBound := sqlf.Sprintf("and true")
 		if end != nil {
 			upperBound = sqlf.Sprintf("and repo_size_bytes < %s", *end)
 		}
-		return basestore.ScanFirstInt64(baseStore.Query(ctx, sqlf.Sprintf("%s where repo_size_bytes >= %s %s", sqlf.Sprintf(baseQuery), start, upperBound)))
+		return basestore.ScanFirstInt64(baseStore.Query(ctx, sqlf.Sprintf("%s and repo_size_bytes >= %s %s", sqlf.Sprintf(baseQuery), start, upperBound)))
 	}
 
 	for i := 1; i < len(sizes); i++ {

@@ -21,7 +21,7 @@ import { TreePage } from './tree/TreePage'
 
 import styles from './RepositoryFileTreePage.module.scss'
 
-interface RepositoryFileTreePageProps extends RepoRevisionContainerContext, NotebookProps, OwnConfigProps {
+export interface RepositoryFileTreePageProps extends RepoRevisionContainerContext, NotebookProps, OwnConfigProps {
     objectType: 'blob' | 'tree' | undefined
 }
 
