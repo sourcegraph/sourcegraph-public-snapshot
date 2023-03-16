@@ -78,7 +78,7 @@ interface RepositoryNodeProps {
 
 const updateNodeFromData = (node: SiteAdminRepositoryFields, data: SettingsAreaRepositoryResult | undefined) => {
     if (data?.repository && data.repository?.mirrorInfo) {
-        node.mirrorInfo.lastError = data.repository.mirrorInfo.lastError
+        node.mirrorInfo.lastError = 'bad errror 123'
         node.mirrorInfo.cloned = data.repository.mirrorInfo.cloned
         node.mirrorInfo.cloneInProgress = data.repository.mirrorInfo.cloneInProgress
         node.mirrorInfo.updatedAt = data.repository.mirrorInfo.updatedAt
@@ -136,6 +136,43 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                 </div>
 
                 <div className="col-auto pr-0">
+                    {node.mirrorInfo.lastError && (
+                        <Popover isOpen={isPopoverOpen} onOpenChange={event => setIsPopoverOpen(event.isOpen)}>
+                            <PopoverTrigger as={Button} variant="secondary" size="sm" aria-label="See errors">
+                                <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} /> See errors
+                            </PopoverTrigger>
+
+                            <PopoverContent position={Position.left} className={styles.errorContent}>
+                                <div className="d-flex">
+                                    <H4 className="m-2">
+                                        <RepositoryStatusBadge status={parseRepositoryStatus(node)} />
+                                        <ExternalRepositoryIcon
+                                            externalRepo={node.externalRepository}
+                                            className="mx-2"
+                                        />
+                                        <RepoLink repoName={node.name} to={null} />
+                                    </H4>
+
+                                    <Button
+                                        aria-label="Dismiss error"
+                                        variant="icon"
+                                        className="ml-auto mr-2"
+                                        onClick={() => setIsPopoverOpen(false)}
+                                    >
+                                        <Icon aria-hidden={true} svgPath={mdiClose} />
+                                    </Button>
+                                </div>
+
+                                <MenuDivider />
+
+                                <Alert variant="warning" className={classNames('m-2', styles.alertOverflow)}>
+                                    <H4>Error syncing repository:</H4>
+                                    {node.mirrorInfo.lastError}
+                                </Alert>
+                            </PopoverContent>
+                            <PopoverTail size="sm" />
+                        </Popover>
+                    )}
                     <Menu>
                         <MenuButton outline={true} aria-label="Repository action">
                             <Icon svgPath={mdiDotsHorizontal} inline={false} aria-hidden={true} />
@@ -179,43 +216,6 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                             </MenuItem>
                         </MenuList>
                     </Menu>
-                    {node.mirrorInfo.lastError && (
-                        <Popover isOpen={isPopoverOpen} onOpenChange={event => setIsPopoverOpen(event.isOpen)}>
-                            <PopoverTrigger as={Button} variant="secondary" size="sm" aria-label="See errors">
-                                <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} /> See errors
-                            </PopoverTrigger>
-
-                            <PopoverContent position={Position.left} className={styles.errorContent}>
-                                <div className="d-flex">
-                                    <H4 className="m-2">
-                                        <RepositoryStatusBadge status={parseRepositoryStatus(node)} />
-                                        <ExternalRepositoryIcon
-                                            externalRepo={node.externalRepository}
-                                            className="mx-2"
-                                        />
-                                        <RepoLink repoName={node.name} to={null} />
-                                    </H4>
-
-                                    <Button
-                                        aria-label="Dismiss error"
-                                        variant="icon"
-                                        className="ml-auto mr-2"
-                                        onClick={() => setIsPopoverOpen(false)}
-                                    >
-                                        <Icon aria-hidden={true} svgPath={mdiClose} />
-                                    </Button>
-                                </div>
-
-                                <MenuDivider />
-
-                                <Alert variant="warning" className={classNames('m-2', styles.alertOverflow)}>
-                                    <H4>Error syncing repository:</H4>
-                                    {node.mirrorInfo.lastError}
-                                </Alert>
-                            </PopoverContent>
-                            <PopoverTail size="sm" />
-                        </Popover>
-                    )}
                 </div>
             </div>
 
