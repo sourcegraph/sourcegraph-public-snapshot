@@ -5,7 +5,7 @@ import { Message } from '@sourcegraph/cody-common'
 
 import { getContextMessageWithResponse, populateCodeContextTemplate } from '../chat/prompt'
 
-import { KeywordContextFetcher } from '.'
+import { getTermScore, KeywordContextFetcher } from '.'
 
 export class LocalKeywordContextFetcher implements KeywordContextFetcher {
     constructor() {}
@@ -137,8 +137,8 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
             const ct = termCounts[term] || 0
             // Assume terms with both upper and lower letters are symbols
             // as symbols should have higher priority than non-symbols
-            const termScore = term.match(/^(?=.*[a-z])(?=.*[A-Z])/) ? 10 : 1
-            const logScore = ct === 0 ? 0 : Math.log10(ct) + termScore
+            const termScore = getTermScore(term)
+            const logScore = ct === 0 ? 0 : Math.log10(termScore) + 1
             const idfLogScore = (idfDict[term] || 1) * logScore
             score += idfLogScore
             scoreComponents[term] = idfLogScore
