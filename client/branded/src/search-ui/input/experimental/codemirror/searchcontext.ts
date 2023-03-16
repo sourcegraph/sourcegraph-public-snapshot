@@ -1,11 +1,10 @@
-import { ChangeSpec, EditorSelection, EditorState, Extension, StateField } from '@codemirror/state'
+import { EditorSelection, EditorState, Extension, StateField } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { mdiFilterOutline } from '@mdi/js'
 import { inRange } from 'lodash'
 
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { FilterKind, findFilter, getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
-import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
 import { isFilterType } from '@sourcegraph/shared/src/search/query/validate'
 
