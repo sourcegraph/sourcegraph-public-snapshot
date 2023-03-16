@@ -3,7 +3,7 @@
 const path = require('path')
 
 // TODO(bazel): drop when non-bazel removed.
-const IS_BAZEL = !!(process.env.BAZEL_BINDIR || process.env.BAZEL_TEST)
+const IS_BAZEL = !!(process.env.JS_BINARY__TARGET || process.env.BAZEL_BINDIR || process.env.BAZEL_TEST)
 const SRC_EXT = IS_BAZEL ? 'js' : 'ts'
 const rootDir = IS_BAZEL ? process.cwd() : __dirname
 
@@ -74,8 +74,6 @@ const config = {
   // Include the pnpm-style rules_js.
   // See pnpm notes at https://jestjs.io/docs/configuration#transformignorepatterns-arraystring
   transformIgnorePatterns: [
-    // TODO(bazel): remove when @sourcegraph/shared is no longer compiled as commonjs. See client/common/BUILD.bazel
-    '@sourcegraph/shared',
     // packages within the root pnpm/rules_js package store
     `<rootDir>/node_modules/.(aspect_rules_js|pnpm)/(?!(${ESM_NPM_DEPS.replace('/', '\\+')})@)`,
     // files under a subdir: eg. '/packages/lib-a/'

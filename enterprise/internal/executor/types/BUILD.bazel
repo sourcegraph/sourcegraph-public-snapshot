@@ -13,6 +13,7 @@ go_library(
 
 go_test(
     name = "types_test",
+    timeout = "short",
     srcs = ["job_test.go"],
     embed = [":types"],
     deps = [

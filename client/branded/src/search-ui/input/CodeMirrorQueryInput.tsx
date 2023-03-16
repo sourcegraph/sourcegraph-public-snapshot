@@ -2,21 +2,11 @@ import React, { RefObject, useCallback, useEffect, useMemo, useRef, useState } f
 
 import { closeCompletion, startCompletion } from '@codemirror/autocomplete'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
-import { Diagnostic as CMDiagnostic, linter, LintSource } from '@codemirror/lint'
-import { EditorSelection, Extension, Prec, Compartment, Range, EditorState } from '@codemirror/state'
-import {
-    EditorView,
-    ViewUpdate,
-    keymap,
-    Decoration,
-    placeholder as placeholderExtension,
-    ViewPlugin,
-    WidgetType,
-} from '@codemirror/view'
+import { EditorSelection, Extension, Prec, Compartment, EditorState } from '@codemirror/state'
+import { EditorView, ViewUpdate, keymap, placeholder as placeholderExtension } from '@codemirror/view'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
-import { renderMarkdown } from '@sourcegraph/common'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { useCodeMirror, createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
@@ -27,9 +17,6 @@ import {
     type QueryState,
     type SearchPatternTypeProps,
 } from '@sourcegraph/shared/src/search'
-import { Diagnostic, getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
-import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
-import { Filter } from '@sourcegraph/shared/src/search/query/token'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
@@ -37,8 +24,10 @@ import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
 import { createDefaultSuggestions, singleLine } from './codemirror'
+import { decorateActiveFilter, filterPlaceholder } from './codemirror/active-filter'
+import { queryDiagnostic } from './codemirror/diagnostics'
 import { HISTORY_USER_EVENT, searchHistory as searchHistoryFacet } from './codemirror/history'
-import { queryTokens, parseInputAsQuery, setQueryParseOptions } from './codemirror/parsedQuery'
+import { parseInputAsQuery, setQueryParseOptions } from './codemirror/parsedQuery'
 import { querySyntaxHighlighting } from './codemirror/syntax-highlighting'
 import { tokenInfo } from './codemirror/token-info'
 import { QueryInputProps } from './QueryInput'
@@ -355,15 +344,7 @@ export const CodeMirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputP
                     // The precedence of these extensions needs to be decreased
                     // explicitly, otherwise the diagnostic indicators will be
                     // hidden behind the highlight background color
-                    Prec.low([
-                        tokenInfo(),
-                        highlightFocusedFilter,
-                        // It baffels me but the syntax highlighting extension has
-                        // to come after the highlight current filter extension,
-                        // otherwise CodeMirror keeps steeling the focus.
-                        // See https://github.com/sourcegraph/sourcegraph/issues/38677
-                        querySyntaxHighlighting,
-                    ]),
+                    Prec.low([tokenInfo(), querySyntaxHighlighting, decorateActiveFilter, filterPlaceholder]),
                     externalExtensions.of(extensions),
                 ],
                 // patternType and interpretComments are updated via a
@@ -425,18 +406,21 @@ export function useUpdateEditorFromQueryState(
             return
         }
 
+        const changes =
+            editor.state.sliceDoc() !== queryState.query
+                ? { from: 0, to: editor.state.doc.length, insert: queryState.query }
+                : undefined
         editor.dispatch({
             // Update value if it's different
-            changes:
-                editor.state.sliceDoc() !== queryState.query
-                    ? { from: 0, to: editor.state.doc.length, insert: queryState.query }
-                    : undefined,
+            changes,
             selection: queryState.selectionRange
                 ? // Select the specified range (most of the time this will be a
                   // placeholder filter value).
                   EditorSelection.range(queryState.selectionRange.start, queryState.selectionRange.end)
-                : // Place the cursor at the end of the query.
-                  EditorSelection.cursor(queryState.query.length),
+                : // Place the cursor at the end of the query if it changed.
+                changes
+                ? EditorSelection.cursor(queryState.query.length)
+                : undefined,
             scrollIntoView: true,
         })
 
@@ -446,6 +430,9 @@ export function useUpdateEditorFromQueryState(
             }
             if ((queryState.hint & EditorHint.ShowSuggestions) === EditorHint.ShowSuggestions) {
                 startCompletionRef.current(editor)
+            }
+            if ((queryState.hint & EditorHint.Blur) === EditorHint.Blur) {
+                editor.contentDOM.blur()
             }
         }
     }, [editorRef, queryState])
@@ -552,152 +539,3 @@ const [callbacksField, setCallbacks] = createUpdateableField<
         }
     }),
 ])
-
-// Defines decorators for syntax highlighting
-const focusedFilterDeco = Decoration.mark({ class: styles.focusedFilter })
-
-class PlaceholderWidget extends WidgetType {
-    constructor(private placeholder: string) {
-        super()
-    }
-
-    /* eslint-disable-next-line id-length */
-    public eq(other: PlaceholderWidget): boolean {
-        return this.placeholder === other.placeholder
-    }
-
-    public toDOM(): HTMLElement {
-        const span = document.createElement('span')
-        span.className = styles.placeholder
-        span.textContent = this.placeholder
-        return span
-    }
-}
-
-// Determines whether the cursor is over a filter and if yes, decorates that
-// filter.
-const highlightFocusedFilter = ViewPlugin.define(
-    () => ({
-        decorations: Decoration.none,
-        update(update) {
-            if (update.docChanged || update.selectionSet || update.focusChanged) {
-                if (update.view.hasFocus) {
-                    const query = update.state.facet(queryTokens)
-                    const position = update.state.selection.main.head
-                    const focusedFilter = query.tokens.find(
-                        (token): token is Filter =>
-                            // Inclusive end so that the filter is highlighted when
-                            // the cursor is positioned directly after the value
-                            token.type === 'filter' && token.range.start <= position && token.range.end >= position
-                    )
-                    const decorations: Range<Decoration>[] = []
-
-                    if (focusedFilter) {
-                        // Adds decoration for background highlighting
-                        decorations.push(focusedFilterDeco.range(focusedFilter.range.start, focusedFilter.range.end))
-
-                        // Adds widget decoration for filter placeholder
-                        if (!focusedFilter.value?.value) {
-                            const resolvedFilter = resolveFilter(focusedFilter.field.value)
-                            if (resolvedFilter?.definition.placeholder) {
-                                decorations.push(
-                                    Decoration.widget({
-                                        widget: new PlaceholderWidget(resolvedFilter.definition.placeholder),
-                                        side: 1, // show after the cursor
-                                    }).range(focusedFilter.range.end)
-                                )
-                            }
-                        }
-                    }
-
-                    this.decorations = Decoration.set(decorations)
-                } else {
-                    this.decorations = Decoration.none
-                }
-            }
-        },
-    }),
-    {
-        decorations: plugin => plugin.decorations,
-    }
-)
-
-/**
- * Sets up client side query validation.
- */
-function queryDiagnostic(): Extension {
-    // The setup is a bit "strange" because @codemirror/lint only triggers
-    // linting when the document changes. But in our case the linting rules
-    // change depending on the query "type" (regexp, structural, ...). Changing
-    // the query type does not involve changing the document and to linting
-    // wouldn't be triggered. To work around this we explictly reconfigure the
-    // linter via a compartment when the parsed query changes but the document
-    // hadsn't change. This queues a new linting pass.
-    // See
-    // - https://discuss.codemirror.net/t/can-we-manually-force-linting-even-if-the-document-hasnt-changed/3570/2
-    // - https://github.com/sourcegraph/sourcegraph/issues/43836
-    //
-    const source: LintSource = view => {
-        const query = view.state.facet(queryTokens)
-        return query.tokens.length > 0 ? getDiagnostics(query.tokens, query.patternType).map(toCMDiagnostic) : []
-    }
-    const config = {
-        delay: 200,
-    }
-
-    const linterCompartment = new Compartment()
-
-    return [
-        linterCompartment.of(linter(source, config)),
-        EditorView.updateListener.of(update => {
-            if (update.state.facet(queryTokens) !== update.startState.facet(queryTokens) && !update.docChanged) {
-                update.view.dispatch({ effects: linterCompartment.reconfigure(linter(source, config)) })
-            }
-        }),
-        EditorView.theme({
-            '.cm-diagnosticText': {
-                display: 'block',
-            },
-            '.cm-diagnosticAction': {
-                color: 'var(--body-color)',
-                borderColor: 'var(--secondary)',
-                backgroundColor: 'var(--secondary)',
-                borderRadius: 'var(--border-radius)',
-                padding: 'var(--btn-padding-y-sm) .5rem',
-                fontSize: 'calc(min(0.75rem, 0.9166666667em))',
-                lineHeight: '1rem',
-                margin: '0.5rem 0 0 0',
-            },
-            '.cm-diagnosticAction + .cm-diagnosticAction': {
-                marginLeft: '1rem',
-            },
-        }),
-    ]
-}
-
-function renderMarkdownNode(message: string): Element {
-    const div = document.createElement('div')
-    div.innerHTML = renderMarkdown(message)
-    return div.firstElementChild || div
-}
-
-function toCMDiagnostic(diagnostic: Diagnostic): CMDiagnostic {
-    return {
-        from: diagnostic.range.start,
-        to: diagnostic.range.end,
-        message: diagnostic.message,
-        renderMessage() {
-            return renderMarkdownNode(diagnostic.message)
-        },
-        severity: diagnostic.severity,
-        actions: diagnostic.actions?.map(action => ({
-            name: action.label,
-            apply(view) {
-                view.dispatch({ changes: action.change, selection: action.selection })
-                if (action.selection && !view.hasFocus) {
-                    view.focus()
-                }
-            },
-        })),
-    }
-}

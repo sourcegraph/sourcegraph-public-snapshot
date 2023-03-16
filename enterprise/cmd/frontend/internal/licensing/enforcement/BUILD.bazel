@@ -15,6 +15,7 @@ go_library(
         "//cmd/frontend/envvar",
         "//enterprise/internal/cloud",
         "//enterprise/internal/licensing",
+        "//internal/actor",
         "//internal/auth",
         "//internal/database",
         "//internal/errcode",
@@ -28,6 +29,7 @@ go_library(
 
 go_test(
     name = "enforcement_test",
+    timeout = "short",
     srcs = [
         "external_services_test.go",
         "main_test.go",
@@ -39,6 +41,7 @@ go_test(
         "//enterprise/internal/cloud",
         "//enterprise/internal/license",
         "//enterprise/internal/licensing",
+        "//internal/actor",
         "//internal/auth",
         "//internal/database",
         "//internal/extsvc",

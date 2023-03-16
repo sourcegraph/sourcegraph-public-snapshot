@@ -2,10 +2,12 @@ package resolvers
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -19,6 +21,78 @@ type RootResolver interface {
 	AutoindexingServiceResolver
 	UploadsServiceResolver
 	PoliciesServiceResolver
+	SentinelServiceResolver
+}
+
+type SentinelServiceResolver interface {
+	Vulnerabilities(ctx context.Context, args GetVulnerabilitiesArgs) (VulnerabilityConnectionResolver, error)
+	VulnerabilityMatches(ctx context.Context, args GetVulnerabilityMatchesArgs) (VulnerabilityMatchConnectionResolver, error)
+	VulnerabilityByID(ctx context.Context, id graphql.ID) (_ VulnerabilityResolver, err error)
+	VulnerabilityMatchByID(ctx context.Context, id graphql.ID) (_ VulnerabilityMatchResolver, err error)
+}
+
+type GetVulnerabilitiesArgs struct {
+	First *int32
+	After *string
+}
+
+type GetVulnerabilityMatchesArgs struct {
+	First *int32
+	After *string
+}
+
+type VulnerabilityConnectionResolver interface {
+	Nodes() []VulnerabilityResolver
+	TotalCount() *int32
+	PageInfo() PageInfo
+}
+
+type VulnerabilityMatchConnectionResolver interface {
+	Nodes() []VulnerabilityMatchResolver
+	TotalCount() *int32
+	PageInfo() PageInfo
+}
+
+type VulnerabilityResolver interface {
+	ID() graphql.ID
+	SourceID() string
+	Summary() string
+	Details() string
+	CPEs() []string
+	CWEs() []string
+	Aliases() []string
+	Related() []string
+	DataSource() string
+	URLs() []string
+	Severity() string
+	CVSSVector() string
+	CVSSScore() string
+	Published() gqlutil.DateTime
+	Modified() *gqlutil.DateTime
+	Withdrawn() *gqlutil.DateTime
+	AffectedPackages() []VulnerabilityAffectedPackageResolver
+}
+
+type VulnerabilityAffectedPackageResolver interface {
+	PackageName() string
+	Language() string
+	Namespace() string
+	VersionConstraint() []string
+	Fixed() bool
+	FixedIn() *string
+	AffectedSymbols() []VulnerabilityAffectedSymbolResolver
+}
+
+type VulnerabilityAffectedSymbolResolver interface {
+	Path() string
+	Symbols() []string
+}
+
+type VulnerabilityMatchResolver interface {
+	ID() graphql.ID
+	Vulnerability(ctx context.Context) (VulnerabilityResolver, error)
+	AffectedPackage(ctx context.Context) (VulnerabilityAffectedPackageResolver, error)
+	PreciseIndex(ctx context.Context) (PreciseIndexResolver, error)
 }
 
 type CodeNavServiceResolver interface {
@@ -39,7 +113,7 @@ type AutoindexingServiceResolver interface {
 	LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
 	LSIFIndexesByRepo(ctx context.Context, args *LSIFRepositoryIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
 	InferAutoIndexJobsForRepo(ctx context.Context, args *InferAutoIndexJobsForRepoArgs) ([]AutoIndexJobDescriptionResolver, error)
-	QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAutoIndexJobsForRepoArgs) ([]LSIFIndexResolver, error)
+	QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAutoIndexJobsForRepoArgs) ([]PreciseIndexResolver, error)
 	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error)
 	CodeIntelSummary(ctx context.Context) (CodeIntelSummaryResolver, error)
 	RepositorySummary(ctx context.Context, id graphql.ID) (CodeIntelRepositorySummaryResolver, error)
@@ -132,7 +206,7 @@ type IndexerKeyQueryArgs struct {
 }
 
 type PreciseIndexesQueryArgs struct {
-	graphqlutil.ConnectionArgs
+	ConnectionArgs
 	After        *string
 	Repo         *graphql.ID
 	Query        *string
@@ -187,6 +261,7 @@ type PreciseIndexResolver interface {
 type AutoIndexJobDescriptionResolver interface {
 	Root() string
 	Indexer() CodeIntelIndexerResolver
+	ComparisonKey() string
 	Steps() IndexStepsResolver
 }
 
@@ -299,15 +374,18 @@ type CodeIntelIndexerResolver interface {
 	Key() string
 	Name() string
 	URL() string
+	ImageName() *string
 }
 
 type IndexConfigurationResolver interface {
 	Configuration(ctx context.Context) (*string, error)
+	ParsedConfiguration(ctx context.Context) (*[]AutoIndexJobDescriptionResolver, error)
 	InferredConfiguration(ctx context.Context) (InferredConfigurationResolver, error)
 }
 
 type InferredConfigurationResolver interface {
 	Configuration() string
+	ParsedConfiguration(ctx context.Context) (*[]AutoIndexJobDescriptionResolver, error)
 	LimitError() *string
 }
 
@@ -359,7 +437,7 @@ type LocationConnectionResolver interface {
 }
 
 type LSIFDiagnosticsArgs struct {
-	graphqlutil.ConnectionArgs
+	ConnectionArgs
 }
 
 type LSIFRangesArgs struct {
@@ -369,7 +447,7 @@ type LSIFRangesArgs struct {
 
 type LSIFPagedQueryPositionArgs struct {
 	LSIFQueryPositionArgs
-	graphqlutil.ConnectionArgs
+	ConnectionArgs
 	After  *string
 	Filter *string
 }
@@ -584,8 +662,10 @@ type LSIFUploadsAuditLogsResolver interface {
 }
 
 type IndexStepResolver interface {
+	Commands() []string
 	IndexerArgs() []string
 	Outfile() *string
+	RequestedEnvVars() *[]string
 	LogEntry() ExecutionLogEntryResolver
 }
 
@@ -647,7 +727,7 @@ func (er *EmptyResponse) AlwaysNil() *string {
 }
 
 type LSIFIndexesQueryArgs struct {
-	graphqlutil.ConnectionArgs
+	ConnectionArgs
 	Query *string
 	State *string
 	After *string
@@ -668,6 +748,7 @@ type DeleteLSIFIndexesArgs struct {
 type DeletePreciseIndexesArgs struct {
 	Query           *string
 	States          *[]string
+	IndexerKey      *string
 	Repository      *graphql.ID
 	IsLatestForRepo *bool
 }
@@ -675,6 +756,7 @@ type DeletePreciseIndexesArgs struct {
 type ReindexPreciseIndexesArgs struct {
 	Query           *string
 	States          *[]string
+	IndexerKey      *string
 	Repository      *graphql.ID
 	IsLatestForRepo *bool
 }
@@ -685,7 +767,7 @@ type LSIFRepositoryIndexesQueryArgs struct {
 }
 
 type LSIFUploadsQueryArgs struct {
-	graphqlutil.ConnectionArgs
+	ConnectionArgs
 	Query           *string
 	State           *string
 	IsLatestForRepo *bool
@@ -741,7 +823,7 @@ type LSIFUploadsWithRepositoryNamespaceResolver interface {
 }
 
 type CodeIntelligenceConfigurationPoliciesArgs struct {
-	graphqlutil.ConnectionArgs
+	ConnectionArgs
 	Repository       *graphql.ID
 	Query            *string
 	ForDataRetention *bool
@@ -780,20 +862,26 @@ type DeleteCodeIntelligenceConfigurationPolicyArgs struct {
 }
 
 type PreviewGitObjectFilterArgs struct {
-	graphqlutil.ConnectionArgs
+	ConnectionArgs
 	Type                         GitObjectType
 	Pattern                      string
 	CountObjectsYoungerThanHours *int32
 }
 
 type PreviewRepositoryFilterArgs struct {
-	graphqlutil.ConnectionArgs
+	ConnectionArgs
 	Patterns []string
 }
 
 type InferredAvailableIndexersResolver interface {
 	Indexer() CodeIntelIndexerResolver
 	Roots() []string
+	RootsWithKeys() []RootsWithKeyResolver
+}
+
+type RootsWithKeyResolver interface {
+	Root() string
+	ComparisonKey() string
 }
 
 type inferredAvailableIndexersResolver struct {
@@ -814,4 +902,35 @@ func (r *inferredAvailableIndexersResolver) Indexer() CodeIntelIndexerResolver {
 
 func (r *inferredAvailableIndexersResolver) Roots() []string {
 	return r.roots
+}
+
+func (r *inferredAvailableIndexersResolver) RootsWithKeys() []RootsWithKeyResolver {
+	var resolvers []RootsWithKeyResolver
+	for _, root := range r.roots {
+		resolvers = append(resolvers, &rootWithKeyResolver{
+			root: root,
+			key:  comparisonKey(root, r.indexer.Name()),
+		})
+	}
+
+	return resolvers
+}
+
+type rootWithKeyResolver struct {
+	root string
+	key  string
+}
+
+func (r *rootWithKeyResolver) Root() string {
+	return r.root
+}
+
+func (r *rootWithKeyResolver) ComparisonKey() string {
+	return r.key
+}
+
+func comparisonKey(root, indexer string) string {
+	hash := sha256.New()
+	_, _ = hash.Write([]byte(strings.Join([]string{root, indexer}, "\x00")))
+	return base64.URLEncoding.EncodeToString(hash.Sum(nil))
 }

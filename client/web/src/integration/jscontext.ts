@@ -16,6 +16,7 @@ export const builtinAuthProvider = {
 
 export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: string }): SourcegraphContext => ({
     currentUser: currentUserMock,
+    temporarySettings: null,
     externalURL: sourcegraphBaseUrl,
     accessTokensAllow: 'all-users-create',
     allowSignup: false,
@@ -24,6 +25,8 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     batchChangesWebhookLogsEnabled: true,
     codeInsightsEnabled: true,
     executorsEnabled: true,
+    extsvcConfigAllowEdits: false,
+    extsvcConfigFileExists: false,
     codeIntelAutoIndexingEnabled: true,
     codeIntelAutoIndexingAllowGlobalPolicies: true,
     externalServicesUserMode: 'disabled',
@@ -37,6 +40,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     likelyDockerOnMac: false,
     needServerRestart: false,
     needsSiteInit: false,
+    needsRepositoryConfiguration: false,
     resetPasswordEnabled: false,
     sentryDSN: null,
     site: {},
@@ -49,4 +53,8 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     xhrHeaders: {},
     authProviders: [builtinAuthProvider],
     authMinPasswordLength: 12,
+    embeddingsEnabled: false,
+    runningOnMacOS: true,
+    localFilePickerAvailable: false,
+    srcServeGitUrl: 'http://127.0.0.1:3434',
 })

@@ -64,6 +64,7 @@ go_library(
 
 go_test(
     name = "search_test",
+    timeout = "short",
     srcs = [
         "filter_test.go",
         "github_archive_test.go",

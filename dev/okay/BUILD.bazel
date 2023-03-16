@@ -17,6 +17,7 @@ go_library(
 
 go_test(
     name = "okay_test",
+    timeout = "short",
     srcs = ["okay_test.go"],
     deps = [
         ":okay",

@@ -21,8 +21,13 @@ go_library(
 
 go_test(
     name = "accessrequest_test",
+    timeout = "short",
     srcs = ["handlers_test.go"],
     embed = [":accessrequest"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/conf",
         "//internal/database",

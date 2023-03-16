@@ -15,21 +15,19 @@ const { StatsWriterPlugin } = require('webpack-stats-plugin')
 const {
   ROOT_PATH,
   STATIC_ASSETS_PATH,
-  getBabelLoader,
   getCacheConfig,
   getMonacoWebpackPlugin,
   getBazelCSSLoaders: getCSSLoaders,
   getTerserPlugin,
   getProvidePlugin,
   getCSSModulesLoader,
-  getMonacoCSSRule,
   getMonacoTTFRule,
   getBasicCSSLoader,
   getStatoscopePlugin,
 } = require('@sourcegraph/build-config')
 
 const { IS_PRODUCTION, IS_DEVELOPMENT, ENVIRONMENT_CONFIG, writeIndexHTMLPlugin } = require('./dev/utils')
-// const { isHotReloadEnabled } = require('./src/integration/environment')
+const { isHotReloadEnabled } = require('./src/integration/environment')
 
 const {
   NODE_ENV,
@@ -118,6 +116,9 @@ const config = {
       },
     },
     ...(IS_DEVELOPMENT && {
+      // Running multiple entries on a single page that do not share a runtime chunk from the same compilation is not supported.
+      // https://github.com/webpack/webpack-dev-server/issues/2792#issuecomment-808328432
+      runtimeChunk: isHotReloadEnabled ? 'single' : false,
       removeAvailableModules: false,
       removeEmptyChunks: false,
       splitChunks: false,
@@ -153,8 +154,7 @@ const config = {
     new webpack.DefinePlugin({
       'process.env': mapValues(RUNTIME_ENV_VARIABLES, JSON.stringify),
     }),
-    // TODO(bazel): why does the provide plugin crash?
-    // getProvidePlugin(),
+    getProvidePlugin(),
     new MiniCssExtractPlugin({
       // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
       filename:
@@ -162,7 +162,7 @@ const config = {
           ? 'styles/[name].[contenthash].bundle.css'
           : 'styles/[name].bundle.css',
     }),
-    // getMonacoWebpackPlugin(),
+    getMonacoWebpackPlugin(),
     new WebpackManifestPlugin({
       writeToFileEmit: false,
       fileName: 'webpack.manifest.json',
@@ -175,7 +175,7 @@ const config = {
     }),
     ...(WEBPACK_SERVE_INDEX && IS_PRODUCTION ? [writeIndexHTMLPlugin] : []),
     WEBPACK_BUNDLE_ANALYZER && getStatoscopePlugin(WEBPACK_STATS_NAME),
-    // isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
+    isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
     IS_PRODUCTION &&
       new CompressionPlugin({
         filename: '[path][base].gz',
@@ -238,6 +238,7 @@ const config = {
       path: require.resolve('path-browserify'),
       punycode: require.resolve('punycode'),
       util: require.resolve('util'),
+      events: require.resolve('events'),
     },
     alias: {
       // react-visibility-sensor's main field points to a UMD bundle instead of ESM

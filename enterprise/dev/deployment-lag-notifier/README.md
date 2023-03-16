@@ -13,7 +13,7 @@ If you would like to actually post the message, either configure the `-slack-web
 ## Flags
 
 - `-dry-run` Print to stdout instead of sending to Slack
-- `-env` (Default: Cloud) Environment to check against. Options: [`cloud`, `k8s`, `preprod`]
+- `-env` (Default: Cloud) Environment to check against. Options: [`cloud`, `k8s`]
 - `-slack-webhook-url` (env var: `SLACK_WEBHOOK_URL`) Slack webhook URL to post to. To get a webhook URL, add a configuration [here](https://sourcegraph.slack.com/apps/A0F7XDUAZ-incoming-webhooks?tab=settings&next_id=0):
 - `-num-commits` (Default: `30`) Number of commits the deployed environment is allowed to differ from tip (Default: 30)
 - `-allowed-age` (Default: `2.5h`) The age that the deployed version is allowed to drift from the current tip of `sourcegraph/sourcegraph@main`. The format should be provided in (`time.Duration`)[https://pkg.go.dev/time#ParseDuration] string format (e.g. `1h`, `20m`, `3h2m1s`) .

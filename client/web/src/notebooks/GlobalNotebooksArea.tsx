@@ -11,6 +11,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { AuthenticatedUser } from '../auth'
+import { OwnConfigProps } from '../own/OwnConfigProps'
 import { EnterprisePageRoutes } from '../routes.constants'
 import { SearchStreamingProps } from '../search'
 
@@ -26,9 +27,11 @@ export interface GlobalNotebooksAreaProps
         SettingsCascadeProps,
         NotebookProps,
         SearchStreamingProps,
-        Pick<SearchContextProps, 'searchContextsEnabled'> {
+        Pick<SearchContextProps, 'searchContextsEnabled'>,
+        OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     globbing: boolean
 }

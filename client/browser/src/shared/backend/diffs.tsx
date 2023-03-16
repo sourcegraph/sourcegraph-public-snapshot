@@ -55,7 +55,7 @@ export const queryRepositoryComparisonFileDiffs = memoizeObservable(
                 if (!repository) {
                     throw new RepoNotFoundError(args.repo)
                 }
-                if (!repository.comparison || !repository.comparison.fileDiffs) {
+                if (!repository.comparison?.fileDiffs) {
                     throw new Error('empty fileDiffs')
                 }
                 return repository.comparison.fileDiffs

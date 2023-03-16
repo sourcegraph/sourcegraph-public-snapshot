@@ -1,9 +1,8 @@
 import React, { useEffect } from 'react'
 
-import classNames from 'classnames'
-
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
     useDebounce,
@@ -27,6 +26,7 @@ import {
 import { useURLSyncedState } from '../../../../hooks'
 import { ActionContainer } from '../../../../repo/settings/components/ActionContainer'
 import { ExternalRepositoryIcon } from '../../../../site-admin/components/ExternalRepositoryIcon'
+import { PermissionsSyncJobsTable } from '../../../../site-admin/permissions-center/PermissionsSyncJobsTable'
 import { Table, IColumn } from '../../../../site-admin/UserManagement/components/Table'
 import { eventLogger } from '../../../../tracking/eventLogger'
 
@@ -34,14 +34,17 @@ import { scheduleUserPermissionsSync, UserPermissionsInfoQuery } from './backend
 
 import styles from './UserSettingsPermissionsPage.module.scss'
 
+interface Props extends TelemetryProps {
+    user: { id: string; username: string }
+}
+
 /**
  * The user settings permissions page.
  */
-export const UserSettingsPermissionsPage: React.FunctionComponent<
-    React.PropsWithChildren<{
-        user: { id: string; username: string }
-    }>
-> = ({ user }) => {
+export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    user,
+    telemetryService,
+}) => {
     useEffect(() => eventLogger.logViewEvent('UserSettingsPermissions'), [])
 
     const [{ query }, setSearchQuery] = useURLSyncedState({ query: '' })
@@ -88,11 +91,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<
                 path={[{ text: 'Permissions' }]}
                 description={
                     <>
-                        Learn more about{' '}
-                        <Link to="/help/admin/repo/permissions#background-permissions-syncing">
-                            background permissions syncing
-                        </Link>
-                        .
+                        Learn more about <Link to="/help/admin/permissions/syncing">permissions syncing</Link>.
                     </>
                 }
                 className="mb-3"
@@ -122,12 +121,26 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<
             </Container>
             <PageHeader
                 headingElement="h2"
+                path={[{ text: 'Permissions Sync Jobs' }]}
+                description={
+                    <>
+                        List of permissions sync jobs. A permission sync job fetches the newest permissions for the
+                        given user.
+                    </>
+                }
+                className="my-3 pt-3"
+            />
+            <Container className="mb-3">
+                <PermissionsSyncJobsTable telemetryService={telemetryService} minimal={true} userID={user.id} />
+            </Container>
+            <PageHeader
+                headingElement="h2"
                 path={[{ text: 'Accessible Repositories' }]}
                 description="List of repositories which are accessible to the user."
                 className="my-3 pt-3"
             />
-            <Container>
-                <div className="d-flex">
+            <Container className="mb-3">
+                <div className="d-flex mb-3">
                     <Input
                         type="search"
                         placeholder="Search repositories..."
@@ -169,22 +182,14 @@ const TableColumns: IColumn<INode>[] = [
     },
     {
         key: 'reason',
-        header: { label: 'Reason', align: 'center' },
-        align: 'center',
-        render: ({ reason }: INode) => (
-            <div className="d-flex justify-content-center">
-                <Badge {...(PermissionReasonBadgeProps[reason] || {})}>{reason}</Badge>
-            </div>
-        ),
+        header: 'Reason',
+        render: ({ reason }: INode) => <Badge {...(PermissionReasonBadgeProps[reason] || {})}>{reason}</Badge>,
     },
     {
         key: 'updatedAt',
-        header: { label: 'Updated At', align: 'center' },
-        align: 'center',
+        header: 'Updated At',
         render: ({ updatedAt }: INode) => (
-            <div className={classNames('d-flex justify-content-center', styles.updatedAtCell)}>
-                {updatedAt ? <Timestamp date={updatedAt} /> : '-'}
-            </div>
+            <div className={styles.updatedAtCell}>{updatedAt ? <Timestamp date={updatedAt} /> : '-'}</div>
         ),
     },
 ]
@@ -194,7 +199,7 @@ const PermissionReasonBadgeProps: { [reason: string]: BadgeProps } = {
         variant: 'success',
         tooltip: 'The repository is accessible to the user due to permissions syncing from code host.',
     },
-    Unrestricted: { variant: 'primary', tooltip: 'The repository is unrestricted and accessible to all the users. ' },
+    Unrestricted: { variant: 'primary', tooltip: 'The repository is accessible to all the users. ' },
     'Site Admin': { variant: 'secondary', tooltip: 'The user is site admin and has access to all the repositories.' },
 }
 

@@ -22,10 +22,26 @@ func RepoUpdater() *monitoring.Dashboard {
 		},
 	}
 
+	grpcMethodVariable := shared.GRPCMethodVariable("repo_updater")
+
 	return &monitoring.Dashboard{
 		Name:        "repo-updater",
 		Title:       "Repo Updater",
 		Description: "Manages interaction with code hosts, instructs Gitserver to update repositories.",
+		Variables: []monitoring.ContainerVariable{
+			{
+
+				Label: "Instance",
+				Name:  "instance",
+				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
+					Query:         "src_repoupdater_syncer_sync_last_time",
+					LabelName:     "instance",
+					ExampleOption: "repo-updater:3182",
+				},
+				Multi: true,
+			},
+			grpcMethodVariable,
+		},
 		Groups: []monitoring.Group{
 			{
 				Title: "Repositories",
@@ -477,7 +493,7 @@ func RepoUpdater() *monitoring.Dashboard {
 							Owner:       monitoring.ObservableOwnerIAM,
 							Interpretation: `
 								Indicates how many repositories have been scheduled for a permissions sync.
-								More about repository permissions synchronization [here](https://docs.sourcegraph.com/admin/repo/permissions#permissions-sync-scheduling)
+								More about repository permissions synchronization [here](https://docs.sourcegraph.com/admin/permissions/syncing#scheduling)
 							`,
 						},
 					},
@@ -645,6 +661,15 @@ func RepoUpdater() *monitoring.Dashboard {
 
 			shared.CodeIntelligence.NewCoursierGroup(containerName),
 			shared.CodeIntelligence.NewNpmGroup(containerName),
+
+			shared.NewGRPCServerMetricsGroup(
+				shared.GRPCServerMetricsOptions{
+					ServiceName:     "repo_updater",
+					MetricNamespace: "repo_updater",
+
+					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+					InstanceFilterRegex: `${instance:regex}`,
+				}, monitoring.ObservableOwnerRepoManagement),
 
 			shared.HTTP.NewHandlersGroup(containerName),
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerRepoManagement, nil),

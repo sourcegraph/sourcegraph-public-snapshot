@@ -257,7 +257,15 @@ interface SettingsProviderProps {
 
 export const SettingsProvider: React.FC<React.PropsWithChildren<SettingsProviderProps>> = props => {
     const { children, settingsCascade } = props
-    const context = useMemo(() => ({ settingsCascade }), [settingsCascade])
+    const context = useMemo(
+        () => ({
+            settingsCascade:
+                // When the EMPTY_SETTINGS_CASCADE is used on purpose, we clone the object to avoid
+                // it from mistakenly causing errors to be logged as if no context provider is used
+                settingsCascade === EMPTY_SETTINGS_CASCADE ? { ...EMPTY_SETTINGS_CASCADE } : settingsCascade,
+        }),
+        [settingsCascade]
+    )
     return <SettingsContext.Provider value={context}>{children}</SettingsContext.Provider>
 }
 
@@ -268,7 +276,10 @@ export const SettingsProvider: React.FC<React.PropsWithChildren<SettingsProvider
  */
 export const useSettingsCascade = (): SettingsCascadeOrError => {
     const { settingsCascade } = useContext(SettingsContext)
-    if (settingsCascade === EMPTY_SETTINGS_CASCADE && process.env.JEST_WORKER_ID === undefined) {
+    if (
+        settingsCascade === EMPTY_SETTINGS_CASCADE &&
+        (typeof globalThis.process === 'undefined' || process.env.JEST_WORKER_ID === undefined)
+    ) {
         logger.error(
             'useSettingsCascade must be used within a SettingsProvider, falling back to an empty settings object'
         )
@@ -296,7 +307,6 @@ const defaultFeatures: SettingsExperimentalFeatures = {
     editor: 'codemirror6',
     codeInsightsRepoUI: 'search-query-or-strict-list',
     applySearchQuerySuggestionOnEnter: false,
-    setupWizard: false,
     isInitialized: true,
 }
 

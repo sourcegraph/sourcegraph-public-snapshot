@@ -8,13 +8,16 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
+	"k8s.io/utils/pointer"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/stretchr/testify/require"
-	"k8s.io/utils/pointer"
 )
 
 func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
@@ -219,6 +222,11 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 			opts:     ListPermissionSyncJobOpts{Query: "user-2", SearchType: PermissionsSyncSearchTypeUser},
 			wantJobs: jobs[2:3],
 		},
+		{
+			name:     "User name search with pagination",
+			opts:     ListPermissionSyncJobOpts{Query: "user-2", SearchType: PermissionsSyncSearchTypeUser, PaginationArgs: &PaginationArgs{First: intPtr(1)}},
+			wantJobs: jobs[2:3],
+		},
 	}
 
 	for _, tt := range listTests {
@@ -233,6 +241,152 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestPermissionSyncJobs_GetLatestSyncJob(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	clock := timeutil.NewFakeClock(time.Now(), 0)
+
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+
+	store := PermissionSyncJobsWith(logger, db)
+	usersStore := UsersWith(logger, db)
+	reposStore := ReposWith(logger, db)
+
+	// Create users.
+	user1, err := usersStore.Create(ctx, NewUser{Username: "test-user-1", DisplayName: "t0pc0d3r"})
+	require.NoError(t, err)
+	user2, err := usersStore.Create(ctx, NewUser{Username: "test-user-2"})
+	require.NoError(t, err)
+
+	// Create repos.
+	repo1 := types.Repo{Name: "test-repo-1", ID: 101}
+	err = reposStore.Create(ctx, &repo1)
+	require.NoError(t, err)
+	repo2 := types.Repo{Name: "test-repo-2", ID: 201}
+	err = reposStore.Create(ctx, &repo2)
+	require.NoError(t, err)
+
+	createJob := func(t *testing.T, userID int32, repoID api.RepoID) {
+		t.Helper()
+
+		opts := PermissionSyncJobOpts{Priority: HighPriorityPermissionsSync, InvalidateCaches: true, Reason: ReasonUserNoPermissions, NoPerms: true}
+		if userID != 0 {
+			err := store.CreateUserSyncJob(ctx, userID, opts)
+			require.NoError(t, err)
+		}
+		if repoID != 0 {
+			err := store.CreateRepoSyncJob(ctx, repoID, opts)
+			require.NoError(t, err)
+		}
+	}
+
+	finishJobWithCancel := func(t *testing.T, id int, finishedAt time.Time, cancel bool) {
+		t.Helper()
+
+		defaultState := PermissionsSyncJobStateCompleted
+		query := sqlf.Sprintf("UPDATE permission_sync_jobs SET finished_at = %s, state = %s, cancel = %s WHERE id = %d", finishedAt, defaultState, cancel, id)
+
+		_, err = db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+		require.NoError(t, err)
+	}
+
+	finishJob := func(t *testing.T, id int, finishedAt time.Time) {
+		t.Helper()
+
+		finishJobWithCancel(t, id, finishedAt, false)
+	}
+
+	cleanupJobs := func(t *testing.T) {
+		t.Helper()
+
+		if t.Failed() {
+			return
+		}
+
+		_, err = db.ExecContext(ctx, "TRUNCATE TABLE permission_sync_jobs; ALTER SEQUENCE permission_sync_jobs_id_seq RESTART WITH 1")
+		require.NoError(t, err)
+	}
+
+	t.Run("No jobs", func(t *testing.T) {
+		job, err := store.GetLatestFinishedSyncJob(ctx, ListPermissionSyncJobOpts{})
+		require.NoError(t, err)
+		require.Nil(t, job, "should not return any job")
+	})
+
+	t.Run("One finished job", func(t *testing.T) {
+		// t.Cleanup(func() { cleanupJobs(t) })
+
+		createJob(t, user1.ID, 0) // id = 1
+		createJob(t, user2.ID, 0) // id = 2
+
+		finishJob(t, 1, clock.Now())
+
+		job, err := store.GetLatestFinishedSyncJob(ctx, ListPermissionSyncJobOpts{})
+		require.NoError(t, err)
+		require.NotNil(t, job, "should return a job")
+		require.Equal(t, 1, job.ID, "wrong job ID")
+	})
+
+	t.Run("Two finished jobs", func(t *testing.T) {
+		t.Cleanup(func() { cleanupJobs(t) })
+
+		createJob(t, user1.ID, 0) // id = 1
+		createJob(t, user2.ID, 0) // id = 2
+
+		finishJob(t, 1, clock.Now().Add(-1*time.Hour))
+		finishJob(t, 2, clock.Now().Add(-1*time.Minute))
+
+		job, err := store.GetLatestFinishedSyncJob(ctx, ListPermissionSyncJobOpts{})
+		require.NoError(t, err)
+		require.NotNil(t, job, "should return a job")
+		require.Equal(t, 2, job.ID, "wrong job ID")
+	})
+
+	t.Run("Three finished jobs, but one cancelled", func(t *testing.T) {
+		t.Cleanup(func() { cleanupJobs(t) })
+
+		createJob(t, user1.ID, 0) // id = 1
+		createJob(t, user2.ID, 0) // id = 2
+		createJob(t, 0, repo1.ID) // id = 3
+
+		finishJob(t, 1, clock.Now().Add(-1*time.Hour))
+		finishJobWithCancel(t, 2, clock.Now().Add(-1*time.Minute), true)
+		finishJob(t, 3, clock.Now().Add(-10*time.Minute))
+
+		job, err := store.GetLatestFinishedSyncJob(ctx, ListPermissionSyncJobOpts{
+			NotCanceled: true,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, job, "should return a job")
+		require.Equal(t, 3, job.ID, "wrong job ID")
+	})
+
+	t.Run("Two finished jobs for each user, pick userIDs latest", func(t *testing.T) {
+		t.Cleanup(func() { cleanupJobs(t) })
+
+		createJob(t, user1.ID, 0) // id = 1
+		createJob(t, user2.ID, 0) // id = 2
+		finishJob(t, 1, clock.Now().Add(-1*time.Hour))
+		finishJob(t, 2, clock.Now().Add(-10*time.Minute))
+
+		createJob(t, user2.ID, 0) // id = 3
+		createJob(t, user1.ID, 0) // id = 4
+		finishJob(t, 3, clock.Now().Add(-1*time.Minute))
+		finishJob(t, 4, clock.Now())
+
+		job, err := store.GetLatestFinishedSyncJob(ctx, ListPermissionSyncJobOpts{
+			UserID: int(user2.ID),
+		})
+		require.NoError(t, err)
+		require.NotNil(t, job, "should return a job")
+		require.Equal(t, 3, job.ID, "wrong job ID")
+	})
 }
 
 func TestPermissionSyncJobs_Deduplication(t *testing.T) {
@@ -652,6 +806,16 @@ func TestPermissionSyncJobs_Count(t *testing.T) {
 	count, err = store.Count(ctx, ListPermissionSyncJobOpts{Reason: ReasonManualUserSync})
 	require.NoError(t, err)
 	require.Equal(t, 10, count)
+
+	// Counting with user search.
+	count, err = store.Count(ctx, ListPermissionSyncJobOpts{SearchType: PermissionsSyncSearchTypeUser, Query: "hors"})
+	require.NoError(t, err)
+	require.Equal(t, 20, count)
+
+	// Counting with repo search.
+	count, err = store.Count(ctx, ListPermissionSyncJobOpts{SearchType: PermissionsSyncSearchTypeRepo, Query: "no :("})
+	require.NoError(t, err)
+	require.Equal(t, 0, count)
 }
 
 // createSyncJobs creates 10 sync jobs, half with the ReasonManualUserSync reason

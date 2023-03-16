@@ -6,10 +6,6 @@ load("//client/shared/dev:generate_schema.bzl", "generate_schema")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
 
-# TODO(bazel): @sourcegraph/shared is currently used by jest setup scripts and must be compiled to commonjs.
-# This should be changed to esm once jest setup scripts are moved to a separate package that can be
-# compiled to commonjs specifically and only for jest.
-
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
 
@@ -80,7 +76,6 @@ js_library(
             "src/testing/**/*.*",
             # TODO: Ignore legacy build generated file as it conflicts with the Bazel
             # build. This can be removed after the migration.
-            "src/schema.ts",
             "src/graphql-operations.ts",
             "src/**/*.module.scss.d.ts",
         ],
@@ -120,7 +115,6 @@ ts_project(
         "src/api/client/api/common.ts",
         "src/api/client/connection.ts",
         "src/api/client/mainthread-api.ts",
-        "src/api/client/search.ts",
         "src/api/client/services/settings.ts",
         "src/api/client/types/textDocument.ts",
         "src/api/contract.ts",
@@ -203,10 +197,6 @@ ts_project(
         "src/codeintel/legacy-extensions/util/uri.ts",
         "src/codeintel/scip.ts",
         "src/codeintel/searchContext.ts",
-        "src/commandPalette/CommandList.tsx",
-        "src/commandPalette/EmptyCommandList.tsx",
-        "src/commandPalette/EmptyCommandListContainer/EmptyCommandListContainer.tsx",
-        "src/commandPalette/EmptyCommandListContainer/index.ts",
         "src/commands/commands.ts",
         "src/components/CodeMirrorEditor.tsx",
         "src/components/HighlightedMatches.tsx",
@@ -215,6 +205,7 @@ ts_project(
         "src/components/Path.tsx",
         "src/components/PrefetchableFile.tsx",
         "src/components/RepoLink.tsx",
+        "src/components/TeamAvatar.tsx",
         "src/components/UserAvatar.tsx",
         "src/components/VirtualList.tsx",
         "src/components/icons.tsx",
@@ -237,8 +228,6 @@ ts_project(
         "src/hover/HoverOverlay.fixtures.ts",
         "src/hover/HoverOverlay.tsx",
         "src/hover/HoverOverlay.types.ts",
-        "src/hover/HoverOverlayAlerts/HoverOverlayAlerts.tsx",
-        "src/hover/HoverOverlayAlerts/index.ts",
         "src/hover/HoverOverlayContents/HoverOverlayContent/HoverOverlayContent.tsx",
         "src/hover/HoverOverlayContents/HoverOverlayContent/index.ts",
         "src/hover/HoverOverlayContents/HoverOverlayContents.tsx",
@@ -252,9 +241,6 @@ ts_project(
         "src/keyboardShortcuts/keyboardShortcuts.ts",
         "src/keyboardShortcuts/useKeyboardShortcut.ts",
         "src/languages.ts",
-        "src/notifications/NotificationItem.tsx",
-        "src/notifications/Notifications.tsx",
-        "src/notifications/notification.ts",
         "src/platform/context.ts",
         "src/polyfills/configure-core-js.ts",
         "src/polyfills/index.ts",
@@ -328,7 +314,6 @@ ts_project(
         "src/types/jasmine/index.d.ts",
         "src/types/puppeteer-firefox/index.d.ts",
         "src/types/storybook-chromatic/index.d.ts",
-        "src/types/string-score/index.d.ts",
         "src/types/web-ext/index.d.ts",
         "src/util/dom.ts",
         "src/util/globbing.ts",
@@ -355,7 +340,6 @@ ts_project(
         "//:node_modules/@mdi/js",
         "//:node_modules/@microsoft/fetch-event-source",
         "//:node_modules/@sourcegraph/extension-api-classes",
-        "//:node_modules/@storybook/addon-actions",
         "//:node_modules/@types/classnames",
         "//:node_modules/@types/history",
         "//:node_modules/@types/lodash",
@@ -382,10 +366,7 @@ ts_project(
         "//:node_modules/react-visibility-sensor",
         "//:node_modules/regexpp",
         "//:node_modules/rxjs",
-        "//:node_modules/string-score",
-        "//:node_modules/tabbable",
         "//:node_modules/tagged-template-noop",
-        "//:node_modules/ts-key-enum",
         "//:node_modules/use-deep-compare-effect",
         "//:node_modules/util",
         "//:node_modules/utility-types",  #keep
@@ -414,7 +395,6 @@ ts_project(
         "src/api/extension/test/extensionHost.hover.test.ts",
         "src/api/extension/test/extensionHost.logging.test.ts",
         "src/api/extension/test/extensionHost.providers.test.ts",
-        "src/api/extension/test/extensionHost.search.test.ts",
         "src/api/util.test.ts",
         "src/backend/errors.test.ts",
         "src/codeintel/legacy-extensions/init.test.ts",
@@ -441,7 +421,6 @@ ts_project(
         "src/codeintel/legacy-extensions/search/tokens.test.ts",
         "src/codeintel/legacy-extensions/util/ix.test.ts",
         "src/codeintel/legacy-extensions/util/uri.test.ts",
-        "src/commandPalette/CommandList.test.ts",
         "src/commands/commands.test.ts",
         "src/components/HighlightedMatches.test.tsx",
         "src/components/Path.test.tsx",

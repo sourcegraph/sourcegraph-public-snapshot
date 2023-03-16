@@ -33,6 +33,7 @@ go_binary(
 
 go_test(
     name = "buildchecker_test",
+    timeout = "short",
     srcs = [
         "branch_test.go",
         "checker_test.go",

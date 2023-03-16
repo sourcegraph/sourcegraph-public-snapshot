@@ -94,7 +94,9 @@ ts_project(
         "src/search-ui/input/SearchContextMenu.tsx",
         "src/search-ui/input/SearchHelpDropdownButton.tsx",
         "src/search-ui/input/SearchHistoryDropdown.tsx",
+        "src/search-ui/input/codemirror/active-filter.ts",
         "src/search-ui/input/codemirror/completion.ts",
+        "src/search-ui/input/codemirror/diagnostics.ts",
         "src/search-ui/input/codemirror/history.ts",
         "src/search-ui/input/codemirror/index.ts",
         "src/search-ui/input/codemirror/loading-indicator.ts",
@@ -106,7 +108,9 @@ ts_project(
         "src/search-ui/input/experimental/LazyCodeMirrorQueryInput.tsx",
         "src/search-ui/input/experimental/Suggestions.tsx",
         "src/search-ui/input/experimental/SyntaxHighlightedSearchQuery.tsx",
+        "src/search-ui/input/experimental/codemirror/example-suggestions.ts",
         "src/search-ui/input/experimental/codemirror/history.ts",
+        "src/search-ui/input/experimental/codemirror/searchcontext.ts",
         "src/search-ui/input/experimental/codemirror/syntax-highlighting.ts",
         "src/search-ui/input/experimental/filters.ts",
         "src/search-ui/input/experimental/index.ts",
@@ -138,7 +142,6 @@ ts_project(
         "src/search-ui/results/sidebar/revisions.ts",
         "src/search-ui/results/use-items-to-show.ts",
         "src/search-ui/results/useSearchResultsKeyboardNavigation.ts",
-        "src/search-ui/util/events.ts",
         "src/search-ui/util/index.ts",
         "src/search-ui/util/query.ts",
         "src/search-ui/util/stars.ts",
@@ -167,7 +170,6 @@ ts_project(
         "//:node_modules/@types/react",
         "//:node_modules/@types/react-dom",
         "//:node_modules/@types/sanitize-html",
-        "//:node_modules/@types/uuid",
         "//:node_modules/classnames",
         "//:node_modules/comlink",  #keep
         "//:node_modules/copy-to-clipboard",
@@ -185,7 +187,6 @@ ts_project(
         "//:node_modules/sanitize-html",
         "//:node_modules/ts-key-enum",
         "//:node_modules/use-resize-observer",
-        "//:node_modules/uuid",
         "//client/shared:shared_lib",  #keep
     ],
 )

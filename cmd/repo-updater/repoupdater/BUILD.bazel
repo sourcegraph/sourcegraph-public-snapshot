@@ -44,6 +44,10 @@ go_test(
         "server_test.go",
     ],
     embed = [":repoupdater"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/api",
         "//internal/authz",

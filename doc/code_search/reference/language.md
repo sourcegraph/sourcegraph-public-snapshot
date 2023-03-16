@@ -257,7 +257,9 @@ ComplexDiagram(
     Choice(0,
         Terminal("file:"),
         Terminal("f:")),
-        Terminal("regular expression", {href: "#regular-expression"})).addTo();
+    Choice(0,
+        Terminal("regular expression", {href: "#regular-expression"}),
+        Terminal("built-in", {href: "#built-in-file-predicate"}))).addTo();
 </script>
 
 Search files whose full path matches the regular expression. A `-` before `file`
@@ -313,7 +315,10 @@ ComplexDiagram(
             Optional(
                 Sequence(
                     Terminal("."),
-                    Terminal("file kind", {href: "#file-kind"})),
+                    Choice(0,
+                        Terminal("file kind", {href: "#file-kind"}),
+                        Terminal("file.owners", {href: "#file-owners"}),
+                    )),
                 'skip')),
         Terminal("content"),
         Sequence(
@@ -416,6 +421,17 @@ Select only directory paths of file results with `select:file.directory`. This i
 `select:file.path` returns the full path for the file and is equivalent to `select:file`. It exists as a fully-qualified alternative.
 
 **Example:** [`file:package\.json select:file.directory` ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:package%5C.json+select:file.directory&patternType=literal)
+
+#### File owners
+
+<script>
+ComplexDiagram(
+    Terminal("file.owners")).addTo();
+</script>
+
+Select owners associated with the results of a query.
+
+**Example:** `lang:TypeScript select:file.owners` Displays owners of all TypeScript files.
 
 ### Type
 
@@ -616,6 +632,22 @@ Search only inside repositories that contain file content matching the regular e
 
 _Note:_ `repo:contains.content(...)` is an alias for `repo:has.content(...)` and behaves identically.
 
+### Repo has topic
+
+<script>
+ComplexDiagram(
+    Terminal("has.topic"),
+    Terminal("("),
+    Terminal("string", {href: "#string"}),
+    Terminal(")")).addTo();
+</script>
+
+Search only inside repositories that have the given GitHub topic.
+
+**Example:** [`repo:has.topic(code-search)` ↗](https://sourcegraph.com/search?q=context%3Aglobal+repo%3Ahas.topic%28code-search%29&patternType=standard&sm=1&groupBy=repo)
+
+_Note:_ topic search is currently only supported for GitHub repos.
+
 ### Repo has commit after
 
 <script>
@@ -655,7 +687,8 @@ Search only inside repositories having a description matching the given regular 
 <script>
 ComplexDiagram(
     Choice(0,
-        Terminal("has.content(...)", {href: "#file-has-content"}))).addTo();
+        Terminal("has.content(...)", {href: "#file-has-content"}),
+        Terminal("has.owner(...)", {href: "#file-has-owner"}))).addTo();
 </script>
 
 ### File has content
@@ -673,6 +706,24 @@ Search only inside files that contain content matching the provided regexp patte
 **Example:** [`file:has.content(test)` ↗](https://sourcegraph.com/search?q=context:global+repo:github%5C.com/sourcegraph/.*+file:has.content%28test%29&patternType=standard)
 
 _Note:_ `file:contains.content(...)` is an alias for `file:has.content(...)` and behaves identically.
+
+### File has owner
+
+<script>
+ComplexDiagram(
+    Terminal("has.owner"),
+    Terminal("("),
+    Choice(0,
+        Terminal("string", {href: "#string"}),
+        Skip()),
+    Terminal(")")).addTo();
+</script>
+
+Search only inside files that have an owner associated matching given string.
+
+_Note:_ When no parameter is supplied, the predicate only includes files with _any_ owner assigned to them:
+*   `file:has.owner()` will include files with any owner assigned.  
+*   `-file:has.owner()` will only include files without an owner.  
 
 ## Regular expression
 

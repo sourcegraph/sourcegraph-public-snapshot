@@ -11,15 +11,15 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	iauth "github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
@@ -378,7 +378,7 @@ func HandleUnlockAccount(logger log.Logger, _ database.DB, store LockoutStore) h
 
 func HandleUnlockUserAccount(_ log.Logger, db database.DB, store LockoutStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := iauth.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
+		if err := auth.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
 			http.Error(w, "Only site admins can unlock user accounts", http.StatusUnauthorized)
 			return
 		}
@@ -453,7 +453,7 @@ func HandleCheckUsernameTaken(logger log.Logger, db database.DB) http.HandlerFun
 	logger = logger.Scoped("HandleCheckUsernameTaken", "checks for username uniqueness")
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		username, err := auth.NormalizeUsername(vars["username"])
+		username, err := NormalizeUsername(vars["username"])
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
@@ -477,3 +477,51 @@ func httpLogError(logFunc func(string, ...log.Field), w http.ResponseWriter, msg
 	logFunc(msg, errArgs...)
 	http.Error(w, msg, code)
 }
+
+// NormalizeUsername normalizes a proposed username into a format that meets Sourcegraph's
+// username formatting rules (based on, but not identical to
+// https://web.archive.org/web/20180215000330/https://help.github.com/enterprise/2.11/admin/guides/user-management/using-ldap):
+//
+// - Any characters not in `[a-zA-Z0-9-._]` are replaced with `-`
+// - Usernames with exactly one `@` character are interpreted as an email address, so the username will be extracted by truncating at the `@` character.
+// - Usernames with two or more `@` characters are not considered an email address, so the `@` will be treated as a non-standard character and be replaced with `-`
+// - Usernames with consecutive `-` or `.` characters are not allowed, so they are replaced with a single `-` or `.`
+// - Usernames that start with `.` or `-` are not allowed, starting periods and dashes are removed
+// - Usernames that end with `.` are not allowed, ending periods are removed
+//
+// Usernames that could not be converted return an error.
+//
+// Note: Do not forget to change database constraints on "users" and "orgs" tables.
+func NormalizeUsername(name string) (string, error) {
+	origName := name
+
+	// If the username is an email address, extract the username part.
+	if i := strings.Index(name, "@"); i != -1 && i == strings.LastIndex(name, "@") {
+		name = name[:i]
+	}
+
+	// Replace all non-alphanumeric characters with a dash.
+	name = disallowedCharacter.ReplaceAllString(name, "-")
+
+	// Replace all consecutive dashes and periods with a single dash.
+	name = consecutivePeriodsDashes.ReplaceAllString(name, "-")
+
+	// Trim leading and trailing dashes and periods.
+	name = sequencesToTrim.ReplaceAllString(name, "")
+
+	if name == "" {
+		return "", errors.Errorf("username %q could not be normalized to acceptable format", origName)
+	}
+
+	if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(name); err != nil {
+		return "", err
+	}
+
+	return name, nil
+}
+
+var (
+	disallowedCharacter      = lazyregexp.New(`[^\w\-\.]`)
+	consecutivePeriodsDashes = lazyregexp.New(`[\-\.]{2,}`)
+	sequencesToTrim          = lazyregexp.New(`(^[\-\.])|(\.$)|`)
+)

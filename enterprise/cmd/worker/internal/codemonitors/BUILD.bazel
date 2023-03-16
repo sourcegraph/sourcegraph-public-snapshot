@@ -10,6 +10,7 @@ go_library(
         "//cmd/worker/shared/init/db",
         "//enterprise/internal/codemonitors/background",
         "//enterprise/internal/database",
+        "//enterprise/internal/search",
         "//internal/env",
         "//internal/goroutine",
         "//internal/observation",

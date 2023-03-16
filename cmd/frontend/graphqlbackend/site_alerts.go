@@ -90,7 +90,7 @@ var disableSecurity, _ = strconv.ParseBool(env.Get("DISABLE_SECURITY", "false", 
 
 func init() {
 	conf.ContributeWarning(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
+		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsApp() {
 			return nil
 		}
 		if c.SiteConfig().ExternalURL == "" {
@@ -121,6 +121,18 @@ func init() {
 	} else if !errors.Is(err, srcprometheus.ErrPrometheusUnavailable) {
 		log15.Warn("WARNING: possibly misconfigured Prometheus", "error", err)
 	}
+
+	AlertFuncs = append(AlertFuncs, func(args AlertFuncArgs) []*Alert {
+		var alerts []*Alert
+		for _, notification := range conf.Get().Notifications {
+			alerts = append(alerts, &Alert{
+				TypeValue:                 AlertTypeInfo,
+				MessageValue:              notification.Message,
+				IsDismissibleWithKeyValue: notification.Key,
+			})
+		}
+		return alerts
+	})
 
 	// Warn about invalid site configuration.
 	AlertFuncs = append(AlertFuncs, func(args AlertFuncArgs) []*Alert {
@@ -202,6 +214,12 @@ func storageLimitReachedAlert(args AlertFuncArgs) []*Alert {
 }
 
 func updateAvailableAlert(args AlertFuncArgs) []*Alert {
+	// TODO(app): App Update Messaging
+	// See: https://github.com/sourcegraph/sourcegraph/issues/48851
+	if deploy.IsApp() {
+		return nil
+	}
+
 	// We only show update alerts to admins. This is not for security reasons, as we already
 	// expose the version number of the instance to all users via the user settings page.
 	if !args.IsSiteAdmin {
@@ -245,7 +263,7 @@ func isMinorUpdateAvailable(currentVersion, updateVersion string) bool {
 }
 
 func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
-	if !args.IsSiteAdmin || deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
+	if !args.IsSiteAdmin || deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsApp() {
 		return nil
 	}
 	if conf.Get().EmailSmtp == nil || conf.Get().EmailSmtp.Host == "" {
@@ -266,6 +284,12 @@ func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
 }
 
 func outOfDateAlert(args AlertFuncArgs) []*Alert {
+	// TODO(app): App Update Messaging
+	// See: https://github.com/sourcegraph/sourcegraph/issues/48851
+	if deploy.IsApp() {
+		return nil
+	}
+
 	globalUpdateStatus := updatecheck.Last()
 	if globalUpdateStatus == nil || updatecheck.IsPending() {
 		return nil

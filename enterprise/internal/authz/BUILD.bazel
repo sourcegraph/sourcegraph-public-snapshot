@@ -6,6 +6,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/authz",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
+        "//enterprise/internal/authz/azuredevops",
         "//enterprise/internal/authz/bitbucketcloud",
         "//enterprise/internal/authz/bitbucketserver",
         "//enterprise/internal/authz/gerrit",
@@ -26,6 +27,7 @@ go_library(
 
 go_test(
     name = "authz_test",
+    timeout = "short",
     srcs = [
         "authz_test.go",
         "main_test.go",

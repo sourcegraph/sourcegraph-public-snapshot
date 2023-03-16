@@ -3,14 +3,12 @@ import { FC, Suspense, useCallback, useLayoutEffect, useState } from 'react'
 import classNames from 'classnames'
 import { matchPath, useLocation, Route, Routes, Navigate } from 'react-router-dom'
 
-import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { FeedbackPrompt, LoadingSpinner, Panel } from '@sourcegraph/wildcard'
+import { FeedbackPrompt, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
@@ -30,9 +28,8 @@ import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery } from './search'
 import { NotepadContainer } from './search/Notepad'
 import { SearchQueryStateObserver } from './SearchQueryStateObserver'
-import { parseBrowserRepoURL } from './util/url'
 
-import styles from './Layout.module.scss'
+import styles from './storm/pages/LayoutPage/LayoutPage.module.scss'
 
 const LazySetupWizard = lazyComponent(() => import('./setup-wizard'), 'SetupWizard')
 
@@ -64,12 +61,14 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const isSearchNotebookListPage = location.pathname === EnterprisePageRoutes.Notebooks
     const isRepositoryRelatedPage = routeMatch === PageRoutes.RepoContainer ?? false
 
-    const { setupWizard, fuzzyFinder } = useExperimentalFeatures(features => ({
-        setupWizard: features.setupWizard,
+    // eslint-disable-next-line no-restricted-syntax
+    const [wasSetupWizardSkipped] = useLocalStorage('setup.skipped', false)
+
+    const { fuzzyFinder } = useExperimentalFeatures(features => ({
         // enable fuzzy finder by default unless it's explicitly disabled in settings
         fuzzyFinder: features.fuzzyFinder ?? true,
     }))
-    const isSetupWizardPage = setupWizard && location.pathname.startsWith(PageRoutes.SetupWizard)
+    const isSetupWizardPage = location.pathname.startsWith(PageRoutes.SetupWizard)
 
     const [isFuzzyFinderVisible, setFuzzyFinderVisible] = useState(false)
     const userHistory = useUserHistory(isRepositoryRelatedPage)
@@ -130,7 +129,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         return <Navigate replace={true} to={{ ...location, pathname: location.pathname.slice(0, -1) }} />
     }
 
-    if (isSetupWizardPage) {
+    if (isSetupWizardPage && !!props.authenticatedUser?.siteAdmin) {
         return (
             <Suspense
                 fallback={
@@ -139,9 +138,18 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     </div>
                 }
             >
-                <LazySetupWizard isSourcegraphApp={props.isSourcegraphApp} />
+                <LazySetupWizard isSourcegraphApp={props.isSourcegraphApp} telemetryService={props.telemetryService} />
             </Suspense>
         )
+    }
+
+    // We have to use window.context here instead of injected context-based
+    // props because we have to have this prop changes over time based on
+    // setup wizard state, since we don't have a good solution for this at the
+    // moment, we use mutable window.context object here.
+    // TODO remove window.context and use injected context store/props
+    if (window.context.needsRepositoryConfiguration && !wasSetupWizardSkipped && props.authenticatedUser?.siteAdmin) {
+        return <Navigate to={PageRoutes.SetupWizard} replace={true} />
     }
 
     return (
@@ -173,11 +181,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 />
             )}
 
-            <GlobalAlerts
-                authenticatedUser={props.authenticatedUser}
-                settingsCascade={props.settingsCascade}
-                isSourcegraphDotCom={props.isSourcegraphDotCom}
-            />
+            <GlobalAlerts authenticatedUser={props.authenticatedUser} isSourcegraphDotCom={props.isSourcegraphDotCom} />
             {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && !disableFeedbackSurvey && (
                 <SurveyToast authenticatedUser={props.authenticatedUser} />
             )}
@@ -217,23 +221,16 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                         ))}
                     </Routes>
                 </AppRouterContainer>
+                {/**
+                 * The portal root is inside the suspense boundary so that it is hidden
+                 * when we navigate to the lazily loaded routes or other actions which trigger
+                 * the Suspense boundary to show the fallback UI. Existing children are not unmounted
+                 * until the promise is resolved.
+                 *
+                 * See: https://github.com/facebook/react/pull/15861
+                 */}
+                <div id="references-panel-react-portal" />
             </Suspense>
-            {parseQueryAndHash(location.search, location.hash).viewState && location.pathname !== PageRoutes.SignIn && (
-                <Panel
-                    className={styles.panel}
-                    position="bottom"
-                    defaultSize={350}
-                    storageKey="panel-size"
-                    ariaLabel="References panel"
-                    id="references-panel"
-                >
-                    <TabbedPanelContent
-                        {...props}
-                        repoName={`git://${parseBrowserRepoURL(location.pathname).repoName}`}
-                        fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
-                    />
-                </Panel>
-            )}
             <GlobalContributions
                 key={3}
                 extensionsController={props.extensionsController}

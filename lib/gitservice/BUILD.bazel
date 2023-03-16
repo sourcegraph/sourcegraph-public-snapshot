@@ -13,6 +13,7 @@ go_library(
 
 go_test(
     name = "gitservice_test",
+    timeout = "short",
     srcs = ["gitservice_test.go"],
     deps = [
         ":gitservice",

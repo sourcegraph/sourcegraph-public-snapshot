@@ -18,7 +18,7 @@ exports[`RepoFileLink renders 1`] = `
        
       <a
         class="anchorLink"
-        href="/file?subtree=true"
+        href="https://example.com/file"
       >
         my/
         <strong>

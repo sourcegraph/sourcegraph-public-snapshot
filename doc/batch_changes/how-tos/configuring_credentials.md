@@ -105,13 +105,20 @@ To finish configuring the new credentials, you will need to create a new persona
 
 #### GitHub.com
 
-On GitHub.com, [you can create a code host token with the correct scopes at this link](https://github.com/settings/tokens/new?scopes=repo,read:org,user:email,read:discussion,workflow).
+On GitHub.com, [create a personal access token (classic) with the correct scopes](https://github.com/settings/tokens/new?scopes=repo,read:org,user:email,read:discussion,workflow).
+
+The `workflow` scope is technically only required if your batch changes modify files in the `.github` directory of a repository, but we recommend enabling it regardless to avoid confusing errors at a later time.
 
 When working with organizations that have SAML SSO (Single Sign On) enabled, configuring credentials requires an additional step that [involves white-listing the token for use in that organization](https://docs.github.com/en/enterprise-cloud@latest/authentication/authenticating-with-saml-single-sign-on/authorizing-a-personal-access-token-for-use-with-saml-single-sign-on).
 
+> NOTE: At present, only classic personal access tokens (PATs) are supported. The following alternative token types are untested or unsupported:
+> * OAuth Access Tokens (e.g. OAuth Apps)
+> * Installation Access Token (e.g. GitHub Apps)
+> * Fine-grained personal access tokens (PATv2)
+
 #### GitHub Enterprise
 
-Follow the steps to [create a personal access token](https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token) on GitHub Enterprise. Batch Changes requires the following scopes:
+Follow the steps to [create a personal access token (classic)](https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token) on GitHub Enterprise. Batch Changes requires the following scopes:
 
 - `repo`
 - `read:org`
@@ -123,9 +130,16 @@ This is done by selecting the relevant checkboxes when creating the token:
 
 <img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/github-token.png" alt="The GitHub token creation page, with the repo scope selected">
 
-> NOTE: `workflow` is technically only required if your batch changes modify files in the `.github` directory of a repository, but we recommend enabling it regardless to avoid confusing errors at a later time.
+The `workflow` scope is technically only required if your batch changes modify files in the `.github` directory of a repository, but we recommend enabling it regardless to avoid confusing errors at a later time.
 
 When working with organizations that have SAML SSO (Single Sign On) enabled, configuring credentials requires an additional step that [involves white-listing the token for use in that organization](https://docs.github.com/en/enterprise-cloud@latest/authentication/authenticating-with-saml-single-sign-on/authorizing-a-personal-access-token-for-use-with-saml-single-sign-on).
+
+> WARNING: Currently, for customers on an instance of GitHub Enterprise Cloud that uses [SSH certificate authorities](https://docs.github.com/en/enterprise-cloud@latest/organizations/managing-git-access-to-your-organizations-repositories/about-ssh-certificate-authorities) and requires SSH certificates to authenticate, we are unable to provide a means of authenticating Batch Changes to your code host.
+
+> NOTE: At present, only classic personal access tokens (PATs) are supported. The following alternative token types are untested or unsupported:
+> * OAuth Access Tokens (e.g. OAuth Apps)
+> * Installation Access Token (e.g. GitHub Apps)
+> * Fine-grained personal access tokens (PATv2)
 
 ### GitLab
 
@@ -159,10 +173,22 @@ Follow the steps to [create an app password](https://support.atlassian.com/bitbu
 
 <img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/bb-cloud-app-password.png" alt="The Bitbucket Cloud app password creation page">
 
+### Azure DevOps
+
+Follow the steps to [create a PAT](https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&tabs=Windows#create-a-pat) on Azure DevOps. Batch Changes requires the following scopes:
+
+- `Organization:All accessible organizations`
+- `Code:Full`
+- `Code:Status`
+- `Pull Request Thread:Read & Write`
+- `User Profile:Read`
+
+> NOTE: Click "Show all scopes" at the bottom of the "Create a new PAT" popup to get the full list of available scopes.
+
+<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/ado-create-pat.png" alt="The Azure DevOps PAT creation page">
+
 ### SSH access to code host
 
 When Sourcegraph is configured to [clone repositories using SSH via the `gitURLType` setting](../../admin/repo/auth.md), an SSH keypair will be generated for you and the public key needs to be added to the code host to allow push access. In the process of adding your personal access token you will be given that public key. You can also come back later and copy it to paste it in your code hosts SSH access settings page.
 
 <img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/create-credential-ssh-key.png" alt="Credentials setup process, showing the SSH public key to be copied">
-
-

@@ -21,6 +21,8 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
+# Use SEARCHER_CACHE_DIR to set the cache dir at runtime for searcher. Setting CACHE_DIR will also
+# apply to other services and is deprecated.
 ENV CACHE_DIR=/mnt/cache/searcher
 RUN mkdir -p ${CACHE_DIR} && chown -R sourcegraph:sourcegraph ${CACHE_DIR}
 USER sourcegraph

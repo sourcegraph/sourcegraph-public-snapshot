@@ -17,6 +17,7 @@ go_library(
         "//internal/database",
         "//internal/search",
         "//internal/search/client",
+        "//internal/search/job/jobutil",
         "//internal/search/result",
         "//internal/search/streaming",
         "//internal/search/streaming/client",

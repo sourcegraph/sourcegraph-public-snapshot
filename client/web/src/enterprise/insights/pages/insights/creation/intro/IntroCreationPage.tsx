@@ -19,7 +19,9 @@ import {
 
 import styles from './IntroCreationPage.module.scss'
 
-interface IntroCreationPageProps extends TelemetryProps {}
+interface IntroCreationPageProps extends TelemetryProps {
+    isSourcegraphApp: boolean
+}
 
 /** Displays intro page for insights creation UI. */
 export const IntroCreationPage: React.FunctionComponent<React.PropsWithChildren<IntroCreationPageProps>> = props => {
@@ -54,7 +56,7 @@ export const IntroCreationPage: React.FunctionComponent<React.PropsWithChildren<
     }, [telemetryService])
 
     return (
-        <CodeInsightsPage className={styles.container}>
+        <CodeInsightsPage className={styles.container} isSourcegraphApp={props.isSourcegraphApp}>
             <PageTitle title="Create insight - Code Insights" />
             <PageHeader
                 path={[{ icon: CodeInsightsIcon }, { text: 'Create new code insight' }]}

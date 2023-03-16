@@ -19,24 +19,13 @@ import { compatNavigate, HistoryOrNavigate } from '@sourcegraph/common'
 import { getSelectedMode, modeChanged, modesFacet, setModeEffect } from './modes'
 import { Suggestions } from './Suggestions'
 
-// Temporary solution to make some editor settings available to other extensions
-interface EditorConfig {
-    onSubmit: () => void
-}
-export const editorConfigFacet = Facet.define<EditorConfig, EditorConfig>({
-    combine(configs) {
-        return configs[0] ?? { onSubmit: () => {} }
-    },
-})
-export function getEditorConfig(state: EditorState): EditorConfig {
-    return state.facet(editorConfigFacet)
-}
+const ASYNC_THROTTLE_TIME = 300
 
 /**
  * A source for completion/suggestion results
  */
 export interface Source {
-    query: (state: EditorState, position: number, mode?: string) => SuggestionResult
+    query: (state: EditorState, position: number, mode?: string) => SuggestionResult | null
     mode?: string
 }
 
@@ -68,7 +57,7 @@ export interface Option {
     action: Action
     /**
      * Options can have perform an alternative action when applied via
-     * Shift+Enter.
+     * Mod-Enter.
      */
     alternativeAction?: Action
     /**
@@ -93,6 +82,11 @@ export interface Option {
      * positions in the label will be highlighted as matches.
      */
     matches?: Set<number>
+    /**
+     * A word that describes the nature of this option (e.g. file, repo, ...)
+     * Not used by the suggestion engine, but possibly used for metrics collection.
+     */
+    kind: string
 }
 
 export interface CommandAction {
@@ -137,7 +131,7 @@ class SuggestionView {
     private root: Root
 
     private onSelect = (option: Option, action?: Action): void => {
-        applyAction(this.view, action ?? option.action, option)
+        applyAction(this.view, action ?? option.action, option, 'mouse')
         // Query input looses focus when option is selected via
         // mousedown/click. This is a necessary hack to re-focus the query
         // input.
@@ -197,48 +191,64 @@ class SuggestionView {
     }
 }
 
+/**
+ * This plugin is responsible for executing async queries.
+ */
 const completionPlugin = ViewPlugin.fromClass(
     class {
-        private running: RunningQuery | null = null
+        private next: Query | null = null
+        private timer: number | null = null
 
         constructor(public readonly view: EditorView) {
-            this.startQuery(view.state.field(suggestionsStateField).source)
+            this.maybeScheduleRun(view.state.field(suggestionsStateField).query)
         }
 
         public update(update: ViewUpdate): void {
-            if (update.view.hasFocus) {
-                this.startQuery(update.state.field(suggestionsStateField).source)
+            const source = update.state.field(suggestionsStateField).query
+
+            if (update.view.hasFocus && source !== update.startState.field(suggestionsStateField).query) {
+                this.maybeScheduleRun(source)
             }
         }
 
-        private startQuery(source: RegisteredSource): void {
-            if (
-                source.state === RegisteredSourceState.Pending &&
-                (!this.running || this.running.timestamp !== source.timestamp)
-            ) {
-                const query = (this.running = new RunningQuery(source))
-                query.source
-                    .run()
-                    ?.then(result => {
-                        if (this.running === query) {
-                            this.view.dispatch({ effects: updateResultEffect.of({ source, result }) })
-                        }
-                    })
+        /**
+         * Implements a throttle mechanism. If no timer is running we execute the query
+         * immediately and start a timer. When the timer expires we run the last query that
+         * has arrived in the meantime.
+         * If a timer is running we keep track of the next query that should be run.
+         */
+        private maybeScheduleRun(query: Query): void {
+            // If the source is not in a pending state we clear any possibly
+            // ongoing request
+            if (!query.isPending()) {
+                this.next = null
+                if (this.timer !== null) {
+                    window.clearTimeout(this.timer)
+                }
+                this.timer = null
+                return
+            }
+
+            if (this.timer) {
+                // Request is already in progress, schedule a new one for the
+                // next "tick"
+                this.next = query
+            } else {
+                this.next = null
+                query
+                    .fetch()
+                    .then(result => this.view.dispatch({ effects: updateResultEffect.of({ query, result }) }))
                     .catch(() => {})
-            } else if (source.state === RegisteredSourceState.Inactive) {
-                this.running = null
+                this.timer = window.setTimeout(() => {
+                    this.timer = null
+                    if (this.next) {
+                        this.maybeScheduleRun(this.next)
+                    }
+                }, ASYNC_THROTTLE_TIME)
             }
         }
     }
 )
-
-class RunningQuery {
-    constructor(public readonly source: RegisteredSource) {}
-
-    public get timestamp(): number {
-        return this.source.timestamp
-    }
-}
 
 /**
  * Wrapper class to make operating on groups of options easier.
@@ -251,6 +261,10 @@ class Result {
         public valid: (state: EditorState, position: number) => boolean = () => false
     ) {
         this.allOptions = groups.flatMap(group => group.options)
+    }
+
+    public static fromSuggestionResult(result: SuggestionResult): Result {
+        return new Result(result.result, result.valid)
     }
 
     // eslint-disable-next-line id-length
@@ -277,6 +291,10 @@ class Result {
         return undefined
     }
 
+    public groupFor(option: Option): Group | undefined {
+        return this.groups.find(group => group.options.includes(option))
+    }
+
     public empty(): boolean {
         return this.length === 0
     }
@@ -288,91 +306,89 @@ class Result {
 
 const emptyResult = new Result([])
 
-enum RegisteredSourceState {
+enum QueryState {
     Inactive,
     Pending,
     Complete,
 }
 
 /**
- * Internal wrapper around a provided source. Keeps track of the sources state
- * and results.
+ * Wrapper around the configered sources. Keeps track of the state and results.
  */
-class RegisteredSource {
-    public timestamp: number
-
+class Query {
     constructor(
         public readonly sources: readonly Source[],
-        public readonly state: RegisteredSourceState,
-        public readonly result: Result,
-        private readonly next?: () => Promise<SuggestionResult>
-    ) {
-        switch (state) {
-            case RegisteredSourceState.Pending:
-                this.timestamp = Date.now()
-                break
-            default:
-                this.timestamp = -1
-        }
-    }
+        public readonly state: QueryState,
+        public readonly result: Result
+    ) {}
 
-    public update(transaction: Transaction): RegisteredSource {
+    public update(transaction: Transaction): Query {
         // Aliasing this makes it easier to create new instances based on all
         // changes and effects of the transaction.
         // eslint-disable-next-line @typescript-eslint/no-this-alias, unicorn/no-this-assignment
-        let source: RegisteredSource = this
+        let query: Query = this
 
-        // TODO: We probably don't want to trigger fetches on every doc changed
         if (isUserInput(transaction) || transaction.docChanged || modeChanged(transaction)) {
-            source = source.query(transaction.state)
+            query = query.run(transaction.state)
         } else if (transaction.selection) {
             if (!transaction.selection.main.empty) {
                 // Hide suggestions when the user selects a range in the input
-                source = new RegisteredSource(source.sources, RegisteredSourceState.Inactive, source.result)
-            } else if (!this.result.valid(transaction.state, transaction.newSelection.main.head)) {
-                source = this.query(transaction.state)
+                query = query.updateWithState(QueryState.Inactive)
+            } else if (!query.result.valid(transaction.state, transaction.newSelection.main.head)) {
+                query = query.run(transaction.state)
             }
         }
 
         for (const effect of transaction.effects) {
-            if (
-                effect.is(updateResultEffect) &&
-                effect.value.source.sources === source.sources &&
-                source.state === RegisteredSourceState.Pending
-            ) {
-                const { result } = effect.value
-                source = new RegisteredSource(
-                    source.sources,
-                    result.next ? RegisteredSourceState.Pending : RegisteredSourceState.Complete,
-                    new Result(result.result, result.valid),
-                    result.next
-                )
-            }
-
-            if (effect.is(startCompletionEffect)) {
-                source = source.query(transaction.state)
+            // Only "apply" the effect if the results are for the curent query. This prevents
+            // overwriting the results from stale requests.
+            if (effect.is(updateResultEffect) && effect.value.query === query) {
+                query = query.updateWithSuggestionResult(effect.value.result)
+            } else if (effect.is(startCompletionEffect)) {
+                query = query.run(transaction.state)
+            } else if (effect.is(hideCompletionEffect)) {
+                query = query.updateWithState(QueryState.Inactive)
             }
         }
 
-        return source
+        return query
     }
 
-    private query(state: EditorState): RegisteredSource {
+    private run(state: EditorState): Query {
         const selectedMode = getSelectedMode(state)
         const activeSources = this.sources.filter(source => source.mode === selectedMode?.name)
         const result = combineResults(
             activeSources.map(source => source.query(state, state.selection.main.head, selectedMode?.name))
         )
-        const nextState = result.next ? RegisteredSourceState.Pending : RegisteredSourceState.Complete
-        return new RegisteredSource(this.sources, nextState, new Result(result.result, result.valid), result.next)
+        return this.updateWithSuggestionResult(result)
     }
 
-    public run(): Promise<SuggestionResult> | null {
-        return this.next?.() ?? null
+    private updateWithSuggestionResult(result: SuggestionResult): Query {
+        return result.next
+            ? new PendingQuery(this.sources, Result.fromSuggestionResult(result), result.next)
+            : new Query(this.sources, QueryState.Complete, Result.fromSuggestionResult(result))
     }
 
-    public get inactive(): boolean {
-        return this.state === RegisteredSourceState.Inactive
+    private updateWithState(state: QueryState.Inactive | QueryState.Complete): Query {
+        return state !== this.state ? new Query(this.sources, state, this.result) : this
+    }
+
+    public isInactive(): boolean {
+        return this.state === QueryState.Inactive
+    }
+
+    public isPending(): this is PendingQuery {
+        return this.state === QueryState.Pending
+    }
+}
+
+class PendingQuery extends Query {
+    constructor(
+        public readonly sources: readonly Source[],
+        public readonly result: Result,
+        public readonly fetch: () => Promise<SuggestionResult>
+    ) {
+        super(sources, QueryState.Pending, result)
     }
 }
 
@@ -421,11 +437,7 @@ export function combineResults(results: (SuggestionResult | null)[]): Suggestion
  * Main suggestions state. Mangages of data source and selected option.
  */
 class SuggestionsState {
-    constructor(
-        public readonly source: RegisteredSource,
-        public readonly open: boolean,
-        public readonly selectedOption: number
-    ) {}
+    constructor(public readonly query: Query, public readonly open: boolean, public readonly selectedOption: number) {}
 
     public update(transaction: Transaction): SuggestionsState {
         // Aliasing makes it easier to update the state
@@ -433,32 +445,28 @@ class SuggestionsState {
         let state: SuggestionsState = this
 
         const sources = transaction.state.facet(suggestionSources)
-        let registeredSource =
-            sources === state.source.sources
-                ? state.source
-                : new RegisteredSource(sources, RegisteredSourceState.Inactive, emptyResult)
-        registeredSource = registeredSource.update(transaction)
-        if (registeredSource !== state.source) {
+        let query = sources === state.query.sources ? state.query : new Query(sources, QueryState.Inactive, emptyResult)
+        query = query.update(transaction)
+        if (query !== state.query) {
             state = new SuggestionsState(
-                registeredSource,
-                !registeredSource.inactive,
-                state.source.state === RegisteredSourceState.Inactive ||
-                state.source.state === RegisteredSourceState.Complete
-                    ? -1
-                    : state.selectedOption
+                query,
+                !query.isInactive(),
+                // Preserve the currently selected option if the query was pending
+                // (ensures that the selected option doesn't change when new options become available)
+                state.query.isPending() ? state.selectedOption : -1
             )
         }
 
         if (state.selectedOption > -1 && transaction.newDoc.length === 0) {
-            state = new SuggestionsState(state.source, !state.source.inactive, -1)
+            state = new SuggestionsState(state.query, !state.query.isInactive(), -1)
         }
 
         for (const effect of transaction.effects) {
             if (effect.is(setSelectedEffect)) {
-                state = new SuggestionsState(state.source, state.open, effect.value)
+                state = new SuggestionsState(state.query, state.open, effect.value)
             }
             if (effect.is(hideCompletionEffect)) {
-                state = new SuggestionsState(state.source, false, state.selectedOption)
+                state = new SuggestionsState(state.query, false, state.selectedOption)
             }
         }
 
@@ -466,7 +474,7 @@ class SuggestionsState {
     }
 
     public get result(): Result {
-        return this.source.result
+        return this.query.result
     }
 }
 
@@ -492,10 +500,10 @@ const suggestionsConfig = Facet.define<Config, Config>({
 const setSelectedEffect = StateEffect.define<number>()
 const startCompletionEffect = StateEffect.define<void>()
 const hideCompletionEffect = StateEffect.define<void>()
-const updateResultEffect = StateEffect.define<{ source: RegisteredSource; result: SuggestionResult }>()
+const updateResultEffect = StateEffect.define<{ query: Query; result: SuggestionResult }>()
 const suggestionsStateField = StateField.define<SuggestionsState>({
     create() {
-        return new SuggestionsState(new RegisteredSource([], RegisteredSourceState.Inactive, emptyResult), false, -1)
+        return new SuggestionsState(new Query([], QueryState.Inactive, emptyResult), false, -1)
     },
 
     update(state, transaction) {
@@ -534,7 +542,7 @@ function moveSelection(direction: 'forward' | 'backward'): CodeMirrorCommand {
     }
 }
 
-function applyAction(view: EditorView, action: Action, option: Option): void {
+function applyAction(view: EditorView, action: Action, option: Option, source: SelectionSource): void {
     switch (action.type) {
         case 'completion':
             {
@@ -564,19 +572,30 @@ function applyAction(view: EditorView, action: Action, option: Option): void {
                         effects: changeSet.effects.concat(setModeEffect.of(null)),
                     })
                 }
+                notifySelectionListeners(view.state, option, action, source)
             }
             break
         case 'command':
+            notifySelectionListeners(view.state, option, action, source)
             action.apply(option, view)
             break
         case 'goto':
             {
                 const historyOrNavigate = view.state.facet(suggestionsConfig).historyOrNavigate
                 if (historyOrNavigate) {
+                    notifySelectionListeners(view.state, option, action, source)
                     compatNavigate(historyOrNavigate, action.url)
+                    view.contentDOM.blur()
                 }
             }
             break
+    }
+}
+
+function notifySelectionListeners(state: EditorState, option: Option, action: Action, source: SelectionSource): void {
+    const params = { option, action, source }
+    for (const listener of state.facet(selectionListener)) {
+        listener(params)
     }
 }
 
@@ -587,6 +606,14 @@ const defaultKeyboardBindings: KeyBinding[] = [
     },
     {
         key: 'ArrowUp',
+        run: moveSelection('backward'),
+    },
+    {
+        mac: 'Ctrl-n',
+        run: moveSelection('forward'),
+    },
+    {
+        mac: 'Ctrl-p',
         run: moveSelection('backward'),
     },
     {
@@ -604,16 +631,18 @@ const defaultKeyboardBindings: KeyBinding[] = [
             if (!state.open || !option) {
                 return false
             }
-            applyAction(view, option.action, option)
+            applyAction(view, option.action, option, 'keyboard')
             return true
         },
-        shift(view) {
+    },
+    {
+        key: 'Mod-Enter',
+        run(view) {
             const state = view.state.field(suggestionsStateField)
             const option = state.result.at(state.selectedOption)
-            if (!state.open || !option || !option.alternativeAction) {
-                return false
+            if (state.open && option && option.alternativeAction) {
+                applyAction(view, option.alternativeAction, option, 'keyboard')
             }
-            applyAction(view, option.alternativeAction, option)
             return true
         },
     },
@@ -645,6 +674,10 @@ export const suggestionSources = Facet.define<Source>({
         Prec.highest(keymap.of(defaultKeyboardBindings)),
     ],
 })
+
+type SelectionSource = 'keyboard' | 'mouse'
+export const selectionListener =
+    Facet.define<(params: { option: Option; action: Action; source: SelectionSource }) => void>()
 
 interface ExternalConfig extends Config {
     parent: HTMLDivElement

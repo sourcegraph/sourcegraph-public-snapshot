@@ -37,6 +37,7 @@ go_library(
 
 go_test(
     name = "bitbucketcloudoauth_test",
+    timeout = "short",
     srcs = [
         "config_test.go",
         "middleware_test.go",
@@ -44,6 +45,10 @@ go_test(
         "session_test.go",
     ],
     embed = [":bitbucketcloudoauth"],
+    tags = [
+        # allows network requests to localhost (database)
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/auth/providers",

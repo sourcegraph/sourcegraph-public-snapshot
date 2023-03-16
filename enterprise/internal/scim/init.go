@@ -2,12 +2,13 @@ package scim
 
 import (
 	"context"
+	"crypto/subtle"
 	"net/http"
 	"strings"
 
 	"github.com/elimity-com/scim"
 	"github.com/elimity-com/scim/optional"
-	logger "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -15,6 +16,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
+
+type IdentityProvider string
+
+const (
+	SCIM_AZURE_AD IdentityProvider = "Azure AD"
+	SCIM_STANDARD IdentityProvider = "STANDARD"
+)
+
+func getConfiguredIdentityProvider() IdentityProvider {
+	value := conf.Get().ScimIdentityProvider
+	switch value {
+	case string(SCIM_AZURE_AD):
+		return SCIM_AZURE_AD
+	default:
+		return SCIM_STANDARD
+	}
+}
 
 // Init sets SCIMHandler to a real handler.
 func Init(ctx context.Context, observationCtx *observation.Context, db database.DB, _ codeintel.Services, _ conftypes.UnifiedWatchable, s *enterprise.Services) error {
@@ -29,6 +47,7 @@ func newHandler(ctx context.Context, db database.DB, observationCtx *observation
 		DocumentationURI: optional.NewString("docs.sourcegraph.com/admin/scim"),
 		MaxResults:       100,
 		SupportFiltering: true,
+		SupportPatch:     true,
 		AuthenticationSchemes: []scim.AuthenticationScheme{
 			{
 				Type:             scim.AuthenticationTypeOauthBearerToken,
@@ -52,12 +71,14 @@ func newHandler(ctx context.Context, db database.DB, observationCtx *observation
 
 	// wrap server into logger handler
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if conf.Get().ScimAuthToken != strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ") {
+		// 🚨 SECURITY: Use constant-time comparisons to avoid leaking the verification
+		// code via timing attack.
+		if subtle.ConstantTimeCompare([]byte(conf.Get().ScimAuthToken),
+			[]byte(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))) != 1 {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
 		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/.api/scim")
-		observationCtx.Logger.Error("SCIM request", logger.String("method", r.Method), logger.String("path", r.URL.Path)) // TODO for debugging
 		server.ServeHTTP(w, r)
 	})
 

@@ -10,10 +10,9 @@ import { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 import { WebHoverOverlay, WebHoverOverlayProps } from '../../../components/WebHoverOverlay'
 import { updateBrowserHistoryIfChanged, BlobPropsFacet } from '../CodeMirrorBlob'
 
+import { blobPropsFacet } from './index'
 import { CodeMirrorContainer } from './react-interop'
 import { zeroToOneBasedPosition } from './utils'
-
-import { blobPropsFacet } from './index'
 
 type UIRange = UIRangeSpec['range']
 
@@ -130,7 +129,6 @@ export class HovercardView implements TooltipView {
                         // hovercard to render
                         overlayPosition={dummyOverlayPosition}
                         hoveredToken={hoveredToken}
-                        onAlertDismissed={() => repositionTooltips(this.view)}
                         pinOptions={{
                             showCloseButton: pinned,
                             onCloseButtonClick: () => {

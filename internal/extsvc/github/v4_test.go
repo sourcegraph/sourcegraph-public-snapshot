@@ -4,19 +4,26 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -84,6 +91,91 @@ func TestGetAuthenticatedUserV4(t *testing.T) {
 		update("GetAuthenticatedUserV4"),
 		user,
 	)
+}
+
+func TestV4Client_RateLimitRetry(t *testing.T) {
+	rcache.SetupForTest(t)
+
+	ctx := context.Background()
+
+	tests := map[string]struct {
+		secondaryLimitWasHit bool
+		primaryLimitWasHit   bool
+		succeeded            bool
+		numRequests          int
+	}{
+		"hit secondary limit": {
+			secondaryLimitWasHit: true,
+			succeeded:            true,
+			numRequests:          2,
+		},
+		"hit primary limit": {
+			primaryLimitWasHit: true,
+			succeeded:          true,
+			numRequests:        2,
+		},
+		"no rate limit hit": {
+			succeeded:   true,
+			numRequests: 1,
+		},
+	}
+
+	// Test both a GET and POST request to make sure retrying is working correctly
+	methodTests := []string{"GET", "POST"}
+	for _, methodTest := range methodTests {
+		for name, tt := range tests {
+			t.Run(methodTest+"_"+name, func(t *testing.T) {
+				numRequests := 0
+				succeeded := false
+				srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					numRequests++
+					if tt.secondaryLimitWasHit {
+						w.Header().Add("retry-after", "1")
+						w.WriteHeader(http.StatusForbidden)
+						w.Write([]byte(`{"message": "Secondary rate limit hit"}`))
+
+						tt.secondaryLimitWasHit = false
+						return
+					}
+
+					if tt.primaryLimitWasHit {
+						w.Header().Add("x-ratelimit-remaining", "0")
+						w.Header().Add("x-ratelimit-limit", "5000")
+						resetTime := time.Now().Add(time.Second)
+						w.Header().Add("x-ratelimit-reset", strconv.Itoa(int(resetTime.Unix())))
+						w.WriteHeader(http.StatusForbidden)
+						w.Write([]byte(`{"message": "Primary rate limit hit"}`))
+
+						tt.primaryLimitWasHit = false
+						return
+					}
+
+					succeeded = true
+					w.Write([]byte(`{"message": "Very nice"}`))
+				}))
+
+				t.Cleanup(srv.Close)
+
+				srvURL, err := url.Parse(srv.URL)
+				require.NoError(t, err)
+
+				transport := http.DefaultTransport.(*http.Transport).Clone()
+				transport.DisableKeepAlives = true // Disable keep-alives otherwise the read of the request body is cached
+				cli := &http.Client{Transport: transport}
+				client := NewV4Client("test", srvURL, nil, cli)
+				client.githubDotCom = true // Otherwise it will make an extra request to determine GH version
+				if methodTest == "POST" {
+					_, err = client.SearchRepos(ctx, SearchReposParams{Query: "test"})
+				} else {
+					_, err = client.GetAuthenticatedUser(ctx)
+				}
+				require.NoError(t, err)
+
+				assert.Equal(t, tt.numRequests, numRequests)
+				assert.Equal(t, tt.succeeded, succeeded)
+			})
+		}
+	}
 }
 
 func TestV4Client_SearchRepos(t *testing.T) {
@@ -849,6 +941,10 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 		IsLocked:         true,
 		ViewerPermission: "ADMIN",
 		Visibility:       "internal",
+		RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{
+			{Topic: Topic{Name: "topic1"}},
+			{Topic: Topic{Name: "topic2"}},
+		}},
 	}
 
 	clojureGrapherRepo := &Repository{
@@ -888,7 +984,21 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
       "isArchived": true,
       "isLocked": true,
       "viewerPermission": "ADMIN",
-      "visibility": "internal"
+      "visibility": "internal",
+	  "repositoryTopics": {
+		"nodes": [
+		  {
+		    "topic": {
+			  "name": "topic1"
+			}
+		  },
+		  {
+			"topic": {
+			  "name": "topic2"
+			}
+		  }
+	    ]
+	  }
     },
     "repo_sourcegraph_clojure_grapher": {
       "id": "MDEwOlJlcG9zaXRvcnkxNTc1NjkwOA==",
@@ -924,7 +1034,21 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
       "isArchived": true,
       "isLocked": true,
       "viewerPermission": "ADMIN",
-      "visibility": "internal"
+      "visibility": "internal",
+	  "repositoryTopics": {
+		  "nodes": [
+			  {
+				  "topic": {
+					  "name": "topic1"
+				  }
+			  },
+			  {
+				  "topic": {
+					  "name": "topic2"
+				  }
+			  }
+		  ]
+	  }
     },
     "repo_sourcegraph_clojure_grapher": null
   },
@@ -1000,8 +1124,8 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 			sort.Slice(tc.wantRepos, newSortFunc(tc.wantRepos))
 			sort.Slice(repos, newSortFunc(repos))
 
-			if !repoListsAreEqual(repos, tc.wantRepos) {
-				t.Errorf("got repositories:\n%s\nwant:\n%s", stringForRepoList(repos), stringForRepoList(tc.wantRepos))
+			if diff := cmp.Diff(repos, tc.wantRepos, cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("got repositories:\n%s", diff)
 			}
 		})
 	}

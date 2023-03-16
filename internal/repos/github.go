@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -180,9 +179,9 @@ func newGithubSource(
 	}
 
 	for resource, monitor := range map[string]*ratelimit.Monitor{
-		"rest":    v3Client.RateLimitMonitor(),
-		"graphql": v4Client.RateLimitMonitor(),
-		"search":  searchClient.RateLimitMonitor(),
+		"rest":    v3Client.ExternalRateLimiter(),
+		"graphql": v4Client.ExternalRateLimiter(),
+		"search":  searchClient.ExternalRateLimiter(),
 	} {
 		// Copy the resource or funcs below will use the last one seen while iterating
 		// the map
@@ -380,10 +379,8 @@ func (s *GitHubSource) ExternalServices() types.ExternalServices {
 // ListNamespaces returns all Github organizations accessible to the given source defined
 // via the external service configuration.
 func (s *GitHubSource) ListNamespaces(ctx context.Context, results chan SourceNamespaceResult) {
-	var (
-		err  error
-		cost int
-	)
+	var err error
+
 	orgs := make([]*github.Org, 0)
 	hasNextPage := true
 	for page := 1; hasNextPage; page++ {
@@ -392,18 +389,12 @@ func (s *GitHubSource) ListNamespaces(ctx context.Context, results chan SourceNa
 			return
 		}
 		var pageOrgs []*github.Org
-		pageOrgs, hasNextPage, cost, err = s.v3Client.GetAuthenticatedUserOrgsForPage(ctx, page)
+		pageOrgs, hasNextPage, _, err = s.v3Client.GetAuthenticatedUserOrgsForPage(ctx, page)
 		if err != nil {
 			results <- SourceNamespaceResult{Source: s, Err: err}
 			continue
 		}
 		orgs = append(orgs, pageOrgs...)
-		if hasNextPage && cost > 0 {
-			// 0-duration sleep unless nearing rate limit exhaustion, or
-			// shorter if context has been canceled (next iteration of loop
-			// will then return `ctx.Err()`).
-			timeutil.SleepWithContext(ctx, s.v3Client.RateLimitMonitor().RecommendedWaitForBackgroundOp(cost))
-		}
 	}
 	for _, org := range orgs {
 		results <- SourceNamespaceResult{Source: s, Namespace: &types.ExternalServiceNamespace{ID: org.ID, Name: org.Login, ExternalID: org.NodeID}}
@@ -438,7 +429,7 @@ func (s *GitHubSource) makeRepo(r *github.Repository) *types.Repo {
 			r.NameWithOwner,
 		)),
 		ExternalRepo: github.ExternalRepoSpec(r, s.baseURL),
-		Description:  r.Description,
+		Description:  strings.ReplaceAll(r.Description, "\x00", ""), // Postgres does not support the NULL character in text fields
 		Fork:         r.IsFork,
 		Archived:     r.IsArchived,
 		Stars:        r.StargazerCount,
@@ -505,9 +496,8 @@ func (s *GitHubSource) paginate(ctx context.Context, results chan *githubResult,
 		}
 
 		var pageRepos []*github.Repository
-		var cost int
 		var err error
-		pageRepos, hasNext, cost, err = pager(page)
+		pageRepos, hasNext, _, err = pager(page)
 		if err != nil {
 			results <- &githubResult{err: err}
 			return
@@ -520,13 +510,6 @@ func (s *GitHubSource) paginate(ctx context.Context, results chan *githubResult,
 			}
 
 			results <- &githubResult{repo: r}
-		}
-
-		if hasNext && cost > 0 {
-			// 0-duration sleep unless nearing rate limit exhaustion, or
-			// shorter if context has been canceled (next iteration of loop
-			// will then return `ctx.Err()`).
-			timeutil.SleepWithContext(ctx, s.v3Client.RateLimitMonitor().RecommendedWaitForBackgroundOp(cost))
 		}
 	}
 }
@@ -560,7 +543,7 @@ func (s *GitHubSource) listOrg(ctx context.Context, org string, results chan *gi
 					}
 				}
 
-				remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
+				remaining, reset, retry, _ := s.v3Client.ExternalRateLimiter().Get()
 				s.logger.Debug(
 					"github sync: ListOrgRepositories",
 					log.Int("repos", len(repos)),
@@ -628,7 +611,7 @@ func (s *GitHubSource) listUser(ctx context.Context, user string, results chan *
 				fail, err = err, nil
 			}
 
-			remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
+			remaining, reset, retry, _ := s.v3Client.ExternalRateLimiter().Get()
 			s.logger.Debug(
 				"github sync: ListUserRepositories",
 				log.Int("repos", len(repos)),
@@ -691,14 +674,6 @@ func (s *GitHubSource) listRepos(ctx context.Context, repos []string, results ch
 		s.logger.Debug("github sync: GetRepository", log.String("repo", repo.NameWithOwner))
 
 		results <- &githubResult{repo: repo}
-
-		// If there is another iteration of the loop: 0-duration sleep unless
-		// nearing rate limit exhaustion, or shorter if context has been
-		// canceled. If context has been canceled, the `ctx.Err()` will be
-		// returned by next iteration.
-		if i > 0 {
-			timeutil.SleepWithContext(ctx, s.v3Client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1))
-		}
 	}
 }
 
@@ -779,7 +754,7 @@ func (s *GitHubSource) listPublicArchivedRepos(ctx context.Context, results chan
 func (s *GitHubSource) listAffiliated(ctx context.Context, results chan *githubResult) {
 	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 		defer func() {
-			remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
+			remaining, reset, retry, _ := s.v3Client.ExternalRateLimiter().Get()
 			s.logger.Debug(
 				"github sync: ListAffiliated",
 				log.Int("repos", len(repos)),
@@ -1134,7 +1109,7 @@ func (s *GitHubSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 		err   error
 	)
 	defer func() {
-		remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
+		remaining, reset, retry, _ := s.v3Client.ExternalRateLimiter().Get()
 		s.logger.Debug(
 			"github sync: ListAffiliated",
 			log.Int("repos", len(repos)),

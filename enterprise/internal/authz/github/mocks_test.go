@@ -60,6 +60,9 @@ type MockClient struct {
 	// ListTeamRepositoriesFunc is an instance of a mock function object
 	// controlling the behavior of the method ListTeamRepositories.
 	ListTeamRepositoriesFunc *ClientListTeamRepositoriesFunc
+	// SetWaitForRateLimitFunc is an instance of a mock function object
+	// controlling the behavior of the method SetWaitForRateLimit.
+	SetWaitForRateLimitFunc *ClientSetWaitForRateLimitFunc
 	// WithAuthenticatorFunc is an instance of a mock function object
 	// controlling the behavior of the method WithAuthenticator.
 	WithAuthenticatorFunc *ClientWithAuthenticatorFunc
@@ -126,6 +129,11 @@ func NewMockClient() *MockClient {
 		},
 		ListTeamRepositoriesFunc: &ClientListTeamRepositoriesFunc{
 			defaultHook: func(context.Context, string, string, int) (r0 []*github.Repository, r1 bool, r2 int, r3 error) {
+				return
+			},
+		},
+		SetWaitForRateLimitFunc: &ClientSetWaitForRateLimitFunc{
+			defaultHook: func(bool) {
 				return
 			},
 		},
@@ -201,6 +209,11 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.ListTeamRepositories")
 			},
 		},
+		SetWaitForRateLimitFunc: &ClientSetWaitForRateLimitFunc{
+			defaultHook: func(bool) {
+				panic("unexpected invocation of MockClient.SetWaitForRateLimit")
+			},
+		},
 		WithAuthenticatorFunc: &ClientWithAuthenticatorFunc{
 			defaultHook: func(auth.Authenticator) client {
 				panic("unexpected invocation of MockClient.WithAuthenticator")
@@ -225,6 +238,7 @@ type surrogateMockClient interface {
 	ListRepositoryTeams(context.Context, string, string, int) ([]*github.Team, bool, error)
 	ListTeamMembers(context.Context, string, string, int) ([]*github.Collaborator, bool, error)
 	ListTeamRepositories(context.Context, string, string, int) ([]*github.Repository, bool, int, error)
+	SetWaitForRateLimit(bool)
 	WithAuthenticator(auth.Authenticator) client
 }
 
@@ -267,6 +281,9 @@ func NewMockClientFrom(i surrogateMockClient) *MockClient {
 		},
 		ListTeamRepositoriesFunc: &ClientListTeamRepositoriesFunc{
 			defaultHook: i.ListTeamRepositories,
+		},
+		SetWaitForRateLimitFunc: &ClientSetWaitForRateLimitFunc{
+			defaultHook: i.SetWaitForRateLimit,
 		},
 		WithAuthenticatorFunc: &ClientWithAuthenticatorFunc{
 			defaultHook: i.WithAuthenticator,
@@ -1684,6 +1701,105 @@ func (c ClientListTeamRepositoriesFuncCall) Args() []interface{} {
 // invocation.
 func (c ClientListTeamRepositoriesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
+}
+
+// ClientSetWaitForRateLimitFunc describes the behavior when the
+// SetWaitForRateLimit method of the parent MockClient instance is invoked.
+type ClientSetWaitForRateLimitFunc struct {
+	defaultHook func(bool)
+	hooks       []func(bool)
+	history     []ClientSetWaitForRateLimitFuncCall
+	mutex       sync.Mutex
+}
+
+// SetWaitForRateLimit delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockClient) SetWaitForRateLimit(v0 bool) {
+	m.SetWaitForRateLimitFunc.nextHook()(v0)
+	m.SetWaitForRateLimitFunc.appendCall(ClientSetWaitForRateLimitFuncCall{v0})
+	return
+}
+
+// SetDefaultHook sets function that is called when the SetWaitForRateLimit
+// method of the parent MockClient instance is invoked and the hook queue is
+// empty.
+func (f *ClientSetWaitForRateLimitFunc) SetDefaultHook(hook func(bool)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetWaitForRateLimit method of the parent MockClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *ClientSetWaitForRateLimitFunc) PushHook(hook func(bool)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientSetWaitForRateLimitFunc) SetDefaultReturn() {
+	f.SetDefaultHook(func(bool) {
+		return
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientSetWaitForRateLimitFunc) PushReturn() {
+	f.PushHook(func(bool) {
+		return
+	})
+}
+
+func (f *ClientSetWaitForRateLimitFunc) nextHook() func(bool) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientSetWaitForRateLimitFunc) appendCall(r0 ClientSetWaitForRateLimitFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientSetWaitForRateLimitFuncCall objects
+// describing the invocations of this function.
+func (f *ClientSetWaitForRateLimitFunc) History() []ClientSetWaitForRateLimitFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientSetWaitForRateLimitFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientSetWaitForRateLimitFuncCall is an object that describes an
+// invocation of method SetWaitForRateLimit on an instance of MockClient.
+type ClientSetWaitForRateLimitFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 bool
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientSetWaitForRateLimitFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientSetWaitForRateLimitFuncCall) Results() []interface{} {
+	return []interface{}{}
 }
 
 // ClientWithAuthenticatorFunc describes the behavior when the

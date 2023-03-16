@@ -14,9 +14,6 @@ import (
 	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	types "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	shared1 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
-	api "github.com/sourcegraph/sourcegraph/internal/api"
-	database "github.com/sourcegraph/sourcegraph/internal/database"
-	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 // MockAutoIndexingService is a mock implementation of the
@@ -24,21 +21,12 @@ import (
 // github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql)
 // used for unit testing.
 type MockAutoIndexingService struct {
-	// GetIndexByIDFunc is an instance of a mock function object controlling
-	// the behavior of the method GetIndexByID.
-	GetIndexByIDFunc *AutoIndexingServiceGetIndexByIDFunc
 	// GetIndexesFunc is an instance of a mock function object controlling
 	// the behavior of the method GetIndexes.
 	GetIndexesFunc *AutoIndexingServiceGetIndexesFunc
 	// GetIndexesByIDsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetIndexesByIDs.
 	GetIndexesByIDsFunc *AutoIndexingServiceGetIndexesByIDsFunc
-	// GetListTagsFunc is an instance of a mock function object controlling
-	// the behavior of the method GetListTags.
-	GetListTagsFunc *AutoIndexingServiceGetListTagsFunc
-	// GetUnsafeDBFunc is an instance of a mock function object controlling
-	// the behavior of the method GetUnsafeDB.
-	GetUnsafeDBFunc *AutoIndexingServiceGetUnsafeDBFunc
 	// NumRepositoriesWithCodeIntelligenceFunc is an instance of a mock
 	// function object controlling the behavior of the method
 	// NumRepositoriesWithCodeIntelligence.
@@ -57,11 +45,6 @@ type MockAutoIndexingService struct {
 // overwritten.
 func NewMockAutoIndexingService() *MockAutoIndexingService {
 	return &MockAutoIndexingService{
-		GetIndexByIDFunc: &AutoIndexingServiceGetIndexByIDFunc{
-			defaultHook: func(context.Context, int) (r0 types.Index, r1 bool, r2 error) {
-				return
-			},
-		},
 		GetIndexesFunc: &AutoIndexingServiceGetIndexesFunc{
 			defaultHook: func(context.Context, shared.GetIndexesOptions) (r0 []types.Index, r1 int, r2 error) {
 				return
@@ -69,16 +52,6 @@ func NewMockAutoIndexingService() *MockAutoIndexingService {
 		},
 		GetIndexesByIDsFunc: &AutoIndexingServiceGetIndexesByIDsFunc{
 			defaultHook: func(context.Context, ...int) (r0 []types.Index, r1 error) {
-				return
-			},
-		},
-		GetListTagsFunc: &AutoIndexingServiceGetListTagsFunc{
-			defaultHook: func(context.Context, api.RepoName, ...string) (r0 []*gitdomain.Tag, r1 error) {
-				return
-			},
-		},
-		GetUnsafeDBFunc: &AutoIndexingServiceGetUnsafeDBFunc{
-			defaultHook: func() (r0 database.DB) {
 				return
 			},
 		},
@@ -105,11 +78,6 @@ func NewMockAutoIndexingService() *MockAutoIndexingService {
 // overwritten.
 func NewStrictMockAutoIndexingService() *MockAutoIndexingService {
 	return &MockAutoIndexingService{
-		GetIndexByIDFunc: &AutoIndexingServiceGetIndexByIDFunc{
-			defaultHook: func(context.Context, int) (types.Index, bool, error) {
-				panic("unexpected invocation of MockAutoIndexingService.GetIndexByID")
-			},
-		},
 		GetIndexesFunc: &AutoIndexingServiceGetIndexesFunc{
 			defaultHook: func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error) {
 				panic("unexpected invocation of MockAutoIndexingService.GetIndexes")
@@ -118,16 +86,6 @@ func NewStrictMockAutoIndexingService() *MockAutoIndexingService {
 		GetIndexesByIDsFunc: &AutoIndexingServiceGetIndexesByIDsFunc{
 			defaultHook: func(context.Context, ...int) ([]types.Index, error) {
 				panic("unexpected invocation of MockAutoIndexingService.GetIndexesByIDs")
-			},
-		},
-		GetListTagsFunc: &AutoIndexingServiceGetListTagsFunc{
-			defaultHook: func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error) {
-				panic("unexpected invocation of MockAutoIndexingService.GetListTags")
-			},
-		},
-		GetUnsafeDBFunc: &AutoIndexingServiceGetUnsafeDBFunc{
-			defaultHook: func() database.DB {
-				panic("unexpected invocation of MockAutoIndexingService.GetUnsafeDB")
 			},
 		},
 		NumRepositoriesWithCodeIntelligenceFunc: &AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFunc{
@@ -153,20 +111,11 @@ func NewStrictMockAutoIndexingService() *MockAutoIndexingService {
 // implementation, unless overwritten.
 func NewMockAutoIndexingServiceFrom(i AutoIndexingService) *MockAutoIndexingService {
 	return &MockAutoIndexingService{
-		GetIndexByIDFunc: &AutoIndexingServiceGetIndexByIDFunc{
-			defaultHook: i.GetIndexByID,
-		},
 		GetIndexesFunc: &AutoIndexingServiceGetIndexesFunc{
 			defaultHook: i.GetIndexes,
 		},
 		GetIndexesByIDsFunc: &AutoIndexingServiceGetIndexesByIDsFunc{
 			defaultHook: i.GetIndexesByIDs,
-		},
-		GetListTagsFunc: &AutoIndexingServiceGetListTagsFunc{
-			defaultHook: i.GetListTags,
-		},
-		GetUnsafeDBFunc: &AutoIndexingServiceGetUnsafeDBFunc{
-			defaultHook: i.GetUnsafeDB,
 		},
 		NumRepositoriesWithCodeIntelligenceFunc: &AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFunc{
 			defaultHook: i.NumRepositoriesWithCodeIntelligence,
@@ -178,120 +127,6 @@ func NewMockAutoIndexingServiceFrom(i AutoIndexingService) *MockAutoIndexingServ
 			defaultHook: i.RepositoryIDsWithErrors,
 		},
 	}
-}
-
-// AutoIndexingServiceGetIndexByIDFunc describes the behavior when the
-// GetIndexByID method of the parent MockAutoIndexingService instance is
-// invoked.
-type AutoIndexingServiceGetIndexByIDFunc struct {
-	defaultHook func(context.Context, int) (types.Index, bool, error)
-	hooks       []func(context.Context, int) (types.Index, bool, error)
-	history     []AutoIndexingServiceGetIndexByIDFuncCall
-	mutex       sync.Mutex
-}
-
-// GetIndexByID delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockAutoIndexingService) GetIndexByID(v0 context.Context, v1 int) (types.Index, bool, error) {
-	r0, r1, r2 := m.GetIndexByIDFunc.nextHook()(v0, v1)
-	m.GetIndexByIDFunc.appendCall(AutoIndexingServiceGetIndexByIDFuncCall{v0, v1, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the GetIndexByID method
-// of the parent MockAutoIndexingService instance is invoked and the hook
-// queue is empty.
-func (f *AutoIndexingServiceGetIndexByIDFunc) SetDefaultHook(hook func(context.Context, int) (types.Index, bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetIndexByID method of the parent MockAutoIndexingService instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *AutoIndexingServiceGetIndexByIDFunc) PushHook(hook func(context.Context, int) (types.Index, bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *AutoIndexingServiceGetIndexByIDFunc) SetDefaultReturn(r0 types.Index, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, int) (types.Index, bool, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *AutoIndexingServiceGetIndexByIDFunc) PushReturn(r0 types.Index, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, int) (types.Index, bool, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *AutoIndexingServiceGetIndexByIDFunc) nextHook() func(context.Context, int) (types.Index, bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *AutoIndexingServiceGetIndexByIDFunc) appendCall(r0 AutoIndexingServiceGetIndexByIDFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of AutoIndexingServiceGetIndexByIDFuncCall
-// objects describing the invocations of this function.
-func (f *AutoIndexingServiceGetIndexByIDFunc) History() []AutoIndexingServiceGetIndexByIDFuncCall {
-	f.mutex.Lock()
-	history := make([]AutoIndexingServiceGetIndexByIDFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// AutoIndexingServiceGetIndexByIDFuncCall is an object that describes an
-// invocation of method GetIndexByID on an instance of
-// MockAutoIndexingService.
-type AutoIndexingServiceGetIndexByIDFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 types.Index
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 bool
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c AutoIndexingServiceGetIndexByIDFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c AutoIndexingServiceGetIndexByIDFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // AutoIndexingServiceGetIndexesFunc describes the behavior when the
@@ -523,227 +358,6 @@ func (c AutoIndexingServiceGetIndexesByIDsFuncCall) Args() []interface{} {
 // invocation.
 func (c AutoIndexingServiceGetIndexesByIDsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// AutoIndexingServiceGetListTagsFunc describes the behavior when the
-// GetListTags method of the parent MockAutoIndexingService instance is
-// invoked.
-type AutoIndexingServiceGetListTagsFunc struct {
-	defaultHook func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error)
-	hooks       []func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error)
-	history     []AutoIndexingServiceGetListTagsFuncCall
-	mutex       sync.Mutex
-}
-
-// GetListTags delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockAutoIndexingService) GetListTags(v0 context.Context, v1 api.RepoName, v2 ...string) ([]*gitdomain.Tag, error) {
-	r0, r1 := m.GetListTagsFunc.nextHook()(v0, v1, v2...)
-	m.GetListTagsFunc.appendCall(AutoIndexingServiceGetListTagsFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetListTags method
-// of the parent MockAutoIndexingService instance is invoked and the hook
-// queue is empty.
-func (f *AutoIndexingServiceGetListTagsFunc) SetDefaultHook(hook func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetListTags method of the parent MockAutoIndexingService instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *AutoIndexingServiceGetListTagsFunc) PushHook(hook func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *AutoIndexingServiceGetListTagsFunc) SetDefaultReturn(r0 []*gitdomain.Tag, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *AutoIndexingServiceGetListTagsFunc) PushReturn(r0 []*gitdomain.Tag, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error) {
-		return r0, r1
-	})
-}
-
-func (f *AutoIndexingServiceGetListTagsFunc) nextHook() func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *AutoIndexingServiceGetListTagsFunc) appendCall(r0 AutoIndexingServiceGetListTagsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of AutoIndexingServiceGetListTagsFuncCall
-// objects describing the invocations of this function.
-func (f *AutoIndexingServiceGetListTagsFunc) History() []AutoIndexingServiceGetListTagsFuncCall {
-	f.mutex.Lock()
-	history := make([]AutoIndexingServiceGetListTagsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// AutoIndexingServiceGetListTagsFuncCall is an object that describes an
-// invocation of method GetListTags on an instance of
-// MockAutoIndexingService.
-type AutoIndexingServiceGetListTagsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg2 []string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []*gitdomain.Tag
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c AutoIndexingServiceGetListTagsFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg2 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c AutoIndexingServiceGetListTagsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// AutoIndexingServiceGetUnsafeDBFunc describes the behavior when the
-// GetUnsafeDB method of the parent MockAutoIndexingService instance is
-// invoked.
-type AutoIndexingServiceGetUnsafeDBFunc struct {
-	defaultHook func() database.DB
-	hooks       []func() database.DB
-	history     []AutoIndexingServiceGetUnsafeDBFuncCall
-	mutex       sync.Mutex
-}
-
-// GetUnsafeDB delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockAutoIndexingService) GetUnsafeDB() database.DB {
-	r0 := m.GetUnsafeDBFunc.nextHook()()
-	m.GetUnsafeDBFunc.appendCall(AutoIndexingServiceGetUnsafeDBFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the GetUnsafeDB method
-// of the parent MockAutoIndexingService instance is invoked and the hook
-// queue is empty.
-func (f *AutoIndexingServiceGetUnsafeDBFunc) SetDefaultHook(hook func() database.DB) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetUnsafeDB method of the parent MockAutoIndexingService instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *AutoIndexingServiceGetUnsafeDBFunc) PushHook(hook func() database.DB) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *AutoIndexingServiceGetUnsafeDBFunc) SetDefaultReturn(r0 database.DB) {
-	f.SetDefaultHook(func() database.DB {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *AutoIndexingServiceGetUnsafeDBFunc) PushReturn(r0 database.DB) {
-	f.PushHook(func() database.DB {
-		return r0
-	})
-}
-
-func (f *AutoIndexingServiceGetUnsafeDBFunc) nextHook() func() database.DB {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *AutoIndexingServiceGetUnsafeDBFunc) appendCall(r0 AutoIndexingServiceGetUnsafeDBFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of AutoIndexingServiceGetUnsafeDBFuncCall
-// objects describing the invocations of this function.
-func (f *AutoIndexingServiceGetUnsafeDBFunc) History() []AutoIndexingServiceGetUnsafeDBFuncCall {
-	f.mutex.Lock()
-	history := make([]AutoIndexingServiceGetUnsafeDBFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// AutoIndexingServiceGetUnsafeDBFuncCall is an object that describes an
-// invocation of method GetUnsafeDB on an instance of
-// MockAutoIndexingService.
-type AutoIndexingServiceGetUnsafeDBFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 database.DB
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c AutoIndexingServiceGetUnsafeDBFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c AutoIndexingServiceGetUnsafeDBFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFunc describes the
@@ -1286,9 +900,6 @@ type MockUploadService struct {
 	// GetCommitGraphMetadataFunc is an instance of a mock function object
 	// controlling the behavior of the method GetCommitGraphMetadata.
 	GetCommitGraphMetadataFunc *UploadServiceGetCommitGraphMetadataFunc
-	// GetListTagsFunc is an instance of a mock function object controlling
-	// the behavior of the method GetListTags.
-	GetListTagsFunc *UploadServiceGetListTagsFunc
 	// GetUploadDocumentsForPathFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// GetUploadDocumentsForPath.
@@ -1322,11 +933,6 @@ func NewMockUploadService() *MockUploadService {
 		},
 		GetCommitGraphMetadataFunc: &UploadServiceGetCommitGraphMetadataFunc{
 			defaultHook: func(context.Context, int) (r0 bool, r1 *time.Time, r2 error) {
-				return
-			},
-		},
-		GetListTagsFunc: &UploadServiceGetListTagsFunc{
-			defaultHook: func(context.Context, api.RepoName, ...string) (r0 []*gitdomain.Tag, r1 error) {
 				return
 			},
 		},
@@ -1372,11 +978,6 @@ func NewStrictMockUploadService() *MockUploadService {
 				panic("unexpected invocation of MockUploadService.GetCommitGraphMetadata")
 			},
 		},
-		GetListTagsFunc: &UploadServiceGetListTagsFunc{
-			defaultHook: func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error) {
-				panic("unexpected invocation of MockUploadService.GetListTags")
-			},
-		},
 		GetUploadDocumentsForPathFunc: &UploadServiceGetUploadDocumentsForPathFunc{
 			defaultHook: func(context.Context, int, string) ([]string, int, error) {
 				panic("unexpected invocation of MockUploadService.GetUploadDocumentsForPath")
@@ -1411,9 +1012,6 @@ func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 		},
 		GetCommitGraphMetadataFunc: &UploadServiceGetCommitGraphMetadataFunc{
 			defaultHook: i.GetCommitGraphMetadata,
-		},
-		GetListTagsFunc: &UploadServiceGetListTagsFunc{
-			defaultHook: i.GetListTags,
 		},
 		GetUploadDocumentsForPathFunc: &UploadServiceGetUploadDocumentsForPathFunc{
 			defaultHook: i.GetUploadDocumentsForPath,
@@ -1865,124 +1463,6 @@ func (c UploadServiceGetCommitGraphMetadataFuncCall) Args() []interface{} {
 // invocation.
 func (c UploadServiceGetCommitGraphMetadataFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// UploadServiceGetListTagsFunc describes the behavior when the GetListTags
-// method of the parent MockUploadService instance is invoked.
-type UploadServiceGetListTagsFunc struct {
-	defaultHook func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error)
-	hooks       []func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error)
-	history     []UploadServiceGetListTagsFuncCall
-	mutex       sync.Mutex
-}
-
-// GetListTags delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockUploadService) GetListTags(v0 context.Context, v1 api.RepoName, v2 ...string) ([]*gitdomain.Tag, error) {
-	r0, r1 := m.GetListTagsFunc.nextHook()(v0, v1, v2...)
-	m.GetListTagsFunc.appendCall(UploadServiceGetListTagsFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetListTags method
-// of the parent MockUploadService instance is invoked and the hook queue is
-// empty.
-func (f *UploadServiceGetListTagsFunc) SetDefaultHook(hook func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetListTags method of the parent MockUploadService instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *UploadServiceGetListTagsFunc) PushHook(hook func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UploadServiceGetListTagsFunc) SetDefaultReturn(r0 []*gitdomain.Tag, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadServiceGetListTagsFunc) PushReturn(r0 []*gitdomain.Tag, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error) {
-		return r0, r1
-	})
-}
-
-func (f *UploadServiceGetListTagsFunc) nextHook() func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UploadServiceGetListTagsFunc) appendCall(r0 UploadServiceGetListTagsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of UploadServiceGetListTagsFuncCall objects
-// describing the invocations of this function.
-func (f *UploadServiceGetListTagsFunc) History() []UploadServiceGetListTagsFuncCall {
-	f.mutex.Lock()
-	history := make([]UploadServiceGetListTagsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UploadServiceGetListTagsFuncCall is an object that describes an
-// invocation of method GetListTags on an instance of MockUploadService.
-type UploadServiceGetListTagsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg2 []string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []*gitdomain.Tag
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c UploadServiceGetListTagsFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg2 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UploadServiceGetListTagsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // UploadServiceGetUploadDocumentsForPathFunc describes the behavior when

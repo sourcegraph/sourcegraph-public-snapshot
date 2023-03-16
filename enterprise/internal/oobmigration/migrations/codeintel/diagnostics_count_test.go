@@ -11,12 +11,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestDiagnosticsCountMigrator(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	rawDB := lastDBWithLSIF(logger, t)
+	db := database.NewDB(logger, rawDB)
 	store := basestore.NewWithHandle(db.Handle())
 	migrator := NewDiagnosticsCountMigrator(store, 250, 1)
 	serializer := newSerializer()

@@ -11,7 +11,6 @@ build --noremote_upload_local_results
 # Developers should tag targets with `tags=["requires-network"]` to opt-out of the enforcement.
 # Docs: https://bazel.build/reference/command-line-reference#flag--sandbox_default_allow_network
 build --sandbox_default_allow_network=false
-test --sandbox_default_allow_network=false
 
 # Warn if a test's timeout is significantly longer than the test's actual execution time.
 # Bazel's default for test_timeout is medium (5 min), but most tests should instead be short (1 min).

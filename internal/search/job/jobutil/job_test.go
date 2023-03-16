@@ -721,6 +721,26 @@ func TestNewPlanJob(t *testing.T) {
             (repoOpts.hasKVPs[0].key . tag)
             (repoNamePatterns . [])))))))`),
 		}, {
+			query:      `repo:has.topic(mytopic)`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeRegex,
+			want: autogold.Expect(`
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . regex)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 500)
+        (PARALLEL
+          (REPOSCOMPUTEEXCLUDED
+            (repoOpts.hasTopics[0].topic . mytopic))
+          (REPOSEARCH
+            (repoOpts.hasTopics[0].topic . mytopic)
+            (repoNamePatterns . [])))))))`),
+		}, {
 			query:      `repo:has.tag(tag) foo`,
 			protocol:   search.Streaming,
 			searchType: query.SearchTypeRegex,
@@ -792,7 +812,7 @@ func TestNewPlanJob(t *testing.T) {
 				OnSourcegraphDotCom: true,
 			}
 
-			j, err := NewPlanJob(inputs, plan)
+			j, err := NewPlanJob(inputs, plan, NewUnimplementedEnterpriseJobs())
 			require.NoError(t, err)
 
 			tc.want.Equal(t, "\n"+printer.SexpPretty(j))

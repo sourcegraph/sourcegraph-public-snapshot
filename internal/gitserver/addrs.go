@@ -8,13 +8,14 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"golang.org/x/exp/slices"
+	"google.golang.org/grpc"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"golang.org/x/exp/slices"
-	"google.golang.org/grpc"
 )
 
 var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{

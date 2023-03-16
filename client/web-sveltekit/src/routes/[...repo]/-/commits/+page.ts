@@ -1,7 +1,7 @@
-import type { PageLoad } from './$types'
-
 import { fetchCommits } from '$lib/loader/commits'
 import { asStore } from '$lib/utils'
+
+import type { PageLoad } from './$types'
 
 export const load: PageLoad = ({ parent }) => ({
     commits: asStore(

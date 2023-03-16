@@ -157,10 +157,10 @@ mutation {
 	updateSiteConfiguration(input: "", lastID: 0)
 }`,
 			}, {
-				name: "deleteLSIFUpload",
+				name: "deletePreciseIndex",
 				query: `
 mutation {
-	deleteLSIFUpload(id: "TFNJRjox") {
+	deletePreciseIndex(id: "TFNJRjox") {
 		alwaysNil
 	}
 }`,

@@ -9,7 +9,7 @@ import { SourcegraphContext } from '../jscontext'
 export function checkRequestAccessAllowed(
     isSourcegraphDotCom: boolean,
     allowSignup: boolean,
-    accessRequestsFeatures: Pick<SourcegraphContext['experimentalFeatures'], 'accessRequests.enabled'> | undefined
+    accessRequestsFeatures: Pick<SourcegraphContext['experimentalFeatures'], 'accessRequest.enabled'> | undefined
 ): boolean {
-    return !isSourcegraphDotCom && !allowSignup && accessRequestsFeatures?.['accessRequests.enabled'] !== false
+    return !isSourcegraphDotCom && !allowSignup && accessRequestsFeatures?.['accessRequest.enabled'] !== false
 }

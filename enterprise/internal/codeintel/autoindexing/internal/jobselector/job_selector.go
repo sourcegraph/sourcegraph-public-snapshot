@@ -9,26 +9,32 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type JobSelector struct {
 	store           store.Store
+	repoStore       database.RepoStore
 	inferenceSvc    InferenceService
-	gitserverClient GitserverClient
+	gitserverClient gitserver.Client
 	logger          log.Logger
 }
 
 func NewJobSelector(
 	store store.Store,
+	repoStore database.RepoStore,
 	inferenceSvc InferenceService,
-	gitserverClient GitserverClient,
+	gitserverClient gitserver.Client,
 	logger log.Logger,
 ) *JobSelector {
 	return &JobSelector{
 		store:           store,
+		repoStore:       repoStore,
 		inferenceSvc:    inferenceSvc,
 		gitserverClient: gitserverClient,
 		logger:          logger,
@@ -42,7 +48,7 @@ var (
 
 // InferIndexJobsFromRepositoryStructure collects the result of InferIndexJobs over all registered recognizers.
 func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) ([]config.IndexJob, error) {
-	repoName, err := s.store.GetRepoName(ctx, repositoryID)
+	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +64,7 @@ func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context,
 		script = localOverrideScript
 	}
 
-	indexes, err := s.inferenceSvc.InferIndexJobs(ctx, api.RepoName(repoName), commit, script)
+	indexes, err := s.inferenceSvc.InferIndexJobs(ctx, repo.Name, commit, script)
 	if err != nil {
 		return nil, err
 	}
@@ -164,17 +170,18 @@ func (s *JobSelector) getIndexRecordsFromConfigurationInDatabase(ctx context.Con
 // configuration file at the given commit. If no jobs are configured within the repository then a false
 // valued flag is returned.
 func (s *JobSelector) getIndexRecordsFromConfigurationInRepository(ctx context.Context, repositoryID int, commit string, _ bool) ([]types.Index, bool, error) {
-	isConfigured, err := s.gitserverClient.FileExists(ctx, repositoryID, commit, "sourcegraph.yaml")
+	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
 	if err != nil {
-		return nil, false, errors.Wrap(err, "gitserver.FileExists")
-	}
-	if !isConfigured {
-		return nil, false, nil
+		return nil, false, err
 	}
 
-	content, err := s.gitserverClient.RawContents(ctx, repositoryID, commit, "sourcegraph.yaml")
+	content, err := s.gitserverClient.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, api.CommitID(commit), "sourcegraph.yaml")
 	if err != nil {
-		return nil, false, errors.Wrap(err, "gitserver.RawContents")
+		if os.IsNotExist(err) {
+			return nil, false, nil
+		}
+
+		return nil, false, err
 	}
 
 	indexConfiguration, err := config.UnmarshalYAML(content)
@@ -206,13 +213,6 @@ func (s *JobSelector) inferIndexRecordsFromRepositoryStructure(ctx context.Conte
 func convertIndexConfiguration(repositoryID int, commit string, indexConfiguration config.IndexConfiguration) (indexes []types.Index) {
 	for _, indexJob := range indexConfiguration.IndexJobs {
 		var dockerSteps []types.DockerStep
-		for _, dockerStep := range indexConfiguration.SharedSteps {
-			dockerSteps = append(dockerSteps, types.DockerStep{
-				Root:     dockerStep.Root,
-				Image:    dockerStep.Image,
-				Commands: dockerStep.Commands,
-			})
-		}
 		for _, dockerStep := range indexJob.Steps {
 			dockerSteps = append(dockerSteps, types.DockerStep{
 				Root:     dockerStep.Root,

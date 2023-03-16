@@ -22,15 +22,18 @@ go_library(
         "//internal/database",
         "//internal/env",
         "//internal/lazyregexp",
+        "//internal/singleprogram/filepicker",
         "//internal/types",
         "//internal/version",
         "//schema",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
 go_test(
     name = "jscontext_test",
+    timeout = "short",
     srcs = ["jscontext_test.go"],
     embed = [":jscontext"],
 )
