@@ -37,7 +37,9 @@
         align-self: center;
     }
 
-    &__delete-btn-icon {
+    &__delete-btn-icon,
+    &__locked-icon {
+        flex-shrink: 0;
         fill: currentColor !important;
     }
 }

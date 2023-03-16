@@ -8,8 +8,9 @@ import { PermissionsMap, allNamespaces } from '../backend'
 interface PermissionListProps {
     allPermissions: PermissionsMap
     isChecked: (value: string) => boolean
-    onChange: (event: ChangeEvent<HTMLInputElement>) => void
-    onBlur: FocusEventHandler<HTMLInputElement>
+    onChange?: (event: ChangeEvent<HTMLInputElement>) => void
+    onBlur?: FocusEventHandler<HTMLInputElement>
+    disabled?: boolean
 }
 
 export const PermissionsList: React.FunctionComponent<React.PropsWithChildren<PermissionListProps>> = ({
@@ -17,6 +18,7 @@ export const PermissionsList: React.FunctionComponent<React.PropsWithChildren<Pe
     isChecked,
     onChange,
     onBlur,
+    disabled,
 }) => (
     <>
         {allNamespaces.map(namespace => {
@@ -34,6 +36,7 @@ export const PermissionsList: React.FunctionComponent<React.PropsWithChildren<Pe
                                 value={permission.id}
                                 onChange={onChange}
                                 onBlur={onBlur}
+                                disabled={disabled}
                             />
                         ))}
                     </Grid>
