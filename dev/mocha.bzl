@@ -24,6 +24,7 @@ NON_BUNDLED = [
 NON_BUNDLED_DEPS = [
     "//:node_modules/jsonc-parser",
     "//:node_modules/puppeteer",
+    "//dev/ci/integration:setup-display",
 ]
 
 def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs):
@@ -76,7 +77,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs)
             "BROWSER": "chrome",
 
             # Puppeteer config
-            "DISPLAY": "1",
+            "DISPLAY": ":0",
         }),
         **kwargs
     )

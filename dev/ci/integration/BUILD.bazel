@@ -1,0 +1,4 @@
+sh_binary(
+  name = "setup-display",
+  srcs = ["setup-display.sh"],
+)
