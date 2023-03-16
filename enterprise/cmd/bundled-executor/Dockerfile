@@ -38,11 +38,9 @@ RUN set -ex && \
     chmod +x /usr/local/bin/src && \
     rm -rf src-cli.tar.gz
 
-# Install additional common tools for running batch changes. TODO: Doesn't work, isn't statically linked.
-COPY --from=comby/comby /usr/local/bin/comby /usr/local/bin/comby
-# RUN apk add --no-cache \
-#     docker \
-#     ca-certificates
+# Install additional common tools for running batch changes.
+RUN apk add --no-cache \
+    xmlstarlet
 
 # Install batcheshelper.
 COPY batcheshelper /usr/local/bin/
