@@ -16,7 +16,7 @@ import {
     useCodeMirror,
 } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import {Container, H3, Link, LoadingSpinner, PageHeader, Text, useObservable} from '@sourcegraph/wildcard'
+import { Container, H3, Link, LoadingSpinner, PageHeader, Text, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
@@ -291,7 +291,11 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                     <li>
                         Code insights usage data
                         <ul>
-                            <li><Link to="/help/admin/pings#other-telemetry">See a full list of Code Insights pings.</Link></li>
+                            <li>
+                                <Link to="/help/admin/pings#other-telemetry">
+                                    See a full list of Code Insights pings.
+                                </Link>
+                            </li>
                         </ul>
                     </li>
                     <li>
