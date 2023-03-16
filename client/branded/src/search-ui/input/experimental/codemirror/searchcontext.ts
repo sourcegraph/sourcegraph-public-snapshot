@@ -93,29 +93,6 @@ const lastContextField = StateField.define<string | undefined>({
 })
 
 /**
- * Allows the user to overwrite the existing input value when pasting by pressing "Shift"
- */
-export function shiftPasteOverwrite(): Extension {
-    let shiftPressed = false
-    return EditorView.domEventHandlers({
-        keydown(event) {
-            shiftPressed = event.shiftKey
-        },
-        keyup() {
-            shiftPressed = false
-        },
-        paste(_event, view) {
-            if (shiftPressed) {
-                // Select the existing value to let the paste event overwrite it
-                view.dispatch({
-                    selection: EditorSelection.range(0, view.state.doc.length),
-                })
-            }
-        },
-    })
-}
-
-/**
  * When the user pastes a new value into the input, this extension tries to be smart about
  * using the correct context: filter.
  */

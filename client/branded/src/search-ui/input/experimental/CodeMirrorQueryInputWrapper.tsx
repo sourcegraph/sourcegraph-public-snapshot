@@ -37,7 +37,7 @@ import { querySyntaxHighlighting } from '../codemirror/syntax-highlighting'
 import { tokenInfo } from '../codemirror/token-info'
 import { useUpdateEditorFromQueryState } from '../CodeMirrorQueryInput'
 
-import { overrideContextOnPaste, shiftPasteOverwrite } from './codemirror/searchcontext'
+import { overrideContextOnPaste } from './codemirror/searchcontext'
 import { filterDecoration } from './codemirror/syntax-highlighting'
 import { modeScope, useInputMode } from './modes'
 import { Source, suggestions, startCompletion } from './suggestionsExtension'
@@ -207,7 +207,6 @@ const staticExtensions: Extension = [
     keymap.of(defaultKeymap),
     codemirrorHistory(),
     filterPlaceholder,
-    shiftPasteOverwrite(),
     modeScope([queryDiagnostic(), overrideContextOnPaste], [null]),
     Prec.low([querySyntaxHighlighting, modeScope([tokenInfo(), filterDecoration], [null])]),
     EditorView.theme({
