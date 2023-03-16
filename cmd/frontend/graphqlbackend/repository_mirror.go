@@ -160,6 +160,18 @@ func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*gqlutil.
 	return &gqlutil.DateTime{Time: info.LastFetched}, nil
 }
 
+func (r *repositoryMirrorInfoResolver) NextSyncAt(ctx context.Context) (*gqlutil.DateTime, error) {
+	info, err := r.repoUpdateSchedulerInfo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if info == nil || info.Schedule == nil || info.Schedule.Due.IsZero() {
+		return nil, nil
+	}
+	return &gqlutil.DateTime{Time: info.Schedule.Due}, nil
+}
+
 func (r *repositoryMirrorInfoResolver) IsCorrupted(ctx context.Context) (bool, error) {
 	info, err := r.computeGitserverRepo(ctx)
 	if err != nil {
