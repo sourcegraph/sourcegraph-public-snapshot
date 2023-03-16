@@ -37,14 +37,11 @@ func (n *Nonce) Value() (string, error) {
 		return n.value, nil
 	}
 
-	data := make([]byte, 32)
-	_, err := rand.Read(data)
+	value, err := randBase64(32)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to generate nonce from crypto/rand")
 	}
-
-	// Our nonces end up in URLs, so use URLEncoding.
-	n.value = base64.URLEncoding.EncodeToString(data)
+	n.value = value
 
 	return n.value, nil
 }
@@ -142,14 +139,22 @@ func AppSiteInit(ctx context.Context, logger log.Logger, db database.DB) error {
 }
 
 func generatePassword() (string, error) {
-	data := make([]byte, 64)
-	_, err := rand.Read(data)
+	pw, err := randBase64(64)
 	if err != nil {
 		return "", err
 	}
-	pw := base64.StdEncoding.EncodeToString(data)
 	if len(pw) > 72 {
 		return pw[:72], nil
 	}
 	return pw, nil
+}
+
+func randBase64(dataLen int) (string, error) {
+	data := make([]byte, dataLen)
+	_, err := rand.Read(data)
+	if err != nil {
+		return "", err
+	}
+	// Our nonces end up in URLs, so use URLEncoding.
+	return base64.URLEncoding.EncodeToString(data), nil
 }
