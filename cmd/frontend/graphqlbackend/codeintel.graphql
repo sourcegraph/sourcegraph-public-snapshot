@@ -64,7 +64,7 @@ extend type Mutation {
     existing in-database configuration, finally falling back to the automatically inferred
     configuration based on the repo contents at the target commit.
     """
-    queueAutoIndexJobsForRepo(repository: ID!, rev: String, configuration: String): [LSIFIndex!]!
+    queueAutoIndexJobsForRepo(repository: ID!, rev: String, configuration: String): [PreciseIndex!]!
 
     """
     Deletes an LSIF upload.
