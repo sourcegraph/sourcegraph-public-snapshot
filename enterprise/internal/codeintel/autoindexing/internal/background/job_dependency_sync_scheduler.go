@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/packagefilters"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -88,13 +89,24 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 	}()
 
 	var (
-		kinds                      = map[string]struct{}{}
-		oldDependencyReposInserted int
-		newDependencyReposInserted int
-		newVersionsInserted        int
-		oldVersionsInserted        int
-		errs                       []error
+		instant             = time.Now()
+		kinds               = map[string]struct{}{}
+		oldDepReposInserted int
+		newDepReposInserted int
+		newVersionsInserted int
+		oldVersionsInserted int
+		errs                []error
 	)
+
+	pkgFilters, _, err := h.depsSvc.ListPackageRepoFilters(ctx, dependencies.ListPackageRepoRefFiltersOpts{})
+	if err != nil {
+		return errors.Wrap(err, "error listing package repo filters")
+	}
+
+	packageFilters, err := packagefilters.NewFilterLists(pkgFilters)
+	if err != nil {
+		return err
+	}
 
 	for {
 		packageReference, exists, err := scanner.Next()
@@ -127,26 +139,21 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 			continue
 		}
 
-		newRepo, newVersion, err := h.insertPackageRepoRef(ctx, pkg)
+		newRepo, newVersion, err := h.insertPackageRepoRef(ctx, pkg, packageFilters, instant)
 		if err != nil {
 			errs = append(errs, err)
 			continue
 		}
 
 		if newRepo {
-			newDependencyReposInserted++
-			if newVersion {
-				newVersionsInserted++
-			} else {
-				oldVersionsInserted++
-			}
+			newDepReposInserted++
 		} else {
-			oldDependencyReposInserted++
-			if newVersion {
-				newVersionsInserted++
-			} else {
-				oldVersionsInserted++
-			}
+			oldDepReposInserted++
+		}
+		if newVersion {
+			newVersionsInserted++
+		} else {
+			oldVersionsInserted++
 		}
 	}
 
@@ -170,8 +177,8 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 			log.Int("upload", job.UploadID),
 			log.Int("numExtSvc", len(externalServices)),
 			log.Strings("schemaKinds", kindsArray),
-			log.Int("newRepos", newDependencyReposInserted),
-			log.Int("existingRepos", oldDependencyReposInserted),
+			log.Int("newRepos", newDepReposInserted),
+			log.Int("existingRepos", oldDepReposInserted),
 			log.Int("newVersions", newVersionsInserted),
 			log.Int("existingVersions", oldVersionsInserted),
 		)
@@ -241,12 +248,18 @@ func newPackage(pkg uploadsshared.Package) (*precise.Package, error) {
 	return &p, nil
 }
 
-func (h *dependencySyncSchedulerHandler) insertPackageRepoRef(ctx context.Context, pkg precise.Package) (newRepos, newVersions bool, err error) {
+func (h *dependencySyncSchedulerHandler) insertPackageRepoRef(ctx context.Context, pkg precise.Package, filters packagefilters.PackageFilters, instant time.Time) (newRepos, newVersions bool, err error) {
 	insertedRepos, insertedVersions, err := h.depsSvc.InsertPackageRepoRefs(ctx, []dependencies.MinimalPackageRepoRef{
 		{
-			Name:     reposource.PackageName(pkg.Name),
-			Scheme:   pkg.Scheme,
-			Versions: []string{pkg.Version},
+			Name:          reposource.PackageName(pkg.Name),
+			Scheme:        pkg.Scheme,
+			Blocked:       !packagefilters.IsPackageAllowed(pkg.Scheme, reposource.PackageName(pkg.Name), filters),
+			LastCheckedAt: &instant,
+			Versions: []dependencies.MinimalPackageRepoRefVersion{{
+				Version:       pkg.Version,
+				Blocked:       !packagefilters.IsVersionedPackageAllowed(pkg.Scheme, reposource.PackageName(pkg.Name), pkg.Version, filters),
+				LastCheckedAt: &instant,
+			}},
 		},
 	})
 	if err != nil {
