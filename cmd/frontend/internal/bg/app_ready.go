@@ -13,17 +13,19 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	frontendapp "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 // AppReady is called once the frontend has reported it is ready to serve
 // requests. It contains tasks related to Sourcegraph App (single binary).
-func AppReady(logger log.Logger) {
+func AppReady(db database.DB, logger log.Logger) {
 	if !deploy.IsApp() {
 		return
 	}
+
+	ctx := context.Background()
 
 	externalURL := appSignInURL()
 
@@ -33,7 +35,7 @@ func AppReady(logger log.Logger) {
 	} else {
 		email := "app@sourcegraph.com"
 		username := "admin"
-		err := frontendapp.AppHandleSiteInit(context.Background(), email, username, password)
+		err := userpasswd.AppSiteInit(ctx, logger, db, email, username, password)
 		if err != nil {
 			logger.Error("failed to create site admin account", log.Error(err))
 		}
