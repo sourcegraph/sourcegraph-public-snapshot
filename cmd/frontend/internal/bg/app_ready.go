@@ -2,7 +2,6 @@ package bg
 
 import (
 	"context"
-	"net/url"
 	"os"
 	"strings"
 
@@ -25,33 +24,26 @@ func AppReady(db database.DB, logger log.Logger) {
 
 	ctx := context.Background()
 
-	externalURL := appSignInURL()
+	// Our goal is to open the browser to a special sign-in URL containing a
+	// nonce (signInURL). We additionally want to display the URL without the
+	// nonce since it can only be used once (displayURL)
+	displayURL := globals.ExternalURL().String()
+	browserURL := displayURL
 
-	if err := userpasswd.AppSiteInit(ctx, logger, db); err != nil {
+	if signInURL, err := userpasswd.AppSiteInit(ctx, logger, db); err != nil {
 		logger.Error("failed to initialize app user account", log.Error(err))
+	} else {
+		browserURL = signInURL
 	}
 
-	printExternalURL(externalURL)
-	if err := browser.OpenURL(externalURL); err != nil {
-		logger.Error("failed to open browser", log.String("url", externalURL), log.Error(err))
+	if err := browser.OpenURL(browserURL); err != nil {
+		logger.Error("failed to open browser", log.String("url", browserURL), log.Error(err))
+		// We failed to open the browser, so rather display that URL so the
+		// user can click it.
+		displayURL = browserURL
 	}
-}
 
-func appSignInURL() string {
-	externalURL := globals.ExternalURL().String()
-	u, err := url.Parse(externalURL)
-	if err != nil {
-		return externalURL
-	}
-	nonce, err := userpasswd.AppNonce.Value()
-	if err != nil {
-		return externalURL
-	}
-	u.Path = "/sign-in"
-	query := u.Query()
-	query.Set("nonce", nonce)
-	u.RawQuery = query.Encode()
-	return u.String()
+	printExternalURL(displayURL)
 }
 
 func printExternalURL(externalURL string) {

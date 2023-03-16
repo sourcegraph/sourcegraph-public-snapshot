@@ -6,10 +6,12 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"net/http"
+	"net/url"
 	"sync"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -117,11 +119,14 @@ func AppSignInMiddleware(db database.DB, handler func(w http.ResponseWriter, r *
 
 // AppSiteInit is called in the case of Sourcegraph App to create the initial site admin account.
 //
+// Returns a sign-in URL which will automatically sign in the user. This URL
+// can only be used once.
+//
 // Returns a nil error if the admin account already exists, or if it was created.
-func AppSiteInit(ctx context.Context, logger log.Logger, db database.DB) error {
+func AppSiteInit(ctx context.Context, logger log.Logger, db database.DB) (string, error) {
 	password, err := generatePassword()
 	if err != nil {
-		return errors.Wrap(err, "failed to generate site admin password")
+		return "", errors.Wrap(err, "failed to generate site admin password")
 	}
 
 	failIfNewUserIsNotInitialSiteAdmin := true
@@ -131,10 +136,11 @@ func AppSiteInit(ctx context.Context, logger log.Logger, db database.DB) error {
 		Password: password,
 	}, failIfNewUserIsNotInitialSiteAdmin)
 	if err != nil {
-		return errors.Wrap(err, "failed to create site admin account")
+		return "", errors.Wrap(err, "failed to create site admin account")
 	}
 
-	return nil
+	// We have an account, return a sign in URL.
+	return appSignInURL(), nil
 }
 
 func generatePassword() (string, error) {
@@ -146,6 +152,23 @@ func generatePassword() (string, error) {
 		return pw[:72], nil
 	}
 	return pw, nil
+}
+
+func appSignInURL() string {
+	externalURL := globals.ExternalURL().String()
+	u, err := url.Parse(externalURL)
+	if err != nil {
+		return externalURL
+	}
+	nonce, err := AppNonce.Value()
+	if err != nil {
+		return externalURL
+	}
+	u.Path = "/sign-in"
+	query := u.Query()
+	query.Set("nonce", nonce)
+	u.RawQuery = query.Encode()
+	return u.String()
 }
 
 func randBase64(dataLen int) (string, error) {
