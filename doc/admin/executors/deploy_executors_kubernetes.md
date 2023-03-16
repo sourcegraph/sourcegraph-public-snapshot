@@ -10,6 +10,23 @@
 
 [Kubernetes manifests](https://github.com/sourcegraph/deploy-sourcegraph) are provided to deploy Sourcegraph Executors on a running Kubernetes cluster. If you are deploying Sourcegraph with helm, charts are available [here](https://github.com/sourcegraph/deploy-sourcegraph-helm).
 
+## Environment Variables
+
+The following are Environment Variables that are specific to the Kubernetes runtime. See other possible Environment
+Variables [here](./deploy_executors_binary.md#step-2-setup-environment-variables).
+
+| Name                                        | Default Value  | Description                                                                                                            |
+|---------------------------------------------|:---------------|------------------------------------------------------------------------------------------------------------------------|
+| EXECUTOR_KUBERNETES_CONFIG_PATH             | N/A            | The path to the Kubernetes configuration file. If not specified, the in cluster config is used.                        |
+| EXECUTOR_KUBERNETES_NODE_NAME               | N/A            | The name of the Kubernetes Node to create Jobs in. If not specified, the Pods are created in the first available node. |
+| EXECUTOR_KUBERNETES_NAMESPACE               | `default`      | The namespace of to assign the Jobs to.                                                                                |
+| EXECUTOR_KUBERNETES_PERSISTENCE_VOLUME_NAME | `executor-pvc` | The name of the Executor Persistence Volume. Must match the `PersistentVolumeClaim` configured for the instance.       |
+| EXECUTOR_KUBERNETES_RESOURCE_LIMIT_CPU      | `1`            | The CPU resource limit for Kubernetes Jobs.                                                                            |
+| EXECUTOR_KUBERNETES_RESOURCE_LIMIT_MEMORY   | `1Gi`          | The memory resource limit for Kubernetes Jobs.                                                                         |
+| EXECUTOR_KUBERNETES_RESOURCE_REQUEST_CPU    | `1`            | The maximum CPU resource limit for Kubernetes Jobs.                                                                    |
+| EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY | `1Gi`          | The maximum memory resource limit for Kubernetes Jobs.                                                                 |
+
+
 ## Deployment
 
 Executors on kubernetes machines require privileged access to a container runtime daemon in order to operate correctly. In order to ensure maximum capability across Kubernetes versions and container runtimes, a [Docker in Docker](https://www.docker.com/blog/docker-can-now-run-within-docker/) side car is deployed with each executor pod to avoid accessing the host container runtime directly.
@@ -27,7 +44,7 @@ Ensure you have the following tools installed:
 2. Run `cd deploy-sourcegraph/configure/executors`.
 3. Configure the [Executor environment variables](https://docs.sourcegraph.com/admin/deploy_executors_binary#step-2-setup-environment-variables) in the `executor/executor.deployment.yaml` file.
 4. Run  `kubectl apply -f . --recursive` to deploy all components.
-5. Confirm executors are working are working by checking the _Executors_ page under _Site Admin_ > _Executors_ > _Instances_ .
+5. Confirm executors are working by checking the _Executors_ page under _Site Admin_ > _Executors_ > _Instances_ .
 
 #### Deployment via Helm
 
@@ -36,7 +53,7 @@ Ensure you have the following tools installed:
 3. Edit the `values.yaml` with any other customizations you may require.
 4. Run the following command:
    1. `helm upgrade --install -f values.yaml --version 4.5.1 sg-executor sourcegraph/sourcegraph-executor`
-5. Confirm executors are working are working by checking the _Executors_ page under _Site Admin_ > _Executors_ > _Instances_ .
+5. Confirm executors are working by checking the _Executors_ page under _Site Admin_ > _Executors_ > _Instances_ .
 
 
 For more information on the components being deployed see the [Executors readme](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/executors/README.md).
