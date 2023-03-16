@@ -2,7 +2,7 @@ load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_proc_macro", "rust_test")
 
 rust_proc_macro(
-    name = "scip-macros",
+    name = "sg-macros",
     srcs = ["src/lib.rs"],
     aliases = aliases(),
     proc_macro_deps = all_crate_deps(
@@ -21,7 +21,7 @@ rust_test(
         normal_dev = True,
         proc_macro_dev = True,
     ),
-    crate = ":scip-macros",
+    crate = ":sg-macros",
     proc_macro_deps = all_crate_deps(
         proc_macro_dev = True,
     ),

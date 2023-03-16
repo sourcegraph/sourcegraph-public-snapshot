@@ -57,6 +57,5 @@ go_library(
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
         "@in_gopkg_yaml_v2//:yaml_v2",
-        "@org_golang_x_exp//maps",
     ],
 )

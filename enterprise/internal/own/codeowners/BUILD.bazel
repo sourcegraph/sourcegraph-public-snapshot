@@ -13,7 +13,6 @@ go_library(
     deps = [
         "//enterprise/internal/own/codeowners/v1:codeowners",
         "//enterprise/internal/paths",
-        "//internal/api",
         "//internal/lazyregexp",
         "//internal/types",
         "//lib/errors",
