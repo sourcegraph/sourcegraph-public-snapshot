@@ -29,8 +29,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "servegit_test",
+    timeout = "short",
     srcs = [
         "extsvc_test.go",
         "serve_test.go",

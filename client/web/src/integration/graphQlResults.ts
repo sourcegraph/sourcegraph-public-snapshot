@@ -83,10 +83,6 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
         productVersion: '0.0.0+dev',
     }),
 
-    StatusMessages: () => ({
-        statusMessages: [],
-    }),
-
     EventLogsData: () => ({
         node: {
             __typename: 'User',

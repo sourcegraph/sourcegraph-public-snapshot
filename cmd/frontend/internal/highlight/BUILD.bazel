@@ -41,8 +41,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "highlight_test",
+    timeout = "short",
     srcs = [
         "highlight_test.go",
         "html_test.go",

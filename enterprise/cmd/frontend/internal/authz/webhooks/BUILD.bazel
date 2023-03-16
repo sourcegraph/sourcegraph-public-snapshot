@@ -19,8 +19,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "webhooks_test",
+    timeout = "short",
     srcs = ["github_test.go"],
     embed = [":webhooks"],
     tags = [

@@ -70,8 +70,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "ui_test",
+    timeout = "short",
     srcs = [
         "handlers_test.go",
         "help_test.go",

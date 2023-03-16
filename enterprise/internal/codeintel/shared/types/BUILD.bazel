@@ -27,8 +27,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "types_test",
+    timeout = "short",
     srcs = [
         "ranges_test.go",
         "scip_test.go",

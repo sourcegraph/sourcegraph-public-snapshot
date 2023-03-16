@@ -20,8 +20,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "ratelimit_test",
+    timeout = "short",
     srcs = [
         "monitor_test.go",
         "rate_limit_test.go",

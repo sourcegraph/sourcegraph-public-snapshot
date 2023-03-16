@@ -30,8 +30,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "auth_test",
+    timeout = "short",
     srcs = [
         "github_test.go",
         "gitlab_test.go",

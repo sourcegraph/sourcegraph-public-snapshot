@@ -3,8 +3,8 @@
 Sourcegraph can be configured to enforce the same access to repositories and underlying 
 source files as your code  host. If configured, Sourcegraph will allow the user to only 
 see the entities that they can see on the code host. These permissions are enforced 
-accross the product for all the use cases that need to read data from a repository, including
- the existence of such repository on the code host.
+accross the product for all the use cases that need to read data from a repository, 
+including the existence of such repository on the code host.
 
 > NOTE: Historically, we have referred to permissions-related features under different 
 names: "authorization", "repository permissions", "code host permissions". All of these 
@@ -14,7 +14,7 @@ can, for example, create a batch change or who is a site admin.
 
 ## Example
 
-Imagine a scenario, with 2 users, `alice` and `bob`. 
+Imagine a scenario, with 2 users, `alice` and `bob`: 
 
 - `alice` can access repositories `horsegraph/global` and `horsegraph/alice` on the code host
 - `bob` has access to repositories `horsegraph/global` and `horsegraph/docs` on the code host
@@ -22,7 +22,7 @@ Imagine a scenario, with 2 users, `alice` and `bob`.
 - all of the mentioned repositories are synced to Sourcegraph
 
 If `alice` tries to run a search on Sourcegraph, the results will only contain data from the public `horsegraph/global` repository 
-and the ones she has access to (`horsegraph/global` and `horsegraph/alice`). `alice` will not be able to see results
+and the ones she has access to (`horsegraph/global` and `horsegraph/alice`). `alice` will not be able to see results 
 from the `horsegraph/docs`. If `alice` creates a code insight, she will only see results from the repositories she has access to.
 
 Same for `bob`, the search results or any other feature will not show him the existence of `horsegraph/alice` repository on 
@@ -41,10 +41,10 @@ To know more about each method that we support, please follow the link above.
 ## Supported code hosts
 
 Support for repository permissions accross different code hosts is different. The following table captures current state of support (ordered alphabetically):
-| Code host | [Permission Syncing](syncing.md) | (Webhooks for Permissions](webhooks.md) | [Explicit API](api.md) | [Scale supported](#supported-scale) |
+| Code host | [Permission Syncing](syncing.md) | [Webhooks for Permissions](webhooks.md) | [Explicit API](api.md) | [Scale supported](#supported-scale) |
 | -------- | -------- | -------- | -------- | -------- |
-| Bitbucket Cloud <span class="badge badge-beta">Beta</span> | ✓ | ✗ | ✓ | 10k users, 100k repositories
-| Bitbucket Server | ✓ | ✗ | ✓ | 10k users, 100k repositories
+| Bitbucket Cloud <span class="badge badge-beta">Beta</span> | ✓ | ✗ | ✓ | 10k users, 100k repositories |
+| Bitbucket Server | ✓ | ✗ | ✓ | 10k users, 100k repositories |
 | Gerrit <span class="badge badge-beta">Beta</span> | ✓ | ✗ | ✓ | 10k users, 100k repositories |
 | GitHub   | ✓ | ✓ | ✓ | 40k users, 200k repositories |
 | GitHub Enterprise | ✓ | ✓ | ✓ | 40k users, 200k repositories |
@@ -70,7 +70,7 @@ Please contact support if you want to discuss bigger scale than specified.
 
 ## SLAs
 
-Each method of getting permissions to Sourcegraph has different SLA on how long it takes for permissions to appear
+Each method of getting permissions to Sourcegraph has different SLA on how long it takes for permissions to appear 
 in Sourcegraph.
 
 - [Permission syncing SLA](./syncing.md#sla)
@@ -80,8 +80,8 @@ in Sourcegraph.
 
 To have permission syncing available, the Sourcegraph instance needs to be configured with 
 a license that has `acls` feature enabled. If it is not present, Sourcegraph will not enforce 
-repository permissions and each repository will be treated as public - any user that has access
- to Sourcegraph will be able to access it.
+repository permissions and each repository will be treated as public - any user that has access 
+to Sourcegraph will be able to access it.
 
 ## Site administrators
 
