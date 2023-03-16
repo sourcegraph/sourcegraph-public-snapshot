@@ -3,18 +3,9 @@
   "compilerOptions": {
     "sourceMap": true,
     "outDir": "dist",
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
   },
-  "include": [
-    "src",
-    "webviews",
-    "vite.config.ts",
-    "webpack.config.js"
-  ],
-  "exclude": [
-    "scripts",
-    "out",
-    "dist"
-  ],
-  "references": []
+  "include": ["src", "webviews", "vite.config.ts", "webpack.config.js"],
+  "exclude": ["scripts", "out", "dist"],
+  "references": [],
 }
