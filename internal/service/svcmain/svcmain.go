@@ -29,8 +29,11 @@ type Config struct {
 	AfterConfigure func() // run after all services' Configure hooks are called
 }
 
-// Main is called from the `main` function of the `sourcegraph-oss` and `sourcegraph` commands.
-func Main(services []sgservice.Service, config Config) {
+// Main is called from the `main` function of the `sourcegraph-oss` and
+// `sourcegraph` commands.
+//
+// args is the commandline arguments (usually os.Args).
+func Main(services []sgservice.Service, config Config, args []string) {
 	// Unlike other sourcegraph binaries we expect Sourcegraph App to be run
 	// by a user instead of deployed to a cloud. So adjust the default output
 	// format before initializing log.

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph/enterprisecmd"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/service/servegit"
@@ -33,5 +35,5 @@ var services = []service.Service{
 }
 
 func main() {
-	enterprisecmd.MainEnterprise(services)
+	enterprisecmd.MainEnterprise(services, os.Args)
 }
