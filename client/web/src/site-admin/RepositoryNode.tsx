@@ -76,9 +76,9 @@ interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
 }
 
-const updateNodeFromData = (node: SiteAdminRepositoryFields, data: SettingsAreaRepositoryResult | undefined) => {
+const updateNodeFromData = (node: SiteAdminRepositoryFields, data: SettingsAreaRepositoryResult | undefined): void => {
     if (data?.repository && data.repository?.mirrorInfo) {
-        node.mirrorInfo.lastError = 'bad errror 123'
+        node.mirrorInfo.lastError = data.repository.mirrorInfo.lastError
         node.mirrorInfo.cloned = data.repository.mirrorInfo.cloned
         node.mirrorInfo.cloneInProgress = data.repository.mirrorInfo.cloneInProgress
         node.mirrorInfo.updatedAt = data.repository.mirrorInfo.updatedAt
@@ -121,7 +121,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
         >
             <div className="d-flex align-items-center justify-content-between">
                 <div className="d-flex col-10 pl-0">
-                    <div className={classNames('col-2 px-0 my-auto h-100', styles.badgeWrapper)}>
+                    <div className={classNames('col-1 px-0 my-auto h-100', styles.badgeWrapper)}>
                         <RepositoryStatusBadge status={parseRepositoryStatus(node)} />
                         {node.mirrorInfo.cloneInProgress && <LoadingSpinner className="ml-2" />}
                     </div>
