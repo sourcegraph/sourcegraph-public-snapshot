@@ -3,7 +3,7 @@
 # file, please don't be scared to make it more pleasant / remove hadolint
 # ignores.
 
-FROM --platform=linux/amd64 sourcegraph/alpine-3.14:201280_2023-02-23_4.5-1071f8b97a60@sha256:c4970b21169db155c1b497740e622adb23007ac11a87ec571d9ecef8aba0adc5
+FROM sourcegraph/alpine-3.14:201280_2023-02-23_4.5-1071f8b97a60@sha256:c4970b21169db155c1b497740e622adb23007ac11a87ec571d9ecef8aba0adc5
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -23,24 +23,24 @@ ENV EXECUTOR_MAXIMUM_NUM_JOBS=1
 ENV EXECUTOR_NUM_TOTAL_JOBS=1
 
 # Install git and docker. We use the same version here as we use in gitserver.
-RUN apk add --no-cache \
-    # Minimal version requirement to address vulnerabilities
-    # https://github.blog/2023-02-14-git-security-vulnerabilities-announced-3/
-    'git>=2.39.2-r0' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main \
-    ca-certificates
+RUN apk add --no-cache
+# Minimal version requirement to address vulnerabilities
+# https://github.blog/2023-02-14-git-security-vulnerabilities-announced-3/
+'git>=2.39.2-r0' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main \
+  ca-certificates
 
 # Install src-cli.
 ARG SRC_CLI_VERSION
-RUN set -ex && \
-    curl -f -L -o src-cli.tar.gz "https://github.com/sourcegraph/src-cli/releases/download/${SRC_CLI_VERSION}/src-cli_${SRC_CLI_VERSION}_linux_amd64.tar.gz" && \
-    tar -xvzf src-cli.tar.gz src && \
-    mv src /usr/local/bin/src && \
-    chmod +x /usr/local/bin/src && \
-    rm -rf src-cli.tar.gz
+RUN set -ex &&
+  curl -f -L -o src-cli.tar.gz "https://github.com/sourcegraph/src-cli/releases/download/${SRC_CLI_VERSION}/src-cli_${SRC_CLI_VERSION}_linux_amd64.tar.gz" &&
+  tar -xvzf src-cli.tar.gz src &&
+  mv src /usr/local/bin/src &&
+  chmod +x /usr/local/bin/src &&
+  rm -rf src-cli.tar.gz
 
 # Install additional common tools for running batch changes.
 RUN apk add --no-cache \
-    xmlstarlet
+  xmlstarlet
 
 # Install batcheshelper.
 COPY batcheshelper /usr/local/bin/
