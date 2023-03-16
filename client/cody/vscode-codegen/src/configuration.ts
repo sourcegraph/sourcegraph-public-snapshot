@@ -1,7 +1,5 @@
 import * as vscode from 'vscode'
 
-export const CODY_ENDPOINT = 'cody.sgdev.org'
-
 export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blended'
 
 export interface Configuration {
