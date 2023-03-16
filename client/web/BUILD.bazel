@@ -537,6 +537,7 @@ ts_project(
         "src/enterprise/codeintel/configuration/components/inference-form/auto-index-to-form-job.ts",
         "src/enterprise/codeintel/configuration/components/inference-form/form-data-to-schema.ts",
         "src/enterprise/codeintel/configuration/components/inference-form/types.ts",
+        "src/enterprise/codeintel/configuration/components/inference-form/util.ts",
         "src/enterprise/codeintel/configuration/components/inference-script/InferenceScriptEditor.tsx",
         "src/enterprise/codeintel/configuration/components/inference-script/InferenceScriptPreview.tsx",
         "src/enterprise/codeintel/configuration/hooks/queryPolicies.tsx",
