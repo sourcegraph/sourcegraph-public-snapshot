@@ -42,6 +42,9 @@ if (process.env.NODE_ENV !== 'production') {
     }) as typeof Link
 }
 
+/**
+ * Set link component for jest tests.
+ */
 if (process.env.JEST_WORKER_ID !== undefined) {
     setLinkComponent(AnchorLink)
 }
