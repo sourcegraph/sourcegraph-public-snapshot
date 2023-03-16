@@ -4,65 +4,8 @@ import (
 	"encoding/base64"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 )
-
-func TestMakeGetUploadsOptions(t *testing.T) {
-	opts, err := makeGetUploadsOptions(&resolverstubs.LSIFRepositoryUploadsQueryArgs{
-		LSIFUploadsQueryArgs: &resolverstubs.LSIFUploadsQueryArgs{
-			ConnectionArgs: resolverstubs.ConnectionArgs{
-				First: intPtr(5),
-			},
-			Query:           strPtr("q"),
-			State:           strPtr("s"),
-			IsLatestForRepo: boolPtr(true),
-			After:           resolverstubs.EncodeIntCursor(intPtr(25)).EndCursor(),
-		},
-		RepositoryID: graphql.ID(base64.StdEncoding.EncodeToString([]byte("Repo:50"))),
-	})
-	if err != nil {
-		t.Fatalf("unexpected error making options: %s", err)
-	}
-
-	expected := shared.GetUploadsOptions{
-		RepositoryID: 50,
-		State:        "s",
-		Term:         "q",
-		VisibleAtTip: true,
-		Limit:        5,
-		Offset:       25,
-		AllowExpired: true,
-	}
-	if diff := cmp.Diff(expected, opts); diff != "" {
-		t.Errorf("unexpected opts (-want +got):\n%s", diff)
-	}
-}
-
-func TestMakeGetUploadsOptionsDefaults(t *testing.T) {
-	opts, err := makeGetUploadsOptions(&resolverstubs.LSIFRepositoryUploadsQueryArgs{
-		LSIFUploadsQueryArgs: &resolverstubs.LSIFUploadsQueryArgs{},
-	})
-	if err != nil {
-		t.Fatalf("unexpected error making options: %s", err)
-	}
-
-	expected := shared.GetUploadsOptions{
-		RepositoryID: 0,
-		State:        "",
-		Term:         "",
-		VisibleAtTip: false,
-		Limit:        DefaultUploadPageSize,
-		Offset:       0,
-		AllowExpired: true,
-	}
-	if diff := cmp.Diff(expected, opts); diff != "" {
-		t.Errorf("unexpected opts (-want +got):\n%s", diff)
-	}
-}
 
 func TestCursor(t *testing.T) {
 	expected := "test"
@@ -105,7 +48,7 @@ func TestCursorEmpty(t *testing.T) {
 
 func TestUploadID(t *testing.T) {
 	expected := int64(42)
-	value, err := unmarshalLSIFUploadGQLID(marshalLSIFUploadGQLID(expected))
+	value, err := UnmarshalLSIFUploadGQLID(marshalLSIFUploadGQLID(expected))
 	if err != nil {
 		t.Fatalf("unexpected error marshalling id: %s", err)
 	}
@@ -117,7 +60,7 @@ func TestUploadID(t *testing.T) {
 func TestUnmarshalUploadIDString(t *testing.T) {
 	expected := int64(42)
 	id := graphql.ID(base64.StdEncoding.EncodeToString([]byte(`LSIFUpload:"42"`)))
-	value, err := unmarshalLSIFUploadGQLID(id)
+	value, err := UnmarshalLSIFUploadGQLID(id)
 	if err != nil {
 		t.Fatalf("unexpected error marshalling id: %s", err)
 	}

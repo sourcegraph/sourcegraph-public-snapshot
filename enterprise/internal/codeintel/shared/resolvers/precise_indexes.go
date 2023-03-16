@@ -19,8 +19,8 @@ import (
 type preciseIndexResolver struct {
 	upload         *types.Upload
 	index          *types.Index
-	uploadResolver resolverstubs.LSIFUploadResolver
-	indexResolver  resolverstubs.LSIFIndexResolver
+	uploadResolver *UploadResolver
+	indexResolver  *indexResolver
 }
 
 func NewPreciseIndexResolver(
@@ -46,7 +46,7 @@ func NewPreciseIndexResolver(
 		}
 	}
 
-	var uploadResolver resolverstubs.LSIFUploadResolver
+	var uploadResolver *UploadResolver
 	if upload != nil {
 		uploadResolver = NewUploadResolver(uploadsSvc, policySvc, gitserverClient, siteAdminChecker, repoStore, *upload, prefetcher, locationResolver, traceErrs)
 
@@ -61,7 +61,7 @@ func NewPreciseIndexResolver(
 		}
 	}
 
-	var indexResolver resolverstubs.LSIFIndexResolver
+	var indexResolver *indexResolver
 	if index != nil {
 		indexResolver = NewIndexResolver(uploadsSvc, policySvc, gitserverClient, siteAdminChecker, repoStore, *index, prefetcher, locationResolver, traceErrs)
 	}
