@@ -44,7 +44,6 @@ RUN apk add --no-cache \
 
 # Install batcheshelper.
 COPY batcheshelper /usr/local/bin/
-ENV PATH="$PATH:/usr/local/bin"
 
 USER sourcegraph
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/executor"]
