@@ -529,8 +529,8 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 		return err
 	}
 
-	// 🚨 SECURITY: For all code host connections on Sourcegraph
-	// Cloud, we always want to disable repository permissions to prevent
+	// 🚨 SECURITY: For all code host connections on Sourcegraph.com,
+	// we always want to disable repository permissions to prevent
 	// permission syncing from trying to sync permissions from public code.
 	if envvar.SourcegraphDotComMode() {
 		rawConfig, err = disablePermsSyncingForExternalService(rawConfig)
