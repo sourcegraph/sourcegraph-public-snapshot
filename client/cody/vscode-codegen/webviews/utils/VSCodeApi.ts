@@ -36,7 +36,7 @@ export interface WebviewMessage {
     text?: string
     recipeID?: string
     accessToken?: string
-    serverURL?: string
+    serverEndpoint?: string
     feedback?: {
         sentiment: 'good' | 'bad'
     }

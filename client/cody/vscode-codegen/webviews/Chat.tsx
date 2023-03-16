@@ -4,11 +4,10 @@ import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
 
 import { Tips } from './Tips'
 import { SubmitSvg } from './utils/icons'
+import { ChatMessage } from './utils/types'
 import { WebviewMessage, vscodeAPI } from './utils/VSCodeApi'
 
 import './Chat.css'
-
-import { ChatMessage } from '@sourcegraph/cody-common'
 
 interface ChatboxProps {
     messageInProgress: ChatMessage | null
@@ -50,8 +49,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const onChatSubmit = useCallback(async () => {
         setInputRows(5)
-        const chatMsg: ChatMessage = { speaker: 'you', displayText: formInput, timestamp: getShortTimestamp() }
-        setMessageInProgress({ speaker: 'bot', displayText: '', timestamp: getShortTimestamp() })
+        const chatMsg: ChatMessage = { speaker: 'human', displayText: formInput, timestamp: getShortTimestamp() }
+        setMessageInProgress({ speaker: 'assistant', displayText: '', timestamp: getShortTimestamp() })
         setTranscript([...transcript, chatMsg])
 
         vscodeAPI.postMessage({ command: 'submit', text: formInput } as WebviewMessage)
@@ -62,7 +61,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         setFormInput('')
     }, [formInput, setTranscript, setMessageInProgress, transcript])
 
-    const bubbleClassName = (speaker: string): string => (speaker === 'you' ? 'human' : 'bot')
+    const bubbleClassName = (speaker: string): string => (speaker === 'human' ? 'human' : 'bot')
 
     const scrollToBottom = () => {
         chatboxRef.current?.scrollIntoView?.({ behavior: 'smooth' })
@@ -97,10 +96,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                                     </div>
                                     <div className={`bubble-footer ${bubbleClassName(message.speaker)}-bubble-footer`}>
                                         <div className="bubble-footer-timestamp">{`${
-                                            message.speaker === 'bot' ? 'Cody' : 'Me'
+                                            message.speaker === 'assistant' ? 'Cody' : 'Me'
                                         } · ${message.timestamp}`}</div>
                                         {/* Only show feedback for the last message. */}
-                                        {message.speaker === 'bot' && index === transcript.length - 1 && (
+                                        {message.speaker === 'assistant' && index === transcript.length - 1 && (
                                             <FeedbackContainer index={index} key={`feedback-${index}`} />
                                         )}
                                     </div>
@@ -108,7 +107,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                             </div>
                         ))}
 
-                        {messageInProgress && messageInProgress.speaker === 'bot' && (
+                        {messageInProgress && messageInProgress.speaker === 'assistant' && (
                             <div className="bubble-row bot-bubble-row">
                                 <div className="bubble bot-bubble">
                                     <div className="bubble-content bot-bubble-content">
