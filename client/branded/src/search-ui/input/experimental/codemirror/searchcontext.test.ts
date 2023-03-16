@@ -12,7 +12,7 @@ describe('overrideContextOnPaste', () => {
      */
     function test(doc: string, insert: string): string {
         let from = doc.indexOf('|')
-        let to: number | undefined = undefined
+        let to: number | undefined
 
         if (from > -1) {
             doc = doc.replace(/\|/, '')
@@ -42,12 +42,15 @@ describe('overrideContextOnPaste', () => {
 
     it('removes the new context: filter if the existing query is not "empty"', () => {
         expect(test('context:global one |two| three', 'context:foo bar')).toStrictEqual('context:global one bar three')
-
     })
 
     it('keeps the filter the query contains kewords', () => {
-        expect(test('context:global foo |', 'OR context:foo bar')).toStrictEqual('context:global foo OR context:foo bar')
-        expect(test('context:global |foo OR bar ', 'context:foo bar')).toStrictEqual('context:global context:foo barfoo OR bar ')
+        expect(test('context:global foo |', 'OR context:foo bar')).toStrictEqual(
+            'context:global foo OR context:foo bar'
+        )
+        expect(test('context:global |foo OR bar ', 'context:foo bar')).toStrictEqual(
+            'context:global context:foo barfoo OR bar '
+        )
     })
 
     it('keeps the filter if the new value does not contain a context filter', () => {
@@ -61,7 +64,9 @@ describe('overrideContextOnPaste', () => {
 
     it('keeps the filter if the new value contains the word "context"', () => {
         expect(test('context:global ', 'context bar')).toStrictEqual('context:global context bar')
-        expect(test('context:global ', 'content:"context:foo" bar')).toStrictEqual('context:global content:"context:foo" bar')
+        expect(test('context:global ', 'content:"context:foo" bar')).toStrictEqual(
+            'context:global content:"context:foo" bar'
+        )
     })
 
     it('does not remove the filter if the new value somehow "breaks" the context filters', () => {

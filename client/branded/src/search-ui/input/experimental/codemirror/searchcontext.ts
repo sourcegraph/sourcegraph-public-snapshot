@@ -1,13 +1,10 @@
 import { ChangeSpec, EditorSelection, EditorState, Extension, StateField } from '@codemirror/state'
+import { EditorView } from '@codemirror/view'
 import { mdiFilterOutline } from '@mdi/js'
 import { inRange } from 'lodash'
 
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
-import {
-    FilterKind,
-    findFilter,
-    getGlobalSearchContextFilter,
-} from '@sourcegraph/shared/src/search/query/query'
+import { FilterKind, findFilter, getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
 import { isFilterType } from '@sourcegraph/shared/src/search/query/validate'
@@ -15,7 +12,6 @@ import { isFilterType } from '@sourcegraph/shared/src/search/query/validate'
 import { getQueryInformation, tokens } from '../../codemirror/parsedQuery'
 import { filterValueRenderer } from '../optionRenderer'
 import { suggestionSources } from '../suggestionsExtension'
-import { EditorView } from '@codemirror/view'
 
 /**
  * A suggestion extension which will show most recently entered context: filter if the
@@ -100,7 +96,7 @@ const lastContextField = StateField.define<string | undefined>({
 /**
  * Allows the user to overwrite the existing input value when pasting by pressing "Shift"
  */
-export function shiftPasteOverwrite() {
+export function shiftPasteOverwrite(): Extension {
     let shiftPressed = false
     return EditorView.domEventHandlers({
         keydown(event) {
@@ -116,7 +112,7 @@ export function shiftPasteOverwrite() {
                     selection: EditorSelection.range(0, view.state.doc.length),
                 })
             }
-        }
+        },
     })
 }
 
@@ -143,8 +139,12 @@ export const overrideContextOnPaste = EditorState.transactionFilter.of(transacti
 
     // Common situation: New query is pasted into "empty" input (only contains context: filter)
     // We assume that the pasted query is always "complete" and clear the current input
-    if (tokens(transaction.startState).every(token => token.type === 'whitespace' || isFilterType(token, FilterType.context))) {
-        return [{changes: {from: 0, to: transaction.startState.doc.length}}, transaction]
+    if (
+        tokens(transaction.startState).every(
+            token => token.type === 'whitespace' || isFilterType(token, FilterType.context)
+        )
+    ) {
+        return [{ changes: { from: 0, to: transaction.startState.doc.length } }, transaction]
     }
 
     // Less common situation: New query pasted into _non-empty_ query input. We assume that the existing query
@@ -167,11 +167,11 @@ export const overrideContextOnPaste = EditorState.transactionFilter.of(transacti
     const changes: ChangeSpec[] = []
     for (const token of scanResult.term) {
         if (isFilterType(token, FilterType.context) && token.range.start !== newRangeOfCurrentContextFilter.start) {
-             // Trim whitespace after context filter. range.end is exclusive so this is our starting point.
+            // Trim whitespace after context filter. range.end is exclusive so this is our starting point.
             const match = newValue.slice(currentGlobalContext.filter.range.end).match(/\s+/)
-            changes.push({from: token.range.start, to: token.range.end + (match?.[0].length ?? 0)})
+            changes.push({ from: token.range.start, to: token.range.end + (match?.[0].length ?? 0) })
         }
     }
 
-    return [transaction, {changes, sequential: true}]
+    return [transaction, { changes, sequential: true }]
 })
