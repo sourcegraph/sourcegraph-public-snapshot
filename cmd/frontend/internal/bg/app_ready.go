@@ -2,8 +2,6 @@ package bg
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
 	"net/url"
 	"os"
 	"strings"
@@ -29,16 +27,8 @@ func AppReady(db database.DB, logger log.Logger) {
 
 	externalURL := appSignInURL()
 
-	password, err := generatePassword()
-	if err != nil {
-		logger.Error("failed to generate site admin password", log.Error(err))
-	} else {
-		email := "app@sourcegraph.com"
-		username := "admin"
-		err := userpasswd.AppSiteInit(ctx, logger, db, email, username, password)
-		if err != nil {
-			logger.Error("failed to create site admin account", log.Error(err))
-		}
+	if err := userpasswd.AppSiteInit(ctx, logger, db); err != nil {
+		logger.Error("failed to initialize app user account", log.Error(err))
 	}
 
 	printExternalURL(externalURL)
@@ -80,17 +70,4 @@ func printExternalURL(externalURL string) {
 	output.Fprintf(os.Stderr, "| %s |"+newLine, pad("Sourcegraph is now available on "+externalURL, 76))
 	output.Fprintf(os.Stderr, "| %s |"+newLine, emptyLine)
 	output.Fprintf(os.Stderr, "|------------------------------------------------------------------------------|"+newLine)
-}
-
-func generatePassword() (string, error) {
-	data := make([]byte, 64)
-	_, err := rand.Read(data)
-	if err != nil {
-		return "", err
-	}
-	pw := base64.StdEncoding.EncodeToString(data)
-	if len(pw) > 72 {
-		return pw[:72], nil
-	}
-	return pw, nil
 }

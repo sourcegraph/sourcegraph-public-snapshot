@@ -119,12 +119,37 @@ func AppSignInMiddleware(db database.DB, handler func(w http.ResponseWriter, r *
 // AppSiteInit is called in the case of Sourcegraph App to create the initial site admin account.
 //
 // Returns a nil error if the admin account already exists, or if it was created.
-func AppSiteInit(ctx context.Context, logger log.Logger, db database.DB, email, username, password string) error {
+func AppSiteInit(ctx context.Context, logger log.Logger, db database.DB) error {
+	password, err := generatePassword()
+	if err != nil {
+		return errors.Wrap(err, "failed to generate site admin password")
+	}
+
+	email := "app@sourcegraph.com"
+	username := "admin"
+
 	failIfNewUserIsNotInitialSiteAdmin := true
-	err, _, _ := unsafeSignUp(ctx, logger, db, credentials{
+	err, _, _ = unsafeSignUp(ctx, logger, db, credentials{
 		Email:    email,
 		Username: username,
 		Password: password,
 	}, failIfNewUserIsNotInitialSiteAdmin)
-	return err
+	if err != nil {
+		return errors.Wrap(err, "failed to create site admin account")
+	}
+
+	return nil
+}
+
+func generatePassword() (string, error) {
+	data := make([]byte, 64)
+	_, err := rand.Read(data)
+	if err != nil {
+		return "", err
+	}
+	pw := base64.StdEncoding.EncodeToString(data)
+	if len(pw) > 72 {
+		return pw[:72], nil
+	}
+	return pw, nil
 }
