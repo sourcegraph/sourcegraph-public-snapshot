@@ -227,11 +227,11 @@ export const PermissionsSyncJobNumbers: React.FunctionComponent<{ job: Permissio
     added,
 }) =>
     added ? (
-        <div className="text-success text-right mr-2">
+        <div className="text-success text-right">
             +<b>{job.permissionsAdded}</b>
         </div>
     ) : (
-        <div className="text-danger text-right mr-2">
+        <div className="text-danger text-right">
             -<b>{job.permissionsRemoved}</b>
         </div>
     )

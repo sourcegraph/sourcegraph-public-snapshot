@@ -43,6 +43,7 @@ import {
     PermissionsSyncJobsSearchType,
     PermissionsSyncJobState,
     PermissionsSyncJobsVariables,
+    PermissionsSyncJobPriority,
     ScheduleRepoPermissionsSyncResult,
     ScheduleRepoPermissionsSyncVariables,
     ScheduleUserPermissionsSyncResult,
@@ -398,7 +399,7 @@ const TableColumns: IColumn<PermissionsSyncJob>[] = [
         header: { label: 'Total', align: 'right' },
         align: 'right',
         render: ({ permissionsFound }: PermissionsSyncJob) => (
-            <div className="text-muted text-right mr-2">
+            <div className="text-muted text-right">
                 <b>{permissionsFound}</b>
             </div>
         ),
@@ -560,7 +561,7 @@ const CodeHostStatesTableColumns: IColumn<CodeHostState>[] = [
     },
 ]
 
-const JobPriorityBadgeVariants: { [priority: string]: BadgeVariantType } = {
+const JobPriorityBadgeVariants: Record<PermissionsSyncJobPriority, BadgeVariantType> = {
     LOW: 'secondary',
     MEDIUM: 'primary',
     HIGH: 'success',
