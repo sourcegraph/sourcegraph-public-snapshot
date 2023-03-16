@@ -116,8 +116,11 @@ func (rp *rolePermissionStore) Revoke(ctx context.Context, opts RevokeRolePermis
 		return errors.New("missing permission id")
 	}
 
-	if opts.RoleID == 0 {
-		return errors.New("missing role id")
+	// First we check that we're not modifying the site administrator role, which
+	// should not be modified except by the `UpdatePermissions` startup process.
+	err := checkRoleExistsAndIsNotSiteAdminRole(ctx, rp, opts.RoleID)
+	if err != nil {
+		return err
 	}
 
 	q := sqlf.Sprintf(
@@ -143,8 +146,11 @@ func (rp *rolePermissionStore) Revoke(ctx context.Context, opts RevokeRolePermis
 }
 
 func (rp *rolePermissionStore) BulkRevokePermissionsForRole(ctx context.Context, opts BulkRevokePermissionsForRoleOpts) error {
-	if opts.RoleID == 0 {
-		return errors.New("missing role id")
+	// First we check that we're not modifying the site administrator role, which
+	// should not be modified except by the `UpdatePermissions` startup process.
+	err := checkRoleExistsAndIsNotSiteAdminRole(ctx, rp, opts.RoleID)
+	if err != nil {
+		return err
 	}
 
 	if len(opts.Permissions) == 0 {
@@ -255,8 +261,11 @@ func (rp *rolePermissionStore) Assign(ctx context.Context, opts AssignRolePermis
 		return errors.New("missing permission id")
 	}
 
-	if opts.RoleID == 0 {
-		return errors.New("missing role id")
+	// First we check that we're not modifying the site administrator role, which
+	// should not be modified except by the `UpdatePermissions` startup process.
+	err := checkRoleExistsAndIsNotSiteAdminRole(ctx, rp, opts.RoleID)
+	if err != nil {
+		return err
 	}
 
 	q := sqlf.Sprintf(
@@ -266,7 +275,7 @@ func (rp *rolePermissionStore) Assign(ctx context.Context, opts AssignRolePermis
 		sqlf.Join(rolePermissionColumns, ", "),
 	)
 
-	_, err := scanRolePermission(rp.QueryRow(ctx, q))
+	_, err = scanRolePermission(rp.QueryRow(ctx, q))
 	if err != nil {
 		// If there are no rows returned, it means that the role has already being assigned this permission.
 		// In that case, we don't need to return an error.
@@ -279,11 +288,14 @@ func (rp *rolePermissionStore) Assign(ctx context.Context, opts AssignRolePermis
 }
 
 func (rp *rolePermissionStore) SetPermissionsForRole(ctx context.Context, opts SetPermissionsForRoleOpts) error {
-	if opts.RoleID == 0 {
-		return errors.New("missing role id")
-	}
-
 	return rp.WithTransact(ctx, func(tx RolePermissionStore) error {
+		// First we check that we're not modifying the site administrator role, which
+		// should not be modified except by the `UpdatePermissions` startup process.
+		err := checkRoleExistsAndIsNotSiteAdminRole(ctx, tx, opts.RoleID)
+		if err != nil {
+			return err
+		}
+
 		// look up the current permissions assigned to the role. We use this to determine which permissions to assign and revoke.
 		rolePermissions, err := tx.GetByRoleID(ctx, GetRolePermissionOpts{RoleID: opts.RoleID})
 		if err != nil {
@@ -354,8 +366,11 @@ func (rp *rolePermissionStore) SetPermissionsForRole(ctx context.Context, opts S
 }
 
 func (rp *rolePermissionStore) BulkAssignPermissionsToRole(ctx context.Context, opts BulkAssignPermissionsToRoleOpts) error {
-	if opts.RoleID == 0 {
-		return errors.New("missing role id")
+	// First we check that we're not modifying the site administrator role, which
+	// should not be modified except by the `UpdatePermissions` startup process.
+	err := checkRoleExistsAndIsNotSiteAdminRole(ctx, rp, opts.RoleID)
+	if err != nil {
+		return err
 	}
 
 	if len(opts.Permissions) == 0 {
@@ -386,6 +401,10 @@ func (rp *rolePermissionStore) AssignToSystemRole(ctx context.Context, opts Assi
 		return errors.New("role is required")
 	}
 
+	if opts.Role == types.SiteAdministratorSystemRole {
+		return errors.New("site administrator role cannot be modified")
+	}
+
 	roleQuery := sqlf.Sprintf("SELECT id FROM roles WHERE name = %s", opts.Role)
 
 	q := sqlf.Sprintf(
@@ -407,6 +426,9 @@ func (rp *rolePermissionStore) AssignToSystemRole(ctx context.Context, opts Assi
 	return nil
 }
 
+// BulkAssignPermissionsToRole assigns multiple permissions to a system role. Note that it
+// is the only method allowed to modify the permissions of the site admin role, which it
+// does from the `UpdatePermissions` startup process.
 func (rp *rolePermissionStore) BulkAssignPermissionsToSystemRoles(ctx context.Context, opts BulkAssignPermissionsToSystemRolesOpts) error {
 	if opts.PermissionID == 0 {
 		return errors.New("permission id is required")
@@ -438,6 +460,25 @@ func (rp *rolePermissionStore) BulkAssignPermissionsToSystemRoles(ctx context.Co
 			return nil
 		}
 		return err
+	}
+	return nil
+}
+
+func checkRoleExistsAndIsNotSiteAdminRole(ctx context.Context, store RolePermissionStore, roleID int32) error {
+	if roleID == 0 {
+		return errors.New("missing role id")
+	}
+
+	roleStore := RolesWith(store)
+	role, err := roleStore.Get(ctx, GetRoleOpts{ID: roleID})
+	if err != nil {
+		return err
+	}
+	if role == nil {
+		return &RoleNotFoundErr{ID: roleID}
+	}
+	if role.IsSiteAdmin() {
+		return errors.New("cannot modify permissions for site admin role")
 	}
 	return nil
 }
