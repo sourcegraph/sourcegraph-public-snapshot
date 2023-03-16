@@ -46,7 +46,7 @@ func init() {
 			return nil
 		},
 		UsageFunc: func() {
-			fmt.Fprintf(flag.CommandLine.Output(), "Usage of 'sourcegraph %s':\n", runFlagSet.Name())
+			fmt.Fprintf(flag.CommandLine.Output(), "Usage of 'sourcegraph %s':\n", flagSet.Name())
 			flagSet.PrintDefaults()
 		},
 	})
