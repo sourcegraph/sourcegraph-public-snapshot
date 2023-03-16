@@ -381,7 +381,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
             </Container>
             {extSvcs && (
                 <Container>
-                    <div className="d-flex justify-content-center">
+                    <div className="d-flex flex-sm-row flex-column-reverse justify-content-center">
                         <FilterControl
                             filters={filters}
                             values={filterValues}
@@ -395,7 +395,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
                         />
                         <Input
                             type="search"
-                            className="flex-1 ml-5"
+                            className="flex-1 md-ml-5 mb-1"
                             placeholder="Search repositories..."
                             name="query"
                             value={searchQuery}
