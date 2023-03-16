@@ -5,9 +5,8 @@ import { removeStopwords } from 'stopword'
 import StreamValues from 'stream-json/streamers/StreamValues'
 import * as vscode from 'vscode'
 
-import { Message } from '@sourcegraph/cody-common'
-
 import { getContextMessageWithResponse, populateCodeContextTemplate } from '../chat/prompt'
+import { Message } from '../sourcegraph-api'
 
 import { KeywordContextFetcher } from '.'
 
