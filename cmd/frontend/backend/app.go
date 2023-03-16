@@ -10,6 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+var _ AppExternalServicesService = &appExternalServices{}
+
 type AppExternalServicesService interface {
 	LocalExternalServices(ctx context.Context) ([]*types.ExternalService, error)
 	RepositoriesCounts(ctx context.Context) (int32, int32, error)
