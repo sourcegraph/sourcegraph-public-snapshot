@@ -74,6 +74,9 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs)
             "KEEP_BROWSER": "true",
             "DEVTOOLS": "true",
             "BROWSER": "chrome",
+
+            # Puppeteer config
+            "DISPLAY": "1",
         }),
         **kwargs
     )
