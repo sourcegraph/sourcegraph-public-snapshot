@@ -37,54 +37,67 @@
       };
 
       # recursiveUpdate is just for recursively merging sets
-      packages = nixpkgs.lib.recursiveUpdate
-        {
-          x86_64-linux.comby =
-            let
-              pkgs = nixpkgs.legacyPackages.x86_64-linux.pkgsMusl;
-              pkgsStatic = nixpkgs.legacyPackages.x86_64-linux.pkgsStatic;
-            in
-            (pkgs.comby.override {
-              sqlite = pkgsStatic.sqlite;
-              zlib = pkgsStatic.zlib.dev;
-              libev = pkgsStatic.libev;
-              gmp = (pkgsStatic.gmp.override {
-                withStatic = true;
-              });
-              ocamlPackages = pkgs.ocamlPackages.overrideScope' (self: super: {
-                ocaml_pcre = super.ocaml_pcre.override {
-                  pcre = pkgsStatic.pcre.dev;
+      packages =
+        let combyBuilder = basePkgsName:
+          let
+            pkgs = nixpkgs.legacyPackages.x86_64-linux.${basePkgsName};
+            pkgsStatic = nixpkgs.legacyPackages.x86_64-linux.pkgsStatic;
+          in
+          (pkgs.comby.override {
+            sqlite = pkgsStatic.sqlite;
+            zlib = pkgsStatic.zlib.dev;
+            libev = pkgsStatic.libev;
+            gmp = (pkgsStatic.gmp.override {
+              withStatic = true;
+            });
+            ocamlPackages = pkgs.ocamlPackages.overrideScope' (self: super: {
+              ocaml_pcre = super.ocaml_pcre.override {
+                pcre = pkgsStatic.pcre.dev;
+              };
+              ssl = super.ssl.override {
+                openssl = pkgs.openssl.override {
+                  static = true;
                 };
-                ssl = super.ssl.override {
-                  openssl = pkgs.openssl.override {
-                    static = true;
-                  };
-                };
+              };
+            });
+          });
+        in
+        nixpkgs.lib.recursiveUpdate
+          {
+            x86_64-linux.comby-musl =
+              (combyBuilder "pkgsMusl").overrideAttrs (oldAttrs: {
+                postFixup = ''
+                  patchelf \
+                    --set-interpreter /lib/ld-musl-x86_64.so.1 \
+                    $out/bin/comby
+                '';
               });
-            }).overrideAttrs (oldAttrs: {
+            x86_64-linux.comby-glibc =
+              (combyBuilder "pkgs").overrideAttrs (oldAttrs: {
+                postFixup = ''
+                  patchelf \
+                    --set-rpath /usr/lib \
+                    --set-interpreter /lib64/ld-linux-x86-64.so.2 \
+                    $out/bin/comby
+                '';
+              });
+            x86_64-linux.p4-fusion-portable = self.packages.x86_64-linux.p4-fusion.overrideAttrs (oldAttrs: {
+              # patch the ELF interpreter for non-nix(os) distros.
               postFixup = ''
                 patchelf \
-                  --set-interpreter /lib/ld-musl-x86_64.so.1 \
-                  $out/bin/comby
+                  --set-interpreter /lib64/ld-linux-x86-64.so.2 \
+                  $out/bin/p4-fusion
               '';
             });
-          x86_64-linux.p4-fusion-portable = self.packages.x86_64-linux.p4-fusion.overrideAttrs (oldAttrs: {
-            # patch the ELF interpreter for non-nix(os) distros.
-            postFixup = ''
-              patchelf \
-                --set-interpreter /lib64/ld-linux-x86-64.so.2 \
-                $out/bin/p4-fusion
-            '';
-          });
-        }
-        (
-          nixpkgs.lib.genAttrs [ "x86_64-linux" "x86_64-darwin" "aarch64-darwin" ] (system:
-            let pkgs = import nixpkgs { inherit system; };
-            in
-            {
-              p4-fusion = pkgs.callPackage ./dev/nix/p4-fusion.nix { };
-            }
-          )
-        );
+          }
+          (
+            nixpkgs.lib.genAttrs [ "x86_64-linux" "x86_64-darwin" "aarch64-darwin" ] (system:
+              let pkgs = import nixpkgs { inherit system; };
+              in
+              {
+                p4-fusion = pkgs.callPackage ./dev/nix/p4-fusion.nix { };
+              }
+            )
+          );
     };
 }
