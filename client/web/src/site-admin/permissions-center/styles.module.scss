@@ -2,7 +2,8 @@
     max-width: 16rem;
 
     svg {
-        min-width: 1rem;
+        min-width: 1.5rem;
+        min-height: 1.5rem;
     }
 }
 
@@ -76,4 +77,9 @@
         column-gap: 1rem;
         row-gap: 0.5rem;
     }
+}
+
+.user-avatar {
+    max-width: 1.5rem;
+    max-height: 1.5rem;
 }
