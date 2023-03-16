@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { mdiChevronUp, mdiChevronDown, mdiDelete } from '@mdi/js'
+import { mdiChevronUp, mdiChevronDown, mdiDelete, mdiLock } from '@mdi/js'
 import { noop } from 'lodash'
 import { animated, useSpring } from 'react-spring'
 
@@ -45,7 +45,7 @@ interface RoleNodePermissionsFormValues {
 
 const SUCCESS_ALERT_BANNER_DURATION_S = 4
 
-export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch, allPermissions }) => {
+const ModifiableRoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch, allPermissions }) => {
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState<boolean>(false)
     const [showAlert, setShowAlert] = useState<boolean>(false)
@@ -157,14 +157,7 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch
                             <div className="d-flex align-items-center">
                                 <H4 className="m-0">{roleName}</H4>
 
-                                {node.system && (
-                                    <Tooltip
-                                        content="System roles are predefined by Sourcegraph. They cannot be deleted."
-                                        placement="topStart"
-                                    >
-                                        <Text className={styles.roleNodeSystemText}>System</Text>
-                                    </Tooltip>
-                                )}
+                                {node.system && <SystemLabel />}
                             </div>
                             {error && <ErrorAlert className="mt-2" error={error} />}
                         </header>
@@ -213,6 +206,77 @@ export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch
         </li>
     )
 }
+
+const LockedRoleNode: React.FunctionComponent<Pick<RoleNodeProps, 'node' | 'allPermissions'>> = ({
+    node,
+    allPermissions,
+}) => {
+    const [isExpanded, setIsExpanded] = useState<boolean>(false)
+    const handleOpenChange = (isOpen: boolean): void => {
+        setIsExpanded(isOpen)
+    }
+
+    const roleName = useMemo(() => (node.system ? prettifySystemRole(node.name) : node.name), [node.system, node.name])
+
+    const isChecked = useCallback(
+        (value: string) => node.permissions.nodes.some(permission => permission.id === value),
+        [node.permissions.nodes]
+    )
+
+    return (
+        <li className={styles.roleNode}>
+            <Collapse isOpen={isExpanded} onOpenChange={handleOpenChange}>
+                <div className="d-flex">
+                    <CollapseHeader
+                        as={Button}
+                        className={styles.roleNodeCollapsibleHeader}
+                        aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
+                        outline={true}
+                        variant="icon"
+                    >
+                        <Icon
+                            data-caret={true}
+                            className="mr-1 bg-red"
+                            aria-hidden={true}
+                            svgPath={isExpanded ? mdiChevronUp : mdiChevronDown}
+                        />
+
+                        <header className="d-flex flex-column justify-content-center mr-2">
+                            <div className="d-flex align-items-center">
+                                <H4 className="m-0">{roleName}</H4>
+                                <SystemLabel />
+                                <Tooltip content="This role is locked. Its permissions are managed by Sourcegraph and cannot be modified.">
+                                    <Icon
+                                        className="flex-shrink-0 text-muted"
+                                        aria-label="Locked role"
+                                        svgPath={mdiLock}
+                                    />
+                                </Tooltip>
+                            </div>
+                        </header>
+                    </CollapseHeader>
+                </div>
+
+                <CollapsePanel className={styles.roleNodePermissions} forcedRender={false}>
+                    <PermissionsList allPermissions={allPermissions} isChecked={isChecked} disabled={true} />
+                </CollapsePanel>
+            </Collapse>
+        </li>
+    )
+}
+
+export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch, allPermissions }) =>
+    node.system && node.name === 'SITE_ADMINISTRATOR' ? (
+        <LockedRoleNode node={node} allPermissions={allPermissions} />
+    ) : (
+        <ModifiableRoleNode node={node} refetch={refetch} allPermissions={allPermissions} />
+    )
+
+const SystemLabel: React.FunctionComponent = () => (
+    <Tooltip content="System roles are predefined by Sourcegraph. They cannot be deleted.">
+        <Text className={styles.roleNodeSystemText}>System</Text>
+    </Tooltip>
+)
 
 // The Alert banner has a 1rem bottom margin
 const ONE_REM_IN_PX = convertREMToPX(1)
