@@ -1,14 +1,14 @@
 import path from 'path'
 
-import { ContextMessage, Message, TranscriptChunk } from '@sourcegraph/cody-common'
-
 import { Editor } from '../editor'
-import { Embeddings, EmbeddingSearchResult } from '../embeddings'
+import { Embeddings } from '../embeddings'
 import { IntentDetector } from '../intent-detector'
 import { KeywordContextFetcher } from '../keyword-context'
+import { Message } from '../sourcegraph-api'
+import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
+import { isError } from '../utils'
 
 import { ContextSearchOptions } from './context-search-options'
-import { renderMarkdown } from './markdown'
 import { getRecipe } from './recipes/index'
 
 const PROMPT_PREAMBLE_LENGTH = 230
@@ -20,6 +20,23 @@ const MAX_RECIPE_SURROUNDING_TOKENS = 500
 const MAX_AVAILABLE_PROMPT_LENGTH = MAX_PROMPT_TOKEN_LENGTH - SOLUTION_TOKEN_LENGTH
 export const MAX_CURRENT_FILE_TOKENS = 4000
 const CHARS_PER_TOKEN = 4
+
+export interface ContextMessage extends Message {
+    filename?: string
+}
+
+/**
+ * Each TranscriptChunk corresponds to a sequence of messages that should be considered as a unit during prompt construction.
+ * - Typically, `actual` has length 1 and represents the actual message incorporated into the prompt.
+ * - `context` is messages that include code snippets fetched as contextual knowledge.
+ *    These should not be displayed in the chat GUI.
+ * - `display` are messages that should replace `actual` in the chat GUI.
+ */
+export interface TranscriptChunk {
+    actual: Message[]
+    context: ContextMessage[]
+    display?: Message[]
+}
 
 export class Transcript {
     private transcript: TranscriptChunk[] = []
@@ -49,7 +66,7 @@ export class Transcript {
             if (chunk.actual.length === 0) {
                 continue
             }
-            if (chunk.actual[chunk.actual.length - 1].speaker === 'bot') {
+            if (chunk.actual[chunk.actual.length - 1].speaker === 'assistant') {
                 continue
             }
             return chunk.context.flatMap(msg => msg.filename || [])
@@ -58,7 +75,13 @@ export class Transcript {
     }
 
     private async getCodebaseContextMessages(query: string): Promise<ContextMessage[]> {
-        const { needsCurrentFileContext, needsCodebaseContext } = await this.intentDetector.detect(query)
+        const intentOrError = await this.intentDetector.detect(query)
+        if (isError(intentOrError)) {
+            console.error('Error detecting message intent:', intentOrError)
+            return []
+        }
+
+        const { needsCodebaseContext, needsCurrentFileContext } = intentOrError
         if (needsCurrentFileContext) {
             const activeTextEditor = this.editor.getActiveTextEditor()
             if (!activeTextEditor) {
@@ -68,11 +91,11 @@ export class Transcript {
             return [
                 {
                     filename: path.basename(activeTextEditor.filePath),
-                    speaker: 'you',
+                    speaker: 'human',
                     text: `Here is the current open file to add to your knowledge base:\n\`\`\`\n${truncatedDocumentText}\n\`\`\``,
                 },
                 {
-                    speaker: 'bot',
+                    speaker: 'assistant',
                     text: 'Ok, added this current open file to my knowledge base.',
                 },
             ]
@@ -88,7 +111,7 @@ export class Transcript {
         const fetchEmbeddingsMessages = (): Promise<Message[]> =>
             this.getEmbeddingsContextMessages(query, {
                 numCodeResults: 8,
-                numMarkdownResults: 2,
+                numTextResults: 2,
             })
 
         switch (this.contextType) {
@@ -126,7 +149,7 @@ export class Transcript {
             console.log('no embeddings client for current codebase')
             return []
         }
-        if (!(await this.embeddings.queryNeedsAdditionalContext(query))) {
+        if (!(await this.embeddings.isContextRequiredForQuery(query))) {
             console.log('embeddings: no context needed')
             return []
         }
@@ -135,25 +158,26 @@ export class Transcript {
         const embeddingsSearchResults = await this.embeddings.search(
             query,
             options.numCodeResults,
-            options.numMarkdownResults
+            options.numTextResults
         )
+        if (isError(embeddingsSearchResults)) {
+            console.error('Error retrieving embeddings:', embeddingsSearchResults)
+            return []
+        }
 
-        const filterFn = options.filterResults ? options.filterResults : () => true
-        const combinedResults = embeddingsSearchResults.codeResults
-            .concat(embeddingsSearchResults.markdownResults)
-            .filter(filterFn)
+        const combinedResults = embeddingsSearchResults.codeResults.concat(embeddingsSearchResults.textResults)
 
         return groupResultsByFile(combinedResults)
             .reverse() // Reverse results so that they appear in ascending order of importance (least -> most).
             .flatMap(groupedResults => {
-                const contextTemplateFn = isMarkdownFile(groupedResults.filePath)
+                const contextTemplateFn = isMarkdownFile(groupedResults.fileName)
                     ? populateMarkdownContextTemplate
                     : populateCodeContextTemplate
 
                 return groupedResults.results.flatMap<Message>(text =>
                     getContextMessageWithResponse(
-                        contextTemplateFn(text, groupedResults.filePath),
-                        groupedResults.filePath
+                        contextTemplateFn(text, groupedResults.fileName),
+                        groupedResults.fileName
                     )
                 )
             })
@@ -165,18 +189,18 @@ export class Transcript {
 
     // addHumanMessage adds a human message to the transcript, along the way computing any context
     // messages that should be incorporated into the prompt.
-    // This should only be invoked with the last message was from 'bot'.
+    // This should only be invoked with the last message was from 'assistant'.
     // Returns the prompt that should be sent to fetch the bot response (same as calling `getPrompt`)
     public async addHumanMessage(humanInput: string): Promise<Message[]> {
         const actualMessages = this.getUnderlyingMessages()
-        if (actualMessages.length > 0 && actualMessages[actualMessages.length - 1].speaker === 'you') {
+        if (actualMessages.length > 0 && actualMessages[actualMessages.length - 1].speaker === 'human') {
             throw new Error('attempt to add human message when last message was human')
         }
 
         const truncatedHumanInput = truncateText(humanInput, MAX_HUMAN_INPUT_TOKENS)
         const contextMessages = await this.getCodebaseContextMessages(humanInput)
         const humanMessage: Message = {
-            speaker: 'you',
+            speaker: 'human',
             text: contextMessages.length > 0 ? humanInput : truncatedHumanInput,
         }
 
@@ -190,14 +214,14 @@ export class Transcript {
 
     public addBotMessage(text: string): void {
         this.addMessage({
-            actual: [{ speaker: 'bot', text }],
+            actual: [{ speaker: 'assistant', text }],
             context: [],
         })
     }
 
     // getPrompt takes the current transcript (both hidden and displayed) and generates a prompt
     // to send to the server to generate the next bot message. This should only be invoked
-    // when the last message in the transcript was from 'you'.
+    // when the last message in the transcript was from 'human'.
     //
     // The prompt construction algorithm is as follows:
     // - Iterate through chunks with most recent first
@@ -225,7 +249,7 @@ export class Transcript {
             if (i === 0) {
                 if (reversePrompt.length === 0) {
                     throw new Error('last message size exceeded token window')
-                } else if (reversePrompt[0].speaker !== 'you') {
+                } else if (reversePrompt[0].speaker !== 'human') {
                     throw new Error('last message was not human')
                 }
             }
@@ -249,7 +273,7 @@ export class Transcript {
 
         const prompt = [...reversePrompt].reverse()
         if (botResponsePrefix) {
-            prompt.push({ speaker: 'bot', text: botResponsePrefix })
+            prompt.push({ speaker: 'assistant', text: botResponsePrefix })
         }
         return prompt
     }
@@ -277,7 +301,7 @@ export class Transcript {
         const { displayText, contextMessages, promptMessage, botResponsePrefix } = prompt
 
         this.addMessage({
-            display: [{ speaker: 'you', text: renderMarkdown(displayText) }],
+            display: [{ speaker: 'human', text: displayText }],
             actual: [promptMessage],
             context: contextMessages,
         })
@@ -291,6 +315,14 @@ export class Transcript {
 
     public reset(): void {
         this.transcript = []
+    }
+
+    public setEmbeddings(embeddings: Embeddings | null): void {
+        this.embeddings = embeddings
+    }
+
+    public setIntentDetector(intentDetector: IntentDetector): void {
+        this.intentDetector = intentDetector
     }
 }
 
@@ -308,42 +340,42 @@ function estimateTokensUsage(message: Message): number {
     return Math.round(message.text.length / CHARS_PER_TOKEN)
 }
 
-function groupResultsByFile(results: EmbeddingSearchResult[]): { filePath: string; results: string[] }[] {
+function groupResultsByFile(results: EmbeddingsSearchResult[]): { fileName: string; results: string[] }[] {
     const originalFileOrder: string[] = []
     for (const result of results) {
-        if (!originalFileOrder.includes(result.filePath)) {
-            originalFileOrder.push(result.filePath)
+        if (!originalFileOrder.includes(result.fileName)) {
+            originalFileOrder.push(result.fileName)
         }
     }
 
-    const resultsGroupedByFile = new Map<string, EmbeddingSearchResult[]>()
+    const resultsGroupedByFile = new Map<string, EmbeddingsSearchResult[]>()
     for (const result of results) {
-        const results = resultsGroupedByFile.get(result.filePath)
+        const results = resultsGroupedByFile.get(result.fileName)
         if (results === undefined) {
-            resultsGroupedByFile.set(result.filePath, [result])
+            resultsGroupedByFile.set(result.fileName, [result])
         } else {
-            resultsGroupedByFile.set(result.filePath, results.concat([result]))
+            resultsGroupedByFile.set(result.fileName, results.concat([result]))
         }
     }
 
-    return originalFileOrder.map(filePath => ({
-        filePath,
-        results: mergeConsecutiveResults(resultsGroupedByFile.get(filePath)!),
+    return originalFileOrder.map(fileName => ({
+        fileName,
+        results: mergeConsecutiveResults(resultsGroupedByFile.get(fileName)!),
     }))
 }
 
-function mergeConsecutiveResults(results: EmbeddingSearchResult[]): string[] {
-    const sortedResults = results.sort((a, b) => a.start - b.start)
-    const mergedResults = [results[0].text]
+function mergeConsecutiveResults(results: EmbeddingsSearchResult[]): string[] {
+    const sortedResults = results.sort((a, b) => a.startLine - b.startLine)
+    const mergedResults = [results[0].content]
 
     for (let i = 1; i < sortedResults.length; i++) {
         const result = sortedResults[i]
         const previousResult = sortedResults[i - 1]
 
-        if (result.start === previousResult.end) {
-            mergedResults[mergedResults.length - 1] = mergedResults[mergedResults.length - 1] + result.text
+        if (result.startLine === previousResult.endLine) {
+            mergedResults[mergedResults.length - 1] = mergedResults[mergedResults.length - 1] + result.content
         } else {
-            mergedResults.push(result.text)
+            mergedResults.push(result.content)
         }
     }
 
@@ -375,7 +407,7 @@ export function populateMarkdownContextTemplate(md: string, filePath: string): s
 
 export function getContextMessageWithResponse(text: string, filename?: string): ContextMessage[] {
     return [
-        { speaker: 'you', text, filename },
-        { speaker: 'bot', text: 'Ok.' },
+        { speaker: 'human', text, filename },
+        { speaker: 'assistant', text: 'Ok.' },
     ]
 }
