@@ -164,13 +164,19 @@ const PackageList: React.FunctionComponent<PackageListProps> = ({ blockState, qu
             <Label className="mb-2">Summary</Label>
             <div className="d-flex justify-content-between text-muted">
                 <span>
-                    {totalCount === 1 ? (
-                        <>{totalCount} package currently matches</>
+                    {totalCount === 0 ? (
+                        <>No package currently matches this filter</>
                     ) : (
-                        <>{totalCount} packages currently match</>
-                    )}{' '}
-                    this filter
-                    {nodes.length < totalCount && <> (showing only {nodes.length})</>}
+                        <>
+                            {totalCount === 1 ? (
+                                <>{totalCount} package currently matches</>
+                            ) : (
+                                <>{totalCount} packages currently match</>
+                            )}{' '}
+                            this filter
+                            {nodes.length < totalCount && <> (showing only {nodes.length})</>}
+                        </>
+                    )}
                 </span>
                 {nodes.length < totalCount && (
                     <Button variant="link" className="p-0 mr-3" onClick={() => setPackageFetchLimit(nextFetchLimit)}>
