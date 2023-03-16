@@ -2,10 +2,13 @@ package codeintel
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	uploadsresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 )
 
@@ -36,10 +39,12 @@ func newResolver(
 func (r *Resolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 	return map[string]gql.NodeByIDFunc{
 		"LSIFUpload": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
-			return r.LSIFUploadByID(ctx, id)
-		},
-		"LSIFIndex": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
-			return r.LSIFIndexByID(ctx, id)
+			uploadID, err := uploadsresolvers.UnmarshalLSIFUploadGQLID(id)
+			if err != nil {
+				return nil, err
+			}
+
+			return r.autoIndexingRootResolver.PreciseIndexByID(ctx, relay.MarshalID("PreciseIndex", fmt.Sprintf("U:%d", uploadID)))
 		},
 		"CodeIntelligenceConfigurationPolicy": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
 			return r.ConfigurationPolicyByID(ctx, id)
