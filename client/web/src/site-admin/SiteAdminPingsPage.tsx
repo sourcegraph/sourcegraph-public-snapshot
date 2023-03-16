@@ -417,10 +417,10 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                         </ul>
                     </li>
                     <li>
-                        Sourcegraph Own usage data.
+                        Sourcegraph Own usage data
                         <ul>
                             <li>
-                                Whether the <pre>search-ownership</pre> feature flag is turned on.
+                                Whether the search-ownership feature flag is turned on.
                             </li>
                             <li>
                                 Number and ratio of repositories for which ownership data is available via CODEOWNERS
@@ -429,10 +429,10 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                             <li>Aggregate monthly weekly and daily active users for the following activities:</li>
                             <ul>
                                 <li>
-                                    Narrowing search results by owner using <pre>file:has.owners</pre> predicate.
+                                    Narrowing search results by owner using file:has.owner() predicate.
                                 </li>
                                 <li>
-                                    Selecting owner search result through <pre>select:file.owners</pre>.
+                                    Selecting owner search result through select:file.owners.
                                 </li>
                                 <li>Displaying ownership panel in file view.</li>
                             </ul>
