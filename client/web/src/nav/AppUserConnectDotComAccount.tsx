@@ -29,7 +29,7 @@ export const AppUserConnectDotComAccount: React.FC = () => {
         <MenuLink as={Link} to="#">
             <LoadingSpinner />
         </MenuLink>
-    ) : isAccountConnected ? (
+    ) : !isAccountConnected ? (
         <MenuLink
             as={Link}
             to={`https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=APP&destination=${destination}`}
