@@ -18,5 +18,5 @@ func TestIsKubernetes(t *testing.T) {
 	assert.True(t, config.IsKubernetes())
 
 	os.Unsetenv("KUBERNETES_SERVICE_HOST")
-	assert.True(t, config.IsKubernetes())
+	assert.False(t, config.IsKubernetes())
 }

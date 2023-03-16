@@ -104,13 +104,16 @@ func TestKubernetesRunner_Run(t *testing.T) {
 				})
 			},
 			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
-				require.Len(t, actions, 2)
+				require.Len(t, actions, 3)
 
 				assert.Equal(t, "create", actions[0].GetVerb())
 				assert.Equal(t, "jobs", actions[0].GetResource().Resource)
 
 				assert.Equal(t, "get", actions[1].GetVerb())
 				assert.Equal(t, "jobs", actions[1].GetResource().Resource)
+
+				assert.Equal(t, "delete", actions[2].GetVerb())
+				assert.Equal(t, "jobs", actions[2].GetResource().Resource)
 			},
 			expectedErr: errors.New("waiting for job to complete: retrieving job: failed"),
 		},
