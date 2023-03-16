@@ -33,6 +33,7 @@ go_library(
 
 go_test(
     name = "jscontext_test",
+    timeout = "short",
     srcs = ["jscontext_test.go"],
     embed = [":jscontext"],
 )

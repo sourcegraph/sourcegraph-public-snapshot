@@ -18,20 +18,20 @@ func TestPythonPackagesSource_ListRepos(t *testing.T) {
 		{
 			Scheme: dependencies.PythonPackagesScheme,
 			Name:   "requests",
-			Versions: []string{
-				"2.27.1", // test deduplication with version from config
-				"2.27.2", // test multiple versions of the same module
+			Versions: []dependencies.MinimalPackageRepoRefVersion{
+				{Version: "2.27.1"}, // test deduplication with version from config
+				{Version: "2.27.2"}, // test multiple versions of the same module
 			},
 		},
 		{
 			Scheme:   dependencies.PythonPackagesScheme,
 			Name:     "numpy",
-			Versions: []string{"1.22.3"},
+			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: "1.22.3"}},
 		},
 		{
 			Scheme:   dependencies.PythonPackagesScheme,
 			Name:     "lofi",
-			Versions: []string{"foobar"}, // test that we create a repo for this package even if it's missing.
+			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: "foobar"}}, // test that we create a repo for this package even if it's missing.
 		},
 	})
 

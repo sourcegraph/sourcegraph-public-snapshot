@@ -40,6 +40,7 @@ go_library(
 
 go_test(
     name = "api_test",
+    timeout = "short",
     srcs = [
         "handler_test.go",
         "mocks_test.go",
@@ -56,6 +57,7 @@ go_test(
         "//internal/diskcache",
         "//internal/endpoint",
         "//internal/gitserver/gitdomain",
+        "//internal/grpc/defaults",
         "//internal/httpcli",
         "//internal/observation",
         "//internal/search",
@@ -66,6 +68,7 @@ go_test(
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",
         "@com_github_sourcegraph_go_ctags//:go-ctags",
+        "@com_github_sourcegraph_log//logtest",
         "@org_golang_x_sync//semaphore",
     ],
 )

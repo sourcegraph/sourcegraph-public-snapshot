@@ -17,6 +17,7 @@ go_library(
 
 go_test(
     name = "gitolite_test",
+    timeout = "short",
     srcs = ["repos_test.go"],
     embed = [":gitolite"],
     deps = [

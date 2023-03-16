@@ -128,6 +128,7 @@ export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInp
     isSourcegraphDotCom,
     submitSearch,
     selectedSearchContextSpec,
+    visualMode,
     ...inputProps
 }) => {
     const { recentSearches } = useRecentSearches()
@@ -215,6 +216,8 @@ export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInp
             placeholder="Search for code or files..."
             suggestionSource={suggestionSource}
             extensions={extensions}
+            visualMode={visualMode}
+            className={inputProps.className}
         >
             {children}
         </CodeMirrorQueryInputWrapper>

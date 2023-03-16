@@ -60,11 +60,13 @@ go_library(
         "@com_github_stretchr_testify//require",
         "@org_golang_google_protobuf//proto",
         "@org_golang_x_exp//maps",
+        "@org_golang_x_exp//slices",
     ],
 )
 
 go_test(
     name = "database_test",
+    timeout = "long",
     srcs = [
         "authz_test.go",
         "code_monitor_action_jobs_test.go",
@@ -97,6 +99,7 @@ go_test(
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
+        "//internal/collections",
         "//internal/conf",
         "//internal/database",
         "//internal/database/basestore",
@@ -119,6 +122,7 @@ go_test(
         "@com_github_stretchr_testify//require",
         "@org_golang_google_protobuf//testing/protocmp",
         "@org_golang_x_exp//maps",
+        "@org_golang_x_exp//slices",
         "@org_golang_x_sync//errgroup",
     ],
 )

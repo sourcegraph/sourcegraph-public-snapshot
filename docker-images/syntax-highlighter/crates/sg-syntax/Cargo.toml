@@ -17,7 +17,7 @@ serde_json.workspace = true
 scip.workspace = true
 protobuf.workspace = true
 tree-sitter.workspace = true
-tree-sitter-highlight = "0.20"
+tree-sitter-highlight.workspace = true
 
 base64 = "0.13.0"
 libloading = "0.7"

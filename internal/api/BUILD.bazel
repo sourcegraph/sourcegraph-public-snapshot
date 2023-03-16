@@ -16,6 +16,7 @@ go_library(
 
 go_test(
     name = "api_test",
+    timeout = "short",
     srcs = ["api_test.go"],
     embed = [":api"],
 )

@@ -32,6 +32,7 @@ go_library(
 
 go_test(
     name = "worker_test",
+    timeout = "short",
     srcs = [
         "handler_test.go",
         "mocks_test.go",

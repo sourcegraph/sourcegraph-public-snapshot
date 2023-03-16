@@ -3,7 +3,9 @@
 // Order is important here
 // Don't remove the empty lines between these imports
 
+// prettier-ignore-start
 import '@sourcegraph/shared/src/polyfills'
+// prettier-ignore-end
 
 import '../initBuildInfo'
 import '../monitoring/initMonitoring'

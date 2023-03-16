@@ -1,11 +1,12 @@
 .settings {
-	padding: 1rem;
+    padding: 1rem;
 }
 
 .logout-button {
-	width: 100%;
-	padding: 5px;
-	margin-bottom: 1rem;
-	padding: 0.5rem 0rem;
-	font-weight: bold;
+    justify-content: center;
+    width: 100%;
+    padding: 5px;
+    margin-bottom: 1rem;
+    padding: 0.5rem 0rem;
+    font-weight: bold;
 }

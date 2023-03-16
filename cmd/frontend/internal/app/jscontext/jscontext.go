@@ -226,8 +226,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	siteID := siteid.Get()
 
 	// Show the site init screen?
-	globalState, err := db.GlobalState().Get(ctx)
-	needsSiteInit := err == nil && !globalState.Initialized
+	siteInitialized, err := db.GlobalState().SiteInitialized(ctx)
+	needsSiteInit := err == nil && !siteInitialized
 
 	// Auth providers
 	var authProviders []authProviderInfo

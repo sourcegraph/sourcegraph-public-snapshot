@@ -38,6 +38,7 @@ go_library(
 
 go_test(
     name = "background_test",
+    timeout = "short",
     srcs = [
         "job_cratesyncer_test.go",
         "job_packages_filter_test.go",

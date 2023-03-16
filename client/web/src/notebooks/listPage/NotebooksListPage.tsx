@@ -262,7 +262,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                 </PageHeader>
 
                 {isSourcegraphApp && (
-                    <LimitedAccessBanner dismissableTemporarySettingsKey="app.limitedAccessBannerDismissed.notebooks">
+                    <LimitedAccessBanner storageKey="app.limitedAccessBannerDismissed.notebooks">
                         Notebooks is currently available to try for free while Sourcegraph App is in beta. Pricing and
                         availability for Notebooks is subject to change in future releases.
                     </LimitedAccessBanner>

@@ -71,6 +71,7 @@ go_library(
 
 go_test(
     name = "ui_test",
+    timeout = "short",
     srcs = [
         "handlers_test.go",
         "help_test.go",

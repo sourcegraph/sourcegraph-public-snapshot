@@ -330,7 +330,7 @@ func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Cont
 	}
 
 	// set repo permissions (and user permissions)
-	if err = txs.SetRepoPerms(ctx, int32(repoID), perms); err != nil {
+	if _, err = txs.SetRepoPerms(ctx, int32(repoID), perms, authz.SourceAPI); err != nil {
 		return errors.Wrapf(err, "failed to set user repo permissions for repo %d and users %v", repoID, perms)
 	} else if _, err = txs.SetRepoPermissions(ctx, &p); err != nil {
 		return errors.Wrapf(err, "failed to set repo permissions for repo %d", repoID)

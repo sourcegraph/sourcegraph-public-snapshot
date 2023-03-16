@@ -3,9 +3,6 @@
   "name": "@sourcegraph/browser",
   "version": "1.0.0",
   "license": "Apache-2.0",
-  "engines": {
-    "pnpm": ">1.10.0"
-  },
   "scripts": {
     "storybook": "STORIES_GLOB='client/browser/src/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start",
     "build-inline-extensions": "node scripts/build-inline-extensions",

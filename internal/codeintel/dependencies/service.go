@@ -32,6 +32,7 @@ type (
 	PackageRepoRefVersion        = shared.PackageRepoRefVersion
 	MinimalPackageRepoRef        = shared.MinimalPackageRepoRef
 	MinimialVersionedPackageRepo = shared.MinimialVersionedPackageRepo
+	MinimalPackageRepoRefVersion = shared.MinimalPackageRepoRefVersion
 	PackageRepoFilter            = shared.PackageRepoFilter
 )
 
@@ -173,12 +174,12 @@ func (s *Service) IsPackageRepoVersionAllowed(ctx context.Context, scheme string
 		return false, err
 	}
 
-	allowlist, blocklist, err := packagefilters.NewFilterLists(filters)
+	packageFilters, err := packagefilters.NewFilterLists(filters)
 	if err != nil {
 		return false, err
 	}
 
-	return packagefilters.IsVersionedPackageAllowed(pkg, version, allowlist, blocklist), nil
+	return packagefilters.IsVersionedPackageAllowed(scheme, pkg, version, packageFilters), nil
 }
 
 func (s *Service) IsPackageRepoAllowed(ctx context.Context, scheme string, pkg reposource.PackageName) (allowed bool, err error) {
@@ -196,12 +197,12 @@ func (s *Service) IsPackageRepoAllowed(ctx context.Context, scheme string, pkg r
 		return false, err
 	}
 
-	allowlist, blocklist, err := packagefilters.NewFilterLists(filters)
+	packageFilters, err := packagefilters.NewFilterLists(filters)
 	if err != nil {
 		return false, err
 	}
 
-	return packagefilters.IsPackageAllowed(pkg, allowlist, blocklist), nil
+	return packagefilters.IsPackageAllowed(scheme, pkg, packageFilters), nil
 }
 
 func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter shared.MinimalPackageFilter, limit, after int) (_ []shared.PackageRepoReference, _ int, hasMore bool, err error) {
@@ -252,7 +253,7 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 			lastID = pkgs[len(pkgs)-1].ID
 
 			for _, pkg := range pkgs {
-				if matcher.Matches(string(pkg.Name), "") {
+				if matcher.Matches(pkg.Name, "") {
 					totalCount++
 					if pkg.ID <= after {
 						continue
@@ -287,7 +288,7 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 		pkg := pkgs[0]
 		versions := pkg.Versions[:0]
 		for _, version := range pkg.Versions {
-			if matcher.Matches(string(pkg.Name), version.Version) {
+			if matcher.Matches(pkg.Name, version.Version) {
 				totalCount++
 				if version.ID <= after {
 					continue

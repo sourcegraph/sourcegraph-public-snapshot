@@ -238,6 +238,14 @@ func (s *store) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOpti
 	if opts.WithoutUpload {
 		conds = append(conds, sqlf.Sprintf("NOT EXISTS (SELECT 1 FROM lsif_uploads u2 WHERE u2.associated_index_id = u.id)"))
 	}
+	if len(opts.IndexerNames) != 0 {
+		var indexerConds []*sqlf.Query
+		for _, indexerName := range opts.IndexerNames {
+			indexerConds = append(indexerConds, sqlf.Sprintf("u.indexer ILIKE %s", "%"+indexerName+"%"))
+		}
+
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(indexerConds, " OR ")))
+	}
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
 	if err != nil {
@@ -290,6 +298,14 @@ func (s *store) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOp
 	}
 	if opts.WithoutUpload {
 		conds = append(conds, sqlf.Sprintf("NOT EXISTS (SELECT 1 FROM lsif_uploads u2 WHERE u2.associated_index_id = u.id)"))
+	}
+	if len(opts.IndexerNames) != 0 {
+		var indexerConds []*sqlf.Query
+		for _, indexerName := range opts.IndexerNames {
+			indexerConds = append(indexerConds, sqlf.Sprintf("u.indexer ILIKE %s", "%"+indexerName+"%"))
+		}
+
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(indexerConds, " OR ")))
 	}
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
@@ -805,6 +821,20 @@ func (s *store) GetRecentIndexesSummary(ctx context.Context, repositoryID int) (
 	return groupedIndexes[1:], nil
 }
 
+const sanitizedIndexerExpression = `
+(
+    split_part(
+        split_part(
+            CASE
+                -- Strip sourcegraph/ prefix if it exists
+                WHEN strpos(indexer, 'sourcegraph/') = 1 THEN substr(indexer, length('sourcegraph/') + 1)
+                ELSE indexer
+            END,
+        '@', 1), -- strip off @sha256:...
+    ':', 1) -- strip off tag
+)
+`
+
 const recentIndexesSummaryQuery = `
 WITH ranked_completed AS (
 	SELECT
@@ -812,7 +842,7 @@ WITH ranked_completed AS (
 		u.root,
 		u.indexer,
 		u.finished_at,
-		RANK() OVER (PARTITION BY root, indexer ORDER BY finished_at DESC) AS rank
+		RANK() OVER (PARTITION BY root, ` + sanitizedIndexerExpression + ` ORDER BY finished_at DESC) AS rank
 	FROM lsif_indexes u
 	WHERE
 		u.repository_id = %s AND

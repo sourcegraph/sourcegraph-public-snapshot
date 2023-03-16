@@ -20,6 +20,7 @@ go_library(
 
 go_test(
     name = "http_test",
+    timeout = "short",
     srcs = [
         "client_test.go",
         "decoder_test.go",

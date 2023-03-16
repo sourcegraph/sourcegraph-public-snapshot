@@ -7,10 +7,13 @@ go_library(
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",
+        "//internal/actor",
         "//internal/auth",
         "//internal/database",
+        "//internal/deviceid",
+        "//internal/featureflag",
         "//internal/types",
-        "//lib/errors",
+        "//internal/usagestats",
         "@com_github_sourcegraph_log//:log",
     ],
 )

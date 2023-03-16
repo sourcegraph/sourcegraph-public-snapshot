@@ -39,6 +39,7 @@ go_library(
 
 go_test(
     name = "run_test",
+    timeout = "short",
     srcs = ["validate_test.go"],
     embed = [":run"],
     deps = [

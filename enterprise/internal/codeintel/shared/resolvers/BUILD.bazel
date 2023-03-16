@@ -64,6 +64,7 @@ go_library(
 
 go_test(
     name = "resolvers_test",
+    timeout = "short",
     srcs = [
         "cached_location_resolver_test.go",
         "mocks_test.go",
