@@ -419,6 +419,11 @@ func Test_BackfillWithRepoNotFound(t *testing.T) {
 
 	completedBackfill, err := bfs.LoadBackfill(ctx, backfill.Id)
 	require.NoError(t, err)
+
+	it, err := completedBackfill.repoIterator(ctx, bfs)
+	require.NoError(t, err)
+	require.Equal(t, 0, it.ErroredRepos())
+
 	if completedBackfill.State != BackfillStateCompleted {
 		t.Fatal(errors.New("backfill should be state completed"))
 	}
