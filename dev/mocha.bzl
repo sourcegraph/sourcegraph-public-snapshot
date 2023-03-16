@@ -75,6 +75,5 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs)
             "DEVTOOLS": "true",
             "BROWSER": "chrome",
         }),
-        tags = ["manual"],
         **kwargs
     )
