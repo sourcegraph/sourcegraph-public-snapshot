@@ -1,9 +1,18 @@
 import React, { useState } from 'react'
 
-import { mdiCog, mdiClose, mdiFileDocumentOutline, mdiBrain, mdiDotsHorizontal } from '@mdi/js'
+import {
+    mdiCog,
+    mdiClose,
+    mdiFileDocumentOutline,
+    mdiBrain,
+    mdiDotsHorizontal,
+    mdiDatabaseRefresh,
+    mdiRefresh,
+} from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
+import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import {
     Alert,
@@ -25,8 +34,18 @@ import {
     Menu,
 } from '@sourcegraph/wildcard'
 
-import { SiteAdminRepositoryFields } from '../graphql-operations'
+import {
+    RecloneRepositoryResult,
+    RecloneRepositoryVariables,
+    SettingsAreaRepositoryResult,
+    SettingsAreaRepositoryVariables,
+    SiteAdminRepositoryFields,
+    UpdateMirrorRepositoryResult,
+    UpdateMirrorRepositoryVariables,
+} from '../graphql-operations'
+import { FETCH_SETTINGS_AREA_REPOSITORY_GQL } from '../repo/settings/backend'
 
+import { RECLONE_REPOSITORY_MUTATION, UPDATE_MIRROR_REPOSITORY } from './backend'
 import { ExternalRepositoryIcon } from './components/ExternalRepositoryIcon'
 import { RepoMirrorInfo } from './components/RepoMirrorInfo'
 
@@ -38,25 +57,66 @@ const RepositoryStatusBadge: React.FunctionComponent<{ status: string }> = ({ st
     </Badge>
 )
 
-const parseRepositoryStatus = (repository: SiteAdminRepositoryFields): string => {
+const parseRepositoryStatus = (repo: SiteAdminRepositoryFields): string => {
     let status = 'queued'
-    if (repository.mirrorInfo.cloned && !repository.mirrorInfo.lastError) {
+    if (repo.mirrorInfo.cloned && !repo.mirrorInfo.lastError) {
         status = 'cloned'
-    } else if (repository.mirrorInfo.cloneInProgress) {
+    } else if (repo.mirrorInfo.cloneInProgress) {
         status = 'cloning'
-    } else if (repository.mirrorInfo.lastError) {
+    } else if (repo.mirrorInfo.lastError) {
         status = 'failed'
     }
     return status
 }
 
+const repoClonedAndHealthy = (repo: SiteAdminRepositoryFields): boolean =>
+    repo.mirrorInfo.cloned && !repo.mirrorInfo.lastError && !repo.mirrorInfo.cloneInProgress
+
 interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
+}
+
+const updateNodeFromData = (
+    node: SiteAdminRepositoryFields,
+    data: SettingsAreaRepositoryResult | undefined
+): SiteAdminRepositoryFields => {
+    if (data?.repository && data.repository?.mirrorInfo) {
+        node.mirrorInfo.lastError = data.repository.mirrorInfo.lastError
+        node.mirrorInfo.cloned = data.repository.mirrorInfo.cloned
+        node.mirrorInfo.cloneInProgress = data.repository.mirrorInfo.cloneInProgress
+        node.mirrorInfo.updatedAt = data.repository.mirrorInfo.updatedAt
+        node.mirrorInfo.isCorrupted = data.repository.mirrorInfo.isCorrupted
+        node.mirrorInfo.corruptionLogs = data.repository.mirrorInfo.corruptionLogs
+    }
+    return node
 }
 
 export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
     const navigate = useNavigate()
+    const [recloneRepository] = useMutation<RecloneRepositoryResult, RecloneRepositoryVariables>(
+        RECLONE_REPOSITORY_MUTATION,
+        {
+            variables: { repo: node.id },
+        }
+    )
+    const [updateRepo] = useMutation<UpdateMirrorRepositoryResult, UpdateMirrorRepositoryVariables>(
+        UPDATE_MIRROR_REPOSITORY,
+        { variables: { repository: node.id } }
+    )
+    const { data, refetch } = useQuery<SettingsAreaRepositoryResult, SettingsAreaRepositoryVariables>(
+        FETCH_SETTINGS_AREA_REPOSITORY_GQL,
+        {
+            variables: { name: node.name },
+            pollInterval: 3000,
+        }
+    )
+    const recloneAndFetch = async (): Promise<void> => {
+        await recloneRepository()
+        await refetch()
+        updateNodeFromData(node, data)
+    }
+
     return (
         <li
             className="repository-node list-group-item px-0 py-2"
@@ -80,12 +140,6 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                 </div>
 
                 <div className="col-auto pr-0">
-                    {/* TODO: Enable 'CLONE NOW' to enqueue the repo
-                    {!node.mirrorInfo.cloned && !node.mirrorInfo.cloneInProgress && !node.mirrorInfo.lastError && (
-                        <Button to={node.url} variant="secondary" size="sm" as={Link}>
-                            <Icon aria-hidden={true} svgPath={mdiCloudDownload} /> Clone now
-                        </Button>
-                    )}{' '} */}
                     <Menu>
                         <MenuButton outline={true} aria-label="Repository action">
                             <Icon svgPath={mdiDotsHorizontal} inline={false} aria-hidden={true} />
@@ -93,7 +147,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                         <MenuList position={Position.bottomEnd}>
                             <MenuItem
                                 as={Button}
-                                disabled={window.location.pathname.includes('/setup')}
+                                disabled={window.location.pathname.includes('/setup') || !repoClonedAndHealthy(node)}
                                 onSelect={() => navigate(`/${node.name}/-/code-graph`)}
                                 className="p-2"
                             >
@@ -102,13 +156,25 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                             </MenuItem>
                             <MenuItem
                                 as={Button}
-                                disabled={
-                                    !(
-                                        node.mirrorInfo.cloned &&
-                                        !node.mirrorInfo.lastError &&
-                                        !node.mirrorInfo.cloneInProgress
-                                    )
-                                }
+                                disabled={window.location.pathname.includes('/setup') || !repoClonedAndHealthy(node)}
+                                onSelect={() => updateRepo()}
+                                className="p-2"
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiRefresh} className="mr-1" />
+                                Refetch
+                            </MenuItem>
+                            <MenuItem
+                                as={Button}
+                                disabled={window.location.pathname.includes('/setup') || !repoClonedAndHealthy(node)}
+                                onSelect={() => recloneAndFetch()}
+                                className="p-2"
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiDatabaseRefresh} className="mr-1" />
+                                Reclone
+                            </MenuItem>
+                            <MenuItem
+                                as={Button}
+                                disabled={!repoClonedAndHealthy(node)}
                                 onSelect={() => navigate(`/${node.name}/-/settings`)}
                                 className="p-2"
                             >
