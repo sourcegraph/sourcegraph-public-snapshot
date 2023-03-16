@@ -14,7 +14,8 @@ import (
 )
 
 func init() {
-	println("Hello from the SHELL executor")
+	// We run /bin/sh to execute scripts locally in the shell runtime, so we need
+	// to allow that, too.
 	allowedBinaries = append(allowedBinaries, "/bin/sh")
 }
 
