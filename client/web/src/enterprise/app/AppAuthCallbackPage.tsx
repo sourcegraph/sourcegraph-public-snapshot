@@ -7,7 +7,7 @@ import { Container, ErrorAlert, Text, Link } from '@sourcegraph/wildcard'
 
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { fetchSite, reloadSite, updateSiteConfiguration } from '../../site-admin/backend'
+import { fetchSite, updateSiteConfiguration } from '../../site-admin/backend'
 import { eventLogger } from '../../tracking/eventLogger'
 
 export const AppAuthCallbackPage: React.FC = () => {
@@ -31,8 +31,8 @@ export const AppAuthCallbackPage: React.FC = () => {
         }
         didSaveRef.current = true
 
-        saveAccessToken(code).catch(setError)
-    }, [code, isInvalidUrl])
+        saveAccessToken(code, destination).catch(setError)
+    }, [code, isInvalidUrl, destination])
 
     return (
         <Page>
@@ -60,16 +60,16 @@ const defaultModificationOptions: jsonc.ModificationOptions = {
     },
 }
 
-async function saveAccessToken(accessToken: string): Promise<void> {
+async function saveAccessToken(accessToken: string, destination: string | null): Promise<void> {
     const site = await fetchSite().toPromise()
 
     const content = site.configuration.effectiveContents
-    const id = site.id
+    const id = site.configuration.id
 
-    const modification = jsonc.modify(content, ['app', 'accessToken'], accessToken, defaultModificationOptions)
+    const modification = jsonc.modify(content, ['app', 'dotcomAuthToken'], accessToken, defaultModificationOptions)
     const modifiedContent = jsonc.applyEdits(content, modification)
 
-    // await updateSiteConfiguration(lastConfigurationID, newContents).toPromise<boolean>()
+    await updateSiteConfiguration(id, modifiedContent).toPromise()
 
-    console.log({ content, id, modifiedContent })
+    location.href = destination ?? '/'
 }
