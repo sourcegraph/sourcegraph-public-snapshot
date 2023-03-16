@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log/output"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
@@ -33,7 +34,7 @@ func Main(services []sgservice.Service, config Config) {
 	// Unlike other sourcegraph binaries we expect Sourcegraph App to be run
 	// by a user instead of deployed to a cloud. So adjust the default output
 	// format before initializing log.
-	if _, ok := os.LookupEnv(log.EnvLogFormat); !ok {
+	if _, ok := os.LookupEnv(log.EnvLogFormat); !ok && deploy.IsApp() {
 		os.Setenv(log.EnvLogFormat, string(output.FormatConsole))
 	}
 
