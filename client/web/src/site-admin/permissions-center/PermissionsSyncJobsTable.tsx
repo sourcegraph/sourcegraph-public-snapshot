@@ -14,7 +14,6 @@ import {
     Alert,
     Button,
     Container,
-    H3,
     Icon,
     Input,
     Link,
@@ -26,6 +25,8 @@ import {
     Tooltip,
     useDebounce,
     useLocalStorage,
+    Badge,
+    BadgeVariantType,
 } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
@@ -219,12 +220,28 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 {error && <ConnectionError errors={[error.message]} />}
                 {!connection && <ConnectionLoading />}
                 {connection?.nodes?.length === 0 && <EmptyList />}
+                {showModal && selectedJob && renderModal(selectedJob, () => setShowModal(false))}
                 {!!connection?.nodes?.length && (
                     <Table<PermissionsSyncJob>
                         columns={TableColumns}
                         getRowId={node => node.id}
                         data={connection.nodes}
                         rowClassName={styles.tableRow}
+                        actions={[
+                            {
+                                key: 'Cancel job',
+                                label: 'Cancel job',
+                                icon: mdiCancel,
+                                onClick: handleCancelSyncJob,
+                                condition: ([node]) => node.state === PermissionsSyncJobState.QUEUED,
+                            },
+                            {
+                                key: 'View Job Details',
+                                label: 'View Job Details',
+                                icon: mdiDetails,
+                                onClick: handleViewJobDetails,
+                            },
+                        ]}
                     />
                 )}
                 <PageSwitcher
@@ -366,19 +383,19 @@ const TableColumns: IColumn<PermissionsSyncJob>[] = [
     },
     {
         key: 'Added',
-        header: 'Added',
+        header: { label: 'Added', align: 'right' },
         align: 'right',
         render: (node: PermissionsSyncJob) => <PermissionsSyncJobNumbers job={node} added={true} />,
     },
     {
         key: 'Removed',
-        header: 'Removed',
+        header: { label: 'Removed', align: 'right' },
         align: 'right',
         render: (node: PermissionsSyncJob) => <PermissionsSyncJobNumbers job={node} added={false} />,
     },
     {
         key: 'Total',
-        header: 'Total',
+        header: { label: 'Total', align: 'right' },
         align: 'right',
         render: ({ permissionsFound }: PermissionsSyncJob) => (
             <div className="text-muted text-right mr-2">
@@ -543,22 +560,34 @@ const CodeHostStatesTableColumns: IColumn<CodeHostState>[] = [
     },
 ]
 
+const JobPriorityBadgeVariants: { [priority: string]: BadgeVariantType } = {
+    LOW: 'secondary',
+    MEDIUM: 'primary',
+    HIGH: 'success',
+}
+
 const renderModal = (job: PermissionsSyncJob, hideModal: () => void): React.ReactNode => (
     <Modal onDismiss={hideModal} aria-labelledby="permissions-sync-job-modal">
         {job.cancellationReason && <Alert variant="info">Cancellation reason: {job.cancellationReason}</Alert>}
         {job.failureMessage && <Alert variant="danger">{job.failureMessage}</Alert>}
-        <div className={classNames(styles.modalGrid, 'mb-2')}>
+        <div className={styles.modalGrid}>
+            <Text className="mb-0" weight="bold">
+                Priority
+            </Text>
+            <div>
+                <Badge variant={JobPriorityBadgeVariants[job.priority]}>{job.priority}</Badge>
+            </div>
             <Text className="mb-0" weight="bold">
                 Queued at
             </Text>
-            <Timestamp date={job.queuedAt} preferAbsolute={true} />
+            <Timestamp date={job.queuedAt} />
 
             {job.startedAt && (
                 <>
                     <Text className="mb-0" weight="bold">
                         Started at
                     </Text>
-                    <Timestamp date={job.startedAt} preferAbsolute={true} />
+                    <Timestamp date={job.startedAt} />
                 </>
             )}
 
@@ -567,7 +596,7 @@ const renderModal = (job: PermissionsSyncJob, hideModal: () => void): React.Reac
                     <Text className="mb-0" weight="bold">
                         {JOB_STATE_METADATA_MAPPING[job.state].temporalWording} at
                     </Text>
-                    <Timestamp date={job.finishedAt} preferAbsolute={true} />
+                    <Timestamp date={job.finishedAt} />
                 </>
             )}
 
@@ -583,35 +612,39 @@ const renderModal = (job: PermissionsSyncJob, hideModal: () => void): React.Reac
                     </Text>
                 </>
             )}
-
-            {finalState(job.state) && (
-                <>
+        </div>
+        {finalState(job.state) && (
+            <>
+                <hr className="my-3" />
+                <div className={styles.modalGrid}>
                     <Text className="mb-0" weight="bold">
                         Permissions added
                     </Text>
-                    <Text className="mb-0">{job.permissionsAdded}</Text>
+                    <Text className="text-success mb-0">{job.permissionsAdded}</Text>
 
                     <Text className="mb-0" weight="bold">
                         Permissions removed
                     </Text>
-                    <Text className="mb-0">{job.permissionsRemoved}</Text>
+                    <Text className="text-danger mb-0">{job.permissionsRemoved}</Text>
 
                     <Text className="mb-0" weight="bold">
                         Permissions found
                     </Text>
                     <Text className="mb-0">{job.permissionsFound}</Text>
-                </>
-            )}
-        </div>
+                </div>
+            </>
+        )}
         {job.codeHostStates?.length > 0 && (
-            <div className="mt-4">
-                <H3>Permissions providers information</H3>
-                <Table<CodeHostState>
-                    columns={CodeHostStatesTableColumns}
-                    data={job.codeHostStates}
-                    getRowId={state => state.providerID}
-                />
-            </div>
+            <>
+                <hr className="my-3" />
+                <div>
+                    <Table<CodeHostState>
+                        columns={CodeHostStatesTableColumns}
+                        data={job.codeHostStates}
+                        getRowId={state => state.providerID}
+                    />
+                </div>
+            </>
         )}
     </Modal>
 )
