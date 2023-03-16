@@ -1,22 +1,22 @@
-import fetch from 'node-fetch'
+import { isError } from 'lodash'
 import * as vscode from 'vscode'
 
-import { ChatMetadata, Feedback, Message } from '@sourcegraph/cody-common'
-
-import { SecretStorage } from '../command/secret-storage'
-import { CODY_ACCESS_TOKEN_SECRET, updateConfiguration } from '../configuration'
+import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../command/secret-storage'
+import { updateConfiguration } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { EmbeddingsClient } from '../embeddings/client'
 import { LLMIntentDetector } from '../intent-detector/llm-intent-detector'
 import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
-import { getRgPath } from '../rg'
+import { Message } from '../sourcegraph-api'
+import { SourcegraphCompletionsClient } from '../sourcegraph-api/completions'
+import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { TestSupport } from '../test-support'
 
+import { ChatClient } from './chat'
 import { renderMarkdown } from './markdown'
 import { Transcript } from './prompt'
-import { WSChatClient } from './ws'
 
-export interface ChatMessage extends Omit<Message, 'text'> {
+export interface ChatMessage extends Message {
     displayText: string
     timestamp: string
     contextFiles?: string[]
@@ -30,51 +30,50 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     private transcript: ChatMessage[] = []
     private messageInProgress: ChatMessage | null = null
 
-    private closeConnectionInProgressPromise: Promise<() => void> | null = null
-    private prompt: Transcript
+    private stopCompletionInProgressCallback: (() => void) | null = null
     private webview?: vscode.Webview
 
-    private wsclient: Promise<WSChatClient | null>
-    private embeddingsClient: EmbeddingsClient | null
-    private rgPath = 'rg'
-
-    private mode: 'development' | 'production'
     private tosVersion = 0
 
     constructor(
-        private codebase: string,
         private extensionPath: string,
-        private serverUrl: string,
-        private accessToken: string,
-        private embeddingsEndpoint: string,
-        private contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
-        private debug: boolean,
-        private secretStorage: SecretStorage
+        private prompt: Transcript,
+        private chat: ChatClient,
+        private secretStorage: SecretStorage,
+        private mode: 'development' | 'production'
     ) {
         if (TestSupport.instance) {
             TestSupport.instance.chatViewProvider.set(this)
         }
-
-        this.mode = this.debug ? 'development' : 'production'
-
-        this.findRgPath()
-            .then(path => (this.rgPath = path))
-            .catch(error => console.error(error))
-
-        this.wsclient = this.makeWSChatClient()
-        this.embeddingsClient = this.makeEmbeddingClient()
-
-        this.prompt = new Transcript(
-            this.contextType,
-            this.embeddingsClient,
-            new LLMIntentDetector(this.serverUrl, this.accessToken),
-            new LocalKeywordContextFetcher(this.rgPath),
-            new VSCodeEditor()
-        )
     }
 
-    private async findRgPath(): Promise<string> {
-        return await getRgPath(this.extensionPath)
+    static async create(
+        extensionPath: string,
+        codebase: string,
+        serverEndpoint: string,
+        contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
+        debug: boolean,
+        secretStorage: SecretStorage
+    ): Promise<ChatViewProvider> {
+        const mode = debug ? 'development' : 'production'
+        const accessToken = await getAccessToken(secretStorage)
+        const client = new SourcegraphGraphQLAPIClient(serverEndpoint, accessToken)
+        const completions = new SourcegraphCompletionsClient(serverEndpoint, accessToken, mode)
+
+        const repoId = codebase ? await client.getRepoId(codebase) : null
+        if (isError(repoId)) {
+            console.error('error fetching repo id', repoId)
+        }
+
+        const embeddings = repoId && !isError(repoId) ? new EmbeddingsClient(client, repoId) : null
+        const prompt = new Transcript(
+            contextType,
+            embeddings,
+            new LLMIntentDetector(completions),
+            new LocalKeywordContextFetcher('rg'),
+            new VSCodeEditor()
+        )
+        return new ChatViewProvider(extensionPath, prompt, new ChatClient(completions), secretStorage, mode)
     }
 
     private async onDidReceiveMessage(message: any, webview: vscode.Webview): Promise<void> {
@@ -84,7 +83,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     this.sendTranscript(),
                     webview?.postMessage({
                         type: 'token',
-                        value: await this.getAccessToken(),
+                        value: await getAccessToken(this.secretStorage),
                         mode: this.mode,
                     }),
                 ])
@@ -99,24 +98,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 await vscode.commands.executeCommand('cody.chat.focus')
                 await this.executeRecipe(message.recipe)
                 break
-            case 'feedback':
-                await this.sendFeedback(message.feedback)
-                break
             case 'acceptTOS':
                 await this.acceptTOS(message.version)
                 break
             case 'setToken':
                 await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.value)
-                this.accessToken = message.value as string
                 break
             case 'settings':
-                await updateConfiguration('serverEndpoint', message.serverURL)
+                await updateConfiguration('serverEndpoint', message.serverEndpoint)
                 await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
-                this.serverUrl = message.value as string
-                this.accessToken = message.accessToken as string
-                if (this.accessToken && this.serverUrl) {
-                    this.wsclient = this.makeWSChatClient()
-                }
                 break
             case 'removeToken':
                 await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
@@ -129,114 +119,30 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         }
     }
 
-    private async getAccessToken(): Promise<string> {
-        if (this.accessToken) {
-            return this.accessToken
-        }
-        const token = await this.secretStorage.get(CODY_ACCESS_TOKEN_SECRET)
-        return token || ''
-    }
-
     private async acceptTOS(version: number): Promise<void> {
         this.tosVersion = version
         await vscode.commands.executeCommand('cody.accept-tos', version)
     }
 
-    public async makeWSChatClient(): Promise<WSChatClient | null> {
-        try {
-            if (this.accessToken && this.serverUrl) {
-                const wsclient = await WSChatClient.new(`${this.serverUrl}/chat`, this.accessToken)
-                return wsclient
-            }
-            return null
-        } catch (error) {
-            console.error(error)
-            return null
-        }
-    }
+    private async sendPrompt(promptMessages: Message[], responsePrefix = ''): Promise<void> {
+        this.stopCompletionInProgress()
 
-    private makeEmbeddingClient(): EmbeddingsClient | null {
-        const useEmbeddings = this.contextType === 'embeddings' || this.contextType === 'blended'
-        if (this.codebase && this.accessToken && this.codebase) {
-            const embeddingsClient = new EmbeddingsClient(this.embeddingsEndpoint, this.accessToken, this.codebase)
-
-            if (!embeddingsClient && useEmbeddings) {
-                // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                vscode.window.showInformationMessage(
-                    'Embeddings were not available (is `cody.codebase` set?), falling back to keyword context'
-                )
-                this.contextType = 'keyword'
-                return null
-            }
-
-            return embeddingsClient
-        }
-        return null
-    }
-
-    private async sendFeedback(feedback: Feedback): Promise<void> {
-        feedback.user = 'unknown'
-        feedback.displayMessages = this.prompt.getDisplayMessages()
-        feedback.transcript = this.prompt.getTranscript()
-        feedback.feedbackVersion = 'v0'
-        const uri = new URL('/feedback', this.serverUrl)
-        const resp = await fetch(uri, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: 'Bearer ' + this.accessToken,
-            },
-            body: JSON.stringify(feedback),
-        })
-        await resp.json()
-    }
-
-    private async sendPrompt(promptMessages: Message[], metadata: ChatMetadata, responsePrefix = ''): Promise<void> {
-        const wsclient = await this.wsclient
-        if (!wsclient) {
-            return
-        }
-
-        await this.closeConnectionInProgress()
-        await this.logSendPrompt(promptMessages)
-
-        this.closeConnectionInProgressPromise = wsclient.chat(promptMessages, metadata, {
+        this.stopCompletionInProgressCallback = this.chat.chat(promptMessages, {
             onChange: text => this.onBotMessageChange(this.reformatBotMessage(text, responsePrefix)),
-            onComplete: text => {
-                const botMessage = this.reformatBotMessage(text, responsePrefix)
-                this.logReceivedBotResponse(botMessage).catch(error => console.error(error))
-                this.onBotMessageComplete(botMessage).catch(error => console.error(error))
-            },
+            onComplete: () => this.onBotMessageComplete(),
             onError: err => {
-                void vscode.window.showErrorMessage(err)
+                vscode.window.showErrorMessage(err)
             },
         })
     }
 
-    private async logReceivedBotResponse(response: string): Promise<void> {
-        await this.webview?.postMessage({
-            type: 'debug',
-            message: `RESPONSE (${response.length} characters):\n${response}`,
-        })
-    }
-
-    private async logSendPrompt(promptMessages: Message[]): Promise<void> {
-        const promptStr = promptMessages.map(msg => `${msg.speaker}: ${msg.text}`).join('\n\n')
-        const debugMessage = `REQUEST (${promptStr.length} characters):\n` + promptStr
-        await this.webview?.postMessage({ type: 'debug', message: debugMessage })
-    }
-
-    private async closeConnectionInProgress(): Promise<void> {
-        if (!this.closeConnectionInProgressPromise) {
-            return
-        }
-        const closeConnection = await this.closeConnectionInProgressPromise
-        closeConnection()
-        this.closeConnectionInProgressPromise = null
+    private stopCompletionInProgress(): void {
+        this.stopCompletionInProgressCallback?.()
+        this.stopCompletionInProgressCallback = null
     }
 
     private async onResetChat(): Promise<void> {
-        await this.closeConnectionInProgress()
+        this.stopCompletionInProgress()
         this.messageInProgress = null
         this.transcript = []
         this.prompt.reset()
@@ -245,13 +151,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
     private async onNewMessageSubmitted(text: string): Promise<void> {
         this.messageInProgress = {
-            speaker: 'bot',
+            speaker: 'assistant',
+            text: '',
             displayText: '',
             timestamp: getShortTimestamp(),
         }
 
         this.transcript.push({
-            speaker: 'you',
+            speaker: 'human',
+            text,
             displayText: renderMarkdown(text),
             timestamp: getShortTimestamp(),
         })
@@ -265,7 +173,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         }
         await this.onNewMessageSubmitted(text)
         const prompt = await this.prompt.addHumanMessage(text)
-        await this.sendPrompt(prompt, { displayMessageLength: this.prompt.getDisplayMessages().length, recipeId: null })
+        await this.sendPrompt(prompt)
     }
 
     public async executeRecipe(recipeId: string): Promise<void> {
@@ -285,21 +193,23 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         await this.showTab('ask')
 
         this.messageInProgress = {
-            speaker: 'bot',
+            speaker: 'assistant',
+            text: '',
             displayText: '',
             timestamp: getShortTimestamp(),
         }
         this.transcript.push(
-            ...display.map(({ speaker, text }) => ({ speaker, displayText: text, timestamp: getShortTimestamp() }))
+            ...display.map(({ speaker, text }) => ({
+                speaker,
+                text,
+                displayText: renderMarkdown(text),
+                timestamp: getShortTimestamp(),
+            }))
         )
 
         await this.sendTranscript()
 
-        return this.sendPrompt(
-            prompt,
-            { displayMessageLength: this.prompt.getDisplayMessages().length, recipeId },
-            botResponsePrefix
-        )
+        return this.sendPrompt(prompt, botResponsePrefix)
     }
 
     private reformatBotMessage(text: string, prefix: string): string {
@@ -315,7 +225,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
     private onBotMessageChange(text: string): void {
         this.messageInProgress = {
-            speaker: 'bot',
+            speaker: 'assistant',
+            text,
             displayText: renderMarkdown(text),
             timestamp: getShortTimestamp(),
             contextFiles: this.prompt.getLastContextFiles(),
@@ -324,17 +235,20 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         this.sendTranscript().catch(error => console.error(error))
     }
 
-    private async onBotMessageComplete(text: string): Promise<void> {
-        this.messageInProgress = null
-        this.closeConnectionInProgressPromise = null
-        this.transcript.push({
-            speaker: 'bot',
-            displayText: renderMarkdown(text),
-            timestamp: getShortTimestamp(),
-            contextFiles: this.prompt.getLastContextFiles(),
-        })
+    private async onBotMessageComplete(): Promise<void> {
+        if (this.messageInProgress) {
+            this.transcript.push({
+                speaker: 'assistant',
+                text: this.messageInProgress.text,
+                displayText: this.messageInProgress.displayText,
+                timestamp: getShortTimestamp(),
+                contextFiles: this.prompt.getLastContextFiles(),
+            })
+            this.prompt.addBotMessage(this.messageInProgress.text)
+        }
 
-        this.prompt.addBotMessage(text)
+        this.messageInProgress = null
+        this.stopCompletionInProgressCallback = null
 
         await this.sendTranscript()
     }
@@ -393,16 +307,24 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         return this.transcript
     }
 
-    public async configChangeDetected(changes: string): Promise<void> {
-        switch (changes) {
+    public async onConfigChange(change: string, codebase: string, serverEndpoint: string): Promise<void> {
+        switch (change) {
             case 'token':
-                void vscode.window.showInformationMessage('Token has been updated.')
-                // TODO: Properly reset clients.
-                this.accessToken = await this.getAccessToken()
-                this.wsclient = this.makeWSChatClient()
+            case 'endpoint': {
+                const accessToken = await getAccessToken(this.secretStorage)
+                const client = new SourcegraphGraphQLAPIClient(serverEndpoint, accessToken)
+
+                const repoId = codebase ? await client.getRepoId(codebase) : null
+                const embeddings = repoId && !isError(repoId) ? new EmbeddingsClient(client, repoId) : null
+                this.prompt.setEmbeddings(embeddings)
+
+                const completions = new SourcegraphCompletionsClient(serverEndpoint, accessToken, this.mode)
+                this.prompt.setIntentDetector(new LLMIntentDetector(completions))
+                this.chat = new ChatClient(completions)
+
+                vscode.window.showInformationMessage('Cody configuration has been updated.')
                 break
-            default:
-                await vscode.window.showInformationMessage('Your configurations for Cody have been updated.')
+            }
         }
     }
 }
