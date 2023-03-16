@@ -319,7 +319,7 @@ func (r *autoIndexJobDescriptionResolver) Steps() resolverstubs.IndexStepsResolv
 }
 
 // 🚨 SECURITY: Only site admins may queue auto-index jobs
-func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.QueueAutoIndexJobsForRepoArgs) (_ []resolverstubs.LSIFIndexResolver, err error) {
+func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.QueueAutoIndexJobsForRepoArgs) (_ []resolverstubs.PreciseIndexResolver, err error) {
 	ctx, traceErrs, endObservation := r.operations.queueAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoID", string(args.Repository)),
 	}})
@@ -352,12 +352,24 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 		return nil, err
 	}
 
-	lsifIndexResolvers := make([]resolverstubs.LSIFIndexResolver, 0, len(indexes))
-	for i := range indexes {
-		lsifIndexResolvers = append(lsifIndexResolvers, sharedresolvers.NewIndexResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, r.siteAdminChecker, r.repoStore, indexes[i], r.prefetcherFactory.Create(), r.locationResolverFactory.Create(), traceErrs))
+	prefetcher := r.prefetcherFactory.Create()
+
+	for _, index := range indexes {
+		prefetcher.MarkIndex(index.ID)
 	}
 
-	return lsifIndexResolvers, nil
+	resolvers := make([]resolverstubs.PreciseIndexResolver, 0, len(indexes))
+	for _, index := range indexes {
+		index := index
+		resolver, err := sharedresolvers.NewPreciseIndexResolver(ctx, r.autoindexSvc, r.uploadSvc, r.policySvc, prefetcher, r.siteAdminChecker, r.repoStore, r.locationResolverFactory.Create(), traceErrs, nil, &index)
+		if err != nil {
+			return nil, err
+		}
+
+		resolvers = append(resolvers, resolver)
+	}
+
+	return resolvers, nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence indexing configuration
