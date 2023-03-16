@@ -267,9 +267,7 @@ describe('Search', () => {
                     const editor = await waitForInput(driver, queryInputSelector)
                     await editor.waitForIt()
                     await driver.page.waitForSelector('[data-testid="results-info-bar"]')
-                    expect(await editor.getValue()).toStrictEqual(
-                        name === 'experimental-search-input' ? 'context:global foo' : 'foo'
-                    )
+                    expect(await editor.getValue()).toStrictEqual('foo')
                     // Field value is cleared when navigating to a non search-related page
                     await driver.page.waitForSelector('a[href="/notebooks"]')
                     await driver.page.click('a[href="/notebooks"]')
