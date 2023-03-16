@@ -13,34 +13,34 @@ func TestAppNonce(t *testing.T) {
 
 	// If we forget to generate a nonce, ensure we don't allow in random
 	// nonces.
-	assert.False(AppNonce.Verify(""))
-	assert.False(AppNonce.Verify("horsegraph"))
+	assert.False(appNonce.Verify(""))
+	assert.False(appNonce.Verify("horsegraph"))
 
-	nonce, err := AppNonce.Value()
+	nonce, err := appNonce.Value()
 	assert.NoError(err)
 	assert.NotEmpty(nonce)
 
 	// Still check random nonces don't work after generating
-	assert.False(AppNonce.Verify(""))
-	assert.False(AppNonce.Verify("horsegraph"))
+	assert.False(appNonce.Verify(""))
+	assert.False(appNonce.Verify("horsegraph"))
 
 	// We should get back the same value since we haven't used it yet
 	{
-		nonceAgain, err := AppNonce.Value()
+		nonceAgain, err := appNonce.Value()
 		assert.NoError(err)
 		assert.Equal(nonce, nonceAgain)
 	}
 
 	// success! Now every Verify after this should fail, even with the same
 	// nonce.
-	assert.True(AppNonce.Verify(nonce))
+	assert.True(appNonce.Verify(nonce))
 
-	assert.False(AppNonce.Verify(nonce))
-	assert.False(AppNonce.Verify(""))
-	assert.False(AppNonce.Verify("horsegraph"))
+	assert.False(appNonce.Verify(nonce))
+	assert.False(appNonce.Verify(""))
+	assert.False(appNonce.Verify("horsegraph"))
 
 	// Now if we ask for the current nonce value we should get back a new one
-	nonce2, err := AppNonce.Value()
+	nonce2, err := appNonce.Value()
 	assert.NoError(err)
 	assert.NotEmpty(nonce2)
 	assert.NotEqual(nonce, nonce2)

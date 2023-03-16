@@ -21,19 +21,19 @@ import (
 
 const appUsername = "admin"
 
-// AppNonce stores the nonce used by Sourcegraph App to enable passworldless
+// appNonce stores the nonce used by Sourcegraph App to enable passworldless
 // login from the console.
-var AppNonce Nonce
+var appNonce nonce
 
-// Nonce is a base64 URL encoded string which can only be verified once.
-type Nonce struct {
+// nonce is a base64 URL encoded string which can only be verified once.
+type nonce struct {
 	mu    sync.Mutex
 	value string
 }
 
 // Value returns the current nonce value, or generates one if it has not yet
 // been generated. An error can be returned if generation fails.
-func (n *Nonce) Value() (string, error) {
+func (n *nonce) Value() (string, error) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -52,7 +52,7 @@ func (n *Nonce) Value() (string, error) {
 
 // Verify returns true if clientNonce matches the current nonce value. If
 // matching the nonce value is cleared out to prevent re-use.
-func (n *Nonce) Verify(clientNonce string) bool {
+func (n *nonce) Verify(clientNonce string) bool {
 	// We hold the lock the entire verify period to ensure we do not have
 	// any replay attacks.
 	n.mu.Lock()
@@ -90,7 +90,7 @@ func AppSignInMiddleware(db database.DB, handler func(w http.ResponseWriter, r *
 			return handler(w, r)
 		}
 
-		if !AppNonce.Verify(nonce) {
+		if !appNonce.Verify(nonce) {
 			return errors.New("Authentication failed")
 		}
 
@@ -160,7 +160,7 @@ func appSignInURL() string {
 	if err != nil {
 		return externalURL
 	}
-	nonce, err := AppNonce.Value()
+	nonce, err := appNonce.Value()
 	if err != nil {
 		return externalURL
 	}
