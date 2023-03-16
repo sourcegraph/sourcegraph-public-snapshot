@@ -99,7 +99,7 @@ A lookup of SCIP [Document](https://sourcegraph.com/search?q=context:%40sourcegr
  last_removal_time | timestamp with time zone |           | not null | now()
 Indexes:
     "codeintel_scip_documents_dereference_logs_pkey" PRIMARY KEY, btree (id)
-    "codeintel_scip_documents_dereference_logs_last_removal_time_doc" btree (last_removal_time, document_id)
+    "codeintel_scip_documents_dereference_logs_last_removal_time_des" btree (last_removal_time DESC, document_id)
 
 ```
 

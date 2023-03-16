@@ -16,8 +16,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "priority_test",
+    timeout = "short",
     srcs = [
         "analyzer_test.go",
         "priority_test.go",

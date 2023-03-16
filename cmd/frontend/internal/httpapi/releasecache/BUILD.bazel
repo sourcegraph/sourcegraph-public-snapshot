@@ -24,8 +24,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "releasecache_test",
+    timeout = "short",
     srcs = [
         "cache_test.go",
         "config_test.go",

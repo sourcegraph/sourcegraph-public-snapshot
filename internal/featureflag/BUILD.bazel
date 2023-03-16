@@ -20,8 +20,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "featureflag_test",
+    timeout = "short",
     srcs = [
         "middleware_test.go",
         "mocks_test.go",

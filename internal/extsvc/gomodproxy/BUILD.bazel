@@ -16,8 +16,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "gomodproxy_test",
+    timeout = "short",
     srcs = ["client_test.go"],
     data = glob(["testdata/**"]),
     embed = [":gomodproxy"],

@@ -41,8 +41,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "reposource_test",
+    timeout = "short",
     srcs = [
         "awscodecommit_test.go",
         "bitbucketcloud_test.go",

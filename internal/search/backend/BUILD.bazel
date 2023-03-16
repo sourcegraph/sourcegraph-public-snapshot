@@ -48,8 +48,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "backend_test",
+    timeout = "short",
     srcs = [
         "aggregate_test.go",
         "cached_test.go",

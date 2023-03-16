@@ -26,8 +26,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "keyword_test",
+    timeout = "short",
     srcs = [
         "match_groups_test.go",
         "query_transformer_test.go",
