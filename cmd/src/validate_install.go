@@ -11,7 +11,6 @@ import (
 	"github.com/mattn/go-isatty"
 
 	"github.com/sourcegraph/src-cli/internal/api"
-	"github.com/sourcegraph/src-cli/internal/validate"
 	"github.com/sourcegraph/src-cli/internal/validate/install"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -97,14 +96,7 @@ Environmental variables
 			validationSpec = install.DefaultConfig()
 		}
 
-		envGithubToken := os.Getenv("SRC_GITHUB_TOKEN")
-
-		// will work for now with only GitHub supported but will need to be revisited when other code hosts are supported
-		if envGithubToken == "" {
-			return errors.Newf("%s  failed to read `SRC_GITHUB_TOKEN` environment variable", validate.WarningSign)
-		}
-
-		validationSpec.ExternalService.Config.GitHub.Token = envGithubToken
+		validationSpec.ExternalService.Config.GitHub.Token = os.Getenv("SRC_GITHUB_TOKEN")
 
 		return install.Validate(context.Background(), client, validationSpec)
 	}
