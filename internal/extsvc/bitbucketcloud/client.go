@@ -1,6 +1,7 @@
 package bitbucketcloud
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -230,11 +231,16 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 		return err
 	}
 
+	reqBody, err := io.ReadAll(req.Body)
+	if err != nil {
+		return err
+	}
+	req.Body = io.NopCloser(bytes.NewReader(reqBody))
+
 	// Because we have no external rate limiting data for Bitbucket Cloud, we do an exponential
 	// back-off and retry for requests where we recieve a 429 Too Many Requests.
 	// If we still don't succeed after waiting a total of 5 min, we give up.
 	var resp *http.Response
-	var err error
 	sleepTime := 10 * time.Second
 	for {
 		resp, err = oauthutil.DoRequest(ctx, nil, c.httpClient, req, c.Auth)
@@ -251,6 +257,7 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 		if sleepTime.Seconds() > 160 {
 			break
 		}
+		req.Body = io.NopCloser(bytes.NewReader(reqBody))
 	}
 
 	defer resp.Body.Close()
