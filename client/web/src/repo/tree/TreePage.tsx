@@ -218,11 +218,12 @@ export const TreePage: FC<Props> = ({
             <div className={styles.header}>
                 <PageHeader className="mb-3 test-tree-page-title">
                     <PageHeader.Heading as="h2" styleAs="h1">
-                        <PageHeader.Breadcrumb icon={getIcon()}>
+                        <Icon svgPath={getIcon()} className="mr-2"/>
+                        <span>
                             {displayRepoName(repo?.name || '')}
-                        </PageHeader.Breadcrumb>
+                        </span>
                         {repo?.isFork && (
-                            <Badge variant="outlineSecondary" className="mr-2 mt-2" data-testid="repo-fork-badge">
+                            <Badge variant="outlineSecondary" className="mr-2 mt-2 ml-2" data-testid="repo-fork-badge">
                                 Fork
                             </Badge>
                         )}
