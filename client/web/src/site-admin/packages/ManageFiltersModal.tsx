@@ -44,7 +44,7 @@ export const ManageFiltersModal: React.FunctionComponent<ManageFiltersModalProps
                         headingElement="h2"
                         className={styles.header}
                         actions={
-                            <Button variant="link" onClick={props.onAdd}>
+                            <Button variant="secondary" outline={true} onClick={props.onAdd}>
                                 Add filter
                             </Button>
                         }
