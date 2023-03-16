@@ -191,13 +191,14 @@ type IndexerKeyQueryArgs struct {
 
 type PreciseIndexesQueryArgs struct {
 	ConnectionArgs
-	After        *string
-	Repo         *graphql.ID
-	Query        *string
-	States       *[]string
-	IndexerKey   *string
-	DependencyOf *string
-	DependentOf  *string
+	After          *string
+	Repo           *graphql.ID
+	Query          *string
+	States         *[]string
+	IndexerKey     *string
+	DependencyOf   *string
+	DependentOf    *string
+	IncludeDeleted *bool
 }
 
 type PreciseIndexConnectionResolver interface {
