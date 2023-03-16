@@ -28,16 +28,12 @@ There are two supported installation paths (in Beta):
 - <span class="badge badge-beta">Beta</span> Deploy with Terraform on AWS or GCP. Sourcegraph provides Terraform modules and AMIs for [supported regions](./deploy_executors.md).
 - <span class="badge badge-beta">Beta</span> Deploy [binaries](./deploy_executors_binary.md).
 
-[//]: # (There has been a number of confusion around this. This is a fallback deployment at the moment for customers that need K8s now.)
-[//]: # (There are two supported installation methods &#40;Experimental&#41;:)
+There has been a number of confusion around this. This is a fallback deployment at the moment for customers that need K8s now.
+There are two supported installation methods (Experimental):
+- <span class="badge badge-experimental">Experimental</span> Deploy on [Kubernetes via Helm or manifests](./deploy_executors_kubernetes.md).
+- <span class="badge badge-experimental">Experimental</span> Deploy via [Docker-Compose](./deploy_executors_docker.md).
 
-[//]: # ()
-[//]: # (- <span class="badge badge-experimental">Experimental</span> Deploy on [Kubernetes via Helm or manifests]&#40;./deploy_executors_kubernetes.md&#41;.)
-
-[//]: # (- <span class="badge badge-experimental">Experimental</span> Deploy via [Docker-Compose]&#40;./deploy_executors_docker.md&#41;.)
-
-[//]: # ()
-[//]: # (> NOTE: Note to all Technical Success team members: please reach out to the product and engineering teams in #wg-shipping-executors for any discussion about deployment modes other than the two documented paths above. We expect large customers &#40;Large Enterprise and Strategic&#41; to have complex and heterogenous requirements not addressed by the deployment models currently in Beta out of the box. Reach out in #wg-shipping-executors early in the process to collect requirements and discuss present and future implementation options.)
+> NOTE: Note to all Technical Success team members: please reach out to the product and engineering teams in #wg-shipping-executors for any discussion about deployment modes other than the two documented paths above. We expect large customers (Large Enterprise and Strategic) to have complex and heterogenous requirements not addressed by the deployment models currently in Beta out of the box. Reach out in #wg-shipping-executors early in the process to collect requirements and discuss present and future implementation options.
 
 ## Why use executors?
 
