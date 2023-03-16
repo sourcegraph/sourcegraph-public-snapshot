@@ -98,10 +98,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                                         <div className="bubble-footer-timestamp">{`${
                                             message.speaker === 'assistant' ? 'Cody' : 'Me'
                                         } · ${message.timestamp}`}</div>
-                                        {/* Only show feedback for the last message. */}
-                                        {message.speaker === 'assistant' && index === transcript.length - 1 && (
-                                            <FeedbackContainer index={index} key={`feedback-${index}`} />
-                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -209,49 +205,4 @@ export function getShortTimestamp(): string {
 
 function padTimePart(timePart: number): string {
     return timePart < 10 ? `0${timePart}` : timePart.toString()
-}
-
-interface FeedbackProps {
-    index: number
-}
-
-export const FeedbackContainer: React.FunctionComponent<React.PropsWithChildren<FeedbackProps>> = ({ index }) => {
-    const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
-
-    const onFeedbackSubmit = useCallback(
-        (sentiment: string) => {
-            const feedback = { sentiment }
-            vscodeAPI.postMessage({
-                command: 'feedback',
-                feedback,
-            } as WebviewMessage)
-            setFeedbackSubmitted(true)
-        },
-        [setFeedbackSubmitted, feedbackSubmitted]
-    )
-
-    return (
-        <div className="feedback-container">
-            {feedbackSubmitted ? (
-                <div className="feedback-container-emojis">Feedback submitted</div>
-            ) : (
-                <div className="feedback-container-emojis">
-                    <VSCodeButton
-                        data-feedbacksentiment="good"
-                        onClick={() => onFeedbackSubmit('good')}
-                        className="feedback-button"
-                    >
-                        &#128077;
-                    </VSCodeButton>{' '}
-                    <VSCodeButton
-                        data-feedbacksentiment="bad"
-                        onClick={() => onFeedbackSubmit('bad')}
-                        className="feedback-button"
-                    >
-                        &#128078;
-                    </VSCodeButton>
-                </div>
-            )}
-        </div>
-    )
 }
