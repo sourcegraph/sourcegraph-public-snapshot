@@ -185,6 +185,8 @@ func (svc *Service) uploadFile(ctx context.Context, workingDir, filePath, batchS
 		// Errors passed to pipeWriter.CloseWithError come through here.
 		return err
 	}
+	defer resp.Body.Close()
+
 	// 2xx and 3xx are ok
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
 		p, err := io.ReadAll(resp.Body)

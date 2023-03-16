@@ -3,8 +3,9 @@ package kube
 import (
 	"context"
 
-	"github.com/sourcegraph/src-cli/internal/validate"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/sourcegraph/src-cli/internal/validate"
 )
 
 type ClusterInfo struct {
@@ -36,16 +37,14 @@ func GkeGcePersistentDiskCSIDrivers(ctx context.Context, config *Config) ([]vali
 	return results, nil
 }
 
-/*
-   validateStorageClasses checks for GKE specific storageClasses:
-
-   After the compute engine persistent disk CSI driver is enabled,
-   gke automatically installs the standard-rwo and the premium-rwo
-   storage classes. This function checks that those storage
-   classes exist on the cluster.
-
-   Ref: shorturl.at/dnKV0
-*/
+// validateStorageClasses checks for GKE specific storageClasses:
+//
+// After the compute engine persistent disk CSI driver is enabled,
+// gke automatically installs the standard-rwo and the premium-rwo
+// storage classes. This function checks that those storage
+// classes exist on the cluster.
+//
+// Ref: shorturl.at/dnKV0
 func validateStorageClasses(ctx context.Context, config *Config) ([]validate.Result, error) {
 	var results []validate.Result
 

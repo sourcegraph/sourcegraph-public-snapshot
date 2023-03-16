@@ -2,15 +2,9 @@ package log
 
 import (
 	"io"
-	"os"
 )
 
-type NoopTaskLogger struct {
-	f *os.File
-
-	errored bool
-	keep    bool
-}
+type NoopTaskLogger struct{}
 
 func (tl *NoopTaskLogger) Close() error {
 	return nil

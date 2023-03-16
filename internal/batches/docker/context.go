@@ -67,9 +67,11 @@ func (e *fastCommandTimeoutError) Error() string {
 
 func (*fastCommandTimeoutError) Timeout() bool { return true }
 
+type fastCommandTimeoutKey string
+
 const (
-	fastCommandTimeoutDefault = 5 * time.Second
-	fastCommandTimeoutEnv     = "SRC_DOCKER_FAST_COMMAND_TIMEOUT"
+	fastCommandTimeoutDefault                       = 5 * time.Second
+	fastCommandTimeoutEnv     fastCommandTimeoutKey = "SRC_DOCKER_FAST_COMMAND_TIMEOUT"
 )
 
 var fastCommandTimeoutData = struct {
@@ -83,7 +85,7 @@ var fastCommandTimeoutData = struct {
 
 func fastCommandTimeout() (time.Duration, error) {
 	fastCommandTimeoutData.once.Do(func() {
-		if userTimeout, ok := os.LookupEnv(fastCommandTimeoutEnv); ok {
+		if userTimeout, ok := os.LookupEnv(string(fastCommandTimeoutEnv)); ok {
 			parsed, err := time.ParseDuration(userTimeout)
 			if err != nil {
 				fastCommandTimeoutData.err = errors.Wrapf(err, "parsing timeout duration from environment variable %s", fastCommandTimeoutEnv)

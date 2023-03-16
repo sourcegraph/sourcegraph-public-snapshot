@@ -19,6 +19,12 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 5.0.1
+
+### Fixed
+
+- Fixed `failed to check version returned by Sourcegraph: Invalid Semantic Version` error in Batch Changes when running against an insiders version of Sourcegraph.
+
 ## 5.0.0
 
 ### Added

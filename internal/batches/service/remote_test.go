@@ -14,11 +14,12 @@ import (
 	"strings"
 	"testing"
 
-	mockclient "github.com/sourcegraph/src-cli/internal/api/mock"
-	"github.com/sourcegraph/src-cli/internal/batches/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	mockclient "github.com/sourcegraph/src-cli/internal/api/mock"
+	"github.com/sourcegraph/src-cli/internal/batches/service"
 
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -235,6 +236,7 @@ func TestService_UploadBatchSpecWorkspaceFiles(t *testing.T) {
 
 				resp := &http.Response{
 					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewReader([]byte{})),
 				}
 				entry := &multipartFormEntry{
 					fileName: "hello.txt",
@@ -276,6 +278,7 @@ func TestService_UploadBatchSpecWorkspaceFiles(t *testing.T) {
 
 				resp := &http.Response{
 					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewReader([]byte{})),
 				}
 				entry := &multipartFormEntry{
 					fileName: "hello.txt",
@@ -317,6 +320,7 @@ func TestService_UploadBatchSpecWorkspaceFiles(t *testing.T) {
 
 				resp := &http.Response{
 					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewReader([]byte{})),
 				}
 				helloEntry := &multipartFormEntry{
 					fileName: "hello.txt",
@@ -364,6 +368,7 @@ func TestService_UploadBatchSpecWorkspaceFiles(t *testing.T) {
 
 				resp := &http.Response{
 					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewReader([]byte{})),
 				}
 				helloEntry := &multipartFormEntry{
 					fileName: "hello.txt",
@@ -412,6 +417,7 @@ func TestService_UploadBatchSpecWorkspaceFiles(t *testing.T) {
 
 				resp := &http.Response{
 					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewReader([]byte{})),
 				}
 				entry := &multipartFormEntry{
 					path:     "scripts",
@@ -463,6 +469,7 @@ func TestService_UploadBatchSpecWorkspaceFiles(t *testing.T) {
 
 				resp := &http.Response{
 					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewReader([]byte{})),
 				}
 				helloEntry := &multipartFormEntry{
 					fileName: "hello.txt",
@@ -581,6 +588,7 @@ func TestService_UploadBatchSpecWorkspaceFiles(t *testing.T) {
 
 				resp := &http.Response{
 					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewReader([]byte{})),
 				}
 				entry := &multipartFormEntry{
 					fileName: "hello.txt",
@@ -640,7 +648,7 @@ func writeTempFile(dir string, name string, content string) error {
 }
 
 // 2006-01-02 15:04:05.999999999 -0700 MST
-var modtimeRegex = regexp.MustCompile("^[0-9]{4}-[0-9]{2}-[0-9]{2}\\s[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{1,9} \\+0000 UTC$")
+var modtimeRegex = regexp.MustCompile(`^[0-9]{4}-[0-9]{2}-[0-9]{2}\s[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{1,9} \+0000 UTC$`)
 
 func multipartFormRequestMatcher(entry *multipartFormEntry) func(*http.Request) bool {
 	return func(req *http.Request) bool {

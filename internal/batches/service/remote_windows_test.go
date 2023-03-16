@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"net/http"
@@ -53,6 +54,7 @@ func TestService_UploadBatchSpecWorkspaceFiles_Windows_Path(t *testing.T) {
 
 	resp := &http.Response{
 		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(bytes.NewReader([]byte{})),
 	}
 	entry := &multipartFormEntry{
 		path:     "scripts/another-dir",

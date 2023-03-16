@@ -127,7 +127,7 @@ func (c *Coordinator) buildChangesetSpecs(task *Task, batchSpec *batcheslib.Batc
 		},
 	}
 
-	return batcheslib.BuildChangesetSpecs(input, c.opts.BinaryDiffs)
+	return batcheslib.BuildChangesetSpecs(input, c.opts.BinaryDiffs, nil)
 }
 
 func (c *Coordinator) loadCachedStepResults(ctx context.Context, task *Task, globalEnv []string) error {

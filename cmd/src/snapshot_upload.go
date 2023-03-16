@@ -10,8 +10,8 @@ import (
 	"path"
 
 	"cloud.google.com/go/storage"
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 	"google.golang.org/api/option"
 
@@ -113,7 +113,7 @@ BUCKET
 			progress := out.Progress(progressBars, nil)
 			progress.WriteLine(output.Emoji(output.EmojiHourglass, "Starting uploads..."))
 			bucket := c.Bucket(*bucketName)
-			g := group.New().WithErrors().WithContext(ctx)
+			g := pool.New().WithErrors().WithContext(ctx)
 			for i, u := range uploads {
 				i := i
 				u := u
