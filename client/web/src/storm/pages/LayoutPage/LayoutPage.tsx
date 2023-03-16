@@ -219,9 +219,18 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     <AppRouterContainer>
                         <Outlet />
                     </AppRouterContainer>
+
+                    {/**
+                     * The portal root is inside the suspense boundary so that it is hidden
+                     * when we navigate to the lazily loaded routes or other actions which trigger
+                     * the Suspense boundary to show the fallback UI. Existing children are not unmounted
+                     * until the promise is resolved.
+                     *
+                     * See: https://github.com/facebook/react/pull/15861
+                     */}
+                    <div id="references-panel-react-portal" />
                 </Suspense>
             </ErrorBoundary>
-            <div id="references-panel-react-portal" />
             {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
                 <NotepadContainer userId={props.authenticatedUser?.id} />
             )}
