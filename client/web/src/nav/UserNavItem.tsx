@@ -30,6 +30,8 @@ import { AuthenticatedUser } from '../auth'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
 
+import { AppUserConnectDotComAccount } from './AppUserConnectDotComAccount'
+
 import styles from './UserNavItem.module.scss'
 
 const MAX_VISIBLE_ORGS = 5
@@ -142,6 +144,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     Setup wizard
                                 </MenuLink>
                             )}
+                            {isSourcegraphApp && <AppUserConnectDotComAccount />}
                             {enableTeams && !isSourcegraphDotCom && (
                                 <MenuLink as={Link} to="/teams">
                                     Teams

@@ -7296,6 +7296,11 @@ type Site implements SettingsSubject {
     FOR INTERNAL USE ONLY: Returns information about instance upgrade readiness.
     """
     upgradeReadiness: UpgradeReadiness!
+
+    """
+    Wether the current App installation has a connected Sourcegraph.com account.
+    """
+    appHasConnectedDotComAccount: Boolean!
 }
 
 """
