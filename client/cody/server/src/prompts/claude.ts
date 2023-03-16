@@ -5,44 +5,44 @@ import { AnthropicAPIClient, AnthropicCompletionCallbacks, AnthropicCompletionPa
 const logRequests = ['true', '1'].includes(process.env.LOG_CLAUDE?.toLocaleLowerCase() || '')
 
 export class ClaudeBackend {
-	private client: AnthropicAPIClient
+    private client: AnthropicAPIClient
 
-	constructor(
-		apiKey: string,
-		private modelParams: Omit<AnthropicCompletionParams, 'prompt'>,
-		private preambleMessages: Message[]
-	) {
-		this.client = new AnthropicAPIClient(apiKey)
-	}
+    constructor(
+        apiKey: string,
+        private modelParams: Omit<AnthropicCompletionParams, 'prompt'>,
+        private preambleMessages: Message[]
+    ) {
+        this.client = new AnthropicAPIClient(apiKey)
+    }
 
-	chat(origMessages: Message[], callbacks: AnthropicCompletionCallbacks): void {
-		const messages = [...this.preambleMessages, ...origMessages]
+    chat(origMessages: Message[], callbacks: AnthropicCompletionCallbacks): void {
+        const messages = [...this.preambleMessages, ...origMessages]
 
-		let lastSpeaker: 'bot' | 'you' | undefined
-		for (const msg of messages) {
-			if (msg.speaker === lastSpeaker) {
-				throw new Error(`duplicate speaker ${lastSpeaker}`)
-			}
-			lastSpeaker = msg.speaker
-		}
+        let lastSpeaker: 'bot' | 'you' | undefined
+        for (const msg of messages) {
+            if (msg.speaker === lastSpeaker) {
+                throw new Error(`duplicate speaker ${lastSpeaker}`)
+            }
+            lastSpeaker = msg.speaker
+        }
 
-		const promptComponents: string[] = []
-		for (const msg of messages) {
-			promptComponents.push(`\n\n${msg.speaker === 'bot' ? 'Assistant' : 'Human'}: ${msg.text}`)
-		}
+        const promptComponents: string[] = []
+        for (const msg of messages) {
+            promptComponents.push(`\n\n${msg.speaker === 'bot' ? 'Assistant' : 'Human'}: ${msg.text}`)
+        }
 
-		if (lastSpeaker === 'you') {
-			promptComponents.push('\n\nAssistant:') // Important: no trailing space (affects output quality)
-		}
+        if (lastSpeaker === 'you') {
+            promptComponents.push('\n\nAssistant:') // Important: no trailing space (affects output quality)
+        }
 
-		const prompt = promptComponents.join('')
-		const anthropicReq = { ...this.modelParams, prompt }
+        const prompt = promptComponents.join('')
+        const anthropicReq = { ...this.modelParams, prompt }
 
-		if (logRequests) {
-			console.log(`REQUEST:\n${prompt}`)
-			console.log(`REQ: ${JSON.stringify(anthropicReq, null, '  ')}`)
-		}
+        if (logRequests) {
+            console.log(`REQUEST:\n${prompt}`)
+            console.log(`REQ: ${JSON.stringify(anthropicReq, null, '  ')}`)
+        }
 
-		this.client.completion(anthropicReq, callbacks)
-	}
+        this.client.completion(anthropicReq, callbacks)
+    }
 }

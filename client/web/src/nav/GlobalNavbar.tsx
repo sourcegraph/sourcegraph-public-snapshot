@@ -15,7 +15,7 @@ import { SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { addSourcegraphAppOutboundUrlParameters, buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
+import { addSourcegraphAppOutboundUrlParameters, buildEnterpriseTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, ButtonLink, useWindowSize } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -38,11 +38,10 @@ import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/Ac
 import { useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
 
+import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
 import { NavDropdown, NavDropdownItem } from './NavBar/NavDropdown'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
-
-import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
 
 import styles from './GlobalNavbar.module.scss'
 
@@ -294,13 +293,15 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <ButtonLink
                             variant="secondary"
                             outline={true}
-                            to={addSourcegraphAppOutboundUrlParameters(buildCloudTrialURL(props.authenticatedUser))}
+                            to={addSourcegraphAppOutboundUrlParameters(
+                                buildEnterpriseTrialURL(props.authenticatedUser)
+                            )}
                             size="sm"
                             onClick={() =>
-                                eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBarSourcegraphApp' })
+                                eventLogger.log('ClickedOnEnterpriseCTA', { location: 'NavBarSourcegraphApp' })
                             }
                         >
-                            Try Sourcegraph Cloud
+                            Try Sourcegraph Enterprise
                         </ButtonLink>
                     )}
                     {props.authenticatedUser?.siteAdmin && (
@@ -370,7 +371,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                 </NavActions>
             </NavBar>
             {showSearchBox && (
-                <div className="w-100 px-3 py-2 border-bottom">
+                <div className={styles.searchNavBar}>
                     <SearchNavbarItem
                         {...props}
                         isLightTheme={isLightTheme}

@@ -15,6 +15,7 @@ go_library(
 
 go_test(
     name = "accesslog_test",
+    timeout = "short",
     srcs = ["accesslog_test.go"],
     embed = [":accesslog"],
     deps = [

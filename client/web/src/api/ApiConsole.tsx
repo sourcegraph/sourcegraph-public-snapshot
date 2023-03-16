@@ -1,6 +1,7 @@
 import * as React from 'react'
 
-import * as _graphiqlModule from 'graphiql' // type only
+// type only
+import * as _graphiqlModule from 'graphiql'
 import * as H from 'history'
 import { useNavigate, useLocation, type NavigateFunction } from 'react-router-dom'
 import { from as fromPromise, Subject, Subscription } from 'rxjs'

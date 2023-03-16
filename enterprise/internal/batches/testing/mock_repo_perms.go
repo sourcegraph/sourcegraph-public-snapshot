@@ -29,9 +29,9 @@ func MockRepoPermissions(t *testing.T, db database.DB, userID int32, repoIDs ...
 		repoIDMap[int32(id)] = struct{}{}
 	}
 
-	err := permsStore.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{
+	_, err := permsStore.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{
 		UserID: userID,
-	}, maps.Keys(repoIDMap))
+	}, maps.Keys(repoIDMap), authz.SourceUserSync)
 	require.NoError(t, err)
 
 	_, err = permsStore.SetUserPermissions(ctx,

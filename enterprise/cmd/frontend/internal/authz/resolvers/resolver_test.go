@@ -188,17 +188,20 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			perms := edb.NewStrictMockPermsStore()
 			perms.TransactFunc.SetDefaultReturn(perms, nil)
 			perms.DoneFunc.SetDefaultReturn(nil)
-			perms.SetRepoPermsFunc.SetDefaultHook(func(_ context.Context, repoID int32, ids []authz.UserIDWithExternalAccountID) error {
+			perms.SetRepoPermsFunc.SetDefaultHook(func(_ context.Context, repoID int32, ids []authz.UserIDWithExternalAccountID, source authz.PermsSource) (*database.SetPermissionsResult, error) {
 				expUserIDs := maps.Keys(test.expUserIDs)
 				userIDs := make([]int32, len(ids))
 				for i, u := range ids {
 					userIDs[i] = u.UserID
 				}
 				if diff := cmp.Diff(expUserIDs, userIDs); diff != "" {
-					return errors.Errorf("userIDs expected: %v, got: %v", expUserIDs, userIDs)
+					return nil, errors.Errorf("userIDs expected: %v, got: %v", expUserIDs, userIDs)
+				}
+				if source != authz.SourceAPI {
+					return nil, errors.Errorf("source expected: %s, got: %s", authz.SourceAPI, source)
 				}
 
-				return nil
+				return nil, nil
 			})
 			perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
 				ids := p.UserIDs
@@ -883,9 +886,11 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 	})
 
 	perms := edb.NewStrictMockPermsStore()
-	perms.LoadUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) error {
-		p.IDs = map[int32]struct{}{1: {}}
-		return nil
+	perms.LoadUserPermissionsFunc.SetDefaultHook(func(_ context.Context, userID int32) ([]authz.Permission, error) {
+		return []authz.Permission{{
+			UserID: userID,
+			RepoID: 1,
+		}}, nil
 	})
 	perms.LoadUserPendingPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPendingPermissions) error {
 		p.IDs = map[int32]struct{}{2: {}, 3: {}, 4: {}, 5: {}}
@@ -1250,9 +1255,16 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 	})
 
 	perms := edb.NewStrictMockPermsStore()
-	perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) error {
-		p.UserIDs = map[int32]struct{}{1: {}, 2: {}, 3: {}, 4: {}, 5: {}}
-		return nil
+	perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, repoID int32) ([]authz.Permission, error) {
+		permissions := make([]authz.Permission, 5)
+		for i, userID := range []int32{1, 2, 3, 4, 5} {
+			permissions[i] = authz.Permission{
+				UserID: userID,
+				RepoID: repoID,
+			}
+		}
+
+		return permissions, nil
 	})
 
 	db := edb.NewStrictMockEnterpriseDB()
@@ -1426,19 +1438,21 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 	})
 
 	perms := edb.NewStrictMockPermsStore()
-	perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) error {
-		p.UpdatedAt = clock()
-		p.SyncedAt = clock()
-		return nil
+	perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, repoID int32) ([]authz.Permission, error) {
+		return []authz.Permission{{RepoID: repoID, UserID: 42, UpdatedAt: clock()}}, nil
 	})
 	perms.IsRepoUnrestrictedFunc.SetDefaultHook(func(_ context.Context, _ api.RepoID) (bool, error) {
 		return false, nil
 	})
 
+	syncJobs := database.NewStrictMockPermissionSyncJobStore()
+	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(&database.PermissionSyncJob{FinishedAt: clock()}, nil)
+
 	db := edb.NewStrictMockEnterpriseDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.PermsFunc.SetDefaultReturn(perms)
+	db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
 
 	tests := []struct {
 		name     string
@@ -1513,11 +1527,15 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 		users.GetByIDFunc.SetDefaultReturn(user, nil)
 
 		perms := edb.NewStrictMockPermsStore()
-		perms.LoadUserPermissionsFunc.SetDefaultReturn(nil)
+		perms.LoadUserPermissionsFunc.SetDefaultReturn([]authz.Permission{}, nil)
+
+		syncJobs := database.NewStrictMockPermissionSyncJobStore()
+		syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(nil, nil)
 
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.PermsFunc.SetDefaultReturn(perms)
+		db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user.ID})
 		result, err := (&Resolver{db: db}).UserPermissionsInfo(ctx, graphqlbackend.MarshalUserID(user.ID))
@@ -1536,11 +1554,12 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 	})
 
 	perms := edb.NewStrictMockPermsStore()
-	perms.LoadUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) error {
-		p.UpdatedAt = clock()
-		p.SyncedAt = clock()
-		return nil
+	perms.LoadUserPermissionsFunc.SetDefaultHook(func(context.Context, int32) ([]authz.Permission, error) {
+		return []authz.Permission{{UpdatedAt: clock()}}, nil
 	})
+
+	syncJobs := database.NewStrictMockPermissionSyncJobStore()
+	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(&database.PermissionSyncJob{FinishedAt: clock()}, nil)
 
 	repos := database.NewStrictMockRepoStore()
 	repos.GetByNameFunc.SetDefaultHook(func(_ context.Context, name api.RepoName) (*types.Repo, error) {
@@ -1551,6 +1570,7 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 	db.UsersFunc.SetDefaultReturn(users)
 	db.PermsFunc.SetDefaultReturn(perms)
 	db.ReposFunc.SetDefaultReturn(repos)
+	db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
 
 	tests := []struct {
 		name     string
@@ -1959,6 +1979,54 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 
 		require.ErrorIs(t, err, auth.ErrMustBeSiteAdmin)
 		require.Nil(t, result)
+	})
+
+	t.Run("authenticated as non-admin with current user's ID as userID filter", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		r := &Resolver{db: db}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		userID := graphqlbackend.MarshalUserID(1)
+		_, err := r.PermissionsSyncJobs(ctx, graphqlbackend.ListPermissionsSyncJobsArgs{UserID: &userID})
+
+		require.NoError(t, err)
+	})
+
+	t.Run("authenticated as non-admin with different user's ID as userID filter", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		r := &Resolver{db: db}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		userID := graphqlbackend.MarshalUserID(2)
+		_, err := r.PermissionsSyncJobs(ctx, graphqlbackend.ListPermissionsSyncJobsArgs{UserID: &userID})
+
+		require.ErrorIs(t, err, auth.ErrMustBeSiteAdminOrSameUser)
+	})
+
+	t.Run("authenticated as admin with different user's ID as userID filter", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		r := &Resolver{db: db}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		userID := graphqlbackend.MarshalUserID(2)
+		_, err := r.PermissionsSyncJobs(ctx, graphqlbackend.ListPermissionsSyncJobsArgs{UserID: &userID})
+
+		require.NoError(t, err)
 	})
 
 	// Mocking users database queries.

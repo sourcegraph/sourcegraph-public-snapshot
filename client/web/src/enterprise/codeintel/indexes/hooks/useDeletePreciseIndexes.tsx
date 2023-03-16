@@ -16,8 +16,20 @@ interface UseDeletePreciseIndexesResult {
 }
 
 const DELETE_PRECISE_INDEXES = gql`
-    mutation DeletePreciseIndexes($query: String, $states: [PreciseIndexState!], $repo: ID, $isLatestForRepo: Boolean) {
-        deletePreciseIndexes(query: $query, states: $states, repository: $repo, isLatestForRepo: $isLatestForRepo) {
+    mutation DeletePreciseIndexes(
+        $query: String
+        $states: [PreciseIndexState!]
+        $indexerKey: String
+        $repo: ID
+        $isLatestForRepo: Boolean
+    ) {
+        deletePreciseIndexes(
+            query: $query
+            states: $states
+            indexerKey: $indexerKey
+            repository: $repo
+            isLatestForRepo: $isLatestForRepo
+        ) {
             alwaysNil
         }
     }
@@ -37,6 +49,7 @@ export const useDeletePreciseIndexes = (): UseDeletePreciseIndexesResult => {
                 repo: options?.variables?.repo ?? null,
                 query: options?.variables?.query ?? null,
                 states: options?.variables?.states ?? null,
+                indexerKey: options?.variables?.indexerKey ?? null,
                 isLatestForRepo: options?.variables?.isLatestForRepo ?? null,
             }
 

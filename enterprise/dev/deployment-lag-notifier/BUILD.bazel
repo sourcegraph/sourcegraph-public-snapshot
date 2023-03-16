@@ -23,6 +23,7 @@ go_binary(
 
 go_test(
     name = "deployment-lag-notifier_test",
+    timeout = "short",
     srcs = ["main_test.go"],
     embed = [":deployment-lag-notifier_lib"],
 )

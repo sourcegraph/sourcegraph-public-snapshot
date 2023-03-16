@@ -339,12 +339,16 @@ input_ranks AS (
 		pci.document_path AS path,
 		pci.count
 	FROM codeintel_ranking_path_counts_inputs pci
-	JOIN repo r ON r.id = pci.repository_id
 	WHERE
 		pci.graph_key = %s AND
 		NOT pci.processed AND
-		r.deleted_at IS NULL AND
-		r.blocked IS NULL
+		EXISTS (
+			SELECT 1 FROM repo r
+			WHERE
+				r.id = pci.repository_id AND
+				r.deleted_at IS NULL AND
+				r.blocked IS NULL
+		)
 	ORDER BY pci.graph_key, pci.repository_id, pci.id
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED
@@ -360,11 +364,12 @@ inserted AS (
 	SELECT
 		temp.repository_id,
 		%s,
-		sg_jsonb_concat_agg(temp.row)
+		jsonb_object_agg(temp.path, temp.count)
 	FROM (
 		SELECT
 			cr.repository_id,
-			jsonb_build_object(cr.path, SUM(count)) AS row
+			cr.path,
+			SUM(count) AS count
 		FROM input_ranks cr
 		GROUP BY cr.repository_id, cr.path
 	) temp
@@ -376,8 +381,8 @@ inserted AS (
 				THEN EXCLUDED.payload
 			ELSE
 				(
-					SELECT sg_jsonb_concat_agg(row) FROM (
-						SELECT jsonb_build_object(key, SUM(value::int)) AS row
+					SELECT jsonb_object_agg(key, sum) FROM (
+						SELECT key, SUM(value::int) AS sum
 						FROM
 							(
 								SELECT * FROM jsonb_each(pr.payload)
@@ -396,7 +401,7 @@ SELECT
 `
 
 // TODO - configure via envvar
-const vacuumBatchSize = 1000
+const vacuumBatchSize = 100
 
 // TODO - configure via envvar
 var threshold = time.Duration(1) * time.Hour

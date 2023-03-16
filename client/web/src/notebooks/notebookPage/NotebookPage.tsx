@@ -51,6 +51,7 @@ import { NotebookPageHeaderActions } from './NotebookPageHeaderActions'
 import { NotebookTitle } from './NotebookTitle'
 
 import styles from './NotebookPage.module.scss'
+
 interface NotebookPageProps
     extends SearchStreamingProps,
         TelemetryProps,

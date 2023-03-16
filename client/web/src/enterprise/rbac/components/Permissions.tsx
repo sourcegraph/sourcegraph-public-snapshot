@@ -2,6 +2,7 @@ import React, { ChangeEvent, FocusEventHandler } from 'react'
 
 import { Text, Checkbox, Grid } from '@sourcegraph/wildcard'
 
+import { prettifyAction, prettifyNamespace } from '../../../util/settings'
 import { PermissionsMap, allNamespaces } from '../backend'
 
 interface PermissionListProps {
@@ -22,12 +23,12 @@ export const PermissionsList: React.FunctionComponent<React.PropsWithChildren<Pe
             const namespacePermissions = allPermissions[namespace]
             return (
                 <div key={namespace}>
-                    <Text className="font-weight-bold">{namespace}</Text>
+                    <Text className="font-weight-bold">{prettifyNamespace(namespace)}</Text>
                     <Grid columnCount={4}>
                         {namespacePermissions.map(permission => (
                             <Checkbox
                                 key={permission.id}
-                                label={permission.action}
+                                label={prettifyAction(permission.action)}
                                 id={permission.displayName}
                                 checked={isChecked(permission.id)}
                                 value={permission.id}

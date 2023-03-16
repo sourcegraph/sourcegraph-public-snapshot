@@ -15,6 +15,7 @@ go_library(
 
 go_test(
     name = "permssync_test",
+    timeout = "short",
     srcs = ["permssync_test.go"],
     embed = [":permssync"],
     deps = [

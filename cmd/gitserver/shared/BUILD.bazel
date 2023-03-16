@@ -56,6 +56,7 @@ go_library(
 
 go_test(
     name = "shared_test",
+    timeout = "short",
     srcs = ["shared_test.go"],
     embed = [":shared"],
     # This test loads coursier as a side effect, so we ensure the

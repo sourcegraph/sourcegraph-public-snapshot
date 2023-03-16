@@ -66,9 +66,10 @@ const UserSettingsAreaGQLFragment = gql`
                 name
             }
         }
-        roles {
+        roles @skip(if: $isSourcegraphDotCom) {
             nodes {
                 name
+                system
             }
         }
         tags @include(if: $siteAdmin)

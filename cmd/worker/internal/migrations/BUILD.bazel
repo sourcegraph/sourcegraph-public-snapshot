@@ -23,6 +23,7 @@ go_library(
 
 go_test(
     name = "migrations_test",
+    timeout = "short",
     srcs = ["init_test.go"],
     embed = [":migrations"],
     deps = ["//internal/oobmigration"],

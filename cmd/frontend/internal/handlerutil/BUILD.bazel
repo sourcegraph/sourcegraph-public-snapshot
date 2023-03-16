@@ -34,6 +34,7 @@ go_library(
 
 go_test(
     name = "handlerutil_test",
+    timeout = "short",
     srcs = ["repo_test.go"],
     embed = [":handlerutil"],
     deps = [

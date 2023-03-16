@@ -13,6 +13,7 @@ go_library(
 
 go_test(
     name = "collections_test",
+    timeout = "short",
     srcs = ["slice_utils_test.go"],
     embed = [":collections"],
     deps = [

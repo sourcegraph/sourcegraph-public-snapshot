@@ -49,6 +49,7 @@ go_library(
 
 go_test(
     name = "shared_test",
+    timeout = "short",
     srcs = ["repo_embedding_index_cache_test.go"],
     embed = [":shared"],
     deps = [

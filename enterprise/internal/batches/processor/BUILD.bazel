@@ -25,6 +25,7 @@ go_library(
 
 go_test(
     name = "processor_test",
+    timeout = "short",
     srcs = ["bulk_processor_test.go"],
     embed = [":processor"],
     tags = [

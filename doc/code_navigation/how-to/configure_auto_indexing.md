@@ -41,17 +41,17 @@ Precise code navigation indexing jobs are scheduled periodically in the backgrou
 
 Site admins can create indexing policies that apply to _all repositories_ on their Sourcegraph instance. In order to view and edit these policies, navigate to the code graph configuration in the site-admin dashboard.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/rename/global-list.png" class="screenshot" alt="Global auto-indexing policy configuration list page">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/renamed/global-list-indexing.png" class="screenshot" alt="Global auto-indexing policy configuration list page">
 
-New policies can also be created to apply to the HEAD of the default branch, or to apply to any arbitrary Git branch or tag pattern. For example, you may want to index the tip of the default branch for all of your repositories (in this example, repositories whose last commit is older than five years of age will not apply).
+New policies can also be created to apply to the HEAD of the default branch, or to apply to any arbitrary Git branch or tag pattern. For example, you may want to index release branches for all of your repositories (in this example, branches whose last commit is older than five years of age will not apply).
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/global-create.png" class="screenshot" alt="Global auto-indexing policy configuration edit page">
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/rename/post-create.png" class="screenshot" alt="Global auto-indexing policy configuration created confirmation">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/renamed/global-create-indexing.png" class="screenshot" alt="Global auto-indexing policy configuration edit page">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/renamed/post-create.png" class="screenshot" alt="Global auto-indexing policy configuration created confirmation">
 
 New policies can be created to apply to a set of repositories that are matched by name. For example, you may want to enable indexing for a particular set of repositories (in this example, repositories in the `sourcegraph` organization).
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/create-repo-list.png" class="screenshot" alt="Global auto-indexing policy with repository patterns configuration edit page">
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/rename/post-create-repo-list.png" class="screenshot" alt="Global auto-indexing policy with repository patterns configuration created confirmation">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/renamed/create-repo-list-indexing.png" class="screenshot" alt="Global auto-indexing policy with repository patterns configuration edit page">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/renamed/post-create-repo-list.png" class="screenshot" alt="Global auto-indexing policy with repository patterns configuration created confirmation">
 
 ### Applying indexing policies to a specific repository
 
@@ -61,12 +61,12 @@ Indexing policies can also be created on a per-repository basis as commit and me
 
 The settings page will show all policies that apply to the given repository, including both repository-specific policies as well as global policies that match the repository.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/rename/list.png" class="screenshot" alt="Repository-specific auto-indexing policy configuration list page">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/renamed/list.png" class="screenshot" alt="Repository-specific auto-indexing policy configuration list page">
 
 In this example, we create an indexing policy that applies to all _versioned_ tags (those prefixed with `v`). The _Index all version tags_ policy ensures all commits visible from matching tagged commit will be kept indexed (and not removed due to age).
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/rename/create.png" class="screenshot" alt="Repository-specific auto-indexing policy configuration edit page">
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/rename/post-create.png" class="screenshot" alt="Repository-specific auto-indexing policy configuration created confirmation">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/renamed/create.png" class="screenshot" alt="Repository-specific auto-indexing policy configuration edit page">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/renamed/post-create-indexing.png" class="screenshot" alt="Repository-specific auto-indexing policy configuration created confirmation">
 
 ## Explicit index job configuration
 
@@ -76,8 +76,8 @@ For projects that have non-standard or complex dependency resolution or pre-comp
 
 1. Configure index jobs via the target repository's code graph settings UI. In order to view and edit the indexing configuration for a repository, navigate to the code graph settings in the target repository's index page.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/rename/repository-page.png" class="screenshot" alt="Repository index page">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.33/repository-page.png" class="screenshot" alt="Repository index page">
 
 From there you can view or edit the repository's configuration. We use a superset of JSON that allows for comments and trailing commas. The set of index jobs that would be [inferred](../explanations/auto_indexing_inference.md) from the content of the repository (at the current tip of the default branch) can be viewed and may often be useful as a starting point to define more elaborate indexing jobs.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/rename/configuration.png" class="screenshot" alt="Auto-indexing configuration editor">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/renamed/configuration.png" class="screenshot" alt="Auto-indexing configuration editor">
