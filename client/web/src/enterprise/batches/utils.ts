@@ -26,7 +26,8 @@ export function isValidChangesetState(input: string): input is ChangesetState {
 }
 
 export const canWriteBatchChanges = (user: Pick<AuthenticatedUser, 'permissions'> | null): boolean =>
-    !!user && findIndex(user.permissions.nodes, permission => permission.displayName === BatchChangesWritePermission) !== -1
+    !!user &&
+    findIndex(user.permissions.nodes, permission => permission.displayName === BatchChangesWritePermission) !== -1
 
 export const NO_ACCESS_SOURCEGRAPH_COM = 'Batch changes are not available on Sourcegraph.com.'
 export const NO_ACCESS_BATCH_CHANGES_WRITE =
