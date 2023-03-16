@@ -37,6 +37,8 @@ You can read about the specific permission types available for each RBAC-enabled
 
 - [Batch Changes](./batch_changes.md)
 
+> NOTE: While Batch Changes is the only RBAC-enabled product area today, we will be working on migrating other product areas in future releases of Sourcegraph. Please reach out to our [support team](mailto:support@sourcegraph.com) if you have further questions. 
+
 ### Deleting a role
 
 With the exception of system roles, all roles can be deleted. To delete a role, click the **Delete** button on it. You will be prompted to confirm your choice. Once deleted, any user previously assigned that role will lose any permissions associated with it that are not also granted by their other roles.
