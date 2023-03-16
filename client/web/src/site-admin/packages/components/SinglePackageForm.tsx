@@ -227,13 +227,13 @@ const VersionFilterSummary: React.FunctionComponent<VersionFilterSummaryProps> =
                                         })}
                                     >
                                         <Badge className="px-2 py-0" as="code">
-                                            {node.name}@v{version}
+                                            {node.name}@{version}
                                         </Badge>
                                     </Link>
                                 </div>
                             ) : (
                                 <Badge className="px-2 py-0" as="code">
-                                    {node.name}@v{version}
+                                    {node.name}@{version}
                                 </Badge>
                             )}
                         </li>
