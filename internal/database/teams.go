@@ -53,8 +53,22 @@ func (opts ListTeamsOpts) SQL() (where, joins, ctes []*sqlf.Query) {
 		joins = append(joins, sqlf.Sprintf("JOIN team_members ON team_members.team_id = teams.id"))
 		where = append(where, sqlf.Sprintf("team_members.user_id = %s", opts.ForUserMember))
 	}
+	if opts.ExceptAncestorID != 0 {
+		joins = append(joins, sqlf.Sprintf("LEFT JOIN descendants ON descendants.id = teams.id"))
+		where = append(where, sqlf.Sprintf("descendants.id IS NULL"))
+		ctes = append(ctes, sqlf.Sprintf(
+			`WITH RECURSIVE descendants AS (
+				SELECT id, parent_team_id
+				FROM teams
+				WHERE id = %s
+			UNION ALL
+				SELECT t.id, t.parent_team_id
+				FROM teams t
+				INNER JOIN descendants d ON t.parent_team_id = d.id
+			)`, opts.ExceptAncestorID))
+	}
 
-	return where, joins, nil
+	return where, joins, ctes
 }
 
 type TeamMemberListCursor struct {

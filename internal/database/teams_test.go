@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -357,6 +358,22 @@ func TestTeams_GetListCount(t *testing.T) {
 					t.Fatal("incorrect cursor returned")
 				}
 			})
+		})
+
+		t.Run("ExceptAncestorID", func(t *testing.T) {
+			teams, cursor, err := store.ListTeams(internalCtx, ListTeamsOpts{ExceptAncestorID: engineeringTeam.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cursor != 0 {
+				t.Fatal("incorrect cursor returned")
+			}
+			want := []*types.Team{salesTeam, supportTeam}
+			sort.Slice(teams, func(i, j int) bool { return teams[i].ID < teams[j].ID })
+			sort.Slice(want, func(i, j int) bool { return want[i].ID < want[j].ID })
+			if diff := cmp.Diff(want, teams); diff != "" {
+				t.Errorf("non-ancestors -want+got: %s", diff)
+			}
 		})
 	})
 
