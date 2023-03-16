@@ -7179,6 +7179,12 @@ type Site implements SettingsSubject {
     """
     allowEditExternalServicesWithFile: Boolean!
     """
+    The number of repos synced across all external services. Includes counts distinguishing repositories based on whether
+    the external service connection is configured for local repositories instead of remote code host repositories.
+    Local repository code host connections are only supported in Sourcegraph App.
+    """
+    reposCounts: ReposCounts!
+    """
     Whether the site is over the limit for free user accounts, and a warning needs to be shown to all users.
     Only applies if the site does not have a valid license.
     """
@@ -7286,6 +7292,21 @@ type Site implements SettingsSubject {
     FOR INTERNAL USE ONLY: Returns information about instance upgrade readiness.
     """
     upgradeReadiness: UpgradeReadiness!
+}
+
+"""
+Repository count information includes a count of repositories for remote code host connections and a count of repositories
+for local code host connections (local is only supported for Sourcegraph App).
+"""
+type ReposCounts {
+    """
+    The count of repositories synced from remote code host connections.
+    """
+    remoteReposCount: Int!
+    """
+    The count of repositories synced from local code host connections.
+    """
+    localReposCount: Int!
 }
 
 """

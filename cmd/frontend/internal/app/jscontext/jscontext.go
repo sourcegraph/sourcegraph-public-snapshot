@@ -14,6 +14,7 @@ import (
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -297,31 +298,15 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	runningOnMacOS := runtime.GOOS == "darwin"
 	srcServeGitUrl := envvar.SrcServeGitUrl()
 
-	repoStatsResolver := graphqlbackend.NewRepositoryStatsResolver(db)
-
-	totalLocalRepos := int32(0)
-
-	totalRepos, err := repoStatsResolver.Total(ctx)
+	remoteCount, localCount, err := backend.NewAppExternalServices(db).RepositoriesCounts(ctx)
 	if err != nil {
-		// assume no repositories (remote or local) on database read error
-		totalRepos = 0
-	} else if deploy.IsApp() {
-		appResolver := graphqlbackend.NewAppResolver(logger.Scoped("jscontext-app", "constructing jscontext - sourcegraph app"), db)
-		if localExternalServices, err := appResolver.LocalExternalServices(ctx); err == nil {
-			for _, svc := range localExternalServices {
-				reposCount, err := svc.RepoCount(ctx)
-				if err == nil {
-					totalLocalRepos += reposCount
-				}
-			}
-		}
-	}
-
-	totalRemoteRepos := totalRepos - totalLocalRepos
-	if totalLocalRepos > totalRepos {
-		// assume no repositories (remote or local)
-		totalRemoteRepos = 0
-		totalLocalRepos = 0
+		// assume no repositories (remote or local) on ExternalServices read error
+		remoteCount = 0
+		localCount = 0
+	} else if !deploy.IsApp() {
+		// if this is not a sourcegraph app deploy then the local repos count should be zero because
+		// the serve-git service only runs in sourcegraph app
+		localCount = 0
 	}
 
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
@@ -410,9 +395,9 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		SrcServeGitUrl: srcServeGitUrl,
 
-		TotalLocalRepositories: int(totalLocalRepos),
+		TotalLocalRepositories: int(localCount),
 
-		TotalRemoteRepositories: int(totalRemoteRepos),
+		TotalRemoteRepositories: int(remoteCount),
 	}
 }
 
