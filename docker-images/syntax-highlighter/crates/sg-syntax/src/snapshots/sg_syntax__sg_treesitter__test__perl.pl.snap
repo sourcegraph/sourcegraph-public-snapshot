@@ -1,6 +1,6 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
-assertion_line: 493
+assertion_line: 497
 expression: "dump_document(&document, &contents)"
 ---
   package HTTP::Config;
@@ -19,7 +19,7 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^^^^^^^^^ StringLiteral 
   
   $VERSION = "5.835";
-//^^^^^^^^ Identifier 
+//^^^^^^^^ Identifier  local 1
 //         ^ IdentifierOperator 
 //           ^^^^^^^ StringLiteral 
   
@@ -28,12 +28,12 @@ expression: "dump_document(&document, &contents)"
 //    ^^^ IdentifierFunction 
       my $class = shift;
 //    ^^ Keyword 
-//       ^^^^^^ Identifier  local 14
+//       ^^^^^^ Identifier  local 4
 //              ^ IdentifierOperator 
 //                ^^^^^ IdentifierBuiltin 
       return bless [], $class;
 //    ^^^^^^ Keyword 
-//                     ^^^^^^ Identifier  local 14
+//                     ^^^^^^ Identifier  local 4
   }
   
   sub entries {
@@ -41,12 +41,12 @@ expression: "dump_document(&document, &contents)"
 //    ^^^^^^^ IdentifierFunction 
       my $self = shift;
 //    ^^ Keyword 
-//       ^^^^^ Identifier  local 15
+//       ^^^^^ Identifier  local 5
 //             ^ IdentifierOperator 
 //               ^^^^^ IdentifierBuiltin 
       @$self;
 //    ^ Identifier 
-//     ^^^^^ Identifier  local 15
+//     ^^^^^ Identifier  local 5
   }
   
   sub empty {
@@ -54,12 +54,12 @@ expression: "dump_document(&document, &contents)"
 //    ^^^^^ IdentifierFunction 
       my $self = shift;
 //    ^^ Keyword 
-//       ^^^^^ Identifier  local 16
+//       ^^^^^ Identifier  local 6
 //             ^ IdentifierOperator 
 //               ^^^^^ IdentifierBuiltin 
       not @$self;
 //        ^ Identifier 
-//         ^^^^^ Identifier  local 16
+//         ^^^^^ Identifier  local 6
   }
   
   sub add {
@@ -71,28 +71,28 @@ expression: "dump_document(&document, &contents)"
 //              ^ NumericLiteral 
           my $self = shift;
 //        ^^ Keyword 
-//           ^^^^^ Identifier  local 19
+//           ^^^^^ Identifier  local 9
 //                 ^ IdentifierOperator 
 //                   ^^^^^ IdentifierBuiltin 
           push(@$self, shift);
 //        ^^^^ IdentifierFunction 
 //             ^ Identifier 
-//              ^^^^^ Identifier  local 19
+//              ^^^^^ Identifier  local 9
 //                     ^^^^^ IdentifierBuiltin 
           return;
 //        ^^^^^^ Keyword 
       }
       my($self, %spec) = @_;
 //    ^^ Keyword 
-//       ^^^^^ Identifier  local 17
-//              ^^^^^ Identifier  local 18
+//       ^^^^^ Identifier  local 7
+//              ^^^^^ Identifier  local 8
 //                     ^ IdentifierOperator 
 //                       ^^ Identifier 
       push(@$self, \%spec);
 //    ^^^^ IdentifierFunction 
 //         ^ Identifier 
-//          ^^^^^ Identifier  local 17
-//                  ^^^^^ Identifier  local 18
+//          ^^^^^ Identifier  local 7
+//                  ^^^^^ Identifier  local 8
       return;
 //    ^^^^^^ Keyword 
   }
@@ -102,71 +102,69 @@ expression: "dump_document(&document, &contents)"
 //    ^^^^^ IdentifierFunction 
       my($self, %spec) = @_;
 //    ^^ Keyword 
-//       ^^^^^ Identifier  local 20
-//              ^^^^^ Identifier  local 21
+//       ^^^^^ Identifier  local 10
+//              ^^^^^ Identifier  local 11
 //                     ^ IdentifierOperator 
 //                       ^^ Identifier 
       my @found;
 //    ^^ Keyword 
-//       ^^^^^^ Identifier  local 22
+//       ^^^^^^ Identifier  local 12
       my @rest;
 //    ^^ Keyword 
-//       ^^^^^ Identifier  local 23
+//       ^^^^^ Identifier  local 13
    ITEM:
-// ^^^^ Keyword 
       for my $item (@$self) {
 //    ^^^ Keyword 
 //        ^^ Keyword 
-//           ^^^^^ Identifier  local 24
+//           ^^^^^ Identifier  local 14
 //                  ^ Identifier 
-//                   ^^^^^ Identifier  local 20
+//                   ^^^^^ Identifier  local 10
           for my $k (keys %spec) {
 //        ^^^ Keyword 
 //            ^^ Keyword 
-//               ^^ Identifier  local 25
+//               ^^ Identifier  local 15
 //                   ^^^^ IdentifierBuiltin 
-//                        ^^^^^ Identifier  local 21
+//                        ^^^^^ Identifier  local 11
               if (!exists $item->{$k} || $spec{$k} ne $item->{$k}) {
 //            ^^ Keyword 
 //                 ^^^^^^ IdentifierBuiltin 
-//                        ^^^^^ Identifier  local 24
+//                        ^^^^^ Identifier  local 14
 //                             ^^ Identifier 
 //                               ^ Identifier 
-//                                ^^ Identifier  local 25
+//                                ^^ Identifier  local 15
 //                                  ^ Identifier 
 //                                       ^^^^^ Identifier 
 //                                            ^ Identifier 
-//                                             ^^ Identifier  local 25
+//                                             ^^ Identifier  local 15
 //                                               ^ Identifier 
 //                                                 ^^ IdentifierOperator 
-//                                                    ^^^^^ Identifier  local 24
+//                                                    ^^^^^ Identifier  local 14
 //                                                         ^^ Identifier 
 //                                                           ^ Identifier 
-//                                                            ^^ Identifier  local 25
+//                                                            ^^ Identifier  local 15
 //                                                              ^ Identifier 
                   push(@rest, $item);
 //                ^^^^ IdentifierFunction 
-//                     ^^^^^ Identifier  local 23
-//                            ^^^^^ Identifier  local 24
+//                     ^^^^^ Identifier  local 13
+//                            ^^^^^ Identifier  local 14
                   next ITEM;
 //                ^^^^ Keyword 
-//                     ^^^^ Keyword 
               }
           }
           push(@found, $item);
 //        ^^^^ IdentifierFunction 
-//             ^^^^^^ Identifier  local 22
-//                     ^^^^^ Identifier  local 24
+//             ^^^^^^ Identifier  local 12
+//                     ^^^^^ Identifier  local 14
       }
       return \@found unless wantarray;
 //    ^^^^^^ Keyword 
-//            ^^^^^^ Identifier  local 22
+//            ^^^^^^ Identifier  local 12
 //                   ^^^^^^ Keyword 
 //                          ^^^^^^^^^ IdentifierBuiltin 
       return \@found, \@rest;
 //    ^^^^^^ Keyword 
-//            ^^^^^^ Identifier  local 22
-//                     ^^^^^ Identifier  local 23
+//            ^^^^^^ Identifier  local 12
+//                     ^^^^^ Identifier  local 13
   }
   
   sub find {
@@ -174,25 +172,25 @@ expression: "dump_document(&document, &contents)"
 //    ^^^^ IdentifierFunction 
       my $self = shift;
 //    ^^ Keyword 
-//       ^^^^^ Identifier  local 26
+//       ^^^^^ Identifier  local 16
 //             ^ IdentifierOperator 
 //               ^^^^^ IdentifierBuiltin 
       my $f = $self->find2(@_);
 //    ^^ Keyword 
-//       ^^ Identifier  local 27
+//       ^^ Identifier  local 17
 //          ^ IdentifierOperator 
-//            ^^^^^ Identifier  local 26
+//            ^^^^^ Identifier  local 16
 //                   ^^^^^ IdentifierFunction 
 //                         ^^ Identifier 
       return @$f if wantarray;
 //    ^^^^^^ Keyword 
 //           ^ Identifier 
-//            ^^ Identifier  local 27
+//            ^^ Identifier  local 17
 //               ^^ Keyword 
 //                  ^^^^^^^^^ IdentifierBuiltin 
       return $f->[0];
 //    ^^^^^^ Keyword 
-//           ^^ Identifier  local 27
+//           ^^ Identifier  local 17
 //             ^^ Identifier 
 //               ^ Identifier 
 //                ^ NumericLiteral 
@@ -204,36 +202,36 @@ expression: "dump_document(&document, &contents)"
 //    ^^^^^^ IdentifierFunction 
       my($self, %spec) = @_;
 //    ^^ Keyword 
-//       ^^^^^ Identifier  local 28
-//              ^^^^^ Identifier  local 29
+//       ^^^^^ Identifier  local 18
+//              ^^^^^ Identifier  local 19
 //                     ^ IdentifierOperator 
 //                       ^^ Identifier 
       my($removed, $rest) = $self->find2(%spec);
 //    ^^ Keyword 
-//       ^^^^^^^^ Identifier  local 30
-//                 ^^^^^ Identifier  local 31
+//       ^^^^^^^^ Identifier  local 20
+//                 ^^^^^ Identifier  local 21
 //                        ^ IdentifierOperator 
-//                          ^^^^^ Identifier  local 28
+//                          ^^^^^ Identifier  local 18
 //                                 ^^^^^ IdentifierFunction 
-//                                       ^^^^^ Identifier  local 29
+//                                       ^^^^^ Identifier  local 19
       @$self = @$rest if @$removed;
 //    ^ Identifier 
-//     ^^^^^ Identifier  local 28
+//     ^^^^^ Identifier  local 18
 //           ^ IdentifierOperator 
 //             ^ Identifier 
-//              ^^^^^ Identifier  local 31
+//              ^^^^^ Identifier  local 21
 //                    ^^ Keyword 
 //                       ^ Identifier 
-//                        ^^^^^^^^ Identifier  local 30
+//                        ^^^^^^^^ Identifier  local 20
       return @$removed;
 //    ^^^^^^ Keyword 
 //           ^ Identifier 
-//            ^^^^^^^^ Identifier  local 30
+//            ^^^^^^^^ Identifier  local 20
   }
   
   my %MATCH = (
 //^^ Keyword 
-//   ^^^^^^ Identifier  local 1
+//   ^^^^^^ Identifier  local 3
 //          ^ IdentifierOperator 
       m_scheme => sub {
 //    ^^^^^^^^^ StringLiteral 
@@ -241,16 +239,16 @@ expression: "dump_document(&document, &contents)"
 //                ^^^ Keyword 
           my($v, $uri) = @_;
 //        ^^ Keyword 
-//           ^^ Identifier  local 32
-//               ^^^^ Identifier  local 33
+//           ^^ Identifier  local 22
+//               ^^^^ Identifier  local 23
 //                     ^ IdentifierOperator 
 //                       ^^ Identifier 
           return $uri->_scheme eq $v;  # URI known to be canonical
 //        ^^^^^^ Keyword 
-//               ^^^^ Identifier  local 33
+//               ^^^^ Identifier  local 23
 //                     ^^^^^^^ IdentifierFunction 
 //                             ^^ IdentifierOperator 
-//                                ^^ Identifier  local 32
+//                                ^^ Identifier  local 22
 //                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
       },
       m_secure => sub {
@@ -259,27 +257,27 @@ expression: "dump_document(&document, &contents)"
 //                ^^^ Keyword 
           my($v, $uri) = @_;
 //        ^^ Keyword 
-//           ^^ Identifier  local 34
-//               ^^^^ Identifier  local 35
+//           ^^ Identifier  local 24
+//               ^^^^ Identifier  local 25
 //                     ^ IdentifierOperator 
 //                       ^^ Identifier 
           my $secure = $uri->can("secure") ? $uri->secure : $uri->_scheme eq "https";
 //        ^^ Keyword 
-//           ^^^^^^^ Identifier  local 36
+//           ^^^^^^^ Identifier  local 26
 //                   ^ IdentifierOperator 
-//                     ^^^^ Identifier  local 35
+//                     ^^^^ Identifier  local 25
 //                           ^^^ IdentifierFunction 
 //                               ^^^^^^^^ StringLiteral 
-//                                           ^^^^ Identifier  local 35
+//                                           ^^^^ Identifier  local 25
 //                                                 ^^^^^^ IdentifierFunction 
-//                                                          ^^^^ Identifier  local 35
+//                                                          ^^^^ Identifier  local 25
 //                                                                ^^^^^^^ IdentifierFunction 
 //                                                                        ^^ IdentifierOperator 
 //                                                                           ^^^^^^^ StringLiteral 
           return $secure == !!$v;
 //        ^^^^^^ Keyword 
-//               ^^^^^^^ Identifier  local 36
-//                            ^^ Identifier  local 34
+//               ^^^^^^^ Identifier  local 26
+//                            ^^ Identifier  local 24
       },
       m_host_port => sub {
 //    ^^^^^^^^^^^^ StringLiteral 
@@ -287,22 +285,22 @@ expression: "dump_document(&document, &contents)"
 //                   ^^^ Keyword 
           my($v, $uri) = @_;
 //        ^^ Keyword 
-//           ^^ Identifier  local 37
-//               ^^^^ Identifier  local 38
+//           ^^ Identifier  local 27
+//               ^^^^ Identifier  local 28
 //                     ^ IdentifierOperator 
 //                       ^^ Identifier 
           return unless $uri->can("host_port");
 //        ^^^^^^ Keyword 
 //               ^^^^^^ Keyword 
-//                      ^^^^ Identifier  local 38
+//                      ^^^^ Identifier  local 28
 //                            ^^^ IdentifierFunction 
 //                                ^^^^^^^^^^^ StringLiteral 
           return $uri->host_port eq $v, 7;
 //        ^^^^^^ Keyword 
-//               ^^^^ Identifier  local 38
+//               ^^^^ Identifier  local 28
 //                     ^^^^^^^^^ IdentifierFunction 
 //                               ^^ IdentifierOperator 
-//                                  ^^ Identifier  local 37
+//                                  ^^ Identifier  local 27
 //                                      ^ NumericLiteral 
       },
       m_host => sub {
@@ -311,22 +309,22 @@ expression: "dump_document(&document, &contents)"
 //              ^^^ Keyword 
           my($v, $uri) = @_;
 //        ^^ Keyword 
-//           ^^ Identifier  local 39
-//               ^^^^ Identifier  local 40
+//           ^^ Identifier  local 29
+//               ^^^^ Identifier  local 30
 //                     ^ IdentifierOperator 
 //                       ^^ Identifier 
           return unless $uri->can("host");
 //        ^^^^^^ Keyword 
 //               ^^^^^^ Keyword 
-//                      ^^^^ Identifier  local 40
+//                      ^^^^ Identifier  local 30
 //                            ^^^ IdentifierFunction 
 //                                ^^^^^^ StringLiteral 
           return $uri->host eq $v, 6;
 //        ^^^^^^ Keyword 
-//               ^^^^ Identifier  local 40
+//               ^^^^ Identifier  local 30
 //                     ^^^^ IdentifierFunction 
 //                          ^^ IdentifierOperator 
-//                             ^^ Identifier  local 39
+//                             ^^ Identifier  local 29
 //                                 ^ NumericLiteral 
       },
       m_port => sub {
@@ -335,22 +333,22 @@ expression: "dump_document(&document, &contents)"
 //              ^^^ Keyword 
           my($v, $uri) = @_;
 //        ^^ Keyword 
-//           ^^ Identifier  local 41
-//               ^^^^ Identifier  local 42
+//           ^^ Identifier  local 31
+//               ^^^^ Identifier  local 32
 //                     ^ IdentifierOperator 
 //                       ^^ Identifier 
           return unless $uri->can("port");
 //        ^^^^^^ Keyword 
 //               ^^^^^^ Keyword 
-//                      ^^^^ Identifier  local 42
+//                      ^^^^ Identifier  local 32
 //                            ^^^ IdentifierFunction 
 //                                ^^^^^^ StringLiteral 
           return $uri->port eq $v;
 //        ^^^^^^ Keyword 
-//               ^^^^ Identifier  local 42
+//               ^^^^ Identifier  local 32
 //                     ^^^^ IdentifierFunction 
 //                          ^^ IdentifierOperator 
-//                             ^^ Identifier  local 41
+//                             ^^ Identifier  local 31
       },
       m_domain => sub {
 //    ^^^^^^^^^ StringLiteral 
@@ -358,52 +356,53 @@ expression: "dump_document(&document, &contents)"
 //                ^^^ Keyword 
           my($v, $uri) = @_;
 //        ^^ Keyword 
-//           ^^ Identifier  local 43
-//               ^^^^ Identifier  local 44
+//           ^^ Identifier  local 33
+//               ^^^^ Identifier  local 34
 //                     ^ IdentifierOperator 
 //                       ^^ Identifier 
           return unless $uri->can("host");
 //        ^^^^^^ Keyword 
 //               ^^^^^^ Keyword 
-//                      ^^^^ Identifier  local 44
+//                      ^^^^ Identifier  local 34
 //                            ^^^ IdentifierFunction 
 //                                ^^^^^^ StringLiteral 
           my $h = $uri->host;
 //        ^^ Keyword 
-//           ^^ Identifier  local 45
+//           ^^ Identifier  local 35
 //              ^ IdentifierOperator 
-//                ^^^^ Identifier  local 44
+//                ^^^^ Identifier  local 34
 //                      ^^^^ IdentifierFunction 
           $h = "$h.local" unless $h =~ /\./;
-//        ^^ Identifier  local 45
+//        ^^ Identifier  local 35
 //           ^ IdentifierOperator 
 //             ^ StringLiteral 
-//              ^^ Identifier  local 45
+//              ^^ Identifier  local 35
 //                ^^^^^^^ StringLiteral 
 //                        ^^^^^^ Keyword 
-//                               ^^ Identifier  local 45
-//                                  ^ IdentifierOperator 
+//                               ^^ Identifier  local 35
+//                                  ^^ IdentifierOperator 
           $v = ".$v" unless $v =~ /^\./;
-//        ^^ Identifier  local 43
+//        ^^ Identifier  local 33
 //           ^ IdentifierOperator 
 //             ^^ StringLiteral 
-//               ^^ Identifier  local 43
+//               ^^ Identifier  local 33
 //                 ^ StringLiteral 
 //                   ^^^^^^ Keyword 
-//                             ^ IdentifierOperator 
+//                          ^^ Identifier  local 33
+//                             ^^ IdentifierOperator 
           return length($v), 5 if substr($h, -length($v)) eq $v;
 //        ^^^^^^ Keyword 
 //               ^^^^^^ IdentifierBuiltin 
-//                      ^^ Identifier  local 43
+//                      ^^ Identifier  local 33
 //                           ^ NumericLiteral 
 //                             ^^ Keyword 
 //                                ^^^^^^ IdentifierFunction 
-//                                       ^^ Identifier  local 45
+//                                       ^^ Identifier  local 35
 //                                           ^^ IdentifierBuiltin 
 //                                             ^^^^^ IdentifierFunction 
-//                                                   ^^ Identifier  local 43
+//                                                   ^^ Identifier  local 33
 //                                                        ^^ IdentifierOperator 
-//                                                           ^^ Identifier  local 43
+//                                                           ^^ Identifier  local 33
           return 0;
 //        ^^^^^^ Keyword 
 //               ^ NumericLiteral 
@@ -414,22 +413,22 @@ expression: "dump_document(&document, &contents)"
 //              ^^^ Keyword 
           my($v, $uri) = @_;
 //        ^^ Keyword 
-//           ^^ Identifier  local 46
-//               ^^^^ Identifier  local 47
+//           ^^ Identifier  local 36
+//               ^^^^ Identifier  local 37
 //                     ^ IdentifierOperator 
 //                       ^^ Identifier 
           return unless $uri->can("path");
 //        ^^^^^^ Keyword 
 //               ^^^^^^ Keyword 
-//                      ^^^^ Identifier  local 47
+//                      ^^^^ Identifier  local 37
 //                            ^^^ IdentifierFunction 
 //                                ^^^^^^ StringLiteral 
           return $uri->path eq $v, 4;
 //        ^^^^^^ Keyword 
-//               ^^^^ Identifier  local 47
+//               ^^^^ Identifier  local 37
 //                     ^^^^ IdentifierFunction 
 //                          ^^ IdentifierOperator 
-//                             ^^ Identifier  local 46
+//                             ^^ Identifier  local 36
 //                                 ^ NumericLiteral 
       },
       m_path_prefix => sub {
@@ -438,63 +437,63 @@ expression: "dump_document(&document, &contents)"
 //                     ^^^ Keyword 
           my($v, $uri) = @_;
 //        ^^ Keyword 
-//           ^^ Identifier  local 48
-//               ^^^^ Identifier  local 49
+//           ^^ Identifier  local 38
+//               ^^^^ Identifier  local 39
 //                     ^ IdentifierOperator 
 //                       ^^ Identifier 
           return unless $uri->can("path");
 //        ^^^^^^ Keyword 
 //               ^^^^^^ Keyword 
-//                      ^^^^ Identifier  local 49
+//                      ^^^^ Identifier  local 39
 //                            ^^^ IdentifierFunction 
 //                                ^^^^^^ StringLiteral 
           my $path = $uri->path;
 //        ^^ Keyword 
-//           ^^^^^ Identifier  local 50
+//           ^^^^^ Identifier  local 40
 //                 ^ IdentifierOperator 
-//                   ^^^^ Identifier  local 49
+//                   ^^^^ Identifier  local 39
 //                         ^^^^ IdentifierFunction 
           my $len = length($v);
 //        ^^ Keyword 
-//           ^^^^ Identifier  local 51
+//           ^^^^ Identifier  local 41
 //                ^ IdentifierOperator 
 //                  ^^^^^^ IdentifierBuiltin 
-//                         ^^ Identifier  local 48
+//                         ^^ Identifier  local 38
           return $len, 3 if $path eq $v;
 //        ^^^^^^ Keyword 
-//               ^^^^ Identifier  local 51
+//               ^^^^ Identifier  local 41
 //                     ^ NumericLiteral 
 //                       ^^ Keyword 
-//                          ^^^^^ Identifier  local 50
+//                          ^^^^^ Identifier  local 40
 //                                ^^ IdentifierOperator 
-//                                   ^^ Identifier  local 48
+//                                   ^^ Identifier  local 38
           return 0 if length($path) <= $len;
 //        ^^^^^^ Keyword 
 //               ^ NumericLiteral 
 //                 ^^ Keyword 
 //                    ^^^^^^ IdentifierBuiltin 
-//                           ^^^^^ Identifier  local 50
-//                                     ^^^^ Identifier  local 51
+//                           ^^^^^ Identifier  local 40
+//                                     ^^^^ Identifier  local 41
           $v .= "/" unless $v =~ m,/\z,,;
-//        ^^ Identifier  local 48
+//        ^^ Identifier  local 38
 //              ^^^ StringLiteral 
 //                  ^^^^^^ Keyword 
-//                         ^^ Identifier  local 48
-//                            ^ IdentifierOperator 
+//                         ^^ Identifier  local 38
+//                            ^^ IdentifierOperator 
 //                               ^ Keyword 
 //                                   ^ Keyword 
           return $len, 3 if substr($path, 0, length($v)) eq $v;
 //        ^^^^^^ Keyword 
-//               ^^^^ Identifier  local 51
+//               ^^^^ Identifier  local 41
 //                     ^ NumericLiteral 
 //                       ^^ Keyword 
 //                          ^^^^^^ IdentifierFunction 
-//                                 ^^^^^ Identifier  local 50
+//                                 ^^^^^ Identifier  local 40
 //                                        ^ NumericLiteral 
 //                                           ^^^^^^ IdentifierBuiltin 
-//                                                  ^^ Identifier  local 48
+//                                                  ^^ Identifier  local 38
 //                                                       ^^ IdentifierOperator 
-//                                                          ^^ Identifier  local 48
+//                                                          ^^ Identifier  local 38
           return 0;
 //        ^^^^^^ Keyword 
 //               ^ NumericLiteral 
@@ -505,22 +504,22 @@ expression: "dump_document(&document, &contents)"
 //                    ^^^ Keyword 
           my($v, $uri) = @_;
 //        ^^ Keyword 
-//           ^^ Identifier  local 52
-//               ^^^^ Identifier  local 53
+//           ^^ Identifier  local 42
+//               ^^^^ Identifier  local 43
 //                     ^ IdentifierOperator 
 //                       ^^ Identifier 
           return unless $uri->can("path");
 //        ^^^^^^ Keyword 
 //               ^^^^^^ Keyword 
-//                      ^^^^ Identifier  local 53
+//                      ^^^^ Identifier  local 43
 //                            ^^^ IdentifierFunction 
 //                                ^^^^^^ StringLiteral 
           return $uri->path =~ $v;
 //        ^^^^^^ Keyword 
-//               ^^^^ Identifier  local 53
+//               ^^^^ Identifier  local 43
 //                     ^^^^ IdentifierFunction 
-//                          ^ IdentifierOperator 
-//                             ^^ Identifier  local 52
+//                          ^^ IdentifierOperator 
+//                             ^^ Identifier  local 42
       },
       m_uri__ => sub {
 //    ^^^^^^^^ StringLiteral 
@@ -528,29 +527,29 @@ expression: "dump_document(&document, &contents)"
 //               ^^^ Keyword 
           my($v, $k, $uri) = @_;
 //        ^^ Keyword 
-//           ^^ Identifier  local 54
-//               ^^ Identifier  local 55
-//                   ^^^^ Identifier  local 56
+//           ^^ Identifier  local 44
+//               ^^ Identifier  local 45
+//                   ^^^^ Identifier  local 46
 //                         ^ IdentifierOperator 
 //                           ^^ Identifier 
           return unless $uri->can($k);
 //        ^^^^^^ Keyword 
 //               ^^^^^^ Keyword 
-//                      ^^^^ Identifier  local 56
+//                      ^^^^ Identifier  local 46
 //                            ^^^ IdentifierFunction 
-//                                ^^ Identifier  local 55
+//                                ^^ Identifier  local 45
           return 1 unless defined $v;
 //        ^^^^^^ Keyword 
 //               ^ NumericLiteral 
 //                 ^^^^^^ Keyword 
 //                        ^^^^^^^ IdentifierBuiltin 
-//                                ^^ Identifier  local 54
+//                                ^^ Identifier  local 44
           return $uri->$k eq $v;
 //        ^^^^^^ Keyword 
-//               ^^^^ Identifier  local 56
-//                     ^^ Identifier  local 55
+//               ^^^^ Identifier  local 46
+//                     ^^ Identifier  local 45
 //                        ^^ IdentifierOperator 
-//                           ^^ Identifier  local 54
+//                           ^^ Identifier  local 44
       },
       m_method => sub {
 //    ^^^^^^^^^ StringLiteral 
@@ -558,18 +557,18 @@ expression: "dump_document(&document, &contents)"
 //                ^^^ Keyword 
           my($v, $uri, $request) = @_;
 //        ^^ Keyword 
-//           ^^ Identifier  local 57
-//               ^^^^ Identifier  local 58
-//                     ^^^^^^^^ Identifier  local 59
+//           ^^ Identifier  local 47
+//               ^^^^ Identifier  local 48
+//                     ^^^^^^^^ Identifier  local 49
 //                               ^ IdentifierOperator 
 //                                 ^^ Identifier 
           return $request && $request->method eq $v;
 //        ^^^^^^ Keyword 
-//               ^^^^^^^^ Identifier  local 59
-//                           ^^^^^^^^ Identifier  local 59
+//               ^^^^^^^^ Identifier  local 49
+//                           ^^^^^^^^ Identifier  local 49
 //                                     ^^^^^^ IdentifierFunction 
 //                                            ^^ IdentifierOperator 
-//                                               ^^ Identifier  local 57
+//                                               ^^ Identifier  local 47
       },
       m_proxy => sub {
 //    ^^^^^^^^ StringLiteral 
@@ -577,22 +576,22 @@ expression: "dump_document(&document, &contents)"
 //               ^^^ Keyword 
           my($v, $uri, $request) = @_;
 //        ^^ Keyword 
-//           ^^ Identifier  local 60
-//               ^^^^ Identifier  local 61
-//                     ^^^^^^^^ Identifier  local 62
+//           ^^ Identifier  local 50
+//               ^^^^ Identifier  local 51
+//                     ^^^^^^^^ Identifier  local 52
 //                               ^ IdentifierOperator 
 //                                 ^^ Identifier 
           return $request && ($request->{proxy} || "") eq $v;
 //        ^^^^^^ Keyword 
-//               ^^^^^^^^ Identifier  local 62
-//                            ^^^^^^^^ Identifier  local 62
+//               ^^^^^^^^ Identifier  local 52
+//                            ^^^^^^^^ Identifier  local 52
 //                                    ^^ Identifier 
 //                                      ^ Identifier 
 //                                       ^^^^^ StringLiteral 
 //                                            ^ Identifier 
 //                                                 ^^ StringLiteral 
 //                                                     ^^ IdentifierOperator 
-//                                                        ^^ Identifier  local 60
+//                                                        ^^ Identifier  local 50
       },
       m_code => sub {
 //    ^^^^^^^ StringLiteral 
@@ -600,35 +599,35 @@ expression: "dump_document(&document, &contents)"
 //              ^^^ Keyword 
           my($v, $uri, $request, $response) = @_;
 //        ^^ Keyword 
-//           ^^ Identifier  local 63
-//               ^^^^ Identifier  local 64
-//                     ^^^^^^^^ Identifier  local 65
-//                               ^^^^^^^^^ Identifier  local 66
+//           ^^ Identifier  local 53
+//               ^^^^ Identifier  local 54
+//                     ^^^^^^^^ Identifier  local 55
+//                               ^^^^^^^^^ Identifier  local 56
 //                                          ^ IdentifierOperator 
 //                                            ^^ Identifier 
           $v =~ s/xx\z//;
-//        ^^ Identifier  local 63
-//           ^ IdentifierOperator 
+//        ^^ Identifier  local 53
+//           ^^ IdentifierOperator 
 //              ^ Keyword 
-//                ^^ Keyword 
+//               ^^^^^^^ StringLiteral 
           return unless $response;
 //        ^^^^^^ Keyword 
 //               ^^^^^^ Keyword 
-//                      ^^^^^^^^^ Identifier  local 66
+//                      ^^^^^^^^^ Identifier  local 56
           return length($v), 2 if substr($response->code, 0, length($v)) eq $v;
 //        ^^^^^^ Keyword 
 //               ^^^^^^ IdentifierBuiltin 
-//                      ^^ Identifier  local 63
+//                      ^^ Identifier  local 53
 //                           ^ NumericLiteral 
 //                             ^^ Keyword 
 //                                ^^^^^^ IdentifierFunction 
-//                                       ^^^^^^^^^ Identifier  local 66
+//                                       ^^^^^^^^^ Identifier  local 56
 //                                                  ^^^^ IdentifierFunction 
 //                                                        ^ NumericLiteral 
 //                                                           ^^^^^^ IdentifierBuiltin 
-//                                                                  ^^ Identifier  local 63
+//                                                                  ^^ Identifier  local 53
 //                                                                       ^^ IdentifierOperator 
-//                                                                          ^^ Identifier  local 63
+//                                                                          ^^ Identifier  local 53
       },
       m_media_type => sub {  # for request too??
 //    ^^^^^^^^^^^^^ StringLiteral 
@@ -637,70 +636,69 @@ expression: "dump_document(&document, &contents)"
 //                           ^^^^^^^^^^^^^^^^^^^ Comment 
           my($v, $uri, $request, $response) = @_;
 //        ^^ Keyword 
-//           ^^ Identifier  local 67
-//               ^^^^ Identifier  local 68
-//                     ^^^^^^^^ Identifier  local 69
-//                               ^^^^^^^^^ Identifier  local 70
+//           ^^ Identifier  local 57
+//               ^^^^ Identifier  local 58
+//                     ^^^^^^^^ Identifier  local 59
+//                               ^^^^^^^^^ Identifier  local 60
 //                                          ^ IdentifierOperator 
 //                                            ^^ Identifier 
           return unless $response;
 //        ^^^^^^ Keyword 
 //               ^^^^^^ Keyword 
-//                      ^^^^^^^^^ Identifier  local 70
+//                      ^^^^^^^^^ Identifier  local 60
           return 1, 1 if $v eq "*/*";
 //        ^^^^^^ Keyword 
 //               ^ NumericLiteral 
 //                  ^ NumericLiteral 
 //                    ^^ Keyword 
-//                       ^^ Identifier  local 67
+//                       ^^ Identifier  local 57
 //                          ^^ IdentifierOperator 
 //                             ^^^^^ StringLiteral 
           my $ct = $response->content_type;
 //        ^^ Keyword 
-//           ^^^ Identifier  local 71
+//           ^^^ Identifier  local 61
 //               ^ IdentifierOperator 
-//                 ^^^^^^^^^ Identifier  local 70
+//                 ^^^^^^^^^ Identifier  local 60
 //                            ^^^^^^^^^^^^ IdentifierFunction 
           return 2, 1 if $v =~ s,/\*\z,, && $ct =~ m,^\Q$v\E/,;
 //        ^^^^^^ Keyword 
 //               ^ NumericLiteral 
 //                  ^ NumericLiteral 
 //                    ^^ Keyword 
-//                       ^^ Identifier  local 67
-//                          ^ IdentifierOperator 
-//                             ^ Keyword 
-//                                          ^^^ Identifier  local 71
-//                                              ^ IdentifierOperator 
+//                       ^^ Identifier  local 57
+//                          ^^ IdentifierOperator 
+//                                          ^^^ Identifier  local 61
+//                                              ^^ IdentifierOperator 
 //                                                 ^ Keyword 
-//                                                      ^^ Identifier  local 67
+//                                                      ^^ Identifier  local 57
           return 3, 1 if $v eq "html" && $response->content_is_html;
 //        ^^^^^^ Keyword 
 //               ^ NumericLiteral 
 //                  ^ NumericLiteral 
 //                    ^^ Keyword 
-//                       ^^ Identifier  local 67
+//                       ^^ Identifier  local 57
 //                          ^^ IdentifierOperator 
 //                             ^^^^^^ StringLiteral 
-//                                       ^^^^^^^^^ Identifier  local 70
+//                                       ^^^^^^^^^ Identifier  local 60
 //                                                  ^^^^^^^^^^^^^^^ IdentifierFunction 
           return 4, 1 if $v eq "xhtml" && $response->content_is_xhtml;
 //        ^^^^^^ Keyword 
 //               ^ NumericLiteral 
 //                  ^ NumericLiteral 
 //                    ^^ Keyword 
-//                       ^^ Identifier  local 67
+//                       ^^ Identifier  local 57
 //                          ^^ IdentifierOperator 
 //                             ^^^^^^^ StringLiteral 
-//                                        ^^^^^^^^^ Identifier  local 70
+//                                        ^^^^^^^^^ Identifier  local 60
 //                                                   ^^^^^^^^^^^^^^^^ IdentifierFunction 
           return 10, 1 if $v eq $ct;
 //        ^^^^^^ Keyword 
 //               ^^ NumericLiteral 
 //                   ^ NumericLiteral 
 //                     ^^ Keyword 
-//                        ^^ Identifier  local 67
+//                        ^^ Identifier  local 57
 //                           ^^ IdentifierOperator 
-//                              ^^^ Identifier  local 71
+//                              ^^^ Identifier  local 61
           return 0;
 //        ^^^^^^ Keyword 
 //               ^ NumericLiteral 
@@ -711,36 +709,36 @@ expression: "dump_document(&document, &contents)"
 //                  ^^^ Keyword 
           my($v, $k, $uri, $request, $response) = @_;
 //        ^^ Keyword 
-//           ^^ Identifier  local 72
-//               ^^ Identifier  local 73
-//                   ^^^^ Identifier  local 74
-//                         ^^^^^^^^ Identifier  local 75
-//                                   ^^^^^^^^^ Identifier  local 76
+//           ^^ Identifier  local 62
+//               ^^ Identifier  local 63
+//                   ^^^^ Identifier  local 64
+//                         ^^^^^^^^ Identifier  local 65
+//                                   ^^^^^^^^^ Identifier  local 66
 //                                              ^ IdentifierOperator 
 //                                                ^^ Identifier 
           return unless $request;
 //        ^^^^^^ Keyword 
 //               ^^^^^^ Keyword 
-//                      ^^^^^^^^ Identifier  local 75
+//                      ^^^^^^^^ Identifier  local 65
           return 1 if $request->header($k) eq $v;
 //        ^^^^^^ Keyword 
 //               ^ NumericLiteral 
 //                 ^^ Keyword 
-//                    ^^^^^^^^ Identifier  local 75
+//                    ^^^^^^^^ Identifier  local 65
 //                              ^^^^^^ IdentifierFunction 
-//                                     ^^ Identifier  local 73
+//                                     ^^ Identifier  local 63
 //                                         ^^ IdentifierOperator 
-//                                            ^^ Identifier  local 72
+//                                            ^^ Identifier  local 62
           return 1 if $response && $response->header($k) eq $v;
 //        ^^^^^^ Keyword 
 //               ^ NumericLiteral 
 //                 ^^ Keyword 
-//                    ^^^^^^^^^ Identifier  local 76
-//                                 ^^^^^^^^^ Identifier  local 76
+//                    ^^^^^^^^^ Identifier  local 66
+//                                 ^^^^^^^^^ Identifier  local 66
 //                                            ^^^^^^ IdentifierFunction 
-//                                                   ^^ Identifier  local 73
+//                                                   ^^ Identifier  local 63
 //                                                       ^^ IdentifierOperator 
-//                                                          ^^ Identifier  local 72
+//                                                          ^^ Identifier  local 62
           return 0;
 //        ^^^^^^ Keyword 
 //               ^ NumericLiteral 
@@ -751,50 +749,50 @@ expression: "dump_document(&document, &contents)"
 //                         ^^^ Keyword 
           my($v, $k, $uri, $request, $response) = @_;
 //        ^^ Keyword 
-//           ^^ Identifier  local 77
-//               ^^ Identifier  local 78
-//                   ^^^^ Identifier  local 79
-//                         ^^^^^^^^ Identifier  local 80
-//                                   ^^^^^^^^^ Identifier  local 81
+//           ^^ Identifier  local 67
+//               ^^ Identifier  local 68
+//                   ^^^^ Identifier  local 69
+//                         ^^^^^^^^ Identifier  local 70
+//                                   ^^^^^^^^^ Identifier  local 71
 //                                              ^ IdentifierOperator 
 //                                                ^^ Identifier 
           return unless $response;
 //        ^^^^^^ Keyword 
 //               ^^^^^^ Keyword 
-//                      ^^^^^^^^^ Identifier  local 81
+//                      ^^^^^^^^^ Identifier  local 71
           return 1 if !defined($v) && exists $response->{$k};
 //        ^^^^^^ Keyword 
 //               ^ NumericLiteral 
 //                 ^^ Keyword 
 //                     ^^^^^^^ IdentifierBuiltin 
-//                             ^^ Identifier  local 77
+//                             ^^ Identifier  local 67
 //                                    ^^^^^^ IdentifierBuiltin 
-//                                           ^^^^^^^^^ Identifier  local 81
+//                                           ^^^^^^^^^ Identifier  local 71
 //                                                    ^^ Identifier 
 //                                                      ^ Identifier 
-//                                                       ^^ Identifier  local 78
+//                                                       ^^ Identifier  local 68
 //                                                         ^ Identifier 
           return 0 unless exists $response->{$k};
 //        ^^^^^^ Keyword 
 //               ^ NumericLiteral 
 //                 ^^^^^^ Keyword 
 //                        ^^^^^^ IdentifierBuiltin 
-//                               ^^^^^^^^^ Identifier  local 81
+//                               ^^^^^^^^^ Identifier  local 71
 //                                        ^^ Identifier 
 //                                          ^ Identifier 
-//                                           ^^ Identifier  local 78
+//                                           ^^ Identifier  local 68
 //                                             ^ Identifier 
           return 1 if $response->{$k} eq $v;
 //        ^^^^^^ Keyword 
 //               ^ NumericLiteral 
 //                 ^^ Keyword 
-//                    ^^^^^^^^^ Identifier  local 81
+//                    ^^^^^^^^^ Identifier  local 71
 //                             ^^ Identifier 
 //                               ^ Identifier 
-//                                ^^ Identifier  local 78
+//                                ^^ Identifier  local 68
 //                                  ^ Identifier 
 //                                    ^^ IdentifierOperator 
-//                                       ^^ Identifier  local 77
+//                                       ^^ Identifier  local 67
           return 0;
 //        ^^^^^^ Keyword 
 //               ^ NumericLiteral 
@@ -803,10 +801,10 @@ expression: "dump_document(&document, &contents)"
   
   sub matching {
 //^^^ Keyword 
-//    ^^^^^^^^ Keyword 
+//    ^^^^^^^^ IdentifierFunction 
       my $self = shift;
 //    ^^ Keyword 
-//       ^^^^^ Identifier  local 2
+//       ^^^^^ Identifier  local 72
 //             ^ IdentifierOperator 
 //               ^^^^^ IdentifierBuiltin 
       if (@_ == 1) {
@@ -862,67 +860,66 @@ expression: "dump_document(&document, &contents)"
       }
       my($uri, $request, $response) = @_;
 //    ^^ Keyword 
-//       ^^^^ Identifier  local 3
-//             ^^^^^^^^ Identifier  local 4
-//                       ^^^^^^^^^ Identifier  local 5
+//       ^^^^ Identifier  local 73
+//             ^^^^^^^^ Identifier  local 74
+//                       ^^^^^^^^^ Identifier  local 75
 //                                  ^ IdentifierOperator 
 //                                    ^^ Identifier 
       $uri = URI->new($uri) unless ref($uri);
-//    ^^^^ Identifier  local 3
+//    ^^^^ Identifier  local 73
 //         ^ IdentifierOperator 
 //           ^^^ IdentifierType 
 //                ^^^ IdentifierFunction 
-//                    ^^^^ Identifier  local 3
+//                    ^^^^ Identifier  local 73
 //                          ^^^^^^ Keyword 
 //                                 ^^^ IdentifierBuiltin 
-//                                     ^^^^ Identifier  local 3
+//                                     ^^^^ Identifier  local 73
   
       my @m;
 //    ^^ Keyword 
-//       ^^ Identifier  local 6
+//       ^^ Identifier  local 76
    ITEM:
-// ^^^^ Keyword 
       for my $item (@$self) {
 //    ^^^ Keyword 
 //        ^^ Keyword 
-//           ^^^^^ Identifier  local 13
+//           ^^^^^ Identifier  local 77
 //                  ^ Identifier 
-//                   ^^^^^ Identifier  local 2
+//                   ^^^^^ Identifier  local 72
           my $order;
 //        ^^ Keyword 
-//           ^^^^^^ Identifier  local 7
+//           ^^^^^^ Identifier  local 78
           for my $ikey (keys %$item) {
 //        ^^^ Keyword 
 //            ^^ Keyword 
-//               ^^^^^ Identifier 
+//               ^^^^^ Identifier  local 79
 //                      ^^^^ IdentifierBuiltin 
 //                           ^ Identifier 
-//                            ^^^^^ Identifier  local 13
+//                            ^^^^^ Identifier  local 77
               my $mkey = $ikey;
 //            ^^ Keyword 
-//               ^^^^^ Identifier  local 8
+//               ^^^^^ Identifier  local 80
 //                     ^ IdentifierOperator 
-//                       ^^^^^ Identifier 
+//                       ^^^^^ Identifier  local 79
               my $k;
 //            ^^ Keyword 
-//               ^^ Identifier  local 9
+//               ^^ Identifier  local 81
               $k = $1 if $mkey =~ s/__(.*)/__/;
-//            ^^ Identifier  local 9
+//            ^^ Identifier  local 81
 //               ^ IdentifierOperator 
 //                 ^^ Identifier 
 //                    ^^ Keyword 
-//                       ^^^^^ Identifier  local 8
-//                             ^ IdentifierOperator 
+//                       ^^^^^ Identifier  local 80
+//                             ^^ IdentifierOperator 
 //                                ^ Keyword 
-//                                         ^^ Keyword 
+//                                 ^^^^^^^^^^^ StringLiteral 
               if (my $m = $MATCH{$mkey}) {
 //            ^^ Keyword 
 //                ^^ Keyword 
-//                   ^^ Identifier  local 10
+//                   ^^ Identifier  local 82
 //                      ^ IdentifierOperator 
 //                        ^^^^^^ Identifier 
 //                              ^ Identifier 
-//                               ^^^^^ Identifier  local 8
+//                               ^^^^^ Identifier  local 80
 //                                    ^ Identifier 
                   #print "$ikey $mkey\n";
 //                ^^^^^^^^^^^^^^^^^^^^^^^ Comment 
@@ -932,56 +929,59 @@ expression: "dump_document(&document, &contents)"
 //                       ^^ Identifier 
                   my @arg = (
 //                ^^ Keyword 
-//                   ^^^^ Identifier  local 11
+//                   ^^^^ Identifier  local 83
 //                        ^ IdentifierOperator 
                       defined($k) ? $k : (),
 //                    ^^^^^^^ IdentifierBuiltin 
-//                            ^^ Identifier  local 9
-//                                  ^^ Identifier  local 9
+//                            ^^ Identifier  local 81
+//                                  ^^ Identifier  local 81
                       $uri, $request, $response
-//                    ^^^^ Identifier  local 3
-//                          ^^^^^^^^ Identifier  local 4
-//                                    ^^^^^^^^^ Identifier  local 5
+//                    ^^^^ Identifier  local 73
+//                          ^^^^^^^^ Identifier  local 74
+//                                    ^^^^^^^^^ Identifier  local 75
                   );
                   my $v = $item->{$ikey};
 //                ^^ Keyword 
-//                   ^^ Identifier  local 12
+//                   ^^ Identifier  local 84
 //                      ^ IdentifierOperator 
-//                        ^^^^^ Identifier  local 13
+//                        ^^^^^ Identifier  local 77
 //                             ^^ Identifier 
 //                               ^ Identifier 
-//                                ^^^^^ Identifier 
+//                                ^^^^^ Identifier  local 79
 //                                     ^ Identifier 
                   $v = [$v] unless ref($v) eq "ARRAY";
-//                ^^ Identifier  local 12
+//                ^^ Identifier  local 84
 //                   ^ IdentifierOperator 
-//                      ^^ Identifier  local 12
+//                      ^^ Identifier  local 84
 //                          ^^^^^^ Keyword 
 //                                 ^^^ IdentifierBuiltin 
-//                                     ^^ Identifier  local 12
+//                                     ^^ Identifier  local 84
 //                                         ^^ IdentifierOperator 
 //                                            ^^^^^^^ StringLiteral 
                   for (@$v) {
 //                ^^^ Keyword 
 //                     ^ Identifier 
-//                      ^^ Identifier  local 12
+//                      ^^ Identifier  local 84
                       ($c, $o) = $m->($_, @arg);
 //                     ^^ Identifier 
 //                         ^^ Identifier 
 //                             ^ IdentifierOperator 
-//                               ^^ Identifier  local 10
+//                               ^^ Identifier  local 82
+//                                    ^^ Identifier 
+//                                        ^^^^ Identifier  local 83
                       #print "  - $_ ==> $c $o\n";
 //                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
                       last if $c;
 //                    ^^^^ Keyword 
+//                         ^^ Keyword 
 //                            ^^ Identifier 
                   }
                   next ITEM unless $c;
 //                ^^^^ Keyword 
-//                     ^^^^ Keyword 
 //                          ^^^^^^ Keyword 
+//                                 ^^ Identifier 
                   $order->[$o || 0] += $c;
-//                ^^^^^^ Identifier  local 7
+//                ^^^^^^ Identifier  local 78
 //                      ^^ Identifier 
 //                        ^ Identifier 
 //                         ^^ Identifier 
@@ -991,14 +991,14 @@ expression: "dump_document(&document, &contents)"
               }
           }
           $order->[7] ||= 0;
-//        ^^^^^^ Identifier  local 7
+//        ^^^^^^ Identifier  local 78
 //              ^^ Identifier 
 //                ^ Identifier 
 //                 ^ NumericLiteral 
 //                  ^ Identifier 
 //                        ^ NumericLiteral 
           $item->{_order} = join(".", reverse map sprintf("%03d", $_ || 0), @$order);
-//        ^^^^^ Identifier  local 13
+//        ^^^^^ Identifier  local 77
 //             ^^ Identifier 
 //               ^ Identifier 
 //                ^^^^^^ StringLiteral 
@@ -1011,14 +1011,14 @@ expression: "dump_document(&document, &contents)"
 //                                                                ^^ Identifier 
 //                                                                      ^ NumericLiteral 
 //                                                                          ^ Identifier 
-//                                                                           ^^^^^^ Identifier  local 7
+//                                                                           ^^^^^^ Identifier  local 78
           push(@m, $item);
 //        ^^^^ IdentifierFunction 
-//             ^^ Identifier  local 6
-//                 ^^^^^ Identifier  local 13
+//             ^^ Identifier  local 76
+//                 ^^^^^ Identifier  local 77
       }
       @m = sort { $b->{_order} cmp $a->{_order} } @m;
-//    ^^ Identifier  local 6
+//    ^^ Identifier  local 76
 //       ^ IdentifierOperator 
 //                ^^ Identifier 
 //                  ^^ Identifier 
@@ -1031,7 +1031,7 @@ expression: "dump_document(&document, &contents)"
 //                                     ^ Identifier 
 //                                      ^^^^^^ StringLiteral 
 //                                            ^ Identifier 
-//                                                ^^ Identifier  local 6
+//                                                ^^ Identifier  local 76
       delete $_->{_order} for @m;
 //    ^^^^^^ IdentifierBuiltin 
 //           ^^ Identifier 
@@ -1040,8 +1040,10 @@ expression: "dump_document(&document, &contents)"
 //                ^^^^^^ StringLiteral 
 //                      ^ Identifier 
 //                        ^^^ Keyword 
+//                            ^^ Identifier  local 76
       return @m if wantarray;
 //    ^^^^^^ Keyword 
+//           ^^ Identifier  local 76
 //              ^^ Keyword 
 //                 ^^^^^^^^^ IdentifierBuiltin 
       return $m[0];
@@ -1054,23 +1056,24 @@ expression: "dump_document(&document, &contents)"
   
   sub add_item {
 //^^^ Keyword 
+//    ^^^^^^^^ IdentifierFunction 
       my $self = shift;
 //    ^^ Keyword 
-//       ^^^^^ Identifier  local 2
+//       ^^^^^ Identifier  local 85
 //             ^ IdentifierOperator 
 //               ^^^^^ IdentifierBuiltin 
       my $item = shift;
 //    ^^ Keyword 
-//       ^^^^^ Identifier  local 13
+//       ^^^^^ Identifier  local 86
 //             ^ IdentifierOperator 
 //               ^^^^^ IdentifierBuiltin 
       return $self->add(item => $item, @_);
 //    ^^^^^^ Keyword 
-//           ^^^^^ Identifier  local 2
+//           ^^^^^ Identifier  local 85
 //                  ^^^ IdentifierFunction 
 //                      ^^^^^ StringLiteral 
 //                           ^^ IdentifierOperator 
-//                              ^^^^^ Identifier  local 13
+//                              ^^^^^ Identifier  local 86
 //                                     ^^ Identifier 
   }
   
@@ -1079,7 +1082,7 @@ expression: "dump_document(&document, &contents)"
 //    ^^^^^^^^^^^^ IdentifierFunction 
       my $self = shift;
 //    ^^ Keyword 
-//       ^^^^^ Identifier  local 82
+//       ^^^^^ Identifier  local 87
 //             ^ IdentifierOperator 
 //               ^^^^^ IdentifierBuiltin 
       return map $_->{item}, $self->remove(@_);
@@ -1089,7 +1092,7 @@ expression: "dump_document(&document, &contents)"
 //                   ^ Identifier 
 //                    ^^^^ StringLiteral 
 //                        ^ Identifier 
-//                           ^^^^^ Identifier  local 82
+//                           ^^^^^ Identifier  local 87
 //                                  ^^^^^^ IdentifierFunction 
 //                                         ^^ Identifier 
   }
@@ -1099,7 +1102,7 @@ expression: "dump_document(&document, &contents)"
 //    ^^^^^^^^^^^^^^ IdentifierFunction 
       my $self = shift;
 //    ^^ Keyword 
-//       ^^^^^ Identifier  local 83
+//       ^^^^^ Identifier  local 88
 //             ^ IdentifierOperator 
 //               ^^^^^ IdentifierBuiltin 
       return map $_->{item}, $self->matching(@_);
@@ -1109,7 +1112,7 @@ expression: "dump_document(&document, &contents)"
 //                   ^ Identifier 
 //                    ^^^^ StringLiteral 
 //                        ^ Identifier 
-//                           ^^^^^ Identifier  local 83
+//                           ^^^^^ Identifier  local 88
 //                                  ^^^^^^^^ IdentifierFunction 
 //                                           ^^ Identifier 
   }
