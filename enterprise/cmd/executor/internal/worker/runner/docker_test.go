@@ -2,7 +2,6 @@ package runner_test
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -51,7 +50,6 @@ func TestDockerRunner_Setup(t *testing.T) {
 				assert.EqualError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
-				fmt.Println(dockerRunner.TempDir())
 				entries, err := os.ReadDir(dockerRunner.TempDir())
 				require.NoError(t, err)
 				if len(test.expectedDockerAuth) == 0 {

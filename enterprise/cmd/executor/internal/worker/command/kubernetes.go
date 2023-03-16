@@ -165,7 +165,12 @@ func (c *KubernetesCommand) getPod(ctx context.Context, namespace string, name s
 
 // WaitForJobToComplete waits for the job with the given name to complete.
 func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, namespace string, name string) error {
+	attempts := 0
 	for {
+		// After 60 seconds, give up
+		if attempts > 600 {
+			return errors.Newf("job %s did not complete", name)
+		}
 		job, err := c.getJob(ctx, namespace, name)
 		if err != nil {
 			return errors.Wrap(err, "retrieving job")
@@ -176,6 +181,7 @@ func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, namespace 
 			return errors.Newf("job %s failed", name)
 		} else {
 			time.Sleep(100 * time.Millisecond)
+			attempts++
 		}
 	}
 }

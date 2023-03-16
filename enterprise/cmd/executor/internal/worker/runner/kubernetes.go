@@ -3,7 +3,6 @@ package runner
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/sourcegraph/log"
 
@@ -47,27 +46,15 @@ func NewKubernetesRunner(
 }
 
 func (r *kubernetesRunner) Setup(ctx context.Context) error {
-	dir, err := os.MkdirTemp("", "executor-kubernetes-runner")
-	if err != nil {
-		return errors.Wrap(err, "failed to create tmp dir for kubernetes runner")
-	}
-	r.tmpDir = dir
-
+	// Nothing to do here.
 	return nil
 }
 
 func (r *kubernetesRunner) TempDir() string {
-	return r.tmpDir
+	return ""
 }
 
 func (r *kubernetesRunner) Teardown(ctx context.Context) error {
-	if err := os.RemoveAll(r.tmpDir); err != nil {
-		r.internalLogger.Error(
-			"Failed to remove kubernetes state tmp dir",
-			log.String("tmpDir", r.tmpDir),
-			log.Error(err),
-		)
-	}
 	for _, name := range r.jobNames {
 		if err := r.cmd.DeleteJob(ctx, r.options.Namespace, name); err != nil {
 			r.internalLogger.Error(
