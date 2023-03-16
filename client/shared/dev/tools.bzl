@@ -19,7 +19,7 @@ def module_style_typings(name, deps = []):
     srcs = native.glob(["src/**/*.module.scss"])
     outs = ["%s.d.ts" % src for src in srcs]
 
-    types_scss_modules_bin.tsm(
+    types_scss_modules_bin.typed_scss_modules(
         name = "%s_types" % name,
         srcs = srcs + deps,
         outs = outs,
