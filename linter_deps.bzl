@@ -35,9 +35,115 @@ def linter_dependencies():
 
   go_repository(
     name = "com_github_gordonklaus_ineffassign",
+    build_file_proto_mode = "disable_global",
     importpath = "github.com/gordonklaus/ineffassign",
     version = "v0.0.0-20230107090616-13ace0543b28",
     sum = "h1:9alfqbrhuD+9fLZ4iaAVwhlp5PEhmnBt7yvK2Oy5C1U=",
   )
 
+  go_repository(
+    name = "com_github_gocritic_gocritic",
+    build_file_proto_mode = "disable_global",
+    importpath = "github.com/go-critic/go-critic",
+    version = "v0.6.7",
+    sum = "h1:1evPrElnLQ2LZtJfmNDzlieDhjnq36SLgNzisx06oPM=",
+  )
 
+  go_repository(
+    name = "com_github_go_toolsmith_astcast",
+    build_file_proto_mode = "disable_global",
+    importpath = "github.com/go-toolsmith/astcast",
+    version = "v1.1.0",
+    sum = "h1:+JN9xZV1A+Re+95pgnMgDboWNVnIMMQXwfBwLRPgSC8=",
+  )
+
+  go_repository(
+    name = "com_github_go_toolsmith_astcopy",
+    build_file_proto_mode = "disable_global",
+    importpath = "github.com/go-toolsmith/astcopy",
+    version = "v1.0.2",
+    sum = "h1:YnWf5Rnh1hUudj11kei53kI57quN/VH6Hp1n+erozn0=",
+  )
+
+  go_repository(
+    name = "com_github_go_toolsmith_astequal",
+    build_file_proto_mode = "disable_global",
+    importpath = "github.com/go-toolsmith/astequal",
+    version = "v1.1.0",
+    sum = "h1:kHKm1AWqClYn15R0K1KKE4RG614D46n+nqUQ06E1dTw=",
+  )
+
+  go_repository(
+    name = "com_github_go_toolsmith_astfmt",
+    build_file_proto_mode = "disable_global",
+    importpath = "github.com/go-toolsmith/astfmt",
+    version = "v1.1.0",
+    sum = "h1:iJVPDPp6/7AaeLJEruMsBUlOYCmvg0MoCfJprsOmcco=",
+  )
+
+  go_repository(
+    name = "com_github_go_toolsmith_astp",
+    build_file_proto_mode = "disable_global",
+    importpath = "github.com/go-toolsmith/astp",
+    version = "v1.1.0",
+    sum = "h1:dXPuCl6u2llURjdPLLDxJeZInAeZ0/eZwFJmqZMnpQA=",
+  )
+
+  go_repository(
+    name = "com_github_go_toolsmith_pkgload",
+    build_file_proto_mode = "disable_global",
+    importpath = "github.com/go-toolsmith/pkgload",
+    version = "v1.0.2-0.20220101231613-e814995d17c5",
+    sum = "h1:eD9POs68PHkwrx7hAB78z1cb6PfGq/jyWn3wJywsH1o=",
+  )
+
+  go_repository(
+    name = "com_github_go_toolsmith_strparse",
+    build_file_proto_mode = "disable_global",
+    importpath = "github.com/go-toolsmith/strparse",
+    version = "v1.1.0",
+    sum = "h1:GAioeZUK9TGxnLS+qfdqNbA4z0SSm5zVNtCQiyP2Bvw=",
+  )
+
+  go_repository(
+    name = "com_github_go_toolsmith_typep",
+    build_file_proto_mode = "disable_global",
+    importpath = "github.com/go-toolsmith/typep",
+    version = "v1.1.0",
+    sum = "h1:fIRYDyF+JywLfqzyhdiHzRop/GQDxxNhLGQ6gFUNHus=",
+  )
+
+  go_repository(
+    name = "com_github_quasilyte_go_ruleguard",
+    importpath = "github.com/quasilyte/go-ruleguard",
+    version = "v0.3.19",
+    sum = "h1:tfMnabXle/HzOb5Xe9CUZYWXKfkS1KwRmZyPmD9nVcc=",
+  )
+
+  go_repository(
+    name = "com_github_quasilyte_gogrep",
+    importpath = "github.com/quasilyte/gogrep",
+    version = "v0.5.0",
+    sum = "h1:eTKODPXbI8ffJMN+W2aE0+oL0z/nh8/5eNdiO34SOAo=",
+  )
+
+  go_repository(
+    name = "com_github_quasilyte_regex_syntax",
+    importpath = "github.com/quasilyte/regex/syntax",
+    version = "v0.0.0-20200407221936-30656e2c4a95",
+    sum = "h1:L8QM9bvf68pVdQ3bCFZMDmnt9yqcMBro1pC7F+IPYMY=",
+  )
+
+  go_repository(
+    name = "com_github_quasilyte_stdinfo",
+    importpath = "github.com/quasilyte/stdinfo",
+    version = "v0.0.0-20220114132959-f7386bf02567",
+    sum = "h1:M8mH9eK4OUR4lu7Gd+PU1fV2/qnDNfzT635KRSObncs=",
+  )
+
+  go_repository(
+    name = "org_golang_x_exp_typeparams",
+    importpath = "golang.org/x/exp/typeparams",
+    version = "v0.0.0-20230203172020-98cc5a0785f9",
+    sum = "h1:6WHiuFL9FNjg8RljAaT7FNUuKDbvMqS1i5cr2OE2sLQ=",
+  )
