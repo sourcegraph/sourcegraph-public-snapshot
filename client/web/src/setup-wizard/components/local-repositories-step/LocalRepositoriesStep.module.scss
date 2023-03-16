@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .content {
     min-height: 30rem;
     display: flex;
@@ -7,6 +9,9 @@
 
 .file-picker {
     width: 65%;
+    @media (--sm-breakpoint-down) {
+        width: 100%;
+    }
 }
 
 .input-root {
@@ -52,6 +57,7 @@
 .list {
     display: flex;
     flex-direction: column;
+    overflow-x: auto;
     gap: 0.5rem;
     padding: 0;
     margin: 1rem 0 0 0.5rem;
@@ -59,6 +65,10 @@
 
     &:empty {
         display: none;
+    }
+
+    svg {
+        overflow: initial;
     }
 }
 
