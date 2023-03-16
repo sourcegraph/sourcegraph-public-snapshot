@@ -62,6 +62,10 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
             __typename: 'Site',
             id: 'TestSiteID',
             needsRepositoryConfiguration: false,
+            reposCounts: {
+                __typename: 'ReposCounts',
+                remoteReposCount: 1,
+            },
             freeUsersExceeded: false,
             alerts: [],
             authProviders: {

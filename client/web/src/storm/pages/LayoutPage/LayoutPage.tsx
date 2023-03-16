@@ -91,6 +91,8 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     // so that Layout can always render the navbar.
     const needsSiteInit = window.context?.needsSiteInit
     const disableFeedbackSurvey = window.context?.disableFeedbackSurvey
+    const needsRepositoryConfiguration =
+        window.context.totalLocalRepositories + window.context.totalRemoteRepositories === 0
     const isSiteInit = location.pathname === PageRoutes.SiteAdminInit
     const isSignInOrUp = useIsSignInOrSignUpPage()
 
@@ -153,7 +155,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     // setup wizard state, since we don't have a good solution for this at the
     // moment, we use mutable window.context object here.
     // TODO remove window.context and use injected context store/props
-    if (window.context.needsRepositoryConfiguration && !wasSetupWizardSkipped && props.authenticatedUser?.siteAdmin) {
+    if (needsRepositoryConfiguration && !wasSetupWizardSkipped && props.authenticatedUser?.siteAdmin) {
         return <Navigate to={PageRoutes.SetupWizard} replace={true} />
     }
 
