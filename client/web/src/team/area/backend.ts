@@ -76,3 +76,15 @@ export function useAssignParentTeam(): MutationTuple<AssignParentTeamResult, Ass
         `
     )
 }
+
+export function useRemoveParentTeam(): MutationTuple<RemoveParentTeamResult, RemoveParentTeamVariables> {
+    return useMutation<RemoveParentTeamResult, RemoveParentTeamVariables>(
+        gql`
+            mutation RemoveParentTeam($id: ID!) {
+                updateTeam(id: $id, makeRoot: true) {
+                    id
+                }
+            }
+        `
+    )
+}

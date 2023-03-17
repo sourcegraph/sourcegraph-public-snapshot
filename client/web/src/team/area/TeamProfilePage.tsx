@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
-import { mdiPencil } from '@mdi/js'
+import { mdiDelete, mdiPencil } from '@mdi/js'
 
 import { logger } from '@sourcegraph/common'
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
@@ -14,6 +14,7 @@ import { Scalars, TeamAreaTeamFields } from '../../graphql-operations'
 
 import { useChangeTeamDisplayName } from './backend'
 import { EditParentTeamModal } from './EditParentTeamModal'
+import { RemoveParentTeamModal } from './RemoveParentTeamModal'
 import { TeamHeader } from './TeamHeader'
 
 export interface TeamProfilePageProps {
@@ -25,7 +26,9 @@ export interface TeamProfilePageProps {
 }
 
 export const TeamProfilePage: React.FunctionComponent<TeamProfilePageProps> = ({ team, onTeamUpdate }) => {
-    const [openModal, setOpenModal] = useState<'edit-display-name' | 'edit-parent-team' | undefined>()
+    const [openModal, setOpenModal] = useState<
+        'edit-display-name' | 'edit-parent-team' | 'remove-parent-team' | undefined
+    >()
 
     const onEditDisplayName = useCallback<React.MouseEventHandler>(event => {
         event.preventDefault()
@@ -34,6 +37,10 @@ export const TeamProfilePage: React.FunctionComponent<TeamProfilePageProps> = ({
     const onEditParentTeam = useCallback<React.MouseEventHandler>(event => {
         event.preventDefault()
         setOpenModal('edit-parent-team')
+    }, [])
+    const onConfirmParentTeamRemoval = useCallback<React.MouseEventHandler>(event => {
+        event.preventDefault()
+        setOpenModal('remove-parent-team')
     }, [])
     const closeModal = useCallback(() => {
         setOpenModal(undefined)
@@ -66,10 +73,19 @@ export const TeamProfilePage: React.FunctionComponent<TeamProfilePageProps> = ({
                     <H3>Parent team</H3>
                     <Text className="d-flex align-items-center">
                         {team.parentTeam && <span>{team.parentTeam?.displayName || team.parentTeam?.name}</span>}
-                        {!team.parentTeam && <span className="text-muted">No display name set</span>}{' '}
+                        {!team.parentTeam && <span className="text-muted">Root team - no parent</span>}{' '}
                         {team.viewerCanAdminister && (
                             <Button variant="link" onClick={onEditParentTeam} className="ml-2" size="sm">
-                                <Icon inline={true} aria-label="Edit parent team" svgPath={mdiPencil} />
+                                <Icon
+                                    inline={true}
+                                    aria-label={team.parentTeam ? 'Edit parent team' : 'Add parent team'}
+                                    svgPath={mdiPencil}
+                                />
+                            </Button>
+                        )}
+                        {team.viewerCanAdminister && team.parentTeam && (
+                            <Button variant="link" onClick={onConfirmParentTeamRemoval} className="ml-2" size="sm">
+                                <Icon inline={true} aria-label="Remove parent team" svgPath={mdiDelete} />
                             </Button>
                         )}
                     </Text>
@@ -105,6 +121,15 @@ export const TeamProfilePage: React.FunctionComponent<TeamProfilePageProps> = ({
                     teamID={team.id}
                     teamName={team.name}
                     parentTeamName={team.parentTeam?.name || null}
+                />
+            )}
+
+            {openModal === 'remove-parent-team' && (
+                <RemoveParentTeamModal
+                    onCancel={closeModal}
+                    afterEdit={afterAction}
+                    teamID={team.id}
+                    teamName={team.name}
                 />
             )}
         </>
