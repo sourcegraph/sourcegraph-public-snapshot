@@ -13,9 +13,8 @@ go_library(
     visibility = ["//enterprise/cmd/repo-updater:__subpackages__"],
     deps = [
         "//cmd/frontend/envvar",
-        "//cmd/frontend/globals",
+        "//enterprise/internal/authz",
         "//enterprise/internal/database",
-        "//enterprise/internal/licensing",
         "//internal/api",
         "//internal/authz",
         "//internal/authz/permssync",

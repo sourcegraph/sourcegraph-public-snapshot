@@ -12,6 +12,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
@@ -147,6 +148,61 @@ func (r *siteResolver) ProductSubscription() *productSubscriptionStatus {
 
 func (r *siteResolver) AllowSiteSettingsEdits() bool {
 	return canUpdateSiteConfiguration()
+}
+
+func (r *siteResolver) ReposCounts(ctx context.Context) (*reposCountsResolver, error) {
+	// 🚨 SECURITY: Only admins can view repositories counts
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	return &reposCountsResolver{db: r.db}, nil
+}
+
+type reposCountsResolver struct {
+	remoteReposCount int32
+	localReposCount  int32
+
+	db   database.DB
+	once sync.Once
+	err  error
+}
+
+func (r *reposCountsResolver) compute(ctx context.Context) (int32, int32, error) {
+	r.once.Do(func() {
+		remoteCount, localCount, err := backend.NewAppExternalServices(r.db).RepositoriesCounts(ctx)
+		if err != nil {
+			r.err = err
+		}
+
+		// if this is not sourcegraph app then local repos count should be zero because
+		// serve-git service only runs in sourcegraph app
+		// see /internal/service/servegit/serve.go
+		if !deploy.IsApp() {
+			localCount = 0
+		}
+
+		r.remoteReposCount = remoteCount
+		r.localReposCount = localCount
+	})
+
+	return r.remoteReposCount, r.localReposCount, r.err
+}
+
+func (r *reposCountsResolver) RemoteReposCount(ctx context.Context) (int32, error) {
+	remoteReposCount, _, err := r.compute(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return remoteReposCount, nil
+}
+
+func (r *reposCountsResolver) LocalReposCount(ctx context.Context) (int32, error) {
+	_, localReposCount, err := r.compute(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return localReposCount, nil
 }
 
 type siteConfigurationResolver struct {

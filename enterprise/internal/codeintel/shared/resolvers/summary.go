@@ -255,38 +255,11 @@ func NewRepositorySummaryResolver(
 	}
 }
 
-func (r *repositorySummaryResolver) RecentUploads() []resolverstubs.LSIFUploadsWithRepositoryNamespaceResolver {
-	resolvers := make([]resolverstubs.LSIFUploadsWithRepositoryNamespaceResolver, 0, len(r.summary.RecentUploads))
-	for _, upload := range r.summary.RecentUploads {
-		uploadResolvers := make([]resolverstubs.LSIFUploadResolver, 0, len(upload.Uploads))
-		for _, u := range upload.Uploads {
-			uploadResolvers = append(uploadResolvers, NewUploadResolver(r.uploadsSvc, r.policySvc, r.gitserverClient, r.siteAdminChecker, r.repoStore, u, r.prefetcher, r.locationResolver, r.errTracer))
-		}
-
-		resolvers = append(resolvers, NewLSIFUploadsWithRepositoryNamespaceResolver(upload, uploadResolvers))
-	}
-
-	return resolvers
-}
-
 func (r *repositorySummaryResolver) AvailableIndexers() []resolverstubs.InferredAvailableIndexersResolver {
 	resolvers := make([]resolverstubs.InferredAvailableIndexersResolver, 0, len(r.availableIndexers))
 	for _, indexer := range r.availableIndexers {
 		resolvers = append(resolvers, resolverstubs.NewInferredAvailableIndexersResolver(types.NewCodeIntelIndexerResolverFrom(indexer.Indexer, ""), indexer.Roots))
 	}
-	return resolvers
-}
-
-func (r *repositorySummaryResolver) RecentIndexes() []resolverstubs.LSIFIndexesWithRepositoryNamespaceResolver {
-	resolvers := make([]resolverstubs.LSIFIndexesWithRepositoryNamespaceResolver, 0, len(r.summary.RecentIndexes))
-	for _, index := range r.summary.RecentIndexes {
-		indexResolvers := make([]resolverstubs.LSIFIndexResolver, 0, len(index.Indexes))
-		for _, idx := range index.Indexes {
-			indexResolvers = append(indexResolvers, NewIndexResolver(r.uploadsSvc, r.policySvc, r.gitserverClient, r.siteAdminChecker, r.repoStore, idx, r.prefetcher, r.locationResolver, r.errTracer))
-		}
-		resolvers = append(resolvers, NewLSIFIndexesWithRepositoryNamespaceResolver(index, indexResolvers))
-	}
-
 	return resolvers
 }
 

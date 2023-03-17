@@ -308,6 +308,7 @@ const defaultFeatures: SettingsExperimentalFeatures = {
     codeInsightsRepoUI: 'search-query-or-strict-list',
     applySearchQuerySuggestionOnEnter: false,
     isInitialized: true,
+    searchQueryInput: 'experimental',
 }
 
 /**

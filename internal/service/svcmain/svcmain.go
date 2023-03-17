@@ -3,12 +3,15 @@ package svcmain
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/output"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -29,8 +32,11 @@ type Config struct {
 	AfterConfigure func() // run after all services' Configure hooks are called
 }
 
-// Main is called from the `main` function of the `sourcegraph-oss` and `sourcegraph` commands.
-func Main(services []sgservice.Service, config Config) {
+// Main is called from the `main` function of the `sourcegraph-oss` and
+// `sourcegraph` commands.
+//
+// args is the commandline arguments (usually os.Args).
+func Main(services []sgservice.Service, config Config, args []string) {
 	// Unlike other sourcegraph binaries we expect Sourcegraph App to be run
 	// by a user instead of deployed to a cloud. So adjust the default output
 	// format before initializing log.
@@ -50,9 +56,28 @@ func Main(services []sgservice.Service, config Config) {
 			},
 		),
 	)
-	logger := log.Scoped("sourcegraph", "Sourcegraph")
-	singleprogram.Init(logger)
-	run(liblog, logger, services, config, true, true)
+
+	runCommand := &cli.Command{
+		Name:  "run",
+		Usage: "Run the Sourcegraph App",
+		Action: func(ctx *cli.Context) error {
+			logger := log.Scoped("sourcegraph", "Sourcegraph")
+			singleprogram.Init(logger)
+			run(liblog, logger, services, config, true, true)
+			return nil
+		},
+	}
+
+	app := cli.NewApp()
+	app.Name = filepath.Base(args[0])
+	app.Usage = "The Sourcegraph App"
+	app.Version = version.Version()
+	app.Action = runCommand.Action
+
+	if err := app.Run(args); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
+	}
 }
 
 // DeprecatedSingleServiceMain is called from the `main` function of a command to start a single

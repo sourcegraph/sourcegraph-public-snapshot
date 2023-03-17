@@ -1,4 +1,12 @@
-import { countColumn, Extension, Prec, StateEffect, StateField } from '@codemirror/state'
+import {
+    countColumn,
+    EditorSelection,
+    Extension,
+    Prec,
+    StateEffect,
+    StateField,
+    TransactionSpec,
+} from '@codemirror/state'
 import { EditorView, getTooltip, PluginValue, showTooltip, Tooltip, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { BehaviorSubject, from, fromEvent, of, Subject, Subscription } from 'rxjs'
 import { debounceTime, filter, map, scan, switchMap, tap } from 'rxjs/operators'
@@ -144,15 +152,21 @@ const warmupOccurrence = (view: EditorView, occurrence: Occurrence): void => {
 }
 
 /**
- * Sets given occurrence to {@link codeIntelTooltipsState}, syncs editor selection with occurrence range,
+ * Sets given occurrence to {@link codeIntelTooltipsState}, sets editor selection to the occurrence range start,
  * fetches hover, definition data and document highlights for occurrence, and focuses the selected occurrence DOM node.
  */
-export const selectOccurrence = (view: EditorView, occurrence: Occurrence): void => {
+export const selectOccurrence = (view: EditorView, occurrence: Occurrence, isClickEvent?: boolean): void => {
     warmupOccurrence(view, occurrence)
-    view.dispatch({
-        effects: setFocusedOccurrence.of(occurrence),
-        selection: rangeToCmSelection(view.state, occurrence.range),
-    })
+    const spec: TransactionSpec = { effects: setFocusedOccurrence.of(occurrence) }
+    if (!isClickEvent) {
+        /**
+         * Set editor selection cursor to the occurrence start.
+         * Ignore click events, they update editor selection by default.
+         */
+        const selection = rangeToCmSelection(view.state, occurrence.range)
+        spec.selection = EditorSelection.cursor(selection.from)
+    }
+    view.dispatch(spec)
     showDocumentHighlightsForOccurrence(view, occurrence)
     focusOccurrence(view, occurrence)
 }

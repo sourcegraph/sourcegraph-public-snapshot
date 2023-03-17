@@ -150,14 +150,15 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 	totalUploadCount := 0
 	if !skipUploads {
 		if uploads, totalUploadCount, err = r.uploadSvc.GetUploads(ctx, uploadsshared.GetUploadsOptions{
-			RepositoryID: repositoryID,
-			States:       uploadStates,
-			Term:         term,
-			DependencyOf: dependencyOf,
-			DependentOf:  dependentOf,
-			IndexerNames: indexerNames,
-			Limit:        pageSize,
-			Offset:       uploadOffset,
+			RepositoryID:       repositoryID,
+			States:             uploadStates,
+			Term:               term,
+			DependencyOf:       dependencyOf,
+			DependentOf:        dependentOf,
+			AllowDeletedUpload: args.IncludeDeleted != nil && *args.IncludeDeleted,
+			IndexerNames:       indexerNames,
+			Limit:              pageSize,
+			Offset:             uploadOffset,
 		}); err != nil {
 			return nil, err
 		}

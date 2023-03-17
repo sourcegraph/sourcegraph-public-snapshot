@@ -57,8 +57,7 @@ export function interactiveOccurrencesExtension(): Extension {
                         decoration: Decoration.mark({
                             class: classNames(
                                 'interactive-occurrence', // used as interactive occurrence selector
-                                'focus-visible', // prevents code editor from blur when focused element inside it changes
-                                'selection-highlight' // highlights the selected (focused) occurrence
+                                'focus-visible' // prevents code editor from blur when focused element inside it changes
                             ),
                             attributes: {
                                 // Selected (focused) occurrence is the only focusable element in the editor.

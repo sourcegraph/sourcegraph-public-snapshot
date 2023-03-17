@@ -258,6 +258,4 @@ jest_test(
     data = [
         ":branded_tests",
     ],
-    # TODO(bazel): enable when snapshots updated to support pre-compiled .js files
-    tags = ["manual"],
 )
