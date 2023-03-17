@@ -93,10 +93,10 @@ func (c *Config) Load() {
 	c.KubernetesNodeName = c.GetOptional("EXECUTOR_KUBERNETES_NODE_NAME", "The name of the Kubernetes node to run executor jobs in.")
 	c.KubernetesNamespace = c.Get("EXECUTOR_KUBERNETES_NAMESPACE", "default", "The namespace to run executor jobs in.")
 	c.KubernetesPersistenceVolumeName = c.Get("EXECUTOR_KUBERNETES_PERSISTENCE_VOLUME_NAME", "executor-pvc", "The name of the Kubernetes persistence volume to use for executor jobs.")
-	c.KubernetesResourceLimitCPU = c.Get("EXECUTOR_KUBERNETES_RESOURCE_LIMIT_CPU", "1", "The CPU resource limit for Kubernetes jobs.")
-	c.KubernetesResourceLimitMemory = c.Get("EXECUTOR_KUBERNETES_RESOURCE_LIMIT_MEMORY", "1Gi", "The memory resource limit for Kubernetes jobs.")
-	c.KubernetesResourceRequestCPU = c.Get("EXECUTOR_KUBERNETES_RESOURCE_REQUEST_CPU", "1", "The CPU resource request for Kubernetes jobs.")
-	c.KubernetesResourceRequestMemory = c.Get("EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY", "1Gi", "The memory resource request for Kubernetes jobs.")
+	c.KubernetesResourceLimitCPU = c.Get("EXECUTOR_KUBERNETES_RESOURCE_LIMIT_CPU", "1", "The maximum CPU resource for Kubernetes Jobs.")
+	c.KubernetesResourceLimitMemory = c.Get("EXECUTOR_KUBERNETES_RESOURCE_LIMIT_MEMORY", "1Gi", "The maximum memory resource for Kubernetes Jobs.")
+	c.KubernetesResourceRequestCPU = c.Get("EXECUTOR_KUBERNETES_RESOURCE_REQUEST_CPU", "1", "The minimum CPU resource for Kubernetes Jobs.")
+	c.KubernetesResourceRequestMemory = c.Get("EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY", "1Gi", "The minimum memory resource for Kubernetes Jobs.")
 	c.dockerAuthConfigStr = c.GetOptional("EXECUTOR_DOCKER_AUTH_CONFIG", "The content of the docker config file including auth for services. If using firecracker, only static credentials are supported, not credential stores nor credential helpers.")
 
 	if c.dockerAuthConfigStr != "" {
