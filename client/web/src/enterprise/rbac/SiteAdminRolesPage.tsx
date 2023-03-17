@@ -56,7 +56,11 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
             <PageHeader
                 className={styles.rolesPageHeader}
                 description={
-                    <>Roles represent a set of permissions that are granted to a user. Roles are currently only available for Batch Changes functionality. Use the <Link to="/site-admin/users">user administration page</Link> to assign roles.</>
+                    <>
+                        Roles represent a set of permissions that are granted to a user. Roles are currently only
+                        available for Batch Changes functionality. Use the{' '}
+                        <Link to="/site-admin/users">user administration page</Link> to assign roles.
+                    </>
                 }
                 actions={
                     <Button variant="primary" onClick={openModal}>
