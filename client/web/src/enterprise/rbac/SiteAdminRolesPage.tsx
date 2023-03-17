@@ -64,7 +64,7 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
             >
                 <PageHeader.Heading as="h2">
                     <PageHeader.Breadcrumb>
-                        Roles <ProductStatusBadge status="experimental" />
+                        Roles <ProductStatusBadge status="beta" />
                     </PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>
