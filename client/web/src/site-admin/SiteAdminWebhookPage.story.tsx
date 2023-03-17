@@ -20,7 +20,7 @@ import { BODY_JSON, BODY_PLAIN, HEADERS_JSON, HEADERS_PLAIN } from './webhooks/s
 const decorator: DecoratorFn = Story => <Story />
 
 const config: Meta = {
-    title: 'web/src/site-admin/SiteAdminWebhookPage',
+    title: 'web/src/site-admin/webhooks/incoming/SiteAdminWebhookPage',
     decorators: [decorator],
 }
 

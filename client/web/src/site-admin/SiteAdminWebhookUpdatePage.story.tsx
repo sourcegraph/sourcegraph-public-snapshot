@@ -17,7 +17,7 @@ import { SiteAdminWebhookUpdatePage } from './SiteAdminWebhookUpdatePage'
 const decorator: DecoratorFn = Story => <Story />
 
 const config: Meta = {
-    title: 'web/src/site-admin/SiteAdminWebhookUpdatePage',
+    title: 'web/src/site-admin/webhooks/incoming/SiteAdminWebhookUpdatePage',
     decorators: [decorator],
 }
 
