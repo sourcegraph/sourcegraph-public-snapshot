@@ -30,7 +30,7 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     isRankingEnabled: true,
     setRankingEnabled: noop,
     options: {
-        version: "V3",
+        version: 'V3',
         patternType: SearchPatternType.standard,
         caseSensitive: false,
         trace: undefined,

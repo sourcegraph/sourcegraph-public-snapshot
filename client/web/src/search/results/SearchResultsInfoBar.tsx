@@ -28,9 +28,9 @@ import styles from './SearchResultsInfoBar.module.scss'
 
 export interface SearchResultsInfoBarProps
     extends TelemetryProps,
-    PlatformContextProps<'settings' | 'sourcegraphURL'>,
-    SearchPatternTypeProps,
-    Pick<CaseSensitivityProps, 'caseSensitive'> {
+        PlatformContextProps<'settings' | 'sourcegraphURL'>,
+        SearchPatternTypeProps,
+        Pick<CaseSensitivityProps, 'caseSensitive'> {
     /** The currently authenticated user or null */
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'displayName' | 'emails' | 'permissions'> | null
 
@@ -39,7 +39,7 @@ export interface SearchResultsInfoBarProps
 
     /** The search query and results */
     query?: string
-    options: StreamSearchOptions,
+    options: StreamSearchOptions
     results?: AggregateStreamingSearchResults
 
     batchChangesEnabled?: boolean

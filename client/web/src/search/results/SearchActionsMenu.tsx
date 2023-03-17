@@ -3,6 +3,7 @@ import React, { useCallback } from 'react'
 import { mdiArrowCollapseUp, mdiArrowExpandDown, mdiBookmarkOutline, mdiChevronDown, mdiDownload } from '@mdi/js'
 import classNames from 'classnames'
 
+import { logger } from '@sourcegraph/common'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
@@ -26,14 +27,13 @@ import { CreateAction } from './createActions'
 import { downloadSearchResults } from './searchResultsExport'
 
 import navStyles from './SearchResultsInfoBar.module.scss'
-import { logger } from '@sourcegraph/common'
 
 interface SearchActionsMenuProps
     extends SearchPatternTypeProps,
-    Pick<PlatformContext, 'sourcegraphURL'>,
-    TelemetryProps {
+        Pick<PlatformContext, 'sourcegraphURL'>,
+        TelemetryProps {
     query?: string
-    options: StreamSearchOptions,
+    options: StreamSearchOptions
     results?: AggregateStreamingSearchResults
     authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
     createActions: CreateAction[]

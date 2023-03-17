@@ -1,3 +1,6 @@
+import { of } from 'rxjs'
+import { last } from 'rxjs/operators'
+
 import {
     ContentMatch,
     getFileMatchUrl,
@@ -14,8 +17,6 @@ import {
     StreamSearchOptions,
     aggregateStreamingSearch,
 } from '@sourcegraph/shared/src/search/stream'
-import { of } from 'rxjs'
-import { last } from 'rxjs/operators'
 
 import { eventLogger } from '../../tracking/eventLogger'
 
@@ -57,10 +58,10 @@ export const searchResultsToFileContent = (searchResults: SearchMatch[], sourceg
                         // "[pkg/microservice/systemconfig/core/codehost/repository/models/codehost.go, [[35, 43], [62,70]]]"
                         const pathMatches = result.pathMatches
                             ? JSON.stringify(
-                                `[${result.path}, [${result.pathMatches
-                                    .map(match => `[${match.start.column}, ${match.end.column}]`)
-                                    .join(' ')}]]`
-                            )
+                                  `[${result.path}, [${result.pathMatches
+                                      .map(match => `[${match.start.column}, ${match.end.column}]`)
+                                      .join(' ')}]]`
+                              )
                             : ''
 
                         // e.g. for query "codehost" the chunk match record can be
@@ -70,15 +71,15 @@ export const searchResultsToFileContent = (searchResults: SearchMatch[], sourceg
                         const chunkMatches =
                             'chunkMatches' in result
                                 ? JSON.stringify(
-                                    result.chunkMatches
-                                        ?.map(
-                                            match =>
-                                                `[${match.contentStart.line}, [${match.ranges
-                                                    .map(range => `[${range.start.column}, ${range.end.column}]`)
-                                                    .join(' ')}]]`
-                                        )
-                                        .join('; ')
-                                )
+                                      result.chunkMatches
+                                          ?.map(
+                                              match =>
+                                                  `[${match.contentStart.line}, [${match.ranges
+                                                      .map(range => `[${range.start.column}, ${range.end.column}]`)
+                                                      .join(' ')}]]`
+                                          )
+                                          .join('; ')
+                                  )
                                 : ''
 
                         return [
@@ -207,26 +208,38 @@ export const buildFileName = (query?: string): string => {
 export const downloadSearchResults = (
     sourcegraphURL: string,
     query: string,
-    options: StreamSearchOptions,
-): Promise<void> => new Promise<void>((resolve, reject) => {
-    // TODO: we have to figure out how to cancel this operation or show related progress
-    // https://github.com/sourcegraph/sourcegraph/issues/49645
-    // eslint-disable-next-line rxjs/no-ignored-subscription
-    aggregateStreamingSearch(of(query), { ...options, displayLimit: 999999 }).pipe(last()).subscribe(results => {
-        const content = searchResultsToFileContent(results.results, sourcegraphURL)
-        const blob = new Blob([content], { type: 'text/csv' })
-        const url = URL.createObjectURL(blob)
+    options: StreamSearchOptions
+): Promise<void> =>
+    new Promise<void>((resolve, reject) => {
+        // TODO: we have to figure out how to cancel this operation or show related progress
+        // https://github.com/sourcegraph/sourcegraph/issues/49645
+        // eslint-disable-next-line rxjs/no-ignored-subscription
+        aggregateStreamingSearch(of(query), { ...options, displayLimit: 999999 })
+            .pipe(last())
+            .subscribe(
+                results => {
+                    const content = searchResultsToFileContent(results.results, sourcegraphURL)
+                    const blob = new Blob([content], { type: 'text/csv' })
+                    const url = URL.createObjectURL(blob)
 
-        const a = document.createElement('a')
-        a.href = url
-        a.style.display = 'none'
-        a.download = buildFileName(query)
-        a.click()
-        eventLogger.log('SearchExportPerformed', { count: results.results.length }, { count: results.results.length })
+                    const a = document.createElement('a')
+                    a.href = url
+                    a.style.display = 'none'
+                    a.download = buildFileName(query)
+                    a.click()
+                    eventLogger.log(
+                        'SearchExportPerformed',
+                        { count: results.results.length },
+                        { count: results.results.length }
+                    )
 
-        // cleanup
-        a.remove()
-        URL.revokeObjectURL(url)
-        resolve()
-    }, error => { reject(error) })
-})
+                    // cleanup
+                    a.remove()
+                    URL.revokeObjectURL(url)
+                    resolve()
+                },
+                error => {
+                    reject(error)
+                }
+            )
+    })
