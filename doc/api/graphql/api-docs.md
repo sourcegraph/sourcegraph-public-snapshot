@@ -20486,8 +20486,8 @@
                       <td>
                         <p>Returns recently received webhooks on this external service.</p>
                         <p>Only site admins may access this field.</p>
-                        <p>DEPRECATED: Webhook logs linked directly to an external service will be removed. See <a href="https://docs.sourcegraph.com/admin/config/webhooks#deprecation-notice">https://docs.sourcegraph.com/admin/config/webhooks#deprecation-notice</a></p>
-                        <span class="deprecation-reason">Webhook logs linked directly to an external service will be removed. See <a href="https://docs.sourcegraph.com/admin/config/webhooks#deprecation-notice">https://docs.sourcegraph.com/admin/config/webhooks#deprecation-notice</a></span>
+                        <p>DEPRECATED: Webhook logs linked directly to an external service will be removed. See <a href="https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice">https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice</a></p>
+                        <span class="deprecation-reason">Webhook logs linked directly to an external service will be removed. See <a href="https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice">https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice</a></span>
                       </td>
                     </tr>
                     <tr class="row-field-arguments">

@@ -123,7 +123,7 @@ To only allow changesets to be reconciled at 1 changeset per minute on (UTC) wee
 
 > NOTE: This feature was added in Sourcegraph 3.33.
 
-Sourcegraph can track incoming webhooks from code hosts to more easily debug issues with webhook delivery. Learn [how to setup webhooks and configure logging](../../admin/config/webhooks.md#webhook-logging).
+Sourcegraph can track incoming webhooks from code hosts to more easily debug issues with webhook delivery. Learn [how to setup webhooks and configure logging](../../admin/config/webhooks/incoming.md#webhook-logging).
 
 ## Forks
 

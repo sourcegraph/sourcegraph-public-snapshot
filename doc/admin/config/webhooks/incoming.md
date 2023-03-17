@@ -25,9 +25,9 @@ Before adding an incoming webhook you should ensure that you have at least one [
 
 The incoming webhook will be configured to accept events from a specific code host connection based on its type and URN.
 
-1. Navigate to **Site Admin > Incoming webhooks**
+1. Navigate to _Site Admin_ > _Webhooks_ > _Incoming webhooks_
    ![Incoming webhooks page](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/webhooks/incoming-webhooks-page.png)
-2. Click **Add webhook**
+2. Click **+ Create webhook**
    ![Adding an incoming webhook](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/webhooks/adding-webhook.png)
 3. Fill out the form:
    1. **Webhook name**: Descriptive name for the webhook.
@@ -175,9 +175,9 @@ Done! Sourcegraph will now receive webhook events from Azure DevOps and use them
 
 Sourcegraph can track incoming webhooks from code hosts to more easily debug issues with webhook delivery. These webhooks can be viewed in two places depending on how they were added:
 
-1. Via **Site Admin > [Repositories] > Incoming webhooks**
+1. Via _Site Admin_ > _Webhooks_ > _Incoming webhooks_
    ![Webhook logs](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/webhooks/webhook-logs.png)
-2. **Deprecated** Via code host connection: **Site Admin > [Batch Changes] > Incoming webhooks**
+2. **Deprecated** Via code host connection: _Site Admin_ > _Batch Changes_ > _Incoming webhooks_
    ![Legacy webhook logs](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/webhooks/webhook-logs-legacy.png)
 
 By default, sites without [database encryption](encryption.md) enabled will retain three days of webhook logs. Sites with encryption will not retain webhook logs by default, as webhooks may include sensitive information; these sites can enable webhook logging and optionally configure encryption for them by using the settings below.

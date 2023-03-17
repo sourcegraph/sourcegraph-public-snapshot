@@ -181,7 +181,7 @@ export const SiteAdminWebhookPageHeader: FC<SiteAdminWebhookPageHeaderProps> = (
 const EmptyList: FC = () => (
     <div className="m-4 w-100 text-center text-muted">
         No requests received yet. Be sure to{' '}
-        <Link to="/help/admin/config/webhooks#configuring-webhooks-on-the-code-host">
+        <Link to="/help/admin/config/webhooks/incoming#configuring-webhooks-on-the-code-host">
             configure the webhook on the code host
         </Link>
         .
