@@ -211,7 +211,7 @@ func (r *siteResolver) AppHasConnectedDotComAccount() bool {
 	}
 
 	appConfig := conf.SiteConfig().App
-	return appConfig != nil && &appConfig.DotcomAuthToken != nil && *(&appConfig.DotcomAuthToken) != ""
+	return appConfig != nil && appConfig.DotcomAuthToken != ""
 }
 
 type siteConfigurationResolver struct {
