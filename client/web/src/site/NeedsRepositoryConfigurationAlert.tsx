@@ -25,8 +25,8 @@ export const NeedsRepositoryConfigurationAlert: React.FunctionComponent<
         className={classNames('d-flex align-items-center', className)}
     >
         <Link className="site-alert__link" to={PageRoutes.SetupWizard} onClick={onClickCTA}>
-            <span className="underline">Connect a code host</span>
+            <span className="underline">Go to setup wizard</span>
         </Link>
-        &nbsp;to connect repositories to Sourcegraph.
+        &nbsp;to add remote repositories from GitHub, GitLab, etc.
     </DismissibleAlert>
 )
