@@ -35,11 +35,6 @@ export class VSCEKeywordContextFetcher implements KeywordContextFetcher {
         const stemmedTerms = await nlp(query).match('#Noun').not('function').sort('length').out('array')
         const filteredTerms = stemmedTerms.filter((term: string) => term.length >= 3)
         const { fileTermCounts, termTotalFiles, totalFiles } = await this.fetchSymbolMatches(filteredTerms, rootPath)
-        // TODO: if symbol search is empty or less than 10, look for keywords in current workspace
-        // if (totalFiles < 10) {
-        //     const filesMatches = await this.fetchFileMatches(filteredTerms)
-        // }
-
         const idfDict = this.idf(termTotalFiles, totalFiles)
         const filenamesWithScores = Object.entries(fileTermCounts)
             .map(([filename, termCounts]) => {
@@ -51,6 +46,11 @@ export class VSCEKeywordContextFetcher implements KeywordContextFetcher {
                 }
             })
             .sort(({ score: score1 }, { score: score2 }) => score2 - score1)
+        // If symbol search is empty or less than 10, look for keywords in current workspace
+        if (filenamesWithScores.length < 10) {
+            const filesMatches = await this.fetchFileMatches(filteredTerms)
+            return [...filenamesWithScores, ...filesMatches]
+        }
         return filenamesWithScores
     }
 
@@ -88,7 +88,6 @@ export class VSCEKeywordContextFetcher implements KeywordContextFetcher {
                     return { fileCounts, filesSearched }
                 })
             )
-
         // Map filenames to an object mapping terms to match counts for that filename
         const fileTermCounts: { [filename: string]: { [term: string]: number } } = {}
         // Map terms to the number of files they matched
@@ -112,29 +111,27 @@ export class VSCEKeywordContextFetcher implements KeywordContextFetcher {
     }
 
     // TODO: Beatrix WIP
-    // private async fetchFileMatches(
-    //     keywords: string[]
-    // ): Promise<{
-    //     totalFiles: number
-    //     fileTermCounts: { [filename: string]: { [term: string]: number } }
-    //     termTotalFiles: { [term: string]: number }
-    // }> {
-    //     const matchedFiles: string[] = []
-    //     const excludePattern = this.generateExcludePattern()
-    //     // Create a regular expression pattern that matches the first two longest keywords
-    //     // const keyword = new RegExp(`^(?=.*${keywords[0]})(?=.*${keywords[1]}).+$`)
-    //     const keyword = new RegExp(`${keywords[0]}|${keywords[1]}`)
-    //     const foundFiles = await vscode.workspace.findFiles('**/*', excludePattern, 10000)
-    //     for (const file of foundFiles) {
-    //         const content = await vscode.workspace.fs.readFile(file)
-    //         const fileContent = content.toString()
-    //         if (keyword.test(fileContent)) {
-    //             // TODO: Add scoring
-    //             matchedFiles.push(file.fsPath)
-    //         }
-    //     }
-    //     return matchedFiles
-    // }
+    private async fetchFileMatches(keywords: string[]): Promise<{ filename: string; score: number }[]> {
+        const matchedFiles: { filename: string; score: number }[] = []
+        const excludePattern = this.generateExcludePattern()
+        // Create a regular expression pattern that matches the first two longest keywords
+        const keyword = new RegExp(`${keywords[0]}|${keywords[1]}`)
+        const foundFiles = await vscode.workspace.findFiles('**/*', excludePattern, 10000)
+        for (const file of foundFiles) {
+            const content = await vscode.workspace.fs.readFile(file)
+            const fileContent = content.toString()
+            if (keyword.test(fileContent)) {
+                const multipleMatchPattern = new RegExp(`^(?=.*${keywords[0]})(?=.*${keywords[1]}).+$`)
+                matchedFiles.push({
+                    filename: file.path,
+                    // if both keywords exists in the file: 1
+                    // if only one keyword exist in the file: 0
+                    score: multipleMatchPattern.test(fileContent) ? 1 : 0,
+                })
+            }
+        }
+        return matchedFiles
+    }
 
     public getRootPath(): string | null {
         const docUri = vscode.window.activeTextEditor?.document.uri
