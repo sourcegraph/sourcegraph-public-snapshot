@@ -221,7 +221,7 @@ func (r *preciseIndexResolver) Indexer() resolverstubs.CodeIntelIndexerResolver 
 		// Note: check index as index fields may contain docker shas
 		return types.NewCodeIntelIndexerResolver(r.index.Indexer, r.index.Indexer)
 	} else if r.upload != nil {
-		types.NewCodeIntelIndexerResolver(r.upload.Indexer, "")
+		return types.NewCodeIntelIndexerResolver(r.upload.Indexer, "")
 	}
 
 	return nil
