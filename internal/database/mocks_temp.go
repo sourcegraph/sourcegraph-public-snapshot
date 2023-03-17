@@ -51161,6 +51161,9 @@ func (c SettingsStoreWithFuncCall) Results() []interface{} {
 // the package github.com/sourcegraph/sourcegraph/internal/database) used
 // for unit testing.
 type MockTeamStore struct {
+	// ContainsTeamFunc is an instance of a mock function object controlling
+	// the behavior of the method ContainsTeam.
+	ContainsTeamFunc *TeamStoreContainsTeamFunc
 	// CountTeamMembersFunc is an instance of a mock function object
 	// controlling the behavior of the method CountTeamMembers.
 	CountTeamMembersFunc *TeamStoreCountTeamMembersFunc
@@ -51209,6 +51212,11 @@ type MockTeamStore struct {
 // methods return zero values for all results, unless overwritten.
 func NewMockTeamStore() *MockTeamStore {
 	return &MockTeamStore{
+		ContainsTeamFunc: &TeamStoreContainsTeamFunc{
+			defaultHook: func(context.Context, int32, ListTeamsOpts) (r0 bool, r1 error) {
+				return
+			},
+		},
 		CountTeamMembersFunc: &TeamStoreCountTeamMembersFunc{
 			defaultHook: func(context.Context, ListTeamMembersOpts) (r0 int32, r1 error) {
 				return
@@ -51286,6 +51294,11 @@ func NewMockTeamStore() *MockTeamStore {
 // methods panic on invocation, unless overwritten.
 func NewStrictMockTeamStore() *MockTeamStore {
 	return &MockTeamStore{
+		ContainsTeamFunc: &TeamStoreContainsTeamFunc{
+			defaultHook: func(context.Context, int32, ListTeamsOpts) (bool, error) {
+				panic("unexpected invocation of MockTeamStore.ContainsTeam")
+			},
+		},
 		CountTeamMembersFunc: &TeamStoreCountTeamMembersFunc{
 			defaultHook: func(context.Context, ListTeamMembersOpts) (int32, error) {
 				panic("unexpected invocation of MockTeamStore.CountTeamMembers")
@@ -51363,6 +51376,9 @@ func NewStrictMockTeamStore() *MockTeamStore {
 // All methods delegate to the given implementation, unless overwritten.
 func NewMockTeamStoreFrom(i TeamStore) *MockTeamStore {
 	return &MockTeamStore{
+		ContainsTeamFunc: &TeamStoreContainsTeamFunc{
+			defaultHook: i.ContainsTeam,
+		},
 		CountTeamMembersFunc: &TeamStoreCountTeamMembersFunc{
 			defaultHook: i.CountTeamMembers,
 		},
@@ -51406,6 +51422,117 @@ func NewMockTeamStoreFrom(i TeamStore) *MockTeamStore {
 			defaultHook: i.UpdateTeam,
 		},
 	}
+}
+
+// TeamStoreContainsTeamFunc describes the behavior when the ContainsTeam
+// method of the parent MockTeamStore instance is invoked.
+type TeamStoreContainsTeamFunc struct {
+	defaultHook func(context.Context, int32, ListTeamsOpts) (bool, error)
+	hooks       []func(context.Context, int32, ListTeamsOpts) (bool, error)
+	history     []TeamStoreContainsTeamFuncCall
+	mutex       sync.Mutex
+}
+
+// ContainsTeam delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockTeamStore) ContainsTeam(v0 context.Context, v1 int32, v2 ListTeamsOpts) (bool, error) {
+	r0, r1 := m.ContainsTeamFunc.nextHook()(v0, v1, v2)
+	m.ContainsTeamFunc.appendCall(TeamStoreContainsTeamFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ContainsTeam method
+// of the parent MockTeamStore instance is invoked and the hook queue is
+// empty.
+func (f *TeamStoreContainsTeamFunc) SetDefaultHook(hook func(context.Context, int32, ListTeamsOpts) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ContainsTeam method of the parent MockTeamStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *TeamStoreContainsTeamFunc) PushHook(hook func(context.Context, int32, ListTeamsOpts) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *TeamStoreContainsTeamFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32, ListTeamsOpts) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *TeamStoreContainsTeamFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, int32, ListTeamsOpts) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *TeamStoreContainsTeamFunc) nextHook() func(context.Context, int32, ListTeamsOpts) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *TeamStoreContainsTeamFunc) appendCall(r0 TeamStoreContainsTeamFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of TeamStoreContainsTeamFuncCall objects
+// describing the invocations of this function.
+func (f *TeamStoreContainsTeamFunc) History() []TeamStoreContainsTeamFuncCall {
+	f.mutex.Lock()
+	history := make([]TeamStoreContainsTeamFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// TeamStoreContainsTeamFuncCall is an object that describes an invocation
+// of method ContainsTeam on an instance of MockTeamStore.
+type TeamStoreContainsTeamFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 ListTeamsOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c TeamStoreContainsTeamFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c TeamStoreContainsTeamFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // TeamStoreCountTeamMembersFunc describes the behavior when the
