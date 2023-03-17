@@ -156,7 +156,7 @@ async function goToDefinition(
             const requestPosition = new Position(params.position.line, params.position.character)
 
             if (resultRange.contains(requestPosition)) {
-                const refPanelURL = locationToURL(locationFrom, 'references')
+                const refPanelURL = locationToURL(view, locationFrom, 'references')
                 return {
                     url: refPanelURL,
                     atTheDefinition: true,
@@ -175,7 +175,7 @@ async function goToDefinition(
 
     if (definition.length === 1) {
         const destination = definition[0]
-        const hrefTo = locationToURL(destination)
+        const hrefTo = locationToURL(view, destination)
         const { range, uri } = definition[0]
 
         if (hrefTo && range) {
@@ -193,7 +193,7 @@ async function goToDefinition(
                     const { location, navigate } = view.state.facet(blobPropsFacet)
                     const locationState = location.state as DefinitionState
 
-                    const hrefFrom = locationToURL(locationFrom)
+                    const hrefFrom = locationToURL(view, locationFrom)
                     // Don't push URLs into the history if the last goto-def
                     // action was from the same URL same as this action. This
                     // happens when the user repeatedly triggers goto-def, which
@@ -222,7 +222,7 @@ async function goToDefinition(
     // Linking to the reference panel is a temporary workaround until we
     // implement a component to resolve ambiguous results inside the blob
     // view similar to how VS Code "Peek definition" works like.
-    const refPanelURL = locationToURL(locationFrom, 'def')
+    const refPanelURL = locationToURL(view, locationFrom, 'def')
 
     return {
         locations: definition,
@@ -239,9 +239,19 @@ async function goToDefinition(
     }
 }
 
-function locationToURL(location: Location, viewState?: BlobViewState): string | undefined {
+function locationToURL(view: EditorView, location: Location, viewState?: BlobViewState): string | undefined {
     const { range, uri } = location
-    const { filePath, repoName, revision } = parseRepoURI(uri)
+    const { filePath, repoName, revision: locationRevision } = parseRepoURI(uri)
+    const { blobInfo } = view.state.facet(blobPropsFacet)
+
+    // Try to preserve the non-canonical revision (branch name or empty revision)
+    // when possible.
+    const preserveNonCanonicalRevision =
+        blobInfo.repoName === repoName && // Destination location is within the same repo.
+        blobInfo.revision !== blobInfo.commitID && // Current URL is non-canonical/non-commit revision.
+        blobInfo.commitID === locationRevision // Destination revision is the as as current revision.
+    const revision = preserveNonCanonicalRevision ? blobInfo.revision : locationRevision
+
     if (filePath && range) {
         return toPrettyBlobURL({
             repoName,
