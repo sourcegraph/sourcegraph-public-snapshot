@@ -97,16 +97,18 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                         )}
                         <MenuHeader>Search query</MenuHeader>
                         {createActions.map(createAction => (
-                            <MenuLink key={createAction.label} as={Link} to={createAction.url}>
-                                <Icon
-                                    aria-hidden="true"
-                                    className="mr-1"
-                                    {...(typeof createAction.icon === 'string'
-                                        ? { svgPath: createAction.icon }
-                                        : { as: createAction.icon })}
-                                />
-                                {createAction.label}
-                            </MenuLink>
+                            <Tooltip content={createAction.tooltip} key={createAction.label} placement="left">
+                                <MenuLink as={Link} to={createAction.url} disabled={createAction.disabled}>
+                                    <Icon
+                                        aria-hidden="true"
+                                        className="mr-1"
+                                        {...(typeof createAction.icon === 'string'
+                                            ? { svgPath: createAction.icon }
+                                            : { as: createAction.icon })}
+                                    />
+                                    {createAction.label}
+                                </MenuLink>
+                            </Tooltip>
                         ))}
                         {createCodeMonitorAction && (
                             <Tooltip
@@ -115,6 +117,7 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                                         ? 'Code monitors only support type:diff or type:commit searches.'
                                         : undefined
                                 }
+                                placement="left"
                             >
                                 <MenuLink
                                     as={Link}
