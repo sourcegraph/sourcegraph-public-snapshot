@@ -8,9 +8,25 @@
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
-[Kubernetes manifests](https://github.com/sourcegraph/deploy-sourcegraph) are provided to deploy Sourcegraph Executors on a running Kubernetes cluster. If you are deploying Sourcegraph with helm, charts are available [here](https://github.com/sourcegraph/deploy-sourcegraph-helm).
+> NOTE: This feature is available in Sourcegraph 5.1.0 and later.
 
-## Environment Variables
+[Kubernetes manifests](https://github.com/sourcegraph/deploy-sourcegraph) are provided to deploy Sourcegraph Executors
+on a running Kubernetes cluster. If you are deploying Sourcegraph with helm, charts are
+available [here](https://github.com/sourcegraph/deploy-sourcegraph-helm).
+
+## Requirements
+
+### RBAC Roles
+
+Executors interact with the Kubernetes' API to handle jobs. The following are the RBAC Roles needed to run Executors on Kubernetes.
+
+| API Groups | Resources          | Verbs                     | Reason                                                                                    |
+|------------|--------------------|---------------------------|-------------------------------------------------------------------------------------------|
+| `batch`    | `jobs`             | `create`, `delete`, `get` | Executors create Job pods to run processes. Once Jobs are completed, they are cleaned up. |
+|            | `pods`, `pods/log` | `get`, `list`, `watch`    | Executors need to look up and steam logs from the Job Pods.                               |
+
+
+### Environment Variables
 
 The following are Environment Variables that are specific to the Kubernetes runtime. See other possible Environment
 Variables [here](./deploy_executors_binary.md#step-2-setup-environment-variables).
@@ -26,17 +42,143 @@ Variables [here](./deploy_executors_binary.md#step-2-setup-environment-variables
 | EXECUTOR_KUBERNETES_RESOURCE_REQUEST_CPU    | `1`            | The maximum CPU resource limit for Kubernetes Jobs.                                                                    |
 | EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY | `1Gi`          | The maximum memory resource limit for Kubernetes Jobs.                                                                 |
 
+### Example Configuration YAML
+
+The following is an example YAML file that can be used to deploy an Executor instance on Kubernetes.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: executor
+spec:
+  selector:
+    matchLabels:
+      app: executor
+  template:
+    metadata:
+      labels:
+        app: executor
+    spec:
+      hostNetwork: true
+      serviceAccountName: executor-service-account
+      containers:
+        - name: executor
+          # Update the image tag to the version that matches your Sourcegraph instance.
+          image: sourcegraph/executor-kubernetes:5.1.0
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: EXECUTOR_FRONTEND_URL
+              # The URL of the Sourcegraph instance to connect to.
+              value: https://my.sourcegraph.com
+            - name: EXECUTOR_FRONTEND_PASSWORD
+              # The shared secret between the executor and the Sourcegraph instance.
+              value: my-password
+            - name: EXECUTOR_QUEUE_NAME
+              # The name of the queue to pull jobs from. Either batches or codeintel.
+              value: batches
+            - name: EXECUTOR_MAXIMUM_NUM_JOBS
+              # The maximum number of jobs to run concurrently.
+              value: "10"
+          volumeMounts:
+            - mountPath: /data
+              name: executor-volume
+      volumes:
+        - name: executor-volume
+          persistentVolumeClaim:
+            claimName: executor-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: executor-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      # Configure this to the possible cumulative size of the Repositories that can be worked at any given time.
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: executor
+  labels:
+    app: executor
+spec:
+  selector:
+    app: executor
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: executor-service-account
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: default
+  name: executor-job-role
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "create", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: executor-log-role
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: executor-job-role-binding
+  namespace: default
+subjects:
+  - kind: ServiceAccount
+    name: executor-service-account
+    namespace: default
+roleRef:
+  kind: Role
+  name: executor-job-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: executor-log-role-binding
+subjects:
+  - kind: ServiceAccount
+    name: executor-service-account
+roleRef:
+  kind: Role
+  name: executor-log-role
+  apiGroup: rbac.authorization.k8s.io
+```
 
 ## Deployment
 
-Executors on kubernetes machines require privileged access to a container runtime daemon in order to operate correctly. In order to ensure maximum capability across Kubernetes versions and container runtimes, a [Docker in Docker](https://www.docker.com/blog/docker-can-now-run-within-docker/) side car is deployed with each executor pod to avoid accessing the host container runtime directly.
+Executors on Kubernetes require specific RBAC rules to be configured in order to operate correctly.
+See [RBAC Roles](#rbac-roles) for more information.
 
 ### Step-by-step Guide
 
-Ensure you have the following tools installed:
-
-  - [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
-  - [Helm](https://helm.sh/) if you're installing Sourcegraph with helm.
+Ensure you have the following tools installed.
+- [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
+- [Helm](https://helm.sh/) if you're installing Sourcegraph with helm.
 
 #### Deployment via kubectl (Kubernetes manifests)
 
@@ -52,7 +194,7 @@ Ensure you have the following tools installed:
 2. Run `cd deploy-sourcegraph-helm/charts/sourcegraph-executor`.
 3. Edit the `values.yaml` with any other customizations you may require.
 4. Run the following command:
-   1. `helm upgrade --install -f values.yaml --version 4.5.1 sg-executor sourcegraph/sourcegraph-executor`
+   1. `helm upgrade --install -f values.yaml --version 5.1.0 sg-executor sourcegraph/sourcegraph-executor`
 5. Confirm executors are working by checking the _Executors_ page under _Site Admin_ > _Executors_ > _Instances_ .
 
 
@@ -60,7 +202,7 @@ For more information on the components being deployed see the [Executors readme]
 
 ## Note
 
-Executors deployed in kubernetes do not use [Firecracker](executors.md#how-it-works), meaning they require [privileged access](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) to the docker daemon running in a sidecar alongside the executor pod.
+Executors deployed in kubernetes do not use [Firecracker](executors.md#how-it-works).
 
 If you have security concerns, consider deploying via [terraform](deploy_executors_terraform.md) or [installing the binary](deploy_executors_binary.md) directly.
 
