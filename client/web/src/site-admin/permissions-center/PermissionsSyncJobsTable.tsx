@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FC, useCallback, useEffect, useState } from 'react'
+import React, { ChangeEvent, FC, useCallback, useEffect, useRef, useState } from 'react'
 
 import { ApolloError } from '@apollo/client/errors'
 import { mdiCancel, mdiClose, mdiDetails, mdiMapSearch, mdiReload, mdiSecurity } from '@mdi/js'
@@ -6,9 +6,11 @@ import classNames from 'classnames'
 import { intervalToDuration } from 'date-fns'
 import formatDuration from 'date-fns/formatDuration'
 import { capitalize, noop } from 'lodash'
+import { animated, useSpring } from 'react-spring'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useMutation } from '@sourcegraph/http-client'
+import { convertREMToPX } from '@sourcegraph/shared/src/components/utils/size'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Alert,
@@ -153,7 +155,11 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
     )
 
     const [notification, setNotification] = useState<Notification | undefined>(undefined)
-    const dismissNotification = useCallback(() => setNotification(undefined), [])
+    const [showNotification, setShowNotification] = useState<boolean>(false)
+    const toggleNotification = useCallback((notification?: Notification) => {
+        setNotification(notification)
+        setShowNotification(true)
+    }, [])
 
     const [triggerUserSync] = useMutation<ScheduleUserPermissionsSyncResult, ScheduleUserPermissionsSyncVariables>(
         TRIGGER_USER_SYNC
@@ -165,14 +171,22 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
         CANCEL_PERMISSIONS_SYNC_JOB
     )
 
-    const onError = (error: ApolloError): void => setNotification({ text: error.message, isError: true })
+    const onError = useCallback(
+        (error: ApolloError): void =>
+            toggleNotification({
+                text: error.message,
+                isError: true,
+            }),
+        [toggleNotification]
+    )
 
     const handleTriggerPermsSync = useCallback(
         ([job]: PermissionsSyncJob[]) => {
             if (job.subject.__typename === 'Repository') {
                 triggerRepoSync({
                     variables: { repo: job.subject.id },
-                    onCompleted: () => setNotification({ text: 'Repository permissions sync successfully scheduled' }),
+                    onCompleted: () =>
+                        toggleNotification({ text: 'Repository permissions sync successfully scheduled' }),
                     onError,
                 }).catch(
                     // noop here is used because an error is handled in `onError` option of `useMutation` above.
@@ -181,7 +195,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
             } else {
                 triggerUserSync({
                     variables: { user: job.subject.id },
-                    onCompleted: () => setNotification({ text: 'User permissions sync successfully scheduled' }),
+                    onCompleted: () => toggleNotification({ text: 'User permissions sync successfully scheduled' }),
                     onError,
                 }).catch(
                     // noop here is used because an error is handled in `onError` option of `useMutation` above.
@@ -189,7 +203,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 )
             }
         },
-        [triggerUserSync, triggerRepoSync]
+        [triggerUserSync, triggerRepoSync, onError, toggleNotification]
     )
 
     const handleCancelSyncJob = useCallback(
@@ -197,14 +211,14 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
             cancelSyncJob({
                 variables: { job: syncJob.id },
                 onCompleted: ({ cancelPermissionsSyncJob }) =>
-                    setNotification({ text: prettyPrintCancelSyncJobMessage(cancelPermissionsSyncJob) }),
+                    toggleNotification({ text: prettyPrintCancelSyncJobMessage(cancelPermissionsSyncJob) }),
                 onError,
             }).catch(
                 // noop here is used because an error is handled in `onError` option of `useMutation` above.
                 noop
             )
         },
-        [cancelSyncJob]
+        [cancelSyncJob, onError, toggleNotification]
     )
 
     const handleViewJobDetails = useCallback(
@@ -295,17 +309,15 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                         <PermissionsSyncJobSearchPane filters={filters} setFilters={setFilters} />
                     </div>
                 )}
-                {notification && (
-                    <Alert
-                        className="mt-2 d-flex justify-content-between align-items-center"
-                        variant={notification.isError ? 'danger' : 'success'}
-                    >
-                        {notification.text}
-                        <Button variant="secondary" outline={true} onClick={dismissNotification}>
-                            <Icon aria-label="Close notification" svgPath={mdiClose} />
-                        </Button>
-                    </Alert>
-                )}
+                <AnimatedAlert
+                    className="mt-2 d-flex justify-content-between align-items-center"
+                    visible={showNotification}
+                >
+                    {notification?.text}
+                    <Button variant="secondary" outline={true} onClick={() => setShowNotification(false)}>
+                        <Icon aria-label="Close notification" svgPath={mdiClose} />
+                    </Button>
+                </AnimatedAlert>
                 {connection?.nodes?.length === 0 && <EmptyList />}
                 {!!connection?.nodes?.length && (
                     <Table<PermissionsSyncJob>
@@ -355,6 +367,31 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 />
             </Container>
         </div>
+    )
+}
+
+// The Alert banner has a 1rem bottom margin
+const ONE_REM_IN_PX = convertREMToPX(1)
+const APPROX_BANNER_HEIGHT_PX = 40
+
+// TODO(sashaostrikov): extract as a separate wildcard component later
+const AnimatedAlert: React.FunctionComponent<React.PropsWithChildren<{ className?: string; visible: boolean }>> = ({
+    className,
+    visible,
+    children,
+}) => {
+    const ref = useRef<HTMLDivElement>(null)
+    const style = useSpring({
+        height: visible ? `${(ref.current?.offsetHeight || APPROX_BANNER_HEIGHT_PX) + ONE_REM_IN_PX}px` : '0px',
+        opacity: visible ? 1 : 0,
+    })
+    return (
+        <animated.div style={style}>
+            {/* Keep this in sync with calculation above: mb-3 = 1rem */}
+            <Alert ref={ref} variant="success" className={classNames(className, 'mb-3')}>
+                {children}
+            </Alert>
+        </animated.div>
     )
 }
 
@@ -547,19 +584,31 @@ const CodeHostStatesTableColumns: IColumn<CodeHostState>[] = [
     {
         key: 'ProviderID',
         header: 'Provider ID',
-        render: (state: CodeHostState) => <Text>{state.providerID}</Text>,
+        accessor: (state: CodeHostState) => state.providerID,
     },
     {
         key: 'ProviderType',
-        header: 'Provider Type',
-        render: (state: CodeHostState) => <Text>{capitalize(state.providerType)}</Text>,
+        header: 'Provider type',
+        accessor: (state: CodeHostState) => capitalize(state.providerType),
     },
     {
         key: 'Status',
         header: 'Status',
-        render: (state: CodeHostState) => <Text>{capitalize(state.status)}</Text>,
+        render: (state: CodeHostState) => (
+            <Badge
+                tooltip={state.status.toLowerCase() === 'error' ? state.message : undefined}
+                variant={CodeHostStateStatusVariants[state.status.toLowerCase()] || 'secondary'}
+            >
+                {state.status}
+            </Badge>
+        ),
     },
 ]
+
+const CodeHostStateStatusVariants: Record<string, BadgeVariantType> = {
+    success: 'success',
+    error: 'danger',
+}
 
 const JobPriorityBadgeVariants: Record<PermissionsSyncJobPriority, BadgeVariantType> = {
     LOW: 'secondary',
@@ -621,17 +670,23 @@ const renderModal = (job: PermissionsSyncJob, hideModal: () => void): React.Reac
                     <Text className="mb-0" weight="bold">
                         Permissions added
                     </Text>
-                    <Text className="text-success mb-0">{job.permissionsAdded}</Text>
+                    <Text className="text-success mb-0" weight="bold">
+                        {job.permissionsAdded}
+                    </Text>
 
                     <Text className="mb-0" weight="bold">
                         Permissions removed
                     </Text>
-                    <Text className="text-danger mb-0">{job.permissionsRemoved}</Text>
+                    <Text className="text-danger mb-0" weight="bold">
+                        {job.permissionsRemoved}
+                    </Text>
 
                     <Text className="mb-0" weight="bold">
                         Permissions found
                     </Text>
-                    <Text className="mb-0">{job.permissionsFound}</Text>
+                    <Text className="mb-0" weight="bold">
+                        {job.permissionsFound}
+                    </Text>
                 </div>
             </>
         )}
