@@ -745,11 +745,10 @@ func (s *Store) augmentSeriesPoints(ctx context.Context, opts SeriesPointsOpts, 
 	if err != nil {
 		return nil, errors.Wrap(err, "GetInsightSeriesRecordingTimes")
 	}
-	var augmentedPoints []SeriesPoint
-	if len(recordingsData.RecordingTimes) > 0 {
-		augmentedPoints = coalesceZeroValues(*opts.SeriesID, pointsMap, captureValues, recordingsData.RecordingTimes)
+	if len(captureValues) == 0 {
+		captureValues[""] = struct{}{}
 	}
-	return augmentedPoints, nil
+	return coalesceZeroValues(*opts.SeriesID, pointsMap, captureValues, recordingsData.RecordingTimes), nil
 }
 
 func coalesceZeroValues(seriesID string, pointsMap map[string]*SeriesPoint, captureValues map[string]struct{}, recordingTimes []types.RecordingTime) []SeriesPoint {
