@@ -1843,6 +1843,7 @@ npm_package(
 
 jest_test(
     name = "test",
+    size = "large",
     data = [
         ":web_tests",
     ],
