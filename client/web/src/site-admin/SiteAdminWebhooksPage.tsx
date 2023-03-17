@@ -3,7 +3,7 @@ import React, { useEffect } from 'react'
 import { mdiWebhook, mdiMapSearch, mdiPlus } from '@mdi/js'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ButtonLink, Container, H5, Icon, PageHeader } from '@sourcegraph/wildcard'
+import { ButtonLink, Container, Icon, PageHeader } from '@sourcegraph/wildcard'
 
 import {
     ConnectionContainer,
@@ -70,7 +70,6 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
                 <ConnectionContainer>
                     {error && <ConnectionError errors={[error.message]} />}
                     {loading && !connection && <ConnectionLoading />}
-                    {connection && connection.nodes?.length > 0 && <Header />}
                     <ConnectionList as="ul" className="list-group" aria-label="Webhooks">
                         {connection?.nodes?.map(node => (
                             <WebhookNode
@@ -102,10 +101,6 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
         </div>
     )
 }
-
-const Header: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
-    <H5 className="p-2 d-none d-md-block text-uppercase text-left text-nowrap">Webhook</H5>
-)
 
 const EmptyList: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <div className="text-muted text-center mb-3 w-100">
