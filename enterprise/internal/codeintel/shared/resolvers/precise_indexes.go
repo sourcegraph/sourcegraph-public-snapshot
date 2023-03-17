@@ -4,23 +4,32 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type preciseIndexResolver struct {
-	upload         *types.Upload
-	index          *types.Index
-	uploadResolver *UploadResolver
-	indexResolver  *indexResolver
+	uploadsSvc       UploadsService
+	policySvc        PolicyService
+	gitserverClient  gitserver.Client
+	siteAdminChecker SiteAdminChecker
+	repoStore        database.RepoStore
+	locationResolver *CachedLocationResolver
+	traceErrs        *observation.ErrCollector
+	upload           *types.Upload
+	index            *types.Index
 }
 
 func NewPreciseIndexResolver(
@@ -46,10 +55,7 @@ func NewPreciseIndexResolver(
 		}
 	}
 
-	var uploadResolver *UploadResolver
 	if upload != nil {
-		uploadResolver = NewUploadResolver(uploadsSvc, policySvc, gitserverClient, siteAdminChecker, repoStore, *upload, prefetcher, locationResolver, traceErrs)
-
 		if upload.AssociatedIndexID != nil {
 			v, ok, err := prefetcher.GetIndexByID(ctx, *upload.AssociatedIndexID)
 			if err != nil {
@@ -61,18 +67,22 @@ func NewPreciseIndexResolver(
 		}
 	}
 
-	var indexResolver *indexResolver
-	if index != nil {
-		indexResolver = NewIndexResolver(uploadsSvc, policySvc, gitserverClient, siteAdminChecker, repoStore, *index, prefetcher, locationResolver, traceErrs)
-	}
-
 	return &preciseIndexResolver{
-		upload:         upload,
-		index:          index,
-		uploadResolver: uploadResolver,
-		indexResolver:  indexResolver,
+		uploadsSvc:       uploadsSvc,
+		policySvc:        policySvc,
+		gitserverClient:  gitserverClient,
+		siteAdminChecker: siteAdminChecker,
+		repoStore:        repoStore,
+		locationResolver: locationResolver,
+		traceErrs:        traceErrs,
+		upload:           upload,
+		index:            index,
 	}, nil
 }
+
+//
+//
+//
 
 func (r *preciseIndexResolver) ID() graphql.ID {
 	var parts []string
@@ -86,52 +96,145 @@ func (r *preciseIndexResolver) ID() graphql.ID {
 	return relay.MarshalID("PreciseIndex", strings.Join(parts, ":"))
 }
 
-func (r *preciseIndexResolver) ProjectRoot(ctx context.Context) (resolverstubs.GitTreeEntryResolver, error) {
-	if r.uploadResolver != nil {
-		return r.uploadResolver.ProjectRoot(ctx)
+//
+//
+//
+//
+
+func (r *preciseIndexResolver) IsLatestForRepo() bool {
+	return r.upload != nil && r.upload.VisibleAtTip
+}
+
+func (r *preciseIndexResolver) QueuedAt() *gqlutil.DateTime {
+	if r.index != nil {
+		return gqlutil.DateTimeOrNil(&r.index.QueuedAt)
 	}
 
-	return r.indexResolver.ProjectRoot(ctx)
+	return nil
 }
+
+func (r *preciseIndexResolver) UploadedAt() *gqlutil.DateTime {
+	if r.upload != nil {
+		return gqlutil.DateTimeOrNil(&r.upload.UploadedAt)
+	}
+
+	return nil
+}
+
+func (r *preciseIndexResolver) IndexingStartedAt() *gqlutil.DateTime {
+	if r.index != nil {
+		return gqlutil.DateTimeOrNil(r.index.StartedAt)
+	}
+
+	return nil
+}
+
+func (r *preciseIndexResolver) ProcessingStartedAt() *gqlutil.DateTime {
+	if r.upload != nil {
+		return gqlutil.DateTimeOrNil(r.upload.StartedAt)
+	}
+
+	return nil
+}
+
+func (r *preciseIndexResolver) IndexingFinishedAt() *gqlutil.DateTime {
+	if r.index != nil {
+		return gqlutil.DateTimeOrNil(r.index.FinishedAt)
+	}
+
+	return nil
+}
+
+func (r *preciseIndexResolver) ProcessingFinishedAt() *gqlutil.DateTime {
+	if r.upload != nil {
+		return gqlutil.DateTimeOrNil(r.upload.FinishedAt)
+	}
+
+	return nil
+}
+
+func (r *preciseIndexResolver) Steps() resolverstubs.IndexStepsResolver {
+	if r.index != nil {
+		return NewIndexStepsResolver(r.siteAdminChecker, *r.index)
+	}
+
+	return nil
+}
+
+//
+//
+//
+//
 
 func (r *preciseIndexResolver) InputCommit() string {
-	if r.uploadResolver != nil {
-		return r.uploadResolver.InputCommit()
+	if r.upload != nil {
+		return r.upload.Commit
+	} else if r.index != nil {
+		return r.index.Commit
 	}
 
-	return r.indexResolver.InputCommit()
-}
-
-func (r *preciseIndexResolver) Tags(ctx context.Context) ([]string, error) {
-	if r.uploadResolver != nil {
-		return r.uploadResolver.Tags(ctx)
-	}
-
-	return r.indexResolver.Tags(ctx)
+	return ""
 }
 
 func (r *preciseIndexResolver) InputRoot() string {
-	if r.uploadResolver != nil {
-		return r.uploadResolver.InputRoot()
+	if r.upload != nil {
+		return r.upload.Root
+	} else if r.index != nil {
+		return r.index.Root
 	}
 
-	return r.indexResolver.InputRoot()
+	return ""
 }
 
 func (r *preciseIndexResolver) InputIndexer() string {
-	if r.uploadResolver != nil {
-		return r.uploadResolver.InputIndexer()
+	if r.upload != nil {
+		return r.upload.Indexer
+	} else if r.index != nil {
+		return r.index.Indexer
 	}
 
-	return r.indexResolver.InputIndexer()
+	return ""
+}
+
+func (r *preciseIndexResolver) Failure() *string {
+	if r.upload != nil && r.upload.FailureMessage != nil {
+		return r.upload.FailureMessage
+	} else if r.index != nil && r.index.FailureMessage != nil {
+		return r.index.FailureMessage
+	}
+
+	return nil
+}
+
+func (r *preciseIndexResolver) PlaceInQueue() *int32 {
+	if r.index != nil && r.index.Rank != nil {
+		return toInt32(r.index.Rank)
+	} else if r.upload != nil && r.upload.Rank != nil {
+		return toInt32(r.upload.Rank)
+	}
+
+	return nil
 }
 
 func (r *preciseIndexResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
-	if r.uploadResolver != nil {
-		return r.uploadResolver.Indexer()
+	if r.index != nil {
+		// Note: check index as index fields may contain docker shas
+		return types.NewCodeIntelIndexerResolver(r.index.Indexer, r.index.Indexer)
+	} else if r.upload != nil {
+		types.NewCodeIntelIndexerResolver(r.upload.Indexer, "")
 	}
 
-	return r.indexResolver.Indexer()
+	return nil
+}
+
+func (r *preciseIndexResolver) ShouldReindex(ctx context.Context) bool {
+	if r.upload != nil {
+		// non-nil upload - this and any index record must both be marked
+		return r.upload.ShouldReindex && (r.index == nil || r.index.ShouldReindex)
+	}
+
+	// nil upload - an index record must be marked
+	return r.index != nil && r.index.ShouldReindex
 }
 
 func (r *preciseIndexResolver) State() string {
@@ -186,120 +289,110 @@ func (r *preciseIndexResolver) State() string {
 	}
 }
 
-func (r *preciseIndexResolver) QueuedAt() *gqlutil.DateTime {
-	if r.indexResolver != nil {
-		t := r.indexResolver.QueuedAt()
-		return &t
-	}
+//
+//
+//
+//
 
-	return nil
-}
+func (r *preciseIndexResolver) ProjectRoot(ctx context.Context) (_ resolverstubs.GitTreeEntryResolver, err error) {
+	// defer r.traceErrs.Collect(&err, log.String("uploadResolver.field", "projectRoot"))
 
-func (r *preciseIndexResolver) UploadedAt() *gqlutil.DateTime {
-	if r.uploadResolver != nil {
-		t := r.uploadResolver.UploadedAt()
-		return &t
-	}
-
-	return nil
-}
-
-func (r *preciseIndexResolver) IndexingStartedAt() *gqlutil.DateTime {
-	if r.indexResolver != nil {
-		return r.indexResolver.StartedAt()
-	}
-
-	return nil
-}
-
-func (r *preciseIndexResolver) ProcessingStartedAt() *gqlutil.DateTime {
-	if r.uploadResolver != nil {
-		return r.uploadResolver.StartedAt()
-	}
-
-	return nil
-}
-
-func (r *preciseIndexResolver) IndexingFinishedAt() *gqlutil.DateTime {
-	if r.indexResolver != nil {
-		return r.indexResolver.FinishedAt()
-	}
-
-	return nil
-}
-
-func (r *preciseIndexResolver) ProcessingFinishedAt() *gqlutil.DateTime {
-	if r.uploadResolver != nil {
-		return r.uploadResolver.FinishedAt()
-	}
-
-	return nil
-}
-
-func (r *preciseIndexResolver) Steps() resolverstubs.IndexStepsResolver {
-	if r.indexResolver == nil {
-		return nil
-	}
-
-	return r.indexResolver.Steps()
-}
-
-func (r *preciseIndexResolver) Failure() *string {
-	if r.upload != nil && r.upload.FailureMessage != nil {
-		return r.upload.FailureMessage
+	var (
+		repoID api.RepoID
+		commit string
+		root   string
+	)
+	if r.upload != nil {
+		repoID, commit, root = api.RepoID(r.upload.RepositoryID), r.upload.Commit, r.upload.Root
 	} else if r.index != nil {
-		return r.index.FailureMessage
+		repoID, commit, root = api.RepoID(r.index.RepositoryID), r.index.Commit, r.index.Root
 	}
 
-	return nil
+	resolver, err := r.locationResolver.Path(ctx, repoID, commit, root, true)
+	if err != nil || resolver == nil {
+		// Do not return typed nil interface
+		return nil, err
+	}
+
+	return resolver, nil
 }
 
-func (r *preciseIndexResolver) PlaceInQueue() *int32 {
-	if r.index != nil && r.index.Rank != nil {
-		return toInt32(r.index.Rank)
+func (r *preciseIndexResolver) Tags(ctx context.Context) ([]string, error) {
+	var (
+		repoName api.RepoName
+		commit   string
+	)
+	if r.upload != nil {
+		repoName, commit = api.RepoName(r.upload.RepositoryName), r.upload.Commit
+	} else if r.index != nil {
+		repoName, commit = api.RepoName(r.index.RepositoryName), r.index.Commit
 	}
 
-	if r.upload != nil && r.upload.Rank != nil {
-		return toInt32(r.upload.Rank)
-	}
-
-	return nil
-}
-
-func (r *preciseIndexResolver) ShouldReindex(ctx context.Context) bool {
-	if r.index != nil {
-		if r.upload != nil {
-			return r.upload.ShouldReindex && r.index.ShouldReindex
+	tags, err := r.gitserverClient.ListTags(ctx, repoName, commit)
+	if err != nil {
+		if gitdomain.IsRepoNotExist(err) {
+			return nil, nil
 		}
 
-		return r.index.ShouldReindex
-	}
-	if r.upload != nil {
-		return r.upload.ShouldReindex
-	}
-	return false
-}
-
-func (r *preciseIndexResolver) IsLatestForRepo() bool {
-	if r.upload == nil {
-		return false
+		return nil, errors.New("unable to return list of tags in the repository.")
 	}
 
-	return r.upload.VisibleAtTip
+	tagNames := make([]string, 0, len(tags))
+	for _, tag := range tags {
+		tagNames = append(tagNames, tag.Name)
+	}
+
+	return tagNames, nil
 }
+
+var DefaultRetentionPolicyMatchesPageSize = 50
 
 func (r *preciseIndexResolver) RetentionPolicyOverview(ctx context.Context, args *resolverstubs.LSIFUploadRetentionPolicyMatchesArgs) (resolverstubs.CodeIntelligenceRetentionPolicyMatchesConnectionResolver, error) {
-	if r.uploadResolver == nil {
+	if r.upload == nil {
 		return nil, nil
 	}
 
-	return r.uploadResolver.RetentionPolicyOverview(ctx, args)
+	var afterID int64
+	if args.After != nil {
+		var err error
+		afterID, err = unmarshalConfigurationPolicyGQLID(graphql.ID(*args.After))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	pageSize := DefaultRetentionPolicyMatchesPageSize
+	if args.First != nil {
+		pageSize = int(*args.First)
+	}
+
+	var term string
+	if args.Query != nil {
+		term = *args.Query
+	}
+
+	matches, totalCount, err := r.policySvc.GetRetentionPolicyOverview(ctx, *r.upload, args.MatchesOnly, pageSize, afterID, term, time.Now())
+	if err != nil {
+		return nil, err
+	}
+
+	return NewCodeIntelligenceRetentionPolicyMatcherConnectionResolver(r.repoStore, matches, totalCount, r.traceErrs), nil
 }
 
 func (r *preciseIndexResolver) AuditLogs(ctx context.Context) (*[]resolverstubs.LSIFUploadsAuditLogsResolver, error) {
-	if r.uploadResolver == nil {
+	if r.upload == nil {
 		return nil, nil
 	}
 
-	return r.uploadResolver.AuditLogs(ctx)
+	logs, err := r.uploadsSvc.GetAuditLogsForUpload(ctx, r.upload.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvers := make([]resolverstubs.LSIFUploadsAuditLogsResolver, 0, len(logs))
+	for _, uploadLog := range logs {
+		resolvers = append(resolvers, NewLSIFUploadsAuditLogsResolver(uploadLog))
+	}
+
+	return &resolvers, nil
 }
