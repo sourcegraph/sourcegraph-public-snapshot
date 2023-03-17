@@ -9,7 +9,7 @@ import { WebhookInformation } from './WebhookInformation'
 const decorator: DecoratorFn = Story => <Story />
 
 const config: Meta = {
-    title: 'web/src/site-admin/WebhookInformation',
+    title: 'web/site-admin/webhooks/incoming/WebhookInformation',
     decorators: [decorator],
 }
 

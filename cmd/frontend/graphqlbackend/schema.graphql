@@ -3087,7 +3087,7 @@ type ExternalService implements Node {
 
     Only site admins may access this field.
 
-    DEPRECATED: Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks#deprecation-notice
+    DEPRECATED: Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice
     """
     webhookLogs(
         """
@@ -3116,7 +3116,7 @@ type ExternalService implements Node {
         until: DateTime
     ): WebhookLogConnection!
         @deprecated(
-            reason: "Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks#deprecation-notice"
+            reason: "Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice"
         )
 
     """

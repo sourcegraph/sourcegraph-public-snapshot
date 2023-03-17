@@ -44,7 +44,7 @@ Azure DevOps connections support the following configuration options, which are 
 
 ## Webhooks
 
-Please consult [this page](../config/webhooks.md) in order to configure webhooks.
+Please consult [this page](../config/webhooks/incoming.md) in order to configure webhooks.
 
 ## Permissions syncing
 

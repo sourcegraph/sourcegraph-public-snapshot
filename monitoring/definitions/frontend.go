@@ -1014,7 +1014,7 @@ func Frontend() *monitoring.Dashboard {
 
 							Increases in response time can point to too much load on the database to keep up with the incoming requests.
 
-							See this documentation page for more details on webhook requests: (https://docs.sourcegraph.com/admin/config/webhooks)`,
+							See this documentation page for more details on webhook requests: (https://docs.sourcegraph.com/admin/config/webhooks/incoming)`,
 						},
 					},
 				},
