@@ -3,17 +3,17 @@ import React, { useCallback, useState } from 'react'
 import classNames from 'classnames'
 
 import { QueryState } from '@sourcegraph/shared/src/search'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Input } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../../components/branding/BrandLogo'
 
-import searchPageStyles from '../../../search/home/SearchPage.module.scss'
+import searchPageStyles from '../../../storm/pages/SearchPage/SearchPageContent.module.scss'
 import styles from './CodyHomepage.module.scss'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 
-interface Props extends ThemeProps {}
+interface Props  {}
 
-export const CodyHomepage: React.FunctionComponent<Props> = ({ isLightTheme }) => {
+export const CodyHomepage: React.FunctionComponent<Props> = () => {
     /** The value entered by the user in the query input */
     const [queryState, setQueryState] = useState<QueryState>({
         query: '',
@@ -22,6 +22,8 @@ export const CodyHomepage: React.FunctionComponent<Props> = ({ isLightTheme }) =
     const onQueryChange = useCallback((value: string) => {
         setQueryState(prev => ({ ...prev, query: value }))
     }, [])
+
+    const isLightTheme = useIsLightTheme()
 
     return (
         <div className={classNames('d-flex flex-column align-items-center px-3', searchPageStyles.searchPage)}>
