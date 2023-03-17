@@ -413,6 +413,7 @@ type UpdateTeamArgs struct {
 	DisplayName    *string
 	ParentTeam     *graphql.ID
 	ParentTeamName *string
+	MakeRoot       *bool
 }
 
 func (r *schemaResolver) UpdateTeam(ctx context.Context, args *UpdateTeamArgs) (*TeamResolver, error) {
@@ -426,8 +427,14 @@ func (r *schemaResolver) UpdateTeam(ctx context.Context, args *UpdateTeamArgs) (
 	if args.ID != nil && args.Name != nil {
 		return nil, errors.New("team to update is identified by either id or name, but both were specified")
 	}
+	if (args.ParentTeam != nil || args.ParentTeamName != nil) && args.MakeRoot != nil {
+		return nil, errors.New("specifying a parent team contradicts making a team root (no parent team)")
+	}
 	if args.ParentTeam != nil && args.ParentTeamName != nil {
 		return nil, errors.New("parent team is identified by either id or name, but both were specified")
+	}
+	if args.MakeRoot != nil && !*args.MakeRoot {
+		return nil, errors.New("the only possible value for makeRoot is true (if set); to assign a parent team please use parentTeam or parentTeamName parameters")
 	}
 	var t *types.Team
 	err := r.db.WithTransact(ctx, func(tx database.DB) (err error) {
@@ -465,6 +472,10 @@ func (r *schemaResolver) UpdateTeam(ctx context.Context, args *UpdateTeamArgs) (
 				needsUpdate = true
 				t.ParentTeamID = parentTeam.ID
 			}
+		}
+		if args.MakeRoot != nil && *args.MakeRoot && t.ParentTeamID != 0 {
+			needsUpdate = true
+			t.ParentTeamID = 0
 		}
 		if needsUpdate {
 			return tx.Teams().UpdateTeam(ctx, t)

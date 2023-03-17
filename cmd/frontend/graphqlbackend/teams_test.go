@@ -802,6 +802,36 @@ func TestUpdateParentCircular(t *testing.T) {
 	})
 }
 
+func TestTeamMakeRoot(t *testing.T) {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	userID := fs.AddUser(types.User{SiteAdmin: true})
+	ctx := userCtx(userID)
+	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
+	parentTeamID := fs.AddTeam(&types.Team{Name: "parent"})
+	fs.AddTeam(&types.Team{Name: "child", ParentTeamID: parentTeamID})
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `mutation UpdateTeam($name: String!) {
+			updateTeam(name: $name, makeRoot: true) {
+				parentTeam {
+					name
+				}
+			}
+		}`,
+		ExpectedResult: `{
+			"updateTeam": {
+				"parentTeam": null
+			}
+		}`,
+		Variables: map[string]any{
+			"name": "child",
+		},
+	})
+}
+
 func TestDeleteTeamByID(t *testing.T) {
 	fs := fakedb.New()
 	db := database.NewMockDB()
