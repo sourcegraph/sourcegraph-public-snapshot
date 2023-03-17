@@ -10,8 +10,8 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/inconshreveable/log15"
 	"github.com/segmentio/ksuid"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -515,7 +515,7 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 			}
 		}
 		for _, dashboardId := range dashboardIds {
-			log15.Debug("AddView", "insightId", view.UniqueID, "dashboardId", dashboardId)
+			r.logger.Debug("AddView", log.String("insightID", view.UniqueID), log.Int("dashboardID", dashboardId))
 			err = dashboardTx.AddViewsToDashboard(ctx, dashboardId, []string{view.UniqueID})
 			if err != nil {
 				return nil, errors.Wrap(err, "AddViewsToDashboard")
@@ -814,7 +814,7 @@ func (r *Resolver) SaveInsightAsNewView(ctx context.Context, args graphqlbackend
 			}
 		}
 		for _, dashboardId := range dashboardIds {
-			log15.Debug("AddView", "insightId", view.UniqueID, "dashboardId", dashboardId)
+			r.logger.Debug("AddView", log.String("insightID", view.UniqueID), log.Int("dashboardID", dashboardId))
 			err = dashboardTx.AddViewsToDashboard(ctx, dashboardId, []string{view.UniqueID})
 			if err != nil {
 				return nil, errors.Wrap(err, "AddViewsToDashboard")
@@ -895,7 +895,7 @@ func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphq
 			}
 		}
 		for _, dashboardId := range dashboardIds {
-			log15.Debug("AddView", "insightId", view.UniqueID, "dashboardId", dashboardId)
+			r.logger.Debug("AddView", log.String("insightID", view.UniqueID), log.Int("dashboardID", dashboardId))
 			err = dashboardTx.AddViewsToDashboard(ctx, dashboardId, []string{view.UniqueID})
 			if err != nil {
 				return nil, errors.Wrap(err, "AddViewsToDashboard")
@@ -966,8 +966,7 @@ func (p *pieChartInsightViewPresentation) Title(ctx context.Context) (string, er
 
 func (p *pieChartInsightViewPresentation) OtherThreshold(ctx context.Context) (float64, error) {
 	if p.view.OtherThreshold == nil {
-		log15.Warn("Returning a pie chart with no threshold set. This should never happen!", "id", p.view.UniqueID)
-		return 0, nil
+		return 0, errors.Newf("Returning a pie chart with no threshold set. This should never happen. insightID: %v", p.view.UniqueID)
 	}
 	return *p.view.OtherThreshold, nil
 }
@@ -1175,7 +1174,6 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 			if r.err != nil {
 				return
 			}
-			log15.Debug("unique_id", "id", unique)
 			args.UniqueID = unique
 		}
 
