@@ -58,7 +58,7 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
     const [deleteWebhook, { error: deleteError, loading: isDeleting }] = useMutation<
         DeleteWebhookResult,
         DeleteWebhookVariables
-    >(DELETE_WEBHOOK, { variables: { hookID: id }, onCompleted: () => navigate('/site-admin/webhooks') })
+    >(DELETE_WEBHOOK, { variables: { hookID: id }, onCompleted: () => navigate('/site-admin/webhooks/incoming') })
 
     return (
         <Container>
@@ -152,7 +152,7 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                             noun="webhook log"
                             pluralNoun="webhook logs"
                             hasNextPage={hasNextPage}
-                            emptyElement={<EmptyList />}
+                            emptyElement={<EmptyList onlyErrors={onlyErrors} />}
                         />
                         {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
                     </SummaryContainer>
@@ -178,12 +178,18 @@ export const SiteAdminWebhookPageHeader: FC<SiteAdminWebhookPageHeaderProps> = (
     </>
 )
 
-const EmptyList: FC = () => (
+const EmptyList: FC<{ onlyErrors: boolean }> = ({ onlyErrors }) => (
     <div className="m-4 w-100 text-center text-muted">
-        No requests received yet. Be sure to{' '}
-        <Link to="/help/admin/config/webhooks/incoming#configuring-webhooks-on-the-code-host">
-            configure the webhook on the code host
-        </Link>
-        .
+        {onlyErrors ? (
+            'No errors have been received from this webhook recently.'
+        ) : (
+            <>
+                No requests received yet. Be sure to{' '}
+                <Link to="/help/admin/config/webhooks/incoming#configuring-webhooks-on-the-code-host">
+                    configure the webhook on the code host
+                </Link>
+                .
+            </>
+        )}
     </div>
 )

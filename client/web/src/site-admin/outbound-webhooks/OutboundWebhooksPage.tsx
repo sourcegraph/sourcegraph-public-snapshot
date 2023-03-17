@@ -57,7 +57,7 @@ export const OutboundWebhooksPage: FC<OutboundWebhooksPageProps> = ({ telemetryS
                         ))}
                     </ConnectionList>
                     {connection && (
-                        <SummaryContainer>
+                        <SummaryContainer centered={true}>
                             <ConnectionSummary
                                 noSummaryIfAllNodesVisible={false}
                                 first={connection.totalCount ?? 0}
