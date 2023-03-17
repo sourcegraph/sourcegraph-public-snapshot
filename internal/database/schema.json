@@ -7839,8 +7839,8 @@
         },
         {
           "Name": "id",
-          "Index": 1,
-          "TypeName": "integer",
+          "Index": 4,
+          "TypeName": "bigint",
           "IsNullable": false,
           "Default": "nextval('codeintel_ranking_references_processed_id_seq'::regclass)",
           "CharacterMaximumLength": 0,

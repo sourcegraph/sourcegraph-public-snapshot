@@ -969,9 +969,9 @@ References for a given upload proceduced by background job consuming SCIP indexe
 ```
              Column             |  Type   | Collation | Nullable |                              Default                               
 --------------------------------+---------+-----------+----------+--------------------------------------------------------------------
- id                             | integer |           | not null | nextval('codeintel_ranking_references_processed_id_seq'::regclass)
  graph_key                      | text    |           | not null | 
  codeintel_ranking_reference_id | integer |           | not null | 
+ id                             | bigint  |           | not null | nextval('codeintel_ranking_references_processed_id_seq'::regclass)
 Indexes:
     "codeintel_ranking_references_processed_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_references_processed_graph_key_codeintel_rank" UNIQUE, btree (graph_key, codeintel_ranking_reference_id)
