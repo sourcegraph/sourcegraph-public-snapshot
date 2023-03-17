@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import { mdiPencil } from '@mdi/js'
 
@@ -23,14 +23,16 @@ export interface TeamProfilePageProps {
     onTeamUpdate: () => void
 }
 
-type OpenModal = 'edit-display-name'
-
 export const TeamProfilePage: React.FunctionComponent<TeamProfilePageProps> = ({ team, onTeamUpdate }) => {
-    const [openModal, setOpenModal] = useState<OpenModal | undefined>()
+    const [openModal, setOpenModal] = useState<'edit-display-name' | 'edit-parent-team' | undefined>()
 
     const onEditDisplayName = useCallback<React.MouseEventHandler>(event => {
         event.preventDefault()
         setOpenModal('edit-display-name')
+    }, [])
+    const onEditParentTeam = useCallback<React.MouseEventHandler>(event => {
+        event.preventDefault()
+        setOpenModal('edit-parent-team')
     }, [])
     const closeModal = useCallback(() => {
         setOpenModal(undefined)
@@ -60,6 +62,16 @@ export const TeamProfilePage: React.FunctionComponent<TeamProfilePageProps> = ({
                             </Button>
                         )}
                     </Text>
+                    <H3>Parent team</H3>
+                    <Text className="d-flex align-items-center">
+                        {team.parentTeam && <span>{team.parentTeam?.displayName || team.parentTeam?.name}</span>}
+                        {!team.parentTeam && <span className="text-muted">No display name set</span>}{' '}
+                        {team.viewerCanAdminister && (
+                            <Button variant="link" onClick={onEditParentTeam} className="ml-2" size="sm">
+                                <Icon inline={true} aria-label="Edit parent team" svgPath={mdiPencil} />
+                            </Button>
+                        )}
+                    </Text>
                     <H3>Creator</H3>
                     <Text className="d-flex align-items-center">
                         {team.creator !== null && (
@@ -83,6 +95,12 @@ export const TeamProfilePage: React.FunctionComponent<TeamProfilePageProps> = ({
                     teamName={team.name}
                     displayName={team.displayName}
                 />
+            )}
+
+            {openModal === 'edit-parent-team' && (
+                <Modal aria-labelledby="editParentTeam" onDismiss={closeModal}>
+                    <span>Edit parent team</span>
+                </Modal>
             )}
         </>
     )
