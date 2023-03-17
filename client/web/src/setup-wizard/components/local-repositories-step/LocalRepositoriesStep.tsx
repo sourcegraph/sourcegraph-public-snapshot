@@ -257,17 +257,6 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
                         Pick a path to see a list of local repositories that you want to have in the Sourcegraph App
                     </Text>
                 </Alert>
-                // <Text className="d-flex align-items-center mb-0 mt-3 text-muted">
-                //     <Icon
-                //         svgPath={mdiInformationOutline}
-                //         className="mr-2 mx-1"
-                //         inline={false}
-                //         aria-hidden={true}
-                //         height={22}
-                //         width={22}
-                //     />
-                //     Pick a path to see a list of local repositories that you want to have in the Sourcegraph App.
-                // </Text>
             )}
         </>
     )
