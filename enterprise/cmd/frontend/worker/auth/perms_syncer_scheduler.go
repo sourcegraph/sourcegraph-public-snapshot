@@ -8,12 +8,10 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -83,7 +81,7 @@ func (p *permissionSyncJobScheduler) Routines(_ context.Context, observationCtx 
 			func() time.Duration { return scheduleInterval },
 			goroutine.HandlerFunc(
 				func(ctx context.Context) error {
-					if !permssync.PermissionSyncWorkerEnabled(ctx, db, logger) || permissionSyncingDisabled() {
+					if !permssync.PermissionSyncWorkerEnabled(ctx, db, logger) || authz.PermissionSyncingDisabled() {
 						logger.Debug("new scheduler disabled due to either permission syncing disabled or feature flag not enabled")
 						return nil
 					}
@@ -308,16 +306,4 @@ func syncRepoBackoff() time.Duration {
 		return 60 * time.Second
 	}
 	return time.Duration(seconds) * time.Second
-}
-
-// PermissionSyncingDisabled returns true if the background permissions syncing is not enabled.
-// It is not enabled if:
-//   - Permissions user mapping (aka explicit permissions API) is enabled and unified permissions model is not enabled
-//   - Not purchased with the current license
-//   - `disableAutoCodeHostSyncs` site setting is set to true
-func permissionSyncingDisabled() bool {
-	return envvar.SourcegraphDotComMode() ||
-		(globals.PermissionsUserMapping().Enabled && !conf.ExperimentalFeatures().UnifiedPermissions) ||
-		licensing.Check(licensing.FeatureACLs) != nil ||
-		conf.Get().DisableAutoCodeHostSyncs
 }
