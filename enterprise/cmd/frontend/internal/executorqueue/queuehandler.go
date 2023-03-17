@@ -58,7 +58,10 @@ func newExecutorQueuesHandler(
 		// Used by code_intel_test.go to test authentication HTTP status codes.
 		// Also used by `executor validate` to check whether a token is set.
 		testRouter := base.PathPrefix("/test").Subrouter()
-		testRouter.Path("/").Methods(http.MethodGet).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		testRouter.Path("/auth").Methods(http.MethodGet).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+			return
 		})
 		testRouter.Use(withInternalActor, executorAuth)
 
