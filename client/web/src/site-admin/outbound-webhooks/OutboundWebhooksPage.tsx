@@ -36,12 +36,12 @@ export const OutboundWebhooksPage: FC<OutboundWebhooksPageProps> = ({ telemetryS
         <div>
             <PageTitle title="Outgoing webhooks" />
             <PageHeader
-                path={[{ icon: mdiCog }, { to: '/site-admin/outbound-webhooks', text: 'Outgoing webhooks' }]}
+                path={[{ icon: mdiCog }, { to: '/site-admin/webhooks/outgoing', text: 'Outgoing webhooks' }]}
                 headingElement="h2"
                 description="All configured outgoing webhooks"
                 className="mb-3"
                 actions={
-                    <ButtonLink to="/site-admin/outbound-webhooks/create" variant="primary">
+                    <ButtonLink to="/site-admin/webhooks/outgoing/create" variant="primary">
                         <Icon aria-hidden={true} svgPath={mdiPlus} /> Add webhook
                     </ButtonLink>
                 }
@@ -81,7 +81,7 @@ const OutboundWebhookNode: FC<{
     node: OutboundWebhookFieldsWithStats
     onDelete: () => void
 }> = ({ node, onDelete }) => {
-    const edit = `/site-admin/outbound-webhooks/${node.id}`
+    const edit = `/site-admin/webhooks/outgoing/${node.id}`
 
     return (
         <li className={styles.node}>

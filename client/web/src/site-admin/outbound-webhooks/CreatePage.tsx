@@ -41,7 +41,7 @@ export const CreatePage: FC<CreatePageProps> = ({ telemetryService }) => {
                 url,
             },
         },
-        onCompleted: () => navigate('/site-admin/outbound-webhooks'),
+        onCompleted: () => navigate('/site-admin/webhooks/outgoing'),
     })
 
     return (
@@ -50,8 +50,8 @@ export const CreatePage: FC<CreatePageProps> = ({ telemetryService }) => {
             <PageHeader
                 path={[
                     { icon: mdiCog },
-                    { to: '/site-admin/outbound-webhooks', text: 'Outgoing webhooks' },
-                    { to: '/site-admin/outbound-webhooks/create', text: 'Add' },
+                    { to: '/site-admin/webhooks/outgoing', text: 'Outgoing webhooks' },
+                    { text: 'Create' },
                 ]}
                 headingElement="h2"
                 description="Add a new outgoing webhook"

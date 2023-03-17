@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 
-import { mdiCog, mdiMapSearch, mdiPlus } from '@mdi/js'
+import { mdiWebhook, mdiMapSearch, mdiPlus } from '@mdi/js'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ButtonLink, Container, H5, Icon, PageHeader } from '@sourcegraph/wildcard'
@@ -37,12 +37,16 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
         <div className="site-admin-webhooks-page">
             <PageTitle title="Incoming webhooks" />
             <PageHeader
-                path={[{ icon: mdiCog }, { to: '/site-admin/webhooks', text: 'Incoming webhooks' }]}
+                path={[{ icon: mdiWebhook }, { to: '/site-admin/webhooks/incoming', text: 'Incoming webhooks' }]}
                 headingElement="h2"
                 description="All configured incoming webhooks"
                 className="mb-3"
                 actions={
-                    <ButtonLink to="/site-admin/webhooks/create" className="test-create-webhook" variant="primary">
+                    <ButtonLink
+                        to="/site-admin/webhooks/incoming/create"
+                        className="test-create-webhook"
+                        variant="primary"
+                    >
                         <Icon aria-hidden={true} svgPath={mdiPlus} /> Add webhook
                     </ButtonLink>
                 }

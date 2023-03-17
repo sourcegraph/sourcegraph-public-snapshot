@@ -69,7 +69,7 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                 <PageHeader
                     path={[
                         { icon: mdiCog },
-                        { to: '/site-admin/webhooks', text: 'Incoming webhooks' },
+                        { to: '/site-admin/webhooks/incoming', text: 'Incoming webhooks' },
                         { text: webhookData.node.name },
                     ]}
                     byline={

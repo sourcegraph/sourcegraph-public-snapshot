@@ -40,7 +40,7 @@ export const EditPage: FC<EditPageProps> = ({ telemetryService }) => {
     const webhookURL = data?.node?.__typename === 'OutboundWebhook' ? data.node.url : undefined
 
     const onDeleted = useCallback(() => {
-        navigate('/site-admin/outbound-webhooks')
+        navigate('/site-admin/webhooks/outgoing')
     }, [navigate])
 
     if (error) {
@@ -151,9 +151,9 @@ const Header: FC<HeaderProps> = ({ id, onDeleted, url }) => (
         <PageHeader
             path={[
                 { icon: mdiCog },
-                { to: '/site-admin/outbound-webhooks', text: 'Outgoing webhooks' },
+                { to: '/site-admin/webhooks/outgoing', text: 'Outgoing webhooks' },
                 {
-                    to: `/site-admin/outbound-webhooks/${id}`,
+                    to: `/site-admin/webhooks/outgoing/${id}`,
                     text: url || 'Edit',
                 },
             ]}

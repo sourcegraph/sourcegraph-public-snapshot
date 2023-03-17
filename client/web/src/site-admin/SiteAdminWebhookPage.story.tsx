@@ -108,12 +108,12 @@ export const SiteAdminWebhookPageStory: Story = args => {
     ])
 
     return (
-        <WebStory initialEntries={['/site-admin/webhooks/1']}>
+        <WebStory initialEntries={['/site-admin/webhooks/incoming/1']}>
             {() => (
                 <MockedTestProvider link={buildWebhookLogsMock}>
                     <Routes>
                         <Route
-                            path="/site-admin/webhooks/:id"
+                            path="/site-admin/webhooks/incoming/:id"
                             element={<SiteAdminWebhookPage telemetryService={NOOP_TELEMETRY_SERVICE} />}
                         />
                     </Routes>
