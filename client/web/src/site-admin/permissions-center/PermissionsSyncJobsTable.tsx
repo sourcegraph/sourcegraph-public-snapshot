@@ -196,7 +196,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 )
             }
         },
-        [triggerUserSync, triggerRepoSync]
+        [triggerUserSync, triggerRepoSync, onError, toggleNotification]
     )
 
     const handleCancelSyncJob = useCallback(
@@ -211,7 +211,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 noop
             )
         },
-        [cancelSyncJob]
+        [cancelSyncJob, onError, toggleNotification]
     )
 
     const handleViewJobDetails = useCallback(
