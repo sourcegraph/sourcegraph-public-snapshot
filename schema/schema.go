@@ -2391,7 +2391,7 @@ type SiteConfiguration struct {
 	DisableAutoGitUpdates bool `json:"disableAutoGitUpdates,omitempty"`
 	// DisableFeedbackSurvey description: Disable the feedback survey
 	DisableFeedbackSurvey bool `json:"disableFeedbackSurvey,omitempty"`
-	// DisableNonCriticalTelemetry description: DISABLED. Has no effect.
+	// DisableNonCriticalTelemetry description: DEPRECATED. Has no effect.
 	DisableNonCriticalTelemetry bool `json:"disableNonCriticalTelemetry,omitempty"`
 	// DisablePublicRepoRedirects description: Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.
 	DisablePublicRepoRedirects bool `json:"disablePublicRepoRedirects,omitempty"`
