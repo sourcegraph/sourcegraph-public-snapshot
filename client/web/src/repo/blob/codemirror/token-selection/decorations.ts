@@ -1,9 +1,11 @@
-import { Extension, Range as CodeMirrorRange } from '@codemirror/state'
+import { EditorState, Extension, Range as CodeMirrorRange } from '@codemirror/state'
 import { Decoration, EditorView } from '@codemirror/view'
 import classNames from 'classnames'
 
 import { Range } from '@sourcegraph/extension-api-types'
+import { Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
 
+import { rangeToCmSelection } from '../occurrence-utils'
 import { positionToOffset, sortRangeValuesByStart } from '../utils'
 
 import { codeIntelTooltipsState } from './code-intel-tooltips'
@@ -41,13 +43,28 @@ function addOrReplace(decorations: DecorationItem[], item: DecorationItem): Deco
 }
 
 /**
+ * Returns `true` if the editor selection is empty or is inside the occurrence range.
+ */
+function shouldApplyFocusStyles(state: EditorState, occurrence: Occurrence): boolean {
+    if (state.selection.main.empty) {
+        return true
+    }
+
+    const occurrenceRangeAsSelection = rangeToCmSelection(state, occurrence.range)
+    const isEditorSelectionInsideOccurrenceRange =
+        state.selection.main.from >= occurrenceRangeAsSelection.from &&
+        state.selection.main.to <= occurrenceRangeAsSelection.to
+    return isEditorSelectionInsideOccurrenceRange
+}
+
+/**
  * Extension providing decorations for focused, hovered, pinned occurrences, and document highlights.
  * We combine all of these into a single extension to avoid the focused element blur caused by its removal from the DOM.
  */
 export function interactiveOccurrencesExtension(): Extension {
     return [
         EditorView.decorations.compute(
-            [codeIntelTooltipsState, documentHighlightsField, definitionUrlField, isModifierKeyHeld],
+            [codeIntelTooltipsState, documentHighlightsField, definitionUrlField, isModifierKeyHeld, 'selection'],
             state => {
                 const { focus, hover, pin } = state.field(codeIntelTooltipsState)
                 let decorations: DecorationItem[] = []
@@ -57,7 +74,7 @@ export function interactiveOccurrencesExtension(): Extension {
                         decoration: Decoration.mark({
                             class: classNames(
                                 'interactive-occurrence', // used as interactive occurrence selector
-                                'focus-visible' // prevents code editor from blur when focused element inside it changes
+                                shouldApplyFocusStyles(state, focus.occurrence) && 'focus-visible' // adds focus styles to the occurrence
                             ),
                             attributes: {
                                 // Selected (focused) occurrence is the only focusable element in the editor.
