@@ -161,6 +161,7 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSSO,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{Unrestricted: true},
+			FeatureSCIM,
 		},
 		ExpiredFeatures: []Feature{
 			FeatureACLs,
