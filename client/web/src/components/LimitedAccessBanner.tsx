@@ -9,6 +9,7 @@ import styles from './LimitedAccessBanner.module.scss'
 interface LimitedAccessBannerProps {
     badgeText?: string
     storageKey: string
+    className?: string
 }
 
 export const LimitedAccessBanner: React.FunctionComponent<
@@ -22,7 +23,7 @@ export const LimitedAccessBanner: React.FunctionComponent<
     }
 
     return (
-        <div className={classNames('my-4 p-1', styles.banner)}>
+        <div className={classNames('p-1', styles.banner, props.className)}>
             <div className={classNames('py-2 px-3', styles.content)}>
                 <div>
                     <Badge className={classNames('mb-2', styles.badge)}>{badgeText}</Badge>
