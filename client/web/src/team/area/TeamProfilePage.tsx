@@ -13,6 +13,7 @@ import { Page } from '../../components/Page'
 import { Scalars, TeamAreaTeamFields } from '../../graphql-operations'
 
 import { useChangeTeamDisplayName } from './backend'
+import { EditParentTeamModal } from './EditParentTeamModal'
 import { TeamHeader } from './TeamHeader'
 
 export interface TeamProfilePageProps {
@@ -98,9 +99,13 @@ export const TeamProfilePage: React.FunctionComponent<TeamProfilePageProps> = ({
             )}
 
             {openModal === 'edit-parent-team' && (
-                <Modal aria-labelledby="editParentTeam" onDismiss={closeModal}>
-                    <span>Edit parent team</span>
-                </Modal>
+                <EditParentTeamModal
+                    onCancel={closeModal}
+                    afterEdit={afterAction}
+                    teamID={team.id}
+                    teamName={team.name}
+                    parentTeamName={team.parentTeam?.name || null}
+                />
             )}
         </>
     )
