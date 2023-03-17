@@ -50,7 +50,7 @@ export function getCaptureGroupInsightCreateInput(
         dataSeries: [
             {
                 query: insight.query,
-                options: {},                
+                options: {},
                 timeScope: { stepInterval: { unit, value } },
                 generatedFromCaptureGroups: true,
             },
