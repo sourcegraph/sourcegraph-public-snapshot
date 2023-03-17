@@ -1,6 +1,6 @@
 import { FC, useCallback, useEffect, useState } from 'react'
 
-import { mdiCog } from '@mdi/js'
+import { mdiWebhook } from '@mdi/js'
 import { noop } from 'lodash'
 import { useNavigate, useParams } from 'react-router-dom'
 
@@ -150,7 +150,7 @@ const Header: FC<HeaderProps> = ({ id, onDeleted, url }) => (
         <PageTitle title="Edit outgoing webhook" />
         <PageHeader
             path={[
-                { icon: mdiCog },
+                { icon: mdiWebhook },
                 { to: '/site-admin/webhooks/outgoing', text: 'Outgoing webhooks' },
                 {
                     to: `/site-admin/webhooks/outgoing/${id}`,

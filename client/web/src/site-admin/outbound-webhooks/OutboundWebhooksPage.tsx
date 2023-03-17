@@ -1,6 +1,6 @@
 import { FC, useEffect } from 'react'
 
-import { mdiAlertCircle, mdiCog, mdiMapSearch, mdiPencil, mdiPlus } from '@mdi/js'
+import { mdiAlertCircle, mdiWebhook, mdiMapSearch, mdiPencil, mdiPlus } from '@mdi/js'
 
 import { pluralize } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -36,7 +36,7 @@ export const OutboundWebhooksPage: FC<OutboundWebhooksPageProps> = ({ telemetryS
         <div>
             <PageTitle title="Outgoing webhooks" />
             <PageHeader
-                path={[{ icon: mdiCog }, { to: '/site-admin/webhooks/outgoing', text: 'Outgoing webhooks' }]}
+                path={[{ icon: mdiWebhook }, { to: '/site-admin/webhooks/outgoing', text: 'Outgoing webhooks' }]}
                 headingElement="h2"
                 description="All configured outgoing webhooks"
                 className="mb-3"

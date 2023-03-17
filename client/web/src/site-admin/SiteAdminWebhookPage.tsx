@@ -1,6 +1,6 @@
 import { FC, useEffect, useState } from 'react'
 
-import { mdiCog, mdiDelete } from '@mdi/js'
+import { mdiWebhook, mdiDelete, mdiPencil } from '@mdi/js'
 import { noop } from 'lodash'
 import { useNavigate, useParams } from 'react-router-dom'
 
@@ -15,7 +15,6 @@ import {
     Link,
     LoadingSpinner,
     PageHeader,
-    Tooltip,
     ErrorAlert,
     Icon,
 } from '@sourcegraph/wildcard'
@@ -63,12 +62,12 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
 
     return (
         <Container>
-            <PageTitle title="Incoming webhook" />
+            <PageTitle title="Incoming webhooks" />
             {webhookLoading && !webhookData && <ConnectionLoading />}
             {webhookData?.node && webhookData.node.__typename === 'Webhook' && (
                 <PageHeader
                     path={[
-                        { icon: mdiCog },
+                        { icon: mdiWebhook },
                         { to: '/site-admin/webhooks/incoming', text: 'Incoming webhooks' },
                         { text: webhookData.node.name },
                     ]}
@@ -83,63 +82,46 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                     className="mb-3"
                     headingElement="h2"
                     actions={
-                        <div className="d-flex flex-row-reverse align-items-center">
-                            <div className="flex-grow mr-2">
-                                <Tooltip content="Edit webhook">
-                                    <ButtonLink
-                                        to={`/site-admin/webhooks/${id}/edit`}
-                                        className="test-edit-webhook"
-                                        size="sm"
-                                        variant="primary"
-                                        display="inline"
-                                    >
-                                        <Icon aria-hidden={true} svgPath={mdiCog} />
-                                        {' Edit'}
-                                    </ButtonLink>
-                                </Tooltip>
-                            </div>
-                            <div className="mr-1">
-                                <Tooltip content="Delete webhook">
-                                    <Button
-                                        aria-label="Delete"
-                                        className="test-delete-webhook"
-                                        variant="danger"
-                                        size="sm"
-                                        disabled={isDeleting}
-                                        onClick={event => {
-                                            event.preventDefault()
-                                            if (
-                                                !window.confirm(
-                                                    'Delete this webhook? Any external webhooks configured to point at this webhook will no longer be received.'
-                                                )
-                                            ) {
-                                                return
-                                            }
-                                            deleteWebhook().catch(
-                                                // noop here is used because creation error is handled directly when useMutation is called
-                                                noop
-                                            )
-                                        }}
-                                    >
-                                        <>
-                                            {isDeleting && <LoadingSpinner />}
-                                            <Icon aria-hidden={true} svgPath={mdiDelete} />
-                                            {' Delete'}
-                                        </>
-                                    </Button>
-                                </Tooltip>
-                                {deleteError && (
-                                    <ErrorAlert
-                                        className="mt-2"
-                                        prefix="Error during webhook deletion"
-                                        error={deleteError}
-                                    />
-                                )}
-                            </div>
+                        <div className="d-flex flex-row align-items-center">
+                            <ButtonLink
+                                to={`/site-admin/webhooks/incoming/${id}/edit`}
+                                className="test-edit-webhook mr-2"
+                                variant="secondary"
+                                display="inline"
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiPencil} />
+                                {' Edit'}
+                            </ButtonLink>
+                            <Button
+                                aria-label="Delete"
+                                className="test-delete-webhook"
+                                variant="danger"
+                                disabled={isDeleting}
+                                onClick={event => {
+                                    event.preventDefault()
+                                    if (
+                                        !window.confirm(
+                                            'Delete this webhook? Any external webhooks configured to point at this endpoint will no longer be received.'
+                                        )
+                                    ) {
+                                        return
+                                    }
+                                    deleteWebhook().catch(
+                                        // noop here is used because creation error is handled directly when useMutation is called
+                                        noop
+                                    )
+                                }}
+                            >
+                                {isDeleting && <LoadingSpinner />}
+                                <Icon aria-hidden={true} svgPath={mdiDelete} />
+                                {' Delete'}
+                            </Button>
                         </div>
                     }
                 />
             )}
+
+            {deleteError && <ErrorAlert className="mt-2" prefix="Error during webhook deletion" error={deleteError} />}
 
             <H2>Information</H2>
             {webhookData?.node && webhookData.node.__typename === 'Webhook' && (

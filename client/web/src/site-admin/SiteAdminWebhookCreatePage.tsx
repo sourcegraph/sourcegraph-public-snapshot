@@ -18,7 +18,7 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
 
     return (
         <Container>
-            <PageTitle title="Incoming webhook" />
+            <PageTitle title="Create incoming webhook" />
             <PageHeader
                 path={[
                     { icon: mdiWebhook },
@@ -26,6 +26,8 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
                     { text: 'Create' },
                 ]}
                 headingElement="h2"
+                description="Create a new incoming webhook"
+                className="mb-3"
             />
             <WebhookCreateUpdatePage />
         </Container>
