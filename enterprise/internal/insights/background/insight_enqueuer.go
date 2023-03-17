@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
@@ -21,7 +22,7 @@ import (
 // newInsightEnqueuer returns a background goroutine which will periodically find all of the search
 // and webhook insights across all user settings, and enqueue work for the query runner and webhook
 // runner workers to perform.
-func newInsightEnqueuer(ctx context.Context, observationCtx *observation.Context, workerBaseStore *basestore.Store, insightStore store.DataSeriesStore) goroutine.BackgroundRoutine {
+func newInsightEnqueuer(ctx context.Context, observationCtx *observation.Context, workerBaseStore *basestore.Store, insightStore store.DataSeriesStore, logger log.Logger) goroutine.BackgroundRoutine {
 	redMetrics := metrics.NewREDMetrics(
 		observationCtx.Registerer,
 		"insights_enqueuer",
@@ -42,7 +43,7 @@ func newInsightEnqueuer(ctx context.Context, observationCtx *observation.Context
 		ctx, "insights.enqueuer", "enqueues snapshot and current recording query jobs",
 		1*time.Hour, goroutine.HandlerFunc(
 			func(ctx context.Context) error {
-				ie := NewInsightEnqueuer(time.Now, workerBaseStore)
+				ie := NewInsightEnqueuer(time.Now, workerBaseStore, logger)
 
 				return ie.discoverAndEnqueueInsights(ctx, insightStore)
 			},
@@ -50,17 +51,20 @@ func newInsightEnqueuer(ctx context.Context, observationCtx *observation.Context
 }
 
 type InsightEnqueuer struct {
+	logger log.Logger
+
 	now                   func() time.Time
 	enqueueQueryRunnerJob func(context.Context, *queryrunner.Job) error
 }
 
-func NewInsightEnqueuer(now func() time.Time, workerBaseStore *basestore.Store) *InsightEnqueuer {
+func NewInsightEnqueuer(now func() time.Time, workerBaseStore *basestore.Store, logger log.Logger) *InsightEnqueuer {
 	return &InsightEnqueuer{
 		now: now,
 		enqueueQueryRunnerJob: func(ctx context.Context, job *queryrunner.Job) error {
 			_, err := queryrunner.EnqueueJob(ctx, workerBaseStore, job)
 			return err
 		},
+		logger: logger,
 	}
 }
 
