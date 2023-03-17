@@ -1,7 +1,7 @@
 lockfileVersion: 5.4
 
 overrides:
-  '@types/webpack': '5'
+  '@types/webpack': 5.28.0
   history: 4.5.1
   cssnano: 4.1.10
   webpack: '5'
@@ -119,7 +119,7 @@ importers:
       '@testing-library/user-event': ^13.5.0
       '@types/babel__core': 7.1.20
       '@types/bloomfilter': 0.0.0
-      '@types/body-parser': ^1.19.2
+      '@types/body-parser': 1.19.2
       '@types/case-sensitive-paths-webpack-plugin': 2.1.6
       '@types/chrome': 0.0.127
       '@types/classnames': 2.2.10
@@ -127,29 +127,29 @@ importers:
       '@types/compression': 1.7.2
       '@types/connect-history-api-fallback': 1.3.4
       '@types/d3-format': 2.0.0
-      '@types/d3-scale': ^3.3.0
-      '@types/d3-shape': ^1.3.1
+      '@types/d3-scale': 3.3.2
+      '@types/d3-shape': 1.3.8
       '@types/d3-time-format': 3.0.0
-      '@types/d3-voronoi': ^1.1.9
-      '@types/escape-html': ^1.0.1
+      '@types/d3-voronoi': 1.1.9
+      '@types/escape-html': 1.0.2
       '@types/express': 4.17.11
       '@types/glob': 7.1.3
-      '@types/google-spreadsheet': ^3.3.1
+      '@types/google-spreadsheet': 3.3.1
       '@types/got': 9.6.11
       '@types/gulp': 4.0.7
       '@types/highlight.js': 9.12.4
-      '@types/history': ^4.7.11
+      '@types/history': 4.7.11
       '@types/jest': 28.1.0
       '@types/js-cookie': 2.2.6
       '@types/js-yaml': 4.0.3
       '@types/jsdom': 12.2.4
       '@types/lodash': 4.14.167
-      '@types/lru-cache': ^7.6.1
+      '@types/lru-cache': 7.10.9
       '@types/marked': 4.0.3
       '@types/mime-types': 2.1.0
-      '@types/minimatch': ^5.1.2
+      '@types/minimatch': 5.1.2
       '@types/mocha': 8.2.0
-      '@types/mock-require': ^2.0.1
+      '@types/mock-require': 2.0.1
       '@types/mockdate': 2.0.0
       '@types/mz': 2.7.3
       '@types/node': 13.13.5
@@ -158,16 +158,16 @@ importers:
       '@types/pollyjs__core': 4.3.1
       '@types/pollyjs__persister-fs': 2.0.1
       '@types/prettier': ^2.7.2
-      '@types/puppeteer': ^5.4.5
+      '@types/puppeteer': 5.4.7
       '@types/react': 18.0.8
-      '@types/react-calendar': ^3.5.2
+      '@types/react-calendar': 3.9.0
       '@types/react-circular-progressbar': 1.0.2
       '@types/react-dom': 18.0.2
       '@types/react-grid-layout': 1.3.2
-      '@types/react-resizable': ^3.0.2
+      '@types/react-resizable': 3.0.3
       '@types/recharts': 1.8.23
       '@types/resize-observer-browser': 0.1.4
-      '@types/rimraf': ^3.0.2
+      '@types/rimraf': 3.0.2
       '@types/sanitize-html': 2.3.0
       '@types/semver': 7.3.1
       '@types/shelljs': 0.8.8
@@ -176,16 +176,16 @@ importers:
       '@types/sinon': 9.0.4
       '@types/socket.io-client': 1.4.33
       '@types/speed-measure-webpack-plugin': 1.3.4
-      '@types/stopword': ^2.0.0
-      '@types/stream-json': ^1.7.3
+      '@types/stopword': 2.0.0
+      '@types/stream-json': 1.7.3
       '@types/svgo': 2.6.0
       '@types/testing-library__jest-dom': 5.9.5
       '@types/uuid': 8.0.1
-      '@types/vscode': ^1.63.1
-      '@types/webpack-bundle-analyzer': ^4.6.0
-      '@types/webpack-stats-plugin': ^0.3.2
-      '@types/ws': ^8.5.3
-      '@types/yauzl': ^2.9.2
+      '@types/vscode': 1.76.0
+      '@types/webpack-bundle-analyzer': 4.6.0
+      '@types/webpack-stats-plugin': 0.3.2
+      '@types/ws': 8.5.4
+      '@types/yauzl': 2.10.0
       '@visx/annotation': ^2.10.0
       '@visx/axis': ^2.11.1
       '@visx/event': 2.6.0
@@ -639,10 +639,10 @@ importers:
       '@types/connect-history-api-fallback': 1.3.4
       '@types/d3-format': 2.0.0
       '@types/d3-scale': 3.3.2
-      '@types/d3-shape': 1.3.2
+      '@types/d3-shape': 1.3.8
       '@types/d3-time-format': 3.0.0
       '@types/d3-voronoi': 1.1.9
-      '@types/escape-html': 1.0.1
+      '@types/escape-html': 1.0.2
       '@types/express': 4.17.11
       '@types/glob': 7.1.3
       '@types/google-spreadsheet': 3.3.1
@@ -655,7 +655,7 @@ importers:
       '@types/js-yaml': 4.0.3
       '@types/jsdom': 12.2.4
       '@types/lodash': 4.14.167
-      '@types/lru-cache': 7.6.1
+      '@types/lru-cache': 7.10.9
       '@types/marked': 4.0.3
       '@types/mime-types': 2.1.0
       '@types/minimatch': 5.1.2
@@ -669,13 +669,13 @@ importers:
       '@types/pollyjs__core': 4.3.1
       '@types/pollyjs__persister-fs': 2.0.1
       '@types/prettier': 2.7.2
-      '@types/puppeteer': 5.4.5
+      '@types/puppeteer': 5.4.7
       '@types/react': 18.0.8
-      '@types/react-calendar': 3.5.2
+      '@types/react-calendar': 3.9.0
       '@types/react-circular-progressbar': 1.0.2
       '@types/react-dom': 18.0.2
       '@types/react-grid-layout': 1.3.2
-      '@types/react-resizable': 3.0.2
+      '@types/react-resizable': 3.0.3
       '@types/recharts': 1.8.23
       '@types/resize-observer-browser': 0.1.4
       '@types/rimraf': 3.0.2
@@ -692,10 +692,10 @@ importers:
       '@types/svgo': 2.6.0
       '@types/testing-library__jest-dom': 5.9.5
       '@types/uuid': 8.0.1
-      '@types/vscode': 1.63.1
+      '@types/vscode': 1.76.0
       '@types/webpack-bundle-analyzer': 4.6.0_cf7cgeqdkm72g3fdehkr7aaod4
       '@types/webpack-stats-plugin': 0.3.2_cf7cgeqdkm72g3fdehkr7aaod4
-      '@types/ws': 8.5.3
+      '@types/ws': 8.5.4
       '@types/yauzl': 2.10.0
       '@vitejs/plugin-react': 3.1.0_vite@4.1.4
       '@vscode/test-electron': 2.1.3
@@ -1123,8 +1123,8 @@ importers:
       '@sveltejs/adapter-auto': ^2.0.0
       '@sveltejs/adapter-static': ^2.0.0
       '@sveltejs/kit': ^1.5.6
-      '@types/cookie': ^0.5.1
-      '@types/prismjs': ^1.26.0
+      '@types/cookie': 0.5.1
+      '@types/prismjs': 1.26.0
       eslint-plugin-svelte3: ^4.0.0
       lodash-es: ^4.17.21
       prettier-plugin-svelte: ^2.9.0
@@ -1169,7 +1169,7 @@ importers:
 
   dev/release:
     specifiers:
-      '@types/luxon': ^3.2.0
+      '@types/luxon': 3.2.0
       luxon: ^3.2.1
     dependencies:
       '@types/luxon': 3.2.0
@@ -3655,7 +3655,7 @@ packages:
     dependencies:
       '@graphql-tools/utils': 9.1.3_graphql@15.4.0
       '@repeaterjs/repeater': 3.0.4
-      '@types/ws': 8.5.3
+      '@types/ws': 8.5.4
       graphql: 15.4.0
       graphql-ws: 5.11.2_graphql@15.4.0
       isomorphic-ws: 5.0.0_ws@8.11.0
@@ -3691,7 +3691,7 @@ packages:
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
     dependencies:
       '@graphql-tools/utils': 9.1.3_graphql@15.4.0
-      '@types/ws': 8.5.3
+      '@types/ws': 8.5.4
       graphql: 15.4.0
       isomorphic-ws: 5.0.0_ws@8.11.0
       tslib: 2.1.0
@@ -3937,7 +3937,7 @@ packages:
       '@graphql-tools/executor-legacy-ws': 0.0.5_graphql@15.4.0
       '@graphql-tools/utils': 9.1.3_graphql@15.4.0
       '@graphql-tools/wrap': 9.2.21_graphql@15.4.0
-      '@types/ws': 8.5.3
+      '@types/ws': 8.5.4
       '@whatwg-node/fetch': 0.5.3
       graphql: 15.4.0
       isomorphic-ws: 5.0.0_ws@8.11.0
@@ -8528,8 +8528,8 @@ packages:
     dependencies:
       '@types/d3-time': 2.1.1
 
-  /@types/d3-shape/1.3.2:
-    resolution: {integrity: sha512-LtD8EaNYCaBRzHzaAiIPrfcL3DdIysc81dkGlQvv7WQP3+YXV7b0JJTtR1U3bzeRieS603KF4wUo+ZkJVenh8w==}
+  /@types/d3-shape/1.3.8:
+    resolution: {integrity: sha512-gqfnMz6Fd5H6GOLYixOZP/xlrMtJms9BaS+6oWxTKHNqPGZ93BkWWupQSCYm6YHqx6h9wjRupuJb90bun6ZaYg==}
     dependencies:
       '@types/d3-path': 1.0.9
 
@@ -8543,8 +8543,8 @@ packages:
   /@types/d3-voronoi/1.1.9:
     resolution: {integrity: sha512-DExNQkaHd1F3dFPvGA/Aw2NGyjMln6E9QzsiqOcBgnE+VInYnFBHBBySbZQts6z6xD+5jTfKCP7M4OqMyVjdwQ==}
 
-  /@types/escape-html/1.0.1:
-    resolution: {integrity: sha512-4mI1FuUUZiuT95fSVqvZxp/ssQK9zsa86S43h9x3zPOSU9BBJ+BfDkXwuaU7BfsD+e7U0/cUUfJFk3iW2M4okA==}
+  /@types/escape-html/1.0.2:
+    resolution: {integrity: sha512-gaBLT8pdcexFztLSPRtriHeXY/Kn4907uOCZ4Q3lncFBkheAWOuNt53ypsF8szgxbEJ513UeBzcf4utN0EzEwA==}
     dev: true
 
   /@types/eslint-scope/3.7.3:
@@ -8781,8 +8781,10 @@ packages:
     resolution: {integrity: sha512-ssE3Vlrys7sdIzs5LOxCzTVMsU7i9oa/IaW92wF32JFb3CVczqOkru2xspuKczHEbG3nvmPY7IFqVmGGHdNbYw==}
     dev: true
 
-  /@types/lru-cache/7.6.1:
-    resolution: {integrity: sha512-69x+Dhrm2aShFkTqUuPgUXbKYwvq4FH/DVeeQH7MBfTjbKjPX51NGLERxVV1vf33N71dzLvXCko4OLqRvsq53Q==}
+  /@types/lru-cache/7.10.9:
+    resolution: {integrity: sha512-wrwgkdJ0xr8AbzKhVaRI8SXZN9saapPwwLoydBEr4HqMZET1LUTi1gdoaj82XmRJ9atqN7MtB0aja29iiK+7ag==}
+    dependencies:
+      lru-cache: 7.14.0
     dev: true
 
   /@types/luxon/3.2.0:
@@ -8916,8 +8918,8 @@ packages:
     resolution: {integrity: sha512-SnHmG9wN1UVmagJOnyo/qkk0Z7gejYxOYYmaAwr5u2yFYfsupN3sg10kyzN8Hep/2zbHxCnsumxOoRIRMBwKCg==}
     dev: true
 
-  /@types/puppeteer/5.4.5:
-    resolution: {integrity: sha512-lxCjpDEY+DZ66+W3x5Af4oHnEmUXt0HuaRzkBGE2UZiZEp/V1d3StpLPlmNVu/ea091bdNmVPl44lu8Wy/0ZCA==}
+  /@types/puppeteer/5.4.7:
+    resolution: {integrity: sha512-JdGWZZYL0vKapXF4oQTC5hLVNfOgdPrqeZ1BiQnGk5cB7HeE91EWUiTdVSdQPobRN8rIcdffjiOgCYJ/S8QrnQ==}
     dependencies:
       '@types/node': 13.13.5
     dev: true
@@ -8932,8 +8934,8 @@ packages:
   /@types/range-parser/1.2.2:
     resolution: {integrity: sha512-HtKGu+qG1NPvYe1z7ezLsyIaXYyi8SoAVqWDZgDQ8dLrsZvSzUNCwZyfX33uhWxL/SU0ZDQZ3nwZ0nimt507Kw==}
 
-  /@types/react-calendar/3.5.2:
-    resolution: {integrity: sha512-8gkU9KaE33VVbu3YWvxXjEk4BsalgSYR3c/5XF9XNJiQ/2MKxiGkTg/PfOHUX/BvcADykRBMAEJiCi6jFPEE3A==}
+  /@types/react-calendar/3.9.0:
+    resolution: {integrity: sha512-KpAu1MKAGFw5hNwlDnWsHWqI9i/igAB+8jH97YV7QpC2v7rlwNEU5i6VMFb73lGRacuejM/Zd2LklnEzkFV3XA==}
     dependencies:
       '@types/react': 18.0.8
     dev: true
@@ -8967,8 +8969,8 @@ packages:
       '@types/react': 18.0.8
     dev: false
 
-  /@types/react-resizable/3.0.2:
-    resolution: {integrity: sha512-4rHjZDQmSpFqRlNzlcnF5tpOG5fBcMuDlvD+qT3XHAJLKGx/FC3iDQ9li9tHW53ecWwZzHTPCGvz5vNWQN+v/Q==}
+  /@types/react-resizable/3.0.3:
+    resolution: {integrity: sha512-W/QsUOZoXBAIBQNhNm95A5ohoaiUA874lWQytO2UP9dOjp5JHO9+a0cwYNabea7sA12ZDJnGVUFZxcNaNksAWA==}
     dependencies:
       '@types/react': 18.0.8
     dev: true
@@ -8991,7 +8993,7 @@ packages:
   /@types/recharts/1.8.23:
     resolution: {integrity: sha512-O/mIPm9f6dwRWfenOI3GQwsGta3x1YWjwqXOCZqC0MATQ6C+A+Jc8VxFnSUr4N3uYv64zkq90RwXFaMNbhJKvg==}
     dependencies:
-      '@types/d3-shape': 1.3.2
+      '@types/d3-shape': 1.3.8
       '@types/react': 18.0.8
     dev: true
 
@@ -9181,8 +9183,8 @@ packages:
       '@types/node': 13.13.5
     dev: true
 
-  /@types/vscode/1.63.1:
-    resolution: {integrity: sha512-Z+ZqjRcnGfHP86dvx/BtSwWyZPKQ/LBdmAVImY82TphyjOw2KgTKcp7Nx92oNwCTsHzlshwexAG/WiY2JuUm3g==}
+  /@types/vscode/1.76.0:
+    resolution: {integrity: sha512-CQcY3+Fe5hNewHnOEAVYj4dd1do/QHliXaknAEYSXx2KEHUzFibDZSKptCon+HPgK55xx20pR+PBJjf0MomnBA==}
     dev: true
 
   /@types/webpack-bundle-analyzer/4.6.0_cf7cgeqdkm72g3fdehkr7aaod4:
@@ -9225,8 +9227,8 @@ packages:
       - webpack-cli
     dev: true
 
-  /@types/ws/8.5.3:
-    resolution: {integrity: sha512-6YOoWjruKj1uLf3INHH7D3qTXwFfEsg1kf3c0uDdSBJwfa/llkwIjrAGV7j7mVgGNbzTQ3HiHKKDXl6bJPD97w==}
+  /@types/ws/8.5.4:
+    resolution: {integrity: sha512-zdQDHKUgcX/zBc4GrwsE/7dVdAD8JR4EuiAXiiUhhfyIJXXb2+PrGshFyeXWQPMmmZ2XxgaqclgpIC7eTXc1mg==}
     dependencies:
       '@types/node': 13.13.5
 
@@ -9528,7 +9530,7 @@ packages:
   /@visx/curve/2.1.0:
     resolution: {integrity: sha512-9b6JOnx91gmOQiSPhUOxdsvcnW88fgqfTPKoVgQxidMsD/I3wksixtwo8TR/vtEz2aHzzsEEhlv1qK7Y3yaSDw==}
     dependencies:
-      '@types/d3-shape': 1.3.2
+      '@types/d3-shape': 1.3.8
       d3-shape: 1.3.7
     dev: false
 
@@ -9556,7 +9558,7 @@ packages:
     peerDependencies:
       react: ^16.3.0-0 || ^17.0.0-0 || ^18.0.0-0
     dependencies:
-      '@types/d3-shape': 1.3.2
+      '@types/d3-shape': 1.3.8
       '@types/react': 18.0.8
       '@visx/group': 2.10.0_react@18.1.0
       classnames: 2.3.1
@@ -9626,7 +9628,7 @@ packages:
       react: ^16.3.0-0 || ^17.0.0-0 || ^18.0.0-0
     dependencies:
       '@types/d3-path': 1.0.9
-      '@types/d3-shape': 1.3.2
+      '@types/d3-shape': 1.3.8
       '@types/lodash': 4.14.182
       '@types/react': 18.0.8
       '@visx/curve': 2.1.0
@@ -9646,7 +9648,7 @@ packages:
       react: ^16.3.0-0 || ^17.0.0-0 || ^18.0.0-0
     dependencies:
       '@types/d3-path': 1.0.9
-      '@types/d3-shape': 1.3.2
+      '@types/d3-shape': 1.3.8
       '@types/lodash': 4.14.182
       '@types/react': 18.0.8
       '@visx/curve': 2.1.0
@@ -19742,7 +19744,6 @@ packages:
   /lru-cache/7.14.0:
     resolution: {integrity: sha512-EIRtP1GrSJny0dqb50QXRUNBxHJhcpxHC++M5tD7RYbvLLn5KVWKsbyswSSqDuU15UFi3bgTQIY8nhDMeF6aDQ==}
     engines: {node: '>=12'}
-    dev: false
 
   /lru-queue/0.1.0:
     resolution: {integrity: sha512-BpdYkt9EvGl8OfWHDQPISVpcl5xZthb+XPsbELj5AQXxIC8IriDZIQYjBJPEm5rS420sjZ0TLEzRcq5KdBhYrQ==}
@@ -27745,7 +27746,7 @@ packages:
       '@types/serve-index': 1.9.1
       '@types/serve-static': 1.15.0
       '@types/sockjs': 0.3.33
-      '@types/ws': 8.5.3
+      '@types/ws': 8.5.4
       ansi-html-community: 0.0.8
       bonjour-service: 1.0.14
       chokidar: 3.5.3

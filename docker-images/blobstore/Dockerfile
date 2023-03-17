@@ -1,6 +1,6 @@
 # Build s3proxy from source
 # hadolint ignore=DL3022
-FROM maven:3.8.6-openjdk-11-slim AS builder
+FROM maven:3.8.6-openjdk-11-slim@sha256:2cb7c73ba2fd0f7ae64cfabd99180030ec85841a1197b4ae821d21836cb0aa3b AS builder
 
 # hadolint ignore=DL3008,DL3009
 RUN apt-get update && \
