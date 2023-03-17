@@ -193,10 +193,10 @@ const ContextFiles: React.FunctionComponent<{ contextFiles: string[] }> = ({ con
                 <i className="codicon codicon-triangle-right" slot="start" />
             </span>
             <div className="context-files-collapsed-text">
-                <span>
-                    Cody read <code className="context-file">{contextFiles[0]}</code> and {contextFiles.length - 1}{' '}
-                    other {contextFiles.length > 2 ? 'files' : 'file'} to provide an answer.
-                </span>
+                <p>
+                    Cody read <code className="context-file">{contextFiles[0].split('/').pop()}</code> and{' '}
+                    {contextFiles.length - 1} other {contextFiles.length > 2 ? 'files' : 'file'} to provide an answer.
+                </p>
             </div>
         </p>
     )

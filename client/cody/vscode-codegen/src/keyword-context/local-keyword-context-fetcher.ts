@@ -17,10 +17,8 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
 
     public async getContextMessages(query: string): Promise<Message[]> {
         console.log('fetching keyword matches')
-        const rootPath = getRootPath()
-        if (!rootPath) {
-            return []
-        }
+        const rootPath = this.getRootPath()
+        if (!rootPath) return []
 
         const filesnamesWithScores = await this.fetchKeywordFiles(rootPath, query)
         const top10 = filesnamesWithScores.slice(0, 10)
@@ -212,21 +210,13 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
 
         return filenamesWithScores
     }
-}
 
-function getRootPath(): string | null {
-    const uri = vscode.window.activeTextEditor?.document.uri
-    if (uri) {
-        const wsFolder = vscode.workspace.getWorkspaceFolder(uri)
-        if (wsFolder) {
-            return wsFolder.uri.fsPath
-        }
+    private getRootPath(): string | null {
+        const docUri = vscode.window.activeTextEditor?.document.uri
+        const wsFolderUri = docUri ? vscode.workspace.getWorkspaceFolder(docUri)?.uri.fsPath : null
+        const wsRootUri = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath || null
+        return wsFolderUri === undefined ? wsRootUri : wsFolderUri
     }
-
-    if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length >= 1) {
-        return vscode.workspace.workspaceFolders[0].uri.fsPath
-    }
-    return null
 }
 
 function idfLogScore(

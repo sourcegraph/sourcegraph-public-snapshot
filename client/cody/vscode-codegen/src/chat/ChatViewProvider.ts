@@ -115,6 +115,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             case 'links':
                 await vscode.env.openExternal(vscode.Uri.parse(message.value))
                 break
+            case 'file':
+                await vscode.workspace.openTextDocument(message.value)
             default:
                 console.error('Invalid request type from Webview')
         }

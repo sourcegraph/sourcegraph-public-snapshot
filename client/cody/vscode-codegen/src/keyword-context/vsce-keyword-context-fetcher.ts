@@ -4,7 +4,7 @@ import * as vscode from 'vscode'
 import { getContextMessageWithResponse, populateCodeContextTemplate } from '../chat/prompt'
 import { Message } from '../sourcegraph-api'
 
-import { getTermScore, KeywordContextFetcher } from '.'
+import { KeywordContextFetcher } from '.'
 
 export class VSCEKeywordContextFetcher implements KeywordContextFetcher {
     constructor() {}
@@ -12,9 +12,7 @@ export class VSCEKeywordContextFetcher implements KeywordContextFetcher {
     public async getContextMessages(query: string): Promise<Message[]> {
         console.log('fetching keyword matches with VSCE')
         const rootPath = this.getRootPath()
-        if (!rootPath) {
-            return []
-        }
+        if (!rootPath) return []
         const filesnamesWithScores = await this.fetchKeywordFiles(rootPath, query)
         const top10 = filesnamesWithScores.slice(0, 10).reverse()
         const messagePairs = await Promise.all(
