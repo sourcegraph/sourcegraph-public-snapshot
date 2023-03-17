@@ -84,12 +84,10 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         [globalTypeFilter]
     )
 
-    const canCreateBatchChangeFromQuery = useMemo(
-        () => globalTypeFilter !== 'diff' && globalTypeFilter !== 'commit',
-        [globalTypeFilter]
-    )
-
     const canCreateBatchChanges: boolean | string = useMemo(() => {
+        if (globalTypeFilter === 'diff' || globalTypeFilter === 'commit') {
+            return 'Batch changes cannot be created from searches with type:diff or type:commit'
+        }
         if (props.isSourcegraphDotCom) {
             return NO_ACCESS_SOURCEGRAPH_COM
         }
@@ -101,6 +99,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         }
         return true
     }, [
+        globalTypeFilter,
         props.isSourcegraphDotCom,
         props.batchChangesEnabled,
         props.batchChangesExecutionEnabled,
@@ -112,15 +111,11 @@ export const SearchResultsInfoBar: React.FunctionComponent<
     const createActions = useMemo(
         () =>
             [
-                getBatchChangeCreateAction(
-                    props.query,
-                    props.patternType,
-                    canCreateBatchChangeFromQuery && canCreateBatchChanges
-                ),
+                getBatchChangeCreateAction(props.query, props.patternType, canCreateBatchChanges),
                 getSearchContextCreateAction(props.query, props.authenticatedUser),
                 getInsightsCreateAction(props.query, props.patternType, window.context?.codeInsightsEnabled),
             ].filter((button): button is CreateAction => button !== null),
-        [props.authenticatedUser, props.patternType, props.query, canCreateBatchChangeFromQuery, canCreateBatchChanges]
+        [props.authenticatedUser, props.patternType, props.query, canCreateBatchChanges]
     )
 
     // The create code monitor action is separated from the rest of the actions, because we use the
