@@ -106,7 +106,6 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                         )
                     })
                     const fileCounts: { [filename: string]: number } = {}
-                    console.log(out)
                     const lines = out.split('\n')
                     let filesSearched = -1
                     for (const line of lines) {

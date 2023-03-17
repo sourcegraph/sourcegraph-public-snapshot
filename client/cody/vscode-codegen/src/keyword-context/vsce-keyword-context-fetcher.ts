@@ -32,7 +32,8 @@ export class VSCEKeywordContextFetcher implements KeywordContextFetcher {
 
     private async fetchKeywordFiles(rootPath: string, query: string): Promise<{ filename: string; score: number }[]> {
         // unique stemmed keywords, our representation of the user query
-        const stemmedTerms = await nlp(query).match('#Noun').not('function').sort('length').out('array')
+        const terms = nlp(query).text({ keepPunct: false, trim: true })
+        const stemmedTerms = nlp(terms).match('#Noun').not('function').sort('length').out('array')
         const filteredTerms = stemmedTerms.filter((term: string) => term.length >= 3)
         const { fileTermCounts, termTotalFiles, totalFiles } = await this.fetchSymbolMatches(filteredTerms, rootPath)
         const idfDict = this.idf(termTotalFiles, totalFiles)
@@ -46,6 +47,7 @@ export class VSCEKeywordContextFetcher implements KeywordContextFetcher {
                 }
             })
             .sort(({ score: score1 }, { score: score2 }) => score2 - score1)
+        // TODO: Beatrix fix filesMatches to output same result as fetchSymbolMatches
         // If symbol search is empty or less than 10, look for keywords in current workspace
         if (filenamesWithScores.length < 10) {
             const filesMatches = await this.fetchFileMatches(filteredTerms)
@@ -81,7 +83,6 @@ export class VSCEKeywordContextFetcher implements KeywordContextFetcher {
                             fileCounts[symbolPath] = (fileCounts[symbolPath] || 0) + 1
                         }
                     })
-
                     // Set the length of fileCounts as files searched
                     const filesSearched = Object.entries(fileCounts).length || 0
                     totalFilesSearched += filesSearched
@@ -110,7 +111,7 @@ export class VSCEKeywordContextFetcher implements KeywordContextFetcher {
         }
     }
 
-    // TODO: Beatrix WIP
+    // TODO: Beatrix fix filesMatches to output same result as fetchSymbolMatches
     private async fetchFileMatches(keywords: string[]): Promise<{ filename: string; score: number }[]> {
         const matchedFiles: { filename: string; score: number }[] = []
         const excludePattern = this.generateExcludePattern()
@@ -154,10 +155,7 @@ export class VSCEKeywordContextFetcher implements KeywordContextFetcher {
         const scoreComponents: { [term: string]: number } = {}
         for (const term of terms) {
             const ct = termCounts[term] || 0
-            // Assume terms with both upper and lower letters are symbols
-            // as symbols should have higher priority than non-symbols
-            const termScore = getTermScore(term)
-            const logScore = ct === 0 ? 0 : Math.log10(termScore) + 1
+            const logScore = ct === 0 ? 0 : Math.log10(ct) + 1
             const idfLogScore = (idfDict[term] || 1) * logScore
             score += idfLogScore
             scoreComponents[term] = idfLogScore

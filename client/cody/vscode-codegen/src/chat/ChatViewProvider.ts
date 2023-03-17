@@ -71,7 +71,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             contextType,
             embeddings,
             new LLMIntentDetector(completions),
-            debug ? new LocalKeywordContextFetcher('rg') : new VSCEKeywordContextFetcher(),
+            debug ? new VSCEKeywordContextFetcher() : new LocalKeywordContextFetcher('rg'),
             new VSCodeEditor()
         )
         return new ChatViewProvider(extensionPath, prompt, new ChatClient(completions), secretStorage, mode)
