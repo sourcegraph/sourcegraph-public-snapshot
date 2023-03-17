@@ -405,6 +405,7 @@ importers:
       webpack-manifest-plugin: ^5.0.0
       webpack-stats-plugin: ^1.1.1
       wildcard-mock-link: ^2.0.1
+      wink-nlp-utils: ^2.1.0
       worker-loader: ^3.0.8
       yaml: ^2.2.1
       yaml-ast-parser: ^0.0.43
@@ -558,6 +559,7 @@ importers:
       vscode-uri: 3.0.7
       webext-domain-permission-toggle: 1.0.1
       webextension-polyfill: 0.6.0
+      wink-nlp-utils: 2.1.0
       yaml-ast-parser: 0.0.43
       zustand: 3.7.2_react@18.1.0
     devDependencies:
@@ -932,12 +934,7 @@ importers:
       '@sourcegraph/cody-common': link:../common
 
   client/cody/vscode-codegen:
-    specifiers:
-      wink-nlp-utils: ^2.1.0
-      wink-porter2-stemmer: ^2.0.1
-    dependencies:
-      wink-nlp-utils: 2.1.0
-      wink-porter2-stemmer: 2.0.1
+    specifiers: {}
 
   client/common:
     specifiers:
@@ -12618,7 +12615,7 @@ packages:
       postcss-modules-values: 4.0.0_postcss@8.4.21
       postcss-value-parser: 4.2.0
       semver: 7.3.8
-      webpack: 5.75.0_cf7cgeqdkm72g3fdehkr7aaod4
+      webpack: 5.75.0_esbuild@0.17.8
 
   /css-minimizer-webpack-plugin/4.2.2_6hyl5w2uqyeivowpusuiulbmoy:
     resolution: {integrity: sha512-s3Of/4jKfw1Hj9CxEO1E5oXhQAxlayuHO2y/ML+C6I9sQ7FdzfEV6QgMLN3vI+qFsjJGIAFLKtQK7t8BOXAIyA==}
@@ -22189,7 +22186,7 @@ packages:
       klona: 2.0.5
       postcss: 8.4.21
       semver: 7.3.8
-      webpack: 5.75.0_cf7cgeqdkm72g3fdehkr7aaod4
+      webpack: 5.75.0_esbuild@0.17.8
 
   /postcss-media-query-parser/0.2.3:
     resolution: {integrity: sha512-3sOlxmbKcSHMjlUXQZKQ06jOswE7oVkXPxmZdoB1r5l0q6gTFTQSHxNxOrCccElbW7dxNytifNEo8qidX2Vsig==}
@@ -24445,7 +24442,7 @@ packages:
       klona: 2.0.5
       neo-async: 2.6.2
       sass: 1.32.4
-      webpack: 5.75.0_cf7cgeqdkm72g3fdehkr7aaod4
+      webpack: 5.75.0_esbuild@0.17.8
 
   /sass/1.32.4:
     resolution: {integrity: sha512-N0BT0PI/t3+gD8jKa83zJJUb7ssfQnRRfqN+GIErokW6U4guBpfYl8qYB+OFLEho+QvnV5ZH1R9qhUC/Z2Ch9w==}
@@ -25588,7 +25585,7 @@ packages:
     peerDependencies:
       webpack: ^5.0.0
     dependencies:
-      webpack: 5.75.0_cf7cgeqdkm72g3fdehkr7aaod4
+      webpack: 5.75.0_esbuild@0.17.8
 
   /style-mod/4.0.0:
     resolution: {integrity: sha512-OPhtyEjyyN9x3nhPsu76f52yUGXiZcgvsrFVtvTkyGRQJ0XK+GPc6ov1z+lRpbeabka+MYEQxOYRnt5nF30aMw==}
@@ -26131,7 +26128,7 @@ packages:
       schema-utils: 3.1.1
       serialize-javascript: 6.0.0
       terser: 5.16.1
-      webpack: 5.75.0_cf7cgeqdkm72g3fdehkr7aaod4
+      webpack: 5.75.0_esbuild@0.17.8
 
   /terser/4.8.1:
     resolution: {integrity: sha512-4GnLC0x667eJG0ewJTa6z/yXrbLGv80D9Ru6HIpCQmO+Q4PfEtBFi0ObSckqwL6VyQv/7ENJieXHo2ANmdQwgw==}
@@ -27954,7 +27951,6 @@ packages:
       - '@swc/core'
       - esbuild
       - uglify-js
-    dev: false
 
   /websocket-driver/0.7.4:
     resolution: {integrity: sha512-b17KeDIQVjvb0ssuSDF2cYXSg2iztliJ4B9WdsuB6J952qCPKmnVq4DyW5motImXHDC1cBT/1UezrJVsKw5zjg==}

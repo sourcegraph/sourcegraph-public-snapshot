@@ -172,7 +172,9 @@ export class VSCEKeywordContextFetcher implements KeywordContextFetcher {
     // produce string as global pattern for list of files to exclude
     // eg. {**/*node_modules,**/*.json}
     public generateExcludePattern(): string {
-        const patterns = this.excludePattern.map(exclude => `**/*${exclude}`).join(',')
+        const patterns = this.excludePattern
+            .map(exclude => (exclude.startsWith('.') ? `**/*${exclude}` : `**/${exclude}`))
+            .join(',')
         return `{${patterns}}`
     }
 
@@ -218,5 +220,6 @@ export class VSCEKeywordContextFetcher implements KeywordContextFetcher {
         '.mkv',
         '.sql',
         '.golden',
+        '.d.*',
     ]
 }
