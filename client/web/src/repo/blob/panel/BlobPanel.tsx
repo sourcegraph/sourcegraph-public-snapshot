@@ -17,6 +17,7 @@ import { Text } from '@sourcegraph/wildcard'
 
 import { CodeIntelligenceProps } from '../../../codeintel'
 import { ReferencesPanel } from '../../../codeintel/ReferencesPanel'
+import { CodyPanel } from '../../../enterprise/cody/CodyPanel'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { OwnConfigProps } from '../../../own/OwnConfigProps'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
@@ -39,7 +40,7 @@ interface Props
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
-export type BlobPanelTabID = 'info' | 'def' | 'references' | 'impl' | 'typedef' | 'history' | 'ownership'
+export type BlobPanelTabID = 'info' | 'def' | 'references' | 'impl' | 'typedef' | 'history' | 'ownership' | 'cody'
 
 /**
  * A React hook that registers panel views for the blob.
@@ -72,6 +73,7 @@ function useBlobPanelViews({
     }, [location.hash, location.search])
 
     const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership')
+    const [codyFeatureFlagEnabled] = useFeatureFlag('cody')
 
     useBuiltinTabbedPanelViews(
         useMemo(() => {
@@ -143,11 +145,28 @@ function useBlobPanelViews({
                           ),
                       }
                     : null,
+                codyFeatureFlagEnabled
+                    ? {
+                          id: 'cody',
+                          title: 'Cody',
+                          productStatus: 'experimental' as const,
+                          element: (
+                              <PanelContent>
+                                  <CodyPanel
+                                      key="cody"
+                                      repoID={repoID}
+                                      revision={revision}
+                                      filePath={filePath}
+                                      telemetryService={telemetryService}
+                                  />
+                              </PanelContent>
+                          ),
+                      }
+                    : null,
             ].filter(isDefined)
 
             return panelDefinitions
         }, [
-            isPackage,
             position,
             settingsCascade,
             platformContext,
@@ -155,6 +174,7 @@ function useBlobPanelViews({
             telemetryService,
             fetchHighlightedFileLineRanges,
             useCodeIntel,
+            isPackage,
             repoID,
             revision,
             filePath,
@@ -162,6 +182,7 @@ function useBlobPanelViews({
             defaultPageSize,
             ownEnabled,
             ownFeatureFlagEnabled,
+            codyFeatureFlagEnabled,
         ])
     )
 

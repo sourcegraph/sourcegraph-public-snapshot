@@ -46,6 +46,7 @@ import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
+import { ToggleCodyPanel } from '../../enterprise/cody/ToggleCodyPanel'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { Scalars } from '../../graphql-operations'
 import { render as renderLsifHtml } from '../../lsif/html'
@@ -398,6 +399,16 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                         navigate={navigate}
                         isPackage={isPackage}
                     />
+                )}
+            </RepoHeaderContributionPortal>
+            <RepoHeaderContributionPortal
+                position="right"
+                priority={20}
+                id="toggle-cody-panel"
+                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+            >
+                {context => (
+                    <ToggleCodyPanel {...context} key="toggle-cody-panel" location={location} navigate={navigate} />
                 )}
             </RepoHeaderContributionPortal>
             {renderMode === 'code' && (
