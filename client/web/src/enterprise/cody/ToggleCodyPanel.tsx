@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { Location, NavigateFunction } from 'react-router-dom'
+import { Location } from 'react-router-dom'
 
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { Icon, Tooltip } from '@sourcegraph/wildcard'
@@ -17,16 +17,16 @@ import { codyIconPath } from './CodyIcon'
 export const ToggleCodyPanel: React.FunctionComponent<
     {
         location: Location
-        navigate: NavigateFunction
     } & RepoHeaderContext
-> = ({ location, navigate, actionType }) => {
+> = ({ location, actionType }) => {
     const visible = parseQueryAndHash<BlobPanelTabID>(location.search, location.hash).viewState === 'cody'
+    const href = visible ? '#' : '#tab=cody'
 
     const title = `${visible ? 'Hide' : 'Show'} Cody`
 
     if (actionType === 'dropdown') {
         return (
-            <RepoHeaderActionMenuLink file={true} href="#tab=cody">
+            <RepoHeaderActionMenuLink file={true} href={href}>
                 <Icon aria-hidden={true} svgPath={codyIconPath} />
                 <span>{title}</span>
             </RepoHeaderActionMenuLink>
@@ -39,7 +39,7 @@ export const ToggleCodyPanel: React.FunctionComponent<
                 aria-controls="references-panel"
                 aria-expanded={visible}
                 file={false}
-                to="#tab=cody"
+                to={href}
             >
                 <Icon aria-hidden={true} svgPath={codyIconPath} />
             </RepoHeaderActionButtonLink>

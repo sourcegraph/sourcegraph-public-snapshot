@@ -1,6 +1,6 @@
 import { FC } from 'react'
 
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -21,6 +21,7 @@ const USE_CODY_SEARCH_PAGE = true
  */
 export const SearchPageWrapper: FC<LegacyLayoutRouteContext> = props => {
     const location = useLocation()
+    const navigate = useNavigate()
     const hasSearchQuery = parseSearchURLQuery(location.search)
 
     return hasSearchQuery ? (
@@ -29,7 +30,7 @@ export const SearchPageWrapper: FC<LegacyLayoutRouteContext> = props => {
         </TraceSpanProvider>
     ) : (
         <TraceSpanProvider name="SearchPage">
-            {USE_CODY_SEARCH_PAGE ? <CodyHomepage {...props} /> : <SearchPage {...props} />}
+            {USE_CODY_SEARCH_PAGE ? <CodyHomepage navigate={navigate} {...props} /> : <SearchPage {...props} />}
         </TraceSpanProvider>
     )
 }

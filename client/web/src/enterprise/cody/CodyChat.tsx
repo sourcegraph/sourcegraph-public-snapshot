@@ -5,25 +5,10 @@ import useWebSocket, { ReadyState } from 'react-use-websocket'
 import { renderMarkdown } from '@sourcegraph/common'
 import { Button, Form, Input, Markdown, Text } from '@sourcegraph/wildcard'
 
-const CODY_ACCESS_TOKEN = localStorage.getItem('codyAccessToken')
-const CODY_ENDPOINT_URL = localStorage.getItem('codyEndpointURL')
+import { useCodyWebsocket } from './api'
 
 export const CodyChat: React.FunctionComponent<{ promptPrefix?: string }> = ({ promptPrefix }) => {
-    if (CODY_ENDPOINT_URL === null || CODY_ACCESS_TOKEN === null) {
-        throw new Error('Cody is not configured')
-    }
-
-    const authenticatedEndpointURL = useMemo(() => {
-        const url = new URL(CODY_ENDPOINT_URL)
-        url.pathname = '/chat'
-        url.searchParams.set('access_token', CODY_ACCESS_TOKEN)
-        return url
-    }, [])
-    const { sendMessage, lastMessage, readyState } = useWebSocket(authenticatedEndpointURL.toString(), {
-        reconnectAttempts: 3,
-        reconnectInterval: 500,
-        shouldReconnect: () => true,
-    })
+    const { sendMessage, lastMessage, readyState } = useCodyWebsocket()
 
     const [input, setInput] = useState('')
     const onInputChange = useCallback<ChangeEventHandler<HTMLInputElement>>(event => {

@@ -178,7 +178,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
 
     const [codyEnabled] = useFeatureFlag('cody')
     const isLightTheme = useIsLightTheme()
-    const isSearchPage = routeMatch === PageRoutes.Search || routeMatch === PageRoutes.SearchConsole
+    const isSearchPage =
+        (routeMatch === PageRoutes.Search || routeMatch === PageRoutes.SearchConsole) && location.search === ''
 
     return (
         <>
