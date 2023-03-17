@@ -1,18 +1,14 @@
-import { isError } from 'lodash'
 import * as vscode from 'vscode'
 
 import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../command/secret-storage'
 import { updateConfiguration } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
-import { EmbeddingsClient } from '../embeddings/client'
-import { LLMIntentDetector } from '../intent-detector/llm-intent-detector'
 import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
 import { Message } from '../sourcegraph-api'
-import { SourcegraphCompletionsClient } from '../sourcegraph-api/completions'
-import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { TestSupport } from '../test-support'
 
 import { ChatClient } from './chat'
+import { configureExternalServices } from './external-services'
 import { renderMarkdown } from './markdown'
 import { Transcript } from './prompt'
 
@@ -30,7 +26,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     private transcript: ChatMessage[] = []
     private messageInProgress: ChatMessage | null = null
 
-    private stopCompletionInProgressCallback: (() => void) | null = null
+    private cancelCompletionCallback: (() => void) | null = null
     private webview?: vscode.Webview
 
     private tosVersion = 0
@@ -56,24 +52,23 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         secretStorage: SecretStorage
     ): Promise<ChatViewProvider> {
         const mode = debug ? 'development' : 'production'
-        const accessToken = await getAccessToken(secretStorage)
-        const client = new SourcegraphGraphQLAPIClient(serverEndpoint, accessToken)
-        const completions = new SourcegraphCompletionsClient(serverEndpoint, accessToken, mode)
 
-        const repoId = codebase ? await client.getRepoId(codebase) : null
-        if (isError(repoId)) {
-            console.error('error fetching repo id', repoId)
-        }
+        const { intentDetector, embeddings, chatClient } = await configureExternalServices(
+            codebase,
+            serverEndpoint,
+            secretStorage,
+            mode
+        )
 
-        const embeddings = repoId && !isError(repoId) ? new EmbeddingsClient(client, repoId) : null
         const prompt = new Transcript(
             contextType,
             embeddings,
-            new LLMIntentDetector(completions),
+            intentDetector,
             new LocalKeywordContextFetcher('rg'),
             new VSCodeEditor()
         )
-        return new ChatViewProvider(extensionPath, prompt, new ChatClient(completions), secretStorage, mode)
+
+        return new ChatViewProvider(extensionPath, prompt, chatClient, secretStorage, mode)
     }
 
     private async onDidReceiveMessage(message: any, webview: vscode.Webview): Promise<void> {
@@ -125,9 +120,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     }
 
     private async sendPrompt(promptMessages: Message[], responsePrefix = ''): Promise<void> {
-        this.stopCompletionInProgress()
+        this.cancelCompletion()
 
-        this.stopCompletionInProgressCallback = this.chat.chat(promptMessages, {
+        this.cancelCompletionCallback = this.chat.chat(promptMessages, {
             onChange: text => this.onBotMessageChange(this.reformatBotMessage(text, responsePrefix)),
             onComplete: () => this.onBotMessageComplete(),
             onError: err => {
@@ -136,13 +131,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         })
     }
 
-    private stopCompletionInProgress(): void {
-        this.stopCompletionInProgressCallback?.()
-        this.stopCompletionInProgressCallback = null
+    private cancelCompletion(): void {
+        this.cancelCompletionCallback?.()
+        this.cancelCompletionCallback = null
     }
 
     private async onResetChat(): Promise<void> {
-        this.stopCompletionInProgress()
+        this.cancelCompletion()
         this.messageInProgress = null
         this.transcript = []
         this.prompt.reset()
@@ -248,7 +243,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         }
 
         this.messageInProgress = null
-        this.stopCompletionInProgressCallback = null
+        this.cancelCompletionCallback = null
 
         await this.sendTranscript()
     }
@@ -311,16 +306,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         switch (change) {
             case 'token':
             case 'endpoint': {
-                const accessToken = await getAccessToken(this.secretStorage)
-                const client = new SourcegraphGraphQLAPIClient(serverEndpoint, accessToken)
+                const { intentDetector, embeddings, chatClient } = await configureExternalServices(
+                    codebase,
+                    serverEndpoint,
+                    this.secretStorage,
+                    this.mode
+                )
 
-                const repoId = codebase ? await client.getRepoId(codebase) : null
-                const embeddings = repoId && !isError(repoId) ? new EmbeddingsClient(client, repoId) : null
                 this.prompt.setEmbeddings(embeddings)
-
-                const completions = new SourcegraphCompletionsClient(serverEndpoint, accessToken, this.mode)
-                this.prompt.setIntentDetector(new LLMIntentDetector(completions))
-                this.chat = new ChatClient(completions)
+                this.prompt.setIntentDetector(intentDetector)
+                this.chat = chatClient
 
                 vscode.window.showInformationMessage('Cody configuration has been updated.')
                 break

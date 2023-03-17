@@ -198,8 +198,8 @@
         },
         "cody.serverEndpoint": {
           "type": "string",
-          "default": "https://instance.sourcegraph.com",
-          "example": "https://instance.sourcegraph.com",
+          "default": "https://<instance>.sourcegraph.com",
+          "example": "https://<instance>.sourcegraph.com",
           "description": "URL to the Sourcegraph instance."
         },
         "cody.codebase": {
