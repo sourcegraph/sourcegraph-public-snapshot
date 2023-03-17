@@ -39,7 +39,7 @@ export function getCaptureGroupInsightCreateInput(
     insight: MinimalCaptureGroupInsightData,
     dashboardId: string | null
 ): LineChartSearchInsightInput {
-    const { step, repositories, repoQuery, filters, title } = insight
+    const { step, repoQuery, filters, title } = insight
     const [unit, value] = getStepInterval(step)
 
     const input: LineChartSearchInsightInput = {
@@ -50,8 +50,7 @@ export function getCaptureGroupInsightCreateInput(
         dataSeries: [
             {
                 query: insight.query,
-                options: {},
-                repositoryScope: { repositories },
+                options: {},                
                 timeScope: { stepInterval: { unit, value } },
                 generatedFromCaptureGroups: true,
             },
