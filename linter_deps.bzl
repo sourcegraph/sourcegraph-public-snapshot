@@ -42,7 +42,7 @@ def linter_dependencies():
   )
 
   go_repository(
-    name = "com_github_gocritic_gocritic",
+    name = "com_github_go_critic_go_critic",
     build_file_proto_mode = "disable_global",
     importpath = "github.com/go-critic/go-critic",
     version = "v0.6.7",

@@ -20,6 +20,7 @@ go_library(
         "//internal/codeintel/dependencies/shared",
         "//internal/conf/reposource",
         "//internal/database",
+        "//internal/gitserver",
         "//internal/goroutine",
         "//internal/metrics",
         "//internal/observation",
