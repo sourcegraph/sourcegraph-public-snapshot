@@ -267,6 +267,13 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Whether the feedback survey is enabled. */
     disableFeedbackSurvey?: boolean
+
+    /**
+     * Total amount of connected local repositories, it's only related to
+     * Sourcegraph App, common instance will always have this setting with 0
+     */
+    totalLocalRepositories: number
+    totalRemoteRepositories: number
 }
 
 export interface BrandAssets {
