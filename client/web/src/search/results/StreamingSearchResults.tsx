@@ -51,14 +51,14 @@ import styles from './StreamingSearchResults.module.scss'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
-        SettingsCascadeProps,
-        PlatformContextProps<'settings' | 'requestGraphQL' | 'sourcegraphURL'>,
-        TelemetryProps,
-        CodeInsightsProps,
-        SearchAggregationProps,
-        CodeMonitoringProps,
-        OwnConfigProps {
+    Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
+    SettingsCascadeProps,
+    PlatformContextProps<'settings' | 'requestGraphQL' | 'sourcegraphURL'>,
+    TelemetryProps,
+    CodeInsightsProps,
+    SearchAggregationProps,
+    CodeMonitoringProps,
+    OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
@@ -264,12 +264,12 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             () =>
                 results?.state === 'complete'
                     ? {
-                          type: 'search',
-                          query: submittedURLQuery,
-                          caseSensitive,
-                          patternType,
-                          searchContext: props.selectedSearchContextSpec,
-                      }
+                        type: 'search',
+                        query: submittedURLQuery,
+                        caseSensitive,
+                        patternType,
+                        searchContext: props.selectedSearchContextSpec,
+                    }
                     : null,
             [results, submittedURLQuery, patternType, caseSensitive, props.selectedSearchContextSpec]
         )
@@ -433,8 +433,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         patternType={patternType}
                         caseSensitive={caseSensitive}
                         query={submittedURLQuery}
-                        enableCodeMonitoring={codeMonitoringEnabled}
                         results={results}
+                        options={options}
+                        enableCodeMonitoring={codeMonitoringEnabled}
                         className={styles.infobar}
                         allExpanded={allExpanded}
                         onExpandAllResultsToggle={onExpandAllResultsToggle}
