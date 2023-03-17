@@ -375,6 +375,28 @@ func TestTeams_GetListCount(t *testing.T) {
 				t.Errorf("non-ancestors -want+got: %s", diff)
 			}
 		})
+
+		t.Run("ExceptAncestorID contains", func(t *testing.T) {
+			contains, err := store.ContainsTeam(internalCtx, salesTeam.ID, ListTeamsOpts{ExceptAncestorID: engineeringTeam.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !contains {
+				t.Errorf("sales team is expected to be contained in all teams except the sub-tree rooted at engineering team")
+			}
+		})
+
+		t.Run("ExceptAncestorID does not contain", func(t *testing.T) {
+			for _, team := range []*types.Team{ownTeam, engineeringTeam} {
+				contains, err := store.ContainsTeam(internalCtx, ownTeam.ID, ListTeamsOpts{ExceptAncestorID: engineeringTeam.ID})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if contains {
+					t.Errorf("%q team is descendant of engineering, so is expected to be outside of list of teams excluding engineering descendants", team.Name)
+				}
+			}
+		})
 	})
 
 	t.Run("ListCountTeamMembers", func(t *testing.T) {

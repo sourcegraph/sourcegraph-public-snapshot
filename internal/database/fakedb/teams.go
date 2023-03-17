@@ -118,6 +118,19 @@ func (teams *Teams) CountTeams(ctx context.Context, opts database.ListTeamsOpts)
 	return int32(len(selected)), err
 }
 
+func (teams *Teams) ContainsTeam(ctx context.Context, teamID int32, opts database.ListTeamsOpts) (bool, error) {
+	selected, _, err := teams.ListTeams(ctx, opts)
+	if err != nil {
+		return false, err
+	}
+	for _, t := range selected {
+		if t.ID == teamID {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func (teams *Teams) matches(team *types.Team, opts database.ListTeamsOpts) bool {
 	if opts.Cursor != 0 && team.ID < opts.Cursor {
 		return false

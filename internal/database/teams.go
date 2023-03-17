@@ -22,7 +22,7 @@ type ListTeamsOpts struct {
 	Cursor int32
 	// List teams of a specific parent team only.
 	WithParentID int32
-	// List teams that do not step from a specific team ID.
+	// List teams that do not have given team as an ancestor in parent relationship.
 	ExceptAncestorID int32
 	// Only return root teams (teams that have no parent).
 	// This is used on the main overview list of teams.
@@ -137,6 +137,8 @@ type TeamStore interface {
 	ListTeams(ctx context.Context, opts ListTeamsOpts) ([]*types.Team, int32, error)
 	// CountTeams counts teams given the options.
 	CountTeams(ctx context.Context, opts ListTeamsOpts) (int32, error)
+	// Contains tells whether given search conditions contain team with given ID.
+	ContainsTeam(ctx context.Context, id int32, opts ListTeamsOpts) (bool, error)
 	// ListTeamMembers lists team members given the options. The matching teams,
 	// plus the next cursor are returned.
 	ListTeamMembers(ctx context.Context, opts ListTeamMembersOpts) ([]*types.TeamMember, *TeamMemberListCursor, error)
@@ -281,6 +283,34 @@ SELECT COUNT(*)
 FROM teams
 %s
 WHERE %s
+`
+
+func (s *teamStore) ContainsTeam(ctx context.Context, id int32, opts ListTeamsOpts) (bool, error) {
+	// Disable cursor for containment.
+	opts.Cursor = 0
+	conds, joins, ctes := opts.SQL()
+	q := sqlf.Sprintf(
+		containsTeamsQueryFmtstr,
+		sqlf.Join(ctes, "\n"),
+		sqlf.Join(joins, "\n"),
+		id,
+		sqlf.Join(conds, "AND"),
+	)
+	ids, err := basestore.ScanInts(s.Query(ctx, q))
+	if err != nil {
+		return false, err
+	}
+	return len(ids) > 0, nil
+}
+
+const containsTeamsQueryFmtstr = `
+%s
+SELECT 1
+FROM teams
+%s
+WHERE teams.id = %s
+AND %s
+LIMIT 1
 `
 
 func (s *teamStore) ListTeamMembers(ctx context.Context, opts ListTeamMembersOpts) (_ []*types.TeamMember, next *TeamMemberListCursor, err error) {
