@@ -171,7 +171,14 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
         CANCEL_PERMISSIONS_SYNC_JOB
     )
 
-    const onError = (error: ApolloError): void => toggleNotification({ text: error.message, isError: true })
+    const onError = useCallback(
+        (error: ApolloError): void =>
+            toggleNotification({
+                text: error.message,
+                isError: true,
+            }),
+        [toggleNotification]
+    )
 
     const handleTriggerPermsSync = useCallback(
         ([job]: PermissionsSyncJob[]) => {
