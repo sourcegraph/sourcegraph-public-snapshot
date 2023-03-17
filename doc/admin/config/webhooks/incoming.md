@@ -219,7 +219,7 @@ Webhook logs can be encrypted by specifying a `webhookLogKey` in the [on-disk da
 
 ## Deprecation notice
 
-As of Sourcegraph 4.3.0 webhooks added via code host configuration are deprecated and support will be removed in release 4.6.0.
+As of Sourcegraph 4.3.0 webhooks added via code host configuration are deprecated and support will be removed in release 5.1.0.
 
 This includes any webhooks pointed at URLs starting with the following:
 
