@@ -68,6 +68,7 @@ go_test(
         "//enterprise/internal/insights/scheduler/iterator",
         "//enterprise/internal/insights/store",
         "//enterprise/internal/insights/types",
+        "//internal/api",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbtest",

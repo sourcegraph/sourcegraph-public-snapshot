@@ -103,8 +103,8 @@ const config = {
     // Needed for reusing API functions that use fetch
     // Neither NodeJS nor JSDOM have fetch + AbortController yet
     require.resolve('abort-controller/polyfill'),
+    require.resolve('message-port-polyfill'),
     path.join(rootDir, 'client/shared/dev/fetch'),
-    path.join(rootDir, 'client/shared/dev/setLinkComponentForTest.ts'),
     path.join(rootDir, 'client/shared/dev/mockDomRect.ts'),
     path.join(rootDir, 'client/shared/dev/mockResizeObserver.ts'),
     path.join(rootDir, 'client/shared/dev/mockUniqueId.ts'),

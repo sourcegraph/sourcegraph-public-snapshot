@@ -71,7 +71,7 @@ export function goToDefinitionOnMouseEvent(
         return
     }
     if (isInteractiveOccurrence(atEvent.occurrence)) {
-        selectOccurrence(view, atEvent.occurrence)
+        selectOccurrence(view, atEvent.occurrence, true)
 
         // Ensure editor remains focused for the keyboard navigation to work
         view.contentDOM.focus()
