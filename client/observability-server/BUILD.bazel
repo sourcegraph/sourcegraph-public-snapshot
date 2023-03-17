@@ -57,6 +57,15 @@ jest_test(
     name = "test",
     data = [
         ":observability-server_tests",
+        "src/webBundleSize/__mocks__/assets/styles/app.123.bundle.css",
+        "src/webBundleSize/__mocks__/assets/styles/app.123.bundle.css.gz",
+        "src/webBundleSize/__mocks__/assets/styles/app.123.bundle.css.br",
+        "src/webBundleSize/__mocks__/assets/scripts/app.bundle.js",
+        "src/webBundleSize/__mocks__/assets/scripts/sg_home.js",
+        "src/webBundleSize/__mocks__/assets/scripts/app.bundle.js.br",
+        "src/webBundleSize/__mocks__/assets/scripts/sg_home.js.br",
+        "src/webBundleSize/__mocks__/assets/scripts/app.bundle.js.gz",
+        "src/webBundleSize/__mocks__/assets/scripts/sg_home.js.gz",
     ],
     # TODO(bazel): requires webpack setup for testing
     tags = ["manual"],
