@@ -68,7 +68,7 @@ spec:
         - name: executor
           # Update the image tag to the version that matches your Sourcegraph instance.
           image: sourcegraph/executor-kubernetes:5.1.0
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
           env:
@@ -76,8 +76,11 @@ spec:
               # The URL of the Sourcegraph instance to connect to.
               value: https://my.sourcegraph.com
             - name: EXECUTOR_FRONTEND_PASSWORD
-              # The shared secret between the executor and the Sourcegraph instance.
-              value: my-password
+              # The password is stored in a Kubernetes secret.
+              valueFrom:
+                secretKeyRef:
+                  name: executor-frontend-password
+                  key: EXECUTOR_FRONTEND_PASSWORD
             - name: EXECUTOR_QUEUE_NAME
               # The name of the queue to pull jobs from. Either batches or codeintel.
               value: batches

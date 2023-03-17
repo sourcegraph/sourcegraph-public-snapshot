@@ -17,6 +17,14 @@ Run the following command to build the image.
 IMAGE=executor-kubernetes ./build.sh
 ```
 
+## Secrets
+
+The frontend password should be stored in a Kubernetes secret. Run the following command to create the secret.
+
+```bash
+kubectl create secret generic executor-frontend-password --from-literal=EXECUTOR_FRONTEND_PASSWORD=hunter2hunter2hunter2
+```
+
 ## Deploy
 
 Run the following command to deploy the executor.
