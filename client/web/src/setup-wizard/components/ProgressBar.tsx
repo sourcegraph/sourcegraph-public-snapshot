@@ -96,12 +96,15 @@ export const ProgressBar: FC<{}> = () => {
         )
     }, [data])
 
-    if (data?.repositoryStats.total === 0) {
+    const totalRepositories = data?.repositoryStats.total ?? 0
+
+    // If there is no repositories do not render progress bar UI
+    if (totalRepositories === 0) {
         return null
     }
 
     return (
-        <section className="d-flex align-items-center">
+        <section className={styles.root}>
             {statusMessage}
 
             {items.map(item => (
