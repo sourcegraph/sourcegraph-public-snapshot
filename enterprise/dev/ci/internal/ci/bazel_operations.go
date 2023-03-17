@@ -18,17 +18,22 @@ func BazelOperations(optional bool) *operations.Set {
 }
 
 func bazelConfigure() func(*bk.Pipeline) {
-	configureCmd := `bazel --bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc
-configure
---remote_cache=$$CI_BAZEL_REMOTE_CACHE
---google_credentials=/mnt/gcloud-service-account/gcloud-service-account.json`
+	configureCmd := []string{
+		"bazel",
+		"--bazelrc=.bazelrc",
+		"--bazelrc=.aspect/bazelrc/ci.bazelrc",
+		"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
+		"configure",
+		"--remote_cache=$$CI_BAZEL_REMOTE_CACHE",
+		"--google_credentials=/mnt/gcloud-service-account/gcloud-service-account.json",
+	}
 
 	// if there are changes diff will exit with 1, and 0 otherwise
 	gitDiff := "git diff --quiet --exit-code"
 	cmds := []bk.StepOpt{
 		bk.Env("CI_BAZEL_REMOTE_CACHE", bazelRemoteCacheURL),
 		bk.Agent("queue", "bazel"),
-		bk.RawCmd(configureCmd),
+		bk.RawCmd(strings.Join(configureCmd, " ")),
 		bk.RawCmd(gitDiff),
 	}
 
@@ -43,6 +48,7 @@ configure
 // over running them in two separate jobs, so we don't build the same code twice.
 func bazelBuildAndTest(optional bool, targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
+		bk.DependsOn(":bazel: Configure"),
 		bk.Env("CI_BAZEL_REMOTE_CACHE", bazelRemoteCacheURL),
 		bk.Agent("queue", "bazel"),
 	}
