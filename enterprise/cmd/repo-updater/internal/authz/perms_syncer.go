@@ -16,9 +16,8 @@ import (
 	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
@@ -34,17 +33,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// PermissionSyncingDisabled returns true if the background permissions syncing is not enabled.
-// It is not enabled if:
-//   - Permissions user mapping (aka explicit permissions API) is enabled and unified permissions model is not enabled
-//   - Not purchased with the current license
-//   - `disableAutoCodeHostSyncs` site setting is set to true
-func PermissionSyncingDisabled() bool {
-	return (globals.PermissionsUserMapping().Enabled && !conf.ExperimentalFeatures().UnifiedPermissions) ||
-		licensing.Check(licensing.FeatureACLs) != nil ||
-		conf.Get().DisableAutoCodeHostSyncs
-}
 
 var scheduleReposCounter = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_repoupdater_perms_syncer_schedule_repos_total",
@@ -1163,7 +1151,7 @@ func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 	return schedule, nil
 }
 
-func (s *PermsSyncer) isDisabled() bool { return PermissionSyncingDisabled() }
+func (s *PermsSyncer) isDisabled() bool { return eiauthz.PermissionSyncingDisabled() }
 
 // runSchedule periodically looks for least updated records and schedule syncs
 // for them.
