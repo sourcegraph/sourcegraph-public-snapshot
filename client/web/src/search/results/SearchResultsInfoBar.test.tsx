@@ -29,6 +29,12 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     isSourcegraphDotCom: true,
     isRankingEnabled: true,
     setRankingEnabled: noop,
+    options: {
+        version: "V3",
+        patternType: SearchPatternType.standard,
+        caseSensitive: false,
+        trace: undefined,
+    },
 }
 
 const renderSearchResultsInfoBar = (

@@ -26,6 +26,7 @@ import { CreateAction } from './createActions'
 import { downloadSearchResults } from './searchResultsExport'
 
 import navStyles from './SearchResultsInfoBar.module.scss'
+import { logger } from '@sourcegraph/common'
 
 interface SearchActionsMenuProps
     extends SearchPatternTypeProps,
@@ -62,7 +63,7 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
         if (query.includes('select:file.owners')) {
             telemetryService.log('searchResults:ownershipCsv:exported')
         }
-        return downloadSearchResults(sourcegraphURL, query, options)
+        downloadSearchResults(sourcegraphURL, query, options).catch(error => logger.error(error))
     }, [query, options, sourcegraphURL, telemetryService])
 
     return (

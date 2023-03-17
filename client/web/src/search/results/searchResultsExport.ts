@@ -16,7 +16,6 @@ import {
 } from '@sourcegraph/shared/src/search/stream'
 import { of } from 'rxjs'
 import { last } from 'rxjs/operators'
-import { SearchStreamingProps } from '..'
 
 import { eventLogger } from '../../tracking/eventLogger'
 
@@ -209,12 +208,11 @@ export const downloadSearchResults = (
     sourcegraphURL: string,
     query: string,
     options: StreamSearchOptions,
-): void => {
-    options = {
-        displayLimit: 999999,
-        ...options
-    }
-    aggregateStreamingSearch(of(query), options).pipe(last()).subscribe(results => {
+): Promise<void> => new Promise<void>((resolve, reject) => {
+    // TODO: we have to figure out how to cancel this operation or show related progress
+    // https://github.com/sourcegraph/sourcegraph/issues/49645
+    // eslint-disable-next-line rxjs/no-ignored-subscription
+    aggregateStreamingSearch(of(query), { ...options, displayLimit: 999999 }).pipe(last()).subscribe(results => {
         const content = searchResultsToFileContent(results.results, sourcegraphURL)
         const blob = new Blob([content], { type: 'text/csv' })
         const url = URL.createObjectURL(blob)
@@ -229,5 +227,6 @@ export const downloadSearchResults = (
         // cleanup
         a.remove()
         URL.revokeObjectURL(url)
-    })
-}
+        resolve()
+    }, error => { reject(error) })
+})
