@@ -41,17 +41,9 @@ type GetVulnerabilityMatchesArgs struct {
 	After *string
 }
 
-type VulnerabilityConnectionResolver interface {
-	Nodes() []VulnerabilityResolver
-	TotalCount() *int32
-	PageInfo() PageInfo
-}
+type VulnerabilityConnectionResolver = ConnectionResolver[VulnerabilityResolver]
 
-type VulnerabilityMatchConnectionResolver interface {
-	Nodes() []VulnerabilityMatchResolver
-	TotalCount() *int32
-	PageInfo() PageInfo
-}
+type VulnerabilityMatchConnectionResolver = ConnectionResolver[VulnerabilityMatchResolver]
 
 type VulnerabilityResolver interface {
 	ID() graphql.ID
@@ -150,17 +142,9 @@ type RepositoriesWithConfigurationArgs struct {
 	After *string
 }
 
-type CodeIntelRepositoryWithErrorConnectionResolver interface {
-	Nodes() []CodeIntelRepositoryWithErrorResolver
-	TotalCount() *int32
-	PageInfo() PageInfo
-}
+type CodeIntelRepositoryWithErrorConnectionResolver = ConnectionResolver[CodeIntelRepositoryWithErrorResolver]
 
-type CodeIntelRepositoryWithConfigurationConnectionResolver interface {
-	Nodes() []CodeIntelRepositoryWithConfigurationResolver
-	TotalCount() *int32
-	PageInfo() PageInfo
-}
+type CodeIntelRepositoryWithConfigurationConnectionResolver = ConnectionResolver[CodeIntelRepositoryWithConfigurationResolver]
 
 type CodeIntelRepositoryWithErrorResolver interface {
 	Repository() RepositoryResolver
@@ -201,11 +185,7 @@ type PreciseIndexesQueryArgs struct {
 	IncludeDeleted *bool
 }
 
-type PreciseIndexConnectionResolver interface {
-	Nodes(ctx context.Context) ([]PreciseIndexResolver, error)
-	TotalCount(ctx context.Context) (*int32, error)
-	PageInfo(ctx context.Context) (PageInfo, error)
-}
+type PreciseIndexConnectionResolver = ConnectionResolver[PreciseIndexResolver]
 
 type PreciseIndexResolver interface {
 	ID() graphql.ID
@@ -497,17 +477,9 @@ type HoverResolver interface {
 	Range() RangeResolver
 }
 
-type DiagnosticConnectionResolver interface {
-	Nodes(ctx context.Context) ([]DiagnosticResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (PageInfo, error)
-}
+type DiagnosticConnectionResolver = ConnectionResolver[DiagnosticResolver]
 
-type CodeIntelligenceConfigurationPolicyConnectionResolver interface {
-	Nodes(ctx context.Context) ([]CodeIntelligenceConfigurationPolicyResolver, error)
-	TotalCount(ctx context.Context) (*int32, error)
-	PageInfo(ctx context.Context) (PageInfo, error)
-}
+type CodeIntelligenceConfigurationPolicyConnectionResolver = ConnectionResolver[CodeIntelligenceConfigurationPolicyResolver]
 
 type RetentionPolicyMatcherResolver interface {
 	ConfigurationPolicy() CodeIntelligenceConfigurationPolicyResolver
@@ -603,11 +575,7 @@ type AuditLogColumnChangeResolver interface {
 	New() *string
 }
 
-type CodeIntelligenceRetentionPolicyMatchesConnectionResolver interface {
-	Nodes(ctx context.Context) ([]CodeIntelligenceRetentionPolicyMatchResolver, error)
-	TotalCount(ctx context.Context) (*int32, error)
-	PageInfo(ctx context.Context) (PageInfo, error)
-}
+type CodeIntelligenceRetentionPolicyMatchesConnectionResolver = ConnectionResolver[CodeIntelligenceRetentionPolicyMatchResolver]
 
 type CodeIntelligenceRetentionPolicyMatchResolver interface {
 	ConfigurationPolicy() CodeIntelligenceConfigurationPolicyResolver
@@ -791,4 +759,10 @@ func comparisonKey(root, indexer string) string {
 	hash := sha256.New()
 	_, _ = hash.Write([]byte(strings.Join([]string{root, indexer}, "\x00")))
 	return base64.URLEncoding.EncodeToString(hash.Sum(nil))
+}
+
+type ConnectionResolver[T any] interface {
+	Nodes() []T
+	TotalCount() *int32
+	PageInfo() PageInfo
 }
