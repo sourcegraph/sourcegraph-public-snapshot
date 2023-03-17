@@ -59,8 +59,8 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
                     <>
                         Roles are a part of the{' '}
                         <Link to="/help/admin/access_control">Role-Based Access Control system</Link> for Sourcegraph
-                        and represent a set of in-product permissions that are granted to a user. Roles are currently
-                        only available for Batch Changes functionality.
+                        and represent a set of in-product permissions. Roles are currently only available for Batch
+                        Changes functionality.
                     </>
                 }
                 actions={
