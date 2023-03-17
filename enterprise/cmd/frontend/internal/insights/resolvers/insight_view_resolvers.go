@@ -966,7 +966,8 @@ func (p *pieChartInsightViewPresentation) Title(ctx context.Context) (string, er
 
 func (p *pieChartInsightViewPresentation) OtherThreshold(ctx context.Context) (float64, error) {
 	if p.view.OtherThreshold == nil {
-		return 0, errors.Newf("Returning a pie chart with no threshold set. This should never happen. insightID: %v", p.view.UniqueID)
+		// Returning a pie chart with no threshold set. This should never happen.
+		return 0, nil
 	}
 	return *p.view.OtherThreshold, nil
 }
