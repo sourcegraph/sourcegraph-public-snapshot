@@ -4,5 +4,5 @@ Granular controls for who can access [Batch Changes](../../batch_changes/index.m
 
 Name      | Description | Granted to **User** by default?
 --------- | ----------- | :-:
-`batch_changes:read` | **Coming soon!** | ✓
+`batch_changes:read` | **_Coming soon!_**<!--<ul><li>User can view batch changes in the open or closed state, belonging to themselves or other users or orgs.</li><li>User can view most details about a batch change, including its latest batch spec, the changesets for repositories they have access to, the burndown chart, and bulk action logs.</li></ul>--> | ✓
 `batch_changes:write` | <ul><li>User can create, update, close, or delete batch changes.</li><li>User can create, execute, and apply batch specs.</li><li>User can perform bulk operations on changesets such as publishing, commenting on, closing, or merging them.</ul> | ✓
