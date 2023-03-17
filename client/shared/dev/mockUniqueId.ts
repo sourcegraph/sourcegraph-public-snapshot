@@ -9,7 +9,7 @@ jest.mock('lodash', () =>
 )
 
 // The module factory of `jest.mock()` is not allowed to reference any out-of-scope variables
- 
+
 jest.mock(
     'lodash/uniqueId',
     () =>
