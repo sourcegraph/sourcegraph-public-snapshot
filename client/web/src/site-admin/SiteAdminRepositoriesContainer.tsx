@@ -19,16 +19,15 @@ import {
     RepositoriesResult,
     RepositoriesVariables,
     RepositoryOrderBy,
-    RepositoryStatsResult,
     ExternalServiceIDsAndNamesVariables,
     ExternalServiceIDsAndNamesResult,
-    RepositoryStatsVariables,
     SiteAdminRepositoryFields,
+    StatusAndRepoStatsResult,
 } from '../graphql-operations'
 import { PageRoutes } from '../routes.constants'
 
 import { ValueLegendList, ValueLegendListProps } from './analytics/components/ValueLegendList'
-import { REPOSITORY_STATS, REPO_PAGE_POLL_INTERVAL, REPOSITORIES_QUERY } from './backend'
+import { STATUS_AND_REPO_STATS, REPO_PAGE_POLL_INTERVAL, REPOSITORIES_QUERY } from './backend'
 import { RepositoryNode } from './RepositoryNode'
 
 const STATUS_FILTERS: { [label: string]: FilteredConnectionFilterValue } = {
@@ -141,7 +140,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
         error: repoStatsError,
         startPolling,
         stopPolling,
-    } = useQuery<RepositoryStatsResult, RepositoryStatsVariables>(REPOSITORY_STATS, {})
+    } = useQuery<StatusAndRepoStatsResult>(STATUS_AND_REPO_STATS, {})
     const location = useLocation()
     const navigate = useNavigate()
 
@@ -382,7 +381,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
             </Container>
             {extSvcs && (
                 <Container>
-                    <div className="d-flex justify-content-center">
+                    <div className="d-flex flex-sm-row flex-column-reverse justify-content-center">
                         <FilterControl
                             filters={filters}
                             values={filterValues}
@@ -396,7 +395,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
                         />
                         <Input
                             type="search"
-                            className="flex-1 ml-5"
+                            className="flex-1 md-ml-5 mb-1"
                             placeholder="Search repositories..."
                             name="query"
                             value={searchQuery}

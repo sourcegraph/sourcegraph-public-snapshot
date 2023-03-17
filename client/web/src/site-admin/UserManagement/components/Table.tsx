@@ -385,7 +385,12 @@ function Row<T>({
                     {render ? (
                         render(data, index)
                     ) : (
-                        <div className={styles.cell}>
+                        <div
+                            className={classNames(styles.cell, {
+                                [styles.alignLeft]: !align || align === 'left',
+                                [styles.alignRight]: align === 'right',
+                            })}
+                        >
                             <Text alignment={align || 'left'} className="mb-0">
                                 {typeof accessor === 'function'
                                     ? accessor(data)
