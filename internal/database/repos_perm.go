@@ -161,9 +161,10 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 	unrestrictedReposQuery := GetUnrestrictedReposCond(unifiedPermsEnabled)
 	conditions := []*sqlf.Query{unrestrictedReposQuery}
 
-	// Treat all external services as restricted when user mapping is enabled
-	// but only if legacy permissions are used.
-	if !usePermissionsUserMapping || unifiedPermsEnabled {
+	// If unified permissions are enabled or explicit permissions API is disabled
+	// add a condition to check if repo is public or external service is unrestricted.
+	// Otherwise all repositories are considered as restricted, even public ones.
+	if unifiedPermsEnabled || !usePermissionsUserMapping {
 		conditions = append(conditions, ExternalServiceUnrestrictedCondition)
 	}
 
