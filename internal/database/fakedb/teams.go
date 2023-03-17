@@ -33,12 +33,22 @@ func (fs Fakes) AddTeamMember(moreMembers ...*types.TeamMember) {
 	fs.TeamStore.members = append(fs.TeamStore.members, moreMembers...)
 }
 
-func (teams *Teams) CreateTeam(_ context.Context, t *types.Team) error {
-	teams.lastUsedID++
+func (fs Fakes) AddTeam(t *types.Team) int32 {
 	u := *t
-	u.ID = teams.lastUsedID
-	teams.list = append(teams.list, &u)
+	fs.TeamStore.addTeam(&u)
+	return u.ID
+}
+
+func (teams *Teams) CreateTeam(_ context.Context, t *types.Team) error {
+	u := *t
+	teams.addTeam(&u)
 	return nil
+}
+
+func (teams *Teams) addTeam(t *types.Team) {
+	teams.lastUsedID++
+	t.ID = teams.lastUsedID
+	teams.list = append(teams.list, t)
 }
 
 func (teams *Teams) UpdateTeam(_ context.Context, t *types.Team) error {
@@ -89,7 +99,7 @@ func (teams *Teams) DeleteTeam(_ context.Context, id int32) error {
 
 func (teams *Teams) ListTeams(_ context.Context, opts database.ListTeamsOpts) (selected []*types.Team, next int32, err error) {
 	for _, t := range teams.list {
-		if matches(t, opts) {
+		if teams.matches(t, opts) {
 			selected = append(selected, t)
 		}
 	}
@@ -108,7 +118,7 @@ func (teams *Teams) CountTeams(ctx context.Context, opts database.ListTeamsOpts)
 	return int32(len(selected)), err
 }
 
-func matches(team *types.Team, opts database.ListTeamsOpts) bool {
+func (teams *Teams) matches(team *types.Team, opts database.ListTeamsOpts) bool {
 	if opts.Cursor != 0 && team.ID < opts.Cursor {
 		return false
 	}
@@ -126,8 +136,29 @@ func matches(team *types.Team, opts database.ListTeamsOpts) bool {
 			return false
 		}
 	}
+	if opts.ExceptAncestorID != 0 {
+		for _, id := range teams.ancestors(team.ID) {
+			if opts.ExceptAncestorID == id {
+				return false
+			}
+		}
+	}
 	// opts.ForUserMember is not supported yet as there is no membership fake.
 	return true
+}
+
+func (teams *Teams) ancestors(id int32) []int32 {
+	var ids []int32
+	parentID := id
+	for parentID != 0 {
+		ids = append(ids, parentID)
+		for _, t := range teams.list {
+			if t.ID == parentID {
+				parentID = t.ParentTeamID
+			}
+		}
+	}
+	return ids
 }
 
 type orderedTeamMembers []*types.TeamMember
