@@ -232,7 +232,7 @@ async function goToDefinition(
             return {
                 locations: definition,
                 url: hrefTo,
-                handler: (_, startTime) => {
+                handler: (_position, startTime) => {
                     const elapsed = Date.now() - startTime
                     if (elapsed < MINIMUM_LATENCY_MILLIS) {
                         setTimeout(handler, MINIMUM_LATENCY_MILLIS - elapsed)
