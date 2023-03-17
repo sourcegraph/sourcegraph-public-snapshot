@@ -8,7 +8,7 @@
 
 > NOTE: This page refers to in-product permissions, which determine who can, for example, create a batch change, or who is a site admin. This is *not* the same as [repository permissions](../permissions/index.md), which enforces the same repository access on Sourcegraph as your code host.
 
-> NOTE: This functionality was added in Sourcegraph 5.0.
+<span class="badge badge-note">Sourcegraph 5.0+</span>
 
 Sourcegraph uses [Role-Based Access Control (RBAC)](https://en.wikipedia.org/wiki/Role-based_access_control) to enable fine-grained control over different features and abilities of Sourcegraph, without having to modify permissions for each user individually. Currently, the scope of permissions control is limited to [Batch Changes](batch_changes.md) functionality, but it will be expanded to other areas in the future.
 

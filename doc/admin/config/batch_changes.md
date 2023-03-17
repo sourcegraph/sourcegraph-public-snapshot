@@ -125,13 +125,13 @@ To only allow changesets to be reconciled at 1 changeset per minute on (UTC) wee
 
 ## Incoming webhooks
 
-> NOTE: This feature was added in Sourcegraph 3.33.
+<span class="badge badge-note">Sourcegraph 3.33+</span>
 
 Sourcegraph can track incoming webhooks from code hosts to more easily debug issues with webhook delivery. Learn [how to setup webhooks and configure logging](../../admin/config/webhooks.md#webhook-logging).
 
 ## Forks
 
-> NOTE: This feature was added in Sourcegraph 3.36.
+<span class="badge badge-note">Sourcegraph 3.36+</span>
 
 Sourcegraph can be configured to push branches created by Batch Changes to a fork of the repository, rather than the repository itself, by enabling the `batchChanges.enforceForks` site configuration option.
 
