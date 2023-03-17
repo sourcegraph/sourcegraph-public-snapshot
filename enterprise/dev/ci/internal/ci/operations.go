@@ -858,11 +858,16 @@ func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) 
 				folder := app
 				if app == "blobstore2" {
 					// experiment: cmd/blobstore is a Go rewrite of docker-images/blobstore. While
-					// it is incomplete, we do not want cmd/blobstore/Dockerfile to get publishe
+					// it is incomplete, we do not want cmd/blobstore/Dockerfile to get published
 					// under the same name.
 					// https://github.com/sourcegraph/sourcegraph/issues/45594
 					// TODO(blobstore): remove this when making Go blobstore the default
 					folder = "blobstore"
+				} else if app == "executor-kubernetes" {
+					// Executors produces many images. The images for Kubernetes and Docker have diverged. So we
+					// need to build them separately. Eventually src-cli will be removed from executors all together.
+					// At that time, we can remove this and only have to build a single image.
+					folder = "executor/kubernetes"
 				}
 				// If /enterprise/cmd/... does not exist, build just /cmd/... instead.
 				if _, err := os.Stat(filepath.Join("enterprise/cmd", folder)); err != nil {
