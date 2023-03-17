@@ -2101,7 +2101,7 @@ func TestCreateChangesetComments(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
@@ -2230,7 +2230,7 @@ func TestReenqueueChangesets(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
@@ -2360,7 +2360,7 @@ func TestMergeChangesets(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
@@ -2490,7 +2490,7 @@ func TestCloseChangesets(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
@@ -2646,7 +2646,7 @@ func TestPublishChangesets(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
