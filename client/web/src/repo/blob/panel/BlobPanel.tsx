@@ -36,6 +36,7 @@ interface Props
     isPackage: boolean
     repoName: string
     commitID: string
+    blobContent: string
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
@@ -50,6 +51,8 @@ function useBlobPanelViews({
     revision,
     filePath,
     repoID,
+    repoName,
+    blobContent,
     isPackage,
     settingsCascade,
     platformContext,
@@ -155,8 +158,10 @@ function useBlobPanelViews({
                                   <CodyPanel
                                       key="cody"
                                       repoID={repoID}
+                                      repoName={repoName}
                                       revision={revision}
                                       filePath={filePath}
+                                      blobContent={blobContent}
                                       telemetryService={telemetryService}
                                   />
                               </PanelContent>

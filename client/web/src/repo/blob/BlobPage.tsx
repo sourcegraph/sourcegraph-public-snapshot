@@ -523,7 +523,15 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     return (
         <div className={className}>
             {alwaysRender}
-            {repoID && commitID && <BlobPanel {...props} repoID={repoID} commitID={commitID} isPackage={isPackage} />}
+            {repoID && commitID && (
+                <BlobPanel
+                    {...props}
+                    repoID={repoID}
+                    commitID={commitID}
+                    isPackage={isPackage}
+                    blobContent={blobInfoOrError.content}
+                />
+            )}
             {blobInfoOrError.richHTML && (
                 <RepoHeaderContributionPortal
                     position="right"
