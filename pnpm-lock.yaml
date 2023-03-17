@@ -227,6 +227,7 @@ importers:
       command-exists: ^1.2.9
       compression: ^1.7.4
       compression-webpack-plugin: ^10.0.0
+      compromise: ^14.8.2
       concurrently: ^7.6.0
       connect-history-api-fallback: ^1.6.0
       copy-to-clipboard: ^3.3.1
@@ -472,6 +473,7 @@ importers:
       case-sensitive-paths-webpack-plugin: 2.4.0
       classnames: 2.3.1
       comlink: 4.3.0
+      compromise: 14.8.2
       copy-to-clipboard: 3.3.1
       core-js: 3.22.8
       d3-format: 2.0.0
@@ -930,7 +932,12 @@ importers:
       '@sourcegraph/cody-common': link:../common
 
   client/cody/vscode-codegen:
-    specifiers: {}
+    specifiers:
+      wink-nlp-utils: ^2.1.0
+      wink-porter2-stemmer: ^2.0.1
+    dependencies:
+      wink-nlp-utils: 2.1.0
+      wink-porter2-stemmer: 2.0.1
 
   client/common:
     specifiers:
@@ -12191,6 +12198,15 @@ packages:
     transitivePeerDependencies:
       - supports-color
 
+  /compromise/14.8.2:
+    resolution: {integrity: sha512-B/2MxDx2R1U8QlZPZycypvqv/JfSPJSyh/sTUxIuteSja5ABWzHoLpaTGmRiai1GX7wKA1pOSSwtp4XRFGDKnA==}
+    engines: {node: '>=12.0.0'}
+    dependencies:
+      efrt: 2.7.0
+      grad-school: 0.0.5
+      suffix-thumb: 4.0.2
+    dev: false
+
   /compute-scroll-into-view/1.0.17:
     resolution: {integrity: sha512-j4dx+Fb0URmzbwwMUrhqWM2BEWHdFGx+qZ9qqASHRPqvTYdqvWnHg0H1hIbcyLnvgnoNAVMlwkepyqM3DaIFUg==}
     dev: false
@@ -12602,7 +12618,7 @@ packages:
       postcss-modules-values: 4.0.0_postcss@8.4.21
       postcss-value-parser: 4.2.0
       semver: 7.3.8
-      webpack: 5.75.0_esbuild@0.17.8
+      webpack: 5.75.0_cf7cgeqdkm72g3fdehkr7aaod4
 
   /css-minimizer-webpack-plugin/4.2.2_6hyl5w2uqyeivowpusuiulbmoy:
     resolution: {integrity: sha512-s3Of/4jKfw1Hj9CxEO1E5oXhQAxlayuHO2y/ML+C6I9sQ7FdzfEV6QgMLN3vI+qFsjJGIAFLKtQK7t8BOXAIyA==}
@@ -14010,6 +14026,11 @@ packages:
   /ee-first/1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
+  /efrt/2.7.0:
+    resolution: {integrity: sha512-/RInbCy1d4P6Zdfa+TMVsf/ufZVotat5hCw3QXmWtjU+3pFEOvOQ7ibo3aIxyCJw2leIeAMjmPj+1SLJiCpdrQ==}
+    engines: {node: '>=12.0.0'}
+    dev: false
+
   /electron-to-chromium/1.4.284:
     resolution: {integrity: sha512-M8WEXFuKXMYMVr45fo8mq0wUrrJHheiKZf6BArTKk9ZBYCKJEOU5H8cdWgDT+qCVZf7Na4lVUaZsA+h6uA9+PA==}
 
@@ -14033,7 +14054,6 @@ packages:
 
   /emoji-regex/9.2.2:
     resolution: {integrity: sha512-L18DaJsXSUk2+42pv8mLs5jJT2hqFkFE4j21wOmgbUqsZ2hL72NsUU785g9RXgo3s0ZNgVl42TiHp3ZtOv/Vyg==}
-    dev: true
 
   /emojis-list/3.0.0:
     resolution: {integrity: sha512-/kyM18EfinwXZbno9FyUGeFh87KC8HRQBQGildHZbEuRyWFOmv1U10o9BBp8XVZDVNNuQKyIGIu5ZYAAXJ0V2Q==}
@@ -16298,6 +16318,11 @@ packages:
 
   /graceful-fs/4.2.10:
     resolution: {integrity: sha512-9ByhssR2fPVsNZj478qUUbKfmL0+t5BDVyjShtyZZLiK7ZDAArFFfopyOTj0M05wE2tJPisA4iTnnXl2YoPvOA==}
+
+  /grad-school/0.0.5:
+    resolution: {integrity: sha512-rXunEHF9M9EkMydTBux7+IryYXEZinRk6g8OBOGDBzo/qWJjhTxy86i5q7lQYpCLHN8Sqv1XX3OIOc7ka2gtvQ==}
+    engines: {node: '>=8.0.0'}
+    dev: false
 
   /grapheme-splitter/1.0.4:
     resolution: {integrity: sha512-bzh50DW9kTPM00T8y4o8vQg89Di9oLJVLW/KaOGIXJWP/iqCN6WKYkbNOF04vFLJhwcpYUh9ydh/+5vpOqV4YQ==}
@@ -22164,7 +22189,7 @@ packages:
       klona: 2.0.5
       postcss: 8.4.21
       semver: 7.3.8
-      webpack: 5.75.0_esbuild@0.17.8
+      webpack: 5.75.0_cf7cgeqdkm72g3fdehkr7aaod4
 
   /postcss-media-query-parser/0.2.3:
     resolution: {integrity: sha512-3sOlxmbKcSHMjlUXQZKQ06jOswE7oVkXPxmZdoB1r5l0q6gTFTQSHxNxOrCccElbW7dxNytifNEo8qidX2Vsig==}
@@ -24420,7 +24445,7 @@ packages:
       klona: 2.0.5
       neo-async: 2.6.2
       sass: 1.32.4
-      webpack: 5.75.0_esbuild@0.17.8
+      webpack: 5.75.0_cf7cgeqdkm72g3fdehkr7aaod4
 
   /sass/1.32.4:
     resolution: {integrity: sha512-N0BT0PI/t3+gD8jKa83zJJUb7ssfQnRRfqN+GIErokW6U4guBpfYl8qYB+OFLEho+QvnV5ZH1R9qhUC/Z2Ch9w==}
@@ -25563,7 +25588,7 @@ packages:
     peerDependencies:
       webpack: ^5.0.0
     dependencies:
-      webpack: 5.75.0_esbuild@0.17.8
+      webpack: 5.75.0_cf7cgeqdkm72g3fdehkr7aaod4
 
   /style-mod/4.0.0:
     resolution: {integrity: sha512-OPhtyEjyyN9x3nhPsu76f52yUGXiZcgvsrFVtvTkyGRQJ0XK+GPc6ov1z+lRpbeabka+MYEQxOYRnt5nF30aMw==}
@@ -25708,6 +25733,10 @@ packages:
 
   /sudo-prompt/9.2.1:
     resolution: {integrity: sha512-Mu7R0g4ig9TUuGSxJavny5Rv0egCEtpZRNMrZaYS1vxkiIxGiGUwoezU3LazIQ+KE04hTrTfNPgxU5gzi7F5Pw==}
+    dev: false
+
+  /suffix-thumb/4.0.2:
+    resolution: {integrity: sha512-CCvCAr7JyeQoO+/lyq3P2foZI/xJz5kpG3L6kg2CaOf9K2/gaM9ixy/JTuRwjEK38l306zE7vl3JoOZYmLQLlA==}
     dev: false
 
   /superagent-proxy/3.0.0_superagent@7.1.6:
@@ -26102,7 +26131,7 @@ packages:
       schema-utils: 3.1.1
       serialize-javascript: 6.0.0
       terser: 5.16.1
-      webpack: 5.75.0_esbuild@0.17.8
+      webpack: 5.75.0_cf7cgeqdkm72g3fdehkr7aaod4
 
   /terser/4.8.1:
     resolution: {integrity: sha512-4GnLC0x667eJG0ewJTa6z/yXrbLGv80D9Ru6HIpCQmO+Q4PfEtBFi0ObSckqwL6VyQv/7ENJieXHo2ANmdQwgw==}
@@ -27925,6 +27954,7 @@ packages:
       - '@swc/core'
       - esbuild
       - uglify-js
+    dev: false
 
   /websocket-driver/0.7.4:
     resolution: {integrity: sha512-b17KeDIQVjvb0ssuSDF2cYXSg2iztliJ4B9WdsuB6J952qCPKmnVq4DyW5motImXHDC1cBT/1UezrJVsKw5zjg==}
@@ -28080,6 +28110,55 @@ packages:
     dependencies:
       execa: 1.0.0
     dev: true
+
+  /wink-distance/2.0.2:
+    resolution: {integrity: sha512-pyEhUB/OKFYcgOC4J6E+c+gwVA/8qg2s5n49mIcUsJZM5iDSa17uOxRQXR4rvfp+gbj55K/I08FwjFBwb6fq3g==}
+    dependencies:
+      wink-helpers: 2.0.0
+      wink-jaro-distance: 2.0.0
+    dev: false
+
+  /wink-eng-lite-web-model/1.4.3_wink-nlp@1.13.0:
+    resolution: {integrity: sha512-HAx6nmDdoCucs4RnPhlxpTqiw0/MYiiGtSyfykYM03KTxvCVjX6HNtdfBhmdUeGLzGh0M/D4WJANU42qH6/1nA==}
+    engines: {node: '>=16.0.0'}
+    peerDependencies:
+      wink-nlp: '>1.8.1'
+    dependencies:
+      wink-nlp: 1.13.0
+    dev: false
+
+  /wink-helpers/2.0.0:
+    resolution: {integrity: sha512-I/ZzXrHcNRXuoeFJmp2vMVqDI6UCK02Tds1WP4kSGAmx520gjL1BObVzF7d2ps24tyHIly9ngdB2jwhlFUjPvg==}
+    dev: false
+
+  /wink-jaro-distance/2.0.0:
+    resolution: {integrity: sha512-9bcUaXCi9N8iYpGWbFkf83OsBkg17r4hEyxusEzl+nnReLRPqxhB9YNeRn3g54SYnVRNXP029lY3HDsbdxTAuA==}
+    dev: false
+
+  /wink-nlp-utils/2.1.0:
+    resolution: {integrity: sha512-b7PcRhEBNxQmsmht70jLOkwYUyie3da4/cgEXL+CumYO5b/nwV+W7fuMXToh5BtGq1RABznmc2TGTp1Qf/JUXg==}
+    dependencies:
+      wink-distance: 2.0.2
+      wink-eng-lite-web-model: 1.4.3_wink-nlp@1.13.0
+      wink-helpers: 2.0.0
+      wink-nlp: 1.13.0
+      wink-porter2-stemmer: 2.0.1
+      wink-tokenizer: 5.3.0
+    dev: false
+
+  /wink-nlp/1.13.0:
+    resolution: {integrity: sha512-aK+KAOwIkeCzCX1E9SNJ3VT5F98Fln4AYRk7XsACcHjgQzJV6Fw6dQoB4UHRybLJt65YGLiQRAXlALd8aFJBcw==}
+    dev: false
+
+  /wink-porter2-stemmer/2.0.1:
+    resolution: {integrity: sha512-0g+RkkqhRXFmSpJQStVXW5N/WsshWpJXsoDRW7DwVkGI2uDT6IBCoq3xdH5p6IHLaC6ygk7RWUsUx4alKxoagQ==}
+    dev: false
+
+  /wink-tokenizer/5.3.0:
+    resolution: {integrity: sha512-O/yAw0g3FmSgeeQuYAJJfP7fVPB4A6ay0018qASh79aWmIOyPYy4j4r9EQT8xBjicja6lCLvgRVAybmEBaATQA==}
+    dependencies:
+      emoji-regex: 9.2.2
+    dev: false
 
   /word-wrap/1.2.3:
     resolution: {integrity: sha512-Hz/mrNwitNRh/HUAtM/VT/5VH+ygD6DV7mYKZAtHOrbs8U7lvPS6xf7EJKMF0uW1KJCl0H701g3ZGus+muE5vQ==}

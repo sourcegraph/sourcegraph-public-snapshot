@@ -6,5 +6,6 @@ export interface KeywordContextFetcher {
 
 export function getTermScore(term: string): number {
     const termLength = term.length
+
     return term.match(/^(?=.*[a-z])(?=.*[A-Z])/) ? 10 * termLength : termLength
 }

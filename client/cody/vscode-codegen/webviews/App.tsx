@@ -16,7 +16,7 @@ import { vscodeAPI, WebviewMessage } from './utils/VSCodeApi'
 
 function App(): React.ReactElement {
     const [devMode, setDevMode] = useState(false)
-    const [debugLog, setDebugLog] = useState(['No data yet'])
+    const [debugLog, setDebugLog] = useState(['Debug mode on.'])
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])

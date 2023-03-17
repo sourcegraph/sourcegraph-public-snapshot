@@ -7,6 +7,7 @@ import { VSCodeEditor } from '../editor/vscode-editor'
 import { EmbeddingsClient } from '../embeddings/client'
 import { LLMIntentDetector } from '../intent-detector/llm-intent-detector'
 import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
+import { VSCEKeywordContextFetcher } from '../keyword-context/vsce-keyword-context-fetcher'
 import { Message } from '../sourcegraph-api'
 import { SourcegraphCompletionsClient } from '../sourcegraph-api/completions'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
@@ -70,7 +71,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             contextType,
             embeddings,
             new LLMIntentDetector(completions),
-            new LocalKeywordContextFetcher(),
+            debug ? new LocalKeywordContextFetcher('rg') : new VSCEKeywordContextFetcher(),
             new VSCodeEditor()
         )
         return new ChatViewProvider(extensionPath, prompt, new ChatClient(completions), secretStorage, mode)

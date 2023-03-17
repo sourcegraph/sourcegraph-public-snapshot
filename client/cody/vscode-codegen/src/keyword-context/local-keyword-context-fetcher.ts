@@ -1,36 +1,82 @@
-import { removeStopwords } from 'stopword'
+import { execFile, spawn } from 'child_process'
+import * as path from 'path'
+
+import StreamValues from 'stream-json/streamers/StreamValues'
 import * as vscode from 'vscode'
+import nlp from 'wink-nlp-utils'
 
 import { getContextMessageWithResponse, populateCodeContextTemplate } from '../chat/prompt'
 import { Message } from '../sourcegraph-api'
 
-import { getTermScore, KeywordContextFetcher } from '.'
+import { KeywordContextFetcher } from '.'
+
+const fileExtRipgrepParams = ['-Tmarkdown', '-Tyaml', '-Tjson', '-g', '!*.lock']
 
 export class LocalKeywordContextFetcher implements KeywordContextFetcher {
-    constructor() {}
+    constructor(private rgPath: string) {}
 
     public async getContextMessages(query: string): Promise<Message[]> {
         console.log('fetching keyword matches')
-        const rootPath = this.getRootPath()
+        const rootPath = getRootPath()
         if (!rootPath) {
             return []
         }
+
         const filesnamesWithScores = await this.fetchKeywordFiles(rootPath, query)
-        const top10 = filesnamesWithScores.slice(0, 10).reverse()
+        const top10 = filesnamesWithScores.slice(0, 10)
         const messagePairs = await Promise.all(
             top10.map(async ({ filename }) => {
-                const uri = vscode.Uri.file(filename)
+                const uri = vscode.Uri.file(path.join(rootPath, filename))
                 const text = (await vscode.workspace.openTextDocument(uri)).getText()
-                // Remove root path from file path
-                const file = filename.replace(`${rootPath}/`, '')
-                const messageText = populateCodeContextTemplate(text, file)
-                return getContextMessageWithResponse(messageText, file)
+                const messageText = populateCodeContextTemplate(text, filename)
+                return getContextMessageWithResponse(messageText, filename)
             })
         )
         return messagePairs.reverse().flat()
     }
 
-    // Get file matches from symbol search through vs code API
+    private async fetchFileStats(
+        keywords: string[],
+        rootPath: string
+    ): Promise<{ [filename: string]: { bytesSearched: number } }> {
+        const regexQuery = `\\b(?:${keywords.join('|')})`
+        const proc = spawn(this.rgPath, [...fileExtRipgrepParams, '--json', regexQuery, './'], {
+            cwd: rootPath,
+            stdio: ['ignore', 'pipe', process.stderr],
+        })
+        const fileTermCounts: {
+            [filename: string]: {
+                bytesSearched: number
+            }
+        } = {}
+        await new Promise<void>((resolve, reject) => {
+            try {
+                proc.stdout
+                    .pipe(StreamValues.withParser())
+                    .on('data', data => {
+                        try {
+                            switch (data.value.type) {
+                                case 'end':
+                                    if (!fileTermCounts[data.value.data.path.text]) {
+                                        fileTermCounts[data.value.data.path.text] = {} as any
+                                    }
+                                    fileTermCounts[data.value.data.path.text].bytesSearched =
+                                        data.value.data.stats.bytes_searched
+
+                                    break
+                            }
+                        } catch (error) {
+                            reject(error)
+                        }
+                    })
+                    .on('end', () => resolve())
+            } catch (error) {
+                reject(error)
+            }
+        })
+        return fileTermCounts
+    }
+
     private async fetchFileMatches(
         keywords: string[],
         rootPath: string
@@ -39,33 +85,63 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         fileTermCounts: { [filename: string]: { [term: string]: number } }
         termTotalFiles: { [term: string]: number }
     }> {
-        // The total number of files searched across all keywords
-        let totalFilesSearched = 0
-        const wsRootPath = rootPath.replace('file://', '')
         const termFileCountsArr: { fileCounts: { [filename: string]: number }; filesSearched: number }[] =
             await Promise.all(
                 keywords.map(async term => {
-                    // Get a list of files that match the term as symbol
-                    const symbols = await this.nativeSymbolSearcher(term)
-                    // Mapping filenames to match counts
-                    const fileCounts: { [filename: string]: number } = {}
-                    symbols.forEach(symbol => {
-                        const symbolPath = symbol.location.uri.fsPath
-                        // filter files that are not in current workspace
-                        if (symbolPath.includes(wsRootPath)) {
-                            fileCounts[symbolPath] = (fileCounts[symbolPath] || 0) + 1
-                        }
+                    const out = await new Promise<string>((resolve, reject) => {
+                        execFile(
+                            this.rgPath,
+                            [...fileExtRipgrepParams, '--count-matches', '--stats', `\\b${term}`, './'],
+                            {
+                                cwd: rootPath,
+                                maxBuffer: 1024 * 1024 * 1024,
+                            },
+                            (error, stdout, stderr) => {
+                                if (error?.code === 2) {
+                                    reject(`${error}: ${stderr}`)
+                                } else {
+                                    resolve(stdout)
+                                }
+                            }
+                        )
                     })
-                    // Set the length of fileCounts as files searched
-                    const filesSearched = Object.entries(fileCounts).length || 0
-                    totalFilesSearched += filesSearched
+                    const fileCounts: { [filename: string]: number } = {}
+                    console.log(out)
+                    const lines = out.split('\n')
+                    let filesSearched = -1
+                    for (const line of lines) {
+                        const terms = line.split(':')
+                        if (terms.length !== 2) {
+                            const matches = /^(\d+) files searched$/.exec(line)
+                            if (matches && matches.length === 2) {
+                                try {
+                                    filesSearched = parseInt(matches[1])
+                                } catch {
+                                    console.error(`failed to parse number of files matched from string: ${matches[1]}`)
+                                }
+                            }
+                            continue
+                        }
+                        try {
+                            const count = parseInt(terms[1])
+                            fileCounts[terms[0]] = count
+                        } catch {
+                            console.error(`could not parse count from ${terms[1]}`)
+                        }
+                    }
                     return { fileCounts, filesSearched }
                 })
             )
 
-        // Map filenames to an object mapping terms to match counts for that filename
+        let totalFilesSearched = -1
+        for (const { filesSearched } of termFileCountsArr) {
+            if (totalFilesSearched >= 0 && totalFilesSearched !== filesSearched) {
+                throw new Error('filesSearched did not match')
+            }
+            totalFilesSearched = filesSearched
+        }
+
         const fileTermCounts: { [filename: string]: { [term: string]: number } } = {}
-        // Map terms to the number of files they matched
         const termTotalFiles: { [term: string]: number } = {}
         for (let i = 0; i < keywords.length; i++) {
             const term = keywords[i]
@@ -79,6 +155,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                 fileTermCounts[filename][term] = count
             }
         }
+
         return {
             totalFiles: totalFilesSearched,
             termTotalFiles,
@@ -87,66 +164,125 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
     }
 
     private async fetchKeywordFiles(rootPath: string, query: string): Promise<{ filename: string; score: number }[]> {
-        const terms = query.split(/\W+/)
-        // TODO: Stemming using the `natural` package was introducing failing licensing checks. Find a replacement stemming package.
-        const stemmedTerms = terms.map(term => this.escapeRegex(term))
-        // unique stemmed keywords, our representation of the user query
-        const filteredTerms = Array.from(new Set(removeStopwords(stemmedTerms).filter(term => term.length >= 3)))
-        const { fileTermCounts, termTotalFiles, totalFiles } = await this.fetchFileMatches(filteredTerms, rootPath)
-        const idfDict = this.idf(termTotalFiles, totalFiles)
+        // Create unique stemmed keywords, our representation of the user query
+        const terms = nlp.string.tokenize0(query) as string[]
+        const stemmedTerms = nlp.tokens.stem(terms)
+        const filteredTerms = nlp.tokens.removeWords(stemmedTerms)
+
+        const fileMatchesPromise = this.fetchFileMatches(filteredTerms, rootPath)
+        const fileStatsPromise = this.fetchFileStats(filteredTerms, rootPath)
+
+        const fileMatches = await fileMatchesPromise
+        const fileStats = await fileStatsPromise
+
+        const { fileTermCounts, termTotalFiles, totalFiles } = fileMatches
+        const idfDict = idf(termTotalFiles, totalFiles)
+
+        const queryTf = tf(
+            filteredTerms,
+            Object.fromEntries(filteredTerms.map(term => [term, 1])),
+            filteredTerms.map(t => t.length).reduce((a, b) => a + b + 1, 0)
+        )
+        const queryVec = tfidf(filteredTerms, queryTf, idfDict)
         const filenamesWithScores = Object.entries(fileTermCounts)
             .map(([filename, termCounts]) => {
-                const { score, scoreComponents } = this.idfLogScore(filteredTerms, termCounts, idfDict)
+                if (fileStats[filename] === undefined) {
+                    throw new Error(`filename ${filename} missing from fileStats`)
+                }
+                const tfVec = tf(filteredTerms, termCounts, fileStats[filename].bytesSearched)
+                const tfidfVec = tfidf(filteredTerms, tfVec, idfDict)
+                const cosineScore = cosine(tfidfVec, queryVec)
+                let { score, scoreComponents } = idfLogScore(filteredTerms, termCounts, idfDict)
+
+                const b = fileStats[filename].bytesSearched
+                if (b > 10000) {
+                    score *= 0.1 // downweight very large files
+                }
+
                 return {
                     filename,
+                    cosineScore,
+                    termCounts,
+                    tfVec,
+                    idfDict,
                     score,
                     scoreComponents,
                 }
             })
             .sort(({ score: score1 }, { score: score2 }) => score2 - score1)
+
         return filenamesWithScores
     }
+}
 
-    public getRootPath(): string | null {
-        const docUri = vscode.window.activeTextEditor?.document.uri
-        const wsFolderUri = docUri ? vscode.workspace.getWorkspaceFolder(docUri)?.uri.fsPath : null
-        const wsRootUri = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath || null
-
-        return wsFolderUri === undefined ? wsRootUri : wsFolderUri
-    }
-
-    private async nativeSymbolSearcher(term: string): Promise<vscode.SymbolInformation[]> {
-        const command = 'vscode.executeWorkspaceSymbolProvider'
-        return await vscode.commands.executeCommand<vscode.SymbolInformation[]>(command, term)
-    }
-
-    private idfLogScore(
-        terms: string[],
-        termCounts: { [term: string]: number },
-        idfDict: { [term: string]: number }
-    ): { score: number; scoreComponents: { [term: string]: number } } {
-        let score = 0
-        const scoreComponents: { [term: string]: number } = {}
-        for (const term of terms) {
-            const ct = termCounts[term] || 0
-            // Assume terms with both upper and lower letters are symbols
-            // as symbols should have higher priority than non-symbols
-            const termScore = getTermScore(term)
-            const logScore = ct === 0 ? 0 : Math.log10(termScore) + 1
-            const idfLogScore = (idfDict[term] || 1) * logScore
-            score += idfLogScore
-            scoreComponents[term] = idfLogScore
+function getRootPath(): string | null {
+    const uri = vscode.window.activeTextEditor?.document.uri
+    if (uri) {
+        const wsFolder = vscode.workspace.getWorkspaceFolder(uri)
+        if (wsFolder) {
+            return wsFolder.uri.fsPath
         }
-        return { score, scoreComponents }
     }
 
-    private idf(termTotalFiles: { [term: string]: number }, totalFiles: number): { [term: string]: number } {
-        const logTotal = Math.log(totalFiles)
-        const e = Object.entries(termTotalFiles).map(([term, count]) => [term, logTotal - Math.log(count)])
-        return Object.fromEntries(e)
+    if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length >= 1) {
+        return vscode.workspace.workspaceFolders[0].uri.fsPath
     }
+    return null
+}
 
-    private escapeRegex(s: string) {
-        return s.replace(/[$()*+./?[\\\]^{|}\-]/g, '\\$&')
+function idfLogScore(
+    terms: string[],
+    termCounts: { [term: string]: number },
+    idfDict: { [term: string]: number }
+): { score: number; scoreComponents: { [term: string]: number } } {
+    let score = 0
+    const scoreComponents: { [term: string]: number } = {}
+    for (const term of terms) {
+        const ct = termCounts[term] || 0
+        const logScore = ct === 0 ? 0 : Math.log10(ct) + 1
+        const idfLogScore = (idfDict[term] || 1) * logScore
+        score += idfLogScore
+        scoreComponents[term] = idfLogScore
     }
+    return { score, scoreComponents }
+}
+
+function cosine(v1: number[], v2: number[]): number {
+    if (v1.length !== v2.length) {
+        throw new Error(`v1.length !== v2.length ${v1.length} !== ${v2.length}`)
+    }
+    let dotProd = 0
+    let v1SqMag = 0
+    let v2SqMag = 0
+    for (let i = 0; i < v1.length; i++) {
+        dotProd += v1[i] * v2[i]
+        v1SqMag += v1[i] * v1[i]
+        v2SqMag += v2[i] * v2[i]
+    }
+    // return dotProd / Math.sqrt(v1SqMag * v2SqMag)
+    return dotProd / (Math.sqrt(v1SqMag) * Math.sqrt(v2SqMag))
+}
+
+function tfidf(terms: string[], tf: number[], idf: { [term: string]: number }): number[] {
+    if (terms.length !== tf.length) {
+        throw new Error(`terms.length !== tf.length ${terms.length} !== ${tf.length}`)
+    }
+    const tfidf = tf.slice(0)
+    for (let i = 0; i < tfidf.length; i++) {
+        if (idf[terms[i]] === undefined) {
+            throw new Error(`term ${terms[i]} did not exist in idf dict`)
+        }
+        tfidf[i] *= idf[terms[i]]
+    }
+    return tfidf
+}
+
+function tf(terms: string[], termCounts: { [term: string]: number }, fileSize: number): number[] {
+    return terms.map(term => (termCounts[term] || 0) / fileSize)
+}
+
+function idf(termTotalFiles: { [term: string]: number }, totalFiles: number): { [term: string]: number } {
+    const logTotal = Math.log(totalFiles)
+    const e = Object.entries(termTotalFiles).map(([term, count]) => [term, logTotal - Math.log(count)])
+    return Object.fromEntries(e)
 }
