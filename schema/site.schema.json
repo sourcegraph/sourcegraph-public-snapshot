@@ -706,7 +706,7 @@
       "group": "Security"
     },
     "disableNonCriticalTelemetry": {
-      "description": "DISABLED. Has no effect.",
+      "description": "DEPRECATED. Has no effect.",
       "type": "boolean",
       "default": false,
       "group": "Misc."
