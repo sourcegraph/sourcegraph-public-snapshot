@@ -12,7 +12,7 @@ trap cleanup EXIT
 
 if [[ "$DOCKER_BAZEL" == "true" ]]; then
 
-  bazel build //cmd/gitserver \
+  bazel build //cmd/github-proxy \
     --stamp \
     --workspace_status_command=./dev/bazel_stamp_vars.sh \
     --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64
