@@ -2,6 +2,8 @@
 package main
 
 import (
+	"os"
+
 	blobstore_shared "github.com/sourcegraph/sourcegraph/cmd/blobstore/shared"
 	frontend_shared "github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	githubproxy_shared "github.com/sourcegraph/sourcegraph/cmd/github-proxy/shared"
@@ -29,5 +31,5 @@ var services = []service.Service{
 }
 
 func main() {
-	osscmd.MainOSS(services)
+	osscmd.MainOSS(services, os.Args)
 }
