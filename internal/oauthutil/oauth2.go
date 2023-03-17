@@ -43,16 +43,6 @@ type TokenRefresher func(ctx context.Context, doer httpcli.Doer, oauthCtx OAuthC
 // it will also attempt to refresh the token in case of a 401 response.
 // If the token is updated successfully, the same request will be retried exactly once.
 func DoRequest(ctx context.Context, logger log.Logger, doer httpcli.Doer, req *http.Request, auther auth.Authenticator) (*http.Response, error) {
-	// Store the body first in case we need to retry the request
-	var err error
-	var reqBody []byte
-	if req.Body != nil {
-		reqBody, err = io.ReadAll(req.Body)
-		if err != nil {
-			return nil, err
-		}
-		req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
-	}
 	if auther == nil {
 		return doer.Do(req.WithContext(ctx))
 	}
@@ -69,6 +59,12 @@ func DoRequest(ctx context.Context, logger log.Logger, doer httpcli.Doer, req *h
 		return nil, errors.Wrap(err, "authenticating request")
 	}
 
+	// Store the body first in case we need to retry the request
+	reqBody, err := io.ReadAll(req.Body)
+	if err != nil {
+		return nil, err
+	}
+	req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
 	// Do first request
 	resp, err := doer.Do(req.WithContext(ctx))
 	if err != nil {
@@ -86,9 +82,7 @@ func DoRequest(ctx context.Context, logger log.Logger, doer httpcli.Doer, req *h
 			return nil, errors.Wrap(err, "authenticating request after token refresh")
 		}
 		// We need to reset the body before retrying the request
-		if req.Body != nil {
-			req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
-		}
+		req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
 		resp, err = doer.Do(req.WithContext(ctx))
 	}
 
