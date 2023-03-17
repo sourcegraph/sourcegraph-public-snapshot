@@ -580,7 +580,8 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 		pr.ToRef.Repository.Slug,
 	)
 
-	_, err = c.send(ctx, "POST", path, nil, payload, pr)
+	resp, err := c.send(ctx, "POST", path, nil, payload, pr)
+	code := resp.StatusCode
 	if err != nil {
 		if IsDuplicatePullRequest(err) {
 			pr, extractErr := ExtractExistingPullRequest(err)
@@ -590,6 +591,10 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 			return &ErrAlreadyExists{
 				Existing: pr,
 			}
+		}
+
+		if code <= 400 && code < 200 {
+			return errcode.MakeNonRetryable(err)
 		}
 		return err
 	}
