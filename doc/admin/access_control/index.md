@@ -16,7 +16,7 @@ Sourcegraph uses [Role-Based Access Control (RBAC)](https://en.wikipedia.org/wik
 
 <!-- TODO: Screenshots -->
 
-Site admins can control which features each type of user has access to by creating custom roles and assigning permissions to them. You can see all available roles and create new ones under _Site admin_ > _Users & auth_ > _Roles_.
+Site admins can control which features each type of user has access to by creating custom roles and assigning permissions to them. You can see all available roles and create new ones under **Site admin > Users & auth > Roles**.
 
 ### System roles
 
@@ -45,6 +45,6 @@ With the exception of system roles, all roles can be deleted. To delete a role, 
 
 ## Managing user roles
 
-Site admins can manage which roles are assigned to which users from _Site admin_ > _Users & auth_ > _Users_. To view or edit a user's roles, click the triple dots to open the context menu for that user, then click **Manage roles**. This will open a modal where you can see the user's current roles, assign new ones, or unassign current ones. You can type in the input field to search roles by name. Click **Update** to save any changes, or **Cancel** to discard. Note that system roles cannot be revoked or assigned via this modal.
+Site admins can manage which roles are assigned to which users from **Site admin > Users & auth > Users**. To view or edit a user's roles, click the triple dots to open the context menu for that user, then click **Manage roles**. This will open a modal where you can see the user's current roles, assign new ones, or unassign current ones. You can type in the input field to search roles by name. Click **Update** to save any changes, or **Cancel** to discard. Note that system roles cannot be revoked or assigned via this modal.
 
 To assign the **Site Administrator** system role to a user, open the same context menu from the triple dots, then click **Promote to site admin**. To unassign the **Site Administrator** role, open the same context menu from the triple dots, then click **Revoke site admin**.
