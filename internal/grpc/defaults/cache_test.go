@@ -43,11 +43,11 @@ func TestCloseGRPCConnectionCallback(t *testing.T) {
 		t.Fatalf("failed to dial gRPC server: %v", err)
 	}
 
-	defer conn.Close() // ensure connection is closed when test ends
+	defer conn.Close() // ensure the connection is closed when test ends
 
 	ce := connAndError{conn: conn, dialErr: err}
 
-	// Wait for connection to be ready, or give up after timeout
+	// Wait for the connection to be ready, or give up after timeout
 
 	connectionInitialized := make(chan struct{})
 
@@ -76,7 +76,7 @@ func TestCloseGRPCConnectionCallback(t *testing.T) {
 	case <-connectionInitialized:
 	}
 
-	// Double check that connection is ready
+	// Double check that the connection is ready
 	if state := ce.conn.GetState(); state != connectivity.Ready {
 		t.Fatalf("expected gRPC connection to be in state %q, got state: %s", connectivity.Ready, state.String())
 	}
