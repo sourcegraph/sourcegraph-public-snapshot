@@ -34,4 +34,4 @@ not be sent to Sourcegraph.
 
 ## Configuring webhooks
 
-Please follow the link for [configuring permission syncing webhooks for Github](../config/webhooks.md#user-permissions).
+Please follow the link for [configuring permission syncing webhooks for Github](../config/webhooks/incoming.md#user-permissions).

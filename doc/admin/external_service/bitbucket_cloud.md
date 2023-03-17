@@ -67,4 +67,4 @@ Bitbucket Cloud connections support the following configuration options, which a
 
 Using the `webhooks` property on the external service has been deprecated.
 
-Please consult [this page](../config/webhooks.md) in order to configure webhooks.
+Please consult [this page](../config/webhooks/incoming.md) in order to configure webhooks.

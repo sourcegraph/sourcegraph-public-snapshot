@@ -17,14 +17,14 @@ import { SiteAdminWebhookUpdatePage } from './SiteAdminWebhookUpdatePage'
 const decorator: DecoratorFn = Story => <Story />
 
 const config: Meta = {
-    title: 'web/src/site-admin/SiteAdminWebhookUpdatePage',
+    title: 'web/site-admin/webhooks/incoming/SiteAdminWebhookUpdatePage',
     decorators: [decorator],
 }
 
 export default config
 
 export const WebhookUpdatePage: Story = () => (
-    <WebStory initialEntries={['/site-admin/webhooks/1']}>
+    <WebStory initialEntries={['/site-admin/webhooks/incoming/1']}>
         {() => (
             <MockedTestProvider
                 link={
@@ -87,7 +87,7 @@ export const WebhookUpdatePage: Story = () => (
             >
                 <Routes>
                     <Route
-                        path="/site-admin/webhooks/:id"
+                        path="/site-admin/webhooks/incoming/:id"
                         element={<SiteAdminWebhookUpdatePage telemetryService={NOOP_TELEMETRY_SERVICE} />}
                     />
                 </Routes>

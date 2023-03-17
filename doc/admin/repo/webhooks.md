@@ -22,4 +22,4 @@ For repositories that Sourcegraph is already aware of, it will periodically perf
 
 ## Code host webhooks
 
-We support receiving webhooks directly from your code host for [GitHub](../config/webhooks.md#github), [GitLab](../config/webhooks.md#gitlab), [Bitbucket Server](../config/webhooks.md#bitbucket-server) and [Bitbucket Cloud](../config/webhooks.md#bitbucket-cloud).
+We support receiving webhooks directly from your code host for [GitHub](../config/webhooks/incoming.md#github), [GitLab](../config/webhooks/incoming.md#gitlab), [Bitbucket Server](../config/webhooks/incoming.md#bitbucket-server) and [Bitbucket Cloud](../config/webhooks/incoming.md#bitbucket-cloud).
