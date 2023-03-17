@@ -1090,7 +1090,7 @@ func (r *Resolver) ReenqueueChangeset(ctx context.Context, args *graphqlbackend.
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
 		return nil, err
 	}
 
@@ -1342,7 +1342,7 @@ func (r *Resolver) DetachChangesets(ctx context.Context, args *graphqlbackend.De
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
 		return nil, err
 	}
 
@@ -1381,7 +1381,7 @@ func (r *Resolver) CreateChangesetComments(ctx context.Context, args *graphqlbac
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
 		return nil, err
 	}
 
@@ -1429,7 +1429,7 @@ func (r *Resolver) ReenqueueChangesets(ctx context.Context, args *graphqlbackend
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
 		return nil, err
 	}
 
@@ -1468,7 +1468,7 @@ func (r *Resolver) MergeChangesets(ctx context.Context, args *graphqlbackend.Mer
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
 		return nil, err
 	}
 
@@ -1510,7 +1510,7 @@ func (r *Resolver) CloseChangesets(ctx context.Context, args *graphqlbackend.Clo
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
 		return nil, err
 	}
 
@@ -1551,7 +1551,7 @@ func (r *Resolver) PublishChangesets(ctx context.Context, args *graphqlbackend.P
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
 		return nil, err
 	}
 
@@ -1823,7 +1823,7 @@ func (r *Resolver) RetryBatchSpecWorkspaceExecution(ctx context.Context, args *g
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
 		return nil, err
 	}
 
@@ -1962,7 +1962,7 @@ func (r *Resolver) RetryBatchSpecExecution(ctx context.Context, args *graphqlbac
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), br.BatchChangesWritePermission); err != nil {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
 		return nil, err
 	}
 
