@@ -18,7 +18,7 @@ available [here](https://github.com/sourcegraph/deploy-sourcegraph-helm).
 
 ### RBAC Roles
 
-Executors interact with the Kubernetes' API to handle jobs. The following are the RBAC Roles needed to run Executors on Kubernetes.
+Executors interact with the Kubernetes API to handle jobs. The following are the RBAC Roles needed to run Executors on Kubernetes.
 
 | API Groups | Resources          | Verbs                     | Reason                                                                                    |
 |------------|--------------------|---------------------------|-------------------------------------------------------------------------------------------|
@@ -28,8 +28,8 @@ Executors interact with the Kubernetes' API to handle jobs. The following are th
 
 ### Environment Variables
 
-The following are Environment Variables that are specific to the Kubernetes runtime. See other possible Environment
-Variables [here](./deploy_executors_binary.md#step-2-setup-environment-variables).
+The following are Environment Variables that are specific to the Kubernetes runtime. These environment variables can be
+set on the Executor `Deployment` and will configure the `Job`s that it spawns.
 
 | Name                                        | Default Value  | Description                                                                                                            |
 |---------------------------------------------|:---------------|------------------------------------------------------------------------------------------------------------------------|
@@ -41,6 +41,8 @@ Variables [here](./deploy_executors_binary.md#step-2-setup-environment-variables
 | EXECUTOR_KUBERNETES_RESOURCE_LIMIT_MEMORY   | `1Gi`          | The memory resource limit for Kubernetes Jobs.                                                                         |
 | EXECUTOR_KUBERNETES_RESOURCE_REQUEST_CPU    | `1`            | The maximum CPU resource limit for Kubernetes Jobs.                                                                    |
 | EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY | `1Gi`          | The maximum memory resource limit for Kubernetes Jobs.                                                                 |
+
+See other possible Environment Variables [here](./deploy_executors_binary.md#step-2-setup-environment-variables).
 
 ### Example Configuration YAML
 
