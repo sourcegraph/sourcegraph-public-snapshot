@@ -28,7 +28,7 @@ import {
     setGoogleExecutorVersion,
     setAWSExecutorVersion,
 } from './config'
-import { getCandidateTags, getPreviousVersion, getTags } from './git'
+import { getCandidateTags, getPreviousVersion } from './git'
 import {
     cloneRepo,
     closeTrackingIssue,
