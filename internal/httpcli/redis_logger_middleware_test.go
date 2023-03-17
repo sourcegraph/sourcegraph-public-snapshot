@@ -26,7 +26,7 @@ func TestRedisLoggerMiddleware(t *testing.T) {
 	normalReq, _ := http.NewRequest("GET", "http://dev/null", strings.NewReader("horse"))
 	complexReq, _ := http.NewRequest("PATCH", "http://test.aa?a=2", strings.NewReader("graph"))
 	complexReq.Header.Set("Cache-Control", "no-cache")
-	postReqNoBody, _ := http.NewRequest("POST", "http://dev/null", io.NopCloser(bytes.NewBuffer(nil)))
+	postReqEmptyBody, _ := http.NewRequest("POST", "http://dev/null", io.NopCloser(bytes.NewBuffer([]byte{})))
 
 	testCases := []struct {
 		req  *http.Request
@@ -72,13 +72,13 @@ func TestRedisLoggerMiddleware(t *testing.T) {
 			err: "oh no",
 		},
 		{
-			req:  postReqNoBody,
-			name: "post request with nil body",
+			req:  postReqEmptyBody,
+			name: "post request with empty body",
 			cli:  newFakeClientWithHeaders(map[string][]string{"X-Test-Header": {"value1", "value2"}}, http.StatusOK, []byte(`{"permission":false}`), nil),
 			err:  "<nil>",
 			want: &types.OutboundRequestLogItem{
-				Method:          postReqNoBody.Method,
-				URL:             postReqNoBody.URL.String(),
+				Method:          postReqEmptyBody.Method,
+				URL:             postReqEmptyBody.URL.String(),
 				RequestHeaders:  map[string][]string{},
 				RequestBody:     "",
 				StatusCode:      http.StatusOK,
