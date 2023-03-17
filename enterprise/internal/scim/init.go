@@ -79,7 +79,7 @@ func scimAuthMiddleware(next http.Handler) http.Handler {
 		gotToken := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
 		// 🚨 SECURITY: Use constant-time comparisons to avoid leaking the verification
 		// code via timing attack.
-		if subtle.ConstantTimeCompare([]byte(confToken), []byte(gotToken)) != 1 {
+		if len(confToken) == 0 || subtle.ConstantTimeCompare([]byte(confToken), []byte(gotToken)) != 1 {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
