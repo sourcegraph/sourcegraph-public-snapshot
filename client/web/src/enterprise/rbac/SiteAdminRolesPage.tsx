@@ -4,7 +4,7 @@ import { mdiPlus } from '@mdi/js'
 import { groupBy, noop } from 'lodash'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, Button, Icon, ProductStatusBadge, ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
+import { PageHeader, Button, Icon, ProductStatusBadge, ErrorAlert, LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 
@@ -55,7 +55,13 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
             <PageTitle title="Roles - Admin" />
             <PageHeader
                 className={styles.rolesPageHeader}
-                description="Roles represent a set of permissions that are granted to a user. Roles are currently only available for Batch Changes functionality."
+                description={
+                    <>
+                        Roles represent a set of permissions that are granted to a user. Roles are currently only
+                        available for Batch Changes functionality. Use the{' '}
+                        <Link to="/site-admin/users">user administration page</Link> to assign roles.
+                    </>
+                }
                 actions={
                     <Button variant="primary" onClick={openModal}>
                         <Icon aria-hidden={true} svgPath={mdiPlus} /> Create Role
