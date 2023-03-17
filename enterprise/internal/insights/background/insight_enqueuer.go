@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
@@ -74,7 +73,7 @@ func (ie *InsightEnqueuer) discoverAndEnqueueInsights(
 ) error {
 	var multi error
 
-	log15.Info("enqueuing indexed insight recordings")
+	ie.logger.Info("enqueuing indexed insight recordings")
 	// this job will do the work of both recording (permanent) queries, and snapshot (ephemeral) queries. We want to try both, so if either has a soft-failure we will attempt both.
 	recordingArgs := store.GetDataSeriesArgs{NextRecordingBefore: ie.now(), ExcludeJustInTime: true}
 	recordingSeries, err := insightStore.GetDataSeries(ctx, recordingArgs)
@@ -86,7 +85,7 @@ func (ie *InsightEnqueuer) discoverAndEnqueueInsights(
 		multi = errors.Append(multi, err)
 	}
 
-	log15.Info("enqueuing indexed insight snapshots")
+	ie.logger.Info("enqueuing indexed insight snapshots")
 	snapshotArgs := store.GetDataSeriesArgs{NextSnapshotBefore: ie.now(), ExcludeJustInTime: true}
 	snapshotSeries, err := insightStore.GetDataSeries(ctx, snapshotArgs)
 	if err != nil {
@@ -184,6 +183,6 @@ func (ie *InsightEnqueuer) EnqueueSingle(
 		return errors.Wrapf(err, "failed to stamp insight series_id: %s", seriesID)
 	}
 
-	log15.Info("queued global search for insight "+string(mode), "series_id", series.SeriesID)
+	ie.logger.Info("queued global search for insight", log.String("persist mode", string(mode)), log.String("seriesID", series.SeriesID))
 	return nil
 }
