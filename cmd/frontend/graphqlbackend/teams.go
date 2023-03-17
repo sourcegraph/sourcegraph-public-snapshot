@@ -453,6 +453,15 @@ func (r *schemaResolver) UpdateTeam(ctx context.Context, args *UpdateTeamArgs) (
 				return errors.Wrap(err, "cannot find parent team")
 			}
 			if parentTeam.ID != t.ParentTeamID {
+				parentOutsideOfTeamsDescendants, err := tx.Teams().ContainsTeam(ctx, parentTeam.ID, database.ListTeamsOpts{
+					ExceptAncestorID: t.ID,
+				})
+				if err != nil {
+					return errors.Newf("could not determine ancestorship on team update: %s", err)
+				}
+				if !parentOutsideOfTeamsDescendants {
+					return errors.Newf("circular dependency: new parent %q is descendant of updated team %q", parentTeam.Name, t.Name)
+				}
 				needsUpdate = true
 				t.ParentTeamID = parentTeam.ID
 			}

@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -357,6 +358,44 @@ func TestTeams_GetListCount(t *testing.T) {
 					t.Fatal("incorrect cursor returned")
 				}
 			})
+		})
+
+		t.Run("ExceptAncestorID", func(t *testing.T) {
+			teams, cursor, err := store.ListTeams(internalCtx, ListTeamsOpts{ExceptAncestorID: engineeringTeam.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cursor != 0 {
+				t.Fatal("incorrect cursor returned")
+			}
+			want := []*types.Team{salesTeam, supportTeam}
+			sort.Slice(teams, func(i, j int) bool { return teams[i].ID < teams[j].ID })
+			sort.Slice(want, func(i, j int) bool { return want[i].ID < want[j].ID })
+			if diff := cmp.Diff(want, teams); diff != "" {
+				t.Errorf("non-ancestors -want+got: %s", diff)
+			}
+		})
+
+		t.Run("ExceptAncestorID contains", func(t *testing.T) {
+			contains, err := store.ContainsTeam(internalCtx, salesTeam.ID, ListTeamsOpts{ExceptAncestorID: engineeringTeam.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !contains {
+				t.Errorf("sales team is expected to be contained in all teams except the sub-tree rooted at engineering team")
+			}
+		})
+
+		t.Run("ExceptAncestorID does not contain", func(t *testing.T) {
+			for _, team := range []*types.Team{ownTeam, engineeringTeam} {
+				contains, err := store.ContainsTeam(internalCtx, ownTeam.ID, ListTeamsOpts{ExceptAncestorID: engineeringTeam.ID})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if contains {
+					t.Errorf("%q team is descendant of engineering, so is expected to be outside of list of teams excluding engineering descendants", team.Name)
+				}
+			}
 		})
 	})
 
