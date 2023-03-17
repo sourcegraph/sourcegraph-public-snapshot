@@ -115,8 +115,8 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 		if err != nil {
 			return "", err
 		}
+		req.Body = io.NopCloser(bytes.NewReader(reqBody))
 	}
-	req.Body = io.NopCloser(bytes.NewReader(reqBody))
 
 	// Add authentication headers for authenticated requests.
 	if err := c.auth.Authenticate(req); err != nil {
@@ -143,7 +143,9 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 	for c.waitForRateLimit && resp.StatusCode == http.StatusTooManyRequests &&
 		numRetries < c.maxRateLimitRetries {
 		if c.externalRateLimiter.WaitForRateLimit(ctx, 1) {
-			req.Body = io.NopCloser(bytes.NewReader(reqBody))
+			if req.Body != nil {
+				req.Body = io.NopCloser(bytes.NewReader(reqBody))
+			}
 			resp, err = oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth)
 			numRetries++
 		} else {

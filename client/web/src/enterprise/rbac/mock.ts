@@ -58,7 +58,7 @@ export const mockRoles: AllRolesResult = {
             {
                 __typename: 'Role',
                 id: 'role-1',
-                name: 'Site Administrator',
+                name: 'SITE_ADMINISTRATOR',
                 system: true,
                 permissions: {
                     nodes: mockPermissions.permissions.nodes,

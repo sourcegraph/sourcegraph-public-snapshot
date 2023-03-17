@@ -221,9 +221,7 @@ export const SetupStepsFooter: FC<HTMLAttributes<HTMLElement>> = props => {
 
     return (
         <footer {...attributes} className={classNames(styles.footer, className)}>
-            <div className={styles.footerWidget}>
-                <div ref={setFooterPortal} className={styles.footerInnerWidget} />
-            </div>
+            <div ref={setFooterPortal} className={styles.footerWidget} />
             <div className={styles.footerNavigation}>
                 <div className={styles.footerInnerNavigation}>
                     <Button variant="link" className={styles.footerSkip} onClick={onSkip}>
