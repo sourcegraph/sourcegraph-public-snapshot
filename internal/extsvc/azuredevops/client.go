@@ -2,6 +2,7 @@
 package azuredevops
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -107,8 +108,14 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 	queryParams.Set("api-version", apiVersion)
 	req.URL.RawQuery = queryParams.Encode()
 	req.URL = u.ResolveReference(req.URL)
+	var reqBody []byte
 	if req.Body != nil {
 		req.Header.Set("Content-Type", "application/json")
+		reqBody, err = io.ReadAll(req.Body)
+		if err != nil {
+			return "", err
+		}
+		req.Body = io.NopCloser(bytes.NewReader(reqBody))
 	}
 
 	// Add authentication headers for authenticated requests.
@@ -136,6 +143,9 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 	for c.waitForRateLimit && resp.StatusCode == http.StatusTooManyRequests &&
 		numRetries < c.maxRateLimitRetries {
 		if c.externalRateLimiter.WaitForRateLimit(ctx, 1) {
+			if req.Body != nil {
+				req.Body = io.NopCloser(bytes.NewReader(reqBody))
+			}
 			resp, err = oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth)
 			numRetries++
 		} else {

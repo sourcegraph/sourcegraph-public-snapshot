@@ -854,6 +854,14 @@ type Role struct {
 	CreatedAt time.Time
 }
 
+func (r Role) IsSiteAdmin() bool {
+	return r.Name == string(SiteAdministratorSystemRole)
+}
+
+func (r Role) IsUser() bool {
+	return r.Name == string(UserSystemRole)
+}
+
 // A PermissionNamespace represents a distinct context within which permission policies
 // are defined and enforced.
 type PermissionNamespace string

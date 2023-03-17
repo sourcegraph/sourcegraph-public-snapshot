@@ -10,6 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -41,7 +43,7 @@ func NewDeletedRepositoryJanitor(
 
 func NewUnknownCommitJanitor(
 	store store.Store,
-	gitserverClient GitserverClient,
+	gitserverClient gitserver.Client,
 	interval time.Duration,
 	commitResolverBatchSize int,
 	minimumTimeSinceLastCheck time.Duration,
@@ -61,8 +63,8 @@ func NewUnknownCommitJanitor(
 				minimumTimeSinceLastCheck,
 				commitResolverMaximumCommitLag,
 				commitResolverBatchSize,
-				func(ctx context.Context, repositoryID int, commit string) (bool, error) {
-					return shouldDeleteRecordsForCommit(ctx, gitserverClient, repositoryID, commit)
+				func(ctx context.Context, repositoryID int, repositoryName, commit string) (bool, error) {
+					return shouldDeleteRecordsForCommit(ctx, gitserverClient, repositoryName, commit)
 				},
 				time.Now(),
 			)
@@ -70,8 +72,8 @@ func NewUnknownCommitJanitor(
 	})
 }
 
-func shouldDeleteRecordsForCommit(ctx context.Context, gitserverClient GitserverClient, repositoryID int, commit string) (bool, error) {
-	if _, err := gitserverClient.ResolveRevision(ctx, repositoryID, commit); err != nil {
+func shouldDeleteRecordsForCommit(ctx context.Context, gitserverClient gitserver.Client, repositoryName, commit string) (bool, error) {
+	if _, err := gitserverClient.ResolveRevision(ctx, api.RepoName(repositoryName), commit, gitserver.ResolveRevisionOptions{}); err != nil {
 		if gitdomain.IsRepoNotExist(err) {
 			// Repository not found; we'll delete these in a separate process
 			return false, nil

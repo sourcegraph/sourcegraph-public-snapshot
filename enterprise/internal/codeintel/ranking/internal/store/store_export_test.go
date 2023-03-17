@@ -48,8 +48,8 @@ func TestGetUploadsForRanking(t *testing.T) {
 		t.Fatalf("unexpected error getting uploads for ranking: %s", err)
 	}
 	expectedUploads := []shared.ExportedUpload{
-		{ID: 102, Repo: "bar", ObjectPrefix: "ranking/test/102"},
-		{ID: 103, Repo: "baz", ObjectPrefix: "ranking/test/103"},
+		{ID: 102, Repo: "bar", RepoID: 51, ObjectPrefix: "ranking/test/102"},
+		{ID: 103, Repo: "baz", RepoID: 52, ObjectPrefix: "ranking/test/103"},
 	}
 	if diff := cmp.Diff(expectedUploads, uploads); diff != "" {
 		t.Fatalf("unexpected uploads (-want +got):\n%s", diff)
@@ -61,7 +61,7 @@ func TestGetUploadsForRanking(t *testing.T) {
 		t.Fatalf("unexpected error getting uploads for ranking: %s", err)
 	}
 	expectedUploads = []shared.ExportedUpload{
-		{ID: 100, Repo: "foo", ObjectPrefix: "ranking/test/100"},
+		{ID: 100, Repo: "foo", RepoID: 50, ObjectPrefix: "ranking/test/100"},
 	}
 	if diff := cmp.Diff(expectedUploads, uploads); diff != "" {
 		t.Fatalf("unexpected uploads (-want +got):\n%s", diff)
@@ -101,9 +101,9 @@ func TestProcessStaleExportedUploads(t *testing.T) {
 		t.Fatalf("unexpected error getting uploads for ranking: %s", err)
 	}
 	expectedUploads := []shared.ExportedUpload{
-		{ID: 100, Repo: "foo", ObjectPrefix: "ranking/test/100"}, // shadowed by upload 102
-		{ID: 103, Repo: "bar", ObjectPrefix: "ranking/test/103"}, // repo gets deleted
-		{ID: 105, Repo: "baz", ObjectPrefix: "ranking/test/105"}, // upload gets deleted
+		{ID: 100, Repo: "foo", RepoID: 50, ObjectPrefix: "ranking/test/100"}, // shadowed by upload 102
+		{ID: 103, Repo: "bar", RepoID: 51, ObjectPrefix: "ranking/test/103"}, // repo gets deleted
+		{ID: 105, Repo: "baz", RepoID: 52, ObjectPrefix: "ranking/test/105"}, // upload gets deleted
 	}
 	if diff := cmp.Diff(expectedUploads, uploads); diff != "" {
 		t.Fatalf("unexpected uploads (-want +got):\n%s", diff)

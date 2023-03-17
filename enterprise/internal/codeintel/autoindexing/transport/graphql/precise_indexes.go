@@ -150,14 +150,15 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 	totalUploadCount := 0
 	if !skipUploads {
 		if uploads, totalUploadCount, err = r.uploadSvc.GetUploads(ctx, uploadsshared.GetUploadsOptions{
-			RepositoryID: repositoryID,
-			States:       uploadStates,
-			Term:         term,
-			DependencyOf: dependencyOf,
-			DependentOf:  dependentOf,
-			IndexerNames: indexerNames,
-			Limit:        pageSize,
-			Offset:       uploadOffset,
+			RepositoryID:       repositoryID,
+			States:             uploadStates,
+			Term:               term,
+			DependencyOf:       dependencyOf,
+			DependentOf:        dependentOf,
+			AllowDeletedUpload: args.IncludeDeleted != nil && *args.IncludeDeleted,
+			IndexerNames:       indexerNames,
+			Limit:              pageSize,
+			Offset:             uploadOffset,
 		}); err != nil {
 			return nil, err
 		}
@@ -229,7 +230,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 
 	resolvers := make([]resolverstubs.PreciseIndexResolver, 0, len(pairs))
 	for _, pair := range pairs {
-		resolver, err := sharedresolvers.NewPreciseIndexResolver(ctx, r.autoindexSvc, r.uploadSvc, r.policySvc, prefetcher, r.siteAdminChecker, r.repoStore, r.locationResolverFactory.Create(), errTracer, pair.upload, pair.index)
+		resolver, err := sharedresolvers.NewPreciseIndexResolver(ctx, r.uploadSvc, r.policySvc, r.gitserverClient, prefetcher, r.siteAdminChecker, r.repoStore, r.locationResolverFactory.Create(), errTracer, pair.upload, pair.index)
 		if err != nil {
 			return nil, err
 		}
@@ -257,7 +258,7 @@ func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ r
 			return nil, err
 		}
 
-		return sharedresolvers.NewPreciseIndexResolver(ctx, r.autoindexSvc, r.uploadSvc, r.policySvc, r.prefetcherFactory.Create(), r.siteAdminChecker, r.repoStore, r.locationResolverFactory.Create(), errTracer, &upload, nil)
+		return sharedresolvers.NewPreciseIndexResolver(ctx, r.uploadSvc, r.policySvc, r.gitserverClient, r.prefetcherFactory.Create(), r.siteAdminChecker, r.repoStore, r.locationResolverFactory.Create(), errTracer, &upload, nil)
 	}
 	if indexID != 0 {
 		index, ok, err := r.autoindexSvc.GetIndexByID(ctx, indexID)
@@ -265,7 +266,7 @@ func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ r
 			return nil, err
 		}
 
-		return sharedresolvers.NewPreciseIndexResolver(ctx, r.autoindexSvc, r.uploadSvc, r.policySvc, r.prefetcherFactory.Create(), r.siteAdminChecker, r.repoStore, r.locationResolverFactory.Create(), errTracer, nil, &index)
+		return sharedresolvers.NewPreciseIndexResolver(ctx, r.uploadSvc, r.policySvc, r.gitserverClient, r.prefetcherFactory.Create(), r.siteAdminChecker, r.repoStore, r.locationResolverFactory.Create(), errTracer, nil, &index)
 	}
 
 	return nil, errors.New("invalid identifier")

@@ -899,6 +899,7 @@ ts_project(
         "src/enterprise/rbac/components/CreateRoleModal.tsx",
         "src/enterprise/rbac/components/Permissions.tsx",
         "src/enterprise/rbac/components/RoleNode.tsx",
+        "src/enterprise/repo/EnterpriseRepositoryFileTreePage.tsx",
         "src/enterprise/repo/enterpriseRepoContainerRoutes.tsx",
         "src/enterprise/repo/enterpriseRepoRevisionContainerRoutes.tsx",
         "src/enterprise/repo/repoHeaderActionButtons.tsx",

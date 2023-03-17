@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -18,15 +19,15 @@ import (
 type preciseIndexResolver struct {
 	upload         *types.Upload
 	index          *types.Index
-	uploadResolver resolverstubs.LSIFUploadResolver
-	indexResolver  resolverstubs.LSIFIndexResolver
+	uploadResolver *UploadResolver
+	indexResolver  *indexResolver
 }
 
 func NewPreciseIndexResolver(
 	ctx context.Context,
-	autoindexingSvc AutoIndexingService,
 	uploadsSvc UploadsService,
 	policySvc PolicyService,
+	gitserverClient gitserver.Client,
 	prefetcher *Prefetcher,
 	siteAdminChecker SiteAdminChecker,
 	repoStore database.RepoStore,
@@ -45,9 +46,9 @@ func NewPreciseIndexResolver(
 		}
 	}
 
-	var uploadResolver resolverstubs.LSIFUploadResolver
+	var uploadResolver *UploadResolver
 	if upload != nil {
-		uploadResolver = NewUploadResolver(uploadsSvc, autoindexingSvc, policySvc, siteAdminChecker, repoStore, *upload, prefetcher, locationResolver, traceErrs)
+		uploadResolver = NewUploadResolver(uploadsSvc, policySvc, gitserverClient, siteAdminChecker, repoStore, *upload, prefetcher, locationResolver, traceErrs)
 
 		if upload.AssociatedIndexID != nil {
 			v, ok, err := prefetcher.GetIndexByID(ctx, *upload.AssociatedIndexID)
@@ -60,9 +61,9 @@ func NewPreciseIndexResolver(
 		}
 	}
 
-	var indexResolver resolverstubs.LSIFIndexResolver
+	var indexResolver *indexResolver
 	if index != nil {
-		indexResolver = NewIndexResolver(autoindexingSvc, uploadsSvc, policySvc, siteAdminChecker, repoStore, *index, prefetcher, locationResolver, traceErrs)
+		indexResolver = NewIndexResolver(uploadsSvc, policySvc, gitserverClient, siteAdminChecker, repoStore, *index, prefetcher, locationResolver, traceErrs)
 	}
 
 	return &preciseIndexResolver{

@@ -11,6 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -112,16 +113,48 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 		http.Error(w, "could not decode request body", http.StatusBadRequest)
 		return
 	}
+	err, statusCode, usr := unsafeSignUp(r.Context(), logger, db, creds, failIfNewUserIsNotInitialSiteAdmin)
+	if err != nil {
+		http.Error(w, err.Error(), statusCode)
+		return
+	}
 
+	// Write the session cookie
+	a := &sgactor.Actor{UID: usr.ID}
+	if err := session.SetActor(w, r, a, 0, usr.CreatedAt); err != nil {
+		httpLogError(logger.Error, w, "Could not create new user session", http.StatusInternalServerError, log.Error(err))
+	}
+
+	// Track user data
+	if r.UserAgent() != "Sourcegraph e2etest-bot" || r.UserAgent() != "test" {
+		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, LastSourceURL: creds.LastSourceURL, DatabaseID: usr.ID})
+	}
+
+	if err = usagestats.LogBackendEvent(db, sgactor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
+		logger.Warn("Failed to log event SignUpSucceeded", log.Error(err))
+	}
+}
+
+// unsafeSignUp is called to create a new user account. It is called for the normal user signup process (where a
+// non-admin user is created) and for the site initialization process (where the initial site admin user account is
+// created).
+//
+// 🚨 SECURITY: Any change to this function could introduce security exploits
+// and/or break sign up / initial admin account creation. Be careful.
+func unsafeSignUp(
+	ctx context.Context,
+	logger log.Logger,
+	db database.DB,
+	creds credentials,
+	failIfNewUserIsNotInitialSiteAdmin bool,
+) (error, int, *types.User) {
 	const defaultErrorMessage = "Signup failed unexpectedly."
 
 	if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(creds.Username); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return err, http.StatusBadRequest, nil
 	}
 	if err := CheckEmailFormat(creds.Email); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return err, http.StatusBadRequest, nil
 	}
 
 	// Create the user.
@@ -144,8 +177,7 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 		code, err := backend.MakeEmailVerificationCode()
 		if err != nil {
 			logger.Error("Error generating email verification code for new user.", log.String("email", creds.Email), log.String("username", creds.Username), log.Error(err))
-			http.Error(w, defaultErrorMessage, http.StatusInternalServerError)
-			return
+			return errors.New(defaultErrorMessage), http.StatusInternalServerError, nil
 		}
 		newUserData.EmailVerificationCode = code
 	}
@@ -153,19 +185,18 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 	// Prevent abuse (users adding emails of other people whom they want to annoy) with the
 	// following abuse prevention checks.
 	if conf.EmailVerificationRequired() && !newUserData.EmailIsVerified {
-		abused, reason, err := checkEmailAbuse(r.Context(), db, creds.Email)
+		abused, reason, err := checkEmailAbuse(ctx, db, creds.Email)
 		if err != nil {
 			logger.Error("Error checking email abuse", log.String("email", creds.Email), log.Error(err))
-			http.Error(w, defaultErrorMessage, http.StatusInternalServerError)
-			return
+			return errors.New(defaultErrorMessage), http.StatusInternalServerError, nil
 		} else if abused {
 			logger.Error("Possible email address abuse prevented", log.String("email", creds.Email), log.String("reason", reason))
-			http.Error(w, "Email address is possibly being abused, please try again later or use a different email address.", http.StatusTooManyRequests)
-			return
+			msg := "Email address is possibly being abused, please try again later or use a different email address."
+			return errors.New(msg), http.StatusTooManyRequests, nil
 		}
 	}
 
-	usr, err := db.Users().Create(r.Context(), newUserData)
+	usr, err := db.Users().Create(ctx, newUserData)
 	if err != nil {
 		var (
 			message    string
@@ -188,16 +219,13 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 			statusCode = http.StatusInternalServerError
 		}
 		logger.Error("Error in user signup.", log.String("email", creds.Email), log.String("username", creds.Username), log.Error(err))
-		http.Error(w, message, statusCode)
-
-		if err = usagestats.LogBackendEvent(db, sgactor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpFailed", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
+		if err = usagestats.LogBackendEvent(db, sgactor.FromContext(ctx).UID, deviceid.FromContext(ctx), "SignUpFailed", nil, nil, featureflag.GetEvaluatedFlagSet(ctx), nil); err != nil {
 			logger.Warn("Failed to log event SignUpFailed", log.Error(err))
 		}
-
-		return
+		return errors.New(message), statusCode, nil
 	}
 
-	if err = db.Authz().GrantPendingPermissions(r.Context(), &database.GrantPendingPermissionsArgs{
+	if err = db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
 		UserID: usr.ID,
 		Perm:   authz.Read,
 		Type:   authz.PermRepos,
@@ -206,27 +234,13 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 	}
 
 	if conf.EmailVerificationRequired() && !newUserData.EmailIsVerified {
-		if err := backend.SendUserEmailVerificationEmail(r.Context(), usr.Username, creds.Email, newUserData.EmailVerificationCode); err != nil {
+		if err := backend.SendUserEmailVerificationEmail(ctx, usr.Username, creds.Email, newUserData.EmailVerificationCode); err != nil {
 			logger.Error("failed to send email verification (continuing, user's email will be unverified)", log.String("email", creds.Email), log.Error(err))
-		} else if err = db.UserEmails().SetLastVerification(r.Context(), usr.ID, creds.Email, newUserData.EmailVerificationCode, time.Now()); err != nil {
+		} else if err = db.UserEmails().SetLastVerification(ctx, usr.ID, creds.Email, newUserData.EmailVerificationCode, time.Now()); err != nil {
 			logger.Error("failed to set email last verification sent at (user's email is verified)", log.String("email", creds.Email), log.Error(err))
 		}
 	}
-
-	// Write the session cookie
-	a := &sgactor.Actor{UID: usr.ID}
-	if err := session.SetActor(w, r, a, 0, usr.CreatedAt); err != nil {
-		httpLogError(logger.Error, w, "Could not create new user session", http.StatusInternalServerError, log.Error(err))
-	}
-
-	// Track user data
-	if r.UserAgent() != "Sourcegraph e2etest-bot" || r.UserAgent() != "test" {
-		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, LastSourceURL: creds.LastSourceURL, DatabaseID: usr.ID})
-	}
-
-	if err = usagestats.LogBackendEvent(db, sgactor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
-		logger.Warn("Failed to log event SignUpSucceeded", log.Error(err))
-	}
+	return nil, http.StatusOK, usr
 }
 
 func CheckEmailFormat(email string) error {

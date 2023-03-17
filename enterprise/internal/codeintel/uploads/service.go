@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -27,7 +26,7 @@ type Service struct {
 	repoStore       RepoStore
 	workerutilStore dbworkerstore.Store[types.Upload]
 	lsifstore       lsifstore.LsifStore
-	gitserverClient GitserverClient
+	gitserverClient gitserver.Client
 	rankingBucket   *storage.BucketHandle
 	policySvc       PolicyService
 	policyMatcher   PolicyMatcher
@@ -42,7 +41,7 @@ func newService(
 	store store.Store,
 	repoStore RepoStore,
 	lsifstore lsifstore.LsifStore,
-	gsc GitserverClient,
+	gsc gitserver.Client,
 	rankingBucket *storage.BucketHandle,
 	policySvc PolicyService,
 	policyMatcher PolicyMatcher,
@@ -79,7 +78,7 @@ func (s *Service) GetRepositoriesForIndexScan(ctx context.Context, table, column
 	return s.store.GetRepositoriesForIndexScan(ctx, table, column, processDelay, allowGlobalPolicies, repositoryMatchLimit, limit, now)
 }
 
-func (s *Service) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error) {
+func (s *Service) GetDirtyRepositories(ctx context.Context) (_ []shared.DirtyRepository, err error) {
 	return s.store.GetDirtyRepositories(ctx)
 }
 
@@ -141,6 +140,11 @@ func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, com
 	})
 	defer endObservation(1, observation.Args{})
 
+	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
+	if err != nil {
+		return nil, err
+	}
+
 	// The parameters exactPath and rootMustEnclosePath align here: if we're looking for dumps
 	// that can answer queries for a directory (e.g. diagnostics), we want any dump that happens
 	// to intersect the target directory. If we're looking for dumps that can answer queries for
@@ -170,7 +174,7 @@ func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, com
 	// and try to link it with what we have in the database. Then mark the repository's commit
 	// graph as dirty so it's updated for subsequent requests.
 
-	graph, err := s.gitserverClient.CommitGraph(ctx, repositoryID, gitserver.CommitGraphOptions{
+	graph, err := s.gitserverClient.CommitGraph(ctx, repo.Name, gitserver.CommitGraphOptions{
 		Commit: commit,
 		Limit:  numAncestors,
 	})
@@ -216,10 +220,6 @@ func (s *Service) GetRecentUploadsSummary(ctx context.Context, repositoryID int)
 
 func (s *Service) GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error) {
 	return s.store.GetLastUploadRetentionScanForRepository(ctx, repositoryID)
-}
-
-func (s *Service) GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) ([]*gitdomain.Tag, error) {
-	return s.gitserverClient.ListTags(ctx, repo, commitObjs...)
 }
 
 func (s *Service) ReindexUploads(ctx context.Context, opts shared.ReindexUploadsOptions) error {

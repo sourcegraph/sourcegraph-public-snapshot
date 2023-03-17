@@ -78,6 +78,7 @@
     - UserRoleStore
     - PermissionStore
     - RolePermissionStore
+    - RepoStatisticsStore
 - filename: internal/gitserver/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/gitserver
   interfaces:
