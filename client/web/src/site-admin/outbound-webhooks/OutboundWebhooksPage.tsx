@@ -98,10 +98,12 @@ const OutboundWebhookNode: FC<{
                 </small>
             </div>
             <RecentErrorIcon count={node.stats.errored} link={`${edit}?only_errors=true#logs`} />
-            <ButtonLink to={edit} variant="secondary" className={styles.edit}>
-                <Icon aria-hidden={true} svgPath={mdiPencil} /> Edit
-            </ButtonLink>
-            <DeleteButton className={styles.del} id={node.id} onDeleted={onDelete} />
+            <div className={styles.buttons}>
+                <ButtonLink to={edit} variant="secondary" className="mr-2">
+                    <Icon aria-hidden={true} svgPath={mdiPencil} /> Edit
+                </ButtonLink>
+                <DeleteButton id={node.id} onDeleted={onDelete} />
+            </div>
         </li>
     )
 }
