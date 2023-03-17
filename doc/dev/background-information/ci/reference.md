@@ -108,7 +108,7 @@ sg ci build bzl
 Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
-- **Bazel**: Build && Test
+- **Bazel**: Configure, Build && Test
 - Upload build trace
 
 ### Wolfi Exp Branch
