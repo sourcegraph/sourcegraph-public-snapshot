@@ -84,7 +84,7 @@ export function getCodeMonitoringCreateAction(
 export function getBatchChangeCreateAction(
     query: string | undefined,
     patternType: SearchPatternType,
-    canCreateBatchChange: boolean
+    canCreateBatchChange: boolean | string
 ): CreateAction | null {
     if (!canCreateBatchChange) {
         return null
