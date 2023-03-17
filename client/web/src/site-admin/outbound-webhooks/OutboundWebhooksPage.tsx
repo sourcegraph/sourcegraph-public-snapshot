@@ -42,7 +42,7 @@ export const OutboundWebhooksPage: FC<OutboundWebhooksPageProps> = ({ telemetryS
                 className="mb-3"
                 actions={
                     <ButtonLink to="/site-admin/webhooks/outgoing/create" variant="primary">
-                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Add webhook
+                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Create webhook
                     </ButtonLink>
                 }
             />

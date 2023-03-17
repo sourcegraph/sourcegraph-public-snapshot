@@ -47,7 +47,7 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
                         className="test-create-webhook"
                         variant="primary"
                     >
-                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Add webhook
+                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Create webhook
                     </ButtonLink>
                 }
             />
