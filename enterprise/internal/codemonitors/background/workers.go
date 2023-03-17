@@ -156,18 +156,14 @@ func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, triggerJob 
 		}
 	}()
 
-	s, err := r.db.CodeMonitors().Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = s.Done(err) }()
+	cm := r.db.CodeMonitors()
 
-	q, err := s.GetQueryTriggerForJob(ctx, triggerJob.ID)
+	q, err := cm.GetQueryTriggerForJob(ctx, triggerJob.ID)
 	if err != nil {
 		return err
 	}
 
-	m, err := s.GetMonitor(ctx, q.Monitor)
+	m, err := cm.GetMonitor(ctx, q.Monitor)
 	if err != nil {
 		return err
 	}
@@ -192,7 +188,7 @@ func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, triggerJob 
 
 	// Log next_run and latest_result to table cm_queries.
 	newLatestResult := latestResultTime(q.LatestResult, results, searchErr)
-	err = s.SetQueryTriggerNextRun(ctx, q.ID, s.Clock()().Add(5*time.Minute), newLatestResult.UTC())
+	err = cm.SetQueryTriggerNextRun(ctx, q.ID, cm.Clock()().Add(5*time.Minute), newLatestResult.UTC())
 	if err != nil {
 		return err
 	}
@@ -203,13 +199,13 @@ func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, triggerJob 
 	}
 
 	// Log the actual query we ran and whether we got any new results.
-	err = s.UpdateTriggerJobWithResults(ctx, triggerJob.ID, query, results)
+	err = cm.UpdateTriggerJobWithResults(ctx, triggerJob.ID, query, results)
 	if err != nil {
 		return errors.Wrap(err, "UpdateTriggerJobWithResults")
 	}
 
 	if len(results) > 0 {
-		_, err := s.EnqueueActionJobsForMonitor(ctx, m.ID, triggerJob.ID)
+		_, err := cm.EnqueueActionJobsForMonitor(ctx, m.ID, triggerJob.ID)
 		if err != nil {
 			return errors.Wrap(err, "store.EnqueueActionJobsForQuery")
 		}
