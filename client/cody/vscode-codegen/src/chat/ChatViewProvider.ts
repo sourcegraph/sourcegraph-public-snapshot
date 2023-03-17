@@ -4,6 +4,7 @@ import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../comm
 import { updateConfiguration } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
+import { getRgPath } from '../rg'
 import { Message } from '../sourcegraph-api'
 import { TestSupport } from '../test-support'
 
@@ -60,11 +61,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             mode
         )
 
+        const rgPath = await getRgPath(extensionPath)
+
         const prompt = new Transcript(
             contextType,
             embeddings,
             intentDetector,
-            new LocalKeywordContextFetcher('rg'),
+            new LocalKeywordContextFetcher(rgPath),
             new VSCodeEditor()
         )
 
