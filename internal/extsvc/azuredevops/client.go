@@ -108,12 +108,14 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 	queryParams.Set("api-version", apiVersion)
 	req.URL.RawQuery = queryParams.Encode()
 	req.URL = u.ResolveReference(req.URL)
+
+	var reqBody []byte
 	if req.Body != nil {
 		req.Header.Set("Content-Type", "application/json")
-	}
-	reqBody, err := io.ReadAll(req.Body)
-	if err != nil {
-		return "", err
+		reqBody, err = io.ReadAll(req.Body)
+		if err != nil {
+			return "", err
+		}
 	}
 	req.Body = io.NopCloser(bytes.NewReader(reqBody))
 

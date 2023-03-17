@@ -55,14 +55,18 @@ func DoRequest(ctx context.Context, logger log.Logger, doer httpcli.Doer, req *h
 		}
 	}
 
-	if err := auther.Authenticate(req); err != nil {
+	var err error
+	if err = auther.Authenticate(req); err != nil {
 		return nil, errors.Wrap(err, "authenticating request")
 	}
 
 	// Store the body first in case we need to retry the request
-	reqBody, err := io.ReadAll(req.Body)
-	if err != nil {
-		return nil, err
+	var reqBody []byte
+	if req.Body != nil {
+		reqBody, err = io.ReadAll(req.Body)
+		if err != nil {
+			return nil, err
+		}
 	}
 	req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
 	// Do first request
