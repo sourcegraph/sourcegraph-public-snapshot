@@ -453,6 +453,7 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
         )
     }
 )
+CodeMirrorQueryInputWrapper.displayName = 'CodeMirrorQueryInputWrapper'
 
 interface SearchModeSwitcherProps {
     mode: string | null

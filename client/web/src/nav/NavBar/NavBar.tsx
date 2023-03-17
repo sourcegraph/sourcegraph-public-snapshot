@@ -66,7 +66,6 @@ export const NavBar = forwardRef(
                     {logo}
                 </RouterNavLink>
             </H1>
-            <hr className={navBarStyles.divider} aria-hidden={true} />
             {children}
         </nav>
     )

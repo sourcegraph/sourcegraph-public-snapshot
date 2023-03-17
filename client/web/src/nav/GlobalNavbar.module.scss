@@ -1,3 +1,7 @@
+.navbar {
+    justify-content: space-between;
+}
+
 .logo {
     height: 1.5rem;
     width: 1.5rem;
@@ -27,9 +31,13 @@
     right: 2rem;
 }
 
-.search-nav-bar {
+.search-nav-bar-container {
     z-index: 1;
     width: 100%;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--border-color);
+    padding: 0 1rem;
+}
+
+.search-nav-bar-item {
+    max-width: 64rem;
+    margin: 0 auto;
 }

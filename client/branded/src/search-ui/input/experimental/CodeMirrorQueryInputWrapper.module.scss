@@ -26,12 +26,16 @@
 .focus-container {
     display: flex;
     align-items: center;
-    min-height: 32px;
-    padding: 0 0.25rem;
+    min-height: 28px;
+    padding: 0 0.125rem;
     border-radius: 4px;
-    border: 1px solid var(--border-color-2);
+    border: 1px solid var(--border-color);
     background-color: var(--input-bg);
     position: relative;
+
+    &:hover {
+        border: 1px solid var(--border-color-2);
+    }
 
     &:focus-within {
         z-index: 1;

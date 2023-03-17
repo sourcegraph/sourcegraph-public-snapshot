@@ -11,6 +11,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { CODY_ENABLED } from '../../enterprise/cody/CodyIcon'
 import { useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
 import { NavbarQueryState, setSearchMode, setSearchPatternType } from '../../stores/navbarSearchQueryState'
 import { useExperimentalQueryInput } from '../useExperimentalSearchInput'
@@ -106,16 +107,18 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                     selectedSearchContextSpec={props.selectedSearchContextSpec}
                     className="flex-grow-1"
                 >
-                    <Toggles
-                        patternType={searchPatternType}
-                        caseSensitive={searchCaseSensitivity}
-                        setPatternType={setSearchPatternType}
-                        setCaseSensitivity={setSearchCaseSensitivity}
-                        searchMode={searchMode}
-                        setSearchMode={setSearchMode}
-                        settingsCascade={props.settingsCascade}
-                        navbarSearchQuery={queryState.query}
-                    />
+                    {!CODY_ENABLED && (
+                        <Toggles
+                            patternType={searchPatternType}
+                            caseSensitive={searchCaseSensitivity}
+                            setPatternType={setSearchPatternType}
+                            setCaseSensitivity={setSearchCaseSensitivity}
+                            searchMode={searchMode}
+                            setSearchMode={setSearchMode}
+                            settingsCascade={props.settingsCascade}
+                            navbarSearchQuery={queryState.query}
+                        />
+                    )}
                 </LazyExperimentalSearchInput>
             </Form>
         )

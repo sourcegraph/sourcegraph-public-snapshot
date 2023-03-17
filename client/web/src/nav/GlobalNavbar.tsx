@@ -178,6 +178,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
 
     const [codyEnabled] = useFeatureFlag('cody')
     const isLightTheme = useIsLightTheme()
+    const isSearchPage = routeMatch === PageRoutes.Search || routeMatch === PageRoutes.SearchConsole
 
     return (
         <>
@@ -193,34 +194,35 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                 }
             >
                 <NavGroup>
-                    {searchNavBarItems.length > 0 ? (
-                        <NavDropdown
-                            toggleItem={{
-                                path: PageRoutes.Search,
-                                altPath: PageRoutes.RepoContainer,
-                                icon: MagnifyIcon,
-                                content: 'Code Search',
-                                variant: navLinkVariant,
-                            }}
-                            routeMatch={routeMatch}
-                            mobileHomeItem={{ content: 'Search home' }}
-                            items={searchNavBarItems}
-                        />
-                    ) : (
-                        <NavItem icon={MagnifyIcon}>
-                            <NavLink variant={navLinkVariant} to={PageRoutes.Search}>
-                                Code Search
-                            </NavLink>
-                        </NavItem>
-                    )}
-                    {showSearchNotebook && (
+                    {!codyEnabled &&
+                        (searchNavBarItems.length > 0 ? (
+                            <NavDropdown
+                                toggleItem={{
+                                    path: PageRoutes.Search,
+                                    altPath: PageRoutes.RepoContainer,
+                                    icon: MagnifyIcon,
+                                    content: 'Code Search',
+                                    variant: navLinkVariant,
+                                }}
+                                routeMatch={routeMatch}
+                                mobileHomeItem={{ content: 'Search home' }}
+                                items={searchNavBarItems}
+                            />
+                        ) : (
+                            <NavItem icon={MagnifyIcon}>
+                                <NavLink variant={navLinkVariant} to={PageRoutes.Search}>
+                                    Code Search
+                                </NavLink>
+                            </NavItem>
+                        ))}
+                    {showSearchNotebook && !codyEnabled && (
                         <NavItem icon={BookOutlineIcon}>
                             <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Notebooks}>
                                 Notebooks
                             </NavLink>
                         </NavItem>
                     )}
-                    {showCodeMonitoring && (
+                    {showCodeMonitoring && !codyEnabled && (
                         <NavItem icon={CodeMonitoringLogo}>
                             <NavLink variant={navLinkVariant} to="/code-monitoring">
                                 Monitoring
@@ -230,24 +232,24 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     {/* This is the only circumstance where we show something
                          batch-changes-related even if the instance does not have batch
                          changes enabled, for marketing purposes on sourcegraph.com */}
-                    {(props.batchChangesEnabled || isSourcegraphDotCom) && (
+                    {(props.batchChangesEnabled || isSourcegraphDotCom) && !codyEnabled && (
                         <BatchChangesNavItem variant={navLinkVariant} />
                     )}
-                    {codeInsights && (
+                    {codeInsights && !codyEnabled && (
                         <NavItem icon={BarChartIcon}>
                             <NavLink variant={navLinkVariant} to="/insights">
                                 Insights
                             </NavLink>
                         </NavItem>
                     )}
-                    {codyEnabled && (
+                    {codyEnabled && false && (
                         <NavItem icon={CodyIcon}>
                             <NavLink variant={navLinkVariant} to="/cody">
                                 Cody
                             </NavLink>
                         </NavItem>
                     )}
-                    {isSourcegraphApp && (
+                    {isSourcegraphApp && !codyEnabled && (
                         <NavDropdown
                             routeMatch="something-that-never-matches"
                             toggleItem={{
@@ -272,6 +274,19 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         />
                     )}
                 </NavGroup>
+                {!isSearchPage && (
+                    <div className={styles.searchNavBarContainer}>
+                        <div className={styles.searchNavBarItem}>
+                            <SearchNavbarItem
+                                {...props}
+                                isLightTheme={isLightTheme}
+                                isSourcegraphDotCom={isSourcegraphDotCom}
+                                searchContextsEnabled={searchContextsEnabled}
+                                isRepositoryRelatedPage={isRepositoryRelatedPage}
+                            />
+                        </div>
+                    </div>
+                )}
                 <NavActions>
                     {!props.authenticatedUser && (
                         <>
@@ -290,14 +305,14 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             )}
                         </>
                     )}
-                    {isSourcegraphApp && (
+                    {isSourcegraphApp && !codyEnabled && (
                         <NavAction>
                             <Link className={styles.link} to="/app/coming-soon">
                                 Coming soon
                             </Link>
                         </NavAction>
                     )}
-                    {isSourcegraphApp && (
+                    {isSourcegraphApp && !codyEnabled && (
                         <ButtonLink
                             variant="secondary"
                             outline={true}
@@ -330,7 +345,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         </NavAction>
                     )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
-                    {props.authenticatedUser?.siteAdmin && (
+                    {props.authenticatedUser?.siteAdmin && !codyEnabled && (
                         <NavAction>
                             <StatusMessagesNavItem />
                         </NavAction>
@@ -381,17 +396,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                 </NavActions>
             </NavBar>
-            {showSearchBox && (
-                <div className={styles.searchNavBar}>
-                    <SearchNavbarItem
-                        {...props}
-                        isLightTheme={isLightTheme}
-                        isSourcegraphDotCom={isSourcegraphDotCom}
-                        searchContextsEnabled={searchContextsEnabled}
-                        isRepositoryRelatedPage={isRepositoryRelatedPage}
-                    />
-                </div>
-            )}
         </>
     )
 }
