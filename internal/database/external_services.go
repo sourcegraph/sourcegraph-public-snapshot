@@ -1090,24 +1090,7 @@ func (e *externalServiceStore) GetSyncJobs(ctx context.Context, opt ExternalServ
 
 	q := sqlf.Sprintf(getSyncJobsQueryFmtstr, sqlf.Join(preds, "AND"), opt.LimitOffset.SQL())
 
-	rows, err := e.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		err = basestore.CloseRows(rows, err)
-	}()
-
-	jobs := make([]*types.ExternalServiceSyncJob, 0)
-	for rows.Next() {
-		var job types.ExternalServiceSyncJob
-		if err := scanExternalServiceSyncJob(rows, &job); err != nil {
-			return nil, errors.Wrap(err, "scanning external service job row")
-		}
-		jobs = append(jobs, &job)
-	}
-
-	return jobs, nil
+	return scanExternalServiceSyncJobs(e.Query(ctx, q))
 }
 
 const countSyncJobsQueryFmtstr = `
@@ -1155,15 +1138,15 @@ func (errSyncJobNotFound) NotFound() bool {
 func (e *externalServiceStore) GetSyncJobByID(ctx context.Context, id int64) (*types.ExternalServiceSyncJob, error) {
 	q := sqlf.Sprintf(getSyncJobsQueryFmtstr, sqlf.Sprintf("id = %s", id), (&LimitOffset{Limit: 1}).SQL())
 
-	var job types.ExternalServiceSyncJob
-	if err := scanExternalServiceSyncJob(e.QueryRow(ctx, q), &job); err != nil {
+	job, err := scanExternalServiceSyncJob(e.QueryRow(ctx, q))
+	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, &errSyncJobNotFound{id: id}
 		}
 		return nil, errors.Wrap(err, "scanning external service job row")
 	}
 
-	return &job, nil
+	return job, nil
 }
 
 // UpdateSyncJobCounters persists only the sync job counters for the supplied job.
@@ -1196,8 +1179,11 @@ WHERE
     id = %d
 `
 
-func scanExternalServiceSyncJob(sc dbutil.Scanner, job *types.ExternalServiceSyncJob) error {
-	return sc.Scan(
+var scanExternalServiceSyncJobs = basestore.NewSliceScanner(scanExternalServiceSyncJob)
+
+func scanExternalServiceSyncJob(sc dbutil.Scanner) (*types.ExternalServiceSyncJob, error) {
+	var job types.ExternalServiceSyncJob
+	err := sc.Scan(
 		&job.ID,
 		&job.State,
 		&dbutil.NullString{S: &job.FailureMessage},
@@ -1216,6 +1202,7 @@ func scanExternalServiceSyncJob(sc dbutil.Scanner, job *types.ExternalServiceSyn
 		&job.ReposUnmodified,
 		&job.ReposDeleted,
 	)
+	return &job, err
 }
 
 func (e *externalServiceStore) GetLastSyncError(ctx context.Context, id int64) (string, error) {

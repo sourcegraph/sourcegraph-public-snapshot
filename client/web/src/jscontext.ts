@@ -139,10 +139,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /**
      * A subset of the site configuration. Not all fields are set.
      */
-    site: Pick<
-        SiteConfiguration,
-        'auth.public' | 'update.channel' | 'disableNonCriticalTelemetry' | 'authz.enforceForSiteAdmins'
-    >
+    site: Pick<SiteConfiguration, 'auth.public' | 'update.channel' | 'authz.enforceForSiteAdmins'>
 
     /** Whether access tokens are enabled. */
     accessTokensAllow: 'all-users-create' | 'site-admin-create' | 'none'

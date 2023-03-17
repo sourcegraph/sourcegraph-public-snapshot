@@ -35,7 +35,6 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
         eventLogger.logViewEvent('SiteAdminPings')
     }, [])
 
-    const nonCriticalTelemetryDisabled = window.context.site.disableNonCriticalTelemetry === true
     const updatesDisabled = window.context.site['update.channel'] !== 'release'
     const jsonEditorContainerRef = useRef<HTMLDivElement | null>(null)
     const editorRef = useRef<EditorView | null>(null)
@@ -390,34 +389,24 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                         </ul>
                     </li>
                     <li>
-                        Sourcegraph Own usage data.
+                        Sourcegraph Own usage data
                         <ul>
-                            <li>
-                                Whether the <pre>search-ownership</pre> feature flag is turned on.
-                            </li>
+                            <li>Whether the search-ownership feature flag is turned on.</li>
                             <li>
                                 Number and ratio of repositories for which ownership data is available via CODEOWNERS
                                 file or the API.
                             </li>
                             <li>Aggregate monthly weekly and daily active users for the following activities:</li>
                             <ul>
-                                <li>
-                                    Narrowing search results by owner using <pre>file:has.owners</pre> predicate.
-                                </li>
-                                <li>
-                                    Selecting owner search result through <pre>select:file.owners</pre>.
-                                </li>
+                                <li>Narrowing search results by owner using file:has.owner() predicate.</li>
+                                <li>Selecting owner search result through select:file.owners.</li>
                                 <li>Displaying ownership panel in file view.</li>
                             </ul>
                         </ul>
                     </li>
                     <li>Histogram of cloned repository sizes</li>
                 </ul>
-                {updatesDisabled ? (
-                    <Text>All telemetry is disabled.</Text>
-                ) : (
-                    nonCriticalTelemetryDisabled && <Text>Non-critical telemetry is disabled.</Text>
-                )}
+                {updatesDisabled && <Text>All telemetry is disabled.</Text>}
             </Container>
         </div>
     )
