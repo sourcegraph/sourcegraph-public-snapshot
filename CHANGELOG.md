@@ -54,6 +54,7 @@ All notable changes to Sourcegraph are documented in this file.
 - [Sourcegraph Own](https://docs.sourcegraph.com/own) is now available as an experimental enterprise feature. Enable the `search-ownership` feature flag to use it.
 - Gitserver supports a new `COURSIER_CACHE_DIR` env var to configure the cache location for coursier JVM package repos.
 - Pings now emit a histogram of repository sizes cloned by Sourcegraph [48211](https://github.com/sourcegraph/sourcegraph/pull/48211).
+- The search input has been redesigned to greatly improve usability. New contextual suggestions help users learn the Sourcegraph query language as they search. Suggestions have been unified across contexts and filters, and the history mode has been integrated into the input. Improved and expanded keyboard shortcuts also make navigation much easier. This functionality is in beta, and can be disabled in the user menu.
 
 ### Changed
 
@@ -63,6 +64,7 @@ All notable changes to Sourcegraph are documented in this file.
 - CodeMirror blob view (default) uses selection-driven code navigation. [#48066](https://github.com/sourcegraph/sourcegraph/pull/48066)
 - Older Code Insights data points will now be automatically archived as configured by the site configuration setting `insights.maximumSampleSize`, set to 30 by default. All points can be exported. This behaviour can be disabled using the experimental setting `insightsDataRetention`. [#48259](https://github.com/sourcegraph/sourcegraph/pull/48259)
 - The admin debug GraphQL endpoint for Code Insights will now include the series metadata in the response. [#49473](https://github.com/sourcegraph/sourcegraph/pull/49473)
+- Usage telemetry has been streamlined; there are no longer two categories (critical and non-critical), and telemetry will be streamlined and reviewed/reduced further in upcoming releases. The site admin flag `disableNonCriticalTelemetry` currently still remains but has no effect.
 
 ### Fixed
 

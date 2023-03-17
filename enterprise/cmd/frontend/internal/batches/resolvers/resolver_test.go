@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	br "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/rbac"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
@@ -257,7 +256,7 @@ func TestCreateBatchSpec(t *testing.T) {
 					t.Error("unexpected lack of errors")
 				}
 
-				if tc.unauthorized && !errors.Is(errs[0], &rbac.ErrNotAuthorized{Permission: br.BatchChangesWritePermission}) {
+				if tc.unauthorized && !errors.Is(errs[0], &rbac.ErrNotAuthorized{Permission: rbac.BatchChangesWritePermission}) {
 					t.Errorf("expected unauthorized error, got %v", errs)
 				}
 			} else {
@@ -408,7 +407,7 @@ func TestCreateBatchSpecFromRaw(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
@@ -515,7 +514,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
@@ -613,7 +612,7 @@ func TestCreateChangesetSpecs(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
@@ -756,7 +755,7 @@ func TestApplyBatchChange(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
@@ -895,7 +894,7 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
@@ -1003,7 +1002,7 @@ func TestUpsertEmptyBatchChange(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
@@ -1103,7 +1102,7 @@ func TestCreateBatchChange(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
@@ -1268,7 +1267,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 			if err == nil {
 				t.Fatal("expected error")
 			}
-			if !strings.Contains(err.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+			if !strings.Contains(err.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 				t.Fatalf("expected unauthorized error, got %+v", err)
 			}
 		})
@@ -1495,7 +1494,7 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 					t.Fatal("expected error")
 				}
 				firstErr := errs[0]
-				if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+				if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 					t.Fatalf("expected unauthorized error, got %+v", err)
 				}
 				return
@@ -1576,7 +1575,7 @@ func TestMoveBatchChange(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
@@ -2799,7 +2798,7 @@ func assignBatchChangesWritePermissionToUser(ctx context.Context, t *testing.T, 
 	role := bt.CreateTestRole(ctx, t, db, "TEST-ROLE-1")
 	bt.AssignRoleToUser(ctx, t, db, userID, role.ID)
 
-	perm := bt.CreateTestPermission(ctx, t, db, br.BatchChangesWritePermission)
+	perm := bt.CreateTestPermission(ctx, t, db, rbac.BatchChangesWritePermission)
 	bt.AssignPermissionToRole(ctx, t, db, perm.ID, role.ID)
 
 	return role, perm

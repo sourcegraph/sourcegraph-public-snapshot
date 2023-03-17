@@ -91,32 +91,6 @@ func NextPageCursor(endCursor string) *PageInfo {
 func (r *PageInfo) EndCursor() *string { return r.endCursor }
 func (r *PageInfo) HasNextPage() bool  { return r.hasNextPage }
 
-func sharedDumpToDbstoreUpload(dump types.Dump) types.Upload {
-	return types.Upload{
-		ID:                dump.ID,
-		Commit:            dump.Commit,
-		Root:              dump.Root,
-		VisibleAtTip:      dump.VisibleAtTip,
-		UploadedAt:        dump.UploadedAt,
-		State:             dump.State,
-		FailureMessage:    dump.FailureMessage,
-		StartedAt:         dump.StartedAt,
-		FinishedAt:        dump.FinishedAt,
-		ProcessAfter:      dump.ProcessAfter,
-		NumResets:         dump.NumResets,
-		NumFailures:       dump.NumFailures,
-		RepositoryID:      dump.RepositoryID,
-		RepositoryName:    dump.RepositoryName,
-		Indexer:           dump.Indexer,
-		IndexerVersion:    dump.IndexerVersion,
-		NumParts:          0,
-		UploadedParts:     []int{},
-		UploadSize:        nil,
-		Rank:              nil,
-		AssociatedIndexID: dump.AssociatedIndexID,
-	}
-}
-
 // resolveLocations creates a slide of LocationResolvers for the given list of adjusted locations. The
 // resulting list may be smaller than the input list as any locations with a commit not known by
 // gitserver will be skipped.

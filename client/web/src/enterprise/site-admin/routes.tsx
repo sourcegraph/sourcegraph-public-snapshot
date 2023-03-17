@@ -52,7 +52,10 @@ const BatchSpecsPage = lazyComponent<BatchSpecsPageProps, 'BatchSpecsPage'>(
 )
 const WebhookLogPage = lazyComponent(() => import('../../site-admin/webhooks/WebhookLogPage'), 'WebhookLogPage')
 const AdminCodeIntelArea = lazyComponent(() => import('../codeintel/admin/AdminCodeIntelArea'), 'AdminCodeIntelArea')
-const SiteAdminLsifUploadPage = lazyComponent(() => import('./SiteAdminLsifUploadPage'), 'SiteAdminLsifUploadPage')
+const SiteAdminPreciseIndexPage = lazyComponent(
+    () => import('./SiteAdminPreciseIndexPage'),
+    'SiteAdminPreciseIndexPage'
+)
 const ExecutorsSiteAdminArea = lazyComponent(
     () => import('../executors/ExecutorsSiteAdminArea'),
     'ExecutorsSiteAdminArea'
@@ -161,7 +164,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         },
         {
             path: '/lsif-uploads/:id',
-            render: () => <SiteAdminLsifUploadPage />,
+            render: () => <SiteAdminPreciseIndexPage />,
         },
 
         // Executor routes

@@ -100,20 +100,11 @@ type CodeNavServiceResolver interface {
 }
 
 type AutoindexingServiceResolver interface {
-	RequestLanguageSupport(ctx context.Context, args *RequestLanguageSupportArgs) (*EmptyResponse, error)
-	RequestedLanguageSupport(ctx context.Context) ([]string, error)
 	GitBlobCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (_ GitBlobCodeIntelSupportResolver, err error)
 	GitTreeCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (resolver GitTreeCodeIntelSupportResolver, err error)
 	IndexConfiguration(ctx context.Context, id graphql.ID) (IndexConfigurationResolver, error) // TODO - rename ...ForRepo
-	DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error)
-	DeleteLSIFIndexes(ctx context.Context, args *DeleteLSIFIndexesArgs) (*EmptyResponse, error)
-	ReindexLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error)
-	ReindexLSIFIndexes(ctx context.Context, args *ReindexLSIFIndexesArgs) (*EmptyResponse, error)
-	LSIFIndexByID(ctx context.Context, id graphql.ID) (_ LSIFIndexResolver, err error)
-	LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
-	LSIFIndexesByRepo(ctx context.Context, args *LSIFRepositoryIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
 	InferAutoIndexJobsForRepo(ctx context.Context, args *InferAutoIndexJobsForRepoArgs) ([]AutoIndexJobDescriptionResolver, error)
-	QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAutoIndexJobsForRepoArgs) ([]LSIFIndexResolver, error)
+	QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAutoIndexJobsForRepoArgs) ([]PreciseIndexResolver, error)
 	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error)
 	CodeIntelSummary(ctx context.Context) (CodeIntelSummaryResolver, error)
 	RepositorySummary(ctx context.Context, id graphql.ID) (CodeIntelRepositorySummaryResolver, error)
@@ -131,11 +122,6 @@ type AutoindexingServiceResolver interface {
 
 type UploadsServiceResolver interface {
 	CommitGraph(ctx context.Context, id graphql.ID) (CodeIntelligenceCommitGraphResolver, error)
-	LSIFUploadByID(ctx context.Context, id graphql.ID) (LSIFUploadResolver, error)
-	LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
-	LSIFUploadsByRepo(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
-	DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error)
-	DeleteLSIFUploads(ctx context.Context, args *DeleteLSIFUploadsArgs) (*EmptyResponse, error)
 }
 
 type PoliciesServiceResolver interface {
@@ -192,8 +178,6 @@ type IndexerWithCountResolver interface {
 }
 
 type CodeIntelRepositorySummaryResolver interface {
-	RecentUploads() []LSIFUploadsWithRepositoryNamespaceResolver
-	RecentIndexes() []LSIFIndexesWithRepositoryNamespaceResolver
 	RecentActivity(ctx context.Context) ([]PreciseIndexResolver, error)
 	LastUploadRetentionScan() *gqlutil.DateTime
 	LastIndexScan() *gqlutil.DateTime
@@ -207,25 +191,14 @@ type IndexerKeyQueryArgs struct {
 
 type PreciseIndexesQueryArgs struct {
 	ConnectionArgs
-	After        *string
-	Repo         *graphql.ID
-	Query        *string
-	States       *[]string
-	IndexerKey   *string
-	DependencyOf *string
-	DependentOf  *string
-}
-
-type LSIFIndexConnectionResolver interface {
-	Nodes(ctx context.Context) ([]LSIFIndexResolver, error)
-	TotalCount(ctx context.Context) (*int32, error)
-	PageInfo(ctx context.Context) (PageInfo, error)
-}
-
-type LSIFUploadConnectionResolver interface {
-	Nodes(ctx context.Context) ([]LSIFUploadResolver, error)
-	TotalCount(ctx context.Context) (*int32, error)
-	PageInfo(ctx context.Context) (PageInfo, error)
+	After          *string
+	Repo           *graphql.ID
+	Query          *string
+	States         *[]string
+	IndexerKey     *string
+	DependencyOf   *string
+	DependentOf    *string
+	IncludeDeleted *bool
 }
 
 type PreciseIndexConnectionResolver interface {
@@ -423,7 +396,6 @@ type GitBlobLSIFDataResolver interface {
 }
 
 type GitTreeLSIFDataResolver interface {
-	LSIFUploads(ctx context.Context) ([]LSIFUploadResolver, error)
 	Diagnostics(ctx context.Context, args *LSIFDiagnosticsArgs) (DiagnosticConnectionResolver, error)
 }
 
@@ -567,25 +539,6 @@ type DiagnosticResolver interface {
 	Location(ctx context.Context) (LocationResolver, error)
 }
 
-type LSIFIndexResolver interface {
-	ID() graphql.ID
-	InputCommit() string
-	Tags(ctx context.Context) ([]string, error)
-	InputRoot() string
-	InputIndexer() string
-	Indexer() CodeIntelIndexerResolver
-	QueuedAt() gqlutil.DateTime
-	State() string
-	Failure() *string
-	StartedAt() *gqlutil.DateTime
-	FinishedAt() *gqlutil.DateTime
-	Steps() IndexStepsResolver
-	PlaceInQueue() *int32
-	AssociatedUpload(ctx context.Context) (LSIFUploadResolver, error)
-	ShouldReindex(ctx context.Context) bool
-	ProjectRoot(ctx context.Context) (GitTreeEntryResolver, error)
-}
-
 type IndexStepsResolver interface {
 	Setup() []ExecutionLogEntryResolver
 	PreIndex() []PreIndexStepResolver
@@ -610,41 +563,11 @@ type ExecutionLogEntryResolver interface {
 	DurationMilliseconds() *int32
 }
 
-type UploadDocumentPathsConnectionResolver interface {
-	Nodes(ctx context.Context) ([]string, error)
-	TotalCount(ctx context.Context) (*int32, error)
-}
-
-type LSIFUploadResolver interface {
-	ID() graphql.ID
-	InputCommit() string
-	Tags(ctx context.Context) ([]string, error)
-	InputRoot() string
-	IsLatestForRepo() bool
-	UploadedAt() gqlutil.DateTime
-	State() string
-	Failure() *string
-	StartedAt() *gqlutil.DateTime
-	FinishedAt() *gqlutil.DateTime
-	InputIndexer() string
-	Indexer() CodeIntelIndexerResolver
-	PlaceInQueue() *int32
-	AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
-	ProjectRoot(ctx context.Context) (GitTreeEntryResolver, error)
-	RetentionPolicyOverview(ctx context.Context, args *LSIFUploadRetentionPolicyMatchesArgs) (CodeIntelligenceRetentionPolicyMatchesConnectionResolver, error)
-	DocumentPaths(ctx context.Context, args *LSIFUploadDocumentPathsQueryArgs) (LSIFUploadDocumentPathsConnectionResolver, error)
-	AuditLogs(ctx context.Context) (*[]LSIFUploadsAuditLogsResolver, error)
-}
-
 type LSIFUploadRetentionPolicyMatchesArgs struct {
 	MatchesOnly bool
 	First       *int32
 	After       *string
 	Query       *string
-}
-
-type LSIFUploadDocumentPathsQueryArgs struct {
-	Pattern string
 }
 
 type LSIFUploadsAuditLogsResolver interface {
@@ -658,7 +581,6 @@ type LSIFUploadsAuditLogsResolver interface {
 	InputIndexer() string
 	UploadedAt() gqlutil.DateTime
 	Operation() string
-	// AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
 }
 
 type IndexStepResolver interface {
@@ -693,11 +615,6 @@ type CodeIntelligenceRetentionPolicyMatchResolver interface {
 	ProtectingCommits() *[]string
 }
 
-type LSIFUploadDocumentPathsConnectionResolver interface {
-	Nodes(ctx context.Context) ([]string, error)
-	TotalCount(ctx context.Context) (*int32, error)
-}
-
 type GitBlobLSIFDataArgs struct {
 	Repo      *types.Repo
 	Commit    api.CommitID
@@ -726,25 +643,6 @@ func (er *EmptyResponse) AlwaysNil() *string {
 	return nil
 }
 
-type LSIFIndexesQueryArgs struct {
-	ConnectionArgs
-	Query *string
-	State *string
-	After *string
-}
-
-type ReindexLSIFIndexesArgs struct {
-	Query      *string
-	State      *string
-	Repository *graphql.ID
-}
-
-type DeleteLSIFIndexesArgs struct {
-	Query      *string
-	State      *string
-	Repository *graphql.ID
-}
-
 type DeletePreciseIndexesArgs struct {
 	Query           *string
 	States          *[]string
@@ -759,40 +657,6 @@ type ReindexPreciseIndexesArgs struct {
 	IndexerKey      *string
 	Repository      *graphql.ID
 	IsLatestForRepo *bool
-}
-
-type LSIFRepositoryIndexesQueryArgs struct {
-	*LSIFIndexesQueryArgs
-	RepositoryID graphql.ID
-}
-
-type LSIFUploadsQueryArgs struct {
-	ConnectionArgs
-	Query           *string
-	State           *string
-	IsLatestForRepo *bool
-	DependencyOf    *graphql.ID
-	DependentOf     *graphql.ID
-	After           *string
-	IncludeDeleted  *bool
-}
-
-type LSIFRepositoryUploadsQueryArgs struct {
-	*LSIFUploadsQueryArgs
-	RepositoryID graphql.ID
-}
-
-type DeleteLSIFUploadsArgs struct {
-	Query           *string
-	State           *string
-	IsLatestForRepo *bool
-	Repository      *graphql.ID
-}
-
-type LSIFIndexesWithRepositoryNamespaceResolver interface {
-	Root() string
-	Indexer() CodeIntelIndexerResolver
-	Indexes() []LSIFIndexResolver
 }
 
 type InferAutoIndexJobsForRepoArgs struct {
@@ -814,12 +678,6 @@ type UpdateRepositoryIndexConfigurationArgs struct {
 
 type UpdateCodeIntelligenceInferenceScriptArgs struct {
 	Script string
-}
-
-type LSIFUploadsWithRepositoryNamespaceResolver interface {
-	Root() string
-	Indexer() CodeIntelIndexerResolver
-	Uploads() []LSIFUploadResolver
 }
 
 type CodeIntelligenceConfigurationPoliciesArgs struct {

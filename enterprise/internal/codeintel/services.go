@@ -8,10 +8,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	ossdependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -23,18 +23,18 @@ type Services struct {
 	RankingService      *ranking.Service
 	UploadsService      *uploads.Service
 	SentinelService     *sentinel.Service
+	GitserverClient     gitserver.Client
 }
 
 type ServiceDependencies struct {
-	DB              database.DB
-	CodeIntelDB     codeintelshared.CodeIntelDB
-	GitserverClient *gitserver.Client
-	ObservationCtx  *observation.Context
+	DB             database.DB
+	CodeIntelDB    codeintelshared.CodeIntelDB
+	ObservationCtx *observation.Context
 }
 
 func NewServices(deps ServiceDependencies) (Services, error) {
 	db, codeIntelDB := deps.DB, deps.CodeIntelDB
-	gitserverClient := gitserver.New(scopedContext("gitserver", deps.ObservationCtx), db)
+	gitserverClient := gitserver.NewClient()
 
 	uploadsSvc := uploads.NewService(deps.ObservationCtx, db, codeIntelDB, gitserverClient)
 	dependenciesSvc := dependencies.NewService(deps.ObservationCtx, db)
@@ -52,6 +52,7 @@ func NewServices(deps ServiceDependencies) (Services, error) {
 		RankingService:      rankingSvc,
 		UploadsService:      uploadsSvc,
 		SentinelService:     sentinelService,
+		GitserverClient:     gitserverClient,
 	}, nil
 }
 

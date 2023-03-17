@@ -241,16 +241,6 @@ func (r *NodeResolver) ToSiteConfigurationChange() (*SiteConfigurationChangeReso
 	return n, ok
 }
 
-func (r *NodeResolver) ToLSIFUpload() (resolverstubs.LSIFUploadResolver, bool) {
-	n, ok := r.Node.(resolverstubs.LSIFUploadResolver)
-	return n, ok
-}
-
-func (r *NodeResolver) ToLSIFIndex() (resolverstubs.LSIFIndexResolver, bool) {
-	n, ok := r.Node.(resolverstubs.LSIFIndexResolver)
-	return n, ok
-}
-
 func (r *NodeResolver) ToPreciseIndex() (resolverstubs.PreciseIndexResolver, bool) {
 	n, ok := r.Node.(resolverstubs.PreciseIndexResolver)
 	return n, ok

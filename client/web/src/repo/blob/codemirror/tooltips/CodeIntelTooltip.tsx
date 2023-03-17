@@ -56,11 +56,13 @@ export class CodeIntelTooltip implements Tooltip {
             const instantDefinitionResult: AsyncDefinitionResult = {
                 locations: [{ uri: '' }],
                 handler: () => {},
-                asyncHandler: () =>
-                    goToDefinitionAtOccurrence(view, occurrence).then(
-                        ({ handler }) => handler(occurrence.range.start),
+                asyncHandler: () => {
+                    const startTime = Date.now()
+                    return goToDefinitionAtOccurrence(view, occurrence).then(
+                        ({ handler }) => handler(occurrence.range.start, startTime),
                         () => {}
-                    ),
+                    )
+                },
             }
             const definitionResults: Observable<AsyncDefinitionResult> = concat(
                 // Show active "Go to definition" button until we have resolved
