@@ -16,7 +16,7 @@ spec:
       containers:
         - name: executor
           image: executor-kubernetes:latest
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
           env:
