@@ -6,6 +6,7 @@ import { EndpointPair, ClosableEndpointPair } from '../../platform/context'
 /* eslint-disable import/extensions, @typescript-eslint/ban-ts-comment */
 // @ts-ignore
 import ExtensionHostWorker from './main.worker.ts'
+
 /* eslint-enable import/extensions, @typescript-eslint/ban-ts-comment */
 
 /**
