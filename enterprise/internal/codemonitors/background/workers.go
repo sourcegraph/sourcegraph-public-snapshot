@@ -179,12 +179,7 @@ func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, triggerJob 
 		return errors.Wrap(err, "query settings")
 	}
 
-	query := q.QueryString
-	if !featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
-		// Only add an after filter when repo-aware monitors is disabled
-		query = newQueryWithAfterFilter(q)
-	}
-	results, searchErr := codemonitors.Search(ctx, logger, r.db, r.enterpriseJobs, query, m.ID, settings)
+	results, searchErr := codemonitors.Search(ctx, logger, r.db, r.enterpriseJobs, q.QueryString, m.ID, settings)
 
 	// Log next_run and latest_result to table cm_queries.
 	newLatestResult := latestResultTime(q.LatestResult, results, searchErr)
@@ -199,7 +194,7 @@ func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, triggerJob 
 	}
 
 	// Log the actual query we ran and whether we got any new results.
-	err = cm.UpdateTriggerJobWithResults(ctx, triggerJob.ID, query, results)
+	err = cm.UpdateTriggerJobWithResults(ctx, triggerJob.ID, q.QueryString, results)
 	if err != nil {
 		return errors.Wrap(err, "UpdateTriggerJobWithResults")
 	}
