@@ -12,6 +12,7 @@ import (
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -71,7 +72,7 @@ func NewClient(serverURL string) *Client {
 			if err != nil {
 				return nil, err
 			}
-			conn, err := defaults.Dial(u.Host)
+			conn, err := grpc.Dial(u.Host, defaults.DialOptions()...)
 			if err != nil {
 				return nil, err
 			}
