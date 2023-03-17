@@ -11,7 +11,7 @@ import * as semver from 'semver'
 import { SemVer } from 'semver'
 
 import { ReleaseConfig } from './config'
-import { getPreviousVersionSrcCli } from './git'
+import { getPreviousVersionExecutor, getPreviousVersionSrcCli } from './git'
 import { cloneRepo, EditFunc, getAuthenticatedGitHubClient, listIssues } from './github'
 import * as update from './update'
 
@@ -222,7 +222,7 @@ const upgradeContentGenerators: { [s: string]: ContentFunc } = {
     pure_docker: (previousVersion?: string, nextVersion?: string) => {
         const compare = `compare/v${previousVersion}...v${nextVersion}`
         return `As a template, perform the same actions as the following diff in your own deployment: [\`Upgrade to v${nextVersion}\`](https://github.com/sourcegraph/deploy-sourcegraph-docker/${compare})
-\nFor non-standard replica builds: 
+\nFor non-standard replica builds:
 - [\`Customer Replica 1: ➔ v${nextVersion}\`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/${compare})`
     },
 }
@@ -382,6 +382,68 @@ export async function nextSrcCliVersionInputWithAutodetect(config: ReleaseConfig
         return new SemVer(
             await retryInput(
                 'Enter the next version of src-cli: ',
+                val => !!semver.parse(val),
+                'Expected semver format'
+            )
+        )
+    }
+    return next
+}
+
+export async function nextGoogleExecutorVersionInputWithAutodetect(config: ReleaseConfig, repoPath?: string): Promise<SemVer> {
+    let next: SemVer
+    if (!config.in_progress?.googleExecutorVersion) {
+        if (!repoPath) {
+            const client = await getAuthenticatedGitHubClient()
+            const { workdir } = await cloneRepo(client, 'sourcegraph', 'terraform-google-executors', {
+                revision: 'main',
+                revisionMustExist: true,
+            })
+            repoPath = workdir
+        }
+        console.log('Attempting to detect previous executor version...')
+        const previous = getPreviousVersionExecutor(repoPath)
+        console.log(chalk.blue(`Detected previous executor version: ${previous.version}`))
+        next = previous.inc('minor')
+    } else {
+        next = new SemVer(config.in_progress.googleExecutorVersion)
+    }
+
+    if (!(await softVerifyWithInput(`Confirm next version of executor should be: ${next.version}`))) {
+        return new SemVer(
+            await retryInput(
+                'Enter the next version of executor: ',
+                val => !!semver.parse(val),
+                'Expected semver format'
+            )
+        )
+    }
+    return next
+}
+
+export async function nextAWSExecutorVersionInputWithAutodetect(config: ReleaseConfig, repoPath?: string): Promise<SemVer> {
+    let next: SemVer
+    if (!config.in_progress?.awsExecutorVersion) {
+        if (!repoPath) {
+            const client = await getAuthenticatedGitHubClient()
+            const { workdir } = await cloneRepo(client, 'sourcegraph', 'terraform-aws-executors', {
+                revision: 'main',
+                revisionMustExist: true,
+            })
+            repoPath = workdir
+        }
+        console.log('Attempting to detect previous executor version...')
+        const previous = getPreviousVersionExecutor(repoPath)
+        console.log(chalk.blue(`Detected previous executor version: ${previous.version}`))
+        next = previous.inc('minor')
+    } else {
+        next = new SemVer(config.in_progress.awsExecutorVersion)
+    }
+
+    if (!(await softVerifyWithInput(`Confirm next version of executor should be: ${next.version}`))) {
+        return new SemVer(
+            await retryInput(
+                'Enter the next version of executor: ',
                 val => !!semver.parse(val),
                 'Expected semver format'
             )
