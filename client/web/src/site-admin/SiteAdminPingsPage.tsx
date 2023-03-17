@@ -35,7 +35,6 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
         eventLogger.logViewEvent('SiteAdminPings')
     }, [])
 
-    const nonCriticalTelemetryDisabled = window.context.site.disableNonCriticalTelemetry === true
     const updatesDisabled = window.context.site['update.channel'] !== 'release'
     const jsonEditorContainerRef = useRef<HTMLDivElement | null>(null)
     const editorRef = useRef<EditorView | null>(null)
@@ -440,11 +439,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                     </li>
                     <li>Histogram of cloned repository sizes</li>
                 </ul>
-                {updatesDisabled ? (
-                    <Text>All telemetry is disabled.</Text>
-                ) : (
-                    nonCriticalTelemetryDisabled && <Text>Non-critical telemetry is disabled.</Text>
-                )}
+                {updatesDisabled && <Text>All telemetry is disabled.</Text>}
             </Container>
         </div>
     )
