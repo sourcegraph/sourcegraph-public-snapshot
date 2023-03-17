@@ -788,9 +788,7 @@ func TestUpdateParentCircular(t *testing.T) {
 				}
 			}
 		}`,
-		ExpectedResult: `{
-			"updateTeam": null
-		}`,
+		ExpectedResult: `null`,
 		ExpectedErrors: []*gqlerrors.QueryError{
 			{
 				Message: `circular dependency: new parent "child" is descendant of updated team "parent"`,
