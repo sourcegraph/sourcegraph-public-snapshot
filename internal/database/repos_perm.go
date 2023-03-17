@@ -162,7 +162,8 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 	conditions := []*sqlf.Query{unrestrictedReposQuery}
 
 	// Treat all external services as restricted when user mapping is enabled
-	if !usePermissionsUserMapping {
+	// but only if legacy permissions are used.
+	if !usePermissionsUserMapping || unifiedPermsEnabled {
 		conditions = append(conditions, ExternalServiceUnrestrictedCondition)
 	}
 
