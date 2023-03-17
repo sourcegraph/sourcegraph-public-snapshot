@@ -5,8 +5,5 @@ go_library(
     srcs = ["gocritic.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/linters/gocritic",
     visibility = ["//visibility:public"],
-    deps = [
-        "@com_github_go_critic_go_critic//framework/linter:go_default_library",
-        "@org_golang_x_tools//go/analysis",
-    ],
+    deps = ["@org_golang_x_tools//go/analysis"],
 )
