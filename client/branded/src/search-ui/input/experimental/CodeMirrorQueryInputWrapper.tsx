@@ -430,6 +430,9 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
 
         const { ref: inputContainerRef, height = 0 } = useResizeObserver({ box: 'border-box' })
 
+        // TODO(sqs): why show this?
+        const SHOW_HISTORY_ICON = false
+
         return (
             <div
                 ref={inputContainerRef}
@@ -438,9 +441,9 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
                 })}
             >
                 <div className={styles.focusContainer}>
-                    <SearchModeSwitcher mode={mode} onModeChange={toggleHistoryMode} />
                     <div ref={editorContainerRef} className={styles.input} />
                     {!mode && children}
+                    {SHOW_HISTORY_ICON && <SearchModeSwitcher mode={mode} onModeChange={toggleHistoryMode} />}
                 </div>
                 <div
                     ref={setSuggestionsContainer}
