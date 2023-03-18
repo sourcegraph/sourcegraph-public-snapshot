@@ -1314,12 +1314,12 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
             const next = await nextAWSExecutorVersionInputWithAutodetect(config, workdir)
             setAWSExecutorVersion(config, next.version)
 
-            const pr = await client.search.issuesAndPullRequests({
+            const mergedPR = await client.search.issuesAndPullRequests({
                 q: `repo:sourcegraph/terraform-google-executors is:pr is:closed is:merged in:title Update files for ${next.version} release `,
             })
             if (!config.dryRun.changesets) {
                 // actually execute the release
-                if (pr.data.total_count > 0) {
+                if (mergedPR.data.total_count > 0) {
                     await execa('bash', ['-c', `yes | ./release.sh ${next.version}`], {
                         stdio: 'inherit',
                         cwd: workdir,
@@ -1351,13 +1351,13 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
             setAWSExecutorVersion(config, next.version)
 
             // check if the release PR is already merged
-            const pr = await client.search.issuesAndPullRequests({
+            const mergedPR = await client.search.issuesAndPullRequests({
                 q: `repo:sourcegraph/terraform-aws-executors is:pr is:closed is:merged in:title Update files for ${next.version} release `,
             })
 
             if (!config.dryRun.changesets) {
                 // actually execute the release
-                if (pr.data.total_count > 0) {
+                if (mergedPR.data.total_count > 0) {
                     await execa('bash', ['-c', `yes | ./release.sh ${next.version}`], {
                         stdio: 'inherit',
                         cwd: workdir,
