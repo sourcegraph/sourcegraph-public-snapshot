@@ -23,6 +23,7 @@ import { Code, Tooltip, Icon } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 import { buildSearchURLQueryFromQueryState } from '../../../stores'
+import { useExperimentalQueryInput } from '../../useExperimentalSearchInput'
 import { AggregationUIMode, GroupResultsPing } from '../components/aggregation'
 
 import { getRevisions } from './Revisions'
@@ -101,6 +102,8 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
         [telemetryService]
     )
 
+    const [experimentalQueryInput] = useExperimentalQueryInput()
+
     return (
         <SearchSidebar {...attributes} onClose={() => setSidebarCollapsed(true)}>
             {children}
@@ -127,15 +130,17 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
                 </SearchSidebarSection>
             )}
 
-            <SearchSidebarSection sectionId={SectionID.SEARCH_TYPES} header="Search Types">
-                {getSearchTypeLinks({
-                    query: liveQuery,
-                    onNavbarQueryChange,
-                    selectedSearchContextSpec,
-                    buildSearchURLQueryFromQueryState,
-                    forceButton: false,
-                })}
-            </SearchSidebarSection>
+            {!experimentalQueryInput && (
+                <SearchSidebarSection sectionId={SectionID.SEARCH_TYPES} header="Search Types">
+                    {getSearchTypeLinks({
+                        query: liveQuery,
+                        onNavbarQueryChange,
+                        selectedSearchContextSpec,
+                        buildSearchURLQueryFromQueryState,
+                        forceButton: false,
+                    })}
+                </SearchSidebarSection>
+            )}
 
             <SearchSidebarSection sectionId={SectionID.LANGUAGES} header="Languages" minItems={2}>
                 {getDynamicFilterLinks(filters, ['lang'], onDynamicFilterClicked, label => `Search ${label} files`)}
@@ -170,18 +175,20 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
                 </SearchSidebarSection>
             )}
 
-            <SearchSidebarSection
-                sectionId={SectionID.SEARCH_REFERENCE}
-                header="Search reference"
-                searchOptions={{
-                    ariaLabel: 'Find filters',
-                    // search reference should always preserve the filter
-                    // (false is just an arbitrary but static value)
-                    clearSearchOnChange: false,
-                }}
-            >
-                {getSearchReferenceFactory({ telemetryService, setQueryState: onNavbarQueryChange })}
-            </SearchSidebarSection>
+            {!experimentalQueryInput && (
+                <SearchSidebarSection
+                    sectionId={SectionID.SEARCH_REFERENCE}
+                    header="Search reference"
+                    searchOptions={{
+                        ariaLabel: 'Find filters',
+                        // search reference should always preserve the filter
+                        // (false is just an arbitrary but static value)
+                        clearSearchOnChange: false,
+                    }}
+                >
+                    {getSearchReferenceFactory({ telemetryService, setQueryState: onNavbarQueryChange })}
+                </SearchSidebarSection>
+            )}
 
             <SearchSidebarSection sectionId={SectionID.SEARCH_SNIPPETS} header="Search snippets">
                 {getSearchSnippetLinks(settingsCascade, onSnippetClicked)}
