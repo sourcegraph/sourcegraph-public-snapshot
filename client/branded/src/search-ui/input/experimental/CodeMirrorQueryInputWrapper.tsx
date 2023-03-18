@@ -24,7 +24,6 @@ import useResizeObserver from 'use-resize-observer'
 import { HistoryOrNavigate } from '@sourcegraph/common'
 import { Editor, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { QueryChangeSource, QueryState } from '@sourcegraph/shared/src/search'
 import { getTokenLength } from '@sourcegraph/shared/src/search/query/utils'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
@@ -227,8 +226,8 @@ const staticExtensions: Extension = [
         '.cm-content': {
             caretColor: 'var(--search-query-text-color)',
             color: 'var(--search-query-text-color)',
-            fontFamily: 'var(--code-font-family)',
-            fontSize: 'var(--code-font-size)',
+            fontFamily: 'var(--font-family-base)',
+            fontSize: 'var(--input-font-size)',
             padding: 0,
             paddingLeft: '0.25rem',
         },
@@ -433,6 +432,8 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
         // TODO(sqs): why show this?
         const SHOW_HISTORY_ICON = false
 
+        const Shortcut = useKeyboardShortcut('focusSearch')
+
         return (
             <div
                 ref={inputContainerRef}
@@ -452,6 +453,9 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
                     style={{ paddingTop: height }}
                 />
                 <Shortcut ordered={['/']} onMatch={focus} />
+                {focusSearchBarShortcut?.keybindings.map((keybinding, index) => (
+                    <Shortcut key={index} {...keybinding} onMatch={globalFocus} />
+                ))}
             </div>
         )
     }

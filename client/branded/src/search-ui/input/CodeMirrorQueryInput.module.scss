@@ -41,8 +41,8 @@
 
         :global(.cm-content) {
             caret-color: var(--search-query-text-color);
-            font-family: var(--code-font-family);
-            font-size: var(--code-font-size);
+             font-family: var(--code-font-family);
+             font-size: var(--code-font-size);
             color: var(--search-query-text-color);
             // Disable default padding
             padding: 0;
