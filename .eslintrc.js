@@ -224,6 +224,11 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
       },
     ],
     'import/order': 'off',
+
+    // TODO(sqs): perf
+    'etc/no-deprecated': 'off',
+    '@typescript-eslint/no-misused-promises': 'off',
+    '@typescript-eslint/no-unsafe-assignment': 'off',
   },
   overrides: [
     {
