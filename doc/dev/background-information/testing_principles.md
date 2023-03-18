@@ -146,6 +146,9 @@ For these PRs a review may not be required. This can be indicated by creating a 
 No review required: deploys tested changes.
 ```
 
+Or, you may also attach `automerge` or `no-review-required` label to the PR to indicate the status of the PR and include a normal test plan without the `No review required:` prefix.
+
+
 ## Test health
 
 ### Failures on the `main` branch
