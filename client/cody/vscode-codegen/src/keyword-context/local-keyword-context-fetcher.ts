@@ -9,11 +9,20 @@ import { getContextMessageWithResponse, populateCodeContextTemplate } from '../c
 import { Message } from '../sourcegraph-api'
 
 import { KeywordContextFetcher } from '.'
+import { getRgPath } from './rg'
 
 const fileExtRipgrepParams = ['-Tmarkdown', '-Tyaml', '-Tjson', '-g', '!*.lock']
 
 export class LocalKeywordContextFetcher implements KeywordContextFetcher {
-    constructor(private rgPath: string) {}
+    private rgPath: string = 'rg'
+
+    constructor(extensionPath: string) {
+        getRgPath(extensionPath)
+            .then(path => {
+                this.rgPath = path || 'rg'
+            })
+            .catch(error => console.error('Cannot find rg on path:', error))
+    }
 
     public async getContextMessages(query: string): Promise<Message[]> {
         console.log('fetching keyword matches')

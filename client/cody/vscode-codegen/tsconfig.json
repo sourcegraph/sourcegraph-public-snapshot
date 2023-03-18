@@ -6,7 +6,7 @@
     "jsx": "react-jsx",
     "noImplicitAny": false,
   },
-  "include": ["src", "webviews", "vite.config.ts", "webpack.config.js"],
+  "include": ["src", "webviews", "vite.config.ts", "webpack.config.js", "package.json"],
   "exclude": ["scripts", "out", "dist"],
   "references": [],
 }

@@ -80,7 +80,6 @@ export class Transcript {
             console.error('Error detecting message intent:', intentOrError)
             return []
         }
-
         const { needsCodebaseContext, needsCurrentFileContext } = intentOrError
         if (needsCurrentFileContext) {
             const activeTextEditor = this.editor.getActiveTextEditor()
@@ -102,9 +101,10 @@ export class Transcript {
         }
 
         // Only load context messages for the first question in the transcript
-        if (this.transcript.length > 0) {
+        if (this.transcript.length > 0 || (!needsCurrentFileContext && !needsCodebaseContext)) {
             return []
         }
+
         const options = {
             numCodeResults: 8,
             numTextResults: 2,

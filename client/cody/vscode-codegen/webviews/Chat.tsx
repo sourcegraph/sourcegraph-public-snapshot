@@ -9,11 +9,18 @@ import { WebviewMessage, vscodeAPI } from './utils/VSCodeApi'
 
 import './Chat.css'
 
+import { getShortTimestamp } from './utils/shared'
+
 interface ChatboxProps {
     messageInProgress: ChatMessage | null
     setMessageInProgress: (transcript: ChatMessage | null) => void
     transcript: ChatMessage[]
     setTranscript: (transcripts: ChatMessage[]) => void
+    formInput: string
+    setFormInput: (input: string) => void
+    inputHistory: string[]
+    setInputHistory: (history: string[]) => void
+    onResetClick: () => void
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -21,13 +28,22 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setMessageInProgress,
     transcript,
     setTranscript,
+    formInput,
+    setFormInput,
+    inputHistory,
+    setInputHistory,
+    onResetClick,
 }) => {
     const [inputRows, setInputRows] = useState(5)
-    const [formInput, setFormInput] = useState('')
+
     const chatboxRef = useRef<HTMLInputElement>(null)
+    let history = 0
 
     const inputHandler = useCallback(
         (inputValue: string) => {
+            if (formInput === '') {
+                history = 0
+            }
             const rowsCount = inputValue.match(/\n/g)?.length
             if (rowsCount) {
                 setInputRows(rowsCount < 5 ? 5 : rowsCount > 25 ? 25 : rowsCount)
@@ -40,26 +56,38 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     )
 
     const onChatKeyDown = async (event: React.KeyboardEvent<HTMLDivElement>): Promise<void> => {
-        if (event.key === 'Enter' && !event.shiftKey) {
+        if (event.key === 'Enter' && !event.shiftKey && formInput) {
             event.preventDefault()
             event.stopPropagation()
             await onChatSubmit()
         }
+        if (event.key === 'ArrowUp' && inputHistory.length) {
+            const chatHistory = [...inputHistory].reverse().filter(input => input !== 'undefined')
+            if (formInput === chatHistory[history]) {
+                history += 1
+            }
+            if (history > chatHistory.length || !formInput) {
+                history = 0
+            }
+            setFormInput(chatHistory[history])
+        }
     }
 
     const onChatSubmit = useCallback(async () => {
+        if (!formInput) return
+        setFormInput(formInput)
+        setInputHistory([...inputHistory, formInput])
         setInputRows(5)
         const chatMsg: ChatMessage = { speaker: 'human', displayText: formInput, timestamp: getShortTimestamp() }
         setMessageInProgress({ speaker: 'assistant', displayText: '', timestamp: getShortTimestamp() })
         setTranscript([...transcript, chatMsg])
-
         vscodeAPI.postMessage({ command: 'submit', text: formInput } as WebviewMessage)
-
         if (formInput === '/reset') {
-            setMessageInProgress(null)
+            onResetClick()
         }
+        history = 0
         setFormInput('')
-    }, [formInput, setTranscript, setMessageInProgress, transcript])
+    }, [formInput, setTranscript, setMessageInProgress, transcript, inputHistory])
 
     const bubbleClassName = (speaker: string): string => (speaker === 'human' ? 'human' : 'bot')
 
@@ -87,6 +115,16 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                                     <div
                                         className={`bubble-content ${bubbleClassName(message.speaker)}-bubble-content`}
                                     >
+                                        {message.speaker === 'assistant' && (
+                                            <VSCodeButton
+                                                className="bubble-top-icon"
+                                                appearance="icon"
+                                                type="button"
+                                                onClick={onChatSubmit}
+                                            >
+                                                <i className="codicon codicon-ellipsis" />
+                                            </VSCodeButton>
+                                        )}
                                         {message.displayText && (
                                             <p dangerouslySetInnerHTML={{ __html: message.displayText }} />
                                         )}
@@ -200,15 +238,6 @@ const ContextFiles: React.FunctionComponent<{ contextFiles: string[] }> = ({ con
             </div>
         </p>
     )
-}
-
-export function getShortTimestamp(): string {
-    const date = new Date()
-    return `${padTimePart(date.getHours())}:${padTimePart(date.getMinutes())}`
-}
-
-function padTimePart(timePart: number): string {
-    return timePart < 10 ? `0${timePart}` : timePart.toString()
 }
 
 interface FeedbackProps {

@@ -1,8 +1,11 @@
 import { isError } from 'lodash'
 import * as vscode from 'vscode'
 
+import { version as packageVersion } from '../../package.json'
+import { getShortTimestamp } from '../../webviews/utils/shared'
 import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../command/secret-storage'
 import { updateConfiguration } from '../configuration'
+import { LocalStorageProvider } from '../editor/LocalStorageProvider'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { EmbeddingsClient } from '../embeddings/client'
 import { LLMIntentDetector } from '../intent-detector/llm-intent-detector'
@@ -17,6 +20,8 @@ import { ChatClient } from './chat'
 import { renderMarkdown } from './markdown'
 import { Transcript } from './prompt'
 
+export type ChatHistory = Map<string, ChatMessage[]>
+
 export interface ChatMessage extends Message {
     displayText: string
     timestamp: string
@@ -30,22 +35,27 @@ const STOP_SEQUENCE_REGEXP = /(H|Hu|Hum|Huma|Human|Human:)$/
 export class ChatViewProvider implements vscode.WebviewViewProvider {
     private transcript: ChatMessage[] = []
     private messageInProgress: ChatMessage | null = null
+    private chatHistory: ChatHistory = new Map()
+    private inputHistory: string[] = []
+    private currentChatID: string = ''
 
     private stopCompletionInProgressCallback: (() => void) | null = null
     private webview?: vscode.Webview
 
-    private tosVersion = 0
+    private tosVersion = packageVersion
 
     constructor(
         private extensionPath: string,
         private prompt: Transcript,
         private chat: ChatClient,
         private secretStorage: SecretStorage,
-        private mode: 'development' | 'production'
+        private mode: 'development' | 'production',
+        private localStorage: LocalStorageProvider
     ) {
         if (TestSupport.instance) {
             TestSupport.instance.chatViewProvider.set(this)
         }
+        this.createNewChatID()
     }
 
     static async create(
@@ -54,7 +64,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         serverEndpoint: string,
         contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
         debug: boolean,
-        secretStorage: SecretStorage
+        secretStorage: SecretStorage,
+        localStorage: LocalStorageProvider
     ): Promise<ChatViewProvider> {
         const mode = debug ? 'development' : 'production'
         const accessToken = await getAccessToken(secretStorage)
@@ -62,32 +73,38 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         const completions = new SourcegraphCompletionsClient(serverEndpoint, accessToken, mode)
 
         const repoId = codebase ? await client.getRepoId(codebase) : null
+
         if (isError(repoId)) {
             console.error('error fetching repo id', repoId)
         }
 
         const embeddings = repoId && !isError(repoId) ? new EmbeddingsClient(client, repoId) : null
+        const keywordSearcher = debug ? new VSCEKeywordContextFetcher() : new LocalKeywordContextFetcher(extensionPath)
+
         const prompt = new Transcript(
             contextType,
             embeddings,
             new LLMIntentDetector(completions),
-            debug ? new VSCEKeywordContextFetcher() : new LocalKeywordContextFetcher('rg'),
+            keywordSearcher,
             new VSCodeEditor()
         )
-        return new ChatViewProvider(extensionPath, prompt, new ChatClient(completions), secretStorage, mode)
+
+        return new ChatViewProvider(
+            extensionPath,
+            prompt,
+            new ChatClient(completions),
+            secretStorage,
+            mode,
+            localStorage
+        )
     }
 
-    private async onDidReceiveMessage(message: any, webview: vscode.Webview): Promise<void> {
+    private async onDidReceiveMessage(message: any): Promise<void> {
         switch (message.command) {
             case 'initialized':
-                await Promise.all([
-                    this.sendTranscript(),
-                    webview?.postMessage({
-                        type: 'token',
-                        value: await getAccessToken(this.secretStorage),
-                        mode: this.mode,
-                    }),
-                ])
+                await this.sendTranscript()
+                await this.sendAccessToken()
+                await this.sendChatHistory()
                 break
             case 'reset':
                 await this.onResetChat()
@@ -117,14 +134,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 break
             case 'file':
                 await vscode.workspace.openTextDocument(message.value)
+                break
             default:
                 console.error('Invalid request type from Webview')
         }
-    }
-
-    private async acceptTOS(version: number): Promise<void> {
-        this.tosVersion = version
-        await vscode.commands.executeCommand('cody.accept-tos', version)
     }
 
     private async sendPrompt(promptMessages: Message[], responsePrefix = ''): Promise<void> {
@@ -149,6 +162,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         this.messageInProgress = null
         this.transcript = []
         this.prompt.reset()
+        this.createNewChatID()
         await this.sendTranscript()
     }
 
@@ -174,6 +188,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         if (this.messageInProgress) {
             return
         }
+        this.inputHistory.push(text)
         await this.onNewMessageSubmitted(text)
         const prompt = await this.prompt.addHumanMessage(text)
         await this.sendPrompt(prompt)
@@ -201,6 +216,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             displayText: '',
             timestamp: getShortTimestamp(),
         }
+
         this.transcript.push(
             ...display.map(({ speaker, text }) => ({
                 speaker,
@@ -223,7 +239,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             reformattedMessage = reformattedMessage.slice(0, stopSequenceMatch.index)
         }
         // TODO: Detect if bot sent unformatted code without a markdown block.
-        return fixOpenMarkdownCodeBlock(reformattedMessage)
+        return this.fixOpenMarkdownCodeBlock(reformattedMessage)
     }
 
     private onBotMessageChange(text: string): void {
@@ -252,14 +268,19 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
         this.messageInProgress = null
         this.stopCompletionInProgressCallback = null
-
+        this.saveChatHistory()
         await this.sendTranscript()
     }
-
+    /**
+     * Sends signal to webview to show tab
+     */
     private async showTab(tab: string): Promise<void> {
         await this.webview?.postMessage({ type: 'showTab', tab })
     }
-
+    /**
+     * 1. Sends chat transcript to webview
+     * 2. Saves chat transcript to history
+     */
     private async sendTranscript(): Promise<void> {
         await this.webview?.postMessage({
             type: 'transcript',
@@ -267,7 +288,46 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             messageInProgress: this.messageInProgress,
         })
     }
-
+    /**
+     * Save chat history
+     */
+    private async saveChatHistory(): Promise<void> {
+        if (this.transcript) {
+            this.chatHistory[this.currentChatID] = this.transcript
+            const userHistory = {
+                chat: this.chatHistory,
+                input: this.inputHistory,
+            }
+            await this.localStorage.setChatHistory(userHistory)
+        }
+    }
+    /**
+     * Sends chat history to webview
+     */
+    private async sendChatHistory(): Promise<void> {
+        const localHistory = this.localStorage.getChatHistory()
+        if (localHistory) {
+            this.chatHistory = localHistory.chat
+            this.inputHistory = localHistory.input
+            await this.webview?.postMessage({
+                type: 'history',
+                messages: localHistory,
+            })
+        }
+    }
+    /**
+     * Sends access token to webview
+     */
+    private async sendAccessToken(): Promise<void> {
+        await this.webview?.postMessage({
+            type: 'token',
+            value: await getAccessToken(this.secretStorage),
+            mode: this.mode,
+        })
+    }
+    /**
+     * create webview resources
+     */
     public async resolveWebviewView(
         webviewView: vscode.WebviewView,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -284,22 +344,27 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             localResourceRoots: [webviewPath],
         }
 
-        // await vscode.commands.executeCommand('cody.get-accepted-tos-version')
-
         //   Create Webview
         const root = vscode.Uri.joinPath(webviewPath, 'index.html')
         const bytes = await vscode.workspace.fs.readFile(root)
         const decoded = new TextDecoder('utf-8').decode(bytes)
         const resources = webviewView.webview.asWebviewUri(webviewPath)
-
-        const nonce = getNonce()
+        const nonce = this.getNonce()
 
         webviewView.webview.html = decoded
             .replaceAll('./', `${resources.toString()}/`)
             .replace('/nonce/', nonce)
             .replace('/tos-version/', this.tosVersion.toString())
 
-        webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message, webviewView.webview))
+        webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message))
+    }
+
+    private createNewChatID(): void {
+        this.currentChatID = Date.now().toString()
+    }
+
+    private async acceptTOS(version: string): Promise<void> {
+        this.tosVersion = version
     }
 
     public transcriptForTesting(testing: TestSupport): ChatMessage[] {
@@ -330,30 +395,21 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             }
         }
     }
-}
 
-function fixOpenMarkdownCodeBlock(text: string): string {
-    const occurances = text.split('```').length - 1
-    if (occurances % 2 === 1) {
-        return text + '\n```'
+    private getNonce(): string {
+        let text = ''
+        const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+        for (let i = 0; i < 32; i++) {
+            text += possible.charAt(Math.floor(Math.random() * possible.length))
+        }
+        return text
     }
-    return text
-}
 
-function padTimePart(timePart: number): string {
-    return timePart < 10 ? `0${timePart}` : timePart.toString()
-}
-
-function getShortTimestamp(): string {
-    const date = new Date()
-    return `${padTimePart(date.getHours())}:${padTimePart(date.getMinutes())}`
-}
-
-function getNonce(): string {
-    let text = ''
-    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    for (let i = 0; i < 32; i++) {
-        text += possible.charAt(Math.floor(Math.random() * possible.length))
+    private fixOpenMarkdownCodeBlock(text: string): string {
+        const occurances = text.split('```').length - 1
+        if (occurances % 2 === 1) {
+            return text + '\n```'
+        }
+        return text
     }
-    return text
 }

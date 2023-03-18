@@ -39,6 +39,7 @@
     border-top-left-radius: 16px;
     word-break: break-word;
     color: var(--bubble-text-color);
+    position: relative;
 }
 
 .bubble-content *:first-child {
@@ -95,6 +96,13 @@
 
 .bot-bubble-row {
     justify-content: start;
+}
+
+.bubble-top-icon {
+    position: absolute;
+    color: var(--vscode-icon-foreground);
+    top: 0.5em;
+    right: 1em;
 }
 
 @keyframes blink {
