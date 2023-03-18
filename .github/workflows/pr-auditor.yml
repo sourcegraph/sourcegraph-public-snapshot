@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        with: { repository: 'sourcegraph/sourcegraph' }
+        with: { repository: 'sourcegraph/sourcegraph', ref: '03-17-dev/pr-auditor_use_labels_to_exempt_from_review' }
       - uses: actions/setup-go@v2
         with: { go-version: '1.19' }
 
