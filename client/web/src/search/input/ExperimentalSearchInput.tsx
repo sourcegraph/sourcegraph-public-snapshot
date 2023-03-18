@@ -213,7 +213,7 @@ export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInp
             onChange={inputProps.onChange}
             onSubmit={inputProps.onSubmit}
             isLightTheme={inputProps.isLightTheme}
-            placeholder="Search for code or files..."
+            placeholder="Find or do..."
             suggestionSource={suggestionSource}
             extensions={extensions}
             visualMode={visualMode}
