@@ -1,99 +1,226 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
-assertion_line: 458
 expression: "dump_document(&document, &contents)"
 ---
   let range
+//^^^ Keyword 
+//    ^^^^^ Identifier 
     | doc "Generate an array of integers in the range [`start`, `end`)."
+//  ^ PunctuationDelimiter 
+//    ^^^ Keyword 
 //         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
     | Number -> Number -> Array Number
-//    ^^^^^^^^^^^^^^^^^^^^ IdentifierType 
+//  ^ PunctuationDelimiter 
+//    ^^^^^^ Identifier 
+//           ^^ PunctuationDelimiter 
+//              ^^^^^^ Identifier 
+//                    ^ IdentifierType 
+//                     ^^ PunctuationDelimiter 
+//                       ^ IdentifierType 
 //                        ^^^^^ IdentifierBuiltinType 
-//                             ^^^^^^^ IdentifierType 
+//                             ^ IdentifierType 
+//                              ^^^^^^ Identifier 
     = fun start end =>
+//  ^ PunctuationDelimiter 
 //    ^^^ Keyword 
+//        ^^^^^ IdentifierParameter 
+//              ^^^ Identifier 
+//                  ^^ IdentifierOperator 
       if end <= start then
 //    ^^ Keyword 
+//       ^^^ Identifier 
+//           ^^ IdentifierOperator 
+//              ^^^^^ Identifier 
 //                    ^^^^ Keyword 
         []
       else
 //    ^^^^ Keyword 
         array.generate (fun x => x + start) (end - start)
-//      ^^^^^^^^^^^^^^ IdentifierFunction 
+//      ^^^^^ Identifier 
+//           ^ PunctuationDelimiter 
+//            ^^^^^^^^ IdentifierFunction 
 //                      ^^^ Keyword 
+//                          ^ IdentifierParameter 
+//                            ^^ IdentifierOperator 
+//                               ^ Identifier 
+//                                 ^ IdentifierOperator 
+//                                   ^^^^^ Identifier 
+//                                           ^^^ Identifier 
+//                                               ^ PunctuationDelimiter 
+//                                                 ^^^^^ Identifier 
   in
+//^^ Keyword 
   
   let is_prime
+//^^^ Keyword 
+//    ^^^^^^^^ Identifier 
     | doc "Returns true if the argument is a prime number."
+//  ^ PunctuationDelimiter 
+//    ^^^ Keyword 
 //         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
     = fun x => x > 1 && array.all (fun d => x % d != 0) (range 2 (x - 1))
+//  ^ PunctuationDelimiter 
 //    ^^^ Keyword 
+//        ^ IdentifierParameter 
+//          ^^ IdentifierOperator 
+//             ^ Identifier 
+//               ^ IdentifierOperator 
 //                 ^ NumericLiteral 
-//                      ^^^^^^^^^ IdentifierFunction 
+//                   ^^ IdentifierOperator 
+//                      ^^^^^ Identifier 
+//                           ^ PunctuationDelimiter 
+//                            ^^^ IdentifierFunction 
 //                                 ^^^ Keyword 
+//                                     ^ IdentifierParameter 
+//                                       ^^ IdentifierOperator 
+//                                          ^ Identifier 
+//                                            ^ IdentifierOperator 
+//                                              ^ Identifier 
+//                                                ^^ IdentifierOperator 
 //                                                   ^ NumericLiteral 
-//                                                       ^^^^^ IdentifierFunction 
+//                                                       ^^^^^ Identifier 
 //                                                             ^ NumericLiteral 
+//                                                                ^ Identifier 
+//                                                                  ^ PunctuationDelimiter 
 //                                                                    ^ NumericLiteral 
   in
+//^^ Keyword 
   
   let Prime = contract.from_predicate is_prime in
-//            ^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction 
+//^^^ Keyword 
+//    ^^^^^ Identifier 
+//          ^ PunctuationDelimiter 
+//            ^^^^^^^^ Identifier 
+//                    ^ PunctuationDelimiter 
+//                     ^^^^^^^^^^^^^^ IdentifierFunction 
+//                                    ^^^^^^^^ Identifier 
+//                                             ^^ Keyword 
   
   let primes
+//^^^ Keyword 
+//    ^^^^^^ Identifier 
     | doc "Generate `max` primes using Sieve of Eratosthenes."
+//  ^ PunctuationDelimiter 
+//    ^^^ Keyword 
 //         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
     | Number -> Array Prime
-//    ^^^^^^^^^^ IdentifierType 
+//  ^ PunctuationDelimiter 
+//    ^^^^^^ Identifier 
+//           ^^ PunctuationDelimiter 
 //              ^^^^^ IdentifierBuiltinType 
-//                   ^^^^^^ IdentifierType 
+//                   ^ IdentifierType 
+//                    ^^^^^ Identifier 
     = fun max =>
+//  ^ PunctuationDelimiter 
 //    ^^^ Keyword 
+//        ^^^ IdentifierParameter 
+//            ^^ IdentifierOperator 
       let limit = number.pow max (1 / 2) in # sqrt(max)
-//                ^^^^^^^^^^ IdentifierFunction 
-//                           ^^^ IdentifierFunction 
+//    ^^^ Keyword 
+//        ^^^^^ Identifier 
+//              ^ PunctuationDelimiter 
+//                ^^^^^^ Identifier 
+//                      ^ PunctuationDelimiter 
+//                       ^^^ IdentifierFunction 
+//                           ^^^ Identifier 
 //                                ^ NumericLiteral 
+//                                  ^ IdentifierOperator 
 //                                    ^ NumericLiteral 
+//                                       ^^ Keyword 
 //                                          ^^^^^^^^^^^ Comment 
       let drop_multiples = fun x xs =>
+//    ^^^ Keyword 
+//        ^^^^^^^^^^^^^^ Identifier 
+//                       ^ PunctuationDelimiter 
 //                         ^^^ Keyword 
+//                             ^ IdentifierParameter 
+//                               ^^ Identifier 
+//                                  ^^ IdentifierOperator 
         let to_drop = max
+//      ^^^ Keyword 
+//          ^^^^^^^ Identifier 
+//                  ^ PunctuationDelimiter 
+//                    ^^^ Identifier 
           |> array.generate (fun y => (y + 2) * x)
-//           ^^^^^^^^^^^^^^ IdentifierFunction 
+//        ^^ IdentifierOperator 
+//           ^^^^^ Identifier 
+//                ^ PunctuationDelimiter 
+//                 ^^^^^^^^ IdentifierFunction 
 //                           ^^^ Keyword 
+//                               ^ IdentifierParameter 
+//                                 ^^ IdentifierOperator 
+//                                     ^ Identifier 
+//                                       ^ PunctuationDelimiter 
 //                                         ^ NumericLiteral 
 //                                            ^ PunctuationDelimiter 
+//                                              ^ Identifier 
           |> array.filter (fun y => y <= max) in
-//           ^^^^^^^^^^^^ IdentifierFunction 
+//        ^^ IdentifierOperator 
+//           ^^^^^ Identifier 
+//                ^ PunctuationDelimiter 
+//                 ^^^^^^ IdentifierFunction 
 //                         ^^^ Keyword 
-          |> array.flatten
-//           ^^^^^^^^^^^^^ IdentifierFunction 
+//                             ^ IdentifierParameter 
+//                               ^^ IdentifierOperator 
+//                                  ^ Identifier 
+//                                    ^^ IdentifierOperator 
+//                                       ^^^ Identifier 
+//                                            ^^ Keyword 
         array.filter (fun y => array.all ((!=) y) to_drop) xs in
-//      ^^^^^^^^^^^^ IdentifierFunction 
+//      ^^^^^ Identifier 
+//           ^ PunctuationDelimiter 
+//            ^^^^^^ IdentifierFunction 
 //                    ^^^ Keyword 
-//                             ^^^^^^^^^ IdentifierFunction 
+//                        ^ IdentifierParameter 
+//                          ^^ IdentifierOperator 
+//                             ^^^^^ Identifier 
+//                                  ^ PunctuationDelimiter 
+//                                   ^^^ IdentifierFunction 
 //                                         ^^ IdentifierOperator 
+//                                             ^ Identifier 
+//                                                ^^^^^^^ Identifier 
+//                                                         ^^ Identifier 
+//                                                            ^^ Keyword 
       let rec loop = fun x xs =>
+//    ^^^ Keyword 
 //        ^^^ Keyword 
+//            ^^^^ Identifier 
+//                 ^ PunctuationDelimiter 
 //                   ^^^ Keyword 
+//                       ^ IdentifierParameter 
+//                         ^^ Identifier 
+//                            ^^ IdentifierOperator 
         if x > limit then
 //      ^^ Keyword 
+//         ^ Identifier 
+//           ^ IdentifierOperator 
+//             ^^^^^ Identifier 
 //                   ^^^^ Keyword 
           xs
+//        ^^ Identifier 
         else
 //      ^^^^ Keyword 
           loop (x + 1) (drop_multiples x xs) in
-//        ^^^^ IdentifierFunction 
+//        ^^^^ Identifier 
+//              ^ Identifier 
+//                ^ IdentifierOperator 
 //                  ^ NumericLiteral 
-//                      ^^^^^^^^^^^^^^ IdentifierFunction 
-//                                     ^ IdentifierFunction 
+//                      ^^^^^^^^^^^^^^ Identifier 
+//                                     ^ Identifier 
+//                                       ^^ Identifier 
+//                                           ^^ Keyword 
       loop 2 (range 2 max) in
-//    ^^^^ IdentifierFunction 
+//    ^^^^ Identifier 
 //         ^ NumericLiteral 
-//            ^^^^^ IdentifierFunction 
+//            ^^^^^ Identifier 
 //                  ^ NumericLiteral 
+//                    ^^^ Identifier 
+//                         ^^ Keyword 
   
   {
     run = primes
+//  ^^^ StringLiteral 
+//      ^ PunctuationDelimiter 
+//        ^^^^^^ Identifier 
   }
 

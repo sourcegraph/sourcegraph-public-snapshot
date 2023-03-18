@@ -8,7 +8,7 @@
   "default"
   "doc"
   "rec"
- @keyword]
+] @keyword
 
 "fun" @keyword.function
 
@@ -17,7 +17,8 @@
 [ "if" "then" "else" ] @conditional
 "match" @conditional
 
-(types) @type
+; TODO: teej fix dis
+(types (infix_expr t1: (_) @type t2: (_) @type))
 "Array" @type.builtin
 
 ; BUILTIN Constants
@@ -40,7 +41,7 @@
  "{" "}"
  "(" ")"
  "[|" "|]"
- @punctuation.bracket]
+] @punctuation.bracket
 
 [
  ","
@@ -52,7 +53,7 @@
  "+"
  "-"
  "*"
- @punctuation.delimiter]
+] @punctuation.delimiter
 
 (multstr_start) @punctuation.bracket
 (multstr_end) @punctuation.bracket
@@ -65,16 +66,25 @@
 
 (fun_expr pats:
   (pattern id:
-    (ident) @parameter))
-
-
+    (ident) @identifier.parameter))
 
 ; application where the head terms is an identifier: function arg1 arg2 arg3
 (applicative t1:
   (applicative (record_operand (atom (ident))) @function))
 
-
 ; application where the head terms is a record field path: foo.bar.function arg1 arg2 arg3
 (applicative t1:
   (applicative (record_operand (record_operation_chain)) @function))
 
+(pattern id:
+    (ident) @identifier)
+
+(atom (ident) @identifier)
+
+(field_path_elem (ident) @string)
+
+[
+ "=>"
+] @operator
+
+(infix_expr op: (_) @operator)
