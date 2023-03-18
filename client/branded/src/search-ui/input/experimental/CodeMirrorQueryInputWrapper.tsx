@@ -477,9 +477,9 @@ const SearchModeSwitcher: FC<SearchModeSwitcherProps> = props => {
             <Tooltip content="Recent searches">
                 <Button variant="icon" aria-label="Open search history" onClick={onModeChange}>
                     <Icon svgPath={mdiClockOutline} aria-hidden="true" />
+                    {mode && <span className="ml-1">{mode}:</span>}
                 </Button>
             </Tooltip>
-            {mode && <span className="ml-1">{mode}:</span>}
         </div>
     )
 }
