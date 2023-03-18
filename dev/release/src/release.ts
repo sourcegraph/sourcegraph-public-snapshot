@@ -1230,26 +1230,25 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
             }
             const sets = await createChangesets({
                 requiredCommands: [],
-                    changes: [
-                        {
-                            ...prDetails,
-                                repo: 'terraform-google-executors',
-                                owner: 'sourcegraph',
-                                base: 'master',
-                                head: `release/prepare-${next.version}`,
-                                edits: [`./prepare-release.sh ${next.version}`],
-                                labels: [releaseBlockerLabel],
-                                draft: true,
-                            },
-                        ],
-                        dryRun: config.dryRun.changesets,
+                changes: [
+                    {
+                        ...prDetails,
+                        repo: 'terraform-google-executors',
+                        owner: 'sourcegraph',
+                        base: 'master',
+                        head: `release/prepare-${next.version}`,
+                        edits: [`./prepare-release.sh ${next.version}`],
+                        labels: [releaseBlockerLabel],
+                        draft: true,
+                    },
+                ],
+                dryRun: config.dryRun.changesets,
             })
             console.log('Merge the following pull requests:\n')
-                    for (const set of sets) {
-                        console.log(set.pullRequestURL)
-                    }
-        }
-
+            for (const set of sets) {
+                console.log(set.pullRequestURL)
+            }
+        },
     },
     {
         id: 'release:prepare-aws-executors',
@@ -1276,33 +1275,31 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                 commitMessage: `executor: v${next.version}`,
             }
             const sets = await createChangesets({
-                        requiredCommands: [],
-                        changes: [
-                            {
-                                ...prDetails,
-                                repo: 'sourcegraph',
-                                owner: 'terraform-aws-executors',
-                                base: 'master',
-                                head: `release/prepare-${next.version}`,
-                                edits: [`./prepare-release.sh ${next.version}`],
-                                labels: [releaseBlockerLabel],
-                                draft: true,
-                            },
-                        ],
-                        dryRun: config.dryRun.changesets,
-                    })
-                    console.log('Merge the following pull requests:\n')
-                    for (const set of sets) {
-
-                        console.log(set.pullRequestURL)
-                    }
-        }
+                requiredCommands: [],
+                changes: [
+                    {
+                        ...prDetails,
+                        repo: 'sourcegraph',
+                        owner: 'terraform-aws-executors',
+                        base: 'master',
+                        head: `release/prepare-${next.version}`,
+                        edits: [`./prepare-release.sh ${next.version}`],
+                        labels: [releaseBlockerLabel],
+                        draft: true,
+                    },
+                ],
+                dryRun: config.dryRun.changesets,
+            })
+            console.log('Merge the following pull requests:\n')
+            for (const set of sets) {
+                console.log(set.pullRequestURL)
+            }
+        },
     },
     {
         id: 'release:google-executors-tags',
         description: 'Release a new version of google executors. Only required for minor and major versions',
         run: async config => {
-
             const release = await getActiveRelease(config)
             if (release.version.patch !== 0) {
                 console.log('executor releases are only supported in this tool for major / minor releases')
@@ -1333,7 +1330,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
             } else {
                 console.log(chalk.blue('Skipping sourcegraph/terraform-google-executors release for dry run'))
             }
-        }
+        },
     },
     {
         id: 'release:aws-executors-tags',
@@ -1371,7 +1368,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
             } else {
                 console.log(chalk.blue('Skipping sourcegraph/terraform-aws-executors release for dry run'))
             }
-        }
+        },
     },
     {
         id: 'util:clear-cache',

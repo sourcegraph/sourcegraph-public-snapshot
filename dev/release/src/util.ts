@@ -390,7 +390,10 @@ export async function nextSrcCliVersionInputWithAutodetect(config: ReleaseConfig
     return next
 }
 
-export async function nextGoogleExecutorVersionInputWithAutodetect(config: ReleaseConfig, repoPath?: string): Promise<SemVer> {
+export async function nextGoogleExecutorVersionInputWithAutodetect(
+    config: ReleaseConfig,
+    repoPath?: string
+): Promise<SemVer> {
     let next: SemVer
     if (!config.in_progress?.googleExecutorVersion) {
         if (!repoPath) {
@@ -421,7 +424,10 @@ export async function nextGoogleExecutorVersionInputWithAutodetect(config: Relea
     return next
 }
 
-export async function nextAWSExecutorVersionInputWithAutodetect(config: ReleaseConfig, repoPath?: string): Promise<SemVer> {
+export async function nextAWSExecutorVersionInputWithAutodetect(
+    config: ReleaseConfig,
+    repoPath?: string
+): Promise<SemVer> {
     let next: SemVer
     if (!config.in_progress?.awsExecutorVersion) {
         if (!repoPath) {
