@@ -23,7 +23,6 @@ import { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { CodeMonitoringProps } from '../codeMonitoring'
-import { CodyIcon } from '../cody/CodyIcon'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
@@ -163,17 +162,19 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     // isCodeInsightsEnabled selector controls appearance based on user settings flags
     const codeInsights = codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)
 
+    const [codyEnabled] = useFeatureFlag('cody')
+
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
             !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
             ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Own' },
+            codyEnabled && { path: EnterprisePageRoutes.CodySearch, content: 'Cody' },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [ownEnabled, showSearchContext])
+    }, [codyEnabled, ownEnabled, showSearchContext])
 
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 
-    const [codyEnabled] = useFeatureFlag('cody')
     const isLightTheme = useIsLightTheme()
 
     return (
@@ -234,13 +235,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <NavItem icon={BarChartIcon}>
                             <NavLink variant={navLinkVariant} to="/insights">
                                 Insights
-                            </NavLink>
-                        </NavItem>
-                    )}
-                    {codyEnabled && (
-                        <NavItem icon={CodyIcon}>
-                            <NavLink variant={navLinkVariant} to="/cody">
-                                Cody
                             </NavLink>
                         </NavItem>
                     )}

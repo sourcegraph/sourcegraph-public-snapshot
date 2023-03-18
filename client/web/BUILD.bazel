@@ -596,8 +596,6 @@ ts_project(
         "src/enterprise/codeintel/sort.ts",
         "src/enterprise/codeintel/useCodeIntel.ts",
         "src/enterprise/codeintel/useSearchBasedCodeIntel.ts",
-        "src/enterprise/cody/CodyPage.tsx",
-        "src/enterprise/cody/GlobalCodyArea.tsx",
         "src/enterprise/dotcom/productSubscriptions/AccountEmailAddresses.tsx",
         "src/enterprise/dotcom/productSubscriptions/AccountName.tsx",
         "src/enterprise/dotcom/productSubscriptions/ProductLicenseValidity.tsx",
