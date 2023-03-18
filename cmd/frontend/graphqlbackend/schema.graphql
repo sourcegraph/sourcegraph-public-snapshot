@@ -9696,12 +9696,19 @@ extend type Mutation {
 
     To unset the display name, pass an empty string. Null will make it ignore updates.
 
-    Either parentTeam XOR parentTeamName can be specified to make the team a child
-    team of the given parent.
+    Either parentTeam XOR parentTeamName XOR makeRoot can be specified to make the team a child
+    team of the given parent or conversely to make a team a root team (with no parent team).
     The user has to be a team-member of both the child and parent team for that, and
     neither can be read-only. Site-admin can modify all teams without constraints.
     """
-    updateTeam(id: ID, name: String, displayName: String, parentTeam: ID, parentTeamName: String): Team!
+    updateTeam(
+        id: ID
+        name: String
+        displayName: String
+        parentTeam: ID
+        parentTeamName: String
+        makeRoot: Boolean
+    ): Team!
 
     """
     Delete team deletes a team. ID or Name must be specified, but not both.
