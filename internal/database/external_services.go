@@ -1451,45 +1451,37 @@ WHERE %s
 		opt.LimitOffset.SQL(),
 	)
 
-	rows, err := e.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+	return scanExternalServiceRepos(e.Query(ctx, q))
+}
 
-	var repos []*types.ExternalServiceRepo
-	for rows.Next() {
-		var (
-			repo   types.ExternalServiceRepo
-			userID sql.NullInt32
-			orgID  sql.NullInt32
-		)
+var scanExternalServiceRepos = basestore.NewSliceScanner(scanExternalServiceRepo)
 
-		if err := rows.Scan(
-			&repo.ExternalServiceID,
-			&repo.RepoID,
-			&repo.CloneURL,
-			&userID,
-			&orgID,
-			&repo.CreatedAt,
-		); err != nil {
-			return nil, err
-		}
+func scanExternalServiceRepo(s dbutil.Scanner) (*types.ExternalServiceRepo, error) {
+	var (
+		repo   types.ExternalServiceRepo
+		userID sql.NullInt32
+		orgID  sql.NullInt32
+	)
 
-		if userID.Valid {
-			repo.UserID = userID.Int32
-		}
-		if orgID.Valid {
-			repo.OrgID = orgID.Int32
-		}
-
-		repos = append(repos, &repo)
-	}
-	if err = rows.Err(); err != nil {
+	if err := s.Scan(
+		&repo.ExternalServiceID,
+		&repo.RepoID,
+		&repo.CloneURL,
+		&userID,
+		&orgID,
+		&repo.CreatedAt,
+	); err != nil {
 		return nil, err
 	}
 
-	return repos, nil
+	if userID.Valid {
+		repo.UserID = userID.Int32
+	}
+	if orgID.Valid {
+		repo.OrgID = orgID.Int32
+	}
+
+	return &repo, nil
 }
 
 func (e *externalServiceStore) DistinctKinds(ctx context.Context) ([]string, error) {
