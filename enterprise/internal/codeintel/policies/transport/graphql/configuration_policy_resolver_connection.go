@@ -1,6 +1,8 @@
 package graphql
 
 import (
+	"context"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -28,13 +30,13 @@ func NewCodeIntelligenceConfigurationPolicyConnectionResolver(
 	}
 }
 
-func (r *codeIntelligenceConfigurationPolicyConnectionResolver) Nodes() []resolverstubs.CodeIntelligenceConfigurationPolicyResolver {
+func (r *codeIntelligenceConfigurationPolicyConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.CodeIntelligenceConfigurationPolicyResolver, error) {
 	resolvers := make([]resolverstubs.CodeIntelligenceConfigurationPolicyResolver, 0, len(r.policies))
 	for _, policy := range r.policies {
 		resolvers = append(resolvers, NewConfigurationPolicyResolver(r.repoStore, policy, r.errTracer))
 	}
 
-	return resolvers
+	return resolvers, nil
 }
 
 func (r *codeIntelligenceConfigurationPolicyConnectionResolver) TotalCount() *int32 {

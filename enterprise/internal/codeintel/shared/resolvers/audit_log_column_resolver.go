@@ -6,7 +6,7 @@ type auditLogColumnChangeResolver struct {
 	columnTransition map[string]*string
 }
 
-func NewAuditLogColumnChangeResolver(columnTransition map[string]*string) resolverstubs.AuditLogColumnChangeResolver {
+func NewAuditLogColumnChangeResolver(columnTransition map[string]*string) resolverstubs.AuditLogColumnChange {
 	return &auditLogColumnChangeResolver{columnTransition}
 }
 

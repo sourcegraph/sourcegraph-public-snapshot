@@ -2,6 +2,8 @@ package graphql
 
 import (
 	"context"
+	"encoding/base64"
+	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
@@ -61,7 +63,7 @@ func (r *rootResolver) CodeIntelligenceConfigurationPolicies(ctx context.Context
 	ctx, traceErrs, endObservation := r.operations.configurationPolicies.WithErrors(ctx, &err, observation.Args{LogFields: fields})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	offset, err := resolverstubs.DecodeIntCursor(args.After)
+	offset, err := decodeIntCursor(args.After)
 	if err != nil {
 		return nil, err
 	}
@@ -279,4 +281,26 @@ func (r *rootResolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID
 	}
 
 	return NewGitObjectFilterPreviewResolver(gitObjectResolvers, totalCount, totalCountYoungerThanThreshold), nil
+}
+
+func decodeIntCursor(val *string) (int, error) {
+	cursor, err := decodeCursor(val)
+	if err != nil || cursor == "" {
+		return 0, err
+	}
+
+	return strconv.Atoi(cursor)
+}
+
+func decodeCursor(val *string) (string, error) {
+	if val == nil {
+		return "", nil
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(*val)
+	if err != nil {
+		return "", err
+	}
+
+	return string(decoded), nil
 }

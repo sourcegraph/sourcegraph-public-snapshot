@@ -375,13 +375,13 @@ type vulnerabilityConnectionResolver struct {
 	totalCount      int
 }
 
-func (r *vulnerabilityConnectionResolver) Nodes() []resolverstubs.VulnerabilityResolver {
+func (r *vulnerabilityConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.VulnerabilityResolver, error) {
 	var resolvers []resolverstubs.VulnerabilityResolver
 	for _, v := range r.vulnerabilities {
 		resolvers = append(resolvers, &vulnerabilityResolver{v: v})
 	}
 
-	return resolvers
+	return resolvers, nil
 }
 
 func (r *vulnerabilityConnectionResolver) TotalCount() *int32 {
@@ -415,7 +415,7 @@ type vulnerabilityMatchConnectionResolver struct {
 	totalCount       int
 }
 
-func (r *vulnerabilityMatchConnectionResolver) Nodes() []resolverstubs.VulnerabilityMatchResolver {
+func (r *vulnerabilityMatchConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.VulnerabilityMatchResolver, error) {
 	var resolvers []resolverstubs.VulnerabilityMatchResolver
 	for _, m := range r.matches {
 		resolvers = append(resolvers, &vulnerabilityMatchResolver{
@@ -432,7 +432,7 @@ func (r *vulnerabilityMatchConnectionResolver) Nodes() []resolverstubs.Vulnerabi
 		})
 	}
 
-	return resolvers
+	return resolvers, nil
 }
 
 func (r *vulnerabilityMatchConnectionResolver) TotalCount() *int32 {
