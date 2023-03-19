@@ -440,7 +440,20 @@ func NewSchema(
 	if codeIntel := optional.CodeIntelResolver; codeIntel != nil {
 		EnterpriseResolvers.codeIntelResolver = codeIntel
 		resolver.CodeIntelResolver = codeIntel
-		schemas = append(schemas, codeIntelSchema)
+
+		entires, err := codeIntelSchema.ReadDir(".")
+		if err != nil {
+			return nil, err
+		}
+		for _, entry := range entires {
+			content, err := codeIntelSchema.ReadFile(entry.Name())
+			if err != nil {
+				return nil, err
+			}
+
+			schemas = append(schemas, string(content))
+		}
+
 		// Register NodeByID handlers.
 		for kind, res := range codeIntel.NodeResolvers() {
 			resolver.nodeByIDFns[kind] = res
