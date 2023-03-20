@@ -58,43 +58,45 @@ func (a *appExternalServices) LocalExternalServices(ctx context.Context) ([]*typ
 	return localExternalServices, nil
 }
 
-func (a *appExternalServices) localRepositoriesCount(ctx context.Context) (int32, error) {
-	services, err := a.LocalExternalServices(ctx)
-	if err != nil {
-		return 0, err
-	}
-
-	var localReposCount int32
-	for _, svc := range services {
-		count, err := a.db.ExternalServices().RepoCount(ctx, svc.ID)
-
-		if err != nil {
-			return 0, err
-		}
-
-		localReposCount += count
-	}
-	return localReposCount, nil
-}
-
 // Return the count of remote repositories and the count of local repositories
 func (a *appExternalServices) RepositoriesCounts(ctx context.Context) (int32, int32, error) {
-	localCount, err := a.localRepositoriesCount(ctx)
+	localServices, err := a.LocalExternalServices(ctx)
+
+	var localReposCount int32
+
+	localIds := make(map[int64]*types.ExternalService)
+
 	if err != nil {
 		return 0, 0, err
 	}
 
-	repoStatistics, err := a.db.RepoStatistics().GetRepoStatistics(ctx)
-	if err != nil {
-		return 0, 0, err
+	// local external services
+	// TODO: Obtain each count in one for loop
+	for _, svc := range localServices {
+		localIds[svc.ID] = svc
+		count, err := a.db.ExternalServices().RepoCount(ctx, svc.ID)
+		if err == nil {
+			// TODO: identify repos sync'd by multiple external services to get accurate repositories set
+			localReposCount += count
+		}
 	}
 
-	totalCount := int32(repoStatistics.Total)
+	var remoteReposCount int32
 
-	if totalCount < localCount {
-		return 0, 0, errors.Newf("One or more Repos counts are incorrect: local repos should be a subset of all repositories. "+
-			"total repos count: %d. local repos count: %d.", totalCount, localCount)
+	// all external services
+	services, err := a.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{})
+
+	if err == nil {
+		for _, svc := range services {
+			if _, ok := localIds[svc.ID]; !ok {
+				count, err := a.db.ExternalServices().RepoCount(ctx, svc.ID)
+				if err == nil {
+					// TODO: identify repos sync'd by multiple external services to get accurate repositories set
+					remoteReposCount += count
+				}
+			}
+		}
 	}
 
-	return totalCount - localCount, localCount, nil
+	return remoteReposCount, localReposCount, nil
 }
