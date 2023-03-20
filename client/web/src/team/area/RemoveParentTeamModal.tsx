@@ -1,9 +1,7 @@
 import React, { useCallback } from 'react'
 
-import { mdiInformation } from '@mdi/js'
-
 import { logger } from '@sourcegraph/common'
-import { Button, ErrorAlert, Form, H3, Icon, Modal, Text } from '@sourcegraph/wildcard'
+import { Button, ErrorAlert, Form, H3, Modal, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../components/LoaderButton'
 import { Scalars } from '../../graphql-operations'
@@ -46,12 +44,7 @@ export const RemoveParentTeamModal: React.FunctionComponent<React.PropsWithChild
 
     return (
         <Modal aria-labelledby={labelId} onDismiss={onCancel}>
-            <div className="d-flex align-items-center mb-2">
-                <Icon className="icon mr-1" svgPath={mdiInformation} inline={false} aria-hidden={true} />{' '}
-                <H3 id={labelId} className="mb-0">
-                    Confirm detaching from parent team
-                </H3>
-            </div>
+            <H3 id={labelId}>Confirm detaching from parent team</H3>
             <Text>
                 This change will make {teamName} top-level. That is {teamName} will now have no parent team.
             </Text>

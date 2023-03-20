@@ -1,11 +1,11 @@
 import React, { useCallback, useState } from 'react'
 
 import { logger } from '@sourcegraph/common'
-import { Button, ErrorAlert, Form, H3, Input, Label, Modal } from '@sourcegraph/wildcard'
+import { Button, ErrorAlert, Form, H3, Label, Modal } from '@sourcegraph/wildcard'
 
-import { TEAM_DISPLAY_NAME_MAX_LENGTH } from '..'
 import { LoaderButton } from '../../components/LoaderButton'
 import { Scalars } from '../../graphql-operations'
+import { ParentTeamSelect } from '../new/team-select/ParentTeamSelect'
 
 import { useAssignParentTeam } from './backend'
 
@@ -27,28 +27,28 @@ export const EditParentTeamModal: React.FunctionComponent<React.PropsWithChildre
 }) => {
     const labelId = 'editParentTeam'
 
-    const [parentTeamName, setParentTeamName] = useState<string | null>(currentParentTeamName)
-    const onParentTeamNameChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        setParentTeamName(event.currentTarget.value)
-    }
+    const [parentTeam, setParentTeam] = useState<string | null>(currentParentTeamName)
 
     const [editTeam, { loading, error }] = useAssignParentTeam()
 
     const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(
         async event => {
             event.preventDefault()
+            if (!parentTeam) {
+                return
+            }
             if (!event.currentTarget.checkValidity()) {
                 return
             }
             try {
-                await editTeam({ variables: { id: teamID, parentTeamName } })
+                await editTeam({ variables: { id: teamID, parentTeamName: parentTeam } })
                 afterEdit()
             } catch (error) {
                 // Non-request error. API errors will be available under `error` above.
                 logger.error(error)
             }
         },
-        [afterEdit, teamID, parentTeamName, editTeam]
+        [afterEdit, teamID, parentTeam, editTeam]
     )
 
     return (
@@ -56,20 +56,15 @@ export const EditParentTeamModal: React.FunctionComponent<React.PropsWithChildre
             <H3 id={labelId}>Assign parent team of {teamName}</H3>
             {error && <ErrorAlert error={error} />}
             <Form onSubmit={onSubmit}>
-                <Label htmlFor="edit-team--parent" className="mt-2">
-                    Display name
-                </Label>
-                <Input
+                <Label htmlFor="edit-team--parent">New parent team</Label>
+                <ParentTeamSelect
                     id="edit-team--parent"
-                    placeholder="Engineering Team"
-                    maxLength={TEAM_DISPLAY_NAME_MAX_LENGTH}
-                    autoCorrect="off"
-                    value={parentTeamName ?? ''}
-                    onChange={onParentTeamNameChange}
+                    initial={parentTeam ?? undefined}
                     disabled={loading}
+                    onSelect={setParentTeam}
                 />
 
-                <div className="d-flex justify-content-end pt-1">
+                <div className="d-flex justify-content-end pt-2">
                     <Button disabled={loading} className="mr-2" onClick={onCancel} outline={true} variant="secondary">
                         Cancel
                     </Button>

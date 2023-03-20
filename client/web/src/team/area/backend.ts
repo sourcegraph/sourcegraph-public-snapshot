@@ -3,8 +3,12 @@ import { MutationTuple, QueryResult } from '@apollo/client'
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
 
 import {
+    AssignParentTeamResult,
+    AssignParentTeamVariables,
     ChangeTeamDisplayNameResult,
     ChangeTeamDisplayNameVariables,
+    RemoveParentTeamResult,
+    RemoveParentTeamVariables,
     TeamResult,
     TeamVariables,
 } from '../../graphql-operations'
