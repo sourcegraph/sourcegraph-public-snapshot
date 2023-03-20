@@ -33,4 +33,4 @@
 }
 ```
 
-Optional: if you also need automatic provisioning, continue to our [SCIM docs](../../scim). 
+> NOTE: Optional, but recommended: [add automatic provisioning of users with SCIM](../../scim). 
