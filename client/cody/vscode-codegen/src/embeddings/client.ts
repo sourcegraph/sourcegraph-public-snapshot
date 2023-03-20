@@ -1,8 +1,8 @@
 import { SourcegraphGraphQLAPIClient, EmbeddingsSearchResults } from '../sourcegraph-api/graphql'
 
-import { Embeddings } from '.'
+import { EmbeddingsSearch } from '.'
 
-export class EmbeddingsClient implements Embeddings {
+export class SourcegraphEmbeddingsSearchClient implements EmbeddingsSearch {
     constructor(private client: SourcegraphGraphQLAPIClient, private repoId: string) {}
 
     public async search(
@@ -11,9 +11,5 @@ export class EmbeddingsClient implements Embeddings {
         textResultsCount: number
     ): Promise<EmbeddingsSearchResults | Error> {
         return this.client.searchEmbeddings(this.repoId, query, codeResultsCount, textResultsCount)
-    }
-
-    public async isContextRequiredForQuery(query: string): Promise<boolean | Error> {
-        return this.client.isContextRequiredForQuery(query)
     }
 }
