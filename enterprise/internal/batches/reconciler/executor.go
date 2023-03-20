@@ -410,6 +410,7 @@ func (e *executor) reopenChangeset(ctx context.Context) (err error) {
 
 	remoteRepo, err := e.remoteRepo(ctx)
 	if err != nil {
+		e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 		return err
 	}
 
@@ -423,8 +424,11 @@ func (e *executor) reopenChangeset(ctx context.Context) (err error) {
 		Changeset:  e.ch,
 	}
 	if err := css.ReopenChangeset(ctx, &cs); err != nil {
+		e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 		return errors.Wrap(err, "reopening changeset")
 	}
+	e.enqueueWebhook(ctx, webhooks.ChangesetUpdate)
+
 	return nil
 }
 
@@ -494,16 +498,19 @@ func (e *executor) closeChangeset(ctx context.Context) (err error) {
 func (e *executor) undraftChangeset(ctx context.Context) (err error) {
 	css, err := e.changesetSource(ctx)
 	if err != nil {
+		e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 		return err
 	}
 
 	draftCss, err := sources.ToDraftChangesetSource(css)
 	if err != nil {
+		e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 		return err
 	}
 
 	remoteRepo, err := e.remoteRepo(ctx)
 	if err != nil {
+		e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 		return nil
 	}
 
@@ -518,8 +525,11 @@ func (e *executor) undraftChangeset(ctx context.Context) (err error) {
 	}
 
 	if err := draftCss.UndraftChangeset(ctx, cs); err != nil {
+		e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 		return errors.Wrap(err, "undrafting changeset")
 	}
+
+	e.enqueueWebhook(ctx, webhooks.ChangesetUpdate)
 	return nil
 }
 
