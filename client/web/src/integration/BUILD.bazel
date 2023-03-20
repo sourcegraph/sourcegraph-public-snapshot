@@ -105,18 +105,6 @@ mocha_test(
     deps = [":integration_tests"],
 )
 
-sh_binary(
-   name = "setup-display",
-   srcs = ["setup-display.sh"],
-   tags = ["requires-network"],
-)
-
-sh_binary(
-  name = "echo",
-  tags = ["requires-network"],
-  srcs = ["test.sh"],
-)
-
 sh_test(
   name = "wrapper_test",
   data = [
