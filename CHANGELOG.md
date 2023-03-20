@@ -19,6 +19,16 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 5.0.2
+
+### Added
+
+- `src admin create` has been added to setup initial admin accounts on new Sourcegraph deployments. [957](https://github.com/sourcegraph/src-cli/pull/957)
+
+### Fixed
+
+- Fixed `src validate install` requiring `SRC_GITHUB_TOKEN` in all cases. [958](https://github.com/sourcegraph/src-cli/pull/958) 
+
 ## 5.0.1
 
 ### Fixed
