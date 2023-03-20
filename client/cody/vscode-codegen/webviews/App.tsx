@@ -2,8 +2,6 @@ import { useCallback, useEffect, useState } from 'react'
 
 import './App.css'
 
-import { UserLocalHistory } from '../src/editor/LocalStorageProvider'
-
 import { About } from './About'
 import { Chat } from './Chat'
 import { Debug } from './Debug'
@@ -13,7 +11,8 @@ import { Login } from './Login'
 import { NavBar } from './NavBar'
 import { Recipes } from './Recipes'
 import { Settings } from './Settings'
-import { ChatMessage, View } from './utils/types'
+import { UserHistory } from './UserHistory'
+import { ChatHistory, ChatMessage, View } from './utils/types'
 import { vscodeAPI, WebviewMessage } from './utils/VSCodeApi'
 
 function App(): React.ReactElement {
@@ -24,7 +23,7 @@ function App(): React.ReactElement {
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
-    const [userHistory, setUserHistory] = useState<UserLocalHistory | null>(null)
+    const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
 
     useEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -44,7 +43,6 @@ function App(): React.ReactElement {
                     setDebugLog([...debugLog, message.data.message])
                     break
                 case 'history':
-                    console.log(message.data.messages)
                     setInputHistory(message.data.messages.input)
                     setUserHistory(message.data.messages.chat)
                     break
@@ -96,7 +94,8 @@ function App(): React.ReactElement {
             {view === 'about' && <About />}
             {view === 'debug' && devMode && <Debug debugLog={debugLog} />}
             {view === 'recipes' && <Recipes />}
-            {view === 'settings' && <Settings setView={setView} onLogout={onLogout} userHistory={userHistory} />}
+            {view === 'settings' && <Settings setView={setView} onLogout={onLogout} />}
+            {view === 'history' && <UserHistory setView={setView} userHistory={userHistory} />}
             {view === 'chat' && (
                 <Chat
                     messageInProgress={messageInProgress}

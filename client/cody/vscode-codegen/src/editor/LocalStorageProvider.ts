@@ -2,7 +2,7 @@
 // A memento represents a storage utility. It can store and retrieve values.
 import { Memento } from 'vscode'
 
-import { ChatHistory } from '../chat/ChatViewProvider'
+import { ChatHistory } from '../../webviews/utils/types'
 
 export interface UserLocalHistory {
     chat: ChatHistory

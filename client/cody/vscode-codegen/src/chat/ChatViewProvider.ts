@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 
 import { version as packageVersion } from '../../package.json'
 import { getShortTimestamp } from '../../webviews/utils/shared'
+import { ChatHistory } from '../../webviews/utils/types'
 import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../command/secret-storage'
 import { updateConfiguration } from '../configuration'
 import { LocalStorageProvider } from '../editor/LocalStorageProvider'
@@ -19,8 +20,6 @@ import { TestSupport } from '../test-support'
 import { ChatClient } from './chat'
 import { renderMarkdown } from './markdown'
 import { Transcript } from './prompt'
-
-export type ChatHistory = Map<string, ChatMessage[]>
 
 export interface ChatMessage extends Message {
     displayText: string

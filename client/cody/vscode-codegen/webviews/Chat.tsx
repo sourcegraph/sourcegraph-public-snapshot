@@ -192,7 +192,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     )
 }
 
-const ContextFiles: React.FunctionComponent<{ contextFiles: string[] }> = ({ contextFiles }) => {
+export const ContextFiles: React.FunctionComponent<{ contextFiles: string[] }> = ({ contextFiles }) => {
     const [isExpanded, setIsExpanded] = useState(false)
 
     if (contextFiles.length === 1) {

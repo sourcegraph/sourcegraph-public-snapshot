@@ -1,0 +1,33 @@
+.history-bubble-container {
+    padding: 1rem;
+    border-radius: 1rem;
+    margin-bottom: 1em;
+    margin-top: 1em;
+}
+
+.history-convo-container {
+    margin-bottom: 1rem !important;
+}
+
+.history-bubble-container:nth-child(odd) {
+    background: var(--human-bubble-color);
+}
+
+.history-bubble-container:nth-child(even) {
+    background: var(--bot-bubble-color);
+}
+
+.history-title-container {
+    width: 100%;
+    justify-content: center;
+    padding: 5px;
+    margin-bottom: 1rem;
+    padding: 0.5rem 0rem;
+    font-weight: bold;
+    color: var(--vscode-foreground);
+}
+
+.history-container {
+    margin-bottom: 2rem;
+    padding-top: 1rem 0rem;
+}
