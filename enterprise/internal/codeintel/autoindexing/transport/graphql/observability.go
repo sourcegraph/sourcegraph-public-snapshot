@@ -23,9 +23,8 @@ type operations struct {
 	getRecentIndexesSummary               *observation.Operation
 	getLastIndexScanForRepository         *observation.Operation
 	gitBlobCodeIntelInfo                  *observation.Operation
-
-	inferAutoIndexJobsForRepo *observation.Operation
-	queueAutoIndexJobsForRepo *observation.Operation
+	inferAutoIndexJobsForRepo             *observation.Operation
+	queueAutoIndexJobsForRepo             *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -60,5 +59,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getRecentIndexesSummary:               op("GetRecentIndexesSummary"),
 		getLastIndexScanForRepository:         op("GetLastIndexScanForRepository"),
 		gitBlobCodeIntelInfo:                  op("GitBlobCodeIntelInfo"),
+		inferAutoIndexJobsForRepo:             op("InferAutoIndexJobsForRepo"),
+		queueAutoIndexJobsForRepo:             op("QueueAutoIndexJobsForRepo"),
 	}
 }
