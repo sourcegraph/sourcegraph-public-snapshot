@@ -14,7 +14,8 @@ Sourcegraph uses [Role-Based Access Control (RBAC)](https://en.wikipedia.org/wik
 
 ## Managing roles and permissions
 
-<!-- TODO: Screenshots -->
+<img alt="Role management page" src="https://sourcegraphstatic.com/docs/images/administration/access_control/managing_roles_permissions_light.png" class="screenshot theme-light-only" />
+<img alt="Role management page" src="https://sourcegraphstatic.com/docs/images/administration/access_control/managing_roles_permissions_dark.png" class="screenshot theme-dark-only" />
 
 Site admins can control which features each type of user has access to by creating custom roles and assigning permissions to them. You can see all available roles and create new ones under **Site admin > Users & auth > Roles**.
 
