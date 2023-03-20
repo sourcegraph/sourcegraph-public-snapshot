@@ -26,7 +26,38 @@ application_cert_path=${APPLE_DEV_ID_APPLICATION_CERT:-/mnt/Apple-Developer-ID-A
   exit 1
 }
 
-app_bundle_path="${artifact:-${PWD}/Sourcegraph App.app}"
+# allow for specifying the location of the artifact via the "artifact" env var
+# supports testing outside of CI, also
+app_bundle_path="${artifact}"
+
+# app bundles can be stapled; standalone executables cannot
+unset staple
+
+while [ ${#} -gt 0 ]; do
+  case "${1}" in
+    --help)
+      echo "$(basename "${BASH_SOURCE[0]}") [--staple] [<file path>]" 1>&2
+      exit 1
+      ;;
+    *)
+      # also support passing the artifact path on the command line
+      app_bundle_path="${1}"
+      ;;
+  esac
+  shift
+done
+
+[ -n "${app_bundle_path}" ] || {
+  echo "missing app bundle path on command line or in \"artifact\" env var" 1>&2
+  exit 1
+}
+
+[ -d "${app_bundle_path}" ] || {
+  echo "invalid app bundle path on command line or in \"artifact\" env var" 1>&2
+  exit 1
+}
+
+exedir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 app_name="$(basename "${app_bundle_path}" .app)"
 
@@ -62,7 +93,7 @@ for f in "${files_to_sign[@]}"; do
   for try in 1 2 3; do
     chmod 777 "${workdir}/${app_name}.app/${f}"
     docker run --rm \
-      -v "/Users/pguy/sourcegraph/sourcegraph.app/enterprise/dev/app/macos_app/macos.entitlements:/entitle/macos.entitlements" \
+      -v "${exedir}/macos_app/macos.entitlements:/entitle/macos.entitlements" \
       -v "${application_cert_path}:/certs/cert.p12" \
       -v "${workdir}/${app_name}.app:/sign" \
       -w "/sign" \
@@ -72,7 +103,6 @@ for f in "${files_to_sign[@]}"; do
       --p12-file "/certs/cert.p12" \
       --p12-password "${APPLE_DEV_ID_APPLICATION_PASSWORD}" \
       --code-signature-flags runtime \
-      --entitlements-xml-path "/entitle/macos.entitlements" \
       "${f}"
     rc=$?
     [[ ${rc:-0} -eq 0 ]] && break
@@ -87,7 +117,7 @@ done
 rc=0
 for try in 1 2 3; do
   docker run --rm \
-    -v "/Users/pguy/sourcegraph/sourcegraph.app/enterprise/dev/app/macos_app/macos.entitlements:/entitle/macos.entitlements" \
+    -v "${exedir}/macos_app/macos.entitlements:/entitle/macos.entitlements" \
     -v "${application_cert_path}:/certs/cert.p12" \
     -v "${workdir}:/sign" \
     -w "/sign" \
