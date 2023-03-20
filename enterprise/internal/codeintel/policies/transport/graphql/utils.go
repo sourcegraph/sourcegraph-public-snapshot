@@ -20,20 +20,6 @@ func unmarshalRepositoryID(id graphql.ID) (repositoryID int64, err error) {
 	return repositoryID, err
 }
 
-// PageInfo implements the GraphQL type PageInfo.
-type PageInfo struct {
-	endCursor   *string
-	hasNextPage bool
-}
-
-// HasNextPage returns a new PageInfo with the given hasNextPage value.
-func HasNextPage(hasNextPage bool) *PageInfo {
-	return &PageInfo{hasNextPage: hasNextPage}
-}
-
-func (r *PageInfo) EndCursor() *string { return r.endCursor }
-func (r *PageInfo) HasNextPage() bool  { return r.hasNextPage }
-
 func validateConfigurationPolicy(policy resolverstubs.CodeIntelConfigurationPolicy) error {
 	switch types.GitObjectType(policy.Type) {
 	case types.GitObjectTypeCommit:

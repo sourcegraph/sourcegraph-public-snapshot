@@ -44,33 +44,13 @@ func DecodeCursor(val *string) (string, error) {
 // EncodeCursor creates a PageInfo object from the given cursor. If the cursor is not
 // defined, then an object indicating the end of the result set is returned. The cursor
 // is base64 encoded for transfer, and should be decoded using the function decodeCursor.
-func EncodeCursor(val *string) *PageInfo {
+func EncodeCursor(val *string) resolverstubs.PageInfo {
 	if val != nil {
-		return NextPageCursor(base64.StdEncoding.EncodeToString([]byte(*val)))
+		return resolverstubs.NewPageInfoFromCursor(base64.StdEncoding.EncodeToString([]byte(*val)))
 	}
 
-	return HasNextPage(false)
+	return resolverstubs.NewPageInfoFromCursor("")
 }
-
-// PageInfo implements the GraphQL type PageInfo.
-type PageInfo struct {
-	endCursor   *string
-	hasNextPage bool
-}
-
-// HasNextPage returns a new PageInfo with the given hasNextPage value.
-func HasNextPage(hasNextPage bool) *PageInfo {
-	return &PageInfo{hasNextPage: hasNextPage}
-}
-
-// NextPageCursor returns a new PageInfo indicating there is a next page with
-// the given end cursor.
-func NextPageCursor(endCursor string) *PageInfo {
-	return &PageInfo{endCursor: &endCursor, hasNextPage: true}
-}
-
-func (r *PageInfo) EndCursor() *string { return r.endCursor }
-func (r *PageInfo) HasNextPage() bool  { return r.hasNextPage }
 
 // resolveLocations creates a slide of LocationResolvers for the given list of adjusted locations. The
 // resulting list may be smaller than the input list as any locations with a commit not known by

@@ -102,11 +102,7 @@ func (r *codeIntelRepositoryWithErrorConnectionResolver) TotalCount() *int32 {
 }
 
 func (r *codeIntelRepositoryWithErrorConnectionResolver) PageInfo() resolverstubs.PageInfo {
-	if r.endCursor != "" {
-		return &pageInfo{hasNextPage: true, endCursor: &r.endCursor}
-	}
-
-	return &pageInfo{hasNextPage: false}
+	return resolverstubs.NewPageInfoFromCursor(r.endCursor)
 }
 
 func (r *summaryResolver) RepositoriesWithConfiguration(ctx context.Context, args *resolverstubs.RepositoriesWithConfigurationArgs) (resolverstubs.CodeIntelRepositoryWithConfigurationConnectionResolver, error) {
@@ -167,11 +163,7 @@ func (r *codeIntelRepositoryWithConfigurationConnectionResolver) TotalCount() *i
 }
 
 func (r *codeIntelRepositoryWithConfigurationConnectionResolver) PageInfo() resolverstubs.PageInfo {
-	if r.endCursor != "" {
-		return &pageInfo{hasNextPage: true, endCursor: &r.endCursor}
-	}
-
-	return &pageInfo{hasNextPage: false}
+	return resolverstubs.NewPageInfoFromCursor(r.endCursor)
 }
 
 type codeIntelRepositoryWithErrorResolver struct {

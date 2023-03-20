@@ -40,5 +40,5 @@ func (r *codeIntelligenceRetentionPolicyMatcherConnectionResolver) TotalCount() 
 }
 
 func (r *codeIntelligenceRetentionPolicyMatcherConnectionResolver) PageInfo() resolverstubs.PageInfo {
-	return HasNextPage(len(r.policies) < r.totalCount)
+	return resolverstubs.NewSimplePageInfo(len(r.policies) < r.totalCount)
 }

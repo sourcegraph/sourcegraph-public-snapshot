@@ -482,11 +482,7 @@ func (r *preciseIndexConnectionResolver) TotalCount() *int32 {
 }
 
 func (r *preciseIndexConnectionResolver) PageInfo() resolverstubs.PageInfo {
-	if r.cursor != "" {
-		return &pageInfo{hasNextPage: true, endCursor: &r.cursor}
-	}
-
-	return &pageInfo{hasNextPage: false}
+	return resolverstubs.NewPageInfoFromCursor(r.cursor)
 }
 
 func unmarshalPreciseIndexGQLID(id graphql.ID) (uploadID, indexID int, err error) {
@@ -528,14 +524,6 @@ func unmarshalRawPreciseIndexGQLID(id graphql.ID) (uploadID, indexID int, err er
 
 	return uploadID, indexID, nil
 }
-
-type pageInfo struct {
-	endCursor   *string
-	hasNextPage bool
-}
-
-func (r *pageInfo) EndCursor() *string { return r.endCursor }
-func (r *pageInfo) HasNextPage() bool  { return r.hasNextPage }
 
 func bifurcateStates(states []string) (uploadStates, indexStates []string, _ error) {
 	for _, state := range states {

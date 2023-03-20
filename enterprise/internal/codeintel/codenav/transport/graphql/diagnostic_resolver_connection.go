@@ -36,5 +36,5 @@ func (r *diagnosticConnectionResolver) TotalCount() *int32 {
 }
 
 func (r *diagnosticConnectionResolver) PageInfo() resolverstubs.PageInfo {
-	return HasNextPage(len(r.diagnostics) < r.totalCount)
+	return resolverstubs.NewSimplePageInfo(len(r.diagnostics) < r.totalCount)
 }

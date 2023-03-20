@@ -27,6 +27,31 @@ type PageInfo interface {
 	EndCursor() *string
 }
 
+type pageInfo struct {
+	endCursor   *string
+	hasNextPage bool
+}
+
+func NewSimplePageInfo(hasNextPage bool) PageInfo {
+	return &pageInfo{
+		hasNextPage: hasNextPage,
+	}
+}
+
+func NewPageInfoFromCursor(endCursor string) PageInfo {
+	if endCursor == "" {
+		return &pageInfo{}
+	}
+
+	return &pageInfo{
+		hasNextPage: true,
+		endCursor:   &endCursor,
+	}
+}
+
+func (r *pageInfo) EndCursor() *string { return r.endCursor }
+func (r *pageInfo) HasNextPage() bool  { return r.hasNextPage }
+
 type ConnectionArgs struct {
 	First *int32
 }

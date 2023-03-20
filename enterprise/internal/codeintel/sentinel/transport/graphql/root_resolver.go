@@ -391,10 +391,10 @@ func (r *vulnerabilityConnectionResolver) TotalCount() *int32 {
 
 func (r *vulnerabilityConnectionResolver) PageInfo() resolverstubs.PageInfo {
 	if r.offset+len(r.vulnerabilities) < r.totalCount {
-		return sharedresolvers.NextPageCursor(strconv.Itoa(r.offset + len(r.vulnerabilities)))
+		return resolverstubs.NewPageInfoFromCursor(strconv.Itoa(r.offset + len(r.vulnerabilities)))
 	}
 
-	return sharedresolvers.HasNextPage(false)
+	return resolverstubs.NewSimplePageInfo(false)
 }
 
 //
@@ -442,8 +442,8 @@ func (r *vulnerabilityMatchConnectionResolver) TotalCount() *int32 {
 
 func (r *vulnerabilityMatchConnectionResolver) PageInfo() resolverstubs.PageInfo {
 	if r.offset+len(r.matches) < r.totalCount {
-		return sharedresolvers.NextPageCursor(strconv.Itoa(r.offset + len(r.matches)))
+		return resolverstubs.NewPageInfoFromCursor(strconv.Itoa(r.offset + len(r.matches)))
 	}
 
-	return sharedresolvers.HasNextPage(false)
+	return resolverstubs.NewSimplePageInfo(false)
 }

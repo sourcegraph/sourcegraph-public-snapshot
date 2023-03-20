@@ -30,25 +30,6 @@ func unmarshalConfigurationPolicyGQLID(id graphql.ID) (configurationPolicyID int
 	return configurationPolicyID, err
 }
 
-type pageInfo struct {
-	endCursor   *string
-	hasNextPage bool
-}
-
-// HasNextPage returns a new PageInfo with the given hasNextPage value.
-func HasNextPage(hasNextPage bool) *pageInfo {
-	return &pageInfo{hasNextPage: hasNextPage}
-}
-
-// NextPageCursor returns a new PageInfo indicating there is a next page with
-// the given end cursor.
-func NextPageCursor(endCursor string) *pageInfo {
-	return &pageInfo{endCursor: &endCursor, hasNextPage: true}
-}
-
-func (r *pageInfo) EndCursor() *string { return r.endCursor }
-func (r *pageInfo) HasNextPage() bool  { return r.hasNextPage }
-
 func CreateFileInfo(path string, isDir bool) fs.FileInfo {
 	return fileInfo{path: path, isDir: isDir}
 }
