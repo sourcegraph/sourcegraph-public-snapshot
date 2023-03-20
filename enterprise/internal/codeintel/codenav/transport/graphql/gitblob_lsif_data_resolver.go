@@ -164,7 +164,7 @@ const DefaultReferencesPageSize = 100
 
 // References returns the list of source locations that reference the symbol at the given position.
 func (r *gitBlobLSIFDataResolver) References(ctx context.Context, args *resolverstubs.LSIFPagedQueryPositionArgs) (_ resolverstubs.LocationConnectionResolver, err error) {
-	limit := resolverstubs.Deref(args.First, DefaultReferencesPageSize)
+	limit := int(resolverstubs.Deref(args.First, DefaultReferencesPageSize))
 	if limit <= 0 {
 		return nil, ErrIllegalLimit
 	}
@@ -217,7 +217,7 @@ const DefaultImplementationsPageSize = 100
 var ErrIllegalLimit = errors.New("illegal limit")
 
 func (r *gitBlobLSIFDataResolver) Implementations(ctx context.Context, args *resolverstubs.LSIFPagedQueryPositionArgs) (_ resolverstubs.LocationConnectionResolver, err error) {
-	limit := resolverstubs.Deref(args.First, DefaultImplementationsPageSize)
+	limit := int(resolverstubs.Deref(args.First, DefaultImplementationsPageSize))
 	if limit <= 0 {
 		return nil, ErrIllegalLimit
 	}
@@ -282,7 +282,7 @@ const DefaultDiagnosticsPageSize = 100
 
 // Diagnostics returns the diagnostics for documents with the given path prefix.
 func (r *gitBlobLSIFDataResolver) Diagnostics(ctx context.Context, args *resolverstubs.LSIFDiagnosticsArgs) (_ resolverstubs.DiagnosticConnectionResolver, err error) {
-	limit := resolverstubs.Deref(args.First, DefaultDiagnosticsPageSize)
+	limit := int(resolverstubs.Deref(args.First, DefaultDiagnosticsPageSize))
 	if limit <= 0 {
 		return nil, ErrIllegalLimit
 	}
