@@ -32,7 +32,7 @@ func resolveRepositoryID(id graphql.ID) (int, error) {
 		return 0, nil
 	}
 
-	repoID, err := UnmarshalRepositoryID(id)
+	repoID, err := unmarshalRepositoryID(id)
 	if err != nil {
 		return 0, err
 	}
@@ -40,7 +40,7 @@ func resolveRepositoryID(id graphql.ID) (int, error) {
 	return int(repoID), nil
 }
 
-func UnmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
+func unmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 	err = relay.UnmarshalSpec(id, &repo)
 	return
 }

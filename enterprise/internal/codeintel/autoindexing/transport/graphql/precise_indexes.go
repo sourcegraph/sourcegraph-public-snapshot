@@ -24,7 +24,7 @@ const DefaultPageSize = 50
 func (r *rootResolver) IndexerKeys(ctx context.Context, args *resolverstubs.IndexerKeyQueryArgs) ([]string, error) {
 	var repositoryID int
 	if args.Repo != nil {
-		v, err := UnmarshalRepositoryID(*args.Repo)
+		v, err := unmarshalRepositoryID(*args.Repo)
 		if err != nil {
 			return nil, err
 		}
@@ -128,7 +128,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 
 	var repositoryID int
 	if args.Repo != nil {
-		v, err := UnmarshalRepositoryID(*args.Repo)
+		v, err := unmarshalRepositoryID(*args.Repo)
 		if err != nil {
 			return nil, err
 		}
