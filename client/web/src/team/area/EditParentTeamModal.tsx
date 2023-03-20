@@ -59,6 +59,7 @@ export const EditParentTeamModal: React.FunctionComponent<React.PropsWithChildre
                 <Label htmlFor="edit-team--parent">New parent team</Label>
                 <ParentTeamSelect
                     id="edit-team--parent"
+                    teamId={teamID}
                     initial={parentTeam ?? undefined}
                     disabled={loading}
                     onSelect={setParentTeam}
