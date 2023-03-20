@@ -174,10 +174,19 @@ func endpointOptions(c *config.Config, pathPrefix string) apiclient.EndpointOpti
 }
 
 func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
+	nodeSelectorValues := strings.Split(c.KubernetesNodeSelector, ",")
+	nodeSelector := make(map[string]string, len(nodeSelectorValues))
+	for _, value := range nodeSelectorValues {
+		parts := strings.Split(value, "=")
+		if len(parts) == 2 {
+			nodeSelector[parts[0]] = parts[1]
+		}
+	}
 	return runner.KubernetesOptions{
 		ConfigPath: c.KubernetesConfigPath,
 		ContainerOptions: command.KubernetesContainerOptions{
 			NodeName:              c.KubernetesNodeName,
+			NodeSelector:          nodeSelector,
 			Namespace:             c.KubernetesNamespace,
 			PersistenceVolumeName: c.KubernetesPersistenceVolumeName,
 			ResourceLimit: command.KubernetesResource{

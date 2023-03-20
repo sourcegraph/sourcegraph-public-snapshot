@@ -49,6 +49,7 @@ type Config struct {
 	DockerAuthConfig                types.DockerAuthConfig
 	KubernetesConfigPath            string
 	KubernetesNodeName              string
+	KubernetesNodeSelector          string
 	KubernetesNamespace             string
 	KubernetesPersistenceVolumeName string
 	KubernetesResourceLimitCPU      string
@@ -91,6 +92,7 @@ func (c *Config) Load() {
 	c.DockerRegistryMirrorURL = c.GetOptional("EXECUTOR_DOCKER_REGISTRY_MIRROR_URL", "The address of a docker registry mirror to use in firecracker VMs. Supports multiple values, separated with a comma.")
 	c.KubernetesConfigPath = c.GetOptional("EXECUTOR_KUBERNETES_CONFIG_PATH", "The path to the Kubernetes config file.")
 	c.KubernetesNodeName = c.GetOptional("EXECUTOR_KUBERNETES_NODE_NAME", "The name of the Kubernetes node to run executor jobs in.")
+	c.KubernetesNodeSelector = c.GetOptional("EXECUTOR_KUBERNETES_NODE_SELECTOR", "A comma separated list of values to use as a node selector for Kubernetes Jobs. e.g. foo=bar,app=my-app")
 	c.KubernetesNamespace = c.Get("EXECUTOR_KUBERNETES_NAMESPACE", "default", "The namespace to run executor jobs in.")
 	c.KubernetesPersistenceVolumeName = c.Get("EXECUTOR_KUBERNETES_PERSISTENCE_VOLUME_NAME", "executor-pvc", "The name of the Kubernetes persistence volume to use for executor jobs.")
 	c.KubernetesResourceLimitCPU = c.Get("EXECUTOR_KUBERNETES_RESOURCE_LIMIT_CPU", "1", "The maximum CPU resource for Kubernetes Jobs.")
