@@ -15,6 +15,7 @@ const config = {
     },
     EXPERIMENTAL_useSourceOfProjectReferenceRedirect: true,
     project: __dirname + '/tsconfig.eslint.json',
+    allowAutomaticSingleRunInference: true,
   },
   settings: {
     react: {
