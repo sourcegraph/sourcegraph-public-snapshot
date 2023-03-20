@@ -1,7 +1,7 @@
 .external-service-page {
     // hide cursor and bracket match in monaco editor
     div[data-editor="monaco"] {
-        textarea, canvas, :global(.cdr.bracket-match) { //, :global(.contentWidgets), :global(.cursors-layer), :global(.overlayWidgets), :global(.view-overlays) {
+        textarea, canvas, :global(.cdr.bracket-match) {
             display: none;
         }
     }
