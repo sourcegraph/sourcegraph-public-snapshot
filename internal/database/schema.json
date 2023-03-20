@@ -13357,7 +13357,7 @@
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX lsif_dependency_repos_last_checked_at ON lsif_dependency_repos USING btree (last_checked_at)",
+          "IndexDefinition": "CREATE INDEX lsif_dependency_repos_last_checked_at ON lsif_dependency_repos USING btree (last_checked_at NULLS FIRST)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
@@ -18365,7 +18365,7 @@
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX package_repo_versions_last_checked_at ON package_repo_versions USING btree (last_checked_at)",
+          "IndexDefinition": "CREATE INDEX package_repo_versions_last_checked_at ON package_repo_versions USING btree (last_checked_at NULLS FIRST)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
