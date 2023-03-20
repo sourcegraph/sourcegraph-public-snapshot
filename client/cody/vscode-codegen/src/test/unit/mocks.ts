@@ -1,12 +1,11 @@
 import { ActiveTextEditor, ActiveTextEditorSelection, Editor } from '../../editor'
-import { Embeddings } from '../../embeddings'
-import { IntentDetector, QueryInfo } from '../../intent-detector'
-import { KeywordContextFetcher } from '../../keyword-context'
-import { Message } from '../../sourcegraph-api'
+import { EmbeddingsSearch } from '../../embeddings'
+import { IntentDetector } from '../../intent-detector'
+import { KeywordContextFetcher, KeywordContextFetcherResult } from '../../keyword-context'
 import { EmbeddingsSearchResults } from '../../sourcegraph-api/graphql'
 
-export class MockEmbeddingsClient implements Embeddings {
-    constructor(private mocks: Partial<Embeddings> = {}) {}
+export class MockEmbeddingsClient implements EmbeddingsSearch {
+    constructor(private mocks: Partial<EmbeddingsSearch> = {}) {}
 
     search(
         query: string,
@@ -18,28 +17,21 @@ export class MockEmbeddingsClient implements Embeddings {
             Promise.resolve({ codeResults: [], textResults: [] })
         )
     }
-
-    isContextRequiredForQuery(query: string): Promise<boolean | Error> {
-        return this.mocks.isContextRequiredForQuery?.(query) ?? Promise.resolve(false)
-    }
 }
 
 export class MockIntentDetector implements IntentDetector {
     constructor(private mocks: Partial<IntentDetector> = {}) {}
 
-    detect(text: string): Promise<QueryInfo | Error> {
-        return (
-            this.mocks.detect?.(text) ??
-            Promise.resolve({ needsCodebaseContext: false, needsCurrentFileContext: false })
-        )
+    isCodebaseContextRequired(input: string): Promise<boolean | Error> {
+        return this.mocks.isCodebaseContextRequired?.(input) ?? Promise.resolve(false)
     }
 }
 
 export class MockKeywordContextFetcher implements KeywordContextFetcher {
     constructor(private mocks: Partial<KeywordContextFetcher> = {}) {}
 
-    getContextMessages(query: string): Promise<Message[]> {
-        return this.mocks.getContextMessages?.(query) ?? Promise.resolve([])
+    getContext(query: string, numResults: number): Promise<KeywordContextFetcherResult[]> {
+        return this.mocks.getContext?.(query, numResults) ?? Promise.resolve([])
     }
 }
 
