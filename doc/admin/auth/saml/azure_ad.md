@@ -32,3 +32,5 @@
  ]
 }
 ```
+
+Optional: if you also need automatic provisioning, continue to our [SCIM docs](../../scim). 
