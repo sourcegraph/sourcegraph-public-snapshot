@@ -1,8 +1,17 @@
 (using_directive (identifier) @variable.module)
 (qualified_name (identifier) @variable.module)
 
+;; Preprocessors
+(if_directive (identifier) @identifier.constant) @keyword
+(endif_directive) @keyword
+(elif_directive (identifier) @identifier.constant) @keyword
+(else_directive) @keyword
+(error_directive "error" @keyword)
+(warning_directive "warning" @keyword)
+(preproc_message) @string
+
 ;; Methods
-(method_declaration (identifier) @type (identifier) @function)
+(method_declaration name: (identifier) @method)
 
 (invocation_expression
   (member_access_expression
@@ -11,6 +20,7 @@
 
 (invocation_expression
   (member_access_expression
+
     name: (identifier) @method))
 
 (invocation_expression
@@ -26,14 +36,20 @@
               . (identifier) @method))
 
 ;; Types
+(variable_declaration type: (identifier) @type)
 (interface_declaration name: (identifier) @type)
 (class_declaration name: (identifier) @type)
 (enum_declaration name: (identifier) @type)
 (struct_declaration (identifier) @type)
 (record_declaration (identifier) @type)
 (namespace_declaration name: (identifier) @type)
+(object_creation_expression type: (identifier) @type)
+(method_declaration type: (identifier) @type)
+(property_declaration type: (identifier) @type)
+(parameter type: (identifier) @type name: (identifier) @variable.parameter)
 
 (constructor_declaration name: (identifier) @type)
+(destructor_declaration name: (identifier) @type)
 
 [
   (implicit_type)
@@ -44,7 +60,7 @@
 @type.builtin
 
 ;; Enum
-(enum_member_declaration (identifier) @property.definition)
+(enum_member_declaration (identifier) @identifier.constant)
 
 ;; Literals
 [
@@ -70,6 +86,9 @@
 
 ;; Comments
 (comment) @comment
+
+;; Operator
+(operator_declaration ["+" "-" "true" "false" "==" "!="] @method)
 
 ;; Tokens
 [
@@ -168,11 +187,18 @@
   "out"
   "ref"
   "from"
+  "join"
+  "on"
+  "equals"
+  "var"
   "where"
   "select"
   "record"
   "init"
   "with"
+  "this"
+  "unmanaged"
+  "notnull"
   "let"] @keyword
 
 
@@ -189,47 +215,47 @@
     (simple_assignment_expression
       (identifier) @variable)))
 
-;; Exprs
-(binary_expression (identifier) @variable (identifier) @variable)
-(binary_expression (identifier)* @variable)
-(conditional_expression (identifier) @variable)
-(prefix_unary_expression (identifier) @variable)
-(postfix_unary_expression (identifier)* @variable)
-(assignment_expression (identifier) @variable)
-(cast_expression (identifier) @type (identifier) @variable)
+;; event
+(event_declaration (accessor_list (accessor_declaration ["add" "remove"] @keyword)))
 
 ;; Class
 (base_list (identifier) @type)
-(property_declaration (generic_name))
-(property_declaration
-  type: (nullable_type) @type
-  name: (identifier) @variable)
-(property_declaration
-  type: (predefined_type) @type
-  name: (identifier) @variable)
-(property_declaration
-  type: (identifier) @type
-  name: (identifier) @variable)
+
+;; Members
+
+; The constructor_declaration queries below assume that the left-hand side of
+; assignments assign to class fields.
+(constructor_declaration
+  body: (block (expression_statement (assignment_expression .
+    left: (identifier) @identifier.attribute))))
+(constructor_declaration
+  body: (arrow_expression_clause (assignment_expression .
+    left: (identifier) @identifier.attribute)))
+
+(member_access_expression name: (identifier) @identifier.attribute)
+(property_declaration name: (identifier) @identifier.attribute)
+(initializer_expression (assignment_expression left: (identifier) @identifier.attribute))
+(attribute_argument (name_equals . (identifier) @identifier.attribute))
+(field_declaration (variable_declaration (variable_declarator . (identifier) @identifier.attribute)))
 
 ;; Lambda
 (lambda_expression) @variable
 
 ;; Attribute
-(attribute) @type
+(attribute name: (identifier) @type)
 
 ;; Parameter
-(parameter
-  type: (identifier) @type
-  name: (identifier) @variable.parameter)
+(parameter type: (identifier) @type name: (identifier) @variable.parameter)
 (parameter (identifier) @variable.parameter)
 (parameter_modifier) @keyword
 
+;; Sunset restricted types
+(make_ref_expression "__makeref" @keyword)
+(ref_value_expression "__refvalue" @keyword)
+(ref_type_expression "__reftype" @keyword)
+
 ;; Typeof
 (type_of_expression (identifier) @type)
-
-;; Variable
-(variable_declaration (identifier) @type)
-(variable_declarator (identifier) @variable)
 
 ;; Return
 (return_statement (identifier) @variable)
@@ -254,3 +280,6 @@
 
 ;; Lock statement
 (lock_statement (identifier) @variable)
+
+
+(identifier) @variable
