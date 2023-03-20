@@ -24,7 +24,6 @@ go_library(
         "//enterprise/internal/codeintel/shared/resolvers",
         "//enterprise/internal/codeintel/shared/types",
         "//enterprise/internal/codeintel/uploads/shared",
-        "//internal/actor",
         "//internal/api",
         "//internal/authz",
         "//internal/codeintel/resolvers",
