@@ -59,7 +59,7 @@ func newExecutorQueuesHandler(
 		// Also used by `executor validate` to check whether a token is set.
 		testRouter := base.PathPrefix("/test").Subrouter()
 		testRouter.Path("/auth").Methods(http.MethodGet).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(200)
+			w.WriteHeader(http.StatusOK)
 			if _, err := w.Write([]byte("ok")); err != nil {
 				logger.Error("failed to test authentication", log.Error(err))
 			}
