@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -44,6 +45,10 @@ func TestConfig_Load(t *testing.T) {
 			return "my-node"
 		case "EXECUTOR_KUBERNETES_NODE_SELECTOR":
 			return "app=my-app,zone=west"
+		case "EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_EXPRESSIONS":
+			return `[{"key": "foo", "operator": "In", "values": ["bar"]}]`
+		case "EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_FIELDS":
+			return `[{"key": "faz", "operator": "In", "values": ["baz"]}]`
 		default:
 			return name
 		}
@@ -78,6 +83,16 @@ func TestConfig_Load(t *testing.T) {
 	assert.Equal(t, "/foo/bar", cfg.KubernetesConfigPath)
 	assert.Equal(t, "my-node", cfg.KubernetesNodeName)
 	assert.Equal(t, "app=my-app,zone=west", cfg.KubernetesNodeSelector)
+	assert.Equal(
+		t,
+		[]corev1.NodeSelectorRequirement{{Key: "foo", Operator: corev1.NodeSelectorOpIn, Values: []string{"bar"}}},
+		cfg.KubernetesNodeRequiredAffinityMatchExpressions,
+	)
+	assert.Equal(
+		t,
+		[]corev1.NodeSelectorRequirement{{Key: "faz", Operator: corev1.NodeSelectorOpIn, Values: []string{"baz"}}},
+		cfg.KubernetesNodeRequiredAffinityMatchFields,
+	)
 }
 
 func TestConfig_Load_Defaults(t *testing.T) {
@@ -112,6 +127,8 @@ func TestConfig_Load_Defaults(t *testing.T) {
 	assert.Empty(t, cfg.KubernetesConfigPath)
 	assert.Empty(t, cfg.KubernetesNodeName)
 	assert.Empty(t, cfg.KubernetesNodeSelector)
+	assert.Nil(t, cfg.KubernetesNodeRequiredAffinityMatchExpressions)
+	assert.Nil(t, cfg.KubernetesNodeRequiredAffinityMatchFields)
 	assert.Equal(t, "default", cfg.KubernetesNamespace)
 	assert.Equal(t, "executor-pvc", cfg.KubernetesPersistenceVolumeName)
 	assert.Equal(t, "1", cfg.KubernetesResourceLimitCPU)
