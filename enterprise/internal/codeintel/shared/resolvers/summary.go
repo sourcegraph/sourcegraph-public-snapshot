@@ -2,8 +2,11 @@ package sharedresolvers
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -89,8 +92,8 @@ type codeIntelRepositoryWithErrorConnectionResolver struct {
 	endCursor  string
 }
 
-func (r *codeIntelRepositoryWithErrorConnectionResolver) Nodes() []resolverstubs.CodeIntelRepositoryWithErrorResolver {
-	return r.nodes
+func (r *codeIntelRepositoryWithErrorConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.CodeIntelRepositoryWithErrorResolver, error) {
+	return r.nodes, nil
 }
 
 func (r *codeIntelRepositoryWithErrorConnectionResolver) TotalCount() *int32 {
@@ -154,8 +157,8 @@ type codeIntelRepositoryWithConfigurationConnectionResolver struct {
 	endCursor  string
 }
 
-func (r *codeIntelRepositoryWithConfigurationConnectionResolver) Nodes() []resolverstubs.CodeIntelRepositoryWithConfigurationResolver {
-	return r.nodes
+func (r *codeIntelRepositoryWithConfigurationConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.CodeIntelRepositoryWithConfigurationResolver, error) {
+	return r.nodes, nil
 }
 
 func (r *codeIntelRepositoryWithConfigurationConnectionResolver) TotalCount() *int32 {
@@ -258,7 +261,7 @@ func NewRepositorySummaryResolver(
 func (r *repositorySummaryResolver) AvailableIndexers() []resolverstubs.InferredAvailableIndexersResolver {
 	resolvers := make([]resolverstubs.InferredAvailableIndexersResolver, 0, len(r.availableIndexers))
 	for _, indexer := range r.availableIndexers {
-		resolvers = append(resolvers, resolverstubs.NewInferredAvailableIndexersResolver(types.NewCodeIntelIndexerResolverFrom(indexer.Indexer, ""), indexer.Roots))
+		resolvers = append(resolvers, newInferredAvailableIndexersResolver(types.NewCodeIntelIndexerResolverFrom(indexer.Indexer, ""), indexer.Roots))
 	}
 	return resolvers
 }
@@ -317,4 +320,55 @@ func (r *repositorySummaryResolver) LimitError() *string {
 	}
 
 	return nil
+}
+
+type inferredAvailableIndexersResolver struct {
+	indexer resolverstubs.CodeIntelIndexerResolver
+	roots   []string
+}
+
+func newInferredAvailableIndexersResolver(indexer resolverstubs.CodeIntelIndexerResolver, roots []string) resolverstubs.InferredAvailableIndexersResolver {
+	return &inferredAvailableIndexersResolver{
+		indexer: indexer,
+		roots:   roots,
+	}
+}
+
+func (r *inferredAvailableIndexersResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
+	return r.indexer
+}
+
+func (r *inferredAvailableIndexersResolver) Roots() []string {
+	return r.roots
+}
+
+func (r *inferredAvailableIndexersResolver) RootsWithKeys() []resolverstubs.RootsWithKeyResolver {
+	var resolvers []resolverstubs.RootsWithKeyResolver
+	for _, root := range r.roots {
+		resolvers = append(resolvers, &rootWithKeyResolver{
+			root: root,
+			key:  comparisonKey(root, r.indexer.Name()),
+		})
+	}
+
+	return resolvers
+}
+
+func comparisonKey(root, indexer string) string {
+	hash := sha256.New()
+	_, _ = hash.Write([]byte(strings.Join([]string{root, indexer}, "\x00")))
+	return base64.URLEncoding.EncodeToString(hash.Sum(nil))
+}
+
+type rootWithKeyResolver struct {
+	root string
+	key  string
+}
+
+func (r *rootWithKeyResolver) Root() string {
+	return r.root
+}
+
+func (r *rootWithKeyResolver) ComparisonKey() string {
+	return r.key
 }
