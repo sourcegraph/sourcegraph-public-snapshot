@@ -5,17 +5,21 @@ import { CompletionsDocumentProvider } from './docprovider'
 
 export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
     private maxPrefixTokens: number
-    private maxPrefixBytes: number
+    private maxSuffixTokens: number
     constructor(
         private openai: OpenAIApi,
         private documentProvider: CompletionsDocumentProvider,
         private model = 'code-cushman-001', // code-davinci-002
         private contextWindowTokens = 2048, // 8001
         private bytesPerToken = 4,
-        private maxCompletionTokens = 200
+        private responseTokens = 200,
+        private prefixPercentage = 0.9,
+        private suffixPercentage = 0.1,
+        private codeContextPercentage = 0.0
     ) {
-        this.maxPrefixTokens = Math.floor(contextWindowTokens / 2) // allocate half of context window for prefix
-        this.maxPrefixBytes = this.maxPrefixTokens * this.bytesPerToken
+        const promptTokens = this.contextWindowTokens - this.responseTokens
+        this.maxPrefixTokens = Math.floor(promptTokens * this.prefixPercentage)
+        this.maxSuffixTokens = Math.floor(promptTokens * this.suffixPercentage)
     }
 
     async provideInlineCompletionItems(
@@ -32,6 +36,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         }
     }
 
+    private tokToByte(toks: number): number {
+        return Math.floor(toks * this.bytesPerToken)
+    }
+
     private async provideInlineCompletionItemsInner(
         document: vscode.TextDocument,
         position: vscode.Position,
@@ -43,7 +51,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return []
         }
 
-        const docContext = getCurrentDocContext(document, position, this.maxPrefixBytes)
+        const docContext = getCurrentDocContext(document, position, this.tokToByte(this.maxPrefixTokens))
         if (!docContext) {
             return []
         }
@@ -76,7 +84,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             {
                 model: this.model,
                 prompt: prefix + completionPrefix,
-                max_tokens: Math.min(this.contextWindowTokens - this.maxPrefixTokens, this.maxCompletionTokens),
+                max_tokens: Math.min(this.contextWindowTokens - this.maxPrefixTokens, this.responseTokens),
                 n: 1,
                 stop,
             },
@@ -132,7 +140,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         const docContext = getCurrentDocContext(
             currentEditor.document,
             currentEditor.selection.start,
-            this.maxPrefixBytes
+            this.tokToByte(this.maxPrefixTokens)
         )
         if (docContext === null) {
             console.error('not showing completions, no currently open doc')
@@ -144,7 +152,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             const completion = await this.openai.createCompletion({
                 model: this.model,
                 prompt: prefix,
-                max_tokens: Math.min(this.contextWindowTokens - this.maxPrefixTokens, this.maxCompletionTokens),
+                max_tokens: Math.min(this.contextWindowTokens - this.maxPrefixTokens, this.responseTokens),
                 n: 3,
             })
 
