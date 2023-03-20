@@ -9696,6 +9696,12 @@ extend type Query {
         Search can be used to do a text-search over the team names.
         """
         search: String
+        """
+        Do not include any teams that have this ancestor in parent-team relationship.
+        This includes the team with the ID mentioned (that is a team is considered
+        its own ancestor).
+        """
+        exceptAncestorId: ID
     ): TeamConnection!
 }
 
