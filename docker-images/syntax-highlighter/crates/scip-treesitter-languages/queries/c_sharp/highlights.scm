@@ -78,6 +78,7 @@
   "$\""
   "@$\""
   "$@\""] @string
+(interpolation ["{" "}"] @string.escape)
 
 [
   (boolean_literal)

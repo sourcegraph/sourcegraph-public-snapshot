@@ -238,17 +238,25 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //        ^^^^^^ Keyword
 //               ^^ StringLiteral
 //                 ^^ StringLiteral
+//                   ^ StringLiteralEscape
 //                    ^ Identifier
+//                     ^ StringLiteralEscape
 //                      ^^^ StringLiteral
+//                         ^ StringLiteralEscape
 //                          ^ Identifier
 //                           ^ IdentifierOperator
+//                                ^ StringLiteralEscape
 //                                 ^^^ StringLiteral
+//                                    ^ StringLiteralEscape
 //                                     ^ Identifier
 //                                      ^ PunctuationDelimiter
 //                                       ^^ NumericLiteral
+//                                         ^ StringLiteralEscape
 //                                          ^^^ StringLiteral
+//                                             ^ StringLiteralEscape
 //                                              ^ Identifier
 //                                               ^ IdentifierOperator
+//                                                 ^ StringLiteralEscape
 //                                                  ^ StringLiteral
 //                                                   ^ PunctuationDelimiter
       }
