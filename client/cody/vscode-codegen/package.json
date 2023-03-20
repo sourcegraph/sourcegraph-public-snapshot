@@ -111,6 +111,11 @@
         "key": "ctrl+alt+c",
         "mac": "ctrl+alt+c",
         "when": "sourcegraph.cody.activated"
+      },
+      {
+        "command": "cody.experimental.suggest",
+        "key": "alt+\\",
+        "when": "sourcegraph.cody.activated"
       }
     ],
     "submenus": [
@@ -225,6 +230,9 @@
           ],
           "default": "embeddings"
         },
+        "cody.keys.openai": {
+          "type": "string"
+        },
         "cody.experimental.suggest": {
           "type": "boolean",
           "default": false
@@ -233,6 +241,11 @@
     }
   },
   "dependencies": {
-    "@sourcegraph/cody-common": "workspace:*"
+    "@sourcegraph/cody-common": "workspace:*",
+    "axios": "^1.3.4",
+    "openai": "^3.2.1"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.76.0"
   }
 }
