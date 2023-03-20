@@ -499,7 +499,7 @@ func (c *Changeset) AuthorName() (string, error) {
 	case *gitlab.MergeRequest:
 		return m.Author.Username, nil
 	case *bbcs.AnnotatedPullRequest:
-		// BitBucket cloud no longer exposes username in its API.
+		// Bitbucket Cloud no longer exposes username in its API.
 		return "", nil
 	case *adobatches.AnnotatedPullRequest:
 		return m.CreatedBy.UniqueName, nil
