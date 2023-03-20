@@ -15,14 +15,18 @@ interface UseMatchingVersionsResult {
     error: ApolloError | undefined
 }
 
-export const useMatchingVersions = (
+interface UseMatchingVersionsArgs {
     variables: PackageRepoReferencesMatchingFilterVariables
-): UseMatchingVersionsResult => {
+    skip?: boolean
+}
+
+export const useMatchingVersions = ({ variables, skip }: UseMatchingVersionsArgs): UseMatchingVersionsResult => {
     const { data, loading, error } = useQuery<
         PackageRepoReferencesMatchingFilterResult,
         PackageRepoReferencesMatchingFilterVariables
     >(packageRepoFilterQuery, {
         variables,
+        skip,
     })
 
     const { versions, totalCount } =

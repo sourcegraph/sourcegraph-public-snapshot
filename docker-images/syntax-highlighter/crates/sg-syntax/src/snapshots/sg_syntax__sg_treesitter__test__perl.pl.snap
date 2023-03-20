@@ -1,1515 +1,1515 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
-assertion_line: 497
-expression: "dump_document(&document, &contents)"
+assertion_line: 362
+expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 ---
   package HTTP::Config;
-//^^^^^^^ Keyword 
-//        ^^^^^^^^^^^^ IdentifierType 
+//^^^^^^^ Keyword
+//        ^^^^^^^^^^^^ IdentifierType
   
   use strict;
-//^^^ Keyword 
-//    ^^^^^^ IdentifierType 
+//^^^ Keyword
+//    ^^^^^^ IdentifierType
   use URI;
-//^^^ Keyword 
-//    ^^^ IdentifierType 
+//^^^ Keyword
+//    ^^^ IdentifierType
   use vars qw($VERSION);
-//^^^ Keyword 
-//    ^^^^ IdentifierType 
-//         ^^^^^^^^^^^^ StringLiteral 
+//^^^ Keyword
+//    ^^^^ IdentifierType
+//         ^^^^^^^^^^^^ StringLiteral
   
   $VERSION = "5.835";
-//^^^^^^^^ Identifier  local 1
-//         ^ IdentifierOperator 
-//           ^^^^^^^ StringLiteral 
+//^^^^^^^^ Identifier
+//         ^ IdentifierOperator
+//           ^^^^^^^ StringLiteral
   
   sub new {
-//^^^ Keyword 
-//    ^^^ IdentifierFunction 
+//^^^ Keyword
+//    ^^^ IdentifierFunction
       my $class = shift;
-//    ^^ Keyword 
-//       ^^^^^^ Identifier  local 4
-//              ^ IdentifierOperator 
-//                ^^^^^ IdentifierBuiltin 
+//    ^^ Keyword
+//       ^^^^^^ Identifier
+//              ^ IdentifierOperator
+//                ^^^^^ IdentifierBuiltin
       return bless [], $class;
-//    ^^^^^^ Keyword 
-//                     ^^^^^^ Identifier  local 4
+//    ^^^^^^ Keyword
+//                     ^^^^^^ Identifier
   }
   
   sub entries {
-//^^^ Keyword 
-//    ^^^^^^^ IdentifierFunction 
+//^^^ Keyword
+//    ^^^^^^^ IdentifierFunction
       my $self = shift;
-//    ^^ Keyword 
-//       ^^^^^ Identifier  local 5
-//             ^ IdentifierOperator 
-//               ^^^^^ IdentifierBuiltin 
+//    ^^ Keyword
+//       ^^^^^ Identifier
+//             ^ IdentifierOperator
+//               ^^^^^ IdentifierBuiltin
       @$self;
-//    ^ Identifier 
-//     ^^^^^ Identifier  local 5
+//    ^ Identifier
+//     ^^^^^ Identifier
   }
   
   sub empty {
-//^^^ Keyword 
-//    ^^^^^ IdentifierFunction 
+//^^^ Keyword
+//    ^^^^^ IdentifierFunction
       my $self = shift;
-//    ^^ Keyword 
-//       ^^^^^ Identifier  local 6
-//             ^ IdentifierOperator 
-//               ^^^^^ IdentifierBuiltin 
+//    ^^ Keyword
+//       ^^^^^ Identifier
+//             ^ IdentifierOperator
+//               ^^^^^ IdentifierBuiltin
       not @$self;
-//        ^ Identifier 
-//         ^^^^^ Identifier  local 6
+//        ^ Identifier
+//         ^^^^^ Identifier
   }
   
   sub add {
-//^^^ Keyword 
-//    ^^^ IdentifierFunction 
+//^^^ Keyword
+//    ^^^ IdentifierFunction
       if (@_ == 2) {
-//    ^^ Keyword 
-//        ^^ Identifier 
-//              ^ NumericLiteral 
+//    ^^ Keyword
+//        ^^ Identifier
+//              ^ NumericLiteral
           my $self = shift;
-//        ^^ Keyword 
-//           ^^^^^ Identifier  local 9
-//                 ^ IdentifierOperator 
-//                   ^^^^^ IdentifierBuiltin 
+//        ^^ Keyword
+//           ^^^^^ Identifier
+//                 ^ IdentifierOperator
+//                   ^^^^^ IdentifierBuiltin
           push(@$self, shift);
-//        ^^^^ IdentifierFunction 
-//             ^ Identifier 
-//              ^^^^^ Identifier  local 9
-//                     ^^^^^ IdentifierBuiltin 
+//        ^^^^ IdentifierFunction
+//             ^ Identifier
+//              ^^^^^ Identifier
+//                     ^^^^^ IdentifierBuiltin
           return;
-//        ^^^^^^ Keyword 
+//        ^^^^^^ Keyword
       }
       my($self, %spec) = @_;
-//    ^^ Keyword 
-//       ^^^^^ Identifier  local 7
-//              ^^^^^ Identifier  local 8
-//                     ^ IdentifierOperator 
-//                       ^^ Identifier 
+//    ^^ Keyword
+//       ^^^^^ Identifier
+//              ^^^^^ Identifier
+//                     ^ IdentifierOperator
+//                       ^^ Identifier
       push(@$self, \%spec);
-//    ^^^^ IdentifierFunction 
-//         ^ Identifier 
-//          ^^^^^ Identifier  local 7
-//                  ^^^^^ Identifier  local 8
+//    ^^^^ IdentifierFunction
+//         ^ Identifier
+//          ^^^^^ Identifier
+//                  ^^^^^ Identifier
       return;
-//    ^^^^^^ Keyword 
+//    ^^^^^^ Keyword
   }
   
   sub find2 {
-//^^^ Keyword 
-//    ^^^^^ IdentifierFunction 
+//^^^ Keyword
+//    ^^^^^ IdentifierFunction
       my($self, %spec) = @_;
-//    ^^ Keyword 
-//       ^^^^^ Identifier  local 10
-//              ^^^^^ Identifier  local 11
-//                     ^ IdentifierOperator 
-//                       ^^ Identifier 
+//    ^^ Keyword
+//       ^^^^^ Identifier
+//              ^^^^^ Identifier
+//                     ^ IdentifierOperator
+//                       ^^ Identifier
       my @found;
-//    ^^ Keyword 
-//       ^^^^^^ Identifier  local 12
+//    ^^ Keyword
+//       ^^^^^^ Identifier
       my @rest;
-//    ^^ Keyword 
-//       ^^^^^ Identifier  local 13
+//    ^^ Keyword
+//       ^^^^^ Identifier
    ITEM:
       for my $item (@$self) {
-//    ^^^ Keyword 
-//        ^^ Keyword 
-//           ^^^^^ Identifier  local 14
-//                  ^ Identifier 
-//                   ^^^^^ Identifier  local 10
+//    ^^^ Keyword
+//        ^^ Keyword
+//           ^^^^^ Identifier
+//                  ^ Identifier
+//                   ^^^^^ Identifier
           for my $k (keys %spec) {
-//        ^^^ Keyword 
-//            ^^ Keyword 
-//               ^^ Identifier  local 15
-//                   ^^^^ IdentifierBuiltin 
-//                        ^^^^^ Identifier  local 11
+//        ^^^ Keyword
+//            ^^ Keyword
+//               ^^ Identifier
+//                   ^^^^ IdentifierBuiltin
+//                        ^^^^^ Identifier
               if (!exists $item->{$k} || $spec{$k} ne $item->{$k}) {
-//            ^^ Keyword 
-//                 ^^^^^^ IdentifierBuiltin 
-//                        ^^^^^ Identifier  local 14
-//                             ^^ Identifier 
-//                               ^ Identifier 
-//                                ^^ Identifier  local 15
-//                                  ^ Identifier 
-//                                       ^^^^^ Identifier 
-//                                            ^ Identifier 
-//                                             ^^ Identifier  local 15
-//                                               ^ Identifier 
-//                                                 ^^ IdentifierOperator 
-//                                                    ^^^^^ Identifier  local 14
-//                                                         ^^ Identifier 
-//                                                           ^ Identifier 
-//                                                            ^^ Identifier  local 15
-//                                                              ^ Identifier 
+//            ^^ Keyword
+//                 ^^^^^^ IdentifierBuiltin
+//                        ^^^^^ Identifier
+//                             ^^ Identifier
+//                               ^ Identifier
+//                                ^^ Identifier
+//                                  ^ Identifier
+//                                       ^^^^^ Identifier
+//                                            ^ Identifier
+//                                             ^^ Identifier
+//                                               ^ Identifier
+//                                                 ^^ IdentifierOperator
+//                                                    ^^^^^ Identifier
+//                                                         ^^ Identifier
+//                                                           ^ Identifier
+//                                                            ^^ Identifier
+//                                                              ^ Identifier
                   push(@rest, $item);
-//                ^^^^ IdentifierFunction 
-//                     ^^^^^ Identifier  local 13
-//                            ^^^^^ Identifier  local 14
+//                ^^^^ IdentifierFunction
+//                     ^^^^^ Identifier
+//                            ^^^^^ Identifier
                   next ITEM;
-//                ^^^^ Keyword 
+//                ^^^^ Keyword
               }
           }
           push(@found, $item);
-//        ^^^^ IdentifierFunction 
-//             ^^^^^^ Identifier  local 12
-//                     ^^^^^ Identifier  local 14
+//        ^^^^ IdentifierFunction
+//             ^^^^^^ Identifier
+//                     ^^^^^ Identifier
       }
       return \@found unless wantarray;
-//    ^^^^^^ Keyword 
-//            ^^^^^^ Identifier  local 12
-//                   ^^^^^^ Keyword 
-//                          ^^^^^^^^^ IdentifierBuiltin 
+//    ^^^^^^ Keyword
+//            ^^^^^^ Identifier
+//                   ^^^^^^ Keyword
+//                          ^^^^^^^^^ IdentifierBuiltin
       return \@found, \@rest;
-//    ^^^^^^ Keyword 
-//            ^^^^^^ Identifier  local 12
-//                     ^^^^^ Identifier  local 13
+//    ^^^^^^ Keyword
+//            ^^^^^^ Identifier
+//                     ^^^^^ Identifier
   }
   
   sub find {
-//^^^ Keyword 
-//    ^^^^ IdentifierFunction 
+//^^^ Keyword
+//    ^^^^ IdentifierFunction
       my $self = shift;
-//    ^^ Keyword 
-//       ^^^^^ Identifier  local 16
-//             ^ IdentifierOperator 
-//               ^^^^^ IdentifierBuiltin 
+//    ^^ Keyword
+//       ^^^^^ Identifier
+//             ^ IdentifierOperator
+//               ^^^^^ IdentifierBuiltin
       my $f = $self->find2(@_);
-//    ^^ Keyword 
-//       ^^ Identifier  local 17
-//          ^ IdentifierOperator 
-//            ^^^^^ Identifier  local 16
-//                   ^^^^^ IdentifierFunction 
-//                         ^^ Identifier 
+//    ^^ Keyword
+//       ^^ Identifier
+//          ^ IdentifierOperator
+//            ^^^^^ Identifier
+//                   ^^^^^ IdentifierFunction
+//                         ^^ Identifier
       return @$f if wantarray;
-//    ^^^^^^ Keyword 
-//           ^ Identifier 
-//            ^^ Identifier  local 17
-//               ^^ Keyword 
-//                  ^^^^^^^^^ IdentifierBuiltin 
+//    ^^^^^^ Keyword
+//           ^ Identifier
+//            ^^ Identifier
+//               ^^ Keyword
+//                  ^^^^^^^^^ IdentifierBuiltin
       return $f->[0];
-//    ^^^^^^ Keyword 
-//           ^^ Identifier  local 17
-//             ^^ Identifier 
-//               ^ Identifier 
-//                ^ NumericLiteral 
-//                 ^ Identifier 
+//    ^^^^^^ Keyword
+//           ^^ Identifier
+//             ^^ Identifier
+//               ^ Identifier
+//                ^ NumericLiteral
+//                 ^ Identifier
   }
   
   sub remove {
-//^^^ Keyword 
-//    ^^^^^^ IdentifierFunction 
+//^^^ Keyword
+//    ^^^^^^ IdentifierFunction
       my($self, %spec) = @_;
-//    ^^ Keyword 
-//       ^^^^^ Identifier  local 18
-//              ^^^^^ Identifier  local 19
-//                     ^ IdentifierOperator 
-//                       ^^ Identifier 
+//    ^^ Keyword
+//       ^^^^^ Identifier
+//              ^^^^^ Identifier
+//                     ^ IdentifierOperator
+//                       ^^ Identifier
       my($removed, $rest) = $self->find2(%spec);
-//    ^^ Keyword 
-//       ^^^^^^^^ Identifier  local 20
-//                 ^^^^^ Identifier  local 21
-//                        ^ IdentifierOperator 
-//                          ^^^^^ Identifier  local 18
-//                                 ^^^^^ IdentifierFunction 
-//                                       ^^^^^ Identifier  local 19
+//    ^^ Keyword
+//       ^^^^^^^^ Identifier
+//                 ^^^^^ Identifier
+//                        ^ IdentifierOperator
+//                          ^^^^^ Identifier
+//                                 ^^^^^ IdentifierFunction
+//                                       ^^^^^ Identifier
       @$self = @$rest if @$removed;
-//    ^ Identifier 
-//     ^^^^^ Identifier  local 18
-//           ^ IdentifierOperator 
-//             ^ Identifier 
-//              ^^^^^ Identifier  local 21
-//                    ^^ Keyword 
-//                       ^ Identifier 
-//                        ^^^^^^^^ Identifier  local 20
+//    ^ Identifier
+//     ^^^^^ Identifier
+//           ^ IdentifierOperator
+//             ^ Identifier
+//              ^^^^^ Identifier
+//                    ^^ Keyword
+//                       ^ Identifier
+//                        ^^^^^^^^ Identifier
       return @$removed;
-//    ^^^^^^ Keyword 
-//           ^ Identifier 
-//            ^^^^^^^^ Identifier  local 20
+//    ^^^^^^ Keyword
+//           ^ Identifier
+//            ^^^^^^^^ Identifier
   }
   
   my %MATCH = (
-//^^ Keyword 
-//   ^^^^^^ Identifier  local 3
-//          ^ IdentifierOperator 
+//^^ Keyword
+//   ^^^^^^ Identifier
+//          ^ IdentifierOperator
       m_scheme => sub {
-//    ^^^^^^^^^ StringLiteral 
-//             ^^ IdentifierOperator 
-//                ^^^ Keyword 
+//    ^^^^^^^^^ StringLiteral
+//             ^^ IdentifierOperator
+//                ^^^ Keyword
           my($v, $uri) = @_;
-//        ^^ Keyword 
-//           ^^ Identifier  local 22
-//               ^^^^ Identifier  local 23
-//                     ^ IdentifierOperator 
-//                       ^^ Identifier 
+//        ^^ Keyword
+//           ^^ Identifier
+//               ^^^^ Identifier
+//                     ^ IdentifierOperator
+//                       ^^ Identifier
           return $uri->_scheme eq $v;  # URI known to be canonical
-//        ^^^^^^ Keyword 
-//               ^^^^ Identifier  local 23
-//                     ^^^^^^^ IdentifierFunction 
-//                             ^^ IdentifierOperator 
-//                                ^^ Identifier  local 22
-//                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+//        ^^^^^^ Keyword
+//               ^^^^ Identifier
+//                     ^^^^^^^ IdentifierFunction
+//                             ^^ IdentifierOperator
+//                                ^^ Identifier
+//                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
       },
       m_secure => sub {
-//    ^^^^^^^^^ StringLiteral 
-//             ^^ IdentifierOperator 
-//                ^^^ Keyword 
+//    ^^^^^^^^^ StringLiteral
+//             ^^ IdentifierOperator
+//                ^^^ Keyword
           my($v, $uri) = @_;
-//        ^^ Keyword 
-//           ^^ Identifier  local 24
-//               ^^^^ Identifier  local 25
-//                     ^ IdentifierOperator 
-//                       ^^ Identifier 
+//        ^^ Keyword
+//           ^^ Identifier
+//               ^^^^ Identifier
+//                     ^ IdentifierOperator
+//                       ^^ Identifier
           my $secure = $uri->can("secure") ? $uri->secure : $uri->_scheme eq "https";
-//        ^^ Keyword 
-//           ^^^^^^^ Identifier  local 26
-//                   ^ IdentifierOperator 
-//                     ^^^^ Identifier  local 25
-//                           ^^^ IdentifierFunction 
-//                               ^^^^^^^^ StringLiteral 
-//                                           ^^^^ Identifier  local 25
-//                                                 ^^^^^^ IdentifierFunction 
-//                                                          ^^^^ Identifier  local 25
-//                                                                ^^^^^^^ IdentifierFunction 
-//                                                                        ^^ IdentifierOperator 
-//                                                                           ^^^^^^^ StringLiteral 
+//        ^^ Keyword
+//           ^^^^^^^ Identifier
+//                   ^ IdentifierOperator
+//                     ^^^^ Identifier
+//                           ^^^ IdentifierFunction
+//                               ^^^^^^^^ StringLiteral
+//                                           ^^^^ Identifier
+//                                                 ^^^^^^ IdentifierFunction
+//                                                          ^^^^ Identifier
+//                                                                ^^^^^^^ IdentifierFunction
+//                                                                        ^^ IdentifierOperator
+//                                                                           ^^^^^^^ StringLiteral
           return $secure == !!$v;
-//        ^^^^^^ Keyword 
-//               ^^^^^^^ Identifier  local 26
-//                            ^^ Identifier  local 24
+//        ^^^^^^ Keyword
+//               ^^^^^^^ Identifier
+//                            ^^ Identifier
       },
       m_host_port => sub {
-//    ^^^^^^^^^^^^ StringLiteral 
-//                ^^ IdentifierOperator 
-//                   ^^^ Keyword 
+//    ^^^^^^^^^^^^ StringLiteral
+//                ^^ IdentifierOperator
+//                   ^^^ Keyword
           my($v, $uri) = @_;
-//        ^^ Keyword 
-//           ^^ Identifier  local 27
-//               ^^^^ Identifier  local 28
-//                     ^ IdentifierOperator 
-//                       ^^ Identifier 
+//        ^^ Keyword
+//           ^^ Identifier
+//               ^^^^ Identifier
+//                     ^ IdentifierOperator
+//                       ^^ Identifier
           return unless $uri->can("host_port");
-//        ^^^^^^ Keyword 
-//               ^^^^^^ Keyword 
-//                      ^^^^ Identifier  local 28
-//                            ^^^ IdentifierFunction 
-//                                ^^^^^^^^^^^ StringLiteral 
+//        ^^^^^^ Keyword
+//               ^^^^^^ Keyword
+//                      ^^^^ Identifier
+//                            ^^^ IdentifierFunction
+//                                ^^^^^^^^^^^ StringLiteral
           return $uri->host_port eq $v, 7;
-//        ^^^^^^ Keyword 
-//               ^^^^ Identifier  local 28
-//                     ^^^^^^^^^ IdentifierFunction 
-//                               ^^ IdentifierOperator 
-//                                  ^^ Identifier  local 27
-//                                      ^ NumericLiteral 
+//        ^^^^^^ Keyword
+//               ^^^^ Identifier
+//                     ^^^^^^^^^ IdentifierFunction
+//                               ^^ IdentifierOperator
+//                                  ^^ Identifier
+//                                      ^ NumericLiteral
       },
       m_host => sub {
-//    ^^^^^^^ StringLiteral 
-//           ^^ IdentifierOperator 
-//              ^^^ Keyword 
+//    ^^^^^^^ StringLiteral
+//           ^^ IdentifierOperator
+//              ^^^ Keyword
           my($v, $uri) = @_;
-//        ^^ Keyword 
-//           ^^ Identifier  local 29
-//               ^^^^ Identifier  local 30
-//                     ^ IdentifierOperator 
-//                       ^^ Identifier 
+//        ^^ Keyword
+//           ^^ Identifier
+//               ^^^^ Identifier
+//                     ^ IdentifierOperator
+//                       ^^ Identifier
           return unless $uri->can("host");
-//        ^^^^^^ Keyword 
-//               ^^^^^^ Keyword 
-//                      ^^^^ Identifier  local 30
-//                            ^^^ IdentifierFunction 
-//                                ^^^^^^ StringLiteral 
+//        ^^^^^^ Keyword
+//               ^^^^^^ Keyword
+//                      ^^^^ Identifier
+//                            ^^^ IdentifierFunction
+//                                ^^^^^^ StringLiteral
           return $uri->host eq $v, 6;
-//        ^^^^^^ Keyword 
-//               ^^^^ Identifier  local 30
-//                     ^^^^ IdentifierFunction 
-//                          ^^ IdentifierOperator 
-//                             ^^ Identifier  local 29
-//                                 ^ NumericLiteral 
+//        ^^^^^^ Keyword
+//               ^^^^ Identifier
+//                     ^^^^ IdentifierFunction
+//                          ^^ IdentifierOperator
+//                             ^^ Identifier
+//                                 ^ NumericLiteral
       },
       m_port => sub {
-//    ^^^^^^^ StringLiteral 
-//           ^^ IdentifierOperator 
-//              ^^^ Keyword 
+//    ^^^^^^^ StringLiteral
+//           ^^ IdentifierOperator
+//              ^^^ Keyword
           my($v, $uri) = @_;
-//        ^^ Keyword 
-//           ^^ Identifier  local 31
-//               ^^^^ Identifier  local 32
-//                     ^ IdentifierOperator 
-//                       ^^ Identifier 
+//        ^^ Keyword
+//           ^^ Identifier
+//               ^^^^ Identifier
+//                     ^ IdentifierOperator
+//                       ^^ Identifier
           return unless $uri->can("port");
-//        ^^^^^^ Keyword 
-//               ^^^^^^ Keyword 
-//                      ^^^^ Identifier  local 32
-//                            ^^^ IdentifierFunction 
-//                                ^^^^^^ StringLiteral 
+//        ^^^^^^ Keyword
+//               ^^^^^^ Keyword
+//                      ^^^^ Identifier
+//                            ^^^ IdentifierFunction
+//                                ^^^^^^ StringLiteral
           return $uri->port eq $v;
-//        ^^^^^^ Keyword 
-//               ^^^^ Identifier  local 32
-//                     ^^^^ IdentifierFunction 
-//                          ^^ IdentifierOperator 
-//                             ^^ Identifier  local 31
+//        ^^^^^^ Keyword
+//               ^^^^ Identifier
+//                     ^^^^ IdentifierFunction
+//                          ^^ IdentifierOperator
+//                             ^^ Identifier
       },
       m_domain => sub {
-//    ^^^^^^^^^ StringLiteral 
-//             ^^ IdentifierOperator 
-//                ^^^ Keyword 
+//    ^^^^^^^^^ StringLiteral
+//             ^^ IdentifierOperator
+//                ^^^ Keyword
           my($v, $uri) = @_;
-//        ^^ Keyword 
-//           ^^ Identifier  local 33
-//               ^^^^ Identifier  local 34
-//                     ^ IdentifierOperator 
-//                       ^^ Identifier 
+//        ^^ Keyword
+//           ^^ Identifier
+//               ^^^^ Identifier
+//                     ^ IdentifierOperator
+//                       ^^ Identifier
           return unless $uri->can("host");
-//        ^^^^^^ Keyword 
-//               ^^^^^^ Keyword 
-//                      ^^^^ Identifier  local 34
-//                            ^^^ IdentifierFunction 
-//                                ^^^^^^ StringLiteral 
+//        ^^^^^^ Keyword
+//               ^^^^^^ Keyword
+//                      ^^^^ Identifier
+//                            ^^^ IdentifierFunction
+//                                ^^^^^^ StringLiteral
           my $h = $uri->host;
-//        ^^ Keyword 
-//           ^^ Identifier  local 35
-//              ^ IdentifierOperator 
-//                ^^^^ Identifier  local 34
-//                      ^^^^ IdentifierFunction 
+//        ^^ Keyword
+//           ^^ Identifier
+//              ^ IdentifierOperator
+//                ^^^^ Identifier
+//                      ^^^^ IdentifierFunction
           $h = "$h.local" unless $h =~ /\./;
-//        ^^ Identifier  local 35
-//           ^ IdentifierOperator 
-//             ^ StringLiteral 
-//              ^^ Identifier  local 35
-//                ^^^^^^^ StringLiteral 
-//                        ^^^^^^ Keyword 
-//                               ^^ Identifier  local 35
-//                                  ^^ IdentifierOperator 
+//        ^^ Identifier
+//           ^ IdentifierOperator
+//             ^ StringLiteral
+//              ^^ Identifier
+//                ^^^^^^^ StringLiteral
+//                        ^^^^^^ Keyword
+//                               ^^ Identifier
+//                                  ^^ IdentifierOperator
           $v = ".$v" unless $v =~ /^\./;
-//        ^^ Identifier  local 33
-//           ^ IdentifierOperator 
-//             ^^ StringLiteral 
-//               ^^ Identifier  local 33
-//                 ^ StringLiteral 
-//                   ^^^^^^ Keyword 
-//                          ^^ Identifier  local 33
-//                             ^^ IdentifierOperator 
+//        ^^ Identifier
+//           ^ IdentifierOperator
+//             ^^ StringLiteral
+//               ^^ Identifier
+//                 ^ StringLiteral
+//                   ^^^^^^ Keyword
+//                          ^^ Identifier
+//                             ^^ IdentifierOperator
           return length($v), 5 if substr($h, -length($v)) eq $v;
-//        ^^^^^^ Keyword 
-//               ^^^^^^ IdentifierBuiltin 
-//                      ^^ Identifier  local 33
-//                           ^ NumericLiteral 
-//                             ^^ Keyword 
-//                                ^^^^^^ IdentifierFunction 
-//                                       ^^ Identifier  local 35
-//                                           ^^ IdentifierBuiltin 
-//                                             ^^^^^ IdentifierFunction 
-//                                                   ^^ Identifier  local 33
-//                                                        ^^ IdentifierOperator 
-//                                                           ^^ Identifier  local 33
+//        ^^^^^^ Keyword
+//               ^^^^^^ IdentifierBuiltin
+//                      ^^ Identifier
+//                           ^ NumericLiteral
+//                             ^^ Keyword
+//                                ^^^^^^ IdentifierFunction
+//                                       ^^ Identifier
+//                                           ^^ IdentifierBuiltin
+//                                             ^^^^^ IdentifierFunction
+//                                                   ^^ Identifier
+//                                                        ^^ IdentifierOperator
+//                                                           ^^ Identifier
           return 0;
-//        ^^^^^^ Keyword 
-//               ^ NumericLiteral 
+//        ^^^^^^ Keyword
+//               ^ NumericLiteral
       },
       m_path => sub {
-//    ^^^^^^^ StringLiteral 
-//           ^^ IdentifierOperator 
-//              ^^^ Keyword 
+//    ^^^^^^^ StringLiteral
+//           ^^ IdentifierOperator
+//              ^^^ Keyword
           my($v, $uri) = @_;
-//        ^^ Keyword 
-//           ^^ Identifier  local 36
-//               ^^^^ Identifier  local 37
-//                     ^ IdentifierOperator 
-//                       ^^ Identifier 
+//        ^^ Keyword
+//           ^^ Identifier
+//               ^^^^ Identifier
+//                     ^ IdentifierOperator
+//                       ^^ Identifier
           return unless $uri->can("path");
-//        ^^^^^^ Keyword 
-//               ^^^^^^ Keyword 
-//                      ^^^^ Identifier  local 37
-//                            ^^^ IdentifierFunction 
-//                                ^^^^^^ StringLiteral 
+//        ^^^^^^ Keyword
+//               ^^^^^^ Keyword
+//                      ^^^^ Identifier
+//                            ^^^ IdentifierFunction
+//                                ^^^^^^ StringLiteral
           return $uri->path eq $v, 4;
-//        ^^^^^^ Keyword 
-//               ^^^^ Identifier  local 37
-//                     ^^^^ IdentifierFunction 
-//                          ^^ IdentifierOperator 
-//                             ^^ Identifier  local 36
-//                                 ^ NumericLiteral 
+//        ^^^^^^ Keyword
+//               ^^^^ Identifier
+//                     ^^^^ IdentifierFunction
+//                          ^^ IdentifierOperator
+//                             ^^ Identifier
+//                                 ^ NumericLiteral
       },
       m_path_prefix => sub {
-//    ^^^^^^^^^^^^^^ StringLiteral 
-//                  ^^ IdentifierOperator 
-//                     ^^^ Keyword 
+//    ^^^^^^^^^^^^^^ StringLiteral
+//                  ^^ IdentifierOperator
+//                     ^^^ Keyword
           my($v, $uri) = @_;
-//        ^^ Keyword 
-//           ^^ Identifier  local 38
-//               ^^^^ Identifier  local 39
-//                     ^ IdentifierOperator 
-//                       ^^ Identifier 
+//        ^^ Keyword
+//           ^^ Identifier
+//               ^^^^ Identifier
+//                     ^ IdentifierOperator
+//                       ^^ Identifier
           return unless $uri->can("path");
-//        ^^^^^^ Keyword 
-//               ^^^^^^ Keyword 
-//                      ^^^^ Identifier  local 39
-//                            ^^^ IdentifierFunction 
-//                                ^^^^^^ StringLiteral 
+//        ^^^^^^ Keyword
+//               ^^^^^^ Keyword
+//                      ^^^^ Identifier
+//                            ^^^ IdentifierFunction
+//                                ^^^^^^ StringLiteral
           my $path = $uri->path;
-//        ^^ Keyword 
-//           ^^^^^ Identifier  local 40
-//                 ^ IdentifierOperator 
-//                   ^^^^ Identifier  local 39
-//                         ^^^^ IdentifierFunction 
+//        ^^ Keyword
+//           ^^^^^ Identifier
+//                 ^ IdentifierOperator
+//                   ^^^^ Identifier
+//                         ^^^^ IdentifierFunction
           my $len = length($v);
-//        ^^ Keyword 
-//           ^^^^ Identifier  local 41
-//                ^ IdentifierOperator 
-//                  ^^^^^^ IdentifierBuiltin 
-//                         ^^ Identifier  local 38
+//        ^^ Keyword
+//           ^^^^ Identifier
+//                ^ IdentifierOperator
+//                  ^^^^^^ IdentifierBuiltin
+//                         ^^ Identifier
           return $len, 3 if $path eq $v;
-//        ^^^^^^ Keyword 
-//               ^^^^ Identifier  local 41
-//                     ^ NumericLiteral 
-//                       ^^ Keyword 
-//                          ^^^^^ Identifier  local 40
-//                                ^^ IdentifierOperator 
-//                                   ^^ Identifier  local 38
+//        ^^^^^^ Keyword
+//               ^^^^ Identifier
+//                     ^ NumericLiteral
+//                       ^^ Keyword
+//                          ^^^^^ Identifier
+//                                ^^ IdentifierOperator
+//                                   ^^ Identifier
           return 0 if length($path) <= $len;
-//        ^^^^^^ Keyword 
-//               ^ NumericLiteral 
-//                 ^^ Keyword 
-//                    ^^^^^^ IdentifierBuiltin 
-//                           ^^^^^ Identifier  local 40
-//                                     ^^^^ Identifier  local 41
+//        ^^^^^^ Keyword
+//               ^ NumericLiteral
+//                 ^^ Keyword
+//                    ^^^^^^ IdentifierBuiltin
+//                           ^^^^^ Identifier
+//                                     ^^^^ Identifier
           $v .= "/" unless $v =~ m,/\z,,;
-//        ^^ Identifier  local 38
-//              ^^^ StringLiteral 
-//                  ^^^^^^ Keyword 
-//                         ^^ Identifier  local 38
-//                            ^^ IdentifierOperator 
-//                               ^ Keyword 
-//                                   ^ Keyword 
+//        ^^ Identifier
+//              ^^^ StringLiteral
+//                  ^^^^^^ Keyword
+//                         ^^ Identifier
+//                            ^^ IdentifierOperator
+//                               ^ Keyword
+//                                   ^ Keyword
           return $len, 3 if substr($path, 0, length($v)) eq $v;
-//        ^^^^^^ Keyword 
-//               ^^^^ Identifier  local 41
-//                     ^ NumericLiteral 
-//                       ^^ Keyword 
-//                          ^^^^^^ IdentifierFunction 
-//                                 ^^^^^ Identifier  local 40
-//                                        ^ NumericLiteral 
-//                                           ^^^^^^ IdentifierBuiltin 
-//                                                  ^^ Identifier  local 38
-//                                                       ^^ IdentifierOperator 
-//                                                          ^^ Identifier  local 38
+//        ^^^^^^ Keyword
+//               ^^^^ Identifier
+//                     ^ NumericLiteral
+//                       ^^ Keyword
+//                          ^^^^^^ IdentifierFunction
+//                                 ^^^^^ Identifier
+//                                        ^ NumericLiteral
+//                                           ^^^^^^ IdentifierBuiltin
+//                                                  ^^ Identifier
+//                                                       ^^ IdentifierOperator
+//                                                          ^^ Identifier
           return 0;
-//        ^^^^^^ Keyword 
-//               ^ NumericLiteral 
+//        ^^^^^^ Keyword
+//               ^ NumericLiteral
       },
       m_path_match => sub {
-//    ^^^^^^^^^^^^^ StringLiteral 
-//                 ^^ IdentifierOperator 
-//                    ^^^ Keyword 
+//    ^^^^^^^^^^^^^ StringLiteral
+//                 ^^ IdentifierOperator
+//                    ^^^ Keyword
           my($v, $uri) = @_;
-//        ^^ Keyword 
-//           ^^ Identifier  local 42
-//               ^^^^ Identifier  local 43
-//                     ^ IdentifierOperator 
-//                       ^^ Identifier 
+//        ^^ Keyword
+//           ^^ Identifier
+//               ^^^^ Identifier
+//                     ^ IdentifierOperator
+//                       ^^ Identifier
           return unless $uri->can("path");
-//        ^^^^^^ Keyword 
-//               ^^^^^^ Keyword 
-//                      ^^^^ Identifier  local 43
-//                            ^^^ IdentifierFunction 
-//                                ^^^^^^ StringLiteral 
+//        ^^^^^^ Keyword
+//               ^^^^^^ Keyword
+//                      ^^^^ Identifier
+//                            ^^^ IdentifierFunction
+//                                ^^^^^^ StringLiteral
           return $uri->path =~ $v;
-//        ^^^^^^ Keyword 
-//               ^^^^ Identifier  local 43
-//                     ^^^^ IdentifierFunction 
-//                          ^^ IdentifierOperator 
-//                             ^^ Identifier  local 42
+//        ^^^^^^ Keyword
+//               ^^^^ Identifier
+//                     ^^^^ IdentifierFunction
+//                          ^^ IdentifierOperator
+//                             ^^ Identifier
       },
       m_uri__ => sub {
-//    ^^^^^^^^ StringLiteral 
-//            ^^ IdentifierOperator 
-//               ^^^ Keyword 
+//    ^^^^^^^^ StringLiteral
+//            ^^ IdentifierOperator
+//               ^^^ Keyword
           my($v, $k, $uri) = @_;
-//        ^^ Keyword 
-//           ^^ Identifier  local 44
-//               ^^ Identifier  local 45
-//                   ^^^^ Identifier  local 46
-//                         ^ IdentifierOperator 
-//                           ^^ Identifier 
+//        ^^ Keyword
+//           ^^ Identifier
+//               ^^ Identifier
+//                   ^^^^ Identifier
+//                         ^ IdentifierOperator
+//                           ^^ Identifier
           return unless $uri->can($k);
-//        ^^^^^^ Keyword 
-//               ^^^^^^ Keyword 
-//                      ^^^^ Identifier  local 46
-//                            ^^^ IdentifierFunction 
-//                                ^^ Identifier  local 45
+//        ^^^^^^ Keyword
+//               ^^^^^^ Keyword
+//                      ^^^^ Identifier
+//                            ^^^ IdentifierFunction
+//                                ^^ Identifier
           return 1 unless defined $v;
-//        ^^^^^^ Keyword 
-//               ^ NumericLiteral 
-//                 ^^^^^^ Keyword 
-//                        ^^^^^^^ IdentifierBuiltin 
-//                                ^^ Identifier  local 44
+//        ^^^^^^ Keyword
+//               ^ NumericLiteral
+//                 ^^^^^^ Keyword
+//                        ^^^^^^^ IdentifierBuiltin
+//                                ^^ Identifier
           return $uri->$k eq $v;
-//        ^^^^^^ Keyword 
-//               ^^^^ Identifier  local 46
-//                     ^^ Identifier  local 45
-//                        ^^ IdentifierOperator 
-//                           ^^ Identifier  local 44
+//        ^^^^^^ Keyword
+//               ^^^^ Identifier
+//                     ^^ Identifier
+//                        ^^ IdentifierOperator
+//                           ^^ Identifier
       },
       m_method => sub {
-//    ^^^^^^^^^ StringLiteral 
-//             ^^ IdentifierOperator 
-//                ^^^ Keyword 
+//    ^^^^^^^^^ StringLiteral
+//             ^^ IdentifierOperator
+//                ^^^ Keyword
           my($v, $uri, $request) = @_;
-//        ^^ Keyword 
-//           ^^ Identifier  local 47
-//               ^^^^ Identifier  local 48
-//                     ^^^^^^^^ Identifier  local 49
-//                               ^ IdentifierOperator 
-//                                 ^^ Identifier 
+//        ^^ Keyword
+//           ^^ Identifier
+//               ^^^^ Identifier
+//                     ^^^^^^^^ Identifier
+//                               ^ IdentifierOperator
+//                                 ^^ Identifier
           return $request && $request->method eq $v;
-//        ^^^^^^ Keyword 
-//               ^^^^^^^^ Identifier  local 49
-//                           ^^^^^^^^ Identifier  local 49
-//                                     ^^^^^^ IdentifierFunction 
-//                                            ^^ IdentifierOperator 
-//                                               ^^ Identifier  local 47
+//        ^^^^^^ Keyword
+//               ^^^^^^^^ Identifier
+//                           ^^^^^^^^ Identifier
+//                                     ^^^^^^ IdentifierFunction
+//                                            ^^ IdentifierOperator
+//                                               ^^ Identifier
       },
       m_proxy => sub {
-//    ^^^^^^^^ StringLiteral 
-//            ^^ IdentifierOperator 
-//               ^^^ Keyword 
+//    ^^^^^^^^ StringLiteral
+//            ^^ IdentifierOperator
+//               ^^^ Keyword
           my($v, $uri, $request) = @_;
-//        ^^ Keyword 
-//           ^^ Identifier  local 50
-//               ^^^^ Identifier  local 51
-//                     ^^^^^^^^ Identifier  local 52
-//                               ^ IdentifierOperator 
-//                                 ^^ Identifier 
+//        ^^ Keyword
+//           ^^ Identifier
+//               ^^^^ Identifier
+//                     ^^^^^^^^ Identifier
+//                               ^ IdentifierOperator
+//                                 ^^ Identifier
           return $request && ($request->{proxy} || "") eq $v;
-//        ^^^^^^ Keyword 
-//               ^^^^^^^^ Identifier  local 52
-//                            ^^^^^^^^ Identifier  local 52
-//                                    ^^ Identifier 
-//                                      ^ Identifier 
-//                                       ^^^^^ StringLiteral 
-//                                            ^ Identifier 
-//                                                 ^^ StringLiteral 
-//                                                     ^^ IdentifierOperator 
-//                                                        ^^ Identifier  local 50
+//        ^^^^^^ Keyword
+//               ^^^^^^^^ Identifier
+//                            ^^^^^^^^ Identifier
+//                                    ^^ Identifier
+//                                      ^ Identifier
+//                                       ^^^^^ StringLiteral
+//                                            ^ Identifier
+//                                                 ^^ StringLiteral
+//                                                     ^^ IdentifierOperator
+//                                                        ^^ Identifier
       },
       m_code => sub {
-//    ^^^^^^^ StringLiteral 
-//           ^^ IdentifierOperator 
-//              ^^^ Keyword 
+//    ^^^^^^^ StringLiteral
+//           ^^ IdentifierOperator
+//              ^^^ Keyword
           my($v, $uri, $request, $response) = @_;
-//        ^^ Keyword 
-//           ^^ Identifier  local 53
-//               ^^^^ Identifier  local 54
-//                     ^^^^^^^^ Identifier  local 55
-//                               ^^^^^^^^^ Identifier  local 56
-//                                          ^ IdentifierOperator 
-//                                            ^^ Identifier 
+//        ^^ Keyword
+//           ^^ Identifier
+//               ^^^^ Identifier
+//                     ^^^^^^^^ Identifier
+//                               ^^^^^^^^^ Identifier
+//                                          ^ IdentifierOperator
+//                                            ^^ Identifier
           $v =~ s/xx\z//;
-//        ^^ Identifier  local 53
-//           ^^ IdentifierOperator 
-//              ^ Keyword 
-//               ^^^^^^^ StringLiteral 
+//        ^^ Identifier
+//           ^^ IdentifierOperator
+//              ^ Keyword
+//               ^^^^^^^ StringLiteral
           return unless $response;
-//        ^^^^^^ Keyword 
-//               ^^^^^^ Keyword 
-//                      ^^^^^^^^^ Identifier  local 56
+//        ^^^^^^ Keyword
+//               ^^^^^^ Keyword
+//                      ^^^^^^^^^ Identifier
           return length($v), 2 if substr($response->code, 0, length($v)) eq $v;
-//        ^^^^^^ Keyword 
-//               ^^^^^^ IdentifierBuiltin 
-//                      ^^ Identifier  local 53
-//                           ^ NumericLiteral 
-//                             ^^ Keyword 
-//                                ^^^^^^ IdentifierFunction 
-//                                       ^^^^^^^^^ Identifier  local 56
-//                                                  ^^^^ IdentifierFunction 
-//                                                        ^ NumericLiteral 
-//                                                           ^^^^^^ IdentifierBuiltin 
-//                                                                  ^^ Identifier  local 53
-//                                                                       ^^ IdentifierOperator 
-//                                                                          ^^ Identifier  local 53
+//        ^^^^^^ Keyword
+//               ^^^^^^ IdentifierBuiltin
+//                      ^^ Identifier
+//                           ^ NumericLiteral
+//                             ^^ Keyword
+//                                ^^^^^^ IdentifierFunction
+//                                       ^^^^^^^^^ Identifier
+//                                                  ^^^^ IdentifierFunction
+//                                                        ^ NumericLiteral
+//                                                           ^^^^^^ IdentifierBuiltin
+//                                                                  ^^ Identifier
+//                                                                       ^^ IdentifierOperator
+//                                                                          ^^ Identifier
       },
       m_media_type => sub {  # for request too??
-//    ^^^^^^^^^^^^^ StringLiteral 
-//                 ^^ IdentifierOperator 
-//                    ^^^ Keyword 
-//                           ^^^^^^^^^^^^^^^^^^^ Comment 
+//    ^^^^^^^^^^^^^ StringLiteral
+//                 ^^ IdentifierOperator
+//                    ^^^ Keyword
+//                           ^^^^^^^^^^^^^^^^^^^ Comment
           my($v, $uri, $request, $response) = @_;
-//        ^^ Keyword 
-//           ^^ Identifier  local 57
-//               ^^^^ Identifier  local 58
-//                     ^^^^^^^^ Identifier  local 59
-//                               ^^^^^^^^^ Identifier  local 60
-//                                          ^ IdentifierOperator 
-//                                            ^^ Identifier 
+//        ^^ Keyword
+//           ^^ Identifier
+//               ^^^^ Identifier
+//                     ^^^^^^^^ Identifier
+//                               ^^^^^^^^^ Identifier
+//                                          ^ IdentifierOperator
+//                                            ^^ Identifier
           return unless $response;
-//        ^^^^^^ Keyword 
-//               ^^^^^^ Keyword 
-//                      ^^^^^^^^^ Identifier  local 60
+//        ^^^^^^ Keyword
+//               ^^^^^^ Keyword
+//                      ^^^^^^^^^ Identifier
           return 1, 1 if $v eq "*/*";
-//        ^^^^^^ Keyword 
-//               ^ NumericLiteral 
-//                  ^ NumericLiteral 
-//                    ^^ Keyword 
-//                       ^^ Identifier  local 57
-//                          ^^ IdentifierOperator 
-//                             ^^^^^ StringLiteral 
+//        ^^^^^^ Keyword
+//               ^ NumericLiteral
+//                  ^ NumericLiteral
+//                    ^^ Keyword
+//                       ^^ Identifier
+//                          ^^ IdentifierOperator
+//                             ^^^^^ StringLiteral
           my $ct = $response->content_type;
-//        ^^ Keyword 
-//           ^^^ Identifier  local 61
-//               ^ IdentifierOperator 
-//                 ^^^^^^^^^ Identifier  local 60
-//                            ^^^^^^^^^^^^ IdentifierFunction 
+//        ^^ Keyword
+//           ^^^ Identifier
+//               ^ IdentifierOperator
+//                 ^^^^^^^^^ Identifier
+//                            ^^^^^^^^^^^^ IdentifierFunction
           return 2, 1 if $v =~ s,/\*\z,, && $ct =~ m,^\Q$v\E/,;
-//        ^^^^^^ Keyword 
-//               ^ NumericLiteral 
-//                  ^ NumericLiteral 
-//                    ^^ Keyword 
-//                       ^^ Identifier  local 57
-//                          ^^ IdentifierOperator 
-//                                          ^^^ Identifier  local 61
-//                                              ^^ IdentifierOperator 
-//                                                 ^ Keyword 
-//                                                      ^^ Identifier  local 57
+//        ^^^^^^ Keyword
+//               ^ NumericLiteral
+//                  ^ NumericLiteral
+//                    ^^ Keyword
+//                       ^^ Identifier
+//                          ^^ IdentifierOperator
+//                                          ^^^ Identifier
+//                                              ^^ IdentifierOperator
+//                                                 ^ Keyword
+//                                                      ^^ Identifier
           return 3, 1 if $v eq "html" && $response->content_is_html;
-//        ^^^^^^ Keyword 
-//               ^ NumericLiteral 
-//                  ^ NumericLiteral 
-//                    ^^ Keyword 
-//                       ^^ Identifier  local 57
-//                          ^^ IdentifierOperator 
-//                             ^^^^^^ StringLiteral 
-//                                       ^^^^^^^^^ Identifier  local 60
-//                                                  ^^^^^^^^^^^^^^^ IdentifierFunction 
+//        ^^^^^^ Keyword
+//               ^ NumericLiteral
+//                  ^ NumericLiteral
+//                    ^^ Keyword
+//                       ^^ Identifier
+//                          ^^ IdentifierOperator
+//                             ^^^^^^ StringLiteral
+//                                       ^^^^^^^^^ Identifier
+//                                                  ^^^^^^^^^^^^^^^ IdentifierFunction
           return 4, 1 if $v eq "xhtml" && $response->content_is_xhtml;
-//        ^^^^^^ Keyword 
-//               ^ NumericLiteral 
-//                  ^ NumericLiteral 
-//                    ^^ Keyword 
-//                       ^^ Identifier  local 57
-//                          ^^ IdentifierOperator 
-//                             ^^^^^^^ StringLiteral 
-//                                        ^^^^^^^^^ Identifier  local 60
-//                                                   ^^^^^^^^^^^^^^^^ IdentifierFunction 
+//        ^^^^^^ Keyword
+//               ^ NumericLiteral
+//                  ^ NumericLiteral
+//                    ^^ Keyword
+//                       ^^ Identifier
+//                          ^^ IdentifierOperator
+//                             ^^^^^^^ StringLiteral
+//                                        ^^^^^^^^^ Identifier
+//                                                   ^^^^^^^^^^^^^^^^ IdentifierFunction
           return 10, 1 if $v eq $ct;
-//        ^^^^^^ Keyword 
-//               ^^ NumericLiteral 
-//                   ^ NumericLiteral 
-//                     ^^ Keyword 
-//                        ^^ Identifier  local 57
-//                           ^^ IdentifierOperator 
-//                              ^^^ Identifier  local 61
+//        ^^^^^^ Keyword
+//               ^^ NumericLiteral
+//                   ^ NumericLiteral
+//                     ^^ Keyword
+//                        ^^ Identifier
+//                           ^^ IdentifierOperator
+//                              ^^^ Identifier
           return 0;
-//        ^^^^^^ Keyword 
-//               ^ NumericLiteral 
+//        ^^^^^^ Keyword
+//               ^ NumericLiteral
       },
       m_header__ => sub {
-//    ^^^^^^^^^^^ StringLiteral 
-//               ^^ IdentifierOperator 
-//                  ^^^ Keyword 
+//    ^^^^^^^^^^^ StringLiteral
+//               ^^ IdentifierOperator
+//                  ^^^ Keyword
           my($v, $k, $uri, $request, $response) = @_;
-//        ^^ Keyword 
-//           ^^ Identifier  local 62
-//               ^^ Identifier  local 63
-//                   ^^^^ Identifier  local 64
-//                         ^^^^^^^^ Identifier  local 65
-//                                   ^^^^^^^^^ Identifier  local 66
-//                                              ^ IdentifierOperator 
-//                                                ^^ Identifier 
+//        ^^ Keyword
+//           ^^ Identifier
+//               ^^ Identifier
+//                   ^^^^ Identifier
+//                         ^^^^^^^^ Identifier
+//                                   ^^^^^^^^^ Identifier
+//                                              ^ IdentifierOperator
+//                                                ^^ Identifier
           return unless $request;
-//        ^^^^^^ Keyword 
-//               ^^^^^^ Keyword 
-//                      ^^^^^^^^ Identifier  local 65
+//        ^^^^^^ Keyword
+//               ^^^^^^ Keyword
+//                      ^^^^^^^^ Identifier
           return 1 if $request->header($k) eq $v;
-//        ^^^^^^ Keyword 
-//               ^ NumericLiteral 
-//                 ^^ Keyword 
-//                    ^^^^^^^^ Identifier  local 65
-//                              ^^^^^^ IdentifierFunction 
-//                                     ^^ Identifier  local 63
-//                                         ^^ IdentifierOperator 
-//                                            ^^ Identifier  local 62
+//        ^^^^^^ Keyword
+//               ^ NumericLiteral
+//                 ^^ Keyword
+//                    ^^^^^^^^ Identifier
+//                              ^^^^^^ IdentifierFunction
+//                                     ^^ Identifier
+//                                         ^^ IdentifierOperator
+//                                            ^^ Identifier
           return 1 if $response && $response->header($k) eq $v;
-//        ^^^^^^ Keyword 
-//               ^ NumericLiteral 
-//                 ^^ Keyword 
-//                    ^^^^^^^^^ Identifier  local 66
-//                                 ^^^^^^^^^ Identifier  local 66
-//                                            ^^^^^^ IdentifierFunction 
-//                                                   ^^ Identifier  local 63
-//                                                       ^^ IdentifierOperator 
-//                                                          ^^ Identifier  local 62
+//        ^^^^^^ Keyword
+//               ^ NumericLiteral
+//                 ^^ Keyword
+//                    ^^^^^^^^^ Identifier
+//                                 ^^^^^^^^^ Identifier
+//                                            ^^^^^^ IdentifierFunction
+//                                                   ^^ Identifier
+//                                                       ^^ IdentifierOperator
+//                                                          ^^ Identifier
           return 0;
-//        ^^^^^^ Keyword 
-//               ^ NumericLiteral 
+//        ^^^^^^ Keyword
+//               ^ NumericLiteral
       },
       m_response_attr__ => sub {
-//    ^^^^^^^^^^^^^^^^^^ StringLiteral 
-//                      ^^ IdentifierOperator 
-//                         ^^^ Keyword 
+//    ^^^^^^^^^^^^^^^^^^ StringLiteral
+//                      ^^ IdentifierOperator
+//                         ^^^ Keyword
           my($v, $k, $uri, $request, $response) = @_;
-//        ^^ Keyword 
-//           ^^ Identifier  local 67
-//               ^^ Identifier  local 68
-//                   ^^^^ Identifier  local 69
-//                         ^^^^^^^^ Identifier  local 70
-//                                   ^^^^^^^^^ Identifier  local 71
-//                                              ^ IdentifierOperator 
-//                                                ^^ Identifier 
+//        ^^ Keyword
+//           ^^ Identifier
+//               ^^ Identifier
+//                   ^^^^ Identifier
+//                         ^^^^^^^^ Identifier
+//                                   ^^^^^^^^^ Identifier
+//                                              ^ IdentifierOperator
+//                                                ^^ Identifier
           return unless $response;
-//        ^^^^^^ Keyword 
-//               ^^^^^^ Keyword 
-//                      ^^^^^^^^^ Identifier  local 71
+//        ^^^^^^ Keyword
+//               ^^^^^^ Keyword
+//                      ^^^^^^^^^ Identifier
           return 1 if !defined($v) && exists $response->{$k};
-//        ^^^^^^ Keyword 
-//               ^ NumericLiteral 
-//                 ^^ Keyword 
-//                     ^^^^^^^ IdentifierBuiltin 
-//                             ^^ Identifier  local 67
-//                                    ^^^^^^ IdentifierBuiltin 
-//                                           ^^^^^^^^^ Identifier  local 71
-//                                                    ^^ Identifier 
-//                                                      ^ Identifier 
-//                                                       ^^ Identifier  local 68
-//                                                         ^ Identifier 
+//        ^^^^^^ Keyword
+//               ^ NumericLiteral
+//                 ^^ Keyword
+//                     ^^^^^^^ IdentifierBuiltin
+//                             ^^ Identifier
+//                                    ^^^^^^ IdentifierBuiltin
+//                                           ^^^^^^^^^ Identifier
+//                                                    ^^ Identifier
+//                                                      ^ Identifier
+//                                                       ^^ Identifier
+//                                                         ^ Identifier
           return 0 unless exists $response->{$k};
-//        ^^^^^^ Keyword 
-//               ^ NumericLiteral 
-//                 ^^^^^^ Keyword 
-//                        ^^^^^^ IdentifierBuiltin 
-//                               ^^^^^^^^^ Identifier  local 71
-//                                        ^^ Identifier 
-//                                          ^ Identifier 
-//                                           ^^ Identifier  local 68
-//                                             ^ Identifier 
+//        ^^^^^^ Keyword
+//               ^ NumericLiteral
+//                 ^^^^^^ Keyword
+//                        ^^^^^^ IdentifierBuiltin
+//                               ^^^^^^^^^ Identifier
+//                                        ^^ Identifier
+//                                          ^ Identifier
+//                                           ^^ Identifier
+//                                             ^ Identifier
           return 1 if $response->{$k} eq $v;
-//        ^^^^^^ Keyword 
-//               ^ NumericLiteral 
-//                 ^^ Keyword 
-//                    ^^^^^^^^^ Identifier  local 71
-//                             ^^ Identifier 
-//                               ^ Identifier 
-//                                ^^ Identifier  local 68
-//                                  ^ Identifier 
-//                                    ^^ IdentifierOperator 
-//                                       ^^ Identifier  local 67
+//        ^^^^^^ Keyword
+//               ^ NumericLiteral
+//                 ^^ Keyword
+//                    ^^^^^^^^^ Identifier
+//                             ^^ Identifier
+//                               ^ Identifier
+//                                ^^ Identifier
+//                                  ^ Identifier
+//                                    ^^ IdentifierOperator
+//                                       ^^ Identifier
           return 0;
-//        ^^^^^^ Keyword 
-//               ^ NumericLiteral 
+//        ^^^^^^ Keyword
+//               ^ NumericLiteral
       },
   );
   
   sub matching {
-//^^^ Keyword 
-//    ^^^^^^^^ IdentifierFunction 
+//^^^ Keyword
+//    ^^^^^^^^ IdentifierFunction
       my $self = shift;
-//    ^^ Keyword 
-//       ^^^^^ Identifier  local 72
-//             ^ IdentifierOperator 
-//               ^^^^^ IdentifierBuiltin 
+//    ^^ Keyword
+//       ^^^^^ Identifier
+//             ^ IdentifierOperator
+//               ^^^^^ IdentifierBuiltin
       if (@_ == 1) {
-//    ^^ Keyword 
-//        ^^ Identifier 
-//              ^ NumericLiteral 
+//    ^^ Keyword
+//        ^^ Identifier
+//              ^ NumericLiteral
           if ($_[0]->can("request")) {
-//        ^^ Keyword 
-//            ^^ Identifier 
-//              ^ Identifier 
-//               ^ NumericLiteral 
-//                ^ Identifier 
-//                   ^^^ IdentifierFunction 
-//                       ^^^^^^^^^ StringLiteral 
+//        ^^ Keyword
+//            ^^ Identifier
+//              ^ Identifier
+//               ^ NumericLiteral
+//                ^ Identifier
+//                   ^^^ IdentifierFunction
+//                       ^^^^^^^^^ StringLiteral
               unshift(@_, $_[0]->request);
-//            ^^^^^^^ IdentifierFunction 
-//                    ^^ Identifier 
-//                        ^^ Identifier 
-//                          ^ Identifier 
-//                           ^ NumericLiteral 
-//                            ^ Identifier 
-//                               ^^^^^^^ IdentifierFunction 
+//            ^^^^^^^ IdentifierFunction
+//                    ^^ Identifier
+//                        ^^ Identifier
+//                          ^ Identifier
+//                           ^ NumericLiteral
+//                            ^ Identifier
+//                               ^^^^^^^ IdentifierFunction
               unshift(@_, undef) unless defined $_[0];
-//            ^^^^^^^ IdentifierFunction 
-//                    ^^ Identifier 
-//                        ^^^^^ Keyword 
-//                               ^^^^^^ Keyword 
-//                                      ^^^^^^^ IdentifierBuiltin 
-//                                              ^^ Identifier 
-//                                                ^ Identifier 
-//                                                 ^ NumericLiteral 
-//                                                  ^ Identifier 
+//            ^^^^^^^ IdentifierFunction
+//                    ^^ Identifier
+//                        ^^^^^ Keyword
+//                               ^^^^^^ Keyword
+//                                      ^^^^^^^ IdentifierBuiltin
+//                                              ^^ Identifier
+//                                                ^ Identifier
+//                                                 ^ NumericLiteral
+//                                                  ^ Identifier
           }
           unshift(@_, $_[0]->uri_canonical) if $_[0] && $_[0]->can("uri_canonical");
-//        ^^^^^^^ IdentifierFunction 
-//                ^^ Identifier 
-//                    ^^ Identifier 
-//                      ^ Identifier 
-//                       ^ NumericLiteral 
-//                        ^ Identifier 
-//                           ^^^^^^^^^^^^^ IdentifierFunction 
-//                                          ^^ Keyword 
-//                                             ^^ Identifier 
-//                                               ^ Identifier 
-//                                                ^ NumericLiteral 
-//                                                 ^ Identifier 
-//                                                      ^^ Identifier 
-//                                                        ^ Identifier 
-//                                                         ^ NumericLiteral 
-//                                                          ^ Identifier 
-//                                                             ^^^ IdentifierFunction 
-//                                                                 ^^^^^^^^^^^^^^^ StringLiteral 
+//        ^^^^^^^ IdentifierFunction
+//                ^^ Identifier
+//                    ^^ Identifier
+//                      ^ Identifier
+//                       ^ NumericLiteral
+//                        ^ Identifier
+//                           ^^^^^^^^^^^^^ IdentifierFunction
+//                                          ^^ Keyword
+//                                             ^^ Identifier
+//                                               ^ Identifier
+//                                                ^ NumericLiteral
+//                                                 ^ Identifier
+//                                                      ^^ Identifier
+//                                                        ^ Identifier
+//                                                         ^ NumericLiteral
+//                                                          ^ Identifier
+//                                                             ^^^ IdentifierFunction
+//                                                                 ^^^^^^^^^^^^^^^ StringLiteral
       }
       my($uri, $request, $response) = @_;
-//    ^^ Keyword 
-//       ^^^^ Identifier  local 73
-//             ^^^^^^^^ Identifier  local 74
-//                       ^^^^^^^^^ Identifier  local 75
-//                                  ^ IdentifierOperator 
-//                                    ^^ Identifier 
+//    ^^ Keyword
+//       ^^^^ Identifier
+//             ^^^^^^^^ Identifier
+//                       ^^^^^^^^^ Identifier
+//                                  ^ IdentifierOperator
+//                                    ^^ Identifier
       $uri = URI->new($uri) unless ref($uri);
-//    ^^^^ Identifier  local 73
-//         ^ IdentifierOperator 
-//           ^^^ IdentifierType 
-//                ^^^ IdentifierFunction 
-//                    ^^^^ Identifier  local 73
-//                          ^^^^^^ Keyword 
-//                                 ^^^ IdentifierBuiltin 
-//                                     ^^^^ Identifier  local 73
+//    ^^^^ Identifier
+//         ^ IdentifierOperator
+//           ^^^ IdentifierType
+//                ^^^ IdentifierFunction
+//                    ^^^^ Identifier
+//                          ^^^^^^ Keyword
+//                                 ^^^ IdentifierBuiltin
+//                                     ^^^^ Identifier
   
       my @m;
-//    ^^ Keyword 
-//       ^^ Identifier  local 76
+//    ^^ Keyword
+//       ^^ Identifier
    ITEM:
       for my $item (@$self) {
-//    ^^^ Keyword 
-//        ^^ Keyword 
-//           ^^^^^ Identifier  local 77
-//                  ^ Identifier 
-//                   ^^^^^ Identifier  local 72
+//    ^^^ Keyword
+//        ^^ Keyword
+//           ^^^^^ Identifier
+//                  ^ Identifier
+//                   ^^^^^ Identifier
           my $order;
-//        ^^ Keyword 
-//           ^^^^^^ Identifier  local 78
+//        ^^ Keyword
+//           ^^^^^^ Identifier
           for my $ikey (keys %$item) {
-//        ^^^ Keyword 
-//            ^^ Keyword 
-//               ^^^^^ Identifier  local 79
-//                      ^^^^ IdentifierBuiltin 
-//                           ^ Identifier 
-//                            ^^^^^ Identifier  local 77
+//        ^^^ Keyword
+//            ^^ Keyword
+//               ^^^^^ Identifier
+//                      ^^^^ IdentifierBuiltin
+//                           ^ Identifier
+//                            ^^^^^ Identifier
               my $mkey = $ikey;
-//            ^^ Keyword 
-//               ^^^^^ Identifier  local 80
-//                     ^ IdentifierOperator 
-//                       ^^^^^ Identifier  local 79
+//            ^^ Keyword
+//               ^^^^^ Identifier
+//                     ^ IdentifierOperator
+//                       ^^^^^ Identifier
               my $k;
-//            ^^ Keyword 
-//               ^^ Identifier  local 81
+//            ^^ Keyword
+//               ^^ Identifier
               $k = $1 if $mkey =~ s/__(.*)/__/;
-//            ^^ Identifier  local 81
-//               ^ IdentifierOperator 
-//                 ^^ Identifier 
-//                    ^^ Keyword 
-//                       ^^^^^ Identifier  local 80
-//                             ^^ IdentifierOperator 
-//                                ^ Keyword 
-//                                 ^^^^^^^^^^^ StringLiteral 
+//            ^^ Identifier
+//               ^ IdentifierOperator
+//                 ^^ Identifier
+//                    ^^ Keyword
+//                       ^^^^^ Identifier
+//                             ^^ IdentifierOperator
+//                                ^ Keyword
+//                                 ^^^^^^^^^^^ StringLiteral
               if (my $m = $MATCH{$mkey}) {
-//            ^^ Keyword 
-//                ^^ Keyword 
-//                   ^^ Identifier  local 82
-//                      ^ IdentifierOperator 
-//                        ^^^^^^ Identifier 
-//                              ^ Identifier 
-//                               ^^^^^ Identifier  local 80
-//                                    ^ Identifier 
+//            ^^ Keyword
+//                ^^ Keyword
+//                   ^^ Identifier
+//                      ^ IdentifierOperator
+//                        ^^^^^^ Identifier
+//                              ^ Identifier
+//                               ^^^^^ Identifier
+//                                    ^ Identifier
                   #print "$ikey $mkey\n";
-//                ^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+//                ^^^^^^^^^^^^^^^^^^^^^^^ Comment
                   my($c, $o);
-//                ^^ Keyword 
-//                   ^^ Identifier 
-//                       ^^ Identifier 
+//                ^^ Keyword
+//                   ^^ Identifier
+//                       ^^ Identifier
                   my @arg = (
-//                ^^ Keyword 
-//                   ^^^^ Identifier  local 83
-//                        ^ IdentifierOperator 
+//                ^^ Keyword
+//                   ^^^^ Identifier
+//                        ^ IdentifierOperator
                       defined($k) ? $k : (),
-//                    ^^^^^^^ IdentifierBuiltin 
-//                            ^^ Identifier  local 81
-//                                  ^^ Identifier  local 81
+//                    ^^^^^^^ IdentifierBuiltin
+//                            ^^ Identifier
+//                                  ^^ Identifier
                       $uri, $request, $response
-//                    ^^^^ Identifier  local 73
-//                          ^^^^^^^^ Identifier  local 74
-//                                    ^^^^^^^^^ Identifier  local 75
+//                    ^^^^ Identifier
+//                          ^^^^^^^^ Identifier
+//                                    ^^^^^^^^^ Identifier
                   );
                   my $v = $item->{$ikey};
-//                ^^ Keyword 
-//                   ^^ Identifier  local 84
-//                      ^ IdentifierOperator 
-//                        ^^^^^ Identifier  local 77
-//                             ^^ Identifier 
-//                               ^ Identifier 
-//                                ^^^^^ Identifier  local 79
-//                                     ^ Identifier 
+//                ^^ Keyword
+//                   ^^ Identifier
+//                      ^ IdentifierOperator
+//                        ^^^^^ Identifier
+//                             ^^ Identifier
+//                               ^ Identifier
+//                                ^^^^^ Identifier
+//                                     ^ Identifier
                   $v = [$v] unless ref($v) eq "ARRAY";
-//                ^^ Identifier  local 84
-//                   ^ IdentifierOperator 
-//                      ^^ Identifier  local 84
-//                          ^^^^^^ Keyword 
-//                                 ^^^ IdentifierBuiltin 
-//                                     ^^ Identifier  local 84
-//                                         ^^ IdentifierOperator 
-//                                            ^^^^^^^ StringLiteral 
+//                ^^ Identifier
+//                   ^ IdentifierOperator
+//                      ^^ Identifier
+//                          ^^^^^^ Keyword
+//                                 ^^^ IdentifierBuiltin
+//                                     ^^ Identifier
+//                                         ^^ IdentifierOperator
+//                                            ^^^^^^^ StringLiteral
                   for (@$v) {
-//                ^^^ Keyword 
-//                     ^ Identifier 
-//                      ^^ Identifier  local 84
+//                ^^^ Keyword
+//                     ^ Identifier
+//                      ^^ Identifier
                       ($c, $o) = $m->($_, @arg);
-//                     ^^ Identifier 
-//                         ^^ Identifier 
-//                             ^ IdentifierOperator 
-//                               ^^ Identifier  local 82
-//                                    ^^ Identifier 
-//                                        ^^^^ Identifier  local 83
+//                     ^^ Identifier
+//                         ^^ Identifier
+//                             ^ IdentifierOperator
+//                               ^^ Identifier
+//                                    ^^ Identifier
+//                                        ^^^^ Identifier
                       #print "  - $_ ==> $c $o\n";
-//                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+//                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
                       last if $c;
-//                    ^^^^ Keyword 
-//                         ^^ Keyword 
-//                            ^^ Identifier 
+//                    ^^^^ Keyword
+//                         ^^ Keyword
+//                            ^^ Identifier
                   }
                   next ITEM unless $c;
-//                ^^^^ Keyword 
-//                          ^^^^^^ Keyword 
-//                                 ^^ Identifier 
+//                ^^^^ Keyword
+//                          ^^^^^^ Keyword
+//                                 ^^ Identifier
                   $order->[$o || 0] += $c;
-//                ^^^^^^ Identifier  local 78
-//                      ^^ Identifier 
-//                        ^ Identifier 
-//                         ^^ Identifier 
-//                               ^ NumericLiteral 
-//                                ^ Identifier 
-//                                     ^^ Identifier 
+//                ^^^^^^ Identifier
+//                      ^^ Identifier
+//                        ^ Identifier
+//                         ^^ Identifier
+//                               ^ NumericLiteral
+//                                ^ Identifier
+//                                     ^^ Identifier
               }
           }
           $order->[7] ||= 0;
-//        ^^^^^^ Identifier  local 78
-//              ^^ Identifier 
-//                ^ Identifier 
-//                 ^ NumericLiteral 
-//                  ^ Identifier 
-//                        ^ NumericLiteral 
+//        ^^^^^^ Identifier
+//              ^^ Identifier
+//                ^ Identifier
+//                 ^ NumericLiteral
+//                  ^ Identifier
+//                        ^ NumericLiteral
           $item->{_order} = join(".", reverse map sprintf("%03d", $_ || 0), @$order);
-//        ^^^^^ Identifier  local 77
-//             ^^ Identifier 
-//               ^ Identifier 
-//                ^^^^^^ StringLiteral 
-//                      ^ Identifier 
-//                        ^ IdentifierOperator 
-//                          ^^^^ IdentifierFunction 
-//                               ^^^ StringLiteral 
-//                                                ^^^^^^^ IdentifierFunction 
-//                                                        ^^^^^^ StringLiteral 
-//                                                                ^^ Identifier 
-//                                                                      ^ NumericLiteral 
-//                                                                          ^ Identifier 
-//                                                                           ^^^^^^ Identifier  local 78
+//        ^^^^^ Identifier
+//             ^^ Identifier
+//               ^ Identifier
+//                ^^^^^^ StringLiteral
+//                      ^ Identifier
+//                        ^ IdentifierOperator
+//                          ^^^^ IdentifierFunction
+//                               ^^^ StringLiteral
+//                                                ^^^^^^^ IdentifierFunction
+//                                                        ^^^^^^ StringLiteral
+//                                                                ^^ Identifier
+//                                                                      ^ NumericLiteral
+//                                                                          ^ Identifier
+//                                                                           ^^^^^^ Identifier
           push(@m, $item);
-//        ^^^^ IdentifierFunction 
-//             ^^ Identifier  local 76
-//                 ^^^^^ Identifier  local 77
+//        ^^^^ IdentifierFunction
+//             ^^ Identifier
+//                 ^^^^^ Identifier
       }
       @m = sort { $b->{_order} cmp $a->{_order} } @m;
-//    ^^ Identifier  local 76
-//       ^ IdentifierOperator 
-//                ^^ Identifier 
-//                  ^^ Identifier 
-//                    ^ Identifier 
-//                     ^^^^^^ StringLiteral 
-//                           ^ Identifier 
-//                             ^^^ IdentifierOperator 
-//                                 ^^ Identifier 
-//                                   ^^ Identifier 
-//                                     ^ Identifier 
-//                                      ^^^^^^ StringLiteral 
-//                                            ^ Identifier 
-//                                                ^^ Identifier  local 76
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//                ^^ Identifier
+//                  ^^ Identifier
+//                    ^ Identifier
+//                     ^^^^^^ StringLiteral
+//                           ^ Identifier
+//                             ^^^ IdentifierOperator
+//                                 ^^ Identifier
+//                                   ^^ Identifier
+//                                     ^ Identifier
+//                                      ^^^^^^ StringLiteral
+//                                            ^ Identifier
+//                                                ^^ Identifier
       delete $_->{_order} for @m;
-//    ^^^^^^ IdentifierBuiltin 
-//           ^^ Identifier 
-//             ^^ Identifier 
-//               ^ Identifier 
-//                ^^^^^^ StringLiteral 
-//                      ^ Identifier 
-//                        ^^^ Keyword 
-//                            ^^ Identifier  local 76
+//    ^^^^^^ IdentifierBuiltin
+//           ^^ Identifier
+//             ^^ Identifier
+//               ^ Identifier
+//                ^^^^^^ StringLiteral
+//                      ^ Identifier
+//                        ^^^ Keyword
+//                            ^^ Identifier
       return @m if wantarray;
-//    ^^^^^^ Keyword 
-//           ^^ Identifier  local 76
-//              ^^ Keyword 
-//                 ^^^^^^^^^ IdentifierBuiltin 
+//    ^^^^^^ Keyword
+//           ^^ Identifier
+//              ^^ Keyword
+//                 ^^^^^^^^^ IdentifierBuiltin
       return $m[0];
-//    ^^^^^^ Keyword 
-//           ^^ Identifier 
-//             ^ Identifier 
-//              ^ NumericLiteral 
-//               ^ Identifier 
+//    ^^^^^^ Keyword
+//           ^^ Identifier
+//             ^ Identifier
+//              ^ NumericLiteral
+//               ^ Identifier
   }
   
   sub add_item {
-//^^^ Keyword 
-//    ^^^^^^^^ IdentifierFunction 
+//^^^ Keyword
+//    ^^^^^^^^ IdentifierFunction
       my $self = shift;
-//    ^^ Keyword 
-//       ^^^^^ Identifier  local 85
-//             ^ IdentifierOperator 
-//               ^^^^^ IdentifierBuiltin 
+//    ^^ Keyword
+//       ^^^^^ Identifier
+//             ^ IdentifierOperator
+//               ^^^^^ IdentifierBuiltin
       my $item = shift;
-//    ^^ Keyword 
-//       ^^^^^ Identifier  local 86
-//             ^ IdentifierOperator 
-//               ^^^^^ IdentifierBuiltin 
+//    ^^ Keyword
+//       ^^^^^ Identifier
+//             ^ IdentifierOperator
+//               ^^^^^ IdentifierBuiltin
       return $self->add(item => $item, @_);
-//    ^^^^^^ Keyword 
-//           ^^^^^ Identifier  local 85
-//                  ^^^ IdentifierFunction 
-//                      ^^^^^ StringLiteral 
-//                           ^^ IdentifierOperator 
-//                              ^^^^^ Identifier  local 86
-//                                     ^^ Identifier 
+//    ^^^^^^ Keyword
+//           ^^^^^ Identifier
+//                  ^^^ IdentifierFunction
+//                      ^^^^^ StringLiteral
+//                           ^^ IdentifierOperator
+//                              ^^^^^ Identifier
+//                                     ^^ Identifier
   }
   
   sub remove_items {
-//^^^ Keyword 
-//    ^^^^^^^^^^^^ IdentifierFunction 
+//^^^ Keyword
+//    ^^^^^^^^^^^^ IdentifierFunction
       my $self = shift;
-//    ^^ Keyword 
-//       ^^^^^ Identifier  local 87
-//             ^ IdentifierOperator 
-//               ^^^^^ IdentifierBuiltin 
+//    ^^ Keyword
+//       ^^^^^ Identifier
+//             ^ IdentifierOperator
+//               ^^^^^ IdentifierBuiltin
       return map $_->{item}, $self->remove(@_);
-//    ^^^^^^ Keyword 
-//               ^^ Identifier 
-//                 ^^ Identifier 
-//                   ^ Identifier 
-//                    ^^^^ StringLiteral 
-//                        ^ Identifier 
-//                           ^^^^^ Identifier  local 87
-//                                  ^^^^^^ IdentifierFunction 
-//                                         ^^ Identifier 
+//    ^^^^^^ Keyword
+//               ^^ Identifier
+//                 ^^ Identifier
+//                   ^ Identifier
+//                    ^^^^ StringLiteral
+//                        ^ Identifier
+//                           ^^^^^ Identifier
+//                                  ^^^^^^ IdentifierFunction
+//                                         ^^ Identifier
   }
   
   sub matching_items {
-//^^^ Keyword 
-//    ^^^^^^^^^^^^^^ IdentifierFunction 
+//^^^ Keyword
+//    ^^^^^^^^^^^^^^ IdentifierFunction
       my $self = shift;
-//    ^^ Keyword 
-//       ^^^^^ Identifier  local 88
-//             ^ IdentifierOperator 
-//               ^^^^^ IdentifierBuiltin 
+//    ^^ Keyword
+//       ^^^^^ Identifier
+//             ^ IdentifierOperator
+//               ^^^^^ IdentifierBuiltin
       return map $_->{item}, $self->matching(@_);
-//    ^^^^^^ Keyword 
-//               ^^ Identifier 
-//                 ^^ Identifier 
-//                   ^ Identifier 
-//                    ^^^^ StringLiteral 
-//                        ^ Identifier 
-//                           ^^^^^ Identifier  local 88
-//                                  ^^^^^^^^ IdentifierFunction 
-//                                           ^^ Identifier 
+//    ^^^^^^ Keyword
+//               ^^ Identifier
+//                 ^^ Identifier
+//                   ^ Identifier
+//                    ^^^^ StringLiteral
+//                        ^ Identifier
+//                           ^^^^^ Identifier
+//                                  ^^^^^^^^ IdentifierFunction
+//                                           ^^ Identifier
   }
   
   1;
-//^ NumericLiteral 
+//^ NumericLiteral
   
   __END__
   
   =head1 NAME
-//^^^^^^ Keyword 
+//^^^^^^ Keyword
   
   HTTP::Config - Configuration for request and response objects
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 239:0..240:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 239:0..240:0
   
   =head1 SYNOPSIS
-//^^^^^^ Keyword 
+//^^^^^^ Keyword
   
    use HTTP::Config;
-// ^^^ Keyword 
-//     ^^^^^^^^^^^^ IdentifierType 
+// ^^^ Keyword
+//     ^^^^^^^^^^^^ IdentifierType
    my $c = HTTP::Config->new;
-// ^^ Keyword 
-//    ^^ Identifier 
-//       ^ IdentifierOperator 
-//         ^^^^^^^^^^^^ IdentifierType 
-//                       ^^^ IdentifierFunction 
+// ^^ Keyword
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^^^^^^^^ IdentifierType
+//                       ^^^ IdentifierFunction
    $c->add(m_domain => ".example.com", m_scheme => "http", verbose => 1);
-// ^^ Identifier 
-//     ^^^ IdentifierFunction 
-//         ^^^^^^^^^ StringLiteral 
-//                  ^^ IdentifierOperator 
-//                     ^^^^^^^^^^^^^^ StringLiteral 
-//                                     ^^^^^^^^^ StringLiteral 
-//                                              ^^ IdentifierOperator 
-//                                                 ^^^^^^ StringLiteral 
-//                                                         ^^^^^^^^ StringLiteral 
-//                                                                 ^^ IdentifierOperator 
-//                                                                    ^ NumericLiteral 
+// ^^ Identifier
+//     ^^^ IdentifierFunction
+//         ^^^^^^^^^ StringLiteral
+//                  ^^ IdentifierOperator
+//                     ^^^^^^^^^^^^^^ StringLiteral
+//                                     ^^^^^^^^^ StringLiteral
+//                                              ^^ IdentifierOperator
+//                                                 ^^^^^^ StringLiteral
+//                                                         ^^^^^^^^ StringLiteral
+//                                                                 ^^ IdentifierOperator
+//                                                                    ^ NumericLiteral
   
    use HTTP::Request;
-// ^^^ Keyword 
-//     ^^^^^^^^^^^^^ IdentifierType 
+// ^^^ Keyword
+//     ^^^^^^^^^^^^^ IdentifierType
    my $request = HTTP::Request->new(GET => "http://www.example.com");
-// ^^ Keyword 
-//    ^^^^^^^^ Identifier 
-//             ^ IdentifierOperator 
-//               ^^^^^^^^^^^^^ IdentifierType 
-//                              ^^^ IdentifierFunction 
-//                                  ^^^^ StringLiteral 
-//                                      ^^ IdentifierOperator 
-//                                         ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+// ^^ Keyword
+//    ^^^^^^^^ Identifier
+//             ^ IdentifierOperator
+//               ^^^^^^^^^^^^^ IdentifierType
+//                              ^^^ IdentifierFunction
+//                                  ^^^^ StringLiteral
+//                                      ^^ IdentifierOperator
+//                                         ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
    if (my @m = $c->matching($request)) {
-// ^^ Keyword 
-//     ^^ Keyword 
-//        ^^ Identifier 
-//           ^ IdentifierOperator 
-//             ^^ Identifier 
-//                 ^^^^^^^^ IdentifierFunction 
-//                          ^^^^^^^^ Identifier 
+// ^^ Keyword
+//     ^^ Keyword
+//        ^^ Identifier
+//           ^ IdentifierOperator
+//             ^^ Identifier
+//                 ^^^^^^^^ IdentifierFunction
+//                          ^^^^^^^^ Identifier
       print "Yadayada\n" if $m[0]->{verbose};
-//          ^^^^^^^^^ StringLiteral 
-//                   ^^ StringLiteral 
-//                     ^ StringLiteral 
-//                       ^^ Keyword 
-//                          ^^ Identifier 
-//                            ^ Identifier 
-//                             ^ NumericLiteral 
-//                              ^ Identifier 
-//                               ^^ Identifier 
-//                                 ^ Identifier 
-//                                  ^^^^^^^ StringLiteral 
-//                                         ^ Identifier 
+//          ^^^^^^^^^ StringLiteral
+//                   ^^ StringLiteral
+//                     ^ StringLiteral
+//                       ^^ Keyword
+//                          ^^ Identifier
+//                            ^ Identifier
+//                             ^ NumericLiteral
+//                              ^ Identifier
+//                               ^^ Identifier
+//                                 ^ Identifier
+//                                  ^^^^^^^ StringLiteral
+//                                         ^ Identifier
    }
   
   =head1 DESCRIPTION
-//^^^^^^ Keyword 
+//^^^^^^ Keyword
   
   An C<HTTP::Config> object is a list of entries that
-//^^^ Comment 
-//   ^^^^^^^^^^^^^^^ Identifier 
-//                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 256:18..260:0 
+//^^^ Comment
+//   ^^^^^^^^^^^^^^^ Identifier
+//                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 256:18..260:0
   can be matched against request or request/response pairs.  Its
   purpose is to hold configuration data that can be looked up given a
   request or response object.
   
   Each configuration entry is a hash.  Some keys specify matching to
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 261:0..264:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 261:0..264:0
   occur against attributes of request/response objects.  Other keys can
   be used to hold user data.
   
   The following methods are provided:
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 265:0..266:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 265:0..266:0
   
   =over 4
-//^^^^^ Keyword 
-//     ^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^ StringLiteral
   
   =item $conf = HTTP::Config->new
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
   Constructs a new empty C<HTTP::Config> object and returns it.
-//^^^^^^^^^^^^^^^^^^^^^^^ Comment 
-//                       ^^^^^^^^^^^^^^^ Identifier 
-//                                      ^^^^^^^^^^^^^^^^^^^^^^^ Comment 271:38..272:0 
+//^^^^^^^^^^^^^^^^^^^^^^^ Comment
+//                       ^^^^^^^^^^^^^^^ Identifier
+//                                      ^^^^^^^^^^^^^^^^^^^^^^^ Comment 271:38..272:0
   
   =item $conf->entries
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^ StringLiteral
   
   Returns the list of entries in the configuration object.
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 275:0..277:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 275:0..277:0
   In scalar context returns the number of entries.
   
   =item $conf->empty
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^ StringLiteral
   
   Return true if there are no entries in the configuration object.
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 280:0..281:29 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 280:0..281:29
   This is just a shorthand for C<< not $conf->entries >>.
-//                             ^^^^^^^^^^^^^^^ Identifier 
-//                                            ^^^^^^^^^^^ Comment 281:44..282:0 
+//                             ^^^^^^^^^^^^^^^ Identifier
+//                                            ^^^^^^^^^^^ Comment 281:44..282:0
   
   =item $conf->add( %matchspec, %other )
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
   =item $conf->add( \%entry )
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
   Adds a new entry to the configuration.
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 287:0..289:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 287:0..289:0
   You can either pass separate key/value pairs or a hash reference.
   
   =item $conf->remove( %spec )
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
   Removes (and returns) the entries that have matches for all the key/value pairs in %spec.
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 292:0..294:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 292:0..294:0
   If %spec is empty this will match all entries; so it will empty the configuation object.
   
   =item $conf->matching( $uri, $request, $response )
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
   =item $conf->matching( $uri )
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
   =item $conf->matching( $request )
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
   =item $conf->matching( $response )
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
   Returns the entries that match the given $uri, $request and $response triplet.
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 303:0..304:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 303:0..304:0
   
   If called with a single $request object then the $uri is obtained by calling its 'uri_canonical' method.
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 305:0..308:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 305:0..308:0
   If called with a single $response object, then the request object is obtained by calling its 'request' method;
   and then the $uri is obtained as if a single $request was provided.
   
   The entries are returned with the most specific matches first.
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 309:0..310:53 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 309:0..310:53
   In scalar context returns the most specific match or C<undef> in none match.
-//                                                     ^^^^^^^^ Identifier 
-//                                                             ^^^^^^^^^^^^^^^ Comment 310:61..311:0 
+//                                                     ^^^^^^^^ Identifier
+//                                                             ^^^^^^^^^^^^^^^ Comment 310:61..311:0
   
   =item $conf->add_item( $item, %matchspec )
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
   =item $conf->remove_items( %spec )
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
   =item $conf->matching_items( $uri, $request, $response )
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
   Wrappers that hides the entries themselves.
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 318:0..319:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 318:0..319:0
   
   =back
-//^^^^^ Keyword 
+//^^^^^ Keyword
   
   =head2 Matching
-//^^^^^^ Keyword 
+//^^^^^^ Keyword
   
   The following keys on a configuration entry specify matching.  For all
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 324:0..327:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 324:0..327:0
   of these you can provide an array of values instead of a single value.
   The entry matches if at least one of the values in the array matches.
   
   Entries that require match against a response object attribute will never match
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 328:0..330:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 328:0..330:0
   unless a response object was provided.
   
   =over
-//^^^^^ Keyword 
+//^^^^^ Keyword
   
   =item m_scheme => $scheme
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
   Matches if the URI uses the specified scheme; e.g. "http".
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 335:0..336:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 335:0..336:0
   
   =item m_secure => $bool
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^ StringLiteral
   
   If $bool is TRUE; matches if the URI uses a secure scheme.  If $bool
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 339:0..342:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 339:0..342:0
   is FALSE; matches if the URI does not use a secure scheme.  An example
   of a secure scheme is "https".
   
   =item m_host_port => "$hostname:$port"
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
   Matches if the URI's host_port method return the specified value.
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 345:0..346:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 345:0..346:0
   
   =item m_host => $hostname
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
   Matches if the URI's host method returns the specified value.
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 349:0..350:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 349:0..350:0
   
   =item m_port => $port
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^ StringLiteral
   
   Matches if the URI's port method returns the specified value.
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 353:0..354:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 353:0..354:0
   
   =item m_domain => ".$domain"
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
   Matches if the URI's host method return a value that within the given
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 357:0..360:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 357:0..360:0
   domain.  The hostname "www.example.com" will for instance match the
   domain ".com".
   
   =item m_path => $path
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^ StringLiteral
   
   Matches if the URI's path method returns the specified value.
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 363:0..364:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 363:0..364:0
   
   =item m_path_prefix => $path
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
   Matches if the URI's path is the specified path or has the specified
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 367:0..369:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 367:0..369:0
   path as prefix.
   
   =item m_path_match => $Regexp
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
   Matches if the regular expression matches the URI's path.  Eg. qr/\.html$/.
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 372:0..373:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 372:0..373:0
   
   =item m_method => $method
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
   Matches if the request method matches the specified value. Eg. "GET" or "POST".
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 376:0..377:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 376:0..377:0
   
   =item m_code => $digit
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^ StringLiteral
   
   =item m_code => $status_code
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
   Matches if the response status code matches.  If a single digit is
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 382:0..384:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 382:0..384:0
   specified; matches for all response status codes beginning with that digit.
   
   =item m_proxy => $url
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^ StringLiteral
   
   Matches if the request is to be sent to the given Proxy server.
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 387:0..388:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 387:0..388:0
   
   =item m_media_type => "*/*"
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
   =item m_media_type => "text/*"
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
   =item m_media_type => "html"
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
   =item m_media_type => "xhtml"
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
   =item m_media_type => "text/html"
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
   
   Matches if the response media type matches.
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 399:0..400:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 399:0..400:0
   
   With a value of "html" matches if $response->content_is_html returns TRUE.
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 401:0..403:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 401:0..403:0
   With a value of "xhtml" matches if $response->content_is_xhtml returns TRUE.
   
   =item m_uri__I<$method> => undef
-//^^^^^ Keyword 
-//     ^^^^^^^^ StringLiteral 
-//             ^^^^^^^^^^ Identifier 
-//                       ^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^ StringLiteral
+//             ^^^^^^^^^^ Identifier
+//                       ^^^^^^^^^ StringLiteral
   
   Matches if the URI object provides the method.
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 406:0..407:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 406:0..407:0
   
   =item m_uri__I<$method> => $string
-//^^^^^ Keyword 
-//     ^^^^^^^^ StringLiteral 
-//             ^^^^^^^^^^ Identifier 
-//                       ^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^ StringLiteral
+//             ^^^^^^^^^^ Identifier
+//                       ^^^^^^^^^^^ StringLiteral
   
   Matches if the URI's $method method returns the given value.
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 410:0..411:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 410:0..411:0
   
   =item m_header__I<$field> => $string
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^ StringLiteral 
-//                ^^^^^^^^^ Identifier 
-//                         ^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^ StringLiteral
+//                ^^^^^^^^^ Identifier
+//                         ^^^^^^^^^^^ StringLiteral
   
   Matches if either the request or the response have a header $field with the given value.
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 414:0..415:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 414:0..415:0
   
   =item m_response_attr__I<$key> => undef
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^ StringLiteral 
-//                       ^^^^^^^ Identifier 
-//                              ^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^ StringLiteral
+//                       ^^^^^^^ Identifier
+//                              ^^^^^^^^^ StringLiteral
   
   =item m_response_attr__I<$key> => $string
-//^^^^^ Keyword 
-//     ^^^^^^^^^^^^^^^^^^ StringLiteral 
-//                       ^^^^^^^ Identifier 
-//                              ^^^^^^^^^^^ StringLiteral 
+//^^^^^ Keyword
+//     ^^^^^^^^^^^^^^^^^^ StringLiteral
+//                       ^^^^^^^ Identifier
+//                              ^^^^^^^^^^^ StringLiteral
   
   Matches if the response object has that key, or the entry has the given value.
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 420:0..421:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 420:0..421:0
   
   =back
-//^^^^^ Keyword 
+//^^^^^ Keyword
   
   =head1 SEE ALSO
-//^^^^^^ Keyword 
+//^^^^^^ Keyword
   
   L<URI>, L<HTTP::Request>, L<HTTP::Response>
-//^^^^^^ Identifier 
-//      ^^ Comment 
-//        ^^^^^^^^^^^^^^^^ Identifier 
-//                        ^^ Comment 
-//                          ^^^^^^^^^^^^^^^^^ Identifier 
-//                                            Comment 426:43..427:0 
+//^^^^^^ Identifier
+//      ^^ Comment
+//        ^^^^^^^^^^^^^^^^ Identifier
+//                        ^^ Comment
+//                          ^^^^^^^^^^^^^^^^^ Identifier
+//                                            Comment 426:43..427:0
   
   =head1 COPYRIGHT
-//^^^^^^ Keyword 
+//^^^^^^ Keyword
   
   Copyright 2008, Gisle Aas
-//^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 430:0..431:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 430:0..431:0
   
   This library is free software; you can redistribute it and/or
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 432:0..434:0 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 432:0..434:0
   modify it under the same terms as Perl itself.
   
   =cut
-//^^^^ Keyword 
-//    ^ Comment 
+//^^^^ Keyword
+//    ^ Comment
 

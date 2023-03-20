@@ -516,7 +516,7 @@ const suggestionsStateField = StateField.define<SuggestionsState>({
             const suggestionState = state.field(field)
             const groupRowIndex = suggestionState.result.groupRowIndex(suggestionState.selectedOption)
             return {
-                'aria-expanded': suggestionState.result.empty() ? 'false' : 'true',
+                'aria-expanded': suggestionState.open && !suggestionState.result.empty() ? 'true' : 'false',
                 'aria-activedescendant': groupRowIndex ? `${id}-${groupRowIndex[0]}x${groupRowIndex[1]}` : '',
             }
         })

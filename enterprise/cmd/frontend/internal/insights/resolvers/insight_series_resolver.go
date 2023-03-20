@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/log"
@@ -305,8 +304,7 @@ func (j *seriesResolverGenerator) Generate(ctx context.Context, series types.Ins
 	if j.next != nil {
 		return j.next.Generate(ctx, series, baseResolver, filters, options)
 	} else {
-		log15.Error("no generator for insight series", "seriesID", series.SeriesID)
-		return nil, errors.New("no resolvers for insights series")
+		return nil, errors.Newf("no resolvers for insights series with ID %s", series.SeriesID)
 	}
 }
 

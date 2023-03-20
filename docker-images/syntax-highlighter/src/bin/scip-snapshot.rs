@@ -1,6 +1,7 @@
 use std::fs;
 
-use sg_syntax::{dump_document, treesitter_index};
+use scip_treesitter::snapshot::dump_document;
+use sg_syntax::treesitter_index;
 
 fn main() {
     if let Some(path) = std::env::args().nth(1) {
@@ -20,7 +21,10 @@ fn main() {
             }
         };
 
-        println!("\n\n{}", dump_document(&document, &contents));
+        println!(
+            "\n\n{}",
+            dump_document(&document, &contents).expect("to dump document")
+        );
     } else {
         panic!("Must pass a filepath");
     }

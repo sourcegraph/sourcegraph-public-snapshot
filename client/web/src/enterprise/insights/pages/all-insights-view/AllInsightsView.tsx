@@ -35,7 +35,7 @@ export const AllInsightsView: FC<AllInsightsViewProps> = props => {
 
             return insightViews
         },
-        options: { fetchPolicy: 'cache-first' },
+        options: { fetchPolicy: 'cache-and-network' },
     })
 
     if (connection === undefined) {

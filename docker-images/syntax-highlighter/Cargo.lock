@@ -1372,6 +1372,9 @@ dependencies = [
 name = "scip-treesitter"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "protobuf",
+ "scip",
  "tree-sitter",
 ]
 
@@ -1478,6 +1481,7 @@ dependencies = [
  "rocket",
  "scip",
  "scip-syntax",
+ "scip-treesitter",
  "scip-treesitter-languages",
  "serde",
  "serde_json",
@@ -1674,6 +1678,7 @@ dependencies = [
  "rocket",
  "rustyline",
  "scip",
+ "scip-treesitter",
  "serde",
  "serde_json",
  "sg-syntax",
