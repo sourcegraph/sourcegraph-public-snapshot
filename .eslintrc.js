@@ -216,14 +216,16 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
     // https://reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html#eslint
     'react/jsx-uses-react': 'off',
     'react/react-in-jsx-scope': 'off',
-    'import/extensions': [
-      'error',
-      'never',
-      {
-        schema: 'always',
-      },
-    ],
+    'import/extensions': 'off',
     'import/order': 'off',
+    'import/no-named-as-default-member': 'off',
+    'import/no-unused-modules': 'off',
+    'import/no-deprecated': 'off',
+    'import/no-self-import': 'off',
+    'import/no-dynamic-require': 'off',
+    'import/no-useless-path-segments': 'off',
+    'import/no-duplicates': 'off',
+    'import/no-default-export': 'off',
   },
   overrides: [
     {
