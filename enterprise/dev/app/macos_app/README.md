@@ -2,13 +2,36 @@
 
 # setup
 
+## Signing certificates
+
+In order to distribute the app bundle, it needs to be code-signed using Apple certificates.
+
+There are two kinds of certificates needed:
+
+1. Developer ID Application
+1. Signs all of the code in the app bundle, and the app bundle itself.
+1. Developer ID Installer
+1. Won't be needed as long as the method of distribution is a simple .dmg archive. If a EULA is added to the .dmg, or a .pkg is created, it will need to be signed by the Developer ID Installer certificate
+
+If they have expired and need to be re-generated, login to https://developer.apple.com as the Account Holder and create new ones.
+
+### get the certificates into Google Secret Manager
+
+Login to https://developer.apple.com as the Account Holder.
+
+Download the certificate, which will download an unencrypted `.cer` file.
+
+For security, we need to use encrypted certificates. To turn the unencrypted `.cer` file into an encrypted `.p12` file, either import into Keychain Access, then export (from the "login" keychain, not the "system" keychain), selecting as the File Format "Personal Information Exchange (.p12)".
+
+## App-specific credentials for notarization
+
 ## Secrets
 
 Secrets can be found in https://docs.google.com/document/d/1YDqrpxJhdfudlRsYTQMGeGiklmWRuSlpZ7Xvk9ABitM/edit?usp=sharing (requires Sourcegraph team credentials)
 
 Secrets are also stored in 1Password, in the Apple Developer vault
 
-The secrets have been stored in Google Secrets, and are set up in the buildkite config so they are pulled into the CI pipeline
+The secrets have been stored in Google Secrets Manager, and are set up in the buildkite config so they are pulled into the CI pipeline.
 
 ### code-signing secrets
 
@@ -21,187 +44,111 @@ The secrets have been stored in Google Secrets, and are set up in the buildkite 
 - APPLE_APP_STORE_CONNECT_API_KEY_ISSUER - App Store Connect API Issuer GUID
 - APPLE_APP_STORE_CONNECT_API_KEY_FILE - App Store Connect API key file (.p8)
 
-## build dependencies
+## dependencies
 
-There are several binary dependencies that are bundled together with Sourcegraph App.
+### referenced in
 
-### icon.icns
+- Xcode project - the `build_app_bundle_template.sh` shell script is set up to run after an Archive action - it downloads the dependencies in order to build the app bundle template
 
-Currently stored in `enterprise/dev/app/macos_app/app_bundle/icon.icns`, the icon resource file contains icons of various sizes for the app. The icons came from the design team, who provided all of the sizes, and they are packaged together in the resource file using `iconutil`.
+### git
 
-The icons from the design team are currently in the folder `enterprise/dev/app/macos_app/App DMG assets`.
+We include `git` in the app bundle to avoid an external runtime dependeny on `git`.
 
-To generate a new `icon.icns` file, place the new icons in a folder that is named with a `.iconset` extension (`icon.iconset`, for example). Name the icons with the pattern `icon_<width>x<height>[@2x].png`. See Apple's [Icon Set Type](https://developer.apple.com/library/archive/documentation/Xcode/Reference/xcode_ref-Asset_Catalog_Format/IconSetType.html) document for details.
-Once the icons are in the `.iconset` folder, run the command `iconutil -c icns -o app_bundle/icon.icns icon.iconset` (adjust paths as necessary) to generate the `.icns` file.
+We have built universal binaries from the latest version at the time - 2.39.2.
 
-The `icon.icns` file is placed into the app bundle in the file `Contents/Resources/AppIcon.icns`.
+New universal binaries can be built using `enterprise/dev/app/macos_app/build_git_macos.sh`.
 
-### Info.plist
+It has to be run on macOS, with Xcode installed.
 
-Currently stored in `enterprise/dev/app/macos_app/app_bundle/Info.plist`, `Info.plist` holds information about the app bundle, such as the name/path of the bundle executable, the name of the icons file and the app display name.
-The `Info.plist` file is placed into the app bundle in the file `Contents/Info.plist`
+Run `build_git_macos.sh --help` to see the options.
 
-## built the app template
+It uses default versions: gettext 0.21.1 and git 2.39.2 - pass other versions as options to the script if you need different versions.
 
-The first step is to create the app bundle template
+The output is a gzipped tar archive in the working directory
+(defaults to the current working directory; can be modified by using the `--workdir` option)
+named with the format `git-universal-${VERSION}.tar.gz`
 
-An app bundle is just a specific directory structure
-
-Decide where you want to build the app
-
-Let's default to `${HOME}/Downloads`, but you can choose any location you'd like.
-
-Throughout this document, we will refer to `${PATH_TO_APP}`, so copy/paste into Terminal should work ok as long as you define that environment variable here.
+To store the archive where the macOS app bundle build process can get to it,
+upload it to the `sourcegraph_app_macos_dependencies` GCS bucket:
 
 ```
-PATH_TO_APP=${HOME}/Downloads
-mkdir -p "${PATH_TO_APP}/Sourcegraph App.app/Contents/MacOS" "${PATH_TO_APP}/Sourcegraph App.app/Contents/Resources"
-cp app_bundle/Info.plist "${PATH_TO_APP}/Sourcegraph App.app/Contents/Info.plist"
-cp app_bundle/icon.icns "${PATH_TO_APP}/Sourcegraph App.app/Contents/Resources/icon.icns"
-cp app_bundle/sourcegraph_launcher.sh "${PATH_TO_APP}/Sourcegraph App.app/Contents/MacOS/sourcegraph_launcher.sh"
-cp app_bundle/external-services-config.json "${PATH_TO_APP}/Sourcegraph App.app/Contents/Resources/external-services-config.json
+gsutil cp git-universal-${VERSION}.tar.gz gs://sourcegraph_app_macos_dependencies
 ```
 
-Note that `external-services-config.json` is required only for the demo, so that App launches with repositories already included. For non-demo bulds, don't include it.
+### src-cli
 
-After copying `external-services-config.json`, we need to update it with the actual token that's kept in a protected location. Copy it from [Secrets for MacOS app bundle](https://docs.google.com/document/d/1YDqrpxJhdfudlRsYTQMGeGiklmWRuSlpZ7Xvk9ABitM/edit?usp=sharing)
+We include `src` in the app bundle so that it doesn't have to download it from elsewhere, like Homebrew.
 
-## sourcegraph binary
+New universal binaries can be built using `enterprise/dev/app/macos_app/build_src-cli_macos.sh`.
+It can be run on Linux or macOS, or maybe even Windows. It will generate macOS universal binaries on any platform.
+It has the option to either build from source, or download a release. Currently it downloads a release.
 
-I've been pulling the sourcegraph binary from the Homebrew package because that has both the Intel and Arm binaries.
+The output is a gzipped tar archive in the working directory
+(defaults to the current working directory; can be modified by using the `--workdir` option)
+named with the format `src-universal-${VERSION}.tar.gz`
 
-To get the binaries, I do `brew edit sourcegraph/sourcegraph-app/sourcegraph`. Need to either `brew tap` or `brew install` it first to get the spec. Could probably get it some other way, but that's easy enough. The file that is being edited is in `/opt/homebrew/Library/Taps/sourcegraph/homebrew-sourcegraph-app/sourcegraph.rb`, so this can probably be automated.
-
-After opening for edit, I pick out the download links for MacOS Intel and Arm, download those files, which are zip archives, unzip them, and stitch the resulting files together using `lipo` to generate a universal binary
-
-Sample `lipo` command
-
-```
-lipo sourcegraph_0.0.200198-snapshot+20230220-35357c_darwin_{arm64,amd64} -create -output sourcegraph-universal
-```
-
-The resulting binary is the file `Contents/MacOS/sourcegraph` in the app
+To store the archive where the macOS app bundle build process can get to it,
+upload it to the `sourcegraph_app_macos_dependencies` GCS bucket:
 
 ```
-cp sourcegraph-universal ${PATH_TO_APP}/Sourcegraph\ App.app/Contents/MacOS/sourcegraph
+gsutil cp src-universal-${VERSION}.tar.gz gs://sourcegraph_app_macos_dependencies
 ```
 
-If you want to build the binary from source or get it elsewhere, just make sure to build/get both the Intel and Arm binaries so that the app is universal.
+### universal-ctags
 
-## universal-ctags binary
+We include a custom build of `universal-ctags` in the app bundle that is built with json support.
 
-Build the `universal-ctags` binary using `build_universal_ctags_macos.sh`. It defaults to working in `${HOME}/Downloads`; you can pass a commandline argument to it to specify a different directory to use. It will download the necessary source code and build the dependencies and `universal-ctags`. The last line of the `stdout` output is the path to the binary, which goes in the file `Contents/MacOS/universal-ctags` in the app
+New universal binaries can be built using `enterprise/dev/app/macos_app/build_universal-ctags_macos.sh`.
+It can be run on Linux or macOS, or maybe even Windows. It will generate macOS universal binaries on any platform.
+It has the option to either build from source, or download a release. Currently it downloads a release.
+
+The output is a gzipped tar archive in the working directory
+(defaults to the current working directory; can be modified by using the `--workdir` option)
+named with the format `universal-ctags-universal-${VERSION}.tar.gz`
+
+To store the archive where the macOS app bundle build process can get to it,
+upload it to the `sourcegraph_app_macos_dependencies` GCS bucket:
 
 ```
-./build_universal_ctags_macos.sh | tee build_universal_ctags_macos.log
-file=$(tail -1 build_universal_ctags_macos.log)
-[ -s "${file}" ] && cp "${file}" ${PATH_TO_APP}/Sourcegraph\ App.app/Contents/MacOS/universal-ctags
+gsutil cp universal-ctags-universal-${VERSION}.tar.gz gs://sourcegraph_app_macos_dependencies
 ```
 
 ### dependencies
 
 - autoconf
 - autoreconf
+- maybe other build tools
 
-Maybe others - can install using `brew install`
+## build and deploy the app bundle template
 
-## src-cli bianary
+The app bundle template is an Xcode project in the `app bundle Xcode project` directory.
 
-Build the `src-cli` binary using `build_src-cli_macos.sh`. It defaults to working in `${HOME}/Downloads`; you can pass a commandline argument to it to specify a different directory to use. The last line of the `stdout` output is the path to the binary, which goes in the file `Contents/MacOS/src` in the app
+The ap bundle template includes a binary that provides a management GUI and launches the `sourcegraph_launcher.sh` shell script.
 
-```
-./build_src-cli_macos.sh | tee build_src-cli_macos.log
-file=$(tail -1 build_src-cli_macos.log)
-[ -s "${file}" ] && cp "${file}" ${PATH_TO_APP}/Sourcegraph\ App.app/Contents/MacOS/src
-```
+To generate and upload to GCS a new app bundle template, click on **Product** in the menu bar, then **Archive** in the list. Xcode will build the project, archive it, and run the `build_app_bundle_template.sh` shell script that's part of the Xcode project. That shell script will download the aforementioned dependencies from the `sourcegraph_app_macos_dependencies` GCS bucket, extract and place them into the app bundle template, create a gzipped tar archive of the app bundle template, and upload it to `sourcegraph_app_macos_dependencies` GCS bucket, named with the date and time of the **Archive** build.
 
-## zoekt-webserver binary
+If you don't have write permission to the `sourcegraph_app_macos_dependencies` GCS bucket, the gzipped tar archive will be placed in your Downloads directory, and you can arrange to get it uploaded from there.
 
-Zoekt needs to be revisited, so don't include it yet. There is a shell script to build a universal binary, like `ctags` and `src-cli`, but it needs several binaries, and some sourcegraph-specific ones.
+In order to obtain write access to GCP, follow [these instructions](https://handbook.sourcegraph.com/departments/security/tooling/entitle_request/) to request Storage Object Admin access to the `sourcegraph_app_macos_dependencies` GCS bucket, which is in the "Sourcegraph CI" project.
 
-## syntect_server binary
+Values for the request form:
 
-App uses a different syntax highlighter at the moment, so don't include this either. There is a writeup about how to build it in `cross-platform build syntax-highlighter.md`.
+- Request type: Specific Permission
+- Integration: GCP Development Projects
+- Resource Types: buckets
+- Resource: Sourcegraph CI/sourcegraph_app_macos_dependencies
+- Role: Storage Object Admin
+- Grant Method: Direct
+- Permission Duration: 3 Hours
+- Add justification: Upload new artifacts for the Sourcegraph App macOS app bundle
 
-## git MacOS universal binary
-
-Download a compiled (somewhat old) git MacOS universal binary [from SourceForge](https://master.dl.sourceforge.net/project/git-osx-installer/git-2.33.0-intel-universal-mavericks.dmg?viasf=1)
-
-Download [unpkg](https://www.timdoug.com/unpkg/)
-
-Open the git dmg, run `unpkg`, navigate to the git dmg and select the pkg file
-
-`unpkg` puts the extracted files on the Desktop; go there to get them.
-
-copy the following directories into the app:
-
-- git/bin
-- git/etc
-- git/libexec
-
-The destination directory in the app is Contents/Resources/git
-
-The final app structure will be:
-
-- Contents
-  - Resources
-    - git
-      - bin
-      - etc
-      - libexec
-
-Sample Terminal command to do the copy
+In order to use the gzipped tar archive as the current template, copy it in the GCS bucket to the file named `Sourcegraph App.app-template.tar.gz`
 
 ```
-cp -R ${HOME}/Desktop/git-2.33.0-intel-universal-mavericks/git/{bin,etc,libexec} ${PATH_TO_APP}/Sourcegraph\ App.app/Contents/Resources/git
+gsutil cp gs://sourcegraph_app_macos_dependencies/Sourcegraph App.app-template-${TIMESTAMP}.tar.gz gs://sourcegraph_app_macos_dependencies/Sourcegraph App.app-template.tar.gz
 ```
 
-## Signing certificates
-
-In order to distribute the app bundle, it needs to be code-signed using Apple certificates.
-
-There are two kinds of certificates needed:
-
-1. Developer ID Application
-1. Signs all of the code in the app bundle, and the app bundle itself.
-1. Developer ID Installer
-1. Won't be needed as long as the method of distribution is a simple .dmg archive. If a EULA is added to the .dmg, or a .pkg is created, it will need to be signed by the Developer ID Installer certificate
-
-The certificates need to be copied to the machine doing the signing, and imported into the login keychain. See [Secrets](#Secrets) for the certificates.
-
-If they have expired and need to be re-generated, login to https://developer.apple.com as the Account Holder and create new ones.
-
-## App-specific credentials for notarization
-
-Get the credentials from Google Drive [Secrets](#Secrets). Use the "Account Holder" credentials if possible - you may need to add your currently-signed-in Apple ID to the Sourcegraph Apple Developer account and generate your own credentials. Store them in the Google Doc if you do.
-
-Save the credentials in the `ALTOOL_CREDENTIALS` keychain item.
-
-```
-xcrun altool --store-password-in-keychain-item ALTOOL_CREDENTIALS -u <appleid email address> -p <app-specific password>
-```
-
-if altool isn't available (xcrun: error: unable to find utility "altool", not a developer tool or in PATH) run `sudo xcode-select -r`
-
-NOTE: altool is deprecated and may not be available starting in "late 2023" - need to switch to `notarytool`.
-
-NOTE: altool also supports specifying the Apple Developer username with -u <username/email> and accepts the password on stdin, or with -p "@env:SOME_ENV_VARIABLE" to read an environment variable, so storing in the keychain is not strictly necessary.
-
-To store credentials for `notarytool`:
-
-```
-xcrun notarytool store-credentials --apple-id "<appleid email address>" --team-id "74A5FJ7P96"
-
-This process stores your credentials securely in the Keychain. You reference these credentials later using a profile name.
-
-Profile name:
-NOTARYTOOL_CREDENTIALS
-App-specific password for <appleid email address>:
-Validating your credentials...
-Success. Credentials validated.
-Credentials saved to Keychain.
-To use them, specify `--keychain-profile "NOTARYTOOL_CREDENTIALS"`
-```
+Where `${TIMESTAMP}` is the date + time in the file name.
 
 # Packaging and signing
 
