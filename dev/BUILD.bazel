@@ -4,3 +4,5 @@ webpack_binary(
     name = "webpack",
     node_modules = "//:node_modules",
 )
+
+exports_files(srcs = ["mocha-xvfb.sh"])
