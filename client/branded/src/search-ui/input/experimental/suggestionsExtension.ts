@@ -570,6 +570,7 @@ function applyAction(view: EditorView, action: Action, option: Option, source: S
                     view.dispatch({
                         ...changeSet,
                         effects: changeSet.effects.concat(setModeEffect.of(null)),
+                        scrollIntoView: true,
                     })
                 }
                 notifySelectionListeners(view.state, option, action, source)
