@@ -19,7 +19,7 @@
     "lint:js:changed": "pnpm _lint:js $(git diff --diff-filter=d --name-only origin/main... | grep -E '\\.[tj]sx?$' | xargs)",
     "lint:js:root": "pnpm run _lint:js --quiet '*.[tj]s?(x)'",
     "lint:js:web": "DOCSITE_LIST=\"$(./dev/docsite.sh -config doc/docsite.json ls)\" pnpm --filter @sourcegraph/web run lint:js --quiet",
-    "lint:js:all": "DOCSITE_LIST=\"$(./dev/docsite.sh -config doc/docsite.json ls)\" dev/foreach-ts-project.sh pnpm run lint:js --quiet && pnpm lint:js:root",
+    "lint:js:all": "DOCSITE_LIST=\"$(./dev/docsite.sh -config doc/docsite.json ls)\" dev/foreach-non-web-client-project.sh pnpm run lint:js --quiet && pnpm lint:js:root",
     "_lint:css": "stylelint --quiet",
     "lint:css:changed": "pnpm _lint:css --allow-empty-input \"*.none\" $(git diff --diff-filter=d --name-only origin/main... | grep -E '.s?css$' | xargs)",
     "lint:css:all": "pnpm _lint:css 'client/*/src/**/*.scss'",
