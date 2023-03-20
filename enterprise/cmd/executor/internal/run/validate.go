@@ -33,7 +33,7 @@ func Validate(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, con
 	if !config.IsKubernetes() {
 		telemetryOptions := newQueueTelemetryOptions(cliCtx.Context, runner, conf.UseFirecracker, logger)
 		copts := queueOptions(conf, telemetryOptions)
-		client, err := apiclient.NewBaseClient(copts.BaseClientOptions)
+		client, err := apiclient.NewBaseClient(logger, copts.BaseClientOptions)
 		if err != nil {
 			return err
 		}
