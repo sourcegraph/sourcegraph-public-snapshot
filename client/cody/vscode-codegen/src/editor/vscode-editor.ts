@@ -35,7 +35,7 @@ export class VSCodeEditor implements Editor {
         )
 
         return {
-            fileName: activeEditor.document.fileName,
+            fileName: vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath),
             selectedText: activeEditor.document.getText(selection),
             precedingText,
             followingText,
