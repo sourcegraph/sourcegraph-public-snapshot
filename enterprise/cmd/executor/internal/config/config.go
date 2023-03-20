@@ -47,6 +47,7 @@ type Config struct {
 	WorkerHostname                 string
 	DockerRegistryMirrorURL        string
 	DockerAuthConfig               types.DockerAuthConfig
+	CACertificate                  string
 	dockerAuthConfigStr            string
 	dockerAuthConfigUnmarshalError error
 }
@@ -82,6 +83,7 @@ func (c *Config) Load() {
 	c.MaxActiveTime = c.GetInterval("EXECUTOR_MAX_ACTIVE_TIME", "0", "The maximum time that can be spent by the worker dequeueing records to be handled.")
 	c.DockerRegistryMirrorURL = c.GetOptional("EXECUTOR_DOCKER_REGISTRY_MIRROR_URL", "The address of a docker registry mirror to use in firecracker VMs. Supports multiple values, separated with a comma.")
 	c.dockerAuthConfigStr = c.GetOptional("EXECUTOR_DOCKER_AUTH_CONFIG", "The content of the docker config file including auth for services. If using firecracker, only static credentials are supported, not credential stores nor credential helpers.")
+	c.CACertificate = c.GetOptional("EXECUTOR_CA_CERTIFICATE", "The base64 encoded CA certificate to use for TLS connections to the frontend.")
 
 	if c.dockerAuthConfigStr != "" {
 		c.dockerAuthConfigUnmarshalError = json.Unmarshal([]byte(c.dockerAuthConfigStr), &c.DockerAuthConfig)

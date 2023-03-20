@@ -188,6 +188,7 @@ func filesOptions(c *config.Config) apiclient.BaseClientOptions {
 	return apiclient.BaseClientOptions{
 		ExecutorName:    c.WorkerHostname,
 		EndpointOptions: endpointOptions(c, "/.executors/files"),
+		CACertificate:   c.CACertificate,
 	}
 }
 
@@ -195,6 +196,7 @@ func baseClientOptions(c *config.Config, pathPrefix string) apiclient.BaseClient
 	return apiclient.BaseClientOptions{
 		ExecutorName:    c.WorkerHostname,
 		EndpointOptions: endpointOptions(c, pathPrefix),
+		CACertificate:   c.CACertificate,
 	}
 }
 

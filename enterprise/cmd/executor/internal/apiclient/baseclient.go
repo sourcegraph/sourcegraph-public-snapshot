@@ -3,6 +3,7 @@ package apiclient
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -63,6 +64,9 @@ type BaseClientOptions struct {
 
 	// EndpointOptions configures the endpoint the BaseClient will call for requests.
 	EndpointOptions EndpointOptions
+
+	// CACertificate is the certificate authority to use for TLS verification.
+	CACertificate string
 }
 
 type EndpointOptions struct {
@@ -83,8 +87,21 @@ func NewBaseClient(options BaseClientOptions) (*BaseClient, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	client := httpcli.InternalClient
+
+	if len(options.CACertificate) > 0 {
+		decodedCACerts, err := base64.StdEncoding.DecodeString(options.CACertificate)
+		if err != nil {
+			return nil, err
+		}
+		if err = httpcli.NewCertPoolOpt(string(decodedCACerts))(client); err != nil {
+			return nil, err
+		}
+	}
+
 	return &BaseClient{
-		httpClient: httpcli.InternalClient,
+		httpClient: client,
 		options:    options,
 		baseURL:    baseURL,
 	}, nil
