@@ -211,22 +211,20 @@ exports[`FeedbackPrompt should render submit success correctly 1`] = `
   <div
     aria-modal="true"
     class="floatingPanel popover menu"
-    hidden=""
     role="dialog"
-    style="visibility: hidden;"
   >
     <div
       data-focus-guard="true"
       style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"
-      tabindex="0"
+      tabindex="-1"
     />
     <div
       data-focus-guard="true"
       style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"
-      tabindex="1"
+      tabindex="-1"
     />
     <div
-      data-focus-lock-disabled="false"
+      data-focus-lock-disabled="disabled"
     >
       <button
         class="btn close"
@@ -277,7 +275,7 @@ exports[`FeedbackPrompt should render submit success correctly 1`] = `
     <div
       data-focus-guard="true"
       style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"
-      tabindex="0"
+      tabindex="-1"
     />
   </div>
 </body>

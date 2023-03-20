@@ -57,8 +57,10 @@ export async function accessibilityAudit(page: Page, config: AccessibilityAuditC
          * TODO: Design review on some CodeMirror query input features to choose
          * a color that fulfill contrast requirements:
          * https://github.com/sourcegraph/sourcegraph/issues/36534
+         * Additionally role="combobox" cannot be used together with aria-multiline, which
+         * CodeMirror sets by default.
          */
-        .exclude('.cm-content .cm-line')
+        .exclude('.cm-content')
 
     if (options) {
         axe.options(options)

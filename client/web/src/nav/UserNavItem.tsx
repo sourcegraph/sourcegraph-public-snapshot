@@ -1,6 +1,6 @@
 import { useCallback, useMemo, ChangeEventHandler, FC } from 'react'
 
-import { mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
+import { mdiChevronDown, mdiChevronUp, mdiCogOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
@@ -70,6 +70,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
     const { themeSetting, setThemeSetting } = useTheme()
     const keyboardShortcutSwitchTheme = useKeyboardShortcut('switchTheme')
     const [enableTeams] = useFeatureFlag('search-ownership')
+    const [enableAppConnectDotCom] = useFeatureFlag('app-connect-dotcom')
 
     const supportsSystemTheme = useMemo(
         () => Boolean(window.matchMedia?.('not all and (prefers-color-scheme), (prefers-color-scheme)').matches),
@@ -118,7 +119,11 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                         >
                             <div className="position-relative">
                                 <div className="align-items-center d-flex">
-                                    <UserAvatar user={authenticatedUser} className={styles.avatar} />
+                                    {isSourcegraphApp ? (
+                                        <Icon svgPath={mdiCogOutline} aria-hidden={true} />
+                                    ) : (
+                                        <UserAvatar user={authenticatedUser} className={styles.avatar} />
+                                    )}
                                     <Icon svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} aria-hidden={true} />
                                 </div>
                             </div>
@@ -129,10 +134,14 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                             className={styles.dropdownMenu}
                             aria-label="User. Open menu"
                         >
-                            <MenuHeader className={styles.dropdownHeader}>
-                                Signed in as <strong>@{authenticatedUser.username}</strong>
-                            </MenuHeader>
-                            <MenuDivider className={styles.dropdownDivider} />
+                            {!isSourcegraphApp ? (
+                                <>
+                                    <MenuHeader className={styles.dropdownHeader}>
+                                        Signed in as <strong>@{authenticatedUser.username}</strong>
+                                    </MenuHeader>
+                                    <MenuDivider className={styles.dropdownDivider} />
+                                </>
+                            ) : null}
                             <MenuLink as={Link} to={authenticatedUser.settingsURL!}>
                                 Settings
                             </MenuLink>
@@ -144,7 +153,12 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     Setup wizard
                                 </MenuLink>
                             )}
-                            {isSourcegraphApp && <AppUserConnectDotComAccount />}
+                            {isSourcegraphApp && (
+                                <MenuLink as={Link} to="/site-admin/repositories">
+                                    Repositories
+                                </MenuLink>
+                            )}
+                            {isSourcegraphApp && enableAppConnectDotCom && <AppUserConnectDotComAccount />}
                             {enableTeams && !isSourcegraphDotCom && (
                                 <MenuLink as={Link} to="/teams">
                                     Teams

@@ -769,6 +769,69 @@ func TestUpdateParentErrorBothNameAndID(t *testing.T) {
 	})
 }
 
+func TestUpdateParentCircular(t *testing.T) {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	userID := fs.AddUser(types.User{SiteAdmin: true})
+	ctx := userCtx(userID)
+	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
+	parentTeamID := fs.AddTeam(&types.Team{Name: "parent"})
+	fs.AddTeam(&types.Team{Name: "child", ParentTeamID: parentTeamID})
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `mutation UpdateTeam($name: String!, $newParentName: String!) {
+			updateTeam(name: $name, parentTeamName: $newParentName) {
+				parentTeam {
+					name
+				}
+			}
+		}`,
+		ExpectedResult: `null`,
+		ExpectedErrors: []*gqlerrors.QueryError{
+			{
+				Message: `circular dependency: new parent "child" is descendant of updated team "parent"`,
+				Path:    []any{"updateTeam"},
+			},
+		},
+		Variables: map[string]any{
+			"name":          "parent",
+			"newParentName": "child",
+		},
+	})
+}
+
+func TestTeamMakeRoot(t *testing.T) {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	userID := fs.AddUser(types.User{SiteAdmin: true})
+	ctx := userCtx(userID)
+	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
+	parentTeamID := fs.AddTeam(&types.Team{Name: "parent"})
+	fs.AddTeam(&types.Team{Name: "child", ParentTeamID: parentTeamID})
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `mutation UpdateTeam($name: String!) {
+			updateTeam(name: $name, makeRoot: true) {
+				parentTeam {
+					name
+				}
+			}
+		}`,
+		ExpectedResult: `{
+			"updateTeam": {
+				"parentTeam": null
+			}
+		}`,
+		Variables: map[string]any{
+			"name": "child",
+		},
+	})
+}
+
 func TestDeleteTeamByID(t *testing.T) {
 	fs := fakedb.New()
 	db := database.NewMockDB()

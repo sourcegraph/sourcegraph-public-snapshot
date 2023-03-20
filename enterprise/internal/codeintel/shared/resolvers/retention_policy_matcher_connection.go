@@ -1,8 +1,6 @@
 package sharedresolvers
 
 import (
-	"context"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -25,20 +23,20 @@ func NewCodeIntelligenceRetentionPolicyMatcherConnectionResolver(repoStore datab
 	}
 }
 
-func (r *codeIntelligenceRetentionPolicyMatcherConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.CodeIntelligenceRetentionPolicyMatchResolver, error) {
+func (r *codeIntelligenceRetentionPolicyMatcherConnectionResolver) Nodes() []resolverstubs.CodeIntelligenceRetentionPolicyMatchResolver {
 	resolvers := make([]resolverstubs.CodeIntelligenceRetentionPolicyMatchResolver, 0, len(r.policies))
 	for _, policy := range r.policies {
 		resolvers = append(resolvers, NewRetentionPolicyMatcherResolver(r.repoStore, policy))
 	}
 
-	return resolvers, nil
+	return resolvers
 }
 
-func (r *codeIntelligenceRetentionPolicyMatcherConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {
+func (r *codeIntelligenceRetentionPolicyMatcherConnectionResolver) TotalCount() *int32 {
 	v := int32(r.totalCount)
-	return &v, nil
+	return &v
 }
 
-func (r *codeIntelligenceRetentionPolicyMatcherConnectionResolver) PageInfo(ctx context.Context) (resolverstubs.PageInfo, error) {
-	return HasNextPage(len(r.policies) < r.totalCount), nil
+func (r *codeIntelligenceRetentionPolicyMatcherConnectionResolver) PageInfo() resolverstubs.PageInfo {
+	return HasNextPage(len(r.policies) < r.totalCount)
 }

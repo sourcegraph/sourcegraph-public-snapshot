@@ -118,6 +118,11 @@
         &:hover {
             background-color: var(--color-bg-2);
         }
+
+        span {
+            font-family: var(--code-font-family);
+            font-size: var(--code-font-size);
+        }
     }
 
     &--active {
