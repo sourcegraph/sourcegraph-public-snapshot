@@ -69,20 +69,20 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
             return version
         }),
         // Commands
-        vscode.commands.registerCommand('cody.recipe.explain-code', async () => executeRecipe('explainCode')),
+        vscode.commands.registerCommand('cody.recipe.explain-code', async () => executeRecipe('explain-code-detailed')),
         vscode.commands.registerCommand('cody.recipe.explain-code-high-level', async () =>
-            executeRecipe('explainCodeHighLevel')
+            executeRecipe('explain-code-high-level')
         ),
         vscode.commands.registerCommand('cody.recipe.generate-unit-test', async () =>
-            executeRecipe('generateUnitTest')
+            executeRecipe('generate-unit-test')
         ),
         vscode.commands.registerCommand('cody.recipe.generate-docstring', async () =>
-            executeRecipe('generateDocstring')
+            executeRecipe('generate-docstring')
         ),
         vscode.commands.registerCommand('cody.recipe.translate-to-language', async () =>
-            executeRecipe('translateToLanguage')
+            executeRecipe('translate-to-language')
         ),
-        vscode.commands.registerCommand('cody.recipe.git-history', async () => executeRecipe('gitHistory'))
+        vscode.commands.registerCommand('cody.recipe.git-history', async () => executeRecipe('git-history'))
     )
 
     // Watch all relevant configuration and secrets for changes.
