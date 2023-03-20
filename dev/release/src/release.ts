@@ -69,7 +69,6 @@ import {
     validateNoReleaseBlockers,
     verifyWithInput,
 } from './util'
-import { IssuesGetLabelParams} from '@octokit/rest';
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
@@ -1304,18 +1303,6 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         description: 'test patch dates',
         run: () => {
             console.log(newRelease(new SemVer('1.0.0'), DateTime.fromISO('2023-03-22'), 'test', 'test'))
-        },
-    },
-    {
-        id: '_test:create-label',
-        description: 'test patch dates',
-        run: async () => {
-            const client = await getAuthenticatedGitHubClient()
-            const got = await client.issues.getLabel({name: 'release-tool-test-please-ignore', owner: 'sourcegraph', repo:'sourcegraph'} as IssuesGetLabelParams)
-            // const resp = await client.issues.createLabel({color:'e69138', name: `release-tool-test-please-ignore`, owner: 'sourcegraph', repo: 'sourcegraph', description: 'release tool testing'} as IssuesCreateLabelParams)
-            // client.issues.updateLabel({} as IssuesUpdateLabelParams)
-            // console.log(resp)
-            console.log(got)
         },
     },
 ]
