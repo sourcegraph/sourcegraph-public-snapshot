@@ -1937,16 +1937,27 @@ webpack_bundle(
     deps = WEBPACK_CONFIG_DEPS,
 )
 
+# ibazel run //client/web:devserver
+# should make the web application available under http://localhost:3080/ by default.
 webpack_devserver(
     name = "devserver",
-    data = WEBPACK_CONFIG_DEPS + [
-        ":module_styles",
-        ":package_styles",
+    data = BUNDLE_DATA_DEPS + WEBPACK_CONFIG_DEPS + [
         "//:babel_config",
         "//:browserslist",
         "//:package_json",
+
+        # references from the devserver config
+        "webpack.bazel.config.js",
     ],
-    webpack_config = "webpack.bazel.config.js",
+    entry_points = {
+        "src/main.js": "app",
+    },
+    env = {
+        "NODE_ENV": "development",
+        # TODO(bazel): make it dynamic or make multiple targets.
+        "SOURCEGRAPH_API_URL": "https://sourcegraph.sourcegraph.com"
+    },
+    webpack_config = "webpack.bazel.devserver.config.js",
 )
 
 build_test(
