@@ -1238,31 +1238,85 @@ func TestTeamsExceptAncestorID(t *testing.T) {
 	fs.AddTeam(&types.Team{Name: "child-include", ParentTeamID: parentTeamID})
 	topLevelNotExcluded := fs.AddTeam(&types.Team{Name: "top-level-not-excluded"})
 	ancestorExcluded := fs.AddTeam(&types.Team{Name: "ancestor-excluded", ParentTeamID: topLevelNotExcluded})
+	fs.AddTeam(&types.Team{Name: "excluded-ancestors-sibling-included", ParentTeamID: topLevelNotExcluded})
 	parentExcluded := fs.AddTeam(&types.Team{Name: "parent-excluded", ParentTeamID: ancestorExcluded})
 	fs.AddTeam(&types.Team{Name: "child-excluded", ParentTeamID: parentExcluded})
-	RunTest(t, &Test{
-		Schema:  mustParseGraphQLSchema(t, db),
-		Context: ctx,
-		Query: `query ExcludeAncestorId($id: ID!){
-			teams(exceptAncestorId: $id) {
-				nodes {
-					name
+	for name, testCase := range map[string]struct {
+		query          string
+		expectedResult string
+	}{
+		"exceptAncestorId": {
+			query: `query ExcludeAncestorId($id: ID!){
+				teams(exceptAncestorId: $id) {
+					nodes {
+						name
+					}
 				}
-			}
-		}`,
-		// child-include team will not be returned - by default only top-level teams are included.
-		ExpectedResult: `{
-			"teams": {
-				"nodes": [
-					{"name": "parent-include"},
-					{"name": "top-level-not-excluded"}
-				]
-			}
-		}`,
-		Variables: map[string]any{
-			"id": string(MarshalTeamID(ancestorExcluded)),
+			}`,
+			expectedResult: `{
+				"teams": {
+					"nodes": [
+						{"name": "parent-include"},
+						{"name": "top-level-not-excluded"}
+					]
+				}
+			}`,
 		},
-	})
+		"exceptAncestorId and includeChildTeams": {
+			query: `query ExcludeAncestorId($id: ID!){
+				teams(exceptAncestorId: $id, includeChildTeams: true) {
+					nodes {
+						name
+					}
+				}
+			}`,
+			expectedResult: `{
+				"teams": {
+					"nodes": [
+						{"name": "parent-include"},
+						{"name": "child-include"},
+						{"name": "top-level-not-excluded"},
+						{"name": "excluded-ancestors-sibling-included"}
+					]
+				}
+			}`,
+		},
+		"includeChildTeams": {
+			query: `{
+				teams(includeChildTeams: true) {
+					nodes {
+						name
+					}
+				}
+			}`,
+			expectedResult: `{
+				"teams": {
+					"nodes": [
+						{"name": "parent-include"},
+						{"name": "child-include"},
+						{"name": "top-level-not-excluded"},
+						{"name": "ancestor-excluded"},
+						{"name": "excluded-ancestors-sibling-included"},
+						{"name": "parent-excluded"},
+						{"name": "child-excluded"}
+					]
+				}
+			}`,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			RunTest(t, &Test{
+				Schema:  mustParseGraphQLSchema(t, db),
+				Context: ctx,
+				Query:   testCase.query,
+				// child-include team will not be returned - by default only top-level teams are included.
+				ExpectedResult: testCase.expectedResult,
+				Variables: map[string]any{
+					"id": string(MarshalTeamID(ancestorExcluded)),
+				},
+			})
+		})
+	}
 }
 
 func TestTeamsCount(t *testing.T) {

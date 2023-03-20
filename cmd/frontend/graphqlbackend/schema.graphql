@@ -9702,6 +9702,11 @@ extend type Query {
         its own ancestor).
         """
         exceptAncestorId: ID
+        """
+        If set to true, child teams (ones that have parent set) are also returned.
+        If not specified, the default behavior is to only include top-level teams.
+        """
+        includeChildTeams: Boolean
     ): TeamConnection!
 }
 
