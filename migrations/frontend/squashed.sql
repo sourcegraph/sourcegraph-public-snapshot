@@ -1753,7 +1753,6 @@ CREATE TABLE codeintel_ranking_references_processed (
 );
 
 CREATE SEQUENCE codeintel_ranking_references_processed_id_seq
-    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
