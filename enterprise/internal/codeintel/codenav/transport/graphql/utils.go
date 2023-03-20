@@ -2,7 +2,6 @@ package graphql
 
 import (
 	"context"
-	"encoding/base64"
 
 	"github.com/sourcegraph/go-lsp"
 
@@ -23,33 +22,6 @@ func sharedRangeTolspRange(r types.Range) lsp.Range {
 
 func convertPosition(line, character int) lsp.Position {
 	return lsp.Position{Line: line, Character: character}
-}
-
-// decodeCursor decodes the given cursor value. It is assumed to be a value previously
-// returned from the function encodeCursor. An empty string is returned if no cursor is
-// supplied. Invalid cursors return errors.
-func decodeCursor(val *string) (string, error) {
-	if val == nil {
-		return "", nil
-	}
-
-	decoded, err := base64.StdEncoding.DecodeString(*val)
-	if err != nil {
-		return "", err
-	}
-
-	return string(decoded), nil
-}
-
-// encodeCursor creates a PageInfo object from the given cursor. If the cursor is not
-// defined, then an object indicating the end of the result set is returned. The cursor
-// is base64 encoded for transfer, and should be decoded using the function decodeCursor.
-func encodeCursor(val *string) string {
-	if val != nil {
-		return base64.StdEncoding.EncodeToString([]byte(*val))
-	}
-
-	return ""
 }
 
 // resolveLocations creates a slide of LocationResolvers for the given list of adjusted locations. The

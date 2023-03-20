@@ -38,7 +38,11 @@ type rootResolver struct {
 	locationResolverFactory *sharedresolvers.CachedLocationResolverFactory
 }
 
-func NewRootResolver(observationCtx *observation.Context, autoindexSvc AutoIndexingService, uploadSvc UploadsService, policySvc PolicyService,
+func NewRootResolver(
+	observationCtx *observation.Context,
+	autoindexSvc AutoIndexingService,
+	uploadSvc UploadsService,
+	policySvc PolicyService,
 	gitserverClient gitserver.Client,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
@@ -64,9 +68,9 @@ var (
 )
 
 // 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is already authenticated
-func (r *rootResolver) IndexConfiguration(ctx context.Context, id graphql.ID) (_ resolverstubs.IndexConfigurationResolver, err error) {
+func (r *rootResolver) IndexConfiguration(ctx context.Context, repoID graphql.ID) (_ resolverstubs.IndexConfigurationResolver, err error) {
 	_, traceErrs, endObservation := r.operations.indexConfiguration.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repoID", string(id)),
+		log.String("repoID", string(repoID)),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -74,7 +78,7 @@ func (r *rootResolver) IndexConfiguration(ctx context.Context, id graphql.ID) (_
 		return nil, errAutoIndexingNotEnabled
 	}
 
-	repositoryID, err := resolverstubs.UnmarshalID[api.RepoID](id)
+	repositoryID, err := resolverstubs.UnmarshalID[api.RepoID](repoID)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +89,9 @@ func (r *rootResolver) IndexConfiguration(ctx context.Context, id graphql.ID) (_
 // 🚨 SECURITY: Only site admins may infer auto-index jobs
 func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.InferAutoIndexJobsForRepoArgs) (_ []resolverstubs.AutoIndexJobDescriptionResolver, err error) {
 	ctx, _, endObservation := r.operations.inferAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repoID", string(args.Repository)),
+		log.String("repository", string(args.Repository)),
+		log.String("rev", resolverstubs.Deref(args.Rev, "")),
+		log.String("script", resolverstubs.Deref(args.Script, "")),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -163,7 +169,9 @@ func (r *autoIndexJobDescriptionResolver) Steps() resolverstubs.IndexStepsResolv
 // 🚨 SECURITY: Only site admins may queue auto-index jobs
 func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.QueueAutoIndexJobsForRepoArgs) (_ []resolverstubs.PreciseIndexResolver, err error) {
 	ctx, traceErrs, endObservation := r.operations.queueAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repoID", string(args.Repository)),
+		log.String("repository", string(args.Repository)),
+		log.String("rev", resolverstubs.Deref(args.Rev, "")),
+		log.String("configuration", resolverstubs.Deref(args.Configuration, "")),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -217,7 +225,8 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 // 🚨 SECURITY: Only site admins may modify code intelligence indexing configuration
 func (r *rootResolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args *resolverstubs.UpdateRepositoryIndexConfigurationArgs) (_ *resolverstubs.EmptyResponse, err error) {
 	ctx, _, endObservation := r.operations.updateIndexConfiguration.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repoID", string(args.Repository)),
+		log.String("repository", string(args.Repository)),
+		log.String("configuration", args.Configuration),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -245,15 +254,27 @@ func (r *rootResolver) UpdateRepositoryIndexConfiguration(ctx context.Context, a
 }
 
 func (r *rootResolver) CodeIntelligenceInferenceScript(ctx context.Context) (script string, err error) {
+	ctx, _, endObservation := r.operations.codeIntelligenceInferenceScript.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	return r.autoindexSvc.GetInferenceScript(ctx)
 }
 
 func (r *rootResolver) UpdateCodeIntelligenceInferenceScript(ctx context.Context, args *resolverstubs.UpdateCodeIntelligenceInferenceScriptArgs) (_ *resolverstubs.EmptyResponse, err error) {
+	ctx, _, endObservation := r.operations.updateCodeIntelligenceInferenceScript.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("script", args.Script),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return resolverstubs.Empty, r.autoindexSvc.SetInferenceScript(ctx, args.Script)
 }
 
 func (r *rootResolver) GitBlobCodeIntelInfo(ctx context.Context, args *resolverstubs.GitTreeEntryCodeIntelInfoArgs) (_ resolverstubs.GitBlobCodeIntelSupportResolver, err error) {
-	ctx, errTracer, endObservation := r.operations.gitBlobCodeIntelInfo.WithErrors(ctx, &err, observation.Args{})
+	ctx, errTracer, endObservation := r.operations.gitBlobCodeIntelInfo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repoID", int(args.Repo.ID)),
+		log.String("commit", args.Commit),
+		log.String("path", args.Path),
+	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	return NewCodeIntelSupportResolver(r.autoindexSvc, args.Repo.Name, args.Path, errTracer), nil
@@ -262,8 +283,8 @@ func (r *rootResolver) GitBlobCodeIntelInfo(ctx context.Context, args *resolvers
 func (r *rootResolver) GitTreeCodeIntelInfo(ctx context.Context, args *resolverstubs.GitTreeEntryCodeIntelInfoArgs) (resolver resolverstubs.GitTreeCodeIntelSupportResolver, err error) {
 	ctx, errTracer, endObservation := r.operations.gitBlobCodeIntelInfo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repoID", int(args.Repo.ID)),
-		log.String("path", args.Path),
 		log.String("commit", args.Commit),
+		log.String("path", args.Path),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -281,18 +302,18 @@ func (r *rootResolver) GitTreeCodeIntelInfo(ctx context.Context, args *resolvers
 }
 
 func (r *rootResolver) GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []shared.IndexesWithRepositoryNamespace, err error) {
-	ctx, _, endObservation := r.operations.getRecentIndexesSummary.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{log.Int("repositoryID", repositoryID)},
-	})
+	ctx, _, endObservation := r.operations.getRecentIndexesSummary.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	return r.autoindexSvc.GetRecentIndexesSummary(ctx, repositoryID)
 }
 
 func (r *rootResolver) GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error) {
-	ctx, _, endObservation := r.operations.getLastIndexScanForRepository.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{log.Int("repositoryID", repositoryID)},
-	})
+	ctx, _, endObservation := r.operations.getLastIndexScanForRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	return r.autoindexSvc.GetLastIndexScanForRepository(ctx, repositoryID)
@@ -305,34 +326,33 @@ func (r *rootResolver) CodeIntelSummary(ctx context.Context) (_ resolverstubs.Co
 	return sharedresolvers.NewSummaryResolver(r.autoindexSvc, r.locationResolverFactory.Create()), nil
 }
 
-func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ resolverstubs.CodeIntelRepositorySummaryResolver, err error) {
+func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID) (_ resolverstubs.CodeIntelRepositorySummaryResolver, err error) {
 	ctx, errTracer, endObservation := r.operations.repositorySummary.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repoID", string(id)),
+		log.String("repoID", string(repoID)),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	repositoryID, err := resolverstubs.UnmarshalID[api.RepoID](id)
-	if err != nil {
-		return nil, err
-	}
-	repoID := int(repositoryID)
-
-	lastUploadRetentionScan, err := r.uploadSvc.GetLastUploadRetentionScanForRepository(ctx, repoID)
+	id, err := resolverstubs.UnmarshalID[int](repoID)
 	if err != nil {
 		return nil, err
 	}
 
-	lastIndexScan, err := r.autoindexSvc.GetLastIndexScanForRepository(ctx, repoID)
+	lastUploadRetentionScan, err := r.uploadSvc.GetLastUploadRetentionScanForRepository(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	recentUploads, err := r.uploadSvc.GetRecentUploadsSummary(ctx, repoID)
+	lastIndexScan, err := r.autoindexSvc.GetLastIndexScanForRepository(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	recentIndexes, err := r.autoindexSvc.GetRecentIndexesSummary(ctx, repoID)
+	recentUploads, err := r.uploadSvc.GetRecentUploadsSummary(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	recentIndexes, err := r.autoindexSvc.GetRecentIndexesSummary(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -351,7 +371,7 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 	commit := "HEAD"
 	var limitErr error
 
-	indexJobs, err := r.autoindexSvc.InferIndexJobsFromRepositoryStructure(ctx, repoID, commit, "", false)
+	indexJobs, err := r.autoindexSvc.InferIndexJobsFromRepositoryStructure(ctx, id, commit, "", false)
 	if err != nil {
 		if !errors.As(err, &inference.LimitError{}) {
 			return nil, err

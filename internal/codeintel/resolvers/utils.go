@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -167,9 +168,27 @@ type ConnectionArgs struct {
 	First *int32
 }
 
+func (a *ConnectionArgs) Limit(defaultValue int32) int32 {
+	return Deref(a.First, defaultValue)
+}
+
 type PagedConnectionArgs struct {
 	ConnectionArgs
 	After *string
+}
+
+func (a *PagedConnectionArgs) ParseOffset() (int32, error) {
+	if a.After == nil {
+		return 0, nil
+	}
+
+	v, err := strconv.ParseInt(*a.After, 10, 32)
+	return int32(v), err
+}
+
+func (a *PagedConnectionArgs) ParseLimitOffset(defaultValue int32) (limit, offset int32, _ error) {
+	offset, err := a.ParseOffset()
+	return a.Limit(defaultValue), offset, err
 }
 
 type EmptyResponse struct{}

@@ -7,9 +7,12 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
+	autoindexingShared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsShared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -161,6 +164,13 @@ type indexerWithCountResolver struct {
 
 func (r *indexerWithCountResolver) Indexer() resolverstubs.CodeIntelIndexerResolver { return r.indexer }
 func (r *indexerWithCountResolver) Count() int32                                    { return r.count }
+
+type RepositorySummary struct {
+	RecentUploads           []uploadsShared.UploadsWithRepositoryNamespace
+	RecentIndexes           []autoindexingShared.IndexesWithRepositoryNamespace
+	LastUploadRetentionScan *time.Time
+	LastIndexScan           *time.Time
+}
 
 type repositorySummaryResolver struct {
 	uploadsSvc        UploadsService

@@ -56,3 +56,12 @@ func toInt32(val *int) *int32 {
 	v := int32(*val)
 	return &v
 }
+
+func toHours(duration *time.Duration) *int32 {
+	if duration == nil {
+		return nil
+	}
+
+	v := int32(*duration / time.Hour)
+	return &v
+}

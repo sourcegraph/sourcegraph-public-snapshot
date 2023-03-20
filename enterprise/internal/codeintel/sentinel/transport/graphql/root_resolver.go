@@ -2,7 +2,6 @@ package graphql
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
@@ -55,27 +54,20 @@ func NewRootResolver(
 }
 
 func (r *rootResolver) Vulnerabilities(ctx context.Context, args resolverstubs.GetVulnerabilitiesArgs) (_ resolverstubs.VulnerabilityConnectionResolver, err error) {
-	ctx, _, endObservation := r.operations.getVulnerabilities.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, _, endObservation := r.operations.getVulnerabilities.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int32("first", resolverstubs.Deref(args.First, 0)),
+		log.String("after", resolverstubs.Deref(args.After, "")),
+	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	limit := 50
-	if args.First != nil {
-		limit = int(*args.First)
-	}
-
-	offset := 0
-	if args.After != nil {
-		after, err := strconv.Atoi(*args.After)
-		if err != nil {
-			return nil, err
-		}
-
-		offset = after
+	limit, offset, err := args.ParseLimitOffset(50)
+	if err != nil {
+		return nil, err
 	}
 
 	vulnerabilities, totalCount, err := r.sentinelSvc.GetVulnerabilities(ctx, shared.GetVulnerabilitiesArgs{
-		Limit:  limit,
-		Offset: offset,
+		Limit:  int(limit),
+		Offset: int(offset),
 	})
 	if err != nil {
 		return nil, err
@@ -90,27 +82,20 @@ func (r *rootResolver) Vulnerabilities(ctx context.Context, args resolverstubs.G
 }
 
 func (r *rootResolver) VulnerabilityMatches(ctx context.Context, args resolverstubs.GetVulnerabilityMatchesArgs) (_ resolverstubs.VulnerabilityMatchConnectionResolver, err error) {
-	ctx, errTracer, endObservation := r.operations.getMatches.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, errTracer, endObservation := r.operations.getMatches.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int32("first", resolverstubs.Deref(args.First, 0)),
+		log.String("after", resolverstubs.Deref(args.After, "")),
+	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	limit := 50
-	if args.First != nil {
-		limit = int(*args.First)
-	}
-
-	offset := 0
-	if args.After != nil {
-		after, err := strconv.Atoi(*args.After)
-		if err != nil {
-			return nil, err
-		}
-
-		offset = after
+	limit, offset, err := args.ParseLimitOffset(50)
+	if err != nil {
+		return nil, err
 	}
 
 	matches, totalCount, err := r.sentinelSvc.GetVulnerabilityMatches(ctx, shared.GetVulnerabilityMatchesArgs{
-		Limit:  limit,
-		Offset: offset,
+		Limit:  int(limit),
+		Offset: int(offset),
 	})
 	if err != nil {
 		return nil, err
@@ -143,14 +128,16 @@ func (r *rootResolver) VulnerabilityMatches(ctx context.Context, args resolverst
 		})
 	}
 
-	return resolverstubs.NewTotalCountConnectionResolver(resolvers, int32(offset), int32(totalCount)), nil
+	return resolverstubs.NewTotalCountConnectionResolver(resolvers, offset, int32(totalCount)), nil
 }
 
-func (r *rootResolver) VulnerabilityByID(ctx context.Context, gqlID graphql.ID) (_ resolverstubs.VulnerabilityResolver, err error) {
-	ctx, _, endObservation := r.operations.vulnerabilityByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+func (r *rootResolver) VulnerabilityByID(ctx context.Context, vulnerabilityID graphql.ID) (_ resolverstubs.VulnerabilityResolver, err error) {
+	ctx, _, endObservation := r.operations.vulnerabilityByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("vulnerabilityID", string(vulnerabilityID)),
+	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	id, err := resolverstubs.UnmarshalID[int](gqlID)
+	id, err := resolverstubs.UnmarshalID[int](vulnerabilityID)
 	if err != nil {
 		return nil, err
 	}
@@ -163,11 +150,13 @@ func (r *rootResolver) VulnerabilityByID(ctx context.Context, gqlID graphql.ID) 
 	return &vulnerabilityResolver{vulnerability}, nil
 }
 
-func (r *rootResolver) VulnerabilityMatchByID(ctx context.Context, gqlID graphql.ID) (_ resolverstubs.VulnerabilityMatchResolver, err error) {
-	ctx, errTracer, endObservation := r.operations.vulnerabilityMatchByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+func (r *rootResolver) VulnerabilityMatchByID(ctx context.Context, vulnerabilityMatchID graphql.ID) (_ resolverstubs.VulnerabilityMatchResolver, err error) {
+	ctx, errTracer, endObservation := r.operations.vulnerabilityMatchByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("vulnerabilityMatchID", string(vulnerabilityMatchID)),
+	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	id, err := resolverstubs.UnmarshalID[int](gqlID)
+	id, err := resolverstubs.UnmarshalID[int](vulnerabilityMatchID)
 	if err != nil {
 		return nil, err
 	}

@@ -2,11 +2,9 @@ package graphql
 
 import (
 	"context"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
-	sglog "github.com/sourcegraph/log"
 
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -17,7 +15,6 @@ import (
 )
 
 type configurationPolicyResolver struct {
-	logger              sglog.Logger
 	repoStore           database.RepoStore
 	configurationPolicy types.ConfigurationPolicy
 	errTracer           *observation.ErrCollector
@@ -26,7 +23,6 @@ type configurationPolicyResolver struct {
 func NewConfigurationPolicyResolver(repoStore database.RepoStore, configurationPolicy types.ConfigurationPolicy, errTracer *observation.ErrCollector) resolverstubs.CodeIntelligenceConfigurationPolicyResolver {
 	return &configurationPolicyResolver{
 		repoStore:           repoStore,
-		logger:              sglog.Scoped("configurationPolicyResolver", ""),
 		configurationPolicy: configurationPolicy,
 		errTracer:           errTracer,
 	}
@@ -107,13 +103,4 @@ func (r *configurationPolicyResolver) IndexCommitMaxAgeHours() *int32 {
 
 func (r *configurationPolicyResolver) IndexIntermediateCommits() bool {
 	return r.configurationPolicy.IndexIntermediateCommits
-}
-
-func toHours(duration *time.Duration) *int32 {
-	if duration == nil {
-		return nil
-	}
-
-	v := int32(*duration / time.Hour)
-	return &v
 }
