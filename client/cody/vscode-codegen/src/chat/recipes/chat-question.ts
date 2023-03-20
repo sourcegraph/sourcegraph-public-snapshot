@@ -26,13 +26,11 @@ export class ChatQuestion implements Recipe {
         const displayText = renderMarkdown(humanChatInput)
 
         // TODO: Include current file as context.
-        const interaction = new Interaction(
+        return new Interaction(
             { speaker: 'human', text: truncatedText, displayText, timestamp },
             { speaker: 'assistant', text: '', displayText: '', timestamp },
             this.getContextMessages(truncatedText, intentDetector, codebaseContext)
         )
-
-        return interaction
     }
 
     private async getContextMessages(

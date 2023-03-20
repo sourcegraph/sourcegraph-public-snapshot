@@ -8,12 +8,6 @@ import { ChatMessage } from './messages'
 export class Transcript {
     private interactions: Interaction[] = []
 
-    constructor() {}
-
-    public getTranscript(): Interaction[] {
-        return this.interactions
-    }
-
     public addInteraction(interaction: Interaction | null): void {
         if (!interaction) {
             return
@@ -36,16 +30,15 @@ export class Transcript {
 
     public async toPrompt(): Promise<Message[]> {
         const messages: Message[] = []
-        const chunks = this.getTranscript()
-        for (let index = 0; index < chunks.length; index++) {
-            const chunkMessages = await chunks[index].toPrompt(index === chunks.length - 1)
-            messages.push(...chunkMessages)
+        for (let index = 0; index < this.interactions.length; index++) {
+            const interactionMessages = await this.interactions[index].toPrompt(index === this.interactions.length - 1)
+            messages.push(...interactionMessages)
         }
         return truncatePrompt(messages)
     }
 
     public toChat(): ChatMessage[] {
-        return this.getTranscript().flatMap(chunk => chunk.toChat())
+        return this.interactions.flatMap(interaction => interaction.toChat())
     }
 
     public reset(): void {

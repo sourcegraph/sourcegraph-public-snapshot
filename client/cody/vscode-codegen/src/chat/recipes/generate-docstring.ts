@@ -45,7 +45,7 @@ export class GenerateDocstring implements Recipe {
         } else if (extension === 'py') {
             additionalInstructions = 'Use a Python docstring to generate a Python multi-line string.'
         }
-        const promptMessage = `${promptPrefix}\n\`\`\`\n${selection.selectedText}\n\`\`\`\n Only generate the documentation, do not generate the code. ${additionalInstructions} ${MARKDOWN_FORMAT_PROMPT}`
+        const promptMessage = `${promptPrefix}\n\`\`\`\n${truncatedSelectedText}\n\`\`\`\nOnly generate the documentation, do not generate the code. ${additionalInstructions} ${MARKDOWN_FORMAT_PROMPT}`
 
         let docStart = ''
         if (extension === 'java' || extension.startsWith('js') || extension.startsWith('ts')) {
