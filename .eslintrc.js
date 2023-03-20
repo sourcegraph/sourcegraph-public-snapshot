@@ -226,6 +226,8 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
     'import/no-useless-path-segments': 'off',
     'import/no-duplicates': 'off',
     'import/no-default-export': 'off',
+    'unused-imports/no-unused-imports': 'off',
+    'unused-imports/no-unused-vars': 'off',
   },
   overrides: [
     {
