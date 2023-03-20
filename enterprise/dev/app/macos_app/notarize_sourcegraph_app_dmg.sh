@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+### DEPRECATED
+### initial experimental, exploratory script that requires macOS
+
+### NOTE
+### if the .app is notarized, the dmg does not need to be notarized also.
+
 # This keychain item contains a username and an app-specific password for Apple Developer
 # Generate app-specific passwords at https://appleid.apple.com/
 #   * Generate password with label "Sourcegraph App notarization"
@@ -19,7 +25,6 @@ altool_credentials_keychain_item=ALTOOL_CREDENTIALS
 # notarytool replaces altool
 notarytool_credentials_keychain_item=NOTARYTOOL_CREDENTIALS
 
-
 dmgpath="${1:-${HOME}/Downloads/Sourcegraph App.dmg}"
 
 # if the shell script quits it can be restarted with an existing UUID passed in as the second parameter
@@ -27,8 +32,8 @@ dmgpath="${1:-${HOME}/Downloads/Sourcegraph App.dmg}"
 altool_requestuuid="${2}"
 
 [ -s "${dmgpath}" ] || {
-    echo "invalid dmg path: ${dmgpath}" 1>&2
-    exit 1
+  echo "invalid dmg path: ${dmgpath}" 1>&2
+  exit 1
 }
 
 ### altool is deprecated and will stop working "late 2023"; `notarytool` is the replacement
@@ -57,8 +62,7 @@ altool_requestuuid="${2}"
 # this seems overly complex, but I'm not sure how many ways it can fail
 
 notarized=false
-while true
-do
+while true; do
   ninfo_response=$(xcrun altool --notarization-info "${altool_requestuuid}" -p "@keychain:${altool_credentials_keychain_item}")
   [ $(echo "${ninfo_response}" | grep -c "No errors getting notarization info.") -gt 0 ] || {
     echo "${ninfo_response}"
