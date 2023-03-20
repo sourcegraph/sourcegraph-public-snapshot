@@ -57,3 +57,5 @@ Site admins can manage which roles are assigned to which users from **Site admin
 To assign the **Site Administrator** system role to a user, open the same context menu from the triple dots, then click **Promote to site admin**. To unassign the **Site Administrator** role, open the same context menu from the triple dots, then click **Revoke site admin**.
 
 The **User** system role is automatically assigned to all users and cannot be revoked.
+
+<video alt="Video walkthrough of how to assign roles to a user" src="https://sourcegraphstatic.com/docs/images/administration/access_control/assign_roles_to_user.mp4" controls />
