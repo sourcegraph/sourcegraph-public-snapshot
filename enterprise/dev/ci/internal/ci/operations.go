@@ -64,17 +64,38 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	ops.Merge(linterOps)
 
 	if diff.Has(changed.Client | changed.GraphQL) {
-		// If there are any Graphql changes, they are impacting the client as well.
-		clientChecks := operations.NewNamedSet("Client checks",
-			clientIntegrationTests,
-			clientChromaticTests(opts),
-			frontendTests,                // ~4.5m
-			addWebApp(opts),              // ~5.5m
-			addBrowserExtensionUnitTests, // ~4.5m
-			addJetBrainsUnitTests,        // ~2.5m
-			addTypescriptCheck,           // ~4m
-			addVsceTests,                 // ~3.0m
-		)
+		var clientChecks *operations.Set
+		// TODO(Bazel) clean this once we go GA.
+		if opts.ForceBazel {
+			// If there are any Graphql changes, they are impacting the client as well.
+			clientChecks = operations.NewNamedSet("Client checks",
+				clientIntegrationTests,
+				clientChromaticTests(opts),
+				// frontendTests is now covered by Bazel
+				// frontendTests,                // ~4.5m
+				addWebApp(opts), // ~5.5m
+				// addWebAppTests is now covered by Bazel
+				// addWebAppTests(opts),
+				// addBrowserExtensionsUnitTests is now covered by Bazel
+				// addBrowserExtensionUnitTests, // ~4.5m
+				addJetBrainsUnitTests, // ~2.5m
+				addTypescriptCheck,    // ~4m
+				addVsceTests,          // ~3.0m
+			)
+		} else {
+			// If there are any Graphql changes, they are impacting the client as well.
+			clientChecks = operations.NewNamedSet("Client checks",
+				clientIntegrationTests,
+				clientChromaticTests(opts),
+				frontendTests, // ~4.5m
+				addWebApp(opts),
+				addWebAppTests(opts),
+				addBrowserExtensionUnitTests, // ~4.5m
+				addJetBrainsUnitTests,        // ~2.5m
+				addTypescriptCheck,           // ~4m
+				addVsceTests,                 // ~3.0m
+			)
+		}
 
 		if opts.ClientLintOnlyChangedFiles {
 			clientChecks.Append(addClientLintersForChangedFiles)
@@ -231,7 +252,11 @@ func addWebApp(opts CoreTestOperationsOptions) operations.Operation {
 			bk.Env("ENTERPRISE", ""))
 
 		addWebEnterpriseBuild(pipeline, opts)
+	}
+}
 
+func addWebAppTests(opts CoreTestOperationsOptions) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
 		// Webapp tests
 		pipeline.AddStep(":jest::globe_with_meridians: Test (client/web)",
 			withPnpmCache(),
