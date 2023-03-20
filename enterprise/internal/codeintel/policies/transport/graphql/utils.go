@@ -15,11 +15,6 @@ func marshalConfigurationPolicyGQLID(configurationPolicyID int64) graphql.ID {
 	return relay.MarshalID("CodeIntelligenceConfigurationPolicy", configurationPolicyID)
 }
 
-func unmarshalRepositoryID(id graphql.ID) (repositoryID int64, err error) {
-	err = relay.UnmarshalSpec(id, &repositoryID)
-	return repositoryID, err
-}
-
 func validateConfigurationPolicy(policy resolverstubs.CodeIntelConfigurationPolicy) error {
 	switch types.GitObjectType(policy.Type) {
 	case types.GitObjectTypeCommit:
@@ -59,11 +54,6 @@ func toDuration(hours *int32) *time.Duration {
 	return &v
 }
 
-func unmarshalConfigurationPolicyGQLID(id graphql.ID) (configurationPolicyID int64, err error) {
-	err = relay.UnmarshalSpec(id, &configurationPolicyID)
-	return configurationPolicyID, err
-}
-
 // toInt32 translates the given int pointer into an int32 pointer.
 func toInt32(val *int) *int32 {
 	if val == nil {
@@ -72,9 +62,4 @@ func toInt32(val *int) *int32 {
 
 	v := int32(*val)
 	return &v
-}
-
-func unmarshalLSIFIndexGQLID(id graphql.ID) (indexID int64, err error) {
-	err = relay.UnmarshalSpec(id, &indexID)
-	return indexID, err
 }

@@ -113,3 +113,8 @@ func Deref[T any](v *T, defaultValue T) T {
 
 	return defaultValue
 }
+
+func UnmarshalID[T any](id graphql.ID) (val T, err error) {
+	err = relay.UnmarshalSpec(id, &val)
+	return
+}

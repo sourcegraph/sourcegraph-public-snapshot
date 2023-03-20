@@ -7,6 +7,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -45,7 +46,7 @@ func (r *rootResolver) CommitGraph(ctx context.Context, id graphql.ID) (_ resolv
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	repositoryID, err := unmarshalRepositoryID(id)
+	repositoryID, err := resolverstubs.UnmarshalID[api.RepoID](id)
 	if err != nil {
 		return nil, err
 	}

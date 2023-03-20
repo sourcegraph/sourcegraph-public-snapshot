@@ -39,7 +39,7 @@ func (r *rootResolver) ConfigurationPolicyByID(ctx context.Context, id graphql.I
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	configurationPolicyID, err := unmarshalConfigurationPolicyGQLID(id)
+	configurationPolicyID, err := resolverstubs.UnmarshalID[int](id)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (r *rootResolver) CodeIntelligenceConfigurationPolicies(ctx context.Context
 		Offset: offset,
 	}
 	if args.Repository != nil {
-		id64, err := unmarshalRepositoryID(*args.Repository)
+		id64, err := resolverstubs.UnmarshalID[int64](*args.Repository)
 		if err != nil {
 			return nil, err
 		}
@@ -120,7 +120,7 @@ func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Con
 
 	var repositoryID *int
 	if args.Repository != nil {
-		id64, err := unmarshalRepositoryID(*args.Repository)
+		id64, err := resolverstubs.UnmarshalID[int64](*args.Repository)
 		if err != nil {
 			return nil, err
 		}
@@ -165,7 +165,7 @@ func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		return nil, err
 	}
 
-	id, err := unmarshalConfigurationPolicyGQLID(args.ID)
+	id, err := resolverstubs.UnmarshalID[int](args.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +201,7 @@ func (r *rootResolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Con
 		return nil, err
 	}
 
-	id, err := unmarshalConfigurationPolicyGQLID(args.Policy)
+	id, err := resolverstubs.UnmarshalID[int](args.Policy)
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +253,7 @@ func (r *rootResolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID
 	ctx, _, endObservation := r.operations.previewGitObjectFilter.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	repositoryID, err := unmarshalLSIFIndexGQLID(id)
+	repositoryID, err := resolverstubs.UnmarshalID[int](id)
 	if err != nil {
 		return nil, err
 	}

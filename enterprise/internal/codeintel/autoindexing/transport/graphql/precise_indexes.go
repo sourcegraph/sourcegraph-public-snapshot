@@ -14,6 +14,7 @@ import (
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -24,7 +25,7 @@ const DefaultPageSize = 50
 func (r *rootResolver) IndexerKeys(ctx context.Context, args *resolverstubs.IndexerKeyQueryArgs) ([]string, error) {
 	var repositoryID int
 	if args.Repo != nil {
-		v, err := unmarshalRepositoryID(*args.Repo)
+		v, err := resolverstubs.UnmarshalID[api.RepoID](*args.Repo)
 		if err != nil {
 			return nil, err
 		}
@@ -128,7 +129,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 
 	var repositoryID int
 	if args.Repo != nil {
-		v, err := unmarshalRepositoryID(*args.Repo)
+		v, err := resolverstubs.UnmarshalID[api.RepoID](*args.Repo)
 		if err != nil {
 			return nil, err
 		}
@@ -324,7 +325,7 @@ func (r *rootResolver) DeletePreciseIndexes(ctx context.Context, args *resolvers
 
 	repositoryID := 0
 	if args.Repository != nil {
-		repositoryID, err = resolveRepositoryID(*args.Repository)
+		repositoryID, err = resolverstubs.UnmarshalID[int](*args.Repository)
 		if err != nil {
 			return nil, err
 		}
@@ -415,7 +416,7 @@ func (r *rootResolver) ReindexPreciseIndexes(ctx context.Context, args *resolver
 
 	repositoryID := 0
 	if args.Repository != nil {
-		repositoryID, err = resolveRepositoryID(*args.Repository)
+		repositoryID, err = resolverstubs.UnmarshalID[int](*args.Repository)
 		if err != nil {
 			return nil, err
 		}

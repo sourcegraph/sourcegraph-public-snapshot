@@ -74,7 +74,7 @@ func (r *rootResolver) IndexConfiguration(ctx context.Context, id graphql.ID) (_
 		return nil, errAutoIndexingNotEnabled
 	}
 
-	repositoryID, err := unmarshalRepositoryID(id)
+	repositoryID, err := resolverstubs.UnmarshalID[api.RepoID](id)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *reso
 		return nil, errAutoIndexingNotEnabled
 	}
 
-	repositoryID, err := unmarshalRepositoryID(args.Repository)
+	repositoryID, err := resolverstubs.UnmarshalID[api.RepoID](args.Repository)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +174,7 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 		return nil, errAutoIndexingNotEnabled
 	}
 
-	repositoryID, err := unmarshalRepositoryID(args.Repository)
+	repositoryID, err := resolverstubs.UnmarshalID[api.RepoID](args.Repository)
 	if err != nil {
 		return nil, err
 	}
@@ -228,7 +228,7 @@ func (r *rootResolver) UpdateRepositoryIndexConfiguration(ctx context.Context, a
 		return nil, errAutoIndexingNotEnabled
 	}
 
-	repositoryID, err := unmarshalLSIFIndexGQLID(args.Repository)
+	repositoryID, err := resolverstubs.UnmarshalID[int](args.Repository)
 	if err != nil {
 		return nil, err
 	}
@@ -311,7 +311,7 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	repositoryID, err := unmarshalRepositoryID(id)
+	repositoryID, err := resolverstubs.UnmarshalID[api.RepoID](id)
 	if err != nil {
 		return nil, err
 	}

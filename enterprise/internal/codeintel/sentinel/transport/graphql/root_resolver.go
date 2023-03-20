@@ -145,7 +145,7 @@ func (r *rootResolver) VulnerabilityByID(ctx context.Context, gqlID graphql.ID) 
 	ctx, _, endObservation := r.operations.vulnerabilityByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	id, err := unmarshalVulnerabilityGQLID(gqlID)
+	id, err := resolverstubs.UnmarshalID[int](gqlID)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +162,7 @@ func (r *rootResolver) VulnerabilityMatchByID(ctx context.Context, gqlID graphql
 	ctx, errTracer, endObservation := r.operations.vulnerabilityMatchByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	id, err := unmarshalVulnerabilityMatchGQLID(gqlID)
+	id, err := resolverstubs.UnmarshalID[int](gqlID)
 	if err != nil {
 		return nil, err
 	}
@@ -348,18 +348,8 @@ func (r *vulnerabilityMatchResolver) PreciseIndex(ctx context.Context) (resolver
 //
 //
 
-func unmarshalVulnerabilityGQLID(id graphql.ID) (vulnerabilityID int, err error) {
-	err = relay.UnmarshalSpec(id, &vulnerabilityID)
-	return vulnerabilityID, err
-}
-
 func marshalVulnerabilityGQLID(vulnerabilityID int) graphql.ID {
 	return relay.MarshalID("Vulnerability", vulnerabilityID)
-}
-
-func unmarshalVulnerabilityMatchGQLID(id graphql.ID) (vulnerabilityMatchID int, err error) {
-	err = relay.UnmarshalSpec(id, &vulnerabilityMatchID)
-	return vulnerabilityMatchID, err
 }
 
 func marshalVulnerabilityMatchGQLID(vulnerabilityMatchID int) graphql.ID {
