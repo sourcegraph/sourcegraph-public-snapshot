@@ -9,6 +9,7 @@ Sourcegraph integrates with your other tools to help you search, navigate, and r
     - [GitLab](gitlab.md)
     - [Bitbucket Cloud](bitbucket_cloud.md)
     - [Bitbucket Server / Bitbucket Data Center](bitbucket_server.md)
+    - [Package repository hosts]()
     - [JVM dependencies](jvm.md)
     - [npm dependencies](npm.md)
     - [Python dependencies](python.md)
