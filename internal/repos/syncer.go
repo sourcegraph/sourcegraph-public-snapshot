@@ -814,7 +814,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		}
 
 		if err = tx.CreateExternalServiceRepo(ctx, svc, sourced); err != nil {
-			return Diff{}, errors.Wrap(err, "syncer: failed to create external service repo")
+			return Diff{}, errors.Wrapf(err, "syncer: failed to create external service repo: %s", sourced.Name)
 		}
 
 		d.Added = append(d.Added, sourced)
