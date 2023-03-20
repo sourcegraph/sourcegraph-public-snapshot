@@ -113,7 +113,7 @@ func TestValidateAuthorizationToken(t *testing.T) {
 		{
 			name:                "Unauthorized",
 			statusCode:          http.StatusUnauthorized,
-			expectedErr:         AuthorizationFailedErr,
+			expectedErr:         authorizationFailedErr,
 			isUnauthorizedError: true,
 		},
 		{
@@ -133,7 +133,7 @@ func TestValidateAuthorizationToken(t *testing.T) {
 			err := validateAuthorizationToken(context.Background(), client, apiclient.EndpointOptions{URL: server.URL})
 			if test.expectedErr != nil {
 				assert.NotNil(t, err)
-				assert.Equal(t, errors.Is(err, AuthorizationFailedErr), test.isUnauthorizedError)
+				assert.Equal(t, errors.Is(err, authorizationFailedErr), test.isUnauthorizedError)
 				assert.Equal(t, test.expectedErr.Error(), err.Error())
 			} else {
 				assert.Nil(t, err)
