@@ -9283,7 +9283,7 @@ extend type Query {
         This includes the team with the ID mentioned (that is a team is considered
         its own ancestor).
         """
-        exceptAncestorId: ID
+        exceptAncestor: ID
         """
         If set to true, child teams (ones that have parent set) are also returned.
         If not specified, the default behavior is to only include top-level teams.

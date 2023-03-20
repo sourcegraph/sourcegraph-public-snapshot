@@ -793,7 +793,7 @@ func (r *schemaResolver) RemoveTeamMembers(ctx context.Context, args *TeamMember
 
 type QueryTeamsArgs struct {
 	ListTeamsArgs
-	ExceptAncestorId  *graphql.ID
+	ExceptAncestor    *graphql.ID
 	IncludeChildTeams *bool
 }
 
@@ -805,10 +805,10 @@ func (r *schemaResolver) Teams(ctx context.Context, args *QueryTeamsArgs) (*team
 	if err := c.applyArgs(&args.ListTeamsArgs); err != nil {
 		return nil, err
 	}
-	if args.ExceptAncestorId != nil {
-		id, err := UnmarshalTeamID(*args.ExceptAncestorId)
+	if args.ExceptAncestor != nil {
+		id, err := UnmarshalTeamID(*args.ExceptAncestor)
 		if err != nil {
-			return nil, errors.Wrapf(err, "cannot interpret exceptAncestorId id: %q", *args.ExceptAncestorId)
+			return nil, errors.Wrapf(err, "cannot interpret exceptAncestor id: %q", *args.ExceptAncestor)
 		}
 		c.exceptAncestorID = id
 	}

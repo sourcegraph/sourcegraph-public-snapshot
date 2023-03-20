@@ -1245,9 +1245,9 @@ func TestTeamsExceptAncestorID(t *testing.T) {
 		query          string
 		expectedResult string
 	}{
-		"exceptAncestorId": {
+		"exceptAncestor": {
 			query: `query ExcludeAncestorId($id: ID!){
-				teams(exceptAncestorId: $id) {
+				teams(exceptAncestor: $id) {
 					nodes {
 						name
 					}
@@ -1262,9 +1262,9 @@ func TestTeamsExceptAncestorID(t *testing.T) {
 				}
 			}`,
 		},
-		"exceptAncestorId and includeChildTeams": {
+		"exceptAncestor and includeChildTeams": {
 			query: `query ExcludeAncestorId($id: ID!){
-				teams(exceptAncestorId: $id, includeChildTeams: true) {
+				teams(exceptAncestor: $id, includeChildTeams: true) {
 					nodes {
 						name
 					}

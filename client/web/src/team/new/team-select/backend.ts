@@ -14,8 +14,8 @@ const PARENT_TEAM_SELECT_SEARCH_FIELDS = gql`
 `
 
 const PARENT_TEAM_SELECT_SEARCH = gql`
-    query ParentTeamSelectSearch($search: String!, $exceptAncestorId: ID) {
-        teams(search: $search, first: 15, exceptAncestorId: $exceptAncestorId, includeChildTeams: true) {
+    query ParentTeamSelectSearch($search: String!, $exceptAncestor: ID) {
+        teams(search: $search, first: 15, exceptAncestor: $exceptAncestor, includeChildTeams: true) {
             nodes {
                 ...ParentTeamSelectSearchFields
             }
@@ -26,13 +26,13 @@ const PARENT_TEAM_SELECT_SEARCH = gql`
 `
 
 export function useParentTeamSelectSearch(
-    exceptAncestorId: string | null,
+    exceptAncestor: string | null,
     search: string
 ): QueryResult<ParentTeamSelectSearchResult, ParentTeamSelectSearchVariables> {
     return useQuery<ParentTeamSelectSearchResult, ParentTeamSelectSearchVariables>(PARENT_TEAM_SELECT_SEARCH, {
         variables: {
             search,
-            exceptAncestorId,
+            exceptAncestor,
         },
     })
 }
