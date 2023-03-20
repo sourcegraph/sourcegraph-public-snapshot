@@ -31,17 +31,19 @@ Executors interact with the Kubernetes API to handle jobs. The following are the
 The following are Environment Variables that are specific to the Kubernetes runtime. These environment variables can be
 set on the Executor `Deployment` and will configure the `Job`s that it spawns.
 
-| Name                                        | Default Value  | Description                                                                                                            |
-|---------------------------------------------|:---------------|------------------------------------------------------------------------------------------------------------------------|
-| EXECUTOR_KUBERNETES_CONFIG_PATH             | N/A            | The path to the Kubernetes configuration file. If not specified, the in cluster config is used.                        |
-| EXECUTOR_KUBERNETES_NODE_NAME               | N/A            | The name of the Kubernetes Node to create Jobs in. If not specified, the Pods are created in the first available node. |
-| EXECUTOR_KUBERNETES_NODE_SELECTOR           | N/A            | A comma separated list of values to use as a node selector for Kubernetes Jobs. e.g. `foo=bar,app=my-app`              |
-| EXECUTOR_KUBERNETES_NAMESPACE               | `default`      | The namespace to create the Jobs in.                                                                                   |
-| EXECUTOR_KUBERNETES_PERSISTENCE_VOLUME_NAME | `executor-pvc` | The name of the Executor Persistence Volume. Must match the `PersistentVolumeClaim` configured for the instance.       |
-| EXECUTOR_KUBERNETES_RESOURCE_LIMIT_CPU      | `1`            | The maximum CPU resource for Kubernetes Jobs.                                                                          |
-| EXECUTOR_KUBERNETES_RESOURCE_LIMIT_MEMORY   | `1Gi`          | The maximum memory resource for Kubernetes Jobs.                                                                       |
-| EXECUTOR_KUBERNETES_RESOURCE_REQUEST_CPU    | `1`            | The minimum CPU resource for Kubernetes Jobs.                                                                          |
-| EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY | `1Gi`          | The minimum memory resource for Kubernetes Jobs.                                                                       |
+| Name                                                         | Default Value  | Description                                                                                                                            |
+|--------------------------------------------------------------|:---------------|----------------------------------------------------------------------------------------------------------------------------------------|
+| EXECUTOR_KUBERNETES_CONFIG_PATH                              | N/A            | The path to the Kubernetes configuration file. If not specified, the in cluster config is used.                                        |
+| EXECUTOR_KUBERNETES_NODE_NAME                                | N/A            | The name of the Kubernetes Node to create Jobs in. If not specified, the Pods are created in the first available node.                 |
+| EXECUTOR_KUBERNETES_NODE_SELECTOR                            | N/A            | A comma separated list of values to use as a node selector for Kubernetes Jobs. e.g. `foo=bar,app=my-app`                              |
+| EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_EXPRESSIONS | N/A            | The JSON encoded required affinity match expressions for Kubernetes Jobs. e.g. `[{"key": "foo", "operator": "In", "values": ["bar"]}]` |
+| EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_FIELDS      | N/A            | The JSON encoded required affinity match fields for Kubernetes Jobs. e.g. `[{"key": "foo", "operator": "In", "values": ["bar"]}]`      |
+| EXECUTOR_KUBERNETES_NAMESPACE                                | `default`      | The namespace to create the Jobs in.                                                                                                   |
+| EXECUTOR_KUBERNETES_PERSISTENCE_VOLUME_NAME                  | `executor-pvc` | The name of the Executor Persistence Volume. Must match the `PersistentVolumeClaim` configured for the instance.                       |
+| EXECUTOR_KUBERNETES_RESOURCE_LIMIT_CPU                       | `1`            | The maximum CPU resource for Kubernetes Jobs.                                                                                          |
+| EXECUTOR_KUBERNETES_RESOURCE_LIMIT_MEMORY                    | `1Gi`          | The maximum memory resource for Kubernetes Jobs.                                                                                       |
+| EXECUTOR_KUBERNETES_RESOURCE_REQUEST_CPU                     | `1`            | The minimum CPU resource for Kubernetes Jobs.                                                                                          |
+| EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY                  | `1Gi`          | The minimum memory resource for Kubernetes Jobs.                                                                                       |
 
 See other possible Environment Variables [here](./deploy_executors_binary.md#step-2-setup-environment-variables).
 
