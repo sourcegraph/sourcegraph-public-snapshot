@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"sync"
 
-	"github.com/go-enry/go-enry/v2/regex"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -554,8 +553,8 @@ func (r *batchSpecWorkspaceStagesResolver) Setup() []graphqlbackend.ExecutionLog
 }
 
 var (
-	logKeyPrefixSetup = regex.MustCompile("^setup\\.")
-	logKeyApplyDiff   = regex.MustCompile("^step\\.(docker|kubernetes)\\.apply-diff$")
+	logKeyPrefixSetup = regexp.MustCompile("^setup\\.")
+	logKeyApplyDiff   = regexp.MustCompile("^step\\.(docker|kubernetes)\\.apply-diff$")
 )
 
 func (r *batchSpecWorkspaceStagesResolver) SrcExec() []graphqlbackend.ExecutionLogEntryResolver {
@@ -580,18 +579,18 @@ func (r *batchSpecWorkspaceStagesResolver) SrcExec() []graphqlbackend.ExecutionL
 }
 
 var (
-	logKeyBatchExec  = regex.MustCompile("^step\\.src.batch-exec$")
-	logKeySrcFirst   = regex.MustCompile("^step\\.src\\.0$")
-	logKeyPrefixStep = regex.MustCompile("^step\\.(docker|kubernetes)\\.step\\.")
+	logKeyBatchExec  = regexp.MustCompile("^step\\.src\\.batch-exec$")
+	logKeySrcFirst   = regexp.MustCompile("^step\\.src\\.0$")
+	logKeyPrefixStep = regexp.MustCompile("^step\\.(docker|kubernetes)\\.step\\.")
 )
 
 func (r *batchSpecWorkspaceStagesResolver) Teardown() []graphqlbackend.ExecutionLogEntryResolver {
 	return r.executionLogEntryResolversWithPrefix(logKeyPrefixTeardown)
 }
 
-var logKeyPrefixTeardown = regex.MustCompile("^teardown\\.")
+var logKeyPrefixTeardown = regexp.MustCompile("^teardown\\.")
 
-func (r *batchSpecWorkspaceStagesResolver) executionLogEntryResolversWithPrefix(prefix regex.EnryRegexp) []graphqlbackend.ExecutionLogEntryResolver {
+func (r *batchSpecWorkspaceStagesResolver) executionLogEntryResolversWithPrefix(prefix *regexp.Regexp) []graphqlbackend.ExecutionLogEntryResolver {
 	var resolvers []graphqlbackend.ExecutionLogEntryResolver
 	for _, entry := range r.execution.ExecutionLogs {
 		if prefix.MatchString(entry.Key) {
