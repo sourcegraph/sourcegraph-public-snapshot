@@ -69,6 +69,7 @@ import {
     validateNoReleaseBlockers,
     verifyWithInput,
 } from './util'
+import { IssuesGetLabelParams} from '@octokit/rest';
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
@@ -383,6 +384,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         description: 'Create release branch',
         run: async config => {
             const release = await getActiveRelease(config)
+            const client = await getAuthenticatedGitHubClient()
             let message: string
             // notify cs team on patch release cut
             if (release.version.patch !== 0) {
@@ -398,6 +400,22 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 console.log(`To check the status of the branch, run:\nsg ci status -branch ${release.branch} --wait\n`)
             } catch (error) {
                 console.error('Failed to create release branch', error)
+            }
+
+            if (release.version.patch === 0) {
+                // create backport label for major / minor versions
+                const params = {
+                    owner: 'sourcegraph',
+                    repo: 'sourcegraph'
+                }
+                const labelName = `backport ${release.version.major}.${release.version.minor}`
+                const labelExists = await client.issues.getLabel({name: labelName, ...params}).then(resp => resp.status === 200).catch(() => false)
+                if (!labelExists) {
+                    console.log(await client.issues.createLabel({name: labelName, color: 'e69138', ...params}))
+                    console.log(`Label ${labelName} created`)
+                } else {
+                    console.log(`label ${labelName} already exists`)
+                }
             }
         },
     },
@@ -1286,6 +1304,18 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         description: 'test patch dates',
         run: () => {
             console.log(newRelease(new SemVer('1.0.0'), DateTime.fromISO('2023-03-22'), 'test', 'test'))
+        },
+    },
+    {
+        id: '_test:create-label',
+        description: 'test patch dates',
+        run: async () => {
+            const client = await getAuthenticatedGitHubClient()
+            const got = await client.issues.getLabel({name: 'release-tool-test-please-ignore', owner: 'sourcegraph', repo:'sourcegraph'} as IssuesGetLabelParams)
+            // const resp = await client.issues.createLabel({color:'e69138', name: `release-tool-test-please-ignore`, owner: 'sourcegraph', repo: 'sourcegraph', description: 'release tool testing'} as IssuesCreateLabelParams)
+            // client.issues.updateLabel({} as IssuesUpdateLabelParams)
+            // console.log(resp)
+            console.log(got)
         },
     },
 ]
