@@ -1,21 +1,21 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
-import { WebviewMessage, vscodeAPI } from './utils/VSCodeApi'
+import { vscodeAPI } from './utils/VSCodeApi'
 
 import './Recipes.css'
 
 export const recipesList = {
-    explainCode: 'Explain selected code (detailed)',
-    explainCodeHighLevel: 'Explain selected code (high level)',
-    generateUnitTest: 'Generate a unit test',
-    generateDocstring: 'Generate a docstring',
-    translateToLanguage: 'Translate to different language',
-    gitHistory: 'Recent history',
+    'explain-code-detailed': 'Explain selected code (detailed)',
+    'explain-code-high-level': 'Explain selected code (high level)',
+    'generate-unit-test': 'Generate a unit test',
+    'generate-docstring': 'Generate a docstring',
+    'translate-to-language': 'Translate to different language',
+    'git-history': 'Recent history',
 }
 
 export function Recipes(): React.ReactElement {
     const onRecipeClick = (recipeID: string) => {
-        vscodeAPI.postMessage({ command: 'executeRecipe', recipe: recipeID } as WebviewMessage)
+        vscodeAPI.postMessage({ command: 'executeRecipe', recipe: recipeID })
     }
 
     return (

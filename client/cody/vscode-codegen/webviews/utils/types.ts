@@ -3,7 +3,7 @@ export interface Message {
     text: string
 }
 
-export interface ChatMessage extends Omit<Message, 'text'> {
+export interface ChatMessage extends Message {
     displayText: string
     timestamp: string
     contextFiles?: string[]

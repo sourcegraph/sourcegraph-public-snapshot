@@ -12,7 +12,7 @@ import { NavBar } from './NavBar'
 import { Recipes } from './Recipes'
 import { Settings } from './Settings'
 import { ChatMessage, View } from './utils/types'
-import { vscodeAPI, WebviewMessage } from './utils/VSCodeApi'
+import { vscodeAPI } from './utils/VSCodeApi'
 
 function App(): React.ReactElement {
     const [devMode, setDevMode] = useState(false)
@@ -24,16 +24,26 @@ function App(): React.ReactElement {
     useEffect(() => {
         vscodeAPI.onMessage(message => {
             switch (message.data.type) {
-                case 'transcript':
-                    // Get chat transcript from extension.
-                    setTranscript(message.data.messages)
-                    setMessageInProgress(message.data.messageInProgress)
+                case 'transcript': {
+                    if (message.data.isMessageInProgress) {
+                        setTranscript(message.data.messages.slice(0, message.data.messages.length - 1))
+                        setMessageInProgress(message.data.messages[message.data.messages.length - 1])
+                    } else {
+                        setTranscript(message.data.messages)
+                        setMessageInProgress(null)
+                    }
                     break
+                }
                 case 'token':
                     // Get the token from the extension.
                     const hasToken = !!message.data.value
                     setView(hasToken ? 'chat' : 'login')
                     setDevMode(message.data.mode === 'development')
+                    break
+                case 'showTab':
+                    if (message.data.tab === 'chat') {
+                        setView('chat')
+                    }
                     break
                 case 'debug':
                     setDebugLog([...debugLog, message.data.message])
@@ -41,7 +51,7 @@ function App(): React.ReactElement {
             }
         })
 
-        vscodeAPI.postMessage({ command: 'initialized' } as WebviewMessage)
+        vscodeAPI.postMessage({ command: 'initialized' })
         // The dependencies array is empty to execute the callback only on component mount.
     }, [])
 
@@ -50,21 +60,14 @@ function App(): React.ReactElement {
             if (!token || !endpoint) {
                 return
             }
-            // Create wsclient.
-            vscodeAPI.postMessage({
-                command: 'settings',
-                serverEndpoint: endpoint,
-                accessToken: token,
-            } as WebviewMessage)
-            // Set token.
-            vscodeAPI.postMessage({ command: 'setToken', value: token } as WebviewMessage)
+            vscodeAPI.postMessage({ command: 'settings', serverEndpoint: endpoint, accessToken: token })
             setView('chat')
         },
         [setView]
     )
 
     const onLogout = useCallback(() => {
-        vscodeAPI.postMessage({ command: 'removeToken' } as WebviewMessage)
+        vscodeAPI.postMessage({ command: 'removeToken' })
         setView('login')
     }, [setView])
 
@@ -73,7 +76,7 @@ function App(): React.ReactElement {
         setDebugLog([])
         setMessageInProgress(null)
         setTranscript([])
-        vscodeAPI.postMessage({ command: 'reset' } as WebviewMessage)
+        vscodeAPI.postMessage({ command: 'reset' })
     }, [setView, setMessageInProgress, setTranscript, setDebugLog])
 
     if (!view) {
@@ -89,14 +92,7 @@ function App(): React.ReactElement {
             {view === 'debug' && devMode && <Debug debugLog={debugLog} />}
             {view === 'recipes' && <Recipes />}
             {view === 'settings' && <Settings setView={setView} onLogout={onLogout} />}
-            {view === 'chat' && (
-                <Chat
-                    messageInProgress={messageInProgress}
-                    transcript={transcript}
-                    setMessageInProgress={setMessageInProgress}
-                    setTranscript={setTranscript}
-                />
-            )}
+            {view === 'chat' && <Chat messageInProgress={messageInProgress} transcript={transcript} />}
         </div>
     )
 }
