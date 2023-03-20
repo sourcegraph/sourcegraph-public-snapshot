@@ -30,6 +30,8 @@ import { AuthenticatedUser } from '../auth'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
 
+import { AppUserConnectDotComAccount } from './AppUserConnectDotComAccount'
+
 import styles from './UserNavItem.module.scss'
 
 const MAX_VISIBLE_ORGS = 5
@@ -68,6 +70,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
     const { themeSetting, setThemeSetting } = useTheme()
     const keyboardShortcutSwitchTheme = useKeyboardShortcut('switchTheme')
     const [enableTeams] = useFeatureFlag('search-ownership')
+    const [enableAppConnectDotCom] = useFeatureFlag('app-connect-dotcom')
 
     const supportsSystemTheme = useMemo(
         () => Boolean(window.matchMedia?.('not all and (prefers-color-scheme), (prefers-color-scheme)').matches),
@@ -155,6 +158,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     Repositories
                                 </MenuLink>
                             )}
+                            {isSourcegraphApp && enableAppConnectDotCom && <AppUserConnectDotComAccount />}
                             {enableTeams && !isSourcegraphDotCom && (
                                 <MenuLink as={Link} to="/teams">
                                     Teams

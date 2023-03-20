@@ -2,7 +2,6 @@ import BrainIcon from 'mdi-react/BrainIcon'
 import BriefcaseIcon from 'mdi-react/BriefcaseIcon'
 import PackageVariantIcon from 'mdi-react/PackageVariantIcon'
 import RobotOutlineIcon from 'mdi-react/RobotOutlineIcon'
-import WebhookIcon from 'mdi-react/WebhookIcon'
 
 import { BatchChangesIcon } from '../../batches/icons'
 import {
@@ -24,6 +23,16 @@ const configurationGroup: SiteAdminSideBarGroup = {
             label: 'License',
             to: '/site-admin/license',
 
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+        },
+        {
+            label: 'Incoming webhooks',
+            to: '/site-admin/webhooks/incoming',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+        },
+        {
+            label: 'Outgoing webhooks',
+            to: '/site-admin/webhooks/outgoing',
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
     ],
@@ -125,22 +134,6 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
     ],
 }
 
-const webhooksGroup: SiteAdminSideBarGroup = {
-    header: { label: 'Webhooks', icon: WebhookIcon },
-    items: [
-        {
-            label: 'Incoming webhooks',
-            to: '/site-admin/webhooks/incoming',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
-        },
-        {
-            label: 'Outgoing webhooks',
-            to: '/site-admin/webhooks/outgoing',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
-        },
-    ],
-}
-
 export const codyGroup: SiteAdminSideBarGroup = {
     header: { label: 'Cody', icon: RobotOutlineIcon },
     items: [
@@ -171,7 +164,6 @@ export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
     analyticsGroup,
     configurationGroup,
     repositoriesGroup,
-    webhooksGroup,
     codeIntelGroup,
     usersGroup,
     executorsGroup,

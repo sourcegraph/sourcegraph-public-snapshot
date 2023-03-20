@@ -135,7 +135,6 @@ export const ExternalServiceWithRepos: Story<WebStoryChildrenProps> = props => (
             telemetryService={NOOP_TELEMETRY_SERVICE}
             externalServicesFromFile={false}
             allowEditExternalServicesWithFile={false}
-            isSourcegraphApp={false}
         />
     </MockedTestProvider>
 )

@@ -1728,6 +1728,17 @@
       },
       "group": "Sourcegraph.com"
     },
+    "app": {
+      "description": "Configuration options for App only.",
+      "type": "object",
+      "properties": {
+        "dotcomAuthToken": {
+          "description": "Authentication token for Sourcegraph.com. If present, indicates that the App account is connected to a Sourcegraph.com account.",
+          "type": "string",
+          "group": "Sourcegraph.com"
+        }
+      }
+    },
     "notifications": {
       "description": "Notifications recieved from Sourcegraph.com to display in Sourcegraph.",
       "type": "array",
