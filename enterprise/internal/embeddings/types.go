@@ -6,6 +6,7 @@ type EmbeddingIndex[T any] struct {
 	Embeddings      []float32
 	ColumnDimension int
 	RowMetadata     []T
+	Ranks           []float64
 }
 
 type RepoEmbeddingRowMetadata struct {

@@ -2,6 +2,8 @@ package repo
 
 import (
 	"context"
+	"net/url"
+	"os"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
@@ -47,6 +49,7 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 
 	workCtx := actor.WithInternalActor(context.Background())
 	return []goroutine.BackgroundRoutine{
+
 		newRepoEmbeddingJobWorker(
 			workCtx,
 			observationCtx,
@@ -66,7 +69,13 @@ func newRepoEmbeddingJobWorker(
 	uploadStore uploadstore.Store,
 	gitserverClient gitserver.Client,
 ) *workerutil.Worker[*repoembeddingsbg.RepoEmbeddingJob] {
-	handler := &handler{db, uploadStore, gitserverClient}
+
+	handler := &handler{
+		db:              db,
+		uploadStore:     uploadStore,
+		gitserverClient: gitserverClient,
+		sourcegraphURL:  sourcegraphURL(),
+	}
 	return dbworker.NewWorker[*repoembeddingsbg.RepoEmbeddingJob](ctx, workerStore, handler, workerutil.WorkerOptions{
 		Name:              "repo_embedding_job_worker",
 		Interval:          time.Minute, // Poll for a job once per minute
@@ -74,4 +83,20 @@ func newRepoEmbeddingJobWorker(
 		HeartbeatInterval: 10 * time.Second,
 		Metrics:           workerutil.NewMetrics(observationCtx, "repo_embedding_job_worker"),
 	})
+}
+
+func sourcegraphURL() *url.URL {
+	rawURL := os.Getenv("SRC_FRONTEND_INTERNAL")
+	if rawURL == "" {
+		rawURL = "sourcegraph-frontend-internal"
+	}
+
+	// api/internalapi/client.go relies on SRC_FRONTEND_INTERNAL being passed
+	// without a scheme. Here we adhere to the same convention.
+	u, err := url.Parse("http://" + rawURL)
+	if err != nil {
+		panic(err)
+	}
+
+	return u
 }
