@@ -25,10 +25,10 @@ func convertPosition(line, character int) lsp.Position {
 	return lsp.Position{Line: line, Character: character}
 }
 
-// DecodeCursor decodes the given cursor value. It is assumed to be a value previously
+// decodeCursor decodes the given cursor value. It is assumed to be a value previously
 // returned from the function encodeCursor. An empty string is returned if no cursor is
 // supplied. Invalid cursors return errors.
-func DecodeCursor(val *string) (string, error) {
+func decodeCursor(val *string) (string, error) {
 	if val == nil {
 		return "", nil
 	}
@@ -41,10 +41,10 @@ func DecodeCursor(val *string) (string, error) {
 	return string(decoded), nil
 }
 
-// EncodeCursor creates a PageInfo object from the given cursor. If the cursor is not
+// encodeCursor creates a PageInfo object from the given cursor. If the cursor is not
 // defined, then an object indicating the end of the result set is returned. The cursor
 // is base64 encoded for transfer, and should be decoded using the function decodeCursor.
-func EncodeCursor(val *string) resolverstubs.PageInfo {
+func encodeCursor(val *string) resolverstubs.PageInfo {
 	if val != nil {
 		return resolverstubs.NewPageInfoFromCursor(base64.StdEncoding.EncodeToString([]byte(*val)))
 	}

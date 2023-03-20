@@ -18,7 +18,7 @@ import (
 
 func TestCursor(t *testing.T) {
 	expected := "test"
-	pageInfo := EncodeCursor(&expected)
+	pageInfo := encodeCursor(&expected)
 
 	if !pageInfo.HasNextPage() {
 		t.Fatalf("expected next page")
@@ -27,7 +27,7 @@ func TestCursor(t *testing.T) {
 		t.Fatalf("unexpected nil cursor")
 	}
 
-	value, err := DecodeCursor(pageInfo.EndCursor())
+	value, err := decodeCursor(pageInfo.EndCursor())
 	if err != nil {
 		t.Fatalf("unexpected error decoding cursor: %s", err)
 	}
@@ -37,7 +37,7 @@ func TestCursor(t *testing.T) {
 }
 
 func TestCursorEmpty(t *testing.T) {
-	pageInfo := EncodeCursor(nil)
+	pageInfo := encodeCursor(nil)
 
 	if pageInfo.HasNextPage() {
 		t.Errorf("unexpected next page")
@@ -46,7 +46,7 @@ func TestCursorEmpty(t *testing.T) {
 		t.Errorf("unexpected encoded cursor: %s", *pageInfo.EndCursor())
 	}
 
-	value, err := DecodeCursor(nil)
+	value, err := decodeCursor(nil)
 	if err != nil {
 		t.Fatalf("unexpected error decoding cursor: %s", err)
 	}

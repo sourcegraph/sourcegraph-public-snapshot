@@ -169,7 +169,7 @@ func (r *gitBlobLSIFDataResolver) References(ctx context.Context, args *resolver
 		return nil, ErrIllegalLimit
 	}
 
-	rawCursor, err := DecodeCursor(args.After)
+	rawCursor, err := decodeCursor(args.After)
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +222,7 @@ func (r *gitBlobLSIFDataResolver) Implementations(ctx context.Context, args *res
 		return nil, ErrIllegalLimit
 	}
 
-	rawCursor, err := DecodeCursor(args.After)
+	rawCursor, err := decodeCursor(args.After)
 	if err != nil {
 		return nil, err
 	}

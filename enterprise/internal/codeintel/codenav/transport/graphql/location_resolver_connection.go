@@ -27,5 +27,5 @@ func (r *locationConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs
 }
 
 func (r *locationConnectionResolver) PageInfo() resolverstubs.PageInfo {
-	return EncodeCursor(r.cursor)
+	return encodeCursor(r.cursor)
 }
