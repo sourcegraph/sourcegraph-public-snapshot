@@ -8,7 +8,7 @@ IETF RFCs [7642](https://www.rfc-editor.org/rfc/rfc7642), [7643](https://www.rfc
 
 Our implementation is in [this folder](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/enterprise/internal/scim).
 
-To try it, follow the "How to use" section of our [SCIM admin guide](doc/admin/scim.md), then see the [manual-testing-with-postman](#manual-testing-with-postman) section below to see it in action. It should take you 10–20 minutes to set up everything and see the full CRUD magic happen.
+To try it, follow the [How to use section of our SCIM admin guide](doc/admin/scim.md#how-to-use), then see the [manual-testing-with-postman](#manual-testing-with-postman) section below to see it in action. It should take you 10–20 minutes to set up everything and see the full CRUD magic happen.
 
 Using ngrok is a good idea because it lets you inspect the requests and responses at http://127.0.0.1:4040/inspect/http.
 
