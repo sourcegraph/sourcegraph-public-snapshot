@@ -38,6 +38,8 @@ type PagedConnectionArgs struct {
 
 type EmptyResponse struct{}
 
+var Empty = &EmptyResponse{}
+
 func (er *EmptyResponse) AlwaysNil() *string {
 	return nil
 }

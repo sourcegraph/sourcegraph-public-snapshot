@@ -295,7 +295,7 @@ func (r *rootResolver) DeletePreciseIndex(ctx context.Context, args *struct{ ID 
 		}
 	}
 
-	return &resolverstubs.EmptyResponse{}, nil
+	return resolverstubs.Empty, nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data
@@ -360,7 +360,7 @@ func (r *rootResolver) DeletePreciseIndexes(ctx context.Context, args *resolvers
 		}
 	}
 
-	return &resolverstubs.EmptyResponse{}, nil
+	return resolverstubs.Empty, nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data
@@ -386,7 +386,7 @@ func (r *rootResolver) ReindexPreciseIndex(ctx context.Context, args *struct{ ID
 		}
 	}
 
-	return &resolverstubs.EmptyResponse{}, nil
+	return resolverstubs.Empty, nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data
@@ -451,7 +451,7 @@ func (r *rootResolver) ReindexPreciseIndexes(ctx context.Context, args *resolver
 		}
 	}
 
-	return &resolverstubs.EmptyResponse{}, nil
+	return resolverstubs.Empty, nil
 }
 
 type preciseIndexConnectionResolver struct {

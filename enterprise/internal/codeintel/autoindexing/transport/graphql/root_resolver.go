@@ -241,7 +241,7 @@ func (r *rootResolver) UpdateRepositoryIndexConfiguration(ctx context.Context, a
 		return nil, err
 	}
 
-	return &resolverstubs.EmptyResponse{}, nil
+	return resolverstubs.Empty, nil
 }
 
 func (r *rootResolver) CodeIntelligenceInferenceScript(ctx context.Context) (script string, err error) {
@@ -249,7 +249,7 @@ func (r *rootResolver) CodeIntelligenceInferenceScript(ctx context.Context) (scr
 }
 
 func (r *rootResolver) UpdateCodeIntelligenceInferenceScript(ctx context.Context, args *resolverstubs.UpdateCodeIntelligenceInferenceScriptArgs) (_ *resolverstubs.EmptyResponse, err error) {
-	return &resolverstubs.EmptyResponse{}, r.autoindexSvc.SetInferenceScript(ctx, args.Script)
+	return resolverstubs.Empty, r.autoindexSvc.SetInferenceScript(ctx, args.Script)
 }
 
 func (r *rootResolver) GitBlobCodeIntelInfo(ctx context.Context, args *resolverstubs.GitTreeEntryCodeIntelInfoArgs) (_ resolverstubs.GitBlobCodeIntelSupportResolver, err error) {

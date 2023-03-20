@@ -187,7 +187,7 @@ func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		return nil, err
 	}
 
-	return &resolverstubs.EmptyResponse{}, nil
+	return resolverstubs.Empty, nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
@@ -210,7 +210,7 @@ func (r *rootResolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Con
 		return nil, err
 	}
 
-	return &resolverstubs.EmptyResponse{}, nil
+	return resolverstubs.Empty, nil
 }
 
 const DefaultRepositoryFilterPreviewPageSize = 15 // TEMP: 50
