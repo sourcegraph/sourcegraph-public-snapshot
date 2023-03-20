@@ -2,22 +2,22 @@
 
 # INPUT ENVIRONMENT VARIABLES
 # - VERSION - required in order to find files on GCS
-#   - also passed on to other shell scripts
+#   - also used by to other shell scripts
 # - APPLE_DEV_ID_APPLICATION_CERT
-#   - passed on to the signing scripts
+#   - used by to the signing scripts
 #   - defaults to /mnt/Apple-Developer-ID-Application.p12
 #     - the file comes from Secrets in CI
 # - APPLE_DEV_ID_APPLICATION_PASSWORD
-#   - passed on to the signing scripts
+#   - used by the signing scripts
 #   - comes from Secrets in CI
 # - APPLE_APP_STORE_CONNECT_API_KEY_ID
-#   - passed on to the notarize script
+#   - used by the notarize script
 #   - comes from Secrets in CI
 # - APPLE_APP_STORE_CONNECT_API_KEY_ISSUER
-#   - passed on to the notarize script
+#   - used by the notarize script
 #   - comes from Secrets in CI
 # - APPLE_APP_STORE_CONNECT_API_KEY_FILE
-#   - passed on to the notarize script
+#   - used by the notarize script
 #   - defaults to /mnt/AuthKey_${APPLE_APP_STORE_CONNECT_API_KEY_ID}.p8
 #     - the file comes from Secrets in CI
 
@@ -60,15 +60,27 @@ while IFS= read -r gcs_file; do
     error "failed to extract ${zip_file_name}.zip"
     exit 1
   }
+
   artifact="${PWD}/${zip_file_name}/sourcegraph" \
     "${exedir}/sign_macos_binary.sh" || {
-    error "failed to sign ${zip_file_name}/sourcegraph"
+    error "failed signing ${zip_file_name}/sourcegraph"
     exit 1
   }
   zip -jf9 "${zip_file_name}.zip" "${zip_file_name}/sourcegraph" || {
     error "failed to archive ${zip_file_name}/sourcegraph"
     exit 1
   }
+
+  # notarize the binary
+  # can't staple to standalone executables
+  info "notarizing ${zip_file_name}.zip"
+
+  "${exedir}/notarize_macos_artifact.sh" \
+    "${PWD}/${zip_file_name}.zip" || {
+    error "failed notarizing ${zip_file_name}.zip"
+    exit 1
+  }
+
   grep -v "${zip_file_name}[.]zip" checksums.txt >checksums.txt.2
   sha256sum "${zip_file_name}.zip" >>checksums.txt.2
   mv checksums.txt.2 checksums.txt
@@ -111,8 +123,9 @@ artifact="${PWD}/Sourcegraph App.app" \
 info "notarizing macOS App bundle"
 
 # this one can take awhile - 5+ minutes
-artifact="${PWD}/Sourcegraph App.app" \
-  "${exedir}/notarize_macos_app.sh" || {
+"${exedir}/notarize_macos_artifact.sh" \
+  --staple \
+  "${PWD}/Sourcegraph App.app" || {
   error "failed notarizing the macOS app bundle"
   exit 1
 }
@@ -129,6 +142,15 @@ gsutil cp "sourcegraph_${VERSION}_macOS_universal_app_bundle.zip" checksums.txt 
   exit 1
 }
 
+# if we're running on macOS, build a .dmg as well as a zip
+command -v hdiutil 1>/dev/null 2>&1 && command -v osascript 1>/dev/null 2>&1 && {
+  "${exedir}/macos_app/create_sourcegraph_app_dmg" "${PWD}/Sourcegraph App.app"
+  # since we're signing and notarizing the .app, we just need to sign the dmg - don't need to notarize it also
+  # I think the recommendation is to noatrize the outermost package,
+  # but since we're distributing both a zip and/or a dmg, we'll notarize the .app
+
+}
+
 info "replicating artifacts to /latest"
 
 # replicate the artifacts in a "latest" bucket
@@ -138,7 +160,10 @@ done < <(gsutil ls "gs://sourcegraph-app-releases/${VERSION}/")
 # change the checksum names and upload that
 sed "s/${VERSION}/latest/g" checksums.txt >checksums.txt.2
 mv checksums.txt.2 checksums.txt
-gsutil cp checksums.txt "gs://sourcegraph-app-releases/latest/"
+gsutil cp checksums.txt gs://sourcegraph-app-releases/latest/
+# include a file with the version number so we can track it for updates and such
+printf '%s' "${VERSION}" >version.txt
+gsutil cp version.txt gs://sourcegraph-app-releases/latest/
 
 # whew; done!
 
