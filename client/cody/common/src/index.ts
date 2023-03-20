@@ -1,5 +1,3 @@
-import { InflatedHistoryItem } from './history'
-
 export * from './history'
 
 // FIXME: When OpenAI's logit_bias uses a more precise type than 'object',
@@ -9,12 +7,6 @@ export type JSONSerializable = null | string | number | boolean | object | JSONS
 export interface ReferenceInfo {
     text: string
     filename: string
-}
-
-export interface LLMDebugInfo {
-    elapsedMillis: number
-    prompt: string
-    llmOptions: JSONSerializable
 }
 
 export interface Message {
@@ -44,44 +36,9 @@ export interface TranscriptChunk {
     context: ContextMessage[]
     display?: Message[]
 }
-
-export interface CompletionLogProbs {
-    tokens?: string[]
-    tokenLogprobs?: number[]
-    topLogprobs?: object[]
-    textOffset?: number[]
-}
-
-export interface Completion {
-    /**
-     * The label to display for this completion.
-     */
-    label: string
-    /**
-     * The text that should be prepended to the insertText to arrive at a "well-formed" (e.g., mostly balanced) completion.
-     */
-    prefixText: string
-
-    /**
-     * The text to insert at the point of completion.
-     */
-    insertText: string
-
-    /**
-     * Log probabilities of the completion tokens
-     */
-    logprobs?: CompletionLogProbs
-
-    /**
-     * The reason the completion terminated
-     */
-    finishReason?: string
-}
 export interface CompletionsArgs {
     uri: string
     prefix: string
-    history: InflatedHistoryItem[]
-    references: ReferenceInfo[]
 }
 export interface WSResponse {
     requestId?: number
@@ -90,11 +47,6 @@ export interface WSCompletionsRequest {
     requestId: number
     kind: 'getCompletions'
     args: CompletionsArgs
-}
-export interface WSCompletionResponseCompletion extends WSResponse {
-    kind: 'completion'
-    completions: Completion[]
-    debugInfo?: LLMDebugInfo
 }
 export interface WSCompletionResponseError extends WSResponse {
     kind: 'error'
@@ -107,11 +59,7 @@ export interface WSCompletionResponseMetadata extends WSResponse {
 export interface WSCompletionResponseDone extends WSResponse {
     kind: 'done'
 }
-export type WSCompletionResponse =
-    | WSCompletionResponseCompletion
-    | WSCompletionResponseError
-    | WSCompletionResponseMetadata
-    | WSCompletionResponseDone
+export type WSCompletionResponse = WSCompletionResponseError | WSCompletionResponseMetadata | WSCompletionResponseDone
 
 export interface WSChatMessage {
     kind: 'request' | 'response:change' | 'response:complete' | 'response:error'

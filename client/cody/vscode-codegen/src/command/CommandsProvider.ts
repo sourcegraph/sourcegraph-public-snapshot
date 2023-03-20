@@ -1,6 +1,9 @@
+import * as openai from 'openai'
 import * as vscode from 'vscode'
 
 import { ChatViewProvider } from '../chat/ChatViewProvider'
+import { CodyCompletionItemProvider } from '../completions'
+import { CompletionsDocumentProvider } from '../completions/docprovider'
 import { CODY_ACCESS_TOKEN_SECRET, ConfigurationUseContext, getConfiguration } from '../configuration'
 import { ExtensionApi } from '../extension-api'
 
@@ -88,6 +91,26 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         ),
         vscode.commands.registerCommand('cody.recipe.git-history', async () => executeRecipe('gitHistory'))
     )
+
+    if (config.experimentalSuggest) {
+        const openaiKey = vscode.workspace.getConfiguration().get<string>('cody.keys.openai')
+        const configuration = new openai.Configuration({
+            apiKey: openaiKey,
+        })
+        const openaiApi = new openai.OpenAIApi(configuration)
+        const docprovider = new CompletionsDocumentProvider()
+        vscode.workspace.registerTextDocumentContentProvider('cody', docprovider)
+
+        const completionsProvider = new CodyCompletionItemProvider(openaiApi, docprovider)
+        context.subscriptions.push(
+            vscode.commands.registerCommand('cody.experimental.suggest', async () => {
+                await completionsProvider.fetchAndShowCompletions()
+            })
+        )
+        context.subscriptions.push(
+            vscode.languages.registerInlineCompletionItemProvider({ scheme: 'file' }, completionsProvider)
+        )
+    }
 
     // Watch all relevant configuration and secrets for changes.
     context.subscriptions.push(
