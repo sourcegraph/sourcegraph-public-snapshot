@@ -120,9 +120,18 @@
         background-color: var(--color-bg-3);
         padding-left: 0.25rem;
         padding-right: 0.1rem;
-        display: flex;
+        display: none;
         justify-content: center;
         align-items: center;
+
+        &.isFirstInActive {
+            display: flex;
+        }
+
+        .location:hover &.isMetaPressed {
+            display: flex;
+            background-color: transparent;
+        }
     }
 
     &--link:hover {

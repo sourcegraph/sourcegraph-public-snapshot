@@ -1,4 +1,12 @@
-import React, { KeyboardEvent, MouseEvent, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import React, {
+    KeyboardEvent as ReactKeyboardEvent,
+    MouseEvent,
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useState,
+} from 'react'
 
 import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronUp, mdiFilterOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
@@ -349,27 +357,7 @@ const ReferencesList: React.FunctionComponent<
                 setActiveURL(undefined)
                 return
             }
-            // Reconstruct the URL instead of using `location.url` to ensure that
-            // the commitID is included even when `location.url` doesn't include the
-            // commitID (because it's the default revision '').
-            const absoluteURL = toPrettyBlobURL({
-                filePath: location.file,
-                revision: location.commitID,
-                repoName: location.repo,
-                commitID: location.commitID,
-                range: location.range
-                    ? {
-                          start: {
-                              line: location.range.start.line + 1,
-                              character: location.range.start.character + 1,
-                          },
-                          end: {
-                              line: location.range.end.line + 1,
-                              character: location.range.end.character + 1,
-                          },
-                      }
-                    : undefined,
-            })
+            const absoluteURL = locationToUrl(location)
             setActiveURL(absoluteURL)
         },
         [setActiveURL]
@@ -896,7 +884,6 @@ const CollapsibleLocationGroup: React.FunctionComponent<
     handleOpenChange,
     fetchHighlightedFileLineRanges,
     navigateToUrl,
-    activeURL,
 }) => {
     // On the first load, update the scroll position towards the active
     // location.  Without this behavior, the scroll position points at the top
@@ -957,6 +944,8 @@ const CollapsibleLocationGroup: React.FunctionComponent<
 
     const open = isOpen(group.path) ?? true
 
+    const isMetaPressed = useIsMetaPressed()
+
     return (
         <Collapse isOpen={open} onOpenChange={isOpen => handleOpenChange(group.path, isOpen)}>
             <div className={styles.locationGroup}>
@@ -1010,11 +999,11 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                     isActive && !(index > 0 && isActiveLocation(group.locations[index - 1]))
                                 const locationActive = isActive ? styles.locationActive : ''
                                 const selectReference = (
-                                    event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>
+                                    event: ReactKeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>
                                 ): void => {
                                     onClickCodeExcerptHref(event, () => {
-                                        if (isActive && activeURL) {
-                                            navigateToUrl(activeURL)
+                                        if (isActive || event.metaKey) {
+                                            navigateToUrl(locationToUrl(reference))
                                         } else {
                                             setActiveLocation(reference)
                                         }
@@ -1056,20 +1045,23 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                                     fetchPlainTextFileRangeLines(reference)
                                                 }
                                             />
-                                            {isFirstInActive ? (
-                                                <span className={classNames('ml-2', styles.locationActiveIcon)}>
-                                                    <Tooltip
-                                                        content="Click again to open line in full view"
-                                                        placement="left"
-                                                    >
-                                                        <Icon
-                                                            aria-label="Open line in full view"
-                                                            size="sm"
-                                                            svgPath={mdiOpenInNew}
-                                                        />
-                                                    </Tooltip>
-                                                </span>
-                                            ) : null}
+                                            <span
+                                                className={classNames('ml-2', styles.locationActiveIcon, {
+                                                    [styles.isFirstInActive]: isFirstInActive,
+                                                    [styles.isMetaPressed]: isMetaPressed,
+                                                })}
+                                            >
+                                                <Tooltip
+                                                    content="Click again to open line in full view"
+                                                    placement="left"
+                                                >
+                                                    <Icon
+                                                        aria-label="Open line in full view"
+                                                        size="sm"
+                                                        svgPath={mdiOpenInNew}
+                                                    />
+                                                </Tooltip>
+                                            </span>
                                         </div>
                                     </li>
                                 )
@@ -1102,4 +1094,51 @@ const LoadingCodeIntelFailed: React.FunctionComponent<React.PropsWithChildren<{ 
 
 function sessionStorageKeyFromToken(token: Token): string {
     return `${token.repoName}@${token.commitID}/${token.filePath}?L${token.line}:${token.character}`
+}
+
+function locationToUrl(location: Location): string {
+    // Reconstruct the URL instead of using `location.url` to ensure that
+    // the commitID is included even when `location.url` doesn't include the
+    // commitID (because it's the default revision '').
+    return toPrettyBlobURL({
+        filePath: location.file,
+        revision: location.commitID,
+        repoName: location.repo,
+        commitID: location.commitID,
+        range: location.range
+            ? {
+                  start: {
+                      line: location.range.start.line + 1,
+                      character: location.range.start.character + 1,
+                  },
+                  end: {
+                      line: location.range.end.line + 1,
+                      character: location.range.end.character + 1,
+                  },
+              }
+            : undefined,
+    })
+}
+
+function useIsMetaPressed(): boolean {
+    const [isMetaPressed, setIsMetaPressed] = useState(false)
+    useEffect(() => {
+        function onKeyDown(event: KeyboardEvent): void {
+            if (event.metaKey) {
+                setIsMetaPressed(true)
+            }
+        }
+        function onKeyUp(event: KeyboardEvent): void {
+            if (!event.metaKey) {
+                setIsMetaPressed(false)
+            }
+        }
+        window.addEventListener('keydown', onKeyDown)
+        window.addEventListener('keyup', onKeyUp)
+        return () => {
+            window.removeEventListener('keydown', onKeyDown)
+            window.removeEventListener('keyup', onKeyUp)
+        }
+    }, [])
+    return isMetaPressed
 }
