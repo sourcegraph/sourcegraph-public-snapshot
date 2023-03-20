@@ -453,8 +453,6 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
     const node = data?.node && data?.node.__typename === 'Repository' ? data.node : null
     const connection = node?.commit?.ancestors
 
-    // In the case of a user-generated `/-/tree` folder, this will also match but we only replace
-    // the first occurrence so it's fine.
     let commitsUrl = tree.url
     if (tree.url.includes('/-/tree')) {
         commitsUrl = commitsUrl.replace('/-/tree', '/-/commits')
