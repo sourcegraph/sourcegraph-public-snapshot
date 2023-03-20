@@ -160,8 +160,11 @@ Follow the same steps as above, but ensure you tick the `Push` option.
 
 1. On Azure DevOps, go to each project, and then **Project settings > General > Service hooks**.
 2. Click **Create subscription**.
+   ![](https://storage.googleapis.com/sourcegraph-assets/docs/images/admin/config/webhook-step-2.png)
 3. Select **Web Hooks** and click **Next** .
+   ![](https://storage.googleapis.com/sourcegraph-assets/docs/images/admin/config/webhook-step-3.png)
 4. From the **Trigger on this type of event** drop-down, choose: **Pull request updated**.
+   ![](https://storage.googleapis.com/sourcegraph-assets/docs/images/admin/config/webhook-step-4.png)
 5. Set the filters how you like, or leave them at the default: **[Any]** and click **Next**.
 6. Fill in the webhook form:
    - **URL**: The URL found after creating an incoming webhook.
