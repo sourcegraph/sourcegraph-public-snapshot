@@ -188,8 +188,12 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 	return runner.KubernetesOptions{
 		ConfigPath: c.KubernetesConfigPath,
 		ContainerOptions: command.KubernetesContainerOptions{
-			NodeName:              c.KubernetesNodeName,
-			NodeSelector:          nodeSelector,
+			NodeName:     c.KubernetesNodeName,
+			NodeSelector: nodeSelector,
+			RequiredNodeAffinity: command.KubernetesNodeAffinity{
+				MatchExpressions: c.KubernetesNodeRequiredAffinityMatchExpressions,
+				MatchFields:      c.KubernetesNodeRequiredAffinityMatchFields,
+			},
 			Namespace:             c.KubernetesNamespace,
 			PersistenceVolumeName: c.KubernetesPersistenceVolumeName,
 			ResourceLimit: command.KubernetesResource{

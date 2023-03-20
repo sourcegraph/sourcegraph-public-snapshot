@@ -8,6 +8,7 @@ import (
 
 	"github.com/c2h5oh/datasize"
 	"github.com/google/uuid"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
@@ -20,44 +21,51 @@ import (
 type Config struct {
 	env.BaseConfig
 
-	FrontendURL                     string
-	FrontendAuthorizationToken      string
-	QueueName                       string
-	QueuePollInterval               time.Duration
-	MaximumNumJobs                  int
-	FirecrackerImage                string
-	FirecrackerKernelImage          string
-	FirecrackerSandboxImage         string
-	VMStartupScriptPath             string
-	VMPrefix                        string
-	KeepWorkspaces                  bool
-	DockerHostMountPath             string
-	UseFirecracker                  bool
-	JobNumCPUs                      int
-	JobMemory                       string
-	FirecrackerDiskSpace            string
-	FirecrackerBandwidthIngress     int
-	FirecrackerBandwidthEgress      int
-	MaximumRuntimePerJob            time.Duration
-	CleanupTaskInterval             time.Duration
-	NumTotalJobs                    int
-	MaxActiveTime                   time.Duration
-	NodeExporterURL                 string
-	DockerRegistryNodeExporterURL   string
-	WorkerHostname                  string
-	DockerRegistryMirrorURL         string
-	DockerAuthConfig                types.DockerAuthConfig
-	KubernetesConfigPath            string
-	KubernetesNodeName              string
-	KubernetesNodeSelector          string
-	KubernetesNamespace             string
-	KubernetesPersistenceVolumeName string
-	KubernetesResourceLimitCPU      string
-	KubernetesResourceLimitMemory   string
-	KubernetesResourceRequestCPU    string
-	KubernetesResourceRequestMemory string
-	dockerAuthConfigStr             string
-	dockerAuthConfigUnmarshalError  error
+	FrontendURL                                    string
+	FrontendAuthorizationToken                     string
+	QueueName                                      string
+	QueuePollInterval                              time.Duration
+	MaximumNumJobs                                 int
+	FirecrackerImage                               string
+	FirecrackerKernelImage                         string
+	FirecrackerSandboxImage                        string
+	VMStartupScriptPath                            string
+	VMPrefix                                       string
+	KeepWorkspaces                                 bool
+	DockerHostMountPath                            string
+	UseFirecracker                                 bool
+	JobNumCPUs                                     int
+	JobMemory                                      string
+	FirecrackerDiskSpace                           string
+	FirecrackerBandwidthIngress                    int
+	FirecrackerBandwidthEgress                     int
+	MaximumRuntimePerJob                           time.Duration
+	CleanupTaskInterval                            time.Duration
+	NumTotalJobs                                   int
+	MaxActiveTime                                  time.Duration
+	NodeExporterURL                                string
+	DockerRegistryNodeExporterURL                  string
+	WorkerHostname                                 string
+	DockerRegistryMirrorURL                        string
+	DockerAuthConfig                               types.DockerAuthConfig
+	KubernetesConfigPath                           string
+	KubernetesNodeName                             string
+	KubernetesNodeSelector                         string
+	KubernetesNodeRequiredAffinityMatchExpressions []corev1.NodeSelectorRequirement
+	KubernetesNodeRequiredAffinityMatchFields      []corev1.NodeSelectorRequirement
+	KubernetesNamespace                            string
+	KubernetesPersistenceVolumeName                string
+	KubernetesResourceLimitCPU                     string
+	KubernetesResourceLimitMemory                  string
+	KubernetesResourceRequestCPU                   string
+	KubernetesResourceRequestMemory                string
+
+	dockerAuthConfigStr                                          string
+	dockerAuthConfigUnmarshalError                               error
+	kubernetesNodeRequiredAffinityMatchExpressions               string
+	kubernetesNodeRequiredAffinityMatchExpressionsUnmarshalError error
+	kubernetesNodeRequiredAffinityMatchFields                    string
+	kubernetesNodeRequiredAffinityMatchFieldsUnmarshalError      error
 }
 
 func (c *Config) Load() {
@@ -93,6 +101,8 @@ func (c *Config) Load() {
 	c.KubernetesConfigPath = c.GetOptional("EXECUTOR_KUBERNETES_CONFIG_PATH", "The path to the Kubernetes config file.")
 	c.KubernetesNodeName = c.GetOptional("EXECUTOR_KUBERNETES_NODE_NAME", "The name of the Kubernetes node to run executor jobs in.")
 	c.KubernetesNodeSelector = c.GetOptional("EXECUTOR_KUBERNETES_NODE_SELECTOR", "A comma separated list of values to use as a node selector for Kubernetes Jobs. e.g. foo=bar,app=my-app")
+	c.kubernetesNodeRequiredAffinityMatchExpressions = c.GetOptional("EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_EXPRESSIONS", "The JSON encoded required affinity match expressions for Kubernetes Jobs. e.g. [{\"key\": \"foo\", \"operator\": \"In\", \"values\": [\"bar\"]}]")
+	c.kubernetesNodeRequiredAffinityMatchFields = c.GetOptional("EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_FIELDS", "The JSON encoded required affinity match fields for Kubernetes Jobs. e.g. [{\"key\": \"foo\", \"operator\": \"In\", \"values\": [\"bar\"]}]")
 	c.KubernetesNamespace = c.Get("EXECUTOR_KUBERNETES_NAMESPACE", "default", "The namespace to run executor jobs in.")
 	c.KubernetesPersistenceVolumeName = c.Get("EXECUTOR_KUBERNETES_PERSISTENCE_VOLUME_NAME", "executor-pvc", "The name of the Kubernetes persistence volume to use for executor jobs.")
 	c.KubernetesResourceLimitCPU = c.Get("EXECUTOR_KUBERNETES_RESOURCE_LIMIT_CPU", "1", "The maximum CPU resource for Kubernetes Jobs.")
@@ -103,6 +113,13 @@ func (c *Config) Load() {
 
 	if c.dockerAuthConfigStr != "" {
 		c.dockerAuthConfigUnmarshalError = json.Unmarshal([]byte(c.dockerAuthConfigStr), &c.DockerAuthConfig)
+	}
+
+	if c.kubernetesNodeRequiredAffinityMatchExpressions != "" {
+		c.kubernetesNodeRequiredAffinityMatchExpressionsUnmarshalError = json.Unmarshal([]byte(c.kubernetesNodeRequiredAffinityMatchExpressions), &c.KubernetesNodeRequiredAffinityMatchExpressions)
+	}
+	if c.kubernetesNodeRequiredAffinityMatchFields != "" {
+		c.kubernetesNodeRequiredAffinityMatchFieldsUnmarshalError = json.Unmarshal([]byte(c.kubernetesNodeRequiredAffinityMatchFields), &c.KubernetesNodeRequiredAffinityMatchFields)
 	}
 
 	hn := hostname.Get()
