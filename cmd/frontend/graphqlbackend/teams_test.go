@@ -1227,6 +1227,44 @@ func TestTeamsNameSearch(t *testing.T) {
 	})
 }
 
+func TestTeamsExceptAncestorID(t *testing.T) {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	userID := fs.AddUser(types.User{SiteAdmin: true})
+	ctx := userCtx(userID)
+	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
+	parentTeamID := fs.AddTeam(&types.Team{Name: "parent-include"})
+	fs.AddTeam(&types.Team{Name: "child-include", ParentTeamID: parentTeamID})
+	topLevelNotExcluded := fs.AddTeam(&types.Team{Name: "top-level-not-excluded"})
+	ancestorExcluded := fs.AddTeam(&types.Team{Name: "ancestor-excluded", ParentTeamID: topLevelNotExcluded})
+	parentExcluded := fs.AddTeam(&types.Team{Name: "parent-excluded", ParentTeamID: ancestorExcluded})
+	fs.AddTeam(&types.Team{Name: "child-excluded", ParentTeamID: parentExcluded})
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `query ExcludeAncestorId($id: ID!){
+			teams(exceptAncestorId: $id) {
+				nodes {
+					name
+				}
+			}
+		}`,
+		// child-include team will not be returned - by default only top-level teams are included.
+		ExpectedResult: `{
+			"teams": {
+				"nodes": [
+					{"name": "parent-include"},
+					{"name": "top-level-not-excluded"}
+				]
+			}
+		}`,
+		Variables: map[string]any{
+			"id": string(MarshalTeamID(ancestorExcluded)),
+		},
+	})
+}
+
 func TestTeamsCount(t *testing.T) {
 	fs := fakedb.New()
 	db := database.NewMockDB()
