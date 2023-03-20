@@ -34,6 +34,8 @@ import { ExternalServiceSyncJobsList } from './ExternalServiceSyncJobsList'
 import { ExternalServiceWebhook } from './ExternalServiceWebhook'
 import { isAppLocalFileService } from './isAppLocalFileService'
 
+import styles from './ExternalServicePage.module.scss'
+
 interface Props extends TelemetryProps {
     afterDeleteRoute: string
 
@@ -172,7 +174,7 @@ export const ExternalServicePage: FC<Props> = props => {
     }
 
     return (
-        <div>
+        <div className={styles.externalServicePage}>
             {externalService ? (
                 <PageTitle title={`Code host - ${externalService.displayName}`} />
             ) : (
