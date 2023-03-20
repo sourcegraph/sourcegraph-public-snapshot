@@ -58,4 +58,6 @@ To assign the **Site Administrator** system role to a user, open the same contex
 
 The **User** system role is automatically assigned to all users and cannot be revoked.
 
-<video alt="Video walkthrough of how to assign roles to a user" src="https://sourcegraphstatic.com/docs/images/administration/access_control/assign_roles_to_user.mp4" controls />
+<video alt="Video walkthrough of how to assign roles to a user" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/access_control/assign_roles_to_user_dark.mp4" type="video/mp4" controls class="theme-dark-only"> </video>
+
+<video alt="Video walkthrough of how to assign roles to a user" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/access_control/assign_roles_to_user_light.mp4" type="video/mp4" controls class="theme-light-only"></video>
