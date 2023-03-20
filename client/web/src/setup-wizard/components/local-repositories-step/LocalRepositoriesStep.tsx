@@ -332,8 +332,7 @@ const BuiltInRepositories: FC<BuiltInRepositoriesProps> = props => {
             <hr />
             <H4 className="mt-3 mb-1">Built-in repositories</H4>
             <Text size="small" className="text-muted">
-                You're running Sourcegraph app from your terminal. We found repositories below based on the path where
-                you run sourcegraph CLI
+                You're running the Sourcegraph app from your terminal. We found the repositories below in your path.
             </Text>
             <ul className={styles.list}>
                 {foundRepositories.map(repository => (
