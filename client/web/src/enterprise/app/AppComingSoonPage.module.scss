@@ -1,5 +1,9 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
+.root {
+    height: min-content;
+}
+
 .link {
     font-size: 1rem;
     font-weight: 600;

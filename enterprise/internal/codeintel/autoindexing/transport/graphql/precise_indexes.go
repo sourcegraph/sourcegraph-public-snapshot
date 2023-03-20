@@ -472,8 +472,8 @@ func NewPreciseIndexConnectionResolver(
 	}
 }
 
-func (r *preciseIndexConnectionResolver) Nodes() []resolverstubs.PreciseIndexResolver {
-	return r.nodes
+func (r *preciseIndexConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.PreciseIndexResolver, error) {
+	return r.nodes, nil
 }
 
 func (r *preciseIndexConnectionResolver) TotalCount() *int32 {

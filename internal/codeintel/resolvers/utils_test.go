@@ -1,4 +1,4 @@
-package graphql
+package resolvers
 
 import (
 	"encoding/base64"

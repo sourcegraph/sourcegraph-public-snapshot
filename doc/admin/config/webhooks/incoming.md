@@ -9,7 +9,7 @@ Webhooks are currently implemented to speed up two types of external events:
 
 See the table below for code host compatibility:
 
-Code host | [Batch changes](../../batch_changes/index.md) | Code push | User permissions
+Code host | [Batch changes](../../../batch_changes/index.md) | Code push | User permissions
 --------- | :-: | :-: | :-:
 GitHub | 🟢 | 🟢 | 🟢
 GitLab | 🟢 | 🟢 | 🔴
@@ -21,11 +21,11 @@ To receive webhooks both Sourcegraph and the code host need to be configured. To
 
 ## Adding an incoming webhook
 
-Before adding an incoming webhook you should ensure that you have at least one [code host connection](../external_services/index.md) configured. 
+Before adding an incoming webhook you should ensure that you have at least one [code host connection](../../external_services/index.md) configured.
 
 The incoming webhook will be configured to accept events from a specific code host connection based on its type and URN.
 
-1. Navigate to _Site Admin_ > _Webhooks_ > _Incoming webhooks_
+1. Navigate to **Site Admin > Configuration > Incoming webhooks**
    ![Incoming webhooks page](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/webhooks/incoming-webhooks-page.png)
 2. Click **+ Create webhook**
    ![Adding an incoming webhook](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/webhooks/adding-webhook.png)
@@ -68,7 +68,7 @@ The instructions for setting up webhooks on the code host are specific to each c
 1. Click **Add webhook**.
 1. Confirm that the new webhook is listed.
 
-Done! Sourcegraph will now receive webhook events from GitHub and use them to sync pull request events, used by [batch changes](../../batch_changes/index.md), faster and more efficiently.
+Done! Sourcegraph will now receive webhook events from GitHub and use them to sync pull request events, used by [batch changes](../../../batch_changes/index.md), faster and more efficiently.
 
 #### Code push
 
@@ -101,7 +101,7 @@ When one of these events occur, a permissions sync will trigger for the relevant
 1. Click **Add webhook**.
 1. Confirm that the new webhook is listed below **Project Hooks**.
 
-Done! Sourcegraph will now receive webhook events from GitLab and use them to sync merge request events, used by [batch changes](../../batch_changes/index.md), faster and more efficiently.
+Done! Sourcegraph will now receive webhook events from GitLab and use them to sync merge request events, used by [batch changes](../../../batch_changes/index.md), faster and more efficiently.
 
 **NOTE:** We currently do not support [system webhooks](https://docs.gitlab.com/ee/administration/system_hooks.html) as these provide a different set of payloads.
 
@@ -113,9 +113,9 @@ Follow the same steps as above, but ensure you include the `Push events` trigger
 
 #### Batch changes
 
-The [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) enables the Bitbucket Server / Bitbucket Data Center instance to send webhooks to Sourcegraph.
+The [Sourcegraph Bitbucket Server plugin](../../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) enables the Bitbucket Server / Bitbucket Data Center instance to send webhooks to Sourcegraph.
 
-1. Install the [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) on your Bitbucket Server / Bitbucket Data Center instance.
+1. Install the [Sourcegraph Bitbucket Server plugin](../../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) on your Bitbucket Server / Bitbucket Data Center instance.
 1. On your Bitbucket Server / Bitbucket Data Center instance, go to **Administration > Add-ons > Sourcegraph**
 1. Fill in the **Add a webhook** form
    * **Name**: A unique name representing your Sourcegraph instance.
@@ -125,7 +125,7 @@ The [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#
    * **Secret**: The secret you configured when creating the incoming webhook.
 1. Confirm that the new webhook is listed under **All webhooks** with a timestamp in the **Last successful** column.
 
-Done! Sourcegraph will now receive webhook events from Bitbucket Server / Bitbucket Data Center and use them to sync pull request events, used by [batch changes](../../batch_changes/index.md), faster and more efficiently.
+Done! Sourcegraph will now receive webhook events from Bitbucket Server / Bitbucket Data Center and use them to sync pull request events, used by [batch changes](../../../batch_changes/index.md), faster and more efficiently.
 
 #### Code push
 
@@ -146,7 +146,7 @@ Follow the same steps as above, but ensure you tick the `Push` option. If asked 
 1. Click **Save**.
 1. Confirm that the new webhook is listed below **Repository hooks**.
 
-Done! Sourcegraph will now receive webhook events from Bitbucket Cloud and use them to sync pull request events, used by [batch changes](../../batch_changes/index.md), faster and more efficiently.
+Done! Sourcegraph will now receive webhook events from Bitbucket Cloud and use them to sync pull request events, used by [batch changes](../../../batch_changes/index.md), faster and more efficiently.
 
 #### Code push
 
@@ -158,29 +158,32 @@ Follow the same steps as above, but ensure you tick the `Push` option.
 
 > NOTE: Experimental webhook support for Azure DevOps was added in Sourcegraph 5.0, and does not currently support secrets. Please <a href="https://about.sourcegraph.com/contact">contact us</a> with any issues found while using webhooks.
 
-1. On Azure DevOps, go to each project, and then **Project settings > Service hooks**.
-2. Click **Create a new subscription**.
-3. Select **Web Hooks**. From the **Trigger on this type of event** drop-down, choose: **Pull request updated**.
-4. Set the filters how you like, or leave them at the default: **\[Any\]**
-5. Fill in the webhook form:
-  * **URL**: The URL found after creating an incoming webhook.
-  * Leave the rest of the fields on the default values.
-6. Click **Test** to verify the webhook works. Then click **Finish**.
-7. Repeat the steps above, this time choosing **Pull request merged** as your event type.
+1. On Azure DevOps, go to each project, and then **Project settings > General > Service hooks**.
+2. Click **Create subscription**.
+   ![](https://storage.googleapis.com/sourcegraph-assets/docs/images/admin/config/webhook-step-2.png)
+3. Select **Web Hooks** and click **Next** .
+   ![](https://storage.googleapis.com/sourcegraph-assets/docs/images/admin/config/webhook-step-3.png)
+4. From the **Trigger on this type of event** drop-down, choose: **Pull request updated**.
+   ![](https://storage.googleapis.com/sourcegraph-assets/docs/images/admin/config/webhook-step-4.png)
+5. Set the filters how you like, or leave them at the default: **[Any]** and click **Next**.
+6. Fill in the webhook form:
+   - **URL**: The URL found after creating an incoming webhook.
+   - Leave the rest of the fields on the default values.
+7. Click **Test** to verify the webhook works. Then click **Finish**.
+8. Repeat the steps above, this time choosing **Pull request merged** as your event type.
 
-Done! Sourcegraph will now receive webhook events from Azure DevOps and use them to sync pull request events, used by [batch changes](../../batch_changes/index.md), faster and more efficiently.
-
+Done! Sourcegraph will now receive webhook events from Azure DevOps and use them to sync pull request events, used by [batch changes](../../../batch_changes/index.md), faster and more efficiently.
 
 ## Webhook logging
 
 Sourcegraph can track incoming webhooks from code hosts to more easily debug issues with webhook delivery. These webhooks can be viewed in two places depending on how they were added:
 
-1. Via _Site Admin_ > _Webhooks_ > _Incoming webhooks_
+1. Via **Site Admin > Configuration > Incoming webhooks**
    ![Webhook logs](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/webhooks/webhook-logs.png)
-2. **Deprecated** Via code host connection: _Site Admin_ > _Batch Changes_ > _Incoming webhooks_
+2. **Deprecated** Via code host connection: **Site Admin > Batch Changes > Incoming webhooks**
    ![Legacy webhook logs](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/webhooks/webhook-logs-legacy.png)
 
-By default, sites without [database encryption](encryption.md) enabled will retain three days of webhook logs. Sites with encryption will not retain webhook logs by default, as webhooks may include sensitive information; these sites can enable webhook logging and optionally configure encryption for them by using the settings below.
+By default, sites without [database encryption](../encryption.md) enabled will retain three days of webhook logs. Sites with encryption will not retain webhook logs by default, as webhooks may include sensitive information; these sites can enable webhook logging and optionally configure encryption for them by using the settings below.
 
 ### Enabling webhook logging
 
@@ -215,7 +218,7 @@ To retain webhook logs for one day:
 
 ### Encrypting webhook logs
 
-Webhook logs can be encrypted by specifying a `webhookLogKey` in the [on-disk database encryption site configuration](encryption.md).
+Webhook logs can be encrypted by specifying a `webhookLogKey` in the [on-disk database encryption site configuration](../encryption.md).
 
 ## Deprecation notice
 

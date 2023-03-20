@@ -1,45 +1,45 @@
 ---
 source: crates/scip-syntax/src/locals.rs
-assertion_line: 469
+assertion_line: 497
 expression: dumped
 ---
   package example
-//        ^^^^^^^ definition  local 1
+//        ^^^^^^^ definition local 1
   
   import (
    f "fmt"
-// ^ definition  local 2
+// ^ definition local 2
    "github.com/sourcegraph/"
   )
   
   func Something() {
-//     ^^^^^^^^^ definition  local 3
+//     ^^^^^^^^^ definition local 3
    y := ", world"
-// ^ definition  local 5
+// ^ definition local 5
    f.Println("hello", y)
-// ^ reference  local 2
-//                    ^ reference  local 5
+// ^ reference local 2
+//                    ^ reference local 5
   }
   
   func Another() {
-//     ^^^^^^^ definition  local 4
+//     ^^^^^^^ definition local 4
    Something()
-// ^^^^^^^^^ reference  local 3
+// ^^^^^^^^^ reference local 3
    if true {
     x := true
-//  ^ definition  local 6
+//  ^ definition local 6
    }
    if true {
     x := true
-//  ^ definition  local 7
+//  ^ definition local 7
     if true {
      x := true
-//   ^ definition  local 8
+//   ^ definition local 8
     }
    }
    if true {
     x := true
-//  ^ definition  local 9
+//  ^ definition local 9
    }
   }
 

@@ -1,6 +1,8 @@
 package sharedresolvers
 
 import (
+	"context"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -23,13 +25,13 @@ func NewCodeIntelligenceRetentionPolicyMatcherConnectionResolver(repoStore datab
 	}
 }
 
-func (r *codeIntelligenceRetentionPolicyMatcherConnectionResolver) Nodes() []resolverstubs.CodeIntelligenceRetentionPolicyMatchResolver {
+func (r *codeIntelligenceRetentionPolicyMatcherConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.CodeIntelligenceRetentionPolicyMatchResolver, error) {
 	resolvers := make([]resolverstubs.CodeIntelligenceRetentionPolicyMatchResolver, 0, len(r.policies))
 	for _, policy := range r.policies {
 		resolvers = append(resolvers, NewRetentionPolicyMatcherResolver(r.repoStore, policy))
 	}
 
-	return resolvers
+	return resolvers, nil
 }
 
 func (r *codeIntelligenceRetentionPolicyMatcherConnectionResolver) TotalCount() *int32 {

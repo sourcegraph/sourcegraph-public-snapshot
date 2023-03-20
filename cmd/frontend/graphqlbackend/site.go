@@ -205,6 +205,15 @@ func (r *reposCountsResolver) LocalReposCount(ctx context.Context) (int32, error
 	return localReposCount, nil
 }
 
+func (r *siteResolver) AppHasConnectedDotComAccount() bool {
+	if !deploy.IsApp() {
+		return false
+	}
+
+	appConfig := conf.SiteConfig().App
+	return appConfig != nil && appConfig.DotcomAuthToken != ""
+}
+
 type siteConfigurationResolver struct {
 	db database.DB
 }

@@ -1747,13 +1747,12 @@ CREATE SEQUENCE codeintel_ranking_references_id_seq
 ALTER SEQUENCE codeintel_ranking_references_id_seq OWNED BY codeintel_ranking_references.id;
 
 CREATE TABLE codeintel_ranking_references_processed (
-    id integer NOT NULL,
     graph_key text NOT NULL,
-    codeintel_ranking_reference_id integer NOT NULL
+    codeintel_ranking_reference_id integer NOT NULL,
+    id bigint NOT NULL
 );
 
 CREATE SEQUENCE codeintel_ranking_references_processed_id_seq
-    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
