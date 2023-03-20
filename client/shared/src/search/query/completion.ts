@@ -75,16 +75,13 @@ const symbolKindToCompletionItemKind: Record<SymbolKind, Monaco.languages.Comple
  * Maps a SearchMatch result from the server to a partial competion item for
  * Monaco.
  */
-const suggestionToCompletionItems = (
-    suggestion: SearchMatch,
-    options: { filterValue?: string }
-): PartialCompletionItem[] | PartialCompletionItem => {
+const suggestionToCompletionItems = (suggestion: SearchMatch): PartialCompletionItem[] | PartialCompletionItem => {
     switch (suggestion.type) {
         case 'path':
             return {
                 label: suggestion.path,
                 kind: Monaco.languages.CompletionItemKind.File,
-                insertText: regexInsertText(suggestion.path, options) + ' ',
+                insertText: regexInsertText(suggestion.path) + ' ',
                 filterText: suggestion.path,
                 detail: `${suggestion.path} - ${suggestion.repository}`,
             }
@@ -92,7 +89,7 @@ const suggestionToCompletionItems = (
             return {
                 label: suggestion.repository,
                 kind: repositoryCompletionItemKind,
-                insertText: repositoryInsertText(suggestion, options) + ' ',
+                insertText: repositoryInsertText(suggestion) + ' ',
                 filterText: suggestion.repository,
             }
         case 'symbol':
