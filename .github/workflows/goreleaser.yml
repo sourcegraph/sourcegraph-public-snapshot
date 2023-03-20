@@ -133,7 +133,7 @@ jobs:
           git config user.name sourcegraph-bot
           git config user.email sourcegraph-bot-github@sourcegraph.com
           git add .
-          git commit -m "Copy previous release"
+          git commit --allow-empty -m "Copy previous release"
           git push
 
   # goreleaser runs tests before building, then uses goreleaser to publish to Homebrew and
