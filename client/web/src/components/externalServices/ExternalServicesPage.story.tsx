@@ -46,7 +46,6 @@ export const ListOfExternalServices: Story = () => (
             telemetryService={NOOP_TELEMETRY_SERVICE}
             externalServicesFromFile={false}
             allowEditExternalServicesWithFile={false}
-            isSourcegraphApp={false}
         />
     </MockedTestProvider>
 )
