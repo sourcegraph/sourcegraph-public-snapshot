@@ -3,17 +3,10 @@ package graphql
 import (
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-func marshalConfigurationPolicyGQLID(configurationPolicyID int64) graphql.ID {
-	return relay.MarshalID("CodeIntelligenceConfigurationPolicy", configurationPolicyID)
-}
 
 func validateConfigurationPolicy(policy resolverstubs.CodeIntelConfigurationPolicy) error {
 	switch types.GitObjectType(policy.Type) {

@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
@@ -200,7 +199,9 @@ type vulnerabilityResolver struct {
 	v shared.Vulnerability
 }
 
-func (r *vulnerabilityResolver) ID() graphql.ID     { return marshalVulnerabilityGQLID(r.v.ID) }
+func (r *vulnerabilityResolver) ID() graphql.ID {
+	return resolverstubs.MarshalID("Vulnerability", r.v.ID)
+}
 func (r *vulnerabilityResolver) SourceID() string   { return r.v.SourceID }
 func (r *vulnerabilityResolver) Summary() string    { return r.v.Summary }
 func (r *vulnerabilityResolver) Details() string    { return r.v.Details }
@@ -314,7 +315,7 @@ type vulnerabilityMatchResolver struct {
 }
 
 func (r *vulnerabilityMatchResolver) ID() graphql.ID {
-	return marshalVulnerabilityMatchGQLID(r.m.ID)
+	return resolverstubs.MarshalID("VulnerabilityMatch", r.m.ID)
 }
 
 func (r *vulnerabilityMatchResolver) Vulnerability(ctx context.Context) (resolverstubs.VulnerabilityResolver, error) {
@@ -349,15 +350,4 @@ func (r *vulnerabilityMatchResolver) PreciseIndex(ctx context.Context) (resolver
 		&upload,
 		nil,
 	)
-}
-
-//
-//
-
-func marshalVulnerabilityGQLID(vulnerabilityID int) graphql.ID {
-	return relay.MarshalID("Vulnerability", vulnerabilityID)
-}
-
-func marshalVulnerabilityMatchGQLID(vulnerabilityMatchID int) graphql.ID {
-	return relay.MarshalID("VulnerabilityMatch", vulnerabilityMatchID)
 }

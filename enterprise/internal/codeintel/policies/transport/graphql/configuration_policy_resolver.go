@@ -33,7 +33,7 @@ func NewConfigurationPolicyResolver(repoStore database.RepoStore, configurationP
 }
 
 func (r *configurationPolicyResolver) ID() graphql.ID {
-	return marshalConfigurationPolicyGQLID(int64(r.configurationPolicy.ID))
+	return resolverstubs.MarshalID("CodeIntelligenceConfigurationPolicy", r.configurationPolicy.ID)
 }
 
 func (r *configurationPolicyResolver) Name() string {

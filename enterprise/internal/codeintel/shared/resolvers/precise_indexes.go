@@ -355,7 +355,7 @@ func (r *preciseIndexResolver) RetentionPolicyOverview(ctx context.Context, args
 	var afterID int64
 	if args.After != nil {
 		var err error
-		afterID, err = unmarshalConfigurationPolicyGQLID(graphql.ID(*args.After))
+		afterID, err = resolverstubs.UnmarshalID[int64](graphql.ID(*args.After))
 		if err != nil {
 			return nil, err
 		}
