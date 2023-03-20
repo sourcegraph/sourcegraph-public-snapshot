@@ -409,6 +409,8 @@ CREATE INDEX codeintel_scip_document_lookup_document_id ON codeintel_scip_docume
 
 CREATE INDEX codeintel_scip_documents_dereference_logs_last_removal_time_des ON codeintel_scip_documents_dereference_logs USING btree (last_removal_time DESC, document_id);
 
+CREATE INDEX codeintel_scip_metadata_upload_id ON codeintel_scip_metadata USING btree (upload_id);
+
 CREATE INDEX codeintel_scip_symbol_names_upload_id_roots ON codeintel_scip_symbol_names USING btree (upload_id) WHERE (prefix_id IS NULL);
 
 CREATE INDEX codeintel_scip_symbols_document_lookup_id ON codeintel_scip_symbols USING btree (document_lookup_id);
