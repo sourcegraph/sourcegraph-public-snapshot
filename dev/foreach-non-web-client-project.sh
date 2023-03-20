@@ -29,7 +29,6 @@ DIRS=(
   client/template-parser
   client/testing
   client/vscode
-  client/web
   client/wildcard
   dev/release
 )
