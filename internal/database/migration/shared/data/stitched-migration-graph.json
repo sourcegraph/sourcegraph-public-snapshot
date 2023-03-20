@@ -9310,6 +9310,20 @@
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
+			},
+			{
+				"ID": 1678994673,
+				"Name": "package_repos_last_checked_at_index",
+				"UpQuery": "DROP INDEX IF EXISTS lsif_dependency_repos_last_checked_at;\nDROP INDEX IF EXISTS package_repo_versions_last_checked_at;\n\nCREATE INDEX IF NOT EXISTS lsif_dependency_repos_last_checked_at\nON lsif_dependency_repos\nUSING btree (last_checked_at ASC NULLS FIRST);\n\nCREATE INDEX IF NOT EXISTS package_repo_versions_last_checked_at\nON package_repo_versions\nUSING btree (last_checked_at ASC NULLS FIRST);",
+				"DownQuery": "DROP INDEX IF EXISTS lsif_dependency_repos_last_checked_at;\nDROP INDEX IF EXISTS package_repo_versions_last_checked_at;\n\nCREATE INDEX IF NOT EXISTS lsif_dependency_repos_last_checked_at\nON lsif_dependency_repos\nUSING btree (last_checked_at);\n\nCREATE INDEX IF NOT EXISTS package_repo_versions_last_checked_at\nON package_repo_versions\nUSING btree (last_checked_at);",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1678601228,
+					1678832491
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
 			}
 		],
 		"BoundsByRev": {
@@ -9540,7 +9554,7 @@
 				"RootID": 1648051770,
 				"LeafIDs": [
 					1678899992,
-					1678832491
+					1678994673
 				],
 				"PreCreation": false
 			}
