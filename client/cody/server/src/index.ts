@@ -5,7 +5,6 @@ import * as bodyParser from 'body-parser'
 import express from 'express'
 import { GoogleSpreadsheet } from 'google-spreadsheet'
 import { WebSocketServer } from 'ws'
-import { EventLogger } from '@sourcegraph/event-logger'
 
 import {
 	Feedback,
@@ -16,6 +15,7 @@ import {
 	WSChatResponseError,
 	feedbackToSheetRow,
 } from '@sourcegraph/cody-common'
+import { EventLogger } from '@sourcegraph/event-logger'
 
 import { authenticate, getUsers, User } from './auth'
 import { wsHandleGetCompletions } from './completions'
@@ -201,8 +201,7 @@ async function postAction(user: User | null, data: any): Promise<void> {
 	// Log to eventLogger
 	try {
 		eventLogger.log('postAction', event)
-	}
-	catch (error) {
+	} catch (error) {
 		console.error('eventLogger postAction error', error)
 	}
 }
@@ -233,8 +232,7 @@ async function postFeedback(user: User, feedback: Feedback): Promise<void> {
 	// Log to eventLogger
 	try {
 		eventLogger.log('postFeedback', feedback)
-	}
-	catch (error) {
+	} catch (error) {
 		console.error('eventLogger postFeedback error', error)
 	}
 }
