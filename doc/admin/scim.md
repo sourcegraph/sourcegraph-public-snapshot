@@ -49,9 +49,9 @@ To set up user provisioning in Okta, you must first set up a new app integration
 
 1. Follow our [SAML guide](auth/saml/okta) to set up a new app integration with SAML, then open the integration you just created.
     - If you already have the integration, just open your existing app integration.
-2. Go to the "General" tab and click "Edit" in the "App Settings" section.
-3. Set "Provisioning" to "SCIM". This makes a new tab called "Provisioning" appear.
-4. Go to the new tab, and click "Edit"
+1. Go to the "General" tab and click "Edit" in the "App Settings" section.
+1. Set "Provisioning" to "SCIM". This creates a new tab called "Provisioning".
+1. Go to the "Provisioning" tab, and click "Edit"
    - Set "SCIM connector base URL" to `{yourSourcegraphUrl}/.api/scim/v2`
    - Set "Unique identifier field for users" to `userName`
    - Check the first three items in `Supported provisioning actions`
