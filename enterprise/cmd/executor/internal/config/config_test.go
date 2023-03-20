@@ -38,6 +38,12 @@ func TestConfig_Load(t *testing.T) {
 			return "10"
 		case "EXECUTOR_MAX_ACTIVE_TIME":
 			return "1h"
+		case "EXECUTOR_KUBERNETES_CONFIG_PATH":
+			return "/foo/bar"
+		case "EXECUTOR_KUBERNETES_NODE_NAME":
+			return "my-node"
+		case "EXECUTOR_KUBERNETES_NODE_SELECTOR":
+			return "app=my-app,zone=west"
 		default:
 			return name
 		}
@@ -69,6 +75,9 @@ func TestConfig_Load(t *testing.T) {
 	assert.Equal(t, "DOCKER_REGISTRY_NODE_EXPORTER_URL", cfg.DockerRegistryNodeExporterURL)
 	assert.Equal(t, time.Hour, cfg.MaxActiveTime)
 	assert.Equal(t, "EXECUTOR_DOCKER_REGISTRY_MIRROR_URL", cfg.DockerRegistryMirrorURL)
+	assert.Equal(t, "/foo/bar", cfg.KubernetesConfigPath)
+	assert.Equal(t, "my-node", cfg.KubernetesNodeName)
+	assert.Equal(t, "app=my-app,zone=west", cfg.KubernetesNodeSelector)
 }
 
 func TestConfig_Load_Defaults(t *testing.T) {
@@ -100,6 +109,15 @@ func TestConfig_Load_Defaults(t *testing.T) {
 	assert.Empty(t, cfg.DockerRegistryNodeExporterURL)
 	assert.Zero(t, cfg.MaxActiveTime)
 	assert.Empty(t, cfg.DockerRegistryMirrorURL)
+	assert.Empty(t, cfg.KubernetesConfigPath)
+	assert.Empty(t, cfg.KubernetesNodeName)
+	assert.Empty(t, cfg.KubernetesNodeSelector)
+	assert.Equal(t, "default", cfg.KubernetesNamespace)
+	assert.Equal(t, "executor-pvc", cfg.KubernetesPersistenceVolumeName)
+	assert.Equal(t, "1", cfg.KubernetesResourceLimitCPU)
+	assert.Equal(t, "1Gi", cfg.KubernetesResourceLimitMemory)
+	assert.Equal(t, "1", cfg.KubernetesResourceRequestCPU)
+	assert.Equal(t, "1Gi", cfg.KubernetesResourceRequestMemory)
 }
 
 func TestConfig_Validate(t *testing.T) {
