@@ -21,7 +21,6 @@ ts_project(
     name = "dev",
     srcs = [
         "mocks/mockEventLogger.ts",
-        "server/bazel.server.ts",
         "server/production.server.ts",
         "utils/constants.ts",
         "utils/create-js-context.ts",
