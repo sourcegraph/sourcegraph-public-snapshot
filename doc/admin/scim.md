@@ -16,7 +16,7 @@ Sourcegraph supports SCIM 2.0 for provisioning and de-provisioning _users_.
 
 ## How to use
 
-To use SCIM, you must have an existing IdP configured to connect to and authenticate with your Sourcegraph instance. For auth, we currently support Bearer token authentication. We have a guide for Okta setup [below](#setting-up-okta-as-the-idp).
+To use SCIM, you must have an existing IdP configured as an auth provider on your Sourcegraph instance. For authenticating SCIM requests, we currently support Bearer token authentication. We have a guide for Okta setup [below](#setting-up-okta-as-the-idp).
 
 To configure:
 
