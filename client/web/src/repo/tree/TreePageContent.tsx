@@ -453,6 +453,13 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
     const node = data?.node && data?.node.__typename === 'Repository' ? data.node : null
     const connection = node?.commit?.ancestors
 
+    let commitsUrl = tree.url
+    if (tree.url.includes('/-/tree')) {
+        commitsUrl = commitsUrl.replace('/-/tree', '/-/commits')
+    } else {
+        commitsUrl = commitsUrl + '/-/commits'
+    }
+
     return (
         <ConnectionContainer>
             {error && <ConnectionError errors={[error.message]} />}
@@ -496,9 +503,7 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
                             </span>
                         </small>
                         <small>
-                            <Link to={`${tree.url}/-/commits`}>
-                                Show {connection.pageInfo.hasNextPage ? 'more' : 'all'}
-                            </Link>
+                            <Link to={commitsUrl}>Show {connection.pageInfo.hasNextPage ? 'more' : 'all'}</Link>
                         </small>
                     </>
                 )}
