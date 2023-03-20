@@ -104,5 +104,6 @@ ts_project(
 mocha_test(
     name = "test",
     tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
+    use_xvfb = True,
     deps = [":integration_tests"],
 )
