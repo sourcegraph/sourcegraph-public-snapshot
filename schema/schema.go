@@ -65,6 +65,12 @@ type ApiRatelimit struct {
 	// PerUser description: Limit granted per user per hour
 	PerUser int `json:"perUser"`
 }
+
+// App description: Configuration options for App only.
+type App struct {
+	// DotcomAuthToken description: Authentication token for Sourcegraph.com. If present, indicates that the App account is connected to a Sourcegraph.com account.
+	DotcomAuthToken string `json:"dotcomAuthToken,omitempty"`
+}
 type AppNotifications struct {
 	// Key description: e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.
 	Key string `json:"key"`
@@ -2303,6 +2309,8 @@ type SiteConfiguration struct {
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser,omitempty"`
 	// ApiRatelimit description: Configuration for API rate limiting
 	ApiRatelimit *ApiRatelimit `json:"api.ratelimit,omitempty"`
+	// App description: Configuration options for App only.
+	App *App `json:"app,omitempty"`
 	// AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
 	AuthAccessTokens *AuthAccessTokens `json:"auth.accessTokens,omitempty"`
 	// AuthEnableUsernameChanges description: Enables users to change their username after account creation. Warning: setting this to be true has security implications if you have enabled (or will at any point in the future enable) repository permissions with an option that relies on username equivalency between Sourcegraph and an external service or authentication provider. Do NOT set this to true if you are using non-built-in authentication OR rely on username equivalency for repository permissions.
@@ -2391,7 +2399,7 @@ type SiteConfiguration struct {
 	DisableAutoGitUpdates bool `json:"disableAutoGitUpdates,omitempty"`
 	// DisableFeedbackSurvey description: Disable the feedback survey
 	DisableFeedbackSurvey bool `json:"disableFeedbackSurvey,omitempty"`
-	// DisableNonCriticalTelemetry description: Disable aggregated event counts from being sent to Sourcegraph.com via pings.
+	// DisableNonCriticalTelemetry description: DEPRECATED. Has no effect.
 	DisableNonCriticalTelemetry bool `json:"disableNonCriticalTelemetry,omitempty"`
 	// DisablePublicRepoRedirects description: Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.
 	DisablePublicRepoRedirects bool `json:"disablePublicRepoRedirects,omitempty"`
@@ -2583,6 +2591,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	}
 	delete(m, "RedirectUnsupportedBrowser")
 	delete(m, "api.ratelimit")
+	delete(m, "app")
 	delete(m, "auth.accessTokens")
 	delete(m, "auth.enableUsernameChanges")
 	delete(m, "auth.lockout")

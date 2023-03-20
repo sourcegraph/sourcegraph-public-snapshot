@@ -2,6 +2,7 @@ import BrainIcon from 'mdi-react/BrainIcon'
 import BriefcaseIcon from 'mdi-react/BriefcaseIcon'
 import PackageVariantIcon from 'mdi-react/PackageVariantIcon'
 import RobotOutlineIcon from 'mdi-react/RobotOutlineIcon'
+import WebhookIcon from 'mdi-react/WebhookIcon'
 
 import { BatchChangesIcon } from '../../batches/icons'
 import {
@@ -9,7 +10,7 @@ import {
     analyticsGroup,
     configurationGroup as ossConfigurationGroup,
     maintenanceGroup as ossMaintenanceGroup,
-    repositoriesGroup as ossRepositoriesGroup,
+    repositoriesGroup,
     usersGroup as ossUsersGroup,
 } from '../../site-admin/sidebaritems'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../site-admin/SiteAdminSidebar'
@@ -74,15 +75,6 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/batch-changes/specs',
             condition: props => props.batchChangesExecutionEnabled,
         },
-        {
-            label: 'Incoming webhooks',
-            to: '/site-admin/batch-changes/webhook-logs',
-            condition: props => props.batchChangesWebhookLogsEnabled,
-        },
-        {
-            label: 'Outgoing webhooks',
-            to: '/site-admin/outbound-webhooks',
-        },
     ],
     condition: ({ batchChangesEnabled, isSourcegraphApp }) => batchChangesEnabled && !isSourcegraphApp,
 }
@@ -133,14 +125,17 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
     ],
 }
 
-const repositoriesGroup: SiteAdminSideBarGroup = {
-    ...ossRepositoriesGroup,
+const webhooksGroup: SiteAdminSideBarGroup = {
+    header: { label: 'Webhooks', icon: WebhookIcon },
+    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     items: [
-        ...ossRepositoriesGroup.items,
         {
             label: 'Incoming webhooks',
-            to: '/site-admin/webhooks',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+            to: '/site-admin/webhooks/incoming',
+        },
+        {
+            label: 'Outgoing webhooks',
+            to: '/site-admin/webhooks/outgoing',
         },
     ],
 }
@@ -175,6 +170,7 @@ export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
     analyticsGroup,
     configurationGroup,
     repositoriesGroup,
+    webhooksGroup,
     codeIntelGroup,
     usersGroup,
     executorsGroup,

@@ -140,6 +140,7 @@ js_library(
         "//:node_modules/babel-jest",
         "//:node_modules/core-js",
         "//:node_modules/identity-obj-proxy",
+        "//:node_modules/message-port-polyfill",
         "//:node_modules/regenerator-runtime",
         "//client/shared/dev:mock",
     ],
@@ -208,6 +209,7 @@ nogo(
     deps = [
         "//dev/linters/bodyclose",
         "//dev/linters/forbidigo",
+        "//dev/linters/gocritic",
         "//dev/linters/ineffassign",
     ],
 )

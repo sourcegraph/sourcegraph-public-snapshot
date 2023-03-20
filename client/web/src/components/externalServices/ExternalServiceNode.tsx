@@ -13,17 +13,15 @@ import { refreshSiteFlags } from '../../site/backend'
 
 import { deleteExternalService } from './backend'
 import { defaultExternalServices, EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES } from './externalServices'
-import { isAppLocalFileService } from './isAppLocalFileService'
 
 import styles from './ExternalServiceNode.module.scss'
 
 export interface ExternalServiceNodeProps {
     node: ListExternalServiceFields
     editingDisabled: boolean
-    isSourcegraphApp: boolean
 }
 
-export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editingDisabled, isSourcegraphApp }) => {
+export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editingDisabled }) => {
     const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
     const client = useApolloClient()
     const onDelete = useCallback<React.MouseEventHandler>(async () => {
@@ -81,12 +79,7 @@ export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editin
                         <strong>
                             <Link to={`/site-admin/external-services/${node.id}`}>{node.displayName}</Link>{' '}
                             <small className="text-muted">
-                                ({node.repoCount}
-                                {isSourcegraphApp ? (isAppLocalFileService(node) ? ' of ∞' : ' of 10') : ''}{' '}
-                                {isSourcegraphApp
-                                    ? 'repositories'
-                                    : pluralize('repository', node.repoCount, 'repositories')}
-                                )
+                                ({node.repoCount} {pluralize('repository', node.repoCount, 'repositories')})
                             </small>
                         </strong>
                         <br />

@@ -33,7 +33,7 @@ var defaultIndexerSHAs = map[string]string{
 	"sourcegraph/scip-rust":       "sha256:e9c400fd1d3146cd9a3d98f89c6d9a70e0a116618057e0dac452219b1c60b658",
 	"sourcegraph/scip-java":       "sha256:964a45ef06b7d914729b1c61b6907b662fc54545b188881c6d25e56fcc8dfb8c",
 	"sourcegraph/scip-python":     "sha256:4cb64c4f62cfa611fcb217581073c2831fb9350bbb1c8e855f152cc4b3428a00",
-	"sourcegraph/scip-typescript": "sha256:2eb90bf6d52f86608b6a723e14079eafed54121419bfd0129bf61a09e1a0f293",
+	"sourcegraph/scip-typescript": "sha256:1851ad42b3b47c8fb240c5060b5757cf51ebeece5e360013e41ab8a1dd05d52c",
 	"sourcegraph/scip-ruby":       "sha256:e553fee039973cda8726d4c8c13cdbb851f82a6fca5daa15798a595ee4042906",
 }
 

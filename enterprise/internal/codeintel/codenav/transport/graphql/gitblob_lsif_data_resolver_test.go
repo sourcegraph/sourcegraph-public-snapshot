@@ -14,7 +14,6 @@ import (
 
 func TestRanges(t *testing.T) {
 	mockCodeNavService := NewMockCodeNavService()
-	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
 
@@ -27,9 +26,9 @@ func TestRanges(t *testing.T) {
 
 	resolver := NewGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
+		nil,
 		nil,
 		nil,
 		nil,
@@ -56,7 +55,6 @@ func TestRanges(t *testing.T) {
 }
 
 func TestDefinitions(t *testing.T) {
-	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
 	mockCodeNavService := NewMockCodeNavService()
@@ -69,9 +67,9 @@ func TestDefinitions(t *testing.T) {
 
 	resolver := NewGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
+		nil,
 		nil,
 		nil,
 		nil,
@@ -98,7 +96,6 @@ func TestDefinitions(t *testing.T) {
 }
 
 func TestReferences(t *testing.T) {
-	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
 	mockCodeNavService := NewMockCodeNavService()
@@ -111,9 +108,9 @@ func TestReferences(t *testing.T) {
 
 	resolver := NewGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
+		nil,
 		nil,
 		nil,
 		nil,
@@ -159,7 +156,6 @@ func TestReferences(t *testing.T) {
 }
 
 func TestReferencesDefaultLimit(t *testing.T) {
-	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
 	mockCodeNavService := NewMockCodeNavService()
@@ -172,9 +168,9 @@ func TestReferencesDefaultLimit(t *testing.T) {
 
 	resolver := NewGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
+		nil,
 		nil,
 		nil,
 		nil,
@@ -205,7 +201,6 @@ func TestReferencesDefaultLimit(t *testing.T) {
 }
 
 func TestReferencesDefaultIllegalLimit(t *testing.T) {
-	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
 	mockCodeNavService := NewMockCodeNavService()
@@ -218,9 +213,9 @@ func TestReferencesDefaultIllegalLimit(t *testing.T) {
 
 	resolver := NewGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
+		nil,
 		nil,
 		nil,
 		nil,
@@ -245,7 +240,6 @@ func TestReferencesDefaultIllegalLimit(t *testing.T) {
 }
 
 func TestHover(t *testing.T) {
-	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
 	mockCodeNavService := NewMockCodeNavService()
@@ -258,9 +252,9 @@ func TestHover(t *testing.T) {
 
 	resolver := NewGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
+		nil,
 		nil,
 		nil,
 		nil,
@@ -288,7 +282,6 @@ func TestHover(t *testing.T) {
 }
 
 func TestDiagnostics(t *testing.T) {
-	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
 	mockCodeNavService := NewMockCodeNavService()
@@ -301,9 +294,9 @@ func TestDiagnostics(t *testing.T) {
 
 	resolver := NewGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
+		nil,
 		nil,
 		nil,
 		nil,
@@ -331,7 +324,6 @@ func TestDiagnostics(t *testing.T) {
 }
 
 func TestDiagnosticsDefaultLimit(t *testing.T) {
-	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
 	mockCodeNavService := NewMockCodeNavService()
@@ -344,9 +336,9 @@ func TestDiagnosticsDefaultLimit(t *testing.T) {
 
 	resolver := NewGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
+		nil,
 		nil,
 		nil,
 		nil,
@@ -373,7 +365,6 @@ func TestDiagnosticsDefaultLimit(t *testing.T) {
 }
 
 func TestDiagnosticsDefaultIllegalLimit(t *testing.T) {
-	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
 	mockCodeNavService := NewMockCodeNavService()
@@ -386,9 +377,9 @@ func TestDiagnosticsDefaultIllegalLimit(t *testing.T) {
 
 	resolver := NewGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
+		nil,
 		nil,
 		nil,
 		nil,

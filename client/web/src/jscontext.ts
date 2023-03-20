@@ -139,10 +139,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /**
      * A subset of the site configuration. Not all fields are set.
      */
-    site: Pick<
-        SiteConfiguration,
-        'auth.public' | 'update.channel' | 'disableNonCriticalTelemetry' | 'authz.enforceForSiteAdmins'
-    >
+    site: Pick<SiteConfiguration, 'auth.public' | 'update.channel' | 'authz.enforceForSiteAdmins'>
 
     /** Whether access tokens are enabled. */
     accessTokensAllow: 'all-users-create' | 'site-admin-create' | 'none'
@@ -267,6 +264,13 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Whether the feedback survey is enabled. */
     disableFeedbackSurvey?: boolean
+
+    /**
+     * Total amount of connected local repositories, it's only related to
+     * Sourcegraph App, common instance will always have this setting with 0
+     */
+    totalLocalRepositories: number
+    totalRemoteRepositories: number
 }
 
 export interface BrandAssets {
