@@ -223,7 +223,7 @@ export const TreePage: FC<Props> = ({
                             {displayRepoName(repo?.name || '')}
                         </span>
                         {repo?.isFork && (
-                            <Badge variant="outlineSecondary" className="mr-2 mt-2 ml-2" data-testid="repo-fork-badge">
+                            <Badge variant="outlineSecondary" className="mx-2 mt-2" data-testid="repo-fork-badge">
                                 Fork
                             </Badge>
                         )}
