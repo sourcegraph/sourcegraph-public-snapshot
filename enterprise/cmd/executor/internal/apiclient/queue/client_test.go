@@ -24,6 +24,35 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func TestNew_CACerts(t *testing.T) {
+	options := queue.Options{
+		ExecutorName: "deadbeef",
+		QueueName:    "test_queue",
+		BaseClientOptions: apiclient.BaseClientOptions{
+			ExecutorName: "deadbeef",
+			EndpointOptions: apiclient.EndpointOptions{
+				URL:        "http://does-not-exist-executor-site",
+				PathPrefix: "/.executors/queue",
+				Token:      "hunter2",
+			},
+			CACertificate: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURKakNDQWc0Q0NRQ0Y2Z3VmaldZbXZEQU5CZ2txaGtpRzl3MEJBUXNGQURCVk1Rc3dDUVlEVlFRR0V3SlYKVXpFTE1Ba0dBMVVFQ0F3Q1EwOHhEekFOQmdOVkJBY01Ca1JsYm5abGNqRVVNQklHQTFVRUNnd0xVMjkxY21ObApaM0poY0dneEVqQVFCZ05WQkFzTUNXVjRaV04xZEc5eWN6QWVGdzB5TXpBek1qQXlNVE16TXpaYUZ3MHlOREF6Ck1Ua3lNVE16TXpaYU1GVXhDekFKQmdOVkJBWVRBbFZUTVFzd0NRWURWUVFJREFKRFR6RVBNQTBHQTFVRUJ3d0cKUkdWdWRtVnlNUlF3RWdZRFZRUUtEQXRUYjNWeVkyVm5jbUZ3YURFU01CQUdBMVVFQ3d3SlpYaGxZM1YwYjNKegpNSUlCSWpBTkJna3Foa2lHOXcwQkFRRUZBQU9DQVE4QU1JSUJDZ0tDQVFFQXdITmUweHBMK21vUWMyK3ZUZy9tCk5STDZvYWNKOGsrTFJTWS9yNjlOUTJjME1Gb3ZoRjQvcEVSNmNDS1p0M0pzdVVhK0hWcFUrdEEybXZEQ1RrWFIKOHZuUmY0T3dSOEQvSDdMMEdDeXZDVmVQQVFROHFOVExCQVh4NTRCK2hDUW1LTTJJVmZRVFM2RnhqbGFaYVR5RgovanBsbFN3TUo2a3h3K3M2NHlHczZwTmdhczRMNjlBNXBkWlpxKzlZeW02eEZocjA4MWxaa21oSjhyWkU2WmN0CmptUzJ6UjVVdGlmQWhYMXBGRURHNVY2OWRXbTdOVzhZY3drNUdtOGh5ZVdRQzZGandBeGhMalJpZzVaQ3luRFYKbkd2ZG05MGRzK3hqVnpLSUR6cGdaZHdWZ0xhTWVGcTlsMUxqVytHbjNPRHJJd0wwRWp2VHpMa1BHSHA3Y1cvbQpvd0lEQVFBQk1BMEdDU3FHU0liM0RRRUJDd1VBQTRJQkFRQ0ZhUXJQWGJuaVNDbmpwNUduc2ZvTFpCcUtnMFg1CnBpSzZIS0dWblhKK3U5YTRqTTdrRWJnWTBUcFdtb2I5bDhud09rd2o2NkFlUDJWRnBkZkhGYU9Oc3FDS0Z4ZXcKNCtRekNSQ1o4UGh2ZE1hWVpJdmdUdUZackx2QmZMYVlqVWhpOEJRTEVWMkE0N085NnJKdTdLKy9kK0QzS09nSQptdnRGYllqVDY1Zzd4NmJDZ3lyOEZOTGUyWlA2eVE4YVlDRUl4VysydjlxRkV2TGk4b25yeEtqajcrSFdmQnV1CkoxMzg0VS9FUEpybjhaZ0hBZEJkbG9iT09QOE51Z3BSOWRHR1R0dFYrWGhZRnQ0K2xOTm9vNmc2ZHB6QzBwR1IKOWdHMUlOSXpJd0ZoSDNMSlRybTV3a1pMVTFDZGt1VDBvZ2kzTEF1MnFzU2xZS2RBdks1emZZa3cKLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=",
+		},
+		TelemetryOptions: queue.TelemetryOptions{
+			OS:              "test-os",
+			Architecture:    "test-architecture",
+			DockerVersion:   "test-docker-version",
+			ExecutorVersion: "test-executor-version",
+			GitVersion:      "test-git-version",
+			IgniteVersion:   "test-ignite-version",
+			SrcCliVersion:   "test-src-cli-version",
+		},
+	}
+
+	client, err := queue.New(&observation.TestContext, options, prometheus.GathererFunc(func() ([]*dto.MetricFamily, error) { return nil, nil }))
+	require.NoError(t, err)
+	require.NotNil(t, client)
+}
+
 func TestClient_Dequeue(t *testing.T) {
 	tests := []struct {
 		name        string

@@ -89,15 +89,14 @@ func NewBaseClient(options BaseClientOptions) (*BaseClient, error) {
 	}
 
 	client := httpcli.InternalClient
-
 	if len(options.CACertificate) > 0 {
 		decodedCACerts, err := base64.StdEncoding.DecodeString(options.CACertificate)
+		client, err = httpcli.InternalClientFactory.Client(httpcli.NewCertPoolOpt(string(decodedCACerts)))
 		if err != nil {
 			return nil, err
 		}
-		if err = httpcli.NewCertPoolOpt(string(decodedCACerts))(client); err != nil {
-			return nil, err
-		}
+	} else {
+		client = httpcli.InternalClient
 	}
 
 	return &BaseClient{
