@@ -127,16 +127,15 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
 
 const webhooksGroup: SiteAdminSideBarGroup = {
     header: { label: 'Webhooks', icon: WebhookIcon },
+    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     items: [
         {
             label: 'Incoming webhooks',
             to: '/site-admin/webhooks/incoming',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Outgoing webhooks',
             to: '/site-admin/webhooks/outgoing',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
     ],
 }
