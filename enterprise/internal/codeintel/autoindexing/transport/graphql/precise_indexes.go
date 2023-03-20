@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/opentracing/opentracing-go/log"
 
 	autoindexingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
@@ -498,8 +497,8 @@ func unmarshalPreciseIndexGQLID(id graphql.ID) (uploadID, indexID int, err error
 var errExpectedPairs = errors.New("expected pairs of `U:<id>`, `I:<id>`")
 
 func unmarshalRawPreciseIndexGQLID(id graphql.ID) (uploadID, indexID int, err error) {
-	var rawPayload string
-	if err := relay.UnmarshalSpec(id, &rawPayload); err != nil {
+	rawPayload, err := resolverstubs.UnmarshalID[string](id)
+	if err != nil {
 		return 0, 0, errors.Wrap(err, "unexpected precise index ID")
 	}
 
