@@ -1,47 +1,49 @@
 import * as vscode from 'vscode'
 
+import { CodebaseContext } from '../codebase-context'
 import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../command/secret-storage'
 import { updateConfiguration } from '../configuration'
+import { Editor } from '../editor'
 import { VSCodeEditor } from '../editor/vscode-editor'
-import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
+import { configureExternalServices } from '../external-services'
+import { IntentDetector } from '../intent-detector'
 import { getRgPath } from '../rg'
 import { Message } from '../sourcegraph-api'
 import { TestSupport } from '../test-support'
 
 import { ChatClient } from './chat'
-import { configureExternalServices } from './external-services'
 import { renderMarkdown } from './markdown'
-import { Transcript } from './prompt'
-
-export interface ChatMessage extends Message {
-    displayText: string
-    timestamp: string
-    contextFiles?: string[]
-}
+import { getRecipe } from './recipes'
+import { Transcript } from './transcript'
+import { ChatMessage } from './transcript/messages'
 
 // If the bot message ends with some prefix of the `Human:` stop
 // sequence, trim if from the end.
 const STOP_SEQUENCE_REGEXP = /(H|Hu|Hum|Huma|Human|Human:)$/
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
-    private transcript: ChatMessage[] = []
-    private messageInProgress: ChatMessage | null = null
-
+    private isMessageInProgress = false
     private cancelCompletionCallback: (() => void) | null = null
     private webview?: vscode.Webview
 
     private tosVersion = 0
+    private editor: Editor
 
     constructor(
         private extensionPath: string,
-        private prompt: Transcript,
+        private transcript: Transcript,
         private chat: ChatClient,
+        private intentDetector: IntentDetector,
+        private codebaseContext: CodebaseContext,
         private secretStorage: SecretStorage,
+        private contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
+        private rgPath: string,
         private mode: 'development' | 'production'
     ) {
         if (TestSupport.instance) {
             TestSupport.instance.chatViewProvider.set(this)
         }
+        this.editor = new VSCodeEditor()
     }
 
     static async create(
@@ -53,54 +55,47 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         secretStorage: SecretStorage
     ): Promise<ChatViewProvider> {
         const mode = debug ? 'development' : 'production'
+        const rgPath = await getRgPath(extensionPath)
 
-        const { intentDetector, embeddings, chatClient } = await configureExternalServices(
+        const { intentDetector, codebaseContext, chatClient } = await configureExternalServices(
+            contextType,
             codebase,
+            rgPath,
             serverEndpoint,
             secretStorage,
             mode
         )
 
-        const rgPath = await getRgPath(extensionPath)
-
-        const prompt = new Transcript(
-            contextType,
-            embeddings,
+        return new ChatViewProvider(
+            extensionPath,
+            new Transcript(),
+            chatClient,
             intentDetector,
-            new LocalKeywordContextFetcher(rgPath),
-            new VSCodeEditor()
+            codebaseContext,
+            secretStorage,
+            contextType,
+            rgPath,
+            mode
         )
-
-        return new ChatViewProvider(extensionPath, prompt, chatClient, secretStorage, mode)
     }
 
     private async onDidReceiveMessage(message: any, webview: vscode.Webview): Promise<void> {
         switch (message.command) {
             case 'initialized':
-                await Promise.all([
-                    this.sendTranscript(),
-                    webview?.postMessage({
-                        type: 'token',
-                        value: await getAccessToken(this.secretStorage),
-                        mode: this.mode,
-                    }),
-                ])
+                this.sendToken()
+                this.sendTranscript()
                 break
             case 'reset':
-                await this.onResetChat()
+                this.onResetChat()
                 break
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text)
                 break
             case 'executeRecipe':
-                await vscode.commands.executeCommand('cody.chat.focus')
                 await this.executeRecipe(message.recipe)
                 break
             case 'acceptTOS':
                 await this.acceptTOS(message.version)
-                break
-            case 'setToken':
-                await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.value)
                 break
             case 'settings':
                 await updateConfiguration('serverEndpoint', message.serverEndpoint)
@@ -139,75 +134,45 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         this.cancelCompletionCallback = null
     }
 
-    private async onResetChat(): Promise<void> {
+    private onResetChat(): void {
         this.cancelCompletion()
-        this.messageInProgress = null
-        this.transcript = []
-        this.prompt.reset()
-        await this.sendTranscript()
-    }
-
-    private async onNewMessageSubmitted(text: string): Promise<void> {
-        this.messageInProgress = {
-            speaker: 'assistant',
-            text: '',
-            displayText: '',
-            timestamp: getShortTimestamp(),
-        }
-
-        this.transcript.push({
-            speaker: 'human',
-            text,
-            displayText: renderMarkdown(text),
-            timestamp: getShortTimestamp(),
-        })
-
-        await this.sendTranscript()
+        this.isMessageInProgress = false
+        this.transcript.reset()
+        this.sendTranscript()
     }
 
     private async onHumanMessageSubmitted(text: string): Promise<void> {
-        if (this.messageInProgress) {
-            return
-        }
-        await this.onNewMessageSubmitted(text)
-        const prompt = await this.prompt.addHumanMessage(text)
-        await this.sendPrompt(prompt)
+        this.executeRecipe('chat-question', text)
     }
 
-    public async executeRecipe(recipeId: string): Promise<void> {
-        if (this.messageInProgress) {
+    public async executeRecipe(recipeId: string, humanChatInput: string = ''): Promise<void> {
+        if (this.isMessageInProgress) {
             await vscode.window.showErrorMessage(
                 'Cannot execute multiple recipes. Please wait for the current recipe to finish.'
             )
         }
-
-        const messageInfo = await this.prompt.resetToRecipe(recipeId)
-        if (!messageInfo) {
-            console.error('unrecognized recipe prompt:', recipeId)
+        const recipe = getRecipe(recipeId)
+        if (!recipe) {
             return
         }
-        const { display, prompt, botResponsePrefix } = messageInfo
 
-        await this.showTab('ask')
-
-        this.messageInProgress = {
-            speaker: 'assistant',
-            text: '',
-            displayText: '',
-            timestamp: getShortTimestamp(),
-        }
-        this.transcript.push(
-            ...display.map(({ speaker, text }) => ({
-                speaker,
-                text,
-                displayText: renderMarkdown(text),
-                timestamp: getShortTimestamp(),
-            }))
+        const interaction = await recipe.getInteraction(
+            humanChatInput,
+            this.editor,
+            this.intentDetector,
+            this.codebaseContext
         )
+        if (!interaction) {
+            return
+        }
+        this.isMessageInProgress = true
+        this.transcript.addInteraction(interaction)
 
-        await this.sendTranscript()
+        this.showTab('chat')
+        this.sendTranscript()
 
-        return this.sendPrompt(prompt, botResponsePrefix)
+        const prompt = await this.transcript.toPrompt()
+        this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
     }
 
     private reformatBotMessage(text: string, prefix: string): string {
@@ -222,44 +187,34 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     }
 
     private onBotMessageChange(text: string): void {
-        this.messageInProgress = {
-            speaker: 'assistant',
-            text,
-            displayText: renderMarkdown(text),
-            timestamp: getShortTimestamp(),
-            contextFiles: this.prompt.getLastContextFiles(),
-        }
-
-        this.sendTranscript().catch(error => console.error(error))
+        this.transcript.addAssistantResponse(text, renderMarkdown(text))
+        this.sendTranscript()
     }
 
     private async onBotMessageComplete(): Promise<void> {
-        if (this.messageInProgress) {
-            this.transcript.push({
-                speaker: 'assistant',
-                text: this.messageInProgress.text,
-                displayText: this.messageInProgress.displayText,
-                timestamp: getShortTimestamp(),
-                contextFiles: this.prompt.getLastContextFiles(),
-            })
-            this.prompt.addBotMessage(this.messageInProgress.text)
-        }
-
-        this.messageInProgress = null
+        this.isMessageInProgress = false
         this.cancelCompletionCallback = null
-
-        await this.sendTranscript()
+        this.sendTranscript()
     }
 
     private async showTab(tab: string): Promise<void> {
+        await vscode.commands.executeCommand('cody.chat.focus')
         await this.webview?.postMessage({ type: 'showTab', tab })
     }
 
-    private async sendTranscript(): Promise<void> {
-        await this.webview?.postMessage({
+    private sendTranscript(): void {
+        this.webview?.postMessage({
             type: 'transcript',
-            messages: this.transcript,
-            messageInProgress: this.messageInProgress,
+            messages: this.transcript.toChat(),
+            isMessageInProgress: this.isMessageInProgress,
+        })
+    }
+
+    private async sendToken(): Promise<void> {
+        this.webview?.postMessage({
+            type: 'token',
+            value: await getAccessToken(this.secretStorage),
+            mode: this.mode,
         })
     }
 
@@ -297,27 +252,29 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message, webviewView.webview))
     }
 
-    public transcriptForTesting(testing: TestSupport): ChatMessage[] {
+    public async transcriptForTesting(testing: TestSupport): Promise<ChatMessage[]> {
         if (!testing) {
             console.error('used ForTesting method without test support object')
             return []
         }
-        return this.transcript
+        return this.transcript.toChat()
     }
 
     public async onConfigChange(change: string, codebase: string, serverEndpoint: string): Promise<void> {
         switch (change) {
             case 'token':
             case 'endpoint': {
-                const { intentDetector, embeddings, chatClient } = await configureExternalServices(
+                const { intentDetector, codebaseContext, chatClient } = await configureExternalServices(
+                    this.contextType,
                     codebase,
+                    this.rgPath,
                     serverEndpoint,
                     this.secretStorage,
                     this.mode
                 )
 
-                this.prompt.setEmbeddings(embeddings)
-                this.prompt.setIntentDetector(intentDetector)
+                this.intentDetector = intentDetector
+                this.codebaseContext = codebaseContext
                 this.chat = chatClient
 
                 vscode.window.showInformationMessage('Cody configuration has been updated.')
@@ -333,15 +290,6 @@ function fixOpenMarkdownCodeBlock(text: string): string {
         return text + '\n```'
     }
     return text
-}
-
-function padTimePart(timePart: number): string {
-    return timePart < 10 ? `0${timePart}` : timePart.toString()
-}
-
-function getShortTimestamp(): string {
-    const date = new Date()
-    return `${padTimePart(date.getHours())}:${padTimePart(date.getMinutes())}`
 }
 
 function getNonce(): string {

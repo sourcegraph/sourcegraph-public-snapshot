@@ -1,10 +1,11 @@
+import { SOLUTION_TOKEN_LENGTH } from '../prompt/constants'
 import { Message } from '../sourcegraph-api'
 import { SourcegraphCompletionsClient, CompletionParameters } from '../sourcegraph-api/completions'
 import { CompletionCallbacks } from '../sourcegraph-api/completions/types'
 
-export const DEFAULT_CHAT_COMPLETION_PARAMETERS: Omit<CompletionParameters, 'messages'> = {
+const DEFAULT_CHAT_COMPLETION_PARAMETERS: Omit<CompletionParameters, 'messages'> = {
     temperature: 0.2,
-    maxTokensToSample: 1000,
+    maxTokensToSample: SOLUTION_TOKEN_LENGTH,
     topK: -1,
     topP: -1,
 }
