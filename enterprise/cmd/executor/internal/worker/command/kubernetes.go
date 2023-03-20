@@ -207,6 +207,21 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 			Value: parts[1],
 		}
 	}
+	var affinity *corev1.Affinity
+	if len(options.RequiredNodeAffinity.MatchExpressions) > 0 || len(options.RequiredNodeAffinity.MatchFields) > 0 {
+		affinity = &corev1.Affinity{
+			NodeAffinity: &corev1.NodeAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+					NodeSelectorTerms: []corev1.NodeSelectorTerm{
+						{
+							MatchExpressions: options.RequiredNodeAffinity.MatchExpressions,
+							MatchFields:      options.RequiredNodeAffinity.MatchFields,
+						},
+					},
+				},
+			},
+		}
+	}
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
@@ -214,20 +229,9 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
-					NodeName:     options.NodeName,
-					NodeSelector: options.NodeSelector,
-					Affinity: &corev1.Affinity{
-						NodeAffinity: &corev1.NodeAffinity{
-							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-								NodeSelectorTerms: []corev1.NodeSelectorTerm{
-									{
-										MatchExpressions: options.RequiredNodeAffinity.MatchExpressions,
-										MatchFields:      options.RequiredNodeAffinity.MatchFields,
-									},
-								},
-							},
-						},
-					},
+					NodeName:      options.NodeName,
+					NodeSelector:  options.NodeSelector,
+					Affinity:      affinity,
 					RestartPolicy: corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
 						{
