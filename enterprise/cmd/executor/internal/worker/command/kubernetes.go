@@ -32,9 +32,17 @@ const KubernetesMountPath = "/data"
 type KubernetesContainerOptions struct {
 	Namespace             string
 	NodeName              string
+	NodeSelector          map[string]string
+	RequiredNodeAffinity  KubernetesNodeAffinity
 	PersistenceVolumeName string
 	ResourceLimit         KubernetesResource
 	ResourceRequest       KubernetesResource
+}
+
+// KubernetesNodeAffinity contains the Kubernetes node affinity for a Job.
+type KubernetesNodeAffinity struct {
+	MatchExpressions []corev1.NodeSelectorRequirement
+	MatchFields      []corev1.NodeSelectorRequirement
 }
 
 // KubernetesResource contains the CPU and memory resources for a Kubernetes Job.
@@ -206,7 +214,20 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
-					NodeName:      options.NodeName,
+					NodeName:     options.NodeName,
+					NodeSelector: options.NodeSelector,
+					Affinity: &corev1.Affinity{
+						NodeAffinity: &corev1.NodeAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+								NodeSelectorTerms: []corev1.NodeSelectorTerm{
+									{
+										MatchExpressions: options.RequiredNodeAffinity.MatchExpressions,
+										MatchFields:      options.RequiredNodeAffinity.MatchFields,
+									},
+								},
+							},
+						},
+					},
 					RestartPolicy: corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
 						{
