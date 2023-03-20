@@ -28,6 +28,7 @@ NON_BUNDLED_DEPS = [
 
 def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs):
     bundle_name = "%s_bundle" % name
+    mocha_name = "%s_mocha" % name
 
     # Bundle the tests to remove the use of esm modules in tests
     esbuild(
@@ -48,35 +49,51 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs)
         },
     )
 
+    args = [
+        "--config",
+        "$(location //:mocha_config)",
+        "$(location :%s)/**/*.test.js" % bundle_name,
+    ] + args
+
+    args_data = [
+        "//:mocha_config",
+        ":%s" % bundle_name,
+    ]
+
+    env = dict(env, **{
+        # Add environment variable so that mocha writes its test xml
+        # to the location Bazel expects.
+        "MOCHA_FILE": "$$XML_OUTPUT_FILE",
+
+        # TODO(bazel): e2e test environment
+        "TEST_USER_EMAIL": "test@sourcegraph.com",
+        "TEST_USER_PASSWORD": "supersecurepassword",
+        "SOURCEGRAPH_BASE_URL": "https://sourcegraph.test:3443",
+        "GH_TOKEN": "fake-gh-token",
+        "SOURCEGRAPH_SUDO_TOKEN": "fake-sg-token",
+        "NO_CLEANUP": "true",
+        "KEEP_BROWSER": "true",
+        "DEVTOOLS": "true",
+        "BROWSER": "chrome",
+
+        # Puppeteer config
+        "DISPLAY": "99",
+    })
+
     bin.mocha_test(
-        name = name,
-        args = [
-            "--config",
-            "$(location //:mocha_config)",
-            "$(location :%s)/**/*.test.js" % bundle_name,
-        ] + args,
-        data = data + deps + [
-            ":%s" % bundle_name,
-            "//:mocha_config",
-        ] + NON_BUNDLED_DEPS,
-        env = dict(env, **{
-            # Add environment variable so that mocha writes its test xml
-            # to the location Bazel expects.
-            "MOCHA_FILE": "$$XML_OUTPUT_FILE",
-
-            # TODO(bazel): e2e test environment
-            "TEST_USER_EMAIL": "test@sourcegraph.com",
-            "TEST_USER_PASSWORD": "supersecurepassword",
-            "SOURCEGRAPH_BASE_URL": "https://sourcegraph.test:3443",
-            "GH_TOKEN": "fake-gh-token",
-            "SOURCEGRAPH_SUDO_TOKEN": "fake-sg-token",
-            "NO_CLEANUP": "true",
-            "KEEP_BROWSER": "true",
-            "DEVTOOLS": "true",
-            "BROWSER": "chrome",
-
-            # Puppeteer config
-            "DISPLAY": "99",
-        }),
+        name = mocha_name,
+        args = args,
+        data = data + deps + args_data + NON_BUNDLED_DEPS,
+        env = env,
         **kwargs
+    )
+
+    #
+    native.sh_test(
+        name = name,
+        srcs = ["//dev:mocha-xvfb.sh"],
+        args = ["$(location :%s)" % mocha_name] + args,
+        data = args_data + [":%s" % mocha_name],
+        env = env,
+        tags = ["requires-network"],
     )

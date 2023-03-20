@@ -100,21 +100,7 @@ ts_project(
 )
 
 mocha_test(
-    name = "integration-tests",
+    name = "test",
     tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
     deps = [":integration_tests"],
-)
-
-sh_test(
-  name = "wrapper_test",
-  data = [
-    ":integration-tests",
-  ],
-  srcs = [
-    "wrapper.sh",
-  ],
-  args = [
-    "$(location :integration-tests)",
-  ],
-  tags = ["requires-network"],
 )

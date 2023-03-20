@@ -6,5 +6,8 @@
 
 /usr/X11/bin/Xvfb ":99" -screen 0 1280x1024x24 &
 
-echo "Running: $1"
-"$1" || exit 1
+cmd=$1
+shift
+
+echo "Running: '$cmd'"
+"$cmd" $@ || exit 1
