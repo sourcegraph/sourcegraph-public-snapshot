@@ -250,8 +250,11 @@ Internal rate limiter settings are described on each code host configuration pag
 #### Less users than repositories
 If there are a lot less users, than repositories, it is better to rely on user-centric perms sync instead of repo-centric sync. In that case, we recommend:
 ```json
+{
+  // ...
   "permissions.syncOldestUsers": 20,
-  "permissions.syncOldestRepos": 1,
+  "permissions.syncOldestRepos": 1
+}
 ```
 
 This configuration change will schedule `20` users on each scheduler iteration and just `1` repository. That 
@@ -271,8 +274,11 @@ If the situation is reversed, it is recommended to do the opposite than above. P
 permission sync in these situations:
 
 ```json
+{
+  // ...
   "permissions.syncOldestUsers": 1,
-  "permissions.syncOldestRepos": 20,
+  "permissions.syncOldestRepos": 20
+}
 ```
 
 **Example**

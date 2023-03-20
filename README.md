@@ -1,9 +1,10 @@
-<a href="https://about.sourcegraph.com/sourcegraph-4" target="_blank">
-  <picture>
-    <source srcset="https://p21.p4.n0.cdn.getcloudapp.com/items/xQuxo7AA/a9e1873b-c7b2-4295-b96a-dd21c992eb63.svg" media="(prefers-color-scheme: dark)">
-    <img src="https://p21.p4.n0.cdn.getcloudapp.com/items/ApuDmzGr/822118fe-e5e6-4f37-8c17-8b406437ad03.svg" alt="Sourcegraph 4.0" width="100%">
-  </picture>
-</a>
+<p align="center">
+<a href="https://about.sourcegraph.com/" target="_blank">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://p21.p4.n0.cdn.getcloudapp.com/items/6qub2y6g/8c25cf68-2715-4f0e-9de6-26292fad604f.svg" width="50%">
+  <img src="https://p21.p4.n0.cdn.getcloudapp.com/items/12u7NWXL/5e21725d-6e84-4ccd-8300-27bf9a050416.svg" width="50%">
+</picture></a>
+</p>
 
 <p align="center">
     <a href="https://docs.sourcegraph.com">Docs</a> •

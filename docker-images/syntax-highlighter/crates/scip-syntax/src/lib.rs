@@ -5,7 +5,6 @@ use scip_treesitter_languages::parsers::BundledParser;
 pub mod languages;
 pub mod locals;
 pub mod matches;
-pub mod snapshot;
 pub mod ts_scip;
 
 pub fn get_locals(parser: BundledParser, source_bytes: &[u8]) -> Option<Result<Vec<Occurrence>>> {

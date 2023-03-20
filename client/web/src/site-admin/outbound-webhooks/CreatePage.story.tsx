@@ -11,7 +11,7 @@ import { eventTypesMock } from './mocks'
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
-    title: 'web/site-admin/outbound-webhooks/CreatePage',
+    title: 'web/site-admin/webhooks/outgoing/CreatePage',
     decorators: [decorator],
 }
 

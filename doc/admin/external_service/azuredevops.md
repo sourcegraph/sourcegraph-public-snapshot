@@ -44,7 +44,7 @@ Azure DevOps connections support the following configuration options, which are 
 
 ## Webhooks
 
-Please consult [this page](../config/webhooks.md) in order to configure webhooks.
+Please consult [this page](../config/webhooks/incoming.md) in order to configure webhooks.
 
 ## Permissions syncing
 
@@ -61,7 +61,7 @@ Please consult [this page](../config/webhooks.md) in order to configure webhooks
    }
    ```
 
-4. For each Azure DevOps organization that is part of the `orgs` or `projects` list in the code host configuration, enable `Third-party application access via OAuth` from `Organization settings` -> `Security` -> `Policies`
+4. For each Azure DevOps organization that is part of the `orgs` or `projects` list in the code host configuration, enable **Third-party application access via OAuth** from **Organization settings > Security > Policies**
 
 ![Enable Third-party application access via OAuth](https://storage.googleapis.com/sourcegraph-assets/docs/images/admin/config/azure-devops-organization-enable-oauth-access.png)
 

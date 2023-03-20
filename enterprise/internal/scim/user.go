@@ -68,7 +68,7 @@ func NewUserResourceHandler(ctx context.Context, observationCtx *observation.Con
 func getUserFromDB(ctx context.Context, store database.UserStore, idStr string) (*types.UserForSCIM, error) {
 	id, err := strconv.ParseInt(idStr, 10, 32)
 	if err != nil {
-		return nil, scimerrors.ScimError{Status: http.StatusBadRequest, Detail: "invalid user id"}
+		return nil, scimerrors.ScimErrorResourceNotFound(idStr)
 	}
 
 	users, err := store.ListForSCIM(ctx, &database.UsersListOptions{

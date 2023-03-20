@@ -22,9 +22,9 @@ http_archive(
 
 http_archive(
     name = "aspect_rules_js",
-    sha256 = "1aa0ab76d1f9520bb8993e2d84f82da2a9c87da1e6e8d121dbb4c857a292c2cd",
-    strip_prefix = "rules_js-1.20.1",
-    url = "https://github.com/aspect-build/rules_js/releases/download/v1.20.1/rules_js-v1.20.1.tar.gz",
+    sha256 = "a592fafd8a27b2828318cebbda0003686c6da3318df366b563e8beeffa05a02c",
+    strip_prefix = "rules_js-1.21.0",
+    url = "https://github.com/aspect-build/rules_js/releases/download/v1.21.0/rules_js-v1.21.0.tar.gz",
 )
 
 http_archive(
@@ -146,11 +146,12 @@ esbuild_register_toolchains(
 )
 
 # rules_webpack setup ===========================
+# Commit to include unreleased https://github.com/aspect-build/rules_webpack/commit/4a5f04a4bc504f71d32825124c7872ff721aa1b0
 http_archive(
     name = "aspect_rules_webpack",
-    sha256 = "4f30fb310d625a4045e37b9e04afb2366c56b547a73c935f308e3d9c31b77519",
-    strip_prefix = "rules_webpack-0.9.1",
-    url = "https://github.com/aspect-build/rules_webpack/releases/download/v0.9.1/rules_webpack-v0.9.1.tar.gz",
+    sha256 = "8d81f8d018127c72270ea4b7287be5c4ff63d9656a34334c305d52f14e0c922f",
+    strip_prefix = "rules_webpack-4a5f04a4bc504f71d32825124c7872ff721aa1b0",
+    url = "https://github.com/aspect-build/rules_webpack/archive/4a5f04a4bc504f71d32825124c7872ff721aa1b0.tar.gz",
 )
 
 load("@aspect_rules_webpack//webpack:dependencies.bzl", "rules_webpack_dependencies")
@@ -216,7 +217,6 @@ protobuf_deps()
 
 # rust toolchain setup
 load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 rules_rust_dependencies()
 

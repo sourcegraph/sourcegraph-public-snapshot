@@ -6,6 +6,7 @@ package defaults
 
 import (
 	"context"
+	"runtime/debug"
 	"strings"
 	"sync"
 
@@ -30,6 +31,7 @@ func Dial(addr string, additionalOpts ...grpc.DialOption) (*grpc.ClientConn, err
 
 // DialContext creates a client connection to the given target with the default options.
 func DialContext(ctx context.Context, addr string, additionalOpts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	log.Scoped("grpc", "").Info("dialing gRPC", log.String("stack", string(debug.Stack())))
 	return grpc.DialContext(ctx, addr, append(DialOptions(), additionalOpts...)...)
 }
 
