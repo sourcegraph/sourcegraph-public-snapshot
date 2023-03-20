@@ -42,7 +42,7 @@ Administration is usually handled by site administrators are the admins responsi
 - [Repository permissions](permissions/index.md)
   - [Row-level security](repo/row_level_security.md)
 - [Batch Changes](../batch_changes/how-tos/site_admin_configuration.md)
-- [Configure incoming webhooks](config/webhooks/incoming.md)
+- [Configure webhooks](config/webhooks/index.md)
 
 For deployment configuration, please refer to the relevant [installation guide](deploy/index.md).
 
