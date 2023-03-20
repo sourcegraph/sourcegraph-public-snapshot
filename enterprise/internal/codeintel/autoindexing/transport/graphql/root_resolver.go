@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -81,32 +80,6 @@ func (r *rootResolver) IndexConfiguration(ctx context.Context, id graphql.ID) (_
 	}
 
 	return NewIndexConfigurationResolver(r.autoindexSvc, r.siteAdminChecker, int(repositoryID), traceErrs), nil
-}
-
-// 🚨 SECURITY: Only site admins may modify code intelligence index data
-func (r *rootResolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (_ *resolverstubs.EmptyResponse, err error) {
-	ctx, _, endObservation := r.operations.deleteLsifIndex.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("indexID", string(args.ID)),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-	if !autoIndexingEnabled() {
-		return nil, errAutoIndexingNotEnabled
-	}
-
-	indexID, err := unmarshalLSIFIndexGQLID(args.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err := r.autoindexSvc.DeleteIndexByID(ctx, int(indexID)); err != nil {
-		return nil, err
-	}
-
-	return &resolverstubs.EmptyResponse{}, nil
 }
 
 // 🚨 SECURITY: Only site admins may infer auto-index jobs
@@ -429,50 +402,4 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 		r.prefetcherFactory.Create(),
 		errTracer,
 	), nil
-}
-
-func (r *rootResolver) GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (_ bool, _ string, err error) {
-	ctx, _, endObservation := r.operations.getSupportedByCtags.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{log.String("repoName", string(repoName))},
-	})
-	defer endObservation(1, observation.Args{})
-
-	return r.autoindexSvc.GetSupportedByCtags(ctx, filepath, repoName)
-}
-
-func (r *rootResolver) RequestLanguageSupport(ctx context.Context, args *resolverstubs.RequestLanguageSupportArgs) (_ *resolverstubs.EmptyResponse, err error) {
-	ctx, _, endObservation := r.operations.requestLanguageSupport.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	userID := int(actor.FromContext(ctx).UID)
-	if userID == 0 {
-		return nil, errors.Newf("language support requests only logged for authenticated users")
-	}
-
-	if err := r.autoindexSvc.SetRequestLanguageSupport(ctx, userID, args.Language); err != nil {
-		return nil, err
-	}
-
-	return &resolverstubs.EmptyResponse{}, nil
-}
-
-func (r *rootResolver) SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error) {
-	ctx, _, endObservation := r.operations.setRequestLanguageSupport.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{log.Int("userID", userID), log.String("language", language)},
-	})
-	defer endObservation(1, observation.Args{})
-
-	return r.autoindexSvc.SetRequestLanguageSupport(ctx, userID, language)
-}
-
-func (r *rootResolver) RequestedLanguageSupport(ctx context.Context) (_ []string, err error) {
-	ctx, _, endObservation := r.operations.requestedLanguageSupport.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	userID := int(actor.FromContext(ctx).UID)
-	if userID == 0 {
-		return nil, errors.Newf("language support requests only logged for authenticated users")
-	}
-
-	return r.autoindexSvc.GetLanguagesRequestedBy(ctx, userID)
 }

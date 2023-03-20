@@ -1,8 +1,6 @@
 package graphql
 
 import (
-	"context"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -30,20 +28,20 @@ func NewCodeIntelligenceConfigurationPolicyConnectionResolver(
 	}
 }
 
-func (r *codeIntelligenceConfigurationPolicyConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.CodeIntelligenceConfigurationPolicyResolver, error) {
+func (r *codeIntelligenceConfigurationPolicyConnectionResolver) Nodes() []resolverstubs.CodeIntelligenceConfigurationPolicyResolver {
 	resolvers := make([]resolverstubs.CodeIntelligenceConfigurationPolicyResolver, 0, len(r.policies))
 	for _, policy := range r.policies {
 		resolvers = append(resolvers, NewConfigurationPolicyResolver(r.repoStore, policy, r.errTracer))
 	}
 
-	return resolvers, nil
+	return resolvers
 }
 
-func (r *codeIntelligenceConfigurationPolicyConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {
+func (r *codeIntelligenceConfigurationPolicyConnectionResolver) TotalCount() *int32 {
 	v := int32(r.totalCount)
-	return &v, nil
+	return &v
 }
 
-func (r *codeIntelligenceConfigurationPolicyConnectionResolver) PageInfo(ctx context.Context) (resolverstubs.PageInfo, error) {
-	return HasNextPage(len(r.policies) < r.totalCount), nil
+func (r *codeIntelligenceConfigurationPolicyConnectionResolver) PageInfo() resolverstubs.PageInfo {
+	return HasNextPage(len(r.policies) < r.totalCount)
 }

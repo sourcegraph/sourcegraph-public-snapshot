@@ -37,6 +37,7 @@ import { querySyntaxHighlighting } from '../codemirror/syntax-highlighting'
 import { tokenInfo } from '../codemirror/token-info'
 import { useUpdateEditorFromQueryState } from '../CodeMirrorQueryInput'
 
+import { overrideContextOnPaste } from './codemirror/searchcontext'
 import { filterDecoration } from './codemirror/syntax-highlighting'
 import { modeScope, useInputMode } from './modes'
 import { Source, suggestions, startCompletion } from './suggestionsExtension'
@@ -206,7 +207,7 @@ const staticExtensions: Extension = [
     keymap.of(defaultKeymap),
     codemirrorHistory(),
     filterPlaceholder,
-    queryDiagnostic(),
+    modeScope([queryDiagnostic(), overrideContextOnPaste], [null]),
     Prec.low([querySyntaxHighlighting, modeScope([tokenInfo(), filterDecoration], [null])]),
     EditorView.theme({
         '&': {
@@ -477,9 +478,9 @@ const SearchModeSwitcher: FC<SearchModeSwitcherProps> = props => {
             <Tooltip content="Recent searches">
                 <Button variant="icon" aria-label="Open search history" onClick={onModeChange}>
                     <Icon svgPath={mdiClockOutline} aria-hidden="true" />
+                    {mode && <span className="ml-1">{mode}:</span>}
                 </Button>
             </Tooltip>
-            {mode && <span className="ml-1">{mode}:</span>}
         </div>
     )
 }

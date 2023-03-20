@@ -76,8 +76,8 @@ const OutboundWebhooksPage = lazyComponent(
     () => import('./outbound-webhooks/OutboundWebhooksPage'),
     'OutboundWebhooksPage'
 )
-const CreatePage = lazyComponent(() => import('./outbound-webhooks/CreatePage'), 'CreatePage')
-const EditPage = lazyComponent(() => import('./outbound-webhooks/EditPage'), 'EditPage')
+const OutgoingWebhookCreatePage = lazyComponent(() => import('./outbound-webhooks/CreatePage'), 'CreatePage')
+const OutgoingWebhookEditPage = lazyComponent(() => import('./outbound-webhooks/EditPage'), 'EditPage')
 const SiteAdminWebhooksPage = lazyComponent(() => import('./SiteAdminWebhooksPage'), 'SiteAdminWebhooksPage')
 const SiteAdminWebhookCreatePage = lazyComponent(
     () => import('./SiteAdminWebhookCreatePage'),
@@ -202,36 +202,36 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
         render: props => <SiteAdminFeatureFlagConfigurationPage {...props} />,
     },
     {
-        path: '/outbound-webhooks',
+        path: '/webhooks/outgoing',
         render: props => <OutboundWebhooksPage {...props} />,
     },
     {
-        path: '/outbound-webhooks/create',
-        render: props => <CreatePage {...props} />,
+        path: '/webhooks/outgoing/create',
+        render: props => <OutgoingWebhookCreatePage {...props} />,
     },
     {
-        path: '/outbound-webhooks/:id',
-        render: props => <EditPage {...props} />,
+        path: '/webhooks/outgoing/:id',
+        render: props => <OutgoingWebhookEditPage {...props} />,
     },
     {
-        path: '/webhooks',
+        path: '/webhooks/incoming',
         render: props => <SiteAdminWebhooksPage {...props} />,
     },
     {
-        path: '/webhooks/create',
+        path: '/webhooks/incoming/create',
         render: props => <SiteAdminWebhookCreatePage {...props} />,
     },
     {
-        path: '/webhooks/:id',
+        path: '/webhooks/incoming/:id',
         render: props => <SiteAdminWebhookPage {...props} />,
+    },
+    {
+        path: '/webhooks/incoming/:id/edit',
+        render: props => <SiteAdminWebhookUpdatePage {...props} />,
     },
     {
         path: '/slow-requests',
         render: props => <SiteAdminSlowRequestsPage {...props} />,
-    },
-    {
-        path: '/webhooks/:id/edit',
-        render: props => <SiteAdminWebhookUpdatePage {...props} />,
     },
     {
         path: '/packages',

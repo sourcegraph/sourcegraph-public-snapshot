@@ -25,9 +25,9 @@ Before adding an incoming webhook you should ensure that you have at least one [
 
 The incoming webhook will be configured to accept events from a specific code host connection based on its type and URN.
 
-1. Navigate to **Site Admin > Incoming webhooks**
+1. Navigate to _Site Admin_ > _Webhooks_ > _Incoming webhooks_
    ![Incoming webhooks page](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/webhooks/incoming-webhooks-page.png)
-2. Click **Add webhook**
+2. Click **+ Create webhook**
    ![Adding an incoming webhook](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/webhooks/adding-webhook.png)
 3. Fill out the form:
    1. **Webhook name**: Descriptive name for the webhook.
@@ -158,26 +158,29 @@ Follow the same steps as above, but ensure you tick the `Push` option.
 
 > NOTE: Experimental webhook support for Azure DevOps was added in Sourcegraph 5.0, and does not currently support secrets. Please <a href="https://about.sourcegraph.com/contact">contact us</a> with any issues found while using webhooks.
 
-1. On Azure DevOps, go to each project, and then **Project settings > Service hooks**.
-2. Click **Create a new subscription**.
-3. Select **Web Hooks**. From the **Trigger on this type of event** drop-down, choose: **Pull request updated**.
-4. Set the filters how you like, or leave them at the default: **\[Any\]**
-5. Fill in the webhook form:
-  * **URL**: The URL found after creating an incoming webhook.
-  * Leave the rest of the fields on the default values.
-6. Click **Test** to verify the webhook works. Then click **Finish**.
-7. Repeat the steps above, this time choosing **Pull request merged** as your event type.
+1. On Azure DevOps, go to each project, and then **Project settings > General > Service hooks**.
+2. Click **Create subscription**.
+   ![](https://storage.googleapis.com/sourcegraph-assets/docs/images/admin/config/webhook-step-2.png)
+3. Select **Web Hooks** and click **Next** .
+   ![](https://storage.googleapis.com/sourcegraph-assets/docs/images/admin/config/webhook-step-3.png)
+4. From the **Trigger on this type of event** drop-down, choose: **Pull request updated**.
+   ![](https://storage.googleapis.com/sourcegraph-assets/docs/images/admin/config/webhook-step-4.png)
+5. Set the filters how you like, or leave them at the default: **[Any]** and click **Next**.
+6. Fill in the webhook form:
+   - **URL**: The URL found after creating an incoming webhook.
+   - Leave the rest of the fields on the default values.
+7. Click **Test** to verify the webhook works. Then click **Finish**.
+8. Repeat the steps above, this time choosing **Pull request merged** as your event type.
 
 Done! Sourcegraph will now receive webhook events from Azure DevOps and use them to sync pull request events, used by [batch changes](../../batch_changes/index.md), faster and more efficiently.
-
 
 ## Webhook logging
 
 Sourcegraph can track incoming webhooks from code hosts to more easily debug issues with webhook delivery. These webhooks can be viewed in two places depending on how they were added:
 
-1. Via **Site Admin > [Repositories] > Incoming webhooks**
+1. Via _Site Admin_ > _Webhooks_ > _Incoming webhooks_
    ![Webhook logs](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/webhooks/webhook-logs.png)
-2. **Deprecated** Via code host connection: **Site Admin > [Batch Changes] > Incoming webhooks**
+2. **Deprecated** Via code host connection: _Site Admin_ > _Batch Changes_ > _Incoming webhooks_
    ![Legacy webhook logs](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/webhooks/webhook-logs-legacy.png)
 
 By default, sites without [database encryption](encryption.md) enabled will retain three days of webhook logs. Sites with encryption will not retain webhook logs by default, as webhooks may include sensitive information; these sites can enable webhook logging and optionally configure encryption for them by using the settings below.
@@ -219,7 +222,7 @@ Webhook logs can be encrypted by specifying a `webhookLogKey` in the [on-disk da
 
 ## Deprecation notice
 
-As of Sourcegraph 4.3.0 webhooks added via code host configuration are deprecated and support will be removed in release 4.6.0.
+As of Sourcegraph 4.3.0 webhooks added via code host configuration are deprecated and support will be removed in release 5.1.0.
 
 This includes any webhooks pointed at URLs starting with the following:
 

@@ -472,21 +472,21 @@ func NewPreciseIndexConnectionResolver(
 	}
 }
 
-func (r *preciseIndexConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.PreciseIndexResolver, error) {
-	return r.nodes, nil
+func (r *preciseIndexConnectionResolver) Nodes() []resolverstubs.PreciseIndexResolver {
+	return r.nodes
 }
 
-func (r *preciseIndexConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {
+func (r *preciseIndexConnectionResolver) TotalCount() *int32 {
 	count := int32(r.totalCount)
-	return &count, nil
+	return &count
 }
 
-func (r *preciseIndexConnectionResolver) PageInfo(ctx context.Context) (resolverstubs.PageInfo, error) {
+func (r *preciseIndexConnectionResolver) PageInfo() resolverstubs.PageInfo {
 	if r.cursor != "" {
-		return &pageInfo{hasNextPage: true, endCursor: &r.cursor}, nil
+		return &pageInfo{hasNextPage: true, endCursor: &r.cursor}
 	}
 
-	return &pageInfo{hasNextPage: false}, nil
+	return &pageInfo{hasNextPage: false}
 }
 
 func unmarshalPreciseIndexGQLID(id graphql.ID) (uploadID, indexID int, err error) {
