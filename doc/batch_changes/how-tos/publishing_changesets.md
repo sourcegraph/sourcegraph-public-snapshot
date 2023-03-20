@@ -173,13 +173,13 @@ See [`changesetTemplate.published`](../references/batch_spec_yaml_reference.md#c
 
 ### Within the UI
 
-> NOTE: This functionality requires Sourcegraph 3.30 or later, and also requires `src` 3.29.2 or later.
+<span class="badge badge-note">Sourcegraph 3.30+</span>
 
 To publish from the Sourcegraph UI, you'll need to remove (or omit) the `published` field from your batch spec. When you first apply a batch change without an explicit `published` field, all changesets are left unpublished.
 
 #### From the preview
 
-> NOTE: This feature requires Sourcegraph 3.31 or later.
+<span class="badge badge-note">Sourcegraph 3.31+</span>
 
 When you run `src batch preview` against your batch spec and open the preview link, you'll see the current states of each of your changesets, as well as a preview of the actions that will be performed when you apply:
 

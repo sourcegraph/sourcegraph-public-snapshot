@@ -1,16 +1,12 @@
 # Permissions
 
-Sourcegraph can be configured to enforce the same access to repositories and underlying 
-source files as your code  host. If configured, Sourcegraph will allow the user to only 
-see the entities that they can see on the code host. These permissions are enforced 
-accross the product for all the use cases that need to read data from a repository, including
- the existence of such repository on the code host.
+> NOTE: This page refers to repository access permissions synced between Sourcegraph and your code host, which has also historically been referred to as "authorization", "repository permissions", and "code host permissions". This is *not* the same as [in-product permissions](../access_control/index.md), which determine who can, for example, create a batch change or who is a site admin.
 
-> NOTE: Historically, we have referred to permissions-related features under different 
-names: "authorization", "repository permissions", "code host permissions". All of these 
-terms were used interchangeably, but in general we do call it permissions or repository 
-permissions. That's not to be confused with in-product permissions, which determine who 
-can, for example, create a batch change or who is a site admin.
+Sourcegraph can be configured to enforce the same access to repositories and underlying 
+source files as your code host. If configured, Sourcegraph will allow the user to only 
+see the entities that they can see on the code host. These permissions are enforced 
+across the product for all the use cases that need to read data from a repository, 
+including the existence of such repository on the code host.
 
 ## Example
 
