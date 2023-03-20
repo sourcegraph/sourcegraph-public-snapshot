@@ -26,9 +26,8 @@ NON_BUNDLED_DEPS = [
     "//:node_modules/puppeteer",
 ]
 
-def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs):
+def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, use_xvfb = False, **kwargs):
     bundle_name = "%s_bundle" % name
-    mocha_name = "%s_mocha" % name
 
     # Bundle the tests to remove the use of esm modules in tests
     esbuild(
@@ -80,6 +79,8 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs)
         "DISPLAY": "99",
     })
 
+    mocha_name = "%s_mocha" % name if use_xvfb else name
+
     bin.mocha_test(
         name = mocha_name,
         args = args,
@@ -88,12 +89,12 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs)
         **kwargs
     )
 
-    #
-    native.sh_test(
-        name = name,
-        srcs = ["//dev:mocha-xvfb.sh"],
-        args = ["$(location :%s)" % mocha_name] + args,
-        data = args_data + [":%s" % mocha_name],
-        env = env,
-        tags = ["requires-network"],
-    )
+    if use_xvfb:
+        native.sh_test(
+            name = name,
+            srcs = ["//dev:mocha-xvfb.sh"],
+            args = ["$(location :%s)" % mocha_name] + args,
+            data = args_data + [":%s" % mocha_name],
+            env = env,
+            tags = ["requires-network"],
+        )
