@@ -3,7 +3,6 @@ import { FC } from 'react'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { Button, Link } from '@sourcegraph/wildcard'
 
-import { CodeHostAppLimit } from '../../../CodeHostExternalServiceAlert'
 import { CodeHostIcon, getCodeHostName, getCodeHostURLParam } from '../../helpers'
 
 import styles from './CodeHostsPicker.module.scss'
