@@ -1,6 +1,6 @@
 import { useCallback, useMemo, ChangeEventHandler, FC } from 'react'
 
-import { mdiChevronDown, mdiChevronUp, mdiAccountWrenchOutline, mdiOpenInNew } from '@mdi/js'
+import { mdiChevronDown, mdiChevronUp, mdiCogOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
@@ -117,7 +117,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                             <div className="position-relative">
                                 <div className="align-items-center d-flex">
                                     {isSourcegraphApp ? (
-                                        <Icon svgPath={mdiAccountWrenchOutline} aria-hidden={true} />
+                                        <Icon svgPath={mdiCogOutline} aria-hidden={true} />
                                     ) : (
                                         <UserAvatar user={authenticatedUser} className={styles.avatar} />
                                     )}
