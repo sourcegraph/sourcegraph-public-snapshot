@@ -203,11 +203,7 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers() ([]graphqlbackend.Ba
 	var stepInfo = make(map[int]*btypes.StepInfo)
 	var entryExitCode *int
 	if r.execution != nil {
-		entry, ok := findExecutionLogEntry(r.execution, logKeyBatchExec)
-		// Backcompat: The step was unnamed before.
-		if !ok {
-			entry, ok = findExecutionLogEntry(r.execution, logKeySrcFirst)
-		}
+		entry, ok := findExecutionLogEntry(r.execution, logKeySrc)
 		if ok {
 			logLines := btypes.ParseJSONLogsFromOutput(entry.Out)
 			stepInfo = btypes.ParseLogLines(entry, logLines)
@@ -558,14 +554,7 @@ var (
 )
 
 func (r *batchSpecWorkspaceStagesResolver) SrcExec() []graphqlbackend.ExecutionLogEntryResolver {
-	// V1 execution uses a single `step.src.batch-exec` step, for backcompat we return just that
-	// here.
-	if entry, ok := findExecutionLogEntry(r.execution, logKeyBatchExec); ok {
-		return []graphqlbackend.ExecutionLogEntryResolver{graphqlbackend.NewExecutionLogEntryResolver(r.store.DatabaseDB(), entry)}
-	}
-
-	// Backcompat: The step was unnamed before.
-	if entry, ok := findExecutionLogEntry(r.execution, logKeySrcFirst); ok {
+	if entry, ok := findExecutionLogEntry(r.execution, logKeySrc); ok {
 		return []graphqlbackend.ExecutionLogEntryResolver{graphqlbackend.NewExecutionLogEntryResolver(r.store.DatabaseDB(), entry)}
 	}
 
@@ -579,8 +568,9 @@ func (r *batchSpecWorkspaceStagesResolver) SrcExec() []graphqlbackend.ExecutionL
 }
 
 var (
-	logKeyBatchExec  = regexp.MustCompile("^step\\.src\\.batch-exec$")
-	logKeySrcFirst   = regexp.MustCompile("^step\\.src\\.0$")
+	// V1 execution uses a single `step.src.batch-exec` step, for backcompat we return just that
+	// here.
+	logKeySrc        = regexp.MustCompile("^step\\.src\\.(batch-exec|0)$")
 	logKeyPrefixStep = regexp.MustCompile("^step\\.(docker|kubernetes)\\.step\\.")
 )
 

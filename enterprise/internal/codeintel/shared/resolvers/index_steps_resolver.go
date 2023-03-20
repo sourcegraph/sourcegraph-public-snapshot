@@ -82,6 +82,8 @@ func (r *indexStepsResolver) Upload() resolverstubs.ExecutionLogEntryResolver {
 }
 
 var (
+	// This is here for backwards compatibility for records that were created before
+	// src became a docker step.
 	logKeyUpload   = regexp.MustCompile("^step\\.(kubernetes|docker|src)\\.upload$")
 	logKeySrcFirst = regexp.MustCompile("^step\\.src\\.0$")
 )
