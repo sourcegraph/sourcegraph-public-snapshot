@@ -32,7 +32,7 @@ export class VSCEKeywordContextFetcher implements KeywordContextFetcher {
         // unique stemmed keywords, our representation of the user query
         const terms = nlp(query).text({ keepPunct: false, trim: true })
         const stemmedTerms = nlp(terms).match('#Noun').not('function').sort('length').out('array')
-        const filteredTerms = stemmedTerms.filter((term: string) => term.length >= 3)
+        const filteredTerms = stemmedTerms.filter((term: string) => term.length > 2)
         const { fileTermCounts, termTotalFiles, totalFiles } = await this.fetchSymbolMatches(filteredTerms, rootPath)
         const idfDict = this.idf(termTotalFiles, totalFiles)
         const filenamesWithScores = Object.entries(fileTermCounts)
@@ -114,18 +114,15 @@ export class VSCEKeywordContextFetcher implements KeywordContextFetcher {
         const matchedFiles: { filename: string; score: number }[] = []
         const excludePattern = this.generateExcludePattern()
         // Create a regular expression pattern that matches the first two longest keywords
-        const keyword = new RegExp(`${keywords[0]}|${keywords[1]}`)
+        const keyword = new RegExp(keywords.join('|'))
         const foundFiles = await vscode.workspace.findFiles('**/*', excludePattern, 10000)
         for (const file of foundFiles) {
             const content = await vscode.workspace.fs.readFile(file)
             const fileContent = content.toString()
             if (keyword.test(fileContent)) {
-                const multipleMatchPattern = new RegExp(`^(?=.*${keywords[0]})(?=.*${keywords[1]}).+$`)
                 matchedFiles.push({
                     filename: file.path,
-                    // if both keywords exists in the file: 1
-                    // if only one keyword exist in the file: 0
-                    score: multipleMatchPattern.test(fileContent) ? 1 : 0,
+                    score: 1,
                 })
             }
         }
