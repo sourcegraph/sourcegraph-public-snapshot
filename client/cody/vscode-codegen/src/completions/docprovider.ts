@@ -8,6 +8,7 @@ export type JSONSerializable = null | string | number | boolean | object | JSONS
 interface Meta {
     elapsedMillis: number
     prompt: string
+    suffix: string
     llmOptions: JSONSerializable
 }
 
@@ -73,7 +74,12 @@ export class CompletionsDocumentProvider implements vscode.TextDocumentContentPr
 
                         let completionText = `\`\`\`${lang}\n${prefixText}${text}\n\`\`\``
                         if (this.isDebug() && meta) {
-                            completionText = `\`\`\`\n${meta.prompt}\n\`\`\`` + '\n' + completionText
+                            completionText =
+                                `\`\`\`\n${meta.prompt}\n\`\`\`` +
+                                '\n' +
+                                completionText +
+                                '\n' +
+                                `\`\`\`\n${meta.suffix}\n\`\`\``
                         }
                         const headerComponents = [`${index + 1} / ${completions.choices.length}`]
                         if (finish_reason) {

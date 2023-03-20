@@ -9,7 +9,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     constructor(
         private openai: OpenAIApi,
         private documentProvider: CompletionsDocumentProvider,
-        private model = 'code-cushman-001', // code-davinci-002
+        // private model = 'code-cushman-001', // code-davinci-002
+        private model = 'code-davinci-002',
         private contextWindowTokens = 2048, // 8001
         private bytesPerToken = 4,
         private responseTokens = 200,
@@ -51,12 +52,17 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return []
         }
 
-        const docContext = getCurrentDocContext(document, position, this.tokToByte(this.maxPrefixTokens))
+        const docContext = getCurrentDocContext(
+            document,
+            position,
+            this.tokToByte(this.maxPrefixTokens),
+            this.tokToByte(this.maxSuffixTokens)
+        )
         if (!docContext) {
             return []
         }
 
-        const { prefix, prevLine: precedingLine } = docContext
+        const { prefix, suffix, prevLine: precedingLine } = docContext
         let waitMs: number
         let stop = null
         let completionPrefix = '' // text to require as the first part of the completion
@@ -84,6 +90,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             {
                 model: this.model,
                 prompt: prefix + completionPrefix,
+                suffix,
+
                 max_tokens: Math.min(this.contextWindowTokens - this.maxPrefixTokens, this.responseTokens),
                 n: 1,
                 stop,
@@ -140,18 +148,20 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         const docContext = getCurrentDocContext(
             currentEditor.document,
             currentEditor.selection.start,
-            this.tokToByte(this.maxPrefixTokens)
+            this.tokToByte(this.maxPrefixTokens),
+            this.tokToByte(this.maxSuffixTokens)
         )
         if (docContext === null) {
             console.error('not showing completions, no currently open doc')
             return
         }
-        const { prefix, prevLine, prevNonEmptyLine } = docContext
+        const { prefix, suffix, prevLine, prevNonEmptyLine } = docContext
 
         try {
             const completion = await this.openai.createCompletion({
                 model: this.model,
                 prompt: prefix,
+                suffix,
                 max_tokens: Math.min(this.contextWindowTokens - this.maxPrefixTokens, this.responseTokens),
                 n: 3,
             })
@@ -167,6 +177,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
             this.documentProvider.addCompletions(completionsUri, ext, prevLine, completion.data, {
                 prompt: prefix,
+                suffix,
                 elapsedMillis: 0,
                 llmOptions: null,
             })
@@ -184,9 +195,11 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 function getCurrentDocContext(
     document: vscode.TextDocument,
     position: vscode.Position,
-    maxPrefixLength: number
+    maxPrefixLength: number,
+    maxSuffixLength: number
 ): {
     prefix: string
+    suffix: string
     prevLine: string
     prevNonEmptyLine: string
     nextNonEmptyLine: string
@@ -221,6 +234,8 @@ function getCurrentDocContext(
     }
 
     const prevLine = prefixLines[prefixLines.length - 1]
+
+    let prefix: string
     if (offset > maxPrefixLength) {
         let total = 0
         let startLine = prefixLines.length
@@ -231,16 +246,25 @@ function getCurrentDocContext(
             startLine = i
             total += prefixLines[i].length
         }
-        return {
-            prefix: prefixLines.slice(startLine).join('\n'),
-            prevLine,
-            prevNonEmptyLine,
-            nextNonEmptyLine,
-        }
+        prefix = prefixLines.slice(startLine).join('\n')
+    } else {
+        prefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position))
     }
 
+    let totalSuffix = 0
+    let endLine = 0
+    for (let i = 0; i < suffixLines.length; i++) {
+        if (totalSuffix + suffixLines[i].length > maxSuffixLength) {
+            break
+        }
+        endLine = i + 1
+        totalSuffix += suffixLines[i].length
+    }
+    const suffix = suffixLines.slice(0, endLine).join('\n')
+
     return {
-        prefix: document.getText(new vscode.Range(new vscode.Position(0, 0), position)),
+        prefix,
+        suffix,
         prevLine,
         prevNonEmptyLine,
         nextNonEmptyLine,
