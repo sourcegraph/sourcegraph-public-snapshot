@@ -162,6 +162,7 @@ ts_project(
         "src/batches/backend.ts",
         "src/batches/icons.tsx",
         "src/batches/index.ts",
+        "src/batches/utils.ts",
         "src/code-monitoring/CodeMonitoringLogo.tsx",
         "src/codeMonitoring/index.ts",
         "src/codeintel/BrainDot.tsx",
@@ -1100,6 +1101,7 @@ ts_project(
         "src/person/PersonLink.tsx",
         "src/platform/context.ts",
         "src/productSubscription/helpers.ts",
+        "src/rbac/constants.ts",
         "src/repo/DirectImportRepoAlert.tsx",
         "src/repo/FilePathBreadcrumbs.tsx",
         "src/repo/GitReference.tsx",
@@ -1412,7 +1414,8 @@ ts_project(
         "src/site-admin/outbound-webhooks/delete/DeleteButton.tsx",
         "src/site-admin/outbound-webhooks/logs/Logs.tsx",
         "src/site-admin/outbound-webhooks/logs/backend.ts",
-        "src/site-admin/packages/PackagesModal.tsx",
+        "src/site-admin/packages/AddFilterModal.tsx",
+        "src/site-admin/packages/ManageFiltersModal.tsx",
         "src/site-admin/packages/backend.ts",
         "src/site-admin/packages/components/BehaviourSelect.tsx",
         "src/site-admin/packages/components/FilterPackagesActions.tsx",
@@ -1955,7 +1958,7 @@ webpack_devserver(
     env = {
         "NODE_ENV": "development",
         # TODO(bazel): make it dynamic or make multiple targets.
-        "SOURCEGRAPH_API_URL": "https://sourcegraph.sourcegraph.com"
+        "SOURCEGRAPH_API_URL": "https://sourcegraph.sourcegraph.com",
     },
     webpack_config = "webpack.bazel.devserver.config.js",
 )
