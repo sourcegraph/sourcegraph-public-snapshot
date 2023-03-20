@@ -242,7 +242,7 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 		Changeset:  e.ch,
 	}
 
-	var exists bool
+	var exists, outdated bool
 	if asDraft {
 		// If the changeset shall be published in draft mode, make sure the changeset source implements DraftChangesetSource.
 		draftCss, err := sources.ToDraftChangesetSource(css)
@@ -266,23 +266,24 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 		// commit yet, because the API of the codehost doesn't return it yet.
 		exists, err = css.CreateChangeset(ctx, cs)
 		if err != nil {
-			if exists {
-				e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
-			} else {
-				e.enqueueWebhook(ctx, webhooks.ChangesetPublishError)
-			}
+			// For several code hosts, it's also impossible to tell if a changeset exists
+			// already or not, yet. Since we're here *intending* to publish, we'll just
+			// emit ChangesetPublish webhook events here.
+			e.enqueueWebhook(ctx, webhooks.ChangesetPublishError)
 			return errors.Wrap(err, "creating changeset")
 		}
 	}
 
 	// If the Changeset already exists and our source can update it, we try to update it
 	if exists {
-		outdated, err := cs.IsOutdated()
+		outdated, err = cs.IsOutdated()
 		if err != nil {
-			e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
+			e.enqueueWebhook(ctx, webhooks.ChangesetPublishError)
 			return errors.Wrap(err, "could not determine whether changeset needs update")
 		}
 
+		// If the changeset is actually outdated, we can be reasonably sure it already
+		// exists on the code host. Here, we'll emit a ChangesetUpdate webhook event.
 		if outdated {
 			if err := css.UpdateChangeset(ctx, cs); err != nil {
 				e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
@@ -295,7 +296,7 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 	e.ch.PublicationState = btypes.ChangesetPublicationStatePublished
 
 	// Enqueue the appropriate webhook.
-	if exists {
+	if exists && outdated {
 		e.enqueueWebhook(ctx, webhooks.ChangesetUpdate)
 	} else {
 		e.enqueueWebhook(ctx, webhooks.ChangesetPublish)
