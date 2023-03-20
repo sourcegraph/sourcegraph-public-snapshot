@@ -43,7 +43,7 @@ To configure:
    https://sourcegraph.company.com/.api/scim/v2/Users
    ```
 
-## Setting up Okta as the IdP
+## Configuring SCIM for Okta
 
 To set up user provisioning in Okta, you must first set up a new app integration of the "SAML 2.0" type, then configure it to use SCIM. Here are the steps to do this:
 
