@@ -246,7 +246,7 @@ func (r *rootResolver) UpdateRepositoryIndexConfiguration(ctx context.Context, a
 		return nil, err
 	}
 
-	if err := r.autoindexSvc.UpdateIndexConfigurationByRepositoryID(ctx, int(repositoryID), []byte(args.Configuration)); err != nil {
+	if err := r.autoindexSvc.UpdateIndexConfigurationByRepositoryID(ctx, repositoryID, []byte(args.Configuration)); err != nil {
 		return nil, err
 	}
 

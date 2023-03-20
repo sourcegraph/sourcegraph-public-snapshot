@@ -78,7 +78,7 @@ func (r *rootResolver) Vulnerabilities(ctx context.Context, args resolverstubs.G
 		resolvers = append(resolvers, &vulnerabilityResolver{v: v})
 	}
 
-	return resolverstubs.NewTotalCountConnectionResolver(resolvers, int32(offset), int32(totalCount)), nil
+	return resolverstubs.NewTotalCountConnectionResolver(resolvers, offset, int32(totalCount)), nil
 }
 
 func (r *rootResolver) VulnerabilityMatches(ctx context.Context, args resolverstubs.GetVulnerabilityMatchesArgs) (_ resolverstubs.VulnerabilityMatchConnectionResolver, err error) {
