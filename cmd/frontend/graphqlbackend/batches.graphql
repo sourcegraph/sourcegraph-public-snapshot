@@ -402,9 +402,9 @@ type ExternalChangeset implements Node & Changeset {
 
     Note that author is not fully supported by some code host APIs:
     * GitHub - only author.name
-    * GitLab - author.name is always available, author.email is only avaiable if a GitLab admin's credentials are used
+    * GitLab - only author.name
     * Bitbucket Server - author is not always available
-    * Bitbucket Cloud - not supported
+    * Bitbucket Cloud - author is never available
     """
     author: Person
 

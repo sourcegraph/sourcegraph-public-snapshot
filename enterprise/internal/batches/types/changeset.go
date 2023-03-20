@@ -526,8 +526,8 @@ func (c *Changeset) AuthorEmail() (string, error) {
 		}
 		return m.Author.User.EmailAddress, nil
 	case *gitlab.MergeRequest:
-		// Only GitLab admins can get the e-mail of a user so most of the time we won't
-		// have this.
+		// This doesn't seem to be available in the GitLab response anymore, but we can
+		// still try to check this field for backwards compatibility.
 		return m.Author.Email, nil
 	case *bbcs.AnnotatedPullRequest:
 		// Bitbucket Cloud does not provide the e-mail of the author under any
