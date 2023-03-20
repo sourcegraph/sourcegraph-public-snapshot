@@ -41,16 +41,17 @@ type ListTeamsArgs struct {
 }
 
 type teamConnectionResolver struct {
-	db            database.DB
-	parentID      int32
-	search        string
-	cursor        int32
-	limit         int
-	once          sync.Once
-	teams         []*types.Team
-	onlyRootTeams bool
-	pageInfo      *graphqlutil.PageInfo
-	err           error
+	db               database.DB
+	parentID         int32
+	search           string
+	cursor           int32
+	limit            int
+	once             sync.Once
+	teams            []*types.Team
+	onlyRootTeams    bool
+	exceptAncestorID int32
+	pageInfo         *graphqlutil.PageInfo
+	err              error
 }
 
 // applyArgs unmarshals query conditions and limites set in `ListTeamsArgs`
@@ -83,10 +84,11 @@ func (r *teamConnectionResolver) applyArgs(args *ListTeamsArgs) error {
 func (r *teamConnectionResolver) compute(ctx context.Context) {
 	r.once.Do(func() {
 		opts := database.ListTeamsOpts{
-			Cursor:       r.cursor,
-			WithParentID: r.parentID,
-			Search:       r.search,
-			RootOnly:     r.onlyRootTeams,
+			Cursor:           r.cursor,
+			WithParentID:     r.parentID,
+			Search:           r.search,
+			RootOnly:         r.onlyRootTeams,
+			ExceptAncestorID: r.exceptAncestorID,
 		}
 		if r.limit != 0 {
 			opts.LimitOffset = &database.LimitOffset{Limit: r.limit}
@@ -789,16 +791,31 @@ func (r *schemaResolver) RemoveTeamMembers(ctx context.Context, args *TeamMember
 	return NewTeamResolver(r.db, team), nil
 }
 
-func (r *schemaResolver) Teams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
+type QueryTeamsArgs struct {
+	ListTeamsArgs
+	ExceptAncestor    *graphql.ID
+	IncludeChildTeams *bool
+}
+
+func (r *schemaResolver) Teams(ctx context.Context, args *QueryTeamsArgs) (*teamConnectionResolver, error) {
 	if err := areTeamEndpointsAvailable(ctx); err != nil {
 		return nil, err
 	}
-
 	c := &teamConnectionResolver{db: r.db}
-	if err := c.applyArgs(args); err != nil {
+	if err := c.applyArgs(&args.ListTeamsArgs); err != nil {
 		return nil, err
 	}
+	if args.ExceptAncestor != nil {
+		id, err := UnmarshalTeamID(*args.ExceptAncestor)
+		if err != nil {
+			return nil, errors.Wrapf(err, "cannot interpret exceptAncestor id: %q", *args.ExceptAncestor)
+		}
+		c.exceptAncestorID = id
+	}
 	c.onlyRootTeams = true
+	if args.IncludeChildTeams != nil && *args.IncludeChildTeams {
+		c.onlyRootTeams = false
+	}
 	return c, nil
 }
 
