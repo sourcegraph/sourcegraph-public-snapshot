@@ -499,7 +499,8 @@ func (c *Changeset) AuthorName() (string, error) {
 	case *gitlab.MergeRequest:
 		return m.Author.Username, nil
 	case *bbcs.AnnotatedPullRequest:
-		return m.Author.Username, nil
+		// BitBucket cloud no longer exposes username in its API.
+		return "", nil
 	case *adobatches.AnnotatedPullRequest:
 		return m.CreatedBy.UniqueName, nil
 	default:
@@ -524,6 +525,8 @@ func (c *Changeset) AuthorEmail() (string, error) {
 		}
 		return m.Author.User.EmailAddress, nil
 	case *gitlab.MergeRequest:
+		// Only GitLab admins can get the e-mail of a user so most of the time we won't
+		// have this.
 		return m.Author.Email, nil
 	case *bbcs.AnnotatedPullRequest:
 		// Bitbucket Cloud does not provide the e-mail of the author under any

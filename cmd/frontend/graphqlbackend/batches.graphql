@@ -397,8 +397,14 @@ type ExternalChangeset implements Node & Changeset {
     body: String
 
     """
-    The author of the changeset, or null if the data hasn't been synced from the code host yet,
-    or the changeset has not yet been published.
+    The author of the changeset, or null if the data is unavailable or hasn't been synced
+    from the code host yet.
+
+    Note that author is not fully supported by some code host APIs:
+    * GitHub - only author.name
+    * GitLab - author.name is always available, author.email is only avaiable if a GitLab admin's credentials are used
+    * Bitbucket Server - author is not always available
+    * Bitbucket Cloud - not supported
     """
     author: Person
 
