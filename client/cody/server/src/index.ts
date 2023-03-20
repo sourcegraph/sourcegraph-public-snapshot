@@ -5,6 +5,7 @@ import * as bodyParser from 'body-parser'
 import express from 'express'
 import { GoogleSpreadsheet } from 'google-spreadsheet'
 import { WebSocketServer } from 'ws'
+import { EventLogger } from '@sourcegraph/event-logger'
 
 import {
 	Feedback,
@@ -39,6 +40,9 @@ const feedbackSheetID = process.env.FEEDBACK_SHEET_ID
 const feedbackSheetTitle = process.env.FEEDBACK_SHEET_TITLE
 const telemetrySheetTitle = process.env.TELEMETRY_SHEET_TITLE
 const telemetryVersion = 'v0'
+
+// eventLogger is used to log events
+const eventLogger = new EventLogger('https://sourcegraph.com/')
 
 if (!feedbackSheetID || !feedbackServiceAccount || !feedbackServiceAccountKey || !feedbackSheetTitle) {
 	console.error('feedback disabled')
@@ -193,6 +197,14 @@ async function postAction(user: User | null, data: any): Promise<void> {
 	} catch (error) {
 		console.error('postAction error', error)
 	}
+
+	// Log to eventLogger
+	try {
+		eventLogger.log('postAction', event)
+	}
+	catch (error) {
+		console.error('eventLogger postAction error', error)
+	}
 }
 
 async function postFeedback(user: User, feedback: Feedback): Promise<void> {
@@ -216,6 +228,14 @@ async function postFeedback(user: User, feedback: Feedback): Promise<void> {
 		await sheet.addRow(feedbackToSheetRow(feedback))
 	} catch (error) {
 		console.error('postFeedback error', error)
+	}
+
+	// Log to eventLogger
+	try {
+		eventLogger.log('postFeedback', feedback)
+	}
+	catch (error) {
+		console.error('eventLogger postFeedback error', error)
 	}
 }
 
