@@ -35,6 +35,7 @@ set on the Executor `Deployment` and will configure the `Job`s that it spawns.
 |---------------------------------------------|:---------------|------------------------------------------------------------------------------------------------------------------------|
 | EXECUTOR_KUBERNETES_CONFIG_PATH             | N/A            | The path to the Kubernetes configuration file. If not specified, the in cluster config is used.                        |
 | EXECUTOR_KUBERNETES_NODE_NAME               | N/A            | The name of the Kubernetes Node to create Jobs in. If not specified, the Pods are created in the first available node. |
+| EXECUTOR_KUBERNETES_NODE_SELECTOR           | N/A            | A comma separated list of values to use as a node selector for Kubernetes Jobs. e.g. `foo=bar,app=my-app`              |
 | EXECUTOR_KUBERNETES_NAMESPACE               | `default`      | The namespace to create the Jobs in.                                                                                   |
 | EXECUTOR_KUBERNETES_PERSISTENCE_VOLUME_NAME | `executor-pvc` | The name of the Executor Persistence Volume. Must match the `PersistentVolumeClaim` configured for the instance.       |
 | EXECUTOR_KUBERNETES_RESOURCE_LIMIT_CPU      | `1`            | The maximum CPU resource for Kubernetes Jobs.                                                                          |
