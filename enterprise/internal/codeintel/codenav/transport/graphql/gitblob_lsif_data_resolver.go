@@ -124,7 +124,15 @@ func (r *gitBlobLSIFDataResolver) Ranges(ctx context.Context, args *resolverstub
 		return nil, err
 	}
 
-	return NewCodeIntelligenceRangeConnectionResolver(ranges, r.locationResolver), nil
+	var resolvers []resolverstubs.CodeIntelligenceRangeResolver
+	for _, rn := range ranges {
+		resolvers = append(resolvers, &codeIntelligenceRangeResolver{
+			r:                rn,
+			locationResolver: r.locationResolver,
+		})
+	}
+
+	return resolverstubs.NewConnectionResolver(resolvers), nil
 }
 
 // Definitions returns the list of source locations that define the symbol at the given position.
@@ -296,5 +304,10 @@ func (r *gitBlobLSIFDataResolver) Diagnostics(ctx context.Context, args *resolve
 		return nil, errors.Wrap(err, "codeNavSvc.GetDiagnostics")
 	}
 
-	return NewDiagnosticConnectionResolver(diagnostics, totalCount, r.locationResolver), nil
+	resolvers := make([]resolverstubs.DiagnosticResolver, 0, len(diagnostics))
+	for i := range diagnostics {
+		resolvers = append(resolvers, NewDiagnosticResolver(diagnostics[i], r.locationResolver))
+	}
+
+	return resolverstubs.NewTotalCountConnectionResolver(resolvers, 0, int32(totalCount)), nil
 }

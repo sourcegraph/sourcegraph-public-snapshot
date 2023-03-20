@@ -79,30 +79,7 @@ func (r *summaryResolver) RepositoriesWithErrors(ctx context.Context, args *reso
 		endCursor = strconv.Itoa(newOffset)
 	}
 
-	return &codeIntelRepositoryWithErrorConnectionResolver{
-		nodes:      resolvers,
-		totalCount: totalCount,
-		endCursor:  endCursor,
-	}, nil
-}
-
-type codeIntelRepositoryWithErrorConnectionResolver struct {
-	nodes      []resolverstubs.CodeIntelRepositoryWithErrorResolver
-	totalCount int
-	endCursor  string
-}
-
-func (r *codeIntelRepositoryWithErrorConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.CodeIntelRepositoryWithErrorResolver, error) {
-	return r.nodes, nil
-}
-
-func (r *codeIntelRepositoryWithErrorConnectionResolver) TotalCount() *int32 {
-	v := int32(r.totalCount)
-	return &v
-}
-
-func (r *codeIntelRepositoryWithErrorConnectionResolver) PageInfo() resolverstubs.PageInfo {
-	return resolverstubs.NewPageInfoFromCursor(r.endCursor)
+	return resolverstubs.NewCursorWithTotalCountConnectionResolver(resolvers, endCursor, int32(totalCount)), nil
 }
 
 func (r *summaryResolver) RepositoriesWithConfiguration(ctx context.Context, args *resolverstubs.RepositoriesWithConfigurationArgs) (resolverstubs.CodeIntelRepositoryWithConfigurationConnectionResolver, error) {
@@ -140,30 +117,7 @@ func (r *summaryResolver) RepositoriesWithConfiguration(ctx context.Context, arg
 		endCursor = strconv.Itoa(newOffset)
 	}
 
-	return &codeIntelRepositoryWithConfigurationConnectionResolver{
-		nodes:      resolvers,
-		totalCount: totalCount,
-		endCursor:  endCursor,
-	}, nil
-}
-
-type codeIntelRepositoryWithConfigurationConnectionResolver struct {
-	nodes      []resolverstubs.CodeIntelRepositoryWithConfigurationResolver
-	totalCount int
-	endCursor  string
-}
-
-func (r *codeIntelRepositoryWithConfigurationConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.CodeIntelRepositoryWithConfigurationResolver, error) {
-	return r.nodes, nil
-}
-
-func (r *codeIntelRepositoryWithConfigurationConnectionResolver) TotalCount() *int32 {
-	v := int32(r.totalCount)
-	return &v
-}
-
-func (r *codeIntelRepositoryWithConfigurationConnectionResolver) PageInfo() resolverstubs.PageInfo {
-	return resolverstubs.NewPageInfoFromCursor(r.endCursor)
+	return resolverstubs.NewCursorWithTotalCountConnectionResolver(resolvers, endCursor, int32(totalCount)), nil
 }
 
 type codeIntelRepositoryWithErrorResolver struct {

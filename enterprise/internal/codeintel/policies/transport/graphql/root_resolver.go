@@ -102,7 +102,12 @@ func (r *rootResolver) CodeIntelligenceConfigurationPolicies(ctx context.Context
 		return nil, err
 	}
 
-	return NewCodeIntelligenceConfigurationPolicyConnectionResolver(r.repoStore, configPolicies, totalCount, traceErrs), nil
+	resolvers := make([]resolverstubs.CodeIntelligenceConfigurationPolicyResolver, 0, len(configPolicies))
+	for _, policy := range configPolicies {
+		resolvers = append(resolvers, NewConfigurationPolicyResolver(r.repoStore, policy, traceErrs))
+	}
+
+	return resolverstubs.NewTotalCountConnectionResolver(resolvers, 0, int32(totalCount)), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies

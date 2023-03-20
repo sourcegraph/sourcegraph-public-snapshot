@@ -44,12 +44,12 @@ func decodeCursor(val *string) (string, error) {
 // encodeCursor creates a PageInfo object from the given cursor. If the cursor is not
 // defined, then an object indicating the end of the result set is returned. The cursor
 // is base64 encoded for transfer, and should be decoded using the function decodeCursor.
-func encodeCursor(val *string) resolverstubs.PageInfo {
+func encodeCursor(val *string) string {
 	if val != nil {
-		return resolverstubs.NewPageInfoFromCursor(base64.StdEncoding.EncodeToString([]byte(*val)))
+		return base64.StdEncoding.EncodeToString([]byte(*val))
 	}
 
-	return resolverstubs.NewPageInfoFromCursor("")
+	return ""
 }
 
 // resolveLocations creates a slide of LocationResolvers for the given list of adjusted locations. The

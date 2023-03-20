@@ -238,7 +238,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 		resolvers = append(resolvers, resolver)
 	}
 
-	return NewPreciseIndexConnectionResolver(resolvers, totalUploadCount+totalIndexCount, cursor), nil
+	return resolverstubs.NewCursorWithTotalCountConnectionResolver(resolvers, cursor, int32(totalUploadCount+totalIndexCount)), nil
 }
 
 func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ resolverstubs.PreciseIndexResolver, err error) {
@@ -452,37 +452,6 @@ func (r *rootResolver) ReindexPreciseIndexes(ctx context.Context, args *resolver
 	}
 
 	return resolverstubs.Empty, nil
-}
-
-type preciseIndexConnectionResolver struct {
-	nodes      []resolverstubs.PreciseIndexResolver
-	totalCount int
-	cursor     string
-}
-
-func NewPreciseIndexConnectionResolver(
-	nodes []resolverstubs.PreciseIndexResolver,
-	totalCount int,
-	cursor string,
-) resolverstubs.PreciseIndexConnectionResolver {
-	return &preciseIndexConnectionResolver{
-		nodes:      nodes,
-		totalCount: totalCount,
-		cursor:     cursor,
-	}
-}
-
-func (r *preciseIndexConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.PreciseIndexResolver, error) {
-	return r.nodes, nil
-}
-
-func (r *preciseIndexConnectionResolver) TotalCount() *int32 {
-	count := int32(r.totalCount)
-	return &count
-}
-
-func (r *preciseIndexConnectionResolver) PageInfo() resolverstubs.PageInfo {
-	return resolverstubs.NewPageInfoFromCursor(r.cursor)
 }
 
 func unmarshalPreciseIndexGQLID(id graphql.ID) (uploadID, indexID int, err error) {

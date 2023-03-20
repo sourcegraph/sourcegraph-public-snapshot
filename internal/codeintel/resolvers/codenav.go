@@ -104,7 +104,7 @@ type GitTreeLSIFDataResolver interface {
 
 type (
 	LSIFDiagnosticsArgs          = ConnectionArgs
-	DiagnosticConnectionResolver = PagedConnectionResolverWithCount[DiagnosticResolver]
+	DiagnosticConnectionResolver = PagedConnectionWithTotalCountResolver[DiagnosticResolver]
 )
 
 type DiagnosticResolver interface {

@@ -12,15 +12,127 @@ type ConnectionResolver[T any] interface {
 	Nodes(ctx context.Context) ([]T, error)
 }
 
+type connectionResolver[T any] struct {
+	nodes []T
+}
+
+func NewConnectionResolver[T any](nodes []T) ConnectionResolver[T] {
+	return &connectionResolver[T]{
+		nodes: nodes,
+	}
+}
+
+func (r *connectionResolver[T]) Nodes(ctx context.Context) ([]T, error) {
+	return r.nodes, nil
+}
+
+//
+//
+
 type PagedConnectionResolver[T any] interface {
 	ConnectionResolver[T]
 	PageInfo() PageInfo
 }
 
-type PagedConnectionResolverWithCount[T any] interface {
+type cursorConnectionResolver[T any] struct {
+	*connectionResolver[T]
+	cursor string
+}
+
+func NewCursorConnectionResolver[T any](nodes []T, cursor string) PagedConnectionResolver[T] {
+	return &cursorConnectionResolver[T]{
+		connectionResolver: &connectionResolver[T]{
+			nodes: nodes,
+		},
+		cursor: cursor,
+	}
+}
+
+func (r *cursorConnectionResolver[T]) PageInfo() PageInfo {
+	return NewPageInfoFromCursor(r.cursor)
+}
+
+//
+//
+
+type lazyConnectionResolver[T any] struct {
+	resolveFunc func(ctx context.Context) ([]T, error)
+	cursor      string
+}
+
+func NewLazyConnectionResolver[T any](resolveFunc func(ctx context.Context) ([]T, error), cursor string) PagedConnectionResolver[T] {
+	return &lazyConnectionResolver[T]{
+		resolveFunc: resolveFunc,
+		cursor:      cursor,
+	}
+}
+
+func (r *lazyConnectionResolver[T]) Nodes(ctx context.Context) ([]T, error) {
+	return r.resolveFunc(ctx)
+}
+
+func (r *lazyConnectionResolver[T]) PageInfo() PageInfo {
+	return NewPageInfoFromCursor(r.cursor)
+}
+
+//
+//
+
+type PagedConnectionWithTotalCountResolver[T any] interface {
 	PagedConnectionResolver[T]
 	TotalCount() *int32
 }
+
+type cursorConnectionWithTotalCountResolver[T any] struct {
+	*cursorConnectionResolver[T]
+	totalCount int32
+}
+
+func NewCursorWithTotalCountConnectionResolver[T any](nodes []T, cursor string, totalCount int32) PagedConnectionWithTotalCountResolver[T] {
+	return &cursorConnectionWithTotalCountResolver[T]{
+		cursorConnectionResolver: &cursorConnectionResolver[T]{
+			connectionResolver: &connectionResolver[T]{
+				nodes: nodes,
+			},
+			cursor: cursor,
+		},
+		totalCount: totalCount,
+	}
+}
+
+func (r *cursorConnectionWithTotalCountResolver[T]) TotalCount() *int32 {
+	return &r.totalCount
+}
+
+//
+//
+
+type totalCountConnectionResolver[T any] struct {
+	*connectionResolver[T]
+	offset     int32
+	totalCount int32
+}
+
+func NewTotalCountConnectionResolver[T any](nodes []T, offset, totalCount int32) PagedConnectionWithTotalCountResolver[T] {
+	return &totalCountConnectionResolver[T]{
+		connectionResolver: &connectionResolver[T]{
+			nodes: nodes,
+		},
+		offset:     offset,
+		totalCount: totalCount,
+	}
+}
+
+func (r *totalCountConnectionResolver[T]) TotalCount() *int32 {
+	return &r.totalCount
+}
+
+func (r *totalCountConnectionResolver[T]) PageInfo() PageInfo {
+	return NewSimplePageInfo(r.offset+int32(len(r.nodes)) < r.totalCount)
+}
+
+//
+//
 
 type PageInfo interface {
 	HasNextPage() bool
