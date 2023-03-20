@@ -1,19 +1,14 @@
+import { CodebaseContext } from '../../codebase-context'
 import { Editor } from '../../editor'
-import { Message } from '../../sourcegraph-api'
-import { ContextSearchOptions } from '../context-search-options'
-
-export interface RecipePrompt {
-    displayText: string
-    contextMessages: Message[]
-    promptMessage: Message
-    botResponsePrefix: string
-}
+import { IntentDetector } from '../../intent-detector'
+import { Interaction } from '../transcript/interaction'
 
 export interface Recipe {
     getID(): string
-    getPrompt(
-        maxTokens: number,
+    getInteraction(
+        humanChatInput: string,
         editor: Editor,
-        getEmbeddingsContextMessages: (query: string, options: ContextSearchOptions) => Promise<Message[]>
-    ): Promise<RecipePrompt | null>
+        intentDetector: IntentDetector,
+        codebaseContext: CodebaseContext
+    ): Promise<Interaction | null>
 }
