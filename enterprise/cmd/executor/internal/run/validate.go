@@ -76,7 +76,7 @@ func RunValidate(cliCtx *cli.Context, logger log.Logger, config *config.Config) 
 	return nil
 }
 
-var AuthorizationFailedErr = errors.New("failed to authorize with frontend, is the authorization token set correctly?")
+var AuthorizationFailedErr = errors.New("failed to authorize with frontend, is executors.accessToken set correctly in the site-config?")
 
 func validateAuthorizationToken(ctx context.Context, client *apiclient.BaseClient, options apiclient.EndpointOptions) error {
 	req, err := apiclient.NewRequest(http.MethodGet, options.URL, ".executors/test/auth", nil)
