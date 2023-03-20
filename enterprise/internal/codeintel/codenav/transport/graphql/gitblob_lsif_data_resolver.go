@@ -164,7 +164,7 @@ const DefaultReferencesPageSize = 100
 
 // References returns the list of source locations that reference the symbol at the given position.
 func (r *gitBlobLSIFDataResolver) References(ctx context.Context, args *resolverstubs.LSIFPagedQueryPositionArgs) (_ resolverstubs.LocationConnectionResolver, err error) {
-	limit := derefInt32(args.First, DefaultReferencesPageSize)
+	limit := resolverstubs.Deref(args.First, DefaultReferencesPageSize)
 	if limit <= 0 {
 		return nil, ErrIllegalLimit
 	}
@@ -207,7 +207,7 @@ func (r *gitBlobLSIFDataResolver) References(ctx context.Context, args *resolver
 		refs = filtered
 	}
 
-	return NewLocationConnectionResolver(refs, strPtr(nextCursor), r.locationResolver), nil
+	return NewLocationConnectionResolver(refs, resolverstubs.NonZeroPtr(nextCursor), r.locationResolver), nil
 }
 
 // DefaultReferencesPageSize is the implementation result page size when no limit is supplied.
@@ -217,7 +217,7 @@ const DefaultImplementationsPageSize = 100
 var ErrIllegalLimit = errors.New("illegal limit")
 
 func (r *gitBlobLSIFDataResolver) Implementations(ctx context.Context, args *resolverstubs.LSIFPagedQueryPositionArgs) (_ resolverstubs.LocationConnectionResolver, err error) {
-	limit := derefInt32(args.First, DefaultImplementationsPageSize)
+	limit := resolverstubs.Deref(args.First, DefaultImplementationsPageSize)
 	if limit <= 0 {
 		return nil, ErrIllegalLimit
 	}
@@ -260,7 +260,7 @@ func (r *gitBlobLSIFDataResolver) Implementations(ctx context.Context, args *res
 		impls = filtered
 	}
 
-	return NewLocationConnectionResolver(impls, strPtr(nextCursor), r.locationResolver), nil
+	return NewLocationConnectionResolver(impls, resolverstubs.NonZeroPtr(nextCursor), r.locationResolver), nil
 }
 
 // Hover returns the hover text and range for the symbol at the given position.
@@ -282,7 +282,7 @@ const DefaultDiagnosticsPageSize = 100
 
 // Diagnostics returns the diagnostics for documents with the given path prefix.
 func (r *gitBlobLSIFDataResolver) Diagnostics(ctx context.Context, args *resolverstubs.LSIFDiagnosticsArgs) (_ resolverstubs.DiagnosticConnectionResolver, err error) {
-	limit := derefInt32(args.First, DefaultDiagnosticsPageSize)
+	limit := resolverstubs.Deref(args.First, DefaultDiagnosticsPageSize)
 	if limit <= 0 {
 		return nil, ErrIllegalLimit
 	}

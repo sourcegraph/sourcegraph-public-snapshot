@@ -17,22 +17,12 @@ func convertRange(r types.Range) lsp.Range {
 	return lsp.Range{Start: convertPosition(r.Start.Line, r.Start.Character), End: convertPosition(r.End.Line, r.End.Character)}
 }
 
-func convertPosition(line, character int) lsp.Position {
-	return lsp.Position{Line: line, Character: character}
-}
-
 func sharedRangeTolspRange(r types.Range) lsp.Range {
 	return lsp.Range{Start: convertPosition(r.Start.Line, r.Start.Character), End: convertPosition(r.End.Line, r.End.Character)}
 }
 
-// strPtr creates a pointer to the given value. If the value is an
-// empty string, a nil pointer is returned.
-func strPtr(val string) *string {
-	if val == "" {
-		return nil
-	}
-
-	return &val
+func convertPosition(line, character int) lsp.Position {
+	return lsp.Position{Line: line, Character: character}
 }
 
 // DecodeCursor decodes the given cursor value. It is assumed to be a value previously
@@ -49,15 +39,6 @@ func DecodeCursor(val *string) (string, error) {
 	}
 
 	return string(decoded), nil
-}
-
-// derefInt32 returns the underlying value in the given pointer.
-// If the pointer is nil, the default value is returned.
-func derefInt32(val *int32, defaultValue int) int {
-	if val != nil {
-		return int(*val)
-	}
-	return defaultValue
 }
 
 // EncodeCursor creates a PageInfo object from the given cursor. If the cursor is not

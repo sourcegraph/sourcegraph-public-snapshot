@@ -329,7 +329,7 @@ func (r *rootResolver) DeletePreciseIndexes(ctx context.Context, args *resolvers
 			return nil, err
 		}
 	}
-	term := derefString(args.Query, "")
+	term := resolverstubs.Deref(args.Query, "")
 
 	visibleAtTip := false
 	if args.IsLatestForRepo != nil {
@@ -420,7 +420,7 @@ func (r *rootResolver) ReindexPreciseIndexes(ctx context.Context, args *resolver
 			return nil, err
 		}
 	}
-	term := derefString(args.Query, "")
+	term := resolverstubs.Deref(args.Query, "")
 
 	visibleAtTip := false
 	if args.IsLatestForRepo != nil {

@@ -62,3 +62,27 @@ func UnmarshalLSIFUploadGQLID(id graphql.ID) (uploadID int64, err error) {
 func marshalLSIFUploadGQLID(uploadID int64) graphql.ID {
 	return relay.MarshalID("LSIFUpload", uploadID)
 }
+
+func Ptr[T any](v T) *T {
+	return &v
+}
+
+func NonZeroPtr[T comparable](v T) *T {
+	if v != zero[T]() {
+		return Ptr(v)
+	}
+
+	return nil
+}
+
+func zero[T any]() (zeroValue T) {
+	return zeroValue
+}
+
+func Deref[T any](v *T, defaultValue T) T {
+	if v != nil {
+		return *v
+	}
+
+	return defaultValue
+}

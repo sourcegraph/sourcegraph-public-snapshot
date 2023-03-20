@@ -11,16 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
-// strPtr creates a pointer to the given value. If the value is an
-// empty string, a nil pointer is returned.
-func strPtr(val string) *string {
-	if val == "" {
-		return nil
-	}
-
-	return &val
-}
-
 // toInt32 translates the given int pointer into an int32 pointer.
 func toInt32(val *int) *int32 {
 	if val == nil {

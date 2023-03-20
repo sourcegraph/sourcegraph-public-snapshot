@@ -14,17 +14,3 @@ func TestIndexID(t *testing.T) {
 		t.Errorf("unexpected id. have=%d want=%d", expected, value)
 	}
 }
-
-func TestDerefString(t *testing.T) {
-	expected := "foo"
-
-	if val := derefString(nil, expected); val != expected {
-		t.Errorf("unexpected value. want=%s have=%s", expected, val)
-	}
-	if val := derefString(&expected, ""); val != expected {
-		t.Errorf("unexpected value. want=%s have=%s", expected, val)
-	}
-	if val := derefString(&expected, expected); val != expected {
-		t.Errorf("unexpected value. want=%s have=%s", expected, val)
-	}
-}
