@@ -16,7 +16,7 @@ Sourcegraph supports SCIM 2.0 for provisioning and de-provisioning _users_.
 
 ## How to use
 
-To use SCIM, you must have an existing IdP configured to connect to and authenticate with your Sourcegraph instance. For auth, we currently support Bearer token authentication.
+To use SCIM, you must have an existing IdP configured to connect to and authenticate with your Sourcegraph instance. For auth, we currently support Bearer token authentication. We have a guide for Okta setup [below](#setting-up-okta-as-the-idp).
 
 To configure:
 
@@ -42,6 +42,24 @@ To configure:
    ```
    https://sourcegraph.company.com/.api/scim/v2/Users
    ```
+
+## Setting up Okta as the IdP
+
+To set up user provisioning in Okta, you must first set up a new app integration of the "SAML 2.0" type, then configure it to use SCIM. Here are the steps to do this:
+
+1. Follow our [SAML guide](auth/saml/okta) to set up a new app integration with SAML, then open the integration you just created.
+    - If you already have the integration, just open your existing app integration.
+2. Go to the "General" tab and click "Edit" in the "App Settings" section.
+3. Set "Provisioning" to "SCIM". This makes a new tab called "Provisioning" appear.
+4. Go to the new tab, and click "Edit"
+   - Set "SCIM connector base URL" to `{yourSourcegraphUrl}/.api/scim/v2`
+   - Set "Unique identifier field for users" to `userName`
+   - Check the first three items in `Supported provisioning actions`
+   - Set "Authentication mode" to "HTTP Header"
+   - Under "HTTP Header", paste the same alphanumeric bearer token you used in your site config.
+   - Click "Save".
+
+Note that you can also use our [SAML](auth/saml/okta) and [OpenID Connect](auth#openid-connect) integrations with Okta.
 
 ## Features and limitations
 
