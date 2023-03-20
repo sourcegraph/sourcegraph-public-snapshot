@@ -91,6 +91,7 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI & Pick<ParsedRe
     const treeSeparator = pathname.indexOf('/-/tree/')
     const blobSeparator = pathname.indexOf('/-/blob/')
     const comparisonSeparator = pathname.indexOf('/-/compare/')
+    const commitsSeparator = pathname.indexOf('/-/commits/')
     if (treeSeparator !== -1) {
         filePath = decodeURIComponent(pathname.slice(treeSeparator + '/-/tree/'.length))
     }
@@ -99,6 +100,9 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI & Pick<ParsedRe
     }
     if (comparisonSeparator !== -1) {
         commitRange = pathname.slice(comparisonSeparator + '/-/compare/'.length)
+    }
+    if (commitsSeparator !== -1) {
+        filePath = decodeURIComponent(pathname.slice(commitsSeparator + '/-/commits/'.length))
     }
     let position: Position | undefined
     let range: Range | undefined
