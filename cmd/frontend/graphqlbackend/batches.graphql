@@ -405,6 +405,7 @@ type ExternalChangeset implements Node & Changeset {
     * GitLab - only author.name
     * Bitbucket Server - author is not always available
     * Bitbucket Cloud - author is never available
+    * Azure DevOps - author is always available
     """
     author: Person
 
