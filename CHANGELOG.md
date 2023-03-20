@@ -73,6 +73,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Enable `auto gc` on fetch when `SRC_ENABLE_GC_AUTO` is set to `true`. [#47852](https://github.com/sourcegraph/sourcegraph/pull/47852)
 - Fixes syntax highlighting and line number issues in the code preview rendered inside the references panel. [#48107](https://github.com/sourcegraph/sourcegraph/pull/48107)
 - The ordering of code host sync error messages in the notifications menu will now be persistent. Previously the order was not guaranteed on a refresh of the status messages, which would make the code host sync error messages jump positions, giving a false sense of change to the site admins. [#48722](https://github.com/sourcegraph/sourcegraph/pull/48722)
+- Fixed Detect & Track Code Insights running over all repositories when during creation a search was used to specify the repositories for the insight. [#49633](https://github.com/sourcegraph/sourcegraph/pull/49633)
 
 ### Removed
 
