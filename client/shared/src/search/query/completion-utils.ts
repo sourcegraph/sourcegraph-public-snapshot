@@ -14,8 +14,8 @@ export const PREDICATE_REGEX = /^([.A-Za-z]+)\((.*?)\)?$/
  * regexInsertText escapes the provided value so that it can be used as value
  * for a filter which expects a regular expression.
  */
-export const regexInsertText = (value: string, options: { globbing: boolean }): string => {
-    const insertText = options.globbing ? value : `^${escapeRegExp(value)}$`
+export const regexInsertText = (value: string, _options: {}): string => {
+    const insertText = `^${escapeRegExp(value)}$`
     return escapeSpaces(insertText)
 }
 
@@ -23,10 +23,8 @@ export const regexInsertText = (value: string, options: { globbing: boolean }): 
  * repositoryInsertText escapes the provides value so that it can be used as a
  * value for the `repo:` filter.
  */
-export const repositoryInsertText = (
-    { repository }: RepositoryMatch,
-    options: { globbing: boolean; filterValue?: string }
-): string => regexInsertText(repository, options)
+export const repositoryInsertText = ({ repository }: RepositoryMatch, options: { filterValue?: string }): string =>
+    regexInsertText(repository, options)
 
 /**
  * Given a list of filter types, this function returns a list of objects which

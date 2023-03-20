@@ -71,7 +71,6 @@ export const JetBrainsSearchBoxStory: Story = () => {
                                     getUserSearchContextNamespaces={() => []}
                                     fetchStreamSuggestions={() => NEVER}
                                     settingsCascade={EMPTY_SETTINGS_CASCADE}
-                                    globbing={false}
                                     telemetryService={NOOP_TELEMETRY_SERVICE}
                                     platformContext={{ requestGraphQL: () => EMPTY }}
                                     className=""

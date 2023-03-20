@@ -132,7 +132,7 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                             caseSensitive={false}
                             queryState={queryState}
                             onChange={setQueryState}
-                            globbing={false}
+                            ={false}
                             preventNewLine={true}
                             applySuggestionsOnEnter={applySuggestionsOnEnter}
                         />

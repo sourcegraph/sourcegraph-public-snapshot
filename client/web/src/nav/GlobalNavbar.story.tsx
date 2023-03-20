@@ -20,7 +20,6 @@ const defaultProps: GlobalNavbarProps = {
         subjects: null,
     },
     telemetryService: NOOP_TELEMETRY_SERVICE,
-    globbing: false,
     platformContext: {} as any,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,

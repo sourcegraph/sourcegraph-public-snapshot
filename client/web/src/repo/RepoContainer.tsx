@@ -88,8 +88,6 @@ export interface RepoContainerContext
 
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 
-    globbing: boolean
-
     isMacPlatform: boolean
 
     isSourcegraphDotCom: boolean
@@ -124,7 +122,6 @@ interface RepoContainerProps
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     authenticatedUser: AuthenticatedUser | null
-    globbing: boolean
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
 }
@@ -140,7 +137,7 @@ export interface HoverThresholdProps {
  * Renders a horizontal bar and content for a repository page.
  */
 export const RepoContainer: FC<RepoContainerProps> = props => {
-    const { extensionsController, globbing, repoContainerRoutes, authenticatedUser, selectedSearchContextSpec } = props
+    const { extensionsController, repoContainerRoutes, authenticatedUser, selectedSearchContextSpec } = props
 
     const location = useLocation()
 
@@ -270,15 +267,15 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
     )
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
     useEffect(() => {
-        let query = queryPrefix + searchQueryForRepoRevision(repoName, globbing, revision)
+        let query = queryPrefix + searchQueryForRepoRevision(repoName, revision)
         if (filePath) {
-            query = `${query.trimEnd()} file:${escapeSpaces(globbing ? filePath : '^' + escapeRegExp(filePath))}`
+            query = `${query.trimEnd()} file:${escapeSpaces('^' + escapeRegExp(filePath))}`
         }
         onNavbarQueryChange({
             query,
             hint: EditorHint.Blur,
         })
-    }, [revision, filePath, repoName, onNavbarQueryChange, globbing, queryPrefix])
+    }, [revision, filePath, repoName, onNavbarQueryChange, queryPrefix])
 
     const isError = isErrorLike(repoOrError) || isErrorLike(resolvedRevisionOrError)
 

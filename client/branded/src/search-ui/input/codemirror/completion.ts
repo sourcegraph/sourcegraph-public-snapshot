@@ -316,7 +316,6 @@ export function searchQueryAutocompletion(
 export interface DefaultSuggestionSourcesOptions {
     fetchSuggestions: (query: string, onAbort: (listener: () => void) => void) => Promise<SearchMatch[]>
     isSourcegraphDotCom: boolean
-    globbing: boolean
     applyOnEnter?: boolean
     disableFilterCompletion?: true
     disableSymbolCompletion?: true
@@ -462,7 +461,7 @@ export function createDefaultSuggestionSources(
                     to: token.value?.range.end,
                     filter: false,
                     options: filteredResults,
-                    getMatch: insidePredicate || options.globbing ? undefined : createMatchFunction(token),
+                    getMatch: insidePredicate ? undefined : createMatchFunction(token),
                 }
             })
         )

@@ -102,7 +102,6 @@ interface BlobPageProps
         NotebookProps,
         OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
-    globbing: boolean
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
     repoID?: Scalars['ID']

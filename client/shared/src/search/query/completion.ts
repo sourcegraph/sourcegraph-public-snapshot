@@ -77,7 +77,7 @@ const symbolKindToCompletionItemKind: Record<SymbolKind, Monaco.languages.Comple
  */
 const suggestionToCompletionItems = (
     suggestion: SearchMatch,
-    options: { globbing: boolean; filterValue?: string }
+    options: { filterValue?: string }
 ): PartialCompletionItem[] | PartialCompletionItem => {
     switch (suggestion.type) {
         case 'path':
@@ -253,10 +253,9 @@ export async function getCompletionItems(
     { column }: Pick<Monaco.Position, 'column'>,
     fetchDynamicSuggestions: FetchSuggestions,
     {
-        globbing = false,
         isSourcegraphDotCom = false,
         disablePatternSuggestions = false,
-    }: { globbing?: boolean; isSourcegraphDotCom?: boolean; disablePatternSuggestions?: boolean }
+    }: { isSourcegraphDotCom?: boolean; disablePatternSuggestions?: boolean }
 ): Promise<Monaco.languages.CompletionList | null> {
     let suggestions: Monaco.languages.CompletionItem[] = []
 
@@ -269,7 +268,7 @@ export async function getCompletionItems(
             tokenAtPosition,
             async (token, type) =>
                 (await fetchDynamicSuggestions(token, type)).flatMap(suggestion =>
-                    suggestionToCompletionItems(suggestion, { globbing })
+                    suggestionToCompletionItems(suggestion, {})
                 ),
             disablePatternSuggestions
         )
@@ -294,7 +293,7 @@ export async function getCompletionItems(
                     (
                         await fetchDynamicSuggestions(token, type)
                     ).flatMap(suggestion =>
-                        suggestionToCompletionItems(suggestion, { globbing, filterValue: token.value?.value })
+                        suggestionToCompletionItems(suggestion, { filterValue: token.value?.value })
                     ),
                 column,
                 isSourcegraphDotCom

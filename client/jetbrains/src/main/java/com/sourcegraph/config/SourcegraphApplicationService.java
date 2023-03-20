@@ -23,7 +23,6 @@ public class SourcegraphApplicationService implements PersistentStateComponent<S
     public String defaultBranch;
     @Nullable
     public String remoteUrlReplacements;
-    public boolean isGlobbingEnabled; // This can be a primitive boolean, we need no "null" state
     @Nullable
     public String anonymousUserId;
     public boolean isInstallEventLogged;
@@ -69,9 +68,6 @@ public class SourcegraphApplicationService implements PersistentStateComponent<S
         return remoteUrlReplacements;
     }
 
-    public boolean isGlobbingEnabled() {
-        return this.isGlobbingEnabled;
-    }
 
     @Nullable
     public String getAnonymousUserId() {
@@ -110,7 +106,6 @@ public class SourcegraphApplicationService implements PersistentStateComponent<S
         this.customRequestHeaders = settings.customRequestHeaders;
         this.defaultBranch = settings.defaultBranch;
         this.remoteUrlReplacements = settings.remoteUrlReplacements;
-        this.isGlobbingEnabled = settings.isGlobbingEnabled;
         this.anonymousUserId = settings.anonymousUserId;
         this.isUrlNotificationDismissed = settings.isUrlNotificationDismissed;
         this.authenticationFailedLastTime = settings.authenticationFailedLastTime;

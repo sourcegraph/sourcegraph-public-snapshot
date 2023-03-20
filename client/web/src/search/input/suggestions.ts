@@ -186,7 +186,7 @@ function toRepoCompletion(
         kind: 'repo',
         action: {
             type: 'completion',
-            insertValue: valuePrefix + regexInsertText(item.name, { globbing: false }) + ' ',
+            insertValue: valuePrefix + regexInsertText(item.name, {}) + ' ',
             from,
             to,
         },
@@ -260,7 +260,7 @@ function toFileCompletion(
         kind: 'file',
         action: {
             type: 'completion',
-            insertValue: valuePrefix + regexInsertText(item.path, { globbing: false }) + ' ',
+            insertValue: valuePrefix + regexInsertText(item.path, {}) + ' ',
             from,
             to,
         },
