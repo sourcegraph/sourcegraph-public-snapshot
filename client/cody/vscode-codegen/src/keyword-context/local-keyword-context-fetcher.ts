@@ -5,17 +5,14 @@ import { removeStopwords } from 'stopword'
 import StreamValues from 'stream-json/streamers/StreamValues'
 import * as vscode from 'vscode'
 
-import { getContextMessageWithResponse, populateCodeContextTemplate } from '../chat/prompt'
-import { Message } from '../sourcegraph-api'
-
-import { KeywordContextFetcher } from '.'
+import { KeywordContextFetcher, KeywordContextFetcherResult } from '.'
 
 const fileExtRipgrepParams = ['-Tmarkdown', '-Tyaml', '-Tjson', '-g', '!*.lock']
 
 export class LocalKeywordContextFetcher implements KeywordContextFetcher {
     constructor(private rgPath: string) {}
 
-    public async getContextMessages(query: string): Promise<Message[]> {
+    public async getContext(query: string, numResults: number): Promise<KeywordContextFetcherResult[]> {
         console.log('fetching keyword matches')
         const rootPath = getRootPath()
         if (!rootPath) {
@@ -23,13 +20,12 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         }
 
         const filesnamesWithScores = await this.fetchKeywordFiles(rootPath, query)
-        const top10 = filesnamesWithScores.slice(0, 10)
+        const top10 = filesnamesWithScores.slice(0, numResults)
         const messagePairs = await Promise.all(
             top10.map(async ({ filename }) => {
                 const uri = vscode.Uri.file(path.join(rootPath, filename))
-                const text = (await vscode.workspace.openTextDocument(uri)).getText()
-                const messageText = populateCodeContextTemplate(text, filename)
-                return getContextMessageWithResponse(messageText, filename)
+                const content = (await vscode.workspace.openTextDocument(uri)).getText()
+                return { fileName: filename, content }
             })
         )
         return messagePairs.reverse().flat()
