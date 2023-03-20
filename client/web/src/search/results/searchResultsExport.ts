@@ -211,11 +211,11 @@ export const downloadSearchResults = (
     options: StreamSearchOptions
 ): Promise<void> =>
     new Promise<void>((resolve, reject) => {
-        // TODO: we have to figure out how to cancel this operation or show related progress
-        // https://github.com/sourcegraph/sourcegraph/issues/49645
-        // eslint-disable-next-line rxjs/no-ignored-subscription
         aggregateStreamingSearch(of(query), { ...options, displayLimit: 999999 })
             .pipe(last())
+            // TODO: we have to figure out how to cancel this operation or show related progress
+            // https://github.com/sourcegraph/sourcegraph/issues/49645
+            // eslint-disable-next-line rxjs/no-ignored-subscription
             .subscribe(
                 results => {
                     const content = searchResultsToFileContent(results.results, sourcegraphURL)
