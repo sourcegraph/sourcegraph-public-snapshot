@@ -17,7 +17,7 @@ export const AppComingSoonPage: React.FC = () => {
     useEffect(() => eventLogger.logPageView('AppComingSoonPage'), [])
 
     return (
-        <Page>
+        <Page className={styles.root}>
             <PageTitle title="Coming soon" />
             <PageHeader
                 description="Exciting things are coming to Sourcegraph. Stay tuned for upcoming features."
