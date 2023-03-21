@@ -134,9 +134,10 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
                             prefix="Error submitting feedback"
                         />
                     )}
-<Text className="d-flex align-items-center justify-content-between mt-2">
+                    <Text className="d-flex align-items-center justify-content-between mt-2">
                         <span>
-                            By submitting your feedback, you agree to the <Link to="https://about.sourcegraph.com/terms/privacy">Sourcegraph Privacy Policy</Link>.
+                            By submitting your feedback, you agree to the{' '}
+                            <Link to="https://about.sourcegraph.com/terms/privacy">Sourcegraph Privacy Policy</Link>.
                         </span>
                     </Text>
                     <Button
@@ -149,7 +150,6 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
                     >
                         {submitting ? <LoadingSpinner /> : 'Send'}
                     </Button>
-
                 </Form>
             )}
         </>
