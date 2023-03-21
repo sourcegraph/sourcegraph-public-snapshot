@@ -419,6 +419,7 @@ func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.
 		logger.Error("server.query-external-service-namespaces", log.Error(err))
 		httpCode := codeToStatus(status.Code(err))
 		s.respond(w, httpCode, &protocol.ExternalServiceNamespacesResult{Error: err.Error()})
+		return
 	}
 	s.respond(w, http.StatusOK, protocol.ExternalServiceNamespacesResultFromProto(result))
 }
@@ -497,6 +498,7 @@ func (s *Server) handleExternalServiceRepositories(w http.ResponseWriter, r *htt
 		logger.Error("server.query-external-service-repositories", log.Error(err))
 		httpCode := codeToStatus(status.Code(err))
 		s.respond(w, httpCode, &protocol.ExternalServiceRepositoriesResult{Error: err.Error()})
+		return
 	}
 	s.respond(w, http.StatusOK, protocol.ExternalServiceRepositoriesResultFromProto(result))
 }
