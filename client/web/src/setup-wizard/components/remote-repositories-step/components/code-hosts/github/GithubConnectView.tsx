@@ -250,7 +250,7 @@ function GithubFormView(props: GithubFormViewProps): ReactElement {
                     <>
                         Create GitHub access token classic (
                         <Link
-                            to="https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line"
+                            to="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token#personal-access-tokens-classic"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
