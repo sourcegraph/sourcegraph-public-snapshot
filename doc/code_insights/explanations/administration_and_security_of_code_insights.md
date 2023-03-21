@@ -31,7 +31,7 @@ Because there are no separate read/write permissions and no dashboard owners, an
 
 If a user gets deleted, any insights they created will still be visible to other users via the dashboards they appear on. However, if one of these insights is removed from all dashboards, it will no longer be accessible.
 
-## Code Insights Admin  (>=5.0.0)
+## Code Insights Admin  (>=5.0)
 
 Sourcegraph administrators can view and manage the background jobs that Code Insights runs when historically backfilling an insight. The following functionality is available under _Code Insights jobs_ in the _Maintenance_ section within the Site Admin:
   - See a list of the jobs that backfill a insights and their current status
