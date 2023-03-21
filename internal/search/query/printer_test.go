@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 )
 
 func TestStringHuman(t *testing.T) {
@@ -43,7 +43,7 @@ func TestStringHuman(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run("printer", func(t *testing.T) {
-			autogold.Equal(t, autogold.Raw(test(c)))
+			autogold.ExpectFile(t, autogold.Raw(test(c)))
 		})
 	}
 }

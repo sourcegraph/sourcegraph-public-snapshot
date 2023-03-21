@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -81,9 +81,8 @@ func (p *permissionSyncJobScheduler) Routines(_ context.Context, observationCtx 
 			func() time.Duration { return scheduleInterval },
 			goroutine.HandlerFunc(
 				func(ctx context.Context) error {
-					if !permssync.PermissionSyncWorkerEnabled(ctx, db, logger) || permissionSyncingDisabled() {
-						// TODO(naman): convert log to debug level post testing
-						logger.Info("disabled")
+					if !permssync.PermissionSyncWorkerEnabled(ctx, db, logger) || authz.PermissionSyncingDisabled() {
+						logger.Debug("new scheduler disabled due to either permission syncing disabled or feature flag not enabled")
 						return nil
 					}
 
@@ -109,10 +108,10 @@ func scheduleJobs(ctx context.Context, db database.DB, logger log.Logger) (int, 
 		return 0, err
 	}
 
-	logger.Info("scheduling permission syncs", log.Int("users", len(schedule.Users)), log.Int("repos", len(schedule.Repos)))
+	logger.Debug("scheduling permission syncs", log.Int("users", len(schedule.Users)), log.Int("repos", len(schedule.Repos)))
 
 	for _, u := range schedule.Users {
-		opts := database.PermissionSyncJobOpts{Reason: u.reason, Priority: u.priority}
+		opts := database.PermissionSyncJobOpts{Reason: u.reason, Priority: u.priority, NoPerms: u.noPerms}
 		if err := store.CreateUserSyncJob(ctx, u.userID, opts); err != nil {
 			logger.Error(fmt.Sprintf("failed to create sync job for user (%d)", u.userID), log.Error(err))
 			continue
@@ -120,7 +119,7 @@ func scheduleJobs(ctx context.Context, db database.DB, logger log.Logger) (int, 
 	}
 
 	for _, r := range schedule.Repos {
-		opts := database.PermissionSyncJobOpts{Reason: r.reason, Priority: r.priority}
+		opts := database.PermissionSyncJobOpts{Reason: r.reason, Priority: r.priority, NoPerms: r.noPerms}
 		if err := store.CreateRepoSyncJob(ctx, r.repoID, opts); err != nil {
 			logger.Error(fmt.Sprintf("failed to create sync job for repo (%d)", r.repoID), log.Error(err))
 			continue
@@ -138,16 +137,16 @@ type schedule struct {
 
 // scheduledUser contains information for scheduling a user.
 type scheduledUser struct {
-	reason   database.PermissionSyncJobReason
-	priority database.PermissionSyncJobPriority
+	reason   database.PermissionsSyncJobReason
+	priority database.PermissionsSyncJobPriority
 	userID   int32
 	noPerms  bool
 }
 
 // scheduledRepo contains for scheduling a repository.
 type scheduledRepo struct {
-	reason   database.PermissionSyncJobReason
-	priority database.PermissionSyncJobPriority
+	reason   database.PermissionsSyncJobReason
+	priority database.PermissionsSyncJobPriority
 	repoID   api.RepoID
 	noPerms  bool
 }
@@ -202,7 +201,7 @@ func scheduleUsersWithNoPerms(ctx context.Context, store edb.PermsStore) ([]sche
 		users[i] = scheduledUser{
 			userID:   id,
 			reason:   database.ReasonUserNoPermissions,
-			priority: database.MediumPriorityPermissionSync,
+			priority: database.MediumPriorityPermissionsSync,
 			noPerms:  true,
 		}
 	}
@@ -222,7 +221,7 @@ func scheduleReposWithNoPerms(ctx context.Context, store edb.PermsStore) ([]sche
 		repositories[i] = scheduledRepo{
 			repoID:   id,
 			reason:   database.ReasonRepoNoPermissions,
-			priority: database.MediumPriorityPermissionSync,
+			priority: database.MediumPriorityPermissionsSync,
 			noPerms:  true,
 		}
 	}
@@ -242,7 +241,7 @@ func scheduleUsersWithOldestPerms(ctx context.Context, store edb.PermsStore, lim
 		users = append(users, scheduledUser{
 			userID:   id,
 			reason:   database.ReasonUserOutdatedPermissions,
-			priority: database.LowPriorityPermissionSync,
+			priority: database.LowPriorityPermissionsSync,
 		})
 	}
 	return users, nil
@@ -261,7 +260,7 @@ func scheduleReposWithOldestPerms(ctx context.Context, store edb.PermsStore, lim
 		repositories = append(repositories, scheduledRepo{
 			repoID:   id,
 			reason:   database.ReasonRepoOutdatedPermissions,
-			priority: database.LowPriorityPermissionSync,
+			priority: database.LowPriorityPermissionsSync,
 		})
 	}
 	return repositories, nil
@@ -307,15 +306,4 @@ func syncRepoBackoff() time.Duration {
 		return 60 * time.Second
 	}
 	return time.Duration(seconds) * time.Second
-}
-
-// PermissionSyncingDisabled returns true if the background permissions syncing is not enabled.
-// It is not enabled if:
-//   - Permissions user mapping (aka explicit permissions API) is enabled
-//   - Not purchased with the current license
-//   - `disableAutoCodeHostSyncs` site setting is set to true
-func permissionSyncingDisabled() bool {
-	return globals.PermissionsUserMapping().Enabled ||
-		licensing.Check(licensing.FeatureACLs) != nil ||
-		conf.Get().DisableAutoCodeHostSyncs
 }

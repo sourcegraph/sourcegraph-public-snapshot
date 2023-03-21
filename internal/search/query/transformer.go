@@ -1,6 +1,7 @@
 package query
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -39,11 +40,16 @@ func LowercaseFieldNames(nodes []Node) []Node {
 	})
 }
 
+const CountAllLimit = 99999999
+
+var countAllLimitStr = strconv.Itoa(CountAllLimit)
+
 // SubstituteCountAll replaces count:all with count:99999999.
 func SubstituteCountAll(nodes []Node) []Node {
 	return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
 		if field == FieldCount && strings.ToLower(value) == "all" {
-			return Parameter{Field: field, Value: "99999999", Negated: negated, Annotation: annotation}
+			c := countAllLimitStr
+			return Parameter{Field: field, Value: c, Negated: negated, Annotation: annotation}
 		}
 		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 	})
@@ -567,11 +573,11 @@ func ConcatRevFilters(b Basic) Basic {
 	if revision == "" {
 		return b
 	}
-	modified := MapField(nodes, FieldRepo, func(value string, negated bool, _ Annotation) Node {
-		if !negated {
-			return Parameter{Value: value + "@" + revision, Field: FieldRepo, Negated: negated}
+	modified := MapField(nodes, FieldRepo, func(value string, negated bool, ann Annotation) Node {
+		if !negated && !ann.Labels.IsSet(IsPredicate) {
+			return Parameter{Value: value + "@" + revision, Field: FieldRepo, Negated: negated, Annotation: ann}
 		}
-		return Parameter{Value: value, Field: FieldRepo, Negated: negated}
+		return Parameter{Value: value, Field: FieldRepo, Negated: negated, Annotation: ann}
 	})
 	return Basic{Parameters: toParameters(modified), Pattern: b.Pattern}
 }

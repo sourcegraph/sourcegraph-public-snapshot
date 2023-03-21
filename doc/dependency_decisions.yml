@@ -297,6 +297,10 @@
   - modernc.org/strutil
   - BSD-3-Clause
   - *3
+- - :license
+  - github.com/pjbgf/sha1cd
+  - Apache 2.0
+  - *3
 - - :ignore
   - github.com/OpenPeeDeeP/depguard
   - :who:

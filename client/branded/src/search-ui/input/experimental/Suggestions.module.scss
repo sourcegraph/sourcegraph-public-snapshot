@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .container {
     overflow-y: hidden;
     display: flex;
@@ -12,6 +14,13 @@
 
     .suggestions {
         overflow-y: auto;
+        margin: 0 var(--suggestions-padding) var(--suggestions-padding);
+
+        // Don't render the suggestions panel if we don't have any suggestions
+        // in order to avoid extra paddings appearance
+        &:empty {
+            display: none;
+        }
 
         ul {
             margin: 0;
@@ -22,7 +31,8 @@
 
         [role='rowgroup'] {
             border-bottom: 1px solid var(--border-color);
-            padding: 0.75rem;
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
 
             &:first-of-type {
                 padding-top: 0;
@@ -30,6 +40,7 @@
 
             &:last-of-type {
                 border: none;
+                padding-bottom: 0;
             }
 
             // group header
@@ -41,6 +52,50 @@
                 padding: 0 0.5rem;
             }
 
+            /*
+                Layout of a row
+                The icon is always top aligned next to the label.
+                Label and description can wrap around if necessary, in which case the
+                action labels are centered.
+                On small screens the action labels are shown on a separate row.
+
+                Normal:
+                       ┌── inner-row ────────────────────────┐
+                       │┌────────────────────────┐           │
+               ┌──────┐││┌───────┐┌─────────────┐│┌─────────┐│
+               │ Icon ││││ Label ││ Description │││ Actions ││
+               └──────┘││└───────┘└─────────────┘│└─────────┘│
+                       │└────────────────────────┘           │
+                       └─────────────────────────────────────┘
+
+                Wrapped description:
+                       ┌─── inner-row ───────────────────────┐
+                       │┌────────────────────────┐           │
+               ┌──────┐││┌──────────────────────┐│           │
+               │ Icon ││││ Label                ││┌─────────┐│
+               └──────┘││└──────────────────────┘││ Actions ││
+                       ││┌──────────────────────┐│└─────────┘│
+                       │││ Description          ││           │
+                       ││└──────────────────────┘│           │
+                       │└────────────────────────┘           │
+                       └─────────────────────────────────────┘
+
+                Mobile:
+                       ┌─── inner-row ───────────────────────┐
+                       │┌───────────────────────────────────┐│
+               ┌──────┐││┌─────────────────────────────────┐││
+               │ Icon ││││ Label                           │││
+               └──────┘││└─────────────────────────────────┘││
+                       ││┌─────────────────────────────────┐││
+                       │││ Description                     │││
+                       ││└─────────────────────────────────┘││
+                       │└───────────────────────────────────┘│
+                       │┌───────────────────────────────────┐│
+                       ││ Actions                           ││
+                       │└───────────────────────────────────┘│
+                       └─────────────────────────────────────┘
+
+            */
             [role='row'] {
                 display: flex;
                 align-items: center;
@@ -60,12 +115,28 @@
                     cursor: pointer;
                 }
 
+                // Used to make label and actions wrappable
+                .inner-row {
+                    display: flex;
+                    flex: 1;
+                    align-items: center;
+
+                    @media (--xs-breakpoint-down) {
+                        flex-direction: column;
+                        align-items: start;
+                        gap: 0.25rem;
+                    }
+                }
+
+                .label {
+                    margin-right: 0.5rem;
+                }
+
                 .match {
                     font-weight: bold;
                 }
 
                 .description {
-                    margin-left: 0.5rem;
                     color: var(--input-placeholder-color);
                 }
 
@@ -75,13 +146,27 @@
                     color: var(--text-muted);
                     font-family: var(--font-family-base);
                     display: flex;
+                    white-space: nowrap;
+
+                    @media (--xs-breakpoint-down) {
+                        margin-left: 0;
+                    }
 
                     > [role='gridcell'] {
                         padding: 0 0.5rem;
-                        border-left: 1px solid var(--border-color);
 
-                        &:first-child {
-                            border-left: 0;
+                        &:hover {
+                            text-decoration: underline;
+                        }
+
+                        + [role='gridcell'] {
+                            border-left: 1px solid var(--border-color-2);
+                        }
+
+                        @media (--xs-breakpoint-down) {
+                            &:first-of-type {
+                                padding-left: 0;
+                            }
                         }
                     }
                 }
@@ -91,21 +176,12 @@
 }
 
 .filter-option {
-    display: flex;
     font-family: var(--code-font-family);
     font-size: 0.75rem;
 
     .separator {
         color: var(--search-filter-keyword-color);
     }
-}
-
-.filter-field {
-    color: var(--search-filter-keyword-color);
-    background-color: var(--oc-blue-0);
-    // border: 1px solid var(--oc-blue-1);
-    border-radius: 3px;
-    padding: 0;
 }
 
 .icon {

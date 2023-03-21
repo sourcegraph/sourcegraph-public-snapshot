@@ -8,12 +8,14 @@ package sources
 
 import (
 	"context"
+	"net/url"
 	"sync"
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	types1 "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	auth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	azuredevops "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	bitbucketcloud "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	protocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
@@ -1301,12 +1303,9 @@ type MockForkableChangesetSource struct {
 	// CreateCommentFunc is an instance of a mock function object
 	// controlling the behavior of the method CreateComment.
 	CreateCommentFunc *ForkableChangesetSourceCreateCommentFunc
-	// GetNamespaceForkFunc is an instance of a mock function object
-	// controlling the behavior of the method GetNamespaceFork.
-	GetNamespaceForkFunc *ForkableChangesetSourceGetNamespaceForkFunc
-	// GetUserForkFunc is an instance of a mock function object controlling
-	// the behavior of the method GetUserFork.
-	GetUserForkFunc *ForkableChangesetSourceGetUserForkFunc
+	// GetForkFunc is an instance of a mock function object controlling the
+	// behavior of the method GetFork.
+	GetForkFunc *ForkableChangesetSourceGetForkFunc
 	// GitserverPushConfigFunc is an instance of a mock function object
 	// controlling the behavior of the method GitserverPushConfig.
 	GitserverPushConfigFunc *ForkableChangesetSourceGitserverPushConfigFunc
@@ -1350,13 +1349,8 @@ func NewMockForkableChangesetSource() *MockForkableChangesetSource {
 				return
 			},
 		},
-		GetNamespaceForkFunc: &ForkableChangesetSourceGetNamespaceForkFunc{
-			defaultHook: func(context.Context, *types.Repo, string) (r0 *types.Repo, r1 error) {
-				return
-			},
-		},
-		GetUserForkFunc: &ForkableChangesetSourceGetUserForkFunc{
-			defaultHook: func(context.Context, *types.Repo) (r0 *types.Repo, r1 error) {
+		GetForkFunc: &ForkableChangesetSourceGetForkFunc{
+			defaultHook: func(context.Context, *types.Repo, *string, *string) (r0 *types.Repo, r1 error) {
 				return
 			},
 		},
@@ -1418,14 +1412,9 @@ func NewStrictMockForkableChangesetSource() *MockForkableChangesetSource {
 				panic("unexpected invocation of MockForkableChangesetSource.CreateComment")
 			},
 		},
-		GetNamespaceForkFunc: &ForkableChangesetSourceGetNamespaceForkFunc{
-			defaultHook: func(context.Context, *types.Repo, string) (*types.Repo, error) {
-				panic("unexpected invocation of MockForkableChangesetSource.GetNamespaceFork")
-			},
-		},
-		GetUserForkFunc: &ForkableChangesetSourceGetUserForkFunc{
-			defaultHook: func(context.Context, *types.Repo) (*types.Repo, error) {
-				panic("unexpected invocation of MockForkableChangesetSource.GetUserFork")
+		GetForkFunc: &ForkableChangesetSourceGetForkFunc{
+			defaultHook: func(context.Context, *types.Repo, *string, *string) (*types.Repo, error) {
+				panic("unexpected invocation of MockForkableChangesetSource.GetFork")
 			},
 		},
 		GitserverPushConfigFunc: &ForkableChangesetSourceGitserverPushConfigFunc{
@@ -1480,11 +1469,8 @@ func NewMockForkableChangesetSourceFrom(i ForkableChangesetSource) *MockForkable
 		CreateCommentFunc: &ForkableChangesetSourceCreateCommentFunc{
 			defaultHook: i.CreateComment,
 		},
-		GetNamespaceForkFunc: &ForkableChangesetSourceGetNamespaceForkFunc{
-			defaultHook: i.GetNamespaceFork,
-		},
-		GetUserForkFunc: &ForkableChangesetSourceGetUserForkFunc{
-			defaultHook: i.GetUserFork,
+		GetForkFunc: &ForkableChangesetSourceGetForkFunc{
+			defaultHook: i.GetFork,
 		},
 		GitserverPushConfigFunc: &ForkableChangesetSourceGitserverPushConfigFunc{
 			defaultHook: i.GitserverPushConfig,
@@ -1843,37 +1829,36 @@ func (c ForkableChangesetSourceCreateCommentFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// ForkableChangesetSourceGetNamespaceForkFunc describes the behavior when
-// the GetNamespaceFork method of the parent MockForkableChangesetSource
-// instance is invoked.
-type ForkableChangesetSourceGetNamespaceForkFunc struct {
-	defaultHook func(context.Context, *types.Repo, string) (*types.Repo, error)
-	hooks       []func(context.Context, *types.Repo, string) (*types.Repo, error)
-	history     []ForkableChangesetSourceGetNamespaceForkFuncCall
+// ForkableChangesetSourceGetForkFunc describes the behavior when the
+// GetFork method of the parent MockForkableChangesetSource instance is
+// invoked.
+type ForkableChangesetSourceGetForkFunc struct {
+	defaultHook func(context.Context, *types.Repo, *string, *string) (*types.Repo, error)
+	hooks       []func(context.Context, *types.Repo, *string, *string) (*types.Repo, error)
+	history     []ForkableChangesetSourceGetForkFuncCall
 	mutex       sync.Mutex
 }
 
-// GetNamespaceFork delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockForkableChangesetSource) GetNamespaceFork(v0 context.Context, v1 *types.Repo, v2 string) (*types.Repo, error) {
-	r0, r1 := m.GetNamespaceForkFunc.nextHook()(v0, v1, v2)
-	m.GetNamespaceForkFunc.appendCall(ForkableChangesetSourceGetNamespaceForkFuncCall{v0, v1, v2, r0, r1})
+// GetFork delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockForkableChangesetSource) GetFork(v0 context.Context, v1 *types.Repo, v2 *string, v3 *string) (*types.Repo, error) {
+	r0, r1 := m.GetForkFunc.nextHook()(v0, v1, v2, v3)
+	m.GetForkFunc.appendCall(ForkableChangesetSourceGetForkFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the GetNamespaceFork
-// method of the parent MockForkableChangesetSource instance is invoked and
-// the hook queue is empty.
-func (f *ForkableChangesetSourceGetNamespaceForkFunc) SetDefaultHook(hook func(context.Context, *types.Repo, string) (*types.Repo, error)) {
+// SetDefaultHook sets function that is called when the GetFork method of
+// the parent MockForkableChangesetSource instance is invoked and the hook
+// queue is empty.
+func (f *ForkableChangesetSourceGetForkFunc) SetDefaultHook(hook func(context.Context, *types.Repo, *string, *string) (*types.Repo, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetNamespaceFork method of the parent MockForkableChangesetSource
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *ForkableChangesetSourceGetNamespaceForkFunc) PushHook(hook func(context.Context, *types.Repo, string) (*types.Repo, error)) {
+// GetFork method of the parent MockForkableChangesetSource instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *ForkableChangesetSourceGetForkFunc) PushHook(hook func(context.Context, *types.Repo, *string, *string) (*types.Repo, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1881,20 +1866,20 @@ func (f *ForkableChangesetSourceGetNamespaceForkFunc) PushHook(hook func(context
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ForkableChangesetSourceGetNamespaceForkFunc) SetDefaultReturn(r0 *types.Repo, r1 error) {
-	f.SetDefaultHook(func(context.Context, *types.Repo, string) (*types.Repo, error) {
+func (f *ForkableChangesetSourceGetForkFunc) SetDefaultReturn(r0 *types.Repo, r1 error) {
+	f.SetDefaultHook(func(context.Context, *types.Repo, *string, *string) (*types.Repo, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ForkableChangesetSourceGetNamespaceForkFunc) PushReturn(r0 *types.Repo, r1 error) {
-	f.PushHook(func(context.Context, *types.Repo, string) (*types.Repo, error) {
+func (f *ForkableChangesetSourceGetForkFunc) PushReturn(r0 *types.Repo, r1 error) {
+	f.PushHook(func(context.Context, *types.Repo, *string, *string) (*types.Repo, error) {
 		return r0, r1
 	})
 }
 
-func (f *ForkableChangesetSourceGetNamespaceForkFunc) nextHook() func(context.Context, *types.Repo, string) (*types.Repo, error) {
+func (f *ForkableChangesetSourceGetForkFunc) nextHook() func(context.Context, *types.Repo, *string, *string) (*types.Repo, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1907,28 +1892,27 @@ func (f *ForkableChangesetSourceGetNamespaceForkFunc) nextHook() func(context.Co
 	return hook
 }
 
-func (f *ForkableChangesetSourceGetNamespaceForkFunc) appendCall(r0 ForkableChangesetSourceGetNamespaceForkFuncCall) {
+func (f *ForkableChangesetSourceGetForkFunc) appendCall(r0 ForkableChangesetSourceGetForkFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of
-// ForkableChangesetSourceGetNamespaceForkFuncCall objects describing the
-// invocations of this function.
-func (f *ForkableChangesetSourceGetNamespaceForkFunc) History() []ForkableChangesetSourceGetNamespaceForkFuncCall {
+// History returns a sequence of ForkableChangesetSourceGetForkFuncCall
+// objects describing the invocations of this function.
+func (f *ForkableChangesetSourceGetForkFunc) History() []ForkableChangesetSourceGetForkFuncCall {
 	f.mutex.Lock()
-	history := make([]ForkableChangesetSourceGetNamespaceForkFuncCall, len(f.history))
+	history := make([]ForkableChangesetSourceGetForkFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// ForkableChangesetSourceGetNamespaceForkFuncCall is an object that
-// describes an invocation of method GetNamespaceFork on an instance of
+// ForkableChangesetSourceGetForkFuncCall is an object that describes an
+// invocation of method GetFork on an instance of
 // MockForkableChangesetSource.
-type ForkableChangesetSourceGetNamespaceForkFuncCall struct {
+type ForkableChangesetSourceGetForkFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1937,7 +1921,10 @@ type ForkableChangesetSourceGetNamespaceForkFuncCall struct {
 	Arg1 *types.Repo
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 string
+	Arg2 *string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 *string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *types.Repo
@@ -1948,124 +1935,13 @@ type ForkableChangesetSourceGetNamespaceForkFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c ForkableChangesetSourceGetNamespaceForkFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+func (c ForkableChangesetSourceGetForkFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c ForkableChangesetSourceGetNamespaceForkFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// ForkableChangesetSourceGetUserForkFunc describes the behavior when the
-// GetUserFork method of the parent MockForkableChangesetSource instance is
-// invoked.
-type ForkableChangesetSourceGetUserForkFunc struct {
-	defaultHook func(context.Context, *types.Repo) (*types.Repo, error)
-	hooks       []func(context.Context, *types.Repo) (*types.Repo, error)
-	history     []ForkableChangesetSourceGetUserForkFuncCall
-	mutex       sync.Mutex
-}
-
-// GetUserFork delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockForkableChangesetSource) GetUserFork(v0 context.Context, v1 *types.Repo) (*types.Repo, error) {
-	r0, r1 := m.GetUserForkFunc.nextHook()(v0, v1)
-	m.GetUserForkFunc.appendCall(ForkableChangesetSourceGetUserForkFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetUserFork method
-// of the parent MockForkableChangesetSource instance is invoked and the
-// hook queue is empty.
-func (f *ForkableChangesetSourceGetUserForkFunc) SetDefaultHook(hook func(context.Context, *types.Repo) (*types.Repo, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetUserFork method of the parent MockForkableChangesetSource instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *ForkableChangesetSourceGetUserForkFunc) PushHook(hook func(context.Context, *types.Repo) (*types.Repo, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ForkableChangesetSourceGetUserForkFunc) SetDefaultReturn(r0 *types.Repo, r1 error) {
-	f.SetDefaultHook(func(context.Context, *types.Repo) (*types.Repo, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ForkableChangesetSourceGetUserForkFunc) PushReturn(r0 *types.Repo, r1 error) {
-	f.PushHook(func(context.Context, *types.Repo) (*types.Repo, error) {
-		return r0, r1
-	})
-}
-
-func (f *ForkableChangesetSourceGetUserForkFunc) nextHook() func(context.Context, *types.Repo) (*types.Repo, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ForkableChangesetSourceGetUserForkFunc) appendCall(r0 ForkableChangesetSourceGetUserForkFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ForkableChangesetSourceGetUserForkFuncCall
-// objects describing the invocations of this function.
-func (f *ForkableChangesetSourceGetUserForkFunc) History() []ForkableChangesetSourceGetUserForkFuncCall {
-	f.mutex.Lock()
-	history := make([]ForkableChangesetSourceGetUserForkFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ForkableChangesetSourceGetUserForkFuncCall is an object that describes an
-// invocation of method GetUserFork on an instance of
-// MockForkableChangesetSource.
-type ForkableChangesetSourceGetUserForkFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *types.Repo
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *types.Repo
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ForkableChangesetSourceGetUserForkFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ForkableChangesetSourceGetUserForkFuncCall) Results() []interface{} {
+func (c ForkableChangesetSourceGetForkFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -5802,4 +5678,2428 @@ func (c BitbucketCloudClientWithAuthenticatorFuncCall) Args() []interface{} {
 // invocation.
 func (c BitbucketCloudClientWithAuthenticatorFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// MockAzureDevOpsClient is a mock implementation of the Client interface
+// (from the package
+// github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops) used for
+// unit testing.
+type MockAzureDevOpsClient struct {
+	// AbandonPullRequestFunc is an instance of a mock function object
+	// controlling the behavior of the method AbandonPullRequest.
+	AbandonPullRequestFunc *AzureDevOpsClientAbandonPullRequestFunc
+	// AuthenticatorFunc is an instance of a mock function object
+	// controlling the behavior of the method Authenticator.
+	AuthenticatorFunc *AzureDevOpsClientAuthenticatorFunc
+	// CompletePullRequestFunc is an instance of a mock function object
+	// controlling the behavior of the method CompletePullRequest.
+	CompletePullRequestFunc *AzureDevOpsClientCompletePullRequestFunc
+	// CreatePullRequestFunc is an instance of a mock function object
+	// controlling the behavior of the method CreatePullRequest.
+	CreatePullRequestFunc *AzureDevOpsClientCreatePullRequestFunc
+	// CreatePullRequestCommentThreadFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// CreatePullRequestCommentThread.
+	CreatePullRequestCommentThreadFunc *AzureDevOpsClientCreatePullRequestCommentThreadFunc
+	// ForkRepositoryFunc is an instance of a mock function object
+	// controlling the behavior of the method ForkRepository.
+	ForkRepositoryFunc *AzureDevOpsClientForkRepositoryFunc
+	// GetAuthorizedProfileFunc is an instance of a mock function object
+	// controlling the behavior of the method GetAuthorizedProfile.
+	GetAuthorizedProfileFunc *AzureDevOpsClientGetAuthorizedProfileFunc
+	// GetProjectFunc is an instance of a mock function object controlling
+	// the behavior of the method GetProject.
+	GetProjectFunc *AzureDevOpsClientGetProjectFunc
+	// GetPullRequestFunc is an instance of a mock function object
+	// controlling the behavior of the method GetPullRequest.
+	GetPullRequestFunc *AzureDevOpsClientGetPullRequestFunc
+	// GetPullRequestStatusesFunc is an instance of a mock function object
+	// controlling the behavior of the method GetPullRequestStatuses.
+	GetPullRequestStatusesFunc *AzureDevOpsClientGetPullRequestStatusesFunc
+	// GetRepoFunc is an instance of a mock function object controlling the
+	// behavior of the method GetRepo.
+	GetRepoFunc *AzureDevOpsClientGetRepoFunc
+	// GetRepositoryBranchFunc is an instance of a mock function object
+	// controlling the behavior of the method GetRepositoryBranch.
+	GetRepositoryBranchFunc *AzureDevOpsClientGetRepositoryBranchFunc
+	// GetURLFunc is an instance of a mock function object controlling the
+	// behavior of the method GetURL.
+	GetURLFunc *AzureDevOpsClientGetURLFunc
+	// IsAzureDevOpsServicesFunc is an instance of a mock function object
+	// controlling the behavior of the method IsAzureDevOpsServices.
+	IsAzureDevOpsServicesFunc *AzureDevOpsClientIsAzureDevOpsServicesFunc
+	// ListAuthorizedUserOrganizationsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// ListAuthorizedUserOrganizations.
+	ListAuthorizedUserOrganizationsFunc *AzureDevOpsClientListAuthorizedUserOrganizationsFunc
+	// ListRepositoriesByProjectOrOrgFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// ListRepositoriesByProjectOrOrg.
+	ListRepositoriesByProjectOrOrgFunc *AzureDevOpsClientListRepositoriesByProjectOrOrgFunc
+	// SetWaitForRateLimitFunc is an instance of a mock function object
+	// controlling the behavior of the method SetWaitForRateLimit.
+	SetWaitForRateLimitFunc *AzureDevOpsClientSetWaitForRateLimitFunc
+	// UpdatePullRequestFunc is an instance of a mock function object
+	// controlling the behavior of the method UpdatePullRequest.
+	UpdatePullRequestFunc *AzureDevOpsClientUpdatePullRequestFunc
+	// WithAuthenticatorFunc is an instance of a mock function object
+	// controlling the behavior of the method WithAuthenticator.
+	WithAuthenticatorFunc *AzureDevOpsClientWithAuthenticatorFunc
+}
+
+// NewMockAzureDevOpsClient creates a new mock of the Client interface. All
+// methods return zero values for all results, unless overwritten.
+func NewMockAzureDevOpsClient() *MockAzureDevOpsClient {
+	return &MockAzureDevOpsClient{
+		AbandonPullRequestFunc: &AzureDevOpsClientAbandonPullRequestFunc{
+			defaultHook: func(context.Context, azuredevops.PullRequestCommonArgs) (r0 azuredevops.PullRequest, r1 error) {
+				return
+			},
+		},
+		AuthenticatorFunc: &AzureDevOpsClientAuthenticatorFunc{
+			defaultHook: func() (r0 auth.Authenticator) {
+				return
+			},
+		},
+		CompletePullRequestFunc: &AzureDevOpsClientCompletePullRequestFunc{
+			defaultHook: func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestCompleteInput) (r0 azuredevops.PullRequest, r1 error) {
+				return
+			},
+		},
+		CreatePullRequestFunc: &AzureDevOpsClientCreatePullRequestFunc{
+			defaultHook: func(context.Context, azuredevops.OrgProjectRepoArgs, azuredevops.CreatePullRequestInput) (r0 azuredevops.PullRequest, r1 error) {
+				return
+			},
+		},
+		CreatePullRequestCommentThreadFunc: &AzureDevOpsClientCreatePullRequestCommentThreadFunc{
+			defaultHook: func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestCommentInput) (r0 azuredevops.PullRequestCommentResponse, r1 error) {
+				return
+			},
+		},
+		ForkRepositoryFunc: &AzureDevOpsClientForkRepositoryFunc{
+			defaultHook: func(context.Context, string, azuredevops.ForkRepositoryInput) (r0 azuredevops.Repository, r1 error) {
+				return
+			},
+		},
+		GetAuthorizedProfileFunc: &AzureDevOpsClientGetAuthorizedProfileFunc{
+			defaultHook: func(context.Context) (r0 azuredevops.Profile, r1 error) {
+				return
+			},
+		},
+		GetProjectFunc: &AzureDevOpsClientGetProjectFunc{
+			defaultHook: func(context.Context, string, string) (r0 azuredevops.Project, r1 error) {
+				return
+			},
+		},
+		GetPullRequestFunc: &AzureDevOpsClientGetPullRequestFunc{
+			defaultHook: func(context.Context, azuredevops.PullRequestCommonArgs) (r0 azuredevops.PullRequest, r1 error) {
+				return
+			},
+		},
+		GetPullRequestStatusesFunc: &AzureDevOpsClientGetPullRequestStatusesFunc{
+			defaultHook: func(context.Context, azuredevops.PullRequestCommonArgs) (r0 []azuredevops.PullRequestBuildStatus, r1 error) {
+				return
+			},
+		},
+		GetRepoFunc: &AzureDevOpsClientGetRepoFunc{
+			defaultHook: func(context.Context, azuredevops.OrgProjectRepoArgs) (r0 azuredevops.Repository, r1 error) {
+				return
+			},
+		},
+		GetRepositoryBranchFunc: &AzureDevOpsClientGetRepositoryBranchFunc{
+			defaultHook: func(context.Context, azuredevops.OrgProjectRepoArgs, string) (r0 azuredevops.Ref, r1 error) {
+				return
+			},
+		},
+		GetURLFunc: &AzureDevOpsClientGetURLFunc{
+			defaultHook: func() (r0 *url.URL) {
+				return
+			},
+		},
+		IsAzureDevOpsServicesFunc: &AzureDevOpsClientIsAzureDevOpsServicesFunc{
+			defaultHook: func() (r0 bool) {
+				return
+			},
+		},
+		ListAuthorizedUserOrganizationsFunc: &AzureDevOpsClientListAuthorizedUserOrganizationsFunc{
+			defaultHook: func(context.Context, azuredevops.Profile) (r0 []azuredevops.Org, r1 error) {
+				return
+			},
+		},
+		ListRepositoriesByProjectOrOrgFunc: &AzureDevOpsClientListRepositoriesByProjectOrOrgFunc{
+			defaultHook: func(context.Context, azuredevops.ListRepositoriesByProjectOrOrgArgs) (r0 []azuredevops.Repository, r1 error) {
+				return
+			},
+		},
+		SetWaitForRateLimitFunc: &AzureDevOpsClientSetWaitForRateLimitFunc{
+			defaultHook: func(bool) {
+				return
+			},
+		},
+		UpdatePullRequestFunc: &AzureDevOpsClientUpdatePullRequestFunc{
+			defaultHook: func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestUpdateInput) (r0 azuredevops.PullRequest, r1 error) {
+				return
+			},
+		},
+		WithAuthenticatorFunc: &AzureDevOpsClientWithAuthenticatorFunc{
+			defaultHook: func(auth.Authenticator) (r0 azuredevops.Client, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockAzureDevOpsClient creates a new mock of the Client
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockAzureDevOpsClient() *MockAzureDevOpsClient {
+	return &MockAzureDevOpsClient{
+		AbandonPullRequestFunc: &AzureDevOpsClientAbandonPullRequestFunc{
+			defaultHook: func(context.Context, azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
+				panic("unexpected invocation of MockAzureDevOpsClient.AbandonPullRequest")
+			},
+		},
+		AuthenticatorFunc: &AzureDevOpsClientAuthenticatorFunc{
+			defaultHook: func() auth.Authenticator {
+				panic("unexpected invocation of MockAzureDevOpsClient.Authenticator")
+			},
+		},
+		CompletePullRequestFunc: &AzureDevOpsClientCompletePullRequestFunc{
+			defaultHook: func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestCompleteInput) (azuredevops.PullRequest, error) {
+				panic("unexpected invocation of MockAzureDevOpsClient.CompletePullRequest")
+			},
+		},
+		CreatePullRequestFunc: &AzureDevOpsClientCreatePullRequestFunc{
+			defaultHook: func(context.Context, azuredevops.OrgProjectRepoArgs, azuredevops.CreatePullRequestInput) (azuredevops.PullRequest, error) {
+				panic("unexpected invocation of MockAzureDevOpsClient.CreatePullRequest")
+			},
+		},
+		CreatePullRequestCommentThreadFunc: &AzureDevOpsClientCreatePullRequestCommentThreadFunc{
+			defaultHook: func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestCommentInput) (azuredevops.PullRequestCommentResponse, error) {
+				panic("unexpected invocation of MockAzureDevOpsClient.CreatePullRequestCommentThread")
+			},
+		},
+		ForkRepositoryFunc: &AzureDevOpsClientForkRepositoryFunc{
+			defaultHook: func(context.Context, string, azuredevops.ForkRepositoryInput) (azuredevops.Repository, error) {
+				panic("unexpected invocation of MockAzureDevOpsClient.ForkRepository")
+			},
+		},
+		GetAuthorizedProfileFunc: &AzureDevOpsClientGetAuthorizedProfileFunc{
+			defaultHook: func(context.Context) (azuredevops.Profile, error) {
+				panic("unexpected invocation of MockAzureDevOpsClient.GetAuthorizedProfile")
+			},
+		},
+		GetProjectFunc: &AzureDevOpsClientGetProjectFunc{
+			defaultHook: func(context.Context, string, string) (azuredevops.Project, error) {
+				panic("unexpected invocation of MockAzureDevOpsClient.GetProject")
+			},
+		},
+		GetPullRequestFunc: &AzureDevOpsClientGetPullRequestFunc{
+			defaultHook: func(context.Context, azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
+				panic("unexpected invocation of MockAzureDevOpsClient.GetPullRequest")
+			},
+		},
+		GetPullRequestStatusesFunc: &AzureDevOpsClientGetPullRequestStatusesFunc{
+			defaultHook: func(context.Context, azuredevops.PullRequestCommonArgs) ([]azuredevops.PullRequestBuildStatus, error) {
+				panic("unexpected invocation of MockAzureDevOpsClient.GetPullRequestStatuses")
+			},
+		},
+		GetRepoFunc: &AzureDevOpsClientGetRepoFunc{
+			defaultHook: func(context.Context, azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
+				panic("unexpected invocation of MockAzureDevOpsClient.GetRepo")
+			},
+		},
+		GetRepositoryBranchFunc: &AzureDevOpsClientGetRepositoryBranchFunc{
+			defaultHook: func(context.Context, azuredevops.OrgProjectRepoArgs, string) (azuredevops.Ref, error) {
+				panic("unexpected invocation of MockAzureDevOpsClient.GetRepositoryBranch")
+			},
+		},
+		GetURLFunc: &AzureDevOpsClientGetURLFunc{
+			defaultHook: func() *url.URL {
+				panic("unexpected invocation of MockAzureDevOpsClient.GetURL")
+			},
+		},
+		IsAzureDevOpsServicesFunc: &AzureDevOpsClientIsAzureDevOpsServicesFunc{
+			defaultHook: func() bool {
+				panic("unexpected invocation of MockAzureDevOpsClient.IsAzureDevOpsServices")
+			},
+		},
+		ListAuthorizedUserOrganizationsFunc: &AzureDevOpsClientListAuthorizedUserOrganizationsFunc{
+			defaultHook: func(context.Context, azuredevops.Profile) ([]azuredevops.Org, error) {
+				panic("unexpected invocation of MockAzureDevOpsClient.ListAuthorizedUserOrganizations")
+			},
+		},
+		ListRepositoriesByProjectOrOrgFunc: &AzureDevOpsClientListRepositoriesByProjectOrOrgFunc{
+			defaultHook: func(context.Context, azuredevops.ListRepositoriesByProjectOrOrgArgs) ([]azuredevops.Repository, error) {
+				panic("unexpected invocation of MockAzureDevOpsClient.ListRepositoriesByProjectOrOrg")
+			},
+		},
+		SetWaitForRateLimitFunc: &AzureDevOpsClientSetWaitForRateLimitFunc{
+			defaultHook: func(bool) {
+				panic("unexpected invocation of MockAzureDevOpsClient.SetWaitForRateLimit")
+			},
+		},
+		UpdatePullRequestFunc: &AzureDevOpsClientUpdatePullRequestFunc{
+			defaultHook: func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestUpdateInput) (azuredevops.PullRequest, error) {
+				panic("unexpected invocation of MockAzureDevOpsClient.UpdatePullRequest")
+			},
+		},
+		WithAuthenticatorFunc: &AzureDevOpsClientWithAuthenticatorFunc{
+			defaultHook: func(auth.Authenticator) (azuredevops.Client, error) {
+				panic("unexpected invocation of MockAzureDevOpsClient.WithAuthenticator")
+			},
+		},
+	}
+}
+
+// NewMockAzureDevOpsClientFrom creates a new mock of the
+// MockAzureDevOpsClient interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockAzureDevOpsClientFrom(i azuredevops.Client) *MockAzureDevOpsClient {
+	return &MockAzureDevOpsClient{
+		AbandonPullRequestFunc: &AzureDevOpsClientAbandonPullRequestFunc{
+			defaultHook: i.AbandonPullRequest,
+		},
+		AuthenticatorFunc: &AzureDevOpsClientAuthenticatorFunc{
+			defaultHook: i.Authenticator,
+		},
+		CompletePullRequestFunc: &AzureDevOpsClientCompletePullRequestFunc{
+			defaultHook: i.CompletePullRequest,
+		},
+		CreatePullRequestFunc: &AzureDevOpsClientCreatePullRequestFunc{
+			defaultHook: i.CreatePullRequest,
+		},
+		CreatePullRequestCommentThreadFunc: &AzureDevOpsClientCreatePullRequestCommentThreadFunc{
+			defaultHook: i.CreatePullRequestCommentThread,
+		},
+		ForkRepositoryFunc: &AzureDevOpsClientForkRepositoryFunc{
+			defaultHook: i.ForkRepository,
+		},
+		GetAuthorizedProfileFunc: &AzureDevOpsClientGetAuthorizedProfileFunc{
+			defaultHook: i.GetAuthorizedProfile,
+		},
+		GetProjectFunc: &AzureDevOpsClientGetProjectFunc{
+			defaultHook: i.GetProject,
+		},
+		GetPullRequestFunc: &AzureDevOpsClientGetPullRequestFunc{
+			defaultHook: i.GetPullRequest,
+		},
+		GetPullRequestStatusesFunc: &AzureDevOpsClientGetPullRequestStatusesFunc{
+			defaultHook: i.GetPullRequestStatuses,
+		},
+		GetRepoFunc: &AzureDevOpsClientGetRepoFunc{
+			defaultHook: i.GetRepo,
+		},
+		GetRepositoryBranchFunc: &AzureDevOpsClientGetRepositoryBranchFunc{
+			defaultHook: i.GetRepositoryBranch,
+		},
+		GetURLFunc: &AzureDevOpsClientGetURLFunc{
+			defaultHook: i.GetURL,
+		},
+		IsAzureDevOpsServicesFunc: &AzureDevOpsClientIsAzureDevOpsServicesFunc{
+			defaultHook: i.IsAzureDevOpsServices,
+		},
+		ListAuthorizedUserOrganizationsFunc: &AzureDevOpsClientListAuthorizedUserOrganizationsFunc{
+			defaultHook: i.ListAuthorizedUserOrganizations,
+		},
+		ListRepositoriesByProjectOrOrgFunc: &AzureDevOpsClientListRepositoriesByProjectOrOrgFunc{
+			defaultHook: i.ListRepositoriesByProjectOrOrg,
+		},
+		SetWaitForRateLimitFunc: &AzureDevOpsClientSetWaitForRateLimitFunc{
+			defaultHook: i.SetWaitForRateLimit,
+		},
+		UpdatePullRequestFunc: &AzureDevOpsClientUpdatePullRequestFunc{
+			defaultHook: i.UpdatePullRequest,
+		},
+		WithAuthenticatorFunc: &AzureDevOpsClientWithAuthenticatorFunc{
+			defaultHook: i.WithAuthenticator,
+		},
+	}
+}
+
+// AzureDevOpsClientAbandonPullRequestFunc describes the behavior when the
+// AbandonPullRequest method of the parent MockAzureDevOpsClient instance is
+// invoked.
+type AzureDevOpsClientAbandonPullRequestFunc struct {
+	defaultHook func(context.Context, azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error)
+	hooks       []func(context.Context, azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error)
+	history     []AzureDevOpsClientAbandonPullRequestFuncCall
+	mutex       sync.Mutex
+}
+
+// AbandonPullRequest delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockAzureDevOpsClient) AbandonPullRequest(v0 context.Context, v1 azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
+	r0, r1 := m.AbandonPullRequestFunc.nextHook()(v0, v1)
+	m.AbandonPullRequestFunc.appendCall(AzureDevOpsClientAbandonPullRequestFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the AbandonPullRequest
+// method of the parent MockAzureDevOpsClient instance is invoked and the
+// hook queue is empty.
+func (f *AzureDevOpsClientAbandonPullRequestFunc) SetDefaultHook(hook func(context.Context, azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AbandonPullRequest method of the parent MockAzureDevOpsClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *AzureDevOpsClientAbandonPullRequestFunc) PushHook(hook func(context.Context, azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AzureDevOpsClientAbandonPullRequestFunc) SetDefaultReturn(r0 azuredevops.PullRequest, r1 error) {
+	f.SetDefaultHook(func(context.Context, azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AzureDevOpsClientAbandonPullRequestFunc) PushReturn(r0 azuredevops.PullRequest, r1 error) {
+	f.PushHook(func(context.Context, azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
+		return r0, r1
+	})
+}
+
+func (f *AzureDevOpsClientAbandonPullRequestFunc) nextHook() func(context.Context, azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AzureDevOpsClientAbandonPullRequestFunc) appendCall(r0 AzureDevOpsClientAbandonPullRequestFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AzureDevOpsClientAbandonPullRequestFuncCall
+// objects describing the invocations of this function.
+func (f *AzureDevOpsClientAbandonPullRequestFunc) History() []AzureDevOpsClientAbandonPullRequestFuncCall {
+	f.mutex.Lock()
+	history := make([]AzureDevOpsClientAbandonPullRequestFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AzureDevOpsClientAbandonPullRequestFuncCall is an object that describes
+// an invocation of method AbandonPullRequest on an instance of
+// MockAzureDevOpsClient.
+type AzureDevOpsClientAbandonPullRequestFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 azuredevops.PullRequestCommonArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 azuredevops.PullRequest
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AzureDevOpsClientAbandonPullRequestFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AzureDevOpsClientAbandonPullRequestFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// AzureDevOpsClientAuthenticatorFunc describes the behavior when the
+// Authenticator method of the parent MockAzureDevOpsClient instance is
+// invoked.
+type AzureDevOpsClientAuthenticatorFunc struct {
+	defaultHook func() auth.Authenticator
+	hooks       []func() auth.Authenticator
+	history     []AzureDevOpsClientAuthenticatorFuncCall
+	mutex       sync.Mutex
+}
+
+// Authenticator delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockAzureDevOpsClient) Authenticator() auth.Authenticator {
+	r0 := m.AuthenticatorFunc.nextHook()()
+	m.AuthenticatorFunc.appendCall(AzureDevOpsClientAuthenticatorFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Authenticator method
+// of the parent MockAzureDevOpsClient instance is invoked and the hook
+// queue is empty.
+func (f *AzureDevOpsClientAuthenticatorFunc) SetDefaultHook(hook func() auth.Authenticator) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Authenticator method of the parent MockAzureDevOpsClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *AzureDevOpsClientAuthenticatorFunc) PushHook(hook func() auth.Authenticator) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AzureDevOpsClientAuthenticatorFunc) SetDefaultReturn(r0 auth.Authenticator) {
+	f.SetDefaultHook(func() auth.Authenticator {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AzureDevOpsClientAuthenticatorFunc) PushReturn(r0 auth.Authenticator) {
+	f.PushHook(func() auth.Authenticator {
+		return r0
+	})
+}
+
+func (f *AzureDevOpsClientAuthenticatorFunc) nextHook() func() auth.Authenticator {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AzureDevOpsClientAuthenticatorFunc) appendCall(r0 AzureDevOpsClientAuthenticatorFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AzureDevOpsClientAuthenticatorFuncCall
+// objects describing the invocations of this function.
+func (f *AzureDevOpsClientAuthenticatorFunc) History() []AzureDevOpsClientAuthenticatorFuncCall {
+	f.mutex.Lock()
+	history := make([]AzureDevOpsClientAuthenticatorFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AzureDevOpsClientAuthenticatorFuncCall is an object that describes an
+// invocation of method Authenticator on an instance of
+// MockAzureDevOpsClient.
+type AzureDevOpsClientAuthenticatorFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 auth.Authenticator
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AzureDevOpsClientAuthenticatorFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AzureDevOpsClientAuthenticatorFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// AzureDevOpsClientCompletePullRequestFunc describes the behavior when the
+// CompletePullRequest method of the parent MockAzureDevOpsClient instance
+// is invoked.
+type AzureDevOpsClientCompletePullRequestFunc struct {
+	defaultHook func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestCompleteInput) (azuredevops.PullRequest, error)
+	hooks       []func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestCompleteInput) (azuredevops.PullRequest, error)
+	history     []AzureDevOpsClientCompletePullRequestFuncCall
+	mutex       sync.Mutex
+}
+
+// CompletePullRequest delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockAzureDevOpsClient) CompletePullRequest(v0 context.Context, v1 azuredevops.PullRequestCommonArgs, v2 azuredevops.PullRequestCompleteInput) (azuredevops.PullRequest, error) {
+	r0, r1 := m.CompletePullRequestFunc.nextHook()(v0, v1, v2)
+	m.CompletePullRequestFunc.appendCall(AzureDevOpsClientCompletePullRequestFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CompletePullRequest
+// method of the parent MockAzureDevOpsClient instance is invoked and the
+// hook queue is empty.
+func (f *AzureDevOpsClientCompletePullRequestFunc) SetDefaultHook(hook func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestCompleteInput) (azuredevops.PullRequest, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CompletePullRequest method of the parent MockAzureDevOpsClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *AzureDevOpsClientCompletePullRequestFunc) PushHook(hook func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestCompleteInput) (azuredevops.PullRequest, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AzureDevOpsClientCompletePullRequestFunc) SetDefaultReturn(r0 azuredevops.PullRequest, r1 error) {
+	f.SetDefaultHook(func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestCompleteInput) (azuredevops.PullRequest, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AzureDevOpsClientCompletePullRequestFunc) PushReturn(r0 azuredevops.PullRequest, r1 error) {
+	f.PushHook(func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestCompleteInput) (azuredevops.PullRequest, error) {
+		return r0, r1
+	})
+}
+
+func (f *AzureDevOpsClientCompletePullRequestFunc) nextHook() func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestCompleteInput) (azuredevops.PullRequest, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AzureDevOpsClientCompletePullRequestFunc) appendCall(r0 AzureDevOpsClientCompletePullRequestFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AzureDevOpsClientCompletePullRequestFuncCall objects describing the
+// invocations of this function.
+func (f *AzureDevOpsClientCompletePullRequestFunc) History() []AzureDevOpsClientCompletePullRequestFuncCall {
+	f.mutex.Lock()
+	history := make([]AzureDevOpsClientCompletePullRequestFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AzureDevOpsClientCompletePullRequestFuncCall is an object that describes
+// an invocation of method CompletePullRequest on an instance of
+// MockAzureDevOpsClient.
+type AzureDevOpsClientCompletePullRequestFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 azuredevops.PullRequestCommonArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 azuredevops.PullRequestCompleteInput
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 azuredevops.PullRequest
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AzureDevOpsClientCompletePullRequestFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AzureDevOpsClientCompletePullRequestFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// AzureDevOpsClientCreatePullRequestFunc describes the behavior when the
+// CreatePullRequest method of the parent MockAzureDevOpsClient instance is
+// invoked.
+type AzureDevOpsClientCreatePullRequestFunc struct {
+	defaultHook func(context.Context, azuredevops.OrgProjectRepoArgs, azuredevops.CreatePullRequestInput) (azuredevops.PullRequest, error)
+	hooks       []func(context.Context, azuredevops.OrgProjectRepoArgs, azuredevops.CreatePullRequestInput) (azuredevops.PullRequest, error)
+	history     []AzureDevOpsClientCreatePullRequestFuncCall
+	mutex       sync.Mutex
+}
+
+// CreatePullRequest delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockAzureDevOpsClient) CreatePullRequest(v0 context.Context, v1 azuredevops.OrgProjectRepoArgs, v2 azuredevops.CreatePullRequestInput) (azuredevops.PullRequest, error) {
+	r0, r1 := m.CreatePullRequestFunc.nextHook()(v0, v1, v2)
+	m.CreatePullRequestFunc.appendCall(AzureDevOpsClientCreatePullRequestFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CreatePullRequest
+// method of the parent MockAzureDevOpsClient instance is invoked and the
+// hook queue is empty.
+func (f *AzureDevOpsClientCreatePullRequestFunc) SetDefaultHook(hook func(context.Context, azuredevops.OrgProjectRepoArgs, azuredevops.CreatePullRequestInput) (azuredevops.PullRequest, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CreatePullRequest method of the parent MockAzureDevOpsClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *AzureDevOpsClientCreatePullRequestFunc) PushHook(hook func(context.Context, azuredevops.OrgProjectRepoArgs, azuredevops.CreatePullRequestInput) (azuredevops.PullRequest, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AzureDevOpsClientCreatePullRequestFunc) SetDefaultReturn(r0 azuredevops.PullRequest, r1 error) {
+	f.SetDefaultHook(func(context.Context, azuredevops.OrgProjectRepoArgs, azuredevops.CreatePullRequestInput) (azuredevops.PullRequest, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AzureDevOpsClientCreatePullRequestFunc) PushReturn(r0 azuredevops.PullRequest, r1 error) {
+	f.PushHook(func(context.Context, azuredevops.OrgProjectRepoArgs, azuredevops.CreatePullRequestInput) (azuredevops.PullRequest, error) {
+		return r0, r1
+	})
+}
+
+func (f *AzureDevOpsClientCreatePullRequestFunc) nextHook() func(context.Context, azuredevops.OrgProjectRepoArgs, azuredevops.CreatePullRequestInput) (azuredevops.PullRequest, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AzureDevOpsClientCreatePullRequestFunc) appendCall(r0 AzureDevOpsClientCreatePullRequestFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AzureDevOpsClientCreatePullRequestFuncCall
+// objects describing the invocations of this function.
+func (f *AzureDevOpsClientCreatePullRequestFunc) History() []AzureDevOpsClientCreatePullRequestFuncCall {
+	f.mutex.Lock()
+	history := make([]AzureDevOpsClientCreatePullRequestFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AzureDevOpsClientCreatePullRequestFuncCall is an object that describes an
+// invocation of method CreatePullRequest on an instance of
+// MockAzureDevOpsClient.
+type AzureDevOpsClientCreatePullRequestFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 azuredevops.OrgProjectRepoArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 azuredevops.CreatePullRequestInput
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 azuredevops.PullRequest
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AzureDevOpsClientCreatePullRequestFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AzureDevOpsClientCreatePullRequestFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// AzureDevOpsClientCreatePullRequestCommentThreadFunc describes the
+// behavior when the CreatePullRequestCommentThread method of the parent
+// MockAzureDevOpsClient instance is invoked.
+type AzureDevOpsClientCreatePullRequestCommentThreadFunc struct {
+	defaultHook func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestCommentInput) (azuredevops.PullRequestCommentResponse, error)
+	hooks       []func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestCommentInput) (azuredevops.PullRequestCommentResponse, error)
+	history     []AzureDevOpsClientCreatePullRequestCommentThreadFuncCall
+	mutex       sync.Mutex
+}
+
+// CreatePullRequestCommentThread delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockAzureDevOpsClient) CreatePullRequestCommentThread(v0 context.Context, v1 azuredevops.PullRequestCommonArgs, v2 azuredevops.PullRequestCommentInput) (azuredevops.PullRequestCommentResponse, error) {
+	r0, r1 := m.CreatePullRequestCommentThreadFunc.nextHook()(v0, v1, v2)
+	m.CreatePullRequestCommentThreadFunc.appendCall(AzureDevOpsClientCreatePullRequestCommentThreadFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// CreatePullRequestCommentThread method of the parent MockAzureDevOpsClient
+// instance is invoked and the hook queue is empty.
+func (f *AzureDevOpsClientCreatePullRequestCommentThreadFunc) SetDefaultHook(hook func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestCommentInput) (azuredevops.PullRequestCommentResponse, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CreatePullRequestCommentThread method of the parent MockAzureDevOpsClient
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *AzureDevOpsClientCreatePullRequestCommentThreadFunc) PushHook(hook func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestCommentInput) (azuredevops.PullRequestCommentResponse, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AzureDevOpsClientCreatePullRequestCommentThreadFunc) SetDefaultReturn(r0 azuredevops.PullRequestCommentResponse, r1 error) {
+	f.SetDefaultHook(func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestCommentInput) (azuredevops.PullRequestCommentResponse, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AzureDevOpsClientCreatePullRequestCommentThreadFunc) PushReturn(r0 azuredevops.PullRequestCommentResponse, r1 error) {
+	f.PushHook(func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestCommentInput) (azuredevops.PullRequestCommentResponse, error) {
+		return r0, r1
+	})
+}
+
+func (f *AzureDevOpsClientCreatePullRequestCommentThreadFunc) nextHook() func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestCommentInput) (azuredevops.PullRequestCommentResponse, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AzureDevOpsClientCreatePullRequestCommentThreadFunc) appendCall(r0 AzureDevOpsClientCreatePullRequestCommentThreadFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AzureDevOpsClientCreatePullRequestCommentThreadFuncCall objects
+// describing the invocations of this function.
+func (f *AzureDevOpsClientCreatePullRequestCommentThreadFunc) History() []AzureDevOpsClientCreatePullRequestCommentThreadFuncCall {
+	f.mutex.Lock()
+	history := make([]AzureDevOpsClientCreatePullRequestCommentThreadFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AzureDevOpsClientCreatePullRequestCommentThreadFuncCall is an object that
+// describes an invocation of method CreatePullRequestCommentThread on an
+// instance of MockAzureDevOpsClient.
+type AzureDevOpsClientCreatePullRequestCommentThreadFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 azuredevops.PullRequestCommonArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 azuredevops.PullRequestCommentInput
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 azuredevops.PullRequestCommentResponse
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AzureDevOpsClientCreatePullRequestCommentThreadFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AzureDevOpsClientCreatePullRequestCommentThreadFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// AzureDevOpsClientForkRepositoryFunc describes the behavior when the
+// ForkRepository method of the parent MockAzureDevOpsClient instance is
+// invoked.
+type AzureDevOpsClientForkRepositoryFunc struct {
+	defaultHook func(context.Context, string, azuredevops.ForkRepositoryInput) (azuredevops.Repository, error)
+	hooks       []func(context.Context, string, azuredevops.ForkRepositoryInput) (azuredevops.Repository, error)
+	history     []AzureDevOpsClientForkRepositoryFuncCall
+	mutex       sync.Mutex
+}
+
+// ForkRepository delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockAzureDevOpsClient) ForkRepository(v0 context.Context, v1 string, v2 azuredevops.ForkRepositoryInput) (azuredevops.Repository, error) {
+	r0, r1 := m.ForkRepositoryFunc.nextHook()(v0, v1, v2)
+	m.ForkRepositoryFunc.appendCall(AzureDevOpsClientForkRepositoryFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ForkRepository
+// method of the parent MockAzureDevOpsClient instance is invoked and the
+// hook queue is empty.
+func (f *AzureDevOpsClientForkRepositoryFunc) SetDefaultHook(hook func(context.Context, string, azuredevops.ForkRepositoryInput) (azuredevops.Repository, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ForkRepository method of the parent MockAzureDevOpsClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *AzureDevOpsClientForkRepositoryFunc) PushHook(hook func(context.Context, string, azuredevops.ForkRepositoryInput) (azuredevops.Repository, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AzureDevOpsClientForkRepositoryFunc) SetDefaultReturn(r0 azuredevops.Repository, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, azuredevops.ForkRepositoryInput) (azuredevops.Repository, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AzureDevOpsClientForkRepositoryFunc) PushReturn(r0 azuredevops.Repository, r1 error) {
+	f.PushHook(func(context.Context, string, azuredevops.ForkRepositoryInput) (azuredevops.Repository, error) {
+		return r0, r1
+	})
+}
+
+func (f *AzureDevOpsClientForkRepositoryFunc) nextHook() func(context.Context, string, azuredevops.ForkRepositoryInput) (azuredevops.Repository, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AzureDevOpsClientForkRepositoryFunc) appendCall(r0 AzureDevOpsClientForkRepositoryFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AzureDevOpsClientForkRepositoryFuncCall
+// objects describing the invocations of this function.
+func (f *AzureDevOpsClientForkRepositoryFunc) History() []AzureDevOpsClientForkRepositoryFuncCall {
+	f.mutex.Lock()
+	history := make([]AzureDevOpsClientForkRepositoryFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AzureDevOpsClientForkRepositoryFuncCall is an object that describes an
+// invocation of method ForkRepository on an instance of
+// MockAzureDevOpsClient.
+type AzureDevOpsClientForkRepositoryFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 azuredevops.ForkRepositoryInput
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 azuredevops.Repository
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AzureDevOpsClientForkRepositoryFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AzureDevOpsClientForkRepositoryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// AzureDevOpsClientGetAuthorizedProfileFunc describes the behavior when the
+// GetAuthorizedProfile method of the parent MockAzureDevOpsClient instance
+// is invoked.
+type AzureDevOpsClientGetAuthorizedProfileFunc struct {
+	defaultHook func(context.Context) (azuredevops.Profile, error)
+	hooks       []func(context.Context) (azuredevops.Profile, error)
+	history     []AzureDevOpsClientGetAuthorizedProfileFuncCall
+	mutex       sync.Mutex
+}
+
+// GetAuthorizedProfile delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockAzureDevOpsClient) GetAuthorizedProfile(v0 context.Context) (azuredevops.Profile, error) {
+	r0, r1 := m.GetAuthorizedProfileFunc.nextHook()(v0)
+	m.GetAuthorizedProfileFunc.appendCall(AzureDevOpsClientGetAuthorizedProfileFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetAuthorizedProfile
+// method of the parent MockAzureDevOpsClient instance is invoked and the
+// hook queue is empty.
+func (f *AzureDevOpsClientGetAuthorizedProfileFunc) SetDefaultHook(hook func(context.Context) (azuredevops.Profile, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetAuthorizedProfile method of the parent MockAzureDevOpsClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *AzureDevOpsClientGetAuthorizedProfileFunc) PushHook(hook func(context.Context) (azuredevops.Profile, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AzureDevOpsClientGetAuthorizedProfileFunc) SetDefaultReturn(r0 azuredevops.Profile, r1 error) {
+	f.SetDefaultHook(func(context.Context) (azuredevops.Profile, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AzureDevOpsClientGetAuthorizedProfileFunc) PushReturn(r0 azuredevops.Profile, r1 error) {
+	f.PushHook(func(context.Context) (azuredevops.Profile, error) {
+		return r0, r1
+	})
+}
+
+func (f *AzureDevOpsClientGetAuthorizedProfileFunc) nextHook() func(context.Context) (azuredevops.Profile, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AzureDevOpsClientGetAuthorizedProfileFunc) appendCall(r0 AzureDevOpsClientGetAuthorizedProfileFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AzureDevOpsClientGetAuthorizedProfileFuncCall objects describing the
+// invocations of this function.
+func (f *AzureDevOpsClientGetAuthorizedProfileFunc) History() []AzureDevOpsClientGetAuthorizedProfileFuncCall {
+	f.mutex.Lock()
+	history := make([]AzureDevOpsClientGetAuthorizedProfileFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AzureDevOpsClientGetAuthorizedProfileFuncCall is an object that describes
+// an invocation of method GetAuthorizedProfile on an instance of
+// MockAzureDevOpsClient.
+type AzureDevOpsClientGetAuthorizedProfileFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 azuredevops.Profile
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AzureDevOpsClientGetAuthorizedProfileFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AzureDevOpsClientGetAuthorizedProfileFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// AzureDevOpsClientGetProjectFunc describes the behavior when the
+// GetProject method of the parent MockAzureDevOpsClient instance is
+// invoked.
+type AzureDevOpsClientGetProjectFunc struct {
+	defaultHook func(context.Context, string, string) (azuredevops.Project, error)
+	hooks       []func(context.Context, string, string) (azuredevops.Project, error)
+	history     []AzureDevOpsClientGetProjectFuncCall
+	mutex       sync.Mutex
+}
+
+// GetProject delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockAzureDevOpsClient) GetProject(v0 context.Context, v1 string, v2 string) (azuredevops.Project, error) {
+	r0, r1 := m.GetProjectFunc.nextHook()(v0, v1, v2)
+	m.GetProjectFunc.appendCall(AzureDevOpsClientGetProjectFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetProject method of
+// the parent MockAzureDevOpsClient instance is invoked and the hook queue
+// is empty.
+func (f *AzureDevOpsClientGetProjectFunc) SetDefaultHook(hook func(context.Context, string, string) (azuredevops.Project, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetProject method of the parent MockAzureDevOpsClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *AzureDevOpsClientGetProjectFunc) PushHook(hook func(context.Context, string, string) (azuredevops.Project, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AzureDevOpsClientGetProjectFunc) SetDefaultReturn(r0 azuredevops.Project, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, string) (azuredevops.Project, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AzureDevOpsClientGetProjectFunc) PushReturn(r0 azuredevops.Project, r1 error) {
+	f.PushHook(func(context.Context, string, string) (azuredevops.Project, error) {
+		return r0, r1
+	})
+}
+
+func (f *AzureDevOpsClientGetProjectFunc) nextHook() func(context.Context, string, string) (azuredevops.Project, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AzureDevOpsClientGetProjectFunc) appendCall(r0 AzureDevOpsClientGetProjectFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AzureDevOpsClientGetProjectFuncCall objects
+// describing the invocations of this function.
+func (f *AzureDevOpsClientGetProjectFunc) History() []AzureDevOpsClientGetProjectFuncCall {
+	f.mutex.Lock()
+	history := make([]AzureDevOpsClientGetProjectFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AzureDevOpsClientGetProjectFuncCall is an object that describes an
+// invocation of method GetProject on an instance of MockAzureDevOpsClient.
+type AzureDevOpsClientGetProjectFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 azuredevops.Project
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AzureDevOpsClientGetProjectFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AzureDevOpsClientGetProjectFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// AzureDevOpsClientGetPullRequestFunc describes the behavior when the
+// GetPullRequest method of the parent MockAzureDevOpsClient instance is
+// invoked.
+type AzureDevOpsClientGetPullRequestFunc struct {
+	defaultHook func(context.Context, azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error)
+	hooks       []func(context.Context, azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error)
+	history     []AzureDevOpsClientGetPullRequestFuncCall
+	mutex       sync.Mutex
+}
+
+// GetPullRequest delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockAzureDevOpsClient) GetPullRequest(v0 context.Context, v1 azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
+	r0, r1 := m.GetPullRequestFunc.nextHook()(v0, v1)
+	m.GetPullRequestFunc.appendCall(AzureDevOpsClientGetPullRequestFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetPullRequest
+// method of the parent MockAzureDevOpsClient instance is invoked and the
+// hook queue is empty.
+func (f *AzureDevOpsClientGetPullRequestFunc) SetDefaultHook(hook func(context.Context, azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetPullRequest method of the parent MockAzureDevOpsClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *AzureDevOpsClientGetPullRequestFunc) PushHook(hook func(context.Context, azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AzureDevOpsClientGetPullRequestFunc) SetDefaultReturn(r0 azuredevops.PullRequest, r1 error) {
+	f.SetDefaultHook(func(context.Context, azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AzureDevOpsClientGetPullRequestFunc) PushReturn(r0 azuredevops.PullRequest, r1 error) {
+	f.PushHook(func(context.Context, azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
+		return r0, r1
+	})
+}
+
+func (f *AzureDevOpsClientGetPullRequestFunc) nextHook() func(context.Context, azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AzureDevOpsClientGetPullRequestFunc) appendCall(r0 AzureDevOpsClientGetPullRequestFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AzureDevOpsClientGetPullRequestFuncCall
+// objects describing the invocations of this function.
+func (f *AzureDevOpsClientGetPullRequestFunc) History() []AzureDevOpsClientGetPullRequestFuncCall {
+	f.mutex.Lock()
+	history := make([]AzureDevOpsClientGetPullRequestFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AzureDevOpsClientGetPullRequestFuncCall is an object that describes an
+// invocation of method GetPullRequest on an instance of
+// MockAzureDevOpsClient.
+type AzureDevOpsClientGetPullRequestFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 azuredevops.PullRequestCommonArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 azuredevops.PullRequest
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AzureDevOpsClientGetPullRequestFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AzureDevOpsClientGetPullRequestFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// AzureDevOpsClientGetPullRequestStatusesFunc describes the behavior when
+// the GetPullRequestStatuses method of the parent MockAzureDevOpsClient
+// instance is invoked.
+type AzureDevOpsClientGetPullRequestStatusesFunc struct {
+	defaultHook func(context.Context, azuredevops.PullRequestCommonArgs) ([]azuredevops.PullRequestBuildStatus, error)
+	hooks       []func(context.Context, azuredevops.PullRequestCommonArgs) ([]azuredevops.PullRequestBuildStatus, error)
+	history     []AzureDevOpsClientGetPullRequestStatusesFuncCall
+	mutex       sync.Mutex
+}
+
+// GetPullRequestStatuses delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockAzureDevOpsClient) GetPullRequestStatuses(v0 context.Context, v1 azuredevops.PullRequestCommonArgs) ([]azuredevops.PullRequestBuildStatus, error) {
+	r0, r1 := m.GetPullRequestStatusesFunc.nextHook()(v0, v1)
+	m.GetPullRequestStatusesFunc.appendCall(AzureDevOpsClientGetPullRequestStatusesFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetPullRequestStatuses method of the parent MockAzureDevOpsClient
+// instance is invoked and the hook queue is empty.
+func (f *AzureDevOpsClientGetPullRequestStatusesFunc) SetDefaultHook(hook func(context.Context, azuredevops.PullRequestCommonArgs) ([]azuredevops.PullRequestBuildStatus, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetPullRequestStatuses method of the parent MockAzureDevOpsClient
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *AzureDevOpsClientGetPullRequestStatusesFunc) PushHook(hook func(context.Context, azuredevops.PullRequestCommonArgs) ([]azuredevops.PullRequestBuildStatus, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AzureDevOpsClientGetPullRequestStatusesFunc) SetDefaultReturn(r0 []azuredevops.PullRequestBuildStatus, r1 error) {
+	f.SetDefaultHook(func(context.Context, azuredevops.PullRequestCommonArgs) ([]azuredevops.PullRequestBuildStatus, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AzureDevOpsClientGetPullRequestStatusesFunc) PushReturn(r0 []azuredevops.PullRequestBuildStatus, r1 error) {
+	f.PushHook(func(context.Context, azuredevops.PullRequestCommonArgs) ([]azuredevops.PullRequestBuildStatus, error) {
+		return r0, r1
+	})
+}
+
+func (f *AzureDevOpsClientGetPullRequestStatusesFunc) nextHook() func(context.Context, azuredevops.PullRequestCommonArgs) ([]azuredevops.PullRequestBuildStatus, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AzureDevOpsClientGetPullRequestStatusesFunc) appendCall(r0 AzureDevOpsClientGetPullRequestStatusesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AzureDevOpsClientGetPullRequestStatusesFuncCall objects describing the
+// invocations of this function.
+func (f *AzureDevOpsClientGetPullRequestStatusesFunc) History() []AzureDevOpsClientGetPullRequestStatusesFuncCall {
+	f.mutex.Lock()
+	history := make([]AzureDevOpsClientGetPullRequestStatusesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AzureDevOpsClientGetPullRequestStatusesFuncCall is an object that
+// describes an invocation of method GetPullRequestStatuses on an instance
+// of MockAzureDevOpsClient.
+type AzureDevOpsClientGetPullRequestStatusesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 azuredevops.PullRequestCommonArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []azuredevops.PullRequestBuildStatus
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AzureDevOpsClientGetPullRequestStatusesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AzureDevOpsClientGetPullRequestStatusesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// AzureDevOpsClientGetRepoFunc describes the behavior when the GetRepo
+// method of the parent MockAzureDevOpsClient instance is invoked.
+type AzureDevOpsClientGetRepoFunc struct {
+	defaultHook func(context.Context, azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error)
+	hooks       []func(context.Context, azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error)
+	history     []AzureDevOpsClientGetRepoFuncCall
+	mutex       sync.Mutex
+}
+
+// GetRepo delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockAzureDevOpsClient) GetRepo(v0 context.Context, v1 azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
+	r0, r1 := m.GetRepoFunc.nextHook()(v0, v1)
+	m.GetRepoFunc.appendCall(AzureDevOpsClientGetRepoFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetRepo method of
+// the parent MockAzureDevOpsClient instance is invoked and the hook queue
+// is empty.
+func (f *AzureDevOpsClientGetRepoFunc) SetDefaultHook(hook func(context.Context, azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetRepo method of the parent MockAzureDevOpsClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *AzureDevOpsClientGetRepoFunc) PushHook(hook func(context.Context, azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AzureDevOpsClientGetRepoFunc) SetDefaultReturn(r0 azuredevops.Repository, r1 error) {
+	f.SetDefaultHook(func(context.Context, azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AzureDevOpsClientGetRepoFunc) PushReturn(r0 azuredevops.Repository, r1 error) {
+	f.PushHook(func(context.Context, azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
+		return r0, r1
+	})
+}
+
+func (f *AzureDevOpsClientGetRepoFunc) nextHook() func(context.Context, azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AzureDevOpsClientGetRepoFunc) appendCall(r0 AzureDevOpsClientGetRepoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AzureDevOpsClientGetRepoFuncCall objects
+// describing the invocations of this function.
+func (f *AzureDevOpsClientGetRepoFunc) History() []AzureDevOpsClientGetRepoFuncCall {
+	f.mutex.Lock()
+	history := make([]AzureDevOpsClientGetRepoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AzureDevOpsClientGetRepoFuncCall is an object that describes an
+// invocation of method GetRepo on an instance of MockAzureDevOpsClient.
+type AzureDevOpsClientGetRepoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 azuredevops.OrgProjectRepoArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 azuredevops.Repository
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AzureDevOpsClientGetRepoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AzureDevOpsClientGetRepoFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// AzureDevOpsClientGetRepositoryBranchFunc describes the behavior when the
+// GetRepositoryBranch method of the parent MockAzureDevOpsClient instance
+// is invoked.
+type AzureDevOpsClientGetRepositoryBranchFunc struct {
+	defaultHook func(context.Context, azuredevops.OrgProjectRepoArgs, string) (azuredevops.Ref, error)
+	hooks       []func(context.Context, azuredevops.OrgProjectRepoArgs, string) (azuredevops.Ref, error)
+	history     []AzureDevOpsClientGetRepositoryBranchFuncCall
+	mutex       sync.Mutex
+}
+
+// GetRepositoryBranch delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockAzureDevOpsClient) GetRepositoryBranch(v0 context.Context, v1 azuredevops.OrgProjectRepoArgs, v2 string) (azuredevops.Ref, error) {
+	r0, r1 := m.GetRepositoryBranchFunc.nextHook()(v0, v1, v2)
+	m.GetRepositoryBranchFunc.appendCall(AzureDevOpsClientGetRepositoryBranchFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetRepositoryBranch
+// method of the parent MockAzureDevOpsClient instance is invoked and the
+// hook queue is empty.
+func (f *AzureDevOpsClientGetRepositoryBranchFunc) SetDefaultHook(hook func(context.Context, azuredevops.OrgProjectRepoArgs, string) (azuredevops.Ref, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetRepositoryBranch method of the parent MockAzureDevOpsClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *AzureDevOpsClientGetRepositoryBranchFunc) PushHook(hook func(context.Context, azuredevops.OrgProjectRepoArgs, string) (azuredevops.Ref, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AzureDevOpsClientGetRepositoryBranchFunc) SetDefaultReturn(r0 azuredevops.Ref, r1 error) {
+	f.SetDefaultHook(func(context.Context, azuredevops.OrgProjectRepoArgs, string) (azuredevops.Ref, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AzureDevOpsClientGetRepositoryBranchFunc) PushReturn(r0 azuredevops.Ref, r1 error) {
+	f.PushHook(func(context.Context, azuredevops.OrgProjectRepoArgs, string) (azuredevops.Ref, error) {
+		return r0, r1
+	})
+}
+
+func (f *AzureDevOpsClientGetRepositoryBranchFunc) nextHook() func(context.Context, azuredevops.OrgProjectRepoArgs, string) (azuredevops.Ref, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AzureDevOpsClientGetRepositoryBranchFunc) appendCall(r0 AzureDevOpsClientGetRepositoryBranchFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AzureDevOpsClientGetRepositoryBranchFuncCall objects describing the
+// invocations of this function.
+func (f *AzureDevOpsClientGetRepositoryBranchFunc) History() []AzureDevOpsClientGetRepositoryBranchFuncCall {
+	f.mutex.Lock()
+	history := make([]AzureDevOpsClientGetRepositoryBranchFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AzureDevOpsClientGetRepositoryBranchFuncCall is an object that describes
+// an invocation of method GetRepositoryBranch on an instance of
+// MockAzureDevOpsClient.
+type AzureDevOpsClientGetRepositoryBranchFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 azuredevops.OrgProjectRepoArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 azuredevops.Ref
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AzureDevOpsClientGetRepositoryBranchFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AzureDevOpsClientGetRepositoryBranchFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// AzureDevOpsClientGetURLFunc describes the behavior when the GetURL method
+// of the parent MockAzureDevOpsClient instance is invoked.
+type AzureDevOpsClientGetURLFunc struct {
+	defaultHook func() *url.URL
+	hooks       []func() *url.URL
+	history     []AzureDevOpsClientGetURLFuncCall
+	mutex       sync.Mutex
+}
+
+// GetURL delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockAzureDevOpsClient) GetURL() *url.URL {
+	r0 := m.GetURLFunc.nextHook()()
+	m.GetURLFunc.appendCall(AzureDevOpsClientGetURLFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the GetURL method of the
+// parent MockAzureDevOpsClient instance is invoked and the hook queue is
+// empty.
+func (f *AzureDevOpsClientGetURLFunc) SetDefaultHook(hook func() *url.URL) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetURL method of the parent MockAzureDevOpsClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *AzureDevOpsClientGetURLFunc) PushHook(hook func() *url.URL) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AzureDevOpsClientGetURLFunc) SetDefaultReturn(r0 *url.URL) {
+	f.SetDefaultHook(func() *url.URL {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AzureDevOpsClientGetURLFunc) PushReturn(r0 *url.URL) {
+	f.PushHook(func() *url.URL {
+		return r0
+	})
+}
+
+func (f *AzureDevOpsClientGetURLFunc) nextHook() func() *url.URL {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AzureDevOpsClientGetURLFunc) appendCall(r0 AzureDevOpsClientGetURLFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AzureDevOpsClientGetURLFuncCall objects
+// describing the invocations of this function.
+func (f *AzureDevOpsClientGetURLFunc) History() []AzureDevOpsClientGetURLFuncCall {
+	f.mutex.Lock()
+	history := make([]AzureDevOpsClientGetURLFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AzureDevOpsClientGetURLFuncCall is an object that describes an invocation
+// of method GetURL on an instance of MockAzureDevOpsClient.
+type AzureDevOpsClientGetURLFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *url.URL
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AzureDevOpsClientGetURLFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AzureDevOpsClientGetURLFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// AzureDevOpsClientIsAzureDevOpsServicesFunc describes the behavior when
+// the IsAzureDevOpsServices method of the parent MockAzureDevOpsClient
+// instance is invoked.
+type AzureDevOpsClientIsAzureDevOpsServicesFunc struct {
+	defaultHook func() bool
+	hooks       []func() bool
+	history     []AzureDevOpsClientIsAzureDevOpsServicesFuncCall
+	mutex       sync.Mutex
+}
+
+// IsAzureDevOpsServices delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockAzureDevOpsClient) IsAzureDevOpsServices() bool {
+	r0 := m.IsAzureDevOpsServicesFunc.nextHook()()
+	m.IsAzureDevOpsServicesFunc.appendCall(AzureDevOpsClientIsAzureDevOpsServicesFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// IsAzureDevOpsServices method of the parent MockAzureDevOpsClient instance
+// is invoked and the hook queue is empty.
+func (f *AzureDevOpsClientIsAzureDevOpsServicesFunc) SetDefaultHook(hook func() bool) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// IsAzureDevOpsServices method of the parent MockAzureDevOpsClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *AzureDevOpsClientIsAzureDevOpsServicesFunc) PushHook(hook func() bool) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AzureDevOpsClientIsAzureDevOpsServicesFunc) SetDefaultReturn(r0 bool) {
+	f.SetDefaultHook(func() bool {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AzureDevOpsClientIsAzureDevOpsServicesFunc) PushReturn(r0 bool) {
+	f.PushHook(func() bool {
+		return r0
+	})
+}
+
+func (f *AzureDevOpsClientIsAzureDevOpsServicesFunc) nextHook() func() bool {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AzureDevOpsClientIsAzureDevOpsServicesFunc) appendCall(r0 AzureDevOpsClientIsAzureDevOpsServicesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AzureDevOpsClientIsAzureDevOpsServicesFuncCall objects describing the
+// invocations of this function.
+func (f *AzureDevOpsClientIsAzureDevOpsServicesFunc) History() []AzureDevOpsClientIsAzureDevOpsServicesFuncCall {
+	f.mutex.Lock()
+	history := make([]AzureDevOpsClientIsAzureDevOpsServicesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AzureDevOpsClientIsAzureDevOpsServicesFuncCall is an object that
+// describes an invocation of method IsAzureDevOpsServices on an instance of
+// MockAzureDevOpsClient.
+type AzureDevOpsClientIsAzureDevOpsServicesFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AzureDevOpsClientIsAzureDevOpsServicesFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AzureDevOpsClientIsAzureDevOpsServicesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// AzureDevOpsClientListAuthorizedUserOrganizationsFunc describes the
+// behavior when the ListAuthorizedUserOrganizations method of the parent
+// MockAzureDevOpsClient instance is invoked.
+type AzureDevOpsClientListAuthorizedUserOrganizationsFunc struct {
+	defaultHook func(context.Context, azuredevops.Profile) ([]azuredevops.Org, error)
+	hooks       []func(context.Context, azuredevops.Profile) ([]azuredevops.Org, error)
+	history     []AzureDevOpsClientListAuthorizedUserOrganizationsFuncCall
+	mutex       sync.Mutex
+}
+
+// ListAuthorizedUserOrganizations delegates to the next hook function in
+// the queue and stores the parameter and result values of this invocation.
+func (m *MockAzureDevOpsClient) ListAuthorizedUserOrganizations(v0 context.Context, v1 azuredevops.Profile) ([]azuredevops.Org, error) {
+	r0, r1 := m.ListAuthorizedUserOrganizationsFunc.nextHook()(v0, v1)
+	m.ListAuthorizedUserOrganizationsFunc.appendCall(AzureDevOpsClientListAuthorizedUserOrganizationsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// ListAuthorizedUserOrganizations method of the parent
+// MockAzureDevOpsClient instance is invoked and the hook queue is empty.
+func (f *AzureDevOpsClientListAuthorizedUserOrganizationsFunc) SetDefaultHook(hook func(context.Context, azuredevops.Profile) ([]azuredevops.Org, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListAuthorizedUserOrganizations method of the parent
+// MockAzureDevOpsClient instance invokes the hook at the front of the queue
+// and discards it. After the queue is empty, the default hook function is
+// invoked for any future action.
+func (f *AzureDevOpsClientListAuthorizedUserOrganizationsFunc) PushHook(hook func(context.Context, azuredevops.Profile) ([]azuredevops.Org, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AzureDevOpsClientListAuthorizedUserOrganizationsFunc) SetDefaultReturn(r0 []azuredevops.Org, r1 error) {
+	f.SetDefaultHook(func(context.Context, azuredevops.Profile) ([]azuredevops.Org, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AzureDevOpsClientListAuthorizedUserOrganizationsFunc) PushReturn(r0 []azuredevops.Org, r1 error) {
+	f.PushHook(func(context.Context, azuredevops.Profile) ([]azuredevops.Org, error) {
+		return r0, r1
+	})
+}
+
+func (f *AzureDevOpsClientListAuthorizedUserOrganizationsFunc) nextHook() func(context.Context, azuredevops.Profile) ([]azuredevops.Org, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AzureDevOpsClientListAuthorizedUserOrganizationsFunc) appendCall(r0 AzureDevOpsClientListAuthorizedUserOrganizationsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AzureDevOpsClientListAuthorizedUserOrganizationsFuncCall objects
+// describing the invocations of this function.
+func (f *AzureDevOpsClientListAuthorizedUserOrganizationsFunc) History() []AzureDevOpsClientListAuthorizedUserOrganizationsFuncCall {
+	f.mutex.Lock()
+	history := make([]AzureDevOpsClientListAuthorizedUserOrganizationsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AzureDevOpsClientListAuthorizedUserOrganizationsFuncCall is an object
+// that describes an invocation of method ListAuthorizedUserOrganizations on
+// an instance of MockAzureDevOpsClient.
+type AzureDevOpsClientListAuthorizedUserOrganizationsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 azuredevops.Profile
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []azuredevops.Org
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AzureDevOpsClientListAuthorizedUserOrganizationsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AzureDevOpsClientListAuthorizedUserOrganizationsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// AzureDevOpsClientListRepositoriesByProjectOrOrgFunc describes the
+// behavior when the ListRepositoriesByProjectOrOrg method of the parent
+// MockAzureDevOpsClient instance is invoked.
+type AzureDevOpsClientListRepositoriesByProjectOrOrgFunc struct {
+	defaultHook func(context.Context, azuredevops.ListRepositoriesByProjectOrOrgArgs) ([]azuredevops.Repository, error)
+	hooks       []func(context.Context, azuredevops.ListRepositoriesByProjectOrOrgArgs) ([]azuredevops.Repository, error)
+	history     []AzureDevOpsClientListRepositoriesByProjectOrOrgFuncCall
+	mutex       sync.Mutex
+}
+
+// ListRepositoriesByProjectOrOrg delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockAzureDevOpsClient) ListRepositoriesByProjectOrOrg(v0 context.Context, v1 azuredevops.ListRepositoriesByProjectOrOrgArgs) ([]azuredevops.Repository, error) {
+	r0, r1 := m.ListRepositoriesByProjectOrOrgFunc.nextHook()(v0, v1)
+	m.ListRepositoriesByProjectOrOrgFunc.appendCall(AzureDevOpsClientListRepositoriesByProjectOrOrgFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// ListRepositoriesByProjectOrOrg method of the parent MockAzureDevOpsClient
+// instance is invoked and the hook queue is empty.
+func (f *AzureDevOpsClientListRepositoriesByProjectOrOrgFunc) SetDefaultHook(hook func(context.Context, azuredevops.ListRepositoriesByProjectOrOrgArgs) ([]azuredevops.Repository, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListRepositoriesByProjectOrOrg method of the parent MockAzureDevOpsClient
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *AzureDevOpsClientListRepositoriesByProjectOrOrgFunc) PushHook(hook func(context.Context, azuredevops.ListRepositoriesByProjectOrOrgArgs) ([]azuredevops.Repository, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AzureDevOpsClientListRepositoriesByProjectOrOrgFunc) SetDefaultReturn(r0 []azuredevops.Repository, r1 error) {
+	f.SetDefaultHook(func(context.Context, azuredevops.ListRepositoriesByProjectOrOrgArgs) ([]azuredevops.Repository, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AzureDevOpsClientListRepositoriesByProjectOrOrgFunc) PushReturn(r0 []azuredevops.Repository, r1 error) {
+	f.PushHook(func(context.Context, azuredevops.ListRepositoriesByProjectOrOrgArgs) ([]azuredevops.Repository, error) {
+		return r0, r1
+	})
+}
+
+func (f *AzureDevOpsClientListRepositoriesByProjectOrOrgFunc) nextHook() func(context.Context, azuredevops.ListRepositoriesByProjectOrOrgArgs) ([]azuredevops.Repository, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AzureDevOpsClientListRepositoriesByProjectOrOrgFunc) appendCall(r0 AzureDevOpsClientListRepositoriesByProjectOrOrgFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AzureDevOpsClientListRepositoriesByProjectOrOrgFuncCall objects
+// describing the invocations of this function.
+func (f *AzureDevOpsClientListRepositoriesByProjectOrOrgFunc) History() []AzureDevOpsClientListRepositoriesByProjectOrOrgFuncCall {
+	f.mutex.Lock()
+	history := make([]AzureDevOpsClientListRepositoriesByProjectOrOrgFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AzureDevOpsClientListRepositoriesByProjectOrOrgFuncCall is an object that
+// describes an invocation of method ListRepositoriesByProjectOrOrg on an
+// instance of MockAzureDevOpsClient.
+type AzureDevOpsClientListRepositoriesByProjectOrOrgFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 azuredevops.ListRepositoriesByProjectOrOrgArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []azuredevops.Repository
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AzureDevOpsClientListRepositoriesByProjectOrOrgFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AzureDevOpsClientListRepositoriesByProjectOrOrgFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// AzureDevOpsClientSetWaitForRateLimitFunc describes the behavior when the
+// SetWaitForRateLimit method of the parent MockAzureDevOpsClient instance
+// is invoked.
+type AzureDevOpsClientSetWaitForRateLimitFunc struct {
+	defaultHook func(bool)
+	hooks       []func(bool)
+	history     []AzureDevOpsClientSetWaitForRateLimitFuncCall
+	mutex       sync.Mutex
+}
+
+// SetWaitForRateLimit delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockAzureDevOpsClient) SetWaitForRateLimit(v0 bool) {
+	m.SetWaitForRateLimitFunc.nextHook()(v0)
+	m.SetWaitForRateLimitFunc.appendCall(AzureDevOpsClientSetWaitForRateLimitFuncCall{v0})
+	return
+}
+
+// SetDefaultHook sets function that is called when the SetWaitForRateLimit
+// method of the parent MockAzureDevOpsClient instance is invoked and the
+// hook queue is empty.
+func (f *AzureDevOpsClientSetWaitForRateLimitFunc) SetDefaultHook(hook func(bool)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetWaitForRateLimit method of the parent MockAzureDevOpsClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *AzureDevOpsClientSetWaitForRateLimitFunc) PushHook(hook func(bool)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AzureDevOpsClientSetWaitForRateLimitFunc) SetDefaultReturn() {
+	f.SetDefaultHook(func(bool) {
+		return
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AzureDevOpsClientSetWaitForRateLimitFunc) PushReturn() {
+	f.PushHook(func(bool) {
+		return
+	})
+}
+
+func (f *AzureDevOpsClientSetWaitForRateLimitFunc) nextHook() func(bool) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AzureDevOpsClientSetWaitForRateLimitFunc) appendCall(r0 AzureDevOpsClientSetWaitForRateLimitFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AzureDevOpsClientSetWaitForRateLimitFuncCall objects describing the
+// invocations of this function.
+func (f *AzureDevOpsClientSetWaitForRateLimitFunc) History() []AzureDevOpsClientSetWaitForRateLimitFuncCall {
+	f.mutex.Lock()
+	history := make([]AzureDevOpsClientSetWaitForRateLimitFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AzureDevOpsClientSetWaitForRateLimitFuncCall is an object that describes
+// an invocation of method SetWaitForRateLimit on an instance of
+// MockAzureDevOpsClient.
+type AzureDevOpsClientSetWaitForRateLimitFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 bool
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AzureDevOpsClientSetWaitForRateLimitFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AzureDevOpsClientSetWaitForRateLimitFuncCall) Results() []interface{} {
+	return []interface{}{}
+}
+
+// AzureDevOpsClientUpdatePullRequestFunc describes the behavior when the
+// UpdatePullRequest method of the parent MockAzureDevOpsClient instance is
+// invoked.
+type AzureDevOpsClientUpdatePullRequestFunc struct {
+	defaultHook func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestUpdateInput) (azuredevops.PullRequest, error)
+	hooks       []func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestUpdateInput) (azuredevops.PullRequest, error)
+	history     []AzureDevOpsClientUpdatePullRequestFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdatePullRequest delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockAzureDevOpsClient) UpdatePullRequest(v0 context.Context, v1 azuredevops.PullRequestCommonArgs, v2 azuredevops.PullRequestUpdateInput) (azuredevops.PullRequest, error) {
+	r0, r1 := m.UpdatePullRequestFunc.nextHook()(v0, v1, v2)
+	m.UpdatePullRequestFunc.appendCall(AzureDevOpsClientUpdatePullRequestFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the UpdatePullRequest
+// method of the parent MockAzureDevOpsClient instance is invoked and the
+// hook queue is empty.
+func (f *AzureDevOpsClientUpdatePullRequestFunc) SetDefaultHook(hook func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestUpdateInput) (azuredevops.PullRequest, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdatePullRequest method of the parent MockAzureDevOpsClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *AzureDevOpsClientUpdatePullRequestFunc) PushHook(hook func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestUpdateInput) (azuredevops.PullRequest, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AzureDevOpsClientUpdatePullRequestFunc) SetDefaultReturn(r0 azuredevops.PullRequest, r1 error) {
+	f.SetDefaultHook(func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestUpdateInput) (azuredevops.PullRequest, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AzureDevOpsClientUpdatePullRequestFunc) PushReturn(r0 azuredevops.PullRequest, r1 error) {
+	f.PushHook(func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestUpdateInput) (azuredevops.PullRequest, error) {
+		return r0, r1
+	})
+}
+
+func (f *AzureDevOpsClientUpdatePullRequestFunc) nextHook() func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestUpdateInput) (azuredevops.PullRequest, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AzureDevOpsClientUpdatePullRequestFunc) appendCall(r0 AzureDevOpsClientUpdatePullRequestFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AzureDevOpsClientUpdatePullRequestFuncCall
+// objects describing the invocations of this function.
+func (f *AzureDevOpsClientUpdatePullRequestFunc) History() []AzureDevOpsClientUpdatePullRequestFuncCall {
+	f.mutex.Lock()
+	history := make([]AzureDevOpsClientUpdatePullRequestFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AzureDevOpsClientUpdatePullRequestFuncCall is an object that describes an
+// invocation of method UpdatePullRequest on an instance of
+// MockAzureDevOpsClient.
+type AzureDevOpsClientUpdatePullRequestFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 azuredevops.PullRequestCommonArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 azuredevops.PullRequestUpdateInput
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 azuredevops.PullRequest
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AzureDevOpsClientUpdatePullRequestFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AzureDevOpsClientUpdatePullRequestFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// AzureDevOpsClientWithAuthenticatorFunc describes the behavior when the
+// WithAuthenticator method of the parent MockAzureDevOpsClient instance is
+// invoked.
+type AzureDevOpsClientWithAuthenticatorFunc struct {
+	defaultHook func(auth.Authenticator) (azuredevops.Client, error)
+	hooks       []func(auth.Authenticator) (azuredevops.Client, error)
+	history     []AzureDevOpsClientWithAuthenticatorFuncCall
+	mutex       sync.Mutex
+}
+
+// WithAuthenticator delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockAzureDevOpsClient) WithAuthenticator(v0 auth.Authenticator) (azuredevops.Client, error) {
+	r0, r1 := m.WithAuthenticatorFunc.nextHook()(v0)
+	m.WithAuthenticatorFunc.appendCall(AzureDevOpsClientWithAuthenticatorFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the WithAuthenticator
+// method of the parent MockAzureDevOpsClient instance is invoked and the
+// hook queue is empty.
+func (f *AzureDevOpsClientWithAuthenticatorFunc) SetDefaultHook(hook func(auth.Authenticator) (azuredevops.Client, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithAuthenticator method of the parent MockAzureDevOpsClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *AzureDevOpsClientWithAuthenticatorFunc) PushHook(hook func(auth.Authenticator) (azuredevops.Client, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AzureDevOpsClientWithAuthenticatorFunc) SetDefaultReturn(r0 azuredevops.Client, r1 error) {
+	f.SetDefaultHook(func(auth.Authenticator) (azuredevops.Client, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AzureDevOpsClientWithAuthenticatorFunc) PushReturn(r0 azuredevops.Client, r1 error) {
+	f.PushHook(func(auth.Authenticator) (azuredevops.Client, error) {
+		return r0, r1
+	})
+}
+
+func (f *AzureDevOpsClientWithAuthenticatorFunc) nextHook() func(auth.Authenticator) (azuredevops.Client, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AzureDevOpsClientWithAuthenticatorFunc) appendCall(r0 AzureDevOpsClientWithAuthenticatorFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AzureDevOpsClientWithAuthenticatorFuncCall
+// objects describing the invocations of this function.
+func (f *AzureDevOpsClientWithAuthenticatorFunc) History() []AzureDevOpsClientWithAuthenticatorFuncCall {
+	f.mutex.Lock()
+	history := make([]AzureDevOpsClientWithAuthenticatorFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AzureDevOpsClientWithAuthenticatorFuncCall is an object that describes an
+// invocation of method WithAuthenticator on an instance of
+// MockAzureDevOpsClient.
+type AzureDevOpsClientWithAuthenticatorFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 auth.Authenticator
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 azuredevops.Client
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AzureDevOpsClientWithAuthenticatorFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AzureDevOpsClientWithAuthenticatorFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }

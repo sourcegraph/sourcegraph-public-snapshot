@@ -29,9 +29,10 @@ const (
 	SecurityEventNameSignInFailed    SecurityEventName = "SignInFailed"
 	SecurityEventNameSignInSucceeded SecurityEventName = "SignInSucceeded"
 
-	SecurityEventNameAccountCreated SecurityEventName = "AccountCreated"
-	SecurityEventNameAccountDeleted SecurityEventName = "AccountDeleted"
-	SecurityEventNameAccountNuked   SecurityEventName = "AccountNuked"
+	SecurityEventNameAccountCreated  SecurityEventName = "AccountCreated"
+	SecurityEventNameAccountDeleted  SecurityEventName = "AccountDeleted"
+	SecurityEventNameAccountModified SecurityEventName = "AccountModified"
+	SecurityEventNameAccountNuked    SecurityEventName = "AccountNuked"
 
 	SecurityEventNamPasswordResetRequested SecurityEventName = "PasswordResetRequested"
 	SecurityEventNamPasswordRandomized     SecurityEventName = "PasswordRandomized"
@@ -59,6 +60,9 @@ const (
 
 	SecurityEventBitbucketCloudAuthSucceeded SecurityEventName = "BitbucketCloudAuthSucceeded"
 	SecurityEventBitbucketCloudAuthFailed    SecurityEventName = "BitbucketCloudAuthFailed"
+
+	SecurityEventAzureDevOpsAuthSucceeded SecurityEventName = "AzureDevOpsAuthSucceeded"
+	SecurityEventAzureDevOpsAuthFailed    SecurityEventName = "AzureDevOpsAuthFailed"
 
 	SecurityEventOIDCLoginSucceeded SecurityEventName = "SecurityEventOIDCLoginSucceeded"
 	SecurityEventOIDCLoginFailed    SecurityEventName = "SecurityEventOIDCLoginFailed"

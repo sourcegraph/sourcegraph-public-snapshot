@@ -12,7 +12,6 @@ go_library(
         "init.go",
         "log_sinks.go",
         "parse.go",
-        "platform.go",
         "server.go",
         "service_watcher.go",
         "store.go",
@@ -47,13 +46,13 @@ go_library(
 
 go_test(
     name = "conf_test",
+    timeout = "short",
     srcs = [
         "auth_test.go",
         "client_test.go",
         "computed_test.go",
         "diff_test.go",
         "mocks_test.go",
-        "platform_test.go",
         "validate_test.go",
     ],
     embed = [":conf"],

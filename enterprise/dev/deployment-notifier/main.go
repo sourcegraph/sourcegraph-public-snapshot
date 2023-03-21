@@ -37,7 +37,7 @@ type Flags struct {
 
 func (f *Flags) Parse() {
 	flag.StringVar(&f.GitHubToken, "github.token", os.Getenv("GITHUB_TOKEN"), "mandatory github token")
-	flag.StringVar(&f.Environment, "environment", "", "Environment being deployed")
+	flag.StringVar(&f.Environment, "environment", "production", "Environment being deployed")
 	flag.BoolVar(&f.DryRun, "dry", false, "Pretend to post notifications, printing to stdout instead")
 	flag.StringVar(&f.SlackToken, "slack.token", "", "mandatory slack api token")
 	flag.StringVar(&f.SlackAnnounceWebhook, "slack.webhook", "", "Slack Webhook URL to post the results on")
@@ -57,7 +57,7 @@ func main() {
 	flags := &Flags{}
 	flags.Parse()
 	if flags.Environment == "" {
-		logger.Fatal("-environment must be specified: preprod or production.")
+		logger.Fatal("-environment must be specified. 'production' is the only valid option")
 	}
 
 	ghc := github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(

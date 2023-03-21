@@ -34,7 +34,7 @@ This list is not guaranteed to be complete, but rather representative of the typ
 |---|---|---|
 |Repository metadata (e.g. clone URLs, whether it is a fork or archive, etc.)|Yes||
 |User accounts|Yes (if using [SSO authentication](../auth/index.md)), No if using builtin authentication||
-|[Repository permissions](../repo/permissions.md)|Yes||
+|[Repository permissions](../permissions/index.md)|Yes||
 |[Organizations](../organizations.md)|No||
 |[User and org settings](../config/settings.md)|No|Global settings can be backed up as described above, but user- and org-level settings cannot.|
 |[Saved searches](../../code_search/how-to/saved_searches.md)|No||
@@ -76,7 +76,7 @@ The easiest option is to simply back up or migrate [configuration JSON data](#co
 
 ### Option 2: All Postgres data
 
-This option provides a more complete backup, and ensures that almost all state will be restored. Repositories will have to be recloned and reindexed, so some downtime will be required while these oprations complete.
+This option provides a more complete backup, and ensures that almost all state will be restored. Repositories will have to be recloned and reindexed, so some downtime will be required while these operations complete.
 
 Follow the instructions in our [Docker to Docker Compose migration guide](../deploy/docker-compose/migrate.md#backup-single-docker-image-database) to generate a dump of Sourcegraph's Postgres database. [Contact us](https://about.sourcegraph.com/contact/sales) for specific recommendations for your deployment type.
 
@@ -91,7 +91,7 @@ Please use the below table for reference when migrating your data from a Kuberne
 
 |Name|Recreatable|Notes|
 |---|---|---|
-|codeinsight-db|Yes|
+|codeinsights-db|Yes|
 |codeintel-db|Yes|While the data is recreateable, we suggest including the disk during your migration as it often contains a lot of data that would take awhile to regenerate|
 |indexed-search|Yes||
 |gitserver|Yes||

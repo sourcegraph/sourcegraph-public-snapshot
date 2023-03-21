@@ -33,7 +33,7 @@ export interface InsightFilters {
 
 export interface InsightSeriesDisplayOptions {
     numSamples: number | null
-    limit: number
+    limit: number | null
     sortOptions: {
         mode: SeriesSortMode
         direction: SeriesSortDirection

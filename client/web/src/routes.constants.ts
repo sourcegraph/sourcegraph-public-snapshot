@@ -19,7 +19,10 @@ export enum PageRoutes {
     Help = '/help/*',
     Debug = '/-/debug/*',
     RepoContainer = '/*',
+    SetupWizard = '/setup',
     InstallGitHubAppSuccess = '/install-github-app-success',
+    Teams = '/teams/*',
+    RequestAccess = '/request-access/*',
 }
 
 export enum EnterprisePageRoutes {
@@ -34,4 +37,8 @@ export enum EnterprisePageRoutes {
     Notebook = '/notebooks/:id',
     Notebooks = '/notebooks',
     SearchNotebook = '/search/notebook',
+    Cody = '/cody/*',
+    Own = '/own',
+    AppComingSoon = '/app/coming-soon',
+    AppAuthCallback = '/app/auth/callback',
 }

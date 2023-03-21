@@ -170,7 +170,7 @@ func NewInserterWithReturn(
 	returningScanner ReturningScanner,
 ) *Inserter {
 	numColumns := len(columnNames)
-	maxBatchSize := getMaxBatchSize(numColumns, maxNumParameters)
+	maxBatchSize := GetMaxBatchSize(numColumns, maxNumParameters)
 	queryPrefix := makeQueryPrefix(tableName, columnNames)
 	querySuffix := makeQuerySuffix(numColumns, maxNumParameters)
 	onConflictSuffix := makeOnConflictSuffix(onConflictClause)
@@ -348,9 +348,9 @@ const MaxNumPostgresParameters = 32767
 // in a single insert statement.
 const MaxNumSQLiteParameters = 999
 
-// getMaxBatchSize returns the number of rows that can be inserted into a single table with the
+// GetMaxBatchSize returns the number of rows that can be inserted into a single table with the
 // given number of columns via a single insert statement.
-func getMaxBatchSize(numColumns, maxNumParameters int) int {
+func GetMaxBatchSize(numColumns, maxNumParameters int) int {
 	return (maxNumParameters / numColumns) * numColumns
 }
 
@@ -365,8 +365,10 @@ func makeQueryPrefix(tableName string, columnNames []string) string {
 	return fmt.Sprintf(`INSERT INTO "%s" (%s) VALUES `, tableName, strings.Join(quotedColumnNames, ","))
 }
 
-var querySuffixCache = map[int]string{}
-var querySuffixCacheMutex sync.Mutex
+var (
+	querySuffixCache      = map[int]string{}
+	querySuffixCacheMutex sync.Mutex
+)
 
 // makeQuerySuffix creates the suffix of the batch insert statement containing the placeholder
 // variables, e.g. `($1,$2,$3),($4,$5,$6),...`. The number of rows will be the maximum number of

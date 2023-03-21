@@ -1,7 +1,5 @@
 import React from 'react'
 
-import { Location } from 'history'
-import { match } from 'react-router'
 import { NavLink } from 'react-router-dom'
 
 import { PageHeader, Button, Link, Icon } from '@sourcegraph/wildcard'
@@ -14,6 +12,7 @@ import { OrgAreaRouteContext } from './OrgArea'
 
 interface Props extends OrgAreaRouteContext {
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
     navItems: readonly OrgAreaHeaderNavItem[]
     className?: string
 }
@@ -25,11 +24,10 @@ export interface OrgSummary {
 
 export interface OrgAreaHeaderContext extends BatchChangesProps, Pick<Props, 'org'> {
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 }
 
-export interface OrgAreaHeaderNavItem extends NavItemWithIconDescriptor<OrgAreaHeaderContext> {
-    isActive?: (match: match | null, location: Location, props: OrgAreaHeaderContext) => boolean
-}
+export interface OrgAreaHeaderNavItem extends NavItemWithIconDescriptor<OrgAreaHeaderContext> {}
 
 /**
  * Header for the organization area.
@@ -42,6 +40,7 @@ export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> 
     navItems,
     className = '',
     isSourcegraphDotCom,
+    isSourcegraphApp,
 }) => {
     const context: OrgAreaHeaderContext = {
         batchChangesEnabled,
@@ -49,6 +48,7 @@ export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> 
         batchChangesWebhookLogsEnabled,
         org,
         isSourcegraphDotCom,
+        isSourcegraphApp,
     }
 
     const url = `/organizations/${org.name}`
@@ -78,28 +78,10 @@ export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> 
                         <nav className="d-flex align-items-end justify-content-between" aria-label="Org">
                             <ul className="nav nav-tabs w-100">
                                 {navItems.map(
-                                    ({
-                                        to,
-                                        label,
-                                        exact,
-                                        icon: ItemIcon,
-                                        condition = () => true,
-                                        isActive,
-                                        dynamicLabel,
-                                    }) =>
+                                    ({ to, label, exact, icon: ItemIcon, condition = () => true, dynamicLabel }) =>
                                         condition(context) && (
                                             <li key={label} className="nav-item">
-                                                <NavLink
-                                                    to={url + to}
-                                                    className="nav-link"
-                                                    activeClassName="active"
-                                                    exact={exact}
-                                                    isActive={
-                                                        isActive
-                                                            ? (match, location) => isActive(match, location, context)
-                                                            : undefined
-                                                    }
-                                                >
+                                                <NavLink to={url + to} className="nav-link" end={exact}>
                                                     <span>
                                                         {ItemIcon && <Icon as={ItemIcon} aria-hidden={true} />}{' '}
                                                         <span className="text-content" data-tab-content={label}>

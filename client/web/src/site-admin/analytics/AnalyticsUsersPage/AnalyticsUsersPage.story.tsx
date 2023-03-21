@@ -7,9 +7,8 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { WebStory } from '../../../components/WebStory'
 import { UsersStatisticsResult } from '../../../graphql-operations'
 
-import { USERS_STATISTICS } from './queries'
-
 import { AnalyticsUsersPage } from './index'
+import { USERS_STATISTICS } from './queries'
 
 const decorator: DecoratorFn = story => <WebStory>{() => <div className="p-3 container">{story()}</div>}</WebStory>
 
@@ -686,12 +685,16 @@ const USER_ANALYTICS_QUERY_MOCK: MockedResponse<UsersStatisticsResult> = {
                 totalCount: 49036,
                 __typename: 'UserConnection',
             },
+            pendingAccessRequests: {
+                totalCount: 123,
+                __typename: 'AccessRequestConnection',
+            },
         },
     },
 }
 
 export const AnalyticsUsersPageExample: Story = () => (
     <MockedTestProvider mocks={[USER_ANALYTICS_QUERY_MOCK]}>
-        <AnalyticsUsersPage history={{} as any} location={{} as any} match={{} as any} />
+        <AnalyticsUsersPage />
     </MockedTestProvider>
 )

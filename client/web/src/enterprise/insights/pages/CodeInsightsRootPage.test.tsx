@@ -1,13 +1,10 @@
 /* eslint-disable ban/ban */
-import React from 'react'
+import { ReactElement } from 'react'
 
 import { MockedResponse } from '@apollo/client/testing'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import * as H from 'history'
-import { MemoryRouter } from 'react-router'
-import { Route } from 'react-router-dom'
-import { CompatRouter } from 'react-router-dom-v5-compat'
+import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import sinon from 'sinon'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -20,22 +17,16 @@ import { GET_INSIGHT_DASHBOARDS_GQL } from '../core/hooks/use-insight-dashboards
 
 import { CodeInsightsRootPage, CodeInsightsRootPageTab } from './CodeInsightsRootPage'
 
-interface ReactRouterMock {
-    useHistory: () => unknown
-    useRouteMatch: () => unknown
+function mockRouterDom() {
+    return {
+        ...jest.requireActual('react-router-dom'),
+        useNavigate: () => ({
+            push: jest.fn(),
+        }),
+    }
 }
 
-const url = '/insights'
-
-jest.mock('react-router', () => ({
-    ...jest.requireActual<ReactRouterMock>('react-router'),
-    useHistory: () => ({
-        push: jest.fn(),
-    }),
-    useRouteMatch: () => ({
-        url,
-    }),
-}))
+jest.mock('react-router-dom', () => mockRouterDom())
 
 const mockTelemetryService = {
     log: sinon.spy(),
@@ -90,34 +81,19 @@ const mockedGQL: MockedResponse[] = [
     } as MockedResponse<InsightsDashboardsResult>,
 ]
 
-const renderWithBrandedContext = (component: React.ReactElement, { route = '/', api = {} } = {}) => {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const routerSettings: { testHistory: H.History; testLocation: H.Location } = {}
-
-    return {
-        ...render(
-            <MockedTestProvider mocks={mockedGQL}>
-                <Wrapper api={api}>
-                    <MemoryRouter initialEntries={[route]}>
-                        <CompatRouter>
-                            {component}
-                            <Route
-                                path="*"
-                                render={({ history, location }) => {
-                                    routerSettings.testHistory = history
-                                    routerSettings.testLocation = location
-                                    return null
-                                }}
-                            />
-                        </CompatRouter>
-                    </MemoryRouter>
-                </Wrapper>
-            </MockedTestProvider>
-        ),
-        ...routerSettings,
-    }
-}
+const renderWithBrandedContext = (component: ReactElement, { route = '/', path = '*', api = {} } = {}) => ({
+    ...render(
+        <MockedTestProvider mocks={mockedGQL}>
+            <Wrapper api={api}>
+                <MemoryRouter initialEntries={[route]}>
+                    <Routes>
+                        <Route path={path} element={component} />
+                    </Routes>
+                </MemoryRouter>
+            </Wrapper>
+        </MockedTestProvider>
+    ),
+})
 
 describe('CodeInsightsRootPage', () => {
     beforeAll(() => {
@@ -129,9 +105,11 @@ describe('CodeInsightsRootPage', () => {
             <CodeInsightsRootPage
                 activeTab={CodeInsightsRootPageTab.Dashboards}
                 telemetryService={mockTelemetryService}
+                isSourcegraphApp={false}
             />,
             {
                 route: '/insights/dashboards/foo',
+                path: '/insights/dashboards/:dashboardId',
             }
         )
 
@@ -143,9 +121,11 @@ describe('CodeInsightsRootPage', () => {
             <CodeInsightsRootPage
                 activeTab={CodeInsightsRootPageTab.Dashboards}
                 telemetryService={mockTelemetryService}
+                isSourcegraphApp={false}
             />,
             {
                 route: '/insights/dashboards/foo',
+                path: '/insights/dashboards/:dashboardId',
             }
         )
 

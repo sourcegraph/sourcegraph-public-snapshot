@@ -13,10 +13,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -62,6 +64,63 @@ func TestWriteSiteConfig(t *testing.T) {
 		err := confSource.Write(context.Background(), conftypes.RawUnified{}, conf.ID, 1)
 		assert.NoError(t, err)
 	})
+}
+
+func TestOverrideSiteConfig(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	conf := db.Conf()
+	ctx := context.Background()
+
+	// Required so that the serviceConnections function when called won't panic.
+	os.Setenv("CODEINTEL_PG_ALLOW_SINGLE_DB", "true")
+
+	// Generate a SITE_CONFIG_FILE and set the env.
+	file, err := os.CreateTemp("", "site-config-*")
+	require.NoError(t, err, "failed to create temp file")
+
+	_, err = file.Write([]byte(`{"auth.providers": [{ "type": "builtin"}]}`))
+	require.NoError(t, err, "failed to write to temp file")
+
+	os.Setenv("SITE_CONFIG_FILE", file.Name())
+
+	// First time a write happens.
+	err = overrideSiteConfig(ctx, logger, db)
+	require.NoError(t, err, "failed to override ")
+
+	// Read the latest site config.
+	current, err := conf.SiteGetLatest(ctx)
+	require.NoError(t, err, "failed to read site config")
+
+	// Try to write again which would happen if Sourcegraph is restarted for example.
+	err = overrideSiteConfig(ctx, logger, db)
+	require.NoError(t, err, "failed to override ")
+
+	next, err := conf.SiteGetLatest(ctx)
+	require.NoError(t, err, "failed to read site config")
+
+	// Since the SITE_CONFIG_FILE has not changed, expect no changes.
+	require.Equal(t, current.ID, next.ID)
+
+	// Now create a new SITE_CONFIG_FILE with a different config and update the env variable.
+	file2, err := os.CreateTemp("", "site-config-*")
+	require.NoError(t, err, "failed to create temp file")
+
+	_, err = file2.Write([]byte(`{"auth.providers": [{"type": "builtin"}], "disableAutoGitUpdates": true}`))
+	require.NoError(t, err, "failed to write to temp file")
+
+	os.Setenv("SITE_CONFIG_FILE", file2.Name())
+
+	// Try to write again.
+	err = overrideSiteConfig(ctx, logger, db)
+	require.NoError(t, err, "failed to override ")
+
+	// Read the latest site config.
+	next2, err := conf.SiteGetLatest(ctx)
+	require.NoError(t, err, "failed to read site config")
+
+	// Since the SITE_CONFIG_FILE has changed, expect a new ID.
+	require.NotEqual(t, next.ID, next2.ID)
 }
 
 func TestReadSiteConfigFile(t *testing.T) {

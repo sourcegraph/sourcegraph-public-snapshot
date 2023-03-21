@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const DEFAULT_MAX_PAGE_SIZE = 100
+const DefaultMaxPageSize = 100
 
 type ConnectionResolver[N any] struct {
 	store   ConnectionResolverStore[N]
@@ -22,9 +22,9 @@ type ConnectionResolverStore[N any] interface {
 	// ComputeTotal returns the total count of all the items in the connection, independent of pagination arguments.
 	ComputeTotal(context.Context) (*int32, error)
 	// ComputeNodes returns the list of nodes based on the pagination args.
-	ComputeNodes(context.Context, *database.PaginationArgs) ([]*N, error)
+	ComputeNodes(context.Context, *database.PaginationArgs) ([]N, error)
 	// MarshalCursor returns cursor for a node and is called for generating start and end cursors.
-	MarshalCursor(*N, database.OrderBy) (*string, error)
+	MarshalCursor(N, database.OrderBy) (*string, error)
 	// UnmarshalCursor returns node id from after/before cursor string.
 	UnmarshalCursor(string, database.OrderBy) (*string, error)
 }
@@ -36,7 +36,7 @@ type ConnectionResolverArgs struct {
 	Before *string
 }
 
-// Limit returns max nodes limit based on resolver arguments
+// Limit returns max nodes limit based on resolver arguments.
 func (a *ConnectionResolverArgs) Limit(options *ConnectionResolverOptions) int {
 	var limit *int32
 
@@ -60,22 +60,27 @@ type ConnectionResolverOptions struct {
 	//
 	// Defaults to `true` when not set.
 	Reverse *bool
-	// Columns to order by
+	// Columns to order by.
 	OrderBy database.OrderBy
-	// Order direction
+	// Order direction.
 	Ascending bool
+
+	// If set to true, the resolver won't throw an error when `first` or `last` isn't provided
+	// in `ConnectionResolverArgs`. Be careful when setting this to true, as this could cause
+	// performance issues when fetching large data.
+	AllowNoLimit bool
 }
 
-// MaxPageSize returns the configured max page limit for the connection
+// MaxPageSizeOrDefault returns the configured max page limit for the connection.
 func (o *ConnectionResolverOptions) MaxPageSizeOrDefault() int {
 	if o.MaxPageSize != nil {
 		return *o.MaxPageSize
 	}
 
-	return DEFAULT_MAX_PAGE_SIZE
+	return DefaultMaxPageSize
 }
 
-// ApplyMaxPageSize return max page size by applying the configured max limit to the first, last arguments
+// ApplyMaxPageSize return max page size by applying the configured max limit to the first, last arguments.
 func (o *ConnectionResolverOptions) ApplyMaxPageSize(limit *int32) int {
 	maxPageSize := o.MaxPageSizeOrDefault()
 
@@ -94,7 +99,7 @@ type connectionData[N any] struct {
 	total      *int32
 	totalError error
 
-	nodes      []*N
+	nodes      []N
 	nodesError error
 }
 
@@ -118,7 +123,7 @@ func (r *ConnectionResolver[N]) paginationArgs() (*database.PaginationArgs, erro
 		paginationArgs.First = &limit
 	} else if r.args.Last != nil {
 		paginationArgs.Last = &limit
-	} else {
+	} else if !r.options.AllowNoLimit {
 		return nil, errors.New("you must provide a `first` or `last` value to properly paginate")
 	}
 
@@ -161,7 +166,7 @@ func (r *ConnectionResolver[N]) TotalCount(ctx context.Context) (int32, error) {
 }
 
 // Nodes returns value for connection.Nodes and is called by the graphql api.
-func (r *ConnectionResolver[N]) Nodes(ctx context.Context) ([]*N, error) {
+func (r *ConnectionResolver[N]) Nodes(ctx context.Context) ([]N, error) {
 	r.once.nodes.Do(func() {
 		paginationArgs, err := r.paginationArgs()
 		if err != nil {
@@ -222,7 +227,7 @@ func (r *ConnectionResolver[N]) PageInfo(ctx context.Context) (*ConnectionPageIn
 type ConnectionPageInfo[N any] struct {
 	pageSize          int
 	fetchedNodesCount int
-	nodes             []*N
+	nodes             []N
 	store             ConnectionResolverStore[N]
 	args              *ConnectionResolverArgs
 	orderBy           database.OrderBy

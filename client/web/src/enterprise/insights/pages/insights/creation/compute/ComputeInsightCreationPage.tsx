@@ -3,17 +3,17 @@ import { FunctionComponent, useCallback, useMemo } from 'react'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, useLocalStorage, useObservable } from '@sourcegraph/wildcard'
-
-import { PageTitle } from '../../../../../../components/PageTitle'
 import {
-    CodeInsightCreationMode,
-    CodeInsightsCreationActions,
-    CodeInsightsPage,
+    PageHeader,
+    useLocalStorage,
+    useObservable,
     FORM_ERROR,
     FormChangeEvent,
     SubmissionErrors,
-} from '../../../../components'
+} from '@sourcegraph/wildcard'
+
+import { PageTitle } from '../../../../../../components/PageTitle'
+import { CodeInsightCreationMode, CodeInsightsCreationActions, CodeInsightsPage } from '../../../../components'
 import { ComputeInsight } from '../../../../core'
 import { useUiFeatures } from '../../../../hooks'
 import { CodeInsightTrackType } from '../../../../pings'
@@ -31,10 +31,12 @@ interface ComputeInsightCreationPageProps extends TelemetryProps {
     onInsightCreateRequest: (event: InsightCreateEvent) => Promise<unknown>
     onSuccessfulCreation: () => void
     onCancel: () => void
+    isSourcegraphApp: boolean
 }
 
 export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreationPageProps> = props => {
-    const { backUrl, telemetryService, onInsightCreateRequest, onSuccessfulCreation, onCancel } = props
+    const { backUrl, telemetryService, onInsightCreateRequest, onSuccessfulCreation, onCancel, isSourcegraphApp } =
+        props
 
     const { licensed, insight } = useUiFeatures()
     const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
@@ -44,7 +46,7 @@ export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreatio
     // render creation UI form.
     // eslint-disable-next-line no-restricted-syntax
     const [initialFormValues, setInitialFormValues] = useLocalStorage<CreateComputeInsightFormFields | undefined>(
-        'insights.compute-creation-ui',
+        'insights.compute-creation-ui-v2',
         undefined
     )
 
@@ -81,7 +83,7 @@ export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreatio
     }, [setInitialFormValues, telemetryService, onCancel])
 
     return (
-        <CodeInsightsPage className="col-11">
+        <CodeInsightsPage isSourcegraphApp={isSourcegraphApp}>
             <PageTitle title="Create group results insight - Code Insights" />
 
             <PageHeader

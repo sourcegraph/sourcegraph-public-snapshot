@@ -157,12 +157,9 @@ describe('Repository component', () => {
             await driver.page.goto(
                 sourcegraphBaseUrl + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d'
             )
-            await driver.page.waitForSelector('[data-testid="tree-row-icon"]', { visible: true })
-            await driver.page.click('[data-testid="tree-row-icon"]')
-            await driver.page.waitForSelector('[data-tree-row-selected="true"] [data-tree-path="websocket"]', {
-                visible: true,
-            })
-            await driver.page.waitForSelector('[data-tree-row-expanded="true"] [data-tree-path="websocket"]', {
+            await driver.page.waitForSelector('[data-testid="tree-expand-icon"]', { visible: true })
+            await driver.page.click('[data-testid="tree-expand-icon"]')
+            await driver.page.waitForSelector('[data-tree-expanded="true"] [data-tree-path="websocket"]', {
                 visible: true,
             })
             await driver.assertWindowLocation(
@@ -174,12 +171,12 @@ describe('Repository component', () => {
             await driver.page.goto(
                 sourcegraphBaseUrl + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d'
             )
-            await driver.page.waitForSelector('[data-testid="tree-row-label"]', { visible: true })
-            await driver.page.click('[data-testid="tree-row-label"')
-            await driver.page.waitForSelector('[data-tree-row-selected="true"] [data-tree-path="websocket"]', {
+            await driver.page.waitForSelector('[data-tree-path="websocket"]', { visible: true })
+            await driver.page.click('[data-tree-path="websocket"]')
+            await driver.page.waitForSelector('[data-tree-selected="true"] [data-tree-path="websocket"]', {
                 visible: true,
             })
-            await driver.page.waitForSelector('[data-tree-row-expanded="true"] [data-tree-path="websocket"]', {
+            await driver.page.waitForSelector('[data-tree-expanded="true"] [data-tree-path="websocket"]', {
                 visible: true,
             })
             await driver.assertWindowLocation(
@@ -192,7 +189,7 @@ describe('Repository component', () => {
                 sourcegraphBaseUrl +
                     '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/blob/async.go'
             )
-            await driver.page.waitForSelector('[data-tree-row-active="true"] [data-tree-path="async.go"]', {
+            await driver.page.waitForSelector('[data-tree-active="true"] [data-tree-path="async.go"]', {
                 visible: true,
             })
         })
@@ -202,57 +199,55 @@ describe('Repository component', () => {
                 sourcegraphBaseUrl +
                     '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/tree/websocket'
             )
-            await driver.page.waitForSelector('[data-testid="tree-row"]', { visible: true })
+            await driver.page.waitForSelector('[data-testid="tree-node"]', { visible: true })
             expect(
-                await driver.page.evaluate(() => document.querySelectorAll('[data-testid="tree-row"]').length)
+                await driver.page.evaluate(() => document.querySelectorAll('[data-testid="tree-node"]').length)
             ).toEqual(2)
         })
 
         test('responds to keyboard shortcuts', async () => {
             const assertNumberRowsExpanded = async (expectedCount: number): Promise<void> => {
                 expect(
-                    await driver.page.evaluate(
-                        () => document.querySelectorAll('[data-tree-row-expanded="true"]').length
-                    )
+                    await driver.page.evaluate(() => document.querySelectorAll('[data-tree-expanded="true"]').length)
                 ).toEqual(expectedCount)
             }
             await driver.page.goto(
                 sourcegraphBaseUrl +
                     '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/.travis.yml'
             )
-            await driver.page.waitForSelector('[data-testid="tree-row"]', { visible: true }) // waitForSelector for tree to render
+            await driver.page.waitForSelector('[data-testid="tree-node"]', { visible: true }) // waitForSelector for tree to render
 
-            await driver.page.click('.test-repo-revision-sidebar [data-testid="tree"]')
+            await driver.page.click('.test-repo-revision-sidebar [data-tree-selected="true"] [data-tree-path]')
             await driver.page.keyboard.press('ArrowUp') // arrow up to 'diff' directory
-            await driver.page.waitForSelector('[data-tree-row-selected="true"] [data-tree-path="diff"]', {
+            await driver.page.waitForSelector('.focus-visible [data-tree-path="diff"]', {
                 visible: true,
             })
             await driver.page.keyboard.press('ArrowRight') // arrow right (expand 'diff' directory)
-            await driver.page.waitForSelector('[data-tree-row-selected="true"] [data-tree-path="diff"]', {
+            await driver.page.waitForSelector('.focus-visible [data-tree-path="diff"]', {
                 visible: true,
             })
-            await driver.page.waitForSelector('[data-tree-row-expanded="true"] [data-tree-path="diff"]', {
+            await driver.page.waitForSelector('[data-tree-expanded="true"] [data-tree-path="diff"]', {
                 visible: true,
             })
-            await driver.page.waitForSelector('[data-testid="tree-row"] [data-tree-path="diff/testdata"]', {
+            await driver.page.waitForSelector('[data-testid="tree-node"] [data-tree-path="diff/testdata"]', {
                 visible: true,
             })
             await driver.page.keyboard.press('ArrowRight') // arrow right (move to nested 'diff/testdata' directory)
-            await driver.page.waitForSelector('[data-tree-row-selected="true"] [data-tree-path="diff/testdata"]', {
+            await driver.page.waitForSelector('.focus-visible [data-tree-path="diff/testdata"]', {
                 visible: true,
             })
             await assertNumberRowsExpanded(1) // only `diff` directory is expanded, though `diff/testdata` is expanded
 
             await driver.page.keyboard.press('ArrowRight') // arrow right (expand 'diff/testdata' directory)
-            await driver.page.waitForSelector('[data-tree-row-selected="true"] [data-tree-path="diff/testdata"]', {
+            await driver.page.waitForSelector('.focus-visible [data-tree-path="diff/testdata"]', {
                 visible: true,
             })
-            await driver.page.waitForSelector('[data-tree-row-expanded="true"] [data-tree-path="diff/testdata"]', {
+            await driver.page.waitForSelector('[data-tree-expanded="true"] [data-tree-path="diff/testdata"]', {
                 visible: true,
             })
             await assertNumberRowsExpanded(2) // `diff` and `diff/testdata` directories expanded
 
-            await driver.page.waitForSelector('[data-testid="tree-row"] [data-tree-path="diff/testdata/empty.diff"]', {
+            await driver.page.waitForSelector('[data-testid="tree-node"] [data-tree-path="diff/testdata/empty.diff"]', {
                 visible: true,
             })
             // select some file nested under `diff/testdata`
@@ -260,21 +255,18 @@ describe('Repository component', () => {
             await driver.page.keyboard.press('ArrowDown') // arrow down
             await driver.page.keyboard.press('ArrowDown') // arrow down
             await driver.page.keyboard.press('ArrowDown') // arrow down
-            await driver.page.waitForSelector(
-                '[data-tree-row-selected="true"] [data-tree-path="diff/testdata/empty_orig.diff"]',
-                {
-                    visible: true,
-                }
-            )
+            await driver.page.waitForSelector('.focus-visible [data-tree-path="diff/testdata/empty_orig.diff"]', {
+                visible: true,
+            })
 
             await driver.page.keyboard.press('ArrowLeft') // arrow left (navigate immediately up to parent directory `diff/testdata`)
-            await driver.page.waitForSelector('[data-tree-row-selected="true"] [data-tree-path="diff/testdata"]', {
+            await driver.page.waitForSelector('.focus-visible [data-tree-path="diff/testdata"]', {
                 visible: true,
             })
             await assertNumberRowsExpanded(2) // `diff` and `diff/testdata` directories expanded
 
             await driver.page.keyboard.press('ArrowLeft') // arrow left
-            await driver.page.waitForSelector('[data-tree-row-selected="true"] [data-tree-path="diff/testdata"]', {
+            await driver.page.waitForSelector('.focus-visible [data-tree-path="diff/testdata"]', {
                 visible: true,
             }) // `diff/testdata` still selected
             await assertNumberRowsExpanded(1) // only `diff` directory expanded
@@ -296,12 +288,15 @@ describe('Repository component', () => {
                     '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/diff.go',
                 symbolNames: [
                     'diff',
-                    'Stat',
-                    'Stat',
-                    'hunkPrefix',
-                    'hunkHeader',
-                    'diffTimeParseLayout',
                     'diffTimeFormatLayout',
+                    'diffTimeParseLayout',
+                    'FileDiff',
+                    'Stat',
+                    'Hunk',
+                    'Stat',
+                    'hunkHeader',
+                    'hunkPrefix',
+                    'Stat',
                     'add',
                 ],
                 symbolTypes: [
@@ -490,13 +485,10 @@ describe('Repository component', () => {
                 }
                 await link.click()
 
-                await driver.page.waitForSelector('.test-blob .selected .line')
-                const selectedLineNumber = await driver.page.evaluate(() => {
-                    const element = document.querySelector<HTMLElement>('.test-blob .selected .line')
-                    return element?.dataset.line && parseInt(element.dataset.line, 10)
-                })
-
-                expect(selectedLineNumber).toEqual(line)
+                const selectedLine = await driver.page.waitForSelector(
+                    `[data-testid="repo-blob"] .cm-line:nth-child(${line}).selected-line`
+                )
+                expect(selectedLine).not.toBeNull()
             })
         }
     })
@@ -559,12 +551,9 @@ describe('Repository component', () => {
                         '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/diff.pb.go?L38:6'
                     )
                     // Verify file tree is highlighting the new path.
-                    await driver.page.waitForSelector(
-                        '[data-tree-row-active="true"] [data-tree-path="diff/diff.pb.go"]',
-                        {
-                            visible: true,
-                        }
-                    )
+                    await driver.page.waitForSelector('[data-tree-active="true"] [data-tree-path="diff/diff.pb.go"]', {
+                        visible: true,
+                    })
                 })
 
                 // basic code intel doesn't support cross-repo jump-to-definition yet.

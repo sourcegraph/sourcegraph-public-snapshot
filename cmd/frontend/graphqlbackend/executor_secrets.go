@@ -258,9 +258,9 @@ func (r *UserResolver) ExecutorSecrets(ctx context.Context, args ExecutorSecrets
 	}, nil
 }
 
-func (r *OrgResolver) ExecutorSecrets(ctx context.Context, args ExecutorSecretsListArgs) (*executorSecretConnectionResolver, error) {
+func (o *OrgResolver) ExecutorSecrets(ctx context.Context, args ExecutorSecretsListArgs) (*executorSecretConnectionResolver, error) {
 	// 🚨 SECURITY: Only allow access to list secrets if the user has access to the namespace.
-	if err := checkNamespaceAccess(ctx, r.db, 0, r.org.ID); err != nil {
+	if err := checkNamespaceAccess(ctx, o.db, 0, o.org.ID); err != nil {
 		return nil, err
 	}
 
@@ -270,12 +270,12 @@ func (r *OrgResolver) ExecutorSecrets(ctx context.Context, args ExecutorSecretsL
 	}
 
 	return &executorSecretConnectionResolver{
-		db:    r.db,
+		db:    o.db,
 		scope: args.Scope,
 		opts: database.ExecutorSecretsListOpts{
 			LimitOffset:     limit,
 			NamespaceUserID: 0,
-			NamespaceOrgID:  r.org.ID,
+			NamespaceOrgID:  o.org.ID,
 		},
 	}, nil
 }

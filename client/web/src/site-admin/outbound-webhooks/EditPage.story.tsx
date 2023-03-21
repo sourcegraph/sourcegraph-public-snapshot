@@ -1,5 +1,4 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import * as H from 'history'
 import { WildcardMockLink } from 'wildcard-mock-link'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -13,7 +12,7 @@ import { logConnectionLink, buildOutboundWebhookMock, eventTypesMock } from './m
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
-    title: 'web/site-admin/outbound-webhooks/EditPage',
+    title: 'web/site-admin/webhooks/outgoing/EditPage',
     decorators: [decorator],
 }
 
@@ -23,14 +22,9 @@ export const Page: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider
-                link={new WildcardMockLink([logConnectionLink, buildOutboundWebhookMock('abcdef'), eventTypesMock])}
+                link={new WildcardMockLink([logConnectionLink, buildOutboundWebhookMock(''), eventTypesMock])}
             >
-                <EditPage
-                    match={{ params: { id: 'abcdef' } } as any}
-                    history={H.createMemoryHistory()}
-                    location={{} as any}
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                />
+                <EditPage telemetryService={NOOP_TELEMETRY_SERVICE} />
             </MockedTestProvider>
         )}
     </WebStory>

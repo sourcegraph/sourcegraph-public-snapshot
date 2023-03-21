@@ -1,15 +1,23 @@
-import React, { useContext, useMemo } from 'react'
+import { FC, useContext, useMemo } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { useHistory } from 'react-router'
+import { useParams, useNavigate } from 'react-router-dom'
 
-import { Button, Container, LoadingSpinner, PageHeader, useObservable, Link } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Container,
+    LoadingSpinner,
+    PageHeader,
+    useObservable,
+    Link,
+    SubmissionErrors,
+} from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../components/HeroPage'
 import { LoaderButton } from '../../../../../components/LoaderButton'
 import { PageTitle } from '../../../../../components/PageTitle'
-import { CodeInsightsIcon, CodeInsightsPage, SubmissionErrors } from '../../../components'
+import { CodeInsightsIcon, CodeInsightsPage } from '../../../components'
 import {
     CodeInsightsBackendContext,
     CustomInsightDashboard,
@@ -27,16 +35,16 @@ import {
 
 import styles from './EditDashboardPage.module.scss'
 
-interface EditDashboardPageProps {
-    dashboardId: string
+interface Props {
+    isSourcegraphApp: boolean
 }
 
 /**
  * Displays the edit (configure) dashboard page.
  */
-export const EditDashboardPage: React.FunctionComponent<React.PropsWithChildren<EditDashboardPageProps>> = props => {
-    const { dashboardId } = props
-    const history = useHistory()
+export const EditDashboardPage: FC<Props> = props => {
+    const navigate = useNavigate()
+    const { dashboardId } = useParams()
 
     const { getDashboardOwners, updateDashboard } = useContext(CodeInsightsBackendContext)
 
@@ -74,13 +82,13 @@ export const EditDashboardPage: React.FunctionComponent<React.PropsWithChildren<
             },
         }).toPromise()
 
-        history.push(`/insights/dashboards/${updatedDashboard.id}`)
+        navigate(`/insights/dashboards/${updatedDashboard.id}`)
     }
 
-    const handleCancel = (): void => history.goBack()
+    const handleCancel = (): void => navigate(-1)
 
     return (
-        <CodeInsightsPage className={classNames('col-8', styles.page)}>
+        <CodeInsightsPage className={classNames('col-8', styles.page)} isSourcegraphApp={props.isSourcegraphApp}>
             <PageTitle title={`Configure ${dashboard.title} - Code Insights`} />
 
             <PageHeader path={[{ icon: CodeInsightsIcon }, { text: 'Configure dashboard' }]} />
@@ -97,6 +105,7 @@ export const EditDashboardPage: React.FunctionComponent<React.PropsWithChildren<
                     initialValues={getDashboardInitialValues(dashboard, owners)}
                     owners={owners}
                     onSubmit={handleSubmit}
+                    isSourcegraphApp={props.isSourcegraphApp}
                 >
                     {formAPI => (
                         <>

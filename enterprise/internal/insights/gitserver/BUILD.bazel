@@ -19,10 +19,11 @@ go_library(
 
 go_test(
     name = "gitserver_test",
+    timeout = "short",
     srcs = ["first_commit_test.go"],
     embed = [":gitserver"],
     deps = [
         "//lib/errors",
-        "@com_github_hexops_autogold//:autogold",
+        "@com_github_hexops_autogold_v2//:autogold",
     ],
 )

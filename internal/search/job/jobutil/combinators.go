@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/conc/pool"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -13,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 // NewSequentialJob will create a job that sequentially runs a list of jobs.
@@ -157,18 +157,18 @@ func (p *ParallelJob) Run(ctx context.Context, clients job.RuntimeClients, s str
 	defer func() { finish(alert, err) }()
 
 	var (
-		g          = group.New().WithContext(ctx)
+		pl         = pool.New().WithContext(ctx)
 		maxAlerter search.MaxAlerter
 	)
 	for _, child := range p.children {
 		child := child
-		g.Go(func(ctx context.Context) error {
+		pl.Go(func(ctx context.Context) error {
 			alert, err := child.Run(ctx, clients, s)
 			maxAlerter.Add(alert)
 			return err
 		})
 	}
-	return maxAlerter.Alert, g.Wait()
+	return maxAlerter.Alert, pl.Wait()
 }
 
 // NewTimeoutJob creates a new job that is canceled after the

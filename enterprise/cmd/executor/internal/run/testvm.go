@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -70,7 +70,7 @@ func createVM(ctx context.Context, config *config.Config, repositoryName, revisi
 		// No need for files store in the test.
 		nil,
 		// Just enough to spin up a VM.
-		executor.Job{
+		types.Job{
 			RepositoryName: repositoryName,
 			Commit:         revision,
 		},

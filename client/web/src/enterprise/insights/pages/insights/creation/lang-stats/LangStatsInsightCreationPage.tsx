@@ -1,18 +1,11 @@
 import { FC, useCallback, useEffect, useMemo } from 'react'
 
-import classNames from 'classnames'
-
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useLocalStorage, Link, PageHeader, useObservable } from '@sourcegraph/wildcard'
+import { useLocalStorage, Link, PageHeader, useObservable, FORM_ERROR } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
-import {
-    CodeInsightCreationMode,
-    CodeInsightsCreationActions,
-    CodeInsightsPage,
-    FORM_ERROR,
-} from '../../../../components'
+import { CodeInsightCreationMode, CodeInsightsCreationActions, CodeInsightsPage } from '../../../../components'
 import { MinimalLangStatsInsightData } from '../../../../core'
 import { useUiFeatures } from '../../../../hooks'
 import { CodeInsightTrackType } from '../../../../pings'
@@ -23,8 +16,6 @@ import {
 } from './components/LangStatsInsightCreationContent'
 import { LangStatsCreationFormFields } from './types'
 import { getSanitizedLangStatsInsight } from './utils/insight-sanitizer'
-
-import styles from './LangStatsInsightCreationPage.module.scss'
 
 export interface InsightCreateEvent {
     insight: MinimalLangStatsInsightData
@@ -50,10 +41,13 @@ export interface LangStatsInsightCreationPageProps extends TelemetryProps {
      * Whenever the user click on cancel button
      */
     onCancel: () => void
+
+    isSourcegraphApp: boolean
 }
 
 export const LangStatsInsightCreationPage: FC<LangStatsInsightCreationPageProps> = props => {
-    const { backUrl, telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
+    const { backUrl, telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation, isSourcegraphApp } =
+        props
 
     const { licensed, insight } = useUiFeatures()
     const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
@@ -100,7 +94,7 @@ export const LangStatsInsightCreationPage: FC<LangStatsInsightCreationPageProps>
     }, [setInitialFormValues, telemetryService, onCancel])
 
     return (
-        <CodeInsightsPage className={classNames(styles.creationPage, 'col-10')}>
+        <CodeInsightsPage isSourcegraphApp={isSourcegraphApp}>
             <PageTitle title="Create language usage insight - Code Insights" />
 
             <PageHeader

@@ -5,18 +5,18 @@ import classNames from 'classnames'
 
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, Icon, Code, H1, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { getPlatformName } from '../../shared/util/context'
 
 import styles from './AfterInstallPageContent.module.scss'
 
-const Video: React.FunctionComponent<
-    React.PropsWithChildren<
-        { name: string } & Pick<VideoHTMLAttributes<HTMLVideoElement>, 'width' | 'height'> & ThemeProps
-    >
-> = ({ name, isLightTheme, width, height }) => {
+interface VideoProps extends Pick<VideoHTMLAttributes<HTMLVideoElement>, 'width' | 'height'> {
+    name: string
+    isLightTheme: boolean
+}
+
+const Video: React.FC<VideoProps> = ({ name, isLightTheme, width, height }) => {
     const suffix = isLightTheme ? 'Light' : 'Dark'
     return (
         <video
@@ -43,7 +43,11 @@ const Video: React.FunctionComponent<
     )
 }
 
-export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChildren<ThemeProps>> = props => {
+interface AfterInstallPageContentProps {
+    isLightTheme: boolean
+}
+
+export const AfterInstallPageContent: React.FC<AfterInstallPageContentProps> = props => {
     // Safari does not support the search shortcut. So don't show the feature.
     const isSafari = getPlatformName() === 'safari-extension'
     const showSearchShortcut = !isSafari

@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -75,8 +74,13 @@ type sourcegraphOperatorCleanHandler struct {
 // configured lifecycle duration every minute. It skips users that have external
 // accounts connected other than service type "sourcegraph-operator".
 func (h *sourcegraphOperatorCleanHandler) Handle(ctx context.Context) error {
+	// We must get external account ID, then query again for the data, since
+	// the UserExternalAccounts is the only way to easily access account data.
+	// We use MAX to make it look like an aggregated value. This is OK because
+	// this query only asks for users with exactly 1 external account so the value
+	// is the same regardless of the aggregation.
 	q := sqlf.Sprintf(`
-SELECT user_id
+SELECT user_id, MAX(user_external_accounts.id)
 FROM users
 JOIN user_external_accounts ON user_external_accounts.user_id = users.id
 WHERE
@@ -84,14 +88,39 @@ WHERE
 	    SELECT user_id FROM user_external_accounts WHERE service_type = %s
 	)
 AND users.created_at <= %s
-GROUP BY user_id HAVING COUNT(*) = 1
+GROUP BY user_id
+HAVING COUNT(*) = 1
 `,
 		auth.SourcegraphOperatorProviderType,
 		time.Now().Add(-1*h.lifecycleDuration),
 	)
-	userIDs, err := basestore.ScanInt32s(h.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
+	rows, err := h.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
-		return errors.Wrap(err, "query user IDs")
+		return errors.Wrap(err, "query expired SOAP users")
+	}
+	defer func() { rows.Close() }()
+
+	var userIDs []int32
+	for rows.Next() {
+		var userID, soapID int32
+		if err := rows.Scan(&userID, &soapID); err != nil {
+			return err
+		}
+
+		soapAccount, err := h.db.UserExternalAccounts().Get(ctx, soapID)
+		if err != nil {
+			return err
+		}
+		data, err := sourcegraphoperator.GetAccountData(ctx, soapAccount.AccountData)
+		if err == nil && data.ServiceAccount {
+			continue // do not delete this user, it is a service account
+		}
+
+		// delete this user
+		userIDs = append(userIDs, userID)
+	}
+	if err := rows.Err(); err != nil {
+		return err
 	}
 
 	// Help exclude Sourcegraph operator related events from analytics

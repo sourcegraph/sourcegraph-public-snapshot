@@ -2,13 +2,16 @@ package licensing
 
 import (
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 )
 
 func TestCheckFeature(t *testing.T) {
-	licenseInfo := func(tags ...string) *Info { return &Info{Info: license.Info{Tags: tags}} }
+	licenseInfo := func(tags ...string) *Info {
+		return &Info{Info: license.Info{Tags: tags, ExpiresAt: time.Now().Add(1 * time.Hour)}}
+	}
 
 	check := func(t *testing.T, feature Feature, info *Info, wantEnabled bool) {
 		t.Helper()

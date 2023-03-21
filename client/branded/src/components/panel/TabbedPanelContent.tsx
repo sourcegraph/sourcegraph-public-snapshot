@@ -2,27 +2,14 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
-import { Remote } from 'comlink'
-import { useHistory, useLocation } from 'react-router'
-import { BehaviorSubject, from, Observable, combineLatest, of } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { BehaviorSubject, Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
 
-import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/client-api'
-import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { isDefined, combineLatestOrDefault, isErrorLike } from '@sourcegraph/common'
-import { Location } from '@sourcegraph/extension-api-types'
-import { ActionsNavItems } from '@sourcegraph/shared/src/actions/ActionsNavItems'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { match } from '@sourcegraph/shared/src/api/client/types/textDocument'
-import { ExtensionCodeEditor } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
-import { PanelViewData } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Button,
     useObservable,
@@ -34,112 +21,59 @@ import {
     Icon,
     Tooltip,
     useKeyboard,
+    ProductStatusType,
+    ProductStatusBadge,
 } from '@sourcegraph/wildcard'
 
-import { LegacyGroupByFileToggle } from './LegacyGroupByFileToggle'
 import { MixPreciseAndSearchBasedReferencesToggle } from './MixPreciseAndSearchBasedReferencesToggle'
 import { EmptyPanelView } from './views/EmptyPanelView'
-import { ExtensionsLoadingPanelView } from './views/ExtensionsLoadingView'
-import { PanelView } from './views/PanelView'
 
 import styles from './TabbedPanelContent.module.scss'
 
-export interface TabbedPanelContentProps
-    extends ExtensionsControllerProps,
-        PlatformContextProps,
-        SettingsCascadeProps,
-        TelemetryProps,
-        ThemeProps {
+interface TabbedPanelContentProps extends PlatformContextProps, SettingsCascadeProps, TelemetryProps {
     repoName?: string
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-}
-
-export interface PanelViewWithComponent extends PanelViewData {
-    /**
-     * The location provider whose results to render in the panel view.
-     */
-    locationProvider?: Observable<MaybeLoadingResult<Location[]>>
-    /**
-     * Maximum number of results to show from locationProvider. If not set,
-     * MAXIMUM_LOCATION_RESULTS will be used.
-     */
-    maxLocationResults?: number
-
-    /**
-     * The React element to render in the panel view.
-     */
-    reactElement?: React.ReactNode
-
-    // Should the content of the panel be put inside a wrapper container with padding or not.
-    noWrapper?: boolean
-
-    // Should the panel be shown for the given `#tab=<ID>` in the URL?
-    matchesTabID?: (id: string) => boolean
 }
 
 /**
  * A tab and corresponding content to display in the panel.
  */
-interface TabbedPanelItem {
+export interface Panel {
+    /** The ID of the panel. */
     id: string
 
-    label: React.ReactNode
-    /**
-     * Controls the relative order of panel items. The items are laid out from highest priority (at the beginning)
-     * to lowest priority (at the end). The default is 0.
-     */
-    priority: number
+    /** The title of the panel view. */
+    title: string
+
+    /** Optional product status to show as a badge next to the panel title. */
+    productStatus?: ProductStatusType
 
     /** The content element to display when the tab is active. */
-    element: JSX.Element
+    element: React.ReactNode
 
-    /**
-     * Whether this panel contains a list of locations (from a location provider). This value is
-     * exposed to contributions as `panel.activeView.hasLocations`. It is true if there is a
-     * location provider (even if the result set is empty).
-     */
-    hasLocations?: boolean
+    // Should the panel be shown for the given `#tab=<ID>` in the URL?
+    matchesTabID?: (id: string) => boolean
 
     /** Callback that's triggered when the panel is selected */
-    trackTabClick: () => void
-
-    // Should the panel item be shown for the given `#tab=<ID>` in the URL?
-    matchesTabID?: (id: string) => boolean
+    trackTabClick?: () => void
 }
 
-export type BuiltinTabbedPanelView = Omit<PanelViewWithComponent, 'component' | 'id'>
-
-const builtinTabbedPanelViewProviders = new BehaviorSubject<
-    Map<string, { id: string; provider: Observable<BuiltinTabbedPanelView | null> }>
->(new Map())
-
-export const hierarchicalLocationViewHasResultContext = new BehaviorSubject<undefined | boolean>(undefined)
+const panelRegistry = new BehaviorSubject<Panel[]>([])
 
 /**
- * BuiltinTabbedPanelView defines which BuiltinTabbedPanelViews will be available.
+ * React hook for other components to add panels.
  */
-export interface BuiltinTabbedPanelDefinition {
-    id: string
-    provider: Observable<BuiltinTabbedPanelView | null>
-}
-/**
- * React hook to add panel views from other components (panel views are typically
- * contributed by Sourcegraph extensions)
- */
-export function useBuiltinTabbedPanelViews(builtinPanels: BuiltinTabbedPanelDefinition[]): void {
+export function useBuiltinTabbedPanelViews(panels: Panel[]): void {
     useEffect(() => {
-        for (const builtinPanel of builtinPanels) {
-            builtinTabbedPanelViewProviders.value.set(builtinPanel.id, builtinPanel)
-        }
-        builtinTabbedPanelViewProviders.next(new Map([...builtinTabbedPanelViewProviders.value]))
+        panelRegistry.next([
+            ...panelRegistry.value.filter(panel => !panels.some(({ id }) => panel.id === id)),
+            ...panels,
+        ])
 
         return () => {
-            for (const builtinPanel of builtinPanels) {
-                builtinTabbedPanelViewProviders.value.delete(builtinPanel.id)
-            }
-            builtinTabbedPanelViewProviders.next(new Map([...builtinTabbedPanelViewProviders.value]))
+            panelRegistry.next(panelRegistry.value.filter(panel => !panels.some(({ id }) => panel.id === id)))
         }
-    }, [builtinPanels])
+    }, [panels])
 }
 
 /**
@@ -149,163 +83,57 @@ export function useBuiltinTabbedPanelViews(builtinPanels: BuiltinTabbedPanelDefi
  * Other components can contribute panel items to the panel with the `useBuildinPanelViews` hook.
  */
 export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
-    // Ensures that we don't show a misleading empty state when extensions haven't loaded yet.
-    const { extensionsController } = props
-    const areExtensionsReady = useObservable(
-        useMemo(
-            () =>
-                extensionsController !== null ? haveInitialExtensionsLoaded(extensionsController.extHostAPI) : of(true),
-            [extensionsController]
-        )
-    )
-
-    const isTabbedReferencesPanelEnabled =
-        !isErrorLike(props.settingsCascade.final) &&
-        props.settingsCascade.final !== null &&
-        props.settingsCascade.final['codeIntel.referencesPanel'] === 'tabbed'
-
     const [tabIndex, setTabIndex] = useState(0)
-    const location = useLocation()
-    const { hash, pathname, search } = location
-    const history = useHistory()
-    const handlePanelClose = useCallback(() => history.replace(pathname), [history, pathname])
+    const { hash, pathname, search } = useLocation()
+    const navigate = useNavigate()
+
+    const handlePanelClose = useCallback(() => navigate(pathname, { replace: true }), [navigate, pathname])
     const [currentTabLabel, currentTabID] = hash.split('=')
 
-    const legacyHierarchicalLocationViewHasResult = useObservable(hierarchicalLocationViewHasResultContext)
-    const builtinTabbedPanels: PanelViewWithComponent[] | undefined = useObservable(
-        useMemo(
-            () =>
-                builtinTabbedPanelViewProviders.pipe(
-                    switchMap(providers =>
-                        combineLatestOrDefault(
-                            [...providers].map(([id, { provider }]) =>
-                                provider.pipe(map(view => (view ? { ...view, id, component: null } : null)))
-                            )
-                        )
-                    ),
-                    map(views => views.filter(isDefined))
-                ),
-            []
-        )
-    )
-
-    const extensionPanels: PanelViewWithComponent[] | undefined = useObservable(
-        useMemo(() => {
-            if (extensionsController === null) {
-                return of([])
-            }
-            return from(extensionsController.extHostAPI).pipe(
-                switchMap(extensionHostAPI =>
-                    combineLatest([
-                        wrapRemoteObservable(extensionHostAPI.getPanelViews()),
-                        wrapRemoteObservable(extensionHostAPI.getActiveViewComponentChanges()),
-                    ]).pipe(
-                        switchMap(async ([panelViews, viewer]) => {
-                            if ((await viewer?.type) !== 'CodeEditor') {
-                                return undefined
-                            }
-
-                            const document = await (viewer as Remote<ExtensionCodeEditor>).document
-
-                            return panelViews
-                                .filter(panelView =>
-                                    panelView.selector !== null ? match(panelView.selector, document) : true
-                                )
-                                .filter(panelView =>
-                                    // If we use the tree-view reference panel
-                                    // we don't want to display additional
-                                    // 'implementations_' panels
-                                    !isTabbedReferencesPanelEnabled
-                                        ? !panelView.component?.locationProvider?.startsWith('implementations_')
-                                        : true
-                                )
-                                .map((panelView: PanelViewWithComponent) => {
-                                    const locationProviderID = panelView.component?.locationProvider
-                                    const maxLocations = panelView.component?.maxLocationResults
-                                    if (locationProviderID) {
-                                        const panelViewWithProvider: PanelViewWithComponent = {
-                                            ...panelView,
-                                            maxLocationResults: maxLocations,
-                                            locationProvider: wrapRemoteObservable(
-                                                extensionHostAPI.getActiveCodeEditorPosition()
-                                            ).pipe(
-                                                switchMap(parameters => {
-                                                    if (!parameters) {
-                                                        return [{ isLoading: false, result: [] }]
-                                                    }
-
-                                                    return wrapRemoteObservable(
-                                                        extensionHostAPI.getLocations(locationProviderID, parameters)
-                                                    )
-                                                })
-                                            ),
-                                        }
-                                        return panelViewWithProvider
-                                    }
-
-                                    return panelView
-                                })
-                        })
-                    )
-                )
-            )
-        }, [isTabbedReferencesPanelEnabled, extensionsController])
-    )
-
-    const panelViews = useMemo(
-        () => [...(builtinTabbedPanels || []), ...(extensionPanels || [])],
-        [builtinTabbedPanels, extensionPanels]
-    )
-
     const trackTabClick = useCallback(
-        (label: string) => props.telemetryService.log(`ReferencePanelClicked${label}`),
+        (title: string) => props.telemetryService.log(`ReferencePanelClicked${title}`),
         [props.telemetryService]
     )
 
-    const items = useMemo(
-        () =>
-            panelViews
-                ? panelViews
-                      .map(
-                          (panelView): TabbedPanelItem => ({
-                              label: panelView.title,
-                              id: panelView.id,
-                              priority: panelView.priority,
-                              element: <PanelView {...props} panelView={panelView} location={location} />,
-                              hasLocations: !!panelView.locationProvider,
-                              trackTabClick: () => trackTabClick(panelView.title),
-                              matchesTabID: panelView.matchesTabID,
-                          })
-                      )
-                      .sort((a, b) => b.priority - a.priority)
-                : [],
-        [location, panelViews, props, trackTabClick]
+    const panels: Panel[] | undefined = useObservable(
+        useMemo(
+            () =>
+                panelRegistry.pipe(
+                    map(panels =>
+                        panels.map(panel => ({
+                            ...panel,
+                            trackTabClick: () => trackTabClick(panel.title),
+                        }))
+                    )
+                ),
+            [trackTabClick]
+        )
     )
 
     useKeyboard({ detectKeys: ['Escape'] }, handlePanelClose)
 
     const handleActiveTab = useCallback(
         (index: number): void => {
-            history.replace(`${pathname}${search}${currentTabLabel}=${items[index].id}`)
+            navigate(`${pathname}${search}${currentTabLabel}=${panels ? panels[index].id : ''}`, { replace: true })
         },
-        [currentTabLabel, history, items, pathname, search]
+        [currentTabLabel, navigate, panels, pathname, search]
     )
 
     useEffect(() => {
         setTabIndex(
-            items.findIndex(({ id, matchesTabID }) => (matchesTabID ? matchesTabID(currentTabID) : id === currentTabID))
+            panels
+                ? panels.findIndex(({ id, matchesTabID }) =>
+                      matchesTabID ? matchesTabID(currentTabID) : id === currentTabID
+                  )
+                : 0
         )
-    }, [items, hash, currentTabID])
+    }, [panels, hash, currentTabID])
 
-    if (!areExtensionsReady) {
-        return <ExtensionsLoadingPanelView className={styles.panel} />
-    }
-
-    if (!items) {
+    if (!panels) {
         return <EmptyPanelView className={styles.panel} />
     }
 
-    const activeTab: TabbedPanelItem | undefined = items[tabIndex]
+    const activeTab: Panel | undefined = panels[tabIndex]
 
     return (
         <Tabs className={styles.panel} index={tabIndex} onChange={handleActiveTab}>
@@ -314,40 +142,11 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                 actions={
                     <div className="align-items-center d-flex">
                         <ul className="d-flex justify-content-end list-unstyled m-0 align-items-center">
-                            {activeTab && (
+                            {activeTab && activeTab.id === 'references' && (
                                 <MixPreciseAndSearchBasedReferencesToggle
                                     settingsCascade={props.settingsCascade}
                                     platformContext={props.platformContext}
                                 />
-                            )}
-                            {activeTab && legacyHierarchicalLocationViewHasResult && (
-                                <LegacyGroupByFileToggle
-                                    settingsCascade={props.settingsCascade}
-                                    platformContext={props.platformContext}
-                                />
-                            )}
-                            {activeTab && extensionsController !== null && (
-                                <>
-                                    <ActionsNavItems
-                                        {...props}
-                                        extensionsController={extensionsController}
-                                        listItemClass="px-2 mx-2"
-                                        actionItemClass={classNames(
-                                            styles.actionItemUnconstrained,
-                                            'font-weight-medium'
-                                        )}
-                                        actionItemIconClass="icon-inline"
-                                        menu={ContributableMenu.PanelToolbar}
-                                        scope={{
-                                            type: 'panelView',
-                                            id: activeTab.id,
-                                            hasLocations: Boolean(activeTab.hasLocations),
-                                        }}
-                                        wrapInList={false}
-                                        location={location}
-                                        transformContributions={transformPanelContributions}
-                                    />
-                                </>
                             )}
                         </ul>
                         <Tooltip content="Close panel" placement="left">
@@ -363,17 +162,23 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                     </div>
                 }
             >
-                {items.map(({ label, id, trackTabClick }, index) => (
+                {panels.map(({ title, id, trackTabClick, productStatus }, index) => (
                     <Tab key={id} index={index}>
                         <span className="tablist-wrapper--tab-label" onClick={trackTabClick} role="none">
-                            {label}
+                            {title}
+                            {productStatus && (
+                                <>
+                                    {' '}
+                                    <ProductStatusBadge status={productStatus} />
+                                </>
+                            )}
                         </span>
                     </Tab>
                 ))}
             </TabList>
             <TabPanels>
                 {activeTab ? (
-                    items.map(({ id, element }, index) => (
+                    panels.map(({ id, element }, index) => (
                         <TabPanel
                             index={index}
                             key={id}
@@ -392,38 +197,3 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
 })
 
 TabbedPanelContent.displayName = 'TabbedPanelContent'
-
-/**
- * Temporary solution to code intel extensions all contributing the same panel actions.
- */
-function transformPanelContributions(contributions: Evaluated<Contributions>): Evaluated<Contributions> {
-    try {
-        const panelMenuItems = contributions.menus?.['panel/toolbar']
-        if (!panelMenuItems || panelMenuItems.length === 0) {
-            return contributions
-        }
-        // This won't dedup e.g. [{action: 'a', when: 'b'}, {when: 'b', action: 'a'}], but should
-        // work for the case this is hackily trying to prevent: multiple extensions generated with the
-        // same manifest.
-        const strings = new Set(panelMenuItems.map(menuItem => JSON.stringify(menuItem)))
-        const uniquePanelMenuItems = [...strings]
-            .map(string => JSON.parse(string))
-            // We render the MixPreciseAndSearchBasedReferencesToggle in React now
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-            .filter(
-                (item: any) =>
-                    item.action !== 'mixPreciseAndSearchBasedReferences.toggle' &&
-                    item.action !== 'panel.locations.groupByFile'
-            )
-
-        return {
-            ...contributions,
-            menus: {
-                ...contributions.menus,
-                'panel/toolbar': uniquePanelMenuItems,
-            },
-        }
-    } catch {
-        return contributions
-    }
-}

@@ -1,0 +1,3 @@
+name: Add index to reference scan column
+parents: [1677627559]
+createIndexConcurrently: true

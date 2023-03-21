@@ -7,7 +7,7 @@ import {
     SeriesSortMode,
     TimeIntervalStepUnit,
 } from '../../../../../../graphql-operations'
-import { MAX_NUMBER_OF_SAMPLES, MAX_NUMBER_OF_SERIES } from '../../../../constants'
+import { MAX_NUMBER_OF_SAMPLES } from '../../../../constants'
 import { InsightFilters, InsightSeriesDisplayOptions } from '../../../types/insight/common'
 
 export function getDurationFromStep(step: TimeIntervalStepInput): Duration {
@@ -42,7 +42,6 @@ export function getParsedFilters(
 
 function getParsedSeriesOption(response: ResponseSeriesDisplayOptions): InsightSeriesDisplayOptions {
     const { limit, numSamples, sortOptions } = response
-    const parsedLimit = Math.min(limit ?? 20, MAX_NUMBER_OF_SERIES)
 
     // Have to check zero value because of backend problem (it always returns 0 when
     // numSamples isn't applied
@@ -54,7 +53,7 @@ function getParsedSeriesOption(response: ResponseSeriesDisplayOptions): InsightS
     }
 
     return {
-        limit: parsedLimit,
+        limit,
         numSamples: parsedNumSamples,
         sortOptions: parsedSortOptions,
     }

@@ -2,41 +2,34 @@ package graphql
 
 import (
 	"context"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
-	sglog "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type configurationPolicyResolver struct {
-	logger              sglog.Logger
-	policySvc           *policies.Service
+	repoStore           database.RepoStore
 	configurationPolicy types.ConfigurationPolicy
 	errTracer           *observation.ErrCollector
 }
 
-func NewConfigurationPolicyResolver(policySvc *policies.Service, configurationPolicy types.ConfigurationPolicy, errTracer *observation.ErrCollector) resolverstubs.CodeIntelligenceConfigurationPolicyResolver {
+func NewConfigurationPolicyResolver(repoStore database.RepoStore, configurationPolicy types.ConfigurationPolicy, errTracer *observation.ErrCollector) resolverstubs.CodeIntelligenceConfigurationPolicyResolver {
 	return &configurationPolicyResolver{
-		policySvc:           policySvc,
-		logger:              sglog.Scoped("configurationPolicyResolver", ""),
+		repoStore:           repoStore,
 		configurationPolicy: configurationPolicy,
 		errTracer:           errTracer,
 	}
 }
 
 func (r *configurationPolicyResolver) ID() graphql.ID {
-	return marshalConfigurationPolicyGQLID(int64(r.configurationPolicy.ID))
+	return resolverstubs.MarshalID("CodeIntelligenceConfigurationPolicy", r.configurationPolicy.ID)
 }
 
 func (r *configurationPolicyResolver) Name() string {
@@ -54,13 +47,7 @@ func (r *configurationPolicyResolver) Repository(ctx context.Context) (_ resolve
 		log.Int("repoID", *r.configurationPolicy.RepositoryID),
 	)
 
-	db := r.policySvc.GetUnsafeDB()
-	repo, err := backend.NewRepos(r.logger, db, gitserver.NewClient()).Get(ctx, api.RepoID(*r.configurationPolicy.RepositoryID))
-	if err != nil {
-		return nil, err
-	}
-
-	return sharedresolvers.NewRepositoryResolver(r.policySvc.GetUnsafeDB(), repo), nil
+	return sharedresolvers.NewRepositoryFromID(ctx, r.repoStore, *r.configurationPolicy.RepositoryID)
 }
 
 func (r *configurationPolicyResolver) RepositoryPatterns() *[]string {
@@ -116,13 +103,4 @@ func (r *configurationPolicyResolver) IndexCommitMaxAgeHours() *int32 {
 
 func (r *configurationPolicyResolver) IndexIntermediateCommits() bool {
 	return r.configurationPolicy.IndexIntermediateCommits
-}
-
-func toHours(duration *time.Duration) *int32 {
-	if duration == nil {
-		return nil
-	}
-
-	v := int32(*duration / time.Hour)
-	return &v
 }

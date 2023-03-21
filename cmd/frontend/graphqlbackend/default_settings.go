@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -10,64 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
-
-var builtinExtensions = map[string]bool{
-	"sourcegraph/apex":       true,
-	"sourcegraph/clojure":    true,
-	"sourcegraph/cobol":      true,
-	"sourcegraph/cpp":        true,
-	"sourcegraph/csharp":     true,
-	"sourcegraph/cuda":       true,
-	"sourcegraph/dart":       true,
-	"sourcegraph/elixir":     true,
-	"sourcegraph/erlang":     true,
-	"sourcegraph/git-extras": true,
-	"sourcegraph/go":         true,
-	"sourcegraph/graphql":    true,
-	"sourcegraph/groovy":     true,
-	"sourcegraph/haskell":    true,
-	"sourcegraph/java":       true,
-	"sourcegraph/jsonnet":    true,
-	"sourcegraph/kotlin":     true,
-	"sourcegraph/lisp":       true,
-	"sourcegraph/lua":        true,
-	"sourcegraph/ocaml":      true,
-	"sourcegraph/pascal":     true,
-	"sourcegraph/perl":       true,
-	"sourcegraph/php":        true,
-	"sourcegraph/powershell": true,
-	"sourcegraph/protobuf":   true,
-	"sourcegraph/python":     true,
-	"sourcegraph/r":          true,
-	"sourcegraph/ruby":       true,
-	"sourcegraph/rust":       true,
-	"sourcegraph/scala":      true,
-	"sourcegraph/shell":      true,
-	"sourcegraph/starlark":   true,
-	"sourcegraph/swift":      true,
-	"sourcegraph/tcl":        true,
-	"sourcegraph/thrift":     true,
-	"sourcegraph/typescript": true,
-	"sourcegraph/verilog":    true,
-	"sourcegraph/vhdl":       true,
-}
-
-func defaultSettings(db database.DB) map[string]any {
-	extensionIDs := []string{}
-	for id := range builtinExtensions {
-		extensionIDs = append(extensionIDs, id)
-	}
-	extensionIDs = ExtensionRegistry(db).FilterRemoteExtensions(extensionIDs)
-	extensions := map[string]bool{}
-	for _, id := range extensionIDs {
-		extensions[id] = true
-	}
-
-	return map[string]any{
-		"experimentalFeatures": map[string]any{},
-		"extensions":           extensions,
-	}
-}
 
 const singletonDefaultSettingsGQLID = "DefaultSettings"
 
@@ -83,11 +24,7 @@ func marshalDefaultSettingsGQLID(defaultSettingsID string) graphql.ID {
 func (r *defaultSettingsResolver) ID() graphql.ID { return marshalDefaultSettingsGQLID(r.gqlID) }
 
 func (r *defaultSettingsResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	contents, err := json.Marshal(defaultSettings(r.db))
-	if err != nil {
-		return nil, err
-	}
-	settings := &api.Settings{Subject: api.SettingsSubject{Default: true}, Contents: string(contents)}
+	settings := &api.Settings{Subject: api.SettingsSubject{Default: true}, Contents: `{"experimentalFeatures": {}}`}
 	return &settingsResolver{r.db, &settingsSubject{defaultSettings: r}, settings, nil}, nil
 }
 

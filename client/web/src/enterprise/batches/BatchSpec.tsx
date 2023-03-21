@@ -4,7 +4,7 @@ import { mdiFileDownload } from '@mdi/js'
 import { kebabCase } from 'lodash'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Link, Icon, Text, Tooltip, Button, AnchorLink } from '@sourcegraph/wildcard'
 
 import { BatchChangeFields } from '../../graphql-operations'
@@ -24,18 +24,14 @@ const isJSON = (string: string): boolean => {
 
 export const getFileName = (name: string): string => `${kebabCase(name)}.batch.yaml`
 
-export interface BatchSpecProps extends ThemeProps {
+export interface BatchSpecProps {
     name: string
     originalInput: BatchChangeFields['currentSpec']['originalInput']
     className?: string
 }
 
-export const BatchSpec: React.FunctionComponent<BatchSpecProps> = ({
-    originalInput,
-    isLightTheme,
-    className,
-    name,
-}) => {
+export const BatchSpec: React.FunctionComponent<BatchSpecProps> = ({ originalInput, className, name }) => {
+    const isLightTheme = useIsLightTheme()
     // JSON is valid YAML, so the input might be JSON. In that case, we'll highlight and indent it
     // as JSON. This is especially nice when the input is a "minified" (no extraneous whitespace)
     // JSON document that's difficult to read unless indented.

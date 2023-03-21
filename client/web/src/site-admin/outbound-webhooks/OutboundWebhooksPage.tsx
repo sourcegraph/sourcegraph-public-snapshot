@@ -1,7 +1,6 @@
 import { FC, useEffect } from 'react'
 
-import { mdiAlertCircle, mdiCog, mdiMapSearch, mdiPencil, mdiPlus } from '@mdi/js'
-import { RouteComponentProps } from 'react-router'
+import { mdiAlertCircle, mdiWebhook, mdiMapSearch, mdiPencil, mdiPlus } from '@mdi/js'
 
 import { pluralize } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -24,7 +23,7 @@ import { DeleteButton } from './delete/DeleteButton'
 
 import styles from './OutboundWebhooksPage.module.scss'
 
-export interface OutboundWebhooksPageProps extends TelemetryProps, RouteComponentProps<{}> {}
+export interface OutboundWebhooksPageProps extends TelemetryProps {}
 
 export const OutboundWebhooksPage: FC<OutboundWebhooksPageProps> = ({ telemetryService }) => {
     useEffect(() => {
@@ -37,13 +36,13 @@ export const OutboundWebhooksPage: FC<OutboundWebhooksPageProps> = ({ telemetryS
         <div>
             <PageTitle title="Outgoing webhooks" />
             <PageHeader
-                path={[{ icon: mdiCog }, { to: '/site-admin/outbound-webhooks', text: 'Outgoing webhooks' }]}
+                path={[{ icon: mdiWebhook }, { to: '/site-admin/webhooks/outgoing', text: 'Outgoing webhooks' }]}
                 headingElement="h2"
                 description="All configured outgoing webhooks"
                 className="mb-3"
                 actions={
-                    <ButtonLink to="/site-admin/outbound-webhooks/create" variant="primary">
-                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Add webhook
+                    <ButtonLink to="/site-admin/webhooks/outgoing/create" variant="primary">
+                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Create webhook
                     </ButtonLink>
                 }
             />
@@ -58,7 +57,7 @@ export const OutboundWebhooksPage: FC<OutboundWebhooksPageProps> = ({ telemetryS
                         ))}
                     </ConnectionList>
                     {connection && (
-                        <SummaryContainer>
+                        <SummaryContainer centered={true}>
                             <ConnectionSummary
                                 noSummaryIfAllNodesVisible={false}
                                 first={connection.totalCount ?? 0}
@@ -82,7 +81,7 @@ const OutboundWebhookNode: FC<{
     node: OutboundWebhookFieldsWithStats
     onDelete: () => void
 }> = ({ node, onDelete }) => {
-    const edit = `/site-admin/outbound-webhooks/${node.id}`
+    const edit = `/site-admin/webhooks/outgoing/${node.id}`
 
     return (
         <li className={styles.node}>
@@ -99,10 +98,12 @@ const OutboundWebhookNode: FC<{
                 </small>
             </div>
             <RecentErrorIcon count={node.stats.errored} link={`${edit}?only_errors=true#logs`} />
-            <ButtonLink to={edit} variant="secondary" className={styles.edit}>
-                <Icon aria-hidden={true} svgPath={mdiPencil} /> Edit
-            </ButtonLink>
-            <DeleteButton className={styles.del} id={node.id} onDeleted={onDelete} />
+            <div className={styles.buttons}>
+                <ButtonLink to={edit} variant="secondary" className="mr-2">
+                    <Icon aria-hidden={true} svgPath={mdiPencil} /> Edit
+                </ButtonLink>
+                <DeleteButton id={node.id} onDeleted={onDelete} />
+            </div>
         </li>
     )
 }

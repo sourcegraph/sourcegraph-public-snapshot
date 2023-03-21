@@ -180,8 +180,8 @@ func TestGetIndexes(t *testing.T) {
 		types.Index{ID: 4, QueuedAt: t4, State: "queued", RepositoryID: 51, RepositoryName: "foo bar x"},
 		types.Index{ID: 5, Commit: makeCommit(3333), QueuedAt: t5, State: "processing", AssociatedUploadID: &uploadID1},
 		types.Index{ID: 6, QueuedAt: t6, State: "processing", RepositoryID: 52, RepositoryName: "foo bar y"},
-		types.Index{ID: 7, QueuedAt: t7},
-		types.Index{ID: 8, QueuedAt: t8},
+		types.Index{ID: 7, QueuedAt: t7, Indexer: "lsif-typescript"},
+		types.Index{ID: 8, QueuedAt: t8, Indexer: "scip-ocaml"},
 		types.Index{ID: 9, QueuedAt: t9, State: "queued"},
 		types.Index{ID: 10, QueuedAt: t10},
 	)
@@ -197,6 +197,7 @@ func TestGetIndexes(t *testing.T) {
 		state         string
 		states        []string
 		term          string
+		indexerNames  []string
 		withoutUpload bool
 		expectedIDs   []int
 	}{
@@ -210,6 +211,7 @@ func TestGetIndexes(t *testing.T) {
 		{state: "failed", expectedIDs: []int{2}},                                   // treats errored/failed states equivalently
 		{states: []string{"completed", "failed"}, expectedIDs: []int{2, 7, 8, 10}}, // searches multiple states
 		{withoutUpload: true, expectedIDs: []int{2, 4, 6, 7, 8, 9, 10}},            // anti-join with upload records
+		{indexerNames: []string{"typescript", "ocaml"}, expectedIDs: []int{7, 8}},  // searches indexer name (only)
 	}
 
 	for _, testCase := range testCases {
@@ -220,12 +222,13 @@ func TestGetIndexes(t *testing.T) {
 			}
 
 			name := fmt.Sprintf(
-				"repositoryID=%d state=%s states=%s term=%s without_upload=%v offset=%d",
+				"repositoryID=%d state=%s states=%s term=%s without_upload=%v indexer_names=%v offset=%d",
 				testCase.repositoryID,
 				testCase.state,
 				strings.Join(testCase.states, ","),
 				testCase.term,
 				testCase.withoutUpload,
+				testCase.indexerNames,
 				lo,
 			)
 
@@ -235,6 +238,7 @@ func TestGetIndexes(t *testing.T) {
 					State:         testCase.state,
 					States:        testCase.states,
 					Term:          testCase.term,
+					IndexerNames:  testCase.indexerNames,
 					WithoutUpload: testCase.withoutUpload,
 					Limit:         3,
 					Offset:        lo,
@@ -590,7 +594,7 @@ func TestDeleteIndexes(t *testing.T) {
 	insertIndexes(t, db, types.Index{ID: 2, State: "errored"})
 
 	if err := store.DeleteIndexes(context.Background(), shared.DeleteIndexesOptions{
-		State:        "errored",
+		States:       []string{"errored"},
 		Term:         "",
 		RepositoryID: 0,
 	}); err != nil {
@@ -602,6 +606,41 @@ func TestDeleteIndexes(t *testing.T) {
 		t.Fatalf("unexpected error getting index: %s", err)
 	} else if exists {
 		t.Fatal("unexpected record")
+	}
+}
+
+func TestDeleteIndexesWithIndexerKey(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	insertIndexes(t, db, types.Index{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
+	insertIndexes(t, db, types.Index{ID: 2, Indexer: "sourcegraph/scip-go"})
+	insertIndexes(t, db, types.Index{ID: 3, Indexer: "sourcegraph/scip-typescript"})
+	insertIndexes(t, db, types.Index{ID: 4, Indexer: "sourcegraph/scip-typescript"})
+
+	if err := store.DeleteIndexes(context.Background(), shared.DeleteIndexesOptions{
+		IndexerNames: []string{"scip-go"},
+	}); err != nil {
+		t.Fatalf("unexpected error deleting indexes: %s", err)
+	}
+
+	// Target indexes no longer exist
+	for _, id := range []int{1, 2} {
+		if _, exists, err := store.GetIndexByID(context.Background(), id); err != nil {
+			t.Fatalf("unexpected error getting index: %s", err)
+		} else if exists {
+			t.Fatal("unexpected record")
+		}
+	}
+
+	// Unmatched indexes remain
+	for _, id := range []int{3, 4} {
+		if _, exists, err := store.GetIndexByID(context.Background(), id); err != nil {
+			t.Fatalf("unexpected error getting index: %s", err)
+		} else if !exists {
+			t.Fatal("expected record, got none")
+		}
 	}
 }
 
@@ -647,18 +686,12 @@ func TestDeleteIndexesWithoutRepository(t *testing.T) {
 		}
 	}
 
-	ids, err := store.DeleteIndexesWithoutRepository(context.Background(), t1)
+	_, count, err := store.DeleteIndexesWithoutRepository(context.Background(), t1)
 	if err != nil {
 		t.Fatalf("unexpected error deleting indexes: %s", err)
 	}
-
-	expected := map[int]int{
-		61: 21,
-		63: 23,
-		65: 25,
-	}
-	if diff := cmp.Diff(expected, ids); diff != "" {
-		t.Errorf("unexpected ids (-want +got):\n%s", diff)
+	if expected := 21 + 23 + 25; count != expected {
+		t.Fatalf("unexpected count. want=%d have=%d", expected, count)
 	}
 }
 
@@ -671,7 +704,7 @@ func TestReindexIndexes(t *testing.T) {
 	insertIndexes(t, db, types.Index{ID: 2, State: "errored"})
 
 	if err := store.ReindexIndexes(context.Background(), shared.ReindexIndexesOptions{
-		State:        "errored",
+		States:       []string{"errored"},
 		Term:         "",
 		RepositoryID: 0,
 	}); err != nil {
@@ -707,6 +740,39 @@ func TestReindexIndexByID(t *testing.T) {
 		t.Fatal("index missing")
 	} else if !index.ShouldReindex {
 		t.Fatal("index not marked for reindexing")
+	}
+}
+
+func TestReindexIndexesWithIndexerKey(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	insertIndexes(t, db, types.Index{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
+	insertIndexes(t, db, types.Index{ID: 2, Indexer: "sourcegraph/scip-go"})
+	insertIndexes(t, db, types.Index{ID: 3, Indexer: "sourcegraph/scip-typescript"})
+	insertIndexes(t, db, types.Index{ID: 4, Indexer: "sourcegraph/scip-typescript"})
+
+	if err := store.ReindexIndexes(context.Background(), shared.ReindexIndexesOptions{
+		IndexerNames: []string{"scip-go"},
+		Term:         "",
+		RepositoryID: 0,
+	}); err != nil {
+		t.Fatalf("unexpected error deleting indexes: %s", err)
+	}
+
+	// Expected indexes marked for re-indexing
+	for id, expected := range map[int]bool{
+		1: true, 2: true,
+		3: false, 4: false,
+	} {
+		if index, exists, err := store.GetIndexByID(context.Background(), id); err != nil {
+			t.Fatalf("unexpected error getting index: %s", err)
+		} else if !exists {
+			t.Fatal("index missing")
+		} else if index.ShouldReindex != expected {
+			t.Fatalf("unexpected mark. want=%v have=%v", expected, index.ShouldReindex)
+		}
 	}
 }
 

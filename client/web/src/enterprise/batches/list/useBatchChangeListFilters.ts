@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import { useHistory } from 'react-router'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { LegacyBatchChangesFilter } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
@@ -44,7 +44,9 @@ interface UseBatchChangeListFiltersResult {
 export const useBatchChangeListFilters = (props: UseBatchChangeListFiltersProps): UseBatchChangeListFiltersResult => {
     const { isExecutionEnabled } = props
 
-    const history = useHistory()
+    const navigate = useNavigate()
+    const location = useLocation()
+
     const availableFilters = isExecutionEnabled ? STATUS_OPTIONS : STATUS_OPTIONS_NO_DRAFTS
 
     // NOTE: Fetching this setting is an async operation, so we can't use it as the
@@ -54,7 +56,7 @@ export const useBatchChangeListFilters = (props: UseBatchChangeListFiltersProps)
 
     const [hasModifiedFilters, setHasModifiedFilters] = useState(false)
     const [selectedFilters, setSelectedFiltersRaw] = useState<BatchChangeState[]>(() => {
-        const searchParameters = new URLSearchParams(history.location.search).get('states')
+        const searchParameters = new URLSearchParams(location.search).get('states')
 
         if (searchParameters) {
             const loweredCaseFilters = new Set(availableFilters.map(filter => filter.toLowerCase()))
@@ -70,7 +72,7 @@ export const useBatchChangeListFilters = (props: UseBatchChangeListFiltersProps)
 
     const setSelectedFilters = useCallback(
         (filters: BatchChangeState[]) => {
-            const searchParameters = new URLSearchParams(history.location.search)
+            const searchParameters = new URLSearchParams(location.search)
 
             if (filters.length > 0) {
                 searchParameters.set(
@@ -84,27 +86,27 @@ export const useBatchChangeListFilters = (props: UseBatchChangeListFiltersProps)
                 searchParameters.delete('states')
             }
 
-            if (history.location.search !== searchParameters.toString()) {
-                history.replace({ ...history.location, search: searchParameters.toString() })
+            if (location.search !== searchParameters.toString()) {
+                navigate({ search: searchParameters.toString() }, { replace: true })
             }
 
             setHasModifiedFilters(true)
             setSelectedFiltersRaw(filters)
             setDefaultFilters(toLegacyFilters(filters))
         },
-        [setDefaultFilters, history]
+        [setDefaultFilters, navigate, location.search]
     )
 
     // Once we've loaded the default filters from temporary settings, we will set them in
     // state, but if the user has already modified the filters before then, or we read a
     // different set of filters from the URL search params, those will take precedence.
     useEffect(() => {
-        const searchParameters = new URLSearchParams(history.location.search).get('states')
+        const searchParameters = new URLSearchParams(location.search).get('states')
 
         if (defaultFilters && !hasModifiedFilters && !searchParameters) {
             setSelectedFiltersRaw(fromLegacyFilters(defaultFilters))
         }
-    }, [defaultFilters, hasModifiedFilters, history.location.search])
+    }, [defaultFilters, hasModifiedFilters, location.search])
 
     return {
         selectedFilters,

@@ -70,6 +70,7 @@ go_library(
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/gqlutil",
+        "//internal/rbac",
         "//internal/trace",
         "//internal/types",
         "//internal/usagestats",
@@ -103,6 +104,7 @@ go_test(
         "changeset_spec_connection_test.go",
         "changeset_spec_test.go",
         "changeset_test.go",
+        "changesets_stats_test.go",
         "code_host_connection_test.go",
         "credential_test.go",
         "main_test.go",
@@ -111,6 +113,10 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":resolvers"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/backend",
         "//cmd/frontend/globals",
@@ -143,6 +149,7 @@ go_test(
         "//internal/gqlutil",
         "//internal/httptestutil",
         "//internal/observation",
+        "//internal/rbac",
         "//internal/rcache",
         "//internal/repos",
         "//internal/repoupdater",

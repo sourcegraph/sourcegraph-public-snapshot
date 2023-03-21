@@ -118,6 +118,6 @@ For our largest customers, we also offer a Kubernetes multi-node cluster deploym
 
 ## Explanations
 
-- [About deploying Sourcegraph, upgrades, etc.](/admin/deploy.md)
-- [How GitHub code search compares to Sourcegraph](https://docs.sourcegraph.com/getting-started/github-vs-sourcegraph)
-- [How Sourcegraph is licensed](https://docs.sourcegraph.com/getting-started/oss-enterprise)
+- [About deploying Sourcegraph, upgrades, etc.](admin/deploy/index.md)
+- [How GitHub code search compares to Sourcegraph](getting-started/github-vs-sourcegraph.md)
+- [How Sourcegraph is licensed](getting-started/oss-enterprise.md)

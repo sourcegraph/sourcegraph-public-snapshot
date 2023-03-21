@@ -7,22 +7,24 @@ import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { Block, BlockInit } from '..'
 import { NotebookFields } from '../../graphql-operations'
+import { OwnConfigProps } from '../../own/OwnConfigProps'
 import { SearchStreamingProps } from '../../search'
 import { CopyNotebookProps } from '../notebook'
 import { NotebookComponent } from '../notebook/NotebookComponent'
 
 export interface NotebookContentProps
     extends SearchStreamingProps,
-        ThemeProps,
         TelemetryProps,
-        Omit<StreamingSearchResultsListProps, 'allExpanded' | 'platformContext' | 'executedQuery'>,
-        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'> {
+        Omit<
+            StreamingSearchResultsListProps,
+            'allExpanded' | 'platformContext' | 'executedQuery' | 'enableOwnershipSearch'
+        >,
+        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'>,
+        OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
-    globbing: boolean
     viewerCanManage: boolean
     blocks: NotebookFields['blocks']
     exportedFileName: string
@@ -39,11 +41,10 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
         exportedFileName,
         onCopyNotebook,
         onUpdateBlocks,
-        globbing,
         streamSearch,
-        isLightTheme,
         telemetryService,
         searchContextsEnabled,
+        ownEnabled,
         isSourcegraphDotCom,
         fetchHighlightedFileLineRanges,
         authenticatedUser,
@@ -79,11 +80,10 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
 
         return (
             <NotebookComponent
-                globbing={globbing}
                 streamSearch={streamSearch}
-                isLightTheme={isLightTheme}
                 telemetryService={telemetryService}
                 searchContextsEnabled={searchContextsEnabled}
+                ownEnabled={ownEnabled}
                 isSourcegraphDotCom={isSourcegraphDotCom}
                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                 authenticatedUser={authenticatedUser}

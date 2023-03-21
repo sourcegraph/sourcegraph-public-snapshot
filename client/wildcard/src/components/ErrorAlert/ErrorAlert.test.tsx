@@ -1,21 +1,25 @@
-import { render } from '@testing-library/react'
+import { renderWithBrandedContext } from '../../testing'
 
 import { ErrorAlert } from './ErrorAlert'
 
 describe('ErrorAlert', () => {
     it('should render an Error object as an alert', () => {
-        expect(render(<ErrorAlert error={new Error('an error happened')} />).asFragment()).toMatchSnapshot()
+        expect(
+            renderWithBrandedContext(<ErrorAlert error={new Error('an error happened')} />).asFragment()
+        ).toMatchSnapshot()
     })
 
     it('should add a prefix if given', () => {
         expect(
-            render(<ErrorAlert error={new Error('an error happened')} prefix="An error happened" />).asFragment()
+            renderWithBrandedContext(
+                <ErrorAlert error={new Error('an error happened')} prefix="An error happened" />
+            ).asFragment()
         ).toMatchSnapshot()
     })
 
     it('should render a Go multierror nicely', () => {
         expect(
-            render(
+            renderWithBrandedContext(
                 <ErrorAlert
                     error={
                         new Error(

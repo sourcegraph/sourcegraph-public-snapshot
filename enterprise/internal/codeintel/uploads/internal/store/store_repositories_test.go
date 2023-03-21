@@ -293,14 +293,14 @@ func TestSetRepositoryAsDirty(t *testing.T) {
 		}
 	}
 
-	repositoryIDs, err := store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
 	}
 
 	var keys []int
-	for repositoryID := range repositoryIDs {
-		keys = append(keys, repositoryID)
+	for _, dirtyRepository := range dirtyRepositories {
+		keys = append(keys, dirtyRepository.RepositoryID)
 	}
 	sort.Ints(keys)
 
@@ -462,14 +462,14 @@ func TestSkipsDeletedRepositories(t *testing.T) {
 		}
 	}
 
-	repositoryIDs, err := store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
 	}
 
 	var keys []int
-	for repositoryID := range repositoryIDs {
-		keys = append(keys, repositoryID)
+	for _, dirtyRepository := range dirtyRepositories {
+		keys = append(keys, dirtyRepository.RepositoryID)
 	}
 	sort.Ints(keys)
 

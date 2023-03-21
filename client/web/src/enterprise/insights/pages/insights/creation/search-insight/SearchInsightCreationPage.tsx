@@ -1,17 +1,11 @@
 import { FC, useCallback, useEffect, useMemo } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, PageHeader, useObservable } from '@sourcegraph/wildcard'
+import { Link, PageHeader, useObservable, FORM_ERROR, FormChangeEvent } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
-import {
-    FORM_ERROR,
-    FormChangeEvent,
-    CodeInsightsPage,
-    CodeInsightsCreationActions,
-    CodeInsightCreationMode,
-} from '../../../../components'
+import { CodeInsightsPage, CodeInsightsCreationActions, CodeInsightCreationMode } from '../../../../components'
 import { MinimalSearchBasedInsightData } from '../../../../core'
 import { useUiFeatures } from '../../../../hooks'
 import { CodeInsightTrackType } from '../../../../pings'
@@ -23,8 +17,6 @@ import {
 import { CreateInsightFormFields } from './types'
 import { getSanitizedSearchInsight } from './utils/insight-sanitizer'
 import { useSearchInsightInitialValues } from './utils/use-initial-values'
-
-import styles from './SearchInsightCreationPage.module.scss'
 
 export interface InsightCreateEvent {
     insight: MinimalSearchBasedInsightData
@@ -50,10 +42,13 @@ export interface SearchInsightCreationPageProps extends TelemetryProps {
      * Whenever the user click on cancel button
      */
     onCancel: () => void
+
+    isSourcegraphApp: boolean
 }
 
 export const SearchInsightCreationPage: FC<SearchInsightCreationPageProps> = props => {
-    const { backUrl, telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
+    const { backUrl, telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation, isSourcegraphApp } =
+        props
 
     const { licensed, insight } = useUiFeatures()
     const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
@@ -96,7 +91,7 @@ export const SearchInsightCreationPage: FC<SearchInsightCreationPageProps> = pro
     }, [telemetryService, setLocalStorageFormValues, onCancel])
 
     return (
-        <CodeInsightsPage className={styles.creationPage}>
+        <CodeInsightsPage isSourcegraphApp={isSourcegraphApp}>
             <PageTitle title="Create track changes insight - Code Insights" />
 
             <PageHeader

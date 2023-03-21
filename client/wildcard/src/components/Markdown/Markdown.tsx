@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 
 import { createLinkClickHandler } from '../../utils'
 
@@ -16,11 +16,11 @@ interface MarkdownProps {
 
 export const Markdown = React.forwardRef<HTMLElement, MarkdownProps>(
     ({ wrapper: RootComponent = 'div', className, dangerousInnerHTML, testId }, reference) => {
-        const history = useHistory()
+        const navigate = useNavigate()
 
         // Links in markdown cannot use react-router's <Link>.
         // Prevent hitting the backend (full page reloads) for links that stay inside the app.
-        const onClick = useMemo(() => createLinkClickHandler(history), [history])
+        const onClick = useMemo(() => createLinkClickHandler(navigate), [navigate])
         return (
             <RootComponent
                 data-testid={testId}

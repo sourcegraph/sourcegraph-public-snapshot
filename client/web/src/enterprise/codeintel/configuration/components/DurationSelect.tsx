@@ -23,7 +23,7 @@ export const maxDuration = 87600
 
 const MS_IN_HOURS = 1000 * 60 * 60
 
-export const DurationSelect: FunctionComponent<React.PropsWithChildren<DurationSelectProps>> = ({
+export const DurationSelect: FunctionComponent<DurationSelectProps> = ({
     id,
     value,
     disabled,

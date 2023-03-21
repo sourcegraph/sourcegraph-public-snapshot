@@ -1,9 +1,7 @@
 import * as React from 'react'
 
-import { mdiCloudOutline } from '@mdi/js'
-
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { Icon, LoadingSpinner, Text, Tooltip } from '@sourcegraph/wildcard'
+import { Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { MirrorRepositoryInfoFields } from '../../graphql-operations'
 import { prettyBytesBigint } from '../../util/prettyBytesBigint'
@@ -14,26 +12,19 @@ export const RepoMirrorInfo: React.FunctionComponent<
     }>
 > = ({ mirrorInfo }) => (
     <>
-        {mirrorInfo.cloneInProgress && (
-            <small className="ml-2 text-success">
-                <LoadingSpinner /> Cloning
-            </small>
-        )}
-        {!mirrorInfo.cloneInProgress && !mirrorInfo.cloned && (
-            <Tooltip content="Visit the repository to clone it. See its mirroring settings for diagnostics.">
-                <small className="ml-2 text-muted">
-                    <Icon aria-hidden={true} svgPath={mdiCloudOutline} /> Not yet cloned
-                </small>
-            </Tooltip>
-        )}
         <Text className="mb-0 text-muted">
             <small>
                 {mirrorInfo.updatedAt === null ? (
                     <>Not yet synced from code host.</>
                 ) : (
                     <>
-                        Last synced <Timestamp date={mirrorInfo.updatedAt} />. Size:{' '}
-                        {prettyBytesBigint(BigInt(mirrorInfo.byteSize))}.
+                        Last synced <Timestamp date={mirrorInfo.updatedAt} />. Next sync time:{' '}
+                        {mirrorInfo.nextSyncAt === null ? (
+                            <>No update scheduled</>
+                        ) : (
+                            <Timestamp date={mirrorInfo.nextSyncAt} />
+                        )}
+                        . Size: {prettyBytesBigint(BigInt(mirrorInfo.byteSize))}.
                         {mirrorInfo.shard !== null && <> Shard: {mirrorInfo.shard}</>}
                         {mirrorInfo.shard === null && (
                             <>

@@ -32,6 +32,7 @@ go_library(
 
 go_test(
     name = "compute_test",
+    timeout = "short",
     srcs = [
         "match_only_command_test.go",
         "output_command_test.go",
@@ -47,6 +48,6 @@ go_test(
         "//internal/search/result",
         "//internal/types",
         "@com_github_grafana_regexp//:regexp",
-        "@com_github_hexops_autogold//:autogold",
+        "@com_github_hexops_autogold_v2//:autogold",
     ],
 )

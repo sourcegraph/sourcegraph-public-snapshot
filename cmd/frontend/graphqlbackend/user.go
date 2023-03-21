@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -110,17 +111,9 @@ func (r *UserResolver) DatabaseID() int32 { return r.user.ID }
 // Email returns the user's oldest email, if one exists.
 // Deprecated: use Emails instead.
 func (r *UserResolver) Email(ctx context.Context) (string, error) {
-	// 🚨 SECURITY: Only the authenticated user can view their email on
-	// Sourcegraph.com.
-	if envvar.SourcegraphDotComMode() {
-		if err := auth.CheckSameUser(ctx, r.user.ID); err != nil {
-			return "", err
-		}
-	} else {
-		// 🚨 SECURITY: Only the user and admins are allowed to access the email address.
-		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
-			return "", err
-		}
+	// 🚨 SECURITY: Only the user and admins are allowed to access the email address.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+		return "", err
 	}
 
 	email, _, err := r.db.UserEmails().GetPrimaryEmail(ctx, r.user.ID)
@@ -209,11 +202,11 @@ func (r *UserResolver) SiteAdmin(ctx context.Context) (bool, error) {
 	return r.user.SiteAdmin, nil
 }
 
-func (r *UserResolver) TosAccepted(ctx context.Context) bool {
+func (r *UserResolver) TosAccepted(_ context.Context) bool {
 	return r.user.TosAccepted
 }
 
-func (r *UserResolver) Searchable(ctx context.Context) bool {
+func (r *UserResolver) Searchable(_ context.Context) bool {
 	return r.user.Searchable
 }
 
@@ -352,6 +345,8 @@ func (r *UserResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 
 func (r *UserResolver) NamespaceName() string { return r.user.Username }
 
+func (r *UserResolver) SCIMControlled() bool { return r.user.SCIMControlled }
+
 func (r *UserResolver) PermissionsInfo(ctx context.Context) (PermissionsInfoResolver, error) {
 	return EnterpriseResolvers.authzResolver.UserPermissionsInfo(ctx, r.ID())
 }
@@ -478,6 +473,42 @@ func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatc
 	return EnterpriseResolvers.batchChangesResolver.BatchChangesCodeHosts(ctx, args)
 }
 
+func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error) {
+	if envvar.SourcegraphDotComMode() {
+		return nil, errors.New("roles are not available on sourcegraph.com")
+	}
+	userID := r.user.ID
+	connectionStore := &roleConnectionStore{
+		db:     r.db,
+		userID: userID,
+	}
+	return graphqlutil.NewConnectionResolver[RoleResolver](
+		connectionStore,
+		&args.ConnectionResolverArgs,
+		&graphqlutil.ConnectionResolverOptions{
+			AllowNoLimit: true,
+		},
+	)
+}
+
+func (r *UserResolver) Permissions(ctx context.Context) (*graphqlutil.ConnectionResolver[PermissionResolver], error) {
+	userID := r.user.ID
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		return nil, err
+	}
+	connectionStore := &permisionConnectionStore{
+		db:     r.db,
+		userID: userID,
+	}
+	return graphqlutil.NewConnectionResolver[PermissionResolver](
+		connectionStore,
+		&graphqlutil.ConnectionResolverArgs{},
+		&graphqlutil.ConnectionResolverOptions{
+			AllowNoLimit: true,
+		},
+	)
+}
+
 func viewerCanChangeUsername(ctx context.Context, db database.DB, userID int32) bool {
 	if err := auth.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
 		return false
@@ -513,10 +544,10 @@ func (r *UserResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (Mo
 	return EnterpriseResolvers.codeMonitorsResolver.Monitors(ctx, r.user.ID, args)
 }
 
-func (r *UserResolver) Teams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
-	return &teamConnectionResolver{}, nil
-}
-
 func (r *UserResolver) ToUser() (*UserResolver, bool) {
 	return r, true
+}
+
+func (r *UserResolver) OwnerField() string {
+	return EnterpriseResolvers.ownResolver.UserOwnerField(r)
 }

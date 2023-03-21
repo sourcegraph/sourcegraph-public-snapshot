@@ -27,7 +27,6 @@ export const Overview: Story = () => (
         {webProps => (
             <AddExternalServicesPage
                 {...webProps}
-                routingPrefix="/site-admin"
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 codeHostExternalServices={codeHostExternalServices}
                 nonCodeHostExternalServices={nonCodeHostExternalServices}
@@ -44,7 +43,6 @@ export const AddConnectionBykind: Story = () => (
         {webProps => (
             <AddExternalServicesPage
                 {...webProps}
-                routingPrefix="/site-admin"
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 codeHostExternalServices={codeHostExternalServices}
                 nonCodeHostExternalServices={nonCodeHostExternalServices}

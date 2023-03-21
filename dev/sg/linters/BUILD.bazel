@@ -27,7 +27,9 @@ go_library(
         "//dev/sg/internal/check",
         "//dev/sg/internal/docker",
         "//dev/sg/internal/generate/golang",
+        "//dev/sg/internal/generate/proto",
         "//dev/sg/internal/repo",
+        "//dev/sg/internal/run",
         "//dev/sg/internal/std",
         "//dev/sg/root",
         "//internal/download",
@@ -35,11 +37,13 @@ go_library(
         "@com_github_grafana_regexp//:regexp",
         "@com_github_masterminds_semver//:semver",
         "@com_github_sourcegraph_run//:run",
+        "@dev_bobheadxi_go_streamline//pipeline",
     ],
 )
 
 go_test(
     name = "linters_test",
+    timeout = "short",
     srcs = [
         "go_checks_test.go",
         "gomod_test.go",

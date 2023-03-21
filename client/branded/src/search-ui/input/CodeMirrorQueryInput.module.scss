@@ -12,6 +12,25 @@
             // Codemirror shows a focus ring by default. Since we handle that
             // differently, disable it here.
             outline: none;
+
+            :global(.sg-query-filter-placeholder) {
+                display: inline;
+            }
+
+            // The placeholder needs to explicilty have the same background color because it
+            // appears to be placed outside of active filter decoration rather than within it.
+            :global(.sg-query-filter-placeholder),
+            :global(.sg-query-filter-active) {
+                background-color: var(--gray-02);
+
+                :global(.theme-dark) & {
+                    background-color: var(--gray-08);
+                }
+            }
+        }
+
+        :global(.sg-query-filter-placeholder) {
+            display: none;
         }
 
         :global(.cm-scroller) {
@@ -64,41 +83,6 @@
             // Setting 'word-break: break-all' explicitly makes appearances a
             // bit better for example queries with long tokens.
             word-break: break-all;
-        }
-
-        :global(.cm-tooltip) {
-            padding: 0.25rem;
-            color: var(--search-query-text-color);
-            background-color: var(--color-bg-1);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            max-width: 50vw;
-
-            p:last-child {
-                margin-bottom: 0;
-            }
-
-            code {
-                background-color: rgba(220, 220, 220, 0.4);
-                border-radius: var(--border-radius);
-                /* stylelint-disable-next-line declaration-property-unit-allowed-list */
-                padding: 0 0.4em;
-            }
-
-            :global(.cm-tooltip-section) {
-                padding-bottom: 0.25rem;
-                border-top-color: var(--border-color);
-
-                &:last-child {
-                    padding-top: 0.25rem;
-                    padding-bottom: 0;
-                }
-
-                &:last-child:first-child {
-                    padding: 0;
-                }
-            }
         }
 
         :global(.cm-tooltip-autocomplete) {
@@ -171,23 +155,11 @@
             }
         }
     }
-}
 
-// .placeholder needs to explicilty have the same background color because it
-// appears to be placed outside of .focusedFilter rather than within it.
-.placeholder,
-.focusedFilter {
-    background-color: var(--gray-02);
-
-    :global(.theme-dark) & {
-        background-color: var(--gray-08);
+    :global(.sg-query-filter-placeholder) {
+        color: var(--text-muted);
+        font-style: italic;
     }
-}
-
-.placeholder {
-    color: var(--text-muted);
-    font-style: italic;
-    pointer-events: none;
 }
 
 // Copied and adapted from the Wildcard LoadingSpinner component

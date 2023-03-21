@@ -1,0 +1,12 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "references": [{ "path": "../common" }],
+  "compilerOptions": {
+    "types": ["mocha", "node"],
+    "module": "commonjs",
+    "rootDir": "./",
+    "outDir": "dist/test",
+  },
+  "include": ["**/*"],
+  "exclude": ["dist", "webviews", "scripts", "vite.config.ts"],
+}

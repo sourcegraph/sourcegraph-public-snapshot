@@ -38,17 +38,18 @@ func TestGetConfigurationPolicies(t *testing.T) {
 			retain_intermediate_commits,
 			indexing_enabled,
 			index_commit_max_age_hours,
-			index_intermediate_commits
+			index_intermediate_commits,
+			protected
 		) VALUES
-			(101, 42,   'policy  1 abc', 'GIT_TREE', '', null,              false, 0, false, true,  0, false),
-			(102, 42,   'policy  2 def', 'GIT_TREE', '', null,              true , 0, false, false, 0, false),
-			(103, 43,   'policy  3 bcd', 'GIT_TREE', '', null,              false, 0, false, true,  0, false),
-			(104, NULL, 'policy  4 abc', 'GIT_TREE', '', null,              true , 0, false, false, 0, false),
-			(105, NULL, 'policy  5 bcd', 'GIT_TREE', '', null,              false, 0, false, true,  0, false),
-			(106, NULL, 'policy  6 bcd', 'GIT_TREE', '', '{gitlab.com/*}',  true , 0, false, false, 0, false),
-			(107, NULL, 'policy  7 def', 'GIT_TREE', '', '{gitlab.com/*1}', false, 0, false, true,  0, false),
-			(108, NULL, 'policy  8 abc', 'GIT_TREE', '', '{gitlab.com/*2}', true , 0, false, false, 0, false),
-			(109, NULL, 'policy  9 def', 'GIT_TREE', '', '{github.com/*}',  false, 0, false, true,  0, false)
+			(101, 42,   'policy  1 abc', 'GIT_TREE', '', null,              false, 0, false, true,  0, false, true),
+			(102, 42,   'policy  2 def', 'GIT_TREE', '', null,              true , 0, false, false, 0, false, true),
+			(103, 43,   'policy  3 bcd', 'GIT_TREE', '', null,              false, 0, false, true,  0, false, true),
+			(104, NULL, 'policy  4 abc', 'GIT_TREE', '', null,              true , 0, false, false, 0, false, false),
+			(105, NULL, 'policy  5 bcd', 'GIT_TREE', '', null,              false, 0, false, true,  0, false, false),
+			(106, NULL, 'policy  6 bcd', 'GIT_TREE', '', '{gitlab.com/*}',  true , 0, false, false, 0, false, false),
+			(107, NULL, 'policy  7 def', 'GIT_TREE', '', '{gitlab.com/*1}', false, 0, false, true,  0, false, false),
+			(108, NULL, 'policy  8 abc', 'GIT_TREE', '', '{gitlab.com/*2}', true , 0, false, false, 0, false, false),
+			(109, NULL, 'policy  9 def', 'GIT_TREE', '', '{github.com/*}',  false, 0, false, true,  0, false, false)
 	`
 	if _, err := db.ExecContext(ctx, query); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
@@ -75,10 +76,14 @@ func TestGetConfigurationPolicies(t *testing.T) {
 		term             string
 		forDataRetention bool
 		forIndexing      bool
+		protected        *bool
 		expectedIDs      []int
 	}
 	testCases := []testCase{
-		{expectedIDs: []int{101, 102, 103, 104, 105, 106, 107, 108, 109}},        // Any flags; all policies
+		{expectedIDs: []int{101, 102, 103, 104, 105, 106, 107, 108, 109}},             // Any flags; all policies
+		{protected: boolPtr(true), expectedIDs: []int{101, 102, 103}},                 // Only protected
+		{protected: boolPtr(false), expectedIDs: []int{104, 105, 106, 107, 108, 109}}, // Only un-protected
+
 		{repositoryID: 41, expectedIDs: []int{104, 105, 106, 107}},               // Any flags; matches repo by patterns
 		{repositoryID: 42, expectedIDs: []int{101, 102, 104, 105, 109}},          // Any flags; matches repo by assignment and pattern
 		{repositoryID: 43, expectedIDs: []int{103, 104, 105}},                    // Any flags; matches repo by assignment
@@ -96,6 +101,7 @@ func TestGetConfigurationPolicies(t *testing.T) {
 
 		{term: "bc", expectedIDs: []int{101, 103, 104, 105, 106, 108}}, // Searches by name (multiple substring matches)
 		{term: "abcd", expectedIDs: []int{}},                           // Searches by name (no matches)
+
 	}
 
 	runTest := func(testCase testCase, lo, hi int) (errors int) {
@@ -114,6 +120,7 @@ func TestGetConfigurationPolicies(t *testing.T) {
 				Term:             testCase.term,
 				ForDataRetention: testCase.forDataRetention,
 				ForIndexing:      testCase.forIndexing,
+				Protected:        testCase.protected,
 				Limit:            3,
 				Offset:           lo,
 			})
@@ -275,4 +282,8 @@ func insertRepo(t testing.TB, db database.DB, id int, name string) {
 	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error while upserting repository: %s", err)
 	}
+}
+
+func boolPtr(value bool) *bool {
+	return &value
 }

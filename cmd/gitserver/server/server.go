@@ -34,6 +34,7 @@ import (
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/conc"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/internal/accesslog"
@@ -50,7 +51,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/search"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
@@ -339,8 +340,8 @@ type Server struct {
 	// cloneLimiter and cloneableLimiter limits the number of concurrent
 	// clones and ls-remotes respectively. Use s.acquireCloneLimiter() and
 	// s.acquireClonableLimiter() instead of using these directly.
-	cloneLimiter     *mutablelimiter.Limiter
-	cloneableLimiter *mutablelimiter.Limiter
+	cloneLimiter     *limiter.MutableLimiter
+	cloneableLimiter *limiter.MutableLimiter
 
 	// rpsLimiter limits the remote code host git operations done per second
 	// per gitserver instance
@@ -516,8 +517,8 @@ func (s *Server) Handler() http.Handler {
 	// so ideally this logic could be removed here; however, ensureRevision can also
 	// cause an update to happen and it is called on every exec command.
 	maxConcurrentClones := conf.GitMaxConcurrentClones()
-	s.cloneLimiter = mutablelimiter.New(maxConcurrentClones)
-	s.cloneableLimiter = mutablelimiter.New(maxConcurrentClones)
+	s.cloneLimiter = limiter.NewMutable(maxConcurrentClones)
+	s.cloneableLimiter = limiter.NewMutable(maxConcurrentClones)
 
 	conf.Watch(func() {
 		limit := conf.GitMaxConcurrentClones()
@@ -573,7 +574,6 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/repo-update", trace.WithRouteName("repo-update", s.handleRepoUpdate))
 	mux.HandleFunc("/repo-clone", trace.WithRouteName("repo-clone", s.handleRepoClone))
 	mux.HandleFunc("/create-commit-from-patch-binary", trace.WithRouteName("create-commit-from-patch-binary", s.handleCreateCommitFromPatchBinary))
-	mux.HandleFunc("/create-commit-from-patch", trace.WithRouteName("create-commit-from-patch", s.handleCreateCommitFromPatch))
 	mux.HandleFunc("/ping", trace.WithRouteName("ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -626,7 +626,7 @@ func (s *Server) Handler() http.Handler {
 // background goroutine.
 func (s *Server) Janitor(ctx context.Context, interval time.Duration) {
 	for {
-		gitserverAddrs := currentGitserverAddresses()
+		gitserverAddrs := gitserver.NewGitserverAddressesFromConf(conf.Get())
 		s.cleanupRepos(actor.WithInternalActor(ctx), gitserverAddrs)
 		time.Sleep(interval)
 	}
@@ -640,7 +640,7 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 	var previousAddrs string
 	var previousPinned string
 	for {
-		gitServerAddrs := currentGitserverAddresses()
+		gitServerAddrs := gitserver.NewGitserverAddressesFromConf(conf.Get())
 		addrs := gitServerAddrs.Addresses
 		// We turn addrs into a string here for easy comparison and storage of previous
 		// addresses since we'd need to take a copy of the slice anyway.
@@ -667,20 +667,8 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 	}
 }
 
-func (s *Server) addrForRepo(ctx context.Context, repoName api.RepoName, gitServerAddrs gitserver.GitServerAddresses) (string, error) {
-	return gitserver.AddrForRepo(ctx, filepath.Base(os.Args[0]), repoName, gitServerAddrs)
-}
-
-func currentGitserverAddresses() gitserver.GitServerAddresses {
-	cfg := conf.Get()
-	gitServerAddrs := gitserver.GitServerAddresses{
-		Addresses: cfg.ServiceConnectionConfig.GitServers,
-	}
-	if cfg.ExperimentalFeatures != nil {
-		gitServerAddrs.PinnedServers = cfg.ExperimentalFeatures.GitServerPinnedRepos
-	}
-
-	return gitServerAddrs
+func (s *Server) addrForRepo(repoName api.RepoName, gitServerAddrs gitserver.GitserverAddresses) string {
+	return gitServerAddrs.AddrForRepo(filepath.Base(os.Args[0]), repoName)
 }
 
 // StartClonePipeline clones repos asynchronously. It creates a producer-consumer
@@ -794,7 +782,7 @@ var (
 	})
 )
 
-func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batchSize, perSecond int, fullSync bool) error {
+func (s *Server) syncRepoState(gitServerAddrs gitserver.GitserverAddresses, batchSize, perSecond int, fullSync bool) error {
 	s.Logger.Debug("starting syncRepoState", log.Bool("fullSync", fullSync))
 	addrs := gitServerAddrs.Addresses
 
@@ -887,10 +875,7 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 			repo.Name = api.UndeletedRepoName(repo.Name)
 
 			// Ensure we're only dealing with repos we are responsible for.
-			addr, err := s.addrForRepo(ctx, repo.Name, gitServerAddrs)
-			if err != nil {
-				return err
-			}
+			addr := s.addrForRepo(repo.Name, gitServerAddrs)
 			if !s.hostnameMatch(addr) {
 				repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 				continue
@@ -1010,7 +995,16 @@ func (s *Server) acquireCloneableLimiter(ctx context.Context) (context.Context, 
 // This directory is cleaned up by gitserver and will be ignored by repository
 // listing operations.
 func (s *Server) tempDir(prefix string) (name string, err error) {
-	dir := filepath.Join(s.ReposDir, tempDirName)
+	return tempDir(s.ReposDir, prefix)
+}
+
+// tempDir is a wrapper around os.MkdirTemp, but using the given reposDir
+// temporary directory filepath.Join(s.ReposDir, tempDirName).
+//
+// This directory is cleaned up by gitserver and will be ignored by repository
+// listing operations.
+func tempDir(reposDir, prefix string) (name string, err error) {
+	dir := filepath.Join(reposDir, tempDirName)
 
 	// Create tmpdir directory if doesn't exist yet.
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
@@ -1247,21 +1241,6 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	tr.SetAttributes(
-		attribute.String("repo", string(args.Repo)),
-		attribute.Bool("include_diff", args.IncludeDiff),
-		attribute.String("query", args.Query.String()),
-		attribute.Int("limit", args.Limit),
-		attribute.Bool("include_modified_files", args.IncludeModifiedFiles),
-	)
-
-	searchStart := time.Now()
-	searchRunning.Inc()
-	defer searchRunning.Dec()
-
-	observeLatency := syncx.OnceFunc(func() {
-		searchLatency.Observe(time.Since(searchStart).Seconds())
-	})
 
 	eventWriter, err := streamhttp.NewWriter(w)
 	if err != nil {
@@ -1270,56 +1249,129 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var matchesBufMux sync.Mutex
 	matchesBuf := streamhttp.NewJSONArrayBuf(8*1024, func(data []byte) error {
 		tr.AddEvent("flushing data", attribute.Int("data.len", len(data)))
-		observeLatency()
 		return eventWriter.EventBytes("matches", data)
 	})
 
+	// Start a goroutine that periodically flushes the buffer
+	var flusherWg conc.WaitGroup
+	flusherCtx, flusherCancel := context.WithCancel(context.Background())
+	defer flusherCancel()
+	flusherWg.Go(func() {
+		flushTicker := time.NewTicker(50 * time.Millisecond)
+		defer flushTicker.Stop()
+
+		for {
+			select {
+			case <-flushTicker.C:
+				matchesBufMux.Lock()
+				matchesBuf.Flush()
+				matchesBufMux.Unlock()
+			case <-flusherCtx.Done():
+				return
+			}
+		}
+	})
+
+	// Create a callback that appends the match to the buffer
+	var haveFlushed atomic.Bool
+	onMatch := func(match *protocol.CommitMatch) error {
+		matchesBufMux.Lock()
+		defer matchesBufMux.Unlock()
+
+		err := matchesBuf.Append(match)
+		if err != nil {
+			return err
+		}
+
+		// If we haven't sent any results yet, flush immediately
+		if !haveFlushed.Load() {
+			haveFlushed.Store(true)
+			return matchesBuf.Flush()
+		}
+
+		return nil
+	}
+
 	// Run the search
-	limitHit, searchErr := s.search(ctx, &args, matchesBuf)
+	limitHit, searchErr := s.searchWithObservability(ctx, tr, &args, onMatch)
 	if writeErr := eventWriter.Event("done", protocol.NewSearchEventDone(limitHit, searchErr)); writeErr != nil {
 		if !errors.Is(writeErr, syscall.EPIPE) {
 			logger.Error("failed to send done event", log.Error(writeErr))
 		}
 	}
-	tr.AddEvent("done", attribute.Bool("limit_hit", limitHit))
-	tr.SetError(searchErr)
-	searchDuration.
-		WithLabelValues(strconv.FormatBool(searchErr != nil)).
-		Observe(time.Since(searchStart).Seconds())
 
-	if honey.Enabled() || traceLogs {
-		act := actor.FromContext(ctx)
-		ev := honey.NewEvent("gitserver-search")
-		ev.SetSampleRate(honeySampleRate("", act))
-		ev.AddField("repo", args.Repo)
-		ev.AddField("revisions", args.Revisions)
-		ev.AddField("include_diff", args.IncludeDiff)
-		ev.AddField("include_modified_files", args.IncludeModifiedFiles)
-		ev.AddField("actor", act.UIDString())
-		ev.AddField("query", args.Query.String())
-		ev.AddField("limit", args.Limit)
-		ev.AddField("duration_ms", time.Since(searchStart).Milliseconds())
-		if searchErr != nil {
-			ev.AddField("error", searchErr.Error())
+	// Clean up the flusher goroutine, then do one final flush
+	flusherCancel()
+	flusherWg.Wait()
+	matchesBuf.Flush()
+}
+
+func (s *Server) searchWithObservability(ctx context.Context, tr *trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
+	searchStart := time.Now()
+
+	searchRunning.Inc()
+	defer searchRunning.Dec()
+
+	tr.SetAttributes(
+		attribute.String("repo", string(args.Repo)),
+		attribute.Bool("include_diff", args.IncludeDiff),
+		attribute.String("query", args.Query.String()),
+		attribute.Int("limit", args.Limit),
+		attribute.Bool("include_modified_files", args.IncludeModifiedFiles),
+	)
+	defer func() {
+		tr.AddEvent("done", attribute.Bool("limit_hit", limitHit))
+		tr.SetError(err)
+		searchDuration.
+			WithLabelValues(strconv.FormatBool(err != nil)).
+			Observe(time.Since(searchStart).Seconds())
+
+		if honey.Enabled() || traceLogs {
+			act := actor.FromContext(ctx)
+			ev := honey.NewEvent("gitserver-search")
+			ev.SetSampleRate(honeySampleRate("", act))
+			ev.AddField("repo", args.Repo)
+			ev.AddField("revisions", args.Revisions)
+			ev.AddField("include_diff", args.IncludeDiff)
+			ev.AddField("include_modified_files", args.IncludeModifiedFiles)
+			ev.AddField("actor", act.UIDString())
+			ev.AddField("query", args.Query.String())
+			ev.AddField("limit", args.Limit)
+			ev.AddField("duration_ms", time.Since(searchStart).Milliseconds())
+			if err != nil {
+				ev.AddField("error", err.Error())
+			}
+			if traceID := trace.ID(ctx); traceID != "" {
+				ev.AddField("traceID", traceID)
+				ev.AddField("trace", trace.URL(traceID, conf.DefaultClient()))
+			}
+			if honey.Enabled() {
+				_ = ev.Send()
+			}
+			if traceLogs {
+				s.Logger.Debug("TRACE gitserver search", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
+			}
 		}
-		if traceID := trace.ID(ctx); traceID != "" {
-			ev.AddField("traceID", traceID)
-			ev.AddField("trace", trace.URL(traceID, conf.DefaultClient()))
-		}
-		if honey.Enabled() {
-			_ = ev.Send()
-		}
-		if traceLogs {
-			logger.Debug("TRACE gitserver search", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
-		}
+	}()
+
+	observeLatency := syncx.OnceFunc(func() {
+		searchLatency.Observe(time.Since(searchStart).Seconds())
+	})
+
+	onMatchWithLatency := func(cm *protocol.CommitMatch) error {
+		observeLatency()
+		return onMatch(cm)
 	}
+
+	return s.search(ctx, args, onMatchWithLatency)
 }
 
 // search handles the core logic of the search. It is passed a matchesBuf so it doesn't need to
 // concern itself with event types, and all instrumentation is handled in the calling function.
-func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, matchesBuf *streamhttp.JSONArrayBuf) (limitHit bool, err error) {
+func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
 	args.Repo = protocol.NormalizeRepo(args.Repo)
 	if args.Limit == 0 {
 		args.Limit = math.MaxInt32
@@ -1368,86 +1420,47 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, match
 		}
 	}
 
-	g, ctx := errgroup.WithContext(ctx)
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	mt, err := search.ToMatchTree(args.Query)
+	if err != nil {
+		return false, err
+	}
 
-	// Search all commits, sending matching commits down resultChan
-	resultChan := make(chan *protocol.CommitMatch, 128)
-	g.Go(func() error {
-		defer close(resultChan)
-		done := ctx.Done()
-
-		mt, err := search.ToMatchTree(args.Query)
-		if err != nil {
-			return err
-		}
-
-		// Ensure that we populate ModifiedFiles when we have a DiffModifiesFile filter.
-		// --name-status is not zero cost, so we don't do it on every search.
-		hasDiffModifiesFile := false
-		search.Visit(mt, func(mt search.MatchTree) {
-			switch mt.(type) {
-			case *search.DiffModifiesFile:
-				hasDiffModifiesFile = true
-			}
-		})
-
-		searcher := &search.CommitSearcher{
-			Logger:               s.Logger,
-			RepoName:             args.Repo,
-			RepoDir:              dir.Path(),
-			Revisions:            args.Revisions,
-			Query:                mt,
-			IncludeDiff:          args.IncludeDiff,
-			IncludeModifiedFiles: args.IncludeModifiedFiles || hasDiffModifiesFile,
-		}
-
-		return searcher.Search(ctx, func(match *protocol.CommitMatch) {
-			select {
-			case <-done:
-			case resultChan <- match:
-			}
-		})
-	})
-
-	// Write matching commits to the stream, flushing occasionally
-	g.Go(func() error {
-		defer cancel()
-		defer matchesBuf.Flush()
-
-		flushTicker := time.NewTicker(50 * time.Millisecond)
-		defer flushTicker.Stop()
-
-		sentCount := 0
-		firstMatch := true
-		for {
-			select {
-			case result, ok := <-resultChan:
-				if !ok {
-					return nil
-				}
-
-				if sentCount >= args.Limit {
-					limitHit = true
-					return nil
-				}
-				sentCount += matchCount(result)
-
-				_ = matchesBuf.Append(result) // EOF only
-
-				// Send immediately if this if the first result we've seen
-				if firstMatch {
-					_ = matchesBuf.Flush() // EOF only
-					firstMatch = false
-				}
-			case <-flushTicker.C:
-				_ = matchesBuf.Flush() // EOF only
-			}
+	// Ensure that we populate ModifiedFiles when we have a DiffModifiesFile filter.
+	// --name-status is not zero cost, so we don't do it on every search.
+	hasDiffModifiesFile := false
+	search.Visit(mt, func(mt search.MatchTree) {
+		switch mt.(type) {
+		case *search.DiffModifiesFile:
+			hasDiffModifiesFile = true
 		}
 	})
 
-	return limitHit, g.Wait()
+	// Create a callback that detects whether we've hit a limit
+	// and stops sending when we have.
+	var sentCount atomic.Int64
+	var hitLimit atomic.Bool
+	limitedOnMatch := func(match *protocol.CommitMatch) {
+		// Avoid sending if we've already hit the limit
+		if int(sentCount.Load()) >= args.Limit {
+			hitLimit.Store(true)
+			return
+		}
+
+		sentCount.Add(int64(matchCount(match)))
+		onMatch(match)
+	}
+
+	searcher := &search.CommitSearcher{
+		Logger:               s.Logger,
+		RepoName:             args.Repo,
+		RepoDir:              dir.Path(),
+		Revisions:            args.Revisions,
+		Query:                mt,
+		IncludeDiff:          args.IncludeDiff,
+		IncludeModifiedFiles: args.IncludeModifiedFiles || hasDiffModifiesFile,
+	}
+
+	return hitLimit.Load(), searcher.Search(ctx, limitedOnMatch)
 }
 
 // matchCount returns either:
@@ -1919,7 +1932,7 @@ func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
 	)
 
 	// Make sure credentials are valid before heavier operation
-	err := p4pingWithTrust(r.Context(), req.P4Port, req.P4User, req.P4Passwd)
+	err := p4testWithTrust(r.Context(), req.P4Port, req.P4User, req.P4Passwd)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -2594,11 +2607,6 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 	span, ctx := ot.StartSpanFromContext(ctx, "Server.doRepoUpdate") //nolint:staticcheck // OT is deprecated
 	span.SetTag("repo", repo)
 	defer span.Finish()
-
-	if msg, ok := isPaused(filepath.Join(s.ReposDir, string(protocol.NormalizeRepo(repo)))); ok {
-		s.Logger.Warn("doRepoUpdate paused", log.String("repo", string(repo)), log.String("reason", msg))
-		return nil
-	}
 
 	s.repoUpdateLocksMu.Lock()
 	l, ok := s.repoUpdateLocks[repo]

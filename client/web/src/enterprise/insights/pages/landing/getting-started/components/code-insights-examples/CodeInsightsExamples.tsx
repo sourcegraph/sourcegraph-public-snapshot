@@ -1,6 +1,6 @@
 import { FunctionComponent } from 'react'
 
-import { useLocation } from 'react-router'
+import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, H2, Text } from '@sourcegraph/wildcard'

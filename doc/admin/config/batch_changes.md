@@ -1,12 +1,18 @@
 # Batch Changes site admin configuration reference
 
-[Batch Changes](../../batch_changes/index.md) is generally configured through the same [site configuration](site_config.md) and [code host configuration](../external_service/index.md) as the rest of Sourcegraph. However, Batch Changes features may require specific configuration, and those are documented here.
+Batch Changes is generally configured through the same [site configuration](site_config.md) and [code host configuration](../external_service/index.md) as the rest of Sourcegraph. However, Batch Changes features may require specific configuration, and those are documented here.
+
+## Access control
+
+<span class="badge badge-note">Sourcegraph 5.0+</span>
+
+Batch Changes is [RBAC-enabled](../../admin/access_control/index.md) <span class="badge badge-beta">Beta</span>. By default, all users have full read and write access for Batch Changes, but this can be restricted by changing the default role permissions, or by creating new custom roles.
 
 ## Rollout windows
 
 By default, Sourcegraph attempts to reconcile (create, update, or close) changesets as quickly as the rate limits on the code host allow. This can result in CI systems being overwhelmed if hundreds or thousands of changesets are being handled as part of a single batch change.
 
-Configuring rollout windows allows changesets to be created and updated at a slower or faster rate based on the time of day and/or the day of the week. These windows are applied to changesets across all code hosts.
+Configuring rollout windows allows changesets to be reconciled at a slower or faster rate based on the time of day and/or the day of the week. These windows are applied to changesets across all code hosts, but they only affect the rate at which changesets are created/published, updated, or closed, as well as some other internal operations like importing and detaching. Bulk operations to publish changesets also respect the rollout window; however, bulk commenting, merging, and closing will happen all at once.
 
 Rollout windows are configured through the `batchChanges.rolloutWindows` [site configuration option](site_config.md). If specified, this option contains an array of rollout window objects that are used to schedule changesets. The format of these objects [is given below](#rollout-window-object).
 
@@ -121,13 +127,13 @@ To only allow changesets to be reconciled at 1 changeset per minute on (UTC) wee
 
 ## Incoming webhooks
 
-> NOTE: This feature was added in Sourcegraph 3.33.
+<span class="badge badge-note">Sourcegraph 3.33+</span>
 
-Sourcegraph can track incoming webhooks from code hosts to more easily debug issues with webhook delivery. Learn [how to setup webhooks and configure logging](../../admin/config/webhooks.md#webhook-logging).
+Sourcegraph can track incoming webhooks from code hosts to more easily debug issues with webhook delivery. Learn [how to setup webhooks and configure logging](../../admin/config/webhooks/incoming.md#webhook-logging).
 
 ## Forks
 
-> NOTE: This feature was added in Sourcegraph 3.36.
+<span class="badge badge-note">Sourcegraph 3.36+</span>
 
 Sourcegraph can be configured to push branches created by Batch Changes to a fork of the repository, rather than the repository itself, by enabling the `batchChanges.enforceForks` site configuration option.
 

@@ -34,20 +34,24 @@
         align-items: center;
     }
 
-    &--compact .sidebar {
-        flex: none;
-        padding-right: 1.5rem;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        display: flex;
-        align-items: center;
+    &--extra-compact .byline {
+        min-width: auto;
+        padding-right: 0.5rem;
+
+        @media (--md-breakpoint-up) {
+            width: auto;
+        }
     }
 
     &--compact .message {
         flex: 1;
         min-width: 0;
         padding-right: 1rem;
+    }
+
+    &--extra-compact .message {
+        flex: initial;
+        padding-right: 0.5rem;
     }
 
     &--compact .message-subject {
@@ -73,7 +77,7 @@
 
 .message {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     font-size: 1rem;
 
     @media (--xs-breakpoint-down) {
@@ -84,17 +88,22 @@
     }
 
     &-subject {
-        font-weight: 600;
         flex: 0 1 auto;
-        padding-right: 0.5rem;
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
+    }
+
+    &-link {
         color: var(--body-color);
     }
 
     &-small {
         font-size: 0.875rem;
+    }
+
+    &-extra-small {
+        font-size: 0.75rem;
     }
 
     &-toggle {
@@ -168,4 +177,56 @@
         font-size: 1rem;
         color: var(--link-color);
     }
+}
+
+.table-row {
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+
+    color: var(--list-group-color);
+    text-decoration: var(--list-group-text-decoration);
+    background-color: var(--list-group-bg);
+    border-bottom: var(--list-group-border-width) solid var(--border-color);
+
+    &:first-child {
+        border-top-left-radius: inherit;
+        border-top-right-radius: inherit;
+    }
+
+    &:last-child {
+        border-bottom-right-radius: inherit;
+        border-bottom-left-radius: inherit;
+        border-bottom: 0;
+    }
+
+    > td {
+        padding: 0 0.25rem;
+    }
+
+    &-open {
+        border-bottom: 0;
+    }
+}
+
+.col-byline {
+    min-width: 25%;
+
+    @media (--md-breakpoint-up) {
+        width: 25%;
+    }
+
+    flex: none;
+    padding-right: 1.5rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+}
+
+.font-weight-normal {
+    font-weight: normal;
 }

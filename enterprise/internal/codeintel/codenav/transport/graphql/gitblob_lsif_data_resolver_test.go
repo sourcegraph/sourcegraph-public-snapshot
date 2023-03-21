@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -15,7 +14,6 @@ import (
 
 func TestRanges(t *testing.T) {
 	mockCodeNavService := NewMockCodeNavService()
-	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
 
@@ -28,9 +26,13 @@ func TestRanges(t *testing.T) {
 
 	resolver := NewGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
 		mockRequestState,
 		observation.NewErrorCollector(),
 		mockOperations,
@@ -53,7 +55,6 @@ func TestRanges(t *testing.T) {
 }
 
 func TestDefinitions(t *testing.T) {
-	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
 	mockCodeNavService := NewMockCodeNavService()
@@ -66,9 +67,13 @@ func TestDefinitions(t *testing.T) {
 
 	resolver := NewGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
 		mockRequestState,
 		observation.NewErrorCollector(),
 		mockOperations,
@@ -91,7 +96,6 @@ func TestDefinitions(t *testing.T) {
 }
 
 func TestReferences(t *testing.T) {
-	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
 	mockCodeNavService := NewMockCodeNavService()
@@ -104,9 +108,13 @@ func TestReferences(t *testing.T) {
 
 	resolver := NewGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
 		mockRequestState,
 		observation.NewErrorCollector(),
 		mockOperations,
@@ -122,8 +130,7 @@ func TestReferences(t *testing.T) {
 			Line:      10,
 			Character: 15,
 		},
-		ConnectionArgs: graphqlutil.ConnectionArgs{First: &offset},
-		After:          &mockCursor,
+		PagedConnectionArgs: resolverstubs.PagedConnectionArgs{ConnectionArgs: resolverstubs.ConnectionArgs{First: &offset}, After: &mockCursor},
 	}
 
 	if _, err := resolver.References(context.Background(), args); err != nil {
@@ -148,7 +155,6 @@ func TestReferences(t *testing.T) {
 }
 
 func TestReferencesDefaultLimit(t *testing.T) {
-	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
 	mockCodeNavService := NewMockCodeNavService()
@@ -161,9 +167,13 @@ func TestReferencesDefaultLimit(t *testing.T) {
 
 	resolver := NewGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
 		mockRequestState,
 		observation.NewErrorCollector(),
 		mockOperations,
@@ -174,7 +184,7 @@ func TestReferencesDefaultLimit(t *testing.T) {
 			Line:      10,
 			Character: 15,
 		},
-		ConnectionArgs: graphqlutil.ConnectionArgs{},
+		PagedConnectionArgs: resolverstubs.PagedConnectionArgs{},
 	}
 
 	if _, err := resolver.References(context.Background(), args); err != nil {
@@ -190,7 +200,6 @@ func TestReferencesDefaultLimit(t *testing.T) {
 }
 
 func TestReferencesDefaultIllegalLimit(t *testing.T) {
-	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
 	mockCodeNavService := NewMockCodeNavService()
@@ -203,9 +212,13 @@ func TestReferencesDefaultIllegalLimit(t *testing.T) {
 
 	resolver := NewGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
 		mockRequestState,
 		observation.NewErrorCollector(),
 		mockOperations,
@@ -217,7 +230,7 @@ func TestReferencesDefaultIllegalLimit(t *testing.T) {
 			Line:      10,
 			Character: 15,
 		},
-		ConnectionArgs: graphqlutil.ConnectionArgs{First: &offset},
+		PagedConnectionArgs: resolverstubs.PagedConnectionArgs{ConnectionArgs: resolverstubs.ConnectionArgs{First: &offset}},
 	}
 
 	if _, err := resolver.References(context.Background(), args); err != ErrIllegalLimit {
@@ -226,7 +239,6 @@ func TestReferencesDefaultIllegalLimit(t *testing.T) {
 }
 
 func TestHover(t *testing.T) {
-	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
 	mockCodeNavService := NewMockCodeNavService()
@@ -239,9 +251,13 @@ func TestHover(t *testing.T) {
 
 	resolver := NewGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
 		mockRequestState,
 		observation.NewErrorCollector(),
 		mockOperations,
@@ -265,7 +281,6 @@ func TestHover(t *testing.T) {
 }
 
 func TestDiagnostics(t *testing.T) {
-	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
 	mockCodeNavService := NewMockCodeNavService()
@@ -278,9 +293,13 @@ func TestDiagnostics(t *testing.T) {
 
 	resolver := NewGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
 		mockRequestState,
 		observation.NewErrorCollector(),
 		mockOperations,
@@ -288,7 +307,7 @@ func TestDiagnostics(t *testing.T) {
 
 	offset := int32(25)
 	args := &resolverstubs.LSIFDiagnosticsArgs{
-		ConnectionArgs: graphqlutil.ConnectionArgs{First: &offset},
+		First: &offset,
 	}
 
 	if _, err := resolver.Diagnostics(context.Background(), args); err != nil {
@@ -304,7 +323,6 @@ func TestDiagnostics(t *testing.T) {
 }
 
 func TestDiagnosticsDefaultLimit(t *testing.T) {
-	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
 	mockCodeNavService := NewMockCodeNavService()
@@ -317,17 +335,19 @@ func TestDiagnosticsDefaultLimit(t *testing.T) {
 
 	resolver := NewGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
 		mockRequestState,
 		observation.NewErrorCollector(),
 		mockOperations,
 	)
 
-	args := &resolverstubs.LSIFDiagnosticsArgs{
-		ConnectionArgs: graphqlutil.ConnectionArgs{},
-	}
+	args := &resolverstubs.LSIFDiagnosticsArgs{}
 
 	if _, err := resolver.Diagnostics(context.Background(), args); err != nil {
 		t.Fatalf("unexpected error: %s", err)
@@ -342,7 +362,6 @@ func TestDiagnosticsDefaultLimit(t *testing.T) {
 }
 
 func TestDiagnosticsDefaultIllegalLimit(t *testing.T) {
-	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
 	mockCodeNavService := NewMockCodeNavService()
@@ -355,9 +374,13 @@ func TestDiagnosticsDefaultIllegalLimit(t *testing.T) {
 
 	resolver := NewGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
 		mockRequestState,
 		observation.NewErrorCollector(),
 		mockOperations,
@@ -365,7 +388,7 @@ func TestDiagnosticsDefaultIllegalLimit(t *testing.T) {
 
 	offset := int32(-1)
 	args := &resolverstubs.LSIFDiagnosticsArgs{
-		ConnectionArgs: graphqlutil.ConnectionArgs{First: &offset},
+		First: &offset,
 	}
 
 	if _, err := resolver.Diagnostics(context.Background(), args); err != ErrIllegalLimit {

@@ -1,23 +1,17 @@
 import * as React from 'react'
 
-import { RouteComponentProps } from 'react-router'
-
 import { logger } from '@sourcegraph/common'
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Container } from '@sourcegraph/wildcard'
 
 import { SettingsAreaPageProps } from './SettingsArea'
 import { SettingsFile } from './SettingsFile'
 
-interface Props
-    extends SettingsAreaPageProps,
-        Pick<RouteComponentProps<{}>, 'history' | 'location'>,
-        ThemeProps,
-        TelemetryProps {
+interface Props extends SettingsAreaPageProps, TelemetryProps {
     /** Optional description to render above the editor. */
     description?: JSX.Element
+    isLightTheme: boolean
 }
 
 interface State {
@@ -38,7 +32,6 @@ export class SettingsPage extends React.PureComponent<Props, State> {
                     commitError={this.state.commitError}
                     onDidCommit={this.onDidCommit}
                     onDidDiscard={this.onDidDiscard}
-                    history={this.props.history}
                     isLightTheme={this.props.isLightTheme}
                     telemetryService={this.props.telemetryService}
                 />

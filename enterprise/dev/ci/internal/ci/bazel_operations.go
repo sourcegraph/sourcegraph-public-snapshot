@@ -10,30 +10,145 @@ import (
 
 const bazelRemoteCacheURL = "https://storage.googleapis.com/sourcegraph_bazel_cache"
 
-func BazelOperations() *operations.Set {
-	ops := operations.NewSet()
-	ops.Append(bazelBuild(
-		"//dev/sg",
-		"//lib/...",
-		"//internal/...",
-		"//cmd/blobstore",
-		"//cmd/frontend",
-		"//cmd/github-proxy",
-		"//cmd/gitserver",
-		"//cmd/loadtest",
-		"//cmd/migrator",
-		"//cmd/repo-updater",
-		"//cmd/server",
-		// "//cmd/sourcegraph-oss", // TODO broken
-		// "//cmd/searcher", // TODO broken
-		// "//cmd/symbols", // TODO broken
-		"//cmd/worker",
-	))
-	ops.Append(bazelTest("//monitoring/..."))
+func BazelOperations(optional bool) *operations.Set {
+	ops := operations.NewNamedSet("Bazel")
+	ops.Append(bazelConfigure(optional))
+	ops.Append(bazelBuildAndTest(optional, "//..."))
 	return ops
 }
 
-func bazelTest(targets ...string) func(*bk.Pipeline) {
+// BazelIncrementalMainOperations is a set of operations that only run on the main
+// branch and whose purpose is to gradually introduce invariants as we progress through
+// the migration.
+func BazelIncrementalMainOperations() *operations.Set {
+	optional := true
+
+	ops := operations.NewNamedSet("Bazel (optional)")
+	ops.Append(bazelAnalysisPhase(optional))
+
+	return ops
+}
+
+// bazelAnalysisPhase only runs the analasys phase, ensure that the buildfiles
+// are correct, but do not actually build anything.
+func bazelAnalysisPhase(optional bool) func(*bk.Pipeline) {
+	// We run :gazelle since 'configure' causes issues on CI, where it doesn't have the go path available
+	cmd := []string{
+		"bazel",
+		"--bazelrc=.bazelrc",
+		"--bazelrc=.aspect/bazelrc/ci.bazelrc",
+		"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
+		"build",
+		"--nobuild", // this is the key flag to enable this.
+		"//...",
+	}
+
+	cmds := []bk.StepOpt{
+		bk.Key("bazel-analysis"),
+		bk.Env("CI_BAZEL_REMOTE_CACHE", bazelRemoteCacheURL),
+		bk.Agent("queue", "bazel"),
+		bk.RawCmd(strings.Join(cmd, " ")),
+	}
+
+	return func(pipeline *bk.Pipeline) {
+		if optional {
+			cmds = append(cmds, bk.SoftFail())
+		}
+
+		pipeline.AddStep(":bazel: Analysis phase",
+			cmds...,
+		)
+	}
+}
+func bazelConfigure(optional bool) func(*bk.Pipeline) {
+	// We run :gazelle since 'configure' causes issues on CI, where it doesn't have the go path available
+	configureCmd := []string{
+		"bazel",
+		"--bazelrc=.bazelrc",
+		"--bazelrc=.aspect/bazelrc/ci.bazelrc",
+		"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
+		"run :gazelle",
+	}
+
+	// if there are changes diff will exit with 1, and 0 otherwise
+	gitDiff := "git diff --exit-code"
+	cmds := []bk.StepOpt{
+		bk.Key("bazel-configure"),
+		bk.Env("CI_BAZEL_REMOTE_CACHE", bazelRemoteCacheURL),
+		bk.Agent("queue", "bazel"),
+		bk.RawCmd(strings.Join(configureCmd, " ")),
+		bk.RawCmd(gitDiff),
+	}
+
+	return func(pipeline *bk.Pipeline) {
+		if optional {
+			cmds = append(cmds, bk.SoftFail())
+		}
+
+		pipeline.AddStep(":bazel: Configure",
+			cmds...,
+		)
+	}
+}
+
+// bazelBuildAndTest will perform a build and test on the same agent, which is the preferred method
+// over running them in two separate jobs, so we don't build the same code twice.
+func bazelBuildAndTest(optional bool, targets ...string) func(*bk.Pipeline) {
+	cmds := []bk.StepOpt{
+		bk.DependsOn("bazel-configure"),
+		bk.Env("CI_BAZEL_REMOTE_CACHE", bazelRemoteCacheURL),
+		bk.Agent("queue", "bazel"),
+	}
+
+	for _, target := range targets {
+		bazelBuildCmd := []string{
+			"bazel",
+			"--bazelrc=.bazelrc",
+			"--bazelrc=.aspect/bazelrc/ci.bazelrc",
+			"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
+			fmt.Sprintf("build %s", target),
+			"--remote_cache=$$CI_BAZEL_REMOTE_CACHE",
+			"--google_credentials=/mnt/gcloud-service-account/gcloud-service-account.json",
+		}
+
+		bazelTestCmd := []string{
+			"bazel",
+			"--bazelrc=.bazelrc",
+			"--bazelrc=.aspect/bazelrc/ci.bazelrc",
+			"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
+			fmt.Sprintf("test %s", target),
+			"--remote_cache=$$CI_BAZEL_REMOTE_CACHE",
+			"--google_credentials=/mnt/gcloud-service-account/gcloud-service-account.json",
+		}
+		cmds = append(
+			cmds,
+			bk.RawCmd(strings.Join(bazelBuildCmd, " ")),
+			bk.RawCmd(strings.Join(bazelTestCmd, " ")),
+		)
+	}
+
+	return func(pipeline *bk.Pipeline) {
+		if optional {
+			cmds = append(cmds, bk.SoftFail())
+		}
+
+		// TODO(JH) Broken we don't have go on the bazel agents
+		// cmds = append(cmds, bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
+		// 	Message:     ":alert: :bazel: test failed",
+		// 	ChannelName: "dev-experience-alerts",
+		// 	Conditions: bk.SlackStepNotifyPayloadConditions{
+		// 		Failed:   true,
+		// 		Branches: []string{"main"},
+		// 	},
+		// }))
+
+		pipeline.AddStep(":bazel: Build && Test",
+			cmds...,
+		)
+	}
+}
+
+func bazelTest(optional bool, targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.Env("CI_BAZEL_REMOTE_CACHE", bazelRemoteCacheURL),
 		bk.Agent("queue", "bazel"),
@@ -44,20 +159,36 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 			"bazel",
 			"--bazelrc=.bazelrc",
 			"--bazelrc=.aspect/bazelrc/ci.bazelrc",
+			"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
 			fmt.Sprintf("test %s", target),
 			"--remote_cache=$$CI_BAZEL_REMOTE_CACHE",
 			"--google_credentials=/mnt/gcloud-service-account/gcloud-service-account.json",
 		}
-		cmds = append(cmds, bk.Cmd(strings.Join(bazelCmd, " ")))
+		cmds = append(cmds, bk.RawCmd(strings.Join(bazelCmd, " ")))
 	}
 
 	return func(pipeline *bk.Pipeline) {
+		if optional {
+			cmds = append(cmds, bk.SoftFail())
+		}
+
+		// TODO(JH) Broken we don't have go on the bazel agents
+		// cmds = append(cmds, bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
+		// 	Message:     ":alert: :bazel: test failed",
+		// 	ChannelName: "dev-experience-alerts",
+		// 	Conditions: bk.SlackStepNotifyPayloadConditions{
+		// 		Failed:   true,
+		// 		Branches: []string{"main"},
+		// 	},
+		// }))
+
 		pipeline.AddStep(":bazel: Tests",
 			cmds...,
 		)
 	}
 }
-func bazelBuild(targets ...string) func(*bk.Pipeline) {
+
+func bazelBuild(optional bool, targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.Env("CI_BAZEL_REMOTE_CACHE", bazelRemoteCacheURL),
 		bk.Agent("queue", "bazel"),
@@ -68,14 +199,29 @@ func bazelBuild(targets ...string) func(*bk.Pipeline) {
 			"bazel",
 			"--bazelrc=.bazelrc",
 			"--bazelrc=.aspect/bazelrc/ci.bazelrc",
+			"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
 			fmt.Sprintf("build %s", target),
 			"--remote_cache=$$CI_BAZEL_REMOTE_CACHE",
 			"--google_credentials=/mnt/gcloud-service-account/gcloud-service-account.json",
 		}
-		cmds = append(cmds, bk.Cmd(strings.Join(bazelCmd, " ")))
+		cmds = append(cmds, bk.RawCmd(strings.Join(bazelCmd, " ")))
 	}
 
 	return func(pipeline *bk.Pipeline) {
+		if optional {
+			cmds = append(cmds, bk.SoftFail())
+		}
+
+		// TODO(JH) Broken we don't have go on the bazel agents
+		// cmds = append(cmds, bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
+		// 	Message:     ":alert: :bazel: build failed",
+		// 	ChannelName: "dev-experience-alerts",
+		// 	Conditions: bk.SlackStepNotifyPayloadConditions{
+		// 		Failed:   true,
+		// 		Branches: []string{"main"},
+		// 	},
+		// }))
+
 		pipeline.AddStep(":bazel: Build ...",
 			cmds...,
 		)

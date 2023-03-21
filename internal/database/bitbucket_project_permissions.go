@@ -55,13 +55,6 @@ func (s *bitbucketProjectPermissionsStore) WithTransact(ctx context.Context, f f
 	})
 }
 
-func (s *bitbucketProjectPermissionsStore) transact(ctx context.Context) (*bitbucketProjectPermissionsStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	c := s.copy()
-	c.Store = txBase
-	return c, err
-}
-
 // Enqueue a job to apply permissions to a Bitbucket project, returning its jobID.
 // The job will be enqueued to the BitbucketProjectPermissions worker.
 // If a non-empty permissions slice is passed, unrestricted has to be false, and vice versa.

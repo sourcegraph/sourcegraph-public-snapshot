@@ -7,16 +7,16 @@
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
 1. Find the relevant entry for your update in the update notes on this page. **If the notes indicate a patch release exists, target the highest one.**
 1. After checking the relevant update notes, refer to either of the following guides to upgrade your instance:
-    * [Kubernetes with Helm upgrade guide](../deploy/kubernetes/helm.md#standard-upgrades)
-    * [Kubernetes without Helm upgrade guide](../deploy/kubernetes/update.md#standard-upgrades)
+    * [Upgrade guide for Kubernetes](../deploy/kubernetes/update.md#standard-upgrades)
+    * [Upgrade guide for Kubernetes with Helm](../deploy/kubernetes/helm.md#standard-upgrades)
 
 ## Multi-version upgrade procedure
 
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
 1. Find the relevant entry for your update in the update notes on this page. **If the notes indicate a patch release exists, target the highest one.** These notes may contain relevant information about the infrastructure update such as resource requirement changes or versions of depencies (Docker, Kubernetes, externalized databases).
 1. After checking the relevant update notes, refer to either of the following guides to upgrade your instance:
-    * [Kubernetes with Helm upgrade guide](../deploy/kubernetes/helm.md#multi-version-upgrades)
-    * [Kubernetes without Helm upgrade guide](../deploy/kubernetes/update.md#multi-version-upgrades)
+    * [Upgrade guide for Kubernetes](../deploy/kubernetes/update.md#multi-version-upgrades)
+    * [Upgrade guide for Kubernetes with Helm](../deploy/kubernetes/helm.md#multi-version-upgrades)
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
@@ -24,15 +24,38 @@
 
 <!-- Add changes changes to this section before release. -->
 
-- This release introduces a background job that will convert all LSIF data into SCIP. **This migration is irreversible** and a rollback from this version may result in loss of precise code intelligence data. Please see the [migration notes](/admin/how-to/lsif_scip_migration) for more details.
+## v4.5.0 ➔ v4.5.1
+
+#### Notes:
+
+## v4.4.2 ➔ v4.5.0
+
+#### Notes:
+
+- This release introduces a background job that will convert all LSIF data into SCIP. **This migration is irreversible** and a rollback from this version may result in loss of precise code intelligence data. Please see the [migration notes](../how-to/lsif_scip_migration.md) for more details.
+
+**Kubernetes with Helm**
+- Searcher and Symbols now use StatefulSets and PVCs to avoid large `ephermeralStorage` requests [#242](https://github.com/sourcegraph/deploy-sourcegraph-helm/pull/242)
+- This release updates `searcher` and `symbols` services to be headless.
+  - Before upgrading, delete your `searcher` and `symbols` services (ex: `kubectl delete svc/searcher svc/symbols`) [#250](https://github.com/sourcegraph/deploy-sourcegraph-helm/pull/250)
+- An env var `CACHE_DIR` was renamed to `SYMBOLS_CACHE_DIR` in `sourcegraph/sourcegraph`. This change was missed in the Helm charts, which caused a permissions issue during some symbols searches. For more details, see the PR to fix the env var: [#258](https://github.com/sourcegraph/deploy-sourcegraph-helm/pull/258).
+  - A revision to the 4.5.1 chart (`4.5.1-rev.1`) was released to address the above issue. Use this revision for upgrades to 4.5.1. (ex: `helm upgrade --install --version 4.5.1-rev.1`) [#259](https://github.com/sourcegraph/deploy-sourcegraph-helm/pull/259)
+
+## v4.4.1 ➔ v4.4.2
+
+#### Notes:
 
 ## v4.3 ➔ v4.4.1
 
-_No notes._
+- Users attempting a multi-version upgrade to v4.4.0 may be affected by a [known bug](https://github.com/sourcegraph/sourcegraph/pull/46969) in which an outdated schema migration is included in the upgrade process. _This issue is fixed in patch v4.4.2_
+
+  - The error will be encountered while running `upgrade`, and contains the following text: `"frontend": failed to apply migration 1648115472`. 
+    - To resolve this issue run migrator with the args `'add-log', '-db=frontend', '-version=1648115472'`. 
+    - If migrator was stopped while running `upgrade` the next run of upgrade will encounter drift, this drift should be disregarded by providing migrator with the `--skip-drift-check` flag.
 
 ## v4.2 ➔ v4.3.1
 
-_No notes._
+#### Notes:
 
 ## v4.1 ➔ v4.2.1
 

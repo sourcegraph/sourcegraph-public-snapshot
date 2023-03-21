@@ -9,8 +9,11 @@
  *  - Apply fix from https://github.com/dgreene1/react-accessible-treeview/pull/81
  *  - Remove PropTypes API
  */
-import cx from 'classnames'
+
 import React, { useEffect, useReducer, useRef } from 'react'
+
+import cx from 'classnames'
+
 import {
     composeHandlers,
     difference,
@@ -389,7 +392,7 @@ interface IUseTreeProps {
     multiSelect?: boolean
     propagateSelectUpwards?: boolean
     propagateSelect?: boolean
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     onLoadData?: (props: ITreeViewOnLoadDataProps) => Promise<any>
     togglableSelect?: boolean
 }
@@ -640,7 +643,10 @@ const useTree = ({
             const tabbableNode = nodeRefs.current[tabbableId]
             const leafNode = leafRefs.current[lastInteractedWith]
             scrollToRef(leafNode)
-            focusRef(tabbableNode)
+            const shouldFocus = !!tabbableNode?.closest('.tree')?.contains(document.activeElement)
+            if (shouldFocus) {
+                focusRef(tabbableNode)
+            }
         }
     }, [tabbableId, nodeRefs, leafRefs, lastInteractedWith])
 
@@ -762,7 +768,7 @@ export interface ITreeViewProps {
     /** Function called when a node changes its expanded state */
     onExpand?: (props: ITreeViewOnExpandProps) => void
     /** Function called to load data asynchronously on expand */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     onLoadData?: (props: ITreeViewOnLoadDataProps) => Promise<any>
     /** className to add to the outermost ul */
     className?: string
@@ -798,7 +804,6 @@ export interface ITreeViewProps {
     onBlur?: (event: { treeState: ITreeViewState; dispatch: React.Dispatch<TreeViewAction> }) => void
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
 const noop = () => {}
 const TreeView = React.forwardRef<HTMLUListElement, ITreeViewProps>(function TreeView(
     {
@@ -1176,7 +1181,6 @@ interface INodeGroupProps extends Omit<INodeProps, 'setsize' | 'posinset'> {
  * It's convenient to pass props down to the child, but we don't want to pass everything since it would create incorrect values for setsize and posinset
  */
 const removeIrrelevantGroupProps = (nodeProps: INodeProps): Omit<INodeGroupProps, 'getClasses'> => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { setsize, posinset, ...rest } = nodeProps
     return rest
 }
@@ -1440,24 +1444,6 @@ const handleKeyDown =
                 expandOnKeyboardSelect && dispatch({ type: treeTypes.toggle, id, lastInteractedWith: id })
                 return
             default:
-                if (event.key.length === 1) {
-                    let currentId = getNextAccessible(data, id, expandedIds)
-                    while (currentId !== id) {
-                        if (currentId == null) {
-                            currentId = data[0].children[0]
-                            continue
-                        }
-                        if (data[currentId].name[0].toLowerCase() === event.key.toLowerCase()) {
-                            dispatch({
-                                type: treeTypes.focus,
-                                id: currentId,
-                                lastInteractedWith: id,
-                            })
-                            return
-                        }
-                        currentId = getNextAccessible(data, currentId, expandedIds)
-                    }
-                }
                 return
         }
     }

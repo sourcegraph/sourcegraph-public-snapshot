@@ -324,11 +324,6 @@ describe('getCompletionItems()', () => {
         ).toStrictEqual([
             {
                 // eslint-disable-next-line no-template-curly-in-string
-                insertText: 'contains.content(${1:TODO}) ',
-                label: 'contains.content(...)',
-            },
-            {
-                // eslint-disable-next-line no-template-curly-in-string
                 insertText: 'has.content(${1:TODO}) ',
                 label: 'has.content(...)',
             },
@@ -360,7 +355,7 @@ describe('getCompletionItems()', () => {
                     {}
                 )
             )?.suggestions.map(({ filterText }) => filterText)
-        ).toStrictEqual(['contains.content(...)', 'has.content(...)', 'has.owner(...)', '^jsonrpc'])
+        ).toStrictEqual(['has.content(...)', 'has.owner(...)', '^jsonrpc'])
     })
 
     test('includes file path in insertText when completing filter value', async () => {
@@ -380,8 +375,6 @@ describe('getCompletionItems()', () => {
                 )
             )?.suggestions.map(({ insertText }) => insertText)
         ).toStrictEqual([
-            // eslint-disable-next-line no-template-curly-in-string
-            'contains.content(${1:TODO}) ',
             // eslint-disable-next-line no-template-curly-in-string
             'has.content(${1:TODO}) ',
             // eslint-disable-next-line no-template-curly-in-string
@@ -411,6 +404,7 @@ describe('getCompletionItems()', () => {
               "has.path(\${1:CHANGELOG}) ",
               "has.content(\${1:TODO}) ",
               "has.file(path:\${1:CHANGELOG} content:\${2:fix}) ",
+              "has.topic(\${1}) ",
               "has.commit.after(\${1:1 month ago}) ",
               "has.description(\${1}) ",
               "has.tag(\${1}) ",
@@ -436,6 +430,7 @@ describe('getCompletionItems()', () => {
               "has.path(\${1:CHANGELOG}) ",
               "has.content(\${1:TODO}) ",
               "has.file(path:\${1:CHANGELOG} content:\${2:fix}) ",
+              "has.topic(\${1}) ",
               "has.commit.after(\${1:1 month ago}) ",
               "has.description(\${1}) ",
               "has.tag(\${1}) ",

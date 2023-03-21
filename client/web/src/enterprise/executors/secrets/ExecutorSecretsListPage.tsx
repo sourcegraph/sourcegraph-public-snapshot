@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { FC, useCallback, useState } from 'react'
 
 import { Button, Container, Link, PageHeader } from '@sourcegraph/wildcard'
 
@@ -12,7 +12,14 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
-import { ExecutorSecretFields, ExecutorSecretScope, Scalars } from '../../../graphql-operations'
+import {
+    ExecutorSecretFields,
+    ExecutorSecretScope,
+    GlobalExecutorSecretsResult,
+    OrgExecutorSecretsResult,
+    Scalars,
+    UserExecutorSecretsResult,
+} from '../../../graphql-operations'
 
 import { AddSecretModal } from './AddSecretModal'
 import {
@@ -25,9 +32,7 @@ import { ExecutorSecretScopeSelector } from './ExecutorSecretScopeSelector'
 
 export interface GlobalExecutorSecretsListPageProps {}
 
-export const GlobalExecutorSecretsListPage: React.FunctionComponent<
-    React.PropsWithChildren<GlobalExecutorSecretsListPageProps>
-> = props => {
+export const GlobalExecutorSecretsListPage: FC<GlobalExecutorSecretsListPageProps> = props => {
     const connectionLoader = useCallback(
         (scope: ExecutorSecretScope) => globalExecutorSecretsConnectionFactory(scope),
         []
@@ -46,9 +51,7 @@ export interface UserExecutorSecretsListPageProps extends GlobalExecutorSecretsL
     userID: Scalars['ID']
 }
 
-export const UserExecutorSecretsListPage: React.FunctionComponent<
-    React.PropsWithChildren<UserExecutorSecretsListPageProps>
-> = props => {
+export const UserExecutorSecretsListPage: FC<UserExecutorSecretsListPageProps> = props => {
     const connectionLoader = useCallback(
         (scope: ExecutorSecretScope) => userExecutorSecretsConnectionFactory(props.userID, scope),
         [props.userID]
@@ -75,9 +78,7 @@ export interface OrgExecutorSecretsListPageProps extends GlobalExecutorSecretsLi
     orgID: Scalars['ID']
 }
 
-export const OrgExecutorSecretsListPage: React.FunctionComponent<
-    React.PropsWithChildren<OrgExecutorSecretsListPageProps>
-> = props => {
+export const OrgExecutorSecretsListPage: FC<OrgExecutorSecretsListPageProps> = props => {
     const connectionLoader = useCallback(
         (scope: ExecutorSecretScope) => orgExecutorSecretsConnectionFactory(props.orgID, scope),
         [props.orgID]
@@ -100,17 +101,18 @@ export const OrgExecutorSecretsListPage: React.FunctionComponent<
     )
 }
 
-interface ExecutorSecretsListPageProps extends GlobalExecutorSecretsListPageProps {
+export interface ExecutorSecretsListPageProps extends GlobalExecutorSecretsListPageProps {
     namespaceID: Scalars['ID'] | null
     headerLine: JSX.Element
-    connectionLoader: (scope: ExecutorSecretScope) => UseShowMorePaginationResult<ExecutorSecretFields>
+    connectionLoader: (
+        scope: ExecutorSecretScope
+    ) => UseShowMorePaginationResult<
+        OrgExecutorSecretsResult | UserExecutorSecretsResult | GlobalExecutorSecretsResult,
+        ExecutorSecretFields
+    >
 }
 
-const ExecutorSecretsListPage: React.FunctionComponent<React.PropsWithChildren<ExecutorSecretsListPageProps>> = ({
-    namespaceID,
-    headerLine,
-    connectionLoader,
-}) => {
+const ExecutorSecretsListPage: FC<ExecutorSecretsListPageProps> = ({ namespaceID, headerLine, connectionLoader }) => {
     const [selectedScope, setSelectedScope] = useState<ExecutorSecretScope>(ExecutorSecretScope.BATCHES)
     const { loading, hasNextPage, fetchMore, connection, error, refetchAll } = connectionLoader(selectedScope)
 

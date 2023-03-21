@@ -17,7 +17,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
-
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -32,6 +31,51 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestGetIndexers(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+	ctx := context.Background()
+
+	insertUploads(t, db,
+		types.Upload{ID: 1, Indexer: "scip-typescript"},
+		types.Upload{ID: 2, Indexer: "scip-typescript"},
+		types.Upload{ID: 3, Indexer: "scip-typescript"},
+		types.Upload{ID: 4, Indexer: "scip-typescript"},
+		types.Upload{ID: 5, Indexer: "scip-typescript"},
+		types.Upload{ID: 6, Indexer: "lsif-ocaml", RepositoryID: 51},
+		types.Upload{ID: 7, Indexer: "lsif-ocaml", RepositoryID: 51},
+		types.Upload{ID: 8, Indexer: "third-party/scip-python@sha256:deadbeefdeadbeefdeadbeef", RepositoryID: 51},
+	)
+
+	// Global
+	indexers, err := store.GetIndexers(ctx, shared.GetIndexersOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error getting indexers: %s", err)
+	}
+	expectedIndexers := []string{
+		"lsif-ocaml",
+		"scip-typescript",
+		"third-party/scip-python@sha256:deadbeefdeadbeefdeadbeef",
+	}
+	if diff := cmp.Diff(expectedIndexers, indexers); diff != "" {
+		t.Errorf("unexpected indexers (-want +got):\n%s", diff)
+	}
+
+	// Repo-specific
+	indexers, err = store.GetIndexers(ctx, shared.GetIndexersOptions{RepositoryID: 51})
+	if err != nil {
+		t.Fatalf("unexpected error getting indexers: %s", err)
+	}
+	expectedIndexers = []string{
+		"lsif-ocaml",
+		"third-party/scip-python@sha256:deadbeefdeadbeefdeadbeef",
+	}
+	if diff := cmp.Diff(expectedIndexers, indexers); diff != "" {
+		t.Errorf("unexpected indexers (-want +got):\n%s", diff)
+	}
+}
 
 func TestGetUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
@@ -60,9 +104,9 @@ func TestGetUploads(t *testing.T) {
 		types.Upload{ID: 5, Commit: makeCommit(3333), UploadedAt: t5, Root: "sub1/", State: "processing", Indexer: "scip-typescript"},
 		types.Upload{ID: 6, UploadedAt: t6, Root: "sub2/", State: "processing", RepositoryID: 52, RepositoryName: "foo bar y"},
 		types.Upload{ID: 7, UploadedAt: t7, FinishedAt: &t4, Root: "sub1/", Indexer: "scip-typescript"},
-		types.Upload{ID: 8, UploadedAt: t8, FinishedAt: &t4, Indexer: "scip-typescript"},
+		types.Upload{ID: 8, UploadedAt: t8, FinishedAt: &t4, Indexer: "lsif-typescript"},
 		types.Upload{ID: 9, UploadedAt: t9, State: "queued"},
-		types.Upload{ID: 10, UploadedAt: t10, FinishedAt: &t6, Root: "sub1/", Indexer: "scip-typescript"},
+		types.Upload{ID: 10, UploadedAt: t10, FinishedAt: &t6, Root: "sub1/", Indexer: "lsif-ocaml"},
 		types.Upload{ID: 11, UploadedAt: t11, FinishedAt: &t6, Root: "sub1/", Indexer: "scip-typescript"},
 
 		// Deleted duplicates
@@ -116,6 +160,7 @@ func TestGetUploads(t *testing.T) {
 		visibleAtTip        bool
 		dependencyOf        int
 		dependentOf         int
+		indexerNames        []string
 		uploadedBefore      *time.Time
 		uploadedAfter       *time.Time
 		inCommitGraph       bool
@@ -129,13 +174,13 @@ func TestGetUploads(t *testing.T) {
 		{oldestFirst: true, expectedIDs: []int{11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1}},
 		{repositoryID: 50, expectedIDs: []int{1, 2, 3, 5, 7, 8, 9, 10, 11}},
 		{state: "completed", expectedIDs: []int{7, 8, 10, 11}},
-		{term: "sub", expectedIDs: []int{1, 3, 5, 6, 7, 10, 11}},     // searches root
-		{term: "003", expectedIDs: []int{1, 3, 5}},                   // searches commits
-		{term: "333", expectedIDs: []int{1, 2, 3, 5}},                // searches commits and failure message
-		{term: "typescript", expectedIDs: []int{2, 5, 7, 8, 10, 11}}, // searches indexer
-		{term: "QuEuEd", expectedIDs: []int{1, 3, 4, 9}},             // searches text status
-		{term: "bAr", expectedIDs: []int{4, 6}},                      // search repo names
-		{state: "failed", expectedIDs: []int{2}},                     // treats errored/failed states equivalently
+		{term: "sub", expectedIDs: []int{1, 3, 5, 6, 7, 10, 11}}, // searches root
+		{term: "003", expectedIDs: []int{1, 3, 5}},               // searches commits
+		{term: "333", expectedIDs: []int{1, 2, 3, 5}},            // searches commits and failure message
+		{term: "typescript", expectedIDs: []int{2, 5, 7, 8, 11}}, // searches indexer
+		{term: "QuEuEd", expectedIDs: []int{1, 3, 4, 9}},         // searches text status
+		{term: "bAr", expectedIDs: []int{4, 6}},                  // search repo names
+		{state: "failed", expectedIDs: []int{2}},                 // treats errored/failed states equivalently
 		{visibleAtTip: true, expectedIDs: []int{2, 5, 7, 8}},
 		{uploadedBefore: &t5, expectedIDs: []int{6, 7, 8, 9, 10, 11}},
 		{uploadedAfter: &t4, expectedIDs: []int{1, 2, 3}},
@@ -148,6 +193,7 @@ func TestGetUploads(t *testing.T) {
 		{dependentOf: 10, expectedIDs: []int{}},
 		{dependencyOf: 11, expectedIDs: []int{8}},
 		{dependentOf: 11, expectedIDs: []int{}},
+		{indexerNames: []string{"typescript", "ocaml"}, expectedIDs: []int{2, 5, 7, 8, 10, 11}}, // search indexer names (only)
 		{allowDeletedRepo: true, state: "deleted", expectedIDs: []int{12, 13, 14, 15}},
 		{allowDeletedRepo: true, state: "deleted", alllowDeletedUpload: true, expectedIDs: []int{12, 13, 14, 15, 16, 17}},
 		{states: []string{"completed", "failed"}, expectedIDs: []int{2, 7, 8, 10, 11}},
@@ -155,7 +201,7 @@ func TestGetUploads(t *testing.T) {
 
 	runTest := func(testCase testCase, lo, hi int) (errors int) {
 		name := fmt.Sprintf(
-			"repositoryID=%d|state='%s'|states='%s',term='%s'|visibleAtTip=%v|dependencyOf=%d|dependentOf=%d|offset=%d",
+			"repositoryID=%d|state='%s'|states='%s',term='%s'|visibleAtTip=%v|dependencyOf=%d|dependentOf=%d|indexersNames=%v|offset=%d",
 			testCase.repositoryID,
 			testCase.state,
 			strings.Join(testCase.states, ","),
@@ -163,6 +209,7 @@ func TestGetUploads(t *testing.T) {
 			testCase.visibleAtTip,
 			testCase.dependencyOf,
 			testCase.dependentOf,
+			testCase.indexerNames,
 			lo,
 		)
 
@@ -175,6 +222,7 @@ func TestGetUploads(t *testing.T) {
 				VisibleAtTip:       testCase.visibleAtTip,
 				DependencyOf:       testCase.dependencyOf,
 				DependentOf:        testCase.dependentOf,
+				IndexerNames:       testCase.indexerNames,
 				UploadedBefore:     testCase.uploadedBefore,
 				UploadedAfter:      testCase.uploadedAfter,
 				InCommitGraph:      testCase.inCommitGraph,
@@ -480,18 +528,12 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 		}
 	}
 
-	deletedCounts, err := store.DeleteUploadsWithoutRepository(context.Background(), t1)
+	_, count, err := store.DeleteUploadsWithoutRepository(context.Background(), t1)
 	if err != nil {
 		t.Fatalf("unexpected error deleting uploads: %s", err)
 	}
-
-	expected := map[int]int{
-		61: 21,
-		63: 23,
-		65: 25,
-	}
-	if diff := cmp.Diff(expected, deletedCounts); diff != "" {
-		t.Errorf("unexpected deletedCounts (-want +got):\n%s", diff)
+	if expected := 21 + 23 + 25; count != expected {
+		t.Fatalf("unexpected count. want=%d have=%d", expected, count)
 	}
 
 	var uploadIDs []int
@@ -510,13 +552,8 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 			}
 		}
 
-		expected := 0
-		for _, deletedCount := range deletedCounts {
-			expected += deletedCount
-		}
-
-		if deletedStates != expected {
-			t.Errorf("unexpected number of deleted records. want=%d have=%d", expected, deletedStates)
+		if deletedStates != count {
+			t.Errorf("unexpected number of deleted records. want=%d have=%d", count, deletedStates)
 		}
 	}
 }
@@ -599,7 +636,7 @@ func TestDeleteUploadsStuckUploading(t *testing.T) {
 		types.Upload{ID: 5, Commit: makeCommit(1115), UploadedAt: t5, State: "uploading"}, // old
 	)
 
-	count, err := store.DeleteUploadsStuckUploading(context.Background(), t1.Add(time.Minute*3))
+	_, count, err := store.DeleteUploadsStuckUploading(context.Background(), t1.Add(time.Minute*3))
 	if err != nil {
 		t.Fatalf("unexpected error deleting uploads stuck uploading: %s", err)
 	}
@@ -648,7 +685,7 @@ func TestDeleteUploads(t *testing.T) {
 	)
 
 	err := store.DeleteUploads(context.Background(), shared.DeleteUploadsOptions{
-		State:        "uploading",
+		States:       []string{"uploading"},
 		Term:         "",
 		VisibleAtTip: false,
 	})
@@ -668,6 +705,47 @@ func TestDeleteUploads(t *testing.T) {
 	sort.Ints(ids)
 
 	expectedIDs := []int{1, 4}
+
+	if totalCount != len(expectedIDs) {
+		t.Errorf("unexpected total count. want=%d have=%d", len(expectedIDs), totalCount)
+	}
+	if diff := cmp.Diff(expectedIDs, ids); diff != "" {
+		t.Errorf("unexpected upload ids (-want +got):\n%s", diff)
+	}
+}
+
+func TestDeleteUploadsWithIndexerKey(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	// note: queued so we delete, not go to deleting state first (makes assertion simpler)
+	insertUploads(t, db, types.Upload{ID: 1, State: "queued", Indexer: "sourcegraph/scip-go@sha256:123456"})
+	insertUploads(t, db, types.Upload{ID: 2, State: "queued", Indexer: "sourcegraph/scip-go"})
+	insertUploads(t, db, types.Upload{ID: 3, State: "queued", Indexer: "sourcegraph/scip-typescript"})
+	insertUploads(t, db, types.Upload{ID: 4, State: "queued", Indexer: "sourcegraph/scip-typescript"})
+
+	err := store.DeleteUploads(context.Background(), shared.DeleteUploadsOptions{
+		IndexerNames: []string{"scip-go"},
+		Term:         "",
+		VisibleAtTip: false,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error deleting uploads: %s", err)
+	}
+
+	uploads, totalCount, err := store.GetUploads(context.Background(), shared.GetUploadsOptions{Limit: 5})
+	if err != nil {
+		t.Fatalf("unexpected error getting uploads: %s", err)
+	}
+
+	var ids []int
+	for _, upload := range uploads {
+		ids = append(ids, upload.ID)
+	}
+	sort.Ints(ids)
+
+	expectedIDs := []int{3, 4}
 
 	if totalCount != len(expectedIDs) {
 		t.Errorf("unexpected total count. want=%d have=%d", len(expectedIDs), totalCount)
@@ -795,7 +873,7 @@ func TestSoftDeleteExpiredUploads(t *testing.T) {
 		t.Fatalf("unexpected error marking uploads as expired: %s", err)
 	}
 
-	if count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
+	if _, count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 2 {
 		t.Fatalf("unexpected number of uploads deleted: want=%d have=%d", 2, count)
@@ -818,14 +896,14 @@ func TestSoftDeleteExpiredUploads(t *testing.T) {
 	}
 
 	// Ensure repository was marked as dirty
-	repositoryIDs, err := store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
 	}
 
 	var keys []int
-	for repositoryID := range repositoryIDs {
-		keys = append(keys, repositoryID)
+	for _, dirtyRepository := range dirtyRepositories {
+		keys = append(keys, dirtyRepository.RepositoryID)
 	}
 	sort.Ints(keys)
 
@@ -906,20 +984,20 @@ func TestSoftDeleteExpiredUploadsViaTraversal(t *testing.T) {
 	if err := store.UpdateUploadRetention(context.Background(), []int{}, []int{100, 101, 102, 103, 104, 106, 107}); err != nil {
 		t.Fatalf("unexpected error marking uploads as expired: %s", err)
 	}
-	if count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
+	if _, count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 0 {
 		t.Fatalf("unexpected number of uploads deleted via refcount: want=%d have=%d", 0, count)
 	}
 	for i := 0; i < 9; i++ {
 		// Initially null last_traversal_scan_at values; run once for each upload (overkill)
-		if count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
+		if _, count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
 			t.Fatalf("unexpected error soft deleting uploads: %s", err)
 		} else if count != 0 {
 			t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 0, count)
 		}
 	}
-	if count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
+	if _, count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 0 {
 		t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 0, count)
@@ -933,19 +1011,19 @@ func TestSoftDeleteExpiredUploadsViaTraversal(t *testing.T) {
 	if _, err := db.ExecContext(context.Background(), "UPDATE lsif_uploads SET last_traversal_scan_at = NULL"); err != nil {
 		t.Fatalf("unexpected error clearing last_traversal_scan_at: %s", err)
 	}
-	if count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
+	if _, count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 0 {
 		t.Fatalf("unexpected number of uploads deleted via refcount: want=%d have=%d", 0, count)
 	}
 	// First connected component (rooted with upload 100)
-	if count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
+	if _, count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 7 {
 		t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 7, count)
 	}
 	// Second connected component (rooted with upload 107)
-	if count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
+	if _, count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 0 {
 		t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 0, count)
@@ -970,14 +1048,14 @@ func TestSoftDeleteExpiredUploadsViaTraversal(t *testing.T) {
 	}
 
 	// Ensure repository was marked as dirty
-	repositoryIDs, err := store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
 	}
 
 	var keys []int
-	for repositoryID := range repositoryIDs {
-		keys = append(keys, repositoryID)
+	for _, dirtyRepository := range dirtyRepositories {
+		keys = append(keys, dirtyRepository.RepositoryID)
 	}
 	sort.Ints(keys)
 
@@ -990,12 +1068,12 @@ func TestSoftDeleteExpiredUploadsViaTraversal(t *testing.T) {
 	if err := store.UpdateUploadRetention(context.Background(), []int{}, []int{107, 108}); err != nil {
 		t.Fatalf("unexpected error marking uploads as expired: %s", err)
 	}
-	if count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
+	if _, count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 0 {
 		t.Fatalf("unexpected number of uploads deleted via refcount: want=%d have=%d", 0, count)
 	}
-	if count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
+	if _, count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 2 {
 		t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 2, count)
@@ -1035,14 +1113,14 @@ func TestDeleteUploadByID(t *testing.T) {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
 
-	repositoryIDs, err := store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
 	}
 
 	var keys []int
-	for repositoryID := range repositoryIDs {
-		keys = append(keys, repositoryID)
+	for _, dirtyRepository := range dirtyRepositories {
+		keys = append(keys, dirtyRepository.RepositoryID)
 	}
 	sort.Ints(keys)
 
@@ -1073,14 +1151,14 @@ func TestDeleteUploadByIDNotCompleted(t *testing.T) {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
 
-	repositoryIDs, err := store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
 	}
 
 	var keys []int
-	for repositoryID := range repositoryIDs {
-		keys = append(keys, repositoryID)
+	for _, dirtyRepository := range dirtyRepositories {
+		keys = append(keys, dirtyRepository.RepositoryID)
 	}
 	sort.Ints(keys)
 
@@ -1422,11 +1500,11 @@ func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 2, now); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
-	repositoryIDs, err := store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
 	}
-	if len(repositoryIDs) == 0 {
+	if len(dirtyRepositories) == 0 {
 		t.Errorf("did not expect repository to be unmarked")
 	}
 
@@ -1434,11 +1512,11 @@ func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 3, now); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
-	repositoryIDs, err = store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err = store.GetDirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
 	}
-	if len(repositoryIDs) != 0 {
+	if len(dirtyRepositories) != 0 {
 		t.Errorf("expected repository to be unmarked")
 	}
 

@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/trie"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -159,8 +160,10 @@ type bufferedDocument struct {
 	payloadHash  []byte
 }
 
-const DocumentsBatchSize = 256
-const MaxBatchPayloadSum = 1024 * 1024 * 32
+const (
+	DocumentsBatchSize = 256
+	MaxBatchPayloadSum = 1024 * 1024 * 32
+)
 
 func (s *scipWriter) InsertDocument(ctx context.Context, path string, scipDocument *scip.Document) error {
 	if s.batchPayloadSum >= MaxBatchPayloadSum {
@@ -174,7 +177,7 @@ func (s *scipWriter) InsertDocument(ctx context.Context, path string, scipDocume
 		return err
 	}
 
-	compressedPayload, err := compressor.compress(bytes.NewReader(payload))
+	compressedPayload, err := shared.Compressor.Compress(bytes.NewReader(payload))
 	if err != nil {
 		return err
 	}

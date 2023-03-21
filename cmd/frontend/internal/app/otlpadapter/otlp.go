@@ -4,11 +4,12 @@ import (
 	"net/url"
 
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/config"
 	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/config/configtls"
+	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/exporter/otlpexporter"
 	"go.opentelemetry.io/collector/exporter/otlphttpexporter"
+	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
 
 	"github.com/sourcegraph/sourcegraph/internal/otlpenv"
@@ -19,8 +20,8 @@ func newExporter(
 	protocol otlpenv.Protocol,
 	endpoint string,
 ) (
-	exporterFactory component.ExporterFactory,
-	signalExporterConfig config.Exporter,
+	exporterFactory exporter.Factory,
+	signalExporterConfig component.Config,
 	err error,
 ) {
 	switch protocol {
@@ -46,7 +47,7 @@ func newExporter(
 	return
 }
 
-func newReceiver(receiverURL *url.URL) (component.ReceiverFactory, config.Receiver) {
+func newReceiver(receiverURL *url.URL) (receiver.Factory, component.Config) {
 	receiverFactory := otlpreceiver.NewFactory()
 	signalReceiverConfig := receiverFactory.CreateDefaultConfig().(*otlpreceiver.Config)
 	signalReceiverConfig.GRPC = nil // disable gRPC receiver, we don't need it

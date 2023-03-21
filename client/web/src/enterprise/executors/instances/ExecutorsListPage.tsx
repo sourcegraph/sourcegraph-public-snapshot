@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import { mdiMapSearch } from '@mdi/js'
@@ -43,9 +43,7 @@ export interface ExecutorsListPageProps {
     queryExecutors?: typeof defaultQueryExecutors
 }
 
-export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<ExecutorsListPageProps>> = ({
-    queryExecutors = defaultQueryExecutors,
-}) => {
+export const ExecutorsListPage: React.FC<ExecutorsListPageProps> = ({ queryExecutors = defaultQueryExecutors }) => {
     useEffect(() => eventLogger.logViewEvent('ExecutorsList'))
 
     const apolloClient = useApolloClient()
@@ -80,7 +78,7 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
                         running batch changes server-side
                     </Link>
                     . In order to use those features,{' '}
-                    <Link to="/help/admin/deploy_executors" rel="noopener">
+                    <Link to="/help/admin/executors/deploy_executors" rel="noopener">
                         set them up
                     </Link>
                     .

@@ -193,7 +193,16 @@ function getDiffResolvedRevisionFromPageSource(
 /**
  * Returns the file path for the current page. Must be on a blob or tree page.
  *
+ * Note: works only with 'old' GitHub UI blob page. When used with the new new UI this function will throw because
+ * there is no element with a permalink on the page. Use {@link getFilePathFromURL} instead.
+ *
  * Implementation details:
+ *
+ * This scrapes the file path from the permalink on GitHub blob pages:
+ * ```html
+ * <a class="d-none js-permalink-shortcut" data-hotkey="y" href="/gorilla/mux/blob/ed099d42384823742bba0bf9a72b53b55c9e2e38/mux.go">Permalink</a>
+ * ```
+ *
  * This scrapes the file path from the permalink on GitHub blob pages.
  * We can't get the file path from the URL because the branch name can contain
  * slashes which make the boundary between the branch name and file path
@@ -202,9 +211,9 @@ function getDiffResolvedRevisionFromPageSource(
  * TODO ideally, this should only scrape the code view itself.
  */
 export function getFilePath(): string {
-    const permalink = document.querySelector<HTMLAnchorElement>(getSelectorFor('permalink'))
+    const permalink = document.querySelector<HTMLAnchorElement>('a.js-permalink-shortcut')
     if (!permalink) {
-        throw new Error('Unable to determine the file path because no element containing file link was found.')
+        throw new Error('Unable to determine the file path because no a.js-permalink-shortcut element was found.')
     }
     const url = new URL(permalink.href)
     // <empty>/<user>/<repo>/(blob|tree)/<commitID|rev>/<path/to/file>
@@ -213,10 +222,31 @@ export function getFilePath(): string {
     // Check for page type because a tree page can be the repo root, so it shouldn't throw an error despite an empty path
     if (pageType !== 'tree' && path.length === 0) {
         throw new Error(
-            `Unable to determine the file path because the link href attribute was ${url.pathname} (it is expected to be of the form /<user>/<repo>/blob/<commitID|rev>/<path/to/file>).`
+            `Unable to determine the file path because the a.js-permalink-shortcut element's href's path was ${url.pathname} (it is expected to be of the form /<user>/<repo>/blob/<commitID|rev>/<path/to/file>).`
         )
     }
     return decodeURIComponent(path.join('/'))
+}
+
+/**
+ * Returns the file path for the current page. Must be on a blob or tree page.
+ *
+ * Implementation details:
+ * This scrapes the file path from the URL.
+ * We need the revision name as a parameter because the branch name in the URL can contain slashes
+ * making the boundary between the branch name and file path ambiguous.
+ * E.g., in URL "https://github.com/sourcegraph/sourcegraph/blob/bext/release/package.json" branch name is "bext/release".
+ */
+export function getFilePathFromURL(rev: string): string {
+    // <empty>/<user>/<repo>/(blob|tree)/<commitID|rev>/<path/to/file>
+    // eslint-disable-next-line unicorn/no-unreadable-array-destructuring
+    const [, , , pageType, ...revAndPathParts] = window.location.pathname.split('/')
+    const revAndPath = revAndPathParts.join('/')
+    if (!revAndPath.startsWith(rev) || (pageType !== 'tree' && revAndPath.length === rev.length)) {
+        throw new Error('Failed to extract the file path from the URL.')
+    }
+
+    return revAndPathParts.slice(rev.split('/').length).join('/')
 }
 
 type GitHubURL = RawRepoSpec &
@@ -270,24 +300,47 @@ export function parseURL(location: Pick<Location, 'host' | 'pathname' | 'href'> 
 interface UISelectors {
     codeCell: string
     blobContainer: string
-    permalink: string
 }
 
 const oldUISelectors: UISelectors = {
     codeCell: 'td.blob-code',
     blobContainer: '.js-file-line-container',
-    permalink: 'a.js-permalink-shortcut',
 }
 
 const newUISelectors: UISelectors = {
-    codeCell: 'td.react-code-cell',
-    blobContainer: 'react-app table',
-
-    // the former selector is for the tree view and the latter is for the blob view
-    permalink: 'a.ActionList-item--navActive, .ActionList-item--navActive a',
+    codeCell: '.react-code-line-contents',
+    blobContainer: '.react-code-lines',
 }
 
 /**
  * Returns the common selector for old and new GitHub UIs.
  */
 export const getSelectorFor = (key: keyof UISelectors): string => `${oldUISelectors[key]}, ${newUISelectors[key]}`
+
+interface GitHubEmbeddedData {
+    refInfo: {
+        name: string
+        currentOid: string
+    }
+}
+
+const NEW_GITHUB_UI_EMBEDDED_DATA_SELECTOR = 'script[data-target="react-app.embeddedData"]'
+function getEmbeddedDataContainer(): HTMLScriptElement | null {
+    return document.querySelector<HTMLScriptElement>(NEW_GITHUB_UI_EMBEDDED_DATA_SELECTOR)
+}
+
+export function isNewGitHubUI(): boolean {
+    return !!getEmbeddedDataContainer()
+}
+
+export function getEmbeddedData(): GitHubEmbeddedData {
+    const script = getEmbeddedDataContainer()
+    if (!script) {
+        throw new Error('Unable to find script with embedded data.')
+    }
+    try {
+        return JSON.parse(script.textContent || '').payload
+    } catch {
+        throw new Error('Failed to parse embedded data.')
+    }
+}

@@ -1,4 +1,4 @@
-import { FC, MouseEvent, useState } from 'react'
+import { forwardRef, MouseEvent, useState } from 'react'
 
 import { ButtonProps } from '@sourcegraph/wildcard'
 
@@ -10,7 +10,7 @@ interface DownloadFileButtonProps extends ButtonProps {
     children?: string
 }
 
-export const DownloadFileButton: FC<DownloadFileButtonProps> = props => {
+export const DownloadFileButton = forwardRef<HTMLButtonElement, DownloadFileButtonProps>((props, ref) => {
     const { fileUrl, fileName, children, onClick, ...attributes } = props
 
     const [isLoading, setLoading] = useState(false)
@@ -35,6 +35,7 @@ export const DownloadFileButton: FC<DownloadFileButtonProps> = props => {
 
     return (
         <LoaderButton
+            ref={ref}
             {...attributes}
             label={children}
             loading={isLoading}
@@ -42,7 +43,7 @@ export const DownloadFileButton: FC<DownloadFileButtonProps> = props => {
             onClick={handleClick}
         />
     )
-}
+})
 
 function syntheticDownload(url: string, name: string): void {
     const element = document.createElement('a')

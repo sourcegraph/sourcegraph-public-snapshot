@@ -97,6 +97,7 @@
 
     &-content {
         grid-area: content;
+        min-width: 0;
 
         &--non-active {
             opacity: 0.5;

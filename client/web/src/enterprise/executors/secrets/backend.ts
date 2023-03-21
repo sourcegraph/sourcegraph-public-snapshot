@@ -119,7 +119,7 @@ export const USER_EXECUTOR_SECRETS = gql`
 export const userExecutorSecretsConnectionFactory = (
     user: Scalars['ID'],
     scope: ExecutorSecretScope
-): UseShowMorePaginationResult<ExecutorSecretFields> =>
+): UseShowMorePaginationResult<UserExecutorSecretsResult, ExecutorSecretFields> =>
     // Scope has to be injected dynamically.
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useShowMorePagination<UserExecutorSecretsResult, UserExecutorSecretsVariables, ExecutorSecretFields>({
@@ -165,7 +165,7 @@ export const ORG_EXECUTOR_SECRETS = gql`
 export const orgExecutorSecretsConnectionFactory = (
     org: Scalars['ID'],
     scope: ExecutorSecretScope
-): UseShowMorePaginationResult<ExecutorSecretFields> =>
+): UseShowMorePaginationResult<OrgExecutorSecretsResult, ExecutorSecretFields> =>
     // Scope has to be injected dynamically.
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useShowMorePagination<OrgExecutorSecretsResult, OrgExecutorSecretsVariables, ExecutorSecretFields>({
@@ -205,7 +205,7 @@ export const GLOBAL_EXECUTOR_SECRETS = gql`
 
 export const globalExecutorSecretsConnectionFactory = (
     scope: ExecutorSecretScope
-): UseShowMorePaginationResult<ExecutorSecretFields> =>
+): UseShowMorePaginationResult<GlobalExecutorSecretsResult, ExecutorSecretFields> =>
     // Scope has to be injected dynamically.
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useShowMorePagination<GlobalExecutorSecretsResult, GlobalExecutorSecretsVariables, ExecutorSecretFields>({
@@ -264,7 +264,7 @@ export const EXECUTOR_SECRET_ACCESS_LOGS = gql`
 
 export const useExecutorSecretAccessLogsConnection = (
     secret: Scalars['ID']
-): UseShowMorePaginationResult<ExecutorSecretAccessLogFields> =>
+): UseShowMorePaginationResult<ExecutorSecretAccessLogsResult, ExecutorSecretAccessLogFields> =>
     useShowMorePagination<
         ExecutorSecretAccessLogsResult,
         ExecutorSecretAccessLogsVariables,

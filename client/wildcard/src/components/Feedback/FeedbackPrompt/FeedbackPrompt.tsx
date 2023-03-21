@@ -87,7 +87,7 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
                     <Icon inline={false} svgPath={mdiCheck} className={styles.successTick} aria-label="Success" />
                     <H3>We‘ve received your feedback!</H3>
                     <Text className="d-inline">
-                        Thank you for your help.
+                        Thank you.
                         {productResearchEnabled && authenticatedUser && (
                             <>
                                 {' '}

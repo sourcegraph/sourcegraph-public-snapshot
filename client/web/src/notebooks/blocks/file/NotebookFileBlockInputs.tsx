@@ -8,19 +8,18 @@ import { createDefaultSuggestions } from '@sourcegraph/branded'
 import { isMacPlatform as isMacPlatformFunc } from '@sourcegraph/common'
 import { PathMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { Icon, Button, Input, InputStatus } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlockInput } from '../..'
 import { HighlightLineRange } from '../../../graphql-operations'
-import { useExperimentalFeatures } from '../../../stores'
 import { parseLineRange, serializeLineRange } from '../../serialize'
 import { SearchTypeSuggestionsInput } from '../suggestions/SearchTypeSuggestionsInput'
 import { fetchSuggestions } from '../suggestions/suggestions'
 
 import styles from './NotebookFileBlockInputs.module.scss'
 
-interface NotebookFileBlockInputsProps extends Pick<BlockProps, 'onRunBlock'>, ThemeProps {
+interface NotebookFileBlockInputsProps extends Pick<BlockProps, 'onRunBlock'> {
     id: string
     queryInput: string
     lineRange: HighlightLineRange | null
@@ -29,7 +28,6 @@ interface NotebookFileBlockInputsProps extends Pick<BlockProps, 'onRunBlock'>, T
     onLineRangeChange: (lineRange: HighlightLineRange | null) => void
     onFileSelected: (file: FileBlockInput) => void
     isSourcegraphDotCom: boolean
-    globbing: boolean
 }
 
 function getFileSuggestionsQuery(queryInput: string): string {
@@ -47,7 +45,7 @@ const editorAttributes = [
 
 export const NotebookFileBlockInputs: React.FunctionComponent<
     React.PropsWithChildren<NotebookFileBlockInputsProps>
-> = ({ id, lineRange, onFileSelected, onLineRangeChange, globbing, isSourcegraphDotCom, ...inputProps }) => {
+> = ({ id, lineRange, onFileSelected, onLineRangeChange, isSourcegraphDotCom, ...inputProps }) => {
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
@@ -100,11 +98,10 @@ export const NotebookFileBlockInputs: React.FunctionComponent<
         () =>
             createDefaultSuggestions({
                 isSourcegraphDotCom,
-                globbing,
                 fetchSuggestions: fetchStreamSuggestions,
                 applyOnEnter: applySuggestionsOnEnter,
             }),
-        [isSourcegraphDotCom, globbing, applySuggestionsOnEnter]
+        [isSourcegraphDotCom, applySuggestionsOnEnter]
     )
 
     return (

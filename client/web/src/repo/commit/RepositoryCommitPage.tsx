@@ -1,7 +1,7 @@
 import React, { useMemo, useCallback, useEffect } from 'react'
 
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router'
+import { useParams } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
@@ -9,7 +9,6 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { FileDiffNode, FileDiffNodeProps } from '../../components/diff/FileDiffNode'
@@ -44,12 +43,7 @@ const COMMIT_QUERY = gql`
     ${gitCommitFragment}
 `
 
-interface RepositoryCommitPageProps
-    extends RouteComponentProps<{ revspec: string }>,
-        TelemetryProps,
-        PlatformContextProps,
-        ThemeProps,
-        SettingsCascadeProps {
+interface RepositoryCommitPageProps extends TelemetryProps, PlatformContextProps, SettingsCascadeProps {
     repo: RepositoryFields
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 }
@@ -58,10 +52,16 @@ export type { DiffMode } from '@sourcegraph/shared/src/settings/temporary/diffMo
 
 /** Displays a commit. */
 export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageProps> = props => {
+    const params = useParams<{ revspec: string }>()
+
+    if (!params.revspec) {
+        throw new Error('Missing `revspec` param!')
+    }
+
     const { data, error, loading } = useQuery<RepositoryCommitResult, RepositoryCommitVariables>(COMMIT_QUERY, {
         variables: {
             repo: props.repo.id,
-            revspec: props.match.params.revspec,
+            revspec: params.revspec,
         },
     })
 
@@ -102,7 +102,7 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
 
     return (
         <div data-testid="repository-commit-page" className={classNames('p-3', styles.repositoryCommitPage)}>
-            <PageTitle title={commit ? commit.subject : `Commit ${props.match.params.revspec}`} />
+            <PageTitle title={commit ? commit.subject : `Commit ${params.revspec}`} />
             {loading ? (
                 <LoadingSpinner className="mt-2" />
             ) : error || !commit ? (

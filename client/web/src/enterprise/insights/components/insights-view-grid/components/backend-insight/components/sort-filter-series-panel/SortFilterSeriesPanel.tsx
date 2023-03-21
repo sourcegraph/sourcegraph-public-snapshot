@@ -31,6 +31,8 @@ export const SortFilterSeriesPanel: FC<SortFilterSeriesPanelProps> = props => {
         if (inputValue.length > 0) {
             const limit = Math.max(Math.min(parseInt(inputValue, 10), MAX_NUMBER_OF_SERIES), 1)
             onChange({ ...value, limit })
+        } else {
+            onChange({ ...value, limit: null })
         }
     }
 
@@ -50,7 +52,7 @@ export const SortFilterSeriesPanel: FC<SortFilterSeriesPanelProps> = props => {
         const limit = event.target.value
 
         if (limit === '') {
-            onChange({ ...value, limit: MAX_NUMBER_OF_SERIES })
+            onChange({ ...value, limit: null })
         }
     }
 
@@ -139,7 +141,8 @@ export const SortFilterSeriesPanel: FC<SortFilterSeriesPanelProps> = props => {
                     step="1"
                     min={1}
                     max={MAX_NUMBER_OF_SERIES}
-                    value={value.limit}
+                    placeholder={`${MAX_NUMBER_OF_SERIES}`}
+                    value={value.limit ?? undefined}
                     onChange={handleSeriesCountChange}
                     onBlur={handleSeriesCountBlur}
                     variant="small"

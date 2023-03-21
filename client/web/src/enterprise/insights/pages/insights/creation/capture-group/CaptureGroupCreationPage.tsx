@@ -1,18 +1,11 @@
 import { FC, useEffect, useMemo } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, PageHeader, useObservable } from '@sourcegraph/wildcard'
+import { Link, PageHeader, useObservable, FORM_ERROR, FormChangeEvent, SubmissionErrors } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
-import {
-    CodeInsightCreationMode,
-    CodeInsightsCreationActions,
-    CodeInsightsPage,
-    FORM_ERROR,
-    FormChangeEvent,
-    SubmissionErrors,
-} from '../../../../components'
+import { CodeInsightCreationMode, CodeInsightsCreationActions, CodeInsightsPage } from '../../../../components'
 import { MinimalCaptureGroupInsightData } from '../../../../core'
 import { useUiFeatures } from '../../../../hooks'
 import { CodeInsightTrackType } from '../../../../pings'
@@ -27,6 +20,7 @@ interface CaptureGroupCreationPageProps extends TelemetryProps {
     onInsightCreateRequest: (event: { insight: MinimalCaptureGroupInsightData }) => Promise<unknown>
     onSuccessfulCreation: () => void
     onCancel: () => void
+    isSourcegraphApp: boolean
 }
 
 export const CaptureGroupCreationPage: FC<CaptureGroupCreationPageProps> = props => {
@@ -70,7 +64,7 @@ export const CaptureGroupCreationPage: FC<CaptureGroupCreationPageProps> = props
     }
 
     return (
-        <CodeInsightsPage>
+        <CodeInsightsPage isSourcegraphApp={props.isSourcegraphApp}>
             <PageTitle title="Create detect and track patterns insight - Code Insights" />
 
             <PageHeader

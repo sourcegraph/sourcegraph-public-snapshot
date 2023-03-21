@@ -9,6 +9,7 @@ type GetIndexesOptions struct {
 	State         string
 	States        []string
 	Term          string
+	IndexerNames  []string
 	WithoutUpload bool
 	Limit         int
 	Offset        int
@@ -34,13 +35,27 @@ type IndexesWithRepositoryNamespace struct {
 }
 
 type DeleteIndexesOptions struct {
-	State        string
-	Term         string
-	RepositoryID int
+	States        []string
+	IndexerNames  []string
+	Term          string
+	RepositoryID  int
+	WithoutUpload bool
 }
 
 type ReindexIndexesOptions struct {
-	State        string
-	Term         string
+	States        []string
+	IndexerNames  []string
+	Term          string
+	RepositoryID  int
+	WithoutUpload bool
+}
+
+type RepositoryWithCount struct {
 	RepositoryID int
+	Count        int
+}
+
+type RepositoryWithAvailableIndexers struct {
+	RepositoryID      int
+	AvailableIndexers map[string]AvailableIndexer
 }

@@ -1,9 +1,9 @@
 import compression from 'compression'
-import { createProxyMiddleware, Options as HTTPProxyMiddlewareOptions } from 'http-proxy-middleware'
+import { createProxyMiddleware } from 'http-proxy-middleware'
 import { once } from 'lodash'
 import signale from 'signale'
 import createWebpackCompiler, { Configuration } from 'webpack'
-import WebpackDevServer, { ProxyConfigArrayItem } from 'webpack-dev-server'
+import WebpackDevServer from 'webpack-dev-server'
 
 import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 
@@ -12,14 +12,14 @@ import { esbuildDevelopmentServer } from '../esbuild/server'
 import {
     ENVIRONMENT_CONFIG,
     getAPIProxySettings,
+    getIndexHTML,
+    getWebpackManifest,
+    HTTP_WEB_SERVER_URL,
+    HTTPS_WEB_SERVER_URL,
+    printSuccessBanner,
     shouldCompressResponse,
     STATIC_ASSETS_URL,
-    HTTPS_WEB_SERVER_URL,
-    HTTP_WEB_SERVER_URL,
-    PROXY_ROUTES,
-    printSuccessBanner,
 } from '../utils'
-import { getHTMLPage } from '../webpack/get-html-webpack-plugins'
 
 // TODO: migrate webpack.config.js to TS to use `import` in this file.
 // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
@@ -28,8 +28,7 @@ const webpackConfig = require('../../webpack.config') as Configuration
 const { SOURCEGRAPH_API_URL, SOURCEGRAPH_HTTPS_PORT, SOURCEGRAPH_HTTP_PORT } = ENVIRONMENT_CONFIG
 
 interface DevelopmentServerInit {
-    proxyRoutes: string[]
-    proxyMiddlewareOptions: HTTPProxyMiddlewareOptions
+    apiURL: string
 }
 
 async function startDevelopmentServer(): Promise<void> {
@@ -40,10 +39,7 @@ async function startDevelopmentServer(): Promise<void> {
     }
 
     const init: DevelopmentServerInit = {
-        proxyRoutes: PROXY_ROUTES,
-        proxyMiddlewareOptions: getAPIProxySettings({
-            apiURL: SOURCEGRAPH_API_URL,
-        }),
+        apiURL: SOURCEGRAPH_API_URL,
     }
 
     switch (ENVIRONMENT_CONFIG.DEV_WEB_BUILDER) {
@@ -57,14 +53,16 @@ async function startDevelopmentServer(): Promise<void> {
     }
 }
 
-async function startWebpackDevelopmentServer({
-    proxyRoutes,
-    proxyMiddlewareOptions,
-}: DevelopmentServerInit): Promise<void> {
-    const proxyConfig: ProxyConfigArrayItem = {
-        context: proxyRoutes,
-        ...proxyMiddlewareOptions,
-    }
+async function startWebpackDevelopmentServer({ apiURL }: DevelopmentServerInit): Promise<void> {
+    const compiler = createWebpackCompiler(webpackConfig)
+
+    const { proxyRoutes, ...proxyConfig } = getAPIProxySettings({
+        apiURL,
+        getLocalIndexHTML(jsContextScript) {
+            const manifestFile = getWebpackManifest()
+            return getIndexHTML({ manifestFile, jsContextScript })
+        },
+    })
 
     const developmentServerConfig: WebpackDevServer.Configuration = {
         // react-refresh plugin triggers page reload if needed.
@@ -88,7 +86,12 @@ async function startWebpackDevelopmentServer({
             directory: STATIC_ASSETS_PATH,
             publicPath: [STATIC_ASSETS_URL, '/'],
         },
-        proxy: [proxyConfig],
+        proxy: [
+            {
+                context: proxyRoutes,
+                ...proxyConfig,
+            },
+        ],
         // Disable default DevServer compression. We need more fine grained compression to support streaming search.
         compress: false,
         setupMiddlewares: (middlewares, developmentServer) => {
@@ -98,7 +101,6 @@ async function startWebpackDevelopmentServer({
         },
     }
 
-    const compiler = createWebpackCompiler(webpackConfig)
     const server = new WebpackDevServer(developmentServerConfig, compiler)
 
     compiler.hooks.done.tap(
@@ -118,12 +120,16 @@ async function startWebpackDevelopmentServer({
     await server.start()
 }
 
-async function startEsbuildDevelopmentServer({
-    proxyRoutes,
-    proxyMiddlewareOptions,
-}: DevelopmentServerInit): Promise<void> {
-    const manifest = getManifest()
-    const htmlPage = getHTMLPage(manifest)
+async function startEsbuildDevelopmentServer({ apiURL }: DevelopmentServerInit): Promise<void> {
+    const manifestFile = getManifest()
+    const htmlPage = getIndexHTML({ manifestFile })
+
+    const { proxyRoutes, ...proxyMiddlewareOptions } = getAPIProxySettings({
+        apiURL,
+        getLocalIndexHTML(jsContextScript) {
+            return getIndexHTML({ manifestFile, jsContextScript })
+        },
+    })
 
     await esbuildDevelopmentServer({ host: '0.0.0.0', port: SOURCEGRAPH_HTTP_PORT }, app => {
         app.use(createProxyMiddleware(proxyRoutes, proxyMiddlewareOptions))

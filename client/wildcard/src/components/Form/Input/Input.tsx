@@ -114,6 +114,7 @@ export const InputElement = forwardRef(function InputElement(props, ref) {
         as: Component = 'input',
         autoFocus,
         className,
+        'aria-invalid': ariaInvalid,
         ...attributes
     } = props
 
@@ -125,7 +126,7 @@ export const InputElement = forwardRef(function InputElement(props, ref) {
         <Component
             {...attributes}
             ref={mergedReference}
-            aria-invalid={status === InputStatus.error ? true : undefined}
+            aria-invalid={ariaInvalid ?? status === InputStatus.error ? true : undefined}
             className={classNames(
                 className,
                 status === InputStatus.loading && styles.inputLoading,

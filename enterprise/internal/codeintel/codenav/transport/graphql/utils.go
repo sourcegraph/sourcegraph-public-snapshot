@@ -2,7 +2,6 @@ package graphql
 
 import (
 	"context"
-	"encoding/base64"
 
 	"github.com/sourcegraph/go-lsp"
 
@@ -17,104 +16,12 @@ func convertRange(r types.Range) lsp.Range {
 	return lsp.Range{Start: convertPosition(r.Start.Line, r.Start.Character), End: convertPosition(r.End.Line, r.End.Character)}
 }
 
-func convertPosition(line, character int) lsp.Position {
-	return lsp.Position{Line: line, Character: character}
-}
-
 func sharedRangeTolspRange(r types.Range) lsp.Range {
 	return lsp.Range{Start: convertPosition(r.Start.Line, r.Start.Character), End: convertPosition(r.End.Line, r.End.Character)}
 }
 
-// strPtr creates a pointer to the given value. If the value is an
-// empty string, a nil pointer is returned.
-func strPtr(val string) *string {
-	if val == "" {
-		return nil
-	}
-
-	return &val
-}
-
-// DecodeCursor decodes the given cursor value. It is assumed to be a value previously
-// returned from the function encodeCursor. An empty string is returned if no cursor is
-// supplied. Invalid cursors return errors.
-func DecodeCursor(val *string) (string, error) {
-	if val == nil {
-		return "", nil
-	}
-
-	decoded, err := base64.StdEncoding.DecodeString(*val)
-	if err != nil {
-		return "", err
-	}
-
-	return string(decoded), nil
-}
-
-// derefInt32 returns the underlying value in the given pointer.
-// If the pointer is nil, the default value is returned.
-func derefInt32(val *int32, defaultValue int) int {
-	if val != nil {
-		return int(*val)
-	}
-	return defaultValue
-}
-
-// EncodeCursor creates a PageInfo object from the given cursor. If the cursor is not
-// defined, then an object indicating the end of the result set is returned. The cursor
-// is base64 encoded for transfer, and should be decoded using the function decodeCursor.
-func EncodeCursor(val *string) *PageInfo {
-	if val != nil {
-		return NextPageCursor(base64.StdEncoding.EncodeToString([]byte(*val)))
-	}
-
-	return HasNextPage(false)
-}
-
-// PageInfo implements the GraphQL type PageInfo.
-type PageInfo struct {
-	endCursor   *string
-	hasNextPage bool
-}
-
-// HasNextPage returns a new PageInfo with the given hasNextPage value.
-func HasNextPage(hasNextPage bool) *PageInfo {
-	return &PageInfo{hasNextPage: hasNextPage}
-}
-
-// NextPageCursor returns a new PageInfo indicating there is a next page with
-// the given end cursor.
-func NextPageCursor(endCursor string) *PageInfo {
-	return &PageInfo{endCursor: &endCursor, hasNextPage: true}
-}
-
-func (r *PageInfo) EndCursor() *string { return r.endCursor }
-func (r *PageInfo) HasNextPage() bool  { return r.hasNextPage }
-
-func sharedDumpToDbstoreUpload(dump types.Dump) types.Upload {
-	return types.Upload{
-		ID:                dump.ID,
-		Commit:            dump.Commit,
-		Root:              dump.Root,
-		VisibleAtTip:      dump.VisibleAtTip,
-		UploadedAt:        dump.UploadedAt,
-		State:             dump.State,
-		FailureMessage:    dump.FailureMessage,
-		StartedAt:         dump.StartedAt,
-		FinishedAt:        dump.FinishedAt,
-		ProcessAfter:      dump.ProcessAfter,
-		NumResets:         dump.NumResets,
-		NumFailures:       dump.NumFailures,
-		RepositoryID:      dump.RepositoryID,
-		RepositoryName:    dump.RepositoryName,
-		Indexer:           dump.Indexer,
-		IndexerVersion:    dump.IndexerVersion,
-		NumParts:          0,
-		UploadedParts:     []int{},
-		UploadSize:        nil,
-		Rank:              nil,
-		AssociatedIndexID: dump.AssociatedIndexID,
-	}
+func convertPosition(line, character int) lsp.Position {
+	return lsp.Position{Line: line, Character: character}
 }
 
 // resolveLocations creates a slide of LocationResolvers for the given list of adjusted locations. The
@@ -140,7 +47,7 @@ func resolveLocations(ctx context.Context, locationResolver *sharedresolvers.Cac
 // resolveLocation creates a LocationResolver for the given adjusted location. This function may return a
 // nil resolver if the location's commit is not known by gitserver.
 func resolveLocation(ctx context.Context, locationResolver *sharedresolvers.CachedLocationResolver, location types.UploadLocation) (resolverstubs.LocationResolver, error) {
-	treeResolver, err := locationResolver.Path(ctx, api.RepoID(location.Dump.RepositoryID), location.TargetCommit, location.Path)
+	treeResolver, err := locationResolver.Path(ctx, api.RepoID(location.Dump.RepositoryID), location.TargetCommit, location.Path, false)
 	if err != nil || treeResolver == nil {
 		return nil, err
 	}

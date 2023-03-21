@@ -1,16 +1,15 @@
-import React, { useMemo } from 'react'
+import React, { FC, useMemo } from 'react'
 
 import { mdiProgressClock } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
+import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useQuery } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Badge, Icon, LoadingSpinner, ErrorMessage, LinkOrSpan } from '@sourcegraph/wildcard'
 
 import { withAuthenticatedUser } from '../../../../auth/withAuthenticatedUser'
@@ -23,8 +22,8 @@ import {
     BatchSpecSource,
     GetBatchChangeToEditResult,
     GetBatchChangeToEditVariables,
-    Scalars,
 } from '../../../../graphql-operations'
+import { NamespaceProps } from '../../../../namespaces'
 import { GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
 import { ConfigurationForm } from '../../create/ConfigurationForm'
 import { NewBatchChangePreviewPage } from '../../preview/BatchChangePreviewPage'
@@ -43,18 +42,21 @@ import { ExecutionWorkspaces } from './workspaces/ExecutionWorkspaces'
 import layoutStyles from '../Layout.module.scss'
 import styles from './ExecuteBatchSpecPage.module.scss'
 
-export interface AuthenticatedExecuteBatchSpecPageProps extends ThemeProps, TelemetryProps, RouteComponentProps<{}> {
-    batchChange: { name: string; namespace: Scalars['ID'] }
-    batchSpecID: Scalars['ID']
+export interface AuthenticatedExecuteBatchSpecPageProps extends TelemetryProps, NamespaceProps {
     authenticatedUser: AuthenticatedUser
     /** FOR TESTING ONLY */
     testContextState?: Partial<BatchSpecContextState<BatchSpecExecutionFields>>
     queryWorkspacesList?: typeof _queryWorkspacesList
 }
 
-export const AuthenticatedExecuteBatchSpecPage: React.FunctionComponent<
-    React.PropsWithChildren<AuthenticatedExecuteBatchSpecPageProps>
-> = ({ batchChange, batchSpecID, testContextState, ...props }) => {
+export const AuthenticatedExecuteBatchSpecPage: FC<AuthenticatedExecuteBatchSpecPageProps> = ({
+    testContextState,
+    ...props
+}) => {
+    const { batchChangeName, batchSpecID } = useParams()
+    const { id } = props.namespace
+
+    const batchChange = useMemo(() => ({ name: batchChangeName!, namespace: id }), [batchChangeName, id])
     const {
         data: batchChangeData,
         error: batchChangeError,
@@ -69,7 +71,7 @@ export const AuthenticatedExecuteBatchSpecPage: React.FunctionComponent<
     const { data, error, loading } = useQuery<BatchSpecExecutionByIDResult, BatchSpecExecutionByIDVariables>(
         FETCH_BATCH_SPEC_EXECUTION,
         {
-            variables: { id: batchSpecID },
+            variables: { id: batchSpecID! },
             fetchPolicy: 'cache-and-network',
             pollInterval: 2500,
         }
@@ -105,7 +107,7 @@ export const AuthenticatedExecuteBatchSpecPage: React.FunctionComponent<
     )
 }
 
-interface ExecuteBatchSpecPageContentProps extends ThemeProps, TelemetryProps, RouteComponentProps<{}> {
+interface ExecuteBatchSpecPageContentProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser
     queryWorkspacesList?: typeof _queryWorkspacesList
 }
@@ -123,168 +125,155 @@ const ExecuteBatchSpecPageContent: React.FunctionComponent<
 type MemoizedExecuteBatchSpecContentProps = ExecuteBatchSpecPageContentProps &
     Pick<BatchSpecContextState, 'batchChange' | 'batchSpec' | 'errors'>
 
-const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
-    React.PropsWithChildren<MemoizedExecuteBatchSpecContentProps>
-> = React.memo(function MemoizedExecuteBatchSpecContent({
-    isLightTheme,
-    match,
-    telemetryService,
-    authenticatedUser,
-    batchChange,
-    batchSpec,
-    errors,
-    queryWorkspacesList,
-}) {
-    const { executionURL, workspaceResolution, applyURL } = batchSpec
+const MemoizedExecuteBatchSpecContent: FC<MemoizedExecuteBatchSpecContentProps> = React.memo(
+    function MemoizedExecuteBatchSpecContent({
+        telemetryService,
+        authenticatedUser,
+        batchChange,
+        batchSpec,
+        errors,
+        queryWorkspacesList,
+    }) {
+        const { executionURL, workspaceResolution, applyURL } = batchSpec
 
-    const tabsConfig = useMemo<TabsConfig[]>(
-        () => [
-            { key: 'configuration', isEnabled: true, handler: { type: 'link' } },
-            { key: 'spec', isEnabled: true, handler: { type: 'link' } },
-            { key: 'execution', isEnabled: true, handler: { type: 'link' } },
-            { key: 'preview', isEnabled: applyURL !== null, handler: { type: 'link' } },
-        ],
-        [applyURL]
-    )
+        const tabsConfig = useMemo<TabsConfig[]>(
+            () => [
+                { key: 'configuration', isEnabled: true, handler: { type: 'link' } },
+                { key: 'spec', isEnabled: true, handler: { type: 'link' } },
+                { key: 'execution', isEnabled: true, handler: { type: 'link' } },
+                { key: 'preview', isEnabled: applyURL !== null, handler: { type: 'link' } },
+            ],
+            [applyURL]
+        )
 
-    return (
-        <div className={layoutStyles.pageContainer}>
-            <div className={layoutStyles.headerContainer}>
-                <BatchChangeHeader
-                    className={styles.header}
-                    namespace={{
-                        to: `${batchChange.namespace.url}/batch-changes`,
-                        text: batchChange.namespace.namespaceName,
-                    }}
-                    title={{ to: batchChange.url, text: batchChange.name }}
-                    description={
-                        <>
-                            Created <Timestamp date={batchSpec.createdAt} /> by{' '}
-                            <LinkOrSpan to={batchSpec.creator?.url}>
-                                {batchSpec.creator?.displayName || batchSpec.creator?.username || 'a deleted user'}
-                            </LinkOrSpan>
-                        </>
-                    }
-                />
-                <div className={styles.statsBar}>
-                    <div className={styles.stateBadge}>
-                        {batchSpec.source === BatchSpecSource.REMOTE ? (
-                            <BatchSpecStateBadge state={batchSpec.state} />
-                        ) : (
+        return (
+            <div className={layoutStyles.pageContainer}>
+                <div className={layoutStyles.headerContainer}>
+                    <BatchChangeHeader
+                        className={styles.header}
+                        namespace={{
+                            to: `${batchChange.namespace.url}/batch-changes`,
+                            text: batchChange.namespace.namespaceName,
+                        }}
+                        title={{ to: batchChange.url, text: batchChange.name }}
+                        description={
                             <>
-                                <VisuallyHidden>This batch spec was executed with src-cli.</VisuallyHidden>
-                                <Badge
-                                    variant="secondary"
-                                    tooltip="This batch spec was executed with src-cli."
-                                    aria-hidden={true}
-                                >
-                                    LOCAL
-                                </Badge>
+                                Created <Timestamp date={batchSpec.createdAt} /> by{' '}
+                                <LinkOrSpan to={batchSpec.creator?.url}>
+                                    {batchSpec.creator?.displayName || batchSpec.creator?.username || 'a deleted user'}
+                                </LinkOrSpan>
                             </>
+                        }
+                    />
+                    <div className={styles.statsBar}>
+                        <div className={styles.stateBadge}>
+                            {batchSpec.source === BatchSpecSource.REMOTE ? (
+                                <BatchSpecStateBadge state={batchSpec.state} />
+                            ) : (
+                                <>
+                                    <VisuallyHidden>This batch spec was executed with src-cli.</VisuallyHidden>
+                                    <Badge
+                                        variant="secondary"
+                                        tooltip="This batch spec was executed with src-cli."
+                                        aria-hidden={true}
+                                    >
+                                        LOCAL
+                                    </Badge>
+                                </>
+                            )}
+                        </div>
+                        {batchSpec.startedAt && (
+                            <ExecutionStat>
+                                <Icon aria-hidden={true} className={styles.durationIcon} svgPath={mdiProgressClock} />
+                                <Duration
+                                    start={batchSpec.startedAt}
+                                    end={batchSpec.finishedAt ?? undefined}
+                                    labelPrefix={`The batch spec ${
+                                        batchSpec.finishedAt ? 'finished executing in' : 'has been executing for'
+                                    }`}
+                                />
+                            </ExecutionStat>
                         )}
+                        {workspaceResolution && <ExecutionStatsBar {...workspaceResolution.workspaces.stats} />}
                     </div>
-                    {batchSpec.startedAt && (
-                        <ExecutionStat>
-                            <Icon aria-hidden={true} className={styles.durationIcon} svgPath={mdiProgressClock} />
-                            <Duration
-                                start={batchSpec.startedAt}
-                                end={batchSpec.finishedAt ?? undefined}
-                                labelPrefix={`The batch spec ${
-                                    batchSpec.finishedAt ? 'finished executing in' : 'has been executing for'
-                                }`}
-                            />
-                        </ExecutionStat>
-                    )}
-                    {workspaceResolution && <ExecutionStatsBar {...workspaceResolution.workspaces.stats} />}
+
+                    <ActionButtons className="flex-shrink-0">
+                        <ActionsMenu />
+                    </ActionButtons>
                 </div>
 
-                <ActionButtons className="flex-shrink-0">
-                    <ActionsMenu />
-                </ActionButtons>
-            </div>
+                {errors.actions && <ErrorMessage error={errors.actions} key={String(errors.actions)} />}
 
-            {errors.actions && <ErrorMessage error={errors.actions} key={String(errors.actions)} />}
-
-            <Switch>
-                <Route render={() => <Redirect to={`${match.url}/execution`} />} path={match.url} exact={true} />
-                <Route
-                    path={`${match.url}/configuration`}
-                    render={() => (
-                        <>
-                            <TabBar activeTabKey="configuration" tabsConfig={tabsConfig} matchURL={executionURL} />
-                            <ConfigurationForm
-                                isReadOnly={true}
-                                batchChange={batchChange}
-                                authenticatedUser={authenticatedUser}
-                            />
-                        </>
-                    )}
-                    exact={true}
-                />
-                <Route
-                    path={`${match.url}/spec`}
-                    render={() => (
-                        <>
-                            <TabBar activeTabKey="spec" tabsConfig={tabsConfig} matchURL={executionURL} />
-                            <ReadOnlyBatchSpecForm isLightTheme={isLightTheme} />
-                        </>
-                    )}
-                    exact={true}
-                />
-                <Route
-                    path={`${match.url}/execution/workspaces/:workspaceID`}
-                    render={({ match }: RouteComponentProps<{ workspaceID: string }>) => (
-                        <>
-                            <TabBar activeTabKey="execution" tabsConfig={tabsConfig} matchURL={executionURL} />
-                            <ExecutionWorkspaces
-                                selectedWorkspaceID={match.params.workspaceID}
-                                isLightTheme={isLightTheme}
-                                queryWorkspacesList={queryWorkspacesList}
-                            />
-                        </>
-                    )}
-                />
-                <Route
-                    path={`${match.url}/execution`}
-                    render={() => (
-                        <>
-                            <TabBar activeTabKey="execution" tabsConfig={tabsConfig} matchURL={executionURL} />
-                            <ExecutionWorkspaces
-                                isLightTheme={isLightTheme}
-                                queryWorkspacesList={queryWorkspacesList}
-                            />
-                        </>
-                    )}
-                />
-                {batchSpec.applyURL ? (
+                <Routes>
+                    <Route element={<Navigate to="execution" replace={true} />} index={true} />
                     <Route
-                        path={`${match.url}/preview`}
-                        render={() => (
+                        path="configuration"
+                        element={
                             <>
-                                <TabBar
-                                    activeTabKey="preview"
-                                    tabsConfig={tabsConfig}
-                                    matchURL={executionURL}
-                                    className="mb-4"
-                                />
-                                <NewBatchChangePreviewPage
+                                <TabBar activeTabKey="configuration" tabsConfig={tabsConfig} matchURL={executionURL} />
+                                <ConfigurationForm
+                                    isReadOnly={true}
+                                    batchChange={batchChange}
                                     authenticatedUser={authenticatedUser}
-                                    telemetryService={telemetryService}
-                                    isLightTheme={isLightTheme}
-                                    batchSpecID={batchSpec.id}
                                 />
                             </>
-                        )}
-                        exact={true}
+                        }
                     />
-                ) : (
-                    // If the batch spec is not ready to be previewed, redirect to the spec instead.
-                    <Redirect to={`${match.url}/spec`} />
-                )}
-                <Route component={() => <HeroPage icon={MapSearchIcon} title="404: Not Found" />} key="hardcoded-key" />
-            </Switch>
-        </div>
-    )
-})
+                    <Route
+                        path="spec"
+                        element={
+                            <>
+                                <TabBar activeTabKey="spec" tabsConfig={tabsConfig} matchURL={executionURL} />
+                                <ReadOnlyBatchSpecForm />
+                            </>
+                        }
+                    />
+                    <Route
+                        path="execution/workspaces/:workspaceID"
+                        element={
+                            <>
+                                <TabBar activeTabKey="execution" tabsConfig={tabsConfig} matchURL={executionURL} />
+                                <ExecutionWorkspaces queryWorkspacesList={queryWorkspacesList} />
+                            </>
+                        }
+                    />
+                    <Route
+                        path="execution"
+                        element={
+                            <>
+                                <TabBar activeTabKey="execution" tabsConfig={tabsConfig} matchURL={executionURL} />
+                                <ExecutionWorkspaces queryWorkspacesList={queryWorkspacesList} />
+                            </>
+                        }
+                    />
+
+                    <Route
+                        path="preview"
+                        element={
+                            batchSpec.applyURL ? (
+                                <>
+                                    <TabBar
+                                        activeTabKey="preview"
+                                        tabsConfig={tabsConfig}
+                                        matchURL={executionURL}
+                                        className="mb-4"
+                                    />
+                                    <NewBatchChangePreviewPage
+                                        authenticatedUser={authenticatedUser}
+                                        telemetryService={telemetryService}
+                                    />
+                                </>
+                            ) : (
+                                // If the batch spec is not ready to be previewed, redirect to the spec instead.
+                                <Navigate to="spec" replace={true} />
+                            )
+                        }
+                    />
+                    <Route path="*" element={<HeroPage icon={MapSearchIcon} title="404: Not Found" />} />
+                </Routes>
+            </div>
+        )
+    }
+)
 
 export const ExecuteBatchSpecPage = withAuthenticatedUser(AuthenticatedExecuteBatchSpecPage)

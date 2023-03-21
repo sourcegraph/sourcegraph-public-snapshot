@@ -1,9 +1,8 @@
-import * as React from 'react'
+import React from 'react'
 
 import { mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
 import prettyBytes from 'pretty-bytes'
-import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map, switchMap, tap } from 'rxjs/operators'
 
@@ -94,7 +93,7 @@ function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<Repositor
         { id }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.node || errors) {
+            if (!data?.node || errors) {
                 throw createAggregateError(errors)
             }
             return (data.node as RepositoryTextSearchIndexRepository).textSearchIndex
@@ -221,7 +220,7 @@ const TextSearchIndexedReference: React.FunctionComponent<
     )
 }
 
-interface Props extends RouteComponentProps<{}> {
+interface Props {
     repo: SettingsAreaRepositoryFields
 }
 

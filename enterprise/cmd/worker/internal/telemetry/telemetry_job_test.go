@@ -24,7 +24,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/hexops/valast"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -167,7 +167,7 @@ func TestHandlerLoadsEvents(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("loads events without error", []*database.Event{
+		autogold.Expect([]*database.Event{
 			{
 				ID:     1,
 				Name:   "event1",
@@ -213,7 +213,7 @@ func TestHandlerLoadsEvents(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("loads using specified batch size from settings", []*database.Event{{
+		autogold.Expect([]*database.Event{{
 			ID:     1,
 			Name:   "event1",
 			UserID: 1,
@@ -277,7 +277,7 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 
 	t.Run("first execution of handler should return first event", func(t *testing.T) {
 		handler.sendEventsCallback = func(ctx context.Context, got []*database.Event, config topicConfig, metadata instanceMetadata) error {
-			autogold.Want("first execution of handler should return first event", []*database.Event{{
+			autogold.Expect([]*database.Event{{
 				ID:     1,
 				Name:   "event1",
 				UserID: 1,
@@ -300,7 +300,7 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 	})
 	t.Run("second execution of handler should return second event", func(t *testing.T) {
 		handler.sendEventsCallback = func(ctx context.Context, got []*database.Event, config topicConfig, metadata instanceMetadata) error {
-			autogold.Want("second execution of handler should return second event", []*database.Event{{
+			autogold.Expect([]*database.Event{{
 				ID:     2,
 				Name:   "event2",
 				UserID: 2,
@@ -389,7 +389,7 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 
 	t.Run("ensure only allowed events are returned", func(t *testing.T) {
 		handler.sendEventsCallback = func(ctx context.Context, got []*database.Event, config topicConfig, metadata instanceMetadata) error {
-			autogold.Want("first execution of handler should return first event", []*database.Event{
+			autogold.Expect([]*database.Event{
 				{
 					ID:     1,
 					Name:   "allowed",
@@ -448,14 +448,14 @@ func TestHandleInvalidConfig(t *testing.T) {
 		handler := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), bookmarkStore, noopHandler(), newHandlerMetrics(obsContext))
 		err := handler.Handle(ctx)
 
-		autogold.Want("handle fails when missing project name", "getTopicConfig: missing project name to export usage data").Equal(t, err.Error())
+		autogold.Expect("getTopicConfig: missing project name to export usage data").Equal(t, err.Error())
 	})
 	t.Run("handle fails when missing topic name", func(t *testing.T) {
 		topicName = ""
 		handler := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), bookmarkStore, noopHandler(), newHandlerMetrics(obsContext))
 		err := handler.Handle(ctx)
 
-		autogold.Want("handle fails when missing topic name", "getTopicConfig: missing topic name to export usage data").Equal(t, err.Error())
+		autogold.Expect("getTopicConfig: missing topic name to export usage data").Equal(t, err.Error())
 	})
 }
 
@@ -496,7 +496,7 @@ func TestBuildBigQueryObject(t *testing.T) {
 	}
 
 	got := buildBigQueryObject(event, metadata)
-	autogold.Want("build big query object", &bigQueryEvent{
+	autogold.Expect(&bigQueryEvent{
 		SiteID: "site-id-1", LicenseKey: "license-key-1",
 		InitialAdminEmail: "admin@place.com",
 		DeployType:        "docker",
@@ -539,7 +539,7 @@ func TestGetInstanceMetadata(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	autogold.Want("check that instance metadata equals mocked values", instanceMetadata{
+	autogold.Expect(instanceMetadata{
 		DeployType:        "fake-deploy-type",
 		Version:           "fake-Version-1",
 		SiteID:            "fake-site-id",

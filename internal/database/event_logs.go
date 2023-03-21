@@ -129,6 +129,10 @@ type EventLogStore interface {
 	// '%codeintel%' events in the event_logs table.
 	UsersUsageCounts(ctx context.Context) (counts []types.UserUsageCounts, err error)
 
+	// OwnershipFeatureActivity returns (M|W|D)AUs for the most recent of each period
+	// for each of given event names.
+	OwnershipFeatureActivity(ctx context.Context, now time.Time, eventNames ...string) (map[string]*types.OwnershipUsageStatisticsActiveUsers, error)
+
 	WithTransact(context.Context, func(EventLogStore) error) error
 	With(other basestore.ShareableStore) EventLogStore
 	basestore.ShareableStore
@@ -720,7 +724,7 @@ unique_users_by_dwm AS (
 	` + aggregatedUserIDQueryFragment + ` as aggregated_user_id
   FROM event_logs
   LEFT OUTER JOIN users ON users.id = event_logs.user_id
-  WHERE (%s)
+  WHERE (%s) AND anonymous_user_id != 'backend'
   GROUP BY day_period, week_period, month_period, aggregated_user_id, registered
 ),
 unique_users_by_day AS (
@@ -869,6 +873,7 @@ SELECT
   COUNT(*) FILTER (WHERE event_logs.name ='SearchResultsQueried') as search_count,
   COUNT(*) FILTER (WHERE event_logs.name LIKE '%codeintel%') as codeintel_count
 FROM event_logs
+WHERE anonymous_user_id != 'backend'
 GROUP BY 1, 2
 ORDER BY 1 DESC, 2 ASC;
 `
@@ -895,18 +900,22 @@ func (l *eventLogStore) siteUsageCurrentPeriods(ctx context.Context, now time.Ti
 		conds = buildCommonUsageConds(&opt.CommonUsageOptions, conds)
 	}
 
-	query := sqlf.Sprintf(siteUsageCurrentPeriodsQuery, now, now, now, now, sqlf.Join(conds, ") AND ("))
+	query := sqlf.Sprintf(siteUsageCurrentPeriodsQuery, now, now, now, now, now, now, sqlf.Join(conds, ") AND ("))
 
 	err = l.QueryRow(ctx, query).Scan(
+		&summary.RollingMonth,
 		&summary.Month,
 		&summary.Week,
 		&summary.Day,
+		&summary.UniquesRollingMonth,
 		&summary.UniquesMonth,
 		&summary.UniquesWeek,
 		&summary.UniquesDay,
+		&summary.RegisteredUniquesRollingMonth,
 		&summary.RegisteredUniquesMonth,
 		&summary.RegisteredUniquesWeek,
 		&summary.RegisteredUniquesDay,
+		&summary.IntegrationUniquesRollingMonth,
 		&summary.IntegrationUniquesMonth,
 		&summary.IntegrationUniquesWeek,
 		&summary.IntegrationUniquesDay,
@@ -917,16 +926,21 @@ func (l *eventLogStore) siteUsageCurrentPeriods(ctx context.Context, now time.Ti
 
 var siteUsageCurrentPeriodsQuery = `
 SELECT
+  current_rolling_month,
   current_month,
   current_week,
   current_day,
 
+  COUNT(DISTINCT user_id) FILTER (WHERE rolling_month = current_rolling_month) AS uniques_rolling_month,
   COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
   COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
   COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
+  COUNT(DISTINCT user_id) FILTER (WHERE rolling_month = current_rolling_month AND registered) AS registered_uniques_rolling_month,
   COUNT(DISTINCT user_id) FILTER (WHERE month = current_month AND registered) AS registered_uniques_month,
   COUNT(DISTINCT user_id) FILTER (WHERE week = current_week AND registered) AS registered_uniques_week,
   COUNT(DISTINCT user_id) FILTER (WHERE day = current_day AND registered) AS registered_uniques_day,
+  COUNT(DISTINCT user_id) FILTER (WHERE rolling_month = current_rolling_month AND source = 'CODEHOSTINTEGRATION')
+  	AS integration_uniques_rolling_month,
   COUNT(DISTINCT user_id) FILTER (WHERE month = current_month AND source = 'CODEHOSTINTEGRATION')
   	AS integration_uniques_month,
   COUNT(DISTINCT user_id) FILTER (WHERE week = current_week AND source = 'CODEHOSTINTEGRATION')
@@ -935,23 +949,26 @@ SELECT
   	AS integration_uniques_day
 FROM (
   -- This sub-query is here to avoid re-doing this work above on each aggregation.
+  -- rolling_month will always be the current_rolling_month, but is retained for clarity of the CTE
   SELECT
     name,
     user_id != 0 as registered,
     ` + aggregatedUserIDQueryFragment + ` AS user_id,
     source,
+    ` + makeDateTruncExpression("rolling_month", "%s::timestamp") + ` as rolling_month,
     ` + makeDateTruncExpression("month", "timestamp") + ` as month,
     ` + makeDateTruncExpression("week", "timestamp") + ` as week,
     ` + makeDateTruncExpression("day", "timestamp") + ` as day,
+    ` + makeDateTruncExpression("rolling_month", "%s::timestamp") + ` as current_rolling_month,
     ` + makeDateTruncExpression("month", "%s::timestamp") + ` as current_month,
     ` + makeDateTruncExpression("week", "%s::timestamp") + ` as current_week,
     ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
   FROM event_logs
   LEFT OUTER JOIN users ON users.id = event_logs.user_id
-  WHERE (timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `) AND (%s)
+  WHERE (timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `) AND (%s) AND anonymous_user_id != 'backend'
 ) events
 
-GROUP BY current_month, current_week, current_day
+GROUP BY current_rolling_month, rolling_month, current_month, current_week, current_day
 `
 
 func (l *eventLogStore) CodeIntelligencePreciseWAUs(ctx context.Context) (int, error) {
@@ -1514,12 +1531,15 @@ CASE WHEN user_id = 0
 END
 `
 
-// makeDateTruncExpression returns an expresson that converts the given
+// makeDateTruncExpression returns an expression that converts the given
 // SQL expression into the start of the containing date container specified
-// by the unit parameter (e.g. day, week, month, or).
+// by the unit parameter (e.g. day, week, month, or rolling month [prior 30 days]).
 func makeDateTruncExpression(unit, expr string) string {
 	if unit == "week" {
 		return fmt.Sprintf(`DATE_TRUNC('%s', TIMEZONE('UTC', %s) + '1 day'::interval) - '1 day'::interval`, unit, expr)
+	}
+	if unit == "rolling_month" {
+		return fmt.Sprintf(`DATE_TRUNC('day', TIMEZONE('UTC', %s)) - '30 day'::interval`, expr)
 	}
 
 	return fmt.Sprintf(`DATE_TRUNC('%s', TIMEZONE('UTC', %s))`, unit, expr)
@@ -1556,3 +1576,120 @@ SELECT
 FROM codeintel_langugage_support_requests
 GROUP BY language_id
 `
+
+func (l *eventLogStore) OwnershipFeatureActivity(ctx context.Context, now time.Time, eventNames ...string) (map[string]*types.OwnershipUsageStatisticsActiveUsers, error) {
+	if len(eventNames) == 0 {
+		return map[string]*types.OwnershipUsageStatisticsActiveUsers{}, nil
+	}
+	var sqlEventNames []*sqlf.Query
+	for _, e := range eventNames {
+		sqlEventNames = append(sqlEventNames, sqlf.Sprintf("%s", e))
+	}
+	query := sqlf.Sprintf(eventActivityQuery, now, now, sqlf.Join(sqlEventNames, ","), now, now, now)
+	rows, err := l.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+	stats := map[string]*types.OwnershipUsageStatisticsActiveUsers{}
+	for _, e := range eventNames {
+		var zero int32
+		stats[e] = &types.OwnershipUsageStatisticsActiveUsers{
+			DAU: &zero,
+			WAU: &zero,
+			MAU: &zero,
+		}
+	}
+	for rows.Next() {
+		var (
+			unit        string
+			eventName   string
+			timestamp   time.Time
+			activeUsers int32
+		)
+		if err := rows.Scan(&unit, &eventName, &timestamp, &activeUsers); err != nil {
+			return nil, err
+		}
+		switch unit {
+		case "day":
+			stats[eventName].DAU = &activeUsers
+		case "week":
+			stats[eventName].WAU = &activeUsers
+		case "month":
+			stats[eventName].MAU = &activeUsers
+		default:
+			return nil, errors.Newf("unexpected unit %q, this is a bug", unit)
+		}
+	}
+	return stats, err
+}
+
+// eventActivityQuery returns the most recent reading on (M|W|D)AU for given events.
+//
+// The query outputs one row per event name, per unit ("month", "week", "day" as strings).
+// Each row contains:
+//  1. "unit" which is either "month" or "week" or "day" indicating whether
+//     whether the associated user_activity referes to MAU, WAU or DAU.
+//  2. "name" which refers to the name of the event considered.
+//  2. "time_stamp" which indicates the beginning of unit time span (like the beginning
+//     of week or month).
+//  3. "active_users" which is the count of distinct active users during
+//     the relevant time span.
+//
+// There are 6 parameters (but just two values):
+//  1. Timestamp which truncated to this month is the time-based lower bound
+//     for events taken into account, twice.
+//  2. The list of event names to consider.
+//  3. The same timestamp again, three times.
+var eventActivityQuery = `
+WITH events AS (
+	SELECT
+	` + aggregatedUserIDQueryFragment + ` AS user_id,
+	` + makeDateTruncExpression("day", "timestamp") + ` AS day,
+	` + makeDateTruncExpression("week", "timestamp") + ` AS week,
+	` + makeDateTruncExpression("month", "timestamp") + ` AS month,
+	name AS name
+	FROM event_logs
+	-- Either: the beginning of current week and current month
+	-- can come first, so take the earliest as timestamp lower bound.
+	WHERE timestamp >= LEAST(
+		` + makeDateTruncExpression("month", "%s::timestamp") + `,
+		` + makeDateTruncExpression("week", "%s::timestamp") + `
+	)
+	AND name IN (%s)
+)
+(
+	SELECT DISTINCT ON (unit, name)
+		'month' AS unit,
+		e.name AS name,
+		e.month AS time_stamp,
+		COUNT(DISTINCT e.user_id) AS active_users
+	FROM events AS e
+	WHERE e.month >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
+	GROUP BY unit, name, time_stamp
+	ORDER BY unit, name, time_stamp DESC
+)
+UNION ALL
+(
+SELECT DISTINCT ON (unit, name)
+	'week' AS unit,
+	e.name AS name,
+	e.week AS time_stamp,
+	COUNT(DISTINCT e.user_id) AS active_users
+FROM events AS e
+WHERE e.week >= ` + makeDateTruncExpression("week", "%s::timestamp") + `
+GROUP BY unit, name, time_stamp
+ORDER BY unit, name, time_stamp DESC
+)
+UNION ALL
+(
+SELECT DISTINCT ON (unit, name)
+	'day' AS unit,
+	e.name AS name,
+	e.day AS time_stamp,
+	COUNT(DISTINCT e.user_id) AS active_users
+FROM events AS e
+WHERE e.day >= ` + makeDateTruncExpression("day", "%s::timestamp") + `
+GROUP BY unit, name, time_stamp
+ORDER BY unit, name, time_stamp DESC
+)`

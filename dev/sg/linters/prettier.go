@@ -16,12 +16,12 @@ var prettier = &linter{
 	// TODO unfortunate that we have to use 'dev/ci/pnpm-run.sh'
 	Check: func(ctx context.Context, out *std.Output, args *repo.State) error {
 		return root.Run(run.Cmd(ctx, "dev/ci/pnpm-run.sh format:check")).
-			Map(pnpmInstallFilter()).
+			Pipeline(pnpmInstallFilter()).
 			StreamLines(out.Write)
 	},
 	Fix: func(ctx context.Context, cio check.IO, args *repo.State) error {
 		return root.Run(run.Cmd(ctx, "dev/ci/pnpm-run.sh format")).
-			Map(pnpmInstallFilter()).
+			Pipeline(pnpmInstallFilter()).
 			StreamLines(cio.Write)
 	},
 }

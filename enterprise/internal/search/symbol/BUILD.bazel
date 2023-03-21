@@ -2,6 +2,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_test")
 
 go_test(
     name = "symbol_test",
+    timeout = "short",
     srcs = ["symbol_test.go"],
     deps = [
         "//enterprise/internal/authz/subrepoperms",

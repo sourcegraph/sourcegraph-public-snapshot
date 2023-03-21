@@ -1,4 +1,4 @@
-import { Redirect } from 'react-router'
+import { Navigate } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
@@ -8,23 +8,18 @@ import { OrgAreaRoute } from './OrgArea'
 
 const OrgSettingsArea = lazyComponent(() => import('../settings/OrgSettingsArea'), 'OrgSettingsArea')
 
-const redirectToOrganizationProfile: OrgAreaRoute['render'] = props => (
-    <Redirect to={`${props.match.url}/settings/profile`} />
-)
-
 export const orgAreaRoutes: readonly OrgAreaRoute[] = [
     {
-        path: '/getstarted',
-        render: props => <Redirect to={`/organizations/${props.org.name}/settings/members`} />,
+        path: 'getstarted',
+        render: props => <Navigate to={`/organizations/${props.org.name}/settings/members`} replace={true} />,
     },
     {
-        path: '/settings',
+        path: 'settings/*',
         render: props => (
             <OrgSettingsArea
                 {...props}
                 routes={props.orgSettingsAreaRoutes}
                 sideBarItems={props.orgSettingsSideBarItems}
-                isLightTheme={props.isLightTheme}
             />
         ),
     },
@@ -32,13 +27,12 @@ export const orgAreaRoutes: readonly OrgAreaRoute[] = [
 
     // Redirect from /organizations/:orgname -> /organizations/:orgname/settings/profile.
     {
-        path: '/',
-        exact: true,
-        render: redirectToOrganizationProfile,
+        path: '',
+        render: () => <Navigate to="./settings/profile" />,
     },
     // Redirect from previous /organizations/:orgname/account -> /organizations/:orgname/settings/profile.
     {
-        path: '/account',
-        render: redirectToOrganizationProfile,
+        path: 'account',
+        render: () => <Navigate to="../settings/profile" />,
     },
 ]

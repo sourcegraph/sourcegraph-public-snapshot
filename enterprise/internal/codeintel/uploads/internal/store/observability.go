@@ -33,6 +33,7 @@ type operations struct {
 	hasRepository                           *observation.Operation
 
 	// Uploads
+	getIndexers                          *observation.Operation
 	getUploads                           *observation.Operation
 	getUploadByID                        *observation.Operation
 	getUploadsByIDs                      *observation.Operation
@@ -76,6 +77,9 @@ type operations struct {
 
 	// Dependencies
 	insertDependencySyncingJob *observation.Operation
+
+	reindexUploads    *observation.Operation
+	reindexUploadByID *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -124,6 +128,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		hasRepository:                           op("HasRepository"),
 
 		// Uploads
+		getIndexers:                          op("GetIndexers"),
 		getUploads:                           op("GetUploads"),
 		getUploadByID:                        op("GetUploadByID"),
 		getUploadsByIDs:                      op("GetUploadsByIDs"),
@@ -168,5 +173,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 
 		// Dependencies
 		insertDependencySyncingJob: op("InsertDependencySyncingJob"),
+
+		reindexUploads:    op("ReindexUploads"),
+		reindexUploadByID: op("ReindexUploadByID"),
 	}
 }

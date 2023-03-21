@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/gitserver"
 	workermigrations "github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
@@ -53,7 +52,6 @@ func LoadConfig(additionalJobs map[string]workerjob.Job, registerEnterpriseMigra
 	builtins := map[string]workerjob.Job{
 		"webhook-log-janitor":       webhooks.NewJanitor(),
 		"out-of-band-migrations":    workermigrations.NewMigrator(registerMigrators),
-		"codeintel-crates-syncer":   codeintel.NewCratesSyncerJob(),
 		"gitserver-metrics":         gitserver.NewMetricsJob(),
 		"record-encrypter":          encryption.NewRecordEncrypterJob(),
 		"repo-statistics-compactor": repostatistics.NewCompactor(),

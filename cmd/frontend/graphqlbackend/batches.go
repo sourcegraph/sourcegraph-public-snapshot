@@ -731,6 +731,8 @@ type ChangesetsStatsResolver interface {
 	Processing() int32
 	Deleted() int32
 	Archived() int32
+	IsCompleted() bool
+	PercentComplete() int32
 }
 
 type ChangesetsConnectionResolver interface {
@@ -781,7 +783,14 @@ type ExternalChangesetResolver interface {
 	Body(context.Context) (*string, error)
 	Author() (*PersonResolver, error)
 	ExternalURL() (*externallink.Resolver, error)
+
+	OwnedByBatchChange() *graphql.ID
+
+	// If the changeset is a fork, this corresponds to the namespace of the fork.
 	ForkNamespace() *string
+	// If the changeset is a fork, this corresponds to the name of the fork.
+	ForkName() *string
+
 	// ReviewState returns a value of type *btypes.ChangesetReviewState.
 	ReviewState(context.Context) *string
 	// CheckState returns a value of type *btypes.ChangesetCheckState.

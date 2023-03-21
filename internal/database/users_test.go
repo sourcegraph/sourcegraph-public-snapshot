@@ -89,7 +89,7 @@ func TestUsers_ValidUsernames(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			valid := true
 			if _, err := db.Users().Create(ctx, NewUser{Username: test.name}); err != nil {
-				var e errCannotCreateUser
+				var e ErrCannotCreateUser
 				if errors.As(err, &e) && (e.Code() == "users_username_max_length" || e.Code() == "users_username_valid_chars") {
 					valid = false
 				} else {
@@ -125,6 +125,13 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	if !user.SiteAdmin {
 		t.Fatal("!user.SiteAdmin")
 	}
+	ur, err := getUserRoles(ctx, db, user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ur) != 2 {
+		t.Fatalf("expected user to be assigned two roles (USER and SITE_ADMINISTRATOR), got %d", len(ur))
+	}
 
 	// Creating a non-site-admin now that the site has already been initialized.
 	u2, err := db.Users().Create(ctx, NewUser{
@@ -139,6 +146,14 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	if u2.SiteAdmin {
 		t.Fatal("want u2 not site admin because site is already initialized")
 	}
+	ur, err = getUserRoles(ctx, db, u2.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ur) != 1 {
+		t.Fatalf("expected user to be assigned one role, got %d", len(ur))
+	}
+
 	// Similar to the above, but expect an error because we pass FailIfNotInitialUser: true.
 	_, err = db.Users().Create(ctx, NewUser{
 		Email:                 "a3@a3.com",
@@ -147,7 +162,7 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 		EmailVerificationCode: "c3",
 		FailIfNotInitialUser:  true,
 	})
-	if want := (errCannotCreateUser{"site_already_initialized"}); !errors.Is(err, want) {
+	if want := (ErrCannotCreateUser{"site_already_initialized"}); !errors.Is(err, want) {
 		t.Fatalf("got error %v, want %v", err, want)
 	}
 
@@ -172,6 +187,14 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	if u4.SiteAdmin {
 		t.Fatal("want u4 not site admin because site is already initialized")
 	}
+	ur, err = getUserRoles(ctx, db, u4.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ur) != 1 {
+		t.Fatalf("expected user to be assigned one role, got %d", len(ur))
+	}
+
 	// Similar to the above, but expect an error because we pass FailIfNotInitialUser: true.
 	if _, err := db.ExecContext(ctx, "UPDATE site_config SET initialized=false"); err != nil {
 		t.Fatal(err)
@@ -183,7 +206,7 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 		EmailVerificationCode: "c5",
 		FailIfNotInitialUser:  true,
 	})
-	if want := (errCannotCreateUser{"initial_site_admin_must_be_first_user"}); !errors.Is(err, want) {
+	if want := (ErrCannotCreateUser{"initial_site_admin_must_be_first_user"}); !errors.Is(err, want) {
 		t.Fatalf("got error %v, want %v", err, want)
 	}
 }
@@ -282,6 +305,13 @@ func TestUsers_ListCount(t *testing.T) {
 	}
 
 	if users, err := db.Users().List(ctx, &UsersListOptions{}); err != nil {
+		t.Fatal(err)
+	} else if users, want := normalizeUsers(users), normalizeUsers([]*types.User{user}); !reflect.DeepEqual(users, want) {
+		t.Errorf("got %+v, want %+v", users[0], user)
+	}
+
+	// By usernames.
+	if users, err := db.Users().List(ctx, &UsersListOptions{Usernames: []string{user.Username}}); err != nil {
 		t.Fatal(err)
 	} else if users, want := normalizeUsers(users), normalizeUsers([]*types.User{user}); !reflect.DeepEqual(users, want) {
 		t.Errorf("got %+v, want %+v", users[0], user)
@@ -438,6 +468,53 @@ func TestUsers_List_Query(t *testing.T) {
 			assert.Equal(t, want, got)
 		})
 	}
+}
+
+func TestUsers_ListForSCIM_Query(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Create users
+	newUsers := []NewUserForSCIM{
+		{NewUser: NewUser{Email: "alice@example.com", Username: "alice", EmailIsVerified: true}},
+		{NewUser: NewUser{Email: "bob@example.com", Username: "bob", EmailVerificationCode: "bb"}, SCIMExternalID: "BOB"},
+		{NewUser: NewUser{Email: "charlie@example.com", Username: "charlie", EmailIsVerified: true}, SCIMExternalID: "CHARLIE", AdditionalVerifiedEmails: []string{"charlie2@example.com"}},
+	}
+	for _, newUser := range newUsers {
+		user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, newUser.NewUser, extsvc.AccountSpec{ServiceType: "scim", AccountID: newUser.SCIMExternalID}, extsvc.AccountData{})
+		for _, email := range newUser.AdditionalVerifiedEmails {
+			verificationCode := "x"
+			err := db.UserEmails().Add(ctx, user.ID, email, &verificationCode)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = db.UserEmails().Verify(ctx, user.ID, email, verificationCode)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	users, err := db.Users().ListForSCIM(ctx, &UsersListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Len(t, users, 3)
+	assert.Equal(t, "alice", users[0].Username)
+	assert.Equal(t, "", users[0].SCIMExternalID)
+	assert.Equal(t, "BOB", users[1].SCIMExternalID)
+	assert.Equal(t, "CHARLIE", users[2].SCIMExternalID)
+	assert.Len(t, users[0].Emails, 1)
+	assert.Len(t, users[1].Emails, 0)
+	assert.Len(t, users[2].Emails, 2)
 }
 
 func TestUsers_Update(t *testing.T) {
@@ -805,6 +882,131 @@ func TestUsers_Delete(t *testing.T) {
 	}
 }
 
+func TestUsers_RecoverUsers(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
+
+	user, err := db.Users().Create(ctx, NewUser{
+		Email:                 "a@a.com",
+		Username:              "u",
+		Password:              "p",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	otherUser, err := db.Users().Create(ctx, NewUser{Username: "other"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = db.UserExternalAccounts().AssociateUserAndSave(ctx, otherUser.ID,
+		extsvc.AccountSpec{
+			ServiceType: "github",
+			ServiceID:   "https://github.com/",
+			AccountID:   "alice_github",
+		},
+		extsvc.AccountData{},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	//Test reviving a user that does not exist
+	t.Run("fails on nonexistent user", func(t *testing.T) {
+		ru, err := db.Users().RecoverUsersList(ctx, []int32{65})
+		if err != nil {
+			t.Errorf("got err %v, want nil", err)
+		}
+		if len(ru) != 0 {
+			t.Errorf("got %d recovered users, want 0", len(ru))
+		}
+	})
+	//Test reviving a user that does exist and hasn't not been deleted
+	t.Run("fails on non-deleted user", func(t *testing.T) {
+		ru, err := db.Users().RecoverUsersList(ctx, []int32{user.ID})
+		if err == nil {
+			t.Errorf("got err %v, want nil", err)
+		}
+		if len(ru) != 0 {
+			t.Errorf("got %d users, want 0", len(ru))
+		}
+	})
+
+	//Test reviving a user that does exist and does not have additional resources deleted in the same timeframe
+	t.Run("revives user with no additional resources", func(t *testing.T) {
+		err := db.Users().Delete(ctx, user.ID)
+		if err != nil {
+			t.Errorf("got err %v, want nil", err)
+		}
+		ru, err := db.Users().RecoverUsersList(ctx, []int32{user.ID})
+		if err != nil {
+			t.Errorf("got err %v, want nil", err)
+		}
+		if len(ru) != 1 {
+			t.Errorf("got %d users, want 1", len(ru))
+		}
+		if ru[0] != user.ID {
+			t.Errorf("got user %d, want %d", ru[0], user.ID)
+		}
+
+		users, err := db.Users().List(ctx, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(users) > 2 {
+			// The otherUser should still exist, which is why we check for 1 not 0.
+			t.Errorf("got %d users, want 1", len(users))
+		}
+	})
+	//Test reviving a user that does exist and does have additional resources deleted in the same timeframe
+	t.Run("revives user and additional resources", func(t *testing.T) {
+		err := db.Users().Delete(ctx, otherUser.ID)
+		if err != nil {
+			t.Errorf("got err %v, want nil", err)
+		}
+
+		_, err = db.UserExternalAccounts().Get(ctx, otherUser.ID)
+		if err == nil {
+			t.Fatal("got err nil, want non-nil")
+		}
+
+		ru, err := db.Users().RecoverUsersList(ctx, []int32{otherUser.ID})
+		if err != nil {
+			t.Errorf("got err %v, want nil", err)
+		}
+		if len(ru) != 1 {
+			t.Errorf("got %d users, want 1", len(ru))
+		}
+		if ru[0] != otherUser.ID {
+			t.Errorf("got user %d, want %d", ru[0], otherUser.ID)
+		}
+
+		extAcc, err := db.UserExternalAccounts().Get(ctx, 1)
+		if err != nil {
+			t.Fatal("got err nil, want non-nil")
+		}
+		if extAcc.UserID != otherUser.ID {
+			t.Errorf("got user %d, want %d", extAcc.UserID, otherUser.ID)
+		}
+
+		users, err := db.Users().List(ctx, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(users) > 2 {
+			t.Errorf("got %d users, want 2", len(users))
+		}
+	})
+}
+
 func TestUsers_HasTag(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -987,6 +1189,73 @@ func TestUsers_SetTag(t *testing.T) {
 	})
 }
 
+func TestUsers_SetIsSiteAdmin(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	adminUser, err := db.Users().Create(ctx, NewUser{Username: "u"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Create user. This user will have a `SiteAdmin` value of false because
+	// Global state hasn't been initialized at this point, so technically this is the
+	// first user.
+	if !adminUser.SiteAdmin {
+		t.Fatalf("expected site admin to be created")
+	}
+
+	regularUser, err := db.Users().Create(ctx, NewUser{Username: "u2"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("revoking site admin role for a site admin", func(t *testing.T) {
+		// Confirm that the user has only two roles assigned to them.
+		ur, err := db.UserRoles().GetByUserID(ctx, GetUserRoleOpts{UserID: adminUser.ID})
+		require.NoError(t, err)
+		require.Len(t, ur, 2)
+
+		err = db.Users().SetIsSiteAdmin(ctx, adminUser.ID, false)
+		require.NoError(t, err)
+
+		// check that site admin role has been revoked for user
+		ur, err = db.UserRoles().GetByUserID(ctx, GetUserRoleOpts{UserID: adminUser.ID})
+		require.NoError(t, err)
+		// Since we've revoked the SITE_ADMINISTRATOR role, the user should still have the
+		// USER role assigned to them.
+		require.Len(t, ur, 1)
+
+		u, err := db.Users().GetByID(ctx, regularUser.ID)
+		require.NoError(t, err)
+		require.False(t, u.SiteAdmin)
+	})
+
+	t.Run("promoting a regular user to site admin", func(t *testing.T) {
+		// Confirm that the user has only one role assigned to them.
+		ur, err := db.UserRoles().GetByUserID(ctx, GetUserRoleOpts{UserID: regularUser.ID})
+		require.NoError(t, err)
+		require.Len(t, ur, 1)
+
+		err = db.Users().SetIsSiteAdmin(ctx, regularUser.ID, true)
+		require.NoError(t, err)
+
+		// check that site admin role has been assigned to user
+		ur, err = db.UserRoles().GetByUserID(ctx, GetUserRoleOpts{UserID: regularUser.ID})
+		require.NoError(t, err)
+		// The user should have both USER role and SITE_ADMINISTRATOR role assigned to them.
+		require.Len(t, ur, 2)
+
+		u, err := db.Users().GetByID(ctx, regularUser.ID)
+		require.NoError(t, err)
+		require.True(t, u.SiteAdmin)
+	})
+}
+
 func normalizeUsers(users []*types.User) []*types.User {
 	for _, u := range users {
 		u.CreatedAt = u.CreatedAt.Local().Round(time.Second)
@@ -994,4 +1263,8 @@ func normalizeUsers(users []*types.User) []*types.User {
 		u.InvalidatedSessionsAt = u.InvalidatedSessionsAt.Local().Round(time.Second)
 	}
 	return users
+}
+
+func getUserRoles(ctx context.Context, db DB, userID int32) ([]*types.UserRole, error) {
+	return db.UserRoles().GetByUserID(ctx, GetUserRoleOpts{UserID: userID})
 }

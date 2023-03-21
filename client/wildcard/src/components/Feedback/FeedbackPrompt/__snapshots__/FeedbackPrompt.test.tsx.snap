@@ -6,7 +6,7 @@ exports[`FeedbackPrompt should render correctly 1`] = `
     <button
       aria-expanded="true"
       aria-label="Feedback"
-      class=""
+      class="btn btnSecondary btnOutline btnSm"
       type="button"
     >
       <span>
@@ -33,7 +33,7 @@ exports[`FeedbackPrompt should render correctly 1`] = `
       data-focus-lock-disabled="disabled"
     >
       <button
-        class="close"
+        class="btn close"
         type="button"
       >
         <svg
@@ -71,7 +71,7 @@ exports[`FeedbackPrompt should render correctly 1`] = `
         </p>
         <button
           aria-disabled="true"
-          class="button"
+          class="btn btnSecondary btnBlock button"
           role="menuitem"
           type="submit"
         >
@@ -94,7 +94,7 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
     <button
       aria-expanded="true"
       aria-label="Feedback"
-      class=""
+      class="btn btnSecondary btnOutline btnSm"
       type="button"
     >
       <span>
@@ -121,7 +121,7 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
       data-focus-lock-disabled="disabled"
     >
       <button
-        class="close"
+        class="btn close"
         type="button"
       >
         <svg
@@ -161,7 +161,7 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
         </p>
         <div
           aria-live="assertive"
-          class="mt-3"
+          class="alert alertDanger mt-3"
           role="alert"
         >
           <strong>
@@ -177,7 +177,7 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
         </div>
         <button
           aria-disabled="false"
-          class="button"
+          class="btn btnSecondary btnBlock button"
           role="menuitem"
           type="submit"
         >
@@ -200,7 +200,7 @@ exports[`FeedbackPrompt should render submit success correctly 1`] = `
     <button
       aria-expanded="true"
       aria-label="Feedback"
-      class=""
+      class="btn btnSecondary btnOutline btnSm"
       type="button"
     >
       <span>
@@ -211,25 +211,23 @@ exports[`FeedbackPrompt should render submit success correctly 1`] = `
   <div
     aria-modal="true"
     class="floatingPanel popover menu"
-    hidden=""
     role="dialog"
-    style="visibility: hidden;"
   >
     <div
       data-focus-guard="true"
       style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"
-      tabindex="0"
+      tabindex="-1"
     />
     <div
       data-focus-guard="true"
       style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"
-      tabindex="1"
+      tabindex="-1"
     />
     <div
-      data-focus-lock-disabled="false"
+      data-focus-lock-disabled="disabled"
     >
       <button
-        class="close"
+        class="btn close"
         type="button"
       >
         <svg
@@ -270,14 +268,14 @@ exports[`FeedbackPrompt should render submit success correctly 1`] = `
         <p
           class="d-inline"
         >
-          Thank you for your help.
+          Thank you.
         </p>
       </div>
     </div>
     <div
       data-focus-guard="true"
       style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"
-      tabindex="0"
+      tabindex="-1"
     />
   </div>
 </body>

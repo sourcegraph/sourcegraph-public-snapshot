@@ -7,6 +7,7 @@ import (
 	"path"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -60,8 +61,9 @@ type packagesDownloadSource interface {
 // dependenciesService captures the methods we use of the codeintel/dependencies.Service,
 // used to make testing easier.
 type dependenciesService interface {
-	ListDependencyRepos(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.Repo, error)
-	UpsertDependencyRepos(ctx context.Context, deps []dependencies.Repo) ([]dependencies.Repo, error)
+	ListPackageRepoRefs(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.PackageRepoReference, int, bool, error)
+	InsertPackageRepoRefs(ctx context.Context, deps []dependencies.MinimalPackageRepoRef) ([]dependencies.PackageRepoReference, []dependencies.PackageRepoRefVersion, error)
+	IsPackageRepoVersionAllowed(ctx context.Context, scheme string, pkg reposource.PackageName, version string) (allowed bool, err error)
 }
 
 func (s *vcsPackagesSyncer) IsCloneable(ctx context.Context, repoUrl *vcs.URL) error {
@@ -146,20 +148,29 @@ func (s *vcsPackagesSyncer) fetchRevspec(ctx context.Context, name reposource.Pa
 		// Invalid version. Silently ignore error, see comment above why.
 		return nil
 	}
+
+	// if the next check passes, we know that any filters added/updated before this timestamp did not block it
+	instant := time.Now()
+
+	if allowed, err := s.svc.IsPackageRepoVersionAllowed(ctx, s.scheme, dep.PackageSyntax(), dep.PackageVersion()); !allowed || err != nil {
+		// if err == nil && !allowed, this will return nil
+		return errors.Wrap(err, "error checking if package repo version is allowed")
+	}
+
 	err = s.gitPushDependencyTag(ctx, string(dir), dep)
 	if err != nil {
 		// Package could not be downloaded. Silently ignore error, see comment above why.
 		return nil
 	}
 
-	_, err = s.svc.UpsertDependencyRepos(ctx, []dependencies.Repo{
+	if _, _, err = s.svc.InsertPackageRepoRefs(ctx, []dependencies.MinimalPackageRepoRef{
 		{
-			Scheme:  dep.Scheme(),
-			Name:    dep.PackageSyntax(),
-			Version: dep.PackageVersion(),
+			Scheme:        dep.Scheme(),
+			Name:          dep.PackageSyntax(),
+			Versions:      []dependencies.MinimalPackageRepoRefVersion{{Version: dep.PackageVersion(), LastCheckedAt: &instant}},
+			LastCheckedAt: &instant,
 		},
-	})
-	if err != nil {
+	}); err != nil {
 		// We don't want to ignore when writing to the database failed, since
 		// we've already downloaded the package successfully.
 		return err
@@ -323,8 +334,8 @@ func (s *vcsPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	return nil
 }
 
-func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName reposource.PackageName) ([]string, error) {
-	var versions []string
+func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName reposource.PackageName) (versions []string, _ error) {
+	var combinedVersions []string
 	for _, d := range s.configDeps {
 		dep, err := s.source.ParseVersionedPackageFromConfiguration(d)
 		if err != nil {
@@ -333,24 +344,33 @@ func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName reposource
 		}
 
 		if dep.PackageSyntax() == packageName {
-			versions = append(versions, dep.PackageVersion())
+			combinedVersions = append(combinedVersions, dep.PackageVersion())
 		}
 	}
 
-	depRepos, err := s.svc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
-		Scheme:      s.scheme,
-		Name:        packageName,
-		NewestFirst: true,
+	listedPackages, _, _, err := s.svc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
+		Scheme:         s.scheme,
+		Name:           packageName,
+		ExactNameOnly:  true,
+		IncludeBlocked: false,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list dependencies from db")
 	}
 
-	for _, depRepo := range depRepos {
-		versions = append(versions, depRepo.Version)
+	if len(listedPackages) > 1 {
+		return nil, errors.Newf("unexpectedly got more than 1 dependency repo for (scheme=%q,name=%q)", s.scheme, packageName)
 	}
 
-	return versions, nil
+	if len(listedPackages) == 0 {
+		return combinedVersions, nil
+	}
+
+	for _, versions := range listedPackages[0].Versions {
+		combinedVersions = append(combinedVersions, versions.Version)
+	}
+
+	return combinedVersions, nil
 }
 
 func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory string, dependency reposource.VersionedPackage) (string, error) {

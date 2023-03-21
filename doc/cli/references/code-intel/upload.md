@@ -7,7 +7,7 @@
 |------|-------------|---------------|
 | `-associated-index-id` | ID of the associated index record for this upload. For internal use only. | `-1` |
 | `-commit` | The 40-character hash of the commit. Defaults to the currently checked-out commit. |  |
-| `-file` | The path to the LSIF dump file. | `./dump.lsif` |
+| `-file` | The path to the LSIF dump file. |  |
 | `-github-token` | A GitHub access token with 'public_repo' scope that Sourcegraph uses to verify you have access to the repository. |  |
 | `-gitlab-token` | A GitLab access token with 'read_api' scope that Sourcegraph uses to verify you have access to the repository. |  |
 | `-ignore-upload-failure` | Exit with status code zero on upload failure. | `false` |
@@ -20,6 +20,7 @@
 | `-open` | Open the LSIF upload page in your browser. | `false` |
 | `-repo` | The name of the repository (e.g. github.com/gorilla/mux). By default, derived from the origin remote. |  |
 | `-root` | The path in the repository that matches the LSIF projectRoot (e.g. cmd/project1). Defaults to the directory where the dump file is located. |  |
+| `-skip-scip` | Skip converting LSIF index to SCIP if the instance supports it; this option should only used for debugging | `false` |
 | `-trace` | -trace=0 shows no logs; -trace=1 shows requests and response metadata; -trace=2 shows headers, -trace=3 shows response body | `0` |
 | `-upload-route` | The path of the upload route. For internal use only. | `/.api/lsif/upload` |
 
@@ -33,7 +34,7 @@ Usage of 'src code-intel upload':
   -commit string
     	The 40-character hash of the commit. Defaults to the currently checked-out commit.
   -file string
-    	The path to the LSIF dump file. (default "./dump.lsif")
+    	The path to the LSIF dump file.
   -github-token string
     	A GitHub access token with 'public_repo' scope that Sourcegraph uses to verify you have access to the repository.
   -gitlab-token string
@@ -58,6 +59,8 @@ Usage of 'src code-intel upload':
     	The name of the repository (e.g. github.com/gorilla/mux). By default, derived from the origin remote.
   -root string
     	The path in the repository that matches the LSIF projectRoot (e.g. cmd/project1). Defaults to the directory where the dump file is located.
+  -skip-scip
+    	Skip converting LSIF index to SCIP if the instance supports it; this option should only used for debugging
   -trace int
     	-trace=0 shows no logs; -trace=1 shows requests and response metadata; -trace=2 shows headers, -trace=3 shows response body
   -upload-route string

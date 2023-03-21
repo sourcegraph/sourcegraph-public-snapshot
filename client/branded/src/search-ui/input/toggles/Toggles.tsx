@@ -35,6 +35,7 @@ export interface TogglesProps
     navbarSearchQuery: string
     className?: string
     showCopyQueryButton?: boolean
+    showSmartSearchButton?: boolean
     /**
      * If set to false makes all buttons non-actionable. The main use case for
      * this prop is showing the toggles in examples. This is different from
@@ -73,6 +74,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
         selectedSearchContextSpec,
         submitSearch,
         showCopyQueryButton = true,
+        showSmartSearchButton = true,
         structuralSearchDisabled,
     } = props
 
@@ -189,13 +191,15 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                         />
                     )}
                 </>
-                <div className={styles.separator} />
-                <SmartSearchToggle
-                    className="test-smart-search-toggle"
-                    isActive={searchMode === SearchMode.SmartSearch}
-                    onSelect={onSelectSmartSearch}
-                    interactive={props.interactive}
-                />
+                {(showSmartSearchButton || showCopyQueryButton) && <div className={styles.separator} />}
+                {showSmartSearchButton && (
+                    <SmartSearchToggle
+                        className="test-smart-search-toggle"
+                        isActive={searchMode === SearchMode.SmartSearch}
+                        onSelect={onSelectSmartSearch}
+                        interactive={props.interactive}
+                    />
+                )}
                 {showCopyQueryButton && (
                     <CopyQueryButton
                         fullQuery={fullQuery}

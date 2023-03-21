@@ -5,24 +5,22 @@ import (
 	"net/http"
 
 	"github.com/fullstorydev/grpcui/standalone"
+	"google.golang.org/grpc"
+
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 const gRPCWebUIPath = "/debug/grpcui"
 
 // NewGRPCWebUIEndpoint returns a new Endpoint that serves a gRPC Web UI instance
 // that targets the gRPC server specified by target.
-func NewGRPCWebUIEndpoint(target string) Endpoint {
-	var opts []grpc.DialOption
-	opts = append(opts, defaults.DialOptions()...)
-	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-
+//
+// serviceName is the name of the gRPC service that will be displayed on the debug page.
+func NewGRPCWebUIEndpoint(serviceName, target string) Endpoint {
 	var handler http.Handler = &grpcHandler{
 		target:   target,
-		dialOpts: opts,
+		dialOpts: defaults.DialOptions(),
 	}
 
 	// gRPC Web UI expects to serve all of its resources
@@ -32,7 +30,7 @@ func NewGRPCWebUIEndpoint(target string) Endpoint {
 	handler = http.StripPrefix(gRPCWebUIPath, handler)
 
 	return Endpoint{
-		Name: "gRPC Web UI",
+		Name: fmt.Sprintf("gRPC Web UI (%s)", serviceName),
 
 		Path: fmt.Sprintf("%s/", gRPCWebUIPath),
 		// gRPC Web UI serves multiple assets, so we need to forward _all_ requests under this path

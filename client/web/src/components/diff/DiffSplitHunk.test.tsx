@@ -1,7 +1,5 @@
 import { cleanup, fireEvent, render, RenderResult } from '@testing-library/react'
-import { createMemoryHistory } from 'history'
-import { Router } from 'react-router'
-import { CompatRouter } from 'react-router-dom-v5-compat'
+import { MemoryRouter } from 'react-router-dom'
 
 import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
 
@@ -54,19 +52,16 @@ describe('DiffSplitHunk', () => {
         },
     }
 
-    const history = createMemoryHistory()
     let queries: RenderResult
     const renderWithProps = (props: DiffHunkProps): RenderResult =>
         render(
-            <Router history={history}>
-                <CompatRouter>
-                    <table>
-                        <tbody>
-                            <DiffSplitHunk {...props} />
-                        </tbody>
-                    </table>
-                </CompatRouter>
-            </Router>
+            <MemoryRouter>
+                <table>
+                    <tbody>
+                        <DiffSplitHunk {...props} />
+                    </tbody>
+                </table>
+            </MemoryRouter>
         )
 
     afterEach(cleanup)

@@ -59,8 +59,8 @@ func TestGitServiceHandlers(t *testing.T) {
 
 type mockAddrForRepo struct{}
 
-func (mockAddrForRepo) AddrForRepo(_ context.Context, name api.RepoName) (string, error) {
-	return strings.ReplaceAll(string(name), "/", ".") + ".gitserver", nil
+func (mockAddrForRepo) AddrForRepo(name api.RepoName) string {
+	return strings.ReplaceAll(string(name), "/", ".") + ".gitserver"
 }
 
 // newTestInternalRouter creates a minimal router for internal endpoints. You can use

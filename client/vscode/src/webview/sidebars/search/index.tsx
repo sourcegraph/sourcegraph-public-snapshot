@@ -80,7 +80,6 @@ const Main: React.FC<React.PropsWithChildren<unknown>> = () => {
     const webviewPageProps: WebviewPageProps = {
         extensionCoreAPI,
         platformContext,
-        theme,
         authenticatedUser,
         settingsCascade,
         instanceURL,

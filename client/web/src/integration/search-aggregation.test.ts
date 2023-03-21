@@ -11,7 +11,7 @@ import { GetSearchAggregationResult, WebGraphQlOperations, SearchAggregationMode
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { createEditorAPI } from './utils'
+import { createEditorAPI, removeContextFromQuery } from './utils'
 
 const aggregationDefaultMock = (mode: SearchAggregationMode): GetSearchAggregationResult => ({
     searchQueryAggregate: {
@@ -123,11 +123,15 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
             builtinAuth: true,
             tags: [],
             createdAt: '2020-03-02T11:52:15Z',
+            roles: {
+                __typename: 'RoleConnection',
+                nodes: [],
+            },
         },
     }),
 }
 
-const QUERY_INPUT_SELECTOR = '[data-testid="searchbox"] .test-query-input'
+const QUERY_INPUT_SELECTOR = '.test-query-input'
 
 describe('Search aggregation', () => {
     let driver: Driver
@@ -180,7 +184,10 @@ describe('Search aggregation', () => {
                                 latestSettings: {
                                     id: 0,
                                     contents: JSON.stringify({
-                                        experimentalFeatures: { searchResultsAggregations: true },
+                                        experimentalFeatures: {
+                                            searchResultsAggregations: true,
+                                            searchQueryInput: 'v1',
+                                        },
                                     }),
                                 },
                             },
@@ -313,7 +320,9 @@ describe('Search aggregation', () => {
             await delay(200)
             await driver.page.click('[aria-label="Sidebar search aggregation chart"] a')
 
-            expect(await editor.getValue()).toStrictEqual('insights repo:sourcegraph/sourcegraph')
+            expect(removeContextFromQuery((await editor.getValue()) ?? '')).toStrictEqual(
+                'insights repo:sourcegraph/sourcegraph'
+            )
 
             await driver.page.waitForSelector('[data-testid="expand-aggregation-ui"]')
             await driver.page.click('[data-testid="expand-aggregation-ui"]')
@@ -330,7 +339,9 @@ describe('Search aggregation', () => {
                 '[aria-label="Expanded search aggregation chart"] [aria-label="Bar chart content"] g:nth-child(2) a'
             )
 
-            expect(await editor.getValue()).toStrictEqual('insights repo:sourecegraph/about')
+            expect(removeContextFromQuery((await editor.getValue()) ?? '')).toStrictEqual(
+                'insights repo:sourecegraph/about'
+            )
         })
 
         test('should preserve case sensitive filter in a query', async () => {

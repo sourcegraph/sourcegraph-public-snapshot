@@ -9,6 +9,7 @@ import (
 	"github.com/derision-test/glock"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
@@ -399,19 +400,19 @@ func (w *Worker[T]) handle(ctx, workerContext context.Context, record T) (err er
 	}
 
 	if errcode.IsNonRetryable(handleErr) || handleErr != nil && w.isJobCanceled(record.RecordID(), handleErr, ctx.Err()) {
-		if marked, markErr := w.store.MarkFailed(workerContext, record.RecordID(), handleErr.Error()); markErr != nil {
+		if marked, markErr := w.store.MarkFailed(workerContext, record, handleErr.Error()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkFailed")
 		} else if marked {
 			handleLog.Warn("Marked record as failed", log.Error(handleErr))
 		}
 	} else if handleErr != nil {
-		if marked, markErr := w.store.MarkErrored(workerContext, record.RecordID(), handleErr.Error()); markErr != nil {
+		if marked, markErr := w.store.MarkErrored(workerContext, record, handleErr.Error()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkErrored")
 		} else if marked {
 			handleLog.Warn("Marked record as errored", log.Error(handleErr))
 		}
 	} else {
-		if marked, markErr := w.store.MarkComplete(workerContext, record.RecordID()); markErr != nil {
+		if marked, markErr := w.store.MarkComplete(workerContext, record); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkComplete")
 		} else if marked {
 			handleLog.Debug("Marked record as complete")

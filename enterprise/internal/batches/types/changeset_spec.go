@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	godiff "github.com/sourcegraph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -24,7 +24,8 @@ func NewChangesetSpecFromRaw(rawSpec string) (*ChangesetSpec, error) {
 }
 
 func NewChangesetSpecFromSpec(spec *batcheslib.ChangesetSpec) (*ChangesetSpec, error) {
-	baseRepoID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(spec.BaseRepository))
+	var baseRepoID api.RepoID
+	err := relay.UnmarshalSpec(graphql.ID(spec.BaseRepository), &baseRepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +41,8 @@ func NewChangesetSpecFromSpec(spec *batcheslib.ChangesetSpec) (*ChangesetSpec, e
 	if spec.IsImportingExisting() {
 		c.Type = ChangesetSpecTypeExisting
 	} else {
-		headRepoID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(spec.HeadRepository))
+		var headRepoID api.RepoID
+		err := relay.UnmarshalSpec(graphql.ID(spec.HeadRepository), &headRepoID)
 		if err != nil {
 			return nil, err
 		}

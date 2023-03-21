@@ -10,12 +10,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	stesting "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/testing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -389,10 +389,11 @@ func TestService(t *testing.T) {
 			AttachedTo:    []int64{batchChange.ID},
 
 			// The important fields:
-			ReconcilerState: btypes.ReconcilerStateQueued,
-			NumResets:       0,
-			NumFailures:     0,
-			FailureMessage:  nil,
+			ReconcilerState:        btypes.ReconcilerStateQueued,
+			NumResets:              0,
+			NumFailures:            0,
+			FailureMessage:         nil,
+			PreviousFailureMessage: strPtr(bt.FailedChangesetFailureMessage),
 		})
 
 		// rs[0] is filtered out
@@ -582,7 +583,7 @@ func TestService(t *testing.T) {
 
 	t.Run("CreateChangesetSpec", func(t *testing.T) {
 		repo := rs[0]
-		rawSpec := bt.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo.ID), "d34db33f")
+		rawSpec := bt.NewRawChangesetSpecGitBranch(relay.MarshalID("Repository", repo.ID), "d34db33f")
 
 		t.Run("success", func(t *testing.T) {
 			spec, err := svc.CreateChangesetSpec(ctx, rawSpec, admin.ID)
@@ -666,7 +667,7 @@ index e5af166..d44c3fc 100644
 	})
 
 	t.Run("CreateChangesetSpecs", func(t *testing.T) {
-		rawSpec := bt.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(rs[0].ID), "d34db33f")
+		rawSpec := bt.NewRawChangesetSpecGitBranch(relay.MarshalID("Repository", rs[0].ID), "d34db33f")
 
 		t.Run("success", func(t *testing.T) {
 			specs, err := svc.CreateChangesetSpecs(ctx, []string{rawSpec}, admin.ID)
@@ -1855,7 +1856,7 @@ changesetTemplate:
 				BatchChange:     batchChange.ID,
 			})
 
-			assert.Equal(t, "must be authenticated as the authorized user or site admin", err.Error())
+			assert.Equal(t, auth.ErrMustBeSiteAdminOrSameUser.Error(), err.Error())
 		})
 
 		t.Run("success - without batch change ID", func(t *testing.T) {
@@ -3181,3 +3182,5 @@ func assertNoAuthError(t *testing.T, err error) {
 		t.Fatalf("got auth error")
 	}
 }
+
+func strPtr(s string) *string { return &s }

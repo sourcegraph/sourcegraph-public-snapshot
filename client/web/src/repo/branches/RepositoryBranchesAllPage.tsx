@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { FC, useCallback, useEffect } from 'react'
 
 import { Observable } from 'rxjs'
 
@@ -13,32 +13,35 @@ import { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
 interface Props extends RepositoryBranchesAreaPageProps {}
 
 /** A page that shows all of a repository's branches. */
-export class RepositoryBranchesAllPage extends React.PureComponent<Props> {
-    public componentDidMount(): void {
+export const RepositoryBranchesAllPage: FC<Props> = props => {
+    const { repo } = props
+
+    useEffect(() => {
         eventLogger.logViewEvent('RepositoryBranchesAll')
-    }
+    }, [])
 
-    public render(): JSX.Element | null {
-        return (
-            <div>
-                <PageTitle title="All branches" />
-                <FilteredConnection<GitRefFields>
-                    inputClassName="w-100"
-                    listClassName="list-group list-group-flush"
-                    noun="branch"
-                    pluralNoun="branches"
-                    queryConnection={this.queryBranches}
-                    nodeComponent={GitReferenceNode}
-                    ariaLabelFunction={(branchDisplayName: string) =>
-                        `View this repository using ${branchDisplayName} as the selected revision`
-                    }
-                    defaultFirst={20}
-                    autoFocus={true}
-                />
-            </div>
-        )
-    }
+    const queryBranches = useCallback(
+        (args: FilteredConnectionQueryArguments): Observable<GitRefConnectionFields> =>
+            queryGitReferences({ ...args, repo: repo.id, type: GitRefType.GIT_BRANCH }),
+        [repo.id]
+    )
 
-    private queryBranches = (args: FilteredConnectionQueryArguments): Observable<GitRefConnectionFields> =>
-        queryGitReferences({ ...args, repo: this.props.repo.id, type: GitRefType.GIT_BRANCH })
+    return (
+        <div>
+            <PageTitle title="All branches" />
+            <FilteredConnection<GitRefFields>
+                inputClassName="w-100"
+                listClassName="list-group list-group-flush"
+                noun="branch"
+                pluralNoun="branches"
+                queryConnection={queryBranches}
+                nodeComponent={GitReferenceNode}
+                ariaLabelFunction={(branchDisplayName: string) =>
+                    `View this repository using ${branchDisplayName} as the selected revision`
+                }
+                defaultFirst={20}
+                autoFocus={true}
+            />
+        </div>
+    )
 }

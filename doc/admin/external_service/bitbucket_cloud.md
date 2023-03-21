@@ -15,7 +15,7 @@ Currently, all repositories belonging to the user configured will be synced.
 
 In addition, there is one more field for configuring which repositories are mirrored:
 
-- [`teams`](bitbucket_cloud.md#configuration)<br>A list of teams that the configured user has access to whose repositories should be synced.
+- [`teams`](bitbucket_cloud.md#configuration)<br>A list of teams (workspaces) that the configured user has access to whose repositories should be synced.
 - [`exclude`](bitbucket_cloud.md#configuration)<br>A list of repositories to exclude, which takes precedence over the `teams` field.
 
 ### HTTPS cloning
@@ -38,6 +38,25 @@ If enabled, the default rate is set at 7200 per hour (2 per second), which can b
 To configure Bitbucket Cloud as an authentication provider (which will enable sign-in via Bitbucket Cloud), see the
 [authentication documentation](../auth/index.md#bitbucket-cloud).
 
+## Repository permissions
+
+Prerequisite: [Add Bitbucket Cloud as an authentication provider](#user-authentication).
+
+Then, add or edit a Bitbucket Cloud connection as described above and include the `authorization` field:
+
+```json
+{
+  // The URL used to set up the Bitbucket Cloud authentication provider must match this URL.
+  "url": "https://bitbucket.com",
+  "username": "horsten",
+  "appPassword": "$APP_PASSWORD",
+  // ...
+  "authorization": {}
+}
+```
+
+> NOTE: It can take some time to complete full cycle of repository permissions sync if you have a large number of users or repositories. [See sync duration time](../permissions/syncing.md#sync-duration) for more information.
+
 ## Configuration
 
 Bitbucket Cloud connections support the following configuration options, which are specified in the JSON editor in the site admin "Manage code hosts" area.
@@ -48,4 +67,4 @@ Bitbucket Cloud connections support the following configuration options, which a
 
 Using the `webhooks` property on the external service has been deprecated.
 
-Please consult [this page](../config/webhooks.md) in order to configure webhooks.
+Please consult [this page](../config/webhooks/incoming.md) in order to configure webhooks.

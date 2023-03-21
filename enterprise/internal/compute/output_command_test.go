@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/grafana/regexp"
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -24,9 +24,7 @@ func Test_output(t *testing.T) {
 		return content
 	}
 
-	autogold.Want(
-		"regexp search outputs only digits",
-		"(1)~(2)~(3)~").
+	autogold.Expect("(1)~(2)~(3)~").
 		Equal(t, test("a 1 b 2 c 3", &Output{
 			SearchPattern: &Regexp{Value: regexp.MustCompile(`(\d)`)},
 			OutputPattern: "($1)",
@@ -38,9 +36,7 @@ func Test_output(t *testing.T) {
 		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
 	}
 
-	autogold.Want(
-		"structural search output",
-		`train(regional, intercity)
+	autogold.Expect(`train(regional, intercity)
 train(commuter, lightrail)`).
 		Equal(t, test("Im a train. train(intercity, regional). choo choo. train(lightrail, commuter)", &Output{
 			SearchPattern: &Comby{Value: `train(:[x], :[y])`},
@@ -98,29 +94,19 @@ func TestRun(t *testing.T) {
 		return "Error, unrecognized result type returned"
 	}
 
-	autogold.Want(
-		"template substitution regexp",
-		"(1)\n(2)\n(3)\n").
+	autogold.Expect("(1)\n(2)\n(3)\n").
 		Equal(t, test(`content:output((\d) -> ($1))`, fileMatch("a 1 b 2 c 3")))
 
-	autogold.Want(
-		"handles repo match via select on file match",
-		"my/awesome/repo").
+	autogold.Expect("my/awesome/repo").
 		Equal(t, test(`lang:ocaml content:output((\d) -> $repo) select:repo`, fileMatch("a 1 b 2 c 3")))
 
-	autogold.Want(
-		"honor type:path efficiently (don't hydrate file content when type:path is set)",
-		"my/awesome/path.ml content is my/awesome/path.ml with extension: ml\n").
+	autogold.Expect("my/awesome/path.ml content is my/awesome/path.ml with extension: ml\n").
 		Equal(t, test(`content:output(awesome/.+\.(\w+) -> $path content is $content with extension: $1) type:path`, fileMatch("a 1 b 2 c 3")))
 
-	autogold.Want(
-		"template substitution regexp with commit author",
-		"bob: (1)\nbob: (2)\nbob: (3)\n").
+	autogold.Expect("bob: (1)\nbob: (2)\nbob: (3)\n").
 		Equal(t, test(`content:output((\d) -> $author: ($1))`, commitMatch("a 1 b 2 c 3")))
 
-	autogold.Want(
-		"works with boundary assertions",
-		"test\nstring\n").
+	autogold.Expect("test\nstring\n").
 		Equal(t, test(`content:output((\b\w+\b) -> $1)`, fileMatch("test", "string")))
 
 	// If we are not on CI skip the test if comby is not installed.
@@ -128,18 +114,12 @@ func TestRun(t *testing.T) {
 		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
 	}
 
-	autogold.Want(
-		"template substitution structural",
-		">bar<").
+	autogold.Expect(">bar<").
 		Equal(t, test(`content:output.structural(foo(:[arg]) -> >:[arg]<)`, fileMatch("foo(bar)")))
 
-	autogold.Want(
-		"substitute language",
-		"OCaml\n").
+	autogold.Expect("OCaml\n").
 		Equal(t, test(`content:output((.|\n)* -> $lang)`, fileMatch("anything")))
 
-	autogold.Want(
-		"use output.extra",
-		`{"value":"OCaml\n","kind":"output","repositoryID":0,"repository":"my/awesome/repo"}`).
+	autogold.Expect(`{"value":"OCaml\n","kind":"output","repositoryID":0,"repository":"my/awesome/repo"}`).
 		Equal(t, test(`content:output.extra((.|\n)* -> $lang)`, fileMatch("anything")))
 }

@@ -19,14 +19,15 @@ go_library(
         "//internal/search/streaming",
         "//internal/trace",
         "//internal/types",
-        "//lib/group",
         "@com_github_grafana_regexp//:regexp",
         "@com_github_opentracing_opentracing_go//log",
+        "@com_github_sourcegraph_conc//pool",
     ],
 )
 
 go_test(
     name = "commit_test",
+    timeout = "short",
     srcs = ["commit_test.go"],
     embed = [":commit"],
     deps = [

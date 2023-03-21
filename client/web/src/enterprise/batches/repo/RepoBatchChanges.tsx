@@ -1,6 +1,5 @@
 import React, { useCallback } from 'react'
 
-import * as H from 'history'
 import { map } from 'rxjs/operators'
 
 import { Container, H3, H5 } from '@sourcegraph/wildcard'
@@ -17,9 +16,12 @@ import styles from './RepoBatchChanges.module.scss'
 
 interface Props {
     viewerCanAdminister: boolean
-    history: H.History
-    location: H.Location
+    // canCreate indicates whether or not the currently-authenticated user has sufficient
+    // permissions to create a batch change. If not, canCreate will be a string reason why
+    // the user cannot create.
+    canCreate: true | string
     repo: RepositoryFields
+    isSourcegraphDotCom: boolean
     onlyArchived?: boolean
 
     /** For testing only. */
@@ -33,9 +35,9 @@ interface Props {
  */
 export const RepoBatchChanges: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     viewerCanAdminister,
-    history,
-    location,
+    canCreate,
     repo,
+    isSourcegraphDotCom,
     queryRepoBatchChanges = _queryRepoBatchChanges,
     queryExternalChangesetWithFileDiffs = _queryExternalChangesetWithFileDiffs,
 }) => {
@@ -57,8 +59,6 @@ export const RepoBatchChanges: React.FunctionComponent<React.PropsWithChildren<P
             <FilteredConnection<RepoBatchChange, Omit<BatchChangeNodeProps, 'node'>>
                 nodeComponent={BatchChangeNode}
                 nodeComponentProps={{
-                    history,
-                    location,
                     queryExternalChangesetWithFileDiffs,
                     viewerCanAdminister,
                 }}
@@ -72,7 +72,7 @@ export const RepoBatchChanges: React.FunctionComponent<React.PropsWithChildren<P
                 headComponent={RepoBatchChangesHeader}
                 cursorPaging={true}
                 noSummaryIfAllNodesVisible={true}
-                emptyElement={<GettingStarted isSourcegraphDotCom={false} />}
+                emptyElement={<GettingStarted isSourcegraphDotCom={isSourcegraphDotCom} canCreate={canCreate} />}
             />
         </Container>
     )

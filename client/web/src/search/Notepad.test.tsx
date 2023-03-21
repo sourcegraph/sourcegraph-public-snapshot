@@ -1,12 +1,14 @@
 import { act, cleanup, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { noop } from 'lodash'
-import { spy, assert } from 'sinon'
+import { of } from 'rxjs'
+import { spy } from 'sinon'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
+import { NotebookFields } from '../graphql-operations'
+import * as backend from '../notebooks/backend'
 import { useNotepadState } from '../stores'
 import { addNotepadEntry, NotepadEntry } from '../stores/notepad'
 
@@ -16,8 +18,7 @@ describe('Notepad', () => {
     const renderNotepad = (props?: Partial<NotepadProps>, enabled = true): RenderWithBrandedContextResult =>
         renderWithBrandedContext(
             <MockTemporarySettings settings={{ 'search.notepad.enabled': enabled }}>
-                {/* eslint-disable-next-line no-restricted-syntax */}
-                <NotepadContainer onCreateNotebook={noop} {...props} />
+                <NotepadContainer userId="testID" {...props} />
             </MockTemporarySettings>
         )
 
@@ -125,13 +126,18 @@ describe('Notepad', () => {
         })
 
         it('creates notebooks', () => {
-            const onCreateNotebook = spy()
-            renderNotepad({ onCreateNotebook })
+            const createNotebookSpy = jest
+                .spyOn(backend, 'createNotebook')
+                .mockImplementation(() => of({} as unknown as NotebookFields))
+
+            renderNotepad()
             open()
 
-            userEvent.click(screen.getByRole('button', { name: 'Create Notebook' }))
+            act(() => {
+                userEvent.click(screen.getByRole('button', { name: 'Create Notebook' }))
+            })
 
-            assert.calledOnce(onCreateNotebook)
+            expect(createNotebookSpy).toBeCalledTimes(1)
         })
 
         it('allows to delete entries', () => {

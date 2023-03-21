@@ -6,6 +6,7 @@
 | Name | Description | Default Value |
 |------|-------------|---------------|
 | `-dump-requests` | Log GraphQL requests and responses to stdout | `false` |
+| `-email` | Look up user by email. (e.g. "alice@sourcegraph.com") |  |
 | `-f` | Format for the output, using the syntax of Go package text/template. (e.g. "{{.ID}}: {{.Username}} ({{.DisplayName}})") | `{{.|json}}` |
 | `-get-curl` | Print the curl command for executing this query and exit (WARNING: includes printing your access token!) | `false` |
 | `-insecure-skip-verify` | Skip validation of TLS certificates against trusted chains | `false` |
@@ -20,6 +21,8 @@
 Usage of 'src users get':
   -dump-requests
     	Log GraphQL requests and responses to stdout
+  -email string
+    	Look up user by email. (e.g. "alice@sourcegraph.com")
   -f string
     	Format for the output, using the syntax of Go package text/template. (e.g. "{{.ID}}: {{.Username}} ({{.DisplayName}})") (default "{{.|json}}")
   -get-curl

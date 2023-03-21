@@ -12,7 +12,6 @@ import {
     mdiShape,
 } from '@mdi/js'
 import format from 'date-fns/format'
-import { RouteComponentProps } from 'react-router'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize } from '@sourcegraph/common'
@@ -41,7 +40,7 @@ import { BACKGROUND_JOBS, BACKGROUND_JOBS_PAGE_POLL_INTERVAL_MS } from './backen
 
 import styles from './SiteAdminBackgroundJobsPage.module.scss'
 
-export interface SiteAdminBackgroundJobsPageProps extends RouteComponentProps, TelemetryProps {}
+export interface SiteAdminBackgroundJobsPageProps extends TelemetryProps {}
 
 export type BackgroundJob = BackgroundJobsResult['backgroundJobs']['nodes'][0]
 export type BackgroundRoutine = BackgroundJob['routines'][0]
@@ -417,7 +416,8 @@ const StartedStoppedIndicator: React.FunctionComponent<{ routine: BackgroundRout
     const mostRecentRunDate = routine.recentRuns.length ? new Date(routine.recentRuns[0].at) : null
 
     // See if this routine is stopped or not seen recently
-    const isStopped = earliestStopDateString ? earliestStopDateString >= latestStartDateString : false
+    const isStopped =
+        latestStartDateString && earliestStopDateString ? earliestStopDateString >= latestStartDateString : false
     const isUnseenInAWhile = !!(
         routine.intervalMs &&
         routine.type !== BackgroundRoutineType.DB_BACKED &&

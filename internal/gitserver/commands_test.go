@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -2819,93 +2818,6 @@ func usePermissionsForFilePermissionsFunc(m *authz.MockSubRepoPermissionChecker)
 	})
 }
 
-func TestLFSSmudge(t *testing.T) {
-	t.Skip("Failing, see https://github.com/sourcegraph/sourcegraph/issues/43473")
-
-	// TODO enforce on CI once CI has git-lfs
-	if _, err := exec.LookPath("git-lfs"); err != nil {
-		t.Skip("git-lfs not installed")
-	}
-
-	ctx := context.Background()
-	ClientMocks.LocalGitserver = true
-	t.Cleanup(func() {
-		ResetClientMocks()
-	})
-
-	files := map[string]string{
-		"in-lfs.txt":       "I am in LFS\n",
-		"in-git-small.txt": "I am small and in git\n",
-		"in-git-large.txt": strings.Repeat("I am large and in git\n", 10),
-	}
-
-	var gitCmds []string
-	for path, content := range files {
-		gitCmds = append(gitCmds, fmt.Sprintf(`echo -n -e %q > %s`, content, path))
-	}
-	gitCmds = append(gitCmds,
-		`git lfs install --local`,
-		`git lfs track in-lfs.txt`,
-		`git add .`,
-		`git commit -m "lfs"`,
-	)
-
-	// We ensure we test against a bare repo because a lot of LFS stuff only
-	// seems to work under the assumption of a working copy.
-	repo := MakeBareGitRepository(t, gitCmds...)
-
-	c := NewClient()
-	head, err := c.ResolveRevision(ctx, repo, "HEAD", ResolveRevisionOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Check that LFSSmudge always returns the file contents
-	for path, content := range files {
-		r, err := c.LFSSmudge(ctx, nil, repo, head, path)
-		if err != nil {
-			t.Fatalf("failed to run lfs-smudge on %q: %v", path, err)
-		}
-		b, err := io.ReadAll(r)
-		if err != nil {
-			t.Fatalf("failed to read output of lfs-smudge on %q: %v", path, err)
-		}
-		if err := r.Close(); err != nil {
-			t.Fatalf("failed to close reader for lfs-smudge on %q: %v", path, err)
-		}
-		if d := cmp.Diff(content, string(b)); d != "" {
-			t.Fatalf("unexpected LFS content for %q (-want, +got):\n%s", path, d)
-		}
-	}
-
-	// Make sure we correctly added contents to git instead of LFS
-	for path, content := range files {
-		if path == "in-lfs.txt" {
-			continue
-		}
-		b, err := c.ReadFile(ctx, nil, repo, head, path)
-		if err != nil {
-			t.Fatalf("failed to read file %q: %v", path, err)
-		}
-		if d := cmp.Diff(content, string(b)); d != "" {
-			t.Fatalf("unexpected LFS content for %q (-want, +got):\n%s", path, d)
-		}
-	}
-
-	// Check that we have a pointer for LFS in git.
-	want := `version https://git-lfs.github.com/spec/v1
-oid sha256:6779da4a4fc9920a86eeb6f7a01062513dbbcc8f221028c7345993884e89a508
-size 12
-`
-	b, err := c.ReadFile(ctx, nil, repo, head, "in-lfs.txt")
-	if err != nil {
-		t.Fatalf("failed to read file in-lfs.txt: %v", err)
-	}
-	if d := cmp.Diff(want, string(b)); d != "" {
-		t.Fatalf("unexpected LFS pointer (-want, +got):\n%s", d)
-	}
-}
-
 // testGitBlameOutput is produced by running
 //
 //	git blame -w --porcelain release.sh
@@ -3231,18 +3143,18 @@ func TestStreamBlameFile(t *testing.T) {
 func TestBlameHunkReader(t *testing.T) {
 	t.Run("OK matching hunks", func(t *testing.T) {
 		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental))
-		reader := newBlameHunkReader(context.Background(), rc)
+		reader := newBlameHunkReader(rc)
+		defer reader.Close()
 
 		hunks := []*Hunk{}
 		for {
-			hunk, done, err := reader.Read()
-			if err != nil {
+			hunk, err := reader.Read()
+			if errors.Is(err, io.EOF) {
+				break
+			} else if err != nil {
 				t.Fatalf("blameHunkReader.Read failed: %s", err)
 			}
-			if done {
-				break
-			}
-			hunks = append(hunks, hunk...)
+			hunks = append(hunks, hunk)
 		}
 
 		sortFn := func(x []*Hunk) func(i, j int) bool {
@@ -3270,15 +3182,15 @@ func TestBlameHunkReader(t *testing.T) {
 
 	t.Run("OK parsing hunks", func(t *testing.T) {
 		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental2))
-		reader := newBlameHunkReader(context.Background(), rc)
+		reader := newBlameHunkReader(rc)
+		defer reader.Close()
 
 		for {
-			_, done, err := reader.Read()
-			if err != nil {
-				t.Fatalf("blameHunkReader.Read failed: %s", err)
-			}
-			if done {
+			_, err := reader.Read()
+			if errors.Is(err, io.EOF) {
 				break
+			} else if err != nil {
+				t.Fatalf("blameHunkReader.Read failed: %s", err)
 			}
 		}
 	})

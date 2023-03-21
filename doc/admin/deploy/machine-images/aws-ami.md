@@ -188,8 +188,7 @@ Please take time to review the following before proceeding with the upgrades:
 9. On the `Attach volume` page:
   - **Instance**: select the new Sourcegraph AMI instance
   - **Device name**: /dev/sdb
-
-10\. **Reboot** the new instance
+10. **Reboot** the new instance
 
 You can terminate the stopped Sourcegraph AMI instance once you have confirmed the new instance is up and running.
 

@@ -8,12 +8,18 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { ExternalServiceFields, ExternalServiceKind, ExternalServiceSyncJobState } from '../../graphql-operations'
-import { WebStory } from '../WebStory'
+import { WebStory, WebStoryChildrenProps } from '../WebStory'
 
 import { FETCH_EXTERNAL_SERVICE, queryExternalServiceSyncJobs as _queryExternalServiceSyncJobs } from './backend'
 import { ExternalServicePage } from './ExternalServicePage'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: DecoratorFn = story => (
+    <div className="p-3 container">
+        <WebStory path="/:externalServiceID" initialEntries={['service123']}>
+            {story}
+        </WebStory>
+    </div>
+)
 
 const config: Meta = {
     title: 'web/External services/ExternalServicePage',
@@ -121,23 +127,16 @@ function newFetchMock(node: { __typename: 'ExternalService' } & ExternalServiceF
     ])
 }
 
-export const ExternalServiceWithRepos: Story = () => (
-    <WebStory>
-        {webProps => (
-            <MockedTestProvider link={newFetchMock(externalService)}>
-                <ExternalServicePage
-                    {...webProps}
-                    routingPrefix="/site-admin"
-                    queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
-                    afterDeleteRoute="/site-admin/after-delete"
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                    externalServiceID="service123"
-                    externalServicesFromFile={false}
-                    allowEditExternalServicesWithFile={false}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
+export const ExternalServiceWithRepos: Story<WebStoryChildrenProps> = props => (
+    <MockedTestProvider link={newFetchMock(externalService)}>
+        <ExternalServicePage
+            queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
+            afterDeleteRoute="/site-admin/after-delete"
+            telemetryService={NOOP_TELEMETRY_SERVICE}
+            externalServicesFromFile={false}
+            allowEditExternalServicesWithFile={false}
+        />
+    </MockedTestProvider>
 )
 
 ExternalServiceWithRepos.storyName = 'External service with synced repos'

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef } from 'react'
+import { FC, useCallback, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
@@ -11,7 +11,6 @@ import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@source
 import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { IEditor, LazyQueryInput, LazyQueryInputProps } from './LazyQueryInput'
 import { SearchButton } from './SearchButton'
@@ -24,7 +23,6 @@ import styles from './SearchBox.module.scss'
 
 export interface SearchBoxProps
     extends Omit<TogglesProps, 'navbarSearchQuery' | 'submitSearch'>,
-        ThemeProps,
         SearchContextInputProps,
         TelemetryProps,
         PlatformContextProps<'requestGraphQL'>,
@@ -33,7 +31,6 @@ export interface SearchBoxProps
             | 'autoFocus'
             | 'onFocus'
             | 'onSubmit'
-            | 'globbing'
             | 'interpretComments'
             | 'onChange'
             | 'onCompletionItemSelected'
@@ -68,7 +65,7 @@ export interface SearchBoxProps
     recentSearches?: RecentSearch[]
 }
 
-export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBoxProps>> = props => {
+export const SearchBox: FC<SearchBoxProps> = props => {
     const {
         queryState,
         onEditorCreated: onEditorCreatedCallback,
@@ -183,9 +180,7 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                         autoFocus={props.autoFocus}
                         caseSensitive={props.caseSensitive}
                         fetchStreamSuggestions={props.fetchStreamSuggestions}
-                        globbing={props.globbing}
                         interpretComments={props.interpretComments}
-                        isLightTheme={props.isLightTheme}
                         isSourcegraphDotCom={props.isSourcegraphDotCom}
                         onChange={props.onChange}
                         onCompletionItemSelected={props.onCompletionItemSelected}

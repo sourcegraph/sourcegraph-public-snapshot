@@ -34,7 +34,7 @@ func replace(ctx context.Context, content []byte, matchPattern MatchPattern, rep
 			Input:           comby.FileContent(content),
 			MatchTemplate:   match.Value,
 			RewriteTemplate: replacePattern,
-			Matcher:         ".generic", // TODO(rvantonder): use language or file filter
+			Matcher:         ".generic", // TODO(search): use language or file filter
 			ResultKind:      comby.Replacement,
 			NumWorkers:      0, // Just a single file's content.
 		})

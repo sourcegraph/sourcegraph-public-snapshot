@@ -10,7 +10,8 @@ import { asGraphQLResult, hasNextPage, parseQueryInt } from '../utils'
 
 import { useShowMorePaginationUrl } from './useShowMorePaginationUrl'
 
-export interface UseShowMorePaginationResult<TData> {
+export interface UseShowMorePaginationResult<TResult, TData> {
+    data?: TResult
     connection?: Connection<TData>
     error?: ApolloError
     fetchMore: () => void
@@ -68,12 +69,12 @@ const DEFAULT_FIRST: ConnectionQueryArguments['first'] = 20
  * @param getConnection A function that filters and returns the relevant data from the connection response.
  * @param options Additional configuration options
  */
-export const useShowMorePagination = <TResult, TVariables, TData>({
+export const useShowMorePagination = <TResult, TVariables extends {}, TData>({
     query,
     variables,
     getConnection: getConnectionFromGraphQLResult,
     options,
-}: UseShowMorePaginationParameters<TResult, TVariables, TData>): UseShowMorePaginationResult<TData> => {
+}: UseShowMorePaginationParameters<TResult, TVariables, TData>): UseShowMorePaginationResult<TResult, TData> => {
     const searchParameters = useSearchParameters()
 
     const { first = DEFAULT_FIRST, after = DEFAULT_AFTER } = variables
@@ -209,6 +210,7 @@ export const useShowMorePagination = <TResult, TVariables, TData>({
     const { startExecution, stopExecution } = useInterval(refetchAll, options?.pollInterval || -1)
 
     return {
+        data,
         connection,
         loading,
         error,

@@ -93,7 +93,7 @@ func (h *GitHubWebhook) handleRepositoryEvent(ctx context.Context, db database.D
 
 func (h *GitHubWebhook) handleMemberEvent(ctx context.Context, db database.DB, e *gh.MemberEvent, codeHostURN extsvc.CodeHostBaseURL) error {
 	action := e.GetAction()
-	var reason database.PermissionSyncJobReason
+	var reason database.PermissionsSyncJobReason
 	if action == "added" {
 		reason = database.ReasonGitHubUserAddedEvent
 	} else if action == "removed" {
@@ -109,7 +109,7 @@ func (h *GitHubWebhook) handleMemberEvent(ctx context.Context, db database.DB, e
 
 func (h *GitHubWebhook) handleOrganizationEvent(ctx context.Context, db database.DB, e *gh.OrganizationEvent, codeHostURN extsvc.CodeHostBaseURL) error {
 	action := e.GetAction()
-	var reason database.PermissionSyncJobReason
+	var reason database.PermissionsSyncJobReason
 	if action == "member_added" {
 		reason = database.ReasonGitHubOrgMemberAddedEvent
 	} else if action == "member_removed" {
@@ -125,7 +125,7 @@ func (h *GitHubWebhook) handleOrganizationEvent(ctx context.Context, db database
 
 func (h *GitHubWebhook) handleMembershipEvent(ctx context.Context, db database.DB, e *gh.MembershipEvent, codeHostURN extsvc.CodeHostBaseURL) error {
 	action := e.GetAction()
-	var reason database.PermissionSyncJobReason
+	var reason database.PermissionsSyncJobReason
 	if action == "added" {
 		reason = database.ReasonGitHubUserMembershipAddedEvent
 	} else if action == "removed" {
@@ -140,7 +140,7 @@ func (h *GitHubWebhook) handleMembershipEvent(ctx context.Context, db database.D
 
 func (h *GitHubWebhook) handleTeamEvent(ctx context.Context, e *gh.TeamEvent, db database.DB) error {
 	action := e.GetAction()
-	var reason database.PermissionSyncJobReason
+	var reason database.PermissionsSyncJobReason
 	if action == "added_to_repository" {
 		reason = database.ReasonGitHubTeamAddedToRepoEvent
 	} else if action == "removed_from_repository" {
@@ -152,7 +152,7 @@ func (h *GitHubWebhook) handleTeamEvent(ctx context.Context, e *gh.TeamEvent, db
 	return h.getRepoAndSyncPerms(ctx, db, e, reason)
 }
 
-func (h *GitHubWebhook) getUserAndSyncPerms(ctx context.Context, db database.DB, user *gh.User, codeHostURN extsvc.CodeHostBaseURL, reason database.PermissionSyncJobReason) error {
+func (h *GitHubWebhook) getUserAndSyncPerms(ctx context.Context, db database.DB, user *gh.User, codeHostURN extsvc.CodeHostBaseURL, reason database.PermissionsSyncJobReason) error {
 	externalAccounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 		ServiceID:      codeHostURN.String(),
 		AccountID:      strconv.Itoa(int(user.GetID())),
@@ -175,7 +175,7 @@ func (h *GitHubWebhook) getUserAndSyncPerms(ctx context.Context, db database.DB,
 	return err
 }
 
-func (h *GitHubWebhook) getRepoAndSyncPerms(ctx context.Context, db database.DB, e interface{ GetRepo() *gh.Repository }, reason database.PermissionSyncJobReason) error {
+func (h *GitHubWebhook) getRepoAndSyncPerms(ctx context.Context, db database.DB, e interface{ GetRepo() *gh.Repository }, reason database.PermissionsSyncJobReason) error {
 	ghRepo := e.GetRepo()
 
 	repo, err := db.Repos().GetFirstRepoByCloneURL(ctx, strings.TrimSuffix(ghRepo.GetCloneURL(), ".git"))

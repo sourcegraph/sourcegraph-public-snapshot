@@ -2,17 +2,22 @@ import { FC, FormHTMLAttributes, ReactNode } from 'react'
 
 import classNames from 'classnames'
 
-import { Card, Input, Label, Link } from '@sourcegraph/wildcard'
+import {
+    Card,
+    Input,
+    Label,
+    Link,
+    FormGroup,
+    getDefaultInputProps,
+    useFieldAPI,
+    FormInstance,
+    SubmissionErrors,
+} from '@sourcegraph/wildcard'
 
 import {
     CodeInsightTimeStepPicker,
     CodeInsightDashboardsVisibility,
-    FormGroup,
-    getDefaultInputProps,
-    useFieldAPI,
-    Form,
     LimitedAccessLabel,
-    SubmissionErrors,
     RepoSettingSection,
 } from '../../../../../components'
 import { useUiFeatures } from '../../../../../hooks'
@@ -24,7 +29,7 @@ import { CaptureGroupQueryInput } from './query-input/CaptureGroupQueryInput'
 import { SearchQueryChecks } from './search-query-checks/SearchQueryChecks'
 
 interface CaptureGroupCreationFormProps extends Omit<FormHTMLAttributes<HTMLFormElement>, 'title' | 'children'> {
-    form: Form<CaptureGroupFormFields>
+    form: FormInstance<CaptureGroupFormFields>
     title: useFieldAPI<CaptureGroupFormFields['title']>
     repositories: useFieldAPI<CaptureGroupFormFields['repositories']>
     repoQuery: useFieldAPI<CaptureGroupFormFields['repoQuery']>
@@ -112,6 +117,8 @@ export const CaptureGroupCreationForm: FC<CaptureGroupCreationFormProps> = props
                         <Input
                             as={CaptureGroupQueryInput}
                             required={true}
+                            // Set repo query to preview only when search query mode is activated
+                            repoQuery={repoMode.input.value === 'search-query' ? repoQuery.input.value.query : null}
                             repositories={repositories.input.value}
                             placeholder="Example: file:\.pom$ <java\.version>(.*)</java\.version>"
                             aria-labelledby="capture-group-query-label"

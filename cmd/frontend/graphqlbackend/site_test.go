@@ -5,11 +5,15 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -22,7 +26,7 @@ func TestSiteConfiguration(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := newSchemaResolver(db, gitserver.NewClient()).Site().Configuration(ctx)
+		_, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx)
 
 		if err == nil || !errors.Is(err, auth.ErrMustBeSiteAdmin) {
 			t.Fatalf("err: want %q but got %v", auth.ErrMustBeSiteAdmin, err)
@@ -34,7 +38,7 @@ func TestSiteConfigurationHistory(t *testing.T) {
 	stubs := setupSiteConfigStubs(t)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: stubs.users[0].ID})
-	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewClient()).Site().Configuration(ctx)
+	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx)
 	if err != nil {
 		t.Fatalf("failed to create schemaResolver: %v", err)
 	}
@@ -172,4 +176,60 @@ diff in IDs: %s,\n
 		})
 	}
 
+}
+
+func TestIsRequiredOutOfBandMigration(t *testing.T) {
+	tests := []struct {
+		name      string
+		version   oobmigration.Version
+		migration oobmigration.Migration
+		want      bool
+	}{
+		{
+			name:      "not deprecated",
+			version:   oobmigration.Version{Major: 4, Minor: 3},
+			migration: oobmigration.Migration{},
+			want:      false,
+		},
+		{
+			name:    "deprecated but finished",
+			version: oobmigration.Version{Major: 4, Minor: 3},
+			migration: oobmigration.Migration{
+				Deprecated: &oobmigration.Version{Major: 3, Minor: 43},
+				Progress:   1,
+			},
+			want: false,
+		},
+		{
+			name:    "deprecated after the current",
+			version: oobmigration.Version{Major: 4, Minor: 3},
+			migration: oobmigration.Migration{
+				Deprecated: &oobmigration.Version{Major: 4, Minor: 4},
+			},
+			want: false,
+		},
+
+		{
+			name:    "deprecated at current and unfinished",
+			version: oobmigration.Version{Major: 4, Minor: 3},
+			migration: oobmigration.Migration{
+				Deprecated: &oobmigration.Version{Major: 4, Minor: 3},
+			},
+			want: true,
+		},
+		{
+			name:    "deprecated prior to current and unfinished",
+			version: oobmigration.Version{Major: 4, Minor: 3},
+			migration: oobmigration.Migration{
+				Deprecated: &oobmigration.Version{Major: 3, Minor: 43},
+			},
+			want: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := isRequiredOutOfBandMigration(test.version, test.migration)
+			assert.Equal(t, test.want, got)
+		})
+	}
 }

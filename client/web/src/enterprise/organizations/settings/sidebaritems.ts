@@ -1,3 +1,4 @@
+import { canWriteBatchChanges } from '../../../batches/utils'
 import { OrgSettingsSidebarItems } from '../../../org/settings/OrgSettingsSidebar'
 import { orgSettingsSideBarItems } from '../../../org/settings/sidebaritems'
 
@@ -6,6 +7,7 @@ export const enterpriseOrgSettingsSideBarItems: OrgSettingsSidebarItems = [
     {
         to: '/executors/secrets',
         label: 'Executor secrets',
-        condition: ({ org: { viewerCanAdminister } }) => viewerCanAdminister,
+        condition: ({ batchChangesEnabled, org: { viewerCanAdminister }, authenticatedUser }) =>
+            batchChangesEnabled && viewerCanAdminister && canWriteBatchChanges(authenticatedUser),
     },
 ]

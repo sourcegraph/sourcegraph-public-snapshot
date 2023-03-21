@@ -38,6 +38,7 @@ go_binary(
 
 go_test(
     name = "search-blitz_test",
+    timeout = "short",
     srcs = ["config_test.go"],
     embed = [":search-blitz_lib"],
 )

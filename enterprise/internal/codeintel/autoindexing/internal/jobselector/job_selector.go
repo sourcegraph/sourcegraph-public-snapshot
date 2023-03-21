@@ -9,29 +9,32 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type JobSelector struct {
 	store           store.Store
-	uploadSvc       UploadService
+	repoStore       database.RepoStore
 	inferenceSvc    InferenceService
-	gitserverClient GitserverClient
+	gitserverClient gitserver.Client
 	logger          log.Logger
 }
 
 func NewJobSelector(
 	store store.Store,
-	uploadSvc UploadService,
+	repoStore database.RepoStore,
 	inferenceSvc InferenceService,
-	gitserverClient GitserverClient,
+	gitserverClient gitserver.Client,
 	logger log.Logger,
 ) *JobSelector {
 	return &JobSelector{
 		store:           store,
-		uploadSvc:       uploadSvc,
+		repoStore:       repoStore,
 		inferenceSvc:    inferenceSvc,
 		gitserverClient: gitserverClient,
 		logger:          logger,
@@ -44,8 +47,8 @@ var (
 )
 
 // InferIndexJobsFromRepositoryStructure collects the result of InferIndexJobs over all registered recognizers.
-func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]config.IndexJob, error) {
-	repoName, err := s.uploadSvc.GetRepoName(ctx, repositoryID)
+func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) ([]config.IndexJob, error) {
+	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
 	if err != nil {
 		return nil, err
 	}
@@ -57,8 +60,11 @@ func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context,
 	if script == "" {
 		script = overrideScript
 	}
+	if localOverrideScript != "" {
+		script = localOverrideScript
+	}
 
-	indexes, err := s.inferenceSvc.InferIndexJobs(ctx, api.RepoName(repoName), commit, script)
+	indexes, err := s.inferenceSvc.InferIndexJobs(ctx, repo.Name, commit, script)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +79,7 @@ func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context,
 
 // inferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobHints over all registered recognizers.
 func (s *JobSelector) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error) {
-	repoName, err := s.uploadSvc.GetRepoName(ctx, repositoryID)
+	repoName, err := s.store.GetRepoName(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
@@ -164,17 +170,18 @@ func (s *JobSelector) getIndexRecordsFromConfigurationInDatabase(ctx context.Con
 // configuration file at the given commit. If no jobs are configured within the repository then a false
 // valued flag is returned.
 func (s *JobSelector) getIndexRecordsFromConfigurationInRepository(ctx context.Context, repositoryID int, commit string, _ bool) ([]types.Index, bool, error) {
-	isConfigured, err := s.gitserverClient.FileExists(ctx, repositoryID, commit, "sourcegraph.yaml")
+	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
 	if err != nil {
-		return nil, false, errors.Wrap(err, "gitserver.FileExists")
-	}
-	if !isConfigured {
-		return nil, false, nil
+		return nil, false, err
 	}
 
-	content, err := s.gitserverClient.RawContents(ctx, repositoryID, commit, "sourcegraph.yaml")
+	content, err := s.gitserverClient.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, api.CommitID(commit), "sourcegraph.yaml")
 	if err != nil {
-		return nil, false, errors.Wrap(err, "gitserver.RawContents")
+		if os.IsNotExist(err) {
+			return nil, false, nil
+		}
+
+		return nil, false, err
 	}
 
 	indexConfiguration, err := config.UnmarshalYAML(content)
@@ -193,7 +200,7 @@ func (s *JobSelector) getIndexRecordsFromConfigurationInRepository(ctx context.C
 // determines a set of index jobs that are likely to succeed. If no jobs could be inferred then a
 // false valued flag is returned.
 func (s *JobSelector) inferIndexRecordsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]types.Index, bool, error) {
-	indexJobs, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, bypassLimit)
+	indexJobs, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, "", bypassLimit)
 	if err != nil || len(indexJobs) == 0 {
 		return nil, false, err
 	}
@@ -206,13 +213,6 @@ func (s *JobSelector) inferIndexRecordsFromRepositoryStructure(ctx context.Conte
 func convertIndexConfiguration(repositoryID int, commit string, indexConfiguration config.IndexConfiguration) (indexes []types.Index) {
 	for _, indexJob := range indexConfiguration.IndexJobs {
 		var dockerSteps []types.DockerStep
-		for _, dockerStep := range indexConfiguration.SharedSteps {
-			dockerSteps = append(dockerSteps, types.DockerStep{
-				Root:     dockerStep.Root,
-				Image:    dockerStep.Image,
-				Commands: dockerStep.Commands,
-			})
-		}
 		for _, dockerStep := range indexJob.Steps {
 			dockerSteps = append(dockerSteps, types.DockerStep{
 				Root:     dockerStep.Root,
@@ -222,15 +222,16 @@ func convertIndexConfiguration(repositoryID int, commit string, indexConfigurati
 		}
 
 		indexes = append(indexes, types.Index{
-			Commit:       commit,
-			RepositoryID: repositoryID,
-			State:        "queued",
-			DockerSteps:  dockerSteps,
-			LocalSteps:   indexJob.LocalSteps,
-			Root:         indexJob.Root,
-			Indexer:      indexJob.Indexer,
-			IndexerArgs:  indexJob.IndexerArgs,
-			Outfile:      indexJob.Outfile,
+			Commit:           commit,
+			RepositoryID:     repositoryID,
+			State:            "queued",
+			DockerSteps:      dockerSteps,
+			LocalSteps:       indexJob.LocalSteps,
+			Root:             indexJob.Root,
+			Indexer:          indexJob.Indexer,
+			IndexerArgs:      indexJob.IndexerArgs,
+			Outfile:          indexJob.Outfile,
+			RequestedEnvVars: indexJob.RequestedEnvVars,
 		})
 	}
 

@@ -17,6 +17,7 @@ go_library(
         "//cmd/symbols/observability",
         "//cmd/symbols/squirrel",
         "//cmd/symbols/types",
+        "//internal/conf/deploy",
         "//internal/database",
         "//internal/env",
         "//internal/grpc",
@@ -24,7 +25,7 @@ go_library(
         "//internal/observation",
         "//internal/search",
         "//internal/search/result",
-        "//internal/symbols/proto",
+        "//internal/symbols/v1:symbols",
         "//internal/types",
         "//lib/errors",
         "@com_github_dustin_go_humanize//:go-humanize",
@@ -32,14 +33,14 @@ go_library(
         "@com_github_sourcegraph_go_ctags//:go-ctags",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
-        "@org_golang_google_grpc//:go_default_library",
-        "@org_golang_google_grpc//reflection",
-        "@org_golang_google_protobuf//types/known/emptypb",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
     ],
 )
 
 go_test(
     name = "api_test",
+    timeout = "short",
     srcs = [
         "handler_test.go",
         "mocks_test.go",
@@ -56,6 +57,7 @@ go_test(
         "//internal/diskcache",
         "//internal/endpoint",
         "//internal/gitserver/gitdomain",
+        "//internal/grpc/defaults",
         "//internal/httpcli",
         "//internal/observation",
         "//internal/search",
@@ -63,7 +65,10 @@ go_test(
         "//internal/symbols",
         "//internal/types",
         "//lib/errors",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
         "@com_github_sourcegraph_go_ctags//:go-ctags",
+        "@com_github_sourcegraph_log//logtest",
         "@org_golang_x_sync//semaphore",
     ],
 )

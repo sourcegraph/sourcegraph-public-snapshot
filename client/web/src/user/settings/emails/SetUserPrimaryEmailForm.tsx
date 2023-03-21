@@ -8,7 +8,12 @@ import { Select, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { LoaderButton } from '../../../components/LoaderButton'
-import { SetUserEmailPrimaryResult, SetUserEmailPrimaryVariables, UserEmailsResult } from '../../../graphql-operations'
+import {
+    SetUserEmailPrimaryResult,
+    SetUserEmailPrimaryVariables,
+    UserEmailsResult,
+    UserSettingsAreaUserFields,
+} from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 import styles from './SetUserPrimaryEmailForm.module.scss'
@@ -16,7 +21,7 @@ import styles from './SetUserPrimaryEmailForm.module.scss'
 type UserEmail = (NonNullable<UserEmailsResult['node']> & { __typename: 'User' })['emails'][number]
 
 interface Props {
-    user: string
+    user: Pick<UserSettingsAreaUserFields, 'id' | 'scimControlled'>
     emails: UserEmail[]
     onDidSet: () => void
 
@@ -33,7 +38,8 @@ export const SetUserPrimaryEmailForm: FunctionComponent<React.PropsWithChildren<
     onDidSet,
     className,
 }) => {
-    const [primaryEmail, setPrimaryEmail] = useState<string | undefined>(findPrimaryEmail(emails))
+    const currentPrimaryEmail = findPrimaryEmail(emails)
+    const [primaryEmail, setPrimaryEmail] = useState<string | undefined>(currentPrimaryEmail)
     const [statusOrError, setStatusOrError] = useState<Status>()
 
     // options should include all verified emails + a primary one
@@ -60,7 +66,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<React.PropsWithChildren<
                                 }
                             }
                         `,
-                        { user, email: primaryEmail }
+                        { user: user.id, email: primaryEmail }
                     ).toPromise()
                 )
 
@@ -91,8 +97,14 @@ export const SetUserPrimaryEmailForm: FunctionComponent<React.PropsWithChildren<
                             value={primaryEmail}
                             onChange={onPrimaryEmailSelect}
                             required={true}
-                            disabled={options.length === 1 || statusOrError === 'loading'}
+                            disabled={
+                                (options.length === 1 && !!currentPrimaryEmail) ||
+                                statusOrError === 'loading' ||
+                                user.scimControlled
+                            }
                         >
+                            {/* If no primary email is selected yet, we add an empty option to indicate nothing was selected. */}
+                            {!currentPrimaryEmail && <option key="" />}
                             {options.map(email => (
                                 <option key={email} value={email}>
                                     {email}
@@ -105,7 +117,14 @@ export const SetUserPrimaryEmailForm: FunctionComponent<React.PropsWithChildren<
                             loading={statusOrError === 'loading'}
                             label="Save"
                             type="submit"
-                            disabled={options.length === 1 || statusOrError === 'loading'}
+                            disabled={
+                                // In case no email is marked primary yet, and none
+                                // has been selected from the dropdown yet.
+                                !primaryEmail ||
+                                (options.length === 1 && !!currentPrimaryEmail) ||
+                                statusOrError === 'loading' ||
+                                user.scimControlled
+                            }
                             variant="primary"
                         />
                     </div>

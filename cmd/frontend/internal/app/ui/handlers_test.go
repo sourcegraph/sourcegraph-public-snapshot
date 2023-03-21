@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"net/http"
@@ -19,11 +20,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 )
 
@@ -39,10 +43,20 @@ func TestRedirects(t *testing.T) {
 		gss := database.NewMockGlobalStateStore()
 		gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
 
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+		extSvcs := database.NewMockExternalServiceStore()
+		extSvcs.CountFunc.SetDefaultReturn(0, nil)
+		repoStatistics := database.NewMockRepoStatisticsStore()
+		repoStatistics.GetRepoStatisticsFunc.SetDefaultReturn(database.RepoStatistics{Total: 1}, nil)
+
 		db := database.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
+		db.UsersFunc.SetDefaultReturn(users)
+		db.ExternalServicesFunc.SetDefaultReturn(extSvcs)
+		db.RepoStatisticsFunc.SetDefaultReturn(repoStatistics)
 
-		InitRouter(db)
+		InitRouter(db, jobutil.NewUnimplementedEnterpriseJobs())
 		rw := httptest.NewRecorder()
 		req, err := http.NewRequest("GET", path, nil)
 		if err != nil {
@@ -180,8 +194,33 @@ func TestNewCommon_repo_error(t *testing.T) {
 			gss := database.NewMockGlobalStateStore()
 			gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
 
+			config := &schema.OtherExternalServiceConnection{
+				Url:   "https://url.com",
+				Repos: []string{"serve-git-local"},
+				Root:  "path/to/repo",
+			}
+
+			bs, err := json.Marshal(config)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			extSvcOther := types.ExternalService{
+				Kind:   extsvc.KindOther,
+				ID:     1,
+				Config: extsvc.NewUnencryptedConfig(string(bs)),
+			}
+
+			extSvcs := database.NewMockExternalServiceStore()
+			extSvcs.ListFunc.SetDefaultReturn([]*types.ExternalService{&extSvcOther}, nil)
+
+			repoStatistics := database.NewMockRepoStatisticsStore()
+			repoStatistics.GetRepoStatisticsFunc.SetDefaultReturn(database.RepoStatistics{Total: 1}, nil)
+
 			db := database.NewMockDB()
 			db.GlobalStateFunc.SetDefaultReturn(gss)
+			db.ExternalServicesFunc.SetDefaultReturn(extSvcs)
+			db.RepoStatisticsFunc.SetDefaultReturn(repoStatistics)
 
 			_, err = newCommon(httptest.NewRecorder(), req, db, "test", index, serveError)
 			if err != nil {

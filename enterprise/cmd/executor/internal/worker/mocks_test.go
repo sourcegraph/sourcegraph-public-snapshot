@@ -13,6 +13,7 @@ import (
 
 	command "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	workspace "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
+	types "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	executor "github.com/sourcegraph/sourcegraph/internal/executor"
 )
 
@@ -35,12 +36,12 @@ type MockExecutionLogEntryStore struct {
 func NewMockExecutionLogEntryStore() *MockExecutionLogEntryStore {
 	return &MockExecutionLogEntryStore{
 		AddExecutionLogEntryFunc: &ExecutionLogEntryStoreAddExecutionLogEntryFunc{
-			defaultHook: func(context.Context, int, executor.ExecutionLogEntry) (r0 int, r1 error) {
+			defaultHook: func(context.Context, types.Job, executor.ExecutionLogEntry) (r0 int, r1 error) {
 				return
 			},
 		},
 		UpdateExecutionLogEntryFunc: &ExecutionLogEntryStoreUpdateExecutionLogEntryFunc{
-			defaultHook: func(context.Context, int, int, executor.ExecutionLogEntry) (r0 error) {
+			defaultHook: func(context.Context, types.Job, int, executor.ExecutionLogEntry) (r0 error) {
 				return
 			},
 		},
@@ -53,12 +54,12 @@ func NewMockExecutionLogEntryStore() *MockExecutionLogEntryStore {
 func NewStrictMockExecutionLogEntryStore() *MockExecutionLogEntryStore {
 	return &MockExecutionLogEntryStore{
 		AddExecutionLogEntryFunc: &ExecutionLogEntryStoreAddExecutionLogEntryFunc{
-			defaultHook: func(context.Context, int, executor.ExecutionLogEntry) (int, error) {
+			defaultHook: func(context.Context, types.Job, executor.ExecutionLogEntry) (int, error) {
 				panic("unexpected invocation of MockExecutionLogEntryStore.AddExecutionLogEntry")
 			},
 		},
 		UpdateExecutionLogEntryFunc: &ExecutionLogEntryStoreUpdateExecutionLogEntryFunc{
-			defaultHook: func(context.Context, int, int, executor.ExecutionLogEntry) error {
+			defaultHook: func(context.Context, types.Job, int, executor.ExecutionLogEntry) error {
 				panic("unexpected invocation of MockExecutionLogEntryStore.UpdateExecutionLogEntry")
 			},
 		},
@@ -83,15 +84,15 @@ func NewMockExecutionLogEntryStoreFrom(i command.ExecutionLogEntryStore) *MockEx
 // when the AddExecutionLogEntry method of the parent
 // MockExecutionLogEntryStore instance is invoked.
 type ExecutionLogEntryStoreAddExecutionLogEntryFunc struct {
-	defaultHook func(context.Context, int, executor.ExecutionLogEntry) (int, error)
-	hooks       []func(context.Context, int, executor.ExecutionLogEntry) (int, error)
+	defaultHook func(context.Context, types.Job, executor.ExecutionLogEntry) (int, error)
+	hooks       []func(context.Context, types.Job, executor.ExecutionLogEntry) (int, error)
 	history     []ExecutionLogEntryStoreAddExecutionLogEntryFuncCall
 	mutex       sync.Mutex
 }
 
 // AddExecutionLogEntry delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockExecutionLogEntryStore) AddExecutionLogEntry(v0 context.Context, v1 int, v2 executor.ExecutionLogEntry) (int, error) {
+func (m *MockExecutionLogEntryStore) AddExecutionLogEntry(v0 context.Context, v1 types.Job, v2 executor.ExecutionLogEntry) (int, error) {
 	r0, r1 := m.AddExecutionLogEntryFunc.nextHook()(v0, v1, v2)
 	m.AddExecutionLogEntryFunc.appendCall(ExecutionLogEntryStoreAddExecutionLogEntryFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -100,7 +101,7 @@ func (m *MockExecutionLogEntryStore) AddExecutionLogEntry(v0 context.Context, v1
 // SetDefaultHook sets function that is called when the AddExecutionLogEntry
 // method of the parent MockExecutionLogEntryStore instance is invoked and
 // the hook queue is empty.
-func (f *ExecutionLogEntryStoreAddExecutionLogEntryFunc) SetDefaultHook(hook func(context.Context, int, executor.ExecutionLogEntry) (int, error)) {
+func (f *ExecutionLogEntryStoreAddExecutionLogEntryFunc) SetDefaultHook(hook func(context.Context, types.Job, executor.ExecutionLogEntry) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -109,7 +110,7 @@ func (f *ExecutionLogEntryStoreAddExecutionLogEntryFunc) SetDefaultHook(hook fun
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *ExecutionLogEntryStoreAddExecutionLogEntryFunc) PushHook(hook func(context.Context, int, executor.ExecutionLogEntry) (int, error)) {
+func (f *ExecutionLogEntryStoreAddExecutionLogEntryFunc) PushHook(hook func(context.Context, types.Job, executor.ExecutionLogEntry) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -118,19 +119,19 @@ func (f *ExecutionLogEntryStoreAddExecutionLogEntryFunc) PushHook(hook func(cont
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ExecutionLogEntryStoreAddExecutionLogEntryFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, executor.ExecutionLogEntry) (int, error) {
+	f.SetDefaultHook(func(context.Context, types.Job, executor.ExecutionLogEntry) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ExecutionLogEntryStoreAddExecutionLogEntryFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, int, executor.ExecutionLogEntry) (int, error) {
+	f.PushHook(func(context.Context, types.Job, executor.ExecutionLogEntry) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *ExecutionLogEntryStoreAddExecutionLogEntryFunc) nextHook() func(context.Context, int, executor.ExecutionLogEntry) (int, error) {
+func (f *ExecutionLogEntryStoreAddExecutionLogEntryFunc) nextHook() func(context.Context, types.Job, executor.ExecutionLogEntry) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -170,7 +171,7 @@ type ExecutionLogEntryStoreAddExecutionLogEntryFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
+	Arg1 types.Job
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 executor.ExecutionLogEntry
@@ -198,15 +199,15 @@ func (c ExecutionLogEntryStoreAddExecutionLogEntryFuncCall) Results() []interfac
 // when the UpdateExecutionLogEntry method of the parent
 // MockExecutionLogEntryStore instance is invoked.
 type ExecutionLogEntryStoreUpdateExecutionLogEntryFunc struct {
-	defaultHook func(context.Context, int, int, executor.ExecutionLogEntry) error
-	hooks       []func(context.Context, int, int, executor.ExecutionLogEntry) error
+	defaultHook func(context.Context, types.Job, int, executor.ExecutionLogEntry) error
+	hooks       []func(context.Context, types.Job, int, executor.ExecutionLogEntry) error
 	history     []ExecutionLogEntryStoreUpdateExecutionLogEntryFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdateExecutionLogEntry delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockExecutionLogEntryStore) UpdateExecutionLogEntry(v0 context.Context, v1 int, v2 int, v3 executor.ExecutionLogEntry) error {
+func (m *MockExecutionLogEntryStore) UpdateExecutionLogEntry(v0 context.Context, v1 types.Job, v2 int, v3 executor.ExecutionLogEntry) error {
 	r0 := m.UpdateExecutionLogEntryFunc.nextHook()(v0, v1, v2, v3)
 	m.UpdateExecutionLogEntryFunc.appendCall(ExecutionLogEntryStoreUpdateExecutionLogEntryFuncCall{v0, v1, v2, v3, r0})
 	return r0
@@ -215,7 +216,7 @@ func (m *MockExecutionLogEntryStore) UpdateExecutionLogEntry(v0 context.Context,
 // SetDefaultHook sets function that is called when the
 // UpdateExecutionLogEntry method of the parent MockExecutionLogEntryStore
 // instance is invoked and the hook queue is empty.
-func (f *ExecutionLogEntryStoreUpdateExecutionLogEntryFunc) SetDefaultHook(hook func(context.Context, int, int, executor.ExecutionLogEntry) error) {
+func (f *ExecutionLogEntryStoreUpdateExecutionLogEntryFunc) SetDefaultHook(hook func(context.Context, types.Job, int, executor.ExecutionLogEntry) error) {
 	f.defaultHook = hook
 }
 
@@ -224,7 +225,7 @@ func (f *ExecutionLogEntryStoreUpdateExecutionLogEntryFunc) SetDefaultHook(hook 
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *ExecutionLogEntryStoreUpdateExecutionLogEntryFunc) PushHook(hook func(context.Context, int, int, executor.ExecutionLogEntry) error) {
+func (f *ExecutionLogEntryStoreUpdateExecutionLogEntryFunc) PushHook(hook func(context.Context, types.Job, int, executor.ExecutionLogEntry) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -233,19 +234,19 @@ func (f *ExecutionLogEntryStoreUpdateExecutionLogEntryFunc) PushHook(hook func(c
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ExecutionLogEntryStoreUpdateExecutionLogEntryFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, int, executor.ExecutionLogEntry) error {
+	f.SetDefaultHook(func(context.Context, types.Job, int, executor.ExecutionLogEntry) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ExecutionLogEntryStoreUpdateExecutionLogEntryFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, int, executor.ExecutionLogEntry) error {
+	f.PushHook(func(context.Context, types.Job, int, executor.ExecutionLogEntry) error {
 		return r0
 	})
 }
 
-func (f *ExecutionLogEntryStoreUpdateExecutionLogEntryFunc) nextHook() func(context.Context, int, int, executor.ExecutionLogEntry) error {
+func (f *ExecutionLogEntryStoreUpdateExecutionLogEntryFunc) nextHook() func(context.Context, types.Job, int, executor.ExecutionLogEntry) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -285,7 +286,7 @@ type ExecutionLogEntryStoreUpdateExecutionLogEntryFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
+	Arg1 types.Job
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 int
@@ -709,12 +710,12 @@ type MockFilesStore struct {
 func NewMockFilesStore() *MockFilesStore {
 	return &MockFilesStore{
 		ExistsFunc: &FilesStoreExistsFunc{
-			defaultHook: func(context.Context, string, string) (r0 bool, r1 error) {
+			defaultHook: func(context.Context, types.Job, string, string) (r0 bool, r1 error) {
 				return
 			},
 		},
 		GetFunc: &FilesStoreGetFunc{
-			defaultHook: func(context.Context, string, string) (r0 io.ReadCloser, r1 error) {
+			defaultHook: func(context.Context, types.Job, string, string) (r0 io.ReadCloser, r1 error) {
 				return
 			},
 		},
@@ -726,12 +727,12 @@ func NewMockFilesStore() *MockFilesStore {
 func NewStrictMockFilesStore() *MockFilesStore {
 	return &MockFilesStore{
 		ExistsFunc: &FilesStoreExistsFunc{
-			defaultHook: func(context.Context, string, string) (bool, error) {
+			defaultHook: func(context.Context, types.Job, string, string) (bool, error) {
 				panic("unexpected invocation of MockFilesStore.Exists")
 			},
 		},
 		GetFunc: &FilesStoreGetFunc{
-			defaultHook: func(context.Context, string, string) (io.ReadCloser, error) {
+			defaultHook: func(context.Context, types.Job, string, string) (io.ReadCloser, error) {
 				panic("unexpected invocation of MockFilesStore.Get")
 			},
 		},
@@ -754,23 +755,23 @@ func NewMockFilesStoreFrom(i workspace.FilesStore) *MockFilesStore {
 // FilesStoreExistsFunc describes the behavior when the Exists method of the
 // parent MockFilesStore instance is invoked.
 type FilesStoreExistsFunc struct {
-	defaultHook func(context.Context, string, string) (bool, error)
-	hooks       []func(context.Context, string, string) (bool, error)
+	defaultHook func(context.Context, types.Job, string, string) (bool, error)
+	hooks       []func(context.Context, types.Job, string, string) (bool, error)
 	history     []FilesStoreExistsFuncCall
 	mutex       sync.Mutex
 }
 
 // Exists delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockFilesStore) Exists(v0 context.Context, v1 string, v2 string) (bool, error) {
-	r0, r1 := m.ExistsFunc.nextHook()(v0, v1, v2)
-	m.ExistsFunc.appendCall(FilesStoreExistsFuncCall{v0, v1, v2, r0, r1})
+func (m *MockFilesStore) Exists(v0 context.Context, v1 types.Job, v2 string, v3 string) (bool, error) {
+	r0, r1 := m.ExistsFunc.nextHook()(v0, v1, v2, v3)
+	m.ExistsFunc.appendCall(FilesStoreExistsFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Exists method of the
 // parent MockFilesStore instance is invoked and the hook queue is empty.
-func (f *FilesStoreExistsFunc) SetDefaultHook(hook func(context.Context, string, string) (bool, error)) {
+func (f *FilesStoreExistsFunc) SetDefaultHook(hook func(context.Context, types.Job, string, string) (bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -778,7 +779,7 @@ func (f *FilesStoreExistsFunc) SetDefaultHook(hook func(context.Context, string,
 // Exists method of the parent MockFilesStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *FilesStoreExistsFunc) PushHook(hook func(context.Context, string, string) (bool, error)) {
+func (f *FilesStoreExistsFunc) PushHook(hook func(context.Context, types.Job, string, string) (bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -787,19 +788,19 @@ func (f *FilesStoreExistsFunc) PushHook(hook func(context.Context, string, strin
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *FilesStoreExistsFunc) SetDefaultReturn(r0 bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, string) (bool, error) {
+	f.SetDefaultHook(func(context.Context, types.Job, string, string) (bool, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *FilesStoreExistsFunc) PushReturn(r0 bool, r1 error) {
-	f.PushHook(func(context.Context, string, string) (bool, error) {
+	f.PushHook(func(context.Context, types.Job, string, string) (bool, error) {
 		return r0, r1
 	})
 }
 
-func (f *FilesStoreExistsFunc) nextHook() func(context.Context, string, string) (bool, error) {
+func (f *FilesStoreExistsFunc) nextHook() func(context.Context, types.Job, string, string) (bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -837,10 +838,13 @@ type FilesStoreExistsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 string
+	Arg1 types.Job
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 bool
@@ -852,7 +856,7 @@ type FilesStoreExistsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c FilesStoreExistsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
@@ -864,23 +868,23 @@ func (c FilesStoreExistsFuncCall) Results() []interface{} {
 // FilesStoreGetFunc describes the behavior when the Get method of the
 // parent MockFilesStore instance is invoked.
 type FilesStoreGetFunc struct {
-	defaultHook func(context.Context, string, string) (io.ReadCloser, error)
-	hooks       []func(context.Context, string, string) (io.ReadCloser, error)
+	defaultHook func(context.Context, types.Job, string, string) (io.ReadCloser, error)
+	hooks       []func(context.Context, types.Job, string, string) (io.ReadCloser, error)
 	history     []FilesStoreGetFuncCall
 	mutex       sync.Mutex
 }
 
 // Get delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockFilesStore) Get(v0 context.Context, v1 string, v2 string) (io.ReadCloser, error) {
-	r0, r1 := m.GetFunc.nextHook()(v0, v1, v2)
-	m.GetFunc.appendCall(FilesStoreGetFuncCall{v0, v1, v2, r0, r1})
+func (m *MockFilesStore) Get(v0 context.Context, v1 types.Job, v2 string, v3 string) (io.ReadCloser, error) {
+	r0, r1 := m.GetFunc.nextHook()(v0, v1, v2, v3)
+	m.GetFunc.appendCall(FilesStoreGetFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Get method of the
 // parent MockFilesStore instance is invoked and the hook queue is empty.
-func (f *FilesStoreGetFunc) SetDefaultHook(hook func(context.Context, string, string) (io.ReadCloser, error)) {
+func (f *FilesStoreGetFunc) SetDefaultHook(hook func(context.Context, types.Job, string, string) (io.ReadCloser, error)) {
 	f.defaultHook = hook
 }
 
@@ -888,7 +892,7 @@ func (f *FilesStoreGetFunc) SetDefaultHook(hook func(context.Context, string, st
 // Get method of the parent MockFilesStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *FilesStoreGetFunc) PushHook(hook func(context.Context, string, string) (io.ReadCloser, error)) {
+func (f *FilesStoreGetFunc) PushHook(hook func(context.Context, types.Job, string, string) (io.ReadCloser, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -897,19 +901,19 @@ func (f *FilesStoreGetFunc) PushHook(hook func(context.Context, string, string) 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *FilesStoreGetFunc) SetDefaultReturn(r0 io.ReadCloser, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, string) (io.ReadCloser, error) {
+	f.SetDefaultHook(func(context.Context, types.Job, string, string) (io.ReadCloser, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *FilesStoreGetFunc) PushReturn(r0 io.ReadCloser, r1 error) {
-	f.PushHook(func(context.Context, string, string) (io.ReadCloser, error) {
+	f.PushHook(func(context.Context, types.Job, string, string) (io.ReadCloser, error) {
 		return r0, r1
 	})
 }
 
-func (f *FilesStoreGetFunc) nextHook() func(context.Context, string, string) (io.ReadCloser, error) {
+func (f *FilesStoreGetFunc) nextHook() func(context.Context, types.Job, string, string) (io.ReadCloser, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -947,10 +951,13 @@ type FilesStoreGetFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 string
+	Arg1 types.Job
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 io.ReadCloser
@@ -962,7 +969,7 @@ type FilesStoreGetFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c FilesStoreGetFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this

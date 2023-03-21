@@ -492,7 +492,7 @@ func (c *clientImplementor) lStat(ctx context.Context, checker authz.SubRepoPerm
 		return fis[0], nil
 	} else {
 		if filteringErr != nil {
-			err = errors.Wrap(err, "filtering paths")
+			err = errors.Wrap(filteringErr, "filtering paths")
 		} else {
 			err = &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
 		}
@@ -737,7 +737,7 @@ func streamBlameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChec
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed", args))
 	}
 
-	return newBlameHunkReader(ctx, rc), nil
+	return newBlameHunkReader(rc), nil
 }
 
 // BlameFile returns Git blame information about a file.
@@ -1142,51 +1142,6 @@ func parseDirectoryChildren(dirnames, paths []string) map[string][]string {
 	}
 
 	return childrenMap
-}
-
-func (c *clientImplementor) LFSSmudge(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (_ io.ReadCloser, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: LFSSmudge") //nolint:staticcheck // OT is deprecated
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.LogFields(log.Error(err))
-		}
-		span.Finish()
-	}()
-
-	// First read in pointer. Pointer should be less than 200 bytes according
-	// to a few different implementations. Note: git-lfs implementation uses
-	// 1024, but we only support newer kind of pointers which are smaller.
-	r, err := c.NewFileReader(ctx, checker, repo, commit, path)
-	if err != nil {
-		return nil, err
-	}
-
-	pointer := make([]byte, 201)
-	n, err := io.ReadFull(r, pointer)
-	pointer = pointer[:n]
-	if err == nil {
-		// This file is too big to be an LFS pointer. So we can fallback to
-		// just returning r (but need to simulate "unreading" the bytes we
-		// have read)
-
-		return withCloser{
-			Reader: io.MultiReader(bytes.NewReader(pointer), r),
-			Closer: r,
-		}, nil
-	} else if err != io.ErrUnexpectedEOF {
-		return nil, errors.Wrapf(err, "failed to read LFS pointer %q in %s@%s", path, repo, commit)
-	}
-
-	cmd := c.gitCommand(repo, "lfs", "smudge", path)
-	cmd.SetStdin(pointer)
-
-	return cmd.StdoutReader(ctx)
-}
-
-type withCloser struct {
-	io.Reader
-	io.Closer
 }
 
 // ListTags returns a list of all tags in the repository. If commitObjs is non-empty, only all tags pointing at those commits are returned.
@@ -2444,10 +2399,7 @@ func (c *clientImplementor) ArchiveReader(
 		return nil, err
 	}
 
-	u, err := c.archiveURL(ctx, repo, options)
-	if err != nil {
-		return nil, err
-	}
+	u := c.archiveURL(repo, options)
 
 	resp, err := c.do(ctx, repo, "POST", u.String(), nil)
 	if err != nil {

@@ -9,12 +9,15 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/azuredevops"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/gerrit"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/perforce"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -59,12 +62,13 @@ func ProvidersFromConfig(
 
 	opt := database.ExternalServicesListOptions{
 		Kinds: []string{
+			extsvc.KindAzureDevOps,
+			extsvc.KindBitbucketCloud,
+			extsvc.KindBitbucketServer,
+			extsvc.KindGerrit,
 			extsvc.KindGitHub,
 			extsvc.KindGitLab,
-			extsvc.KindBitbucketServer,
-			extsvc.KindBitbucketCloud,
 			extsvc.KindPerforce,
-			extsvc.KindGerrit,
 		},
 		LimitOffset: &database.LimitOffset{
 			Limit: 500, // The number is randomly chosen
@@ -78,6 +82,7 @@ func ProvidersFromConfig(
 		perforceConns        []*types.PerforceConnection
 		bitbucketCloudConns  []*types.BitbucketCloudConnection
 		gerritConns          []*types.GerritConnection
+		azuredevopsConns     []*types.AzureDevOpsConnection
 	)
 	for {
 		svcs, err := store.List(ctx, opt)
@@ -102,6 +107,26 @@ func ProvidersFromConfig(
 			}
 
 			switch c := cfg.(type) {
+			case *schema.AzureDevOpsConnection:
+				azuredevopsConns = append(azuredevopsConns, &types.AzureDevOpsConnection{
+					URN:                   svc.URN(),
+					AzureDevOpsConnection: c,
+				})
+			case *schema.BitbucketCloudConnection:
+				bitbucketCloudConns = append(bitbucketCloudConns, &types.BitbucketCloudConnection{
+					URN:                      svc.URN(),
+					BitbucketCloudConnection: c,
+				})
+			case *schema.BitbucketServerConnection:
+				bitbucketServerConns = append(bitbucketServerConns, &types.BitbucketServerConnection{
+					URN:                       svc.URN(),
+					BitbucketServerConnection: c,
+				})
+			case *schema.GerritConnection:
+				gerritConns = append(gerritConns, &types.GerritConnection{
+					URN:              svc.URN(),
+					GerritConnection: c,
+				})
 			case *schema.GitHubConnection:
 				gitHubConns = append(gitHubConns,
 					&github.ExternalConnection{
@@ -117,25 +142,10 @@ func ProvidersFromConfig(
 					URN:              svc.URN(),
 					GitLabConnection: c,
 				})
-			case *schema.BitbucketServerConnection:
-				bitbucketServerConns = append(bitbucketServerConns, &types.BitbucketServerConnection{
-					URN:                       svc.URN(),
-					BitbucketServerConnection: c,
-				})
-			case *schema.BitbucketCloudConnection:
-				bitbucketCloudConns = append(bitbucketCloudConns, &types.BitbucketCloudConnection{
-					URN:                      svc.URN(),
-					BitbucketCloudConnection: c,
-				})
 			case *schema.PerforceConnection:
 				perforceConns = append(perforceConns, &types.PerforceConnection{
 					URN:                svc.URN(),
 					PerforceConnection: c,
-				})
-			case *schema.GerritConnection:
-				gerritConns = append(gerritConns, &types.GerritConnection{
-					URN:              svc.URN(),
-					GerritConnection: c,
 				})
 			default:
 				logger.Error("ProvidersFromConfig", log.Error(errors.Errorf("unexpected connection type: %T", cfg)))
@@ -149,9 +159,11 @@ func ProvidersFromConfig(
 	}
 
 	enableGithubInternalRepoVisibility := false
+	unifiedPermissions := false
 	ef := cfg.SiteConfig().ExperimentalFeatures
 	if ef != nil {
 		enableGithubInternalRepoVisibility = ef.EnableGithubInternalRepoVisibility
+		unifiedPermissions = ef.UnifiedPermissions
 	}
 
 	initResult := github.NewAuthzProviders(db, gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility)
@@ -160,10 +172,13 @@ func ProvidersFromConfig(
 	initResult.Append(perforce.NewAuthzProviders(perforceConns))
 	initResult.Append(bitbucketcloud.NewAuthzProviders(db, bitbucketCloudConns, cfg.SiteConfig().AuthProviders))
 	initResult.Append(gerrit.NewAuthzProviders(gerritConns, cfg.SiteConfig().AuthProviders))
+	initResult.Append(azuredevops.NewAuthzProviders(db, azuredevopsConns))
 
 	// 🚨 SECURITY: Warn the admin when both code host authz provider and the permissions user mapping are configured.
+	// But only if the unified permissions is disabled
 	if cfg.SiteConfig().PermissionsUserMapping != nil &&
-		cfg.SiteConfig().PermissionsUserMapping.Enabled {
+		cfg.SiteConfig().PermissionsUserMapping.Enabled &&
+		!unifiedPermissions {
 		allowAccessByDefault = false
 		if len(initResult.Providers) > 0 {
 			serviceTypes := make([]string, len(initResult.Providers))
@@ -186,4 +201,18 @@ func RefreshInterval() time.Duration {
 		return 5 * time.Second
 	}
 	return time.Duration(interval) * time.Second
+}
+
+// PermissionSyncingDisabled returns true if the background permissions syncing is not enabled.
+// It is not enabled if:
+//   - There are no code host connections with authorization or enforcePermissions enabled
+//   - Permissions user mapping (aka explicit permissions API) is enabled and unified permissions model is not enabled
+//   - Not purchased with the current license
+//   - `disableAutoCodeHostSyncs` site setting is set to true
+func PermissionSyncingDisabled() bool {
+	_, p := authz.GetProviders()
+	return len(p) == 0 ||
+		(globals.PermissionsUserMapping().Enabled && !conf.ExperimentalFeatures().UnifiedPermissions) ||
+		licensing.Check(licensing.FeatureACLs) != nil ||
+		conf.Get().DisableAutoCodeHostSyncs
 }

@@ -47,7 +47,7 @@ If you have not yet set up a Sourcegraph server, you can also test out the API o
 
 ### Documentation
 
-Sourcegraph's GraphQL API documentation is available directly in the API console itself. To access the documentation, click **Docs** on the right-hand side of the API console page.
+Sourcegraph's GraphQL API documentation is available on the [API Docs](api-docs.md) page, as well as directly in the API console itself. To access the documentation, click **Docs** on the right-hand side of the API console page.
 
 ### Search
 

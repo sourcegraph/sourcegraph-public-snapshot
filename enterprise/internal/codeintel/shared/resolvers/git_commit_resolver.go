@@ -31,7 +31,10 @@ func NewGitCommitResolver(repo *RepositoryResolver, id api.CommitID) *GitCommitR
 }
 
 func (r *GitCommitResolver) ID() graphql.ID {
-	return marshalGitCommitID(r.repoResolver.ID(), r.oid)
+	return resolverstubs.MarshalID("GitCommit", struct {
+		Repository graphql.ID  `json:"r"`
+		CommitID   GitObjectID `json:"c"`
+	}{Repository: r.repoResolver.ID(), CommitID: r.oid})
 }
 
 func (r *GitCommitResolver) Repository() resolverstubs.RepositoryResolver { return r.repoResolver }
@@ -58,10 +61,7 @@ func (r *GitCommitResolver) inputRevOrImmutableRev() string {
 }
 
 func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
-	// Dereference to copy the URL to avoid mutation
-	repoURL := *r.repoResolver.RepoMatch.URL()
-	repoURL.Path += "@" + string(r.oid)
-	return &repoURL
+	return &url.URL{Path: "/" + r.repoResolver.Name() + "@" + string(r.oid)}
 }
 
 // repoRevURL returns the URL path prefix to use when constructing URLs to resources at this
@@ -70,8 +70,7 @@ func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
 // portion (unlike for commit page URLs, which must include some revspec in
 // "/REPO/-/commit/REVSPEC").
 func (r *GitCommitResolver) repoRevURL() *url.URL {
-	// Dereference to copy to avoid mutation
-	repoURL := *r.repoResolver.RepoMatch.URL()
+	repoURL := &url.URL{Path: "/" + r.repoResolver.Name()}
 	var rev string
 	if r.inputRev != nil {
 		rev = *r.inputRev // use the original input rev from the user
@@ -81,5 +80,5 @@ func (r *GitCommitResolver) repoRevURL() *url.URL {
 	if rev != "" {
 		repoURL.Path += "@" + rev
 	}
-	return &repoURL
+	return repoURL
 }

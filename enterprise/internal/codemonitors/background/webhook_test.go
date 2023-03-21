@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -32,7 +32,7 @@ func TestWebhook(t *testing.T) {
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			b, err := io.ReadAll(r.Body)
 			require.NoError(t, err)
-			autogold.Equal(t, autogold.Raw(b))
+			autogold.ExpectFile(t, autogold.Raw(b))
 			w.WriteHeader(200)
 		}))
 		defer s.Close()
@@ -51,14 +51,14 @@ func TestWebhook(t *testing.T) {
 		j, err := json.Marshal(generateWebhookPayload(actionCopy))
 		require.NoError(t, err)
 
-		autogold.Equal(t, autogold.Raw(j))
+		autogold.ExpectFile(t, autogold.Raw(j))
 	})
 
 	t.Run("error is returned", func(t *testing.T) {
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			b, err := io.ReadAll(r.Body)
 			require.NoError(t, err)
-			autogold.Equal(t, autogold.Raw(b))
+			autogold.ExpectFile(t, autogold.Raw(b))
 			w.WriteHeader(500)
 		}))
 		defer s.Close()
@@ -73,7 +73,7 @@ func TestTriggerTestWebhookAction(t *testing.T) {
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		b, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
-		autogold.Equal(t, autogold.Raw(b))
+		autogold.ExpectFile(t, autogold.Raw(b))
 		w.WriteHeader(200)
 	}))
 	defer s.Close()

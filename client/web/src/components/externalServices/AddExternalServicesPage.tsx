@@ -1,13 +1,11 @@
-import React from 'react'
+import { FC } from 'react'
 
 import { mdiInformation } from '@mdi/js'
-import * as H from 'history'
+import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useLocalStorage, Button, Link, Alert, H2, H3, Icon, Text, Container } from '@sourcegraph/wildcard'
 
-import { Scalars } from '../../graphql-operations'
 import { PageTitle } from '../PageTitle'
 
 import { AddExternalServicePage } from './AddExternalServicePage'
@@ -16,11 +14,7 @@ import { allExternalServices, AddExternalServiceOptions } from './externalServic
 
 import styles from './AddExternalServicesPage.module.scss'
 
-export interface AddExternalServicesPageProps extends ThemeProps, TelemetryProps {
-    history: H.History
-    routingPrefix: string
-    userID?: Scalars['ID']
-
+export interface AddExternalServicesPageProps extends TelemetryProps {
     /**
      * The list of code host external services to be displayed.
      * Pick items from externalServices.codeHostExternalServices.
@@ -42,20 +36,15 @@ export interface AddExternalServicesPageProps extends ThemeProps, TelemetryProps
 /**
  * Page for choosing a service kind and variant to add, among the available options.
  */
-export const AddExternalServicesPage: React.FunctionComponent<
-    React.PropsWithChildren<AddExternalServicesPageProps>
-> = ({
+export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
     codeHostExternalServices,
-    history,
-    isLightTheme,
     nonCodeHostExternalServices,
-    routingPrefix,
     telemetryService,
-    userID,
     autoFocusForm,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
 }) => {
+    const { search } = useLocation()
     const [hasDismissedPrivacyWarning, setHasDismissedPrivacyWarning] = useLocalStorage(
         'hasDismissedCodeHostPrivacyWarning',
         false
@@ -63,17 +52,14 @@ export const AddExternalServicesPage: React.FunctionComponent<
     const dismissPrivacyWarning = (): void => {
         setHasDismissedPrivacyWarning(true)
     }
-    const id = new URLSearchParams(history.location.search).get('id')
+
+    const id = new URLSearchParams(search).get('id')
     if (id) {
         const externalService = allExternalServices[id]
         if (externalService) {
             return (
                 <AddExternalServicePage
-                    history={history}
-                    isLightTheme={isLightTheme}
-                    routingPrefix={routingPrefix}
                     telemetryService={telemetryService}
-                    userID={userID}
                     externalService={externalService}
                     autoFocusForm={autoFocusForm}
                     externalServicesFromFile={externalServicesFromFile}
@@ -101,13 +87,11 @@ export const AddExternalServicesPage: React.FunctionComponent<
                 <Text>Add repositories from one of these code hosts.</Text>
                 {hasDismissedPrivacyWarning && (
                     <Alert variant="info">
-                        {!userID && (
-                            <Text>
-                                This Sourcegraph installation will never send your code, repository names, file names,
-                                or any other specific code data to Sourcegraph.com or any other destination. Your code
-                                is kept private on this installation.
-                            </Text>
-                        )}
+                        <Text>
+                            This Sourcegraph installation will never send your code, repository names, file names, or
+                            any other specific code data to Sourcegraph.com or any other destination. Your code is kept
+                            private on this installation.
+                        </Text>
                         <H3>This Sourcegraph installation will access your code host by:</H3>
                         <ul>
                             <li>
@@ -118,7 +102,7 @@ export const AddExternalServicesPage: React.FunctionComponent<
                             <li>Periodically pulling cloned repositories to ensure search results are current.</li>
                             <li>
                                 Fetching{' '}
-                                <Link to="/help/admin/repo/permissions" target="_blank" rel="noopener noreferrer">
+                                <Link to="/help/admin/permissions" target="_blank" rel="noopener noreferrer">
                                     user repository access permissions
                                 </Link>
                                 , if you have enabled this feature.
@@ -140,6 +124,9 @@ export const AddExternalServicesPage: React.FunctionComponent<
                 )}
                 {Object.entries(codeHostExternalServices)
                     .filter(externalService => !allowedCodeHosts || allowedCodeHosts.includes(externalService[1]))
+                    .sort(([, externalService1], [, externalService2]) =>
+                        externalService1.title.localeCompare(externalService2.title)
+                    )
                     .map(([id, externalService]) => (
                         <div className={styles.addExternalServicesPageCard} key={id}>
                             <ExternalServiceCard to={getAddURL(id)} {...externalService} />
@@ -156,6 +143,9 @@ export const AddExternalServicesPage: React.FunctionComponent<
                         {Object.entries(codeHostExternalServices)
                             .filter(
                                 externalService => allowedCodeHosts && !allowedCodeHosts.includes(externalService[1])
+                            )
+                            .sort(([, externalService1], [, externalService2]) =>
+                                externalService1.title.localeCompare(externalService2.title)
                             )
                             .map(([id, externalService]) => (
                                 <div className={styles.addExternalServicesPageCard} key={id}>

@@ -1,13 +1,11 @@
-import React, { useEffect } from 'react'
+import { FC, useEffect } from 'react'
 
 import { mdiPlus } from '@mdi/js'
-import { Redirect } from 'react-router'
+import { Navigate } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, ButtonLink, Icon, PageHeader, Container } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
-import { Scalars } from '../../graphql-operations'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -25,24 +23,19 @@ import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTe
 import { ExternalServiceNode } from './ExternalServiceNode'
 
 interface Props extends TelemetryProps {
-    routingPrefix: string
-    userID?: Scalars['ID']
-    authenticatedUser: Pick<AuthenticatedUser, 'id'>
-
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
+    isSourcegraphApp: boolean
 }
 
 /**
  * A page displaying the external services on this site.
  */
-export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    routingPrefix,
-    userID,
+export const ExternalServicesPage: FC<Props> = ({
     telemetryService,
-    authenticatedUser,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
+    isSourcegraphApp,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalServices')
@@ -54,10 +47,9 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
     })
 
     const editingDisabled = externalServicesFromFile && !allowEditExternalServicesWithFile
-    const isManagingOtherUser = !!userID && userID !== authenticatedUser.id
 
-    return !isManagingOtherUser && !loading && (connection?.nodes?.length ?? 0) === 0 ? (
-        <Redirect to={`${routingPrefix}/external-services/new`} />
+    return !loading && (connection?.nodes?.length ?? 0) === 0 ? (
+        <Navigate to="/site-admin/external-services/new" replace={true} />
     ) : (
         <div className="site-admin-external-services-page">
             <PageTitle title="Manage code hosts" />
@@ -67,17 +59,20 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
                 headingElement="h2"
                 actions={
                     <>
-                        {!isManagingOtherUser && (
-                            <ButtonLink
-                                className="test-goto-add-external-service-page"
-                                to={`${routingPrefix}/external-services/new`}
-                                variant="primary"
-                                as={Link}
-                                disabled={editingDisabled}
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Add code host
+                        {isSourcegraphApp && (
+                            <ButtonLink className="mr-2" to="/setup" variant="secondary" as={Link}>
+                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Add local code
                             </ButtonLink>
                         )}
+                        <ButtonLink
+                            className="test-goto-add-external-service-page"
+                            to="/site-admin/external-services/new"
+                            variant="primary"
+                            as={Link}
+                            disabled={editingDisabled}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Add code host
+                        </ButtonLink>
                     </>
                 }
                 className="mb-3"
@@ -92,12 +87,7 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
                     {loading && !connection && <ConnectionLoading />}
                     <ConnectionList as="ul" className="list-group" aria-label="CodeHosts">
                         {connection?.nodes?.map(node => (
-                            <ExternalServiceNode
-                                key={node.id}
-                                node={node}
-                                routingPrefix={routingPrefix}
-                                editingDisabled={editingDisabled}
-                            />
+                            <ExternalServiceNode key={node.id} node={node} editingDisabled={editingDisabled} />
                         ))}
                     </ConnectionList>
                     {connection && (

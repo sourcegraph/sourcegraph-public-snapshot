@@ -12,11 +12,11 @@ import (
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -123,7 +123,7 @@ var app = &cli.App{
 
 						var done int64
 
-						g := group.NewWithResults[error]().WithMaxConcurrency(20)
+						p := pool.NewWithResults[error]().WithMaxGoroutines(20)
 						for !repoIter.Done() && repoIter.Err() == nil {
 							for _, r := range repoIter.Next(ctx) {
 								r := r
@@ -131,7 +131,7 @@ var app = &cli.App{
 									logger.Fatal("could not save repo", log.Error(err), log.String("repo", r.Name))
 								}
 
-								g.Go(func() error {
+								p.Go(func() error {
 									if r.Pushed {
 										return nil
 									}
@@ -173,7 +173,7 @@ var app = &cli.App{
 							logger.Error("repo iterator encountered an error", log.Error(err))
 						}
 
-						results := g.Wait()
+						results := p.Wait()
 
 						// Check that we actually got errors
 						errs := []error{}

@@ -6,7 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -109,8 +109,6 @@ type OrgResolver struct {
 	org *types.Org
 }
 
-func NewOrg(db database.DB, org *types.Org) *OrgResolver { return &OrgResolver{db: db, org: org} }
-
 func (o *OrgResolver) ID() graphql.ID { return MarshalOrgID(o.org.ID) }
 
 func MarshalOrgID(id int32) graphql.ID { return relay.MarshalID("Org", id) }
@@ -144,9 +142,9 @@ func (o *OrgResolver) CreatedAt() gqlutil.DateTime { return gqlutil.DateTime{Tim
 func (o *OrgResolver) Members(ctx context.Context, args struct {
 	graphqlutil.ConnectionResolverArgs
 	Query *string
-}) (*graphqlutil.ConnectionResolver[UserResolver], error) {
-	// 🚨 SECURITY: Only org members can list other org members.
-	if err := checkMembersAccess(ctx, o.db, o.org.ID); err != nil {
+}) (*graphqlutil.ConnectionResolver[*UserResolver], error) {
+	// 🚨 SECURITY: Verify listing users is allowed.
+	if err := checkMembersAccess(ctx, o.db); err != nil {
 		return nil, err
 	}
 
@@ -156,7 +154,9 @@ func (o *OrgResolver) Members(ctx context.Context, args struct {
 		query: args.Query,
 	}
 
-	return graphqlutil.NewConnectionResolver[UserResolver](connectionStore, &args.ConnectionResolverArgs, nil)
+	return graphqlutil.NewConnectionResolver[*UserResolver](connectionStore, &args.ConnectionResolverArgs, &graphqlutil.ConnectionResolverOptions{
+		AllowNoLimit: true,
+	})
 }
 
 type membersConnectionStore struct {
@@ -205,8 +205,8 @@ func (s *membersConnectionStore) MarshalCursor(node *UserResolver, _ database.Or
 	return &cursor, nil
 }
 
-func (s *membersConnectionStore) UnmarshalCursor(cusror string, _ database.OrderBy) (*string, error) {
-	nodeID, err := UnmarshalUserID(graphql.ID(cusror))
+func (s *membersConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+	nodeID, err := UnmarshalUserID(graphql.ID(cursor))
 	if err != nil {
 		return nil, err
 	}
@@ -316,7 +316,7 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 		// we do not throw errors here as this is best effort
 		err = r.db.Orgs().UpdateOrgsOpenBetaStats(ctx, *args.StatsID, newOrg.ID)
 		if err != nil {
-			log15.Warn("Cannot update orgs open beta stats", "id", *args.StatsID, "orgID", newOrg.ID, "error", err)
+			r.logger.Warn("Cannot update orgs open beta stats", log.String("id", *args.StatsID), log.Int32("orgID", newOrg.ID), log.Error(err))
 		}
 	}
 
@@ -377,7 +377,7 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 	if memberCount == 1 && !r.siteAdminSelfRemoving(ctx, userID) {
 		return nil, errors.New("you can’t remove the only member of an organization")
 	}
-	log15.Info("removing user from org", "user", userID, "org", orgID)
+	r.logger.Info("removing user from org", log.Int32("userID", userID), log.Int32("orgID", orgID))
 	if err := r.db.OrgMembers().Remove(ctx, orgID, userID); err != nil {
 		return nil, err
 	}

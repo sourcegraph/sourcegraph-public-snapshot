@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "module": "commonjs",
     "baseUrl": ".",
@@ -36,6 +36,9 @@
     },
     {
       "path": "../common",
+    },
+    {
+      "path": "../extension-api",
     },
     {
       "path": "../extension-api-types",

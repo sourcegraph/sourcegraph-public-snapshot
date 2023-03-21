@@ -138,14 +138,13 @@ const Template: Story<{
     ])
 
     return (
-        <WebStory initialEntries={[url]}>
+        <WebStory path="/users/:username/batch-changes/:batchChangeName" initialEntries={[url]}>
             {props => (
                 <MockedTestProvider link={mocks}>
                     <BatchChangeDetailsPage
                         {...props}
                         authenticatedUser={authenticatedUser}
                         namespaceID="namespace123"
-                        batchChangeName="awesome-batch-change"
                         queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                         deleteBatchChange={deleteBatchChange}
                         queryAllChangesetIDs={queryAllChangesetIDs}
@@ -257,14 +256,13 @@ export const EmptyChangesets: Story = args => {
     ])
 
     return (
-        <WebStory>
+        <WebStory path="/:batchChangeName" initialEntries={['/awesome-batch-change']}>
             {props => (
                 <MockedTestProvider link={mocks}>
                     <BatchChangeDetailsPage
                         {...props}
                         authenticatedUser={authenticatedUser}
                         namespaceID="namespace123"
-                        batchChangeName="awesome-batch-change"
                         queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                         deleteBatchChange={deleteBatchChange}
                         settingsCascade={EMPTY_SETTINGS_CASCADE}

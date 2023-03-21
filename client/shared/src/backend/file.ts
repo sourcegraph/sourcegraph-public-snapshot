@@ -20,7 +20,7 @@ import { makeRepoURI } from '../util/url'
 */
 type RequestVariables = Omit<HighlightedFileVariables, 'format'> & { format?: HighlightedFileVariables['format'] }
 
-const IS_VSCE = typeof (window as any).acquireVsCodeApi === 'function'
+const IS_VSCE = typeof window !== 'undefined' && typeof (window as any).acquireVsCodeApi === 'function'
 
 const HIGHLIGHTED_FILE_QUERY = gql`
     query HighlightedFile(

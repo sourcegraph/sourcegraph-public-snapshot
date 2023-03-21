@@ -158,10 +158,7 @@ func (s *confStore) ListSiteConfigs(ctx context.Context, paginationArgs *Paginat
 		return scanSiteConfigs(rows, err)
 	}
 
-	args, err := paginationArgs.SQL()
-	if err != nil {
-		return []*SiteConfig{}, nil
-	}
+	args := paginationArgs.SQL()
 
 	if args.Where != nil {
 		where = append(where, args.Where)

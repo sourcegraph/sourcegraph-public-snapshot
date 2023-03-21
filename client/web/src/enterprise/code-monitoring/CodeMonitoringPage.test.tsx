@@ -1,6 +1,5 @@
 import { render, fireEvent } from '@testing-library/react'
-import { MemoryRouter } from 'react-router'
-import { CompatRouter } from 'react-router-dom-v5-compat'
+import { MemoryRouter } from 'react-router-dom'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
@@ -30,6 +29,7 @@ const additionalProps = {
     toggleCodeMonitorEnabled: sinon.spy((id: string, enabled: boolean) => of({ id: 'test', enabled: true })),
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     isLightTheme: false,
+    isSourcegraphApp: false,
 }
 
 const generateMockFetchMonitors =
@@ -50,9 +50,7 @@ describe('CodeMonitoringListPage', () => {
     test('Clicking enabled toggle calls toggleCodeMonitorEnabled', () => {
         const component = render(
             <MemoryRouter initialEntries={['/code-monitoring']}>
-                <CompatRouter>
-                    <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(1)} />
-                </CompatRouter>
+                <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(1)} />
             </MemoryRouter>
         )
         const toggle = component.getByTestId('toggle-monitor-enabled')
@@ -63,9 +61,7 @@ describe('CodeMonitoringListPage', () => {
     test('Switching tabs from getting started to empty list works', () => {
         const component = render(
             <MemoryRouter initialEntries={['/code-monitoring']}>
-                <CompatRouter>
-                    <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(0)} />
-                </CompatRouter>
+                <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(0)} />
             </MemoryRouter>
         )
         const codeMonitorsButton = component.getByRole('button', { name: 'Code monitors' })
@@ -78,9 +74,7 @@ describe('CodeMonitoringListPage', () => {
     test('Switching tabs from list to getting started works', () => {
         const component = render(
             <MemoryRouter initialEntries={['/code-monitoring']}>
-                <CompatRouter>
-                    <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(0)} />
-                </CompatRouter>
+                <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(0)} />
             </MemoryRouter>
         )
         const gettingStartedButton = component.getByRole('button', { name: 'Getting started' })

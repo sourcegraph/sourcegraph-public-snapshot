@@ -355,6 +355,11 @@ type ExternalChangeset implements Node & Changeset {
     ): BatchChangeConnection!
 
     """
+    The batch change that "owns" this changeset: If this is null, it is imported/tracked by a batch change.
+    """
+    ownedByBatchChange: ID
+
+    """
     The events belonging to this changeset.
     """
     events(first: Int = 50, after: String): ChangesetEventConnection!
@@ -392,8 +397,15 @@ type ExternalChangeset implements Node & Changeset {
     body: String
 
     """
-    The author of the changeset, or null if the data hasn't been synced from the code host yet,
-    or the changeset has not yet been published.
+    The author of the changeset, or null if the data is unavailable or hasn't been synced
+    from the code host yet.
+
+    Note that author is not fully supported by some code host APIs:
+    * GitHub - only author.name
+    * GitLab - only author.name
+    * Bitbucket Server - author is not always available
+    * Bitbucket Cloud - author is never available
+    * Azure DevOps - author is always available
     """
     author: Person
 
@@ -418,9 +430,15 @@ type ExternalChangeset implements Node & Changeset {
     host).
     """
     forkNamespace: String
+    """
+    If the changeset was opened from a fork, this is the name of the fork repository.
+    """
+    forkName: String
 
     """
     The review state of this changeset. This is only set once the changeset is published on the code host.
+
+    Note: The COMMENTED and DISMISSED review states are not yet implemented.
     """
     reviewState: ChangesetReviewState
 
@@ -514,6 +532,14 @@ type ChangesetsStats {
     The count of all changesets.
     """
     total: Int!
+    """
+    If true, then all changesets are either merged or closed. This indicates that the batch change is completed.
+    """
+    isCompleted: Boolean!
+    """
+    The count of changesets that are complete (i.e in a merged or closed state) and not archived or deleted.
+    """
+    percentComplete: Int!
 }
 
 """
@@ -2679,6 +2705,8 @@ type BatchChange implements Node {
         onlyClosable: Boolean
         """
         Only include changesets with the given review state.
+
+        Note: The COMMENTED and DISMISSED review states are not yet implemented.
         """
         reviewState: ChangesetReviewState
         """

@@ -6,7 +6,7 @@ export interface CaptureGroupFormFields {
     /**
      * Repositories which to be used to get the info for code insights
      */
-    repositories: string
+    repositories: string[]
 
     repoQuery: QueryState
 

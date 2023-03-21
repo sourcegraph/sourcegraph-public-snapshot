@@ -1,7 +1,11 @@
-import { Extension, Range } from '@codemirror/state'
+import { EditorState, Extension, Range as CodeMirrorRange } from '@codemirror/state'
 import { Decoration, EditorView } from '@codemirror/view'
 import classNames from 'classnames'
 
+import { Range } from '@sourcegraph/extension-api-types'
+import { Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
+
+import { rangeToCmSelection } from '../occurrence-utils'
 import { positionToOffset, sortRangeValuesByStart } from '../utils'
 
 import { codeIntelTooltipsState } from './code-intel-tooltips'
@@ -9,8 +13,48 @@ import { definitionUrlField } from './definition'
 import { documentHighlightsField, findByOccurrence } from './document-highlights'
 import { isModifierKeyHeld } from './modifier-click'
 
-function sortByFromPosition(ranges: Range<Decoration>[]): Range<Decoration>[] {
+interface DecorationItem {
+    decoration: Decoration
+    range: Range
+}
+
+function sortByFromPosition(ranges: CodeMirrorRange<Decoration>[]): CodeMirrorRange<Decoration>[] {
     return ranges.sort((a, b) => a.from - b.from)
+}
+
+function findByRange(decorations: DecorationItem[], range: Range): DecorationItem | undefined {
+    return decorations.find(
+        ({ range: decorationRange }) =>
+            decorationRange.start.line === range.start.line &&
+            decorationRange.start.character === range.start.character &&
+            decorationRange.end.line === range.end.line &&
+            decorationRange.end.character === range.end.character
+    )
+}
+
+function addOrReplace(decorations: DecorationItem[], item: DecorationItem): DecorationItem[] {
+    const existing = findByRange(decorations, item.range)
+    if (existing) {
+        existing.decoration = item.decoration
+    } else {
+        decorations.push(item)
+    }
+    return decorations
+}
+
+/**
+ * Returns `true` if the editor selection is empty or is inside the occurrence range.
+ */
+function shouldApplyFocusStyles(state: EditorState, occurrence: Occurrence): boolean {
+    if (state.selection.main.empty) {
+        return true
+    }
+
+    const occurrenceRangeAsSelection = rangeToCmSelection(state, occurrence.range)
+    const isEditorSelectionInsideOccurrenceRange =
+        state.selection.main.from >= occurrenceRangeAsSelection.from &&
+        state.selection.main.to <= occurrenceRangeAsSelection.to
+    return isEditorSelectionInsideOccurrenceRange
 }
 
 /**
@@ -20,18 +64,17 @@ function sortByFromPosition(ranges: Range<Decoration>[]): Range<Decoration>[] {
 export function interactiveOccurrencesExtension(): Extension {
     return [
         EditorView.decorations.compute(
-            [codeIntelTooltipsState, documentHighlightsField, definitionUrlField, isModifierKeyHeld],
+            [codeIntelTooltipsState, documentHighlightsField, definitionUrlField, isModifierKeyHeld, 'selection'],
             state => {
                 const { focus, hover, pin } = state.field(codeIntelTooltipsState)
-                const decorations = []
+                let decorations: DecorationItem[] = []
 
                 if (focus) {
                     decorations.push({
                         decoration: Decoration.mark({
                             class: classNames(
                                 'interactive-occurrence', // used as interactive occurrence selector
-                                'focus-visible', // prevents code editor from blur when focused element inside it changes
-                                'sourcegraph-document-highlight' // highlights the selected (focused) occurrence
+                                shouldApplyFocusStyles(state, focus.occurrence) && 'focus-visible' // adds focus styles to the occurrence
                             ),
                             attributes: {
                                 // Selected (focused) occurrence is the only focusable element in the editor.
@@ -62,15 +105,19 @@ export function interactiveOccurrencesExtension(): Extension {
                     }
                 }
 
-                if (pin) {
-                    decorations.push({
+                // focused occurrence is already highlighted
+                if (pin && pin.occurrence !== focus?.occurrence) {
+                    // pinned decoration styles have higher precedence over the document highlights decoration
+                    decorations = addOrReplace(decorations, {
                         decoration: Decoration.mark({ class: 'selection-highlight' }),
                         range: pin.occurrence.range,
                     })
                 }
 
-                if (hover) {
-                    decorations.push({
+                // focused and pinned occurrences are already highlighted
+                if (hover && hover.occurrence !== focus?.occurrence && hover.occurrence !== pin?.occurrence) {
+                    // pinned decoration styles have higher precedence over the document highlights decoration
+                    decorations = addOrReplace(decorations, {
                         decoration: Decoration.mark({
                             class: classNames('selection-highlight', {
                                 // If the user is hovering over a selected (focused) occurrence with a definition holding the modifier key,
@@ -93,7 +140,7 @@ export function interactiveOccurrencesExtension(): Extension {
                     }
 
                     return acc
-                }, [] as Range<Decoration>[])
+                }, [] as CodeMirrorRange<Decoration>[])
 
                 return Decoration.set(sortByFromPosition(ranges))
             }

@@ -1,31 +1,3 @@
-/* Command palette */
-.command-palette-button {
-    z-index: 3000;
-    font-size: 13px;
-
-    svg {
-        /* The icon we use is taller than the other items' font size, so make it a bit shorter. */
-        height: 13px;
-    }
-}
-
-.command-palette-popover {
-    display: block !important;
-    max-width: unset !important;
-
-    header {
-        padding: 8px;
-    }
-
-    input {
-        max-width: unset !important;
-    }
-}
-
-.no-results {
-    padding: 10px;
-}
-
 /* Open on Sourcegraph button */
 .open-on-sourcegraph {
     margin-left: 2px; /* same as other buttons in the row */
@@ -108,6 +80,20 @@
     }
 }
 
+.hover-overlay {
+    // HoverOverlay max-width is defined in rem (https://sourcegraph.com/github.com/sourcegraph/sourcegraph@0a7bfc6c389b71484615e788a62b9ef262823726/-/blob/client/shared/src/hover/HoverOverlay.module.scss?L15).
+    // Rem on Bitbucket equals to 14px vs 16px on Sourcegraph.
+    // Set value in pixels to ensure content fits container.
+    max-width: 544px !important; // 34rem * 16px in Sourcegraph web app
+}
+
+.hover-actions {
+    > span:not(:first-child) {
+        /* Add margin between buttons. */
+        margin-left: 0.25rem !important;
+    }
+}
+
 /* Hover overlay buttons */
 .hover-action-item {
     margin: 0 !important;
@@ -139,30 +125,5 @@
 
     &:hover {
         opacity: 0.7;
-    }
-}
-
-/* Bitbucket's style is copied here because adding the aui-dropdown2-trigger class
- * to the command palette causes exceptions in Atlassian's JS. */
-.command-list-popover-button {
-    padding-right: 24px !important;
-
-    &::after {
-        -moz-osx-font-smoothing: grayscale;
-        -webkit-font-smoothing: antialiased;
-        -webkit-text-stroke-width: 0;
-        font-family: 'Adgs Icons';
-        font-weight: normal;
-        font-style: normal;
-        content: '\f15b';
-        font-size: 16px;
-        height: 16px;
-        line-height: 1;
-        margin-top: -8px;
-        position: absolute;
-        right: 4px;
-        top: 50%;
-        text-indent: 0;
-        width: 16px;
     }
 }

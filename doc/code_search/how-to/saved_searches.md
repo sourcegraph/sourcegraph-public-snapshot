@@ -2,6 +2,8 @@
 
 Saved searches let you save and describe search queries so you can easily find and use them again later. You can create a saved search for anything, including diffs and commits across all branches of your repositories.
 
+If you want Sourcegraph to monitor a search query and send notifications when there are new results, use [code monitoring](../../code_monitoring/index.md).
+
 ## Creating saved searches
 
 A saved search consists of a description and a query, both of which you can define and edit.

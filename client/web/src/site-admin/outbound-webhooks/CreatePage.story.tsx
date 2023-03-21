@@ -1,5 +1,4 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import * as H from 'history'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -12,7 +11,7 @@ import { eventTypesMock } from './mocks'
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
-    title: 'web/site-admin/outbound-webhooks/CreatePage',
+    title: 'web/site-admin/webhooks/outgoing/CreatePage',
     decorators: [decorator],
 }
 
@@ -22,12 +21,7 @@ export const Page: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider mocks={[eventTypesMock]}>
-                <CreatePage
-                    match={{} as any}
-                    history={H.createMemoryHistory()}
-                    location={{} as any}
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                />
+                <CreatePage telemetryService={NOOP_TELEMETRY_SERVICE} />
             </MockedTestProvider>
         )}
     </WebStory>

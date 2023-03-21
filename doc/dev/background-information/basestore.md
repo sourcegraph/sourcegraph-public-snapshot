@@ -192,5 +192,55 @@ func (s *MyStore) ItsHorsegraphTime(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	// Scan []horse
+	horses, err := scanHorses(s.Query(ctx, sqlf.Sprintf("SELECT id, age, name, nicknames, passportName FROM horses")))
+	if err != nil {
+		return err
+	}
+
+  // Scan map[string]int32
+  horseNameToID, err := scanHorseNameToID(s.Query(ctx, sqlf.Sprintf("SELECT id, name FROM horses"))) {
+  	if err != nil {
+		return err
+	}
+
+  // Scan map[string]horse
+  horseMap, err := scanMapHorses(s.Query(ctx, sqlf.Sprintf("SELECT id, age, name, nicknames, passportName FROM horses")))
+  if err != nil {
+    return err
+  }
+}
+
+// scanHorses can scan a row of `horse`s into `[]*horse`
+var scanHorses = basestore.NewSliceScanner(scanHorse)
+
+// scanHorse scans a database row into a `*horse`
+func scanHorse(s dbutil.Scanner) (*horse, error) {
+	var h horse
+	if err := s.Scan(&h.id, &h.age, &h.name, &h.nicknames, &h.passportName); err != nil {
+		return nil, errors.Wrap(err, "Scanning horse failed")
+	}
+	return &h, nil
+}
+
+var scanHorseNameToID = basestore.NewMapScanner(func(s dbutil.Scanner) (string, int32, error) {
+  var id int32
+  var name string
+	err := s.Scan(&id, &name)
+	return name, id, err
+})
+
+var scanMapHorses = basestore.NewMapScanner(func(s dbutil.Scanner) (string, *horse, error) {
+	h, err := scanHorse(s)
+	return h.name, h, err
+})
+
+type horse struct {
+	id           int32
+	age          int32
+	name         string
+	nicknames    []string
+	passportName string
 }
 ```

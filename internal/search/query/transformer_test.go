@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/require"
 )
 
@@ -16,24 +16,16 @@ func TestSubstituteAliases(t *testing.T) {
 		return json
 	}
 
-	autogold.Want(
-		"basic substitution",
-		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"field":"file","value":"file","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":13}}}]}]`).
+	autogold.Expect(`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"field":"file","value":"file","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":13}}}]}]`).
 		Equal(t, test("r:repo f:file", SearchTypeRegex))
 
-	autogold.Want(
-		"special case for content substitution",
-		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"^a-regexp:tbf$","negated":false,"labels":["IsAlias","Regexp"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":29}}}]}]`).
+	autogold.Expect(`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"^a-regexp:tbf$","negated":false,"labels":["IsAlias","Regexp"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":29}}}]}]`).
 		Equal(t, test("r:repo content:^a-regexp:tbf$", SearchTypeRegex))
 
-	autogold.Want(
-		"substitution honors literal search pattern",
-		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"^not-actually-a-regexp:tbf$","negated":false,"labels":["IsAlias","Literal"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":42}}}]}]`).
+	autogold.Expect(`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"^not-actually-a-regexp:tbf$","negated":false,"labels":["IsAlias","Literal"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":42}}}]}]`).
 		Equal(t, test("r:repo content:^not-actually-a-regexp:tbf$", SearchTypeLiteral))
 
-	autogold.Want(
-		"substitution honors path",
-		`[{"field":"file","value":"foo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":8}}}]`).
+	autogold.Expect(`[{"field":"file","value":"foo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":8}}}]`).
 		Equal(t, test("path:foo", SearchTypeLiteral))
 }
 
@@ -205,39 +197,39 @@ func TestConcat(t *testing.T) {
 	}
 
 	t.Run("", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test("a b c d e f", SearchTypeLiteral)))
+		autogold.ExpectFile(t, autogold.Raw(test("a b c d e f", SearchTypeLiteral)))
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test("(a not b not c d)", SearchTypeLiteral)))
+		autogold.ExpectFile(t, autogold.Raw(test("(a not b not c d)", SearchTypeLiteral)))
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test("(((a b c))) and d", SearchTypeLiteral)))
+		autogold.ExpectFile(t, autogold.Raw(test("(((a b c))) and d", SearchTypeLiteral)))
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`foo\d "bar*"`, SearchTypeRegex)))
+		autogold.ExpectFile(t, autogold.Raw(test(`foo\d "bar*"`, SearchTypeRegex)))
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`"bar*" foo\d "bar*" foo\d`, SearchTypeRegex)))
+		autogold.ExpectFile(t, autogold.Raw(test(`"bar*" foo\d "bar*" foo\d`, SearchTypeRegex)))
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test("a b (c and d) e f (g or h) (i j k)", SearchTypeRegex)))
+		autogold.ExpectFile(t, autogold.Raw(test("a b (c and d) e f (g or h) (i j k)", SearchTypeRegex)))
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`/alsace/ bourgogne bordeaux /champagne/`, SearchTypeStandard)))
+		autogold.ExpectFile(t, autogold.Raw(test(`/alsace/ bourgogne bordeaux /champagne/`, SearchTypeStandard)))
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`alsace /bourgogne/ bordeaux`, SearchTypeStandard)))
+		autogold.ExpectFile(t, autogold.Raw(test(`alsace /bourgogne/ bordeaux`, SearchTypeStandard)))
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`alsace /bourgogne/ bordeaux`, SearchTypeLucky)))
+		autogold.ExpectFile(t, autogold.Raw(test(`alsace /bourgogne/ bordeaux`, SearchTypeLucky)))
 	})
 }
 
@@ -442,6 +434,10 @@ func TestConcatRevFilters(t *testing.T) {
 			input: "repo:foo file:bas qux AND (rev:a or rev:b)",
 			want:  `("repo:foo@a" "file:bas" "qux") OR ("repo:foo@b" "file:bas" "qux")`,
 		},
+		{
+			input: "repo:foo rev:4.2.1 repo:has.file(content:fix)",
+			want:  `("repo:foo@4.2.1" "repo:has.file(content:fix)")`,
+		},
 	}
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
@@ -495,8 +491,8 @@ func TestQueryField(t *testing.T) {
 		return OmitField(q, field)
 	}
 
-	autogold.Want("omit repo", "pattern").Equal(t, test("repo:stuff pattern", "repo"))
-	autogold.Want("omit repo alias", "alias-pattern").Equal(t, test("r:stuff alias-pattern", "repo"))
+	autogold.Expect("pattern").Equal(t, test("repo:stuff pattern", "repo"))
+	autogold.Expect("alias-pattern").Equal(t, test("r:stuff alias-pattern", "repo"))
 }
 
 func TestSubstituteCountAll(t *testing.T) {
@@ -506,8 +502,8 @@ func TestSubstituteCountAll(t *testing.T) {
 		return toString(q)
 	}
 
-	autogold.Want("all", `(and "count:99999999" "foo")`).Equal(t, test("foo count:all"))
-	autogold.Want("ALL", `(and "count:99999999" "foo")`).Equal(t, test("foo count:ALL"))
-	autogold.Want("with integer count", `(and "count:3" "foo")`).Equal(t, test("foo count:3"))
-	autogold.Want("subexpressions", `(or (and "count:3" "foo") (and "count:99999999" "bar"))`).Equal(t, test("(foo count:3) or (bar count:all)"))
+	autogold.Expect(`(and "count:99999999" "foo")`).Equal(t, test("foo count:all"))
+	autogold.Expect(`(and "count:99999999" "foo")`).Equal(t, test("foo count:ALL"))
+	autogold.Expect(`(and "count:3" "foo")`).Equal(t, test("foo count:3"))
+	autogold.Expect(`(or (and "count:3" "foo") (and "count:99999999" "bar"))`).Equal(t, test("(foo count:3) or (bar count:all)"))
 }

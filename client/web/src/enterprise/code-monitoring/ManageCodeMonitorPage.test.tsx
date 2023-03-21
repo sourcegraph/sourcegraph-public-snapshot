@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { Route, Routes } from 'react-router-dom-v5-compat/'
+import { Route, Routes } from 'react-router-dom'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
@@ -204,8 +204,7 @@ describe('ManageCodeMonitorPage', () => {
     })
 
     test('Clicking delete code monitor opens deletion confirmation modal', () => {
-        let currentPathname = ''
-        renderWithBrandedContext(
+        const { locationRef } = renderWithBrandedContext(
             <MockedTestProvider>
                 <Routes>
                     <Route path="/code-monitoring/:id" element={<ManageCodeMonitorPage {...props} />} />
@@ -214,7 +213,6 @@ describe('ManageCodeMonitorPage', () => {
             </MockedTestProvider>,
             {
                 route: '/code-monitoring/test-monitor-id',
-                onLocationChange: location => (currentPathname = location.pathname),
             }
         )
         userEvent.click(screen.getByTestId('delete-monitor'))
@@ -225,6 +223,6 @@ describe('ManageCodeMonitorPage', () => {
         userEvent.click(confirmDeleteButton)
 
         sinon.assert.calledOnce(props.deleteCodeMonitor)
-        expect(currentPathname).toEqual('/code-monitoring')
+        expect(locationRef.current?.pathname).toEqual('/code-monitoring')
     })
 })

@@ -97,7 +97,9 @@ func RequestSource(ctx context.Context) SourceType {
 // which we only want to log a message if the duration is slower than the
 // threshold here.
 var slowPaths = map[string]time.Duration{
-	"/repo-update": 5 * time.Second,
+	// this blocks on running git fetch which depending on repo size can take
+	// a long time. As such we use a very high duration to avoid log spam.
+	"/repo-update": 10 * time.Minute,
 }
 
 var (

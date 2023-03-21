@@ -1,11 +1,10 @@
 import { FunctionComponent, useCallback, useMemo, useState } from 'react'
 
-import * as H from 'history'
 import { editor } from 'monaco-editor'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, screenReaderAnnounce, ErrorAlert } from '@sourcegraph/wildcard'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
+import { LoadingSpinner, screenReaderAnnounce, ErrorAlert, BeforeUnloadPrompt } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { SaveToolbarProps, SaveToolbarPropsGenerator } from '../../../../components/SaveToolbar'
@@ -17,19 +16,17 @@ import allConfigSchema from '../schema.json'
 
 import { IndexConfigurationSaveToolbar, IndexConfigurationSaveToolbarProps } from './IndexConfigurationSaveToolbar'
 
-export interface ConfigurationEditorProps extends ThemeProps, TelemetryProps {
+export interface ConfigurationEditorProps extends TelemetryProps {
     repoId: string
     authenticatedUser: AuthenticatedUser | null
-    history: H.History
 }
 
-export const ConfigurationEditor: FunctionComponent<React.PropsWithChildren<ConfigurationEditorProps>> = ({
+export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = ({
     repoId,
     authenticatedUser,
-    isLightTheme,
     telemetryService,
-    history,
 }) => {
+    const isLightTheme = useIsLightTheme()
     const { inferredConfiguration, loadingInferred, inferredError } = useInferredConfig(repoId)
     const { configuration, loadingRepository, repositoryError } = useRepositoryConfig(repoId)
     const { updateConfigForRepository, isUpdating, updatingError } = useUpdateConfigurationForRepository()
@@ -46,9 +43,11 @@ export const ConfigurationEditor: FunctionComponent<React.PropsWithChildren<Conf
         [updateConfigForRepository, repoId]
     )
 
-    const [dirty, setDirty] = useState<boolean>()
+    const [dirty, setDirty] = useState<boolean>(false)
     const [editor, setEditor] = useState<editor.ICodeEditor>()
-    const infer = useCallback(() => editor?.setValue(inferredConfiguration), [editor, inferredConfiguration])
+    const infer = useCallback(() => editor?.setValue(inferredConfiguration.raw), [editor, inferredConfiguration])
+    const showInferButton =
+        Boolean(inferredConfiguration.raw) && configuration !== null && configuration.raw !== inferredConfiguration.raw
 
     const customToolbar = useMemo<{
         saveToolbar: FunctionComponent<SaveToolbarProps & IndexConfigurationSaveToolbarProps>
@@ -61,7 +60,7 @@ export const ConfigurationEditor: FunctionComponent<React.PropsWithChildren<Conf
                     ...props,
                     onInfer: infer,
                     loading: inferredConfiguration === undefined,
-                    inferEnabled: !!inferredConfiguration && configuration !== inferredConfiguration,
+                    inferEnabled: showInferButton,
                 }
                 mergedProps.willShowError = () => !mergedProps.saving
                 mergedProps.saveDiscardDisabled = () => mergedProps.saving || !dirty
@@ -69,8 +68,17 @@ export const ConfigurationEditor: FunctionComponent<React.PropsWithChildren<Conf
                 return mergedProps
             },
         }),
-        [dirty, configuration, inferredConfiguration, infer]
+        [infer, inferredConfiguration, showInferButton, dirty]
     )
+
+    // Show any set configuration if available, otherwise show the inferred configuration
+    const preferredConfiguration = useMemo(() => {
+        if (configuration !== null) {
+            return configuration
+        }
+
+        return inferredConfiguration
+    }, [configuration, inferredConfiguration])
 
     if (inferredError || repositoryError) {
         return <ErrorAlert prefix="Error fetching index configuration" error={inferredError || repositoryError} />
@@ -83,21 +91,23 @@ export const ConfigurationEditor: FunctionComponent<React.PropsWithChildren<Conf
             {loadingInferred || loadingRepository ? (
                 <LoadingSpinner />
             ) : (
-                <DynamicallyImportedMonacoSettingsEditor
-                    value={configuration}
-                    jsonSchema={allConfigSchema}
-                    canEdit={authenticatedUser?.siteAdmin}
-                    readOnly={!authenticatedUser?.siteAdmin}
-                    onSave={save}
-                    saving={isUpdating}
-                    height={600}
-                    isLightTheme={isLightTheme}
-                    history={history}
-                    telemetryService={telemetryService}
-                    customSaveToolbar={authenticatedUser?.siteAdmin ? customToolbar : undefined}
-                    onDirtyChange={setDirty}
-                    onEditor={setEditor}
-                />
+                <>
+                    <BeforeUnloadPrompt when={dirty} message="Discard changes?" />
+                    <DynamicallyImportedMonacoSettingsEditor
+                        value={preferredConfiguration.raw}
+                        jsonSchema={allConfigSchema}
+                        canEdit={authenticatedUser?.siteAdmin}
+                        readOnly={!authenticatedUser?.siteAdmin}
+                        onSave={save}
+                        saving={isUpdating}
+                        height={600}
+                        isLightTheme={isLightTheme}
+                        telemetryService={telemetryService}
+                        customSaveToolbar={authenticatedUser?.siteAdmin ? customToolbar : undefined}
+                        onDirtyChange={setDirty}
+                        onEditor={setEditor}
+                    />
+                </>
             )}
         </>
     )

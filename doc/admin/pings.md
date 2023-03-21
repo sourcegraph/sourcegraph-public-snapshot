@@ -2,12 +2,12 @@
 
 Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and customer teams. It sends only the high-level data below. It never sends code, repository names, usernames, or any other specific data. To learn more, go to the **Site admin > Pings** page on your instance. (The URL is `https://sourcegraph.example.com/site-admin/pings`.)
 
-## Critical telemetry
+## Telemetry
 
-Critical telemetry includes only the high-level data below required for billing, support, updates, and security notices.
+Sourcegraph aggregates usage and performance metrics for some product features. No personal or specific information is ever included.
 
 <details>
-<summary>Click to expand a list of critical telemetry</summary>
+<summary>Click to expand a list of other telemetry</summary>
 
 - Randomly generated site identifier
 - The email address of the initial site installer (or if deleted, the first active site admin), to know who to contact regarding sales, product updates, security updates, and policy updates
@@ -20,20 +20,6 @@ Critical telemetry includes only the high-level data below required for billing,
 - Aggregated repository statistics
   - Total size of git repositories stored in bytes
   - Total number of lines of code stored in text search index
-- Code Insights: total count of insights
-
-</details>
-
-## Other telemetry
-
-By default, Sourcegraph also aggregates usage and performance metrics for some product features. No personal or specific information is ever included.
-
-This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
-[site configuration](config/site_config.md#disableNonCriticalTelemetry).
-
-<details>
-<summary>Click to expand a list of other telemetry</summary>
-
 - Whether the instance is deployed on localhost (true/false)
 - Which category of authentication provider is in use (built-in, OpenID Connect, an HTTP proxy, SAML, GitHub, GitLab)
 - Which code hosts are in use (GitHub, Bitbucket Server / Bitbucket Data Center, GitLab, Phabricator, Gitolite, AWS CodeCommit, Other)
@@ -88,6 +74,7 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
       - executor
       - local (using `src-cli`)
 - Aggregated counts of users created, deleted, retained, resurrected and churned within the month
+- Aggregated counts of access requests pending, approved, rejected
 - Saved searches usage data
   - Count of saved searches
   - Count of users using saved searches
@@ -108,26 +95,46 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Total number of users that use non-default Sourcegraph extensions
   - Average number of non-default extensions enabled for users that use non-default Sourcegraph extensions
 - Code insights usage data
-  - Total count of page views on the insights page
-  - Count of unique viewers on the insights page
-  - Total counts of hovers, clicks, and drags of insights by type (e.g. search, code stats)
-  - Total counts of edits, additions, and removals of insights by type
+  - Total count of insights
+  - Weekly count of page views on the insights pages
+  - Weekly count of unique viewers on the insights pages
+  - Weekly counts of hovers and clicks insights by type (e.g. search, code stats)
+  - Weekly counts of resizing of insights by type
+  - Weekly counts of edits, additions, and removals of insights by type
   - Total count of clicks on the "Add more insights" and "Configure insights" buttons on the insights page
-  - Weekly count of users that have created an insight, and count of users that have created their first insight this week
-  - Weekly count of total and unique views to the `Create new insight`, `Create search insight`, and `Create language insight` pages
-  - Weekly count of total and unique clicks of the `Create search insight`, `Create language usage insight`, and `Explore the extensions` buttons on the `Create new insight` page
+  - Weekly count of users that have created an insight
+  - Weekly count of users that have created their first insight this week
+  - Weekly count of total and unique views to the different `Create`, `Create search insight`, and `Create language insight` pages
+  - Weekly count of total and unique clicks of the different `Create search insight` and `Create language usage insight`, and `Explore the extensions` buttons on the `Create new insight` page
   - Weekly count of total and unique clicks of the `Create` and `Cancel` buttons on the `Create search insight` and `Create language insight` pages
   - Total count of insights grouped by time interval (step size) in days
-  - Total count of insights set organization visible grouped by insight type
+  - Total count of insights that are organization visible grouped by insight type
   - Total count of insights grouped by presentation type, series type, and presentation-series type.
   - Weekly count of unique users that have viewed code insights in-product landing page
   - Weekly count of per user changes that have been made over the query field insight example.
   - Weekly count of per user changes that have been made over the repositories field insight example.
   - Weekly count of clicks on the "Create your first insight" CTA button on the in-product landing page.
-  - Weekly count of clicks on the code insights in-product template section's tabs.
+  - Weekly count of clicks on the code insights in-product template section's tabs, with tab title data.
   - Weekly count of clicks on the use/explore template card's button.
   - Weekly count of clicks on the "view more" template section button.
   - Weekly count of clicks on the in-product landing page documentation links.
+  - Weekly count of filters usage on the standalone insight page
+  - Weekly count of navigation to dashboards from the standalone insight page
+  - Weekly count of clicks on "Edit" from the standalone insight page
+  - Total count of individual view series, grouped by presentation type and generation method
+  - Total count of insight series, grouped by generation method
+  - Total count of views, grouped by presentation type
+  - Total count of organisations with at least one dashboard
+  - Total count of dashboards
+  - Total count of insights per dashboard
+  - Weekly count of time to complete an insight series backfill in seconds 
+  - Weekly count of requests of exports of Code Insights data
+- Search aggregations usage data
+  - Weekly count of hovers over the search aggregations information icon
+  - Weekly count of open/collapse clicks on the sidebar and expanded view of search aggregations
+  - Weekly count of search aggregation mode clicks and hovers
+  - Weekly count of search aggregation bars clicks and hovers
+  - Weekly count of search aggregation success and timeouts 
 - Code monitoring usage data
   - Total number of views of the code monitoring page
   - Total number of views of the create code monitor page
@@ -181,12 +188,23 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
     - Count of unique users who interacted with the search exports feature
     - Count interactions with the go imports search query transformation feature
     - Count of unique users who interacted with the go imports search query transformation feature
-
+- Sourcegraph Own usage data
+  - Whether the `search-ownership` feature flag is turned on.
+  - Number and ratio of repositories for which ownership data is available via CODEOWNERS file or the API.
+  - Aggregate monthly weekly and daily active users for the following activities:
+    - Narrowing search results by owner using `file:has.owners` predicate.
+    - Selecting owner search result through `select:file.owners`.
+    - Displaying ownership panel in file view.
+- Histogram of cloned repository sizes
 </details>
 
 ## CIDR Range for Sourcegraph
 
 Sourcegraph currently uses Cloudflare to provide web application security. You should allow access to all [Cloudflare IP ranges](https://www.cloudflare.com/ips/)
+
+## Using an HTTP proxy for telemetry requests
+
+The environment variable `TELEMETRY_HTTP_PROXY` can be set on the `sourcegraph-frontend` service, to use an HTTP proxy for telemetry requests.
 
 ## Connections to Sourcegraph.com
 

@@ -1,12 +1,14 @@
 package singleprogram
 
 import (
+	"bufio"
 	"context"
 	"fmt"
-	golog "log"
+	"io"
 	"os"
 	"os/user"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
@@ -28,9 +30,9 @@ func initPostgreSQL(logger log.Logger, embeddedPostgreSQLRootDir string) error {
 	var vars *postgresqlEnvVars
 	if useEmbeddedPostgreSQL {
 		var err error
-		vars, err = startEmbeddedPostgreSQL(embeddedPostgreSQLRootDir)
+		vars, err = startEmbeddedPostgreSQL(logger, embeddedPostgreSQLRootDir)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "Failed to download or start embedded postgresql. Please start your own postgres instance then configure the PG* environment variables to connect to it as well as setting USE_EMBEDDED_POSTGRESQL=0")
 		}
 		os.Setenv("PGPORT", vars.PGPORT)
 		os.Setenv("PGHOST", vars.PGHOST)
@@ -53,7 +55,7 @@ func initPostgreSQL(logger log.Logger, embeddedPostgreSQLRootDir string) error {
 
 	useSinglePostgreSQLDatabase(logger, vars)
 
-	// Migration on startup is ideal for the single-program deployment because there are no other
+	// Migration on startup is ideal for the app deployment because there are no other
 	// simultaneously running services at startup that might interfere with a migration.
 	//
 	// TODO(sqs): TODO(single-binary): make this behavior more official and not just for "dev"
@@ -62,7 +64,21 @@ func initPostgreSQL(logger log.Logger, embeddedPostgreSQLRootDir string) error {
 	return nil
 }
 
-func startEmbeddedPostgreSQL(pgRootDir string) (*postgresqlEnvVars, error) {
+func startEmbeddedPostgreSQL(logger log.Logger, pgRootDir string) (*postgresqlEnvVars, error) {
+	// Note: some linux distributions (eg NixOS) do not ship with the dynamic
+	// linker at the "standard" location which the embedded postgres
+	// executables rely on. Give a nice error instead of the confusing "file
+	// not found" error.
+	//
+	// We could consider extending embedded-postgres to use something like
+	// patchelf, but this is non-trivial.
+	if runtime.GOOS == "linux" && runtime.GOARCH == "amd64" {
+		ldso := "/lib64/ld-linux-x86-64.so.2"
+		if _, err := os.Stat(ldso); err != nil {
+			return nil, errors.Errorf("could not use embedded-postgres since %q is missing", ldso)
+		}
+	}
+
 	// Note: on macOS unix socket paths must be <103 bytes, so we place them in the home directory.
 	current, err := user.Current()
 	if err != nil {
@@ -93,7 +109,7 @@ func startEmbeddedPostgreSQL(pgRootDir string) (*postgresqlEnvVars, error) {
 			Username(vars.PGUSER).
 			Database(vars.PGDATABASE).
 			UseUnixSocket(unixSocketDir).
-			Logger(golog.Writer()),
+			Logger(debugLogLinesWriter(logger, "postgres output line")),
 	)
 	if err := db.Start(); err != nil {
 		return nil, err
@@ -138,4 +154,26 @@ func useSinglePostgreSQLDatabase(logger log.Logger, vars *postgresqlEnvVars) {
 	setDefaultEnv(logger, "CODEINSIGHTS_PGDATABASE", vars.PGDATABASE)
 	setDefaultEnv(logger, "CODEINSIGHTS_PGSSLMODE", vars.PGSSLMODE)
 	setDefaultEnv(logger, "CODEINSIGHTS_PGDATASOURCE", vars.PGDATASOURCE)
+}
+
+// debugLogLinesWriter returns an io.Writer which will log each line written to it to logger.
+//
+// Note: this leaks a goroutine since embedded-postgres does not provide a way
+// for us to close the writer once it is finished running. In practice we only
+// call this function once and postgres has the same lifetime as the process,
+// so this is fine.
+func debugLogLinesWriter(logger log.Logger, msg string) io.Writer {
+	r, w := io.Pipe()
+
+	go func() {
+		scanner := bufio.NewScanner(r)
+		for scanner.Scan() {
+			logger.Debug(msg, log.String("line", scanner.Text()))
+		}
+		if err := scanner.Err(); err != nil {
+			logger.Error("error reading for "+msg, log.Error(err))
+		}
+	}()
+
+	return w
 }

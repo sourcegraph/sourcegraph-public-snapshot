@@ -4,6 +4,7 @@ go_library(
     name = "resolvers",
     srcs = [
         "bitbucket_projects_permission_jobs.go",
+        "permissions_info.go",
         "permissions_sync_jobs.go",
         "repositories.go",
         "resolver.go",
@@ -16,7 +17,6 @@ go_library(
         "//cmd/frontend/globals",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",
-        "//enterprise/internal/authz/syncjobs",
         "//enterprise/internal/database",
         "//enterprise/internal/licensing",
         "//internal/actor",
@@ -36,19 +36,24 @@ go_library(
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_graph_gophers_graphql_go//relay",
         "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_exp//slices",
     ],
 )
 
 go_test(
     name = "resolvers_test",
-    srcs = ["resolver_test.go"],
+    timeout = "short",
+    srcs = [
+        "permissions_sync_jobs_test.go",
+        "resolver_test.go",
+    ],
     embed = [":resolvers"],
     deps = [
         "//cmd/frontend/envvar",
         "//cmd/frontend/globals",
         "//cmd/frontend/graphqlbackend",
+        "//cmd/frontend/graphqlbackend/graphqlutil",
         "//enterprise/internal/authz/github",
-        "//enterprise/internal/authz/syncjobs",
         "//enterprise/internal/database",
         "//enterprise/internal/licensing",
         "//internal/actor",
@@ -72,5 +77,6 @@ go_test(
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
+        "@org_golang_x_exp//maps",
     ],
 )

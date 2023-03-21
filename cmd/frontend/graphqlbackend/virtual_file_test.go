@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 )
@@ -18,6 +19,9 @@ func TestVirtualFile(t *testing.T) {
 		CreateFileInfo(fileName, false),
 		func(ctx context.Context) (string, error) {
 			return fileContent, nil
+		},
+		VirtualFileResolverOptions{
+			URL: "/testurl",
 		},
 	)
 	t.Run("Path", func(t *testing.T) {
@@ -72,6 +76,13 @@ func TestVirtualFile(t *testing.T) {
 		if isBinary {
 			t.Fatalf("wrong Binary: %t", isBinary)
 		}
+	})
+	t.Run("URL", func(t *testing.T) {
+		url, err := vfr.URL(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		require.Equal(t, "/testurl", url)
 	})
 	t.Run("Highlight", func(t *testing.T) {
 		testHighlight := func(aborted bool) {

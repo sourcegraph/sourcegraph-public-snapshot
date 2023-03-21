@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 
 import { mdiArchive } from '@mdi/js'
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { pluralize } from '@sourcegraph/common'
 import { Link, Icon } from '@sourcegraph/wildcard'

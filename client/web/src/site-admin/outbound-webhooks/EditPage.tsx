@@ -1,8 +1,8 @@
 import { FC, useCallback, useEffect, useState } from 'react'
 
-import { mdiCog } from '@mdi/js'
+import { mdiWebhook } from '@mdi/js'
 import { noop } from 'lodash'
-import { RouteComponentProps } from 'react-router'
+import { useNavigate, useParams } from 'react-router-dom'
 
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -23,10 +23,11 @@ import { SubmitButton } from './create-edit/SubmitButton'
 import { DeleteButton } from './delete/DeleteButton'
 import { Logs } from './logs/Logs'
 
-export interface EditPageProps extends TelemetryProps, RouteComponentProps<{ id: string }> {}
+export interface EditPageProps extends TelemetryProps {}
 
-export const EditPage: FC<EditPageProps> = ({ history, match, telemetryService }) => {
-    const { id } = match.params
+export const EditPage: FC<EditPageProps> = ({ telemetryService }) => {
+    const navigate = useNavigate()
+    const { id = '' } = useParams<{ id: string }>()
 
     useEffect(() => {
         telemetryService.logPageView('OutboundWebhooksEditPage')
@@ -39,8 +40,8 @@ export const EditPage: FC<EditPageProps> = ({ history, match, telemetryService }
     const webhookURL = data?.node?.__typename === 'OutboundWebhook' ? data.node.url : undefined
 
     const onDeleted = useCallback(() => {
-        history.push('/site-admin/outbound-webhooks')
-    }, [history])
+        navigate('/site-admin/webhooks/outgoing')
+    }, [navigate])
 
     if (error) {
         return (
@@ -149,10 +150,10 @@ const Header: FC<HeaderProps> = ({ id, onDeleted, url }) => (
         <PageTitle title="Edit outgoing webhook" />
         <PageHeader
             path={[
-                { icon: mdiCog },
-                { to: '/site-admin/outbound-webhooks', text: 'Outgoing webhooks' },
+                { icon: mdiWebhook },
+                { to: '/site-admin/webhooks/outgoing', text: 'Outgoing webhooks' },
                 {
-                    to: `/site-admin/outbound-webhooks/${id}`,
+                    to: `/site-admin/webhooks/outgoing/${id}`,
                     text: url || 'Edit',
                 },
             ]}

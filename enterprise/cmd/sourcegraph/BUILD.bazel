@@ -18,6 +18,7 @@ go_library(
         "//enterprise/cmd/symbols/shared",
         "//enterprise/cmd/worker/shared",
         "//internal/service",
+        "//internal/service/servegit",
     ],
 )
 

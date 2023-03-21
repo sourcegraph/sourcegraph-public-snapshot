@@ -1,6 +1,3 @@
-import fs from 'fs'
-import path from 'path'
-
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
@@ -11,11 +8,10 @@ import {
     IntegrationTestOptions,
 } from '@sourcegraph/shared/src/testing/integration/context'
 
-import { WebpackManifest, getHTMLPage } from '../../dev/webpack/get-html-webpack-plugins'
+import { getWebpackManifest, getIndexHTML } from '../../dev/utils/get-index-html'
 import { WebGraphQlOperations } from '../graphql-operations'
 import { SourcegraphContext } from '../jscontext'
 
-import { isHotReloadEnabled } from './environment'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createJsContext } from './jscontext'
 import { TemporarySettingsContext } from './temporarySettingsContext'
@@ -43,13 +39,6 @@ export interface WebIntegrationTestContext
     overrideInitialTemporarySettings: (overrides: TemporarySettings) => void
 }
 
-const rootDirectory = path.resolve(__dirname, '..', '..', '..', '..')
-const manifestFile = path.resolve(rootDirectory, 'ui/assets/webpack.manifest.json')
-
-const getManifestBundles = (): Partial<WebpackManifest> =>
-    // eslint-disable-next-line no-sync
-    JSON.parse(fs.readFileSync(manifestFile, 'utf-8')) as Partial<WebpackManifest>
-
 /**
  * Creates the integration test context for integration tests testing the web app.
  * This should be called in a `beforeEach()` hook and assigned to a variable `testContext` in the test scope.
@@ -61,7 +50,6 @@ export const createWebIntegrationTestContext = async ({
     customContext = {},
 }: IntegrationTestOptions): Promise<WebIntegrationTestContext> => {
     const config = getConfig('disableAppAssetsMocking')
-    const { environment, ...bundles } = getManifestBundles()
 
     const sharedTestContext = await createSharedIntegrationTestContext<
         WebGraphQlOperations & SharedGraphQlOperations,
@@ -74,26 +62,18 @@ export const createWebIntegrationTestContext = async ({
     const tempSettings = new TemporarySettingsContext()
     sharedTestContext.overrideGraphQL(tempSettings.getGraphQLOverrides())
 
-    const prodChunks = {
-        'app.js': bundles['app.js'] || '',
-        'app.css': bundles['app.css'],
-        'react.js': bundles['react.js'],
-        'opentelemetry.js': bundles['opentelemetry.js'],
-    }
-
-    const devChunks = {
-        'app.js': bundles['app.js'] || '',
-        'runtime.js': isHotReloadEnabled ? bundles['runtime.js'] : undefined,
-    }
-
-    const appChunks = environment === 'production' ? prodChunks : devChunks
     if (!config.disableAppAssetsMocking) {
         // Serve all requests for index.html (everything that does not match the handlers above) the same index.html
         sharedTestContext.server
             .get(new URL('/*path', driver.sourcegraphBaseUrl).href)
             .filter(request => !request.pathname.startsWith('/-/'))
             .intercept((request, response) => {
-                response.type('text/html').send(getHTMLPage(appChunks, { ...jsContext, ...customContext }))
+                response.type('text/html').send(
+                    getIndexHTML({
+                        manifestFile: getWebpackManifest(),
+                        jsContext: { ...jsContext, ...customContext },
+                    })
+                )
             })
     }
 
@@ -112,6 +92,9 @@ export const createWebIntegrationTestContext = async ({
                 .join('')
             response.status(200).type('text/event-stream').send(responseContent)
         })
+
+    // Let browser handle data: URIs
+    sharedTestContext.server.get('data:*rest').passthrough()
 
     return {
         ...sharedTestContext,

@@ -1,16 +1,16 @@
 import * as React from 'react'
+import { FC } from 'react'
 
+import { ApolloClient, useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
-import * as H from 'history'
 import * as jsonc from 'jsonc-parser'
-import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 
 import { logger } from '@sourcegraph/common'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     Button,
     LoadingSpinner,
@@ -211,8 +211,10 @@ const quickConfigureActions: {
     },
 ]
 
-interface Props extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
-    history: H.History
+interface Props extends TelemetryProps {
+    isLightTheme: boolean
+    client: ApolloClient<{}>
+    isSourcegraphApp: boolean
 }
 
 interface State {
@@ -223,14 +225,20 @@ interface State {
     saving?: boolean
     restartToApply: boolean
     reloadStartedAt?: number
+    enabledCompletions?: boolean
 }
 
 const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
 
+export const SiteAdminConfigurationPage: FC<TelemetryProps & { isSourcegraphApp: boolean }> = props => {
+    const client = useApolloClient()
+    return <SiteAdminConfigurationContent {...props} isLightTheme={useIsLightTheme()} client={client} />
+}
+
 /**
  * A page displaying the site configuration.
  */
-export class SiteAdminConfigurationPage extends React.Component<Props, State> {
+class SiteAdminConfigurationContent extends React.Component<Props, State> {
     public state: State = {
         loading: true,
         restartToApply: window.context.needServerRestart,
@@ -381,6 +389,18 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             )
         }
 
+        if (this.state.enabledCompletions) {
+            alerts.push(
+                <Alert key="cody-beta-notice" className={styles.alert} variant="info">
+                    By turning on completions for "Cody beta," you have read the{' '}
+                    <Link to="/help/cody">Cody Documentation</Link> and agree to the{' '}
+                    <Link to="https://about.sourcegraph.com/terms/cody-notice">Cody Notice and Usage Policy</Link>. In
+                    particular, some code snippets will be sent to a third-party language model provider when you use
+                    Cody questions.
+                </Alert>
+            )
+        }
+
         const isReloading = typeof this.state.reloadStartedAt === 'number'
 
         return (
@@ -411,8 +431,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                                 height={600}
                                 isLightTheme={this.props.isLightTheme}
                                 onSave={this.onSave}
-                                actions={quickConfigureActions}
-                                history={this.props.history}
+                                actions={this.props.isSourcegraphApp ? [] : quickConfigureActions}
                                 telemetryService={this.props.telemetryService}
                                 explanation={
                                     <Text className="form-text text-muted">
@@ -466,13 +485,18 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             window.location.reload()
         }
 
+        this.setState({
+            enabledCompletions:
+                !oldConfiguration?.completions?.enabled && Boolean(newConfiguration?.completions?.enabled),
+        })
+
         if (restartToApply) {
             window.context.needServerRestart = restartToApply
         } else {
             // Refresh site flags so that global site alerts
             // reflect the latest configuration.
             try {
-                await refreshSiteFlags().toPromise()
+                await refreshSiteFlags(this.props.client)
             } catch (error) {
                 logger.error(error)
             }

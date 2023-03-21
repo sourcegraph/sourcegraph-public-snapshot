@@ -14,6 +14,8 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/unpack"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -34,16 +36,13 @@ const (
 	jvmMajorVersion0 = 44
 )
 
-func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *dependencies.Service) VCSSyncer {
+func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *dependencies.Service, cacheDir string) VCSSyncer {
 	placeholder, err := reposource.ParseMavenVersionedPackage("com.sourcegraph:sourcegraph:1.0.0")
 	if err != nil {
 		panic(fmt.Sprintf("expected placeholder package to parse but got %v", err))
 	}
 
-	var configDeps []string
-	if connection.Maven != nil {
-		configDeps = connection.Maven.Dependencies
-	}
+	chandle := coursier.NewCoursierHandle(observation.NewContext(log.Scoped("gitserver.jvmsyncer", "")), cacheDir)
 
 	return &vcsPackagesSyncer{
 		logger:      log.Scoped("JVMPackagesSyncer", "sync JVM packages"),
@@ -51,14 +50,19 @@ func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *depende
 		scheme:      dependencies.JVMPackagesScheme,
 		placeholder: placeholder,
 		svc:         svc,
-		configDeps:  configDeps,
-		source:      &jvmPackagesSyncer{config: connection, fetch: coursier.FetchSources},
+		configDeps:  connection.Maven.Dependencies,
+		source: &jvmPackagesSyncer{
+			coursier: chandle,
+			config:   connection,
+			fetch:    chandle.FetchSources,
+		},
 	}
 }
 
 type jvmPackagesSyncer struct {
-	config *schema.JVMPackagesConnection
-	fetch  func(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (sourceCodeJarPath string, err error)
+	coursier *coursier.CoursierHandle
+	config   *schema.JVMPackagesConnection
+	fetch    func(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (sourceCodeJarPath string, err error)
 }
 
 func (jvmPackagesSyncer) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
@@ -168,7 +172,7 @@ func (s *jvmPackagesSyncer) inferJVMVersionFromByteCode(ctx context.Context,
 		return dependency.Version, nil
 	}
 
-	byteCodeJarPath, err := coursier.FetchByteCode(ctx, s.config, dependency)
+	byteCodeJarPath, err := s.coursier.FetchByteCode(ctx, s.config, dependency)
 	if err != nil {
 		return "", err
 	}

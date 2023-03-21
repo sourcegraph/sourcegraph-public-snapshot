@@ -40,7 +40,7 @@ export const BackendAlertOverlay: FC<BackendAlertOverLayProps> = props => {
         return (
             <AlertOverlay
                 title="This insight is still being processed"
-                icon={<ProgressWrench className={classNames('mb-3')} size={33} />}
+                icon={<ProgressWrench size={33} />}
                 className={className}
             />
         )

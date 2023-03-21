@@ -1,18 +1,16 @@
 import * as React from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Routes, Route, useParams, useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { Routes, Route, useParams, useLocation, useNavigate } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../auth'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { BatchChangesProps } from '../batches'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
-import { HeroPage } from '../components/HeroPage'
+import { NotFoundPage } from '../components/HeroPage'
 
 import { OrgArea, type OrgAreaProps, OrgAreaRoute } from './area/OrgArea'
 import { OrgAreaHeaderNavItem } from './area/OrgHeader'
@@ -21,18 +19,9 @@ import { NewOrganizationPage } from './new/NewOrganizationPage'
 import { OrgSettingsAreaRoute } from './settings/OrgSettingsArea'
 import { OrgSettingsSidebarItems } from './settings/OrgSettingsSidebar'
 
-const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage
-        icon={MapSearchIcon}
-        title="404: Not Found"
-        subtitle="Sorry, the requested organization page was not found."
-    />
-)
-
 export interface Props
     extends PlatformContextProps,
         SettingsCascadeProps,
-        ThemeProps,
         TelemetryProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
@@ -44,6 +33,7 @@ export interface Props
 
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 }
 
 /**
@@ -55,17 +45,18 @@ const AuthenticatedOrgsArea: React.FunctionComponent<React.PropsWithChildren<Pro
             <Route path="new" element={<NewOrganizationPage />} />
         )}
         <Route path="invitation/:token" element={<OrgInvitationPage {...props} />} />
-        <Route path=":name/*" element={<OrgAreaWithRouteProps {...props} />} />
-        <Route element={<NotFoundPage />} />
+        <Route path=":orgName/*" element={<OrgAreaWithRouteProps {...props} />} />
+        <Route path="*" element={<NotFoundPage pageType="organization" />} />
     </Routes>
 )
 
 // TODO: Migrate this into the OrgArea component once it's migrated to a function component.
 function OrgAreaWithRouteProps(props: Omit<OrgAreaProps, 'orgName' | 'location' | 'navigate'>): JSX.Element {
-    const { name } = useParams<{ name: string }>()
+    const { orgName } = useParams<{ orgName: string }>()
     const location = useLocation()
     const navigate = useNavigate()
-    return <OrgArea {...props} orgName={name!} location={location} navigate={navigate} />
+
+    return <OrgArea {...props} orgName={orgName!} location={location} navigate={navigate} />
 }
 
 export const OrgsArea = withAuthenticatedUser(AuthenticatedOrgsArea)

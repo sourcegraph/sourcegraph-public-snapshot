@@ -6,6 +6,7 @@
 * [`api`](api.md)
 * [`batch`](batch/index.md)
 * [`code-intel`](code-intel/index.md)
+* [`codeowners`](codeowners.md)
 * [`config`](config/index.md)
 * [`debug`](debug.md)
 * [`extensions`](extensions/index.md)
@@ -17,7 +18,8 @@
 * [`search`](search.md)
 * [`serve-git`](serve-git.md)
 * [`snapshot`](snapshot.md)
+* [`teams`](teams.md)
 * [`users`](users/index.md)
-* [`validate`](validate/index.md)
+* [`validate`](validate.md)
 * [`version`](version.md)
 	

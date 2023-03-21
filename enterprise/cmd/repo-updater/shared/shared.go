@@ -36,7 +36,7 @@ func EnterpriseInit(
 	keyring keyring.Ring,
 	cf *httpcli.Factory,
 	server *repoupdater.Server,
-) (debugDumpers map[string]debugserver.Dumper, enqueueRepoPermsJob func(context.Context, api.RepoID, ossDB.PermissionSyncJobReason) error) {
+) (debugDumpers map[string]debugserver.Dumper, enqueueRepoPermsJob func(context.Context, api.RepoID, ossDB.PermissionsSyncJobReason) error) {
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	if debug {
 		observationCtx.Logger.Info("enterprise edition")
@@ -58,14 +58,14 @@ func EnterpriseInit(
 	permsSyncer := authz.NewPermsSyncer(observationCtx.Logger.Scoped("PermsSyncer", "repository and user permissions syncer"), db, repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
 
 	permsJobStore := db.PermissionSyncJobs()
-	enqueueRepoPermsJob = func(ctx context.Context, repo api.RepoID, reason ossDB.PermissionSyncJobReason) error {
-		if authz.PermissionSyncingDisabled() {
+	enqueueRepoPermsJob = func(ctx context.Context, repo api.RepoID, reason ossDB.PermissionsSyncJobReason) error {
+		if frontendAuthz.PermissionSyncingDisabled() {
 			return nil
 		}
 
 		// If the feature flag is enabled, create job...
 		if permssync.PermissionSyncWorkerEnabled(ctx, db, observationCtx.Logger) {
-			opts := ossDB.PermissionSyncJobOpts{Priority: ossDB.HighPriorityPermissionSync, Reason: reason}
+			opts := ossDB.PermissionSyncJobOpts{Priority: ossDB.HighPriorityPermissionsSync, Reason: reason}
 			return permsJobStore.CreateRepoSyncJob(ctx, repo, opts)
 		}
 		// ... otherwise, we just call the PermsSyncer
@@ -75,12 +75,17 @@ func EnterpriseInit(
 
 	if server != nil {
 		server.PermsSyncer = permsSyncer
+		if server.Syncer != nil {
+			server.Syncer.EnterpriseCreateRepoHook = enterpriseCreateRepoHook
+			server.Syncer.EnterpriseUpdateRepoHook = enterpriseUpdateRepoHook
+		}
 	}
 
 	repoWorkerStore := authz.MakeStore(observationCtx, db.Handle(), authz.SyncTypeRepo)
 	userWorkerStore := authz.MakeStore(observationCtx, db.Handle(), authz.SyncTypeUser)
-	repoSyncWorker := authz.MakeWorker(ctx, observationCtx, repoWorkerStore, permsSyncer, authz.SyncTypeRepo)
-	userSyncWorker := authz.MakeWorker(ctx, observationCtx, userWorkerStore, permsSyncer, authz.SyncTypeUser)
+	permissionSyncJobStore := ossDB.PermissionSyncJobsWith(observationCtx.Logger, db)
+	repoSyncWorker := authz.MakeWorker(ctx, observationCtx, repoWorkerStore, permsSyncer, authz.SyncTypeRepo, permissionSyncJobStore)
+	userSyncWorker := authz.MakeWorker(ctx, observationCtx, userWorkerStore, permsSyncer, authz.SyncTypeUser, permissionSyncJobStore)
 	// Type of store (repo/user) for resetter doesn't matter, because it has its
 	// separate name for logging and metrics.
 	resetter := authz.MakeResetter(observationCtx, repoWorkerStore)

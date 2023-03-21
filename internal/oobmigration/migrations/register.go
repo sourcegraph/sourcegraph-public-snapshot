@@ -54,7 +54,7 @@ type migratorDependencies struct {
 func registerOSSMigrators(runner *oobmigration.Runner, noDelay bool, deps migratorDependencies) error {
 	return RegisterAll(runner, noDelay, []TaggedMigrator{
 		batches.NewExternalServiceWebhookMigratorWithDB(deps.store, deps.keyring.ExternalServiceKey, 50),
-		batches.NewRoleAssignmentMigrator(deps.store, 500),
+		batches.NewUserRoleAssignmentMigrator(deps.store, 250),
 	})
 }
 

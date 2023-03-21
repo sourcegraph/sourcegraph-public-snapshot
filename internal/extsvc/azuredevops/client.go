@@ -2,48 +2,76 @@
 package azuredevops
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 
+	"github.com/goware/urlx"
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"golang.org/x/oauth2"
 )
 
 const (
-	azureDevOpsServicesURL = "https://dev.azure.com/"
-	// TODO: @varsanojidan look into which API version/s we want to support.
-	apiVersion = "7.0"
+	AzureDevOpsAPIURL       = "https://dev.azure.com/"
+	ClientAssertionType     = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+	apiVersion              = "7.0"
+	continuationTokenHeader = "x-ms-continuationtoken"
 )
 
 // Client used to access an AzureDevOps code host via the REST API.
-type Client struct {
+type Client interface {
+	WithAuthenticator(a auth.Authenticator) (Client, error)
+	Authenticator() auth.Authenticator
+	GetURL() *url.URL
+	IsAzureDevOpsServices() bool
+	AbandonPullRequest(ctx context.Context, args PullRequestCommonArgs) (PullRequest, error)
+	CreatePullRequest(ctx context.Context, args OrgProjectRepoArgs, input CreatePullRequestInput) (PullRequest, error)
+	GetPullRequest(ctx context.Context, args PullRequestCommonArgs) (PullRequest, error)
+	GetPullRequestStatuses(ctx context.Context, args PullRequestCommonArgs) ([]PullRequestBuildStatus, error)
+	UpdatePullRequest(ctx context.Context, args PullRequestCommonArgs, input PullRequestUpdateInput) (PullRequest, error)
+	CreatePullRequestCommentThread(ctx context.Context, args PullRequestCommonArgs, input PullRequestCommentInput) (PullRequestCommentResponse, error)
+	CompletePullRequest(ctx context.Context, args PullRequestCommonArgs, input PullRequestCompleteInput) (PullRequest, error)
+	GetRepo(ctx context.Context, args OrgProjectRepoArgs) (Repository, error)
+	ListRepositoriesByProjectOrOrg(ctx context.Context, args ListRepositoriesByProjectOrOrgArgs) ([]Repository, error)
+	ForkRepository(ctx context.Context, org string, input ForkRepositoryInput) (Repository, error)
+	GetRepositoryBranch(ctx context.Context, args OrgProjectRepoArgs, branchName string) (Ref, error)
+	GetProject(ctx context.Context, org, project string) (Project, error)
+	GetAuthorizedProfile(ctx context.Context) (Profile, error)
+	ListAuthorizedUserOrganizations(ctx context.Context, profile Profile) ([]Org, error)
+	SetWaitForRateLimit(wait bool)
+}
+
+type client struct {
 	// HTTP Client used to communicate with the API.
 	httpClient httpcli.Doer
-
-	// Config is the code host connection config for this client.
-	Config *schema.AzureDevOpsConnection
 
 	// URL is the base URL of AzureDevOps.
 	URL *url.URL
 
-	// RateLimit is the self-imposed rate limiter (since AzureDevOps does not have a concept
-	// of rate limiting in HTTP response headers).
-	rateLimit *ratelimit.InstrumentedLimiter
-	auth      auth.Authenticator
+	urn string
+
+	internalRateLimiter *ratelimit.InstrumentedLimiter
+	externalRateLimiter *ratelimit.Monitor
+	auth                auth.Authenticator
+	waitForRateLimit    bool
+	maxRateLimitRetries int
 }
 
 // NewClient returns an authenticated AzureDevOps API client with
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(urn string, config *schema.AzureDevOpsConnection, httpClient httpcli.Doer) (*Client, error) {
-	u, err := url.Parse(config.Url)
+func NewClient(urn string, url string, auth auth.Authenticator, httpClient httpcli.Doer) (Client, error) {
+	u, err := urlx.Parse(url)
 	if err != nil {
 		return nil, err
 	}
@@ -52,104 +80,94 @@ func NewClient(urn string, config *schema.AzureDevOpsConnection, httpClient http
 		httpClient = httpcli.ExternalDoer
 	}
 
-	return &Client{
-		httpClient: httpClient,
-		Config:     config,
-		URL:        u,
-		rateLimit:  ratelimit.DefaultRegistry.Get(urn),
-		auth: &auth.BasicAuth{
-			Username: config.Username,
-			Password: config.Token,
-		},
+	return &client{
+		httpClient:          httpClient,
+		URL:                 u,
+		internalRateLimiter: ratelimit.DefaultRegistry.Get(urn),
+		externalRateLimiter: ratelimit.DefaultMonitorRegistry.GetOrSet(url, auth.Hash(), "rest", &ratelimit.Monitor{HeaderPrefix: "X-"}),
+		auth:                auth,
+		urn:                 urn,
+		waitForRateLimit:    true,
+		maxRateLimitRetries: 2,
 	}, nil
 }
 
-// ListRepositoriesByProjectOrOrgArgs defines options to be set on the ListRepositories methods' calls.
-type ListRepositoriesByProjectOrOrgArgs struct {
-	// Should be in the form of 'org/project' for projects and 'org' for orgs.
-	ProjectOrOrgName string
-}
-
-func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, opts ListRepositoriesByProjectOrOrgArgs) ([]Repository, error) {
-	queryParams := make(url.Values)
-	queryParams.Set("api-version", apiVersion)
-
-	urlRepositoriesByProjects := url.URL{Path: fmt.Sprintf("%s/_apis/git/repositories", opts.ProjectOrOrgName), RawQuery: queryParams.Encode()}
-
-	req, err := http.NewRequest("GET", urlRepositoriesByProjects.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	var repos ListRepositoriesResponse
-	if _, err = c.do(ctx, req, "", &repos); err != nil {
-		return nil, err
-	}
-
-	return repos.Value, nil
-}
-
-// AzureServicesProfile is used to return information about the authorized user, should only be used for Azure Services (https://dev.azure.com)
-func (c *Client) AzureServicesProfile(ctx context.Context) (Profile, error) {
-	queryParams := make(url.Values)
-
-	queryParams.Set("api-version", apiVersion)
-
-	urlProfile := url.URL{Path: "/_apis/profile/profiles/me", RawQuery: queryParams.Encode()}
-
-	req, err := http.NewRequest("GET", urlProfile.String(), nil)
-	if err != nil {
-		return Profile{}, err
-	}
-
-	var p Profile
-	if _, err = c.do(ctx, req, "https://app.vssps.visualstudio.com", &p); err != nil {
-		return Profile{}, err
-	}
-
-	return p, nil
-}
-
+// do performs the specified request, returning any errors and a continuationToken used for pagination (if the API supports it).
+//
 //nolint:unparam // http.Response is never used, but it makes sense API wise.
-func (c *Client) do(ctx context.Context, req *http.Request, urlOverride string, result any) (*http.Response, error) {
-	var err error
+func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, result any) (continuationToken string, err error) {
 	u := c.URL
 	if urlOverride != "" {
 		u, err = url.Parse(urlOverride)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 	}
+
+	queryParams := req.URL.Query()
+	queryParams.Set("api-version", apiVersion)
+	req.URL.RawQuery = queryParams.Encode()
 	req.URL = u.ResolveReference(req.URL)
 
-	// Add Basic Auth headers for authenticated requests.
-	c.auth.Authenticate(req)
+	var reqBody []byte
+	if req.Body != nil {
+		req.Header.Set("Content-Type", "application/json")
+		reqBody, err = io.ReadAll(req.Body)
+		if err != nil {
+			return "", err
+		}
+	}
+	req.Body = io.NopCloser(bytes.NewReader(reqBody))
 
-	if err := c.rateLimit.Wait(ctx); err != nil {
-		return nil, err
+	// Add authentication headers for authenticated requests.
+	if err := c.auth.Authenticate(req); err != nil {
+		return "", err
 	}
 
-	resp, err := c.httpClient.Do(req)
+	if err := c.internalRateLimiter.Wait(ctx); err != nil {
+		return "", err
+	}
+
+	if c.waitForRateLimit {
+		_ = c.externalRateLimiter.WaitForRateLimit(ctx, 1)
+	}
+
+	logger := log.Scoped("azuredevops.Client", "azuredevops Client logger")
+	resp, err := oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth)
 	if err != nil {
-		return nil, err
+		return "", err
+	}
+
+	c.externalRateLimiter.Update(resp.Header)
+
+	numRetries := 0
+	for c.waitForRateLimit && resp.StatusCode == http.StatusTooManyRequests &&
+		numRetries < c.maxRateLimitRetries {
+		if c.externalRateLimiter.WaitForRateLimit(ctx, 1) {
+			req.Body = io.NopCloser(bytes.NewReader(reqBody))
+			resp, err = oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth)
+			numRetries++
+		} else {
+			break
+		}
 	}
 
 	defer resp.Body.Close()
 
 	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return nil, &httpError{
+		return "", &HTTPError{
 			URL:        req.URL,
 			StatusCode: resp.StatusCode,
 			Body:       bs,
 		}
 	}
 
-	return resp, json.Unmarshal(bs, result)
+	return resp.Header.Get(continuationTokenHeader), json.Unmarshal(bs, result)
 }
 
 // WithAuthenticator returns a new Client that uses the same configuration,
@@ -157,63 +175,109 @@ func (c *Client) do(ctx context.Context, req *http.Request, urlOverride string, 
 // the given authenticator instance.
 //
 // Note that using an unsupported Authenticator implementation may result in
-// unexpected behaviour, or (more likely) errors. At present, only BasicAuth is
-// supported.
-func (c *Client) WithAuthenticator(a auth.Authenticator) (*Client, error) {
-	if _, ok := a.(*auth.BasicAuth); !ok {
+// unexpected behaviour, or (more likely) errors. At present, only BasicAuth and
+// BasicAuthWithSSH are supported.
+func (c *client) WithAuthenticator(a auth.Authenticator) (Client, error) {
+	switch a.(type) {
+	case *auth.BasicAuth, *auth.BasicAuthWithSSH:
+		break
+	default:
 		return nil, errors.Errorf("authenticator type unsupported for Azure DevOps clients: %s", a)
 	}
 
-	return &Client{
-		httpClient: c.httpClient,
-		URL:        c.URL,
-		auth:       a,
-		rateLimit:  c.rateLimit,
-	}, nil
+	return NewClient(c.urn, c.URL.String(), a, c.httpClient)
+}
+
+func (c *client) SetWaitForRateLimit(wait bool) {
+	c.waitForRateLimit = wait
+}
+
+func (c *client) Authenticator() auth.Authenticator {
+	return c.auth
+}
+
+func (c *client) GetURL() *url.URL {
+	return c.URL
 }
 
 // IsAzureDevOpsServices returns true if the client is configured to Azure DevOps
-// Services (https://dev.azure.com
-func (c *Client) IsAzureDevOpsServices() bool {
-	return c.URL.String() == azureDevOpsServicesURL
+// Services (https://dev.azure.com)
+func (c *client) IsAzureDevOpsServices() bool {
+	return c.URL.String() == AzureDevOpsAPIURL
 }
 
-type ListRepositoriesResponse struct {
-	Value []Repository `json:"value"`
-	Count int          `json:"count"`
+func GetOAuthContext(refreshToken string) (*oauthutil.OAuthContext, error) {
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		if authProvider.AzureDevOps != nil {
+			authURL, err := url.JoinPath(VisualStudioAppURL, "oauth2/authorize")
+			if err != nil {
+				return nil, err
+			}
+			tokenURL, err := url.JoinPath(VisualStudioAppURL, "oauth2/token")
+			if err != nil {
+				return nil, err
+			}
+
+			redirectURL, err := GetRedirectURL(nil)
+			if err != nil {
+				return nil, err
+			}
+
+			p := authProvider.AzureDevOps
+			return &oauthutil.OAuthContext{
+				ClientID:     p.ClientID,
+				ClientSecret: p.ClientSecret,
+				Endpoint: oauth2.Endpoint{
+					AuthURL:  authURL,
+					TokenURL: tokenURL,
+				},
+				// The API expects some custom values in the POST body to refresh the token. See:
+				// https://learn.microsoft.com/en-us/azure/devops/integrate/get-started/authentication/oauth?view=azure-devops#4-use-the-access-token
+				//
+				// DEBUGGING NOTE: The token refresher (internal/oauthutil/token.go:newTokenRequest)
+				// adds some default key-value pairs to the body, some of which are eventually
+				// overridden by the values in this map. But some extra arg remain in the body that
+				// is sent in the request. This works for now, but if refreshing a token ever stops
+				// working for Azure Dev Ops this is a good place to start looking by writing a
+				// custom implementation that only sends the key-value pairs that the API expects.
+				CustomQueryParams: map[string]string{
+					"client_assertion_type": ClientAssertionType,
+					"client_assertion":      url.QueryEscape(p.ClientSecret),
+					"grant_type":            "refresh_token",
+					"assertion":             url.QueryEscape(refreshToken),
+					"redirect_uri":          redirectURL.String(),
+				},
+			}, nil
+		}
+	}
+
+	return nil, errors.New("No authprovider configured for AzureDevOps, check site configuration.")
 }
 
-type Repository struct {
-	ID         string  `json:"id"`
-	Name       string  `json:"name"`
-	CloneURL   string  `json:"remoteURL"`
-	APIURL     string  `json:"url"`
-	SSHURL     string  `json:"sshUrl"`
-	WebURL     string  `json:"webUrl"`
-	IsDisabled bool    `json:"isDisabled"`
-	Project    Project `json:"project"`
+// GetRedirectURL returns the redirect URL for azuredevops OAuth provider. It takes an optional
+// SiteConfigQuerier to query the ExternalURL from the site config. If nil, it directly reads the
+// site config using the conf.SiteConfig method.
+func GetRedirectURL(cfg conftypes.SiteConfigQuerier) (*url.URL, error) {
+	var externalURL string
+	if cfg != nil {
+		externalURL = cfg.SiteConfig().ExternalURL
+	} else {
+		externalURL = conf.SiteConfig().ExternalURL
+	}
+
+	parsedURL, err := url.Parse(externalURL)
+	if err != nil {
+		return nil, errors.New("Could not parse `externalURL`, which is needed to determine the OAuth callback URL.")
+	}
+
+	parsedURL.Path = "/.auth/azuredevops/callback"
+	return parsedURL, nil
 }
 
-type Project struct {
-	ID         string `json:"id"`
-	Name       string `json:"name"`
-	State      string `json:"state"`
-	Revision   int    `json:"revision"`
-	Visibility string `json:"visibility"`
+func (e *HTTPError) Unauthorized() bool {
+	return e.StatusCode == http.StatusUnauthorized
 }
 
-type Profile struct {
-	ID           string `json:"id"`
-	DisplayName  string `json:"displayName"`
-	EmailAddress string `json:"emailAddress"`
-}
-
-type httpError struct {
-	StatusCode int
-	URL        *url.URL
-	Body       []byte
-}
-
-func (e *httpError) Error() string {
-	return fmt.Sprintf("Azure DevOps API HTTP error: code=%d url=%q body=%q", e.StatusCode, e.URL, e.Body)
+func (e *HTTPError) NotFound() bool {
+	return e.StatusCode == http.StatusNotFound
 }

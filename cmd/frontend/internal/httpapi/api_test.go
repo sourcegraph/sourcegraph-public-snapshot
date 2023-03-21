@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 )
 
@@ -29,6 +30,7 @@ func newTest(t *testing.T) *httptestutil.Client {
 	db := database.NewMockDB()
 
 	return httptestutil.NewTest(NewHandler(db,
+		jobutil.NewUnimplementedEnterpriseJobs(),
 		router.New(mux.NewRouter()),
 		nil,
 		rateLimiter,
@@ -41,10 +43,12 @@ func newTest(t *testing.T) *httptestutil.Client {
 			BitbucketCloudSyncWebhook:     enterpriseServices.ReposBitbucketCloudWebhook,
 			BatchesBitbucketServerWebhook: enterpriseServices.BatchesBitbucketServerWebhook,
 			BatchesBitbucketCloudWebhook:  enterpriseServices.BatchesBitbucketCloudWebhook,
+			BatchesAzureDevOpsWebhook:     enterpriseServices.BatchesAzureDevOpsWebhook,
 			SCIMHandler:                   enterpriseServices.SCIMHandler,
 			NewCodeIntelUploadHandler:     enterpriseServices.NewCodeIntelUploadHandler,
 			NewComputeStreamHandler:       enterpriseServices.NewComputeStreamHandler,
 			PermissionsGitHubWebhook:      enterpriseServices.PermissionsGitHubWebhook,
+			NewCompletionsStreamHandler:   enterpriseServices.NewCompletionsStreamHandler,
 		},
 	))
 }

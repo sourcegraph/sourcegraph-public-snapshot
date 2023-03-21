@@ -8,10 +8,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
+type DirtyRepository struct {
+	RepositoryID   int
+	RepositoryName string
+	DirtyToken     int
+}
+
 type SourcedCommits struct {
 	RepositoryID   int
 	RepositoryName string
 	Commits        []string
+}
+
+type GetIndexersOptions struct {
+	RepositoryID int
 }
 
 type GetUploadsOptions struct {
@@ -22,6 +32,7 @@ type GetUploadsOptions struct {
 	VisibleAtTip            bool
 	DependencyOf            int
 	DependentOf             int
+	IndexerNames            []string
 	UploadedBefore          *time.Time
 	UploadedAfter           *time.Time
 	LastRetentionScanBefore *time.Time
@@ -38,9 +49,18 @@ type GetUploadsOptions struct {
 	InCommitGraph bool
 }
 
+type ReindexUploadsOptions struct {
+	States       []string
+	IndexerNames []string
+	Term         string
+	RepositoryID int
+	VisibleAtTip bool
+}
+
 type DeleteUploadsOptions struct {
 	RepositoryID int
-	State        string
+	States       []string
+	IndexerNames []string
 	Term         string
 	VisibleAtTip bool
 }
@@ -191,4 +211,23 @@ type UploadLog struct {
 	TransitionColumns []map[string]*string
 	Reason            *string
 	Operation         string
+}
+
+type RankingDefinitions struct {
+	UploadID     int
+	SymbolName   string
+	DocumentPath string
+}
+
+type RankingReferences struct {
+	UploadID    int
+	SymbolNames []string
+}
+
+type ExportedUpload struct {
+	ID           int
+	Repo         string
+	RepoID       int
+	Root         string
+	ObjectPrefix string
 }

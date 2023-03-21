@@ -1,12 +1,8 @@
 import { FC, useMemo } from 'react'
 
-import {
-    SubmissionErrors,
-    createDefaultEditSeries,
-    CodeInsightsCreationActions,
-    CodeInsightCreationMode,
-    FORM_ERROR,
-} from '../../../../components'
+import { FORM_ERROR, SubmissionErrors } from '@sourcegraph/wildcard'
+
+import { createDefaultEditSeries, CodeInsightsCreationActions, CodeInsightCreationMode } from '../../../../components'
 import { MinimalSearchBasedInsightData, SearchBasedInsight } from '../../../../core'
 import { CreateInsightFormFields, InsightStep } from '../../creation/search-insight'
 import { SearchInsightCreationContent } from '../../creation/search-insight/components/SearchInsightCreationContent'
@@ -31,7 +27,7 @@ export const EditSearchBasedInsight: FC<EditSearchBasedInsightProps> = props => 
             title: insight.title,
             repoMode: repoQuery ? 'search-query' : 'urls-list',
             repoQuery: { query: repoQuery },
-            repositories: insight.repositories.join(', '),
+            repositories: insight.repositories,
             series: insight.series.map(line => createDefaultEditSeries({ ...line, valid: true })),
             stepValue: Object.values(insight.step)[0]?.toString() ?? '3',
             step: Object.keys(insight.step)[0] as InsightStep,

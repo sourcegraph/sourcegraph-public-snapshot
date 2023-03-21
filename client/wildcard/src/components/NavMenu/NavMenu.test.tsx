@@ -1,12 +1,11 @@
-import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
+import { renderWithBrandedContext } from '../../testing'
 import { AnchorLink } from '../Link'
 
-import { NavMenuSectionProps } from './NavMenu'
-
 import { NavMenu } from '.'
+import { NavMenuSectionProps } from './NavMenu'
 
 describe('<NavMenu />', () => {
     it('Should render Menu Items Correctly', () => {
@@ -80,8 +79,10 @@ describe('<NavMenu />', () => {
             },
         ]
 
-        render(<NavMenu navTrigger={{ triggerContent: { text: 'menu trigger' } }} sections={menuNavItems} />)
-        const button = screen.getByRole('button', { name: 'menu trigger' })
+        const result = renderWithBrandedContext(
+            <NavMenu navTrigger={{ triggerContent: { text: 'menu trigger' } }} sections={menuNavItems} />
+        )
+        const button = result.getByRole('button', { name: 'menu trigger' })
         expect(button).toBeVisible()
         userEvent.click(button)
 
@@ -90,11 +91,11 @@ describe('<NavMenu />', () => {
             const { headerContent, navItems = [] } = navItem
 
             if (headerContent && typeof headerContent === 'string') {
-                expect(screen.getByText(headerContent)).toBeInTheDocument()
+                expect(result.getByText(headerContent)).toBeInTheDocument()
             }
 
             for (const { content } of navItems) {
-                expect(screen.getByText(content as string)).toBeInTheDocument()
+                expect(result.getByText(content as string)).toBeInTheDocument()
             }
         }
     })

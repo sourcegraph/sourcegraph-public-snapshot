@@ -37,3 +37,29 @@ export function buildFrequencyDatum(
 }
 
 export const formatNumber = (value: number): string => Intl.NumberFormat('en', { notation: 'compact' }).format(value)
+
+export const getByteUnitValue = (value: number): number => {
+    switch (true) {
+        case value < 1000:
+            return value
+        case value >= 1000 && value < 1000000:
+            return value / 1000
+        case value < 1000000000:
+            return value / 1000000
+        default:
+            return value / 1000000000
+    }
+}
+
+export const getByteUnitLabel = (value: number): string => {
+    switch (true) {
+        case value < 1000:
+            return 'Bytes'
+        case value < 1000000:
+            return 'KB'
+        case value < 1000000000:
+            return 'MB'
+        default:
+            return 'GB'
+    }
+}

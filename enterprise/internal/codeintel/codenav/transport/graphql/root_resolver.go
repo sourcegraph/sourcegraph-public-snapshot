@@ -4,10 +4,15 @@ import (
 	"context"
 	"strings"
 
+	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
+	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -16,7 +21,11 @@ type rootResolver struct {
 	autoindexingSvc                AutoIndexingService
 	uploadSvc                      UploadsService
 	policiesSvc                    PolicyService
-	gitserver                      GitserverClient
+	gitserverClient                gitserver.Client
+	siteAdminChecker               sharedresolvers.SiteAdminChecker
+	repoStore                      database.RepoStore
+	prefetcherFactory              *sharedresolvers.PrefetcherFactory
+	locationResolverFactory        *sharedresolvers.CachedLocationResolverFactory
 	maximumIndexesPerMonikerSearch int
 	hunkCache                      codenav.HunkCache
 
@@ -24,7 +33,7 @@ type rootResolver struct {
 	operations *operations
 }
 
-func NewRootResolver(observationCtx *observation.Context, svc CodeNavService, autoindexingSvc AutoIndexingService, uploadSvc UploadsService, policiesSvc PolicyService, gitserver GitserverClient, maxIndexSearch, hunkCacheSize int) (resolverstubs.CodeNavServiceResolver, error) {
+func NewRootResolver(observationCtx *observation.Context, svc CodeNavService, autoindexingSvc AutoIndexingService, uploadSvc UploadsService, policiesSvc PolicyService, gitserverClient gitserver.Client, siteAdminChecker sharedresolvers.SiteAdminChecker, repoStore database.RepoStore, locationResolverFactory *sharedresolvers.CachedLocationResolverFactory, prefetcherFactory *sharedresolvers.PrefetcherFactory, maxIndexSearch, hunkCacheSize int) (resolverstubs.CodeNavServiceResolver, error) {
 	hunkCache, err := codenav.NewHunkCache(hunkCacheSize)
 	if err != nil {
 		return nil, err
@@ -35,7 +44,11 @@ func NewRootResolver(observationCtx *observation.Context, svc CodeNavService, au
 		autoindexingSvc:                autoindexingSvc,
 		uploadSvc:                      uploadSvc,
 		policiesSvc:                    policiesSvc,
-		gitserver:                      gitserver,
+		gitserverClient:                gitserverClient,
+		siteAdminChecker:               siteAdminChecker,
+		repoStore:                      repoStore,
+		prefetcherFactory:              prefetcherFactory,
+		locationResolverFactory:        locationResolverFactory,
 		operations:                     newOperations(observationCtx),
 		hunkCache:                      hunkCache,
 		maximumIndexesPerMonikerSearch: maxIndexSearch,
@@ -44,7 +57,13 @@ func NewRootResolver(observationCtx *observation.Context, svc CodeNavService, au
 
 // 🚨 SECURITY: dbstore layer handles authz for query resolution
 func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.GitBlobLSIFDataArgs) (_ resolverstubs.GitBlobLSIFDataResolver, err error) {
-	ctx, errTracer, endObservation := r.operations.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{})
+	ctx, errTracer, endObservation := r.operations.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repoID", int(args.Repo.ID)),
+		log.String("commit", string(args.Commit)),
+		log.String("path", args.Path),
+		log.Bool("exactPath", args.ExactPath),
+		log.String("toolName", args.ToolName),
+	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	uploads, err := r.svc.GetClosestDumpsForBlob(ctx, int(args.Repo.ID), string(args.Commit), args.Path, args.ExactPath, args.ToolName)
@@ -61,7 +80,29 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.
 		return nil, err
 	}
 
-	reqState := codenav.NewRequestState(uploads, authz.DefaultSubRepoPermsChecker, r.gitserver, args.Repo, string(args.Commit), args.Path, r.maximumIndexesPerMonikerSearch, r.hunkCache)
+	reqState := codenav.NewRequestState(
+		uploads,
+		r.repoStore,
+		authz.DefaultSubRepoPermsChecker,
+		r.gitserverClient,
+		args.Repo,
+		string(args.Commit),
+		args.Path,
+		r.maximumIndexesPerMonikerSearch,
+		r.hunkCache,
+	)
 
-	return NewGitBlobLSIFDataResolver(r.svc, r.autoindexingSvc, r.uploadSvc, r.policiesSvc, reqState, errTracer, r.operations), nil
+	return NewGitBlobLSIFDataResolver(
+		r.svc,
+		r.uploadSvc,
+		r.policiesSvc,
+		r.gitserverClient,
+		r.siteAdminChecker,
+		r.repoStore,
+		r.prefetcherFactory.Create(),
+		r.locationResolverFactory.Create(),
+		reqState,
+		errTracer,
+		r.operations,
+	), nil
 }

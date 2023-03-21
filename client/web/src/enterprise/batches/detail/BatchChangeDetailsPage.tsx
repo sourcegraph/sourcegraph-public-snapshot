@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react'
 
 import { subDays, startOfDay } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import { useParams } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
@@ -14,11 +15,7 @@ import { BatchChangesIcon } from '../../../batches/icons'
 import { CreatedByAndUpdatedByInfoByline } from '../../../components/Byline/CreatedByAndUpdatedByInfoByline'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
-import {
-    BatchChangeByNamespaceResult,
-    BatchChangeByNamespaceVariables,
-    BatchChangeFields,
-} from '../../../graphql-operations'
+import { BatchChangeByNamespaceResult, BatchChangeByNamespaceVariables } from '../../../graphql-operations'
 import { Description } from '../Description'
 import { MissingCredentialsAlert } from '../MissingCredentialsAlert'
 
@@ -32,12 +29,11 @@ import { ChangesetsArchivedNotice } from './ChangesetsArchivedNotice'
 import { ClosedNotice } from './ClosedNotice'
 import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
 import { UnpublishedNotice } from './UnpublishedNotice'
+import { WebhookAlert } from './WebhookAlert'
 
 export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps, SettingsCascadeProps<Settings> {
     /** The namespace ID. */
     namespaceID: Scalars['ID']
-    /** The batch change name. */
-    batchChangeName: BatchChangeFields['name']
     /** The name of the tab that should be initially open */
     initialTab?: TabName
     /** For testing only. */
@@ -52,7 +48,8 @@ export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps, Se
 export const BatchChangeDetailsPage: React.FunctionComponent<
     React.PropsWithChildren<BatchChangeDetailsPageProps>
 > = props => {
-    const { namespaceID, batchChangeName, telemetryService, authenticatedUser, deleteBatchChange } = props
+    const { batchChangeName } = useParams()
+    const { namespaceID, telemetryService, authenticatedUser, deleteBatchChange } = props
 
     useEffect(() => {
         telemetryService.logViewEvent('BatchChangeDetailsPage')
@@ -64,7 +61,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
     const { data, error, loading, refetch } = useQuery<BatchChangeByNamespaceResult, BatchChangeByNamespaceVariables>(
         BATCH_CHANGE_BY_NAMESPACE,
         {
-            variables: { namespaceID, batchChange: batchChangeName, createdAfter },
+            variables: { namespaceID, batchChange: batchChangeName!, createdAfter },
             // Cache this data but always re-request it in the background when we revisit
             // this page to pick up newer changes.
             fetchPolicy: 'cache-and-network',
@@ -95,7 +92,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
         throw new Error(error.message)
     }
     // If there weren't any errors and we just didn't receive any data
-    if (!data || !data.batchChange) {
+    if (!data?.batchChange) {
         return <HeroPage icon={AlertCircleIcon} title="Batch change not found" />
     }
 
@@ -166,9 +163,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
                 />
             )}
             <ChangesetsArchivedNotice />
-            {/* Temporarily disabled due to bug with discovery. */}
-            {/* See https://github.com/sourcegraph/sourcegraph/issues/45919 */}
-            {/* <WebhookAlert batchChange={batchChange} /> */}
+            <WebhookAlert batchChange={batchChange} />
             <BatchChangeStatsCard batchChange={batchChange} className="mb-3" />
             <Description description={batchChange.description} />
             <BatchChangeDetailsTabs batchChange={batchChange} refetchBatchChange={refetch} {...props} />

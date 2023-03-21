@@ -7,6 +7,7 @@ import (
 	"os/exec"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -103,9 +104,6 @@ func (s *GitRepoSyncer) fetchCommand(ctx context.Context, remoteURL *vcs.URL) (c
 		cmd = refspecOverridesFetchCmd(ctx, remoteURL)
 	} else {
 		cmd = exec.CommandContext(ctx, "git", "fetch",
-			// We already have janitor jobs that run git gc. We disable git gc here to avoid
-			// a possible corruption of repositories by competing gc processes.
-			"--no-auto-gc",
 			"--progress", "--prune", remoteURL.String(),
 			// Normal git refs
 			"+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*",

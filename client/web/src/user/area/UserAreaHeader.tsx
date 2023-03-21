@@ -2,11 +2,11 @@ import React, { useMemo } from 'react'
 
 import { NavLink } from 'react-router-dom'
 
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { Icon, PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
-import { UserAvatar } from '../UserAvatar'
 
 import { UserAreaRouteContext } from './UserArea'
 
@@ -19,6 +19,7 @@ interface Props extends UserAreaRouteContext {
 
 export interface UserAreaHeaderContext extends BatchChangesProps, Pick<Props, 'user'> {
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 }
 
 export interface UserAreaHeaderNavItem extends NavItemWithIconDescriptor<UserAreaHeaderContext> {}
@@ -69,12 +70,7 @@ export const UserAreaHeader: React.FunctionComponent<React.PropsWithChildren<Pro
                             ({ to, label, exact, icon: ItemIcon, condition = () => true }) =>
                                 condition(props) && (
                                     <li key={label} className="nav-item">
-                                        <NavLink
-                                            to={url + to}
-                                            className="nav-link"
-                                            activeClassName="active"
-                                            exact={exact}
-                                        >
+                                        <NavLink to={url + to} className="nav-link">
                                             <span>
                                                 {ItemIcon && <Icon as={ItemIcon} aria-hidden={true} />}{' '}
                                                 <span className="text-content" data-tab-content={label}>

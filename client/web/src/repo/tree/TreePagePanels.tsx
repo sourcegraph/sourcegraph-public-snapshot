@@ -1,58 +1,93 @@
-import React, { FC, useCallback, useRef, useState, useMemo } from 'react'
+import React, { FC, useCallback, useRef, useState, useMemo, useEffect } from 'react'
 
 import { mdiFileDocumentOutline, mdiFolderOutline, mdiMenuDown, mdiMenuUp } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
 
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import {
     Card,
     CardHeader,
+    H2,
     Icon,
     Link,
     LinkOrSpan,
+    LoadingSpinner,
     ParentSize,
     StackedMeter,
     Tooltip,
     useElementObscuredArea,
 } from '@sourcegraph/wildcard'
 
-import { dirname } from '../../util/path'
+import { BlobFileFields } from '../../graphql-operations'
+import { basename, dirname } from '../../util/path'
+import { fetchBlob } from '../blob/backend'
 import { RenderedFile } from '../blob/RenderedFile'
 
 import styles from './TreePagePanels.module.scss'
 
 interface ReadmePreviewCardProps {
-    readmeHTML: string
-    readmeURL: string
-    location: H.Location
-    className?: string
+    entry: TreeFields['entries'][number]
+    repoName: string
+    revision: string
 }
+export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> = ({ entry, repoName, revision }) => {
+    const [readmeInfo, setReadmeInfo] = useState<null | BlobFileFields>(null)
 
-export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> = props => {
-    const { readmeHTML, readmeURL, location, className } = props
-
-    const renderedFileRef = useRef<HTMLDivElement>(null)
-    const { bottom } = useElementObscuredArea(renderedFileRef)
+    useEffect(() => {
+        const subscription = fetchBlob({
+            repoName,
+            revision,
+            filePath: entry.path,
+            disableTimeout: true,
+        }).subscribe(blob => {
+            if (blob) {
+                setReadmeInfo(blob)
+            } else {
+                setReadmeInfo(null)
+            }
+        })
+        return () => subscription.unsubscribe()
+    }, [repoName, revision, entry.path])
 
     return (
-        <section className={className}>
-            <RenderedFile
-                key={readmeHTML}
-                ref={renderedFileRef}
-                location={location}
-                dangerousInnerHTML={readmeHTML}
-                className={styles.readme}
-            />
+        <section className="mb-4">
+            {readmeInfo ? (
+                <RenderedReadmeFile blob={readmeInfo} entryUrl={entry.url} />
+            ) : (
+                <div className={classNames('text-muted', styles.readmeLoading)}>
+                    <LoadingSpinner />
+                </div>
+            )}
+        </section>
+    )
+}
+
+interface RenderedReadmeFileProps {
+    blob: BlobFileFields
+    entryUrl: string
+}
+const RenderedReadmeFile: React.FC<RenderedReadmeFileProps> = ({ blob, entryUrl }) => {
+    const renderedFileRef = useRef<HTMLDivElement>(null)
+    const { bottom } = useElementObscuredArea(renderedFileRef)
+    return (
+        <>
+            {blob.richHTML ? (
+                <RenderedFile ref={renderedFileRef} dangerousInnerHTML={blob.richHTML} className={styles.readme} />
+            ) : (
+                <div ref={renderedFileRef} className={styles.readme}>
+                    <H2 className={styles.readmePreHeader}>{basename(entryUrl)}</H2>
+                    <pre className={styles.readmePre}>{blob.content}</pre>
+                </div>
+            )}
             {bottom > 0 && (
                 <>
                     <div className={styles.readmeFader} />
-                    <Link to={readmeURL} className={styles.readmeMoreLink}>
+                    <Link to={entryUrl} className={styles.readmeMoreLink}>
                         View full README
                     </Link>
                 </>
             )}
-        </section>
+        </>
     )
 }
 

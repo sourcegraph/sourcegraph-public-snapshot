@@ -8,17 +8,16 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 	logger "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/symbols/proto"
+	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 const maxNumSymbolResults = 500
@@ -27,12 +26,12 @@ type grpcService struct {
 	searchFunc   types.SearchFunc
 	readFileFunc func(context.Context, internaltypes.RepoCommitPath) ([]byte, error)
 	ctagsBinary  string
-	proto.UnimplementedSymbolsServer
+	proto.UnimplementedSymbolsServiceServer
 	logger logger.Logger
 }
 
-func (s *grpcService) Search(ctx context.Context, r *proto.SearchRequest) (*proto.SymbolsResponse, error) {
-	var response proto.SymbolsResponse
+func (s *grpcService) Search(ctx context.Context, r *proto.SearchRequest) (*proto.SearchResponse, error) {
+	var response proto.SearchResponse
 
 	params := r.ToInternal()
 	symbols, err := s.searchFunc(ctx, params)
@@ -50,7 +49,7 @@ func (s *grpcService) Search(ctx context.Context, r *proto.SearchRequest) (*prot
 	return &response, nil
 }
 
-func (s *grpcService) ListLanguages(ctx context.Context, _ *emptypb.Empty) (*proto.ListLanguagesResponse, error) {
+func (s *grpcService) ListLanguages(ctx context.Context, _ *proto.ListLanguagesRequest) (*proto.ListLanguagesResponse, error) {
 	rawMapping, err := ctags.ListLanguageMappings(ctx, s.ctagsBinary)
 	if err != nil {
 		return nil, errors.Wrap(err, "listing ctags language mappings")
@@ -66,13 +65,13 @@ func (s *grpcService) ListLanguages(ctx context.Context, _ *emptypb.Empty) (*pro
 	}, nil
 }
 
-func (s *grpcService) Healthz(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+func (s *grpcService) Healthz(ctx context.Context, _ *proto.HealthzRequest) (*proto.HealthzResponse, error) {
 	// Note: Kubernetes only has beta support for GRPC Healthchecks since version >= 1.23. This means
 	// that we probably need the old non-GRPC healthcheck endpoint for a while.
 	//
 	// See https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-a-grpc-liveness-probe
 	// for more information.
-	return &emptypb.Empty{}, nil
+	return &proto.HealthzResponse{}, nil
 }
 
 func NewHandler(
@@ -94,17 +93,13 @@ func NewHandler(
 	rootLogger := logger.Scoped("symbolsServer", "symbols RPC server")
 
 	// Initialize the gRPC server
-	grpcServer := grpc.NewServer(
-		defaults.ServerOptions(rootLogger)...,
-	)
-	grpcServer.RegisterService(&proto.Symbols_ServiceDesc, &grpcService{
+	grpcServer := defaults.NewServer(rootLogger)
+	proto.RegisterSymbolsServiceServer(grpcServer, &grpcService{
 		searchFunc:   searchFuncWrapper,
 		readFileFunc: readFileFunc,
 		ctagsBinary:  ctagsBinary,
 		logger:       rootLogger.Scoped("grpc", "grpc server implementation"),
 	})
-
-	reflection.Register(grpcServer)
 
 	jsonLogger := rootLogger.Scoped("jsonrpc", "json server implementation")
 
@@ -158,6 +153,14 @@ func handleSearchWith(l logger.Logger, searchFunc types.SearchFunc) http.Handler
 
 func handleListLanguages(ctagsBinary string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if deploy.IsSingleBinary() && ctagsBinary == "" {
+			// app: ctags is not available
+			var mapping map[string][]string
+			if err := json.NewEncoder(w).Encode(mapping); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+			return
+		}
 		mapping, err := ctags.ListLanguageMappings(r.Context(), ctagsBinary)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -86,7 +86,7 @@ UPDATE gitserver_repos SET repo_size_bytes = 5 where repo_id = 3;
 		t.Fatalf("unexpected error while inserting test data: %s", err)
 	}
 
-	s.cleanupRepos(actor.WithInternalActor(context.Background()), gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
+	s.cleanupRepos(actor.WithInternalActor(context.Background()), gitserver.GitserverAddresses{Addresses: []string{"gitserver-0"}})
 
 	for i := 1; i <= 3; i++ {
 		repo, err := s.DB.GitserverRepos().GetByID(context.Background(), api.RepoID(i))
@@ -151,7 +151,7 @@ func TestCleanupInactive(t *testing.T) {
 		DB:             database.NewMockDB(),
 	}
 	s.testSetup(t)
-	s.cleanupRepos(context.Background(), gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
+	s.cleanupRepos(context.Background(), gitserver.GitserverAddresses{Addresses: []string{"gitserver-0"}})
 
 	if _, err := os.Stat(repoA); os.IsNotExist(err) {
 		t.Error("expected repoA not to be removed")
@@ -186,7 +186,7 @@ func TestCleanupWrongShard(t *testing.T) {
 		}
 		s.testSetup(t)
 		s.Hostname = "does-not-exist"
-		s.cleanupRepos(context.Background(), gitserver.GitServerAddresses{Addresses: []string{"gitserver-0", "gitserver-1"}})
+		s.cleanupRepos(context.Background(), gitserver.GitserverAddresses{Addresses: []string{"gitserver-0", "gitserver-1"}})
 
 		if _, err := os.Stat(repoA); err != nil {
 			t.Error("expected repoA not to be removed")
@@ -219,7 +219,7 @@ func TestCleanupWrongShard(t *testing.T) {
 		}
 		s.testSetup(t)
 		s.Hostname = "gitserver-0"
-		s.cleanupRepos(context.Background(), gitserver.GitServerAddresses{Addresses: []string{"gitserver-0.cluster.local:3178", "gitserver-1.cluster.local:3178"}})
+		s.cleanupRepos(context.Background(), gitserver.GitserverAddresses{Addresses: []string{"gitserver-0.cluster.local:3178", "gitserver-1.cluster.local:3178"}})
 
 		if _, err := os.Stat(repoA); err != nil {
 			t.Error("expected repoA not to be removed")
@@ -252,7 +252,7 @@ func TestCleanupWrongShard(t *testing.T) {
 		}
 		s.testSetup(t)
 		wrongShardReposDeleteLimit = -1
-		s.cleanupRepos(context.Background(), gitserver.GitServerAddresses{Addresses: []string{"gitserver-0", "gitserver-1"}})
+		s.cleanupRepos(context.Background(), gitserver.GitserverAddresses{Addresses: []string{"gitserver-0", "gitserver-1"}})
 
 		if _, err := os.Stat(repoA); os.IsNotExist(err) {
 			t.Error("expected repoA not to be removed")
@@ -272,7 +272,7 @@ func TestGitGCAuto(t *testing.T) {
 	// Create a test repository with detectable garbage that GC can prune.
 	wd := t.TempDir()
 	repo := filepath.Join(wd, "garbage-repo")
-	runCmd(t, wd, "git", "init", repo)
+	runCmd(t, wd, "git", "init", "--initial-branch", "main", repo)
 
 	// First we need to generate a moderate number of commits.
 	for i := 0; i < 50; i++ {
@@ -290,7 +290,7 @@ func TestGitGCAuto(t *testing.T) {
 	}
 
 	// Bring everything back together in one branch.
-	runCmd(t, repo, "git", "checkout", "master")
+	runCmd(t, repo, "git", "checkout", "main")
 	runCmd(t, repo, "git", "merge", "secondary")
 
 	// Now create a bare repo like gitserver expects
@@ -320,7 +320,7 @@ func TestGitGCAuto(t *testing.T) {
 		DB:             database.NewMockDB(),
 	}
 	s.testSetup(t)
-	s.cleanupRepos(context.Background(), gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
+	s.cleanupRepos(context.Background(), gitserver.GitserverAddresses{Addresses: []string{"gitserver-0"}})
 
 	// Verify that there are no more GC-able objects in the repository.
 	if !strings.Contains(countObjects(), "count: 0") {
@@ -442,7 +442,7 @@ func TestCleanupExpired(t *testing.T) {
 		DB: database.NewMockDB(),
 	}
 	s.testSetup(t)
-	s.cleanupRepos(context.Background(), gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
+	s.cleanupRepos(context.Background(), gitserver.GitserverAddresses{Addresses: []string{"gitserver-0"}})
 
 	// repos that shouldn't be re-cloned
 	if repoNewTime.Before(modTime(repoNew)) {
@@ -548,7 +548,7 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 		s.testSetup(t)
 		s.DB = mockDB
 
-		s.cleanupRepos(context.Background(), gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
+		s.cleanupRepos(context.Background(), gitserver.GitserverAddresses{Addresses: []string{"gitserver-0"}})
 
 		// nothing should happen if test env not declared to true
 		if _, err := os.Stat(repoExists); err != nil {
@@ -568,7 +568,7 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 		s.testSetup(t)
 		s.DB = mockDB
 
-		s.cleanupRepos(context.Background(), gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
+		s.cleanupRepos(context.Background(), gitserver.GitserverAddresses{Addresses: []string{"gitserver-0"}})
 
 		if _, err := os.Stat(repoNotExists); err == nil {
 			t.Fatal("repo not existing in DB was not removed")
@@ -710,7 +710,7 @@ func TestCleanupOldLocks(t *testing.T) {
 
 	s := &Server{ReposDir: root, Logger: logtest.Scoped(t), ObservationCtx: observation.TestContextTB(t), DB: database.NewMockDB()}
 	s.testSetup(t)
-	s.cleanupRepos(context.Background(), gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
+	s.cleanupRepos(context.Background(), gitserver.GitserverAddresses{Addresses: []string{"gitserver-0"}})
 
 	isRemoved := func(path string) bool {
 		_, err := os.Stat(path)
@@ -1263,6 +1263,11 @@ func prepareEmptyGitRepo(t *testing.T, dir string) GitDir {
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("execution error: %v, output %s", err, out)
 	}
+	cmd = exec.Command("git", "config", "user.email", "test@sourcegraph.com")
+	cmd.Dir = dir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("execution error: %v, output %s", err, out)
+	}
 	return GitDir(filepath.Join(dir, ".git"))
 }
 
@@ -1571,7 +1576,7 @@ update gitserver_repos set repo_size_bytes = 228 where repo_id = 1;
 		t.Fatalf("unexpected error while inserting test data: %s", err)
 	}
 
-	s.cleanupRepos(context.Background(), gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
+	s.cleanupRepos(context.Background(), gitserver.GitserverAddresses{Addresses: []string{"gitserver-0"}})
 
 	for i := 1; i <= 3; i++ {
 		repo, err := s.DB.GitserverRepos().GetByID(context.Background(), 1)

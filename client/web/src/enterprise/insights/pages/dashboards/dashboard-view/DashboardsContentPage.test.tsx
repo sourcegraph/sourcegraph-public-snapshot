@@ -19,7 +19,6 @@ import {
     InsightsDashboardsResult,
     InsightSubjectsResult,
 } from '../../../../../graphql-operations'
-import { useCodeInsightsState } from '../../../../../stores'
 import { CodeInsightsBackendContext, CodeInsightsGqlBackend } from '../../../core'
 import {
     GET_DASHBOARD_INSIGHTS_GQL,
@@ -27,6 +26,7 @@ import {
     GET_INSIGHTS_DASHBOARD_OWNERS_GQL,
 } from '../../../core/backend/gql-backend'
 import { GET_INSIGHT_DASHBOARDS_GQL } from '../../../core/hooks/use-insight-dashboards'
+import { useCodeInsightsLicenseState } from '../../../stores'
 
 import { GET_INSIGHTS_BY_SEARCH_TERM } from './components/add-insight-modal'
 import { DashboardsView } from './DashboardsView'
@@ -48,7 +48,7 @@ const mockTelemetryService = {
 const Wrapper: React.FunctionComponent<React.PropsWithChildren<unknown>> = ({ children }) => {
     const apolloClient = useApolloClient()
     const api = new CodeInsightsGqlBackend(apolloClient)
-    useCodeInsightsState.setState({ licensed: true, insightsLimit: 2 })
+    useCodeInsightsLicenseState.setState({ licensed: true, insightsLimit: 2 })
 
     return <CodeInsightsBackendContext.Provider value={api}>{children}</CodeInsightsBackendContext.Provider>
 }
@@ -168,7 +168,11 @@ const renderDashboardsContent = (
     ...renderWithBrandedContext(
         <MockedTestProvider mocks={mocks}>
             <Wrapper>
-                <DashboardsView dashboardId={dashboardID} telemetryService={mockTelemetryService} />
+                <DashboardsView
+                    dashboardId={dashboardID}
+                    telemetryService={mockTelemetryService}
+                    isSourcegraphApp={false}
+                />
             </Wrapper>
         </MockedTestProvider>
     ),
@@ -217,7 +221,7 @@ describe('DashboardsContent', () => {
 
     it('redirect to new dashboard page on selection', async () => {
         const screen = renderDashboardsContent()
-        const { history, user } = screen
+        const { locationRef, user } = screen
 
         const chooseDashboard = await waitFor(() => screen.getByRole('button', { name: /Choose a dashboard/ }))
         user.click(chooseDashboard)
@@ -229,17 +233,15 @@ describe('DashboardsContent', () => {
             user.click(dashboard2)
         }
 
-        expect(history.location.pathname).toEqual('/insights/dashboards/bar')
+        expect(locationRef.current?.pathname).toEqual('/insights/dashboards/bar')
     })
 
     it('redirects to dashboard edit page', async () => {
         const screen = renderDashboardsContent()
 
-        const { history } = screen
-
         await triggerDashboardMenuItem(screen, 'Configure dashboard')
 
-        expect(history.location.pathname).toEqual('/insights/dashboards/foo/edit')
+        expect(screen.locationRef.current?.pathname).toEqual('/insights/dashboards/foo/edit')
     })
 
     it('opens add insight modal', async () => {

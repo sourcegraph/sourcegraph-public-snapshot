@@ -8,14 +8,16 @@ type repositoryFilterPreviewResolver struct {
 	repositoryResolvers []resolverstubs.RepositoryResolver
 	totalCount          int
 	totalMatches        int
+	matchesAllRepos     bool
 	limit               *int
 }
 
-func NewRepositoryFilterPreviewResolver(repositoryResolvers []resolverstubs.RepositoryResolver, totalCount, totalMatches int, limit *int) resolverstubs.RepositoryFilterPreviewResolver {
+func NewRepositoryFilterPreviewResolver(repositoryResolvers []resolverstubs.RepositoryResolver, totalCount, totalMatches int, matchesAllRepos bool, limit *int) resolverstubs.RepositoryFilterPreviewResolver {
 	return &repositoryFilterPreviewResolver{
 		repositoryResolvers: repositoryResolvers,
 		totalCount:          totalCount,
 		totalMatches:        totalMatches,
+		matchesAllRepos:     matchesAllRepos,
 		limit:               limit,
 	}
 }
@@ -30,6 +32,10 @@ func (r *repositoryFilterPreviewResolver) TotalCount() int32 {
 
 func (r *repositoryFilterPreviewResolver) TotalMatches() int32 {
 	return int32(r.totalMatches)
+}
+
+func (r *repositoryFilterPreviewResolver) MatchesAllRepos() bool {
+	return r.matchesAllRepos
 }
 
 func (r *repositoryFilterPreviewResolver) Limit() *int32 {

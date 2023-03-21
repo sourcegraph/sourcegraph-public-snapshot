@@ -95,13 +95,11 @@ type Mutation {
     """
     updateOrganization(id: ID!, displayName: String): Org!
     """
-    Soft or hard deletes an organization.
-    - When the second argument is not provided, it soft deletes an organization, marking it as deleted.
+    Soft deletes an organization.
+
     Only site admins may perform this mutation.
-    - When the second argument is true, it hard deletes an organization and its associated resources.
-    Hard deletion is currently only supported on cloud. Only org members may perform this mutation
     """
-    deleteOrganization(organization: ID!, hard: Boolean): EmptyResponse
+    deleteOrganization(organization: ID!): EmptyResponse
 
     """
     Creates a webhook for the specified code host. Only site admins may perform this mutation.
@@ -245,7 +243,6 @@ type Mutation {
 
     - All user data (access tokens, email addresses, external account info, survey responses, etc)
     - Organization membership information (which organizations the user is a part of, any invitations created by or targeting the user).
-    - Sourcegraph extensions published by the user.
     - User, Organization, or Global settings authored by the user.
     """
     deleteUser(user: ID!, hard: Boolean): EmptyResponse
@@ -262,8 +259,7 @@ type Mutation {
     """
     updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse
     """
-    Creates a password for the current user. It is only permitted if the user does not have a password and
-    they don't have any login connections.
+    Creates a password for the current user. It is only permitted if the user does not have a password.
     """
     createPassword(newPassword: String!): EmptyResponse
     """
@@ -846,6 +842,51 @@ type Mutation {
     the file on disk, and marking it as not-cloned in the database.
     """
     deleteRepositoryFromDisk(repo: ID!): EmptyResponse!
+
+    """
+    Create a new package repo reference filter.
+    """
+    addPackageRepoFilter(
+        """
+        Whether the matcher should be for allowlisting or blocklisting.
+        """
+        behaviour: PackageMatchBehaviour!
+        """
+        The ecosystem of the package repo reference this matcher should apply to.
+        Maps to the external service whos config would be updated when used in the
+        set query.
+        """
+        kind: PackageRepoReferenceKind!
+        """
+        The package repo reference matcher to persist.
+        """
+        filter: PackageVersionOrNameFilterInput!
+    ): PackageFilter!
+
+    """
+    Updates a package repo reference filter.
+    """
+    updatePackageRepoFilter(
+        """
+        The ID of the package repo reference filter to update.
+        """
+        id: ID!
+
+        behaviour: PackageMatchBehaviour!
+        """
+        The ecosystem of the package repo reference this matcher should apply to.
+        Maps to the external service whos config would be updated when used in the
+        set query.
+        """
+        kind: PackageRepoReferenceKind!
+
+        filter: PackageVersionOrNameFilterInput!
+    ): EmptyResponse!
+
+    """
+    Deletes a package repo reference filter.
+    """
+    deletePackageRepoFilter(id: ID!): EmptyResponse!
 }
 
 """
@@ -1297,6 +1338,67 @@ type Query {
         after: String
     ): ExternalServiceConnection!
     """
+    Lists all namespaces for a given external service connection.
+    A namespace is an entity on the code host that repositories are assignable to.
+    """
+    externalServiceNamespaces(
+        """
+        The GraphQL ID of the external service whose configuration will be used to define the code host remote url to
+        submit requests to and the token value to authenticate with.
+        If no external service exists which provides the necessary request parameters then leave ID nil and
+        provide kind, remote code host token and url.
+        """
+        id: ID
+        """
+        The kind of the external service.
+        """
+        kind: ExternalServiceKind!
+        """
+        The secret token value that is used to authenticate.
+        """
+        token: String!
+        """
+        The url of the external service.
+        """
+        url: String!
+    ): ExternalServiceNamespaceConnection!
+    """
+    Lists all repositories for a given external service connection.
+    """
+    externalServiceRepositories(
+        """
+        The GraphQL ID of the external service whose configuration will be used to define the code host remote url to
+        submit requests to and the token value to authenticate with.
+        If no external service exists which provides the necessary request parameters then leave ID nil and
+        provide kind, remote code host token and url.
+        """
+        id: ID
+        """
+        The kind of the external service.
+        """
+        kind: ExternalServiceKind!
+        """
+        The secret token value that is used to authenticate.
+        """
+        token: String!
+        """
+        The url of the external service.
+        """
+        url: String!
+        """
+        Repository query string.
+        """
+        query: String!
+        """
+        A list of repository names to exclude from results (in the form of owner/name).
+        """
+        excludeRepos: [String!]!
+        """
+        Returns the first n repositories matching the query and excludeRepos criteria.
+        """
+        first: Int
+    ): ExternalServiceRepositoryConnection!
+    """
     List all repositories.
     """
     repositories(
@@ -1365,6 +1467,70 @@ type Query {
         """
         descending: Boolean = false
     ): NewRepositoryConnection!
+
+    """
+    Query package repo references.
+    """
+    packageRepoReferences(
+        """
+        The exact package repo reference kind to filter by.
+        """
+        kind: PackageRepoReferenceKind
+        """
+        If supplied, only package repo references that match the given
+        terms by their name will be returned.
+        TODO: fuzzy vs exact?
+        """
+        name: String
+        """
+        Returns the first n package repo references from the list.
+        """
+        first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): PackageRepoReferenceConnection!
+
+    """
+    Query package repo reference filters.
+    """
+    packageRepoFilters(
+        """
+        Whether the matcher should be for allowlisting or blocklisting.
+        """
+        behaviour: PackageMatchBehaviour
+        """
+        The ecosystem of the package repo reference this matcher should apply to.
+        Maps to the external service whos config would be updated when used in the
+        set query.
+        """
+        kind: PackageRepoReferenceKind
+    ): [PackageFilter!]
+
+    """
+    Returns either a list of package repo references,
+    or the versions of a single package repo reference,
+    that match the provided matcher.
+    """
+    packageRepoReferencesMatchingFilter(
+        """
+        The kind of the package repo reference this matcher should apply to.
+        """
+        kind: PackageRepoReferenceKind!
+        """
+        The matcher for which to return matching results.
+        """
+        filter: PackageVersionOrNameFilterInput!
+        """
+        Returns the first n package/package version matches from the list.
+        """
+        first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): PackageRepoOrVersionConnection!
 
     """
     Looks up a Phabricator repository by name.
@@ -1557,10 +1723,6 @@ type Query {
         """
         first: Int
     ): SurveyResponseConnection!
-    """
-    The extension registry.
-    """
-    extensionRegistry: ExtensionRegistry!
     """
     FOR INTERNAL USE ONLY: Lists all status messages
     """
@@ -1788,6 +1950,50 @@ type Query {
         """
         after: String
     ): SlowRequestConnection!
+
+    """
+    Roles returns all the roles in the database that matches the arguments.
+    """
+    roles(
+        """
+        The limit argument for forward pagination.
+        """
+        first: Int
+        """
+        The limit argument for backward pagination.
+        """
+        last: Int
+        """
+        The cursor argument for forward pagination.
+        """
+        after: String
+        """
+        The cursor argument for backward pagination.
+        """
+        before: String
+    ): RoleConnection!
+
+    """
+    This returns all permissions in a paginated format.
+    """
+    permissions(
+        """
+        The limit argument for forward pagination.
+        """
+        first: Int
+        """
+        The limit argument for backward pagination.
+        """
+        last: Int
+        """
+        The cursor argument for forward pagination.
+        """
+        after: String
+        """
+        The cursor argument for backward pagination.
+        """
+        before: String
+    ): PermissionConnection!
 }
 
 """
@@ -2881,7 +3087,7 @@ type ExternalService implements Node {
 
     Only site admins may access this field.
 
-    DEPRECATED: Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks#deprecation-notice
+    DEPRECATED: Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice
     """
     webhookLogs(
         """
@@ -2910,7 +3116,7 @@ type ExternalService implements Node {
         until: DateTime
     ): WebhookLogConnection!
         @deprecated(
-            reason: "Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks#deprecation-notice"
+            reason: "Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice"
         )
 
     """
@@ -3103,6 +3309,73 @@ type ExternalServiceSyncJob implements Node {
     The number of existing repos whose metadata did not change during this sync job.
     """
     reposUnmodified: Int!
+}
+
+"""
+A list of namespaces available to an external service configuration.
+"""
+type ExternalServiceNamespaceConnection {
+    """
+    A list of namespaces available on the source.
+    Namespaces are used to organize which members and users can access repositories
+    and are defined by external service kind (e.g. Github organizations, Bitbucket projects, etc.)
+    """
+    nodes: [ExternalServiceNamespace!]!
+
+    """
+    The total number of source repos in the connection.
+    """
+    totalCount: Int!
+}
+
+"""
+A namespace sourced from a defined external service (such as GitHub, GitLab, Phabricator, etc.) that can be discovered
+before any sync or mirror operations.
+"""
+type ExternalServiceNamespace {
+    """
+    The unique identifier of the external service namespace.
+    """
+    id: ID!
+    """
+    The name of the external service namespace.
+    """
+    name: String!
+    """
+    The Namespace's ID on the external service.
+    Example: For GitHub, this is the GitHub GraphQL API's node ID for the organization.
+    """
+    externalID: String!
+}
+
+"""
+A list of repositories available to an external service configuration.
+"""
+type ExternalServiceRepositoryConnection {
+    """
+    A list of repositories available on the source.
+    """
+    nodes: [ExternalServiceRepository!]!
+}
+
+"""
+A repository sourced from a defined external service (such as GitHub, GitLab, Phabricator, etc.) that can be discovered
+before any sync or mirror operations.
+"""
+type ExternalServiceRepository {
+    """
+    The unique identifier of the external service repository.
+    """
+    id: ID!
+    """
+    The name of the external service repository.
+    """
+    name: String!
+    """
+    The repository's ID on the external service.
+    Example: For GitHub, this is the GitHub GraphQL API's node ID for the repository.
+    """
+    externalID: String!
 }
 """
 A list of repositories.
@@ -3422,6 +3695,234 @@ type KeyValuePair {
 }
 
 """
+List of package repo references.
+"""
+type PackageRepoReferenceConnection {
+    """
+    A list of package repo references.
+    """
+    nodes: [PackageRepoReference!]!
+
+    """
+    The total number of package repo references in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+Connection resolver for either a list of package repo references or versions.
+"""
+union PackageRepoOrVersionConnection = PackageRepoReferenceConnection | PackageRepoReferenceVersionConnection
+
+"""
+List of package repo reference versions.
+"""
+type PackageRepoReferenceVersionConnection {
+    """
+    A list of package repo versions.
+    """
+    nodes: [PackageRepoReferenceVersion!]!
+
+    """
+    The total number of package repo versions in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A kind of package repo reference.
+ExternalServiceKind, with a more specific set of values.
+"""
+enum PackageRepoReferenceKind {
+    GOMODULES
+    JVMPACKAGES
+    NPMPACKAGES
+    PYTHONPACKAGES
+    RUSTPACKAGES
+    RUBYPACKAGES
+}
+
+"""
+A reference to a package repo, such as a maven artifact, rust crate etc.
+"""
+type PackageRepoReference {
+    """
+    A unique ID for the package repo reference.
+    """
+    id: ID!
+
+    """
+    The external service kind under which this package repo
+    reference is uniquely identified.
+    """
+    kind: PackageRepoReferenceKind!
+
+    """
+    The name of the package, in a format relevant to the specific ecosystem e.g.
+    maven artifact coordinates (com.sample:text), npm scoped packages (@monkeys/banana).
+    """
+    name: String!
+
+    """
+    The versions of this package known to the sourcegraph instance.
+    """
+    versions: [PackageRepoReferenceVersion!]!
+
+    """
+    Indicates whether a package repo reference has been blocked by a blocklist entry and/or
+    no matching entry in a non-empty allowlist
+    """
+    blocked: Boolean!
+
+    """
+    The synthetic repository (aka the package repo) created to store the contents of the
+    synced versions of the package repo reference. This type is subject to change once
+    package repos and other non-git code hosts become first-class.
+    """
+    repository: Repository
+}
+
+"""
+A version of a package repo reference.
+"""
+type PackageRepoReferenceVersion {
+    """
+    A unique ID for the package repo reference version.
+    """
+    id: ID!
+
+    """
+    The package repo reference that this ID is for.
+    """
+    packageRepoReferenceID: ID!
+
+    """
+    The version string. Not guaranteed to be semver or any other format.
+    """
+    version: String!
+}
+
+"""
+Whether a package repo reference filter is part of the allowlist or blocklist
+"""
+enum PackageMatchBehaviour {
+    """
+    Blocks a package repo reference from syncing.
+    """
+    BLOCK
+    """
+    Allows a package repo reference to be synced.
+    """
+    ALLOW
+}
+
+"""
+Filters package repo references of the matching scheme/kind, applying to either
+references of matching names or versions of a specific package name.
+One of either nameFilter or versionFilter must be provided.
+"""
+type PackageFilter {
+    """
+    Opaque ID string.
+    """
+    id: ID!
+
+    """
+    The behaviour of the filter when applied to a matching package repo reference or version.
+    """
+    behaviour: PackageMatchBehaviour!
+
+    """
+    The schemes/kinds of package repo references this filter should apply to only.
+    """
+    kind: PackageRepoReferenceKind!
+
+    """
+    Optional name-matching filter.
+    """
+    nameFilter: PackageNameFilter
+
+    """
+    Optional package-specific version-matching filter.
+    """
+    versionFilter: PackageVersionFilter
+}
+
+"""
+A package repo reference filter that matches names.
+"""
+type PackageNameFilter {
+    """
+    Glob string to match names.
+    """
+    packageGlob: String!
+}
+
+"""
+A package repo reference filter that matches versions for a specific name.
+"""
+type PackageVersionFilter {
+    """
+    Exact package name to match.
+    """
+    packageName: String!
+
+    """
+    Glob string to match versions.
+    """
+    versionGlob: String!
+}
+
+"""
+A name or version matching filter for. One of either nameFilter or versionFilter must be provided.
+"""
+input PackageVersionOrNameFilterInput {
+    """
+    Optional name-matching filter.
+    """
+    nameFilter: PackageNameFilterInput
+    """
+    Optional package-specific version-matching filter.
+    """
+    versionFilter: PackageVersionFilterInput
+}
+
+"""
+A package repo reference filter that matches names.
+"""
+input PackageNameFilterInput {
+    """
+    Glob string to match names.
+    """
+    packageGlob: String!
+}
+
+"""
+A package repo reference filter that matches versions for a specific name.
+"""
+input PackageVersionFilterInput {
+    """
+    Exact package name to match.
+    """
+    packageName: String!
+
+    """
+    Glob string to match versions.
+    """
+    versionGlob: String!
+}
+
+"""
 Information and status related to the commit graph of this repository calculated
 for use by code intelligence features.
 """
@@ -3510,9 +4011,13 @@ type MirrorRepositoryInfo {
     """
     corruptionLogs: [RepoCorruptionLog!]!
     """
-    When the repository was last successfully updated from the remote source repository..
+    When the repository was last successfully updated from the remote source repository.
     """
     updatedAt: DateTime
+    """
+    When the repository is next scheduled to be updated from the remote source repository.
+    """
+    nextSyncAt: DateTime
     """
     The state of this repository in the update schedule.
     """
@@ -4087,315 +4592,6 @@ type RepositoryContributor {
         """
         first: Int
     ): GitCommitConnection!
-}
-
-"""
-A code symbol (e.g., a function, variable, type, class, etc.).
-It is derived from DocumentSymbol as defined in the Language Server Protocol (see https://microsoft.github.io/language-server-protocol/specifications/specification-3-14/#textDocument_documentSymbol).
-"""
-type Symbol {
-    """
-    The name of the symbol.
-    """
-    name: String!
-    """
-    The name of the symbol that contains this symbol, if any. This field's value is not guaranteed to be
-    structured in such a way that callers can infer a hierarchy of symbols.
-    """
-    containerName: String
-    """
-    The kind of the symbol.
-    """
-    kind: SymbolKind!
-    """
-    The programming language of the symbol.
-    """
-    language: String!
-    """
-    The location where this symbol is defined.
-    """
-    location: Location!
-    """
-    The URL to this symbol (using the input revision specifier, which may not be immutable).
-    """
-    url: String!
-    """
-    The canonical URL to this symbol (using an immutable revision specifier).
-    """
-    canonicalURL: String!
-    """
-    Whether or not the symbol is local to the file it's defined in.
-    """
-    fileLocal: Boolean!
-}
-
-"""
-A gitblob resolver specific to code intel.
-"""
-type CodeIntelGitBlob {
-    """
-    The full path (relative to the root) of this tree.
-    """
-    path: String!
-    """
-    The base name (i.e., last path component only) of this tree.
-    """
-    name: String!
-    """
-    The Git commit containing this tree.
-    """
-    commit: CodeIntelCommit!
-    """
-    The URL to this tree (using the input revision specifier, which may not be immutable).
-    """
-    url: String!
-    """
-    The repository containing this tree.
-    """
-    repository: CodeIntelRepository!
-    """
-    The content of this blob.
-    """
-    content(
-        """
-        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
-        """
-        startLine: Int
-        """
-        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
-        """
-        endLine: Int
-    ): String!
-}
-
-"""
-A codeintel repository is a Git source control repository that is mirrored from some origin code host and it is specific to code intel.
-"""
-type CodeIntelRepository {
-    """
-    The globally addressable ID for this commit.
-    """
-    id: ID!
-    """
-    The repository's name, as a path with one or more components. It conventionally consists of
-    the repository's hostname and path (joined by "/"), minus any suffixes (such as ".git").
-    Examples:
-    - github.com/foo/bar
-    - my-code-host.example.com/myrepo
-    - myrepo
-    """
-    name: String!
-    """
-    The URL to this repository.
-    """
-    url: String!
-    """
-    Information about this repository from the external service that it originates from (such as GitHub, GitLab,
-    Phabricator, etc.). Only populated when used as part of repository list previews for configuration policies.
-    """
-    externalRepository: CodeIntelExternalRepository
-}
-
-"""
-A repository on an external service (such as GitHub, GitLab, Phabricator, etc.).
-"""
-type CodeIntelExternalRepository {
-    """
-    The type of external service where this repository resides.
-    Example: "github", "gitlab", etc.
-    """
-    serviceType: String!
-    """
-    The particular instance of the external service where this repository resides. Its value is
-    opaque but typically consists of the canonical base URL to the service.
-    Example: For GitHub.com, this is "https://github.com/".
-    """
-    serviceID: String!
-}
-
-"""
-A Code Intel Commit.
-"""
-type CodeIntelCommit {
-    """
-    The globally addressable ID for this commit.
-    """
-    id: ID!
-    """
-    This commit's Git object ID (OID), a 40-character SHA-1 hash.
-    """
-    oid: GitObjectID!
-    """
-    The abbreviated form of this commit's OID.
-    """
-    abbreviatedOID: String!
-    """
-    The URL to this commit (using the input revision specifier, which may not be immutable).
-    """
-    url: String!
-    """
-    The repository that contains this commit.
-    """
-    repository: CodeIntelRepository!
-}
-
-"""
-A location inside a resource (in a repository at a specific commit).
-"""
-type Location {
-    """
-    The file that this location refers to.
-    """
-    resource: CodeIntelGitBlob!
-    """
-    The range inside the file that this location refers to.
-    """
-    range: Range
-    """
-    The URL to this location (using the input revision specifier, which may not be immutable).
-    """
-    url: String!
-    """
-    The canonical URL to this location (using an immutable revision specifier).
-    """
-    canonicalURL: String!
-}
-
-"""
-A range inside a file. The start position is inclusive, and the end position is exclusive.
-"""
-type Range {
-    """
-    The start position of the range (inclusive).
-    """
-    start: Position!
-    """
-    The end position of the range (exclusive).
-    """
-    end: Position!
-}
-
-"""
-A zero-based position inside a file.
-"""
-type Position {
-    """
-    The line number (zero-based) of the position.
-    """
-    line: Int!
-    """
-    The character offset (zero-based) in the line of the position.
-    """
-    character: Int!
-}
-
-"""
-A list of diagnostics.
-"""
-type DiagnosticConnection {
-    """
-    A list of diagnostics.
-    """
-    nodes: [Diagnostic!]!
-
-    """
-    The total count of diagnostics (which may be larger than nodes.length if the connection is paginated).
-    """
-    totalCount: Int!
-
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
-"""
-Represents a diagnostic, such as a compiler error or warning.
-"""
-type Diagnostic {
-    """
-    The location at which the message applies.
-    """
-    location: Location!
-
-    """
-    The diagnostic's severity.
-    """
-    severity: DiagnosticSeverity
-
-    """
-    The diagnostic's code as provided by the tool.
-    """
-    code: String
-
-    """
-    A human-readable string describing the source of this
-    diagnostic, e.g. "typescript" or "super lint".
-    """
-    source: String
-
-    """
-    The diagnostic's message.
-    """
-    message: String
-}
-
-"""
-Represents the severity level of a diagnostic.
-"""
-enum DiagnosticSeverity {
-    ERROR
-    WARNING
-    INFORMATION
-    HINT
-}
-
-"""
-All possible kinds of symbols. This set matches that of the Language Server Protocol
-(https://microsoft.github.io/language-server-protocol/specification#workspace_symbol).
-"""
-enum SymbolKind {
-    UNKNOWN
-    FILE
-    MODULE
-    NAMESPACE
-    PACKAGE
-    CLASS
-    METHOD
-    PROPERTY
-    FIELD
-    CONSTRUCTOR
-    ENUM
-    INTERFACE
-    FUNCTION
-    VARIABLE
-    CONSTANT
-    STRING
-    NUMBER
-    BOOLEAN
-    ARRAY
-    OBJECT
-    KEY
-    NULL
-    ENUMMEMBER
-    STRUCT
-    EVENT
-    OPERATOR
-    TYPEPARAMETER
-}
-
-"""
-A list of symbols.
-"""
-type SymbolConnection {
-    """
-    A list of symbols.
-    """
-    nodes: [Symbol!]!
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
 }
 
 """
@@ -4982,45 +5178,6 @@ interface TreeEntry {
         """
         recursiveSingleChild: Boolean = false
     ): Boolean!
-}
-
-"""
-A Code Intel Git Tree.
-"""
-type CodeIntelGitTree {
-    """
-    The full path (relative to the root) of this tree.
-    """
-    path: String!
-    """
-    The base name (i.e., last path component only) of this tree.
-    """
-    name: String!
-    """
-    The Git commit containing this tree.
-    """
-    commit: CodeIntelCommit!
-    """
-    The URL to this tree (using the input revision specifier, which may not be immutable).
-    """
-    url: String!
-    """
-    The repository containing this tree.
-    """
-    repository: CodeIntelRepository!
-    """
-    The content of this blob.
-    """
-    content(
-        """
-        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
-        """
-        startLine: Int
-        """
-        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
-        """
-        endLine: Int
-    ): String!
 }
 
 """
@@ -5903,6 +6060,11 @@ type User implements Node & SettingsSubject & Namespace {
     """
     emails: [UserEmail!]!
     """
+    The user's verified primary email address (if any).
+    On dotcom only the user and site admins can access this field.
+    """
+    primaryEmail: UserEmail
+    """
     The user's access tokens (which grant to the holder the privileges of the user). This consists
     of all access tokens whose subject is this user.
     Only the user and site admins can access this field.
@@ -5956,10 +6118,40 @@ type User implements Node & SettingsSubject & Namespace {
     namespaceName: String!
 
     """
+    Whether the user is controlled externally through SCIM.
+    """
+    scimControlled: Boolean!
+
+    """
     EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few
     repositories this user has access to, and is derived from recent commit history of those.
     """
     invitableCollaborators: [Person!]!
+    """
+    The list of all roles assigned to this user.
+    """
+    roles(
+        """
+        The limit argument for forward pagination.
+        """
+        first: Int
+        """
+        The limit argument for backward pagination.
+        """
+        last: Int
+        """
+        The cursor argument for forward pagination.
+        """
+        after: String
+        """
+        The cursor argument for backward pagination.
+        """
+        before: String
+    ): RoleConnection!
+    """
+    The list of permissions granted to this user based on their roles.
+    """
+    permissions: PermissionConnection!
 }
 
 """
@@ -6643,6 +6835,12 @@ type Site implements SettingsSubject {
     """
     allowEditExternalServicesWithFile: Boolean!
     """
+    The number of repos synced across all external services. Includes counts distinguishing repositories based on whether
+    the external service connection is configured for local repositories instead of remote code host repositories.
+    Local repository code host connections are only supported in Sourcegraph App.
+    """
+    reposCounts: ReposCounts!
+    """
     Whether the site is over the limit for free user accounts, and a warning needs to be shown to all users.
     Only applies if the site does not have a valid license.
     """
@@ -6745,11 +6943,45 @@ type Site implements SettingsSubject {
     the GLOBAL_SETTINGS_FILE environment variable, site settings edits cannot be made through the API.
     """
     allowSiteSettingsEdits: Boolean!
+
     """
-    Whether to enable the extension registry and the use of extensions.
-    Reflects the site configuration `enableLegacyExtensions` experimental feature value.
+    FOR INTERNAL USE ONLY: Returns information about instance upgrade readiness.
     """
-    enableLegacyExtensions: Boolean!
+    upgradeReadiness: UpgradeReadiness!
+
+    """
+    Wether the current App installation has a connected Sourcegraph.com account.
+    """
+    appHasConnectedDotComAccount: Boolean!
+}
+
+"""
+Repository count information includes a count of repositories for remote code host connections and a count of repositories
+for local code host connections (local is only supported for Sourcegraph App).
+"""
+type ReposCounts {
+    """
+    The count of repositories synced from remote code host connections.
+    """
+    remoteReposCount: Int!
+    """
+    The count of repositories synced from local code host connections.
+    """
+    localReposCount: Int!
+}
+
+"""
+Instance upgrade readiness information includes schema drifts and deprecated-but-unfinished out-of-band migrations.
+"""
+type UpgradeReadiness {
+    """
+    The schema drift details.
+    """
+    schemaDrift: String!
+    """
+    The list of deprecated-but-unfinished out-of-band migrations.
+    """
+    requiredOutOfBandMigrations: [OutOfBandMigration!]!
 }
 
 """
@@ -6833,10 +7065,19 @@ type SiteConfigurationChange implements Node {
     via an internal process (example: site startup or SITE_CONFIG_FILE being reloaded).
     """
     author: User
+
     """
-    The diff string when diffed against the site config at previousID.
+    A flag to indicate if the diff of changes to the previous site configuration
+    was reproduced or not. Sometimes it may not be possible to generate a diff
+    (for example the redacted contents are not available) in which case the
+    value of the flag will be false.
     """
-    diff: String!
+    reproducedDiff: Boolean!
+
+    """
+    The diff string when diffed against the previous site config. When this is null there was no diff to the previous change.
+    """
+    diff: String
     """
     The timestamp when this change in the site config was applied.
     """
@@ -7528,6 +7769,10 @@ type SiteUser {
     """
     siteAdmin: Boolean!
     """
+    Whether the user is controlled through SCIM.
+    """
+    scimControlled: Boolean!
+    """
     Total number of user's event_logs.
     """
     eventsCount: Float!
@@ -7827,145 +8072,6 @@ type ProductLicenseInfo {
     The date when this license expires.
     """
     expiresAt: DateTime!
-}
-
-"""
-An extension registry.
-"""
-type ExtensionRegistry {
-    """
-    A list of extensions published in the extension registry.
-    """
-    extensions(
-        """
-        Returns the first n extensions from the list.
-        """
-        first: Int
-        """
-        Returns only extensions with the given IDs.
-        """
-        extensionIDs: [String!]
-    ): RegistryExtensionConnection!
-}
-
-"""
-An extension's listing in the extension registry.
-"""
-type RegistryExtension implements Node {
-    """
-    The unique, opaque, permanent ID of the extension. Do not display this ID to the user; display
-    RegistryExtension.extensionID instead (it is friendlier and still unique, but it can be renamed).
-    """
-    id: ID!
-    """
-    The qualified, unique name that refers to this extension, consisting of the registry name (if non-default),
-    publisher's name, and the extension's name, all joined by "/" (for example, "acme-corp/my-extension-name").
-    """
-    extensionID: String!
-    """
-    The extension manifest, or null if none is set.
-    """
-    manifest: ExtensionManifest
-}
-
-"""
-A description of the extension, how to run or access it, and when to activate it.
-"""
-type ExtensionManifest {
-    """
-    The raw JSON (or JSONC) contents of the manifest. This value may be large (because many
-    manifests contain README and icon data), and it is JSONC (not strict JSON), which means
-    it must be parsed with a JSON parser that supports trailing commas and comments. Consider
-    using jsonFields instead.
-    """
-    raw: String!
-    """
-    The manifest as JSON (not JSONC, even if the raw manifest is JSONC) with only the
-    specified fields. This is useful for callers that only need certain fields and want
-    to avoid fetching a large amount of data (because many manifests contain README
-    and icon data).
-    """
-    jsonFields(fields: [String!]!): JSONValue!
-}
-
-"""
-A list of registry extensions.
-"""
-type RegistryExtensionConnection {
-    """
-    A list of registry extensions.
-    """
-    nodes: [RegistryExtension!]!
-}
-
-"""
-Aggregate local code intelligence for all ranges that fall between a window of lines in a document.
-"""
-type CodeIntelligenceRangeConnection {
-    """
-    Aggregate local code intelligence grouped by range.
-    """
-    nodes: [CodeIntelligenceRange!]!
-}
-
-"""
-Aggregate code intelligence for a particular range within a document.
-"""
-type CodeIntelligenceRange {
-    """
-    The range this code intelligence applies to.
-    """
-    range: Range!
-
-    """
-    A list of definitions of the symbol occurring within the range.
-    """
-    definitions: LocationConnection!
-
-    """
-    A list of references of the symbol occurring within the range.
-    """
-    references: LocationConnection!
-
-    """
-    A list of implementations of the symbol occurring within the range.
-    """
-    implementations: LocationConnection!
-
-    """
-    The hover result of the symbol occurring within the range.
-    """
-    hover: Hover
-}
-
-"""
-A list of locations within a file.
-"""
-type LocationConnection {
-    """
-    A list of locations within a file.
-    """
-    nodes: [Location!]!
-
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
-"""
-Hover range and markdown content.
-"""
-type Hover {
-    """
-    A markdown string containing the contents of the hover.
-    """
-    markdown: Markdown!
-
-    """
-    The range to highlight.
-    """
-    range: Range!
 }
 
 """
@@ -8987,6 +9093,11 @@ type Team implements Node {
     url: String!
 
     """
+    URL to an avatar of this team.
+    """
+    avatarURL: String
+
+    """
     A human readable name substitute for the name. Null, if not defined.
     """
     displayName: String
@@ -9048,6 +9159,11 @@ type Team implements Node {
     True, if the current user can modify this team.
     """
     viewerCanAdminister: Boolean!
+
+    """
+    The creator of this team. Null, if the user was deleted.
+    """
+    creator: User
 }
 
 """
@@ -9057,13 +9173,7 @@ type TeamConnection {
     """
     The total count of items in the connection.
     """
-    totalCount(
-        """
-        If true, the total count of teams, including deeply nested child teams will
-        be returned. Note that those teams will NOT be part of the nodes.
-        """
-        countDeeplyNestedTeams: Boolean = false
-    ): Int!
+    totalCount: Int!
 
     """
     The pagination info for the connection.
@@ -9083,14 +9193,7 @@ type TeamMemberConnection {
     """
     The total count of items in the connection.
     """
-    totalCount(
-        """
-        If true, the total count of members of this team, including deeply nested
-        child teams members will be returned. Note that child team members will NOT
-        be part of the nodes.
-        """
-        countDeeplyNestedTeamMembers: Boolean = false
-    ): Int!
+    totalCount: Int!
 
     """
     The pagination info for the connection.
@@ -9154,6 +9257,11 @@ extend type User implements TeamMember {
 
 extend type Query {
     """
+    Get a single team by name. Returns null if not found.
+    """
+    team(name: String!): Team
+
+    """
     Get the global list of all root teams. (Those without a parent team).
     """
     teams(
@@ -9170,6 +9278,17 @@ extend type Query {
         Search can be used to do a text-search over the team names.
         """
         search: String
+        """
+        Do not include any teams that have this ancestor in parent-team relationship.
+        This includes the team with the ID mentioned (that is a team is considered
+        its own ancestor).
+        """
+        exceptAncestor: ID
+        """
+        If set to true, child teams (ones that have parent set) are also returned.
+        If not specified, the default behavior is to only include top-level teams.
+        """
+        includeChildTeams: Boolean
     ): TeamConnection!
 }
 
@@ -9200,12 +9319,19 @@ extend type Mutation {
 
     To unset the display name, pass an empty string. Null will make it ignore updates.
 
-    Either parentTeam XOR parentTeamName can be specified to make the team a child
-    team of the given parent.
+    Either parentTeam XOR parentTeamName XOR makeRoot can be specified to make the team a child
+    team of the given parent or conversely to make a team a root team (with no parent team).
     The user has to be a team-member of both the child and parent team for that, and
     neither can be read-only. Site-admin can modify all teams without constraints.
     """
-    updateTeam(id: ID, name: String, displayName: String, parentTeam: ID, parentTeamName: String): Team!
+    updateTeam(
+        id: ID
+        name: String
+        displayName: String
+        parentTeam: ID
+        parentTeamName: String
+        makeRoot: Boolean
+    ): Team!
 
     """
     Delete team deletes a team. ID or Name must be specified, but not both.
@@ -9222,8 +9348,15 @@ extend type Mutation {
 
     For now, members can only be the IDs of User entities in Sourcegraph.
     Later, we will expand this to allow Persons as well.
+
+    If skipUnmatchedMembers is true, members that are not matched to a user are skipped.
     """
-    addTeamMembers(team: ID, teamName: String, members: [ID!]!): Team!
+    addTeamMembers(
+        team: ID
+        teamName: String
+        members: [TeamMemberInput!]!
+        skipUnmatchedMembers: Boolean = false
+    ): Team!
 
     """
     This is a convenience method to forcefully overwrite the full set of members
@@ -9235,8 +9368,15 @@ extend type Mutation {
 
     For now, members can only be the IDs of User entities in Sourcegraph.
     Later, we will expand this to allow Persons as well.
+
+    If skipUnmatchedMembers is true, members that are not matched to a user are skipped.
     """
-    setTeamMembers(team: ID, teamName: String, members: [ID!]!): Team!
+    setTeamMembers(
+        team: ID
+        teamName: String
+        members: [TeamMemberInput!]!
+        skipUnmatchedMembers: Boolean = false
+    ): Team!
 
     """
     This mutation removes team membership for the given team and set of members.
@@ -9247,6 +9387,582 @@ extend type Mutation {
 
     For now, members can only be the IDs of User entities in Sourcegraph.
     Later, we will expand this to allow Persons as well.
+
+    If skipUnmatchedMembers is true, members that are not matched to a user are skipped.
     """
-    removeTeamMembers(team: ID, teamName: String, members: [ID!]!): Team!
+    removeTeamMembers(
+        team: ID
+        teamName: String
+        members: [TeamMemberInput!]!
+        skipUnmatchedMembers: Boolean = false
+    ): Team!
+}
+
+"""
+Options to specify a user for team membership. Multiple options can be provided,
+with the following precedence order: (Other mismatches will be discarded)
+- UserID
+- Username
+- Email
+- External Account fields
+
+Examples:
+- If ID is set and no match, return.
+- If ID and username is set, and ID matches but username doesn't, match.
+"""
+input TeamMemberInput {
+    """
+    Explicitly define a user by ID.
+    """
+    userID: ID
+    """
+    Explicitly define a user by username in Sourcegraph.
+    """
+    username: String
+    """
+    If the email is associated to a user and verified, the user account will be matched.
+    """
+    email: String
+
+    """
+    If the user has an associated external account, use this.
+    externalAccountServiceID and externalAccountServiceType must be set and
+    either of externalAccountAccountID externalAccountLogin are required as well.
+    Service ID for the GitHub OAuth provider, for example, is https://github.com/.
+    """
+    externalAccountServiceID: String
+    """
+    If the user has an associated external account, use this.
+    externalAccountServiceID and externalAccountServiceType must be set and
+    either of externalAccountAccountID externalAccountLogin are required as well.
+    Service Type for the GitHub OAuth provider, for example, is github.
+    """
+    externalAccountServiceType: String
+    """
+    If the user has an associated external account, use this.
+    externalAccountServiceID and externalAccountServiceType must be set and
+    either of externalAccountAccountID externalAccountLogin are required as well.
+    Account ID is the unique identifier on the external account platform.
+    """
+    externalAccountAccountID: String
+    """
+    If the user has an associated external account, use this.
+    externalAccountServiceID and externalAccountServiceType must be set and
+    either of externalAccountAccountID externalAccountLogin are required as well.
+    Account Login is usually the username on the external account platform.
+    """
+    externalAccountLogin: String
+}
+
+"""
+A list of access requests
+"""
+type AccessRequestConnection {
+    """
+    Total count of access requests
+    """
+    totalCount: Int!
+    """
+    A list of access requests
+    """
+    nodes: [AccessRequest!]!
+
+    """
+    Pagination information.
+    """
+    pageInfo: BidirectionalPageInfo!
+}
+
+"""
+Access request status enum
+"""
+enum AccessRequestStatus {
+    """
+    Access request is submitted and waiting for actions
+    """
+    PENDING
+    """
+    Access request was approved
+    """
+    APPROVED
+    """
+    Access request was rejected
+    """
+    REJECTED
+}
+
+"""
+Access request
+"""
+type AccessRequest implements Node {
+    """
+    The unique identifier of the secret.
+    """
+    id: ID!
+
+    """
+    Name of a person requested access
+    """
+    name: String!
+
+    """
+    Email of a person requested access
+    """
+    email: String!
+
+    """
+    The date and time when request access was created
+    """
+    createdAt: DateTime!
+
+    """
+    Additional information submitted by person requested access
+    """
+    additionalInfo: String
+
+    """
+    Access request status
+    """
+    status: AccessRequestStatus!
+}
+
+extend type Query {
+    """
+    List access requests.
+    """
+    accessRequests(
+        status: AccessRequestStatus
+        """
+        Returns the first n access requests from the list.
+        """
+        first: Int
+        last: Int
+        after: String
+        before: String
+    ): AccessRequestConnection!
+}
+
+extend type Mutation {
+    """
+    Marks access_request as rejected
+    """
+    setAccessRequestStatus(id: ID!, status: AccessRequestStatus!): EmptyResponse
+}
+
+"""
+A role
+"""
+type Role implements Node {
+    """
+    The globally unique identifier for this role.
+    """
+    id: ID!
+    """
+    The human readable name for this role.
+    """
+    name: String!
+    """
+    Indicates whether a role is a default system role, which cannot be modified or deleted, or a custom role added by a site admin.
+    """
+    system: Boolean!
+    """
+    The list of permissions that will be granted to any user with this role.
+    """
+    permissions(
+        """
+        The limit argument for forward pagination.
+        """
+        first: Int
+        """
+        The limit argument for backward pagination.
+        """
+        last: Int
+        """
+        The cursor argument for forward pagination.
+        """
+        after: String
+        """
+        The cursor argument for backward pagination.
+        """
+        before: String
+    ): PermissionConnection!
+    """
+    The date and time when the role was created.
+    """
+    createdAt: DateTime!
+}
+
+"""
+A list of roles.
+"""
+type RoleConnection {
+    """
+    A list of roles.
+    """
+    nodes: [Role!]!
+    """
+    The total count of roles in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+"""
+A list of permissions.
+"""
+type PermissionConnection {
+    """
+    A list of permissions.
+    """
+    nodes: [Permission!]!
+    """
+    The total count of permissions in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+"""
+A namespace represents a distinct context within which permission policies
+are defined and enforced.
+"""
+enum PermissionNamespace {
+    """
+    This represents the Batch Changes namespace.
+    """
+    BATCH_CHANGES
+}
+
+"""
+A permission
+"""
+type Permission implements Node {
+    """
+    The globally unique identifier for this permission.
+    """
+    id: ID!
+    """
+    The namespace in which this permission belongs to.
+    """
+    namespace: PermissionNamespace!
+    """
+    The unique action which is granted to a bearer of this permission.
+    """
+    action: String!
+    """
+    A unique, human-readable string used to represent a permission, taking the form: <namespace>:<object_id>#<relation>@<user_id | user_group>
+    """
+    displayName: String!
+    """
+    The date and time when the permission was created.
+    """
+    createdAt: DateTime!
+}
+
+"""
+A list of symbols.
+"""
+type SymbolConnection {
+    """
+    A list of symbols.
+    """
+    nodes: [Symbol!]!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A code symbol (e.g., a function, variable, type, class, etc.).
+It is derived from DocumentSymbol as defined in the Language Server Protocol (see https://microsoft.github.io/language-server-protocol/specifications/specification-3-14/#textDocument_documentSymbol).
+"""
+type Symbol {
+    """
+    The name of the symbol.
+    """
+    name: String!
+    """
+    The name of the symbol that contains this symbol, if any. This field's value is not guaranteed to be
+    structured in such a way that callers can infer a hierarchy of symbols.
+    """
+    containerName: String
+    """
+    The kind of the symbol.
+    """
+    kind: SymbolKind!
+    """
+    The programming language of the symbol.
+    """
+    language: String!
+    """
+    The location where this symbol is defined.
+    """
+    location: Location!
+    """
+    The URL to this symbol (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+    """
+    The canonical URL to this symbol (using an immutable revision specifier).
+    """
+    canonicalURL: String!
+    """
+    Whether or not the symbol is local to the file it's defined in.
+    """
+    fileLocal: Boolean!
+}
+
+"""
+All possible kinds of symbols. This set matches that of the Language Server Protocol
+(https://microsoft.github.io/language-server-protocol/specification#workspace_symbol).
+"""
+enum SymbolKind {
+    UNKNOWN
+    FILE
+    MODULE
+    NAMESPACE
+    PACKAGE
+    CLASS
+    METHOD
+    PROPERTY
+    FIELD
+    CONSTRUCTOR
+    ENUM
+    INTERFACE
+    FUNCTION
+    VARIABLE
+    CONSTANT
+    STRING
+    NUMBER
+    BOOLEAN
+    ARRAY
+    OBJECT
+    KEY
+    NULL
+    ENUMMEMBER
+    STRUCT
+    EVENT
+    OPERATOR
+    TYPEPARAMETER
+}
+
+"""
+A list of locations within a file.
+"""
+type LocationConnection {
+    """
+    A list of locations within a file.
+    """
+    nodes: [Location!]!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A location inside a resource (in a repository at a specific commit).
+"""
+type Location {
+    """
+    The file that this location refers to.
+    """
+    resource: CodeIntelGitBlob!
+    """
+    The range inside the file that this location refers to.
+    """
+    range: Range
+    """
+    The URL to this location (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+    """
+    The canonical URL to this location (using an immutable revision specifier).
+    """
+    canonicalURL: String!
+}
+
+"""
+A range inside a file. The start position is inclusive, and the end position is exclusive.
+"""
+type Range {
+    """
+    The start position of the range (inclusive).
+    """
+    start: Position!
+    """
+    The end position of the range (exclusive).
+    """
+    end: Position!
+}
+
+"""
+A zero-based position inside a file.
+"""
+type Position {
+    """
+    The line number (zero-based) of the position.
+    """
+    line: Int!
+    """
+    The character offset (zero-based) in the line of the position.
+    """
+    character: Int!
+}
+
+"""
+A gitblob resolver specific to code intel.
+"""
+type CodeIntelGitBlob {
+    """
+    The full path (relative to the root) of this tree.
+    """
+    path: String!
+    """
+    The base name (i.e., last path component only) of this tree.
+    """
+    name: String!
+    """
+    The Git commit containing this tree.
+    """
+    commit: CodeIntelCommit!
+    """
+    The URL to this tree (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+    """
+    The repository containing this tree.
+    """
+    repository: CodeIntelRepository!
+    """
+    The content of this blob.
+    """
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
+}
+
+"""
+A Code Intel Git Tree.
+"""
+type CodeIntelGitTree {
+    """
+    The full path (relative to the root) of this tree.
+    """
+    path: String!
+    """
+    The base name (i.e., last path component only) of this tree.
+    """
+    name: String!
+    """
+    The Git commit containing this tree.
+    """
+    commit: CodeIntelCommit!
+    """
+    The URL to this tree (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+    """
+    The repository containing this tree.
+    """
+    repository: CodeIntelRepository!
+    """
+    The content of this blob.
+    """
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
+}
+
+"""
+A codeintel repository is a Git source control repository that is mirrored from some origin code host and it is specific to code intel.
+"""
+type CodeIntelRepository {
+    """
+    The globally addressable ID for this commit.
+    """
+    id: ID!
+    """
+    The repository's name, as a path with one or more components. It conventionally consists of
+    the repository's hostname and path (joined by "/"), minus any suffixes (such as ".git").
+    Examples:
+    - github.com/foo/bar
+    - my-code-host.example.com/myrepo
+    - myrepo
+    """
+    name: String!
+    """
+    The URL to this repository.
+    """
+    url: String!
+    """
+    Information about this repository from the external service that it originates from (such as GitHub, GitLab,
+    Phabricator, etc.). Only populated when used as part of repository list previews for configuration policies.
+    """
+    externalRepository: CodeIntelExternalRepository
+}
+
+"""
+A repository on an external service (such as GitHub, GitLab, Phabricator, etc.).
+"""
+type CodeIntelExternalRepository {
+    """
+    The type of external service where this repository resides.
+    Example: "github", "gitlab", etc.
+    """
+    serviceType: String!
+    """
+    The particular instance of the external service where this repository resides. Its value is
+    opaque but typically consists of the canonical base URL to the service.
+    Example: For GitHub.com, this is "https://github.com/".
+    """
+    serviceID: String!
+}
+
+"""
+A Code Intel Commit.
+"""
+type CodeIntelCommit {
+    """
+    The globally addressable ID for this commit.
+    """
+    id: ID!
+    """
+    This commit's Git object ID (OID), a 40-character SHA-1 hash.
+    """
+    oid: GitObjectID!
+    """
+    The abbreviated form of this commit's OID.
+    """
+    abbreviatedOID: String!
+    """
+    The URL to this commit (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+    """
+    The repository that contains this commit.
+    """
+    repository: CodeIntelRepository!
 }

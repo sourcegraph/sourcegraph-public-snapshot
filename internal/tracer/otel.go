@@ -2,108 +2,66 @@ package tracer
 
 import (
 	"context"
-	"io"
-	"time"
 
-	"github.com/opentracing/opentracing-go"
-	"github.com/sourcegraph/log"
-	jaegerpropagator "go.opentelemetry.io/contrib/propagators/jaeger"
-	otpropagator "go.opentelemetry.io/contrib/propagators/ot"
-	"go.opentelemetry.io/otel"
-	otelbridge "go.opentelemetry.io/otel/bridge/opentracing"
-	w3cpropagator "go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
-	oteltrace "go.opentelemetry.io/otel/trace"
+
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/tracer/internal/exporters"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// newOTelBridgeTracer creates an opentracing.Tracer that exports all OpenTracing traces
-// as OpenTelemetry traces to an OpenTelemetry collector (effectively "bridging" the two
-// APIs). This enables us to continue leveraging the OpenTracing API (which is a predecessor
-// to OpenTelemetry tracing) without making changes to existing tracing code.
-//
-// All configuration is sourced directly from the environment using the specification
-// laid out in https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md
-func newOTelBridgeTracer(logger log.Logger, exporter oteltracesdk.SpanExporter, resource log.Resource, debug bool) (opentracing.Tracer, oteltrace.TracerProvider, io.Closer, error) {
-	// Ensure propagation between services continues to work. This is also done by another
-	// project that uses the OpenTracing bridge:
-	// https://sourcegraph.com/github.com/thanos-io/thanos/-/blob/pkg/tracing/migration/bridge.go?L62
-	compositePropagator := w3cpropagator.NewCompositeTextMapPropagator(
-		jaegerpropagator.Jaeger{},
-		otpropagator.OT{},
-		w3cpropagator.TraceContext{},
-		w3cpropagator.Baggage{},
+// newOtelTracerProvider creates a baseline OpenTelemetry TracerProvider that doesn't do
+// anything with incoming spans.
+func newOtelTracerProvider(r log.Resource) *oteltracesdk.TracerProvider {
+	return oteltracesdk.NewTracerProvider(
+		// Adapt log.Resource to OpenTelemetry's internal resource type
+		oteltracesdk.WithResource(
+			resource.NewWithAttributes(
+				semconv.SchemaURL,
+				semconv.ServiceNameKey.String(r.Name),
+				semconv.ServiceNamespaceKey.String(r.Namespace),
+				semconv.ServiceInstanceIDKey.String(r.InstanceID),
+				semconv.ServiceVersionKey.String(r.Version),
+			),
+		),
+		// We use an always-sampler to retain all spans, and depend on shouldTraceTracer
+		// to decide from context whether or not to start a span. This is required because
+		// we have opentracing bridging enabled.
+		oteltracesdk.WithSampler(oteltracesdk.AlwaysSample()),
 	)
-	otel.SetTextMapPropagator(compositePropagator)
+}
+
+// newOtelSpanProcessor is the default builder for OpenTelemetry span processors to
+// register on the underlying OpenTelemetry TracerProvider.
+func newOtelSpanProcessor(logger log.Logger, opts options, debug bool) (oteltracesdk.SpanProcessor, error) {
+	var exporter oteltracesdk.SpanExporter
+	var err error
+	switch opts.TracerType {
+	case OpenTelemetry:
+		exporter, err = exporters.NewOTLPExporter(context.Background(), logger)
+
+	case Jaeger:
+		exporter, err = exporters.NewJaegerExporter()
+
+	case None:
+		exporter = tracetest.NewNoopExporter()
+
+	default:
+		err = errors.Newf("unknown tracer type %q", opts.TracerType)
+	}
+	if err != nil {
+		return nil, err
+	}
 
 	// If in debug mode, we use a synchronous span processor to force spans to get pushed
 	// immediately, otherwise we batch
-	processor := oteltracesdk.NewBatchSpanProcessor(exporter)
 	if debug {
 		logger.Warn("using synchronous span processor - disable 'observability.debug' to use something more suitable for production")
-		processor = oteltracesdk.NewSimpleSpanProcessor(exporter)
+		return oteltracesdk.NewSimpleSpanProcessor(exporter), nil
 	}
-
-	// Create the underlying trace provider
-	provider := oteltracesdk.NewTracerProvider(
-		oteltracesdk.WithResource(newResource(resource)),
-		oteltracesdk.WithSampler(oteltracesdk.AlwaysSample()),
-		oteltracesdk.WithSpanProcessor(processor),
-	)
-
-	// Set up otBridgeTracer for converting OpenTracing API calls to OpenTelemetry, and
-	// otelTracerProvider for the inverse.
-	//
-	// TODO: Unfortunately, this wrapped tracer provider discards the name provided to
-	// the Tracer() constructor on it, since it uses a fixed tracer that we provide it.
-	// We could submit a PR upstream to have the wrapped provider create new tracers with
-	// the appropriate names.
-	otBridgeTracer, otelTracerProvider := otelbridge.NewTracerPair(provider.Tracer("internal/tracer/otel"))
-	otBridgeTracer.SetTextMapPropagator(compositePropagator)
-
-	// Set up logging
-	otelLogger := logger.AddCallerSkip(2).Scoped("otel", "OpenTelemetry library")
-	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
-		if debug {
-			otelLogger.Warn("error encountered", log.Error(err))
-		} else {
-			otelLogger.Debug("error encountered", log.Error(err))
-		}
-	}))
-	bridgeLogger := logger.AddCallerSkip(2).Scoped("bridge", "OpenTracing to OpenTelemetry compatibility layer")
-	otBridgeTracer.SetWarningHandler(func(msg string) {
-		if debug {
-			bridgeLogger.Warn(msg)
-		} else {
-			bridgeLogger.Debug(msg)
-		}
-	})
-
-	// Done
-	return otBridgeTracer, otelTracerProvider, &otelBridgeCloser{provider}, nil
-}
-
-// otelBridgeCloser shuts down the wrapped TracerProvider, and unsets the global OTel
-// trace provider.
-type otelBridgeCloser struct{ *oteltracesdk.TracerProvider }
-
-var _ io.Closer = &otelBridgeCloser{}
-
-func (p otelBridgeCloser) Close() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	return p.Shutdown(ctx)
-}
-
-// newResource adapts sourcegraph/log.Resource into the OpenTelemetry package's Resource
-// type.
-func newResource(r log.Resource) *resource.Resource {
-	return resource.NewWithAttributes(
-		semconv.SchemaURL,
-		semconv.ServiceNameKey.String(r.Name),
-		semconv.ServiceNamespaceKey.String(r.Namespace),
-		semconv.ServiceInstanceIDKey.String(r.InstanceID),
-		semconv.ServiceVersionKey.String(r.Version))
+	return oteltracesdk.NewBatchSpanProcessor(exporter), nil
 }

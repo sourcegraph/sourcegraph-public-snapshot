@@ -38,7 +38,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/rubygems"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
@@ -74,11 +77,18 @@ type EnterpriseInit func(db database.DB)
 type Config struct {
 	env.BaseConfig
 
-	ReposDir string
+	ReposDir         string
+	CoursierCacheDir string
 }
 
 func (c *Config) Load() {
 	c.ReposDir = c.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
+
+	// if COURSIER_CACHE_DIR is set, try create that dir and use it. If not set, use the SRC_REPOS_DIR value (or default).
+	c.CoursierCacheDir = env.Get("COURSIER_CACHE_DIR", "", "Directory in which coursier data is cached for JVM package repos.")
+	if c.CoursierCacheDir == "" && c.ReposDir != "" {
+		c.CoursierCacheDir = filepath.Join(c.ReposDir, "coursier")
+	}
 }
 
 func LoadConfig() *Config {
@@ -134,13 +144,18 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, nil, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
-			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo, config.ReposDir)
+			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo, config.ReposDir, config.CoursierCacheDir)
 		},
-		Hostname:                hostname.Get(),
+		Hostname:                externalAddress(),
 		DB:                      db,
 		CloneQueue:              server.NewCloneQueue(list.New()),
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
 	}
+
+	grpcServer := defaults.NewServer(logger)
+	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{
+		Server: &gitserver,
+	})
 
 	gitserver.RegisterMetrics(observationCtx, db)
 
@@ -159,6 +174,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	handler = requestclient.HTTPMiddleware(handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
+	handler = internalgrpc.MultiplexHandlers(grpcServer, handler)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -178,15 +194,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	gitserver.StartClonePipeline(ctx)
 
-	addr := os.Getenv("GITSERVER_ADDR")
-	if addr == "" {
-		port := "3178"
-		host := ""
-		if env.InsecureDev {
-			host = "127.0.0.1"
-		}
-		addr = net.JoinHostPort(host, port)
-	}
+	addr := getAddr()
 	srv := &http.Server{
 		Addr:    addr,
 		Handler: handler,
@@ -420,6 +428,7 @@ func getVCSSyncer(
 	depsSvc *dependencies.Service,
 	repo api.RepoName,
 	reposDir string,
+	coursierCacheDir string,
 ) (server.VCSSyncer, error) {
 	// We need an internal actor in case we are trying to access a private repo. We
 	// only need access in order to find out the type of code host we're using, so
@@ -475,7 +484,7 @@ func getVCSSyncer(
 		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
-		return server.NewJVMPackagesSyncer(&c, depsSvc), nil
+		return server.NewJVMPackagesSyncer(&c, depsSvc, coursierCacheDir), nil
 	case extsvc.TypeNpmPackages:
 		var c schema.NpmPackagesConnection
 		urn, err := extractOptions(&c)
@@ -499,7 +508,7 @@ func getVCSSyncer(
 			return nil, err
 		}
 		cli := pypi.NewClient(urn, c.Urls, httpcli.ExternalDoer)
-		return server.NewPythonPackagesSyncer(&c, depsSvc, cli), nil
+		return server.NewPythonPackagesSyncer(&c, depsSvc, cli, reposDir), nil
 	case extsvc.TypeRustPackages:
 		var c schema.RustPackagesConnection
 		urn, err := extractOptions(&c)
@@ -570,4 +579,33 @@ func syncRateLimiters(ctx context.Context, logger log.Logger, store database.Ext
 		case <-ticker.C:
 		}
 	}
+}
+
+// externalAddress calculates the name of this gitserver as it would appear in
+// SRC_GIT_SERVERS.
+//
+// Note: we can't just rely on the listen address since more than likely
+// gitserver is behind a k8s service.
+func externalAddress() string {
+	// First we check for it being explicitly set. This should only be
+	// happening in environments were we run gitserver on localhost.
+	if addr := os.Getenv("GITSERVER_EXTERNAL_ADDR"); addr != "" {
+		return addr
+	}
+	// Otherwise we assume we can reach gitserver via its hostname / its
+	// hostname is a prefix of the reachable address (see hostnameMatch).
+	return hostname.Get()
+}
+
+func getAddr() string {
+	addr := os.Getenv("GITSERVER_ADDR")
+	if addr == "" {
+		port := "3178"
+		host := ""
+		if env.InsecureDev {
+			host = "127.0.0.1"
+		}
+		addr = net.JoinHostPort(host, port)
+	}
+	return addr
 }

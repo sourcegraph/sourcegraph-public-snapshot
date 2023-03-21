@@ -2,7 +2,7 @@ import { FC, useMemo } from 'react'
 
 import { mdiAlertCircle, mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
-import { useHistory } from 'react-router'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { Button, H3, Icon } from '@sourcegraph/wildcard'
 
@@ -29,8 +29,9 @@ export interface LogsProps {
 }
 
 export const Logs: FC<LogsProps> = ({ id }) => {
-    const history = useHistory()
-    const params = useMemo(() => new URLSearchParams(history.location.search), [history.location.search])
+    const navigate = useNavigate()
+    const location = useLocation()
+    const params = useMemo(() => new URLSearchParams(location.search), [location.search])
     const onlyErrors = useMemo(() => params.has(ONLY_ERRORS_PARAM), [params])
 
     const { loading, hasNextPage, fetchMore, connection, error } = useOutboundWebhookLogsConnection(id, onlyErrors)
@@ -42,10 +43,10 @@ export const Logs: FC<LogsProps> = ({ id }) => {
                 onSetOnlyErrors={onlyErrors => {
                     if (onlyErrors) {
                         params.set(ONLY_ERRORS_PARAM, 'true')
-                        history.replace({ ...history.location, search: params.toString() })
+                        navigate({ search: params.toString() })
                     } else {
                         params.delete(ONLY_ERRORS_PARAM)
-                        history.replace({ ...history.location, search: params.toString() })
+                        navigate({ search: params.toString() })
                     }
                 }}
             />

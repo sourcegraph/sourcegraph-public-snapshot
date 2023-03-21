@@ -125,7 +125,7 @@ func withBeforePA(before string, a *database.PaginationArgs) *database.Paginatio
 func TestConnectionTotalCount(t *testing.T) {
 	ctx := context.Background()
 	store := &testConnectionStore{t: t}
-	resolver, err := NewConnectionResolver[testConnectionNode](store, withFirstCA(1, &ConnectionResolverArgs{}), nil)
+	resolver, err := NewConnectionResolver[*testConnectionNode](store, withFirstCA(1, &ConnectionResolverArgs{}), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -144,12 +144,19 @@ func TestConnectionTotalCount(t *testing.T) {
 	}
 }
 
-func testResolverNodesResponse(t *testing.T, resolver *ConnectionResolver[testConnectionNode], store *testConnectionStore, count int) {
+func testResolverNodesResponse(t *testing.T, resolver *ConnectionResolver[*testConnectionNode], store *testConnectionStore, count int, wantErr bool) {
 	ctx := context.Background()
 	nodes, err := resolver.Nodes(ctx)
-	if err != nil {
+	if wantErr {
+		if err == nil {
+			t.Fatalf("expected error, got %v", err)
+		}
+		return
+	}
+	if err != nil && !wantErr {
 		t.Fatal(err)
 	}
+
 	if diff := cmp.Diff(count, len(nodes)); diff != "" {
 		t.Fatal(diff)
 	}
@@ -172,7 +179,9 @@ func TestConnectionNodes(t *testing.T) {
 	for _, test := range []struct {
 		name           string
 		connectionArgs *ConnectionResolverArgs
+		options        *ConnectionResolverOptions
 
+		wantError          bool
 		wantPaginationArgs *database.PaginationArgs
 		wantNodes          int
 	}{
@@ -206,15 +215,28 @@ func TestConnectionNodes(t *testing.T) {
 			connectionArgs:     withBeforeCA("0", withLastCA(1, &ConnectionResolverArgs{})),
 			wantNodes:          1,
 		},
+		{
+			name:           "no args supplied (skipArgValidation is false)",
+			connectionArgs: &ConnectionResolverArgs{},
+			options:        &ConnectionResolverOptions{AllowNoLimit: false},
+			wantError:      true,
+		},
+		{
+			name:           "no args supplied (skipArgValidation is true)",
+			connectionArgs: &ConnectionResolverArgs{},
+			options:        &ConnectionResolverOptions{AllowNoLimit: true},
+			wantError:      false,
+			wantNodes:      2,
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			store := &testConnectionStore{t: t, expectedPaginationArgs: test.wantPaginationArgs}
-			resolver, err := NewConnectionResolver[testConnectionNode](store, test.connectionArgs, nil)
+			resolver, err := NewConnectionResolver[*testConnectionNode](store, test.connectionArgs, test.options)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			testResolverNodesResponse(t, resolver, store, test.wantNodes)
+			testResolverNodesResponse(t, resolver, store, test.wantNodes, test.wantError)
 		})
 	}
 }
@@ -226,7 +248,7 @@ type pageInfoResponse struct {
 	hasPreviousPage bool
 }
 
-func testResolverPageInfoResponse(t *testing.T, resolver *ConnectionResolver[testConnectionNode], store *testConnectionStore, expectedResponse *pageInfoResponse) {
+func testResolverPageInfoResponse(t *testing.T, resolver *ConnectionResolver[*testConnectionNode], store *testConnectionStore, expectedResponse *pageInfoResponse) {
 	ctx := context.Background()
 	pageInfo, err := resolver.PageInfo(ctx)
 	if err != nil {
@@ -301,7 +323,7 @@ func TestConnectionPageInfo(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			store := &testConnectionStore{t: t}
-			resolver, err := NewConnectionResolver[testConnectionNode](store, test.args, nil)
+			resolver, err := NewConnectionResolver[*testConnectionNode](store, test.args, nil)
 			if err != nil {
 				t.Fatal(err)
 			}

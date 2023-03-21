@@ -75,16 +75,13 @@ const symbolKindToCompletionItemKind: Record<SymbolKind, Monaco.languages.Comple
  * Maps a SearchMatch result from the server to a partial competion item for
  * Monaco.
  */
-const suggestionToCompletionItems = (
-    suggestion: SearchMatch,
-    options: { globbing: boolean; filterValue?: string }
-): PartialCompletionItem[] | PartialCompletionItem => {
+const suggestionToCompletionItems = (suggestion: SearchMatch): PartialCompletionItem[] | PartialCompletionItem => {
     switch (suggestion.type) {
         case 'path':
             return {
                 label: suggestion.path,
                 kind: Monaco.languages.CompletionItemKind.File,
-                insertText: regexInsertText(suggestion.path, options) + ' ',
+                insertText: regexInsertText(suggestion.path) + ' ',
                 filterText: suggestion.path,
                 detail: `${suggestion.path} - ${suggestion.repository}`,
             }
@@ -92,7 +89,7 @@ const suggestionToCompletionItems = (
             return {
                 label: suggestion.repository,
                 kind: repositoryCompletionItemKind,
-                insertText: repositoryInsertText(suggestion, options) + ' ',
+                insertText: repositoryInsertText(suggestion) + ' ',
                 filterText: suggestion.repository,
             }
         case 'symbol':
@@ -253,10 +250,9 @@ export async function getCompletionItems(
     { column }: Pick<Monaco.Position, 'column'>,
     fetchDynamicSuggestions: FetchSuggestions,
     {
-        globbing = false,
         isSourcegraphDotCom = false,
         disablePatternSuggestions = false,
-    }: { globbing?: boolean; isSourcegraphDotCom?: boolean; disablePatternSuggestions?: boolean }
+    }: { isSourcegraphDotCom?: boolean; disablePatternSuggestions?: boolean }
 ): Promise<Monaco.languages.CompletionList | null> {
     let suggestions: Monaco.languages.CompletionItem[] = []
 
@@ -269,7 +265,7 @@ export async function getCompletionItems(
             tokenAtPosition,
             async (token, type) =>
                 (await fetchDynamicSuggestions(token, type)).flatMap(suggestion =>
-                    suggestionToCompletionItems(suggestion, { globbing })
+                    suggestionToCompletionItems(suggestion)
                 ),
             disablePatternSuggestions
         )
@@ -293,9 +289,7 @@ export async function getCompletionItems(
                 async (token, type) =>
                     (
                         await fetchDynamicSuggestions(token, type)
-                    ).flatMap(suggestion =>
-                        suggestionToCompletionItems(suggestion, { globbing, filterValue: token.value?.value })
-                    ),
+                    ).flatMap(suggestion => suggestionToCompletionItems(suggestion)),
                 column,
                 isSourcegraphDotCom
             )

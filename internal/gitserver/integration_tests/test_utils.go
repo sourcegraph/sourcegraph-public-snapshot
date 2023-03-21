@@ -11,15 +11,19 @@ import (
 	"strings"
 	"testing"
 
+	"golang.org/x/sync/semaphore"
+
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"golang.org/x/sync/semaphore"
 )
 
 var root string
@@ -51,20 +55,26 @@ func InitGitserver() {
 	gr := database.NewMockGitserverRepoStore()
 	db.GitserverReposFunc.SetDefaultReturn(gr)
 
+	s := server.Server{
+		Logger:         sglog.Scoped("server", "the gitserver service"),
+		ObservationCtx: &observation.TestContext,
+		ReposDir:       filepath.Join(root, "repos"),
+		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
+			return filepath.Join(root, "remotes", string(name)), nil
+		},
+		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
+			return &server.GitRepoSyncer{}, nil
+		},
+		GlobalBatchLogSemaphore: semaphore.NewWeighted(32),
+		DB:                      db,
+	}
+
+	grpcServer := defaults.NewServer(logger)
+	grpcServer.RegisterService(&proto.GitserverService_ServiceDesc, &server.GRPCServer{Server: &s})
+	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
+
 	srv := &http.Server{
-		Handler: (&server.Server{
-			Logger:         sglog.Scoped("server", "the gitserver service"),
-			ObservationCtx: &observation.TestContext,
-			ReposDir:       filepath.Join(root, "repos"),
-			GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
-				return filepath.Join(root, "remotes", string(name)), nil
-			},
-			GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
-				return &server.GitRepoSyncer{}, nil
-			},
-			GlobalBatchLogSemaphore: semaphore.NewWeighted(32),
-			DB:                      db,
-		}).Handler(),
+		Handler: handler,
 	}
 	go func() {
 		if err := srv.Serve(l); err != nil {

@@ -13,6 +13,7 @@ go_library(
 
 go_test(
     name = "vcs_test",
+    timeout = "short",
     srcs = ["url_test.go"],
     embed = [":vcs"],
 )

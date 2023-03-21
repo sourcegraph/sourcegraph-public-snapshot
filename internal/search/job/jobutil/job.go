@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	codeownershipjob "github.com/sourcegraph/sourcegraph/internal/search/codeownership"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -30,10 +29,10 @@ import (
 )
 
 // NewPlanJob converts a query.Plan into its job tree representation.
-func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
+func NewPlanJob(inputs *search.Inputs, plan query.Plan, enterpriseJobs EnterpriseJobs) (job.Job, error) {
 	children := make([]job.Job, 0, len(plan))
 	for _, q := range plan {
-		child, err := NewBasicJob(inputs, q)
+		child, err := NewBasicJob(inputs, q, enterpriseJobs)
 		if err != nil {
 			return nil, err
 		}
@@ -42,7 +41,7 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 
 	jobTree := NewOrJob(children...)
 	newJob := func(b query.Basic) (job.Job, error) {
-		return NewBasicJob(inputs, b)
+		return NewBasicJob(inputs, b, enterpriseJobs)
 	}
 	if inputs.SearchMode == search.SmartSearch || inputs.PatternType == query.SearchTypeLucky {
 		jobTree = smartsearch.NewSmartSearchJob(jobTree, newJob, plan)
@@ -62,7 +61,7 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 }
 
 // NewBasicJob converts a query.Basic into its job tree representation.
-func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
+func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs EnterpriseJobs) (job.Job, error) {
 	var children []job.Job
 	addJob := func(j job.Job) {
 		children = append(children, j)
@@ -186,15 +185,8 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 	}
 
 	{ // Apply code ownership post-search filter
-		if includeOwners, excludeOwners := b.FileHasOwner(); inputs.Features.CodeOwnershipFilters && (len(includeOwners) > 0 || len(excludeOwners) > 0) {
-			basicJob = codeownershipjob.New(basicJob, includeOwners, excludeOwners)
-		}
-	}
-
-	{ // Apply selectors
-		if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
-			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
-			basicJob = NewSelectJob(sp, basicJob)
+		if includeOwners, excludeOwners, ok := isOwnershipSearch(b); ok {
+			basicJob = enterpriseJobs.FileHasOwnerJob(basicJob, inputs.Features, includeOwners, excludeOwners)
 		}
 	}
 
@@ -202,6 +194,18 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		checker := authz.DefaultSubRepoPermsChecker
 		if authz.SubRepoEnabled(checker) {
 			basicJob = NewFilterJob(basicJob)
+		}
+	}
+
+	{ // Apply selectors
+		if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
+			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
+			if isSelectOwnersSearch(sp) {
+				// the select owners job is ran separately as it requires state and can return multiple owners from one match.
+				basicJob = enterpriseJobs.SelectFileOwnerJob(basicJob, inputs.Features)
+			} else {
+				basicJob = NewSelectJob(sp, basicJob)
+			}
 		}
 	}
 
@@ -503,6 +507,29 @@ func getPathRegexpsFromTextPatternInfo(patternInfo *search.TextPatternInfo) (pat
 }
 
 func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
+	// Temporary fix:
+	// If doing ownership search, we post-filter results so we may need more than
+	// b.Count() results from the search backends to end up with enough results
+	// sent down the stream.
+	//
+	// This is actually a more general problem with other post-filters, too but
+	// keeps the scope of this change minimal.
+	// The proper fix will likely be to establish proper result streaming and cancel
+	// the stream once enough results have been consumed. We will revisit this
+	// post-Starship March 2023 as part of search performance improvements for
+	// ownership search.
+	if _, _, ok := isOwnershipSearch(b); ok {
+		// This is the int equivalent of count:all.
+		return query.CountAllLimit
+	}
+	if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
+		sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
+		if isSelectOwnersSearch(sp) {
+			// This is the int equivalent of count:all.
+			return query.CountAllLimit
+		}
+	}
+
 	if count := b.Count(); count != nil {
 		return *count
 	}
@@ -514,6 +541,18 @@ func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
 		return limits.DefaultMaxSearchResultsStreaming
 	}
 	panic("unreachable")
+}
+
+func isOwnershipSearch(b query.Basic) (include, exclude []string, ok bool) {
+	if includeOwners, excludeOwners := b.FileHasOwner(); len(includeOwners) > 0 || len(excludeOwners) > 0 {
+		return includeOwners, excludeOwners, true
+	}
+	return nil, nil, false
+}
+
+func isSelectOwnersSearch(sp filter.SelectPath) bool {
+	// If the filter is for file.owners, this is a select:file.owners search, and we should apply special limits.
+	return sp.Root() == filter.File && len(sp) == 2 && sp[1] == "owners"
 }
 
 func timeoutDuration(b query.Basic) time.Duration {
@@ -690,6 +729,7 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 		CommitAfter:         b.RepoContainsCommitAfter(),
 		UseIndex:            b.Index(),
 		HasKVPs:             b.RepoHasKVPs(),
+		HasTopics:           b.RepoHasTopics(),
 	}
 }
 
@@ -955,6 +995,12 @@ func isGlobal(op search.RepoOptions) bool {
 	// Zoekt does not know about repo key-value pairs or tags, so we depend on the
 	// database to handle this filter.
 	if len(op.HasKVPs) > 0 {
+		return false
+	}
+
+	// Zoekt does not know about repo topics, so we depend on the database to
+	// handle this filter.
+	if len(op.HasTopics) > 0 {
 		return false
 	}
 

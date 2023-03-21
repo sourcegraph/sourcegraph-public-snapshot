@@ -52,6 +52,13 @@ func (s *store) GetConfigurationPolicies(ctx context.Context, opts policiesshare
 	if opts.ForIndexing {
 		conds = append(conds, sqlf.Sprintf("p.indexing_enabled"))
 	}
+	if opts.Protected != nil {
+		if *opts.Protected {
+			conds = append(conds, sqlf.Sprintf("p.protected"))
+		} else {
+			conds = append(conds, sqlf.Sprintf("NOT p.protected"))
+		}
+	}
 	if len(conds) == 0 {
 		conds = append(conds, sqlf.Sprintf("TRUE"))
 	}

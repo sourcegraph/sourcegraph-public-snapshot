@@ -4,9 +4,8 @@ import * as sinon from 'sinon'
 
 import { platform } from '../testing/dom-utils'
 
-import { ModifierKey } from './keys'
-
 import { Shortcut, ShortcutProvider } from '.'
+import { ModifierKey } from './keys'
 
 describe('ShortcutManager', () => {
     // We only want to preserve the original implementation, not call it as a
@@ -272,6 +271,21 @@ describe('ShortcutManager', () => {
             sinon.assert.called(fooSpy)
 
             platform.reset()
+        })
+
+        it("doesn't match shortcut when any modifier key is held, but no modifier key is defined for the shortcut", () => {
+            const fooSpy = sinon.spy()
+
+            render(
+                <ShortcutProvider>
+                    <Shortcut ordered={['/']} onMatch={fooSpy} />
+                </ShortcutProvider>
+            )
+
+            for (const key of ['Alt', 'Control', 'Meta', 'Shift']) {
+                userEvent.keyboard(`{${key}>}/{/${key}}`)
+                sinon.assert.notCalled(fooSpy)
+            }
         })
     })
 })

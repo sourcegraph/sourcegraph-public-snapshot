@@ -23,7 +23,7 @@ func NewRubyVersionedPackage(name PackageName, version string) *RubyVersionedPac
 
 // ParseRubyVersionedPackage parses a string in a '<name>(@version>)?' format into an
 // RubyVersionedPackage.
-func ParseRubyVersionedPackage(dependency string) (*RubyVersionedPackage, error) {
+func ParseRubyVersionedPackage(dependency string) *RubyVersionedPackage {
 	var dep RubyVersionedPackage
 	if i := strings.LastIndex(dependency, "@"); i == -1 {
 		dep.Name = PackageName(dependency)
@@ -31,10 +31,10 @@ func ParseRubyVersionedPackage(dependency string) (*RubyVersionedPackage, error)
 		dep.Name = PackageName(strings.TrimSpace(dependency[:i]))
 		dep.Version = strings.TrimSpace(dependency[i+1:])
 	}
-	return &dep, nil
+	return &dep
 }
 
-func ParseRubyPackageFromName(name PackageName) (*RubyVersionedPackage, error) {
+func ParseRubyPackageFromName(name PackageName) *RubyVersionedPackage {
 	return ParseRubyVersionedPackage(string(name))
 }
 
@@ -45,7 +45,7 @@ func ParseRubyPackageFromRepoName(name api.RepoName) (*RubyVersionedPackage, err
 	if len(dependency) == len(name) {
 		return nil, errors.Newf("invalid Ruby dependency repo name, missing %s prefix '%s'", rubyPackagesPrefix, name)
 	}
-	return ParseRubyVersionedPackage(dependency)
+	return ParseRubyVersionedPackage(dependency), nil
 }
 
 func (p *RubyVersionedPackage) Scheme() string {

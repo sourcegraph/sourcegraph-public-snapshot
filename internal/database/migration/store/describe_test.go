@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -26,7 +26,7 @@ func TestDescribe(t *testing.T) {
 		t.Fatalf("unexpected error describing schema: %s", err)
 	}
 
-	autogold.Equal(t, descriptions["public"])
+	autogold.ExpectFile(t, descriptions["public"])
 }
 
 const testDescribeQuery = `

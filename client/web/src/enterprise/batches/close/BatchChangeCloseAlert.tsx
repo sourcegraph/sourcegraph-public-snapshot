@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 
 import { isErrorLike, asError, pluralize } from '@sourcegraph/common'
 import { Button, AlertLink, CardBody, Card, Alert, Checkbox, Text, ErrorAlert } from '@sourcegraph/wildcard'

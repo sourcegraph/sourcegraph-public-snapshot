@@ -37,6 +37,7 @@ env:
   REPO_UPDATER_URL: http://127.0.0.1:3182
   REDIS_ENDPOINT: 127.0.0.1:6379
   SYMBOLS_URL: http://localhost:3184
+  EMBEDDINGS_URL: http://localhost:9991
   SRC_SYNTECT_SERVER: http://localhost:9238
   SRC_FRONTEND_INTERNAL: localhost:3090
   GRAFANA_SERVER_URL: http://localhost:3370
@@ -221,7 +222,7 @@ commands:
     <<: *oss_gitserver_template
     env:
       <<: *gitserverenv
-      HOSTNAME: 127.0.0.1:3501
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3501
       GITSERVER_ADDR: 127.0.0.1:3501
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
       SRC_PROF_HTTP: 127.0.0.1:3551
@@ -230,7 +231,7 @@ commands:
     <<: *oss_gitserver_template
     env:
       <<: *oss_gitserverenv
-      HOSTNAME: 127.0.0.1:3502
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3502
       GITSERVER_ADDR: 127.0.0.1:3502
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
       SRC_PROF_HTTP: 127.0.0.1:3552
@@ -244,7 +245,7 @@ commands:
     <<: *gitserver_template
     env:
       <<: *gitserverenv
-      HOSTNAME: 127.0.0.1:3501
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3501
       GITSERVER_ADDR: 127.0.0.1:3501
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
       SRC_PROF_HTTP: 127.0.0.1:3551
@@ -253,7 +254,7 @@ commands:
     <<: *gitserver_template
     env:
       <<: *gitserverenv
-      HOSTNAME: 127.0.0.1:3502
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3502
       GITSERVER_ADDR: 127.0.0.1:3502
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
       SRC_PROF_HTTP: 127.0.0.1:3552
@@ -323,7 +324,6 @@ commands:
       go build -gcflags="$GCFLAGS" -o .bin/repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
     checkBinary: .bin/repo-updater
     env:
-      HOSTNAME: $SRC_GIT_SERVER_1
       ENTERPRISE: 1
     watch:
       - lib
@@ -370,6 +370,21 @@ commands:
       - cmd/symbols
       - enterprise/cmd/symbols
       - enterprise/internal/rockskip
+
+  embeddings:
+    cmd: .bin/embeddings
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+
+      go build -gcflags="$GCFLAGS" -o .bin/embeddings github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings
+    checkBinary: .bin/embeddings
+    watch:
+      - lib
+      - internal
+      - enterprise/cmd/embeddings
+      - enterprise/internal/embeddings
 
   searcher:
     cmd: .bin/searcher
@@ -444,7 +459,7 @@ commands:
     cmd: .bin/docsite_${DOCSITE_VERSION} -config doc/docsite.json serve -http=localhost:5080
     install_func: 'installDocsite'
     env:
-      DOCSITE_VERSION: v1.8.7 # Update DOCSITE_VERSION in all places (including outside this repo)
+      DOCSITE_VERSION: v1.9.1 # Update in all places (including outside this repo)
 
   syntax-highlighter:
     ignoreStdout: true
@@ -481,6 +496,7 @@ commands:
     checkBinary: .bin/zoekt-sourcegraph-indexserver
     env: &zoektenv
       CTAGS_COMMAND: dev/universal-ctags-dev
+      GRPC_ENABLED: true
 
   zoekt-index-0:
     <<: *zoekt_indexserver_template
@@ -828,7 +844,7 @@ commands:
   sourcegraph:
     description: Single program (Go static binary) distribution
     cmd: |
-      unset SRC_GIT_SERVERS INDEXED_SEARCH_SERVERS
+      unset SRC_GIT_SERVERS INDEXED_SEARCH_SERVERS REDIS_ENDPOINT
 
       # TODO: This should be fixed
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
@@ -840,10 +856,9 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=single-program" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph
+      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph
     checkBinary: .bin/sourcegraph
     env:
-      USE_EMBEDDED_POSTGRESQL: false
       ENTERPRISE: 1
       SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
       SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
@@ -864,18 +879,157 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=single-program" -o .bin/sourcegraph-oss github.com/sourcegraph/sourcegraph/cmd/sourcegraph-oss
+      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app" -o .bin/sourcegraph-oss github.com/sourcegraph/sourcegraph/cmd/sourcegraph-oss
     checkBinary: .bin/sourcegraph-oss
     env:
-      USE_EMBEDDED_POSTGRESQL: false
       WEBPACK_DEV_SERVER: 1
     watch:
       - cmd
       - internal
       - schema
 
+bazelCommands:
+  oss-frontend:
+    target: //cmd/frontend
+    env:
+      CONFIGURATION_MODE: server
+      USE_ENHANCED_LANGUAGE_DETECTION: false
+      # frontend processes need this to be so that the paths to the assets are rendered correctly
+      WEBPACK_DEV_SERVER: 1
+  oss-worker:
+    target: //cmd/worker
+  oss-repo-updater:
+    target: //cmd/repo-updater
+  oss-symbols:
+    target: //cmd/symbols
+    env:
+      CTAGS_COMMAND: dev/universal-ctags-dev
+      CTAGS_PROCESSES: 2
+  oss-gitserver-0:
+    target: //cmd/gitserver
+    env:
+      <<: *gitserverenv
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3501
+      GITSERVER_ADDR: 127.0.0.1:3501
+      SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
+      SRC_PROF_HTTP: 127.0.0.1:3551
+  oss-gitserver-1:
+    target: //cmd/gitserver
+    env:
+      <<: *gitserverenv
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3501
+      GITSERVER_ADDR: 127.0.0.1:3501
+      SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
+      SRC_PROF_HTTP: 127.0.0.1:3551
+  searcher:
+    target: //cmd/searcher
+  github-proxy:
+    target: //cmd/github-proxy
+  frontend:
+    description: Enterprise frontend
+    target: //enterprise/cmd/frontend
+    precmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      # If EXTSVC_CONFIG_FILE is *unset*, set a default.
+      export EXTSVC_CONFIG_FILE=${EXTSVC_CONFIG_FILE-'../dev-private/enterprise/dev/external-services-config.json'}
+    env:
+      CONFIGURATION_MODE: server
+      USE_ENHANCED_LANGUAGE_DETECTION: false
+      ENTERPRISE: 1
+      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
+      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
+      # frontend processes need this to be so that the paths to the assets are rendered correctly
+      WEBPACK_DEV_SERVER: 1
+  worker:
+    target: //enterprise/cmd/worker
+    precmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+  repo-updater:
+    target: //enterprise/cmd/repo-updater
+    precmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+    env:
+      ENTERPRISE: 1
+  symbols:
+    # TODO build ctags thing
+    target: //enterprise/cmd/symbols
+    checkBinary: .bin/symbols
+    env:
+      CTAGS_COMMAND: dev/universal-ctags-dev
+      CTAGS_PROCESSES: 2
+      USE_ROCKSKIP: 'false'
+  gitserver-template: &gitserver_bazel_template
+    target: //enterprise/cmd/gitserver
+    env: &gitserverenv
+      HOSTNAME: 127.0.0.1:3178
+  # This is only here to stay backwards-compatible with people's custom
+  # `sg.config.overwrite.yaml` files
+  gitserver:
+    <<: *gitserver_bazel_template
+  gitserver-0:
+    <<: *gitserver_bazel_template
+    env:
+      <<: *gitserverenv
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3501
+      GITSERVER_ADDR: 127.0.0.1:3501
+      SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
+      SRC_PROF_HTTP: 127.0.0.1:3551
+  gitserver-1:
+    <<: *gitserver_bazel_template
+    env:
+      <<: *gitserverenv
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3502
+      GITSERVER_ADDR: 127.0.0.1:3502
+      SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
+      SRC_PROF_HTTP: 127.0.0.1:3552
+  codeintel-worker:
+    precmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+    target: //enterprise/cmd/precise-code-intel-worker
+  executor-template: &executor_template_bazel
+    target: //enterprise/cmd/executor
+    env:
+      EXECUTOR_QUEUE_NAME: TEMPLATE
+      TMPDIR: $HOME/.sourcegraph/executor-temp
+  codeintel-executor:
+    <<: *executor_template_bazel
+    env:
+      EXECUTOR_QUEUE_NAME: codeintel
+      TMPDIR: $HOME/.sourcegraph/indexer-temp
+
+#
+# CommandSets ################################################################
+#
 defaultCommandset: enterprise
 commandsets:
+  oss-bazel:
+    # open-source version doesn't require the dev-private repository
+    requiresDevPrivate: false
+    checks:
+      - docker
+      - redis
+      - postgres
+      - git
+      - bazelisk
+      - ibazel
+    bazelCommands:
+      - oss-frontend
+      - oss-worker
+      - oss-repo-updater
+      - oss-symbols
+      - oss-gitserver-0
+      - oss-gitserver-1
+      - github-proxy
+      - searcher
+    commands:
+      - oss-web
+      - caddy
+      - syntax-highlighter
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
+      - docsite
   oss:
     # open-source version doesn't require the dev-private repository
     requiresDevPrivate: false
@@ -902,6 +1056,34 @@ commandsets:
       - zoekt-web-0
       - zoekt-web-1
 
+  enterprise-bazel: &enterprise_bazel_set
+    requiresDevPrivate: true
+    checks:
+      - docker
+      - redis
+      - postgres
+      - git
+      - bazelisk
+      - ibazel
+    bazelCommands:
+      - frontend
+      - worker
+      - repo-updater
+      - gitserver-0
+      - gitserver-1
+      - searcher
+      - symbols
+      - github-proxy
+    commands:
+      - web
+      - blobstore
+      - docsite
+      - syntax-highlighter
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
+      - caddy
   enterprise: &enterprise_set
     requiresDevPrivate: true
     checks:
@@ -940,6 +1122,40 @@ commandsets:
     env:
       SOURCEGRAPHDOTCOM_MODE: true
 
+  codeintel-bazel: &codeintel_bazel_set
+    requiresDevPrivate: true
+    checks:
+      - docker
+      - redis
+      - postgres
+      - git
+      - bazelisk
+      - ibazel
+    bazelCommands:
+      - frontend
+      - worker
+      - repo-updater
+      - gitserver-0
+      - gitserver-1
+      - searcher
+      - symbols
+      - github-proxy
+      - codeintel-worker
+      - codeintel-executor
+    commands:
+      - web
+      - blobstore
+      - docsite
+      - syntax-highlighter
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
+      - caddy
+      - jaeger
+      - grafana
+      - prometheus
+
   codeintel: &codeintel_set
     requiresDevPrivate: true
     checks:
@@ -974,6 +1190,8 @@ commandsets:
 
   enterprise-codeintel:
     <<: *codeintel_set
+  enterprise-codeintel-bazel:
+    <<: *codeintel_bazel_set
 
   enterprise-codeinsights:
     requiresDevPrivate: true
@@ -1054,6 +1272,33 @@ commandsets:
       - batches-executor
       - batcheshelper-builder
 
+  embeddings:
+    requiresDevPrivate: true
+    checks:
+      - docker
+      - redis
+      - postgres
+      - git
+    commands:
+      - embeddings
+      - frontend
+      - worker
+      - repo-updater
+      - web
+      - gitserver-0
+      - gitserver-1
+      - searcher
+      - symbols
+      - caddy
+      - docsite
+      - syntax-highlighter
+      - github-proxy
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
+      - blobstore
+
   iam:
     requiresDevPrivate: true
     checks:
@@ -1131,18 +1376,14 @@ commandsets:
   app:
     requiresDevPrivate: true
     checks:
-      - docker
-      # TODO: App's dependency on Redis will be removed.
-      - redis
-      - postgres
       - git
     commands:
       - sourcegraph
       - docsite
       - web
-      # TODO: App's dependency on syntax-highlighter will be removed.
-      - syntax-highlighter
       - caddy
+    env:
+      DISABLE_CODE_INSIGHTS: false
 
 tests:
   # These can be run with `sg test [name]`
@@ -1179,7 +1420,7 @@ tests:
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
     env:
-      DOCSITE_VERSION: v1.8.7 # Update DOCSITE_VERSION everywhere in all places (including outside this repo)
+      DOCSITE_VERSION: v1.9.1 # Update DOCSITE_VERSION everywhere in all places (including outside this repo)
 
   web-e2e:
     preamble: |

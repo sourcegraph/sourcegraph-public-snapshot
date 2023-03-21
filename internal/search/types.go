@@ -8,8 +8,9 @@ import (
 
 	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	zoektquery "github.com/sourcegraph/zoekt/query"
+
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -347,9 +348,9 @@ type Features struct {
 	// from here. For now we treat this like a feature flag for convenience.
 	Debug bool `json:"debug"`
 
-	// CodeOwnershipFilters when true will enable searching through code ownership
-	// using `file:has.owner({owner})` filter.
-	CodeOwnershipFilters bool `json:"codeownersip"`
+	// CodeOwnershipSearch when true will enable searching through code ownership
+	// using `file:has.owner({owner})` and `select:file.owners` filters.
+	CodeOwnershipSearch bool `json:"codeownership"`
 }
 
 func (f *Features) String() string {
@@ -384,6 +385,7 @@ type RepoOptions struct {
 	UseIndex       query.YesNoOnly
 	HasFileContent []query.RepoHasFileContentArgs
 	HasKVPs        []query.RepoKVPFilter
+	HasTopics      []query.RepoHasTopicPredicate
 
 	// ForkSet indicates whether `fork:` was set explicitly in the query,
 	// or whether the values were set from defaults.
@@ -467,6 +469,18 @@ func (op *RepoOptions) Tags() []otlog.Field {
 			add(trace.Scoped(fmt.Sprintf("hasKVPs[%d]", i), nondefault...))
 		}
 	}
+	if len(op.HasTopics) > 0 {
+		for i, arg := range op.HasTopics {
+			nondefault := []otlog.Field{}
+			if arg.Topic != "" {
+				nondefault = append(nondefault, otlog.String("topic", arg.Topic))
+			}
+			if arg.Negated {
+				nondefault = append(nondefault, otlog.Bool("negated", arg.Negated))
+			}
+			add(trace.Scoped(fmt.Sprintf("hasTopics[%d]", i), nondefault...))
+		}
+	}
 	if op.ForkSet {
 		add(otlog.Bool("forkSet", op.ForkSet))
 	}
@@ -540,6 +554,16 @@ func (op *RepoOptions) String() string {
 			}
 			if arg.Negated {
 				fmt.Fprintf(&b, "HasKVPs[%d].negated: %t\n", i, arg.Negated)
+			}
+		}
+	}
+	if len(op.HasTopics) > 0 {
+		for i, arg := range op.HasTopics {
+			if arg.Topic != "" {
+				fmt.Fprintf(&b, "HasTopics[%d].topic: %s\n", i, arg.Topic)
+			}
+			if arg.Negated {
+				fmt.Fprintf(&b, "HasTopics[%d].negated: %t\n", i, arg.Negated)
 			}
 		}
 	}

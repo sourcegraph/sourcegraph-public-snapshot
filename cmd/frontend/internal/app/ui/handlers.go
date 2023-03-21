@@ -24,12 +24,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -68,12 +71,21 @@ type Metadata struct {
 	PreviewImage string
 }
 
+type PreloadedAsset struct {
+	// The as property. E.g. `image`
+	As string
+	// The href property. It should be set to a resolved path using `assetsutil.URL`
+	Href string
+}
+
 type Common struct {
 	Injected InjectedHTML
 	Metadata *Metadata
 	Context  jscontext.JSContext
 	Title    string
 	Error    *pageError
+
+	PreloadedAssets *[]PreloadedAsset
 
 	Manifest *assets.WebpackManifest
 
@@ -141,6 +153,16 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 		w.Header().Set("X-Robots-Tag", "noindex")
 	}
 
+	var preloadedAssets *[]PreloadedAsset
+	preloadedAssets = nil
+	if globals.Branding() == nil || (globals.Branding().Dark == nil && globals.Branding().Light == nil) {
+		preloadedAssets = &[]PreloadedAsset{
+			// sourcegraph-mark.svg is always loaded as part of the layout component unless a custom
+			// branding is defined
+			{As: "image", Href: assetsutil.URL("/img/sourcegraph-mark.svg").String() + "?v2"},
+		}
+	}
+
 	common := &Common{
 		Injected: InjectedHTML{
 			HeadTop:    template.HTML(conf.Get().HtmlHeadTop),
@@ -148,9 +170,10 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 			BodyTop:    template.HTML(conf.Get().HtmlBodyTop),
 			BodyBottom: template.HTML(conf.Get().HtmlBodyBottom),
 		},
-		Context:  jscontext.NewJSContextFromRequest(r, db),
-		Title:    title,
-		Manifest: manifest,
+		Context:         jscontext.NewJSContextFromRequest(r, db),
+		Title:           title,
+		Manifest:        manifest,
+		PreloadedAssets: preloadedAssets,
 		Metadata: &Metadata{
 			Title:       globals.Branding().BrandName,
 			Description: "Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.",
@@ -325,7 +348,7 @@ func serveHome(db database.DB) handlerFunc {
 }
 
 func serveSignIn(db database.DB) handlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) error {
+	handler := func(w http.ResponseWriter, r *http.Request) error {
 		common, err := newCommon(w, r, db, "", index, serveError)
 		if err != nil {
 			return err
@@ -337,6 +360,14 @@ func serveSignIn(db database.DB) handlerFunc {
 
 		return renderTemplate(w, "app.html", common)
 	}
+
+	// For app we use an extra middleware to handle passwordless signin via a
+	// nonce.
+	if deploy.IsApp() {
+		return userpasswd.AppSignInMiddleware(db, handler)
+	}
+
+	return handler
 }
 
 func serveEmbed(db database.DB) handlerFunc {

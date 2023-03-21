@@ -45,12 +45,13 @@ type rubyPackagesSource struct {
 var _ packagesSource = &rubyPackagesSource{}
 
 func (rubyPackagesSource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
-	return reposource.ParseRubyVersionedPackage(dep)
+	return reposource.ParseRubyVersionedPackage(dep), nil
 }
 
 func (rubyPackagesSource) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
-	return reposource.ParseRubyPackageFromName(name)
+	return reposource.ParseRubyPackageFromName(name), nil
 }
+
 func (rubyPackagesSource) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
 	return reposource.ParseRubyPackageFromRepoName(repoName)
 }

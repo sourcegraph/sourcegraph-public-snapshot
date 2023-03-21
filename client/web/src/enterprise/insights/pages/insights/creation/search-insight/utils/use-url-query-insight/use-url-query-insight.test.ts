@@ -17,7 +17,7 @@ describe('getInsightDataFromQuery', () => {
             const result = getInsightDataFromQuery(queryString)
 
             expect(result).toStrictEqual({
-                repoQuery: 'context:global repo:^github\\.com/sourcegraph/sourcegraph$',
+                repoQuery: 'repo:^github\\.com/sourcegraph/sourcegraph$',
                 seriesQuery: 'test patterntype:literal',
             })
         })
@@ -35,13 +35,12 @@ describe('getInsightDataFromQuery', () => {
 
         it('with multiple repo: filters and "test" pattern query', () => {
             const queryString =
-                'context:global test repo:^github\\.com/sourcegraph/sourcegraph$ repo:^github\\.com/sourcegraph/about patterntype:literal'
+                'test repo:^github\\.com/sourcegraph/sourcegraph$ repo:^github\\.com/sourcegraph/about patterntype:literal'
 
             const result = getInsightDataFromQuery(queryString)
 
             expect(result).toStrictEqual({
-                repoQuery:
-                    'context:global repo:^github\\.com/sourcegraph/sourcegraph$ repo:^github\\.com/sourcegraph/about',
+                repoQuery: 'repo:^github\\.com/sourcegraph/sourcegraph$ repo:^github\\.com/sourcegraph/about',
                 seriesQuery: 'test patterntype:literal',
             })
         })
@@ -53,7 +52,7 @@ describe('getInsightDataFromQuery', () => {
             const result = getInsightDataFromQuery(queryString)
 
             expect(result).toStrictEqual({
-                repoQuery: 'context:global repo:^github\\.com/sourcegraph/sourcegraph$|^github\\.com/sourcegraph/about',
+                repoQuery: 'repo:^github\\.com/sourcegraph/sourcegraph$|^github\\.com/sourcegraph/about',
                 seriesQuery: 'test patterntype:literal',
             })
         })
@@ -65,7 +64,7 @@ describe('getInsightDataFromQuery', () => {
             const result = getInsightDataFromQuery(queryString)
 
             expect(result).toStrictEqual({
-                repoQuery: 'context:global repo:^github\\.com/sourcegraph/sourcegraph$',
+                repoQuery: 'repo:^github\\.com/sourcegraph/sourcegraph$',
                 seriesQuery: '"repo: " patterntype:literal',
             })
         })

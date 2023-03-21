@@ -1,8 +1,7 @@
-import React, { useState, useCallback } from 'react'
+import { FC, useState, useCallback } from 'react'
 
 import { mdiMenu, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router-dom'
 
 import { ProductStatusBadge, Button, Link, Icon, ProductStatusType } from '@sourcegraph/wildcard'
 
@@ -19,8 +18,9 @@ import styles from './UserSettingsSidebar.module.scss'
 
 export interface UserSettingsSidebarItemConditionContext extends BatchChangesProps {
     user: UserSettingsAreaUserFields
-    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'siteAdmin' | 'tags'>
+    authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 }
 
 type UserSettingsSidebarItem = NavItemDescriptor<UserSettingsSidebarItemConditionContext> & {
@@ -29,19 +29,16 @@ type UserSettingsSidebarItem = NavItemDescriptor<UserSettingsSidebarItemConditio
 
 export type UserSettingsSidebarItems = readonly UserSettingsSidebarItem[]
 
-export interface UserSettingsSidebarProps
-    extends UserSettingsAreaRouteContext,
-        BatchChangesProps,
-        RouteComponentProps<{}> {
+export interface UserSettingsSidebarProps extends UserSettingsAreaRouteContext, BatchChangesProps {
     items: UserSettingsSidebarItems
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
     className?: string
 }
 
 /** Sidebar for user account pages. */
-export const UserSettingsSidebar: React.FunctionComponent<
-    React.PropsWithChildren<UserSettingsSidebarProps>
-> = props => {
+export const UserSettingsSidebar: FC<UserSettingsSidebarProps> = props => {
+    const { user } = props
     const [isMobileExpanded, setIsMobileExpanded] = useState(false)
     const collapseMobileSidebar = useCallback((): void => setIsMobileExpanded(false), [])
 
@@ -58,6 +55,7 @@ export const UserSettingsSidebar: React.FunctionComponent<
         user: props.user,
         authenticatedUser: props.authenticatedUser,
         isSourcegraphDotCom: props.isSourcegraphDotCom,
+        isSourcegraphApp: props.isSourcegraphApp,
     }
 
     return (
@@ -74,53 +72,50 @@ export const UserSettingsSidebar: React.FunctionComponent<
                             condition(context) && (
                                 <SidebarNavItem
                                     key={label}
-                                    to={props.match.path + to}
-                                    exact={exact}
+                                    to={`/users/${user.username}/settings` + to}
                                     onClick={collapseMobileSidebar}
+                                    exact={true}
                                 >
                                     {label} {status && <ProductStatusBadge className="ml-1" status={status} />}
                                 </SidebarNavItem>
                             )
                     )}
                 </SidebarGroup>
-                {(props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) && (
-                    <SidebarGroup>
-                        <SidebarGroupHeader label="Your organizations" />
-                        {props.user.organizations.nodes.map(org => (
-                            <SidebarNavItem
-                                key={org.id}
-                                to={`/organizations/${org.name}/settings`}
-                                className="text-truncate text-nowrap align-items-center"
-                                onClick={collapseMobileSidebar}
-                            >
-                                <OrgAvatar org={org.name} className="d-inline-flex mr-1" /> {org.name}
-                            </SidebarNavItem>
-                        ))}
-                        {!siteAdminViewingOtherUser &&
-                            (window.context.sourcegraphDotComMode &&
-                            !props.authenticatedUser?.tags?.includes('CreateOrg') ? (
+                {(props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) &&
+                    !props.isSourcegraphApp && (
+                        <SidebarGroup>
+                            <SidebarGroupHeader label="Your organizations" />
+                            {props.user.organizations.nodes.map(org => (
                                 <SidebarNavItem
-                                    to={`${props.match.path}/about-organizations`}
+                                    key={org.id}
+                                    to={`/organizations/${org.name}/settings`}
+                                    className="text-truncate text-nowrap align-items-center"
                                     onClick={collapseMobileSidebar}
                                 >
-                                    About organizations
+                                    <OrgAvatar org={org.name} className="d-inline-flex mr-1" /> {org.name}
                                 </SidebarNavItem>
-                            ) : (
-                                <div className={styles.newOrgBtnWrapper}>
-                                    <Button
-                                        to="/organizations/new"
-                                        variant="secondary"
-                                        outline={true}
-                                        size="sm"
-                                        as={Link}
-                                        onClick={collapseMobileSidebar}
-                                    >
-                                        <Icon aria-hidden={true} svgPath={mdiPlus} /> New organization
-                                    </Button>
-                                </div>
                             ))}
-                    </SidebarGroup>
-                )}
+                            {!siteAdminViewingOtherUser &&
+                                (window.context.sourcegraphDotComMode ? (
+                                    <SidebarNavItem to="./about-organizations" onClick={collapseMobileSidebar}>
+                                        About organizations
+                                    </SidebarNavItem>
+                                ) : (
+                                    <div className={styles.newOrgBtnWrapper}>
+                                        <Button
+                                            to="/organizations/new"
+                                            variant="secondary"
+                                            outline={true}
+                                            size="sm"
+                                            as={Link}
+                                            onClick={collapseMobileSidebar}
+                                        >
+                                            <Icon aria-hidden={true} svgPath={mdiPlus} /> New organization
+                                        </Button>
+                                    </div>
+                                ))}
+                        </SidebarGroup>
+                    )}
                 <SidebarGroup>
                     <SidebarGroupHeader label="Other actions" />
                     {!siteAdminViewingOtherUser && (
@@ -128,11 +123,16 @@ export const UserSettingsSidebar: React.FunctionComponent<
                             API console
                         </SidebarNavItem>
                     )}
-                    {props.authenticatedUser.siteAdmin && (
-                        <SidebarNavItem to="/site-admin" onClick={collapseMobileSidebar}>
-                            Site admin
-                        </SidebarNavItem>
-                    )}
+                    {props.authenticatedUser.siteAdmin &&
+                        (props.isSourcegraphApp ? (
+                            <SidebarNavItem to="/site-admin/configuration" onClick={collapseMobileSidebar}>
+                                Advanced settings
+                            </SidebarNavItem>
+                        ) : (
+                            <SidebarNavItem to="/site-admin" onClick={collapseMobileSidebar}>
+                                Site admin
+                            </SidebarNavItem>
+                        ))}
                 </SidebarGroup>
                 <div>Version: {window.context.version}</div>
             </div>

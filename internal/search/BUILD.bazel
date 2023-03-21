@@ -37,6 +37,7 @@ go_library(
 
 go_test(
     name = "search_test",
+    timeout = "short",
     srcs = [
         "alert_test.go",
         "repo_status_test.go",

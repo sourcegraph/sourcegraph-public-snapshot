@@ -16,13 +16,13 @@ import {
 import { QueryStateUpdate, QueryUpdate } from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Code, Tooltip, Icon } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
-import { buildSearchURLQueryFromQueryState, useExperimentalFeatures } from '../../../stores'
+import { buildSearchURLQueryFromQueryState } from '../../../stores'
 import { AggregationUIMode, GroupResultsPing } from '../components/aggregation'
 
 import { getRevisions } from './Revisions'
@@ -38,7 +38,7 @@ export interface SearchFiltersSidebarProps extends TelemetryProps, SettingsCasca
     selectedSearchContextSpec?: string
     aggregationUIMode?: AggregationUIMode
     onNavbarQueryChange: (queryState: QueryStateUpdate) => void
-    onSearchSubmit: (updates: QueryUpdate[]) => void
+    onSearchSubmit: (updates: QueryUpdate[], updatedSearchQuery?: string) => void
     setSidebarCollapsed: (collapsed: boolean) => void
 }
 
@@ -62,10 +62,10 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
     } = props
 
     // Settings
-    const enableSearchAggregations = useExperimentalFeatures(features => features.searchResultsAggregations ?? true)
-    const proactiveSearchAggregations = useExperimentalFeatures(
-        features => features.proactiveSearchResultsAggregations ?? true
-    )
+    const { enableSearchAggregations, proactiveSearchAggregations } = useExperimentalFeatures(features => ({
+        enableSearchAggregations: features.searchResultsAggregations ?? true,
+        proactiveSearchAggregations: features.proactiveSearchResultsAggregations ?? true,
+    }))
 
     // Derived state
     const repoFilters = useMemo(() => getFiltersOfKind(filters, FilterType.repo), [filters])
@@ -88,8 +88,8 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
     )
 
     const handleAggregationBarLinkClick = useCallback(
-        (query: string): void => {
-            onSearchSubmit([{ type: 'replaceQuery', value: query }])
+        (query: string, updatedSearchQuery: string): void => {
+            onSearchSubmit([{ type: 'replaceQuery', value: query }], updatedSearchQuery)
         },
         [onSearchSubmit]
     )

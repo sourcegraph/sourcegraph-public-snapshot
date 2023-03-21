@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react'
 
 import { ComponentStory, ComponentMeta } from '@storybook/react'
-import { noop } from 'lodash'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
@@ -25,7 +24,7 @@ function NotepadWrapper({
 
     return (
         <MockTemporarySettings settings={{ 'search.notepad.enabled': enableNotepad }}>
-            <NotepadContainer onCreateNotebook={noop} initialOpen={open} />
+            <NotepadContainer initialOpen={open} />
         </MockTemporarySettings>
     )
 }

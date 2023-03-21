@@ -3,6 +3,7 @@ package httpapi
 import (
 	"fmt"
 	"html"
+	"io"
 	"net/http"
 	"strings"
 
@@ -96,79 +97,75 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		defer hunkReader.Close()
 
 		parentsCache := map[api.CommitID][]api.CommitID{}
 
 		for {
-			hunks, done, err := hunkReader.Read()
-			if err != nil {
+			h, err := hunkReader.Read()
+			if errors.Is(err, io.EOF) {
+				streamWriter.Event("done", map[string]any{})
+				return
+			} else if err != nil {
 				tr.SetError(err)
 				http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 				return
 			}
-			if done {
-				streamWriter.Event("done", map[string]any{})
-				return
-			}
 
-			blameResponses := make([]BlameHunkResponse, 0, len(hunks))
-			for _, h := range hunks {
-				var parents []api.CommitID
-				if p, ok := parentsCache[h.CommitID]; ok {
-					parents = p
-				} else {
-					c, err := gitserverClient.GetCommit(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, h.CommitID, gitserver.ResolveRevisionOptions{})
-					if err != nil {
-						tr.SetError(err)
-						http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
-						return
-					}
-					parents = c.Parents
-					parentsCache[h.CommitID] = c.Parents
-				}
-
-				user, err := db.Users().GetByVerifiedEmail(ctx, h.Author.Email)
-				if err != nil && !errcode.IsNotFound(err) {
+			var parents []api.CommitID
+			if p, ok := parentsCache[h.CommitID]; ok {
+				parents = p
+			} else {
+				c, err := gitserverClient.GetCommit(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, h.CommitID, gitserver.ResolveRevisionOptions{})
+				if err != nil {
 					tr.SetError(err)
 					http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 					return
 				}
-
-				var blameHunkUserResponse *BlameHunkUserResponse
-				if user != nil {
-					displayName := &user.DisplayName
-					if *displayName == "" {
-						displayName = nil
-					}
-					avatarURL := &user.AvatarURL
-					if *avatarURL == "" {
-						avatarURL = nil
-					}
-
-					blameHunkUserResponse = &BlameHunkUserResponse{
-						Username:    user.Username,
-						DisplayName: displayName,
-						AvatarURL:   avatarURL,
-					}
-				}
-
-				blameResponse := BlameHunkResponse{
-					StartLine: h.StartLine,
-					EndLine:   h.EndLine,
-					CommitID:  h.CommitID,
-					Author:    h.Author,
-					Message:   h.Message,
-					Filename:  h.Filename,
-					Commit: BlameHunkCommitResponse{
-						Parents: parents,
-						URL:     fmt.Sprintf("%s/-/commit/%s", repo.URI, h.CommitID),
-					},
-					User: blameHunkUserResponse,
-				}
-				blameResponses = append(blameResponses, blameResponse)
+				parents = c.Parents
+				parentsCache[h.CommitID] = c.Parents
 			}
 
-			if err := streamWriter.Event("hunk", blameResponses); err != nil {
+			user, err := db.Users().GetByVerifiedEmail(ctx, h.Author.Email)
+			if err != nil && !errcode.IsNotFound(err) {
+				tr.SetError(err)
+				http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
+				return
+			}
+
+			var blameHunkUserResponse *BlameHunkUserResponse
+			if user != nil {
+				displayName := &user.DisplayName
+				if *displayName == "" {
+					displayName = nil
+				}
+				avatarURL := &user.AvatarURL
+				if *avatarURL == "" {
+					avatarURL = nil
+				}
+
+				blameHunkUserResponse = &BlameHunkUserResponse{
+					Username:    user.Username,
+					DisplayName: displayName,
+					AvatarURL:   avatarURL,
+				}
+			}
+
+			blameResponse := BlameHunkResponse{
+				StartLine: h.StartLine,
+				EndLine:   h.EndLine,
+				CommitID:  h.CommitID,
+				Author:    h.Author,
+				Message:   h.Message,
+				Filename:  h.Filename,
+				Commit: BlameHunkCommitResponse{
+					Parents: parents,
+					URL:     fmt.Sprintf("%s/-/commit/%s", repo.URI, h.CommitID),
+				},
+				User: blameHunkUserResponse,
+			}
+
+			if err := streamWriter.Event("hunk", []BlameHunkResponse{blameResponse}); err != nil {
 				tr.SetError(err)
 				http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 				return

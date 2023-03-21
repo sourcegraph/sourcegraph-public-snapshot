@@ -10,12 +10,14 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"runtime"
 	"strconv"
 	"sync"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -23,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -109,12 +112,22 @@ func hasFindRefsOccurred(ctx context.Context) (_ bool, err error) {
 
 func getTotalUsersCount(ctx context.Context, db database.DB) (_ int, err error) {
 	defer recordOperation("getTotalUsersCount")(&err)
-	return db.Users().Count(ctx, &database.UsersListOptions{ExcludeSourcegraphOperators: true})
+	return db.Users().Count(ctx,
+		&database.UsersListOptions{
+			ExcludeSourcegraphAdmins:    true,
+			ExcludeSourcegraphOperators: true,
+		},
+	)
 }
 
 func getTotalOrgsCount(ctx context.Context, db database.DB) (_ int, err error) {
 	defer recordOperation("getTotalOrgsCount")(&err)
 	return db.Orgs().Count(ctx, database.OrgsListOptions{})
+}
+
+func getTotalReposCount(ctx context.Context, db database.DB) (_ int, err error) {
+	defer recordOperation("getTotalReposCount")(&err)
+	return db.Repos().Count(ctx, database.ReposListOptions{})
 }
 
 // hasRepo returns true when the instance has at least one repository that isn't
@@ -185,6 +198,16 @@ func getAndMarshalRepositoriesJSON(ctx context.Context, db database.DB) (_ json.
 		return nil, err
 	}
 	return json.Marshal(repos)
+}
+
+func getAndMarshalRepositorySizeHistogramJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalRepositorySizeHistogramJSON")(&err)
+
+	buckets, err := usagestats.GetRepositorySizeHistorgram(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(buckets)
 }
 
 func getAndMarshalRetentionStatisticsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
@@ -398,6 +421,60 @@ func parseRedisInfo(buf []byte) (map[string]string, error) {
 	return m, nil
 }
 
+// Create a ping body with limited fields, used in Sourcegraph App.
+func limitedUpdateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Reader, error) {
+	logFunc := logger.Debug
+
+	r := &pingRequest{
+		ClientSiteID:        siteid.Get(),
+		DeployType:          deploy.Type(),
+		ClientVersionString: version.Version(),
+	}
+
+	os := runtime.GOOS
+	if os == "darwin" {
+		os = "mac"
+	}
+	r.Os = os
+
+	totalRepos, err := getTotalReposCount(ctx, db)
+	if err != nil {
+		logFunc("getTotalReposCount failed", log.Error(err))
+	}
+	r.TotalRepos = int32(totalRepos)
+
+	usersActiveTodayCount, err := getUsersActiveTodayCount(ctx, db)
+	if err != nil {
+		logFunc("getUsersActiveTodayCount failed", log.Error(err))
+	}
+	r.ActiveToday = usersActiveTodayCount > 0
+
+	contents, err := json.Marshal(r)
+	if err != nil {
+		return nil, err
+	}
+
+	err = db.EventLogs().Insert(ctx, &database.Event{
+		UserID:          0,
+		Name:            "ping",
+		URL:             "",
+		AnonymousUserID: "backend",
+		Source:          "BACKEND",
+		Argument:        contents,
+		Timestamp:       time.Now().UTC(),
+	})
+
+	return bytes.NewReader(contents), err
+}
+
+func getAndMarshalOwnUsageJSON(ctx context.Context, db database.DB) (json.RawMessage, error) {
+	stats, err := usagestats.GetOwnershipUsageStats(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(stats)
+}
+
 func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Reader, error) {
 	scopedLog := logger.Scoped("telemetry", "track and update various usages stats")
 	logFunc := scopedLog.Debug
@@ -455,164 +532,163 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		logFunc("getAndMarshalCodeInsightsCriticalTelemetry failed", log.Error(err))
 	}
 
-	if !conf.Get().DisableNonCriticalTelemetry {
-		// TODO(Dan): migrate this to the new usagestats package.
-		//
-		// For the time being, instances will report daily active users through the legacy package via this argument,
-		// as well as using the new package through the `act` argument below. This will allow comparison during the
-		// transition.
-		count, err := getUsersActiveTodayCount(ctx, db)
-		if err != nil {
-			logFunc("getUsersActiveToday failed", log.Error(err))
-		}
-		r.UniqueUsers = int32(count)
+	// TODO(Dan): migrate this to the new usagestats package.
+	//
+	// For the time being, instances will report daily active users through the legacy package via this argument,
+	// as well as using the new package through the `act` argument below. This will allow comparison during the
+	// transition.
+	count, err := getUsersActiveTodayCount(ctx, db)
+	if err != nil {
+		logFunc("getUsersActiveToday failed", log.Error(err))
+	}
+	r.UniqueUsers = int32(count)
 
-		totalOrgs, err := getTotalOrgsCount(ctx, db)
-		if err != nil {
-			logFunc("database.Orgs.Count failed", log.Error(err))
-		}
-		r.TotalOrgs = int32(totalOrgs)
+	totalOrgs, err := getTotalOrgsCount(ctx, db)
+	if err != nil {
+		logFunc("database.Orgs.Count failed", log.Error(err))
+	}
+	r.TotalOrgs = int32(totalOrgs)
 
-		r.HasRepos, err = hasRepos(ctx, db)
-		if err != nil {
-			logFunc("hasRepos failed", log.Error(err))
-		}
+	r.HasRepos, err = hasRepos(ctx, db)
+	if err != nil {
+		logFunc("hasRepos failed", log.Error(err))
+	}
 
-		r.EverSearched, err = hasSearchOccurred(ctx)
-		if err != nil {
-			logFunc("hasSearchOccurred failed", log.Error(err))
-		}
-		r.EverFindRefs, err = hasFindRefsOccurred(ctx)
-		if err != nil {
-			logFunc("hasFindRefsOccurred failed", log.Error(err))
-		}
-		r.BatchChangesUsage, err = getAndMarshalBatchChangesUsageJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalBatchChangesUsageJSON failed", log.Error(err))
-		}
-		r.GrowthStatistics, err = getAndMarshalGrowthStatisticsJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalGrowthStatisticsJSON failed", log.Error(err))
-		}
+	r.EverSearched, err = hasSearchOccurred(ctx)
+	if err != nil {
+		logFunc("hasSearchOccurred failed", log.Error(err))
+	}
+	r.EverFindRefs, err = hasFindRefsOccurred(ctx)
+	if err != nil {
+		logFunc("hasFindRefsOccurred failed", log.Error(err))
+	}
+	r.BatchChangesUsage, err = getAndMarshalBatchChangesUsageJSON(ctx, db)
+	if err != nil {
+		logFunc("getAndMarshalBatchChangesUsageJSON failed", log.Error(err))
+	}
+	r.GrowthStatistics, err = getAndMarshalGrowthStatisticsJSON(ctx, db)
+	if err != nil {
+		logFunc("getAndMarshalGrowthStatisticsJSON failed", log.Error(err))
+	}
 
-		r.SavedSearches, err = getAndMarshalSavedSearchesJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalSavedSearchesJSON failed", log.Error(err))
-		}
+	r.SavedSearches, err = getAndMarshalSavedSearchesJSON(ctx, db)
+	if err != nil {
+		logFunc("getAndMarshalSavedSearchesJSON failed", log.Error(err))
+	}
 
-		r.HomepagePanels, err = getAndMarshalHomepagePanelsJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalHomepagePanelsJSON failed", log.Error(err))
-		}
+	r.HomepagePanels, err = getAndMarshalHomepagePanelsJSON(ctx, db)
+	if err != nil {
+		logFunc("getAndMarshalHomepagePanelsJSON failed", log.Error(err))
+	}
 
-		r.SearchOnboarding, err = getAndMarshalSearchOnboardingJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalSearchOnboardingJSON failed", log.Error(err))
-		}
+	r.SearchOnboarding, err = getAndMarshalSearchOnboardingJSON(ctx, db)
+	if err != nil {
+		logFunc("getAndMarshalSearchOnboardingJSON failed", log.Error(err))
+	}
 
-		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalRepositoriesJSON failed", log.Error(err))
-		}
+	r.Repositories, err = getAndMarshalRepositoriesJSON(ctx, db)
+	if err != nil {
+		logFunc("getAndMarshalRepositoriesJSON failed", log.Error(err))
+	}
 
-		r.RetentionStatistics, err = getAndMarshalRetentionStatisticsJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalRetentionStatisticsJSON failed", log.Error(err))
-		}
+	r.RepositorySizeHistogram, err = getAndMarshalRepositorySizeHistogramJSON(ctx, db)
+	if err != nil {
+		logFunc("getAndMarshalRepositorySizeHistogramJSON failed", log.Error(err))
+	}
 
-		r.ExtensionsUsage, err = getAndMarshalExtensionsUsageStatisticsJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalExtensionsUsageStatisticsJSON failed", log.Error(err))
-		}
+	r.RetentionStatistics, err = getAndMarshalRetentionStatisticsJSON(ctx, db)
+	if err != nil {
+		logFunc("getAndMarshalRetentionStatisticsJSON failed", log.Error(err))
+	}
 
-		r.CodeInsightsUsage, err = getAndMarshalCodeInsightsUsageJSON(ctx, db)
-		if err != nil {
-			logFuncWarn("getAndMarshalCodeInsightsUsageJSON failed", log.Error(err))
-		}
+	r.ExtensionsUsage, err = getAndMarshalExtensionsUsageStatisticsJSON(ctx, db)
+	if err != nil {
+		logFunc("getAndMarshalExtensionsUsageStatisticsJSON failed", log.Error(err))
+	}
 
-		r.CodeMonitoringUsage, err = getAndMarshalCodeMonitoringUsageJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalCodeMonitoringUsageJSON failed", log.Error(err))
-		}
+	r.CodeInsightsUsage, err = getAndMarshalCodeInsightsUsageJSON(ctx, db)
+	if err != nil {
+		logFuncWarn("getAndMarshalCodeInsightsUsageJSON failed", log.Error(err))
+	}
 
-		r.NotebooksUsage, err = getAndMarshalNotebooksUsageJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalNotebooksUsageJSON failed", log.Error(err))
-		}
+	r.CodeMonitoringUsage, err = getAndMarshalCodeMonitoringUsageJSON(ctx, db)
+	if err != nil {
+		logFunc("getAndMarshalCodeMonitoringUsageJSON failed", log.Error(err))
+	}
 
-		r.CodeHostIntegrationUsage, err = getAndMarshalCodeHostIntegrationUsageJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalCodeHostIntegrationUsageJSON failed", log.Error(err))
-		}
+	r.NotebooksUsage, err = getAndMarshalNotebooksUsageJSON(ctx, db)
+	if err != nil {
+		logFunc("getAndMarshalNotebooksUsageJSON failed", log.Error(err))
+	}
 
-		r.IDEExtensionsUsage, err = getAndMarshalIDEExtensionsUsageJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalIDEExtensionsUsageJSON failed", log.Error(err))
-		}
+	r.CodeHostIntegrationUsage, err = getAndMarshalCodeHostIntegrationUsageJSON(ctx, db)
+	if err != nil {
+		logFunc("getAndMarshalCodeHostIntegrationUsageJSON failed", log.Error(err))
+	}
 
-		r.MigratedExtensionsUsage, err = getAndMarshalMigratedExtensionsUsageJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalMigratedExtensionsUsageJSON failed", log.Error(err))
-		}
+	r.IDEExtensionsUsage, err = getAndMarshalIDEExtensionsUsageJSON(ctx, db)
+	if err != nil {
+		logFunc("getAndMarshalIDEExtensionsUsageJSON failed", log.Error(err))
+	}
 
-		r.CodeHostVersions, err = getAndMarshalCodeHostVersionsJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalCodeHostVersionsJSON failed", log.Error(err))
-		}
+	r.MigratedExtensionsUsage, err = getAndMarshalMigratedExtensionsUsageJSON(ctx, db)
+	if err != nil {
+		logFunc("getAndMarshalMigratedExtensionsUsageJSON failed", log.Error(err))
+	}
 
-		r.ExternalServices, err = externalServiceKinds(ctx, db)
-		if err != nil {
-			logFunc("externalServicesKinds failed", log.Error(err))
-		}
+	r.CodeHostVersions, err = getAndMarshalCodeHostVersionsJSON(ctx, db)
+	if err != nil {
+		logFunc("getAndMarshalCodeHostVersionsJSON failed", log.Error(err))
+	}
 
-		r.HasExtURL = conf.UsingExternalURL()
-		r.BuiltinSignupAllowed = conf.IsBuiltinSignupAllowed()
-		r.AuthProviders = authProviderTypes()
+	r.ExternalServices, err = externalServiceKinds(ctx, db)
+	if err != nil {
+		logFunc("externalServicesKinds failed", log.Error(err))
+	}
 
-		// The following methods are the most expensive to calculate, so we do them in
-		// parallel.
+	r.OwnUsage, err = getAndMarshalOwnUsageJSON(ctx, db)
+	if err != nil {
+		logFunc("ownUsage failed", log.Error(err))
+	}
 
-		var wg sync.WaitGroup
+	r.HasExtURL = conf.UsingExternalURL()
+	r.BuiltinSignupAllowed = conf.IsBuiltinSignupAllowed()
+	r.AccessRequestEnabled = conf.IsAccessRequestEnabled()
+	r.AuthProviders = authProviderTypes()
 
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			r.Activity, err = getAndMarshalSiteActivityJSON(ctx, db, false)
-			if err != nil {
-				logFunc("getAndMarshalSiteActivityJSON failed", log.Error(err))
-			}
-		}()
+	// The following methods are the most expensive to calculate, so we do them in
+	// parallel.
 
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			r.NewCodeIntelUsage, err = getAndMarshalAggregatedCodeIntelUsageJSON(ctx, db)
-			if err != nil {
-				logFunc("getAndMarshalAggregatedCodeIntelUsageJSON failed", log.Error(err))
-			}
-		}()
+	var wg sync.WaitGroup
 
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			r.SearchUsage, err = getAndMarshalAggregatedSearchUsageJSON(ctx, db)
-			if err != nil {
-				logFunc("getAndMarshalAggregatedSearchUsageJSON failed", log.Error(err))
-			}
-		}()
-
-		wg.Wait()
-	} else {
-		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalRepositoriesJSON failed", log.Error(err))
-		}
-
-		r.Activity, err = getAndMarshalSiteActivityJSON(ctx, db, true)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		r.Activity, err = getAndMarshalSiteActivityJSON(ctx, db, false)
 		if err != nil {
 			logFunc("getAndMarshalSiteActivityJSON failed", log.Error(err))
 		}
-	}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		r.NewCodeIntelUsage, err = getAndMarshalAggregatedCodeIntelUsageJSON(ctx, db)
+		if err != nil {
+			logFunc("getAndMarshalAggregatedCodeIntelUsageJSON failed", log.Error(err))
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		r.SearchUsage, err = getAndMarshalAggregatedSearchUsageJSON(ctx, db)
+		if err != nil {
+			logFunc("getAndMarshalAggregatedSearchUsageJSON failed", log.Error(err))
+		}
+	}()
+
+	wg.Wait()
 
 	contents, err := json.Marshal(r)
 	if err != nil {
@@ -668,15 +744,23 @@ func updateCheckURL(logger log.Logger) string {
 	return u.String()
 }
 
+var telemetryHTTPProxy = env.Get("TELEMETRY_HTTP_PROXY", "", "if set, HTTP proxy URL for telemetry and update checks")
+
 // check performs an update check and updates the global state.
 func check(logger log.Logger, db database.DB) {
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
+	updateBodyFunc := updateBody
+	// In Sourcegraph App mode, use limited pings.
+	if deploy.IsApp() {
+		updateBodyFunc = limitedUpdateBody
+	}
 	endpoint := updateCheckURL(logger)
 
 	doCheck := func() (updateVersion string, err error) {
-		body, err := updateBody(ctx, logger, db)
+		body, err := updateBodyFunc(ctx, logger, db)
+
 		if err != nil {
 			return "", err
 		}
@@ -688,7 +772,20 @@ func check(logger log.Logger, db database.DB) {
 		req.Header.Set("Content-Type", "application/json")
 		req = req.WithContext(ctx)
 
-		resp, err := httpcli.ExternalDoer.Do(req)
+		var doer httpcli.Doer
+		if telemetryHTTPProxy == "" {
+			doer = httpcli.ExternalDoer
+		} else {
+			u, err := url.Parse(telemetryHTTPProxy)
+			if err != nil {
+				return "", errors.Wrap(err, "parsing telemetry HTTP proxy URL")
+			}
+			doer = &http.Client{
+				Transport: &http.Transport{Proxy: http.ProxyURL(u)},
+			}
+		}
+
+		resp, err := doer.Do(req)
 		if err != nil {
 			return "", err
 		}
@@ -705,11 +802,24 @@ func check(logger log.Logger, db database.DB) {
 			return "", errors.Errorf("update endpoint returned HTTP error %d: %s", resp.StatusCode, description)
 		}
 
+		// Sourcegraph App: we always get ping responses back, as they may contain notification messages for us.
+		if deploy.IsApp() {
+			var response pingResponse
+			if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+				return "", err
+			}
+			response.handleNotifications()
+			if response.UpdateAvailable {
+				return response.Version.String(), nil
+			}
+			return "", nil // no update available
+		}
+
 		if resp.StatusCode == http.StatusNoContent {
 			return "", nil // no update available
 		}
 
-		var latestBuild build
+		var latestBuild pingResponse
 		if err := json.NewDecoder(resp.Body).Decode(&latestBuild); err != nil {
 			return "", err
 		}

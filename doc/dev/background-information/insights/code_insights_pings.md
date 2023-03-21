@@ -359,6 +359,20 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 - Event Code: [WeeklySeriesBackfillTime](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+WeeklySeriesBackfillTime&patternType=standard)
 - **Version added:** 4.1
 
+### Data export requests
+
+**Type:** BE capture
+
+**Intended purpose:** To track usage of data exporting functionality.
+
+**Functional implementation:** Telemetry events are fired when a request reaches the backend HTTP handler, whether that comes from the webapp or the CLI.
+
+**Other considerations:** The ping name contains `click` but this does indeed also record events from the CLI.
+
+- Aggregation: weekly
+- Event Code: [WeeklyDataExportClicks](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+WeeklyDataExportClicks&patternType=standard), `InsightsDataExportRequest` in `event_logs`
+- **Version added:** 5.0
+
 ## Search results aggregations metrics
 
 ### Information icon hovers

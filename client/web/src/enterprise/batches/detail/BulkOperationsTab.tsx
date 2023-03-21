@@ -80,7 +80,7 @@ const BATCH_COUNT = 15
 
 const useBulkOperationsListConnection = (
     batchChangeID: Scalars['ID']
-): UseShowMorePaginationResult<BulkOperationFields> => {
+): UseShowMorePaginationResult<BatchChangeBulkOperationsResult, BulkOperationFields> => {
     const { connection, startPolling, stopPolling, ...rest } = useShowMorePagination<
         BatchChangeBulkOperationsResult,
         BatchChangeBulkOperationsVariables,
