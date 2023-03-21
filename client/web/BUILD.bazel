@@ -1850,9 +1850,7 @@ jest_test(
     data = [
         ":web_tests",
     ],
-    # The tests takes are timing out, due to taking too much time.
-    # but there is no "timeout" attribute we can use here.
-    tags = ["manual"],
+    timeout = "long",
 )
 
 # webpack dev environment -------------------
