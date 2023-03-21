@@ -8,7 +8,7 @@ Feature | Supported?
 ------- | ----------
 [Repository syncing](#repository-syncing) | ✅
 [Repository permissions](#repository-syncing) | ❌
-[Multiple RubyGems repositories](#multiple-ruby-dependency-code-hosts) | ❌
+[Multiple RubyGems repositories code hosts](#multiple-ruby-dependencies-code-hosts) | ❌
 
 ## Setup
 

@@ -8,7 +8,7 @@ Feature | Supported?
 ------- | ----------
 [Repository syncing](#repository-syncing) | ✅
 [Repository permissions](#repository-syncing) | ❌
-[Multiple JVM dependencies code hosts](#multiple-jvm-dependency-code-hosts) | ❌
+[Multiple JVM dependencies code hosts](#multiple-jvm-dependencies-code-hosts) | ❌
 
 ## Setup
 
