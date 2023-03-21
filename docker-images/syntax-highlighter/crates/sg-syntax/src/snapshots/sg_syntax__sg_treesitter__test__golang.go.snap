@@ -1,6 +1,5 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
-assertion_line: 362
 expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 ---
   package main
@@ -258,6 +257,10 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //        ^ IdentifierOperator
 //         ^^^^^^ IdentifierType
   }
+  
+  // 🚨 SECURITY: something something
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  
   type Drivable interface {
 //^^^^ Keyword
 //     ^^^^^^^^ IdentifierType

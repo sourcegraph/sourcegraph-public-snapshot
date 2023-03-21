@@ -76,6 +76,9 @@ type Vehicle struct {
 	Wheels int
 	Owner  *Person
 }
+
+// 🚨 SECURITY: something something
+
 type Drivable interface {
 	Wheels() int
 }
