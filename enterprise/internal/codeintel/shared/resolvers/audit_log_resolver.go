@@ -35,7 +35,7 @@ func (r *lsifUploadsAuditLogResolver) UploadDeletedAt() *gqlutil.DateTime {
 }
 
 func (r *lsifUploadsAuditLogResolver) UploadID() graphql.ID {
-	return marshalLSIFUploadGQLID(int64(r.log.UploadID))
+	return resolverstubs.MarshalID("LSIFUpload", r.log.UploadID)
 }
 func (r *lsifUploadsAuditLogResolver) InputCommit() string  { return r.log.Commit }
 func (r *lsifUploadsAuditLogResolver) InputRoot() string    { return r.log.Root }
