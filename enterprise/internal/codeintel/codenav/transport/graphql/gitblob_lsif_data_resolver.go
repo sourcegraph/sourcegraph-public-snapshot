@@ -124,7 +124,15 @@ func (r *gitBlobLSIFDataResolver) Ranges(ctx context.Context, args *resolverstub
 		return nil, err
 	}
 
-	return NewCodeIntelligenceRangeConnectionResolver(ranges, r.locationResolver), nil
+	var resolvers []resolverstubs.CodeIntelligenceRangeResolver
+	for _, rn := range ranges {
+		resolvers = append(resolvers, &codeIntelligenceRangeResolver{
+			r:                rn,
+			locationResolver: r.locationResolver,
+		})
+	}
+
+	return resolverstubs.NewConnectionResolver(resolvers), nil
 }
 
 // Definitions returns the list of source locations that define the symbol at the given position.
@@ -164,12 +172,12 @@ const DefaultReferencesPageSize = 100
 
 // References returns the list of source locations that reference the symbol at the given position.
 func (r *gitBlobLSIFDataResolver) References(ctx context.Context, args *resolverstubs.LSIFPagedQueryPositionArgs) (_ resolverstubs.LocationConnectionResolver, err error) {
-	limit := derefInt32(args.First, DefaultReferencesPageSize)
+	limit := int(resolverstubs.Deref(args.First, DefaultReferencesPageSize))
 	if limit <= 0 {
 		return nil, ErrIllegalLimit
 	}
 
-	rawCursor, err := DecodeCursor(args.After)
+	rawCursor, err := decodeCursor(args.After)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +215,7 @@ func (r *gitBlobLSIFDataResolver) References(ctx context.Context, args *resolver
 		refs = filtered
 	}
 
-	return NewLocationConnectionResolver(refs, strPtr(nextCursor), r.locationResolver), nil
+	return NewLocationConnectionResolver(refs, resolverstubs.NonZeroPtr(nextCursor), r.locationResolver), nil
 }
 
 // DefaultReferencesPageSize is the implementation result page size when no limit is supplied.
@@ -217,12 +225,12 @@ const DefaultImplementationsPageSize = 100
 var ErrIllegalLimit = errors.New("illegal limit")
 
 func (r *gitBlobLSIFDataResolver) Implementations(ctx context.Context, args *resolverstubs.LSIFPagedQueryPositionArgs) (_ resolverstubs.LocationConnectionResolver, err error) {
-	limit := derefInt32(args.First, DefaultImplementationsPageSize)
+	limit := int(resolverstubs.Deref(args.First, DefaultImplementationsPageSize))
 	if limit <= 0 {
 		return nil, ErrIllegalLimit
 	}
 
-	rawCursor, err := DecodeCursor(args.After)
+	rawCursor, err := decodeCursor(args.After)
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +268,7 @@ func (r *gitBlobLSIFDataResolver) Implementations(ctx context.Context, args *res
 		impls = filtered
 	}
 
-	return NewLocationConnectionResolver(impls, strPtr(nextCursor), r.locationResolver), nil
+	return NewLocationConnectionResolver(impls, resolverstubs.NonZeroPtr(nextCursor), r.locationResolver), nil
 }
 
 // Hover returns the hover text and range for the symbol at the given position.
@@ -282,7 +290,7 @@ const DefaultDiagnosticsPageSize = 100
 
 // Diagnostics returns the diagnostics for documents with the given path prefix.
 func (r *gitBlobLSIFDataResolver) Diagnostics(ctx context.Context, args *resolverstubs.LSIFDiagnosticsArgs) (_ resolverstubs.DiagnosticConnectionResolver, err error) {
-	limit := derefInt32(args.First, DefaultDiagnosticsPageSize)
+	limit := int(resolverstubs.Deref(args.First, DefaultDiagnosticsPageSize))
 	if limit <= 0 {
 		return nil, ErrIllegalLimit
 	}
@@ -296,5 +304,10 @@ func (r *gitBlobLSIFDataResolver) Diagnostics(ctx context.Context, args *resolve
 		return nil, errors.Wrap(err, "codeNavSvc.GetDiagnostics")
 	}
 
-	return NewDiagnosticConnectionResolver(diagnostics, totalCount, r.locationResolver), nil
+	resolvers := make([]resolverstubs.DiagnosticResolver, 0, len(diagnostics))
+	for i := range diagnostics {
+		resolvers = append(resolvers, NewDiagnosticResolver(diagnostics[i], r.locationResolver))
+	}
+
+	return resolverstubs.NewTotalCountConnectionResolver(resolvers, 0, int32(totalCount)), nil
 }

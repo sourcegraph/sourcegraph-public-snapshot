@@ -13,6 +13,6 @@ type UploadsServiceResolver interface {
 }
 
 type CodeIntelligenceCommitGraphResolver interface {
-	Stale(ctx context.Context) (bool, error)
-	UpdatedAt(ctx context.Context) (*gqlutil.DateTime, error)
+	Stale() bool
+	UpdatedAt() *gqlutil.DateTime
 }

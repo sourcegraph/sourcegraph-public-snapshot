@@ -12,12 +12,55 @@ const bazelRemoteCacheURL = "https://storage.googleapis.com/sourcegraph_bazel_ca
 
 func BazelOperations(optional bool) *operations.Set {
 	ops := operations.NewNamedSet("Bazel")
-	ops.Append(bazelConfigure())
+	ops.Append(bazelConfigure(optional))
 	ops.Append(bazelBuildAndTest(optional, "//..."))
 	return ops
 }
 
-func bazelConfigure() func(*bk.Pipeline) {
+// BazelIncrementalMainOperations is a set of operations that only run on the main
+// branch and whose purpose is to gradually introduce invariants as we progress through
+// the migration.
+func BazelIncrementalMainOperations() *operations.Set {
+	optional := true
+
+	ops := operations.NewNamedSet("Bazel (optional)")
+	ops.Append(bazelAnalysisPhase(optional))
+
+	return ops
+}
+
+// bazelAnalysisPhase only runs the analasys phase, ensure that the buildfiles
+// are correct, but do not actually build anything.
+func bazelAnalysisPhase(optional bool) func(*bk.Pipeline) {
+	// We run :gazelle since 'configure' causes issues on CI, where it doesn't have the go path available
+	cmd := []string{
+		"bazel",
+		"--bazelrc=.bazelrc",
+		"--bazelrc=.aspect/bazelrc/ci.bazelrc",
+		"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
+		"build",
+		"--nobuild", // this is the key flag to enable this.
+		"//...",
+	}
+
+	cmds := []bk.StepOpt{
+		bk.Key("bazel-analysis"),
+		bk.Env("CI_BAZEL_REMOTE_CACHE", bazelRemoteCacheURL),
+		bk.Agent("queue", "bazel"),
+		bk.RawCmd(strings.Join(cmd, " ")),
+	}
+
+	return func(pipeline *bk.Pipeline) {
+		if optional {
+			cmds = append(cmds, bk.SoftFail())
+		}
+
+		pipeline.AddStep(":bazel: Analysis phase",
+			cmds...,
+		)
+	}
+}
+func bazelConfigure(optional bool) func(*bk.Pipeline) {
 	// We run :gazelle since 'configure' causes issues on CI, where it doesn't have the go path available
 	configureCmd := []string{
 		"bazel",
@@ -38,6 +81,10 @@ func bazelConfigure() func(*bk.Pipeline) {
 	}
 
 	return func(pipeline *bk.Pipeline) {
+		if optional {
+			cmds = append(cmds, bk.SoftFail())
+		}
+
 		pipeline.AddStep(":bazel: Configure",
 			cmds...,
 		)

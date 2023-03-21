@@ -274,6 +274,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		)
 
 	default:
+		if c.RunType.Is(runtype.MainBranch) {
+			// If we're on the main branch, we test a few Bazel invariants.
+			ops.Merge(BazelIncrementalMainOperations())
+		}
 		// Slow async pipeline
 		ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
 			triggerAsync(buildOptions)))

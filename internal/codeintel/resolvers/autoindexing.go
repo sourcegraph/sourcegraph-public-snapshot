@@ -99,7 +99,7 @@ type GitTreeEntryCodeIntelInfoArgs struct {
 }
 
 type (
-	PreciseIndexConnectionResolver = PagedConnectionResolverWithCount[PreciseIndexResolver]
+	PreciseIndexConnectionResolver = PagedConnectionWithTotalCountResolver[PreciseIndexResolver]
 )
 
 type PreciseIndexResolver interface {
@@ -132,7 +132,7 @@ type LSIFUploadRetentionPolicyMatchesArgs struct {
 	Query *string
 }
 
-type CodeIntelligenceRetentionPolicyMatchesConnectionResolver = PagedConnectionResolverWithCount[CodeIntelligenceRetentionPolicyMatchResolver]
+type CodeIntelligenceRetentionPolicyMatchesConnectionResolver = PagedConnectionWithTotalCountResolver[CodeIntelligenceRetentionPolicyMatchResolver]
 
 type CodeIntelligenceRetentionPolicyMatchResolver interface {
 	ConfigurationPolicy() CodeIntelligenceConfigurationPolicyResolver
@@ -226,8 +226,8 @@ type CodeIntelSummaryResolver interface {
 type (
 	RepositoriesWithErrorsArgs                             = PagedConnectionArgs
 	RepositoriesWithConfigurationArgs                      = PagedConnectionArgs
-	CodeIntelRepositoryWithErrorConnectionResolver         = PagedConnectionResolverWithCount[CodeIntelRepositoryWithErrorResolver]
-	CodeIntelRepositoryWithConfigurationConnectionResolver = PagedConnectionResolverWithCount[CodeIntelRepositoryWithConfigurationResolver]
+	CodeIntelRepositoryWithErrorConnectionResolver         = PagedConnectionWithTotalCountResolver[CodeIntelRepositoryWithErrorResolver]
+	CodeIntelRepositoryWithConfigurationConnectionResolver = PagedConnectionWithTotalCountResolver[CodeIntelRepositoryWithConfigurationResolver]
 )
 
 type CodeIntelRepositoryWithErrorResolver interface {
