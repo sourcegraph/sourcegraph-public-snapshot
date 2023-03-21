@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Button, Checkbox } from '@sourcegraph/wildcard'
+import { Button, Checkbox, Link, Text } from '@sourcegraph/wildcard'
 
 import { SurveyRatingRadio } from '../components/SurveyRatingRadio'
 
@@ -41,6 +41,12 @@ export const SurveyUserRatingToast: React.FunctionComponent<SurveyUserRatingToas
             </>
         }
         footer={
+            <>
+            <Text className="d-flex align-items-center justify-content-between mb-1">
+                <span>
+                    By submitting your feedback, you agree to the <Link to="https://about.sourcegraph.com/terms/privacy">Sourcegraph Privacy Policy</Link>.
+                </span>
+            </Text>
             <div className="d-flex align-items-center justify-content-between">
                 <Checkbox
                     id="survey-toast-refuse"
@@ -51,6 +57,7 @@ export const SurveyUserRatingToast: React.FunctionComponent<SurveyUserRatingToas
                     Continue
                 </Button>
             </div>
+            </>
         }
         onDismiss={onDismiss}
     />
