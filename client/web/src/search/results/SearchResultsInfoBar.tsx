@@ -7,7 +7,7 @@ import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CaseSensitivityProps, SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
-import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon, Label } from '@sourcegraph/wildcard'
 
@@ -39,6 +39,7 @@ export interface SearchResultsInfoBarProps
 
     /** The search query and results */
     query?: string
+    options: StreamSearchOptions
     results?: AggregateStreamingSearchResults
 
     batchChangesEnabled?: boolean
@@ -162,6 +163,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                 <ul className="nav align-items-center">
                     <SearchActionsMenu
                         query={props.query}
+                        options={props.options}
                         patternType={props.patternType}
                         sourcegraphURL={props.platformContext.sourcegraphURL}
                         authenticatedUser={props.authenticatedUser}
