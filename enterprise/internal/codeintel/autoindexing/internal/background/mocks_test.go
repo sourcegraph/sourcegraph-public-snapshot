@@ -19,6 +19,7 @@ import (
 	types1 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	shared1 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
+	dependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -38,6 +39,9 @@ type MockDependenciesService struct {
 	// InsertPackageRepoRefsFunc is an instance of a mock function object
 	// controlling the behavior of the method InsertPackageRepoRefs.
 	InsertPackageRepoRefsFunc *DependenciesServiceInsertPackageRepoRefsFunc
+	// ListPackageRepoFiltersFunc is an instance of a mock function object
+	// controlling the behavior of the method ListPackageRepoFilters.
+	ListPackageRepoFiltersFunc *DependenciesServiceListPackageRepoFiltersFunc
 }
 
 // NewMockDependenciesService creates a new mock of the DependenciesService
@@ -47,6 +51,11 @@ func NewMockDependenciesService() *MockDependenciesService {
 	return &MockDependenciesService{
 		InsertPackageRepoRefsFunc: &DependenciesServiceInsertPackageRepoRefsFunc{
 			defaultHook: func(context.Context, []shared.MinimalPackageRepoRef) (r0 []shared.PackageRepoReference, r1 []shared.PackageRepoRefVersion, r2 error) {
+				return
+			},
+		},
+		ListPackageRepoFiltersFunc: &DependenciesServiceListPackageRepoFiltersFunc{
+			defaultHook: func(context.Context, dependencies.ListPackageRepoRefFiltersOpts) (r0 []shared.PackageRepoFilter, r1 bool, r2 error) {
 				return
 			},
 		},
@@ -63,6 +72,11 @@ func NewStrictMockDependenciesService() *MockDependenciesService {
 				panic("unexpected invocation of MockDependenciesService.InsertPackageRepoRefs")
 			},
 		},
+		ListPackageRepoFiltersFunc: &DependenciesServiceListPackageRepoFiltersFunc{
+			defaultHook: func(context.Context, dependencies.ListPackageRepoRefFiltersOpts) ([]shared.PackageRepoFilter, bool, error) {
+				panic("unexpected invocation of MockDependenciesService.ListPackageRepoFilters")
+			},
+		},
 	}
 }
 
@@ -73,6 +87,9 @@ func NewMockDependenciesServiceFrom(i DependenciesService) *MockDependenciesServ
 	return &MockDependenciesService{
 		InsertPackageRepoRefsFunc: &DependenciesServiceInsertPackageRepoRefsFunc{
 			defaultHook: i.InsertPackageRepoRefs,
+		},
+		ListPackageRepoFiltersFunc: &DependenciesServiceListPackageRepoFiltersFunc{
+			defaultHook: i.ListPackageRepoFilters,
 		},
 	}
 }
@@ -189,6 +206,121 @@ func (c DependenciesServiceInsertPackageRepoRefsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DependenciesServiceInsertPackageRepoRefsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// DependenciesServiceListPackageRepoFiltersFunc describes the behavior when
+// the ListPackageRepoFilters method of the parent MockDependenciesService
+// instance is invoked.
+type DependenciesServiceListPackageRepoFiltersFunc struct {
+	defaultHook func(context.Context, dependencies.ListPackageRepoRefFiltersOpts) ([]shared.PackageRepoFilter, bool, error)
+	hooks       []func(context.Context, dependencies.ListPackageRepoRefFiltersOpts) ([]shared.PackageRepoFilter, bool, error)
+	history     []DependenciesServiceListPackageRepoFiltersFuncCall
+	mutex       sync.Mutex
+}
+
+// ListPackageRepoFilters delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockDependenciesService) ListPackageRepoFilters(v0 context.Context, v1 dependencies.ListPackageRepoRefFiltersOpts) ([]shared.PackageRepoFilter, bool, error) {
+	r0, r1, r2 := m.ListPackageRepoFiltersFunc.nextHook()(v0, v1)
+	m.ListPackageRepoFiltersFunc.appendCall(DependenciesServiceListPackageRepoFiltersFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// ListPackageRepoFilters method of the parent MockDependenciesService
+// instance is invoked and the hook queue is empty.
+func (f *DependenciesServiceListPackageRepoFiltersFunc) SetDefaultHook(hook func(context.Context, dependencies.ListPackageRepoRefFiltersOpts) ([]shared.PackageRepoFilter, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListPackageRepoFilters method of the parent MockDependenciesService
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *DependenciesServiceListPackageRepoFiltersFunc) PushHook(hook func(context.Context, dependencies.ListPackageRepoRefFiltersOpts) ([]shared.PackageRepoFilter, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DependenciesServiceListPackageRepoFiltersFunc) SetDefaultReturn(r0 []shared.PackageRepoFilter, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, dependencies.ListPackageRepoRefFiltersOpts) ([]shared.PackageRepoFilter, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DependenciesServiceListPackageRepoFiltersFunc) PushReturn(r0 []shared.PackageRepoFilter, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, dependencies.ListPackageRepoRefFiltersOpts) ([]shared.PackageRepoFilter, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *DependenciesServiceListPackageRepoFiltersFunc) nextHook() func(context.Context, dependencies.ListPackageRepoRefFiltersOpts) ([]shared.PackageRepoFilter, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DependenciesServiceListPackageRepoFiltersFunc) appendCall(r0 DependenciesServiceListPackageRepoFiltersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// DependenciesServiceListPackageRepoFiltersFuncCall objects describing the
+// invocations of this function.
+func (f *DependenciesServiceListPackageRepoFiltersFunc) History() []DependenciesServiceListPackageRepoFiltersFuncCall {
+	f.mutex.Lock()
+	history := make([]DependenciesServiceListPackageRepoFiltersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DependenciesServiceListPackageRepoFiltersFuncCall is an object that
+// describes an invocation of method ListPackageRepoFilters on an instance
+// of MockDependenciesService.
+type DependenciesServiceListPackageRepoFiltersFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 dependencies.ListPackageRepoRefFiltersOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.PackageRepoFilter
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DependenciesServiceListPackageRepoFiltersFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DependenciesServiceListPackageRepoFiltersFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 

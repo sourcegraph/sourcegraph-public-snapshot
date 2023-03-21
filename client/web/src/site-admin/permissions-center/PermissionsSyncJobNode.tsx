@@ -1,9 +1,10 @@
 import React, { useCallback, useState } from 'react'
 
-import { mdiAccount, mdiChevronDown } from '@mdi/js'
+import { mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import {
     Badge,
     BADGE_VARIANTS,
@@ -98,11 +99,20 @@ export const JOB_STATE_METADATA_MAPPING: Record<PermissionsSyncJobState, JobStat
     },
 }
 
-export const PermissionsSyncJobStatusBadge: React.FunctionComponent<{ state: PermissionsSyncJobState }> = ({
+interface PermissionsSyncJobStatusBadgeProps {
+    state: PermissionsSyncJobState
+    cancellationReason: string | null
+    failureMessage: string | null
+}
+
+export const PermissionsSyncJobStatusBadge: React.FunctionComponent<PermissionsSyncJobStatusBadgeProps> = ({
     state,
+    cancellationReason,
+    failureMessage,
 }) => (
     <Badge
         className={classNames(styles.statusContainer, 'mr-1')}
+        tooltip={cancellationReason ?? failureMessage ?? undefined}
         variant={JOB_STATE_METADATA_MAPPING[state].badgeVariant}
     >
         {state}
@@ -153,7 +163,7 @@ export const PermissionsSyncJobSubject: React.FunctionComponent<{ job: Permissio
                     </>
                 ) : (
                     <>
-                        <Icon className="mr-2" aria-hidden={true} svgPath={mdiAccount} />
+                        <UserAvatar className={classNames(styles.userAvatar, 'mr-2')} user={job.subject} />
                         <Link to={`/users/${job.subject.username}`} className="text-truncate">
                             {job.subject.username}
                         </Link>
@@ -217,11 +227,11 @@ export const PermissionsSyncJobNumbers: React.FunctionComponent<{ job: Permissio
     added,
 }) =>
     added ? (
-        <div className="text-success text-right mr-2">
+        <div className="text-success text-right">
             +<b>{job.permissionsAdded}</b>
         </div>
     ) : (
-        <div className="text-danger text-right mr-2">
+        <div className="text-danger text-right">
             -<b>{job.permissionsRemoved}</b>
         </div>
     )

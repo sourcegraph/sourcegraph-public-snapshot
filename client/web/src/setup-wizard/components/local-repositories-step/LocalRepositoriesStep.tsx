@@ -83,7 +83,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
         if (localService) {
             // We do have local service already so run update mutation
             updateLocalCodeHost({
-                refetchQueries: ['GetLocalCodeHosts', 'RepositoryStats', 'StatusMessages'],
+                refetchQueries: ['GetLocalCodeHosts', 'StatusAndRepoStats'],
                 variables: {
                     input: {
                         id: localService.id,
@@ -95,7 +95,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
         } else {
             // We don't have any local external service yet, so call create mutation
             addLocalCodeHost({
-                refetchQueries: ['GetLocalCodeHosts', 'RepositoryStats', 'StatusMessages'],
+                refetchQueries: ['GetLocalCodeHosts', 'StatusAndRepoStats'],
                 variables: {
                     input: {
                         displayName: 'Local repositories service',
@@ -223,7 +223,7 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
                 <ul className={styles.list}>
                     {foundRepositories.map(codeHost => (
                         <li key={codeHost.path} className={classNames('d-flex')}>
-                            <Icon svgPath={mdiGit} aria-hidden={true} className="mt-1 mr-3" />
+                            <Icon svgPath={mdiGit} size="md" aria-hidden={true} className="mt-1 mr-3" />
                             <div className="d-flex flex-column">
                                 <Text weight="medium" className="mb-0">
                                     {codeHost.name}
