@@ -294,7 +294,7 @@ func applyAttributeChange(attributes scim.ResourceAttributes, attrName string, v
 	return true
 }
 
-// applyMapChanges applies changes to an existing attribute which is a map (for example, name).
+// applyMapChanges applies changes to an existing attribute which is a map.
 func applyMapChanges(m map[string]interface{}, items map[string]interface{}) (changed bool) {
 	for attr, value := range items {
 		if value == nil {
@@ -358,6 +358,12 @@ func standardMultiValueReplaceNotFoundStrategy(
 	return nil, scimerrors.ScimErrorNoTarget
 }
 
+// azureMultiValueReplaceNotFoundStrategy is a multiValueReplaceNotFoundStrategy that is used when the
+// IdP is Azure AD. It is used to handle the case where a filter is used to replace a value in a
+// multi-valued attribute that does not exist. According to the standard, this should return a 400
+// error. However, Azure AD does not follow the standard and instead returns a 200 with the
+// attribute value set to the value that was passed in. This function is used to replicate that
+// behavior.
 func azureMultiValueReplaceNotFoundStrategy(multiValueAttribute []interface{},
 	propertyToSet string,
 	value interface{},
@@ -378,6 +384,8 @@ func azureMultiValueReplaceNotFoundStrategy(multiValueAttribute []interface{},
 	}
 }
 
+// getMultiValueReplaceNotFoundStrategy returns the multiValueReplaceNotFoundStrategy that matches
+// the provided IdentityProvider.
 func getMultiValueReplaceNotFoundStrategy(provider IdentityProvider) multiValueReplaceNotFoundStrategy {
 	switch provider {
 	case IDPAzureAd:
