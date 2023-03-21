@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+### requires macOS and the code-signing cert in Keychain Access.
+
 # This is the Common Name of the code signing certificate.
 # The certificate needs to be exported from XCode
 # Or saved from developer.apple.com
