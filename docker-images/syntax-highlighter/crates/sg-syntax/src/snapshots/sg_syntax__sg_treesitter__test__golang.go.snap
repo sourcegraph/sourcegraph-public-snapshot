@@ -1,6 +1,6 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
-assertion_line: 367
+assertion_line: 375
 expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 ---
   package main
@@ -259,9 +259,6 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //         ^^^^^^ IdentifierType
   }
   
-  // 🚨 SECURITY: something something
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
-  
   type Drivable interface {
 //^^^^ Keyword
 //     ^^^^^^^^ IdentifierType
@@ -358,4 +355,13 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                              ^^^ StringLiteral
 //                                    ^^^^^^ Comment
   }
+  
+  // 🚨 SECURITY: something something
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  // 🤦🏼‍♂️ Multipoint emoji
+//^^^^^^^^^^^^^^^^^^^^^^ Comment
+  
+  func justchecking() {}
+//^^^^ Keyword
+//     ^^^^^^^^^^^^ IdentifierFunction
 

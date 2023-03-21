@@ -77,8 +77,6 @@ type Vehicle struct {
 	Owner  *Person
 }
 
-// 🚨 SECURITY: something something
-
 type Drivable interface {
 	Wheels() int
 }
@@ -103,3 +101,8 @@ func generics() {
 	fmt.Println(Min[int](5, 10))       // 5
 	fmt.Println(Min[string]("a", "b")) // "a"
 }
+
+// 🚨 SECURITY: something something
+// 🤦🏼‍♂️ Multipoint emoji
+
+func justchecking() {}
