@@ -3,9 +3,9 @@
 }
 
 .logout-button {
-    justify-content: center;
     width: 100%;
-    padding: 5px;
+    justify-content: center;
+    padding: 0.5rem 1rem;
     margin-bottom: 1rem;
     padding: 0.5rem 0rem;
     font-weight: bold;

@@ -144,7 +144,8 @@ const ContextFiles: React.FunctionComponent<{ contextFiles: string[] }> = ({ con
     if (contextFiles.length === 1) {
         return (
             <p>
-                Cody read <code className="context-file">{contextFiles[0]}</code> file to provide an answer.
+                Cody read <code className="context-file">{contextFiles[0].split('/').pop()}</code> file to provide an
+                answer.
             </p>
         )
     }
@@ -178,8 +179,8 @@ const ContextFiles: React.FunctionComponent<{ contextFiles: string[] }> = ({ con
             </span>
             <div className="context-files-collapsed-text">
                 <span>
-                    Cody read <code className="context-file">{contextFiles[0]}</code> and {contextFiles.length - 1}{' '}
-                    other {contextFiles.length > 2 ? 'files' : 'file'} to provide an answer.
+                    Cody read <code className="context-file">{contextFiles[0].split('/').pop()}</code> and{' '}
+                    {contextFiles.length - 1} other {contextFiles.length > 2 ? 'files' : 'file'} to provide an answer.
                 </span>
             </div>
         </p>

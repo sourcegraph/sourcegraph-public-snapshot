@@ -11,6 +11,7 @@
     background-color: var(--vscode-editorGroupHeader-tabsBackground);
     margin-bottom: 0.5rem;
     padding: 0.5rem;
+    font-weight: bold;
 }
 
 .terms-container {
@@ -31,8 +32,12 @@
 }
 
 .accept-button {
-    color: var(--vscode-tab-activeForeground);
-    font-weight: bold;
-    padding: 1rem;
+    padding: 0.5rem 1rem;
     justify-content: center;
+}
+
+.reset-button {
+    width: calc(var(--vscode-font-size) * 2);
+    height: calc(var(--vscode-font-size) * 2);
+    fill: var(--vscode-icon-foreground);
 }

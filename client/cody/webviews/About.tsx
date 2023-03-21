@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
+import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
 import './About.css'
 
@@ -41,7 +41,7 @@ export const Terms: React.FunctionComponent<React.PropsWithChildren<TermsProps>>
             </p>
             <p>
                 Acceptable use: You must follow the acceptable use policies of the following LLM providers:{' '}
-                <VSCodeLink href="https://www.anthropic.com/aup">Anthropic Acceptable Use Policy</VSCodeLink>
+                <a href="https://www.anthropic.com/aup">Anthropic Acceptable Use Policy</a>
             </p>
         </div>
 
@@ -63,9 +63,12 @@ export const Terms: React.FunctionComponent<React.PropsWithChildren<TermsProps>>
                 A: No, Sourcegraph has obtained commitments from our LLM providers that no Cody requests will be used to
                 train LLM models.
             </p>
-            <VSCodeLink className="cta" href="https://docs.sourcegraph.com/cody">
-                Learn more about Cody security standards and data retention.
-            </VSCodeLink>
+            <p>
+                <a className="cta" href="https://docs.sourcegraph.com/cody">
+                    Learn more about Cody security standards and data retention
+                </a>
+                .
+            </p>
         </div>
         {setTermsAccepted && (
             <VSCodeButton className="accept-button" type="button" onClick={() => setTermsAccepted(true)}>

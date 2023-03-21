@@ -21,7 +21,6 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
             <div className="non-transcript-container">
                 {termsAccepted ? (
                     <div className="container-getting-started">
-                        <h1>Login</h1>
                         <p>Access Token</p>
                         <VSCodeTextField
                             value={token}

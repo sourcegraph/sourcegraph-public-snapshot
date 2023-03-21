@@ -1,6 +1,18 @@
 .login-button {
     width: 100%;
-    margin-top: 32px;
-    padding: 4px 0;
+    margin-top: 2.5rem;
     justify-content: center;
+}
+
+.container-getting-started {
+    padding: 1rem;
+    padding-top: 0px;
+}
+
+.container-getting-started ul {
+    padding-inline-start: 1rem;
+}
+
+.container-getting-started li {
+    line-height: 1.5rem;
 }

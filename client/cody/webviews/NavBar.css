@@ -1,22 +1,29 @@
 .tab-menu-container {
-	width: 100%;
-	flex-direction: row;
-	display: flex;
-	margin: 0;
-	padding: 4px 0;
-	border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border);
-	background-color: var(--vscode-tab-inactiveBackground);
-	justify-content: space-around;
+    width: 100%;
+    flex-direction: row;
+    display: flex;
+    margin: 0;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border);
+    background-color: var(--vscode-tab-inactiveBackground);
+    justify-content: space-between;
 }
 
 .tab-menu-item {
-	cursor: pointer;
-	user-select: none;
-	background-color: var(--vscode-tab-inactiveBackground);
-	color: var(--vscode-tab-inactiveForeground);
+    cursor: pointer;
+    user-select: none;
+    background-color: var(--vscode-tab-inactiveBackground);
+    color: var(--vscode-tab-inactiveForeground);
 }
 
 .tab-menu-item-selected {
-	color: var(--vscode-tab-activeForeground);
-	font-weight: bold;
+    color: var(--vscode-tab-activeForeground);
+    font-weight: bold;
+}
+
+.tab-menu-group {
+    display: flex;
+    gap: 2rem;
+    flex-direction: row;
+    padding: 0px 1rem;
 }

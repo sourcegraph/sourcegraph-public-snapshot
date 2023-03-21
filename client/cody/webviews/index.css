@@ -34,7 +34,7 @@ body {
 
 a {
     font-weight: 500;
-    color: var(--vscode-textCodeBlock-background);
+    color: var(--vscode-textLink-foreground);
     text-decoration: inherit;
 }
 
