@@ -58,6 +58,11 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 		}{
 			ExternalAccount: graphql.ID(base64.URLEncoding.EncodeToString([]byte("ExternalAccount:1"))),
 		}
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
+			if req.Reason != database.ReasonExternalAccountDeleted {
+				t.Errorf("got reason %s, want %s", req.Reason, database.ReasonExternalAccountDeleted)
+			}
+		}
 		_, err = sr.DeleteExternalAccount(ctx, &graphqlArgs)
 		require.NoError(t, err)
 
@@ -182,6 +187,9 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
 				if req.UserIDs[0] != tc.user.ID {
 					t.Errorf("got userID %d, want %d", req.UserIDs[0], tc.user.ID)
+				}
+				if req.Reason != database.ReasonExternalAccountAdded {
+					t.Errorf("got reason %s, want %s", req.Reason, database.ReasonExternalAccountAdded)
 				}
 			}
 
