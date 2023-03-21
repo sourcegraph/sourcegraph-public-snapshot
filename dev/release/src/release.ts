@@ -405,12 +405,15 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 // create backport label for major / minor versions
                 const params = {
                     owner: 'sourcegraph',
-                    repo: 'sourcegraph'
+                    repo: 'sourcegraph',
                 }
                 const labelName = `backport ${release.version.major}.${release.version.minor}`
-                const labelExists = await client.issues.getLabel({name: labelName, ...params}).then(resp => resp.status === 200).catch(() => false)
+                const labelExists = await client.issues
+                    .getLabel({ name: labelName, ...params })
+                    .then(resp => resp.status === 200)
+                    .catch(() => false)
                 if (!labelExists) {
-                    console.log(await client.issues.createLabel({name: labelName, color: 'e69138', ...params}))
+                    console.log(await client.issues.createLabel({ name: labelName, color: 'e69138', ...params }))
                     console.log(`Label ${labelName} created`)
                 } else {
                     console.log(`label ${labelName} already exists`)
