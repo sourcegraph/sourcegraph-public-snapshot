@@ -267,7 +267,6 @@ require (
 	github.com/sourcegraph/conc v0.2.0
 	github.com/sourcegraph/mountinfo v0.0.0-20230106004439-7026e28cef67
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-20230124144931-b2d81b1accb6
-	github.com/sourcegraph/zoekt v0.0.0-20230308131753-939eb52f3486
 	github.com/wk8/go-ordered-map/v2 v2.1.5
 	github.com/xanzy/go-gitlab v0.80.0
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20220924101305-151362477c87
@@ -293,7 +292,10 @@ replace (
 
 )
 
-require github.com/stretchr/objx v0.5.0 // indirect
+require (
+	github.com/sourcegraph/zoekt v0.0.0-20230315153951-06c1bce6400a
+	github.com/stretchr/objx v0.5.0 // indirect
+)
 
 require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
