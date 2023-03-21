@@ -1,8 +1,9 @@
 import { CodebaseContext } from '../../codebase-context'
-import { ContextMessage } from '../../codebase-context/messages'
+import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
 import { Editor } from '../../editor'
 import { IntentDetector } from '../../intent-detector'
-import { MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
+import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
+import { populateCodeContextTemplate } from '../../prompt/templates'
 import { truncateText } from '../../prompt/truncation'
 import { getShortTimestamp } from '../../timestamp'
 import { renderMarkdown } from '../markdown'
@@ -17,7 +18,7 @@ export class ChatQuestion implements Recipe {
 
     public async getInteraction(
         humanChatInput: string,
-        _editor: Editor,
+        editor: Editor,
         intentDetector: IntentDetector,
         codebaseContext: CodebaseContext
     ): Promise<Interaction | null> {
@@ -25,23 +26,42 @@ export class ChatQuestion implements Recipe {
         const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)
         const displayText = renderMarkdown(humanChatInput)
 
-        // TODO: Include current file as context.
         return new Interaction(
             { speaker: 'human', text: truncatedText, displayText, timestamp },
             { speaker: 'assistant', text: '', displayText: '', timestamp },
-            this.getContextMessages(truncatedText, intentDetector, codebaseContext)
+            this.getContextMessages(truncatedText, editor, intentDetector, codebaseContext)
         )
     }
 
     private async getContextMessages(
         text: string,
+        editor: Editor,
         intentDetector: IntentDetector,
         codebaseContext: CodebaseContext
     ): Promise<ContextMessage[]> {
+        const contextMessages = this.getEditorContext(editor)
+
         const isCodebaseContextRequired = await intentDetector.isCodebaseContextRequired(text)
-        if (!isCodebaseContextRequired) {
+        if (isCodebaseContextRequired) {
+            const codebaseContextMessages = await codebaseContext.getContextMessages(text, {
+                numCodeResults: 8,
+                numTextResults: 2,
+            })
+            contextMessages.push(...codebaseContextMessages)
+        }
+
+        return contextMessages
+    }
+
+    private getEditorContext(editor: Editor): ContextMessage[] {
+        const visibleContent = editor.getActiveTextEditorVisibleContent()
+        if (!visibleContent) {
             return []
         }
-        return codebaseContext.getContextMessages(text, { numCodeResults: 8, numTextResults: 2 })
+        const truncatedContent = truncateText(visibleContent.content, MAX_CURRENT_FILE_TOKENS)
+        return getContextMessageWithResponse(
+            populateCodeContextTemplate(truncatedContent, visibleContent.fileName),
+            visibleContent.fileName
+        )
     }
 }

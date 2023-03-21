@@ -1,4 +1,4 @@
-import { ActiveTextEditor, ActiveTextEditorSelection, Editor } from '../../editor'
+import { ActiveTextEditor, ActiveTextEditorSelection, ActiveTextEditorVisibleContent, Editor } from '../../editor'
 import { EmbeddingsSearch } from '../../embeddings'
 import { IntentDetector } from '../../intent-detector'
 import { KeywordContextFetcher, KeywordContextFetcherResult } from '../../keyword-context'
@@ -44,6 +44,10 @@ export class MockEditor implements Editor {
 
     getActiveTextEditor(): ActiveTextEditor | null {
         return this.mocks.getActiveTextEditor?.() ?? null
+    }
+
+    getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
+        return this.mocks.getActiveTextEditorVisibleContent?.() ?? null
     }
 
     showQuickPick(labels: string[]): Promise<string | undefined> {

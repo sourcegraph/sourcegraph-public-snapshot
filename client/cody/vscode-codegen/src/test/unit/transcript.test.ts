@@ -10,6 +10,7 @@ import {
     defaultEmbeddingsClient,
     defaultIntentDetector,
     defaultKeywordContextFetcher,
+    MockEditor,
     MockEmbeddingsClient,
     MockIntentDetector,
 } from './mocks'
@@ -141,5 +142,49 @@ describe('Transcript', () => {
 
         const prompt = await transcript.toPrompt()
         assert.deepStrictEqual(prompt.length, numExpectedMessages)
+    })
+
+    it('includes currently visible content from the editor', async () => {
+        const editor = new MockEditor({
+            getActiveTextEditorVisibleContent: () => ({ fileName: 'internal/lib.go', content: 'package lib' }),
+        })
+        const embeddings = new MockEmbeddingsClient({
+            search: async () => ({
+                codeResults: [{ fileName: 'src/main.go', startLine: 0, endLine: 1, content: 'package main' }],
+                textResults: [{ fileName: 'docs/README.md', startLine: 0, endLine: 1, content: '# Main' }],
+            }),
+        })
+        const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => true })
+        const codebaseContext = new CodebaseContext('embeddings', embeddings, defaultKeywordContextFetcher)
+
+        const chatQuestionRecipe = new ChatQuestion()
+        const transcript = new Transcript()
+
+        const interaction = await chatQuestionRecipe.getInteraction(
+            'how do access tokens work in sourcegraph',
+            editor,
+            intentDetector,
+            codebaseContext
+        )
+        transcript.addInteraction(interaction)
+
+        const prompt = await transcript.toPrompt()
+        const expectedPrompt = [
+            {
+                speaker: 'human',
+                text: 'Use following code snippet from file `internal/lib.go`:\n```go\npackage lib\n```',
+            },
+            { speaker: 'assistant', text: 'Ok.' },
+            { speaker: 'human', text: 'Use the following text from file `docs/README.md`:\n# Main' },
+            { speaker: 'assistant', text: 'Ok.' },
+            {
+                speaker: 'human',
+                text: 'Use following code snippet from file `src/main.go`:\n```go\npackage main\n```',
+            },
+            { speaker: 'assistant', text: 'Ok.' },
+            { speaker: 'human', text: 'how do access tokens work in sourcegraph' },
+            { speaker: 'assistant', text: '' },
+        ]
+        assert.deepStrictEqual(prompt, expectedPrompt)
     })
 })
