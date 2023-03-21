@@ -173,10 +173,10 @@ func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *sc
 		case []interface{}: // this value has multiple items → append or replace
 			if op.Op == "add" {
 				userRes.Attributes[attrName] = append(old.([]interface{}), v...)
+				ensureSinglePrimaryItem(v, userRes.Attributes, attrName)
 			} else { // replace
 				userRes.Attributes[attrName] = v
 			}
-			ensureSinglePrimaryItem(v, userRes.Attributes, attrName)
 			changed = true
 		default: // this value has a single item
 			var newlyChanged bool
