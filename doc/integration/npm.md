@@ -7,7 +7,7 @@ Feature | Supported?
 ------- | ----------
 [Repository syncing](#repository-syncing) | ✅
 [Repository permissions](#repository-syncing) | ❌
-[Multiple npm dependencies code hosts](#multiple-npm-dependency-code-hosts) | ❌
+[Multiple npm dependencies code hosts](#multiple-npm-dependencies-code-hosts) | ❌
 
 ## Setup
 
