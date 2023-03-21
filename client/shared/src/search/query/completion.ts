@@ -265,7 +265,7 @@ export async function getCompletionItems(
             tokenAtPosition,
             async (token, type) =>
                 (await fetchDynamicSuggestions(token, type)).flatMap(suggestion =>
-                    suggestionToCompletionItems(suggestion, {})
+                    suggestionToCompletionItems(suggestion)
                 ),
             disablePatternSuggestions
         )
@@ -289,9 +289,7 @@ export async function getCompletionItems(
                 async (token, type) =>
                     (
                         await fetchDynamicSuggestions(token, type)
-                    ).flatMap(suggestion =>
-                        suggestionToCompletionItems(suggestion, { filterValue: token.value?.value })
-                    ),
+                    ).flatMap(suggestion => suggestionToCompletionItems(suggestion)),
                 column,
                 isSourcegraphDotCom
             )
