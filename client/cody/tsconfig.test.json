@@ -1,6 +1,5 @@
 {
-  "extends": "../../../tsconfig.base.json",
-  "references": [{ "path": "../common" }],
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "types": ["mocha", "node"],
     "module": "commonjs",

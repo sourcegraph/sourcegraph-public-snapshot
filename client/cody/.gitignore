@@ -1,4 +1,4 @@
 node_modules/
-tsconfig.tsbuildinfo
-.vsix
-.envrc
+out/
+.vscode-test/
+dist/
