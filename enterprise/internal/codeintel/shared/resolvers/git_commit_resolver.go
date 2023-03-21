@@ -31,7 +31,10 @@ func NewGitCommitResolver(repo *RepositoryResolver, id api.CommitID) *GitCommitR
 }
 
 func (r *GitCommitResolver) ID() graphql.ID {
-	return marshalGitCommitID(r.repoResolver.ID(), r.oid)
+	return resolverstubs.MarshalID("GitCommit", struct {
+		Repository graphql.ID  `json:"r"`
+		CommitID   GitObjectID `json:"c"`
+	}{Repository: r.repoResolver.ID(), CommitID: r.oid})
 }
 
 func (r *GitCommitResolver) Repository() resolverstubs.RepositoryResolver { return r.repoResolver }

@@ -98,8 +98,10 @@ The changeset webhook event payload mirrors the [GraphQL API](../../../api/graph
   "title": "Hello World",
   // The body of the changese (as Markdown).
   "body": "My first batch change!",
-  // The author of the changeset. Note that this is only available after the changeset has been published.
+  // The username of the author of the changeset. Note that this is only available after the changeset has been published and is not available on some code hosts.
   "author_name": "my-username",
+  // The email of the author of the changeset. Note that this is only available after the changeset has been published and is not available on most code hosts.
+  "author_email": "me@myorganization.com",
   // The state of the changeset on Sourcegraph.
   "state": "OPEN",
   // Any labels attached to the changeset on the code host.

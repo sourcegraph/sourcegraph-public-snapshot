@@ -940,6 +940,7 @@ Foreign-key constraints:
  repository_id | integer |           | not null | 
 Indexes:
     "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_path_counts_inputs_graph_key_id" btree (graph_key, id)
     "codeintel_ranking_path_counts_inputs_graph_key_repository_id_id" btree (graph_key, repository_id, id) WHERE NOT processed
 
 ```

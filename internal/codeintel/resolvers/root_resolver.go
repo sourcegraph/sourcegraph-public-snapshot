@@ -3,9 +3,9 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
 )
 
 type RootResolver interface {
@@ -48,12 +48,12 @@ type (
 func (r *Resolver) NodeResolvers() map[string]NodeByIDFunc {
 	return map[string]NodeByIDFunc{
 		"LSIFUpload": func(ctx context.Context, id graphql.ID) (Node, error) {
-			uploadID, err := UnmarshalLSIFUploadGQLID(id)
+			uploadID, err := unmarshalLegacyUploadID(id)
 			if err != nil {
 				return nil, err
 			}
 
-			return r.autoIndexingRootResolver.PreciseIndexByID(ctx, relay.MarshalID("PreciseIndex", fmt.Sprintf("U:%d", uploadID)))
+			return r.autoIndexingRootResolver.PreciseIndexByID(ctx, MarshalID("PreciseIndex", fmt.Sprintf("U:%d", uploadID)))
 		},
 		"CodeIntelligenceConfigurationPolicy": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.policiesRootResolver.ConfigurationPolicyByID(ctx, id)
@@ -68,6 +68,21 @@ func (r *Resolver) NodeResolvers() map[string]NodeByIDFunc {
 			return r.sentinelRootResolver.VulnerabilityMatchByID(ctx, id)
 		},
 	}
+}
+
+func unmarshalLegacyUploadID(id graphql.ID) (int64, error) {
+	// New: supplied as int
+	if uploadID, err := UnmarshalID[int64](id); err == nil {
+		return uploadID, nil
+	}
+
+	// Old: supplied as quoted string
+	rawID, err := UnmarshalID[string](id)
+	if err != nil {
+		return 0, err
+	}
+
+	return strconv.ParseInt(rawID, 10, 64)
 }
 
 func (r *Resolver) Vulnerabilities(ctx context.Context, args GetVulnerabilitiesArgs) (_ VulnerabilityConnectionResolver, err error) {

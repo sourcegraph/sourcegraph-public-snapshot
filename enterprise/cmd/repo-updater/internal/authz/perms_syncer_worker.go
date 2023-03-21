@@ -97,6 +97,25 @@ func (h *permsSyncerWorker) handlePermsSync(ctx context.Context, reqType request
 		return errors.Newf("unexpected request type: %q", reqType)
 	}
 
+	// Adding an extra check in case of all providers errored out, but sync has been
+	// completed successfully. This can happen e.g. if we only got HTTP401 responses.
+	//
+	// Initializing `allProvidersFailedToSync` to `false` in case of receiving 0
+	// states and `true` otherwise. We will clear this flag as soon as we come across
+	// one non-errored state.
+	if err == nil {
+		allProvidersFailedToSync := len(providerStates) > 0
+		for _, state := range providerStates {
+			if state.Status != "ERROR" {
+				allProvidersFailedToSync = false
+				break
+			}
+		}
+		if allProvidersFailedToSync {
+			err = errors.New("All providers failed to sync permissions.")
+		}
+	}
+
 	if err != nil {
 		h.logger.Error("failed to sync permissions", providerStates.SummaryField(), log.Error(err))
 	} else {

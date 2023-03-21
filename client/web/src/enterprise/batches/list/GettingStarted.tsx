@@ -2,7 +2,7 @@ import React from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 
-import { Alert, Container, H2, H3, Link, Text, Icon, useMatchMedia } from '@sourcegraph/wildcard'
+import { Alert, Container, H2, H3, Link, Text, Icon, useReducedMotion } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { CallToActionBanner } from '../../../components/CallToActionBanner'
@@ -24,7 +24,7 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
     canCreate,
     className,
 }) => {
-    const allowAutoplay = useMatchMedia('(prefers-reduced-motion: no-preference)')
+    const allowAutoplay = !useReducedMotion()
 
     return (
         <div className={className} data-testid="test-getting-started">

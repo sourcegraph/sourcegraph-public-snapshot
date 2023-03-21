@@ -12,14 +12,90 @@ const bazelRemoteCacheURL = "https://storage.googleapis.com/sourcegraph_bazel_ca
 
 func BazelOperations(optional bool) *operations.Set {
 	ops := operations.NewNamedSet("Bazel")
+	ops.Append(bazelConfigure(optional))
 	ops.Append(bazelBuildAndTest(optional, "//..."))
 	return ops
+}
+
+// BazelIncrementalMainOperations is a set of operations that only run on the main
+// branch and whose purpose is to gradually introduce invariants as we progress through
+// the migration.
+func BazelIncrementalMainOperations() *operations.Set {
+	optional := true
+
+	ops := operations.NewNamedSet("Bazel (optional)")
+	ops.Append(bazelAnalysisPhase(optional))
+
+	return ops
+}
+
+// bazelAnalysisPhase only runs the analasys phase, ensure that the buildfiles
+// are correct, but do not actually build anything.
+func bazelAnalysisPhase(optional bool) func(*bk.Pipeline) {
+	// We run :gazelle since 'configure' causes issues on CI, where it doesn't have the go path available
+	cmd := []string{
+		"bazel",
+		"--bazelrc=.bazelrc",
+		"--bazelrc=.aspect/bazelrc/ci.bazelrc",
+		"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
+		"build",
+		"--nobuild", // this is the key flag to enable this.
+		"//...",
+	}
+
+	cmds := []bk.StepOpt{
+		bk.Key("bazel-analysis"),
+		bk.Env("CI_BAZEL_REMOTE_CACHE", bazelRemoteCacheURL),
+		bk.Agent("queue", "bazel"),
+		bk.RawCmd(strings.Join(cmd, " ")),
+	}
+
+	return func(pipeline *bk.Pipeline) {
+		if optional {
+			cmds = append(cmds, bk.SoftFail())
+		}
+
+		pipeline.AddStep(":bazel: Analysis phase",
+			cmds...,
+		)
+	}
+}
+func bazelConfigure(optional bool) func(*bk.Pipeline) {
+	// We run :gazelle since 'configure' causes issues on CI, where it doesn't have the go path available
+	configureCmd := []string{
+		"bazel",
+		"--bazelrc=.bazelrc",
+		"--bazelrc=.aspect/bazelrc/ci.bazelrc",
+		"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
+		"run :gazelle",
+	}
+
+	// if there are changes diff will exit with 1, and 0 otherwise
+	gitDiff := "git diff --exit-code"
+	cmds := []bk.StepOpt{
+		bk.Key("bazel-configure"),
+		bk.Env("CI_BAZEL_REMOTE_CACHE", bazelRemoteCacheURL),
+		bk.Agent("queue", "bazel"),
+		bk.RawCmd(strings.Join(configureCmd, " ")),
+		bk.RawCmd(gitDiff),
+	}
+
+	return func(pipeline *bk.Pipeline) {
+		if optional {
+			cmds = append(cmds, bk.SoftFail())
+		}
+
+		pipeline.AddStep(":bazel: Configure",
+			cmds...,
+		)
+	}
 }
 
 // bazelBuildAndTest will perform a build and test on the same agent, which is the preferred method
 // over running them in two separate jobs, so we don't build the same code twice.
 func bazelBuildAndTest(optional bool, targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
+		bk.DependsOn("bazel-configure"),
 		bk.Env("CI_BAZEL_REMOTE_CACHE", bazelRemoteCacheURL),
 		bk.Agent("queue", "bazel"),
 	}

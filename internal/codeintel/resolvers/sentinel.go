@@ -22,8 +22,8 @@ type SentinelServiceResolver interface {
 
 type (
 	GetVulnerabilitiesArgs               = PagedConnectionArgs
-	VulnerabilityConnectionResolver      = PagedConnectionResolverWithCount[VulnerabilityResolver]
-	VulnerabilityMatchConnectionResolver = PagedConnectionResolverWithCount[VulnerabilityMatchResolver]
+	VulnerabilityConnectionResolver      = PagedConnectionWithTotalCountResolver[VulnerabilityResolver]
+	VulnerabilityMatchConnectionResolver = PagedConnectionWithTotalCountResolver[VulnerabilityMatchResolver]
 )
 
 type GetVulnerabilityMatchesArgs struct {
