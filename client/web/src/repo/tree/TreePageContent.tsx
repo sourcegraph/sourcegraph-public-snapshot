@@ -379,7 +379,7 @@ const RepositoryContributorNode: React.FC<RepositoryContributorNodeProps> = ({
     path,
 }) => {
     const query: string = [
-        searchQueryForRepoRevision(repoName, false),
+        searchQueryForRepoRevision(repoName),
         'type:diff',
         `author:${quoteIfNeeded(node.person.email)}`,
         after ? `after:${quoteIfNeeded(after)}` : '',
