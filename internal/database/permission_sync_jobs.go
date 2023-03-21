@@ -162,7 +162,9 @@ func (r PermissionsSyncJobReason) ResolveGroup() PermissionsSyncJobReasonGroup {
 		ReasonUserEmailVerified,
 		ReasonUserAddedToOrg,
 		ReasonUserRemovedFromOrg,
-		ReasonUserAcceptedOrgInvite:
+		ReasonUserAcceptedOrgInvite,
+		ReasonExternalAccountAdded,
+		ReasonExternalAccountDeleted:
 		return PermissionsSyncJobReasonGroupSourcegraph
 	default:
 		return PermissionsSyncJobReasonGroupUnknown
@@ -180,11 +182,13 @@ const (
 
 	// ReasonUserEmailRemoved and below are reasons of permission syncs scheduled due
 	// to Sourcegraph internal events.
-	ReasonUserEmailRemoved      PermissionsSyncJobReason = "REASON_USER_EMAIL_REMOVED"
-	ReasonUserEmailVerified     PermissionsSyncJobReason = "REASON_USER_EMAIL_VERIFIED"
-	ReasonUserAddedToOrg        PermissionsSyncJobReason = "REASON_USER_ADDED_TO_ORG"
-	ReasonUserRemovedFromOrg    PermissionsSyncJobReason = "REASON_USER_REMOVED_FROM_ORG"
-	ReasonUserAcceptedOrgInvite PermissionsSyncJobReason = "REASON_USER_ACCEPTED_ORG_INVITE"
+	ReasonUserEmailRemoved       PermissionsSyncJobReason = "REASON_USER_EMAIL_REMOVED"
+	ReasonUserEmailVerified      PermissionsSyncJobReason = "REASON_USER_EMAIL_VERIFIED"
+	ReasonUserAddedToOrg         PermissionsSyncJobReason = "REASON_USER_ADDED_TO_ORG"
+	ReasonUserRemovedFromOrg     PermissionsSyncJobReason = "REASON_USER_REMOVED_FROM_ORG"
+	ReasonUserAcceptedOrgInvite  PermissionsSyncJobReason = "REASON_USER_ACCEPTED_ORG_INVITE"
+	ReasonExternalAccountAdded   PermissionsSyncJobReason = "REASON_EXTERNAL_ACCOUNT_ADDED"
+	ReasonExternalAccountDeleted PermissionsSyncJobReason = "REASON_EXTERNAL_ACCOUNT_DELETED"
 
 	// ReasonGitHubUserEvent and below are reasons of permission syncs triggered by
 	// webhook events.

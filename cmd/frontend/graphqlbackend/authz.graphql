@@ -553,7 +553,7 @@ type PermissionsSyncJobReasonWithGroup {
     """
     Reason with details about why/how the sync was triggered.
     """
-    reason: PermissionsSyncJobReason!
+    reason: PermissionsSyncJobReason
 }
 
 """
@@ -583,6 +583,8 @@ enum PermissionsSyncJobReason {
     REASON_GITHUB_REPO_MADE_PRIVATE_EVENT
     REASON_MANUAL_REPO_SYNC
     REASON_MANUAL_USER_SYNC
+    REASON_EXTERNAL_ACCOUNT_ADDED
+    REASON_EXTERNAL_ACCOUNT_DELETED
 }
 
 """
@@ -593,6 +595,7 @@ enum PermissionsSyncJobReasonGroup {
     WEBHOOK
     SCHEDULE
     SOURCEGRAPH
+    UNKNOWN
 }
 
 """
