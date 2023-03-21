@@ -407,6 +407,7 @@ func watchUpdate(ctx context.Context, logger log.Logger, update func(context.Con
 			metricConfigOverrideUpdates.WithLabelValues("success").Inc()
 		} else {
 			logger.Info("skipped updating configuration as it is already up to date")
+			metricConfigOverrideUpdates.WithLabelValues("skipped").Inc()
 		}
 	}
 }
