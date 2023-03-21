@@ -51,6 +51,10 @@ syntect = { git = "https://github.com/sourcegraph/syntect", branch = "main" }
 tree-sitter = "0.20.9"
 tree-sitter-highlight = "0.20"
 
+# Text utilities
+unicode-segmentation = "1.10.1"
+unicode-width = "0.1.10"
+
 scip = { git = "https://github.com/sourcegraph/scip", branch = "main" }
 protobuf = "3"
 

@@ -1,5 +1,6 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
+assertion_line: 367
 expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 ---
   package main
@@ -259,7 +260,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   }
   
   // 🚨 SECURITY: something something
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
   
   type Drivable interface {
 //^^^^ Keyword

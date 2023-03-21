@@ -157,29 +157,42 @@ impl OffsetManager {
     }
 
     fn line_and_col(&self, offset_byte: usize) -> (usize, usize) {
+        use unicode_segmentation::UnicodeSegmentation;
+        use unicode_width::UnicodeWidthStr;
+
         // let offset_char = self.source.bytes
         let mut line = 0;
         for window in self.offsets.windows(2) {
             let curr = window[0];
             let next = window[1];
             if next > offset_byte {
-                return (
-                    line,
-                    // Return the number of characters between the locations (which is the column)
-                    self.source[curr..offset_byte].chars().count(),
-                );
+                let graphemes = self.source[curr..offset_byte].graphemes(true);
+                let column = graphemes.into_iter().fold(0, |acc, g| match g {
+                    "\t" => 1 + acc,
+                    _ => g.width().min(2) + acc,
+                });
+
+                return (line, column);
             }
 
             line += 1;
         }
 
-        (
-            line,
-            // Return the number of characters between the locations (which is the column)
-            self.source[*self.offsets.last().unwrap()..offset_byte]
-                .chars()
-                .count(),
-        )
+        let graphemes = self.source[*self.offsets.last().unwrap()..offset_byte].graphemes(true);
+        let column = graphemes.into_iter().fold(0, |acc, g| match g {
+            "\t" => 1 + acc,
+            _ => g.width().min(2) + acc,
+        });
+
+        (line, column)
+
+        // (
+        //     line,
+        //     // Return the number of characters between the locations (which is the column)
+        //     self.source[*self.offsets.last().unwrap()..offset_byte]
+        //         .chars()
+        //         .count(),
+        // )
     }
 
     // range takes in start and end offsets and returns start/end line/column.
@@ -432,6 +445,48 @@ SELECT * FROM my_table
                 format!("{} tests failed", failed_tests.len()),
             ));
         }
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_width_of_unicodes() -> Result<()> {
+        use unicode_segmentation::UnicodeSegmentation;
+        use unicode_width::UnicodeWidthStr;
+
+        // 🚨 => double-wide emoji, single grapheme
+        let s = "//🚨";
+        let graphemes = UnicodeSegmentation::graphemes(s, true).collect::<Vec<&str>>();
+        let widths = graphemes.iter().map(|s| s.width()).collect::<Vec<usize>>();
+
+        assert_eq!(s.graphemes(true).count(), 3);
+        assert_eq!(graphemes, vec!["/", "/", "🚨",]);
+        assert_eq!(widths, vec![1, 1, 2]);
+
+        // This part is goofy, but it's to show that we can't use `.len()` :)
+        assert_eq!(s.len(), 6);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_width_zerowidth_unicodes() -> Result<()> {
+        use unicode_segmentation::UnicodeSegmentation;
+        use unicode_width::UnicodeWidthStr;
+
+        // Depending on your editor, renderer, etc. this may show up as one emoji
+        // or may show all the weird goofy extra stuff as well.
+        // 🤦🏼‍♂️ => 🤦🏼\u{200d}♂\u{fe0f} => Man Facepalming: Medium-Light Skin Tone
+        let s = "🤦🏼‍♂️";
+        let graphemes = UnicodeSegmentation::graphemes(s, true).collect::<Vec<&str>>();
+        let widths = graphemes.iter().map(|s| s.width()).collect::<Vec<usize>>();
+
+        assert_eq!(s.graphemes(true).count(), 1);
+        assert_eq!(graphemes, vec!["🤦🏼\u{200d}♂\u{fe0f}"]);
+
+        // Unforunately... this is not great.
+        // I don't know how to fix this yet.
+        assert_eq!(widths, vec![5]);
 
         Ok(())
     }

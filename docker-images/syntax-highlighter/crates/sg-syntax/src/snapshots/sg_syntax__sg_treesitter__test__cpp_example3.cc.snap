@@ -1,6 +1,6 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
-assertion_line: 362
+assertion_line: 370
 expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 ---
   #include <iostream>
@@ -303,8 +303,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //    ^^^ IdentifierNamespace
 //         ^^^^^^ IdentifierType
 //                ^^ Identifier
-//                     ^^^^^^^^^^ StringLiteral
-//                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+//                     ^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
   
       char c1 = 'A';          // single-byte character
 //    ^^^^ IdentifierBuiltinType
@@ -314,8 +314,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
       char c2 = u8'あ';       // multi-byte character encoded in UTF-8
 //    ^^^^ IdentifierBuiltinType
 //         ^^ Identifier
-//              ^^^^^ CharacterLiteral
-//                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+//              ^^^^^^ CharacterLiteral
+//                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
   
   
       std::cout << s1 << std::endl;

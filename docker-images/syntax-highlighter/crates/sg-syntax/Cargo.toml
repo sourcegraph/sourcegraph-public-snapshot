@@ -18,6 +18,8 @@ scip.workspace = true
 protobuf.workspace = true
 tree-sitter.workspace = true
 tree-sitter-highlight.workspace = true
+unicode-segmentation.workspace = true
+unicode-width.workspace = true
 
 base64 = "0.13.0"
 libloading = "0.7"
