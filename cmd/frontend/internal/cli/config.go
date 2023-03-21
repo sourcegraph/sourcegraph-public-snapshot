@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/google/go-cmp/cmp"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
@@ -125,7 +126,14 @@ func overrideSiteConfig(ctx context.Context, logger log.Logger, db database.DB) 
 		if err != nil {
 			return errors.Wrap(err, "reading SITE_CONFIG_FILE")
 		}
-		raw.Site = string(site)
+
+		newRawSite := string(site)
+		if diff := cmp.Diff(raw.Site, newRawSite); diff == "" {
+			logger.Info("Site config in critical_and_site_config table is already up to date, skipping writing a new entry")
+			return nil
+		}
+
+		raw.Site = newRawSite
 
 		// NOTE: authorUserID is effectively 0 because this code is on the start-up path and we will
 		// never have a non nil actor available here to determine the user ID. This is consistent
