@@ -200,7 +200,7 @@ Sourcegraph aggregates usage and performance metrics for some product features i
 
 ## Sourcegraph app telemetry
 
-We collect extremely limited telemetry from the Sourcegraph app: 
+We collect extremely limited telemetry from the Sourcegraph app to infer value to our users and send update notifications: 
 
 - Randomly generated site identifier
 - Deployment type (the Sourcegraph app)
