@@ -38,8 +38,9 @@ func bazelAnalysisPhase(optional bool) func(*bk.Pipeline) {
 		"--bazelrc=.bazelrc",
 		"--bazelrc=.aspect/bazelrc/ci.bazelrc",
 		"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
-		"--nobuild", // this is the key flag to enable this.
 		"build",
+		"--nobuild", // this is the key flag to enable this.
+		"//...",
 	}
 
 	cmds := []bk.StepOpt{
