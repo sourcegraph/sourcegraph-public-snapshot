@@ -976,6 +976,7 @@ References for a given upload proceduced by background job consuming SCIP indexe
 Indexes:
     "codeintel_ranking_references_processed_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_references_processed_graph_key_codeintel_rank" UNIQUE, btree (graph_key, codeintel_ranking_reference_id)
+    "codeintel_ranking_references_processed_reference_id" btree (codeintel_ranking_reference_id)
 Foreign-key constraints:
     "fk_codeintel_ranking_reference" FOREIGN KEY (codeintel_ranking_reference_id) REFERENCES codeintel_ranking_references(id) ON DELETE CASCADE
 
