@@ -18,12 +18,13 @@ func BazelOperations(optional bool) *operations.Set {
 }
 
 func bazelConfigure() func(*bk.Pipeline) {
+	// We run :gazelle since 'configure' causes issues on CI, where it doesn't have the go path available
 	configureCmd := []string{
 		"bazel",
 		"--bazelrc=.bazelrc",
 		"--bazelrc=.aspect/bazelrc/ci.bazelrc",
 		"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
-		"configure",
+		"run :gazelle",
 	}
 
 	// if there are changes diff will exit with 1, and 0 otherwise
