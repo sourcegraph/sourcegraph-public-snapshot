@@ -1,12 +1,19 @@
 package embeddings
 
-import "github.com/sourcegraph/sourcegraph/internal/api"
+import (
+	"github.com/sourcegraph/sourcegraph/internal/api"
+)
 
 type EmbeddingIndex[T any] struct {
 	Embeddings      []float32
 	ColumnDimension int
 	RowMetadata     []T
 	Ranks           []float32
+}
+
+type SimilaritySearchResult[T any] struct {
+	RowMetadata []*T
+	Debug       []string
 }
 
 type RepoEmbeddingRowMetadata struct {
@@ -37,4 +44,6 @@ type EmbeddingSearchResult struct {
 	StartLine int    `json:"startLine"`
 	EndLine   int    `json:"endLine"`
 	Content   string `json:"content"`
+	// Experimental: Clients should not rely on any particular format of debug
+	Debug string `json:"debug,omitempty"`
 }

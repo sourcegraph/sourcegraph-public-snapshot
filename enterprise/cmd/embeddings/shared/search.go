@@ -19,6 +19,7 @@ func searchRepoEmbeddingIndex(
 	readFile readFileFn,
 	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
 	getQueryEmbedding getQueryEmbeddingFn,
+	debug bool,
 ) (*embeddings.EmbeddingSearchResults, error) {
 	embeddingIndex, err := getRepoEmbeddingIndex(ctx, params.RepoName)
 	if err != nil {
@@ -32,11 +33,11 @@ func searchRepoEmbeddingIndex(
 
 	var codeResults, textResults []embeddings.EmbeddingSearchResult
 	if params.CodeResultsCount > 0 && len(embeddingIndex.CodeIndex.Embeddings) > 0 {
-		codeResults = searchEmbeddingIndex(ctx, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.CodeIndex, readFile, embeddedQuery, params.CodeResultsCount)
+		codeResults = searchEmbeddingIndex(ctx, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.CodeIndex, readFile, embeddedQuery, params.CodeResultsCount, debug)
 	}
 
 	if params.TextResultsCount > 0 && len(embeddingIndex.TextIndex.Embeddings) > 0 {
-		textResults = searchEmbeddingIndex(ctx, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.TextIndex, readFile, embeddedQuery, params.TextResultsCount)
+		textResults = searchEmbeddingIndex(ctx, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.TextIndex, readFile, embeddedQuery, params.TextResultsCount, debug)
 	}
 
 	return &embeddings.EmbeddingSearchResults{CodeResults: codeResults, TextResults: textResults}, nil
@@ -52,12 +53,13 @@ func searchEmbeddingIndex(
 	readFile readFileFn,
 	query []float32,
 	nResults int,
+	debug bool,
 ) []embeddings.EmbeddingSearchResult {
 	numWorkers := runtime.GOMAXPROCS(0)
-	rows := index.SimilaritySearch(query, nResults, embeddings.WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT})
+	res := index.SimilaritySearch(query, nResults, embeddings.WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT}, debug)
 
-	results := make([]embeddings.EmbeddingSearchResult, len(rows))
-	for idx, row := range rows {
+	results := make([]embeddings.EmbeddingSearchResult, len(res.RowMetadata))
+	for idx, row := range res.RowMetadata {
 		fileContent, err := readFile(ctx, repoName, revision, row.FileName)
 		if err != nil {
 			continue
@@ -73,6 +75,9 @@ func searchEmbeddingIndex(
 			StartLine: row.StartLine,
 			EndLine:   row.EndLine,
 			Content:   strings.Join(lines[startLine:endLine], "\n"),
+		}
+		if debug {
+			results[idx].Debug = res.Debug[idx]
 		}
 	}
 
