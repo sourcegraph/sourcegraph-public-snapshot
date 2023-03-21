@@ -468,7 +468,7 @@ func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
 	conds := make([]*sqlf.Query, 0)
 
 	if opts.ID != 0 {
-		conds = append(conds, sqlf.Sprintf("id = %s", opts.ID))
+		conds = append(conds, sqlf.Sprintf("permission_sync_jobs.id = %s", opts.ID))
 	}
 	if opts.UserID != 0 {
 		conds = append(conds, sqlf.Sprintf("user_id = %s", opts.UserID))
@@ -521,7 +521,7 @@ func (s *permissionSyncJobStore) GetLatestFinishedSyncJob(ctx context.Context, o
 		First:     &first,
 		Ascending: false,
 		OrderBy: []OrderByOption{{
-			Field: "finished_at",
+			Field: "permission_sync_jobs.finished_at",
 			Nulls: OrderByNullsLast,
 		}},
 	}
@@ -545,9 +545,17 @@ FROM permission_sync_jobs
 func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error) {
 	conds := opts.sqlConds()
 
-	paginationArgs := PaginationArgs{OrderBy: []OrderByOption{{Field: "id"}}, Ascending: true}
+	orderByID := []OrderByOption{{Field: "permission_sync_jobs.id"}}
+	paginationArgs := PaginationArgs{OrderBy: orderByID, Ascending: true}
+	// If pagination args contain only one OrderBy statement for "id" column, then it
+	// is added by generic pagination logic and we can continue with OrderBy above
+	// because it fixes ambiguity error for "id" column in case of joins with
+	// repo/users table.
 	if opts.PaginationArgs != nil {
 		paginationArgs = *opts.PaginationArgs
+	}
+	if paginationOrderByContainsOnlyIDColumn(opts.PaginationArgs) {
+		paginationArgs.OrderBy = orderByID
 	}
 	pagination := paginationArgs.SQL()
 
@@ -595,6 +603,20 @@ func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSy
 	}
 
 	return syncJobs, nil
+}
+
+func paginationOrderByContainsOnlyIDColumn(pagination *PaginationArgs) bool {
+	if pagination == nil {
+		return false
+	}
+	columns := pagination.OrderBy.Columns()
+	if len(columns) != 1 {
+		return false
+	}
+	if columns[0] == "id" {
+		return true
+	}
+	return false
 }
 
 const countPermissionSyncJobsQuery = `
