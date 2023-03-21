@@ -11,7 +11,6 @@ currdir="${PWD}"
 
 apppath="${1:-${HOME}/Downloads/Sourcegraph App.app}"
 appname=$(basename "${apppath}" .app)
-applocation=$(dirname "${apppath}")
 DMG_BACKGROUND_IMG="${2:-${exedir}/App DMG Assets/Folder-bg.png}"
 VOL_NAME="${appname}"
 DMG_TMP="${tempdir}/${VOL_NAME}.dmg"
@@ -53,10 +52,16 @@ hdiutil create \
   -fsargs "-c c=64,a=16,e=16" \
   -format UDRW \
   -size "${size}${size_units}" \
-  "${DMG_TMP}"
+  "${DMG_TMP}" || exit 1
+
 echo "Created DMG: ${DMG_TMP}"
 
-DEVICE=$(hdiutil attach -readwrite -noverify "${DMG_TMP}" | grep '^/dev/' | sed 1q | awk '{print $1}') || exit 1
+DEVICE=$(hdiutil attach -readwrite -noverify "${DMG_TMP}" | grep '^/dev/' | sed 1q | awk '{print $1}')
+
+[ -n "${DEVICE}" ] || {
+  echo "unable to mount the dmg" 1>&2
+  exit 1
+}
 
 # add to the trap so that it will unmount the volume first
 # could use `trap -p` to get the current trap and add to it, but this is much more simple
@@ -70,8 +75,8 @@ ln -s /Applications /Volumes/"${VOL_NAME}"/Applications || {
   echo "unable to add link to /Applications" 1>&2
   exit 1
 }
-mkdir /Volumes/"${VOL_NAME}"/.background
-cp "${DMG_BACKGROUND_IMG}" /Volumes/"${VOL_NAME}"/.background/
+mkdir /Volumes/"${VOL_NAME}"/.background || exit 1
+cp "${DMG_BACKGROUND_IMG}" /Volumes/"${VOL_NAME}"/.background/ || exit 1
 
 dmg_height=$(sips -g pixelHeight "${DMG_BACKGROUND_IMG}" | grep -Eo '[0-9]+')
 dmg_width=$(sips -g pixelWidth "${DMG_BACKGROUND_IMG}" | grep -Eo '[0-9]+')
@@ -109,35 +114,54 @@ EOF
 sync
 
 # diskutil unmountDisk /Volumes/"${VOL_NAME}"
-hdiutil detach "${DEVICE}"
+hdiutil detach "${DEVICE}" || exit 1
+
+# now remove the detach from the trap because it has been done
+trap "[ -d \"${tempdir}\" ] && rm -rf \"${tempdir}\"" EXIT
+
+sync
 
 sleep 2
 
 echo "Creating compressed image"
 hdiutil convert "${DMG_TMP}" -format UDZO -imagekey zlib-level=9 -o "${DMG_FINAL}"
 
-# find the name of the icon bundle in the app
-# defaults requires an absolute path; use `realpath` to get that
-iconfile=$(defaults read "$(realpath "${apppath}/Contents/Info.plist")" CFBundleIconFile)
-[ -n "${iconfile}" ] || iconfile=icon
-iconfile="$(basename "${iconfile}" .icns).icns"
+# afaik there is no way to set an icon for a dmg that will stick to it when downloaded to another machine.
+# all approaches apply only to the current machine.
 
-[ -f "${apppath}/Contents/Resources/${iconfile}" ] || {
-  echo "missing icon file in app" 1>&2
-  exit 1
-}
+# echo "Setting an iconfile for the dmg"
 
-# set the file icon
-# brew install fileicon
-# actually, it's just a shell script that can be gotten from
-# https://raw.githubusercontent.com/mklement0/fileicon/stable/bin/fileicon
-# for the "set" command, it uses applescript's `set imageData to`
-fileicon=$(command -v fileicon) || {
-  curl -fsSL https://raw.githubusercontent.com/mklement0/fileicon/stable/bin/fileicon -o "${tempdir}/fileicon"
-  chmod u+x "${tempdir}/fileicon"
-  fileicon="${tempdir}/fileicon"
-}
-"${fileicon}" set "${DMG_FINAL}" "${apppath}/Contents/Resources/${iconfile}"
+# # find the name of the icon bundle in the app
+# # defaults requires an absolute path; use `realpath` to get that
+# iconfile=$(defaults read "$(realpath "${apppath}/Contents/Info.plist")" CFBundleIconFile)
+# [ -n "${iconfile}" ] || iconfile=icon
+# iconfile="$(basename "${iconfile}" .icns)"
+
+# [ -f "${apppath}/Contents/Resources/${iconfile}.icns" ] || {
+#   echo "missing icon file in app" 1>&2
+#   exit 1
+# }
+
+# cp "${apppath}/Contents/Resources/${iconfile}.icns" "${tempdir}/${iconfile}.icns"
+# DeRez -only icns "${tempdir}/${iconfile}.icns" >"${tempdir}/${iconfile}.rsrc"
+# Rez -append "${tempdir}/${iconfile}.rsrc" -o "${DMG_FINAL}"
+# SetFile -a C "${DMG_FINAL}"
+
+# cp "${apppath}/Contents/Resources/${iconfile}" "/Volumes/${VOL_NAME}/.VolumeIcon.icns"
+# SetFile -c icnC "/Volumes/${VOL_NAME}/.VolumeIcon.icns"
+# SetFile -a C "/Volumes/${VOL_NAME}"
+
+# # set the file icon
+# # brew install fileicon
+# # actually, it's just a shell script that can be gotten from
+# # https://raw.githubusercontent.com/mklement0/fileicon/stable/bin/fileicon
+# # for the "set" command, it uses applescript's `set imageData to`
+# fileicon=$(command -v fileicon) || {
+#   curl -fsSL https://raw.githubusercontent.com/mklement0/fileicon/stable/bin/fileicon -o "${tempdir}/fileicon"
+#   chmod u+x "${tempdir}/fileicon"
+#   fileicon="${tempdir}/fileicon"
+# }
+# "${fileicon}" set "${DMG_FINAL}" "${apppath}/Contents/Resources/${iconfile}"
 
 echo "${DMG_FINAL}"
 
