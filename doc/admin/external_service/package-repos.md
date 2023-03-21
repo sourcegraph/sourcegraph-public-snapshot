@@ -6,7 +6,7 @@
 </p>
 </aside>
 
-Sourcegraph package repos can sync dependency sources from dependency artifact hosts such as Rust crates, JVM libraries, Node.js packages, Ruby gems, and more.
+Sourcegraph package repos can synchronize dependency sources (Rust crates, JVM libraries, Node.js packages, Ruby gems, and more) from public and private artifact hosts (such as NPM, Artifactory etc).
 
 ## Enable package repositories
 
@@ -16,7 +16,12 @@ Package repositories can be enabled on a per-ecosystem level in your [site confi
 {
   // ...
   "experimentalFeatures": {
-    "jvmPackages": "enabled"
+    "jvmPackages": "enabled",
+    "goPackagse": "enabled",
+    "npmPackages": "enabled",
+    "pythonPackagse": "disabled",
+    "rubyPackages": "disabled",
+    "rustPacakges": "enabled"
   }
   // ...
 }
@@ -26,7 +31,7 @@ Package repositories can be enabled on a per-ecosystem level in your [site confi
 
 There are generally two ways of syncing package repositories to the Sourcegraph instance.
 
-1. **Indexing** (recommended): package repositories can be added to the Sourcegraph instance when they are referenced in [code graph data uploads](/code_navigation/explanations/uploads). Code graph indexers can derive package repository references during indexing, which will be used on upload to sync them to your instance.
+1. **Indexing** (recommended): package repositories can be added to the Sourcegraph instance when they are referenced in [code graph data uploads](/code_navigation/explanations/uploads). Code graph indexers can derive package repository references during indexing, which will be used on upload to sync them to your instance. An external service for the given ecosystem must be created in order for these referenced package repositories to be synchronized.
 2. **Code host configuration**: each package repository external service supports manually defining versions of packages to sync. See the page specific to the ecosystem you wish to configure. This method can be useful to verify that the credentials are picked up correctly without having to upload an index, as we'll as to poke holes in the filters (detailed below) if necessary.
 
 ## Filters
@@ -35,12 +40,12 @@ Package repository filters allow you to limit the package repositories and versi
 
 There are two kinds of filters:
 
-1. **Package name filters**: these match a glob pattern to only the package repository name, and will apply to all versions of any matched names.
-2. **Package version filters**: these match a glob pattern to only the versions for a specific package repository. It cannot apply to multiple package repositories.
+1. **Package name filters**: these filters match a glob pattern against a package repository's name, and will apply to all versions of matching package repositories.
+2. **Package version filters**: these filters match a glob pattern against versions for a specific package repository. It cannot apply to multiple package repositories.
 
 Filters can also have one of two behaviours:
 
 1. **Block filters**: package repositories or versions matching these filters won't be synced.
 2. **Allow filters**: only package repositories or versions matching these filters (that don't match a block filter) will be synced.
 
-In other words, if there is a non-empty blocklist and an empty allowlist, anything not matching the blocklist will be synced. If there is a non-empty or empty blocklist and a non-empty allowlist, only package repositories matching the allowlist will be synced, if not matching the blocklist.
+Having no configured _allow_ filters implicitly allows everything. _Block_ filters have priority over _allow_ filters (a blocked package or version will not be synced even if it is explicitly allowed).

@@ -6,7 +6,7 @@
 </p>
 </aside>
 
-Site admins can sync Rust dependencies from any Cargo repositories, including Cargo.org or an internal Artifactory, to their Sourcegraph instance so that users can search and navigate the repositories.
+Site admins can sync Rust dependencies from any Cargo repository, including crates.io or an internal Artifactory, to their Sourcegraph instance so that users can search and navigate their dependencies.
 
 To add Rust dependencies to Sourcegraph you need to setup a Rust dependencies code host:
 
