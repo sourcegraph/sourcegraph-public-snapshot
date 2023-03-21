@@ -227,6 +227,11 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 			opts:     ListPermissionSyncJobOpts{Query: "user-2", SearchType: PermissionsSyncSearchTypeUser, PaginationArgs: &PaginationArgs{First: intPtr(1)}},
 			wantJobs: jobs[2:3],
 		},
+		{
+			name:     "User name search with default OrderBy",
+			opts:     ListPermissionSyncJobOpts{Query: "user-2", SearchType: PermissionsSyncSearchTypeUser, PaginationArgs: &PaginationArgs{OrderBy: OrderBy{{Field: "id"}}}},
+			wantJobs: jobs[2:3],
+		},
 	}
 
 	for _, tt := range listTests {
