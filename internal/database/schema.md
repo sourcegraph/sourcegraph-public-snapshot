@@ -825,6 +825,40 @@ Maps commits within a repository to the commit date as reported by gitserver.
 
 Contains auto-index job inference Lua scripts as an alternative to setting via environment variables.
 
+# Table "public.codeintel_initial_path_ranks"
+```
+     Column      |           Type           | Collation | Nullable |                         Default                          
+-----------------+--------------------------+-----------+----------+----------------------------------------------------------
+ id              | bigint                   |           | not null | nextval('codeintel_initial_path_ranks_id_seq'::regclass)
+ upload_id       | integer                  |           | not null | 
+ document_path   | text                     |           | not null | 
+ graph_key       | text                     |           | not null | 
+ last_scanned_at | timestamp with time zone |           |          | 
+Indexes:
+    "codeintel_initial_path_ranks_pkey" PRIMARY KEY, btree (id)
+    "codeintel_initial_path_ranks_graph_key_id" btree (graph_key, id)
+    "codeintel_initial_path_ranks_graph_key_last_scanned_at" btree (graph_key, last_scanned_at NULLS FIRST, id)
+    "codeintel_initial_path_upload_id" btree (upload_id)
+Referenced by:
+    TABLE "codeintel_initial_path_ranks_processed" CONSTRAINT "fk_codeintel_initial_path_ranks" FOREIGN KEY (codeintel_initial_path_ranks_id) REFERENCES codeintel_initial_path_ranks(id) ON DELETE CASCADE
+
+```
+
+# Table "public.codeintel_initial_path_ranks_processed"
+```
+             Column              |  Type  | Collation | Nullable |                              Default                               
+---------------------------------+--------+-----------+----------+--------------------------------------------------------------------
+ id                              | bigint |           | not null | nextval('codeintel_initial_path_ranks_processed_id_seq'::regclass)
+ graph_key                       | text   |           | not null | 
+ codeintel_initial_path_ranks_id | bigint |           | not null | 
+Indexes:
+    "codeintel_initial_path_ranks_processed_pkey" PRIMARY KEY, btree (id)
+    "codeintel_initial_path_ranks_processed_cgraph_key_codeintel_ini" UNIQUE, btree (graph_key, codeintel_initial_path_ranks_id)
+Foreign-key constraints:
+    "fk_codeintel_initial_path_ranks" FOREIGN KEY (codeintel_initial_path_ranks_id) REFERENCES codeintel_initial_path_ranks(id) ON DELETE CASCADE
+
+```
+
 # Table "public.codeintel_langugage_support_requests"
 ```
    Column    |  Type   | Collation | Nullable |                             Default                              
@@ -906,6 +940,7 @@ Foreign-key constraints:
  repository_id | integer |           | not null | 
 Indexes:
     "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_path_counts_inputs_graph_key_id" btree (graph_key, id)
     "codeintel_ranking_path_counts_inputs_graph_key_repository_id_id" btree (graph_key, repository_id, id) WHERE NOT processed
 
 ```
@@ -935,9 +970,9 @@ References for a given upload proceduced by background job consuming SCIP indexe
 ```
              Column             |  Type   | Collation | Nullable |                              Default                               
 --------------------------------+---------+-----------+----------+--------------------------------------------------------------------
- id                             | integer |           | not null | nextval('codeintel_ranking_references_processed_id_seq'::regclass)
  graph_key                      | text    |           | not null | 
  codeintel_ranking_reference_id | integer |           | not null | 
+ id                             | bigint  |           | not null | nextval('codeintel_ranking_references_processed_id_seq'::regclass)
 Indexes:
     "codeintel_ranking_references_processed_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_references_processed_graph_key_codeintel_rank" UNIQUE, btree (graph_key, codeintel_ranking_reference_id)
@@ -1810,7 +1845,7 @@ Indexes:
     "lsif_dependency_repos_pkey" PRIMARY KEY, btree (id)
     "lsif_dependency_repos_unique_scheme_name" UNIQUE, btree (scheme, name)
     "lsif_dependency_repos_blocked" btree (blocked)
-    "lsif_dependency_repos_last_checked_at" btree (last_checked_at)
+    "lsif_dependency_repos_last_checked_at" btree (last_checked_at NULLS FIRST)
     "lsif_dependency_repos_name_id" btree (name, id)
     "lsif_dependency_repos_scheme_id" btree (scheme, id)
 Referenced by:
@@ -2740,7 +2775,7 @@ Indexes:
     "package_repo_versions_pkey" PRIMARY KEY, btree (id)
     "package_repo_versions_unique_version_per_package" UNIQUE, btree (package_id, version)
     "package_repo_versions_blocked" btree (blocked)
-    "package_repo_versions_last_checked_at" btree (last_checked_at)
+    "package_repo_versions_last_checked_at" btree (last_checked_at NULLS FIRST)
 Foreign-key constraints:
     "package_id_fk" FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE
 

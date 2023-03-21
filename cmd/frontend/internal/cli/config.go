@@ -116,16 +116,22 @@ func overrideSiteConfig(ctx context.Context, logger log.Logger, db database.DB) 
 		return nil
 	}
 	cs := newConfigurationSource(logger, db)
-	updateFunc := func(ctx context.Context) error {
+	updateFunc := func(ctx context.Context) (bool, error) {
 		raw, err := cs.Read(ctx)
 		if err != nil {
-			return err
+			return false, err
 		}
 		site, err := readSiteConfigFile(paths)
 		if err != nil {
-			return errors.Wrap(err, "reading SITE_CONFIG_FILE")
+			return false, errors.Wrap(err, "reading SITE_CONFIG_FILE")
 		}
-		raw.Site = string(site)
+
+		newRawSite := string(site)
+		if raw.Site == newRawSite {
+			return false, nil
+		}
+
+		raw.Site = newRawSite
 
 		// NOTE: authorUserID is effectively 0 because this code is on the start-up path and we will
 		// never have a non nil actor available here to determine the user ID. This is consistent
@@ -140,13 +146,16 @@ func overrideSiteConfig(ctx context.Context, logger log.Logger, db database.DB) 
 		// thing.
 		err = cs.WriteWithOverride(ctx, raw, raw.ID, actor.FromContext(ctx).UID, true)
 		if err != nil {
-			return errors.Wrap(err, "writing site config overrides to database")
+			return false, errors.Wrap(err, "writing site config overrides to database")
 		}
-		return nil
+		return true, nil
 	}
-	err := updateFunc(ctx)
+	updated, err := updateFunc(ctx)
 	if err != nil {
 		return err
+	}
+	if !updated {
+		logger.Info("Site config in critical_and_site_config table is already up to date, skipping writing a new entry")
 	}
 
 	go watchUpdate(ctx, logger, updateFunc, paths...)
@@ -160,14 +169,14 @@ func overrideGlobalSettings(ctx context.Context, logger log.Logger, db database.
 		return nil
 	}
 	settings := db.Settings()
-	update := func(ctx context.Context) error {
+	update := func(ctx context.Context) (bool, error) {
 		globalSettingsBytes, err := os.ReadFile(path)
 		if err != nil {
-			return errors.Wrap(err, "reading GLOBAL_SETTINGS_FILE")
+			return false, errors.Wrap(err, "reading GLOBAL_SETTINGS_FILE")
 		}
 		currentSettings, err := settings.GetLatest(ctx, api.SettingsSubject{Site: true})
 		if err != nil {
-			return errors.Wrap(err, "could not fetch current settings")
+			return false, errors.Wrap(err, "could not fetch current settings")
 		}
 		// Only overwrite the settings if the current settings differ, don't exist, or were
 		// created by a human user to prevent creating unnecessary rows in the DB.
@@ -179,14 +188,20 @@ func overrideGlobalSettings(ctx context.Context, logger log.Logger, db database.
 			}
 			_, err = settings.CreateIfUpToDate(ctx, api.SettingsSubject{Site: true}, lastID, nil, globalSettings)
 			if err != nil {
-				return errors.Wrap(err, "writing global setting override to database")
+				return false, errors.Wrap(err, "writing global setting override to database")
 			}
+			return true, nil
 		}
-		return nil
+		return false, nil
 	}
-	if err := update(ctx); err != nil {
+	updated, err := update(ctx)
+	if err != nil {
 		return err
 	}
+	if !updated {
+		logger.Info("Global settings is already up to date, skipping writing a new entry")
+	}
+
 	go watchUpdate(ctx, logger, update, path)
 
 	return nil
@@ -201,24 +216,24 @@ func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB
 	extsvcs := db.ExternalServices()
 	cs := newConfigurationSource(logger, db)
 
-	update := func(ctx context.Context) error {
+	update := func(ctx context.Context) (bool, error) {
 		raw, err := cs.Read(ctx)
 		if err != nil {
-			return err
+			return false, err
 		}
 		parsed, err := conf.ParseConfig(raw)
 		if err != nil {
-			return errors.Wrap(err, "parsing extsvc config")
+			return false, errors.Wrap(err, "parsing extsvc config")
 		}
 		confGet := func() *conf.Unified { return parsed }
 
 		extsvcConfig, err := os.ReadFile(path)
 		if err != nil {
-			return errors.Wrap(err, "reading EXTSVC_CONFIG_FILE")
+			return false, errors.Wrap(err, "reading EXTSVC_CONFIG_FILE")
 		}
 		var rawConfigs map[string][]*json.RawMessage
 		if err := jsonc.Unmarshal(string(extsvcConfig), &rawConfigs); err != nil {
-			return errors.Wrap(err, "parsing EXTSVC_CONFIG_FILE")
+			return false, errors.Wrap(err, "parsing EXTSVC_CONFIG_FILE")
 		}
 		if len(rawConfigs) == 0 {
 			logger.Warn("EXTSVC_CONFIG_FILE contains zero external service configurations")
@@ -226,7 +241,7 @@ func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB
 
 		existing, err := extsvcs.List(ctx, database.ExternalServicesListOptions{})
 		if err != nil {
-			return errors.Wrap(err, "ExternalServices.List")
+			return false, errors.Wrap(err, "ExternalServices.List")
 		}
 
 		// Perform delta update for external services. We don't want to just delete all
@@ -247,7 +262,7 @@ func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB
 			for i, cfg := range cfgs {
 				marshaledCfg, err := json.MarshalIndent(cfg, "", "  ")
 				if err != nil {
-					return errors.Wrap(err, fmt.Sprintf("marshaling extsvc config ([%v][%v])", key, i))
+					return false, errors.Wrapf(err, "marshaling extsvc config ([%v][%v])", key, i)
 				}
 
 				// When overriding external service config from a file we allow setting the value
@@ -257,17 +272,16 @@ func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB
 				case extsvc.KindGitHub:
 					var c schema.GitHubConnection
 					if err = json.Unmarshal(marshaledCfg, &c); err != nil {
-						return err
+						return false, err
 					}
 					cloudDefault = c.CloudDefault
 
 				case extsvc.KindGitLab:
 					var c schema.GitLabConnection
 					if err = json.Unmarshal(marshaledCfg, &c); err != nil {
-						return err
+						return false, err
 					}
 					cloudDefault = c.CloudDefault
-
 				}
 
 				toAdd[&types.ExternalService{
@@ -309,7 +323,7 @@ func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB
 		for a := range toAdd {
 			for b := range toRemove {
 				if ok, err := isEquiv(a, b); err != nil {
-					return err
+					return false, err
 				} else if ok {
 					// Nothing changed
 					delete(toAdd, a)
@@ -318,7 +332,7 @@ func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB
 				}
 
 				if ok, err := shouldUpdate(a, b); err != nil {
-					return err
+					return false, err
 				} else if ok {
 					delete(toAdd, a)
 					delete(toRemove, b)
@@ -332,13 +346,13 @@ func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB
 			logger.Debug("Deleting external service", log.Int64("id", extSvc.ID), log.String("displayName", extSvc.DisplayName))
 			err := extsvcs.Delete(ctx, extSvc.ID)
 			if err != nil {
-				return errors.Wrap(err, "ExternalServices.Delete")
+				return false, errors.Wrap(err, "ExternalServices.Delete")
 			}
 		}
 		for extSvc := range toAdd {
 			logger.Debug("Adding external service", log.String("displayName", extSvc.DisplayName))
 			if err := extsvcs.Create(ctx, confGet, extSvc); err != nil {
-				return errors.Wrap(err, "ExternalServices.Create")
+				return false, errors.Wrap(err, "ExternalServices.Create")
 			}
 		}
 
@@ -348,26 +362,29 @@ func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB
 
 			rawConfig, err := extSvc.Config.Decrypt(ctx)
 			if err != nil {
-				return err
+				return false, err
 			}
 
 			update := &database.ExternalServiceUpdate{DisplayName: &extSvc.DisplayName, Config: &rawConfig, CloudDefault: &extSvc.CloudDefault}
 			if err := extsvcs.Update(ctx, ps, id, update); err != nil {
-				return errors.Wrap(err, "ExternalServices.Update")
+				return false, errors.Wrap(err, "ExternalServices.Update")
 			}
 		}
-		return nil
+		return true, nil
 	}
-	if err := update(ctx); err != nil {
+	updated, err := update(ctx)
+	if err != nil {
 		return err
+	}
+	if !updated {
+		logger.Info("External site config is already up to date, skipping writing a new entry")
 	}
 
 	go watchUpdate(ctx, logger, update, path)
-
 	return nil
 }
 
-func watchUpdate(ctx context.Context, logger log.Logger, update func(context.Context) error, paths ...string) {
+func watchUpdate(ctx context.Context, logger log.Logger, update func(context.Context) (bool, error), paths ...string) {
 	logger = logger.Scoped("watch", "").With(log.Strings("files", paths))
 	events, err := watchPaths(ctx, paths...)
 	if err != nil {
@@ -381,12 +398,15 @@ func watchUpdate(ctx context.Context, logger log.Logger, update func(context.Con
 			continue
 		}
 
-		if err := update(ctx); err != nil {
+		if updated, err := update(ctx); err != nil {
 			logger.Error("failed to update configuration from modified config override file", log.Error(err))
 			metricConfigOverrideUpdates.WithLabelValues("update_failed").Inc()
-		} else {
+		} else if updated {
 			logger.Info("updated configuration from modified config override files")
 			metricConfigOverrideUpdates.WithLabelValues("success").Inc()
+		} else {
+			logger.Info("skipped updating configuration as it is already up to date")
+			metricConfigOverrideUpdates.WithLabelValues("skipped").Inc()
 		}
 	}
 }

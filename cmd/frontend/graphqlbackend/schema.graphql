@@ -3087,7 +3087,7 @@ type ExternalService implements Node {
 
     Only site admins may access this field.
 
-    DEPRECATED: Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks#deprecation-notice
+    DEPRECATED: Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice
     """
     webhookLogs(
         """
@@ -3116,7 +3116,7 @@ type ExternalService implements Node {
         until: DateTime
     ): WebhookLogConnection!
         @deprecated(
-            reason: "Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks#deprecation-notice"
+            reason: "Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice"
         )
 
     """
@@ -4011,9 +4011,13 @@ type MirrorRepositoryInfo {
     """
     corruptionLogs: [RepoCorruptionLog!]!
     """
-    When the repository was last successfully updated from the remote source repository..
+    When the repository was last successfully updated from the remote source repository.
     """
     updatedAt: DateTime
+    """
+    When the repository is next scheduled to be updated from the remote source repository.
+    """
+    nextSyncAt: DateTime
     """
     The state of this repository in the update schedule.
     """
@@ -4588,315 +4592,6 @@ type RepositoryContributor {
         """
         first: Int
     ): GitCommitConnection!
-}
-
-"""
-A code symbol (e.g., a function, variable, type, class, etc.).
-It is derived from DocumentSymbol as defined in the Language Server Protocol (see https://microsoft.github.io/language-server-protocol/specifications/specification-3-14/#textDocument_documentSymbol).
-"""
-type Symbol {
-    """
-    The name of the symbol.
-    """
-    name: String!
-    """
-    The name of the symbol that contains this symbol, if any. This field's value is not guaranteed to be
-    structured in such a way that callers can infer a hierarchy of symbols.
-    """
-    containerName: String
-    """
-    The kind of the symbol.
-    """
-    kind: SymbolKind!
-    """
-    The programming language of the symbol.
-    """
-    language: String!
-    """
-    The location where this symbol is defined.
-    """
-    location: Location!
-    """
-    The URL to this symbol (using the input revision specifier, which may not be immutable).
-    """
-    url: String!
-    """
-    The canonical URL to this symbol (using an immutable revision specifier).
-    """
-    canonicalURL: String!
-    """
-    Whether or not the symbol is local to the file it's defined in.
-    """
-    fileLocal: Boolean!
-}
-
-"""
-A gitblob resolver specific to code intel.
-"""
-type CodeIntelGitBlob {
-    """
-    The full path (relative to the root) of this tree.
-    """
-    path: String!
-    """
-    The base name (i.e., last path component only) of this tree.
-    """
-    name: String!
-    """
-    The Git commit containing this tree.
-    """
-    commit: CodeIntelCommit!
-    """
-    The URL to this tree (using the input revision specifier, which may not be immutable).
-    """
-    url: String!
-    """
-    The repository containing this tree.
-    """
-    repository: CodeIntelRepository!
-    """
-    The content of this blob.
-    """
-    content(
-        """
-        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
-        """
-        startLine: Int
-        """
-        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
-        """
-        endLine: Int
-    ): String!
-}
-
-"""
-A codeintel repository is a Git source control repository that is mirrored from some origin code host and it is specific to code intel.
-"""
-type CodeIntelRepository {
-    """
-    The globally addressable ID for this commit.
-    """
-    id: ID!
-    """
-    The repository's name, as a path with one or more components. It conventionally consists of
-    the repository's hostname and path (joined by "/"), minus any suffixes (such as ".git").
-    Examples:
-    - github.com/foo/bar
-    - my-code-host.example.com/myrepo
-    - myrepo
-    """
-    name: String!
-    """
-    The URL to this repository.
-    """
-    url: String!
-    """
-    Information about this repository from the external service that it originates from (such as GitHub, GitLab,
-    Phabricator, etc.). Only populated when used as part of repository list previews for configuration policies.
-    """
-    externalRepository: CodeIntelExternalRepository
-}
-
-"""
-A repository on an external service (such as GitHub, GitLab, Phabricator, etc.).
-"""
-type CodeIntelExternalRepository {
-    """
-    The type of external service where this repository resides.
-    Example: "github", "gitlab", etc.
-    """
-    serviceType: String!
-    """
-    The particular instance of the external service where this repository resides. Its value is
-    opaque but typically consists of the canonical base URL to the service.
-    Example: For GitHub.com, this is "https://github.com/".
-    """
-    serviceID: String!
-}
-
-"""
-A Code Intel Commit.
-"""
-type CodeIntelCommit {
-    """
-    The globally addressable ID for this commit.
-    """
-    id: ID!
-    """
-    This commit's Git object ID (OID), a 40-character SHA-1 hash.
-    """
-    oid: GitObjectID!
-    """
-    The abbreviated form of this commit's OID.
-    """
-    abbreviatedOID: String!
-    """
-    The URL to this commit (using the input revision specifier, which may not be immutable).
-    """
-    url: String!
-    """
-    The repository that contains this commit.
-    """
-    repository: CodeIntelRepository!
-}
-
-"""
-A location inside a resource (in a repository at a specific commit).
-"""
-type Location {
-    """
-    The file that this location refers to.
-    """
-    resource: CodeIntelGitBlob!
-    """
-    The range inside the file that this location refers to.
-    """
-    range: Range
-    """
-    The URL to this location (using the input revision specifier, which may not be immutable).
-    """
-    url: String!
-    """
-    The canonical URL to this location (using an immutable revision specifier).
-    """
-    canonicalURL: String!
-}
-
-"""
-A range inside a file. The start position is inclusive, and the end position is exclusive.
-"""
-type Range {
-    """
-    The start position of the range (inclusive).
-    """
-    start: Position!
-    """
-    The end position of the range (exclusive).
-    """
-    end: Position!
-}
-
-"""
-A zero-based position inside a file.
-"""
-type Position {
-    """
-    The line number (zero-based) of the position.
-    """
-    line: Int!
-    """
-    The character offset (zero-based) in the line of the position.
-    """
-    character: Int!
-}
-
-"""
-A list of diagnostics.
-"""
-type DiagnosticConnection {
-    """
-    A list of diagnostics.
-    """
-    nodes: [Diagnostic!]!
-
-    """
-    The total count of diagnostics (which may be larger than nodes.length if the connection is paginated).
-    """
-    totalCount: Int!
-
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
-"""
-Represents a diagnostic, such as a compiler error or warning.
-"""
-type Diagnostic {
-    """
-    The location at which the message applies.
-    """
-    location: Location!
-
-    """
-    The diagnostic's severity.
-    """
-    severity: DiagnosticSeverity
-
-    """
-    The diagnostic's code as provided by the tool.
-    """
-    code: String
-
-    """
-    A human-readable string describing the source of this
-    diagnostic, e.g. "typescript" or "super lint".
-    """
-    source: String
-
-    """
-    The diagnostic's message.
-    """
-    message: String
-}
-
-"""
-Represents the severity level of a diagnostic.
-"""
-enum DiagnosticSeverity {
-    ERROR
-    WARNING
-    INFORMATION
-    HINT
-}
-
-"""
-All possible kinds of symbols. This set matches that of the Language Server Protocol
-(https://microsoft.github.io/language-server-protocol/specification#workspace_symbol).
-"""
-enum SymbolKind {
-    UNKNOWN
-    FILE
-    MODULE
-    NAMESPACE
-    PACKAGE
-    CLASS
-    METHOD
-    PROPERTY
-    FIELD
-    CONSTRUCTOR
-    ENUM
-    INTERFACE
-    FUNCTION
-    VARIABLE
-    CONSTANT
-    STRING
-    NUMBER
-    BOOLEAN
-    ARRAY
-    OBJECT
-    KEY
-    NULL
-    ENUMMEMBER
-    STRUCT
-    EVENT
-    OPERATOR
-    TYPEPARAMETER
-}
-
-"""
-A list of symbols.
-"""
-type SymbolConnection {
-    """
-    A list of symbols.
-    """
-    nodes: [Symbol!]!
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
 }
 
 """
@@ -5483,45 +5178,6 @@ interface TreeEntry {
         """
         recursiveSingleChild: Boolean = false
     ): Boolean!
-}
-
-"""
-A Code Intel Git Tree.
-"""
-type CodeIntelGitTree {
-    """
-    The full path (relative to the root) of this tree.
-    """
-    path: String!
-    """
-    The base name (i.e., last path component only) of this tree.
-    """
-    name: String!
-    """
-    The Git commit containing this tree.
-    """
-    commit: CodeIntelCommit!
-    """
-    The URL to this tree (using the input revision specifier, which may not be immutable).
-    """
-    url: String!
-    """
-    The repository containing this tree.
-    """
-    repository: CodeIntelRepository!
-    """
-    The content of this blob.
-    """
-    content(
-        """
-        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
-        """
-        startLine: Int
-        """
-        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
-        """
-        endLine: Int
-    ): String!
 }
 
 """
@@ -7179,6 +6835,12 @@ type Site implements SettingsSubject {
     """
     allowEditExternalServicesWithFile: Boolean!
     """
+    The number of repos synced across all external services. Includes counts distinguishing repositories based on whether
+    the external service connection is configured for local repositories instead of remote code host repositories.
+    Local repository code host connections are only supported in Sourcegraph App.
+    """
+    reposCounts: ReposCounts!
+    """
     Whether the site is over the limit for free user accounts, and a warning needs to be shown to all users.
     Only applies if the site does not have a valid license.
     """
@@ -7286,6 +6948,26 @@ type Site implements SettingsSubject {
     FOR INTERNAL USE ONLY: Returns information about instance upgrade readiness.
     """
     upgradeReadiness: UpgradeReadiness!
+
+    """
+    Wether the current App installation has a connected Sourcegraph.com account.
+    """
+    appHasConnectedDotComAccount: Boolean!
+}
+
+"""
+Repository count information includes a count of repositories for remote code host connections and a count of repositories
+for local code host connections (local is only supported for Sourcegraph App).
+"""
+type ReposCounts {
+    """
+    The count of repositories synced from remote code host connections.
+    """
+    remoteReposCount: Int!
+    """
+    The count of repositories synced from local code host connections.
+    """
+    localReposCount: Int!
 }
 
 """
@@ -8390,76 +8072,6 @@ type ProductLicenseInfo {
     The date when this license expires.
     """
     expiresAt: DateTime!
-}
-
-"""
-Aggregate local code intelligence for all ranges that fall between a window of lines in a document.
-"""
-type CodeIntelligenceRangeConnection {
-    """
-    Aggregate local code intelligence grouped by range.
-    """
-    nodes: [CodeIntelligenceRange!]!
-}
-
-"""
-Aggregate code intelligence for a particular range within a document.
-"""
-type CodeIntelligenceRange {
-    """
-    The range this code intelligence applies to.
-    """
-    range: Range!
-
-    """
-    A list of definitions of the symbol occurring within the range.
-    """
-    definitions: LocationConnection!
-
-    """
-    A list of references of the symbol occurring within the range.
-    """
-    references: LocationConnection!
-
-    """
-    A list of implementations of the symbol occurring within the range.
-    """
-    implementations: LocationConnection!
-
-    """
-    The hover result of the symbol occurring within the range.
-    """
-    hover: Hover
-}
-
-"""
-A list of locations within a file.
-"""
-type LocationConnection {
-    """
-    A list of locations within a file.
-    """
-    nodes: [Location!]!
-
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
-"""
-Hover range and markdown content.
-"""
-type Hover {
-    """
-    A markdown string containing the contents of the hover.
-    """
-    markdown: Markdown!
-
-    """
-    The range to highlight.
-    """
-    range: Range!
 }
 
 """
@@ -9666,6 +9278,17 @@ extend type Query {
         Search can be used to do a text-search over the team names.
         """
         search: String
+        """
+        Do not include any teams that have this ancestor in parent-team relationship.
+        This includes the team with the ID mentioned (that is a team is considered
+        its own ancestor).
+        """
+        exceptAncestor: ID
+        """
+        If set to true, child teams (ones that have parent set) are also returned.
+        If not specified, the default behavior is to only include top-level teams.
+        """
+        includeChildTeams: Boolean
     ): TeamConnection!
 }
 
@@ -9696,12 +9319,19 @@ extend type Mutation {
 
     To unset the display name, pass an empty string. Null will make it ignore updates.
 
-    Either parentTeam XOR parentTeamName can be specified to make the team a child
-    team of the given parent.
+    Either parentTeam XOR parentTeamName XOR makeRoot can be specified to make the team a child
+    team of the given parent or conversely to make a team a root team (with no parent team).
     The user has to be a team-member of both the child and parent team for that, and
     neither can be read-only. Site-admin can modify all teams without constraints.
     """
-    updateTeam(id: ID, name: String, displayName: String, parentTeam: ID, parentTeamName: String): Team!
+    updateTeam(
+        id: ID
+        name: String
+        displayName: String
+        parentTeam: ID
+        parentTeamName: String
+        makeRoot: Boolean
+    ): Team!
 
     """
     Delete team deletes a team. ID or Name must be specified, but not both.
@@ -10033,4 +9663,306 @@ type Permission implements Node {
     The date and time when the permission was created.
     """
     createdAt: DateTime!
+}
+
+"""
+A list of symbols.
+"""
+type SymbolConnection {
+    """
+    A list of symbols.
+    """
+    nodes: [Symbol!]!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A code symbol (e.g., a function, variable, type, class, etc.).
+It is derived from DocumentSymbol as defined in the Language Server Protocol (see https://microsoft.github.io/language-server-protocol/specifications/specification-3-14/#textDocument_documentSymbol).
+"""
+type Symbol {
+    """
+    The name of the symbol.
+    """
+    name: String!
+    """
+    The name of the symbol that contains this symbol, if any. This field's value is not guaranteed to be
+    structured in such a way that callers can infer a hierarchy of symbols.
+    """
+    containerName: String
+    """
+    The kind of the symbol.
+    """
+    kind: SymbolKind!
+    """
+    The programming language of the symbol.
+    """
+    language: String!
+    """
+    The location where this symbol is defined.
+    """
+    location: Location!
+    """
+    The URL to this symbol (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+    """
+    The canonical URL to this symbol (using an immutable revision specifier).
+    """
+    canonicalURL: String!
+    """
+    Whether or not the symbol is local to the file it's defined in.
+    """
+    fileLocal: Boolean!
+}
+
+"""
+All possible kinds of symbols. This set matches that of the Language Server Protocol
+(https://microsoft.github.io/language-server-protocol/specification#workspace_symbol).
+"""
+enum SymbolKind {
+    UNKNOWN
+    FILE
+    MODULE
+    NAMESPACE
+    PACKAGE
+    CLASS
+    METHOD
+    PROPERTY
+    FIELD
+    CONSTRUCTOR
+    ENUM
+    INTERFACE
+    FUNCTION
+    VARIABLE
+    CONSTANT
+    STRING
+    NUMBER
+    BOOLEAN
+    ARRAY
+    OBJECT
+    KEY
+    NULL
+    ENUMMEMBER
+    STRUCT
+    EVENT
+    OPERATOR
+    TYPEPARAMETER
+}
+
+"""
+A list of locations within a file.
+"""
+type LocationConnection {
+    """
+    A list of locations within a file.
+    """
+    nodes: [Location!]!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A location inside a resource (in a repository at a specific commit).
+"""
+type Location {
+    """
+    The file that this location refers to.
+    """
+    resource: CodeIntelGitBlob!
+    """
+    The range inside the file that this location refers to.
+    """
+    range: Range
+    """
+    The URL to this location (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+    """
+    The canonical URL to this location (using an immutable revision specifier).
+    """
+    canonicalURL: String!
+}
+
+"""
+A range inside a file. The start position is inclusive, and the end position is exclusive.
+"""
+type Range {
+    """
+    The start position of the range (inclusive).
+    """
+    start: Position!
+    """
+    The end position of the range (exclusive).
+    """
+    end: Position!
+}
+
+"""
+A zero-based position inside a file.
+"""
+type Position {
+    """
+    The line number (zero-based) of the position.
+    """
+    line: Int!
+    """
+    The character offset (zero-based) in the line of the position.
+    """
+    character: Int!
+}
+
+"""
+A gitblob resolver specific to code intel.
+"""
+type CodeIntelGitBlob {
+    """
+    The full path (relative to the root) of this tree.
+    """
+    path: String!
+    """
+    The base name (i.e., last path component only) of this tree.
+    """
+    name: String!
+    """
+    The Git commit containing this tree.
+    """
+    commit: CodeIntelCommit!
+    """
+    The URL to this tree (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+    """
+    The repository containing this tree.
+    """
+    repository: CodeIntelRepository!
+    """
+    The content of this blob.
+    """
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
+}
+
+"""
+A Code Intel Git Tree.
+"""
+type CodeIntelGitTree {
+    """
+    The full path (relative to the root) of this tree.
+    """
+    path: String!
+    """
+    The base name (i.e., last path component only) of this tree.
+    """
+    name: String!
+    """
+    The Git commit containing this tree.
+    """
+    commit: CodeIntelCommit!
+    """
+    The URL to this tree (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+    """
+    The repository containing this tree.
+    """
+    repository: CodeIntelRepository!
+    """
+    The content of this blob.
+    """
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
+}
+
+"""
+A codeintel repository is a Git source control repository that is mirrored from some origin code host and it is specific to code intel.
+"""
+type CodeIntelRepository {
+    """
+    The globally addressable ID for this commit.
+    """
+    id: ID!
+    """
+    The repository's name, as a path with one or more components. It conventionally consists of
+    the repository's hostname and path (joined by "/"), minus any suffixes (such as ".git").
+    Examples:
+    - github.com/foo/bar
+    - my-code-host.example.com/myrepo
+    - myrepo
+    """
+    name: String!
+    """
+    The URL to this repository.
+    """
+    url: String!
+    """
+    Information about this repository from the external service that it originates from (such as GitHub, GitLab,
+    Phabricator, etc.). Only populated when used as part of repository list previews for configuration policies.
+    """
+    externalRepository: CodeIntelExternalRepository
+}
+
+"""
+A repository on an external service (such as GitHub, GitLab, Phabricator, etc.).
+"""
+type CodeIntelExternalRepository {
+    """
+    The type of external service where this repository resides.
+    Example: "github", "gitlab", etc.
+    """
+    serviceType: String!
+    """
+    The particular instance of the external service where this repository resides. Its value is
+    opaque but typically consists of the canonical base URL to the service.
+    Example: For GitHub.com, this is "https://github.com/".
+    """
+    serviceID: String!
+}
+
+"""
+A Code Intel Commit.
+"""
+type CodeIntelCommit {
+    """
+    The globally addressable ID for this commit.
+    """
+    id: ID!
+    """
+    This commit's Git object ID (OID), a 40-character SHA-1 hash.
+    """
+    oid: GitObjectID!
+    """
+    The abbreviated form of this commit's OID.
+    """
+    abbreviatedOID: String!
+    """
+    The URL to this commit (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+    """
+    The repository that contains this commit.
+    """
+    repository: CodeIntelRepository!
 }

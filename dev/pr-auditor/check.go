@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/go-github/v41/github"
 	"github.com/grafana/regexp"
+	"golang.org/x/exp/slices"
 )
 
 type checkResult struct {
@@ -30,6 +31,8 @@ var (
 	noReviewNeededDividerRegexp = regexp.MustCompile("(?m)([nN]o [rR]eview [rR]equired:)")
 
 	markdownCommentRegexp = regexp.MustCompile("<!--((.|\n)*?)-->(\n)*")
+
+	noReviewNeedLabels = []string{"no-review-required", "automerge"}
 )
 
 type checkOpts struct {
@@ -72,6 +75,15 @@ func checkPR(ctx context.Context, ghc *github.Client, payload *EventPayload, opt
 		noReviewRequiredExplanation := cleanMarkdown(sections[1])
 		if len(noReviewRequiredExplanation) > 0 {
 			reviewed = true
+		}
+	}
+
+	if testPlan != "" {
+		for _, label := range pr.Labels {
+			if slices.Contains(noReviewNeedLabels, label.Name) {
+				reviewed = true
+				break
+			}
 		}
 	}
 

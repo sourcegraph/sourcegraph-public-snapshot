@@ -42,7 +42,7 @@ func (r *indexConfigurationResolver) Configuration(ctx context.Context) (_ *stri
 		return nil, nil
 	}
 
-	return strPtr(string(configuration.Data)), nil
+	return resolverstubs.NonZeroPtr(string(configuration.Data)), nil
 }
 
 func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) (_ resolverstubs.InferredConfigurationResolver, err error) {

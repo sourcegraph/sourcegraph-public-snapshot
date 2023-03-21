@@ -2,14 +2,21 @@ package sharedresolvers
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"sort"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
+	autoindexingShared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsShared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -75,34 +82,7 @@ func (r *summaryResolver) RepositoriesWithErrors(ctx context.Context, args *reso
 		endCursor = strconv.Itoa(newOffset)
 	}
 
-	return &codeIntelRepositoryWithErrorConnectionResolver{
-		nodes:      resolvers,
-		totalCount: totalCount,
-		endCursor:  endCursor,
-	}, nil
-}
-
-type codeIntelRepositoryWithErrorConnectionResolver struct {
-	nodes      []resolverstubs.CodeIntelRepositoryWithErrorResolver
-	totalCount int
-	endCursor  string
-}
-
-func (r *codeIntelRepositoryWithErrorConnectionResolver) Nodes() []resolverstubs.CodeIntelRepositoryWithErrorResolver {
-	return r.nodes
-}
-
-func (r *codeIntelRepositoryWithErrorConnectionResolver) TotalCount() *int32 {
-	v := int32(r.totalCount)
-	return &v
-}
-
-func (r *codeIntelRepositoryWithErrorConnectionResolver) PageInfo() resolverstubs.PageInfo {
-	if r.endCursor != "" {
-		return &pageInfo{hasNextPage: true, endCursor: &r.endCursor}
-	}
-
-	return &pageInfo{hasNextPage: false}
+	return resolverstubs.NewCursorWithTotalCountConnectionResolver(resolvers, endCursor, int32(totalCount)), nil
 }
 
 func (r *summaryResolver) RepositoriesWithConfiguration(ctx context.Context, args *resolverstubs.RepositoriesWithConfigurationArgs) (resolverstubs.CodeIntelRepositoryWithConfigurationConnectionResolver, error) {
@@ -140,34 +120,7 @@ func (r *summaryResolver) RepositoriesWithConfiguration(ctx context.Context, arg
 		endCursor = strconv.Itoa(newOffset)
 	}
 
-	return &codeIntelRepositoryWithConfigurationConnectionResolver{
-		nodes:      resolvers,
-		totalCount: totalCount,
-		endCursor:  endCursor,
-	}, nil
-}
-
-type codeIntelRepositoryWithConfigurationConnectionResolver struct {
-	nodes      []resolverstubs.CodeIntelRepositoryWithConfigurationResolver
-	totalCount int
-	endCursor  string
-}
-
-func (r *codeIntelRepositoryWithConfigurationConnectionResolver) Nodes() []resolverstubs.CodeIntelRepositoryWithConfigurationResolver {
-	return r.nodes
-}
-
-func (r *codeIntelRepositoryWithConfigurationConnectionResolver) TotalCount() *int32 {
-	v := int32(r.totalCount)
-	return &v
-}
-
-func (r *codeIntelRepositoryWithConfigurationConnectionResolver) PageInfo() resolverstubs.PageInfo {
-	if r.endCursor != "" {
-		return &pageInfo{hasNextPage: true, endCursor: &r.endCursor}
-	}
-
-	return &pageInfo{hasNextPage: false}
+	return resolverstubs.NewCursorWithTotalCountConnectionResolver(resolvers, endCursor, int32(totalCount)), nil
 }
 
 type codeIntelRepositoryWithErrorResolver struct {
@@ -212,10 +165,17 @@ type indexerWithCountResolver struct {
 func (r *indexerWithCountResolver) Indexer() resolverstubs.CodeIntelIndexerResolver { return r.indexer }
 func (r *indexerWithCountResolver) Count() int32                                    { return r.count }
 
+type RepositorySummary struct {
+	RecentUploads           []uploadsShared.UploadsWithRepositoryNamespace
+	RecentIndexes           []autoindexingShared.IndexesWithRepositoryNamespace
+	LastUploadRetentionScan *time.Time
+	LastIndexScan           *time.Time
+}
+
 type repositorySummaryResolver struct {
-	autoindexingSvc   AutoIndexingService
 	uploadsSvc        UploadsService
 	policySvc         PolicyService
+	gitserverClient   gitserver.Client
 	siteAdminChecker  SiteAdminChecker
 	repoStore         database.RepoStore
 	summary           RepositorySummary
@@ -227,9 +187,9 @@ type repositorySummaryResolver struct {
 }
 
 func NewRepositorySummaryResolver(
-	autoindexingSvc AutoIndexingService,
 	uploadsSvc UploadsService,
 	policySvc PolicyService,
+	gitserverClient gitserver.Client,
 	siteAdminChecker SiteAdminChecker,
 	repoStore database.RepoStore,
 	locationResolver *CachedLocationResolver,
@@ -240,9 +200,9 @@ func NewRepositorySummaryResolver(
 	errTracer *observation.ErrCollector,
 ) resolverstubs.CodeIntelRepositorySummaryResolver {
 	return &repositorySummaryResolver{
-		autoindexingSvc:   autoindexingSvc,
 		uploadsSvc:        uploadsSvc,
 		policySvc:         policySvc,
+		gitserverClient:   gitserverClient,
 		siteAdminChecker:  siteAdminChecker,
 		repoStore:         repoStore,
 		summary:           summary,
@@ -254,38 +214,11 @@ func NewRepositorySummaryResolver(
 	}
 }
 
-func (r *repositorySummaryResolver) RecentUploads() []resolverstubs.LSIFUploadsWithRepositoryNamespaceResolver {
-	resolvers := make([]resolverstubs.LSIFUploadsWithRepositoryNamespaceResolver, 0, len(r.summary.RecentUploads))
-	for _, upload := range r.summary.RecentUploads {
-		uploadResolvers := make([]resolverstubs.LSIFUploadResolver, 0, len(upload.Uploads))
-		for _, u := range upload.Uploads {
-			uploadResolvers = append(uploadResolvers, NewUploadResolver(r.uploadsSvc, r.autoindexingSvc, r.policySvc, r.siteAdminChecker, r.repoStore, u, r.prefetcher, r.locationResolver, r.errTracer))
-		}
-
-		resolvers = append(resolvers, NewLSIFUploadsWithRepositoryNamespaceResolver(upload, uploadResolvers))
-	}
-
-	return resolvers
-}
-
 func (r *repositorySummaryResolver) AvailableIndexers() []resolverstubs.InferredAvailableIndexersResolver {
 	resolvers := make([]resolverstubs.InferredAvailableIndexersResolver, 0, len(r.availableIndexers))
 	for _, indexer := range r.availableIndexers {
-		resolvers = append(resolvers, resolverstubs.NewInferredAvailableIndexersResolver(types.NewCodeIntelIndexerResolverFrom(indexer.Indexer, ""), indexer.Roots))
+		resolvers = append(resolvers, newInferredAvailableIndexersResolver(types.NewCodeIntelIndexerResolverFrom(indexer.Indexer, ""), indexer.Roots))
 	}
-	return resolvers
-}
-
-func (r *repositorySummaryResolver) RecentIndexes() []resolverstubs.LSIFIndexesWithRepositoryNamespaceResolver {
-	resolvers := make([]resolverstubs.LSIFIndexesWithRepositoryNamespaceResolver, 0, len(r.summary.RecentIndexes))
-	for _, index := range r.summary.RecentIndexes {
-		indexResolvers := make([]resolverstubs.LSIFIndexResolver, 0, len(index.Indexes))
-		for _, idx := range index.Indexes {
-			indexResolvers = append(indexResolvers, NewIndexResolver(r.autoindexingSvc, r.uploadsSvc, r.policySvc, r.siteAdminChecker, r.repoStore, idx, r.prefetcher, r.locationResolver, r.errTracer))
-		}
-		resolvers = append(resolvers, NewLSIFIndexesWithRepositoryNamespaceResolver(index, indexResolvers))
-	}
-
 	return resolvers
 }
 
@@ -296,7 +229,7 @@ func (r *repositorySummaryResolver) RecentActivity(ctx context.Context) ([]resol
 		for _, upload := range recentUploads.Uploads {
 			upload := upload
 
-			resolver, err := NewPreciseIndexResolver(ctx, r.autoindexingSvc, r.uploadsSvc, r.policySvc, r.prefetcher, r.siteAdminChecker, r.repoStore, r.locationResolver, r.errTracer, &upload, nil)
+			resolver, err := NewPreciseIndexResolver(ctx, r.uploadsSvc, r.policySvc, r.gitserverClient, r.prefetcher, r.siteAdminChecker, r.repoStore, r.locationResolver, r.errTracer, &upload, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -315,7 +248,7 @@ func (r *repositorySummaryResolver) RecentActivity(ctx context.Context) ([]resol
 				}
 			}
 
-			resolver, err := NewPreciseIndexResolver(ctx, r.autoindexingSvc, r.uploadsSvc, r.policySvc, r.prefetcher, r.siteAdminChecker, r.repoStore, r.locationResolver, r.errTracer, nil, &index)
+			resolver, err := NewPreciseIndexResolver(ctx, r.uploadsSvc, r.policySvc, r.gitserverClient, r.prefetcher, r.siteAdminChecker, r.repoStore, r.locationResolver, r.errTracer, nil, &index)
 			if err != nil {
 				return nil, err
 			}
@@ -343,4 +276,55 @@ func (r *repositorySummaryResolver) LimitError() *string {
 	}
 
 	return nil
+}
+
+type inferredAvailableIndexersResolver struct {
+	indexer resolverstubs.CodeIntelIndexerResolver
+	roots   []string
+}
+
+func newInferredAvailableIndexersResolver(indexer resolverstubs.CodeIntelIndexerResolver, roots []string) resolverstubs.InferredAvailableIndexersResolver {
+	return &inferredAvailableIndexersResolver{
+		indexer: indexer,
+		roots:   roots,
+	}
+}
+
+func (r *inferredAvailableIndexersResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
+	return r.indexer
+}
+
+func (r *inferredAvailableIndexersResolver) Roots() []string {
+	return r.roots
+}
+
+func (r *inferredAvailableIndexersResolver) RootsWithKeys() []resolverstubs.RootsWithKeyResolver {
+	var resolvers []resolverstubs.RootsWithKeyResolver
+	for _, root := range r.roots {
+		resolvers = append(resolvers, &rootWithKeyResolver{
+			root: root,
+			key:  comparisonKey(root, r.indexer.Name()),
+		})
+	}
+
+	return resolvers
+}
+
+func comparisonKey(root, indexer string) string {
+	hash := sha256.New()
+	_, _ = hash.Write([]byte(strings.Join([]string{root, indexer}, "\x00")))
+	return base64.URLEncoding.EncodeToString(hash.Sum(nil))
+}
+
+type rootWithKeyResolver struct {
+	root string
+	key  string
+}
+
+func (r *rootWithKeyResolver) Root() string {
+	return r.root
+}
+
+func (r *rootWithKeyResolver) ComparisonKey() string {
+	return r.key
 }

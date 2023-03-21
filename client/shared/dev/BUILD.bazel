@@ -51,7 +51,6 @@ ts_project(
         "mockSentryBrowser.ts",
         "mockUniqueId.ts",
         "reactCleanup.ts",
-        "setLinkComponentForTest.ts",
     ],
     extends = None,
     module = "commonjs",

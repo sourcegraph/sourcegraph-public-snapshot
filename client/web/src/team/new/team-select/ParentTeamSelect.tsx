@@ -6,11 +6,13 @@ import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import {
-    ComboboxOptionText,
+    Button,
     Combobox,
     ComboboxInput,
     ComboboxList,
     ComboboxOption,
+    ComboboxOptionText,
+    createRectangle,
     Flipping,
     Popover,
     PopoverContent,
@@ -18,11 +20,9 @@ import {
     PopoverTrigger,
     Strategy,
     usePopoverContext,
-    Button,
-    createRectangle,
 } from '@sourcegraph/wildcard'
 
-import { ParentTeamSelectSearchFields } from '../../../graphql-operations'
+import { ParentTeamSelectSearchFields, Scalars } from '../../../graphql-operations'
 
 import { useParentTeamSelectSearch } from './backend'
 
@@ -32,13 +32,15 @@ const POPOVER_PADDING = createRectangle(0, 0, 5, 5)
 
 export interface ParentTeamSelectProps {
     disabled: boolean
-    id?: string
+    id?: Scalars['ID']
+    teamId?: string
     initial?: string
     onSelect: (id: string | null) => void
 }
 
 export const ParentTeamSelect: React.FunctionComponent<ParentTeamSelectProps> = ({
     id,
+    teamId,
     onSelect,
     initial,
     disabled,
@@ -72,21 +74,25 @@ export const ParentTeamSelect: React.FunctionComponent<ParentTeamSelectProps> = 
                 strategy={Strategy.Absolute}
                 className="d-flex"
             >
-                <ParentTeamSelectContent parentTeam={parentTeam} onSelect={handleSelect} />
+                <ParentTeamSelectContent teamId={teamId} parentTeam={parentTeam} onSelect={handleSelect} />
             </PopoverContent>
         </Popover>
     )
 }
 
 export interface ParentTeamSelectContentProps {
+    teamId?: Scalars['ID']
     parentTeam: ParentTeamSelectSearchFields | undefined
     onSelect: (parentTeam: ParentTeamSelectSearchFields) => void
 }
 
-export const ParentTeamSelectContent: React.FunctionComponent<ParentTeamSelectContentProps> = ({ onSelect }) => {
+export const ParentTeamSelectContent: React.FunctionComponent<ParentTeamSelectContentProps> = ({
+    teamId,
+    onSelect,
+}) => {
     const [search, setSearch] = useState<string>('')
 
-    const { data, loading, error } = useParentTeamSelectSearch(search)
+    const { data, loading, error } = useParentTeamSelectSearch(teamId || null, search)
 
     const selectHandler = (name: string): void => {
         const team = data?.teams.nodes.find(team => team.name === name)

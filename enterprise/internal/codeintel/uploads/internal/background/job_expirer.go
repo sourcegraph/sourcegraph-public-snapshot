@@ -9,6 +9,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -27,6 +29,7 @@ type ExpirerConfig struct {
 func NewUploadExpirer(
 	observationCtx *observation.Context,
 	store store.Store,
+	repoStore database.RepoStore,
 	policySvc PolicyService,
 	policyMatcher PolicyMatcher,
 	interval time.Duration,
@@ -34,6 +37,7 @@ func NewUploadExpirer(
 ) goroutine.BackgroundRoutine {
 	expirer := &expirer{
 		store:         store,
+		repoStore:     repoStore,
 		policySvc:     policySvc,
 		policyMatcher: policyMatcher,
 	}
@@ -49,6 +53,7 @@ func NewUploadExpirer(
 
 type expirer struct {
 	store         store.Store
+	repoStore     database.RepoStore
 	policySvc     PolicyService
 	policyMatcher PolicyMatcher
 }
@@ -152,6 +157,12 @@ func (s *expirer) buildCommitMap(ctx context.Context, repositoryID int, cfg Expi
 		policies []types.ConfigurationPolicy
 	)
 
+	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
+	if err != nil {
+		return nil, err
+	}
+	repoName := repo.Name
+
 	for {
 		// Retrieve the complete set of configuration policies that affect data retention for this repository
 		policyBatch, totalCount, err := s.policySvc.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
@@ -173,7 +184,7 @@ func (s *expirer) buildCommitMap(ctx context.Context, repositoryID int, cfg Expi
 	}
 
 	// Get the set of commits within this repository that match a data retention policy
-	return s.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, policies, now)
+	return s.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, repoName, policies, now)
 }
 
 func (s *expirer) handleUploads(

@@ -92,6 +92,7 @@ var DeploySourcegraphDockerImages = []string{
 	"opentelemetry-collector",
 	"embeddings",
 	"dind",
+	"bundled-executor",
 }
 
 // CandidateImageTag provides the tag for a candidate image built for this Buildkite run.

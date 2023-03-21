@@ -162,6 +162,7 @@ ts_project(
         "src/batches/backend.ts",
         "src/batches/icons.tsx",
         "src/batches/index.ts",
+        "src/batches/utils.ts",
         "src/code-monitoring/CodeMonitoringLogo.tsx",
         "src/codeMonitoring/index.ts",
         "src/codeintel/BrainDot.tsx",
@@ -264,8 +265,6 @@ ts_project(
         "src/components/externalServices/AddExternalServicesPage.tsx",
         "src/components/externalServices/ExternalServiceCard.tsx",
         "src/components/externalServices/ExternalServiceEditPage.tsx",
-        "src/components/externalServices/ExternalServiceEditingAppLimitInPlaceAlert.tsx",
-        "src/components/externalServices/ExternalServiceEditingAppLimitReachedAlert.tsx",
         "src/components/externalServices/ExternalServiceEditingDisabledAlert.tsx",
         "src/components/externalServices/ExternalServiceEditingTemporaryAlert.tsx",
         "src/components/externalServices/ExternalServiceForm.tsx",
@@ -280,7 +279,6 @@ ts_project(
         "src/components/externalServices/backend.ts",
         "src/components/externalServices/externalServices.tsx",
         "src/components/externalServices/index.ts",
-        "src/components/externalServices/isAppLocalFileService.ts",
         "src/components/fuzzyFinder/FuzzyActions.tsx",
         "src/components/fuzzyFinder/FuzzyFiles.tsx",
         "src/components/fuzzyFinder/FuzzyFinder.mocks.tsx",
@@ -304,6 +302,8 @@ ts_project(
         "src/components/useUserHistory.ts",
         "src/contributions.ts",
         "src/enterprise/EnterpriseWebApp.tsx",
+        "src/enterprise/app/AppAuthCallbackPage.tsx",
+        "src/enterprise/app/AppComingSoonPage.tsx",
         "src/enterprise/batches/BatchChangeTabs.tsx",
         "src/enterprise/batches/BatchSpec.tsx",
         "src/enterprise/batches/BatchSpecNode.tsx",
@@ -925,7 +925,7 @@ ts_project(
         "src/enterprise/searchContexts/repositoryRevisionsConfigParser.ts",
         "src/enterprise/site-admin/SiteAdminAuthenticationProvidersPage.tsx",
         "src/enterprise/site-admin/SiteAdminExternalAccountsPage.tsx",
-        "src/enterprise/site-admin/SiteAdminLsifUploadPage.tsx",
+        "src/enterprise/site-admin/SiteAdminPreciseIndexPage.tsx",
         "src/enterprise/site-admin/UserManagement/backend.ts",
         "src/enterprise/site-admin/UserManagement/components/RoleAssignmentModal.tsx",
         "src/enterprise/site-admin/backend.ts",
@@ -1016,6 +1016,7 @@ ts_project(
         "src/namespaces/index.ts",
         "src/namespaces/navitems.ts",
         "src/namespaces/routes.tsx",
+        "src/nav/AppUserConnectDotComAccount.tsx",
         "src/nav/GlobalNavbar.tsx",
         "src/nav/NavBar/NavBar.tsx",
         "src/nav/NavBar/NavDropdown.tsx",
@@ -1099,6 +1100,7 @@ ts_project(
         "src/person/PersonLink.tsx",
         "src/platform/context.ts",
         "src/productSubscription/helpers.ts",
+        "src/rbac/constants.ts",
         "src/repo/DirectImportRepoAlert.tsx",
         "src/repo/FilePathBreadcrumbs.tsx",
         "src/repo/GitReference.tsx",
@@ -1411,7 +1413,8 @@ ts_project(
         "src/site-admin/outbound-webhooks/delete/DeleteButton.tsx",
         "src/site-admin/outbound-webhooks/logs/Logs.tsx",
         "src/site-admin/outbound-webhooks/logs/backend.ts",
-        "src/site-admin/packages/PackagesModal.tsx",
+        "src/site-admin/packages/AddFilterModal.tsx",
+        "src/site-admin/packages/ManageFiltersModal.tsx",
         "src/site-admin/packages/backend.ts",
         "src/site-admin/packages/components/BehaviourSelect.tsx",
         "src/site-admin/packages/components/FilterPackagesActions.tsx",
@@ -1463,6 +1466,8 @@ ts_project(
         "src/storm/pages/SearchPageWrapper/index.ts",
         "src/storm/routes.tsx",
         "src/team/TeamsArea.tsx",
+        "src/team/area/EditParentTeamModal.tsx",
+        "src/team/area/RemoveParentTeamModal.tsx",
         "src/team/area/TeamArea.tsx",
         "src/team/area/TeamChildTeamsPage.tsx",
         "src/team/area/TeamHeader.tsx",
@@ -1718,7 +1723,7 @@ ts_project(
         "src/enterprise/code-monitoring/components/actions/EmailAction.test.tsx",
         "src/enterprise/code-monitoring/components/actions/SlackWebhookAction.test.tsx",
         "src/enterprise/code-monitoring/components/actions/WebhookAction.test.tsx",
-        "src/enterprise/codeintel/configuration/components/inference-form/auto-index-to-schema.test.ts",
+        "src/enterprise/codeintel/configuration/components/inference-form/auto-index-to-schema.test.tsx",
         "src/enterprise/insights/components/creation-ui/code-insight-time-step-picker/get-interval-descrtiption-text/get-interval-description.text.test.ts",
         "src/enterprise/insights/hooks/use-parallel-requests/use-prallel-requests.test.ts",
         "src/enterprise/insights/pages/CodeInsightsRootPage.test.tsx",
@@ -1845,7 +1850,8 @@ jest_test(
     data = [
         ":web_tests",
     ],
-    # TODO(bazel): enable when snapshots updated to support pre-compiled .js files
+    # The tests takes are timing out, due to taking too much time.
+    # but there is no "timeout" attribute we can use here.
     tags = ["manual"],
 )
 
@@ -1936,16 +1942,27 @@ webpack_bundle(
     deps = WEBPACK_CONFIG_DEPS,
 )
 
+# ibazel run //client/web:devserver
+# should make the web application available under http://localhost:3080/ by default.
 webpack_devserver(
     name = "devserver",
-    data = WEBPACK_CONFIG_DEPS + [
-        ":module_styles",
-        ":package_styles",
+    data = BUNDLE_DATA_DEPS + WEBPACK_CONFIG_DEPS + [
         "//:babel_config",
         "//:browserslist",
         "//:package_json",
+
+        # references from the devserver config
+        "webpack.bazel.config.js",
     ],
-    webpack_config = "webpack.bazel.config.js",
+    entry_points = {
+        "src/main.js": "app",
+    },
+    env = {
+        "NODE_ENV": "development",
+        # TODO(bazel): make it dynamic or make multiple targets.
+        "SOURCEGRAPH_API_URL": "https://sourcegraph.sourcegraph.com",
+    },
+    webpack_config = "webpack.bazel.devserver.config.js",
 )
 
 build_test(

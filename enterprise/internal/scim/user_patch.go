@@ -195,7 +195,7 @@ func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *sc
 			}
 			validator, _ := sgfilter.NewValidator(buildFilterString(valueExpr, attrName), h.coreSchema, getExtensionSchemas(h.schemaExtensions)...)
 			filterMatched := false
-			// Capture the proper name of the attribute to set so we don't have to do it each iteration
+			// Capture the proper name of the attribute to set, so we don't have to do it each iteration
 			attributeToSet := attrName
 			if subAttrName != "" {
 				attributeToSet = subAttrName
@@ -206,7 +206,7 @@ func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *sc
 					continue // if this isn't a map of properties it can't match or be replaced
 				}
 				if arrayItemMatchesFilter(attrName, item, validator) {
-					// Note that we found a matching item so we dont' need to take additional actions
+					// Note that we found a matching item, so we don't need to take additional actions
 					filterMatched = true
 					newlyChanged := applyAttributeChange(item, attributeToSet, v, op.Op)
 					if newlyChanged {
@@ -271,13 +271,13 @@ func applyChangeToAttributes(attributes scim.ResourceAttributes, rawPath string,
 
 // applyAttributeChange applies a change to an _existing_ resource attribute (for example, userName).
 func applyAttributeChange(attributes scim.ResourceAttributes, attrName string, value interface{}, op string) (changed bool) {
-	// apply remove operation
+	// Apply remove operation
 	if op == "remove" {
 		delete(attributes, attrName)
 		return true
 	}
 
-	// add only works for arrays and maps, otherwise it's the same as replace
+	// Add only works for arrays and maps, otherwise it's the same as replace
 	if op == "add" {
 		switch value := value.(type) {
 		case []interface{}:
@@ -288,7 +288,7 @@ func applyAttributeChange(attributes scim.ResourceAttributes, attrName string, v
 		}
 	}
 
-	// apply replace operation (or add operation for non-array and non-map values)
+	// Apply "replace" operation (or "add" operation for non-array and non-map values)
 	attributes[attrName] = value
 	return true
 }
@@ -353,21 +353,21 @@ func standardMultiValueReplaceNotFoundStrategy(
 	_ string,
 	_ interface{},
 	_ string,
-	filterExpression filter.Expression) ([]interface{}, error) {
+	_ filter.Expression) ([]interface{}, error) {
 	return nil, scimerrors.ScimErrorNoTarget
 }
 
 func azureMultiValueReplaceNotFoundStrategy(multiValueAttribute []interface{},
 	propertyToSet string,
 	value interface{},
-	operation string,
+	_ string,
 	filterExpression filter.Expression,
 ) ([]interface{}, error) {
 	switch v := filterExpression.(type) {
 	case *filter.AttributeExpression:
 		if v.Operator != filter.EQ {
-			// There is nothing we can do in this case because the expected behavior is that an object will be created using the
-			// the left and right side of the operator as a property and value
+			// There is nothing we can do in this case because the expected behavior is to create
+			// an object using the left and right side of the operator as a property and value.
 			return nil, scimerrors.ScimErrorNoTarget
 		}
 		newItem := map[string]interface{}{v.AttributePath.AttributeName: v.CompareValue, propertyToSet: value}
@@ -379,7 +379,7 @@ func azureMultiValueReplaceNotFoundStrategy(multiValueAttribute []interface{},
 
 func getMultiValueReplaceNotFoundStrategy(provider IdentityProvider) multiValueReplaceNotFoundStrategy {
 	switch provider {
-	case SCIM_AZURE_AD:
+	case IDPAzureAd:
 		return azureMultiValueReplaceNotFoundStrategy
 	default:
 		return standardMultiValueReplaceNotFoundStrategy

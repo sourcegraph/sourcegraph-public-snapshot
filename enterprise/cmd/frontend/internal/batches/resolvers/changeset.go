@@ -266,6 +266,11 @@ func (r *changesetResolver) Author() (*graphqlbackend.PersonResolver, error) {
 		return nil, err
 	}
 
+	// For many code hosts, we can't get the author information from the API.
+	if name == "" && email == "" {
+		return nil, nil
+	}
+
 	return graphqlbackend.NewPersonResolver(
 		r.store.DatabaseDB(),
 		name,

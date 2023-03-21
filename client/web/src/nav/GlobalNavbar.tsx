@@ -61,8 +61,6 @@ export interface GlobalNavbarProps
     showSearchBox: boolean
     routes: RouteObject[]
 
-    // Whether globbing is enabled for filters.
-    globbing: boolean
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
     branding?: typeof window.context.branding
@@ -288,6 +286,13 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 </NavAction>
                             )}
                         </>
+                    )}
+                    {isSourcegraphApp && (
+                        <NavAction>
+                            <Link className={styles.link} to="/app/coming-soon">
+                                Coming soon
+                            </Link>
+                        </NavAction>
                     )}
                     {isSourcegraphApp && (
                         <ButtonLink

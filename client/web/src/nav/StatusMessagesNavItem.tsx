@@ -24,9 +24,9 @@ import {
     ErrorAlert,
 } from '@sourcegraph/wildcard'
 
-import { StatusAndRepoStatsResult } from '../graphql-operations'
+import { StatusAndRepoCountResult } from '../graphql-operations'
 
-import { STATUS_AND_REPO_STATS } from './StatusMessagesNavItemQueries'
+import { STATUS_AND_REPO_COUNT } from './StatusMessagesNavItemQueries'
 
 import styles from './StatusMessagesNavItem.module.scss'
 
@@ -163,7 +163,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
     const [isOpen, setIsOpen] = useState(false)
     const toggleIsOpen = (): void => setIsOpen(old => !old)
 
-    const { data, error } = useQuery<StatusAndRepoStatsResult>(STATUS_AND_REPO_STATS, {
+    const { data, error } = useQuery<StatusAndRepoCountResult>(STATUS_AND_REPO_COUNT, {
         fetchPolicy: 'no-cache',
         pollInterval: props.disablePolling !== true ? STATUS_MESSAGES_POLL_INTERVAL : undefined,
     })

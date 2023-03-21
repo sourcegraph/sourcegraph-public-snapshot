@@ -142,6 +142,7 @@ Tracks the range of `schema_versions` values associated with each document refer
  protocol_version       | integer |           | not null | 
 Indexes:
     "codeintel_scip_metadata_pkey" PRIMARY KEY, btree (id)
+    "codeintel_scip_metadata_upload_id" btree (upload_id)
 
 ```
 

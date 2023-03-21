@@ -122,7 +122,7 @@ Once the shared secret is set in Sourcegraph, you can start setting up executors
 
 ## Confirm executors are working
 
-If executor instances boot correctly and can authenticate with the Sourcegraph frontend, they will show up in the _Executors_ page under _Site Admin_ > _Maintenance_.
+If executor instances boot correctly and can authenticate with the Sourcegraph frontend, they will show up in the **Executors** page under **Site admin > Maintenance**.
 
 ![Executor list in UI](https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/executor-ui-test.png)
 

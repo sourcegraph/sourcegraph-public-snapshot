@@ -14,6 +14,7 @@ import { Button, PageHeader, Link, Container, H3, Text, screenReaderAnnounce } f
 import { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { BatchChangesIcon } from '../../../batches/icons'
+import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_NAMESPACE } from '../../../batches/utils'
 import { useShowMorePagination } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
@@ -37,7 +38,6 @@ import {
     GetLicenseAndUsageInfoVariables,
 } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_NAMESPACE } from '../utils'
 
 import { BATCH_CHANGES, BATCH_CHANGES_BY_NAMESPACE, GET_LICENSE_AND_USAGE_INFO } from './backend'
 import { BatchChangeListFilters } from './BatchChangeListFilters'
@@ -180,7 +180,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                 </PageHeader.Heading>
             </PageHeader>
             {isSourcegraphApp && (
-                <LimitedAccessBanner storageKey="app.limitedAccessBannerDismissed.batchChanges">
+                <LimitedAccessBanner storageKey="app.limitedAccessBannerDismissed.batchChanges" className="my-4">
                     Batch Changes is currently available to try for free, up to 10 changesets, while Sourcegraph App is
                     in beta. Pricing and availability for Batch Changes is subject to change in future releases.{' '}
                     <strong>

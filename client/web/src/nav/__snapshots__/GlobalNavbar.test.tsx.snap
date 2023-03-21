@@ -105,7 +105,7 @@ exports[`GlobalNavbar default 1`] = `
                 aria-label="Show search menu"
                 class="btn navDropdownIconButton itemFocusable"
                 data-reach-menu-button=""
-                id="menu-button-2"
+                id="menu-button-test-id"
                 type="button"
               >
                 <span

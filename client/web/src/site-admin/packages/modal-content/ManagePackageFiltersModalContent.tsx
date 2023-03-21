@@ -4,7 +4,7 @@ import { mdiDelete, mdiPencil } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { LoadingSpinner, PageHeader, ErrorAlert, Badge, Input, Label, Button, Icon, Alert } from '@sourcegraph/wildcard'
+import { LoadingSpinner, ErrorAlert, Badge, Input, Label, Button, Icon, Alert } from '@sourcegraph/wildcard'
 
 import {
     PackageMatchBehaviour,
@@ -33,7 +33,6 @@ export const ManagePackageFiltersModalContent: React.FunctionComponent<ManagePac
 
     return (
         <>
-            <PageHeader path={[{ text: 'Manage package filters' }]} headingElement="h2" className={styles.header} />
             {loading || !data ? (
                 <LoadingSpinner className="d-block mx-auto mt-3" />
             ) : error ? (

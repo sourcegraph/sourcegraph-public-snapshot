@@ -75,41 +75,6 @@ export const inferredAvailableIndexersWithKeysFieldsFragment = gql`
     }
 `
 
-export const gitTreeCodeIntelInfoFragment = gql`
-    fragment GitTreeCodeIntelInfoFields on GitTreeCodeIntelInfo {
-        preciseSupport {
-            coverage {
-                support {
-                    ...PreciseSupportFields
-                }
-                confidence
-            }
-            limitError
-        }
-        searchBasedSupport {
-            support {
-                ...SearchBasedCodeIntelSupportFields
-            }
-        }
-    }
-`
-
-export const preciseSupportFragment = gql`
-    fragment PreciseSupportFields on PreciseCodeIntelSupport {
-        supportLevel
-        indexers {
-            ...CodeIntelIndexerFields
-        }
-    }
-`
-
-export const searchBasedCodeIntelSupportFragment = gql`
-    fragment SearchBasedCodeIntelSupportFields on SearchBasedCodeIntelSupport {
-        language
-        supportLevel
-    }
-`
-
 export const repoCodeIntelStatusCommitGraphFragment = gql`
     fragment RepoCodeIntelStatusCommitGraphFields on CodeIntelligenceCommitGraph {
         stale

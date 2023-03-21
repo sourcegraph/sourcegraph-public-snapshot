@@ -81,7 +81,6 @@ go_test(
         "codeowners_test.go",
         "db_test.go",
         "external_services_test.go",
-        "integration_test.go",
         "main_test.go",
         "perms_store_test.go",
         "sub_repo_perms_store_test.go",

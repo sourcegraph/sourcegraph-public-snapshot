@@ -23,6 +23,7 @@ export type FeatureFlagName =
     | 'search-ranking'
     | 'database-permission-sync-worker'
     | 'blob-page-switch-areas-shortcuts'
+    | 'app-connect-dotcom'
 
 interface OrgFlagOverride {
     orgID: string

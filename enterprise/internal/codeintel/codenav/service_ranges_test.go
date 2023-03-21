@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -35,11 +36,11 @@ index deadbeef1..deadbeef2 100644
 func TestRanges(t *testing.T) {
 	// Set up mocks
 	mockStore := NewMockStore()
+	mockRepoStore := defaultMockRepoStore()
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
-	mockGitserverClient := NewMockGitserverClient()
-	mockGitServer := NewMockGitserverClient()
-	mockGitServer.DiffPathFunc.SetDefaultHook(func(ctx context.Context, srpc authz.SubRepoPermissionChecker, rn api.RepoName, sourceCommit, targetCommit, path string) ([]*godiff.Hunk, error) {
+	mockGitserverClient := gitserver.NewMockClient()
+	mockGitserverClient.DiffPathFunc.SetDefaultHook(func(ctx context.Context, _ authz.SubRepoPermissionChecker, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*godiff.Hunk, error) {
 		if path == "sub3/changed.go" {
 			fileDiff, err := godiff.ParseFileDiff([]byte(rangesDiff))
 			if err != nil {
@@ -52,12 +53,12 @@ func TestRanges(t *testing.T) {
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observation.TestContext, mockStore, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}
-	mockRequestState.SetLocalCommitCache(mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
+	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
+	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
 	uploads := []types.Dump{
 		{ID: 50, Commit: "deadbeef1", Root: "sub1/", RepositoryID: 42},
 		{ID: 51, Commit: "deadbeef1", Root: "sub2/", RepositoryID: 42},

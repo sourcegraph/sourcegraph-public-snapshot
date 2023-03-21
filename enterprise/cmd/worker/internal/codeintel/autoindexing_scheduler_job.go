@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -41,13 +40,19 @@ func (j *autoindexingScheduler) Routines(_ context.Context, observationCtx *obse
 		return nil, err
 	}
 
-	gitserverClient := gitserver.New(observationCtx, db)
+	matcher := policies.NewMatcher(
+		services.GitserverClient,
+		policies.IndexingExtractor,
+		false,
+		true,
+	)
 
 	return autoindexing.NewIndexSchedulers(
 		observationCtx,
 		services.UploadsService,
 		services.PoliciesService,
-		policies.NewMatcher(gitserverClient, policies.IndexingExtractor, false, true),
+		matcher,
 		services.AutoIndexingService,
+		db.Repos(),
 	), nil
 }
