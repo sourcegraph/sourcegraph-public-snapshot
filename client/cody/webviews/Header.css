@@ -22,17 +22,18 @@
     font-size: calc(var(--vscode-font-size) * 2);
     display: flex;
     align-items: center;
+    margin-left: 0.5rem !important;
 }
 
-.header-cody {
-    margin-right: 1rem;
+.header-title > span {
+    margin-right: 0.5rem !important;
 }
 
 .header-logo {
     position: relative;
     display: flex;
     align-items: center;
-    justify-content: center;
-    width: calc(var(--vscode-font-size) * 4);
-    height: calc(var(--vscode-font-size) * 4);
+    justify-content: flex-start;
+    width: calc(var(--vscode-font-size) * 2.5);
+    height: var(--vscode-font-size);
 }

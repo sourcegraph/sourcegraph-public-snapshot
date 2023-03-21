@@ -7,6 +7,7 @@
     border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border);
     background-color: var(--vscode-tab-inactiveBackground);
     justify-content: space-between;
+    height: 2rem;
 }
 
 .tab-menu-item {
@@ -26,4 +27,9 @@
     gap: 2rem;
     flex-direction: row;
     padding: 0px 1rem;
+}
+
+.reset-conversation > svg {
+    width: calc(var(--vscode-font-size) * 1.5);
+    height: calc(var(--vscode-font-size) * 1.5);
 }
