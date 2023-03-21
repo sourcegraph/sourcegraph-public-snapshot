@@ -75,6 +75,30 @@ Sourcegraph Cloud instances are deployed in one of Google Cloud Platform data ce
 
 More details about the locations and data storage can be found in [our handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/multi-region/)
 
+### Private Code Host support
+
+Sourcegraph Cloud connects to customer code hosts from 2 public NAT IPs. Customers can add Sourcegraph customer-dedicated IPs to their IP allowlist.
+
+#### Code host on AWS without public access
+
+As part of enterprise tier, for customers having code host without public access deployed on AWS, Sourcegraph Cloud offers [high available site to site VPN solution](https://cloud.google.com/network-connectivity/docs/vpn/tutorials/create-ha-vpn-connections-google-cloud-aws) with [AWS Private Link](https://docs.aws.amazon.com/vpc/latest/privatelink/what-is-privatelink.html) inside AWS network.
+
+Solution architecture
+<img src="https://sourcegraphstatic.com/private-code-host-solution-vpn-aws-private-link.png" class="screenshot">
+
+Site to site GCP with AWS VPN advantages:
+- encrypted connection between Sourcegraph Cloud and customer code host
+- multiple tunnels to provide high availability between Cloud
+instance and customer code host
+
+AWS Private Link advantages:
+- ensures customer only opens connectivity to their code host inside AWS network
+- provides customer mechanism to select AWS Princincal (AWS Account or more granular), who can connect to their code host
+- allows customer to control incoming connections
+- supports private DNS
+
+To learn more about Private Code Host details and how customers can expose their private code host via AWS Private Link, refer to [our handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/private-code-hosts).
+
 ### Health monitoring, support, and SLAs
 
 - Instance performance and health [monitored](../admin/observability/index.md) by our team's on-call engineers.
