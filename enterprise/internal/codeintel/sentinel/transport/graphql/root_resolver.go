@@ -8,6 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -18,7 +19,7 @@ import (
 )
 
 type rootResolver struct {
-	sentinelSvc             SentinelService
+	sentinelSvc             *sentinel.Service
 	uploadSvc               sharedresolvers.UploadsService
 	policySvc               sharedresolvers.PolicyService
 	gitserverClient         gitserver.Client
@@ -32,7 +33,7 @@ type rootResolver struct {
 
 func NewRootResolver(
 	observationCtx *observation.Context,
-	sentinelSvc SentinelService,
+	sentinelSvc *sentinel.Service,
 	uploadSvc sharedresolvers.UploadsService,
 	policySvc sharedresolvers.PolicyService,
 	gitserverClient gitserver.Client,
@@ -108,9 +109,27 @@ func (r *rootResolver) VulnerabilityMatches(ctx context.Context, args resolverst
 		offset = after
 	}
 
+	language := ""
+	if args.Language != nil {
+		language = *args.Language
+	}
+
+	severity := ""
+	if args.Severity != nil {
+		severity = *args.Severity
+	}
+
+	repositoryName := ""
+	if args.RepositoryName != nil {
+		repositoryName = *args.RepositoryName
+	}
+
 	matches, totalCount, err := r.sentinelSvc.GetVulnerabilityMatches(ctx, shared.GetVulnerabilityMatchesArgs{
-		Limit:  limit,
-		Offset: offset,
+		Limit:          limit,
+		Offset:         offset,
+		Language:       language,
+		Severity:       severity,
+		RepositoryName: repositoryName,
 	})
 	if err != nil {
 		return nil, err
@@ -184,6 +203,64 @@ func (r *rootResolver) VulnerabilityMatchByID(ctx context.Context, gqlID graphql
 		errTracer:        errTracer,
 		bulkLoader:       r.bulkLoaderFactory.Create(),
 		m:                match,
+	}, nil
+}
+
+func (r *rootResolver) VulnerabilityMatchesGroupByRepository(ctx context.Context, args resolverstubs.GetVulnerabilityMatchGroupByRepositoryArgs) (_ resolverstubs.VulnerabilityMatchGroupByRepositoryConnectionResolver, err error) {
+	ctx, _, endObservation := r.operations.vulnerabilityMatchByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	limit := 50
+	if args.First != nil {
+		limit = int(*args.First)
+	}
+
+	offset := 0
+	if args.After != nil {
+		after, err := strconv.Atoi(*args.After)
+		if err != nil {
+			return nil, err
+		}
+
+		offset = after
+	}
+
+	repositoryName := ""
+	if args.RepositoryName != nil {
+		repositoryName = *args.RepositoryName
+	}
+
+	groupedMatches, totalCount, err := r.sentinelSvc.GetVulnerabilityMatchesCountByRepository(ctx, shared.GetVulnerabilityMatchesGroupByRepositoryArgs{
+		Limit:          limit,
+		Offset:         offset,
+		RepositoryName: repositoryName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &vulnerabilityMatchGroupByRepositoryConnectionResolver{
+		groupedMatches: groupedMatches,
+		offset:         offset,
+		totalCount:     totalCount,
+	}, nil
+}
+
+func (r *rootResolver) VulnerabilityMatchesSummaryCounts(ctx context.Context) (_ resolverstubs.VulnerabilityMatchesSummaryCountResolver, err error) {
+	ctx, _, endObservation := r.operations.vulnerabilityMatchByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	counts, err := r.sentinelSvc.GetVulnerabilityMatchesSummaryCounts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &vulnerabilityMatchesSummaryCountResolver{
+		critical:   counts.Critical,
+		high:       counts.High,
+		medium:     counts.Medium,
+		low:        counts.Low,
+		repository: counts.Repositories,
 	}, nil
 }
 
@@ -266,7 +343,7 @@ func (r *vulnerabilityAffectedSymbolResolver) Symbols() []string { return r.s.Sy
 //
 
 type bulkLoaderFactory struct {
-	sentinelSvc SentinelService
+	sentinelSvc *sentinel.Service
 }
 
 func (f *bulkLoaderFactory) Create() *bulkLoader {
@@ -277,7 +354,7 @@ type bulkLoader struct {
 	loader *sharedresolvers.DataLoader[int, shared.Vulnerability]
 }
 
-func NewBulkLoader(sentinelSvc SentinelService) *bulkLoader {
+func NewBulkLoader(sentinelSvc *sentinel.Service) *bulkLoader {
 	return &bulkLoader{
 		loader: sharedresolvers.NewDataLoader[int, shared.Vulnerability](sharedresolvers.DataLoaderBackingServiceFunc[int, shared.Vulnerability](func(ctx context.Context, ids ...int) ([]shared.Vulnerability, error) {
 			return sentinelSvc.GetVulnerabilitiesByIDs(ctx, ids...)
@@ -294,7 +371,7 @@ func (l *bulkLoader) GetVulnerabilityByID(ctx context.Context, id int) (shared.V
 }
 
 type vulnerabilityMatchResolver struct {
-	sentinelSvc      SentinelService
+	sentinelSvc      *sentinel.Service
 	uploadsSvc       sharedresolvers.UploadsService
 	policySvc        sharedresolvers.PolicyService
 	gitserverClient  gitserver.Client
@@ -366,6 +443,10 @@ func marshalVulnerabilityMatchGQLID(vulnerabilityMatchID int) graphql.ID {
 	return relay.MarshalID("VulnerabilityMatch", vulnerabilityMatchID)
 }
 
+func marshalVulnerabilityMatchGroupByRepositoryGQLID(vulnerabilityMatchID int) graphql.ID {
+	return relay.MarshalID("VulnerabilityMatchGroup", vulnerabilityMatchID)
+}
+
 //
 //
 
@@ -401,7 +482,7 @@ func (r *vulnerabilityConnectionResolver) PageInfo() resolverstubs.PageInfo {
 //
 
 type vulnerabilityMatchConnectionResolver struct {
-	sentinelSvc      SentinelService
+	sentinelSvc      *sentinel.Service
 	uploadsSvc       sharedresolvers.UploadsService
 	policySvc        sharedresolvers.PolicyService
 	gitserverClient  gitserver.Client
@@ -446,4 +527,73 @@ func (r *vulnerabilityMatchConnectionResolver) PageInfo() resolverstubs.PageInfo
 	}
 
 	return sharedresolvers.HasNextPage(false)
+}
+
+//
+//
+
+type vulnerabilityMatchGroupByRepositoryResolver struct {
+	v shared.VulnerabilityMatchesByRepository
+}
+
+func (v vulnerabilityMatchGroupByRepositoryResolver) ID() graphql.ID {
+	return marshalVulnerabilityMatchGroupByRepositoryGQLID(v.v.ID)
+}
+
+func (v vulnerabilityMatchGroupByRepositoryResolver) RepositoryName() string {
+	return v.v.RepositoryName
+}
+
+func (v vulnerabilityMatchGroupByRepositoryResolver) MatchCount() int32 {
+	return v.v.MatchCount
+}
+
+//
+//
+
+type vulnerabilityMatchGroupByRepositoryConnectionResolver struct {
+	groupedMatches []shared.VulnerabilityMatchesByRepository
+	offset         int
+	totalCount     int
+}
+
+func (v *vulnerabilityMatchGroupByRepositoryConnectionResolver) Nodes() []resolverstubs.VulnerabilityMatchGroupByRepositoryResolver {
+	var resolvers []resolverstubs.VulnerabilityMatchGroupByRepositoryResolver
+	for _, m := range v.groupedMatches {
+		resolvers = append(resolvers, &vulnerabilityMatchGroupByRepositoryResolver{v: m})
+	}
+
+	return resolvers
+}
+
+func (v *vulnerabilityMatchGroupByRepositoryConnectionResolver) TotalCount() *int32 {
+	c := int32(v.totalCount)
+	return &c
+}
+
+func (v *vulnerabilityMatchGroupByRepositoryConnectionResolver) PageInfo() resolverstubs.PageInfo {
+	if v.offset+len(v.groupedMatches) < v.totalCount {
+		return sharedresolvers.NextPageCursor(strconv.Itoa(v.offset + len(v.groupedMatches)))
+	}
+
+	return sharedresolvers.HasNextPage(false)
+}
+
+//
+//
+
+type vulnerabilityMatchesSummaryCountResolver struct {
+	critical   int32
+	high       int32
+	medium     int32
+	low        int32
+	repository int32
+}
+
+func (v *vulnerabilityMatchesSummaryCountResolver) Critical() int32 { return v.critical }
+func (v *vulnerabilityMatchesSummaryCountResolver) High() int32     { return v.high }
+func (v *vulnerabilityMatchesSummaryCountResolver) Medium() int32   { return v.medium }
+func (v *vulnerabilityMatchesSummaryCountResolver) Low() int32      { return v.low }
+func (v *vulnerabilityMatchesSummaryCountResolver) Repository() int32 {
+	return v.repository
 }
