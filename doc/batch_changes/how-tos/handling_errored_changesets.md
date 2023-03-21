@@ -30,7 +30,7 @@ Examples of errors that requires [manual retrying](#manual-retrying-by-re-applyi
 
 ## Automatic retrying of errored changesets
 
-When Sourcegraph batch changes marks a changeset as **Retrying** it's automatically going to retry publishing it for up to 10 times if we identify the error as an error that could possibly improve with retries. No user action is needed. Errors that will not automatically be retried are errors that return status codes less than 200 or greater than 400.
+When Sourcegraph batch changes marks a changeset as **Retrying** it's automatically going to retry publishing it for up to 10 times if we identify the error as an error that could possibly improve with retries. No user action is needed. Errors deemed as non-retryable are errors that return status codes less than 200 or greater than 400. This behaivor applies to all codehosts excluding Github, which will automatically retry publishing 10 times regardless of any status codes returned from the codehost.
 
 ## Manual retrying of errored changesets
 
