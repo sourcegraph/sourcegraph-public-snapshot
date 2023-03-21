@@ -1353,7 +1353,7 @@ type InsightSeries struct {
 // JVMPackagesConnection description: Configuration for a connection to a JVM packages repository.
 type JVMPackagesConnection struct {
 	// Maven description: Configuration for resolving from Maven repositories.
-	Maven *Maven `json:"maven,omitempty"`
+	Maven Maven `json:"maven"`
 }
 
 // Log description: Configuration for logging and alerting, including to external services.
