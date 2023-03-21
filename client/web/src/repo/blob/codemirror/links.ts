@@ -17,11 +17,10 @@ const LINK_REGEX =
     /(?:(?:https?|ftp|file):\/\/|www\.|ftp\.)(?:\([\w!#$%&+,./:=?@|~-]*\)|[\w!#$%&+,./:=?@|~-])*(?:\([\w!#$%&+,./:=?@|~-]*\)|[\w#$%&+/=@|~])/gim
 
 /**
- * Iterates through highlighting occurrences and match any URLs in `SUPPORTED_KINDS`.
+ * Iterates through `SUPPORTED_KINDS` highlighting occurrences and match any URLs within.
  * Converts matches into <a> tags with a permanent underline and a relevant href.
  */
 class LinkBuilder implements PluginValue {
-    // private decorationCache: Partial<Record<SyntaxKind, Decoration>> = {}
     public decorations: DecorationSet = Decoration.none
 
     constructor(view: EditorView) {
@@ -83,6 +82,7 @@ class LinkBuilder implements PluginValue {
                     const matches = line.text.matchAll(LINK_REGEX)
 
                     for (const match of matches) {
+                        // https://github.com/microsoft/TypeScript/issues/36788
                         if (match.index) {
                             const from = Math.min(line.from + match.index, line.to)
                             const to = Math.min(line.from + match.index + match[0].length, line.to)
