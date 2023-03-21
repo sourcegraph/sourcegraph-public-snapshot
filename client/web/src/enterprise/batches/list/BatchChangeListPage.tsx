@@ -8,7 +8,7 @@ import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { buildEnterpriseTrialURL, addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
+import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
 import { Button, PageHeader, Link, Container, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -187,7 +187,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                         For unlimited access to Batch Changes,{' '}
                         <Link
                             to={addSourcegraphAppOutboundUrlParameters(
-                                buildEnterpriseTrialURL(authenticatedUser),
+                                'https://about.sourcegraph.com/get-started?app=enterprise',
                                 'batch-changes'
                             )}
                         >

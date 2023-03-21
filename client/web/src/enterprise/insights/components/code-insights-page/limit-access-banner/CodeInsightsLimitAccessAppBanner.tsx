@@ -1,5 +1,5 @@
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { addSourcegraphAppOutboundUrlParameters, buildEnterpriseTrialURL } from '@sourcegraph/shared/src/util/url'
+import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
 import { Link } from '@sourcegraph/wildcard'
 
 import { LimitedAccessBanner } from '../../../../../components/LimitedAccessBanner'
@@ -16,7 +16,7 @@ export const CodeInsightsLimitedAccessAppBanner: React.FC<Props> = props => (
             For unlimited access to Insights,{' '}
             <Link
                 to={addSourcegraphAppOutboundUrlParameters(
-                    buildEnterpriseTrialURL(props.authenticatedUser),
+                    'https://about.sourcegraph.com/get-started?app=enterprise',
                     'code-insights'
                 )}
             >
