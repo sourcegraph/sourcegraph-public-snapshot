@@ -232,9 +232,9 @@ func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *sc
 }
 
 // ensureSinglePrimaryItem ensures that only one item in a slice of items is marked as "primary".
-func ensureSinglePrimaryItem(v []interface{}, attributes scim.ResourceAttributes, attrName string) {
+func ensureSinglePrimaryItem(changedItems []interface{}, attributes scim.ResourceAttributes, attrName string) {
 	var primaryItem map[string]interface{}
-	for _, item := range v {
+	for _, item := range changedItems {
 		mapItem, ok := item.(map[string]interface{})
 		if !ok {
 			continue
