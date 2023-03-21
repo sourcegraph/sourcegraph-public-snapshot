@@ -39,6 +39,7 @@ Sourcegraph administrators can view and manage the background jobs that Code Ins
   - Retry a failed backfill
   - Move a backfill job to the front or back of the processing queue
   
+The jobs can be searched by state and by an insight's title or the label of any of its series.
 ## Code Insights Site Configuration
 
 While the default configuration is appropriate for most deployments, in the site configuration there are values that allow admins more control over the rate at which insights runs in the background. 
