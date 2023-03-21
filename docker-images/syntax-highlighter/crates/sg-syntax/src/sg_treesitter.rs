@@ -133,6 +133,21 @@ struct OffsetManager {
     offsets: Vec<usize>,
 }
 
+fn accumulate_columns(acc: usize, grapheme: &str) -> usize {
+    use unicode_width::UnicodeWidthStr;
+
+    match grapheme {
+        "\t" => 1 + acc,
+        // Why `.min(2)`? Because unicode_width::UnicodeWidthStr::width()
+        // doesn't understand how to handle zero-width joined emojis.
+        //
+        // You can see some of the tests for examples. What we do
+        // is make a best guess that these graphemes can't be over
+        // double-wide to display
+        _ => grapheme.width().min(2) + acc,
+    }
+}
+
 impl OffsetManager {
     fn new(s: &str) -> Result<Self, Error> {
         if s.is_empty() {
@@ -146,8 +161,6 @@ impl OffsetManager {
         let mut pos = 0;
         for line in s.lines() {
             offsets.push(pos);
-            // pos += line.chars().count() + 1;
-            //
             // NOTE: This intentionally in bytes. The correct stuff is done in
             // self.line_and_col later
             pos += line.len() + 1;
@@ -158,19 +171,14 @@ impl OffsetManager {
 
     fn line_and_col(&self, offset_byte: usize) -> (usize, usize) {
         use unicode_segmentation::UnicodeSegmentation;
-        use unicode_width::UnicodeWidthStr;
 
-        // let offset_char = self.source.bytes
         let mut line = 0;
         for window in self.offsets.windows(2) {
             let curr = window[0];
             let next = window[1];
             if next > offset_byte {
                 let graphemes = self.source[curr..offset_byte].graphemes(true);
-                let column = graphemes.into_iter().fold(0, |acc, g| match g {
-                    "\t" => 1 + acc,
-                    _ => g.width().min(2) + acc,
-                });
+                let column = graphemes.into_iter().fold(0, accumulate_columns);
 
                 return (line, column);
             }
@@ -179,20 +187,9 @@ impl OffsetManager {
         }
 
         let graphemes = self.source[*self.offsets.last().unwrap()..offset_byte].graphemes(true);
-        let column = graphemes.into_iter().fold(0, |acc, g| match g {
-            "\t" => 1 + acc,
-            _ => g.width().min(2) + acc,
-        });
+        let column = graphemes.into_iter().fold(0, accumulate_columns);
 
         (line, column)
-
-        // (
-        //     line,
-        //     // Return the number of characters between the locations (which is the column)
-        //     self.source[*self.offsets.last().unwrap()..offset_byte]
-        //         .chars()
-        //         .count(),
-        // )
     }
 
     // range takes in start and end offsets and returns start/end line/column.
