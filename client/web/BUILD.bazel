@@ -1847,10 +1847,10 @@ npm_package(
 
 jest_test(
     name = "test",
+    timeout = "long",
     data = [
         ":web_tests",
     ],
-    timeout = "long",
 )
 
 # webpack dev environment -------------------
