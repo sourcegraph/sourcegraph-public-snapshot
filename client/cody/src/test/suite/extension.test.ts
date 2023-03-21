@@ -70,7 +70,7 @@ suite('End-to-end', () => {
 
         // Run the "explain" command
         await ensureExecuteCommand('cody.recipe.explain-code-high-level')
-        const api = vscode.extensions.getExtension<ExtensionApi>('hpargecruos.kodj')
+        const api = vscode.extensions.getExtension<ExtensionApi>('sourcegraph.cody')
         assert.ok(api)
         assert.ok(api.exports)
 

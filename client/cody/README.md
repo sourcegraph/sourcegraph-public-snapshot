@@ -75,7 +75,7 @@ Follow the steps below to package and publish the VS Code extension.
 2. To try the packaged extension locally, disable any other installations of it and then run:
 
    ```sh
-   $ code --install-extension dist/kodj.vsix
+   $ code --install-extension dist/cody.vsix
    ```
 
 3. To publish the packaged extension to the VS Code Extension Marketplace:
