@@ -313,9 +313,37 @@ func argsAsAttributes(ctx context.Context, _ otelsql.Method, _ string, args []dr
 
 	attrs := make([]attribute.KeyValue, len(args))
 	for i, arg := range args {
-		attrs[i] = attribute.String(
-			fmt.Sprintf("db.args.$%d", arg.Ordinal),
-			fmt.Sprintf("%v", arg.Value))
+		key := "db.args.$" + strconv.Itoa(arg.Ordinal)
+
+		// Value is a value that drivers must be able to handle.
+		// It is either nil, a type handled by a database driver's NamedValueChecker
+		// interface, or an instance of one of these types:
+		//
+		//	int64
+		//	float64
+		//	bool
+		//	[]byte
+		//	string
+		//	time.Time
+		switch v := arg.Value.(type) {
+		case nil:
+			attrs[i] = attribute.String(key, "nil")
+		case int64:
+			attrs[i] = attribute.Int64(key, v)
+		case float64:
+			attrs[i] = attribute.Float64(key, v)
+		case bool:
+			attrs[i] = attribute.Bool(key, v)
+		case []byte:
+			attrs[i] = attribute.String(key, string(v))
+		case string:
+			attrs[i] = attribute.String(key, v)
+		case time.Time:
+			attrs[i] = attribute.String(key, v.String())
+
+		default: // in case we miss anything
+			attrs[i] = attribute.String(key, fmt.Sprintf("%v", v))
+		}
 	}
 	return attrs
 }
