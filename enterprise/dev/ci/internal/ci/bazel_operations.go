@@ -24,7 +24,6 @@ func BazelIncrementalMainOperations() *operations.Set {
 	optional := true
 
 	ops := operations.NewNamedSet("Bazel (optional)")
-	ops.Append(bazelConfigure(optional))
 	ops.Append(bazelAnalysisPhase(optional))
 
 	return ops
