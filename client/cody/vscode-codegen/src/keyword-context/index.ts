@@ -1,5 +1,8 @@
-import { Message } from '@sourcegraph/cody-common'
+export interface KeywordContextFetcherResult {
+    fileName: string
+    content: string
+}
 
 export interface KeywordContextFetcher {
-    getContextMessages(query: string): Promise<Message[]>
+    getContext(query: string, numResults: number): Promise<KeywordContextFetcherResult[]>
 }

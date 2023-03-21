@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { ActiveTextEditor, ActiveTextEditorSelection, Editor } from '.'
+import { ActiveTextEditor, ActiveTextEditorSelection, ActiveTextEditorVisibleContent, Editor } from '.'
 
 const SURROUNDING_LINES = 50
 
@@ -35,10 +35,35 @@ export class VSCodeEditor implements Editor {
         )
 
         return {
-            fileName: activeEditor.document.fileName,
+            fileName: vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath),
             selectedText: activeEditor.document.getText(selection),
             precedingText,
             followingText,
+        }
+    }
+
+    public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
+        const activeEditor = vscode.window.activeTextEditor
+        if (!activeEditor) {
+            return null
+        }
+
+        const visibleRanges = activeEditor.visibleRanges
+        if (visibleRanges.length === 0) {
+            return null
+        }
+
+        const visibleRange = visibleRanges[0]
+        const content = activeEditor.document.getText(
+            new vscode.Range(
+                new vscode.Position(visibleRange.start.line, 0),
+                new vscode.Position(visibleRange.end.line + 1, 0)
+            )
+        )
+
+        return {
+            fileName: vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath),
+            content,
         }
     }
 

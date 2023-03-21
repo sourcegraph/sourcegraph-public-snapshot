@@ -18,7 +18,6 @@ export const Tips: React.FunctionComponent<{}> = () => (
                 Use the <ResetIcon /> button in the upper right to reset the chat when you want to start a new line of
                 thought. Cody does not remember anything outside the current chat.
             </li>
-            <li>Use the feedback buttons when Cody messes up. We will use your feedback to make Cody better.</li>
             <li>
                 Cody tells you which files it reads to respond to your message. If this list of files looks wrong, try
                 copying the relevant code (up to 20KB) into your message like this:

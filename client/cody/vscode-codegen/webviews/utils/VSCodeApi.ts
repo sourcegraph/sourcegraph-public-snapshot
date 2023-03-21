@@ -21,23 +21,38 @@ class VSCodeWrapper {
 
 export const vscodeAPI: VSCodeWrapper = new VSCodeWrapper()
 
-export interface WebviewMessage {
-    command:
-        | 'setToken'
-        | 'setEndpoint'
-        | 'removeToken'
-        | 'executeRecipe'
-        | 'submit'
-        | 'reset'
-        | 'settings'
-        | 'initialized'
-        | 'feedback'
-    value?: string
-    text?: string
-    recipeID?: string
-    accessToken?: string
-    serverURL?: string
-    feedback?: {
-        sentiment: 'good' | 'bad'
-    }
+interface IntializedWebviewMessage {
+    command: 'initialized'
 }
+
+interface ResetWebviewMessage {
+    command: 'reset'
+}
+
+interface RemoveTokenWebviewMessage {
+    command: 'removeToken'
+}
+
+interface SettingsWebviewMessage {
+    command: 'settings'
+    serverEndpoint: string
+    accessToken: string
+}
+
+interface SubmitWebviewMessage {
+    command: 'submit'
+    text: string
+}
+
+interface ExecuteRecipeWebviewMessage {
+    command: 'executeRecipe'
+    recipe: string
+}
+
+type WebviewMessage =
+    | IntializedWebviewMessage
+    | ResetWebviewMessage
+    | RemoveTokenWebviewMessage
+    | SettingsWebviewMessage
+    | SubmitWebviewMessage
+    | ExecuteRecipeWebviewMessage

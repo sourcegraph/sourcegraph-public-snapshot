@@ -1,10 +1,10 @@
 import * as vscode from 'vscode'
 
 import { ChatViewProvider } from '../chat/ChatViewProvider'
-import { CODY_ACCESS_TOKEN_SECRET, ConfigurationUseContext, getConfiguration } from '../configuration'
+import { getConfiguration } from '../configuration'
 import { ExtensionApi } from '../extension-api'
 
-import { InMemorySecretStorage, SecretStorage, VSCodeSecretStorage } from './secret-storage'
+import { CODY_ACCESS_TOKEN_SECRET, InMemorySecretStorage, SecretStorage, VSCodeSecretStorage } from './secret-storage'
 
 function getSecretStorage(context: vscode.ExtensionContext): SecretStorage {
     return process.env.CODY_TESTING === 'true' ? new InMemorySecretStorage() : new VSCodeSecretStorage(context.secrets)
@@ -17,17 +17,13 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
 
     const secretStorage = getSecretStorage(context)
     const config = getConfiguration(vscode.workspace.getConfiguration())
-    const accessToken = (await secretStorage.get(CODY_ACCESS_TOKEN_SECRET)) || ''
-    const useContext: ConfigurationUseContext = config.useContext
 
     // Create chat webview
-    const chatProvider = new ChatViewProvider(
-        config.codebase || '',
+    const chatProvider = await ChatViewProvider.create(
         context.extensionPath,
+        config.codebase ?? '',
         config.serverEndpoint,
-        accessToken,
-        config.embeddingsEndpoint,
-        useContext,
+        config.useContext,
         config.debug,
         secretStorage
     )
@@ -73,34 +69,36 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
             return version
         }),
         // Commands
-        vscode.commands.registerCommand('cody.recipe.explain-code', async () => executeRecipe('explainCode')),
+        vscode.commands.registerCommand('cody.recipe.explain-code', async () => executeRecipe('explain-code-detailed')),
         vscode.commands.registerCommand('cody.recipe.explain-code-high-level', async () =>
-            executeRecipe('explainCodeHighLevel')
+            executeRecipe('explain-code-high-level')
         ),
         vscode.commands.registerCommand('cody.recipe.generate-unit-test', async () =>
-            executeRecipe('generateUnitTest')
+            executeRecipe('generate-unit-test')
         ),
         vscode.commands.registerCommand('cody.recipe.generate-docstring', async () =>
-            executeRecipe('generateDocstring')
+            executeRecipe('generate-docstring')
         ),
         vscode.commands.registerCommand('cody.recipe.translate-to-language', async () =>
-            executeRecipe('translateToLanguage')
+            executeRecipe('translate-to-language')
         ),
-        vscode.commands.registerCommand('cody.recipe.git-history', async () => executeRecipe('gitHistory'))
+        vscode.commands.registerCommand('cody.recipe.git-history', async () => executeRecipe('git-history'))
     )
 
     // Watch all relevant configuration and secrets for changes.
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(async event => {
             if (event.affectsConfiguration('cody') || event.affectsConfiguration('sourcegraph')) {
-                await chatProvider.configChangeDetected('endpoints')
+                const config = getConfiguration(vscode.workspace.getConfiguration())
+                await chatProvider.onConfigChange('endpoint', config.codebase ?? '', config.serverEndpoint)
             }
         })
     )
     context.subscriptions.push(
         secretStorage.onDidChange(async key => {
             if (key === CODY_ACCESS_TOKEN_SECRET) {
-                await chatProvider.configChangeDetected('token')
+                const config = getConfiguration(vscode.workspace.getConfiguration())
+                await chatProvider.onConfigChange('token', config.codebase ?? '', config.serverEndpoint)
             }
         })
     )

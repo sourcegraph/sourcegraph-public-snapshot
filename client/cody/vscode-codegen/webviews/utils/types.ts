@@ -1,9 +1,9 @@
 export interface Message {
-    speaker: 'you' | 'bot'
+    speaker: 'human' | 'assistant'
     text: string
 }
 
-export interface ChatMessage extends Omit<Message, 'text'> {
+export interface ChatMessage extends Message {
     displayText: string
     timestamp: string
     contextFiles?: string[]

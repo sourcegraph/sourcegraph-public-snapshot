@@ -2,7 +2,7 @@ import * as assert from 'assert'
 
 import * as vscode from 'vscode'
 
-import { ChatMessage } from '../../chat/ChatViewProvider'
+import { ChatMessage } from '../../chat/transcript/messages'
 import { ExtensionApi } from '../../extension-api'
 import * as mockServer from '../mock-server'
 
@@ -15,7 +15,6 @@ async function enableCodyWithAccessToken(token: string): Promise<void> {
 async function setMockServerConfig(): Promise<void> {
     const config = vscode.workspace.getConfiguration()
     await config.update('cody.serverEndpoint', `http://localhost:${mockServer.SERVER_PORT}`)
-    await config.update('cody.embeddingsEndpoint', `http://localhost:${mockServer.EMBEDDING_PORT}`)
 }
 
 async function waitUntil(predicate: () => Promise<boolean>): Promise<void> {
@@ -42,7 +41,7 @@ async function getTranscript(api: vscode.Extension<ExtensionApi>, index: number)
             return false
         }
         transcript = await api.exports.testing.chatTranscript()
-        return Boolean(transcript && transcript.length > index)
+        return transcript && transcript.length > index
     })
     assert.ok(transcript)
     return transcript[index]
@@ -81,10 +80,14 @@ suite('End-to-end', () => {
         assert.ok(message.displayText.includes('<span class="hljs-keyword">public</span>'))
 
         // Check the server response was handled
-        // "hello world" is a canned response the WebSocket server
+        // "hello world" is a canned response from the server
         // in runTest.js responds to all messages with
-        message = await getTranscript(api, 1)
-        assert.ok(message.displayText.includes('hello, world'))
+        await waitUntil(async () => {
+            const assistantMessage = await getTranscript(api, 1)
+            return assistantMessage.displayText.length > 0
+        })
+        const assistantMessage = await getTranscript(api, 1)
+        assert.ok(assistantMessage.displayText.includes('hello, world'))
 
         // Clean up.
         await ensureExecuteCommand('cody.delete-access-token')

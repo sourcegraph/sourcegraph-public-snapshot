@@ -73,7 +73,6 @@ Run the embeddings API:
 
    ```json
    "cody.serverEndpoint": "http://localhost:9300",
-   "cody.embeddingsEndpoint": "http://localhost:9301",
    "cody.debug": true,
    ```
 

@@ -1,41 +1,37 @@
-import { Message, QueryInfo } from '@sourcegraph/cody-common'
-
-import { ActiveTextEditor, ActiveTextEditorSelection, Editor } from '../../editor'
-import { EmbeddingSearchResults, Embeddings } from '../../embeddings'
+import { ActiveTextEditor, ActiveTextEditorSelection, ActiveTextEditorVisibleContent, Editor } from '../../editor'
+import { EmbeddingsSearch } from '../../embeddings'
 import { IntentDetector } from '../../intent-detector'
-import { KeywordContextFetcher } from '../../keyword-context'
+import { KeywordContextFetcher, KeywordContextFetcherResult } from '../../keyword-context'
+import { EmbeddingsSearchResults } from '../../sourcegraph-api/graphql'
 
-export class MockEmbeddingsClient implements Embeddings {
-    constructor(private mocks: Partial<Embeddings> = {}) {}
+export class MockEmbeddingsClient implements EmbeddingsSearch {
+    constructor(private mocks: Partial<EmbeddingsSearch> = {}) {}
 
-    search(query: string, codeCount: number, markdownCount: number): Promise<EmbeddingSearchResults> {
+    search(
+        query: string,
+        codeResultsCount: number,
+        textResultsCount: number
+    ): Promise<EmbeddingsSearchResults | Error> {
         return (
-            this.mocks.search?.(query, codeCount, markdownCount) ??
-            Promise.resolve({ codeResults: [], markdownResults: [] })
+            this.mocks.search?.(query, codeResultsCount, textResultsCount) ??
+            Promise.resolve({ codeResults: [], textResults: [] })
         )
-    }
-
-    queryNeedsAdditionalContext(query: string): Promise<boolean> {
-        return this.mocks.queryNeedsAdditionalContext?.(query) ?? Promise.resolve(false)
     }
 }
 
 export class MockIntentDetector implements IntentDetector {
     constructor(private mocks: Partial<IntentDetector> = {}) {}
 
-    detect(text: string): Promise<QueryInfo> {
-        return (
-            this.mocks.detect?.(text) ??
-            Promise.resolve({ needsCodebaseContext: false, needsCurrentFileContext: false })
-        )
+    isCodebaseContextRequired(input: string): Promise<boolean | Error> {
+        return this.mocks.isCodebaseContextRequired?.(input) ?? Promise.resolve(false)
     }
 }
 
 export class MockKeywordContextFetcher implements KeywordContextFetcher {
     constructor(private mocks: Partial<KeywordContextFetcher> = {}) {}
 
-    getContextMessages(query: string): Promise<Message[]> {
-        return this.mocks.getContextMessages?.(query) ?? Promise.resolve([])
+    getContext(query: string, numResults: number): Promise<KeywordContextFetcherResult[]> {
+        return this.mocks.getContext?.(query, numResults) ?? Promise.resolve([])
     }
 }
 
@@ -48,6 +44,10 @@ export class MockEditor implements Editor {
 
     getActiveTextEditor(): ActiveTextEditor | null {
         return this.mocks.getActiveTextEditor?.() ?? null
+    }
+
+    getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
+        return this.mocks.getActiveTextEditorVisibleContent?.() ?? null
     }
 
     showQuickPick(labels: string[]): Promise<string | undefined> {

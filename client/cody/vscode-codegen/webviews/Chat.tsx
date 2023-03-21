@@ -4,24 +4,19 @@ import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
 
 import { Tips } from './Tips'
 import { SubmitSvg } from './utils/icons'
-import { WebviewMessage, vscodeAPI } from './utils/VSCodeApi'
+import { ChatMessage } from './utils/types'
+import { vscodeAPI } from './utils/VSCodeApi'
 
 import './Chat.css'
 
-import { ChatMessage } from '@sourcegraph/cody-common'
-
 interface ChatboxProps {
     messageInProgress: ChatMessage | null
-    setMessageInProgress: (transcript: ChatMessage | null) => void
     transcript: ChatMessage[]
-    setTranscript: (transcripts: ChatMessage[]) => void
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
-    setMessageInProgress,
     transcript,
-    setTranscript,
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [formInput, setFormInput] = useState('')
@@ -49,20 +44,12 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     }
 
     const onChatSubmit = useCallback(async () => {
+        vscodeAPI.postMessage({ command: 'submit', text: formInput })
         setInputRows(5)
-        const chatMsg: ChatMessage = { speaker: 'you', displayText: formInput, timestamp: getShortTimestamp() }
-        setMessageInProgress({ speaker: 'bot', displayText: '', timestamp: getShortTimestamp() })
-        setTranscript([...transcript, chatMsg])
-
-        vscodeAPI.postMessage({ command: 'submit', text: formInput } as WebviewMessage)
-
-        if (formInput === '/reset') {
-            setMessageInProgress(null)
-        }
         setFormInput('')
-    }, [formInput, setTranscript, setMessageInProgress, transcript])
+    }, [formInput, setFormInput])
 
-    const bubbleClassName = (speaker: string): string => (speaker === 'you' ? 'human' : 'bot')
+    const bubbleClassName = (speaker: string): string => (speaker === 'human' ? 'human' : 'bot')
 
     const scrollToBottom = () => {
         chatboxRef.current?.scrollIntoView?.({ behavior: 'smooth' })
@@ -97,18 +84,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                                     </div>
                                     <div className={`bubble-footer ${bubbleClassName(message.speaker)}-bubble-footer`}>
                                         <div className="bubble-footer-timestamp">{`${
-                                            message.speaker === 'bot' ? 'Cody' : 'Me'
+                                            message.speaker === 'assistant' ? 'Cody' : 'Me'
                                         } · ${message.timestamp}`}</div>
-                                        {/* Only show feedback for the last message. */}
-                                        {message.speaker === 'bot' && index === transcript.length - 1 && (
-                                            <FeedbackContainer index={index} key={`feedback-${index}`} />
-                                        )}
                                     </div>
                                 </div>
                             </div>
                         ))}
 
-                        {messageInProgress && messageInProgress.speaker === 'bot' && (
+                        {messageInProgress && messageInProgress.speaker === 'assistant' && (
                             <div className="bubble-row bot-bubble-row">
                                 <div className="bubble bot-bubble">
                                     <div className="bubble-content bot-bubble-content">
@@ -200,59 +183,5 @@ const ContextFiles: React.FunctionComponent<{ contextFiles: string[] }> = ({ con
                 </span>
             </div>
         </p>
-    )
-}
-
-export function getShortTimestamp(): string {
-    const date = new Date()
-    return `${padTimePart(date.getHours())}:${padTimePart(date.getMinutes())}`
-}
-
-function padTimePart(timePart: number): string {
-    return timePart < 10 ? `0${timePart}` : timePart.toString()
-}
-
-interface FeedbackProps {
-    index: number
-}
-
-export const FeedbackContainer: React.FunctionComponent<React.PropsWithChildren<FeedbackProps>> = ({ index }) => {
-    const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
-
-    const onFeedbackSubmit = useCallback(
-        (sentiment: string) => {
-            const feedback = { sentiment }
-            vscodeAPI.postMessage({
-                command: 'feedback',
-                feedback,
-            } as WebviewMessage)
-            setFeedbackSubmitted(true)
-        },
-        [setFeedbackSubmitted, feedbackSubmitted]
-    )
-
-    return (
-        <div className="feedback-container">
-            {feedbackSubmitted ? (
-                <div className="feedback-container-emojis">Feedback submitted</div>
-            ) : (
-                <div className="feedback-container-emojis">
-                    <VSCodeButton
-                        data-feedbacksentiment="good"
-                        onClick={() => onFeedbackSubmit('good')}
-                        className="feedback-button"
-                    >
-                        &#128077;
-                    </VSCodeButton>{' '}
-                    <VSCodeButton
-                        data-feedbacksentiment="bad"
-                        onClick={() => onFeedbackSubmit('bad')}
-                        className="feedback-button"
-                    >
-                        &#128078;
-                    </VSCodeButton>
-                </div>
-            )}
-        </div>
     )
 }

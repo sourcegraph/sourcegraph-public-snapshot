@@ -10,9 +10,15 @@ export interface ActiveTextEditorSelection {
     followingText: string
 }
 
+export interface ActiveTextEditorVisibleContent {
+    content: string
+    fileName: string
+}
+
 export interface Editor {
     getActiveTextEditor(): ActiveTextEditor | null
     getActiveTextEditorSelection(): ActiveTextEditorSelection | null
+    getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null
     showQuickPick(labels: string[]): Promise<string | undefined>
     showWarningMessage(message: string): Promise<void>
 }

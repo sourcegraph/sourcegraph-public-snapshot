@@ -90,7 +90,7 @@
       },
       {
         "command": "cody.recipe.git-history",
-        "title": "Cody: Recent History"
+        "title": "Ask Cody: Recent History"
       },
       {
         "command": "cody.recipe.improve-variable-names",
@@ -198,15 +198,9 @@
         },
         "cody.serverEndpoint": {
           "type": "string",
-          "default": "https://cody.sgdev.org",
-          "example": "https://cody.sgdev.org",
-          "description": "URL to the Cody server"
-        },
-        "cody.embeddingsEndpoint": {
-          "type": "string",
-          "default": "https://cody.sgdev.org",
-          "example": "https://cody.sgdev.org",
-          "description": "URL to the Cody embeddings API"
+          "default": "https://<instance>.sourcegraph.com",
+          "example": "https://<instance>.sourcegraph.com",
+          "description": "URL to the Sourcegraph instance."
         },
         "cody.codebase": {
           "type": "string",
@@ -231,8 +225,5 @@
         }
       }
     }
-  },
-  "dependencies": {
-    "@sourcegraph/cody-common": "workspace:*"
   }
 }
