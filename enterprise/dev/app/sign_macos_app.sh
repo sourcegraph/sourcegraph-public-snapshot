@@ -30,13 +30,10 @@ application_cert_path=${APPLE_DEV_ID_APPLICATION_CERT:-/mnt/Apple-Developer-ID-A
 # supports testing outside of CI, also
 app_bundle_path="${artifact}"
 
-# app bundles can be stapled; standalone executables cannot
-unset staple
-
 while [ ${#} -gt 0 ]; do
   case "${1}" in
     --help)
-      echo "$(basename "${BASH_SOURCE[0]}") [--staple] [<file path>]" 1>&2
+      echo "$(basename "${BASH_SOURCE[0]}") [<file path>]" 1>&2
       exit 1
       ;;
     *)
