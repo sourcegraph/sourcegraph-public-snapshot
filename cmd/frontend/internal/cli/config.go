@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/google/go-cmp/cmp"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
@@ -128,7 +127,7 @@ func overrideSiteConfig(ctx context.Context, logger log.Logger, db database.DB) 
 		}
 
 		newRawSite := string(site)
-		if diff := cmp.Diff(raw.Site, newRawSite); diff == "" {
+		if raw.Site == newRawSite {
 			return false, nil
 		}
 
