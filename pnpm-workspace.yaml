@@ -1,4 +1,4 @@
 packages:
-  - "client/*"
-  - "schema"
-  - "dev/release"
+  - 'client/*'
+  - 'schema'
+  - 'dev/release'
