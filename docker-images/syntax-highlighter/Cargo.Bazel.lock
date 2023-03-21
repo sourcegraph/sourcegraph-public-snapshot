@@ -1,5 +1,5 @@
 {
-  "checksum": "93e17d247f9cc3972348a03470b5fa0796e3959d22c27908feb32b930c91467a",
+  "checksum": "75577b9b5a017805673ca98bd2226be6ba90724e1628869e5c55de6e6cfd5c28",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -8243,6 +8243,10 @@
               "target": "anyhow"
             },
             {
+              "id": "clap 4.1.11",
+              "target": "clap"
+            },
+            {
               "id": "insta 1.28.0",
               "target": "insta"
             },
@@ -8296,6 +8300,18 @@
         ],
         "deps": {
           "common": [
+            {
+              "id": "anyhow 1.0.69",
+              "target": "anyhow"
+            },
+            {
+              "id": "protobuf 3.2.0",
+              "target": "protobuf"
+            },
+            {
+              "id": "scip 0.1.1",
+              "target": "scip"
+            },
             {
               "id": "tree-sitter 0.20.9",
               "target": "tree_sitter"
