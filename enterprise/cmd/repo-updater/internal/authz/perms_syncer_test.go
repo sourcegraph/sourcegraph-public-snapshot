@@ -373,86 +373,91 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 
 	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
 
-	t.Run("gitlab perms sync succeeds, github FetchAccount succeeds", func(t *testing.T) {
-		_, s, err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
-		require.NoError(t, err, "unexpected error")
-		require.Equal(t, database.CodeHostStatusesSet{{
-			ProviderID:   p1.serviceID,
-			ProviderType: p1.serviceType,
-			Status:       "SUCCESS",
-			Message:      "FetchUserPerms",
-		}}, s)
-	})
+	tests := []struct {
+		name           string
+		fetchAccount   func(ctx context.Context, user *types.User, accounts []*extsvc.Account, emails []string) (*extsvc.Account, error)
+		fetchUserPerms func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error)
+		statuses       database.CodeHostStatusesSet
+	}{
+		{
+			name: "gitlab perms sync succeeds, github FetchAccount succeeds",
+			statuses: database.CodeHostStatusesSet{{
+				ProviderID:   p1.serviceID,
+				ProviderType: p1.serviceType,
+				Status:       "SUCCESS",
+				Message:      "FetchUserPerms",
+			}},
+		},
+		{
+			name: "gitlab perms sync succeeds, github FetchAccount fails",
+			statuses: database.CodeHostStatusesSet{{
+				ProviderID:   p2.serviceID,
+				ProviderType: p2.serviceType,
+				Status:       "ERROR",
+				Message:      "FetchAccount: no account found for this user",
+			}, {
+				ProviderID:   p1.serviceID,
+				ProviderType: p1.serviceType,
+				Status:       "SUCCESS",
+				Message:      "FetchUserPerms",
+			}},
+			fetchAccount: func(context.Context, *types.User, []*extsvc.Account, []string) (*extsvc.Account, error) {
+				return nil, errors.New("no account found for this user")
+			},
+		},
+		{
+			name: "gitlab perms sync fails, github FetchAccount succeeds",
+			statuses: database.CodeHostStatusesSet{{
+				ProviderID:   p1.serviceID,
+				ProviderType: p1.serviceType,
+				Status:       "ERROR",
+				Message:      "FetchUserPerms: horse error",
+			}},
+			fetchUserPerms: func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
+				return nil, errors.New("horse error")
+			},
+		},
+		{
+			name: "gitlab perms sync fails, github FetchAccount fails",
+			statuses: database.CodeHostStatusesSet{{
+				ProviderID:   p2.serviceID,
+				ProviderType: p2.serviceType,
+				Status:       "ERROR",
+				Message:      "FetchAccount: no account found for this user",
+			}, {
+				ProviderID:   p1.serviceID,
+				ProviderType: p1.serviceType,
+				Status:       "ERROR",
+				Message:      "FetchUserPerms: horse error",
+			}},
+			fetchAccount: func(context.Context, *types.User, []*extsvc.Account, []string) (*extsvc.Account, error) {
+				return nil, errors.New("no account found for this user")
+			},
+			fetchUserPerms: func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
+				return nil, errors.New("horse error")
+			},
+		},
+	}
 
-	t.Run("gitlab perms sync succeeds, github FetchAccount fails", func(t *testing.T) {
-		p2.fetchAccount = func(context.Context, *types.User, []*extsvc.Account, []string) (*extsvc.Account, error) {
-			return nil, errors.New("no account found for this user")
-		}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if test.fetchAccount != nil {
+				p2.fetchAccount = test.fetchAccount
+			}
+			if test.fetchUserPerms != nil {
+				p1.fetchUserPerms = test.fetchUserPerms
+			}
 
-		t.Cleanup(func() {
-			p2.fetchAccount = nil
+			t.Cleanup(func() {
+				p1.fetchUserPerms = fetchUserPermsSuccessfully
+				p2.fetchAccount = nil
+			})
+
+			_, s, err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
+			require.NoError(t, err, "expected to swallow the error")
+			require.Equal(t, test.statuses, s)
 		})
-
-		_, s, err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
-		require.NoError(t, err, "expected to swallow the error")
-		require.Equal(t, database.CodeHostStatusesSet{{
-			ProviderID:   p2.serviceID,
-			ProviderType: p2.serviceType,
-			Status:       "ERROR",
-			Message:      "FetchAccount: no account found for this user",
-		}, {
-			ProviderID:   p1.serviceID,
-			ProviderType: p1.serviceType,
-			Status:       "SUCCESS",
-			Message:      "FetchUserPerms",
-		}}, s)
-	})
-
-	t.Run("gitlab perms sync fails, github FetchAccount succeeds", func(t *testing.T) {
-		p1.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
-			return nil, errors.New("horse error")
-		}
-		t.Cleanup(func() {
-			p1.fetchUserPerms = fetchUserPermsSuccessfully
-		})
-
-		_, s, err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
-		require.NoError(t, err, "expected to swallow the error")
-		require.Equal(t, database.CodeHostStatusesSet{{
-			ProviderID:   p1.serviceID,
-			ProviderType: p1.serviceType,
-			Status:       "ERROR",
-			Message:      "FetchUserPerms: horse error",
-		}}, s)
-	})
-
-	t.Run("gitlab perms sync fails, github FetchAccount fails", func(t *testing.T) {
-		p1.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
-			return nil, errors.New("horse error")
-		}
-		p2.fetchAccount = func(context.Context, *types.User, []*extsvc.Account, []string) (*extsvc.Account, error) {
-			return nil, errors.New("no account found for this user")
-		}
-
-		t.Cleanup(func() {
-			p1.fetchUserPerms = fetchUserPermsSuccessfully
-			p2.fetchAccount = nil
-		})
-
-		_, s, err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
-		require.NoError(t, err, "expected to swallow the error")
-		require.Equal(t, database.CodeHostStatusesSet{{
-			ProviderID:   p2.serviceID,
-			ProviderType: p2.serviceType,
-			Status:       "ERROR",
-			Message:      "FetchAccount: no account found for this user",
-		}, {
-			ProviderID:   p1.serviceID,
-			ProviderType: p1.serviceType,
-			Status:       "ERROR",
-			Message:      "FetchUserPerms: horse error",
-		}}, s)
-	})
+	}
 }
 
 // If we hit a temporary error from the provider we should fetch existing
