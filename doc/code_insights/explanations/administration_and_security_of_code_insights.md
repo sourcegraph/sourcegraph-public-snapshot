@@ -34,7 +34,7 @@ If a user gets deleted, any insights they created will still be visible to other
 ## Code Insights Admin  (>=5.0.0)
 
 Sourcegraph administrators can view and manage the background jobs that Code Insights runs when historically backfilling an insight. The following functionality is available under _Code Insights jobs_ in the _Maintenance_ section within the Site Admin:
-  - See the jobs to backfill an insight
+  - See a list of the jobs that backfill a insights and their current status
   - See any errors that occurred when backfilling an insight
   - Retry a failed backfill
   - Move a backfill job to the front or back of the processing queue
