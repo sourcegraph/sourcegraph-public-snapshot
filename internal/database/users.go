@@ -1538,8 +1538,10 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 	})
 
 	var path string
+	var host string
 	if r != nil {
 		path = r.URL.Path
+		host = r.URL.Host
 	}
 	event := &SecurityEvent{
 		Name:      name,
@@ -1563,12 +1565,10 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 	logEvent := &Event{
 		Name:            string(name),
 		AnonymousUserID: "backend",
+		URL:             host,
 		Argument:        eArgs,
 		Source:          "BACKEND",
 		Timestamp:       time.Now(),
-	}
-	if r != nil && r.URL != nil {
-		logEvent.URL = r.URL.Host
 	}
 
 	db.EventLogs().Insert(ctx, logEvent)
