@@ -147,7 +147,7 @@ func getDocumentRanks(ctx context.Context, repoName string, sourcegraphRoot *url
 		return types.RepoPathRanks{}, &url.Error{
 			Op:  "Get",
 			URL: u.String(),
-			Err: fmt.Errorf("%s: %s", resp.Status, string(b)),
+			Err: errors.Errorf("%s: %s", resp.Status, string(b)),
 		}
 	}
 
