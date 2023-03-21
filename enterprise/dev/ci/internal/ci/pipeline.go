@@ -107,9 +107,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 	case runtype.PullRequest:
-		// TODO remove, QA'ing this
-		ops.Merge(BazelIncrementalMainOperations())
-
 		// First, we set up core test operations that apply both to PRs and to other run
 		// types such as main.
 		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{
