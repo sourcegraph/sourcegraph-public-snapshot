@@ -176,6 +176,7 @@ func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *sc
 			} else { // replace
 				userRes.Attributes[attrName] = v
 			}
+			ensureSinglePrimaryItem(v, userRes.Attributes, attrName)
 			changed = true
 		default: // this value has a single item
 			var newlyChanged bool
@@ -228,6 +229,32 @@ func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *sc
 	}
 
 	return
+}
+
+// ensureSinglePrimaryItem ensures that only one item in a slice of items is marked as "primary".
+func ensureSinglePrimaryItem(v []interface{}, attributes scim.ResourceAttributes, attrName string) {
+	var primaryItem map[string]interface{}
+	for _, item := range v {
+		mapItem, ok := item.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if mapItem["primary"] == true {
+			primaryItem = mapItem
+			break
+		}
+	}
+	if primaryItem != nil {
+		for _, item := range attributes[attrName].([]interface{}) {
+			mapItem, ok := item.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			if mapItem["primary"] == true && mapItem["value"] != primaryItem["value"] {
+				mapItem["primary"] = false
+			}
+		}
+	}
 }
 
 // applyChangeToAttributes applies a change to a resource (for example, sets its userName).
@@ -349,6 +376,8 @@ type multiValueReplaceNotFoundStrategy func(
 	filterExpression filter.Expression,
 ) ([]interface{}, error)
 
+// standardMultiValueReplaceNotFoundStrategy is a multiValueReplaceNotFoundStrategy that is used when
+// the IdP is NOT Azure AD. See the comment on azureMultiValueReplaceNotFoundStrategy for more info.
 func standardMultiValueReplaceNotFoundStrategy(
 	_ []interface{},
 	_ string,
