@@ -9,6 +9,14 @@
     color: inherit;
 }
 
+:global(.cm-line) {
+    background-color: #282a36 !important;
+}
+
+:global(.selected-line) {
+    background-color: #44475a !important;
+}
+
 .theme-light {
     // Adapted from https://github.com/highlightjs/highlight.js/blob/1b10552510a1ec13a3d30d46281dc268553ad157/src/styles/vs.css
 
@@ -925,16 +933,39 @@
     // Each group should exactly match the name of the spec.
     // .hl-typed-$SYNTAX_KIND
 
+    // Darcula
+    --darcula-background: #282a36;
+    --darcula-current-line: #44475a;
+    --darcula-foreground: #f8f8f2;
+    --darcula-comment: #6272a4;
+    --darcula-cyan: #8be9fd;
+    --darcula-green: #50fa7b;
+    --darcula-orange: #ffb86c;
+    --darcula-pink: #ff79c6;
+    --darcula-purple: #bd93f9;
+    --darcula-red: #ff5555;
+    --darcula-yellow: #f1fa8c;
+
+    --scip-keyword: var(--darcula-orange);
+    --scip-identifier: var(--darcula-foreground);
+    --scip-identifier-type: var(--darcula-foreground);
+    --scip-identifier-attribute: var(--darcula-green);
+    --scip-identifier-function: var(--darcula-yellow);
+    --scip-string-literal: var(--darcula-cyan);
+    --scip-escape: var(--darcula-red);
+    --scip-numeric-literal: var(--darcula-purple);
+    --scip-comment: var(--darcula-comment);
+
     // Tailwind 300
-    --scip-keyword: var(--oc-orange-4);
-    --scip-identifier: var(--oc-blue-3);
-    --scip-identifier-type: var(--oc-indigo-3);
-    --scip-identifier-attribute: var(--oc-grape-3);
-    --scip-identifier-function: var(--oc-yellow-3);
-    --scip-string-literal: var(--oc-teal-3);
-    --scip-escape: var(--oc-red-3);
-    --scip-numeric-literal: var(--oc-cyan-3);
-    --scip-comment: var(--oc-green-5);
+    // --scip-keyword: var(--oc-orange-4);
+    // --scip-identifier: var(--oc-blue-3);
+    // --scip-identifier-type: var(--oc-indigo-3);
+    // --scip-identifier-attribute: var(--oc-grape-3);
+    // --scip-identifier-function: var(--oc-yellow-3);
+    // --scip-string-literal: var(--oc-teal-3);
+    // --scip-escape: var(--oc-red-3);
+    // --scip-numeric-literal: var(--oc-cyan-3);
+    // --scip-comment: var(--oc-green-5);
 
     .hl-typed-Comment {
         color: var(--scip-comment);
