@@ -32,10 +32,10 @@ const CORE_STEPS: StepConfiguration[] = [
         nextURL: '/search',
         component: SyncRepositoriesStep,
         onNext: (client: ApolloClient<{}>) => {
-            // Mutate initial totalRemoteRepositories value
+            // Mutate initial needsRepositoryConfiguration value
             // in order to avoid loop in Layout page redirection logic
             // TODO Remove this as soon as we have a proper Sourcegraph context store
-            window.context.totalRemoteRepositories = 1
+            window.context.needsRepositoryConfiguration = false
 
             // Update global site flags in order to fix global navigation items about
             // setup instance state
