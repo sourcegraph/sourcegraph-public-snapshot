@@ -8,10 +8,10 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { Container } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../components/WebStory'
+import { SelectedExternalService, WEBHOOK_BY_ID_LOG_PAGE_HEADER } from '../enterprise/site-admin/webhooks/backend'
 import { WebhookByIDLogPageHeaderResult } from '../graphql-operations'
 
 import { WebhookInfoLogPageHeader } from './WebhookInfoLogPageHeader'
-import { SelectedExternalService, WEBHOOK_BY_ID_LOG_PAGE_HEADER } from './webhooks/backend'
 
 const decorator: DecoratorFn = story => (
     <Container>

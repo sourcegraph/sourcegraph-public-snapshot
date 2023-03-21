@@ -74,6 +74,27 @@ const CodeInsightsJobsPage = lazyComponent(() => import('../insights/admin-ui/Co
 
 const SiteAdminCodyPage = lazyComponent(() => import('./cody/SiteAdminCodyPage'), 'SiteAdminCodyPage')
 
+const OutboundWebhooksPage = lazyComponent(
+    () => import('./outbound-webhooks/OutboundWebhooksPage'),
+    'OutboundWebhooksPage'
+)
+const OutgoingWebhookCreatePage = lazyComponent(() => import('./outbound-webhooks/CreatePage'), 'CreatePage')
+const OutgoingWebhookEditPage = lazyComponent(() => import('./outbound-webhooks/EditPage'), 'EditPage')
+const SiteAdminWebhooksPage = lazyComponent(() => import('./SiteAdminWebhooksPage'), 'SiteAdminWebhooksPage')
+const SiteAdminWebhookCreatePage = lazyComponent(
+    () => import('./SiteAdminWebhookCreatePage'),
+    'SiteAdminWebhookCreatePage'
+)
+const SiteAdminWebhookPage = lazyComponent(() => import('./SiteAdminWebhookPage'), 'SiteAdminWebhookPage')
+const SiteAdminSlowRequestsPage = lazyComponent(
+    () => import('./SiteAdminSlowRequestsPage'),
+    'SiteAdminSlowRequestsPage'
+)
+const SiteAdminWebhookUpdatePage = lazyComponent(
+    () => import('./SiteAdminWebhookUpdatePage'),
+    'SiteAdminWebhookUpdatePage'
+)
+
 export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
     [
         ...otherSiteAdminRoutes,
@@ -187,6 +208,35 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             path: '/roles',
             exact: true,
             render: props => <SiteAdminRolesPage {...props} />,
+        },
+        // Webhooks routes
+        {
+            path: '/webhooks/outgoing',
+            render: props => <OutboundWebhooksPage {...props} />,
+        },
+        {
+            path: '/webhooks/outgoing/create',
+            render: props => <OutgoingWebhookCreatePage {...props} />,
+        },
+        {
+            path: '/webhooks/outgoing/:id',
+            render: props => <OutgoingWebhookEditPage {...props} />,
+        },
+        {
+            path: '/webhooks/incoming',
+            render: props => <SiteAdminWebhooksPage {...props} />,
+        },
+        {
+            path: '/webhooks/incoming/create',
+            render: props => <SiteAdminWebhookCreatePage {...props} />,
+        },
+        {
+            path: '/webhooks/incoming/:id',
+            render: props => <SiteAdminWebhookPage {...props} />,
+        },
+        {
+            path: '/webhooks/incoming/:id/edit',
+            render: props => <SiteAdminWebhookUpdatePage {...props} />,
         },
     ] as readonly (SiteAdminAreaRoute | undefined)[]
 ).filter(Boolean) as readonly SiteAdminAreaRoute[]

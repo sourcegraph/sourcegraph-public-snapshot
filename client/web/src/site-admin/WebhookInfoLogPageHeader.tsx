@@ -6,10 +6,9 @@ import classNames from 'classnames'
 import { useQuery } from '@sourcegraph/http-client'
 import { Button, Icon } from '@sourcegraph/wildcard'
 
+import { WEBHOOK_BY_ID_LOG_PAGE_HEADER } from '../enterprise/site-admin/webhooks/backend'
+import { PerformanceGauge } from '../enterprise/site-admin/webhooks/PerformanceGauge'
 import { WebhookByIDLogPageHeaderResult } from '../graphql-operations'
-
-import { WEBHOOK_BY_ID_LOG_PAGE_HEADER } from './webhooks/backend'
-import { PerformanceGauge } from './webhooks/PerformanceGauge'
 
 import styles from './WebhookInfoLogPageHeader.module.scss'
 
