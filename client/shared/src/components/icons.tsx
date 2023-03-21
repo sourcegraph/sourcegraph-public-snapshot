@@ -191,6 +191,28 @@ export const CloudSyncIconRefresh = React.forwardRef((props, reference) => (
 )) as ForwardReferenceComponent<'svg', React.PropsWithChildren<IconProps>>
 CloudSyncIconRefresh.displayName = 'CloudSyncIconRefresh'
 
+export const CloudInfoIconRefresh = React.forwardRef((props, reference) => (
+    <svg
+        ref={reference}
+        {...props}
+        {...sizeProps(props)}
+        className={classNames('phabricator-icon mdi-icon', props.className)}
+        viewBox="0 -4 20 20"
+        fill="currentColor"
+        xmlns="http://www.w3.org/2000/svg"
+    >
+        <path
+            d="M10.3872 11.9168H4.96484C3.18134 11.9168 1.71484 10.4503 1.71484 8.66683C1.71484 7.00907 2.9321 5.62911 4.68879 5.40244L5.61324 5.28316L6.03009 4.44945C6.7313 3.04703 8.20576 2.0835 9.96484 2.0835C11.4816 2.0835 12.7994 2.80509 13.6199 3.90816L15.3998 3.43124C14.3159 1.58578 12.3089 0.333496 9.96484 0.333496C7.54818 0.333496 5.46484 1.66683 4.46484 3.66683C1.88151 4.00016 -0.0351562 6.0835 -0.0351562 8.66683C-0.0351562 11.4168 2.21484 13.6668 4.96484 13.6668H10.3872V11.9168Z"
+            fill="#798BAF"
+        />
+        <path
+            d="M19.9649 9.49464C19.9649 11.7987 18.097 13.6665 15.793 13.6665C13.4889 13.6665 11.6211 11.7987 11.6211 9.49464C11.6211 7.19057 13.4889 5.32275 15.793 5.32275C18.097 5.32275 19.9649 7.19057 19.9649 9.49464Z"
+            fill="#0BB3CA"
+        />
+    </svg>
+)) as ForwardReferenceComponent<'svg', React.PropsWithChildren<IconProps>>
+CloudInfoIconRefresh.displayName = 'CloudInfoIconRefresh'
+
 // TODO: Rename name when refresh design is complete
 // eslint-disable-next-line react/display-name
 export const CloudCheckIconRefresh = React.forwardRef((props, reference) => (
