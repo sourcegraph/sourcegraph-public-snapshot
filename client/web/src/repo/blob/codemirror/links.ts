@@ -92,6 +92,7 @@ class LinkBuilder implements PluginValue {
                                 class: classNames(styles.link, `hl-typed-${SyntaxKind[occurrence.kind]}`),
                                 attributes: {
                                     href: match[0],
+                                    rel: 'noreferrer noopener',
                                 },
                             })
 
