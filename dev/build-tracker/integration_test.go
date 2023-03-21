@@ -428,6 +428,23 @@ func TestSlackNotification(t *testing.T) {
 			t.Fatalf("failed to send slack notification: %v", err)
 		}
 	})
+	t.Run("baze nudege if one of the failed steps is :bazel: Configure", func(t *testing.T) {
+		// setup the build
+		msg := "one where :bazel: Configure failed"
+		b.Message = &msg
+		buildNumber++
+		b.Number = &buildNumber
+		b.Steps = map[string]*build.Step{
+			":bazel: Configure": build.NewStepFromJob(newJob(t, ":bazel: Configure", exit)),
+		}
+
+		// post a new notification
+		info := toBuildNotification(b)
+		err := client.Send(info)
+		if err != nil {
+			t.Fatalf("failed to send slack notification: %v", err)
+		}
+	})
 }
 
 func TestServerNotify(t *testing.T) {

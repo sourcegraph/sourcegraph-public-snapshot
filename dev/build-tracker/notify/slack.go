@@ -261,9 +261,36 @@ func (c *Client) createMessageBlocks(logger log.Logger, info *BuildNotification,
 	section := fmt.Sprintf("> %s\n\n", commitLink(msg, info.Commit))
 
 	// create a bulleted list of all the failed jobs
-	jobSection := createStepsSection("Fixed", info.Fixed, StepShowLimit)
-	jobSection += createStepsSection("Failed", info.Failed, StepShowLimit)
-	section += jobSection
+	fixedSection := createStepsSection("Fixed", info.Fixed, StepShowLimit)
+	failedSection := createStepsSection("Failed", info.Failed, StepShowLimit)
+	section += fixedSection + failedSection
+
+	nudge := slack.NewSectionBlock(
+		&slack.TextBlockObject{
+			Type: slack.MarkdownType,
+			Text: `:books: *More information on flakes*
+• <https://docs.sourcegraph.com/dev/background-information/ci#flakes|How to disable flaky tests>
+• <https://github.com/sourcegraph/sourcegraph/issues/new/choose|Create a flaky test issue>
+• <https://docs.sourcegraph.com/dev/how-to/testing#assessing-flaky-client-steps|Recognizing flaky client steps and how to fix them>
+
+_Disable flakes on sight and save your fellow teammate some time!_`,
+		},
+		nil,
+		nil,
+	)
+	// if one of the steps that failed is the ":bazel: Configure" step, then add a different nudge
+	if strings.Contains(failedSection, ":bazel: Configure") {
+		nudge = slack.NewSectionBlock(
+			&slack.TextBlockObject{
+				Type: slack.MarkdownType,
+				Text: fmt.Sprintf(`:bazel: *Bazel resolution tip*
+%s the ":bazel: Configure" step failed for your build. You need to run %s to update the build files and commit the result.
+For more information please see the Bazel FAQ.`, author, "`bazel configure`"),
+			},
+			nil,
+			nil,
+		)
+	}
 
 	blocks := []slack.Block{
 		slack.NewHeaderBlock(
@@ -294,22 +321,8 @@ func (c *Client) createMessageBlocks(logger log.Logger, info *BuildNotification,
 				},
 			}...,
 		),
-
 		&slack.DividerBlock{Type: slack.MBTDivider},
-
-		slack.NewSectionBlock(
-			&slack.TextBlockObject{
-				Type: slack.MarkdownType,
-				Text: `:books: *More information on flakes*
-• <https://docs.sourcegraph.com/dev/background-information/ci#flakes|How to disable flaky tests>
-• <https://github.com/sourcegraph/sourcegraph/issues/new/choose|Create a flaky test issue>
-• <https://docs.sourcegraph.com/dev/how-to/testing#assessing-flaky-client-steps|Recognizing flaky client steps and how to fix them>
-
-_Disable flakes on sight and save your fellow teammate some time!_`,
-			},
-			nil,
-			nil,
-		),
+		nudge,
 	}
 
 	return blocks, nil
