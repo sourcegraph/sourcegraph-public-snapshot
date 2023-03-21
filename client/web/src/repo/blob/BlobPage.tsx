@@ -283,6 +283,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                             aborted: blob.highlight.aborted,
                             lfs: blob.__typename === 'GitBlob' ? blob.lfs : undefined,
                             externalURLs: blob.__typename === 'GitBlob' ? blob.externalURLs : undefined,
+                            snapshotData: blob.snapshot,
                         }
                         return blobInfo
                     }),

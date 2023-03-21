@@ -200,6 +200,13 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
+
+    snapshot: [SnapshotData!]!
+}
+
+type SnapshotData {
+    offset: Int!
+    data: String!
 }
 
 """

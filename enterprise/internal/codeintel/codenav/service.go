@@ -2,10 +2,12 @@ package codenav
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	traceLog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/lsifstore"
@@ -1307,4 +1309,90 @@ func (s *Service) getVisibleUpload(ctx context.Context, line, character int, upl
 		TargetPosition:        targetPosition,
 		TargetPathWithoutRoot: strings.TrimPrefix(targetPath, upload.Root),
 	}, true, nil
+}
+
+func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, commit, path string) (data []shared.SnapshotData, err error) {
+	closestDumps, err := s.GetClosestDumpsForBlob(ctx, repositoryID, commit, path, true, "")
+	if err != nil {
+		return nil, err
+	}
+
+	if len(closestDumps) == 0 {
+		return nil, nil
+	}
+
+	closestDump := closestDumps[0]
+
+	document, err := s.lsifstore.SCIPDocument(ctx, closestDump.ID, path)
+	if err != nil {
+		return nil, err
+	}
+
+	file, err := s.gitserver.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, api.RepoName(closestDump.RepositoryName), api.CommitID(closestDump.Commit), path)
+	if err != nil {
+		return nil, err
+	}
+
+	repo, err := s.repoStore.Get(ctx, api.RepoID(closestDump.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	hunkcache, err := NewHunkCache(10)
+	if err != nil {
+		return nil, err
+	}
+	gittranslator := NewGitTreeTranslator(s.gitserver, &requestArgs{
+		repo:   repo,
+		commit: commit,
+		path:   path,
+	}, hunkcache)
+
+	linemap := newLinemap(string(file))
+	formatter := scip.LenientVerboseSymbolFormatter
+	// symtab := document.SymbolTable()
+
+	for _, occ := range document.Occurrences {
+		formatted, err := formatter.Format(occ.Symbol)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+
+		originalRange := scip.NewRange(occ.Range)
+
+		var snap strings.Builder
+		snap.WriteString(strings.Repeat(" ", int(originalRange.Start.Character)))
+		snap.WriteString(strings.Repeat("^", int(originalRange.End.Character-originalRange.Start.Character)))
+		snap.WriteRune(' ')
+
+		if occ.SymbolRoles&int32(scip.SymbolRole_Definition) > 0 {
+			snap.WriteString("definition")
+		} else {
+			snap.WriteString("reference")
+		}
+		snap.WriteRune(' ')
+		snap.WriteString(formatted)
+
+		_, newRange, ok, err := gittranslator.GetTargetCommitPositionFromSourcePosition(ctx, closestDump.Commit, types.Position{
+			Line:      int(originalRange.Start.Line),
+			Character: int(originalRange.Start.Character),
+		}, false)
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			fmt.Println("FAILED TO TRANSLATE")
+			continue
+		}
+
+		fmt.Printf("%s %+v %+v %d\n", formatted, newRange, originalRange, linemap.positions[newRange.Line+1])
+
+		data = append(data, shared.SnapshotData{
+			DocumentOffset: linemap.positions[newRange.Line+1],
+			Symbol:         snap.String(),
+		})
+	}
+
+	return
 }

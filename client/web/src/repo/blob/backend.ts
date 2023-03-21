@@ -42,69 +42,89 @@ interface FetchBlobOptions {
     endLine?: number | null
 }
 
-export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observable<BlobFileFields | null> => {
-    const { repoName, revision, filePath, disableTimeout, format, startLine, endLine } =
-        applyDefaultValuesToFetchBlobOptions(options)
+export const fetchBlob = memoizeObservable(
+    (
+        options: FetchBlobOptions
+    ): Observable<(BlobFileFields & { snapshot?: { offset: number; data: string }[] }) | null> => {
+        const { repoName, revision, filePath, disableTimeout, format, startLine, endLine } =
+            applyDefaultValuesToFetchBlobOptions(options)
 
-    // We only want to include HTML data if explicitly requested. We always
-    // include LSIF because this is used for languages that are configured
-    // to be processed with tree sitter (and is used when explicitly
-    // requested via JSON_SCIP).
-    const html = [HighlightResponseFormat.HTML_PLAINTEXT, HighlightResponseFormat.HTML_HIGHLIGHT].includes(format)
-    return requestGraphQL<BlobResult, BlobVariables>(
-        gql`
-            query Blob(
-                $repoName: String!
-                $revision: String!
-                $filePath: String!
-                $disableTimeout: Boolean!
-                $format: HighlightResponseFormat!
-                $html: Boolean!
-                $startLine: Int
-                $endLine: Int
-            ) {
-                repository(name: $repoName) {
-                    commit(rev: $revision) {
-                        file(path: $filePath) {
-                            ...BlobFileFields
+        // We only want to include HTML data if explicitly requested. We always
+        // include LSIF because this is used for languages that are configured
+        // to be processed with tree sitter (and is used when explicitly
+        // requested via JSON_SCIP).
+        const html = [HighlightResponseFormat.HTML_PLAINTEXT, HighlightResponseFormat.HTML_HIGHLIGHT].includes(format)
+        return requestGraphQL<BlobResult, BlobVariables>(
+            gql`
+                query Blob(
+                    $repoName: String!
+                    $revision: String!
+                    $filePath: String!
+                    $disableTimeout: Boolean!
+                    $format: HighlightResponseFormat!
+                    $html: Boolean!
+                    $startLine: Int
+                    $endLine: Int
+                ) {
+                    repository(name: $repoName) {
+                        commit(rev: $revision) {
+                            file(path: $filePath) {
+                                ...BlobFileFields
+                            }
+                            blob(path: $filePath) {
+                                lsif {
+                                    snapshot {
+                                        offset
+                                        data
+                                    }
+                                }
+                            }
                         }
                     }
                 }
-            }
 
-            fragment BlobFileFields on File2 {
-                __typename
-                content(startLine: $startLine, endLine: $endLine)
-                richHTML(startLine: $startLine, endLine: $endLine)
-                highlight(disableTimeout: $disableTimeout, format: $format, startLine: $startLine, endLine: $endLine) {
-                    aborted
-                    html @include(if: $html)
-                    lsif
-                }
-                totalLines
-                ... on GitBlob {
-                    lfs {
-                        byteSize
+                fragment BlobFileFields on File2 {
+                    __typename
+                    content(startLine: $startLine, endLine: $endLine)
+                    richHTML(startLine: $startLine, endLine: $endLine)
+                    highlight(
+                        disableTimeout: $disableTimeout
+                        format: $format
+                        startLine: $startLine
+                        endLine: $endLine
+                    ) {
+                        aborted
+                        html @include(if: $html)
+                        lsif
                     }
-                    externalURLs {
-                        url
-                        serviceKind
+                    totalLines
+                    ... on GitBlob {
+                        lfs {
+                            byteSize
+                        }
+                        externalURLs {
+                            url
+                            serviceKind
+                        }
                     }
                 }
-            }
-        `,
-        { repoName, revision, filePath, disableTimeout, format, html, startLine, endLine }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (!data.repository?.commit) {
-                throw new Error('Commit not found')
-            }
+            `,
+            { repoName, revision, filePath, disableTimeout, format, html, startLine, endLine }
+        ).pipe(
+            map(dataOrThrowErrors),
+            map(data => {
+                if (!data.repository?.commit) {
+                    throw new Error('Commit not found')
+                }
 
-            return data.repository.commit.file
-        })
-    )
-}, fetchBlobCacheKey)
+                return { snapshot: data.repository.commit.blob?.lsif?.snapshot, ...data.repository.commit.file } as
+                    | (BlobFileFields & { snapshot?: { offset: number; data: string }[] })
+                    | null
+            })
+        )
+    },
+    fetchBlobCacheKey
+)
 
 /**
  * Returns the preferred blob prefetch format.
