@@ -1,5 +1,5 @@
 {
-  "checksum": "75577b9b5a017805673ca98bd2226be6ba90724e1628869e5c55de6e6cfd5c28",
+  "checksum": "6655664b9ffcd3b5378f115297e4793f7479ff8a4953d123a0a2c215cf5784b8",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -7988,11 +7988,11 @@
               "target": "smallvec"
             },
             {
-              "id": "unicode-segmentation 1.9.0",
+              "id": "unicode-segmentation 1.10.1",
               "target": "unicode_segmentation"
             },
             {
-              "id": "unicode-width 0.1.9",
+              "id": "unicode-width 0.1.10",
               "target": "unicode_width"
             }
           ],
@@ -8887,6 +8887,14 @@
             {
               "id": "tree-sitter-highlight 0.20.1",
               "target": "tree_sitter_highlight"
+            },
+            {
+              "id": "unicode-segmentation 1.10.1",
+              "target": "unicode_segmentation"
+            },
+            {
+              "id": "unicode-width 0.1.10",
+              "target": "unicode_width"
             }
           ],
           "selects": {}
@@ -12673,13 +12681,13 @@
       },
       "license": "(MIT OR Apache-2.0) AND Unicode-DFS-2016"
     },
-    "unicode-segmentation 1.9.0": {
+    "unicode-segmentation 1.10.1": {
       "name": "unicode-segmentation",
-      "version": "1.9.0",
+      "version": "1.10.1",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/unicode-segmentation/1.9.0/download",
-          "sha256": "7e8820f5d777f6224dc4be3632222971ac30164d4a258d595640799554ebfd99"
+          "url": "https://crates.io/api/v1/crates/unicode-segmentation/1.10.1/download",
+          "sha256": "1dd624098567895118886609431a7c3b8f516e41d30e0643f03d94592a147e36"
         }
       },
       "targets": [
@@ -12699,17 +12707,17 @@
           "**"
         ],
         "edition": "2018",
-        "version": "1.9.0"
+        "version": "1.10.1"
       },
       "license": "MIT/Apache-2.0"
     },
-    "unicode-width 0.1.9": {
+    "unicode-width 0.1.10": {
       "name": "unicode-width",
-      "version": "0.1.9",
+      "version": "0.1.10",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/unicode-width/0.1.9/download",
-          "sha256": "3ed742d4ea2bd1176e236172c8429aaf54486e7ac098db29ffe6529e0ce50973"
+          "url": "https://crates.io/api/v1/crates/unicode-width/0.1.10/download",
+          "sha256": "c0edd1e5b14653f783770bce4a4dabb4a5108a5370a5f5d8cfe8710c361f6c8b"
         }
       },
       "targets": [
@@ -12735,7 +12743,7 @@
           "selects": {}
         },
         "edition": "2015",
-        "version": "0.1.9"
+        "version": "0.1.10"
       },
       "license": "MIT/Apache-2.0"
     },
