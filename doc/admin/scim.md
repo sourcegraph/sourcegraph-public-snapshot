@@ -45,7 +45,7 @@ To configure:
 
 ## Configuring SCIM for Okta
 
-To set up user provisioning in Okta, you must first set up a new app integration of the "SAML 2.0" type, then configure it to use SCIM. Here are the steps to do this:
+To set up user provisioning in [Okta](https://help.okta.com/en-us/Content/Topics/Apps/Apps_App_Integration_Wizard_SCIM.htm), you must first set up a new app integration of the "SAML 2.0" type, then configure it to use SCIM. Here are the steps to do this:
 
 1. Follow our [SAML guide](auth/saml/okta) to set up a new app integration with SAML, then open the integration you just created.
     - If you already have the integration, just open your existing app integration.
@@ -54,12 +54,12 @@ To set up user provisioning in Okta, you must first set up a new app integration
 1. Go to the "Provisioning" tab, and click "Edit"
    - Set "SCIM connector base URL" to `{yourSourcegraphUrl}/.api/scim/v2`
    - Set "Unique identifier field for users" to `userName`
-   - Check the first three items in `Supported provisioning actions`
+   - Check the first three items in `Supported provisioning actions`: "Import New Users and Profile Updates", "Push New Users", and "Push Profile Updates".
    - Set "Authentication mode" to "HTTP Header"
    - Under "HTTP Header", paste the same alphanumeric bearer token you used in your site config.
    - Click "Save".
 
-Note that you can also use our [SAML](auth/saml/okta) and [OpenID Connect](auth#openid-connect) integrations with Okta.
+> NOTE: You can also use our [SAML](auth/saml/okta) and [OpenID Connect](auth#openid-connect) integrations with Okta.
 
 ## Features and limitations
 
