@@ -28,7 +28,7 @@ type CoreTestOperationsOptions struct {
 	MinimumUpgradeableVersion  string
 	ClientLintOnlyChangedFiles bool
 	ForceReadyForReview        bool
-	// for addWebApp
+	// for addWebAppOSSBuild
 	CacheBundleSize      bool
 	CreateBundleSizeDiff bool
 	// ForceBazel replaces vanilla jobs with Bazel ones if enabled.
@@ -73,14 +73,17 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 				clientChromaticTests(opts),
 				// frontendTests is now covered by Bazel
 				// frontendTests,                // ~4.5m
-				addWebApp(opts), // ~5.5m
+				// addWebAppOSSBuild is now covered by Bazel
+				// addWebAppOSSBuild(opts),
+				addWebAppEnterpriseBuild(opts),
 				// addWebAppTests is now covered by Bazel
 				// addWebAppTests(opts),
 				// addBrowserExtensionsUnitTests is now covered by Bazel
 				// addBrowserExtensionUnitTests, // ~4.5m
 				addJetBrainsUnitTests, // ~2.5m
-				addTypescriptCheck,    // ~4m
-				addVsceTests,          // ~3.0m
+				// addTypescriptCheck is now covered by Bazel
+				// addTypescriptCheck,    // ~4m
+				addVsceTests, // ~3.0m
 			)
 		} else {
 			// If there are any Graphql changes, they are impacting the client as well.
@@ -88,7 +91,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 				clientIntegrationTests,
 				clientChromaticTests(opts),
 				frontendTests, // ~4.5m
-				addWebApp(opts),
+				addWebAppOSSBuild(opts),
 				addWebAppTests(opts),
 				addBrowserExtensionUnitTests, // ~4.5m
 				addJetBrainsUnitTests,        // ~2.5m
@@ -242,7 +245,7 @@ func addClientLintersForChangedFiles(pipeline *bk.Pipeline) {
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
-func addWebApp(opts CoreTestOperationsOptions) operations.Operation {
+func addWebAppOSSBuild(opts CoreTestOperationsOptions) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		// Webapp build
 		pipeline.AddStep(":webpack::globe_with_meridians: Build",
@@ -250,8 +253,6 @@ func addWebApp(opts CoreTestOperationsOptions) operations.Operation {
 			bk.Cmd("dev/ci/pnpm-build.sh client/web"),
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("ENTERPRISE", ""))
-
-		addWebEnterpriseBuild(pipeline, opts)
 	}
 }
 
@@ -270,38 +271,40 @@ func addWebAppTests(opts CoreTestOperationsOptions) operations.Operation {
 }
 
 // Webapp enterprise build
-func addWebEnterpriseBuild(pipeline *bk.Pipeline, opts CoreTestOperationsOptions) {
-	commit := os.Getenv("BUILDKITE_COMMIT")
-	branch := os.Getenv("BUILDKITE_BRANCH")
+func addWebAppEnterpriseBuild(opts CoreTestOperationsOptions) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		commit := os.Getenv("BUILDKITE_COMMIT")
+		branch := os.Getenv("BUILDKITE_BRANCH")
 
-	cmds := []bk.StepOpt{
-		withPnpmCache(),
-		bk.Cmd("dev/ci/pnpm-build.sh client/web"),
-		bk.Env("NODE_ENV", "production"),
-		bk.Env("ENTERPRISE", "1"),
-		bk.Env("CHECK_BUNDLESIZE", "1"),
-		// To ensure the Bundlesize output can be diffed to the baseline on main
-		bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
+		cmds := []bk.StepOpt{
+			withPnpmCache(),
+			bk.Cmd("dev/ci/pnpm-build.sh client/web"),
+			bk.Env("NODE_ENV", "production"),
+			bk.Env("ENTERPRISE", "1"),
+			bk.Env("CHECK_BUNDLESIZE", "1"),
+			// To ensure the Bundlesize output can be diffed to the baseline on main
+			bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
+		}
+
+		if opts.CacheBundleSize {
+			cmds = append(cmds,
+				// Emit a stats.json file for bundle size diffs
+				bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
+				withBundleSizeCache(commit))
+		}
+
+		if opts.CreateBundleSizeDiff {
+			cmds = append(cmds,
+				// Emit a stats.json file for bundle size diffs
+				bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
+				bk.Env("BRANCH", branch),
+				bk.Env("COMMIT", commit),
+				bk.Cmd("dev/ci/report-bundle-diff.sh"),
+			)
+		}
+
+		pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build", cmds...)
 	}
-
-	if opts.CacheBundleSize {
-		cmds = append(cmds,
-			// Emit a stats.json file for bundle size diffs
-			bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
-			withBundleSizeCache(commit))
-	}
-
-	if opts.CreateBundleSizeDiff {
-		cmds = append(cmds,
-			// Emit a stats.json file for bundle size diffs
-			bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
-			bk.Env("BRANCH", branch),
-			bk.Env("COMMIT", commit),
-			bk.Cmd("dev/ci/report-bundle-diff.sh"),
-		)
-	}
-
-	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build", cmds...)
 }
 
 var browsers = []string{"chrome"}
