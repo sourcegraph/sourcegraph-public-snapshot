@@ -5,22 +5,18 @@ import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
 import { Tips } from './Tips'
 import { SubmitSvg } from './utils/icons'
 import { ChatMessage } from './utils/types'
-import { WebviewMessage, vscodeAPI } from './utils/VSCodeApi'
+import { vscodeAPI } from './utils/VSCodeApi'
 
 import './Chat.css'
 
 interface ChatboxProps {
     messageInProgress: ChatMessage | null
-    setMessageInProgress: (transcript: ChatMessage | null) => void
     transcript: ChatMessage[]
-    setTranscript: (transcripts: ChatMessage[]) => void
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
-    setMessageInProgress,
     transcript,
-    setTranscript,
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [formInput, setFormInput] = useState('')
@@ -48,18 +44,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     }
 
     const onChatSubmit = useCallback(async () => {
+        vscodeAPI.postMessage({ command: 'submit', text: formInput })
         setInputRows(5)
-        const chatMsg: ChatMessage = { speaker: 'human', displayText: formInput, timestamp: getShortTimestamp() }
-        setMessageInProgress({ speaker: 'assistant', displayText: '', timestamp: getShortTimestamp() })
-        setTranscript([...transcript, chatMsg])
-
-        vscodeAPI.postMessage({ command: 'submit', text: formInput } as WebviewMessage)
-
-        if (formInput === '/reset') {
-            setMessageInProgress(null)
-        }
         setFormInput('')
-    }, [formInput, setTranscript, setMessageInProgress, transcript])
+    }, [formInput, setFormInput])
 
     const bubbleClassName = (speaker: string): string => (speaker === 'human' ? 'human' : 'bot')
 
@@ -196,13 +184,4 @@ const ContextFiles: React.FunctionComponent<{ contextFiles: string[] }> = ({ con
             </div>
         </p>
     )
-}
-
-export function getShortTimestamp(): string {
-    const date = new Date()
-    return `${padTimePart(date.getHours())}:${padTimePart(date.getMinutes())}`
-}
-
-function padTimePart(timePart: number): string {
-    return timePart < 10 ? `0${timePart}` : timePart.toString()
 }

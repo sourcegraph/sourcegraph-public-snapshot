@@ -1,4 +1,5 @@
-import { ChatMessage, ChatViewProvider } from './chat/ChatViewProvider'
+import { ChatViewProvider } from './chat/ChatViewProvider'
+import { ChatMessage } from './chat/transcript/messages'
 
 // A one-slot channel which lets readers block on a value being
 // available from a writer. Tests use this to wait for the

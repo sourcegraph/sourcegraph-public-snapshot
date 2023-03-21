@@ -1,8 +1,10 @@
-import { ExplainCodeDetailed, ExplainCodeHighLevel } from './explainCode'
-import { GenerateDocstring } from './generateDocstring'
-import { GenerateTest } from './generateTest'
-import { GitHistory } from './gitLog'
-import { ImproveVariableNames } from './improveVariableNames'
+import { ChatQuestion } from './chat-question'
+import { ExplainCodeDetailed } from './explain-code-detailed'
+import { ExplainCodeHighLevel } from './explain-code-high-level'
+import { GenerateDocstring } from './generate-docstring'
+import { GenerateTest } from './generate-test'
+import { GitHistory } from './git-log'
+import { ImproveVariableNames } from './improve-variable-names'
 import { Recipe } from './recipe'
 import { TranslateToLanguage } from './translate'
 
@@ -17,7 +19,12 @@ export function getRecipe(id: string): Recipe | null {
 }
 
 function init() {
+    if (Object.keys(registeredRecipes).length > 0) {
+        return
+    }
+
     const recipes: Recipe[] = [
+        new ChatQuestion(),
         new ExplainCodeDetailed(),
         new ExplainCodeHighLevel(),
         new GenerateDocstring(),

@@ -90,7 +90,7 @@
       },
       {
         "command": "cody.recipe.git-history",
-        "title": "Cody: Recent History"
+        "title": "Ask Cody: Recent History"
       },
       {
         "command": "cody.recipe.improve-variable-names",
