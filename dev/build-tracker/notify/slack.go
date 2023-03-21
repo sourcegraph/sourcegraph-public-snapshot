@@ -284,8 +284,9 @@ _Disable flakes on sight and save your fellow teammate some time!_`,
 			&slack.TextBlockObject{
 				Type: slack.MarkdownType,
 				Text: fmt.Sprintf(`:bazel: *Bazel resolution tip*
-%s the ":bazel: Configure" step failed for your build. You need to run %s to update the build files and commit the result.
-For more information please see the Bazel FAQ.`, author, "`bazel configure`"),
+When the *configure* step fails, you need to run %s to update the build files and commit the result.
+
+For more information please see the <https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@b07a465f6e392cd55c24c28d24ef903269e45689/-/blob/doc/dev/background-information/bazel.md|Bazel FAQ>.`, "`bazel configure`"),
 			},
 			nil,
 			nil,
