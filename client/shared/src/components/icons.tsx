@@ -207,7 +207,7 @@ export const CloudInfoIconRefresh = React.forwardRef((props, reference) => (
         />
         <path
             d="M19.9649 9.49464C19.9649 11.7987 18.097 13.6665 15.793 13.6665C13.4889 13.6665 11.6211 11.7987 11.6211 9.49464C11.6211 7.19057 13.4889 5.32275 15.793 5.32275C18.097 5.32275 19.9649 7.19057 19.9649 9.49464Z"
-            fill="#0b70db"
+            fill="#72dbe8"
         />
     </svg>
 )) as ForwardReferenceComponent<'svg', React.PropsWithChildren<IconProps>>

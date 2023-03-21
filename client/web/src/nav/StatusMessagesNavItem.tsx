@@ -103,7 +103,7 @@ function entryIcon(entryType: EntryType): JSX.Element {
             return (
                 <Icon
                     {...sharedProps}
-                    className={classNames('text-primary', styles.icon)}
+                    className={classNames('text-info', styles.icon)}
                     svgPath={mdiInformationOutline}
                     aria-label="Information"
                 />
@@ -134,6 +134,8 @@ const getBorderClassname = (entryType: EntryType): string => {
             return styles.entryBorderProgress
         case 'indexing':
             return styles.entryBorderProgress
+        case 'info':
+            return styles.entryBorderInfo
         default:
             return ''
     }
