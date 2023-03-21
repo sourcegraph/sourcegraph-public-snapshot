@@ -186,6 +186,7 @@ func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *sc
 					newlyChanged = applyAttributeChange(userRes.Attributes, attrName, v, op.Op)
 				}
 				changed = changed || newlyChanged
+				return
 			}
 
 			// We have a valueExpression to apply which means this must be a slice
