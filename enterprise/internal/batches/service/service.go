@@ -994,14 +994,18 @@ func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangeset
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = tx.Done(err) }()
+	defer func() {
+		err = tx.Done(err)
+		// Only enqueue the webhook if after the transaction is finished, or the batch
+		// change payload will still show the open old state.
+		s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeClose, bgql.MarshalBatchChangeID(batchChange.ID))
+	}()
 
 	batchChange.ClosedAt = s.clock()
 	if err := tx.UpdateBatchChange(ctx, batchChange); err != nil {
 		return nil, err
 	}
 
-	s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeClose, bgql.MarshalBatchChangeID(batchChange.ID))
 	if !closeChangesets {
 		return batchChange, nil
 	}
@@ -1033,6 +1037,8 @@ func (s *Service) DeleteBatchChange(ctx context.Context, id int64) (err error) {
 		return err
 	}
 
+	// We enqueue this webhook before actually deleting the batch change, so that the
+	// payload contains the last state of the batch change before it was hard-deleted.
 	s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeDelete, bgql.MarshalBatchChangeID(batchChange.ID))
 	return s.store.DeleteBatchChange(ctx, id)
 }
