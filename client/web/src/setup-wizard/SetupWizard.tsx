@@ -20,7 +20,7 @@ import styles from './Setup.module.scss'
 
 const CORE_STEPS: StepConfiguration[] = [
     {
-        id: 'remote-repositoires',
+        id: 'remote-repositories',
         name: 'Add remote repositories',
         path: '/setup/remote-repositories',
         component: RemoteRepositoriesStep,
