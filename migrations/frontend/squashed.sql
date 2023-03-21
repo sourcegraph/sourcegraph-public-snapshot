@@ -5106,6 +5106,8 @@ CREATE INDEX changesets_reconciler_state_idx ON changesets USING btree (reconcil
 
 CREATE INDEX cm_action_jobs_state_idx ON cm_action_jobs USING btree (state);
 
+CREATE INDEX cm_action_jobs_trigger_event ON cm_action_jobs USING btree (trigger_event);
+
 CREATE INDEX cm_slack_webhooks_monitor ON cm_slack_webhooks USING btree (monitor);
 
 CREATE INDEX cm_trigger_jobs_finished_at ON cm_trigger_jobs USING btree (finished_at);

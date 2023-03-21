@@ -536,6 +536,7 @@ Triggers:
 Indexes:
     "cm_action_jobs_pkey" PRIMARY KEY, btree (id)
     "cm_action_jobs_state_idx" btree (state)
+    "cm_action_jobs_trigger_event" btree (trigger_event)
 Check constraints:
     "cm_action_jobs_only_one_action_type" CHECK ((
 CASE
