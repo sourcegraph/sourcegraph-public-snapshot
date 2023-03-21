@@ -8,6 +8,7 @@ import { Button, Link, Icon, Code } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
+import { Linkified } from '../linkifiy/Linkified'
 
 import { GitCommitNodeProps } from './GitCommitNode'
 import { GitCommitNodeByline } from './GitCommitNodeByline'
@@ -61,10 +62,12 @@ export const GitCommitNodeTableRow: React.FC<
     )
 
     const commitMessageBody =
-        expandCommitMessageBody || showCommitMessageBody ? (
+        (expandCommitMessageBody || showCommitMessageBody) && node.body ? (
             <tr className={classNames(styles.tableRow, className)}>
                 <td colSpan={3}>
-                    <pre className={styles.messageBody}>{node.body}</pre>
+                    <pre className={styles.messageBody}>
+                        <Linkified input={node.body} externalURLs={node.externalURLs} />
+                    </pre>
                 </td>
             </tr>
         ) : undefined

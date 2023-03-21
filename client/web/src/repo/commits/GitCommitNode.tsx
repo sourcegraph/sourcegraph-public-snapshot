@@ -13,6 +13,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 import { DiffModeSelector } from '../commit/DiffModeSelector'
 import { DiffMode } from '../commit/RepositoryCommitPage'
+import { Linkified } from '../linkifiy/Linkified'
 
 import { GitCommitNodeByline } from './GitCommitNodeByline'
 
@@ -146,9 +147,11 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     )
 
     const commitMessageBody =
-        expandCommitMessageBody || showCommitMessageBody ? (
+        (expandCommitMessageBody || showCommitMessageBody) && node.body ? (
             <div className="w-100">
-                <pre className={styles.messageBody}>{node.body}</pre>
+                <pre className={styles.messageBody}>
+                    <Linkified input={node.body} externalURLs={node.externalURLs} />
+                </pre>
             </div>
         ) : undefined
 
@@ -227,7 +230,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     }
 
     const viewFilesCommitElement = node.tree && (
-        <div className="d-flex justify-content-between align-items-start">
+        <div className="d-flex justify-content-between align-items-start mt-3">
             <Tooltip content="Browse files in the repository at this point in history">
                 <Button
                     className="align-center d-inline-flex"

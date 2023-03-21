@@ -296,6 +296,7 @@ importers:
       libhoney: ^3.1.1
       license-checker: ^25.0.1
       linguist-languages: ^7.14.0
+      linkifyjs: ^4.1.0
       lodash: ^4.17.20
       lru-cache: ^7.8.0
       marked: 4.0.16
@@ -508,6 +509,7 @@ importers:
       js-yaml: 4.1.0
       jsonc-parser: 3.2.0
       linguist-languages: 7.14.0
+      linkifyjs: 4.1.0
       lodash: 4.17.21
       lru-cache: 7.14.0
       marked: 4.0.16
@@ -19425,6 +19427,10 @@ packages:
     resolution: {integrity: sha512-ynTsyrFSdE5oZ/O9GEf00kPngmOfVwazR5GKDq6EYfhlpFug3J2zybX56a2PRRpc9P+FuSoGNAwjlbDs9jJBPQ==}
     dependencies:
       uc.micro: 1.0.5
+
+  /linkifyjs/4.1.0:
+    resolution: {integrity: sha512-Ffv8VoY3+ixI1b3aZ3O+jM6x17cOsgwfB1Wq7pkytbo1WlyRp6ZO0YDMqiWT/gQPY/CmtiGuKfzDIVqxh1aCTA==}
+    dev: false
 
   /listenercount/1.0.1:
     resolution: {integrity: sha512-3mk/Zag0+IJxeDrxSgaDPy4zZ3w05PRZeJNnlWhzFz5OkX49J4krc+A8X2d2M69vGMBEX0uyl8M+W+8gH+kBqQ==}
