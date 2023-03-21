@@ -186,7 +186,7 @@ func Test_UserResourceHandler_PatchRemoveNonExistingField(t *testing.T) {
 	assert.Nil(t, userRes.Attributes[AttrNickName])
 }
 
-func Test_UserResourceHandler_PatchAddEmail(t *testing.T) {
+func Test_UserResourceHandler_PatchAddPrimaryEmail(t *testing.T) {
 	db := createMockDB()
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 	operations := []scim.PatchOperation{
@@ -201,6 +201,22 @@ func Test_UserResourceHandler_PatchAddEmail(t *testing.T) {
 	assert.False(t, emails[0].(map[string]interface{})["primary"].(bool))
 	assert.False(t, emails[1].(map[string]interface{})["primary"].(bool))
 	assert.True(t, emails[2].(map[string]interface{})["primary"].(bool))
+}
+
+func Test_UserResourceHandler_PatchReplacePrimaryEmailWithFilter(t *testing.T) {
+	db := createMockDB()
+	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
+	operations := []scim.PatchOperation{
+		{Op: "replace", Path: parseStringPath("emails[value eq \"secondary@work.com\"].primary"), Value: true},
+	}
+
+	userRes, err := userResourceHandler.Patch(createDummyRequest(), "1", operations)
+	assert.NoError(t, err)
+	// Check emails
+	emails := userRes.Attributes[AttrEmails].([]interface{})
+	assert.Len(t, emails, 2)
+	assert.False(t, emails[0].(map[string]interface{})["primary"].(bool))
+	assert.True(t, emails[1].(map[string]interface{})["primary"].(bool))
 }
 
 func Test_UserResourceHandler_PatchAddNonExistingField(t *testing.T) {

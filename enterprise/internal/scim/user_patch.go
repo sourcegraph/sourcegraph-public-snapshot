@@ -202,6 +202,7 @@ func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *sc
 			if subAttrName != "" {
 				attributeToSet = subAttrName
 			}
+			matchedItems := []interface{}{}
 			for i := 0; i < len(attributeItems); i++ {
 				item, ok := attributeItems[i].(map[string]interface{})
 				if !ok {
@@ -213,6 +214,7 @@ func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *sc
 					newlyChanged := applyAttributeChange(item, attributeToSet, v, op.Op)
 					if newlyChanged {
 						attributeItems[i] = item //attribute items are updated
+						matchedItems = append(matchedItems, item)
 					}
 					changed = changed || newlyChanged
 				}
@@ -223,6 +225,9 @@ func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *sc
 				if err != nil {
 					return
 				}
+			}
+			if attributeToSet == "primary" && v == true {
+				ensureSinglePrimaryItem(matchedItems, userRes.Attributes, attrName)
 			}
 			userRes.Attributes[attrName] = attributeItems
 		}
