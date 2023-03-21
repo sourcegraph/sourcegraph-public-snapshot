@@ -374,10 +374,10 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
 
 	tests := []struct {
-		name           string
-		fetchAccount   func(ctx context.Context, user *types.User, accounts []*extsvc.Account, emails []string) (*extsvc.Account, error)
-		fetchUserPerms func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error)
-		statuses       database.CodeHostStatusesSet
+		name                string
+		fetchAccountError   error
+		fetchUserPermsError error
+		statuses            database.CodeHostStatusesSet
 	}{
 		{
 			name: "gitlab perms sync succeeds, github FetchAccount succeeds",
@@ -401,9 +401,7 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 				Status:       "SUCCESS",
 				Message:      "FetchUserPerms",
 			}},
-			fetchAccount: func(context.Context, *types.User, []*extsvc.Account, []string) (*extsvc.Account, error) {
-				return nil, errors.New("no account found for this user")
-			},
+			fetchAccountError: errors.New("no account found for this user"),
 		},
 		{
 			name: "gitlab perms sync fails, github FetchAccount succeeds",
@@ -413,9 +411,7 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 				Status:       "ERROR",
 				Message:      "FetchUserPerms: horse error",
 			}},
-			fetchUserPerms: func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
-				return nil, errors.New("horse error")
-			},
+			fetchUserPermsError: errors.New("horse error"),
 		},
 		{
 			name: "gitlab perms sync fails, github FetchAccount fails",
@@ -430,22 +426,22 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 				Status:       "ERROR",
 				Message:      "FetchUserPerms: horse error",
 			}},
-			fetchAccount: func(context.Context, *types.User, []*extsvc.Account, []string) (*extsvc.Account, error) {
-				return nil, errors.New("no account found for this user")
-			},
-			fetchUserPerms: func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
-				return nil, errors.New("horse error")
-			},
+			fetchAccountError:   errors.New("no account found for this user"),
+			fetchUserPermsError: errors.New("horse error"),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if test.fetchAccount != nil {
-				p2.fetchAccount = test.fetchAccount
+			if test.fetchAccountError != nil {
+				p2.fetchAccount = func(context.Context, *types.User, []*extsvc.Account, []string) (*extsvc.Account, error) {
+					return nil, test.fetchAccountError
+				}
 			}
-			if test.fetchUserPerms != nil {
-				p1.fetchUserPerms = test.fetchUserPerms
+			if test.fetchUserPermsError != nil {
+				p1.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
+					return nil, test.fetchUserPermsError
+				}
 			}
 
 			t.Cleanup(func() {
