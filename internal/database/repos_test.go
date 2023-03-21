@@ -2497,6 +2497,103 @@ func TestRepos_Delete(t *testing.T) {
 	}
 }
 
+func TestRepos_DeleteReconcilesName(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
+	if err := upsertRepo(ctx, db, InsertRepoOp{Name: "myrepo"}); err != nil {
+		t.Fatal(err)
+	}
+	repo, err := db.Repos().GetByName(ctx, "myrepo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Artificially set deleted_at but do not modify the name, which all delete code does.
+	repo.DeletedAt = time.Now()
+	q := sqlf.Sprintf("UPDATE repo SET deleted_at = %s WHERE name = %s", time.Now(), repo.Name)
+	if _, err := db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+		t.Fatal(err)
+	}
+	// Delete repo
+	if err := db.Repos().Delete(ctx, repo.ID); err != nil {
+		t.Fatal(err)
+	}
+	// Check if name is updated to DELETED-...
+	repos, err := db.Repos().List(ctx, ReposListOptions{
+		IDs:            []api.RepoID{repo.ID},
+		IncludeDeleted: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(repos) != 1 {
+		t.Fatalf("want one repo with given ID, got %v", repos)
+	}
+	if got := string(repos[0].Name); !strings.HasPrefix(got, "DELETED-") {
+		t.Errorf("deleted repo name, got %q, want \"DELETED-..\"", got)
+	}
+}
+
+func TestRepos_MultipleDeletesKeepTheSameTombstoneData(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
+	if err := upsertRepo(ctx, db, InsertRepoOp{Name: "myrepo"}); err != nil {
+		t.Fatal(err)
+	}
+	repo, err := db.Repos().GetByName(ctx, "myrepo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Delete once.
+	if err := db.Repos().Delete(ctx, repo.ID); err != nil {
+		t.Fatal(err)
+	}
+	repos, err := db.Repos().List(ctx, ReposListOptions{
+		IDs:            []api.RepoID{repo.ID},
+		IncludeDeleted: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(repos) != 1 {
+		t.Fatalf("want one repo with given ID, got %v", repos)
+	}
+	afterFirstDelete := repos[0]
+	// Delete again
+	if err := db.Repos().Delete(ctx, repo.ID); err != nil {
+		t.Fatal(err)
+	}
+	repos, err = db.Repos().List(ctx, ReposListOptions{
+		IDs:            []api.RepoID{repo.ID},
+		IncludeDeleted: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(repos) != 1 {
+		t.Fatalf("want one repo with given ID, got %v", repos)
+	}
+	afterSecondDelete := repos[0]
+	// Check if tombstone data - deleted_at and name are the same.
+	if got, want := afterSecondDelete.Name, afterFirstDelete.Name; got != want {
+		t.Errorf("name: got %q want %q", got, want)
+	}
+	if got, want := afterSecondDelete.DeletedAt, afterFirstDelete.DeletedAt; got != want {
+		t.Errorf("deleted_at, got %v want %v", got, want)
+	}
+}
+
 func TestRepos_Upsert(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
