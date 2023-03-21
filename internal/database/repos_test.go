@@ -2514,7 +2514,7 @@ func TestRepos_DeleteReconcilesName(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Artificially set deleted_at but do not modify the name, which all delete code does.
-	repo.DeletedAt = time.Now()
+	repo.DeletedAt = time.Date(2020, 10, 12, 12, 0, 0, 0, time.UTC)
 	q := sqlf.Sprintf("UPDATE repo SET deleted_at = %s WHERE name = %s", time.Now(), repo.Name)
 	if _, err := db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 		t.Fatal(err)
@@ -2536,6 +2536,9 @@ func TestRepos_DeleteReconcilesName(t *testing.T) {
 	}
 	if got := string(repos[0].Name); !strings.HasPrefix(got, "DELETED-") {
 		t.Errorf("deleted repo name, got %q, want \"DELETED-..\"", got)
+	}
+	if got, want := repos[0].DeletedAt, repo.DeletedAt; got != want {
+		t.Errorf("deleted_at seems unexpectedly updated, got %s want %s", got, want)
 	}
 }
 

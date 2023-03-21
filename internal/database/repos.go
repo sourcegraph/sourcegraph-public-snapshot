@@ -1631,11 +1631,7 @@ WITH repo_ids AS (
 )
 UPDATE repo
 SET
-  name = (CASE
-    WHEN name LIKE 'DELETED%%'
-	THEN name
-	ELSE soft_deleted_repository_name(name)
-  END),
+  name = soft_deleted_repository_name(name),
   deleted_at = COALESCE(deleted_at, transaction_timestamp())
 FROM repo_ids
 WHERE repo.id = repo_ids.id::int

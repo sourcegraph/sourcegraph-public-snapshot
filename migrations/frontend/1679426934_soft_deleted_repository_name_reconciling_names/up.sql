@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION soft_deleted_repository_name(name text)
+CREATE OR REPLACE FUNCTION soft_deleted_repository_name(name text) RETURNS text
     LANGUAGE plpgsql
     AS $$
 BEGIN
