@@ -920,18 +920,6 @@ importers:
   client/cody:
     specifiers: {}
 
-  client/cody/common:
-    specifiers: {}
-
-  client/cody/server:
-    specifiers:
-      '@sourcegraph/cody-common': workspace:*
-    dependencies:
-      '@sourcegraph/cody-common': link:../common
-
-  client/cody/vscode-codegen:
-    specifiers: {}
-
   client/common:
     specifiers:
       '@sourcegraph/extension-api-types': workspace:*

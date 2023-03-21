@@ -56,7 +56,8 @@
     "optimize-svg-assets": "svgo --multipass --config=\"./svgo.config.js\"",
     "build-vsce": "pnpm --filter @sourcegraph/vscode run build",
     "watch-vsce": "pnpm --filter @sourcegraph/vscode run watch",
-    "watch-cody": "pnpm --filter kodj run watch",
+    "build-cody": "pnpm --filter cody run build",
+    "watch-cody": "pnpm --filter cody run watch",
     "postinstall": "set-project-references --save && pnpm run format:tsconfig",
     "postuninstall": "set-project-references --save && pnpm run format:tsconfig"
   },
