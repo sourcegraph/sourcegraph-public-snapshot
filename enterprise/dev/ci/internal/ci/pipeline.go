@@ -56,6 +56,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 	bk.FeatureFlags.ApplyEnv(env)
 
+	// If we detect the author to be a folk from Aspect.dev, force the Bazel flag.
+	// This is to avoid incorrectly assuming that the CI will run Bazel task and
+	// missing regressions being introduced in a PR.
+	authorEmail := os.Getenv("BUILDKITE_BUILD_AUTHOR_EMAIL")
+	if strings.HasSuffix(authorEmail, "@aspect.dev") {
+		c.MessageFlags.ForceBazel = true
+	}
+
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
 	if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) {
 		env["PERCY_TARGET_BRANCH"] = c.Branch
