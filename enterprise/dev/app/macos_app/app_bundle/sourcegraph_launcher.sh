@@ -63,7 +63,7 @@ mkdir -p "${sgdir}"
 cd "${DIR}" || exit 1
 
 # make sure all of the binaries in here are available on PATH
-export PATH="${DIR}:${PATH}"
+export PATH="${RESOURCES}:${PATH}"
 
 # tell it to use git that's in this app package so that it doesn't try to
 # use Apple's git that requires Xcode's command line developer tools
@@ -113,7 +113,7 @@ export SRC_REPOS_DIR="${sgdir}/repos"
 # and won't create a temporary shell script that runs a Docker image
 # the universal-ctags binary includes in this app package is a universal bvinary
 # that works on both Intel and ARM macOS
-export CTAGS_COMMAND="${DIR}/universal-ctags"
+export CTAGS_COMMAND="${RESOURCES}/universal-ctags"
 
 # include some default repositories to immediately begin indexing, so that demos work better
 # TODO: can we use the token in that file???
@@ -122,7 +122,8 @@ export CTAGS_COMMAND="${DIR}/universal-ctags"
 
 # make sure it knows where the repo updater is
 # (itself? I think?)
-export REPO_UPDATER_URL="http://127.0.0.1:6060"
+# not necessary since the app now sets it correctly
+# export REPO_UPDATER_URL="http://127.0.0.1:3182"
 
 # force it to listen only on localhost so that it does not trigger
 # the "allow application to accept incoming network requests?" prompt
@@ -146,7 +147,7 @@ EOF
 # launch app
 # send it to background so that I can explicitly kill it later
 echo "$(date) CONTROL START" | tee "${sgdir}/sourcegraph.log"
-"${DIR}"/sourcegraph 2>&1 | tee -a "${sgdir}/sourcegraph.log" &
+"${RESOURCES}"/sourcegraph 2>&1 | tee -a "${sgdir}/sourcegraph.log" &
 SPID=$!
 
 wait
