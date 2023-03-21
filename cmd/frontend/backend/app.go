@@ -15,7 +15,7 @@ var _ AppExternalServicesService = &appExternalServices{}
 
 type AppExternalServicesService interface {
 	LocalExternalServices(ctx context.Context) ([]*types.ExternalService, error)
-	RepositoriesCounts(ctx context.Context) (int32, int32, error)
+	ExternalServicesCounts(ctx context.Context) (int, int, error)
 }
 
 type appExternalServices struct {
@@ -58,45 +58,24 @@ func (a *appExternalServices) LocalExternalServices(ctx context.Context) ([]*typ
 	return localExternalServices, nil
 }
 
-// Return the count of remote repositories and the count of local repositories
-func (a *appExternalServices) RepositoriesCounts(ctx context.Context) (int32, int32, error) {
+// Return the count of remote external services and the count of local external services
+func (a *appExternalServices) ExternalServicesCounts(ctx context.Context) (int, int, error) {
 	localServices, err := a.LocalExternalServices(ctx)
-
-	var localReposCount int32
-
-	localIds := make(map[int64]*types.ExternalService)
-
 	if err != nil {
 		return 0, 0, err
 	}
 
-	// local external services
-	// TODO: Obtain each count in one for loop
-	for _, svc := range localServices {
-		localIds[svc.ID] = svc
-		count, err := a.db.ExternalServices().RepoCount(ctx, svc.ID)
-		if err == nil {
-			// TODO: identify repos sync'd by multiple external services to get accurate repositories set
-			localReposCount += count
-		}
+	localServicesCount := len(localServices)
+
+	totalServicesCount, err := a.db.ExternalServices().Count(ctx, database.ExternalServicesListOptions{})
+	if err != nil {
+		return 0, 0, err
 	}
 
-	var remoteReposCount int32
-
-	// all external services
-	services, err := a.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{})
-
-	if err == nil {
-		for _, svc := range services {
-			if _, ok := localIds[svc.ID]; !ok {
-				count, err := a.db.ExternalServices().RepoCount(ctx, svc.ID)
-				if err == nil {
-					// TODO: identify repos sync'd by multiple external services to get accurate repositories set
-					remoteReposCount += count
-				}
-			}
-		}
+	if totalServicesCount < localServicesCount {
+		return 0, 0, errors.Newf("One or more external services counts are incorrect: local external services should be a subset of all external services. "+
+			"total external services count: %d. local external services count: %d.", totalServicesCount, localServicesCount)
 	}
 
-	return remoteReposCount, localReposCount, nil
+	return totalServicesCount - localServicesCount, localServicesCount, nil
 }
