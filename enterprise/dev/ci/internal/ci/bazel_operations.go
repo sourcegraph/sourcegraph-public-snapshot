@@ -27,7 +27,7 @@ func bazelConfigure() func(*bk.Pipeline) {
 	}
 
 	// if there are changes diff will exit with 1, and 0 otherwise
-	gitDiff := "git diff --quiet --exit-code"
+	gitDiff := "git diff --exit-code"
 	cmds := []bk.StepOpt{
 		bk.Key("bazel-configure"),
 		bk.Env("CI_BAZEL_REMOTE_CACHE", bazelRemoteCacheURL),
