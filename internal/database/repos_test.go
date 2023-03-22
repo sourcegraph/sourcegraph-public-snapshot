@@ -2506,16 +2506,10 @@ func TestRepos_DeleteReconcilesName(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
-	if err := upsertRepo(ctx, db, InsertRepoOp{Name: "myrepo"}); err != nil {
-		t.Fatal(err)
-	}
-	repo, err := db.Repos().GetByName(ctx, "myrepo")
-	if err != nil {
-		t.Fatal(err)
-	}
+	repo := mustCreate(ctx, t, db, &types.Repo{Name: "myrepo"})
 	// Artificially set deleted_at but do not modify the name, which all delete code does.
 	repo.DeletedAt = time.Date(2020, 10, 12, 12, 0, 0, 0, time.UTC)
-	q := sqlf.Sprintf("UPDATE repo SET deleted_at = %s WHERE name = %s", time.Now(), repo.Name)
+	q := sqlf.Sprintf("UPDATE repo SET deleted_at = %s WHERE id = %s", repo.DeletedAt, repo.ID)
 	if _, err := db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 		t.Fatal(err)
 	}
@@ -2551,13 +2545,7 @@ func TestRepos_MultipleDeletesKeepTheSameTombstoneData(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
-	if err := upsertRepo(ctx, db, InsertRepoOp{Name: "myrepo"}); err != nil {
-		t.Fatal(err)
-	}
-	repo, err := db.Repos().GetByName(ctx, "myrepo")
-	if err != nil {
-		t.Fatal(err)
-	}
+	repo := mustCreate(ctx, t, db, &types.Repo{Name: "myrepo"})
 	// Delete once.
 	if err := db.Repos().Delete(ctx, repo.ID); err != nil {
 		t.Fatal(err)
