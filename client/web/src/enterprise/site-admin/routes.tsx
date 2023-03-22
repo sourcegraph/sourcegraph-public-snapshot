@@ -50,9 +50,11 @@ const BatchSpecsPage = lazyComponent<BatchSpecsPageProps, 'BatchSpecsPage'>(
     () => import('../batches/BatchSpecsPage'),
     'BatchSpecsPage'
 )
-const WebhookLogPage = lazyComponent(() => import('../../site-admin/webhooks/WebhookLogPage'), 'WebhookLogPage')
 const AdminCodeIntelArea = lazyComponent(() => import('../codeintel/admin/AdminCodeIntelArea'), 'AdminCodeIntelArea')
-const SiteAdminLsifUploadPage = lazyComponent(() => import('./SiteAdminLsifUploadPage'), 'SiteAdminLsifUploadPage')
+const SiteAdminPreciseIndexPage = lazyComponent(
+    () => import('./SiteAdminPreciseIndexPage'),
+    'SiteAdminPreciseIndexPage'
+)
 const ExecutorsSiteAdminArea = lazyComponent(
     () => import('../executors/ExecutorsSiteAdminArea'),
     'ExecutorsSiteAdminArea'
@@ -134,9 +136,12 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
                 batchChangesEnabled && batchChangesExecutionEnabled,
         },
+        // Old batch changes webhooks logs page redirects to new incoming webhooks page.
+        // The old page components and documentation are still available in the codebase
+        // but should be fully removed in the next release.
         {
             path: '/batch-changes/webhook-logs',
-            render: () => <WebhookLogPage />,
+            render: () => <Navigate to="/site-admin/webhooks/incoming" replace={true} />,
             condition: ({ batchChangesEnabled, batchChangesWebhookLogsEnabled }) =>
                 batchChangesEnabled && batchChangesWebhookLogsEnabled,
         },
@@ -161,7 +166,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         },
         {
             path: '/lsif-uploads/:id',
-            render: () => <SiteAdminLsifUploadPage />,
+            render: () => <SiteAdminPreciseIndexPage />,
         },
 
         // Executor routes

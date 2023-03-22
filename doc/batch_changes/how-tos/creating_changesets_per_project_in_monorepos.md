@@ -5,7 +5,7 @@
 .markdown-body pre.chroma { font-size: 0.75em; }
 </style>
 
-> NOTE: This feature is available in Sourcegraph 3.25 with <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.25.0 and later.</p>
+<span class="badge badge-note">Sourcegraph 3.25+</span>
 
 ## Overview
 

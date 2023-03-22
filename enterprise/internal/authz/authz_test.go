@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -809,4 +810,113 @@ func mustURLParse(t *testing.T, u string) *url.URL {
 		t.Fatal(err)
 	}
 	return parsed
+}
+
+type mockProvider struct {
+	codeHost *extsvc.CodeHost
+	extAcct  *extsvc.Account
+}
+
+func (p *mockProvider) FetchAccount(context.Context, *types.User, []*extsvc.Account, []string) (mine *extsvc.Account, err error) {
+	return p.extAcct, nil
+}
+
+func (p *mockProvider) ServiceType() string { return p.codeHost.ServiceType }
+func (p *mockProvider) ServiceID() string   { return p.codeHost.ServiceID }
+func (p *mockProvider) URN() string         { return extsvc.URN(p.codeHost.ServiceType, 0) }
+
+func (p *mockProvider) ValidateConnection(context.Context) error { return nil }
+
+func (p *mockProvider) FetchUserPerms(context.Context, *extsvc.Account, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+	return nil, nil
+}
+
+func (p *mockProvider) FetchUserPermsByToken(context.Context, string, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+	return nil, nil
+}
+
+func (p *mockProvider) FetchRepoPerms(context.Context, *extsvc.Repository, authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
+	return nil, nil
+}
+
+func mockExplicitPermissions(enabled bool) func() {
+	orig := globals.PermissionsUserMapping()
+	globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: enabled})
+	return func() {
+		globals.SetPermissionsUserMapping(orig)
+	}
+}
+
+func mockUnifiedPermsConfig(val bool) {
+	cfg := &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		ExperimentalFeatures: &schema.ExperimentalFeatures{
+			UnifiedPermissions: val,
+		},
+	}}
+	conf.Mock(cfg)
+}
+
+func TestPermissionSyncingDisabled(t *testing.T) {
+	authz.SetProviders(true, []authz.Provider{&mockProvider{}})
+	cleanupLicense := licensing.MockCheckFeatureError("")
+
+	t.Cleanup(func() {
+		authz.SetProviders(true, nil)
+		cleanupLicense()
+	})
+
+	t.Run("no authz providers", func(t *testing.T) {
+		authz.SetProviders(true, nil)
+		t.Cleanup(func() {
+			authz.SetProviders(true, []authz.Provider{&mockProvider{}})
+		})
+
+		assert.True(t, PermissionSyncingDisabled())
+	})
+
+	t.Run("permissions user mapping enabled and unified permissions disabled", func(t *testing.T) {
+		cleanup := mockExplicitPermissions(true)
+		mockUnifiedPermsConfig(false)
+		t.Cleanup(func() {
+			cleanup()
+			conf.Mock(nil)
+		})
+
+		assert.True(t, PermissionSyncingDisabled())
+	})
+
+	t.Run("permissions user mapping enabled and unified permissions enabled", func(t *testing.T) {
+		cleanup := mockExplicitPermissions(true)
+		mockUnifiedPermsConfig(true)
+		t.Cleanup(func() {
+			cleanup()
+			conf.Mock(nil)
+		})
+
+		assert.False(t, PermissionSyncingDisabled())
+	})
+
+	t.Run("license does not have acls feature", func(t *testing.T) {
+		licensing.MockCheckFeatureError("failed")
+		t.Cleanup(func() {
+			licensing.MockCheckFeatureError("")
+		})
+		assert.True(t, PermissionSyncingDisabled())
+	})
+
+	t.Run("Auto code host syncs disabled", func(t *testing.T) {
+		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{DisableAutoCodeHostSyncs: true}})
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
+		assert.True(t, PermissionSyncingDisabled())
+	})
+
+	t.Run("Auto code host syncs enabled", func(t *testing.T) {
+		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{DisableAutoCodeHostSyncs: false}})
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
+		assert.False(t, PermissionSyncingDisabled())
+	})
 }

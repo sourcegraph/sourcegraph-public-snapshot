@@ -545,9 +545,8 @@ npm_package(
 
 jest_test(
     name = "test",
+    timeout = "moderate",
     data = [
         ":wildcard_tests",
     ],
-    # TODO(bazel): enable when snapshots updated to support pre-compiled .js files
-    tags = ["manual"],
 )

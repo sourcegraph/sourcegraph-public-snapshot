@@ -676,42 +676,46 @@ func Frontend() *monitoring.Dashboard {
 							Interpretation: "The total number of search clicks across all search types over a 6 hour window.",
 						},
 						{
-							Name:           "percent_file_clicks_on_top_search_result",
-							Description:    "percent of file clicks on top search result over 6h",
-							Query:          "sum by (ranked) (increase(src_search_ranking_result_clicked_bucket{le=\"1\",resultsLength=\">3\",type=\"fileMatch\"}[6h])) / sum by (ranked) (increase(src_search_ranking_result_clicked_count{type=\"fileMatch\"}[6h])) * 100",
+							Name:           "percent_clicks_on_top_search_result",
+							Description:    "percent of clicks on top search result over 6h",
+							Query:          "sum by (ranked) (increase(src_search_ranking_result_clicked_bucket{le=\"1\",resultsLength=\">3\"}[6h])) / sum by (ranked) (increase(src_search_ranking_result_clicked_count[6h])) * 100",
 							NoAlert:        true,
 							Panel:          monitoring.Panel().LegendFormat("ranked={{ranked}}").Unit(monitoring.Percentage),
 							Owner:          monitoring.ObservableOwnerSearchCore,
 							Interpretation: "The percent of clicks that were on the top search result, excluding searches with very few results (3 or fewer).",
 						},
 						{
-							Name:           "percent_file_clicks_on_top_3_search_results",
-							Description:    "percent of file clicks on top 3 search results over 6h",
-							Query:          "sum by (ranked) (increase(src_search_ranking_result_clicked_bucket{le=\"3\",resultsLength=\">3\",type=\"fileMatch\"}[6h])) / sum by (ranked) (increase(src_search_ranking_result_clicked_count{type=\"fileMatch\"}[6h])) * 100",
+							Name:           "percent_clicks_on_top_3_search_results",
+							Description:    "percent of clicks on top 3 search results over 6h",
+							Query:          "sum by (ranked) (increase(src_search_ranking_result_clicked_bucket{le=\"3\",resultsLength=\">3\"}[6h])) / sum by (ranked) (increase(src_search_ranking_result_clicked_count[6h])) * 100",
 							NoAlert:        true,
 							Panel:          monitoring.Panel().LegendFormat("ranked={{ranked}}").Unit(monitoring.Percentage),
 							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "The percent of file clicks that were on the first 3 search results, excluding searches with very few results (3 or fewer).",
+							Interpretation: "The percent of clicks that were on the first 3 search results, excluding searches with very few results (3 or fewer).",
 						},
 					}, {
 						{
 							Name:        "distribution_of_clicked_search_result_type_over_6h_in_percent",
 							Description: "distribution of clicked search result type over 6h",
-							Query:       "round(sum(increase(src_search_ranking_result_clicked_count{type=\"repo\"}[6h])) / sum (increase(src_search_ranking_result_clicked_count[6h]))) * 100",
+							Query:       "sum(increase(src_search_ranking_result_clicked_count{type=\"repo\"}[6h])) / sum(increase(src_search_ranking_result_clicked_count[6h])) * 100",
 							NoAlert:     true,
 							Panel: monitoring.Panel().With(
 								func(o monitoring.Observable, p *sdk.Panel) {
 									p.GraphPanel.Legend.Current = true
-									p.GraphPanel.Targets = []sdk.Target{{
-										Expr:         o.Query,
-										LegendFormat: "repo",
-									}, {
-										Expr:         "round(sum(increase(src_search_ranking_result_clicked_count{type=\"fileMatch\"}[6h])) / sum (increase(src_search_ranking_result_clicked_count[6h]))) * 100",
-										LegendFormat: "fileMatch",
-									}, {
-										Expr:         "round(sum(increase(src_search_ranking_result_clicked_count{type=\"filePathMatch\"}[6h])) / sum (increase(src_search_ranking_result_clicked_count[6h]))) * 100",
-										LegendFormat: "filePathMatch",
-									}}
+									p.GraphPanel.Targets = []sdk.Target{
+										{
+											RefID:        "0",
+											Expr:         o.Query,
+											LegendFormat: "repo",
+										}, {
+											RefID:        "1",
+											Expr:         "sum(increase(src_search_ranking_result_clicked_count{type=\"fileMatch\"}[6h])) / sum(increase(src_search_ranking_result_clicked_count[6h])) * 100",
+											LegendFormat: "fileMatch",
+										}, {
+											RefID:        "2",
+											Expr:         "sum(increase(src_search_ranking_result_clicked_count{type=\"filePathMatch\"}[6h])) / sum(increase(src_search_ranking_result_clicked_count[6h])) * 100",
+											LegendFormat: "filePathMatch",
+										}}
 									p.GraphPanel.Tooltip.Shared = true
 								}),
 							Owner:          monitoring.ObservableOwnerSearchCore,
@@ -1014,7 +1018,7 @@ func Frontend() *monitoring.Dashboard {
 
 							Increases in response time can point to too much load on the database to keep up with the incoming requests.
 
-							See this documentation page for more details on webhook requests: (https://docs.sourcegraph.com/admin/config/webhooks)`,
+							See this documentation page for more details on webhook requests: (https://docs.sourcegraph.com/admin/config/webhooks/incoming)`,
 						},
 					},
 				},

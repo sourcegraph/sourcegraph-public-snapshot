@@ -16,6 +16,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var allowedBinaries = []string{
+	"docker",
+	"git",
+	"ignite",
+	"src",
+}
+
+func init() {
+	// We run /bin/sh to execute scripts locally in the shell runtime, so we need
+	// to allow that, too.
+	if util.HasShellBuildTag() {
+		allowedBinaries = append(allowedBinaries, "/bin/sh")
+	}
+}
+
 type Command interface {
 	Run(ctx context.Context, cmdLogger Logger, spec Spec) error
 }
@@ -125,13 +140,6 @@ func validateCommand(command []string) error {
 
 // ErrIllegalCommand is returned when a command is not allowed to be run.
 var ErrIllegalCommand = errors.New("illegal command")
-
-var allowedBinaries = []string{
-	"docker",
-	"git",
-	"ignite",
-	"src",
-}
 
 func (c *RealCommand) prepCommand(ctx context.Context, options Spec) (cmd *exec.Cmd, stdout, stderr io.ReadCloser, err error) {
 	cmd = c.CmdRunner.CommandContext(ctx, options.Command[0], options.Command[1:]...)

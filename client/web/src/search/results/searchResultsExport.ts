@@ -1,5 +1,7 @@
+import { of } from 'rxjs'
+import { last } from 'rxjs/operators'
+
 import {
-    AggregateStreamingSearchResults,
     ContentMatch,
     getFileMatchUrl,
     getRepositoryUrl,
@@ -12,6 +14,8 @@ import {
     PersonMatch,
     TeamMatch,
     getOwnerMatchUrl,
+    StreamSearchOptions,
+    aggregateStreamingSearch,
 } from '@sourcegraph/shared/src/search/stream'
 
 import { eventLogger } from '../../tracking/eventLogger'
@@ -202,22 +206,40 @@ export const buildFileName = (query?: string): string => {
 }
 
 export const downloadSearchResults = (
-    results: AggregateStreamingSearchResults,
     sourcegraphURL: string,
-    query?: string
-): void => {
-    const content = searchResultsToFileContent(results.results, sourcegraphURL)
-    const blob = new Blob([content], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
+    query: string,
+    options: StreamSearchOptions
+): Promise<void> =>
+    new Promise<void>((resolve, reject) => {
+        aggregateStreamingSearch(of(query), { ...options, displayLimit: 999999 })
+            .pipe(last())
+            // TODO: we have to figure out how to cancel this operation or show related progress
+            // https://github.com/sourcegraph/sourcegraph/issues/49645
+            // eslint-disable-next-line rxjs/no-ignored-subscription
+            .subscribe(
+                results => {
+                    const content = searchResultsToFileContent(results.results, sourcegraphURL)
+                    const blob = new Blob([content], { type: 'text/csv' })
+                    const url = URL.createObjectURL(blob)
 
-    const a = document.createElement('a')
-    a.href = url
-    a.style.display = 'none'
-    a.download = buildFileName(query)
-    a.click()
-    eventLogger.log('SearchExportPerformed', { count: results.results.length }, { count: results.results.length })
+                    const a = document.createElement('a')
+                    a.href = url
+                    a.style.display = 'none'
+                    a.download = buildFileName(query)
+                    a.click()
+                    eventLogger.log(
+                        'SearchExportPerformed',
+                        { count: results.results.length },
+                        { count: results.results.length }
+                    )
 
-    // cleanup
-    a.remove()
-    URL.revokeObjectURL(url)
-}
+                    // cleanup
+                    a.remove()
+                    URL.revokeObjectURL(url)
+                    resolve()
+                },
+                error => {
+                    reject(error)
+                }
+            )
+    })

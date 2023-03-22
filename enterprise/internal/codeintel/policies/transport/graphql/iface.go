@@ -17,7 +17,12 @@ type PoliciesService interface {
 	CreateConfigurationPolicy(ctx context.Context, configurationPolicy types.ConfigurationPolicy) (types.ConfigurationPolicy, error)
 	UpdateConfigurationPolicy(ctx context.Context, policy types.ConfigurationPolicy) (err error)
 	DeleteConfigurationPolicyByID(ctx context.Context, id int) error
-	GetPreviewRepositoryFilter(ctx context.Context, patterns []string, limit int) (_ []int, totalCount int, matchesAll bool, repositoryMatchLimit *int, err error)
+
+	GetPreviewRepositoryFilter(
+		ctx context.Context,
+		patterns []string,
+		limit int,
+	) (_ []int, totalCount int, matchesAll bool, repositoryMatchLimit *int, _ error)
 
 	GetPreviewGitObjectFilter(
 		ctx context.Context,
@@ -26,5 +31,5 @@ type PoliciesService interface {
 		pattern string,
 		limit int,
 		countObjectsYoungerThanHours *int32,
-	) (_ []policies.GitObject, totalCount int, totalCountYoungerThanThreshold *int, err error)
+	) (_ []policies.GitObject, totalCount int, totalCountYoungerThanThreshold *int, _ error)
 }

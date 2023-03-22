@@ -200,6 +200,10 @@ func addClientLintersForAllFiles(pipeline *bk.Pipeline) {
 		withPnpmCache(),
 		bk.Cmd("dev/ci/pnpm-run.sh lint:js:all"))
 
+	pipeline.AddStep(":eslint: ESLint (web)",
+		withPnpmCache(),
+		bk.Cmd("dev/ci/pnpm-run.sh lint:js:web"))
+
 	pipeline.AddStep(":stylelint: Stylelint (all)",
 		withPnpmCache(),
 		bk.Cmd("dev/ci/pnpm-run.sh lint:css:all"))
@@ -625,7 +629,7 @@ func addAppReleaseSteps(c Config, insiders bool) operations.Operation {
 	if insiders {
 		insidersStr = "-insiders"
 	}
-	version := fmt.Sprintf("%s%s+%d.%.6s", c.Time.Format("2006.01.06"), insidersStr, c.BuildNumber, c.Commit)
+	version := fmt.Sprintf("%s%s+%d.%.6s", c.Time.Format("2006.01.02"), insidersStr, c.BuildNumber, c.Commit)
 
 	return func(pipeline *bk.Pipeline) {
 		// Release App (.zip/.deb/.rpm to Google Cloud Storage, new tap for Homebrew, etc.).

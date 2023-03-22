@@ -1747,13 +1747,12 @@ CREATE SEQUENCE codeintel_ranking_references_id_seq
 ALTER SEQUENCE codeintel_ranking_references_id_seq OWNED BY codeintel_ranking_references.id;
 
 CREATE TABLE codeintel_ranking_references_processed (
-    id integer NOT NULL,
     graph_key text NOT NULL,
-    codeintel_ranking_reference_id integer NOT NULL
+    codeintel_ranking_reference_id integer NOT NULL,
+    id bigint NOT NULL
 );
 
 CREATE SEQUENCE codeintel_ranking_references_processed_id_seq
-    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -5107,6 +5106,8 @@ CREATE INDEX changesets_reconciler_state_idx ON changesets USING btree (reconcil
 
 CREATE INDEX cm_action_jobs_state_idx ON cm_action_jobs USING btree (state);
 
+CREATE INDEX cm_action_jobs_trigger_event ON cm_action_jobs USING btree (trigger_event);
+
 CREATE INDEX cm_slack_webhooks_monitor ON cm_slack_webhooks USING btree (monitor);
 
 CREATE INDEX cm_trigger_jobs_finished_at ON cm_trigger_jobs USING btree (finished_at);
@@ -5139,6 +5140,8 @@ CREATE INDEX codeintel_ranking_definitions_graph_key_symbol_search ON codeintel_
 
 CREATE UNIQUE INDEX codeintel_ranking_exports_graph_key_upload_id ON codeintel_ranking_exports USING btree (graph_key, upload_id);
 
+CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, id);
+
 CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_repository_id_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository_id, id) WHERE (NOT processed);
 
 CREATE INDEX codeintel_ranking_references_graph_key_id ON codeintel_ranking_references USING btree (graph_key, id);
@@ -5146,6 +5149,8 @@ CREATE INDEX codeintel_ranking_references_graph_key_id ON codeintel_ranking_refe
 CREATE INDEX codeintel_ranking_references_graph_key_last_scanned_at_id ON codeintel_ranking_references USING btree (graph_key, last_scanned_at NULLS FIRST, id);
 
 CREATE UNIQUE INDEX codeintel_ranking_references_processed_graph_key_codeintel_rank ON codeintel_ranking_references_processed USING btree (graph_key, codeintel_ranking_reference_id);
+
+CREATE INDEX codeintel_ranking_references_processed_reference_id ON codeintel_ranking_references_processed USING btree (codeintel_ranking_reference_id);
 
 CREATE INDEX codeintel_ranking_references_upload_id ON codeintel_ranking_references USING btree (upload_id);
 
@@ -5265,7 +5270,7 @@ CREATE INDEX lsif_dependency_indexing_jobs_upload_id ON lsif_dependency_syncing_
 
 CREATE INDEX lsif_dependency_repos_blocked ON lsif_dependency_repos USING btree (blocked);
 
-CREATE INDEX lsif_dependency_repos_last_checked_at ON lsif_dependency_repos USING btree (last_checked_at);
+CREATE INDEX lsif_dependency_repos_last_checked_at ON lsif_dependency_repos USING btree (last_checked_at NULLS FIRST);
 
 CREATE INDEX lsif_dependency_repos_name_id ON lsif_dependency_repos USING btree (name, id);
 
@@ -5355,7 +5360,7 @@ CREATE UNIQUE INDEX package_repo_filters_unique_matcher_per_scheme ON package_re
 
 CREATE INDEX package_repo_versions_blocked ON package_repo_versions USING btree (blocked);
 
-CREATE INDEX package_repo_versions_last_checked_at ON package_repo_versions USING btree (last_checked_at);
+CREATE INDEX package_repo_versions_last_checked_at ON package_repo_versions USING btree (last_checked_at NULLS FIRST);
 
 CREATE UNIQUE INDEX package_repo_versions_unique_version_per_package ON package_repo_versions USING btree (package_id, version);
 

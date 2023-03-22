@@ -22,6 +22,7 @@ import (
 )
 
 const errorMsg = "Sorry, wrong number."
+const allProvidersFailedMsg = "All providers failed to sync permissions."
 
 func TestPermsSyncerWorker_Handle(t *testing.T) {
 	ctx := context.Background()
@@ -96,7 +97,7 @@ func TestPermsSyncerWorker_RepoSyncJobs(t *testing.T) {
 	// Creating a worker.
 	observationCtx := &observation.TestContext
 	dummySyncer := &dummySyncerWithErrors{
-		repoIDErrors: map[api.RepoID]struct{}{3: {}},
+		repoIDErrors: map[api.RepoID]errorType{2: allProvidersFailed, 3: realError},
 	}
 
 	syncJobsStore := db.PermissionSyncJobs()
@@ -172,12 +173,22 @@ loop:
 		}
 
 		// Check that repo sync job was completed and results were saved.
-		if jobID == 2 {
+		if jobID == 1 {
 			require.Equal(t, database.PermissionsSyncJobStateCompleted, job.State)
 			require.Nil(t, job.FailureMessage)
 			require.Equal(t, 1, job.PermissionsAdded)
 			require.Equal(t, 2, job.PermissionsRemoved)
 			require.Equal(t, 5, job.PermissionsFound)
+		}
+
+		// Check that repo sync job has the failure message.
+		if jobID == 2 {
+			require.NotNil(t, job.FailureMessage)
+			require.Equal(t, allProvidersFailedMsg, *job.FailureMessage)
+			require.Equal(t, 1, job.NumFailures)
+			require.Equal(t, 0, job.PermissionsAdded)
+			require.Equal(t, 0, job.PermissionsRemoved)
+			require.Equal(t, 0, job.PermissionsFound)
 		}
 
 		// Check that failed job has the failure message.
@@ -225,7 +236,7 @@ func TestPermsSyncerWorker_UserSyncJobs(t *testing.T) {
 	// Creating a worker.
 	observationCtx := &observation.TestContext
 	dummySyncer := &dummySyncerWithErrors{
-		userIDErrors: map[int32]struct{}{3: {}},
+		userIDErrors: map[int32]errorType{2: allProvidersFailed, 3: realError},
 	}
 
 	syncJobsStore := db.PermissionSyncJobs()
@@ -302,12 +313,24 @@ loop:
 			require.Equal(t, jobID, job.UserID)
 		}
 
-		if jobID == 2 {
+		// Check that user sync job was completed and results were saved.
+		if jobID == 1 {
 			require.Equal(t, database.PermissionsSyncJobStateCompleted, job.State)
 			require.Nil(t, job.FailureMessage)
 			require.Equal(t, 1, job.PermissionsAdded)
 			require.Equal(t, 2, job.PermissionsRemoved)
 			require.Equal(t, 5, job.PermissionsFound)
+		}
+
+		// Check that failed job has the failure message.
+		if jobID == 2 {
+			require.NotNil(t, job.FailureMessage)
+			require.Equal(t, allProvidersFailedMsg, *job.FailureMessage)
+			require.Equal(t, 1, job.NumFailures)
+			require.True(t, job.NoPerms)
+			require.Equal(t, 0, job.PermissionsAdded)
+			require.Equal(t, 0, job.PermissionsRemoved)
+			require.Equal(t, 0, job.PermissionsFound)
 		}
 
 		// Check that failed job has the failure message.
@@ -379,7 +402,7 @@ func TestPermsSyncerWorker_Store_Dequeue_Order(t *testing.T) {
 	}
 
 	store := MakeStore(&observation.TestContext, db.Handle(), SyncTypeRepo)
-	jobIDs := []int{}
+	jobIDs := make([]int, 0)
 	wantJobIDs := []int{5, 6, 8, 7, 3, 4, 10, 9, 1, 2, 12, 11, 0, 0, 0, 0}
 	var dequeueErr error
 	for range wantJobIDs {
@@ -452,18 +475,25 @@ func (d *dummyPermsSyncer) syncUserPerms(_ context.Context, userID int32, noPerm
 	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, database.CodeHostStatusesSet{}, nil
 }
 
+type errorType string
+
+const (
+	realError          errorType = "REAL_ERROR"
+	allProvidersFailed errorType = "ALL_PROVIDERS_FAILED"
+)
+
 type dummySyncerWithErrors struct {
 	sync.Mutex
 	request      combinedRequest
-	userIDErrors map[int32]struct{}
-	repoIDErrors map[api.RepoID]struct{}
+	userIDErrors map[int32]errorType
+	repoIDErrors map[api.RepoID]errorType
 }
 
 func (d *dummySyncerWithErrors) syncRepoPerms(_ context.Context, repoID api.RepoID, noPerms bool, options authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
 	d.Lock()
 	defer d.Unlock()
 
-	if _, ok := d.repoIDErrors[repoID]; ok {
+	if errorTyp, ok := d.repoIDErrors[repoID]; ok && errorTyp == realError {
 		return nil, nil, errors.New(errorMsg)
 	}
 	d.request = combinedRequest{
@@ -471,13 +501,21 @@ func (d *dummySyncerWithErrors) syncRepoPerms(_ context.Context, repoID api.Repo
 		NoPerms: noPerms,
 		Options: options,
 	}
-	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, database.CodeHostStatusesSet{}, nil
+
+	codeHostStates := database.CodeHostStatusesSet{{ProviderID: "id1", Status: database.CodeHostStatusSuccess}, {ProviderID: "id2", Status: database.CodeHostStatusSuccess}}
+	if typ, ok := d.repoIDErrors[repoID]; ok && typ == allProvidersFailed {
+		for idx := range codeHostStates {
+			codeHostStates[idx].Status = database.CodeHostStatusError
+		}
+	}
+
+	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, codeHostStates, nil
 }
 func (d *dummySyncerWithErrors) syncUserPerms(_ context.Context, userID int32, noPerms bool, options authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
 	d.Lock()
 	defer d.Unlock()
 
-	if _, ok := d.userIDErrors[userID]; ok {
+	if errorTyp, ok := d.userIDErrors[userID]; ok && errorTyp == realError {
 		return nil, nil, errors.New(errorMsg)
 	}
 	d.request = combinedRequest{
@@ -485,5 +523,13 @@ func (d *dummySyncerWithErrors) syncUserPerms(_ context.Context, userID int32, n
 		NoPerms: noPerms,
 		Options: options,
 	}
-	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, database.CodeHostStatusesSet{}, nil
+
+	codeHostStates := database.CodeHostStatusesSet{{ProviderID: "id1", Status: database.CodeHostStatusError}, {ProviderID: "id2", Status: database.CodeHostStatusSuccess}}
+	if typ, ok := d.userIDErrors[userID]; ok && typ == allProvidersFailed {
+		for idx := range codeHostStates {
+			codeHostStates[idx].Status = database.CodeHostStatusError
+		}
+	}
+
+	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, codeHostStates, nil
 }

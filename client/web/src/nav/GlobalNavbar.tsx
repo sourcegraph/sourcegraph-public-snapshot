@@ -15,7 +15,7 @@ import { SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { addSourcegraphAppOutboundUrlParameters, buildEnterpriseTrialURL } from '@sourcegraph/shared/src/util/url'
+import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, ButtonLink, useWindowSize } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -61,8 +61,6 @@ export interface GlobalNavbarProps
     showSearchBox: boolean
     routes: RouteObject[]
 
-    // Whether globbing is enabled for filters.
-    globbing: boolean
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
     branding?: typeof window.context.branding
@@ -301,7 +299,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             variant="secondary"
                             outline={true}
                             to={addSourcegraphAppOutboundUrlParameters(
-                                buildEnterpriseTrialURL(props.authenticatedUser)
+                                'https://about.sourcegraph.com/get-started?t=enterprise',
+                                'navbar'
                             )}
                             size="sm"
                             onClick={() =>

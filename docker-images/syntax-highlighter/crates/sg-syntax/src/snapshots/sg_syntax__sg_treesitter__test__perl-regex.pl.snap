@@ -1,124 +1,124 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
-assertion_line: 497
-expression: "dump_document(&document, &contents)"
+assertion_line: 362
+expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 ---
   package URI;
-//^^^^^^^ Keyword 
-//        ^^^ IdentifierType 
+//^^^^^^^ Keyword
+//        ^^^ IdentifierType
   
   use strict;
-//^^^ Keyword 
-//    ^^^^^^ IdentifierType 
+//^^^ Keyword
+//    ^^^^^^ IdentifierType
   use vars qw($VERSION);
-//^^^ Keyword 
-//    ^^^^ IdentifierType 
-//         ^^^^^^^^^^^^ StringLiteral 
+//^^^ Keyword
+//    ^^^^ IdentifierType
+//         ^^^^^^^^^^^^ StringLiteral
   
   sub new
-//^^^ Keyword 
-//    ^^^ IdentifierFunction 
+//^^^ Keyword
+//    ^^^ IdentifierFunction
   {
       my($class, $uri, $scheme) = @_;
-//    ^^ Keyword 
-//       ^^^^^^ Identifier  local 1
-//               ^^^^ Identifier  local 2
-//                     ^^^^^^^ Identifier  local 3
-//                              ^ IdentifierOperator 
-//                                ^^ Identifier 
+//    ^^ Keyword
+//       ^^^^^^ Identifier
+//               ^^^^ Identifier
+//                     ^^^^^^^ Identifier
+//                              ^ IdentifierOperator
+//                                ^^ Identifier
   
       $uri = defined ($uri) ? "$uri" : "";
-//    ^^^^ Identifier  local 2
-//         ^ IdentifierOperator 
-//           ^^^^^^^ IdentifierBuiltin 
-//                    ^^^^ Identifier  local 2
-//                            ^ StringLiteral 
-//                             ^^^^ Identifier  local 2
-//                                 ^ StringLiteral 
-//                                     ^^ StringLiteral 
+//    ^^^^ Identifier
+//         ^ IdentifierOperator
+//           ^^^^^^^ IdentifierBuiltin
+//                    ^^^^ Identifier
+//                            ^ StringLiteral
+//                             ^^^^ Identifier
+//                                 ^ StringLiteral
+//                                     ^^ StringLiteral
       $uri =~ s/^<(?:URL:)?(.*)>$/$1/;  #
-//    ^^^^ Identifier  local 2
-//         ^^ IdentifierOperator 
-//            ^ Keyword 
-//             ^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
-//                                      ^ Comment 
+//    ^^^^ Identifier
+//         ^^ IdentifierOperator
+//            ^ Keyword
+//             ^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                      ^ Comment
       $uri =~ s/^"(.*)"$/$1/;
-//    ^^^^ Identifier  local 2
-//         ^^ IdentifierOperator 
-//            ^ Keyword 
-//             ^^^^^^^^^^^^^ StringLiteral 
+//    ^^^^ Identifier
+//         ^^ IdentifierOperator
+//            ^ Keyword
+//             ^^^^^^^^^^^^^ StringLiteral
       $uri =~ s/^\s+//;
-//    ^^^^ Identifier  local 2
-//         ^^ IdentifierOperator 
-//            ^ Keyword 
-//             ^^^^^^^ StringLiteral 
+//    ^^^^ Identifier
+//         ^^ IdentifierOperator
+//            ^ Keyword
+//             ^^^^^^^ StringLiteral
       $uri =~ s/\s+$//;
-//    ^^^^ Identifier  local 2
-//         ^^ IdentifierOperator 
-//            ^ Keyword 
-//             ^^^^^^^ StringLiteral 
+//    ^^^^ Identifier
+//         ^^ IdentifierOperator
+//            ^ Keyword
+//             ^^^^^^^ StringLiteral
   
       my $impclass;
-//    ^^ Keyword 
-//       ^^^^^^^^^ Identifier  local 4
+//    ^^ Keyword
+//       ^^^^^^^^^ Identifier
       if ($uri =~ m/^($scheme_re):/so) {
-//    ^^ Keyword 
-//        ^^^^ Identifier  local 2
-//             ^^ IdentifierOperator 
-//                ^ Keyword 
-//                                 ^^ Keyword 
+//    ^^ Keyword
+//        ^^^^ Identifier
+//             ^^ IdentifierOperator
+//                ^ Keyword
+//                                 ^^ Keyword
           $scheme = $1;
-//        ^^^^^^^ Identifier  local 3
-//                ^ IdentifierOperator 
-//                  ^^ Identifier 
+//        ^^^^^^^ Identifier
+//                ^ IdentifierOperator
+//                  ^^ Identifier
       }
       else {
-//    ^^^^ Keyword 
+//    ^^^^ Keyword
           if (($impclass = ref($scheme))) {
-//        ^^ Keyword 
-//             ^^^^^^^^^ Identifier  local 4
-//                       ^ IdentifierOperator 
-//                         ^^^ IdentifierBuiltin 
-//                             ^^^^^^^ Identifier  local 3
+//        ^^ Keyword
+//             ^^^^^^^^^ Identifier
+//                       ^ IdentifierOperator
+//                         ^^^ IdentifierBuiltin
+//                             ^^^^^^^ Identifier
               $scheme = $scheme->scheme;
-//            ^^^^^^^ Identifier  local 3
-//                    ^ IdentifierOperator 
-//                      ^^^^^^^ Identifier  local 3
-//                               ^^^^^^ IdentifierFunction 
+//            ^^^^^^^ Identifier
+//                    ^ IdentifierOperator
+//                      ^^^^^^^ Identifier
+//                               ^^^^^^ IdentifierFunction
           }
           elsif ($scheme && $scheme =~ m/^($scheme_re)(?::|$)/o) {
-//        ^^^^^ Keyword 
-//               ^^^^^^^ Identifier  local 3
-//                          ^^^^^^^ Identifier  local 3
-//                                  ^^ IdentifierOperator 
-//                                     ^ Keyword 
-//                                                            ^ Keyword 
+//        ^^^^^ Keyword
+//               ^^^^^^^ Identifier
+//                          ^^^^^^^ Identifier
+//                                  ^^ IdentifierOperator
+//                                     ^ Keyword
+//                                                            ^ Keyword
               $scheme = $1;
-//            ^^^^^^^ Identifier  local 3
-//                    ^ IdentifierOperator 
-//                      ^^ Identifier 
+//            ^^^^^^^ Identifier
+//                    ^ IdentifierOperator
+//                      ^^ Identifier
           }
       }
       $impclass ||= implementor($scheme) ||
-//    ^^^^^^^^^ Identifier  local 4
-//                  ^^^^^^^^^^^ IdentifierFunction 
-//                              ^^^^^^^ Identifier  local 3
+//    ^^^^^^^^^ Identifier
+//                  ^^^^^^^^^^^ IdentifierFunction
+//                              ^^^^^^^ Identifier
       do {
-//    ^^ Keyword 
+//    ^^ Keyword
           require URI::_foreign;
-//        ^^^^^^^ Keyword 
-//                ^^^^^^^^^^^^^ IdentifierType 
+//        ^^^^^^^ Keyword
+//                ^^^^^^^^^^^^^ IdentifierType
           $impclass = 'URI::_foreign';
-//        ^^^^^^^^^ Identifier  local 4
-//                  ^ IdentifierOperator 
-//                    ^^^^^^^^^^^^^^^ StringLiteral 
+//        ^^^^^^^^^ Identifier
+//                  ^ IdentifierOperator
+//                    ^^^^^^^^^^^^^^^ StringLiteral
       };
   
       return $impclass->_init($uri, $scheme);
-//    ^^^^^^ Keyword 
-//           ^^^^^^^^^ Identifier  local 4
-//                      ^^^^^ IdentifierFunction 
-//                            ^^^^ Identifier  local 2
-//                                  ^^^^^^^ Identifier  local 3
+//    ^^^^^^ Keyword
+//           ^^^^^^^^^ Identifier
+//                      ^^^^^ IdentifierFunction
+//                            ^^^^ Identifier
+//                                  ^^^^^^^ Identifier
   }
 
