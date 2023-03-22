@@ -659,24 +659,16 @@ func (s *permissionSyncJobStore) Count(ctx context.Context, opts ListPermissionS
 }
 
 const countUsersWithFailingSyncJobsQuery = `
-WITH sync_jobs_with_row_number AS (
-	SELECT
-		state,
-		ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY finished_at DESC) AS row_num
-	FROM
-		permission_sync_jobs
-	WHERE
-		user_id IS NOT NULL
-		AND finished_at IS NOT NULL
-		AND state IN ('completed', 'failed')
-)
-SELECT
-	COUNT(*)
-FROM
-	sync_jobs_with_row_number
-WHERE 
-	state = 'failed'
-	AND row_num = 1
+SELECT COUNT(*) 
+FROM (
+  SELECT DISTINCT ON (user_id) id, state 
+  FROM permission_sync_jobs 
+  WHERE 
+	user_id is NOT NULL 
+	AND state IN ('completed', 'failed')
+  ORDER BY user_id, finished_at DESC
+) AS tmp 
+WHERE state = 'failed';
 `
 
 // CountUsersWithFailingSyncJob returns count of users with LATEST sync job failing.
@@ -689,24 +681,16 @@ func (s *permissionSyncJobStore) CountUsersWithFailingSyncJob(ctx context.Contex
 }
 
 const countReposWithFailingSyncJobsQuery = `
-WITH sync_jobs_with_row_number AS (
-	SELECT
-		state,
-		ROW_NUMBER() OVER (PARTITION BY repository_id ORDER BY finished_at DESC) AS row_num
-	FROM
-		permission_sync_jobs
-	WHERE
-		repository_id IS NOT NULL
-		AND finished_at IS NOT NULL
-		AND state IN ('completed', 'failed')
-)
-SELECT
-	COUNT(*)
-FROM
-	sync_jobs_with_row_number
-WHERE 
-	state = 'failed'
-	AND row_num = 1
+SELECT COUNT(*) 
+FROM (
+  SELECT DISTINCT ON (repository_id) id, state 
+  FROM permission_sync_jobs 
+  WHERE 
+	repository_id is NOT NULL 
+	AND state IN ('completed', 'failed')
+  ORDER BY repository_id, finished_at DESC
+) AS tmp 
+WHERE state = 'failed';
 `
 
 // CountReposWithFailingSyncJob returns count of repos with LATEST sync job failing.
