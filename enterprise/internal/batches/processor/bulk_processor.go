@@ -46,7 +46,7 @@ func New(logger log.Logger, tx *store.Store, sourcer sources.Sourcer) BulkProces
 }
 
 type BulkProcessor interface {
-	Process(ctx context.Context, job *btypes.ChangesetJob) error
+	Process(ctx context.Context, job *btypes.ChangesetJob) (err error, afterDone func(*store.Store))
 }
 
 type bulkProcessor struct {
@@ -59,31 +59,31 @@ type bulkProcessor struct {
 	ch   *btypes.Changeset
 }
 
-func (b *bulkProcessor) Process(ctx context.Context, job *btypes.ChangesetJob) (err error) {
+func (b *bulkProcessor) Process(ctx context.Context, job *btypes.ChangesetJob) (err error, afterDone func(*store.Store)) {
 	// Use the acting user for the operation to enforce repository permissions.
 	ctx = actor.WithActor(ctx, actor.FromUser(job.UserID))
 
 	// Load changeset.
 	b.ch, err = b.tx.GetChangeset(ctx, store.GetChangesetOpts{ID: job.ChangesetID})
 	if err != nil {
-		return errors.Wrap(err, "loading changeset")
+		return errors.Wrap(err, "loading changeset"), nil
 	}
 
 	// Changesets that are currently processing should be retried at a later stage.
 	if b.ch.ReconcilerState == btypes.ReconcilerStateProcessing {
-		return changesetIsProcessingErr
+		return changesetIsProcessingErr, nil
 	}
 
 	// Load repo.
 	b.repo, err = b.tx.Repos().Get(ctx, b.ch.RepoID)
 	if err != nil {
-		return errors.Wrap(err, "loading repo")
+		return errors.Wrap(err, "loading repo"), nil
 	}
 
 	// Construct changeset source.
 	b.css, err = b.sourcer.ForUser(ctx, b.tx, job.UserID, b.repo)
 	if err != nil {
-		return errors.Wrap(err, "loading ChangesetSource")
+		return errors.Wrap(err, "loading ChangesetSource"), nil
 	}
 
 	b.logger.Info("processing changeset job", log.String("type", string(job.JobType)))
@@ -91,20 +91,20 @@ func (b *bulkProcessor) Process(ctx context.Context, job *btypes.ChangesetJob) (
 	switch job.JobType {
 
 	case btypes.ChangesetJobTypeComment:
-		return b.comment(ctx, job)
+		return b.comment(ctx, job), nil
 	case btypes.ChangesetJobTypeDetach:
-		return b.detach(ctx, job)
+		return b.detach(ctx, job), nil
 	case btypes.ChangesetJobTypeReenqueue:
-		return b.reenqueueChangeset(ctx)
+		return b.reenqueueChangeset(ctx), nil
 	case btypes.ChangesetJobTypeMerge:
 		return b.mergeChangeset(ctx, job)
 	case btypes.ChangesetJobTypeClose:
 		return b.closeChangeset(ctx)
 	case btypes.ChangesetJobTypePublish:
-		return b.publishChangeset(ctx, job)
+		return b.publishChangeset(ctx, job), nil
 
 	default:
-		return &unknownJobTypeErr{jobType: string(job.JobType)}
+		return &unknownJobTypeErr{jobType: string(job.JobType)}, nil
 	}
 }
 
@@ -163,15 +163,15 @@ func (b *bulkProcessor) reenqueueChangeset(ctx context.Context) error {
 	return err
 }
 
-func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.ChangesetJob) (err error) {
+func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.ChangesetJob) (err error, afterDone func(*store.Store)) {
 	typedPayload, ok := job.Payload.(*btypes.ChangesetJobMergePayload)
 	if !ok {
-		return errors.Errorf("invalid payload type for changeset_job, want=%T have=%T", &btypes.ChangesetJobMergePayload{}, job.Payload)
+		return errors.Errorf("invalid payload type for changeset_job, want=%T have=%T", &btypes.ChangesetJobMergePayload{}, job.Payload), nil
 	}
 
 	remoteRepo, err := sources.GetRemoteRepo(ctx, b.css, b.repo, b.ch, nil)
 	if err != nil {
-		return errors.Wrap(err, "loading remote repo")
+		return errors.Wrap(err, "loading remote repo"), nil
 	}
 
 	cs := &sources.Changeset{
@@ -180,35 +180,34 @@ func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.Changese
 		RemoteRepo: remoteRepo,
 	}
 	if err := b.css.MergeChangeset(ctx, cs, typedPayload.Squash); err != nil {
-		return err
+		return err, nil
 	}
-
-	b.enqueueWebhook(ctx, webhooks.ChangesetClose)
 
 	events, err := cs.Changeset.Events()
 	if err != nil {
 		b.logger.Error("Events", log.Error(err))
-		return errcode.MakeNonRetryable(err)
+		return errcode.MakeNonRetryable(err), nil
 	}
 	state.SetDerivedState(ctx, b.tx.Repos(), gitserver.NewClient(), cs.Changeset, events)
 
 	if err := b.tx.UpsertChangesetEvents(ctx, events...); err != nil {
 		b.logger.Error("UpsertChangesetEvents", log.Error(err))
-		return errcode.MakeNonRetryable(err)
+		return errcode.MakeNonRetryable(err), nil
 	}
 
 	if err := b.tx.UpdateChangesetCodeHostState(ctx, cs.Changeset); err != nil {
 		b.logger.Error("UpdateChangeset", log.Error(err))
-		return errcode.MakeNonRetryable(err)
+		return errcode.MakeNonRetryable(err), nil
 	}
 
-	return nil
+	afterDone = func(s *store.Store) { b.enqueueWebhook(ctx, s, webhooks.ChangesetClose) }
+	return nil, afterDone
 }
 
-func (b *bulkProcessor) closeChangeset(ctx context.Context) (err error) {
+func (b *bulkProcessor) closeChangeset(ctx context.Context) (err error, afterDone func(*store.Store)) {
 	remoteRepo, err := sources.GetRemoteRepo(ctx, b.css, b.repo, b.ch, nil)
 	if err != nil {
-		return errors.Wrap(err, "loading remote repo")
+		return errors.Wrap(err, "loading remote repo"), nil
 	}
 
 	cs := &sources.Changeset{
@@ -217,29 +216,28 @@ func (b *bulkProcessor) closeChangeset(ctx context.Context) (err error) {
 		RemoteRepo: remoteRepo,
 	}
 	if err := b.css.CloseChangeset(ctx, cs); err != nil {
-		return err
+		return err, nil
 	}
-
-	b.enqueueWebhook(ctx, webhooks.ChangesetClose)
 
 	events, err := cs.Changeset.Events()
 	if err != nil {
 		b.logger.Error("Events", log.Error(err))
-		return errcode.MakeNonRetryable(err)
+		return errcode.MakeNonRetryable(err), nil
 	}
 	state.SetDerivedState(ctx, b.tx.Repos(), gitserver.NewClient(), cs.Changeset, events)
 
 	if err := b.tx.UpsertChangesetEvents(ctx, events...); err != nil {
 		b.logger.Error("UpsertChangesetEvents", log.Error(err))
-		return errcode.MakeNonRetryable(err)
+		return errcode.MakeNonRetryable(err), nil
 	}
 
 	if err := b.tx.UpdateChangesetCodeHostState(ctx, cs.Changeset); err != nil {
 		b.logger.Error("UpdateChangeset", log.Error(err))
-		return errcode.MakeNonRetryable(err)
+		return errcode.MakeNonRetryable(err), nil
 	}
 
-	return nil
+	afterDone = func(s *store.Store) { b.enqueueWebhook(ctx, s, webhooks.ChangesetClose) }
+	return nil, afterDone
 }
 
 func (b *bulkProcessor) publishChangeset(ctx context.Context, job *btypes.ChangesetJob) (err error) {
@@ -291,6 +289,6 @@ func (b *bulkProcessor) publishChangeset(ctx context.Context, job *btypes.Change
 	return nil
 }
 
-func (b *bulkProcessor) enqueueWebhook(ctx context.Context, eventType string) {
-	webhooks.EnqueueChangeset(ctx, b.logger, b.tx, eventType, bgql.MarshalChangesetID(b.ch.ID))
+func (b *bulkProcessor) enqueueWebhook(ctx context.Context, store *store.Store, eventType string) {
+	webhooks.EnqueueChangeset(ctx, b.logger, store, eventType, bgql.MarshalChangesetID(b.ch.ID))
 }

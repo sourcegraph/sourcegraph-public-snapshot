@@ -53,10 +53,17 @@ func (b *bulkProcessorWorker) HandlerFunc() workerutil.HandlerFunc[*btypes.Chang
 		if err != nil {
 			return err
 		}
-		defer func() { err = tx.Done(err) }()
 
 		p := processor.New(logger, tx, b.sourcer)
+		err, afterDone := p.Process(ctx, job)
 
-		return p.Process(ctx, job)
+		defer func() {
+			err = tx.Done(err)
+			if afterDone != nil {
+				afterDone(b.store)
+			}
+		}()
+
+		return err
 	}
 }
