@@ -14,6 +14,7 @@ import (
 	"github.com/XSAM/otelsql"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/stdlib"
+	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/qustavo/sqlhooks/v2"
@@ -302,6 +303,8 @@ func isDatabaseLikelyStartingUp(err error) bool {
 	return false
 }
 
+const argsAttributesValueLimit = 100
+
 // argsAsAttributes generates a set of OpenTelemetry trace attributes that represent the
 // argument values used in a query.
 func argsAsAttributes(ctx context.Context, _ otelsql.Method, _ string, args []driver.NamedValue) []attribute.KeyValue {
@@ -335,15 +338,60 @@ func argsAsAttributes(ctx context.Context, _ otelsql.Method, _ string, args []dr
 		case bool:
 			attrs[i] = attribute.Bool(key, v)
 		case []byte:
-			attrs[i] = attribute.String(key, string(v))
+			attrs[i] = attribute.String(key, truncateStringValue(string(v)))
 		case string:
-			attrs[i] = attribute.String(key, v)
+			attrs[i] = attribute.String(key, truncateStringValue(v))
 		case time.Time:
 			attrs[i] = attribute.String(key, v.String())
+
+		// pq.Array types
+		case pq.BoolArray:
+			attrs[i] = attribute.BoolSlice(key, truncateSliceValue([]bool(v)))
+		case pq.Float64Array:
+			attrs[i] = attribute.Float64Slice(key, truncateSliceValue([]float64(v)))
+		case pq.Float32Array:
+			vals := truncateSliceValue([]float32(v))
+			floats := make([]float64, len(vals))
+			for i, v := range vals {
+				floats[i] = float64(v)
+			}
+			attrs[i] = attribute.Float64Slice(key, floats)
+		case pq.Int64Array:
+			attrs[i] = attribute.Int64Slice(key, truncateSliceValue([]int64(v)))
+		case pq.Int32Array:
+			vals := truncateSliceValue([]int32(v))
+			ints := make([]int, len(vals))
+			for i, v := range vals {
+				ints[i] = int(v)
+			}
+			attrs[i] = attribute.IntSlice(key, ints)
+		case pq.StringArray:
+			attrs[i] = attribute.StringSlice(key, truncateSliceValue([]string(v)))
+		case pq.ByteaArray:
+			vals := truncateSliceValue([][]byte(v))
+			strings := make([]string, len(vals))
+			for i, v := range vals {
+				strings[i] = string(v)
+			}
+			attrs[i] = attribute.StringSlice(key, strings)
 
 		default: // in case we miss anything
 			attrs[i] = attribute.String(key, fmt.Sprintf("%v", v))
 		}
 	}
 	return attrs
+}
+
+func truncateStringValue(v string) string {
+	if len(v) > argsAttributesValueLimit {
+		return v[:argsAttributesValueLimit]
+	}
+	return v
+}
+
+func truncateSliceValue[T any](s []T) []T {
+	if len(s) > argsAttributesValueLimit {
+		return s[:argsAttributesValueLimit]
+	}
+	return s
 }
