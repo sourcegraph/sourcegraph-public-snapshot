@@ -189,6 +189,15 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// sync the rate limit first, because externalServiceValidate potentially
+	// makes a call to the code host, which might be rate limited
+	if s.RateLimitSyncer != nil {
+		err = s.RateLimitSyncer.SyncRateLimiters(ctx, req.ExternalServiceID)
+		if err != nil {
+			logger.Warn("Handling rate limiter sync", log.Error(err))
+		}
+	}
+
 	statusCode, resp := handleExternalServiceValidate(ctx, logger, es, genericSrc)
 	if statusCode > 0 {
 		s.respond(w, statusCode, resp)
@@ -197,13 +206,6 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	if statusCode == 0 {
 		// client is gone
 		return
-	}
-
-	if s.RateLimitSyncer != nil {
-		err = s.RateLimitSyncer.SyncRateLimiters(ctx, req.ExternalServiceID)
-		if err != nil {
-			logger.Warn("Handling rate limiter sync", log.Error(err))
-		}
 	}
 
 	if err := s.Syncer.TriggerExternalServiceSync(ctx, req.ExternalServiceID); err != nil {

@@ -5,6 +5,9 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/log"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -15,8 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type RepoUpdaterServiceServer struct {
@@ -125,6 +126,15 @@ func (s *RepoUpdaterServiceServer) SyncExternalService(ctx context.Context, req 
 		return &proto.SyncExternalServiceResponse{}, nil
 	}
 
+	// sync the rate limit first, because externalServiceValidate potentially
+	// makes a call to the code host, which might be rate limited
+	if s.Server.RateLimitSyncer != nil {
+		err = s.Server.RateLimitSyncer.SyncRateLimiters(ctx, req.ExternalServiceId)
+		if err != nil {
+			logger.Warn("Handling rate limiter sync", log.Error(err))
+		}
+	}
+
 	err = externalServiceValidate(ctx, es, genericSrc)
 	if err == github.ErrIncompleteResults {
 		logger.Info("server.external-service-sync", log.Error(err))
@@ -138,13 +148,6 @@ func (s *RepoUpdaterServiceServer) SyncExternalService(ctx context.Context, req 
 			return nil, status.Error(codes.PermissionDenied, err.Error())
 		}
 		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	if s.Server.RateLimitSyncer != nil {
-		err = s.Server.RateLimitSyncer.SyncRateLimiters(ctx, req.ExternalServiceId)
-		if err != nil {
-			logger.Warn("Handling rate limiter sync", log.Error(err))
-		}
 	}
 
 	if err := s.Server.Syncer.TriggerExternalServiceSync(ctx, req.ExternalServiceId); err != nil {
