@@ -17,6 +17,8 @@ export function useObservable<T>(observable: Observable<T>): T | undefined {
     const [error, setError] = useState<any>()
     const [currentValue, setCurrentValue] = useState<T>()
 
+    // We use a layout effect to avoid UI tearing when the observable is updated because otherwise
+    // the page will be rendered with the old value after the first render pass.
     useLayoutEffect(() => {
         setCurrentValue(undefined)
         const subscription = observable.subscribe({ next: setCurrentValue, error: setError })
