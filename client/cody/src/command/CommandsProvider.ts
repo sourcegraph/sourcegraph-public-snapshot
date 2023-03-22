@@ -43,19 +43,15 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
 
     vscode.window.registerWebviewViewProvider('cody.chat', chatProvider)
 
-    await vscode.commands.executeCommand('setContext', 'sourcegraph.cody.activated', true)
+    await vscode.commands.executeCommand('setContext', 'cody.activated', true)
 
     const disposables: vscode.Disposable[] = []
 
     disposables.push(
         // Toggle Chat
-        vscode.commands.registerCommand('sourcegraph.cody.toggleEnabled', async () => {
+        vscode.commands.registerCommand('cody.toggle-enabled', async () => {
             const config = vscode.workspace.getConfiguration()
-            await config.update(
-                'sourcegraph.cody.enable',
-                !config.get('sourcegraph.cody.enable'),
-                vscode.ConfigurationTarget.Global
-            )
+            await config.update('cody.enabled', !config.get('cody.enabled'), vscode.ConfigurationTarget.Global)
         }),
         // Access token
         vscode.commands.registerCommand('cody.set-access-token', async (args: any[]) => {

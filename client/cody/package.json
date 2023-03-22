@@ -47,7 +47,7 @@
           "id": "cody",
           "title": "Cody",
           "icon": "resources/cody.svg",
-          "when": "sourcegraph.cody.activated"
+          "when": "cody.activated"
         }
       ]
     },
@@ -57,18 +57,14 @@
           "type": "webview",
           "id": "cody.chat",
           "name": "Chat",
-          "when": "sourcegraph.cody.activated"
+          "when": "cody.activated"
         }
       ]
     },
     "commands": [
       {
-        "command": "sourcegraph.cody.toggleEnabled",
+        "command": "cody.toggle-enabled",
         "title": "Cody: Toggle Enabled/Disabled"
-      },
-      {
-        "command": "cody.experimental.suggest",
-        "title": "Ask Cody: View Suggestions"
       },
       {
         "command": "cody.recipe.explain-code",
@@ -112,7 +108,7 @@
         "command": "cody.recipe.explain-code-high-level",
         "key": "ctrl+alt+c",
         "mac": "ctrl+alt+c",
-        "when": "sourcegraph.cody.activated"
+        "when": "cody.activated"
       }
     ],
     "submenus": [
@@ -124,35 +120,31 @@
     "menus": {
       "commandPalette": [
         {
-          "command": "sourcegraph.cody.toggleEnabled"
-        },
-        {
-          "command": "cody.experimental.suggest",
-          "when": "config.cody.experimental.suggest && sourcegraph.cody.activated"
+          "command": "cody.toggle-enabled"
         },
         {
           "command": "cody.recipe.explain-code",
-          "when": "sourcegraph.cody.activated"
+          "when": "cody.activated"
         },
         {
           "command": "cody.recipe.explain-code-high-level",
-          "when": "sourcegraph.cody.activated"
+          "when": "cody.activated"
         },
         {
           "command": "cody.recipe.generate-unit-test",
-          "when": "sourcegraph.cody.activated"
+          "when": "cody.activated"
         },
         {
           "command": "cody.recipe.generate-docstring",
-          "when": "sourcegraph.cody.activated"
+          "when": "cody.activated"
         },
         {
           "command": "cody.recipe.translate-to-language",
-          "when": "sourcegraph.cody.activated"
+          "when": "cody.activated"
         },
         {
           "command": "cody.recipe.git-history",
-          "when": "sourcegraph.cody.activated"
+          "when": "cody.activated"
         },
         {
           "command": "cody.set-access-token"
@@ -165,7 +157,7 @@
         {
           "submenu": "cody.submenu",
           "group": "7_modification",
-          "when": "sourcegraph.cody.activated"
+          "when": "cody.activated"
         }
       ],
       "cody.submenu": [
@@ -193,7 +185,7 @@
       "type": "object",
       "title": "Cody settings",
       "properties": {
-        "sourcegraph.cody.enable": {
+        "cody.enabled": {
           "type": "boolean",
           "default": true,
           "description": "Enable Cody"
@@ -220,10 +212,6 @@
             "blended"
           ],
           "default": "embeddings"
-        },
-        "cody.experimental.suggest": {
-          "type": "boolean",
-          "default": false
         }
       }
     }

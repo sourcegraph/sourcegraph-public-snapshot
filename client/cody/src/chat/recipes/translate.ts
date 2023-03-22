@@ -25,7 +25,6 @@ export class TranslateToLanguage implements Recipe {
         if (!selection) {
             return null
         }
-        console.log(selection)
 
         const toLanguage = await editor.showQuickPick(languageNames)
         if (!toLanguage) {
