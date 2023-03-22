@@ -36,7 +36,13 @@ export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editin
         } catch (error) {
             setIsDeleting(asError(error))
         } finally {
-            window.location.reload()
+            const deletedCodeHostId = client.cache.identify({
+                __typename: 'ExternalService',
+                id: node.id,
+            })
+
+            // Remove deleted code host from the apollo cache.
+            client.cache.evict({ id: deletedCodeHostId })
         }
     }, [node, client])
 
