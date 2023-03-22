@@ -73,7 +73,7 @@ func EnterpriseInit(
 	go watchAuthzProviders(ctx, db)
 }
 
-// watchAuthzProviders sets up background permissions syncing.
+// watchAuthzProviders updates authz providers if config changes.
 func watchAuthzProviders(ctx context.Context, db ossDB.DB) {
 	globals.WatchPermissionsUserMapping()
 	go func() {

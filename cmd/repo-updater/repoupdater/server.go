@@ -212,7 +212,7 @@ func (s *Server) respond(w http.ResponseWriter, code int, v any) {
 			s.Logger.Error("response value error", log.Error(val))
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(code)
-			_, _ = fmt.Fprintf(w, "%v", val)
+			fmt.Fprintf(w, "%v", val)
 		}
 	default:
 		w.Header().Set("Content-Type", "application/json")
