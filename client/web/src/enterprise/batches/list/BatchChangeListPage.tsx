@@ -187,7 +187,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                         For unlimited access to Batch Changes,{' '}
                         <Link
                             to={addSourcegraphAppOutboundUrlParameters(
-                                'https://about.sourcegraph.com/get-started?app=enterprise',
+                                'https://about.sourcegraph.com/get-started?app=entrerprise_trial',
                                 'batch-changes'
                             )}
                         >
