@@ -293,6 +293,7 @@ ts_project(
 
 jest_test(
     name = "test",
+    timeout = "moderate",
     data = [
         ":browser_tests",
     ],

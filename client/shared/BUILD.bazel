@@ -514,6 +514,8 @@ filegroup(
 
 jest_test(
     name = "test",
+    size = "enormous",  # make sure bazel reserves enough RAM for this.
+    timeout = "long",
     data = [
         ":shared_tests",
         ":snapshots",

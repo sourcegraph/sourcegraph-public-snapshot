@@ -5449,6 +5449,16 @@
           "IndexDefinition": "CREATE INDEX cm_action_jobs_state_idx ON cm_action_jobs USING btree (state)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
+        },
+        {
+          "Name": "cm_action_jobs_trigger_event",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX cm_action_jobs_trigger_event ON cm_action_jobs USING btree (trigger_event)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -7881,6 +7891,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_references_processed_pkey ON codeintel_ranking_references_processed USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "codeintel_ranking_references_processed_reference_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_references_processed_reference_id ON codeintel_ranking_references_processed USING btree (codeintel_ranking_reference_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [

@@ -383,6 +383,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         description: 'Create release branch',
         run: async config => {
             const release = await getActiveRelease(config)
+            const client = await getAuthenticatedGitHubClient()
             let message: string
             // notify cs team on patch release cut
             if (release.version.patch !== 0) {
@@ -398,6 +399,25 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 console.log(`To check the status of the branch, run:\nsg ci status -branch ${release.branch} --wait\n`)
             } catch (error) {
                 console.error('Failed to create release branch', error)
+            }
+
+            if (release.version.patch === 0) {
+                // create backport label for major / minor versions
+                const params = {
+                    owner: 'sourcegraph',
+                    repo: 'sourcegraph',
+                }
+                const labelName = `backport ${release.version.major}.${release.version.minor}`
+                const labelExists = await client.issues
+                    .getLabel({ name: labelName, ...params })
+                    .then(resp => resp.status === 200)
+                    .catch(() => false)
+                if (!labelExists) {
+                    console.log(await client.issues.createLabel({ name: labelName, color: 'e69138', ...params }))
+                    console.log(`Label ${labelName} created`)
+                } else {
+                    console.log(`label ${labelName} already exists`)
+                }
             }
         },
     },

@@ -25,16 +25,11 @@ func NewRubyPackagesSource(ctx context.Context, svc *types.ExternalService, cf *
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 
-	cli, err := cf.Doer()
-	if err != nil {
-		return nil, err
-	}
-
 	return &PackagesSource{
 		svc:        svc,
 		configDeps: c.Dependencies,
 		scheme:     dependencies.RubyPackagesScheme,
-		src:        &rubyPackagesSource{client: rubygems.NewClient(svc.URN(), c.Repository, cli)},
+		src:        &rubyPackagesSource{client: rubygems.NewClient(svc.URN(), c.Repository, cf)},
 	}, nil
 }
 

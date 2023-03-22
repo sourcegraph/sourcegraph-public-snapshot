@@ -85,5 +85,9 @@ func (r *CompiledRule) match(filePath string) bool {
 		// For now, we ignore errors.
 		r.glob, _ = paths.Compile(r.proto.GetPattern())
 	})
+	// If we saw any error on compiling the glob, we just treat this as a no-match case.
+	if r.glob == nil {
+		return false
+	}
 	return r.glob.Match(filePath)
 }

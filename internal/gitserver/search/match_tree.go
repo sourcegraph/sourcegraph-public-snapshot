@@ -1,6 +1,7 @@
 package search
 
 import (
+	"bufio"
 	"bytes"
 	"unicode/utf8"
 
@@ -158,7 +159,11 @@ func (dm *DiffMatches) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit,
 		var hunkHighlights map[int]MatchedHunk
 		for hunkIdx, hunk := range fileDiff.Hunks {
 			var lineHighlights map[int]result.Ranges
-			for lineIdx, line := range bytes.Split(hunk.Body, []byte("\n")) {
+			sc := bufio.NewScanner(bytes.NewReader(hunk.Body))
+			lineIdx := -1
+			for sc.Scan() {
+				lineIdx++
+				line := sc.Bytes()
 				if len(line) == 0 {
 					continue
 				}
@@ -177,6 +182,9 @@ func (dm *DiffMatches) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit,
 					}
 					lineHighlights[lineIdx] = matchesToRanges(lineWithoutPrefix, matches)
 				}
+			}
+			if err := sc.Err(); err != nil {
+				return filterResult(false), MatchedCommit{}, err
 			}
 
 			if len(lineHighlights) > 0 {
