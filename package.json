@@ -217,7 +217,7 @@
     "@types/svgo": "2.6.0",
     "@types/testing-library__jest-dom": "5.9.5",
     "@types/uuid": "8.0.1",
-    "@types/vscode": "^1.63.1",
+    "@types/vscode": "^1.76.0",
     "@types/webpack-bundle-analyzer": "^4.6.0",
     "@types/webpack-stats-plugin": "^0.3.2",
     "@types/yauzl": "^2.9.2",
