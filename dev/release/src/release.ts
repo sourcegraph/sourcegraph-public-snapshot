@@ -481,7 +481,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 let nextCandidate = 1
                 for (const tag of tags) {
                     const lastNum = tag.match('.*-rc\\.(\\d+)')
-                    if (lastNum.length === 0) {
+                    if (!lastNum || lastNum.length === 0) {
                         break
                     }
                     const num = parseInt(lastNum[1], 10)
