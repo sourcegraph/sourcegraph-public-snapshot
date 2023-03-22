@@ -823,6 +823,248 @@ func TestPermissionSyncJobs_Count(t *testing.T) {
 	require.Equal(t, 0, count)
 }
 
+func TestPermissionSyncJobs_CountUsersWithFailingSyncJob(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	clock := timeutil.NewFakeClock(time.Now(), 0)
+
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+
+	store := PermissionSyncJobsWith(logger, db)
+	usersStore := UsersWith(logger, db)
+
+	// Create users.
+	user1, err := usersStore.Create(ctx, NewUser{Username: "test-user-1", DisplayName: "t0pc0d3r"})
+	require.NoError(t, err)
+	user2, err := usersStore.Create(ctx, NewUser{Username: "test-user-2"})
+	require.NoError(t, err)
+
+	createJob := func(t *testing.T, userID int32) {
+		t.Helper()
+
+		opts := PermissionSyncJobOpts{Priority: HighPriorityPermissionsSync, InvalidateCaches: true, Reason: ReasonUserNoPermissions, NoPerms: true}
+		err := store.CreateUserSyncJob(ctx, userID, opts)
+		require.NoError(t, err)
+	}
+
+	finishJobWithFailure := func(t *testing.T, id int, finishedAt time.Time) {
+		t.Helper()
+
+		query := sqlf.Sprintf("UPDATE permission_sync_jobs SET finished_at = %s, state = %s WHERE id = %d", finishedAt, PermissionsSyncJobStateFailed, id)
+
+		_, err = db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+		require.NoError(t, err)
+	}
+
+	finishJobWithCancel := func(t *testing.T, id int, finishedAt time.Time) {
+		t.Helper()
+
+		query := sqlf.Sprintf("UPDATE permission_sync_jobs SET finished_at = %s, state = %s, cancel = true WHERE id = %d", finishedAt, PermissionsSyncJobStateCanceled, id)
+
+		_, err = db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+		require.NoError(t, err)
+	}
+
+	finishJob := func(t *testing.T, id int, finishedAt time.Time) {
+		t.Helper()
+
+		query := sqlf.Sprintf("UPDATE permission_sync_jobs SET finished_at = %s, state = %s WHERE id = %d", finishedAt, PermissionsSyncJobStateCompleted, id)
+
+		_, err = db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+		require.NoError(t, err)
+	}
+
+	cleanupJobs := func(t *testing.T) {
+		t.Helper()
+
+		if t.Failed() {
+			return
+		}
+
+		_, err = db.ExecContext(ctx, "TRUNCATE TABLE permission_sync_jobs; ALTER SEQUENCE permission_sync_jobs_id_seq RESTART WITH 1")
+		require.NoError(t, err)
+	}
+
+	t.Run("No jobs", func(t *testing.T) {
+		count, err := store.CountUsersWithFailingSyncJob(ctx)
+		require.NoError(t, err)
+		require.Equal(t, int32(0), count, "wrong count")
+	})
+
+	t.Run("No failining sync job", func(t *testing.T) {
+		cleanupJobs(t)
+		createJob(t, user1.ID) // id = 1
+		createJob(t, user2.ID) // id = 2
+
+		finishJob(t, 1, clock.Now())
+
+		count, err := store.CountUsersWithFailingSyncJob(ctx)
+		require.NoError(t, err)
+		require.Equal(t, int32(0), count, "wrong count")
+	})
+
+	t.Run("No latest failing sync job", func(t *testing.T) {
+		cleanupJobs(t)
+		createJob(t, user1.ID) // id = 1
+		finishJob(t, 1, clock.Now().Add(-1*time.Minute))
+
+		createJob(t, user1.ID) // id = 2
+		finishJobWithFailure(t, 2, clock.Now().Add(-1*time.Hour))
+
+		createJob(t, user2.ID) // id = 3
+		finishJob(t, 3, clock.Now())
+
+		count, err := store.CountUsersWithFailingSyncJob(ctx)
+		require.NoError(t, err)
+		require.Equal(t, int32(0), count, "wrong count")
+	})
+
+	t.Run("With latest failing sync job", func(t *testing.T) {
+		cleanupJobs(t)
+		createJob(t, user1.ID) // id = 1
+		finishJob(t, 1, clock.Now().Add(-1*time.Hour))
+
+		createJob(t, user1.ID) // id = 2
+		finishJobWithFailure(t, 2, clock.Now().Add(-1*time.Minute))
+
+		createJob(t, user1.ID) // id = 3
+		finishJobWithCancel(t, 3, clock.Now().Add(-1*time.Minute))
+
+		createJob(t, user2.ID) // id = 4
+		finishJobWithFailure(t, 4, clock.Now())
+
+		count, err := store.CountUsersWithFailingSyncJob(ctx)
+		require.NoError(t, err)
+		require.Equal(t, int32(2), count, "wrong count")
+	})
+}
+
+func TestPermissionSyncJobs_CountReposWithFailingSyncJob(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	clock := timeutil.NewFakeClock(time.Now(), 0)
+
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+
+	store := PermissionSyncJobsWith(logger, db)
+	reposStore := ReposWith(logger, db)
+
+	// Create repos.
+	repo1 := types.Repo{Name: "test-repo-1", ID: 101}
+	err := reposStore.Create(ctx, &repo1)
+	require.NoError(t, err)
+	repo2 := types.Repo{Name: "test-repo-2", ID: 201}
+	err = reposStore.Create(ctx, &repo2)
+	require.NoError(t, err)
+
+	createJob := func(t *testing.T, repoID api.RepoID) {
+		t.Helper()
+
+		opts := PermissionSyncJobOpts{Priority: HighPriorityPermissionsSync, InvalidateCaches: true, Reason: ReasonRepoNoPermissions, NoPerms: true}
+		err := store.CreateRepoSyncJob(ctx, repoID, opts)
+		require.NoError(t, err)
+	}
+
+	finishJobWithFailure := func(t *testing.T, id int, finishedAt time.Time) {
+		t.Helper()
+
+		query := sqlf.Sprintf("UPDATE permission_sync_jobs SET finished_at = %s, state = %s WHERE id = %d", finishedAt, PermissionsSyncJobStateFailed, id)
+
+		_, err = db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+		require.NoError(t, err)
+	}
+
+	finishJobWithCancel := func(t *testing.T, id int, finishedAt time.Time) {
+		t.Helper()
+
+		query := sqlf.Sprintf("UPDATE permission_sync_jobs SET finished_at = %s, state = %s, cancel = true WHERE id = %d", finishedAt, PermissionsSyncJobStateCanceled, id)
+
+		_, err = db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+		require.NoError(t, err)
+	}
+
+	finishJob := func(t *testing.T, id int, finishedAt time.Time) {
+		t.Helper()
+
+		query := sqlf.Sprintf("UPDATE permission_sync_jobs SET finished_at = %s, state = %s WHERE id = %d", finishedAt, PermissionsSyncJobStateCompleted, id)
+
+		_, err = db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+		require.NoError(t, err)
+	}
+
+	cleanupJobs := func(t *testing.T) {
+		t.Helper()
+
+		if t.Failed() {
+			return
+		}
+
+		_, err = db.ExecContext(ctx, "TRUNCATE TABLE permission_sync_jobs; ALTER SEQUENCE permission_sync_jobs_id_seq RESTART WITH 1")
+		require.NoError(t, err)
+	}
+
+	t.Run("No jobs", func(t *testing.T) {
+		count, err := store.CountReposWithFailingSyncJob(ctx)
+		require.NoError(t, err)
+		require.Equal(t, int32(0), count, "wrong count")
+	})
+
+	t.Run("No failining sync job", func(t *testing.T) {
+		cleanupJobs(t)
+		createJob(t, repo1.ID) // id = 1
+		createJob(t, repo2.ID) // id = 2
+
+		finishJob(t, 1, clock.Now())
+
+		count, err := store.CountReposWithFailingSyncJob(ctx)
+		require.NoError(t, err)
+		require.Equal(t, int32(0), count, "wrong count")
+	})
+
+	t.Run("No latest failing sync job", func(t *testing.T) {
+		cleanupJobs(t)
+		createJob(t, repo1.ID) // id = 1
+		finishJob(t, 1, clock.Now().Add(-1*time.Minute))
+
+		createJob(t, repo1.ID) // id = 2
+		finishJobWithFailure(t, 2, clock.Now().Add(-1*time.Hour))
+
+		createJob(t, repo2.ID) // id = 3
+		finishJob(t, 3, clock.Now())
+
+		count, err := store.CountReposWithFailingSyncJob(ctx)
+		require.NoError(t, err)
+		require.Equal(t, int32(0), count, "wrong count")
+	})
+
+	t.Run("With latest failing sync job", func(t *testing.T) {
+		cleanupJobs(t)
+		createJob(t, repo1.ID) // id = 1
+		finishJob(t, 1, clock.Now().Add(-1*time.Hour))
+
+		createJob(t, repo1.ID) // id = 2
+		finishJobWithFailure(t, 2, clock.Now().Add(-1*time.Minute))
+
+		createJob(t, repo1.ID) // id = 3
+		finishJobWithCancel(t, 3, clock.Now().Add(-1*time.Minute))
+
+		createJob(t, repo2.ID) // id = 4
+		finishJobWithFailure(t, 4, clock.Now())
+
+		count, err := store.CountReposWithFailingSyncJob(ctx)
+		require.NoError(t, err)
+		require.Equal(t, int32(2), count, "wrong count")
+	})
+}
+
 // createSyncJobs creates 10 sync jobs, half with the ReasonManualUserSync reason
 // and half with the ReasonGitHubUserMembershipRemovedEvent reason.
 func createSyncJobs(t *testing.T, ctx context.Context, userID int32, store PermissionSyncJobStore) {

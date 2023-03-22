@@ -232,6 +232,8 @@ type PermissionSyncJobStore interface {
 	List(ctx context.Context, opts ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error)
 	GetLatestFinishedSyncJob(ctx context.Context, opts ListPermissionSyncJobOpts) (*PermissionSyncJob, error)
 	Count(ctx context.Context, opts ListPermissionSyncJobOpts) (int, error)
+	CountUsersWithFailingSyncJob(ctx context.Context) (int32, error)
+	CountReposWithFailingSyncJob(ctx context.Context) (int32, error)
 	CancelQueuedJob(ctx context.Context, reason string, id int) error
 	SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, codeHostStatuses CodeHostStatusesSet) error
 }
@@ -654,6 +656,66 @@ func (s *permissionSyncJobStore) Count(ctx context.Context, opts ListPermissionS
 		return 0, err
 	}
 	return count, nil
+}
+
+const countUsersWithFailingSyncJobsQuery = `
+WITH sync_jobs_with_row_number AS (
+	SELECT
+		state,
+		ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY finished_at DESC) AS row_num
+	FROM
+		permission_sync_jobs
+	WHERE
+		user_id IS NOT NULL
+		AND finished_at IS NOT NULL
+		AND state IN ('completed', 'failed')
+)
+SELECT
+	COUNT(*)
+FROM
+	sync_jobs_with_row_number
+WHERE 
+	state = 'failed'
+	AND row_num = 1
+`
+
+// CountUsersWithFailingSyncJob returns count of users with LATEST sync job failing.
+func (s *permissionSyncJobStore) CountUsersWithFailingSyncJob(ctx context.Context) (int32, error) {
+	var count int32
+
+	err := s.QueryRow(ctx, sqlf.Sprintf(countUsersWithFailingSyncJobsQuery)).Scan(&count)
+
+	return count, err
+}
+
+const countReposWithFailingSyncJobsQuery = `
+WITH sync_jobs_with_row_number AS (
+	SELECT
+		state,
+		ROW_NUMBER() OVER (PARTITION BY repository_id ORDER BY finished_at DESC) AS row_num
+	FROM
+		permission_sync_jobs
+	WHERE
+		repository_id IS NOT NULL
+		AND finished_at IS NOT NULL
+		AND state IN ('completed', 'failed')
+)
+SELECT
+	COUNT(*)
+FROM
+	sync_jobs_with_row_number
+WHERE 
+	state = 'failed'
+	AND row_num = 1
+`
+
+// CountReposWithFailingSyncJob returns count of repos with LATEST sync job failing.
+func (s *permissionSyncJobStore) CountReposWithFailingSyncJob(ctx context.Context) (int32, error) {
+	var count int32
+
+	err := s.QueryRow(ctx, sqlf.Sprintf(countReposWithFailingSyncJobsQuery)).Scan(&count)
+
+	return count, err
 }
 
 type PermissionSyncJob struct {
