@@ -156,7 +156,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 				sourcer:           sourcer,
 				store:             store,
 			}
-			err := rec.process(ctx, logger, store, changeset)
+			err, _ := rec.process(ctx, logger, store, changeset)
 			if err != nil {
 				t.Fatalf("reconciler process failed: %s", err)
 			}
