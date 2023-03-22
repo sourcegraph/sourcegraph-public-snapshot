@@ -29,28 +29,28 @@ func TestShellRunner_Setup(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			options := command.DockerOptions{}
-			ShellRunner := runner.NewShellRunner(nil, nil, "", options)
+			shellRunner := runner.NewShellRunner(nil, nil, "", options)
 
 			ctx := context.Background()
-			err := ShellRunner.Setup(ctx)
-			defer ShellRunner.Teardown(ctx)
+			err := shellRunner.Setup(ctx)
+			defer shellRunner.Teardown(ctx)
 
 			if test.expectedErr != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
-				fmt.Println(ShellRunner.TempDir())
-				entries, err := os.ReadDir(ShellRunner.TempDir())
+				fmt.Println(shellRunner.TempDir())
+				entries, err := os.ReadDir(shellRunner.TempDir())
 				require.NoError(t, err)
 				if len(test.expectedDockerAuth) == 0 {
 					require.Len(t, entries, 0)
 				} else {
 					require.Len(t, entries, 1)
-					dockerAuthEntries, err := os.ReadDir(filepath.Join(ShellRunner.TempDir(), entries[0].Name()))
+					dockerAuthEntries, err := os.ReadDir(filepath.Join(shellRunner.TempDir(), entries[0].Name()))
 					require.NoError(t, err)
 					require.Len(t, dockerAuthEntries, 1)
-					f, err := os.ReadFile(filepath.Join(ShellRunner.TempDir(), entries[0].Name(), dockerAuthEntries[0].Name()))
+					f, err := os.ReadFile(filepath.Join(shellRunner.TempDir(), entries[0].Name(), dockerAuthEntries[0].Name()))
 					require.NoError(t, err)
 					assert.JSONEq(t, test.expectedDockerAuth, string(f))
 				}
@@ -60,17 +60,17 @@ func TestShellRunner_Setup(t *testing.T) {
 }
 
 func TestShellRunner_Teardown(t *testing.T) {
-	ShellRunner := runner.NewShellRunner(nil, nil, "", command.DockerOptions{})
+	shellRunner := runner.NewShellRunner(nil, nil, "", command.DockerOptions{})
 	ctx := context.Background()
-	err := ShellRunner.Setup(ctx)
+	err := shellRunner.Setup(ctx)
 	require.NoError(t, err)
 
-	dir := ShellRunner.TempDir()
+	dir := shellRunner.TempDir()
 
 	_, err = os.Stat(dir)
 	require.NoError(t, err)
 
-	err = ShellRunner.Teardown(ctx)
+	err = shellRunner.Teardown(ctx)
 	require.NoError(t, err)
 
 	_, err = os.Stat(dir)
@@ -102,36 +102,15 @@ func TestShellRunner_Run(t *testing.T) {
 		ScriptPath: "/some/script",
 	}
 
-	ShellRunner := runner.NewShellRunner(cmd, logger, dir, options)
+	shellRunner := runner.NewShellRunner(cmd, logger, dir, options)
 
 	cmd.RunFunc.PushReturn(nil)
 
-	err := ShellRunner.Run(context.Background(), spec)
+	err := shellRunner.Run(context.Background(), spec)
 
 	require.NoError(t, err)
 
 	require.Len(t, cmd.RunFunc.History(), 1)
 	assert.Equal(t, "some-key", cmd.RunFunc.History()[0].Arg2.Key)
-	assert.Equal(t, []string{
-		"docker",
-		"--config",
-		"/docker/config",
-		"run",
-		"--rm",
-		"--add-host=host.docker.internal:host-gateway",
-		"--cpus",
-		"10",
-		"--memory",
-		"1G",
-		"-v",
-		"/some/dir:/data",
-		"-w",
-		"/data/workingdir",
-		"-e",
-		"FOO=bar",
-		"--entrypoint",
-		"/bin/sh",
-		"alpine",
-		"/data/.sourcegraph-executor/some/script",
-	}, cmd.RunFunc.History()[0].Arg2.Command)
+	assert.Equal(t, []string{"/bin/sh", "/some/dir/.sourcegraph-executor/some/script"}, cmd.RunFunc.History()[0].Arg2.Command)
 }

@@ -29,7 +29,7 @@ func NewShellRunner(
 	dir string,
 	options command.DockerOptions,
 ) Runner {
-	return &dockerRunner{
+	return &shellRunner{
 		cmd:            cmd,
 		dir:            dir,
 		internalLogger: log.Scoped("shell-runner", ""),
