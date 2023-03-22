@@ -14,8 +14,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "diff_test",
+    timeout = "short",
     srcs = ["diff_test.go"],
     data = ["//lib/codeintel/precise/diff/testdata:data"],
     embed = [":diff"],

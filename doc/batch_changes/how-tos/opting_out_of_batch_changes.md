@@ -1,6 +1,6 @@
 # Opting out of batch changes
 
-> NOTE: This feature requires [Sourcegraph CLI](https://github.com/sourcegraph/src-cli) 3.26.3 or later.
+<span class="badge badge-note">Sourcegraph CLI 3.26.3+</span>
 
 Repository owners that are not interested in batch change changesets can opt out so that their repository will be skipped when a batch spec is executed.
 

@@ -59,7 +59,7 @@ func EnterpriseInit(
 
 	permsJobStore := db.PermissionSyncJobs()
 	enqueueRepoPermsJob = func(ctx context.Context, repo api.RepoID, reason ossDB.PermissionsSyncJobReason) error {
-		if authz.PermissionSyncingDisabled() {
+		if frontendAuthz.PermissionSyncingDisabled() {
 			return nil
 		}
 

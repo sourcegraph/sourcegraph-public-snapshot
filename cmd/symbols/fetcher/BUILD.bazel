@@ -21,8 +21,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "fetcher_test",
+    timeout = "short",
     srcs = [
         "mocks_test.go",
         "repository_fetcher_test.go",

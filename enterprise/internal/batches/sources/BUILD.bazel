@@ -43,8 +43,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "sources_test",
+    timeout = "short",
     srcs = [
         "azuredevops_test.go",
         "bitbucketcloud_test.go",

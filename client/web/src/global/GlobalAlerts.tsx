@@ -45,7 +45,7 @@ const QUERY = gql`
 export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser, isSourcegraphDotCom }) => {
     const settings = useSettings()
     const { data } = useQuery<GlobalAlertsSiteFlagsResult, GlobalAlertsSiteFlagsVariables>(QUERY, {
-        fetchPolicy: 'cache-first',
+        fetchPolicy: 'cache-and-network',
     })
     const siteFlagsValue = data?.site
 
@@ -63,7 +63,7 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
         <div className={classNames('test-global-alert', styles.globalAlerts)}>
             {siteFlagsValue && (
                 <>
-                    {siteFlagsValue.needsRepositoryConfiguration && (
+                    {siteFlagsValue?.externalServicesCounts.remoteExternalServicesCount === 0 && (
                         <NeedsRepositoryConfigurationAlert className={styles.alert} />
                     )}
                     {siteFlagsValue.freeUsersExceeded && (

@@ -20,7 +20,7 @@ import { BODY_JSON, BODY_PLAIN, HEADERS_JSON, HEADERS_PLAIN } from './webhooks/s
 const decorator: DecoratorFn = Story => <Story />
 
 const config: Meta = {
-    title: 'web/src/site-admin/SiteAdminWebhookPage',
+    title: 'web/site-admin/webhooks/incoming/SiteAdminWebhookPage',
     decorators: [decorator],
 }
 
@@ -108,12 +108,12 @@ export const SiteAdminWebhookPageStory: Story = args => {
     ])
 
     return (
-        <WebStory initialEntries={['/site-admin/webhooks/1']}>
+        <WebStory initialEntries={['/site-admin/webhooks/incoming/1']}>
             {() => (
                 <MockedTestProvider link={buildWebhookLogsMock}>
                     <Routes>
                         <Route
-                            path="/site-admin/webhooks/:id"
+                            path="/site-admin/webhooks/incoming/:id"
                             element={<SiteAdminWebhookPage telemetryService={NOOP_TELEMETRY_SERVICE} />}
                         />
                     </Routes>

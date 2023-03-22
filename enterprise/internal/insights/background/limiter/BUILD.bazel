@@ -17,8 +17,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "limiter_test",
+    timeout = "short",
     srcs = [
         "historical_test.go",
         "search_query_test.go",

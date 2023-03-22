@@ -10,7 +10,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -31,6 +33,7 @@ type indexSchedulerJob struct {
 	policiesSvc   PoliciesService
 	policyMatcher PolicyMatcher
 	indexEnqueuer IndexEnqueuer
+	repoStore     database.RepoStore
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -41,6 +44,7 @@ func NewScheduler(
 	policiesSvc PoliciesService,
 	policyMatcher PolicyMatcher,
 	indexEnqueuer IndexEnqueuer,
+	repoStore database.RepoStore,
 	interval time.Duration,
 	config IndexSchedulerConfig,
 ) goroutine.BackgroundRoutine {
@@ -49,6 +53,7 @@ func NewScheduler(
 		policiesSvc:   policiesSvc,
 		policyMatcher: policyMatcher,
 		indexEnqueuer: indexEnqueuer,
+		repoStore:     repoStore,
 	}
 
 	redMetrics := m.Get(func() *metrics.REDMetrics {
@@ -154,6 +159,12 @@ func (b indexSchedulerJob) handleScheduler(
 func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID, policyBatchSize int, now time.Time) error {
 	offset := 0
 
+	repo, err := b.repoStore.Get(ctx, api.RepoID(repositoryID))
+	if err != nil {
+		return err
+	}
+	repoName := repo.Name
+
 	for {
 		// Retrieve the set of configuration policies that affect indexing for this repository.
 		policies, totalCount, err := b.policiesSvc.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
@@ -168,7 +179,7 @@ func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID, p
 		offset += len(policies)
 
 		// Get the set of commits within this repository that match an indexing policy
-		commitMap, err := b.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, policies, now)
+		commitMap, err := b.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, repoName, policies, now)
 		if err != nil {
 			return errors.Wrap(err, "policies.CommitsDescribedByPolicy")
 		}

@@ -39,8 +39,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "github_test",
+    timeout = "short",
     srcs = [
         "common_test.go",
         "v3_test.go",

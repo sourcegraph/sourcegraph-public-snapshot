@@ -1,7 +1,7 @@
 import React, { MouseEvent, useMemo, useState, useCallback, useLayoutEffect } from 'react'
 
 import { mdiInformationOutline } from '@mdi/js'
-import classnames from 'classnames'
+import classNames from 'classnames'
 
 import { isSafari } from '@sourcegraph/common'
 import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
@@ -118,7 +118,10 @@ export const Suggestions: React.FunctionComponent<SuggesionsProps> = ({
                                     )}
                                     <div className={styles.innerRow}>
                                         <div className="d-flex flex-wrap">
-                                            <div role="gridcell" className={styles.label}>
+                                            <div
+                                                role="gridcell"
+                                                className={classNames(styles.label, 'test-option-label')}
+                                            >
                                                 {option.render ? (
                                                     renderStringOrRenderer(option.render, option)
                                                 ) : option.matches ? (
@@ -156,7 +159,7 @@ export const Suggestions: React.FunctionComponent<SuggesionsProps> = ({
 }
 
 const Footer: React.FunctionComponent<{ option: Option }> = ({ option }) => (
-    <div className={classnames(styles.footer, 'd-flex align-items-center justify-content-between')}>
+    <div className={classNames(styles.footer, 'd-flex align-items-center justify-content-between')}>
         <span>
             {option.info && renderStringOrRenderer(option.info, option)}
             {!option.info && (

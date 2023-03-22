@@ -22,8 +22,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "actor_test",
+    timeout = "short",
     srcs = [
         "grpc_test.go",
         "http_test.go",

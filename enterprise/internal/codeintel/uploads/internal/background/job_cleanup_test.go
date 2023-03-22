@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
@@ -85,14 +86,14 @@ var testSourcedCommits = []shared.SourcedCommits{
 }
 
 func testShouldDeleteRecordsForCommit(t *testing.T, resolveRevisionFunc func(commit string) error, expectedCalls []updateInvocation) {
-	gitserverClient := NewMockGitserverClient()
-	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, i int, spec string) (api.CommitID, error) {
+	gitserverClient := gitserver.NewMockClient()
+	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, _ api.RepoName, spec string, opts gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		return api.CommitID(spec), resolveRevisionFunc(spec)
 	})
 
 	for _, sc := range testSourcedCommits {
 		for _, commit := range sc.Commits {
-			shouldDelete, err := shouldDeleteRecordsForCommit(context.Background(), gitserverClient, sc.RepositoryID, commit)
+			shouldDelete, err := shouldDeleteRecordsForCommit(context.Background(), gitserverClient, sc.RepositoryName, commit)
 			if err != nil {
 				t.Fatalf("unexpected error: %s", err)
 			}

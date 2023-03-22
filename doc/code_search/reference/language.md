@@ -257,7 +257,9 @@ ComplexDiagram(
     Choice(0,
         Terminal("file:"),
         Terminal("f:")),
-        Terminal("regular expression", {href: "#regular-expression"})).addTo();
+    Choice(0,
+        Terminal("regular expression", {href: "#regular-expression"}),
+        Terminal("built-in", {href: "#built-in-file-predicate"}))).addTo();
 </script>
 
 Search files whose full path matches the regular expression. A `-` before `file`
@@ -313,7 +315,10 @@ ComplexDiagram(
             Optional(
                 Sequence(
                     Terminal("."),
-                    Terminal("file kind", {href: "#file-kind"})),
+                    Choice(0,
+                        Terminal("file kind", {href: "#file-kind"}),
+                        Terminal("file.owners", {href: "#file-owners"}),
+                    )),
                 'skip')),
         Terminal("content"),
         Sequence(
@@ -416,6 +421,17 @@ Select only directory paths of file results with `select:file.directory`. This i
 `select:file.path` returns the full path for the file and is equivalent to `select:file`. It exists as a fully-qualified alternative.
 
 **Example:** [`file:package\.json select:file.directory` ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:package%5C.json+select:file.directory&patternType=literal)
+
+#### File owners
+
+<script>
+ComplexDiagram(
+    Terminal("file.owners")).addTo();
+</script>
+
+Select owners associated with the results of a query.
+
+**Example:** `lang:TypeScript select:file.owners` Displays owners of all TypeScript files.
 
 ### Type
 
@@ -559,12 +575,54 @@ or structural search. This parameter is available as a command-line and accessib
 <script>
 ComplexDiagram(
     Choice(0,
+        Terminal("has(...)", {href: "#repo-has"}),
+        Terminal("has.key(...)", {href: "#repo-has-key"}),
         Terminal("has.file(...)", {href: "#repo-has-file"}),
         Terminal("has.content(...)", {href: "#repo-has-content"}),
         Terminal("has.path(...)", {href: "#repo-has-path"}),
         Terminal("has.commit.after(...)", {href: "#repo-has-commit-after"}),
+        Terminal("has.topic(...)", {href: "#repo-has-topic"}),
         Terminal("has.description(...)", {href: "#repo-has-description"}))).addTo();
 </script>
+
+### Repo has
+
+<aside class="experimental">
+<span class="badge badge-experimental">Experimental</span> Tagging repositories with key/value pairs is an experimental feature in Sourcegraph 4.0. It's a <b>preview</b> of functionality we're currently exploring to make searching large numbers of repositories easier. To enable this feature, enable the `repository-metadata` feature flag for your org. If you have any feedback, please let us know!
+</aside>
+
+<script>
+ComplexDiagram(
+    Terminal("has"),
+    Terminal("("),
+    Sequence(
+      Terminal("string", {href: "#string"}),
+      Terminal(":"),
+      Terminal("string", {href: "#string"})),
+    Terminal(")")).addTo();
+</script>
+
+Search only inside repositories that are associated with the provided key-value pair.
+
+**Example:** `repo:has(owning-team:security)`
+
+### Repo has key
+
+<aside class="experimental">
+<span class="badge badge-experimental">Experimental</span> Tagging repositories with key/value pairs is an experimental feature in Sourcegraph 4.0. It's a <b>preview</b> of functionality we're currently exploring to make searching large numbers of repositories easier. To enable this feature, enable the `repository-metadata` feature flag for your org. If you have any feedback, please let us know!
+</aside>
+
+<script>
+ComplexDiagram(
+    Terminal("has.key"),
+    Terminal("("),
+    Terminal("string", {href: "#string"}),
+    Terminal(")")).addTo();
+</script>
+
+Search only inside repositories that are associated with at least one key-value with the provided key.
+
+**Example:** `repo:has.key(owning-team)`
 
 ### Repo has file and content
 
@@ -671,7 +729,8 @@ Search only inside repositories having a description matching the given regular 
 <script>
 ComplexDiagram(
     Choice(0,
-        Terminal("has.content(...)", {href: "#file-has-content"}))).addTo();
+        Terminal("has.content(...)", {href: "#file-has-content"}),
+        Terminal("has.owner(...)", {href: "#file-has-owner"}))).addTo();
 </script>
 
 ### File has content
@@ -689,6 +748,24 @@ Search only inside files that contain content matching the provided regexp patte
 **Example:** [`file:has.content(test)` ↗](https://sourcegraph.com/search?q=context:global+repo:github%5C.com/sourcegraph/.*+file:has.content%28test%29&patternType=standard)
 
 _Note:_ `file:contains.content(...)` is an alias for `file:has.content(...)` and behaves identically.
+
+### File has owner
+
+<script>
+ComplexDiagram(
+    Terminal("has.owner"),
+    Terminal("("),
+    Choice(0,
+        Terminal("string", {href: "#string"}),
+        Skip()),
+    Terminal(")")).addTo();
+</script>
+
+Search only inside files that have an owner associated matching given string.
+
+_Note:_ When no parameter is supplied, the predicate only includes files with _any_ owner assigned to them:
+*   `file:has.owner()` will include files with any owner assigned.  
+*   `-file:has.owner()` will only include files without an owner.  
 
 ## Regular expression
 

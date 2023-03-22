@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -16,8 +17,8 @@ func TestCommitsDescribedByPolicyForRetention(t *testing.T) {
 	mainGitserverClient := testUploadExpirerMockGitserverClient("main", now)
 	developGitserverClient := testUploadExpirerMockGitserverClient("develop", now)
 
-	runTest := func(t *testing.T, gitserverClient *MockGitserverClient, policies []types.ConfigurationPolicy, expectedPolicyMatches map[string][]PolicyMatch) {
-		policyMatches, err := NewMatcher(gitserverClient, RetentionExtractor, true, false).CommitsDescribedByPolicy(context.Background(), 50, policies, now)
+	runTest := func(t *testing.T, gitserverClient *gitserver.MockClient, policies []types.ConfigurationPolicy, expectedPolicyMatches map[string][]PolicyMatch) {
+		policyMatches, err := NewMatcher(gitserverClient, RetentionExtractor, true, false).CommitsDescribedByPolicy(context.Background(), 50, "r50", policies, now)
 		if err != nil {
 			t.Fatalf("unexpected error finding matches: %s", err)
 		}
@@ -31,7 +32,7 @@ func TestCommitsDescribedByPolicyForRetention(t *testing.T) {
 		}
 
 		for i, call := range gitserverClient.CommitsUniqueToBranchFunc.History() {
-			if call.Arg4 != nil {
+			if call.Arg5 != nil {
 				t.Errorf("unexpected restriction of git results by date: call #%d", i)
 			}
 		}

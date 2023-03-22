@@ -2,16 +2,20 @@ import React from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 
+import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
 import { H2, H3, Icon, Text, Link } from '@sourcegraph/wildcard'
 
 interface Props {
     className?: string
+    isSourcegraphApp?: boolean
 }
+
+const productPageUrl = 'https://about.sourcegraph.com/code-insights'
 
 /**
  * The product description for Code Insights.
  */
-export const CodeInsightsDescription: React.FunctionComponent<Props> = ({ className }) => (
+export const CodeInsightsDescription: React.FunctionComponent<Props> = ({ className, isSourcegraphApp }) => (
     <section className={className}>
         <H2>Track what matters in your code</H2>
 
@@ -44,7 +48,11 @@ export const CodeInsightsDescription: React.FunctionComponent<Props> = ({ classN
                 </Link>
             </li>
             <li>
-                <Link to="https://about.sourcegraph.com/code-insights" target="_blank" rel="noopener">
+                <Link
+                    to={isSourcegraphApp ? addSourcegraphAppOutboundUrlParameters(productPageUrl) : productPageUrl}
+                    target="_blank"
+                    rel="noopener"
+                >
                     Product page <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
                 </Link>
             </li>

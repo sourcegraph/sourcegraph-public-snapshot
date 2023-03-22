@@ -26,8 +26,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "httpapi_test",
+    timeout = "short",
     srcs = ["file_handler_test.go"],
     tags = [
         # Test requires localhost database

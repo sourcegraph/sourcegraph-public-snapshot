@@ -20,8 +20,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "extsvc_test",
+    timeout = "short",
     srcs = [
         "codehost_test.go",
         "types_test.go",

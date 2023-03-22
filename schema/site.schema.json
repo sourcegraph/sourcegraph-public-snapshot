@@ -706,7 +706,7 @@
       "group": "Security"
     },
     "disableNonCriticalTelemetry": {
-      "description": "Disable aggregated event counts from being sent to Sourcegraph.com via pings.",
+      "description": "DEPRECATED. Has no effect.",
       "type": "boolean",
       "default": false,
       "group": "Misc."
@@ -1727,6 +1727,17 @@
         }
       },
       "group": "Sourcegraph.com"
+    },
+    "app": {
+      "description": "Configuration options for App only.",
+      "type": "object",
+      "properties": {
+        "dotcomAuthToken": {
+          "description": "Authentication token for Sourcegraph.com. If present, indicates that the App account is connected to a Sourcegraph.com account.",
+          "type": "string",
+          "group": "Sourcegraph.com"
+        }
+      }
     },
     "notifications": {
       "description": "Notifications recieved from Sourcegraph.com to display in Sourcegraph.",

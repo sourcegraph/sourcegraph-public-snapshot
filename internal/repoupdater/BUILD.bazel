@@ -21,15 +21,14 @@ go_library(
         "//lib/errors",
         "@com_github_opentracing_contrib_go_stdlib//nethttp",
         "@com_github_opentracing_opentracing_go//ext",
-        "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",
     ],
 )
 
 go_test(
-    timeout = "short",
     name = "repoupdater_test",
+    timeout = "short",
     srcs = ["client_test.go"],
     embed = [":repoupdater"],
 )

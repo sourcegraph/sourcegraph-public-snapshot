@@ -34,8 +34,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "luasandbox_test",
+    timeout = "short",
     srcs = ["sandbox_test.go"],
     embed = [":luasandbox"],
     deps = [

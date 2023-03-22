@@ -28,6 +28,8 @@ go_library(
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/actor",
         "//internal/api",
+        "//internal/authz",
+        "//internal/database",
         "//internal/database/locker",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
@@ -56,8 +58,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "background_test",
+    timeout = "short",
     srcs = [
         "job_backfill_test.go",
         "job_cleanup_test.go",
@@ -78,6 +80,8 @@ go_test(
         "//enterprise/internal/codeintel/uploads/internal/store",
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/api",
+        "//internal/authz",
+        "//internal/database",
         "//internal/database/basestore",
         "//internal/executor",
         "//internal/gitserver",

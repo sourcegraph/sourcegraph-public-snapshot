@@ -28,8 +28,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "handler_test",
+    timeout = "short",
     srcs = [
         "handler_test.go",
         "routes_test.go",

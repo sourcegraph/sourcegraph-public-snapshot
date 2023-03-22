@@ -95,33 +95,34 @@ Once the shared secret is set in Sourcegraph, you can start setting up executors
 ### Supported installation types
 
 <div class="grid">
-  <a class="btn-app btn" href="/admin/deploy_executors_terraform">
+  <a class="btn-app btn" href="/admin/executors/deploy_executors_terraform">
     <h3>Terraform</h3>
     <p>Simply launch executors on AWS or GCP using Sourcegraph-maintained modules and machine images.</p>
     <p>Supports auto scaling.</p>
   </a>
-  <a class="btn-app btn" href="/admin/deploy_executors_binary">
+  <a class="btn-app btn" href="/admin/executors/deploy_executors_binary">
     <h3>Install executor on your machine</h3>
     <p>Run executors on any linux amd64 machine.</p>
   </a>
 </div>
 
-<div class="grid">
-  <a class="btn-app btn" href="/admin/deploy_executors_kubernetes">
+<!-- Hidden for now while they're still experimental. -->
+<!-- <div class="grid">
+  <a class="btn-app btn" href="/admin/executors/deploy_executors_kubernetes">
     <h3>Kubernetes</h3>
     <p>Run executors on kubernetes</p>
     <p>Requires privileged access to a container runtime.</p>
   </a>
-  <a class="btn-app btn" href="/admin/deploy_executors_docker">
+  <a class="btn-app btn" href="/admin/executors/deploy_executors_docker">
     <h3>Docker Compose</h3>
     <p>Run executors on any linux amd64 machine with docker-compose</p>
     <p>Requires privileged access to a container runtime.</p>
   </a>
-</div>
+</div> -->
 
 ## Confirm executors are working
 
-If executor instances boot correctly and can authenticate with the Sourcegraph frontend, they will show up in the _Executors_ page under _Site Admin_ > _Maintenance_.
+If executor instances boot correctly and can authenticate with the Sourcegraph frontend, they will show up in the **Executors** page under **Site admin > Maintenance**.
 
 ![Executor list in UI](https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/executor-ui-test.png)
 

@@ -13,7 +13,6 @@ go_library(
     deps = [
         "//internal/actor",
         "//internal/api",
-        "//internal/authz",
         "//internal/codeintel/dependencies/internal/store",
         "//internal/codeintel/dependencies/shared",
         "//internal/conf/reposource",
@@ -21,7 +20,6 @@ go_library(
         "//internal/extsvc",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
-        "//internal/gitserver/protocol",
         "//internal/goroutine",
         "//internal/jsonc",
         "//internal/metrics",
@@ -37,8 +35,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "background_test",
+    timeout = "short",
     srcs = [
         "job_cratesyncer_test.go",
         "job_packages_filter_test.go",
@@ -59,8 +57,6 @@ go_test(
         "//internal/database/dbtest",
         "//internal/encryption",
         "//internal/gitserver",
-        "//internal/gitserver/gitdomain",
-        "//internal/gitserver/protocol",
         "//internal/observation",
         "//internal/types",
         "//lib/errors",

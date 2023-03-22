@@ -8,6 +8,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
+type DirtyRepository struct {
+	RepositoryID   int
+	RepositoryName string
+	DirtyToken     int
+}
+
 type SourcedCommits struct {
 	RepositoryID   int
 	RepositoryName string
@@ -221,6 +227,7 @@ type RankingReferences struct {
 type ExportedUpload struct {
 	ID           int
 	Repo         string
+	RepoID       int
 	Root         string
 	ObjectPrefix string
 }

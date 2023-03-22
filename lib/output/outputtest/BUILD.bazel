@@ -8,8 +8,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "outputtest_test",
+    timeout = "short",
     srcs = ["buffer_test.go"],
     embed = [":outputtest"],
     deps = [

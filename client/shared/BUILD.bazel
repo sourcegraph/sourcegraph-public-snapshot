@@ -316,7 +316,6 @@ ts_project(
         "src/types/storybook-chromatic/index.d.ts",
         "src/types/web-ext/index.d.ts",
         "src/util/dom.ts",
-        "src/util/globbing.ts",
         "src/util/lazyComponent.tsx",
         "src/util/url.ts",
         "src/util/useInputValidation.ts",
@@ -519,6 +518,4 @@ jest_test(
         ":shared_tests",
         ":snapshots",
     ],
-    # TODO(bazel): enable when snapshots updated to support pre-compiled .js files
-    tags = ["manual"],
 )

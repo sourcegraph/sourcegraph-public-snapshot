@@ -26,7 +26,6 @@ go_library(
         "//internal/database/locker",
         "//internal/env",
         "//internal/gitserver",
-        "//internal/gitserver/gitdomain",
         "//internal/goroutine",
         "//internal/metrics",
         "//internal/observation",
@@ -46,8 +45,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "uploads_test",
+    timeout = "short",
     srcs = ["mocks_test.go"],
     embed = [":uploads"],
     deps = [
@@ -60,7 +59,6 @@ go_test(
         "//internal/api",
         "//internal/database/basestore",
         "//internal/executor",
-        "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/observation",
         "//internal/types",

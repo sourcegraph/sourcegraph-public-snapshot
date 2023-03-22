@@ -30,7 +30,6 @@ import styles from './NotebookFileBlock.module.scss'
 
 interface NotebookFileBlockProps extends BlockProps<FileBlock>, TelemetryProps {
     isSourcegraphDotCom: boolean
-    globbing: boolean
 }
 
 const LOADING = 'loading' as const

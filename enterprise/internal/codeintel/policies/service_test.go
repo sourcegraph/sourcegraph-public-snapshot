@@ -2,6 +2,7 @@ package policies
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -9,16 +10,21 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestGetRetentionPolicyOverview(t *testing.T) {
 	mockStore := NewMockStore()
+	mockRepoStore := defaultMockRepoStore()
 	mockUploadSvc := NewMockUploadService()
-	mockGitserverClient := NewMockGitserverClient()
+	mockGitserverClient := gitserver.NewMockClient()
 
-	svc := newService(&observation.TestContext, mockStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observation.TestContext, mockStore, mockRepoStore, mockUploadSvc, mockGitserverClient)
 
 	mockClock := glock.NewMockClock()
 
@@ -214,10 +220,11 @@ func TestGetRetentionPolicyOverview(t *testing.T) {
 
 func TestRetentionPolicyOverview_ByVisibility(t *testing.T) {
 	mockStore := NewMockStore()
+	mockRepoStore := defaultMockRepoStore()
 	mockUploadSvc := NewMockUploadService()
-	mockGitserverClient := NewMockGitserverClient()
+	mockGitserverClient := gitserver.NewMockClient()
 
-	svc := newService(&observation.TestContext, mockStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observation.TestContext, mockStore, mockRepoStore, mockUploadSvc, mockGitserverClient)
 
 	mockClock := glock.NewMockClock()
 
@@ -335,4 +342,15 @@ func mockConfigurationPolicies(policies []types.RetentionPolicyMatchCandidate) (
 		mockedCandidates = append(mockedCandidates, policy)
 	}
 	return
+}
+
+func defaultMockRepoStore() *database.MockRepoStore {
+	repoStore := database.NewMockRepoStore()
+	repoStore.GetFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (*internaltypes.Repo, error) {
+		return &internaltypes.Repo{
+			ID:   id,
+			Name: api.RepoName(fmt.Sprintf("r%d", id)),
+		}, nil
+	})
+	return repoStore
 }

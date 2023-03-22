@@ -62,7 +62,7 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
                         className={styles.emptyStateIcon}
                     />
                 </span>
-                <span>Choose at least one of the code host providers from the list on the right.</span>
+                <span>Choose at least one of the code host providers from the list.</span>
             </small>
         )
     }

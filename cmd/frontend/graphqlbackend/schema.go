@@ -1,6 +1,7 @@
 package graphqlbackend
 
 import (
+	"embed"
 	_ "embed"
 )
 
@@ -16,8 +17,8 @@ var batchesSchema string
 
 // codeIntelSchema is the Code Intel raw graqhql schema.
 //
-//go:embed codeintel.graphql
-var codeIntelSchema string
+//go:embed codeintel*.graphql
+var codeIntelSchema embed.FS
 
 // dotcomSchema is the Dotcom schema extension raw graqhql schema.
 //

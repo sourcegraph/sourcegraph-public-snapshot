@@ -11,6 +11,7 @@ go_library(
     deps = [
         "//cmd/worker/job",
         "//cmd/worker/shared/init/db",
+        "//internal/conf/deploy",
         "//internal/env",
         "//internal/goroutine",
         "//internal/observation",
@@ -22,8 +23,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "migrations_test",
+    timeout = "short",
     srcs = ["init_test.go"],
     embed = [":migrations"],
     deps = ["//internal/oobmigration"],

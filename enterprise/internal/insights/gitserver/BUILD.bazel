@@ -18,8 +18,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "gitserver_test",
+    timeout = "short",
     srcs = ["first_commit_test.go"],
     embed = [":gitserver"],
     deps = [

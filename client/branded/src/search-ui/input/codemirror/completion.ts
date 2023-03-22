@@ -316,7 +316,6 @@ export function searchQueryAutocompletion(
 export interface DefaultSuggestionSourcesOptions {
     fetchSuggestions: (query: string, onAbort: (listener: () => void) => void) => Promise<SearchMatch[]>
     isSourcegraphDotCom: boolean
-    globbing: boolean
     applyOnEnter?: boolean
     disableFilterCompletion?: true
     disableSymbolCompletion?: true
@@ -462,7 +461,7 @@ export function createDefaultSuggestionSources(
                     to: token.value?.range.end,
                     filter: false,
                     options: filteredResults,
-                    getMatch: insidePredicate || options.globbing ? undefined : createMatchFunction(token),
+                    getMatch: insidePredicate ? undefined : createMatchFunction(token),
                 }
             })
         )
@@ -576,7 +575,7 @@ function completionFromSearchMatch(
                               revision: match.commit,
                               repoName: match.repository,
                           }),
-                    apply: (params?.isDefaultSource ? 'file:' : '') + regexInsertText(match.path, options) + ' ',
+                    apply: (params?.isDefaultSource ? 'file:' : '') + regexInsertText(match.path) + ' ',
                     info: match.repository,
                 },
             ]
@@ -587,10 +586,7 @@ function completionFromSearchMatch(
                     type: 'repository',
                     url: hasNonActivePatternTokens ? undefined : `/${match.repository}`,
                     detail: formatRepositoryStars(match.repoStars),
-                    apply:
-                        (params?.isDefaultSource ? 'repo:' : '') +
-                        repositoryInsertText(match, { ...options, filterValue: params?.filterValue }) +
-                        ' ',
+                    apply: (params?.isDefaultSource ? 'repo:' : '') + repositoryInsertText(match) + ' ',
                 },
             ]
         case 'symbol':

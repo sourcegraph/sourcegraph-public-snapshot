@@ -1,6 +1,7 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-expression: "dump_document(&document, &contents)"
+assertion_line: 616
+expression: "snapshot_sciptect_documents(&document, &contents)"
 ---
   {
       // Comment

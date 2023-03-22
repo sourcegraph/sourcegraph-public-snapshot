@@ -22,8 +22,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "streaming_test",
+    timeout = "short",
     srcs = [
         "filters_test.go",
         "search_filters_test.go",
