@@ -475,7 +475,8 @@ func (e *executor) closeChangeset(ctx context.Context) (err error, afterDone fun
 	e.ch.Closing = false
 
 	if e.ch.ExternalState != btypes.ChangesetExternalStateDraft && e.ch.ExternalState != btypes.ChangesetExternalStateOpen {
-		return nil, afterDone
+		// no-op
+		return nil, nil
 	}
 
 	css, err := e.changesetSource(ctx)
