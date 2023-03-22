@@ -8,6 +8,8 @@ export interface Configuration {
     codebase?: string
     debug: boolean
     useContext: ConfigurationUseContext
+    experimentalSuggest: boolean
+    openaiKey: string | null
 }
 
 export function getConfiguration(config: vscode.WorkspaceConfiguration): Configuration {
@@ -17,6 +19,8 @@ export function getConfiguration(config: vscode.WorkspaceConfiguration): Configu
         codebase: config.get('cody.codebase'),
         debug: config.get('cody.debug', false),
         useContext: config.get<ConfigurationUseContext>('cody.useContext') || 'embeddings',
+        experimentalSuggest: config.get('cody.experimental.suggest', false),
+        openaiKey: config.get('cody.keys.openai', null),
     }
 }
 
