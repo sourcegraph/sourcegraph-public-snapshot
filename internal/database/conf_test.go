@@ -350,7 +350,7 @@ func createDummySiteConfigs(t *testing.T, ctx context.Context, s ConfStore) {
 
 	// Change config again one last time, so that we have a new entry in the DB - ID: 5
 	config = `{"disableAutoGitUpdates": true, "auth.Providers": []}`
-	siteConfig, err = s.SiteCreateIfUpToDate(ctx, &lastID, 1, config, false)
+	_, err = s.SiteCreateIfUpToDate(ctx, &lastID, 1, config, false)
 	require.NoError(t, err, "failed to create site config")
 
 	// By this point we have 5 entries instead of 4.
