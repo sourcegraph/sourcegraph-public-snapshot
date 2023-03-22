@@ -35,12 +35,12 @@ To enable codebase-aware answers, you have to set the codebase setting to let Co
 
 This extension contributes the following settings:
 
-| Setting             | Description                                                                                                                  | Example                              |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| cody.enabled        | Enable or disable Cody.                                                                                                      | true/false                           |
-| cody.serverEndpoint | URL of the Sourcegraph instance.                                                                                             | "https://<instance>.sourcegraph.com" |
-| cody.codebase       | Name of the repository opened in the current workspace. Use the same repository name as listed on your Sourcegraph instance. | "github.com/sourcegraph/sourcegraph" |
-| cody.useContext     | Context source for Cody. One of: "embeddings", "keyword", "blended", or "none".                                              | "embeddings"                         |
+| Setting             | Description                                                                                                                  | Example                               |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| cody.enabled        | Enable or disable Cody.                                                                                                      | true/false                            |
+| cody.serverEndpoint | URL of the Sourcegraph instance.                                                                                             | "https://sourcegraph.sourcegraph.com" |
+| cody.codebase       | Name of the repository opened in the current workspace. Use the same repository name as listed on your Sourcegraph instance. | "github.com/sourcegraph/sourcegraph"  |
+| cody.useContext     | Context source for Cody. One of: "embeddings", "keyword", "blended", or "none".                                              | "embeddings"                          |
 
 ## Development
 
