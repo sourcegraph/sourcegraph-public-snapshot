@@ -14,9 +14,9 @@ go_library(
 )
 
 go_test(
-    name = "rubygems_test",
+    name = "client_test",
     timeout = "short",
-    srcs = ["rubygems_test.go"],
+    srcs = ["client_test.go"],
     data = glob(["testdata/**"]),
     embed = [":rubygems"],
     deps = [

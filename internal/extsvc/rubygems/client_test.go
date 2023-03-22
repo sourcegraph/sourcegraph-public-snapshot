@@ -28,10 +28,7 @@ func newTestHTTPClient(t *testing.T) (client *Client, stop func()) {
 	t.Helper()
 	recorderFactory, stop := httptestutil.NewRecorderFactory(t, *updateRecordings, t.Name())
 
-	doer, err := recorderFactory.Doer()
-	require.Nil(t, err)
-
-	return NewClient("rubygems_urn", "https://rubygems.org", doer), stop
+	return NewClient("rubygems_urn", "https://rubygems.org", recorderFactory), stop
 }
 
 func TestGetPackageContents(t *testing.T) {
@@ -39,7 +36,7 @@ func TestGetPackageContents(t *testing.T) {
 	client, stop := newTestHTTPClient(t)
 	defer stop()
 	dep := reposource.ParseRubyVersionedPackage("hola@0.1.0")
-	readCloser, _, err := client.GetPackageContents(ctx, dep)
+	readCloser, err := client.GetPackageContents(ctx, dep)
 	require.Nil(t, err)
 	defer readCloser.Close()
 
