@@ -30,8 +30,6 @@ Cody is your hyper-intelligent programming sidekick - an AI assistant developed 
 - Translate comments and functions in your code between languages
 - Find and fix vulnerabilities or anti-patterns in your code
 
-Program with an expert by your side - code with confidence using Cody.
-
 ## Installation
 
 Here are the ways to install Cody in Visual Studio Code:

@@ -1,9 +1,9 @@
 {
   "name": "cody",
   "private": true,
-  "displayName": "Cody for Enterprise",
-  "version": "0.0.6",
-  "publisher": "Sourcegraph",
+  "displayName": "Cody Enterprise",
+  "version": "0.0.1",
+  "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
   "description": "Your programming sidekick powered by AI and Sourcegraph's code search and intelligence.",
