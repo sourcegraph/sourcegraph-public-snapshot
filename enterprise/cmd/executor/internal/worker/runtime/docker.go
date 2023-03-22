@@ -19,33 +19,32 @@ type dockerRuntime struct {
 	dockerOpts   command.DockerOptions
 }
 
-func (d *dockerRuntime) Name() Name {
+func (r *dockerRuntime) Name() Name {
 	return NameDocker
 }
 
-func (d *dockerRuntime) PrepareWorkspace(ctx context.Context, logger command.Logger, job types.Job) (workspace.Workspace, error) {
-	// We can pass empty options as they are not used in the Docker path.
+func (r *dockerRuntime) PrepareWorkspace(ctx context.Context, logger command.Logger, job types.Job) (workspace.Workspace, error) {
 	return workspace.NewDockerWorkspace(
 		ctx,
-		d.filesStore,
+		r.filesStore,
 		job,
-		d.cmd,
+		r.cmd,
 		logger,
-		d.cloneOptions,
-		d.operations,
+		r.cloneOptions,
+		r.operations,
 	)
 }
 
-func (d *dockerRuntime) NewRunner(ctx context.Context, logger command.Logger, options RunnerOptions) (runner.Runner, error) {
-	r := runner.NewDockerRunner(d.cmd, logger, options.Path, d.dockerOpts, options.DockerAuthConfig)
-	if err := r.Setup(ctx); err != nil {
+func (r *dockerRuntime) NewRunner(ctx context.Context, logger command.Logger, options RunnerOptions) (runner.Runner, error) {
+	run := runner.NewDockerRunner(r.cmd, logger, options.Path, r.dockerOpts, options.DockerAuthConfig)
+	if err := run.Setup(ctx); err != nil {
 		return nil, errors.Wrap(err, "failed to setup docker runner")
 	}
 
-	return r, nil
+	return run, nil
 }
 
-func (d *dockerRuntime) NewRunnerSpecs(ws workspace.Workspace, steps []types.DockerStep) ([]runner.Spec, error) {
+func (r *dockerRuntime) NewRunnerSpecs(ws workspace.Workspace, steps []types.DockerStep) ([]runner.Spec, error) {
 	runnerSpecs := make([]runner.Spec, len(steps))
 	for i, step := range steps {
 		var key string
@@ -61,7 +60,7 @@ func (d *dockerRuntime) NewRunnerSpecs(ws workspace.Workspace, steps []types.Doc
 				Command:   nil,
 				Dir:       step.Dir,
 				Env:       step.Env,
-				Operation: d.operations.Exec,
+				Operation: r.operations.Exec,
 			},
 			Image:      step.Image,
 			ScriptPath: ws.ScriptFilenames()[i],
