@@ -50,7 +50,7 @@ func New(
 			operations:   ops,
 			filesStore:   filesStore,
 			cloneOptions: cloneOpts,
-			dockerOpts:   dockerOpts,
+			dockerOpts:   runnerOpts.DockerOptions,
 		}, nil
 	}
 
@@ -105,7 +105,7 @@ func New(
 }
 
 // ErrNoRuntime is the error when there is no runtime configured.
-var ErrNoRuntime = errors.New("runtime is not configured: use SetupRuntime to configure the runtime")
+var ErrNoRuntime = errors.New("runtime is not configured")
 
 // Name is the name of the runtime.
 type Name string
@@ -113,5 +113,5 @@ type Name string
 const (
 	NameDocker      Name = "docker"
 	NameFirecracker Name = "firecracker"
-	NameShell  Name = "shell"
+	NameShell       Name = "shell"
 )
