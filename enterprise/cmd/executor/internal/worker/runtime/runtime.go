@@ -41,6 +41,18 @@ func New(
 	runner util.CmdRunner,
 	cmd command.Command,
 ) (Runtime, error) {
+	// TODO: eventually remove this. It was a quick workaround.
+	if util.HasShellBuildTag() {
+		logger.Info("runtime 'shell' is supported")
+		return &shellRuntime{
+			cmd:          cmd,
+			operations:   ops,
+			filesStore:   filesStore,
+			cloneOptions: cloneOpts,
+			dockerOpts:   dockerOpts,
+		}, nil
+	}
+
 	err := util.ValidateDockerTools(runner)
 	if err != nil {
 		var errMissingTools *util.ErrMissingTools
@@ -69,4 +81,5 @@ type Name string
 
 const (
 	NameDocker Name = "docker"
+	NameShell  Name = "shell"
 )
