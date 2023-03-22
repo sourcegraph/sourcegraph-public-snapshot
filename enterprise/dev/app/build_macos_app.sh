@@ -69,8 +69,11 @@ app_name="$(basename "${app_name:-Sourcegraph App}" .app).app"
 if [ -n "${app_template_path}" ]; then
   cp -R "${app_template_path}" "${app_name}" || exit 1
 else
-  gsutil cp "gs://sourcegraph_app_macos_dependencies/${app_name}-template.tar.gz" . || exit 1
-  tar -xzf "${app_name}-template.tar.gz" || exit 1
+  template_file="${app_name}-template.tar.gz"
+  template_version=$(gsutil cat "gs://sourcegraph_app_macos_dependencies/template-version.txt" 2>/dev/null)
+  [ -z "${template_version}" ] || template_file="${app_name}-template-${template_version}.tar.gz"
+  gsutil cp "gs://sourcegraph_app_macos_dependencies/${template_file}" . || exit 1
+  tar -xzf "${template_file}" || exit 1
 fi
 
 # copy in the launcher shell script
