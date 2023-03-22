@@ -14,13 +14,14 @@
     </a>
 </div>
 
-## AI-powered programming assistant
+## What is Cody?
 
-Cody is an AI-powered programming assistant that lives in your editor, developed by Sourcegraph.
+- Cody is your hyperintelligent programming sidekick - an AI assistant developed by Sourcegraph to supercharge your productivity as a developer.
+- Cody frees you from mundane, repetitive tasks so you can focus on solving complex problems and building amazing things. Powered by advanced AI and Sourcegraph's code search and intelligence, Cody is like having a teammate who has memorized every line of code on GitHub and Stack Overflow along with your organization's private repositories.
+- Cody can instantly answer questions, generate documentation and unit tests on demand, suggest and even write code for you. With Cody, you'll spend less time searching for answers and more time achieving flow state - staying focused, in the zone, and building at peak productivity.
+- Cody enables you to code faster, with more confidence, and avoid vulnerabilities by putting the world of code at your fingertips with Cody - your AI-powered programming companion.
 
-Cody supercharges your productivity as a developer and allows you to focus on solving hard problems instead of mundane, repetitive tasks.
-
-Supported features:
+## Highlighted features
 
 - Answer questions about your codebase instantly
 - Generate documentation and unit tests on demand
