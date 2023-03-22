@@ -883,6 +883,8 @@ func (s *repoStore) ListMinimalRepos(ctx context.Context, opt ReposListOptions) 
 	preallocSize := 128
 	if opt.LimitOffset != nil {
 		preallocSize = opt.Limit
+	} else if len(opt.IDs) > 0 {
+		preallocSize = len(opt.IDs)
 	}
 	if preallocSize > 4096 {
 		preallocSize = 4096
