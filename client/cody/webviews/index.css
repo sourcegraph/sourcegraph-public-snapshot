@@ -13,6 +13,7 @@
     margin: 0 auto;
     font-family: var(--vscode-font-family);
     color: var(--vscode-foreground);
+    background-color: var(--vscode-background);
     height: 100%;
 }
 
