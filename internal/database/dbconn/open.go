@@ -345,30 +345,30 @@ func argsAsAttributes(ctx context.Context, _ otelsql.Method, _ string, args []dr
 			attrs[i] = attribute.String(key, v.String())
 
 		// pq.Array types
-		case pq.BoolArray:
-			attrs[i] = attribute.BoolSlice(key, truncateSliceValue([]bool(v)))
-		case pq.Float64Array:
-			attrs[i] = attribute.Float64Slice(key, truncateSliceValue([]float64(v)))
-		case pq.Float32Array:
-			vals := truncateSliceValue([]float32(v))
+		case *pq.BoolArray:
+			attrs[i] = attribute.BoolSlice(key, truncateSliceValue([]bool(*v)))
+		case *pq.Float64Array:
+			attrs[i] = attribute.Float64Slice(key, truncateSliceValue([]float64(*v)))
+		case *pq.Float32Array:
+			vals := truncateSliceValue([]float32(*v))
 			floats := make([]float64, len(vals))
 			for i, v := range vals {
 				floats[i] = float64(v)
 			}
 			attrs[i] = attribute.Float64Slice(key, floats)
-		case pq.Int64Array:
-			attrs[i] = attribute.Int64Slice(key, truncateSliceValue([]int64(v)))
-		case pq.Int32Array:
-			vals := truncateSliceValue([]int32(v))
+		case *pq.Int64Array:
+			attrs[i] = attribute.Int64Slice(key, truncateSliceValue([]int64(*v)))
+		case *pq.Int32Array:
+			vals := truncateSliceValue([]int32(*v))
 			ints := make([]int, len(vals))
 			for i, v := range vals {
 				ints[i] = int(v)
 			}
 			attrs[i] = attribute.IntSlice(key, ints)
-		case pq.StringArray:
-			attrs[i] = attribute.StringSlice(key, truncateSliceValue([]string(v)))
-		case pq.ByteaArray:
-			vals := truncateSliceValue([][]byte(v))
+		case *pq.StringArray:
+			attrs[i] = attribute.StringSlice(key, truncateSliceValue([]string(*v)))
+		case *pq.ByteaArray:
+			vals := truncateSliceValue([][]byte(*v))
 			strings := make([]string, len(vals))
 			for i, v := range vals {
 				strings[i] = string(v)
