@@ -1,3 +1,4 @@
+import { MockedProvider } from '@apollo/client/testing'
 import { cleanup } from '@testing-library/react'
 import { EMPTY, NEVER } from 'rxjs'
 import sinon from 'sinon'
@@ -70,15 +71,25 @@ describe('TreePage', () => {
             const repo = repoDefaults()
             repo.isFork = false
             const props = treePagePropsDefaults(repo)
-            const result = renderWithBrandedContext(<TreePage {...props} />)
+            const result = renderWithBrandedContext(
+                <MockedProvider>
+                    <TreePage {...props} />
+                </MockedProvider>
+            )
             expect(result.queryByTestId('repo-fork-badge')).not.toBeInTheDocument()
+            // check for validity that repo header renders
+            expect(result.queryByTestId('repo-header')).toBeInTheDocument()
         })
 
         it('displays a page that is a fork', () => {
             const repo = repoDefaults()
             repo.isFork = true
             const props = treePagePropsDefaults(repo)
-            const result = renderWithBrandedContext(<TreePage {...props} />)
+            const result = renderWithBrandedContext(
+                <MockedProvider>
+                    <TreePage {...props} />
+                </MockedProvider>
+            )
             expect(result.queryByTestId('repo-fork-badge')).toHaveTextContent('Fork')
         })
     })

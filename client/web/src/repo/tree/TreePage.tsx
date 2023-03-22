@@ -221,7 +221,7 @@ export const TreePage: FC<Props> = ({
                 <PageHeader className="mb-3 test-tree-page-title">
                     <PageHeader.Heading as="h2" styleAs="h1">
                         <Icon aria-hidden={true} svgPath={getIcon()} className="mr-2" />
-                        <span>{displayRepoName(repo?.name || '')}</span>
+                        <span data-testid="repo-header">{displayRepoName(repo?.name || '')}</span>
                         {repo?.isFork && (
                             <Badge variant="outlineSecondary" className="mx-2 mt-2" data-testid="repo-fork-badge">
                                 Fork
