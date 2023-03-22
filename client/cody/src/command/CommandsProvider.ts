@@ -31,7 +31,9 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         localStorage
     )
 
-    vscode.window.registerWebviewViewProvider('cody.chat', chatProvider)
+    vscode.window.registerWebviewViewProvider('cody.chat', chatProvider, {
+        webviewOptions: { retainContextWhenHidden: true },
+    })
 
     await vscode.commands.executeCommand('setContext', 'sourcegraph.cody.activated', true)
 

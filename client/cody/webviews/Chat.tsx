@@ -60,7 +60,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     const newIndex = historyIndex - 1 < 0 ? inputHistory.length - 1 : historyIndex - 1
                     setHistoryIndex(newIndex)
                     setFormInput(inputHistory[newIndex])
-                    console.log(newIndex, inputHistory[newIndex])
                 }
             }
         },

@@ -60,7 +60,7 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
                             disabled={userHistory === null || chatHistory === 'removed'}
                         >
                             {userHistory === null || chatHistory === 'removed'
-                                ? 'No chat history found'
+                                ? 'Chat history is empty'
                                 : 'Remove all chat history'}
                         </VSCodeButton>
                     </div>
