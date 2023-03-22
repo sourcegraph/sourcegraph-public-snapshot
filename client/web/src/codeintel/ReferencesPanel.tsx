@@ -944,8 +944,6 @@ const CollapsibleLocationGroup: React.FunctionComponent<
 
     const open = isOpen(group.path) ?? true
 
-    const isMetaPressed = useIsMetaPressed()
-
     return (
         <Collapse isOpen={open} onOpenChange={isOpen => handleOpenChange(group.path, isOpen)}>
             <div className={styles.locationGroup}>
@@ -998,16 +996,17 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                 const isFirstInActive =
                                     isActive && !(index > 0 && isActiveLocation(group.locations[index - 1]))
                                 const locationActive = isActive ? styles.locationActive : ''
-                                const selectReference = (
-                                    event: ReactKeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>
-                                ): void => {
-                                    onClickCodeExcerptHref(event, () => {
-                                        if (isActive || event.metaKey) {
-                                            navigateToUrl(locationToUrl(reference))
-                                        } else {
-                                            setActiveLocation(reference)
-                                        }
-                                    })
+                                const clickReference = (event: MouseEvent<HTMLElement>): void => {
+                                    event.preventDefault()
+                                    if (isActive) {
+                                        navigateToUrl(locationToUrl(reference))
+                                    } else {
+                                        setActiveLocation(reference)
+                                    }
+                                }
+                                const doubleClickReference = (event: MouseEvent<HTMLElement>): void => {
+                                    event.preventDefault()
+                                    navigateToUrl(locationToUrl(reference))
                                 }
 
                                 return (
@@ -1015,13 +1014,13 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                         key={reference.url}
                                         className={classNames('border-0 rounded-0 mb-0', styles.location)}
                                     >
-                                        <div
-                                            role="link"
+                                        {/* eslint-disable-next-line react/forbid-elements */}
+                                        <a
                                             data-testid={`reference-item-${group.path}-${index}`}
                                             tabIndex={0}
-                                            onClick={selectReference}
-                                            onKeyDown={selectReference}
-                                            data-href={reference.url}
+                                            onClick={clickReference}
+                                            onDoubleClick={doubleClickReference}
+                                            href={reference.url}
                                             className={classNames(styles.locationLink, locationActive)}
                                         >
                                             <CodeExcerpt
@@ -1045,24 +1044,21 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                                     fetchPlainTextFileRangeLines(reference)
                                                 }
                                             />
-                                            <span
-                                                className={classNames('ml-2', styles.locationActiveIcon, {
-                                                    [styles.isFirstInActive]: isFirstInActive,
-                                                    [styles.isMetaPressed]: isMetaPressed,
-                                                })}
-                                            >
-                                                <Tooltip
-                                                    content="Click again to open line in full view"
-                                                    placement="left"
-                                                >
-                                                    <Icon
-                                                        aria-label="Open line in full view"
-                                                        size="sm"
-                                                        svgPath={mdiOpenInNew}
-                                                    />
-                                                </Tooltip>
-                                            </span>
-                                        </div>
+                                            {isFirstInActive ? (
+                                                <span className={classNames('ml-2', styles.locationActiveIcon)}>
+                                                    <Tooltip
+                                                        content="Click again to open line in full view"
+                                                        placement="left"
+                                                    >
+                                                        <Icon
+                                                            aria-label="Open line in full view"
+                                                            size="sm"
+                                                            svgPath={mdiOpenInNew}
+                                                        />
+                                                    </Tooltip>
+                                                </span>
+                                            ) : null}
+                                        </a>
                                     </li>
                                 )
                             })}
@@ -1118,27 +1114,4 @@ function locationToUrl(location: Location): string {
               }
             : undefined,
     })
-}
-
-function useIsMetaPressed(): boolean {
-    const [isMetaPressed, setIsMetaPressed] = useState(false)
-    useEffect(() => {
-        function onKeyDown(event: KeyboardEvent): void {
-            if (event.metaKey) {
-                setIsMetaPressed(true)
-            }
-        }
-        function onKeyUp(event: KeyboardEvent): void {
-            if (!event.metaKey) {
-                setIsMetaPressed(false)
-            }
-        }
-        window.addEventListener('keydown', onKeyDown)
-        window.addEventListener('keyup', onKeyUp)
-        return () => {
-            window.removeEventListener('keydown', onKeyDown)
-            window.removeEventListener('keyup', onKeyUp)
-        }
-    }, [])
-    return isMetaPressed
 }

@@ -106,45 +106,9 @@
         border-bottom: 1px solid var(--body-bg);
     }
 
-    &--active {
-        background-color: var(--color-bg-3);
-    }
-
-    &--active-icon {
-        width: 1.35rem;
-        // stylelint-disable-next-line declaration-property-unit-allowed-list
-        height: calc(100% - 1px);
-        position: absolute;
-        right: 0;
-        top: 0;
-        background-color: var(--color-bg-3);
-        padding-left: 0.25rem;
-        padding-right: 0.1rem;
-        display: none;
-        justify-content: center;
-        align-items: center;
-
-        &.isFirstInActive {
-            display: flex;
-        }
-
-        .location:hover &.isMetaPressed {
-            display: flex;
-            background-color: transparent;
-        }
-    }
-
-    &--link:hover {
-        background-color: var(--color-bg-2);
-        cursor: pointer;
-    }
-
-    &--active:hover {
-        // Needed to override `&--link:hover`
-        background-color: var(--color-bg-3);
-    }
-
     &--link {
+        all: unset;
+
         display: flex;
         flex-direction: column;
         flex: 1;
@@ -160,7 +124,7 @@
         // Avoid line number and filename getting put on different lines
         white-space: nowrap;
         padding-left: 0;
-        font-family: 'SF Mono', monospace;
+        font-family: var(--code-font-family);
 
         border: none;
 
@@ -174,8 +138,39 @@
         }
     }
 
+    &--active {
+        background-color: var(--color-bg-3);
+    }
+
+    &--active-icon {
+        width: 1.35rem;
+        // stylelint-disable-next-line declaration-property-unit-allowed-list
+        height: calc(100% - 1px);
+        position: absolute;
+        right: 0;
+        top: 0;
+        background-color: var(--color-bg-3);
+        padding-left: 0.25rem;
+        padding-right: 0.1rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    &--link:hover {
+        all: unset;
+
+        background-color: var(--color-bg-2);
+        cursor: pointer;
+    }
+
+    &--active:hover {
+        // Needed to override `&--link:hover`
+        background-color: var(--color-bg-3);
+    }
+
     code {
-        font-family: 'SF Mono', monospace;
+        font-family: var(--code-font-family);
         overflow: hidden;
         color: var(--body-color);
         font-weight: 400;
@@ -183,7 +178,7 @@
     }
 
     mark {
-        font-family: 'SF Mono', monospace;
+        font-family: var(--code-font-family);
         font-weight: 400;
         font-size: 0.75rem;
     }
