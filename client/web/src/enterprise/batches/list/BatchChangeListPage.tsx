@@ -330,7 +330,7 @@ const BatchChangeListTabHeader: React.FunctionComponent<
         selectedTab: SelectedTab
         setSelectedTab: (selectedTab: SelectedTab) => void
     }>
-> = ({ selectedTab, setSelectedTab, isSourcegraphDotCom }) => {
+> = ({ selectedTab, setSelectedTab }) => {
     const onSelectBatchChanges = useCallback<React.MouseEventHandler>(
         event => {
             event.preventDefault()
