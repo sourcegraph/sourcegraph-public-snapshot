@@ -136,7 +136,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 
 			permsStore := edb.Perms(logger, testDB, timeutil.Now)
-			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
+			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
 
 			_, providerStates, err := syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
@@ -221,7 +221,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 
 			permsStore := edb.Perms(logger, testDB, timeutil.Now)
-			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
+			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
 
 			_, providerStates, err := syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
@@ -344,7 +344,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 
 			permsStore := edb.Perms(logger, testDB, timeutil.Now)
-			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
+			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
 
 			_, providerStates, err := syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
@@ -432,7 +432,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 
 			permsStore := edb.Perms(logger, testDB, timeutil.Now)
-			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
+			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
 
 			_, providerStates, err := syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
