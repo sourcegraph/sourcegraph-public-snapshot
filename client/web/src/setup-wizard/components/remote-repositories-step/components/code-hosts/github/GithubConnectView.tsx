@@ -24,6 +24,7 @@ import {
     FORM_ERROR,
     AsyncValidator,
     FormChangeEvent,
+    Link,
 } from '@sourcegraph/wildcard'
 
 import { EXTERNAL_SERVICE_CHECK_CONNECTION_BY_ID } from '../../../../../../components/externalServices/backend'
@@ -34,7 +35,6 @@ import {
     ValidateAccessTokenResult,
     ValidateAccessTokenVariables,
 } from '../../../../../../graphql-operations'
-import { CodeHostRepositoriesAppLimitAlert } from '../../../../CodeHostExternalServiceAlert'
 import { CodeHostJSONFormContent, RadioGroupSection, CodeHostConnectFormFields, CodeHostJSONFormState } from '../common'
 
 import { GithubOrganizationsPicker, GithubRepositoriesPicker } from './GithubEntityPickers'
@@ -141,7 +141,6 @@ export const GithubConnectForm: FC<GithubConnectFormProps> = props => {
                     JSONC editor
                 </Tab>
             </TabList>
-
             <TabPanels className={styles.tabPanels}>
                 <TabPanel as="fieldset" tabIndex={-1} className={styles.formView}>
                     <GithubFormView
@@ -242,14 +241,24 @@ function GithubFormView(props: GithubFormViewProps): ReactElement {
     // Fragment to avoid nesting since it's rendered within TabPanel fieldset
     return (
         <>
-            <CodeHostRepositoriesAppLimitAlert className="mb-2" />
-
             <Input label="Display name" placeholder="Github (Personal)" {...getDefaultInputProps(displayNameField)} />
 
             <Input
                 label="Access token"
                 placeholder="Input your access token"
-                message="Create a new access token on GitHub.com with repo or public_repo scope."
+                description={
+                    <>
+                        Create GitHub access token classic (
+                        <Link
+                            to="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token#personal-access-tokens-classic"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            instructions
+                        </Link>
+                        ) with <b>repo</b> or <b>public_repo</b> scope.
+                    </>
+                }
                 type="password"
                 {...getDefaultInputProps(accessTokenField)}
             />

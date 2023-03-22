@@ -13,7 +13,7 @@ type retentionPolicyMatcherResolver struct {
 	errCollector *observation.ErrCollector
 }
 
-func NewRetentionPolicyMatcherResolver(repoStore database.RepoStore, policy types.RetentionPolicyMatchCandidate) resolverstubs.RetentionPolicyMatcherResolver {
+func NewRetentionPolicyMatcherResolver(repoStore database.RepoStore, policy types.RetentionPolicyMatchCandidate) resolverstubs.CodeIntelligenceRetentionPolicyMatchResolver {
 	return &retentionPolicyMatcherResolver{repoStore: repoStore, policy: policy}
 }
 

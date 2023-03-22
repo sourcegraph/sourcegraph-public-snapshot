@@ -113,7 +113,7 @@ const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
     const handleFormSubmit = async (values: CodeHostConnectFormFields): Promise<void> => {
         await addRemoteCodeHost({
             variables: { input: { ...values, kind: codeHostKind } },
-            refetchQueries: ['RepositoryStats', 'StatusMessages'],
+            refetchQueries: ['StatusAndRepoStats'],
             update: (cache, result) => {
                 const { data } = result
 

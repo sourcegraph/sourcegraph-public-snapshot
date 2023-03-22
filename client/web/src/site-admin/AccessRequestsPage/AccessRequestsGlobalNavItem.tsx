@@ -44,7 +44,7 @@ export const AccessRequestsGlobalNavItem: React.FunctionComponent<AccessRequests
         <ButtonLink
             variant="success"
             size="sm"
-            to="/site-admin/access-requests"
+            to="/site-admin/account-requests"
             className="d-flex align-items-center py-1"
         >
             <Icon svgPath={mdiAccountPlus} size="md" aria-label="Account requests icons" color="var(--success-2)" />

@@ -5,7 +5,6 @@ go_library(
     srcs = [
         "cursor.go",
         "diagnostic_resolver.go",
-        "diagnostic_resolver_connection.go",
         "gitblob_lsif_data_resolver.go",
         "hover_resolver.go",
         "iface.go",
@@ -15,7 +14,6 @@ go_library(
         "position_resolver.go",
         "range_resolver.go",
         "ranges_resolver.go",
-        "ranges_resolver_connection.go",
         "root_resolver.go",
         "types.go",
         "utils.go",
@@ -32,6 +30,7 @@ go_library(
         "//internal/authz",
         "//internal/codeintel/resolvers",
         "//internal/database",
+        "//internal/gitserver",
         "//internal/metrics",
         "//internal/observation",
         "//lib/codeintel/precise",
@@ -43,8 +42,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "graphql_test",
+    timeout = "short",
     srcs = [
         "gitblob_lsif_data_resolver_test.go",
         "mocks_test.go",
@@ -55,12 +54,10 @@ go_test(
         "//enterprise/internal/codeintel/autoindexing/shared",
         "//enterprise/internal/codeintel/codenav",
         "//enterprise/internal/codeintel/codenav/shared",
-        "//enterprise/internal/codeintel/shared/gitserver",
         "//enterprise/internal/codeintel/shared/resolvers",
         "//enterprise/internal/codeintel/shared/types",
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/api",
-        "//internal/authz",
         "//internal/codeintel/resolvers",
         "//internal/database",
         "//internal/gitserver",
@@ -68,6 +65,5 @@ go_test(
         "//internal/observation",
         "//internal/types",
         "@com_github_derision_test_go_mockgen//testutil/require",
-        "@com_github_sourcegraph_go_diff//diff",
     ],
 )

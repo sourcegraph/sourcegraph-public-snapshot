@@ -23,9 +23,15 @@ func NewDiagnosticResolver(diagnostic shared.DiagnosticAtUpload, locationResolve
 }
 
 func (r *diagnosticResolver) Severity() (*string, error) { return toSeverity(r.diagnostic.Severity) }
-func (r *diagnosticResolver) Code() (*string, error)     { return strPtr(r.diagnostic.Code), nil }
-func (r *diagnosticResolver) Source() (*string, error)   { return strPtr(r.diagnostic.Source), nil }
-func (r *diagnosticResolver) Message() (*string, error)  { return strPtr(r.diagnostic.Message), nil }
+func (r *diagnosticResolver) Code() (*string, error) {
+	return resolverstubs.NonZeroPtr(r.diagnostic.Code), nil
+}
+func (r *diagnosticResolver) Source() (*string, error) {
+	return resolverstubs.NonZeroPtr(r.diagnostic.Source), nil
+}
+func (r *diagnosticResolver) Message() (*string, error) {
+	return resolverstubs.NonZeroPtr(r.diagnostic.Message), nil
+}
 
 func (r *diagnosticResolver) Location(ctx context.Context) (resolverstubs.LocationResolver, error) {
 	return resolveLocation(

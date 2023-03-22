@@ -21,8 +21,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "files_test",
+    timeout = "short",
     srcs = ["client_test.go"],
     deps = [
         ":files",

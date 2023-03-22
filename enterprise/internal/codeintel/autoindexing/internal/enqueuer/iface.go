@@ -1,7 +1,12 @@
 package enqueuer
 
-import "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/background"
+import (
+	"context"
 
-type RepoUpdaterClient = background.RepoUpdaterClient
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+)
 
-type GitserverClient = background.GitserverClient
+type RepoUpdaterClient interface {
+	EnqueueRepoUpdate(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error)
+}

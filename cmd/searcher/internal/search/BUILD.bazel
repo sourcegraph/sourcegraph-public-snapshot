@@ -23,6 +23,7 @@ go_library(
         "//internal/api",
         "//internal/comby",
         "//internal/conf",
+        "//internal/conf/deploy",
         "//internal/diskcache",
         "//internal/errcode",
         "//internal/gitserver",
@@ -63,8 +64,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "search_test",
+    timeout = "short",
     srcs = [
         "filter_test.go",
         "github_archive_test.go",

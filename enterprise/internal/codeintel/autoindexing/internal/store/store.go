@@ -25,7 +25,7 @@ type Store interface {
 		minimumTimeSinceLastCheck time.Duration,
 		commitResolverBatchSize int,
 		commitResolverMaximumCommitLag time.Duration,
-		shouldDelete func(ctx context.Context, repositoryID int, commit string) (bool, error),
+		shouldDelete func(ctx context.Context, repositoryID int, repositoryName, commit string) (bool, error),
 	) (indexesScanned, indexesDeleted int, _ error)
 
 	// Indexes

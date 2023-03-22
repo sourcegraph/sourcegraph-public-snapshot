@@ -24,8 +24,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "protocol_test",
+    timeout = "short",
     srcs = [
         "gitserver_test.go",
         "search_test.go",

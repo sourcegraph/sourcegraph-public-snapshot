@@ -8,12 +8,15 @@ import (
 	"github.com/gobwas/glob"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Matcher struct {
-	gitserverClient           GitserverClient
+	gitserverClient           gitserver.Client
 	extractor                 Extractor
 	includeTipOfDefaultBranch bool
 	filterByCreatedDate       bool
@@ -30,7 +33,7 @@ type PolicyMatch struct {
 }
 
 func NewMatcher(
-	gitserverClient GitserverClient,
+	gitserverClient gitserver.Client,
 	extractor Extractor,
 	includeTipOfDefaultBranch bool,
 	filterByCreatedDate bool,
@@ -56,7 +59,7 @@ func NewMatcher(
 // commit date.
 //
 // A subset of all commits can be returned by passing in any number of commit revhash strings.
-func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int, policies []types.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]PolicyMatch, error) {
+func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int, repoName api.RepoName, policies []types.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]PolicyMatch, error) {
 	if len(policies) == 0 && !m.includeTipOfDefaultBranch {
 		return nil, nil
 	}
@@ -69,13 +72,14 @@ func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int
 	// mutable context
 	mContext := matcherContext{
 		repositoryID:   repositoryID,
+		repo:           repoName,
 		policies:       policies,
 		patterns:       patterns,
 		commitMap:      map[string][]PolicyMatch{},
 		branchRequests: map[string]branchRequestMeta{},
 	}
 
-	refDescriptions, err := m.gitserverClient.RefDescriptions(ctx, repositoryID, filterCommits...)
+	refDescriptions, err := m.gitserverClient.RefDescriptions(ctx, authz.DefaultSubRepoPermsChecker, repoName, filterCommits...)
 	if err != nil {
 		return nil, errors.Wrap(err, "gitserver.RefDescriptions")
 	}
@@ -110,6 +114,8 @@ func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int
 type matcherContext struct {
 	// repositoryID is the repository identifier used in requests to gitserver.
 	repositoryID int
+
+	repo api.RepoName
 
 	// policies is the full set (global and repository-specific) policies that apply to the given repository.
 	policies []types.ConfigurationPolicy
@@ -206,7 +212,14 @@ func (m *Matcher) matchCommitsOnBranch(ctx context.Context, context matcherConte
 			maxCommitAge = nil
 		}
 
-		commitDates, err := m.gitserverClient.CommitsUniqueToBranch(ctx, context.repositoryID, branchRequestMeta.commitID, branchRequestMeta.isDefaultBranch, maxCommitAge)
+		commitDates, err := m.gitserverClient.CommitsUniqueToBranch(
+			ctx,
+			authz.DefaultSubRepoPermsChecker,
+			context.repo,
+			branchRequestMeta.commitID,
+			branchRequestMeta.isDefaultBranch,
+			maxCommitAge,
+		)
 		if err != nil {
 			return errors.Wrap(err, "gitserver.CommitsUniqueToBranch")
 		}
@@ -248,9 +261,9 @@ func (m *Matcher) matchCommitsOnBranch(ctx context.Context, context matcherConte
 func (m *Matcher) matchCommitPolicies(ctx context.Context, context matcherContext, now time.Time) error {
 	for _, policy := range context.policies {
 		if policy.Type == types.GitObjectTypeCommit {
-			commit, commitDate, revisionExists, err := m.gitserverClient.CommitDate(ctx, context.repositoryID, policy.Pattern)
+			commit, commitDate, revisionExists, err := m.gitserverClient.CommitDate(ctx, authz.DefaultSubRepoPermsChecker, context.repo, api.CommitID(policy.Pattern))
 			if err != nil {
-				return errors.Wrap(err, "gitserver.CommitDate")
+				return err
 			}
 			if !revisionExists {
 				continue

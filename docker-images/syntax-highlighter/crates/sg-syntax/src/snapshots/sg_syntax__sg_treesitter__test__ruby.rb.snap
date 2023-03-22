@@ -1,385 +1,386 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
-expression: "dump_document(&document, &contents)"
+assertion_line: 362
+expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 ---
   #!/usr/bin/env ruby
-//^^^^^^^^^^^^^^^^^^^ Comment 
+//^^^^^^^^^^^^^^^^^^^ Comment
   # Comments - this is a comment
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
   # Variables
-//^^^^^^^^^^^ Comment 
+//^^^^^^^^^^^ Comment
   foo = "bar"
-//^^^ Identifier 
-//    ^ IdentifierOperator 
-//      ^ StringLiteral 
-//       ^^^ StringLiteral 
-//          ^ StringLiteral 
+//^^^ Identifier
+//    ^ IdentifierOperator
+//      ^ StringLiteral
+//       ^^^ StringLiteral
+//          ^ StringLiteral
   baz = 1
-//^^^ Identifier 
-//    ^ IdentifierOperator 
-//      ^ NumericLiteral 
+//^^^ Identifier
+//    ^ IdentifierOperator
+//      ^ NumericLiteral
   # Strings
-//^^^^^^^^^ Comment 
+//^^^^^^^^^ Comment
   hello = "Hello world"
-//^^^^^ Identifier 
-//      ^ IdentifierOperator 
-//        ^ StringLiteral 
-//         ^^^^^^^^^^^ StringLiteral 
-//                    ^ StringLiteral 
+//^^^^^ Identifier
+//      ^ IdentifierOperator
+//        ^ StringLiteral
+//         ^^^^^^^^^^^ StringLiteral
+//                    ^ StringLiteral
   hello = 'Hello world'
-//^^^^^ Identifier 
-//      ^ IdentifierOperator 
-//        ^ StringLiteral 
-//         ^^^^^^^^^^^ StringLiteral 
-//                    ^ StringLiteral 
+//^^^^^ Identifier
+//      ^ IdentifierOperator
+//        ^ StringLiteral
+//         ^^^^^^^^^^^ StringLiteral
+//                    ^ StringLiteral
   multiline_string = """This
-//^^^^^^^^^^^^^^^^ Identifier 
-//                 ^ IdentifierOperator 
-//                   ^ StringLiteral 
-//                    ^ StringLiteral 
-//                     ^ StringLiteral 
-//                      ^^^^ StringLiteral 8:22..12:6 
+//^^^^^^^^^^^^^^^^ Identifier
+//                 ^ IdentifierOperator
+//                   ^ StringLiteral
+//                    ^ StringLiteral
+//                     ^ StringLiteral
+//                      ^^^^ StringLiteral 8:22..12:6
   is
   a
   multiline
   string"""
-//      ^ StringLiteral 
-//       ^ StringLiteral 
-//        ^ StringLiteral 
+//      ^ StringLiteral
+//       ^ StringLiteral
+//        ^ StringLiteral
   multiline_string = <<~END_OF_STRING
-//^^^^^^^^^^^^^^^^ Identifier 
-//                 ^ IdentifierOperator 
-//                                    StringLiteral 13:35..17:0 
+//^^^^^^^^^^^^^^^^ Identifier
+//                 ^ IdentifierOperator
+//                                    StringLiteral 13:35..17:0
     This is a multiline string.
     It can contain multiple lines of text.
     And it preserves all whitespace and formatting.
   END_OF_STRING
   
   puts multiline_string
-//^^^^ IdentifierFunction 
-//     ^^^^^^^^^^^^^^^^ Identifier 
+//^^^^ IdentifierFunction
+//     ^^^^^^^^^^^^^^^^ Identifier
   # Arrays
-//^^^^^^^^ Comment 
+//^^^^^^^^ Comment
   array = [1, 2, 3]
-//^^^^^ Identifier 
-//      ^ IdentifierOperator 
-//         ^ NumericLiteral 
-//            ^ NumericLiteral 
-//               ^ NumericLiteral 
+//^^^^^ Identifier
+//      ^ IdentifierOperator
+//         ^ NumericLiteral
+//            ^ NumericLiteral
+//               ^ NumericLiteral
   # Hashes
-//^^^^^^^^ Comment 
+//^^^^^^^^ Comment
   hash = {foo: "bar", baz: 1}
-//^^^^ Identifier 
-//     ^ IdentifierOperator 
-//        ^^^ CharacterLiteral 
-//             ^ StringLiteral 
-//              ^^^ StringLiteral 
-//                 ^ StringLiteral 
-//                    ^^^ CharacterLiteral 
-//                         ^ NumericLiteral 
+//^^^^ Identifier
+//     ^ IdentifierOperator
+//        ^^^ CharacterLiteral
+//             ^ StringLiteral
+//              ^^^ StringLiteral
+//                 ^ StringLiteral
+//                    ^^^ CharacterLiteral
+//                         ^ NumericLiteral
   # Ranges
-//^^^^^^^^ Comment 
+//^^^^^^^^ Comment
   (1..5).each { |n| print n } # Prints 1 2 3 4 5
-// ^ NumericLiteral 
-//    ^ NumericLiteral 
-//       ^^^^ IdentifierFunction 
-//               ^ IdentifierParameter 
-//                  ^^^^^ IdentifierFunction 
-//                        ^ Identifier 
-//                            ^^^^^^^^^^^^^^^^^^ Comment 
+// ^ NumericLiteral
+//    ^ NumericLiteral
+//       ^^^^ IdentifierFunction
+//               ^ IdentifierParameter
+//                  ^^^^^ IdentifierFunction
+//                        ^ Identifier
+//                            ^^^^^^^^^^^^^^^^^^ Comment
   # Control flow
-//^^^^^^^^^^^^^^ Comment 
+//^^^^^^^^^^^^^^ Comment
   if foo == "bar"
-//^^ Keyword 
-//   ^^^ Identifier 
-//          ^ StringLiteral 
-//           ^^^ StringLiteral 
-//              ^ StringLiteral 
+//^^ Keyword
+//   ^^^ Identifier
+//          ^ StringLiteral
+//           ^^^ StringLiteral
+//              ^ StringLiteral
     puts "Foo is bar!"
-//  ^^^^ IdentifierFunction 
-//       ^ StringLiteral 
-//        ^^^^^^^^^^^ StringLiteral 
-//                   ^ StringLiteral 
+//  ^^^^ IdentifierFunction
+//       ^ StringLiteral
+//        ^^^^^^^^^^^ StringLiteral
+//                   ^ StringLiteral
   elsif foo == "baz"
-//^^^^^ Keyword 
-//      ^^^ Identifier 
-//             ^ StringLiteral 
-//              ^^^ StringLiteral 
-//                 ^ StringLiteral 
+//^^^^^ Keyword
+//      ^^^ Identifier
+//             ^ StringLiteral
+//              ^^^ StringLiteral
+//                 ^ StringLiteral
     puts "Foo is baz!"
-//  ^^^^ IdentifierFunction 
-//       ^ StringLiteral 
-//        ^^^^^^^^^^^ StringLiteral 
-//                   ^ StringLiteral 
+//  ^^^^ IdentifierFunction
+//       ^ StringLiteral
+//        ^^^^^^^^^^^ StringLiteral
+//                   ^ StringLiteral
   else
-//^^^^ Keyword 
+//^^^^ Keyword
     puts "Foo is something else!"
-//  ^^^^ IdentifierFunction 
-//       ^ StringLiteral 
-//        ^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
-//                              ^ StringLiteral 
+//  ^^^^ IdentifierFunction
+//       ^ StringLiteral
+//        ^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                              ^ StringLiteral
   end
-//^^^ Keyword 
+//^^^ Keyword
   # Methods
-//^^^^^^^^^ Comment 
+//^^^^^^^^^ Comment
   def hello
-//^^^ Keyword 
-//    ^^^^^ IdentifierFunction 
+//^^^ Keyword
+//    ^^^^^ IdentifierFunction
     "Hello!"
-//  ^ StringLiteral 
-//   ^^^^^^ StringLiteral 
-//         ^ StringLiteral 
+//  ^ StringLiteral
+//   ^^^^^^ StringLiteral
+//         ^ StringLiteral
   end
-//^^^ Keyword 
+//^^^ Keyword
   puts hello # Prints "Hello!"
-//^^^^ IdentifierFunction 
-//     ^^^^^ Identifier 
-//           ^^^^^^^^^^^^^^^^^ Comment 
+//^^^^ IdentifierFunction
+//     ^^^^^ Identifier
+//           ^^^^^^^^^^^^^^^^^ Comment
   # Classes
-//^^^^^^^^^ Comment 
+//^^^^^^^^^ Comment
   class Dog
-//^^^^^ Keyword 
-//      ^^^ Identifier 
+//^^^^^ Keyword
+//      ^^^ Identifier
     def bark
-//  ^^^ Keyword 
-//      ^^^^ IdentifierFunction 
+//  ^^^ Keyword
+//      ^^^^ IdentifierFunction
       "Woof!"
-//    ^ StringLiteral 
-//     ^^^^^ StringLiteral 
-//          ^ StringLiteral 
+//    ^ StringLiteral
+//     ^^^^^ StringLiteral
+//          ^ StringLiteral
     end
-//  ^^^ Keyword 
+//  ^^^ Keyword
   end
-//^^^ Keyword 
+//^^^ Keyword
   fido = Dog.new
-//^^^^ Identifier 
-//     ^ IdentifierOperator 
-//       ^^^ Identifier 
-//           ^^^ IdentifierFunction 
+//^^^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^ Identifier
+//           ^^^ IdentifierFunction
   puts fido.bark # Prints "Woof!"
-//^^^^ IdentifierFunction 
-//     ^^^^ Identifier 
-//          ^^^^ IdentifierFunction 
-//               ^^^^^^^^^^^^^^^^ Comment 
+//^^^^ IdentifierFunction
+//     ^^^^ Identifier
+//          ^^^^ IdentifierFunction
+//               ^^^^^^^^^^^^^^^^ Comment
   
   class Person
-//^^^^^ Keyword 
-//      ^^^^^^ Identifier 
+//^^^^^ Keyword
+//      ^^^^^^ Identifier
     @@count = 0
-//  ^^^^^^^ IdentifierAttribute 
-//          ^ IdentifierOperator 
-//            ^ NumericLiteral 
+//  ^^^^^^^ IdentifierAttribute
+//          ^ IdentifierOperator
+//            ^ NumericLiteral
     def initialize(name)
-//  ^^^ Keyword 
-//      ^^^^^^^^^^ IdentifierFunction 
-//                 ^^^^ IdentifierParameter 
+//  ^^^ Keyword
+//      ^^^^^^^^^^ IdentifierFunction
+//                 ^^^^ IdentifierParameter
       @name = name
-//    ^^^^^ IdentifierAttribute 
-//          ^ IdentifierOperator 
-//            ^^^^ Identifier 
+//    ^^^^^ IdentifierAttribute
+//          ^ IdentifierOperator
+//            ^^^^ Identifier
       @@count += 1
-//    ^^^^^^^ IdentifierAttribute 
-//               ^ NumericLiteral 
+//    ^^^^^^^ IdentifierAttribute
+//               ^ NumericLiteral
     end
-//  ^^^ Keyword 
+//  ^^^ Keyword
     def greet
-//  ^^^ Keyword 
-//      ^^^^^ IdentifierFunction 
+//  ^^^ Keyword
+//      ^^^^^ IdentifierFunction
       puts "Hello, I'm #{@name}! Count is #{@@count}"
-//    ^^^^ IdentifierFunction 
-//         ^ StringLiteral 
-//          ^^^^^^^^^^^ StringLiteral 
-//                     ^^ StringLiteralEscape 
-//                       ^^^^^ IdentifierAttribute 
-//                            ^ StringLiteralEscape 
-//                             ^^^^^^^^^^^ StringLiteral 
-//                                        ^^ StringLiteralEscape 
-//                                          ^^^^^^^ IdentifierAttribute 
-//                                                 ^ StringLiteralEscape 
-//                                                  ^ StringLiteral 
+//    ^^^^ IdentifierFunction
+//         ^ StringLiteral
+//          ^^^^^^^^^^^ StringLiteral
+//                     ^^ StringLiteralEscape
+//                       ^^^^^ IdentifierAttribute
+//                            ^ StringLiteralEscape
+//                             ^^^^^^^^^^^ StringLiteral
+//                                        ^^ StringLiteralEscape
+//                                          ^^^^^^^ IdentifierAttribute
+//                                                 ^ StringLiteralEscape
+//                                                  ^ StringLiteral
     end
-//  ^^^ Keyword 
+//  ^^^ Keyword
   end
-//^^^ Keyword 
+//^^^ Keyword
   # Usage:
-//^^^^^^^^ Comment 
+//^^^^^^^^ Comment
   person = Person.new("John")
-//^^^^^^ Identifier 
-//       ^ IdentifierOperator 
-//         ^^^^^^ Identifier 
-//                ^^^ IdentifierFunction 
-//                    ^ StringLiteral 
-//                     ^^^^ StringLiteral 
-//                         ^ StringLiteral 
+//^^^^^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^^ Identifier
+//                ^^^ IdentifierFunction
+//                    ^ StringLiteral
+//                     ^^^^ StringLiteral
+//                         ^ StringLiteral
   person.greet # Prints "Hello, I'm John!"
-//^^^^^^ Identifier 
-//       ^^^^^ IdentifierFunction 
-//             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+//^^^^^^ Identifier
+//       ^^^^^ IdentifierFunction
+//             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
   
   def banana
-//^^^ Keyword 
-//    ^^^^^^ IdentifierFunction 
+//^^^ Keyword
+//    ^^^^^^ IdentifierFunction
     File.open('foobar', mode: 'w') do |banana|
-//  ^^^^ Identifier 
-//       ^^^^ IdentifierFunction 
-//            ^ StringLiteral 
-//             ^^^^^^ StringLiteral 
-//                   ^ StringLiteral 
-//                      ^^^^ CharacterLiteral 
-//                            ^ StringLiteral 
-//                             ^ StringLiteral 
-//                              ^ StringLiteral 
-//                                 ^^ Keyword 
-//                                     ^^^^^^ IdentifierParameter 
+//  ^^^^ Identifier
+//       ^^^^ IdentifierFunction
+//            ^ StringLiteral
+//             ^^^^^^ StringLiteral
+//                   ^ StringLiteral
+//                      ^^^^ CharacterLiteral
+//                            ^ StringLiteral
+//                             ^ StringLiteral
+//                              ^ StringLiteral
+//                                 ^^ Keyword
+//                                     ^^^^^^ IdentifierParameter
             banana << "yummy\n"
-//          ^^^^^^ Identifier 
-//                    ^ StringLiteral 
-//                     ^^^^^ StringLiteral 
-//                          ^^ StringLiteralEscape 
-//                            ^ StringLiteral 
+//          ^^^^^^ Identifier
+//                    ^ StringLiteral
+//                     ^^^^^ StringLiteral
+//                          ^^ StringLiteralEscape
+//                            ^ StringLiteral
     end
-//  ^^^ Keyword 
+//  ^^^ Keyword
   
     if __FILE__ == $0
-//  ^^ Keyword 
-//     ^^^^^^^^ IdentifierBuiltin 
-//                 ^^ Identifier 
+//  ^^ Keyword
+//     ^^^^^^^^ IdentifierBuiltin
+//                 ^^ Identifier
       output_path = File.dirname($0) + 'snapshots.txt'
-//    ^^^^^^^^^^^ Identifier 
-//                ^ IdentifierOperator 
-//                  ^^^^ Identifier 
-//                       ^^^^^^^ IdentifierFunction 
-//                               ^^ Identifier 
-//                                     ^ StringLiteral 
-//                                      ^^^^^^^^^^^^^ StringLiteral 
-//                                                   ^ StringLiteral 
+//    ^^^^^^^^^^^ Identifier
+//                ^ IdentifierOperator
+//                  ^^^^ Identifier
+//                       ^^^^^^^ IdentifierFunction
+//                               ^^ Identifier
+//                                     ^ StringLiteral
+//                                      ^^^^^^^^^^^^^ StringLiteral
+//                                                   ^ StringLiteral
     end
-//  ^^^ Keyword 
+//  ^^^ Keyword
   
   end
-//^^^ Keyword 
+//^^^ Keyword
   
   
   def regexp
-//^^^ Keyword 
-//    ^^^^^^ IdentifierFunction 
+//^^^ Keyword
+//    ^^^^^^ IdentifierFunction
     regex = /foo\.bar/
-//  ^^^^^ Identifier 
-//        ^ IdentifierOperator 
-//          ^ StringLiteral 
-//           ^^^ StringLiteral 
-//              ^^ StringLiteralEscape 
-//                ^^^ StringLiteral 
-//                   ^ StringLiteral 
+//  ^^^^^ Identifier
+//        ^ IdentifierOperator
+//          ^ StringLiteral
+//           ^^^ StringLiteral
+//              ^^ StringLiteralEscape
+//                ^^^ StringLiteral
+//                   ^ StringLiteral
     # Matches "foo.bar"
-//  ^^^^^^^^^^^^^^^^^^^ Comment 
+//  ^^^^^^^^^^^^^^^^^^^ Comment
     regex = /foo\.bar/i
-//  ^^^^^ Identifier 
-//        ^ IdentifierOperator 
-//          ^ StringLiteral 
-//           ^^^ StringLiteral 
-//              ^^ StringLiteralEscape 
-//                ^^^ StringLiteral 
-//                   ^^ StringLiteral 
+//  ^^^^^ Identifier
+//        ^ IdentifierOperator
+//          ^ StringLiteral
+//           ^^^ StringLiteral
+//              ^^ StringLiteralEscape
+//                ^^^ StringLiteral
+//                   ^^ StringLiteral
     # Case insensitive match, matches "foo.bar" or "Foo.Bar" or "FOO.BAR" etc.
-//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
     regex = /f.*o/
-//  ^^^^^ Identifier 
-//        ^ IdentifierOperator 
-//          ^ StringLiteral 
-//           ^^^^ StringLiteral 
-//               ^ StringLiteral 
+//  ^^^^^ Identifier
+//        ^ IdentifierOperator
+//          ^ StringLiteral
+//           ^^^^ StringLiteral
+//               ^ StringLiteral
     # Uses . as a wildcard, matches "fo", "fido", "f1o", etc.
-//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
     regex = /f[io]o/
-//  ^^^^^ Identifier 
-//        ^ IdentifierOperator 
-//          ^ StringLiteral 
-//           ^^^^^^ StringLiteral 
-//                 ^ StringLiteral 
+//  ^^^^^ Identifier
+//        ^ IdentifierOperator
+//          ^ StringLiteral
+//           ^^^^^^ StringLiteral
+//                 ^ StringLiteral
     # Uses [] for a union, matches "foo" or "fioo"
-//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
     # And you can use \ to escape special characters:
-//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
     regex = /f\.o/
-//  ^^^^^ Identifier 
-//        ^ IdentifierOperator 
-//          ^ StringLiteral 
-//           ^ StringLiteral 
-//            ^^ StringLiteralEscape 
-//              ^ StringLiteral 
-//               ^ StringLiteral 
+//  ^^^^^ Identifier
+//        ^ IdentifierOperator
+//          ^ StringLiteral
+//           ^ StringLiteral
+//            ^^ StringLiteralEscape
+//              ^ StringLiteral
+//               ^ StringLiteral
     # Matches "f.o" (with a literal .)
-//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
   end
-//^^^ Keyword 
+//^^^ Keyword
   
   def interpolation
-//^^^ Keyword 
-//    ^^^^^^^^^^^^^ IdentifierFunction 
+//^^^ Keyword
+//    ^^^^^^^^^^^^^ IdentifierFunction
     STDERR.puts "Parsing #{something.sub(another_thing, '')}"
-//  ^^^^^^ Identifier 
-//         ^^^^ IdentifierFunction 
-//              ^ StringLiteral 
-//               ^^^^^^^^ StringLiteral 
-//                       ^^ StringLiteralEscape 
-//                         ^^^^^^^^^ Identifier 
-//                                   ^^^ IdentifierFunction 
-//                                       ^^^^^^^^^^^^^ Identifier 
-//                                                      ^ StringLiteral 
-//                                                       ^ StringLiteral 
-//                                                         ^ StringLiteralEscape 
-//                                                          ^ StringLiteral 
+//  ^^^^^^ Identifier
+//         ^^^^ IdentifierFunction
+//              ^ StringLiteral
+//               ^^^^^^^^ StringLiteral
+//                       ^^ StringLiteralEscape
+//                         ^^^^^^^^^ Identifier
+//                                   ^^^ IdentifierFunction
+//                                       ^^^^^^^^^^^^^ Identifier
+//                                                      ^ StringLiteral
+//                                                       ^ StringLiteral
+//                                                         ^ StringLiteralEscape
+//                                                          ^ StringLiteral
     multiline_interpolation = """This
-//  ^^^^^^^^^^^^^^^^^^^^^^^ Identifier 
-//                          ^ IdentifierOperator 
-//                            ^ StringLiteral 
-//                             ^ StringLiteral 
-//                              ^ StringLiteral 
-//                               ^^^^ StringLiteral 90:31..91:5 
+//  ^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+//                          ^ IdentifierOperator
+//                            ^ StringLiteral
+//                             ^ StringLiteral
+//                              ^ StringLiteral
+//                               ^^^^ StringLiteral 90:31..91:5
     is #{hello}
-//     ^^ StringLiteralEscape 
-//       ^^^^^ Identifier 
-//            ^ StringLiteralEscape 
-//              StringLiteral 91:13..92:4 
+//     ^^ StringLiteralEscape
+//       ^^^^^ Identifier
+//            ^ StringLiteralEscape
+//              StringLiteral 91:13..92:4
     a #{hello}
-//    ^^ StringLiteralEscape 
-//      ^^^^^ Identifier 
-//           ^ StringLiteralEscape 
-//             StringLiteral 92:12..94:8 
+//    ^^ StringLiteralEscape
+//      ^^^^^ Identifier
+//           ^ StringLiteralEscape
+//             StringLiteral 92:12..94:8
     multiline
     string"""
-//        ^ StringLiteral 
-//         ^ StringLiteral 
-//          ^ StringLiteral 
+//        ^ StringLiteral
+//         ^ StringLiteral
+//          ^ StringLiteral
   end
-//^^^ Keyword 
+//^^^ Keyword
   
   def more_stuff(mine)
-//^^^ Keyword 
-//    ^^^^^^^^^^ IdentifierFunction 
-//               ^^^^ IdentifierParameter 
+//^^^ Keyword
+//    ^^^^^^^^^^ IdentifierFunction
+//               ^^^^ IdentifierParameter
     text = mine.foos().qux(&:horse).join.strip
-//  ^^^^ Identifier 
-//       ^ IdentifierOperator 
-//         ^^^^ Identifier 
-//              ^^^^ IdentifierFunction 
-//                     ^^^ IdentifierFunction 
-//                          ^^^^^^ CharacterLiteral 
-//                                  ^^^^ IdentifierFunction 
-//                                       ^^^^^ IdentifierFunction 
+//  ^^^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^ Identifier
+//              ^^^^ IdentifierFunction
+//                     ^^^ IdentifierFunction
+//                          ^^^^^^ CharacterLiteral
+//                                  ^^^^ IdentifierFunction
+//                                       ^^^^^ IdentifierFunction
     if text.empty?
-//  ^^ Keyword 
-//     ^^^^ Identifier 
-//          ^^^^^^ IdentifierFunction 
+//  ^^ Keyword
+//     ^^^^ Identifier
+//          ^^^^^^ IdentifierFunction
       nil
-//    ^^^ IdentifierNull 
+//    ^^^ IdentifierNull
     else
-//  ^^^^ Keyword 
+//  ^^^^ Keyword
       text
-//    ^^^^ Identifier 
+//    ^^^^ Identifier
     end
-//  ^^^ Keyword 
+//  ^^^ Keyword
   end
-//^^^ Keyword 
+//^^^ Keyword
 

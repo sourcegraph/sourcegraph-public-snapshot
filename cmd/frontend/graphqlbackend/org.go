@@ -154,7 +154,9 @@ func (o *OrgResolver) Members(ctx context.Context, args struct {
 		query: args.Query,
 	}
 
-	return graphqlutil.NewConnectionResolver[*UserResolver](connectionStore, &args.ConnectionResolverArgs, nil)
+	return graphqlutil.NewConnectionResolver[*UserResolver](connectionStore, &args.ConnectionResolverArgs, &graphqlutil.ConnectionResolverOptions{
+		AllowNoLimit: true,
+	})
 }
 
 type membersConnectionStore struct {

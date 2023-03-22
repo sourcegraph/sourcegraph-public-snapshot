@@ -15,8 +15,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "webhooks_test",
+    timeout = "short",
     srcs = [
         "events_test.go",
         "merge_requests_test.go",

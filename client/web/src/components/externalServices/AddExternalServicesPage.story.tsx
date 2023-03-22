@@ -33,7 +33,6 @@ export const Overview: Story = () => (
                 autoFocusForm={false}
                 externalServicesFromFile={false}
                 allowEditExternalServicesWithFile={false}
-                isSourcegraphApp={false}
             />
         )}
     </WebStory>
@@ -50,7 +49,6 @@ export const AddConnectionBykind: Story = () => (
                 autoFocusForm={false}
                 externalServicesFromFile={false}
                 allowEditExternalServicesWithFile={false}
-                isSourcegraphApp={false}
             />
         )}
     </WebStory>

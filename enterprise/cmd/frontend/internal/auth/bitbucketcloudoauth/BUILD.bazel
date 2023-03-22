@@ -36,8 +36,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "bitbucketcloudoauth_test",
+    timeout = "short",
     srcs = [
         "config_test.go",
         "middleware_test.go",

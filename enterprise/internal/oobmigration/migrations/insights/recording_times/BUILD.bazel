@@ -18,8 +18,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "recording_times_test",
+    timeout = "short",
     srcs = [
         "calculate_test.go",
         "migrator_test.go",

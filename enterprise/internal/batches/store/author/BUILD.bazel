@@ -14,8 +14,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "author_test",
+    timeout = "short",
     srcs = ["author_test.go"],
     embed = [":author"],
     tags = [

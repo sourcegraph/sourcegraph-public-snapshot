@@ -16,9 +16,8 @@ import (
 	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
@@ -34,17 +33,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// PermissionSyncingDisabled returns true if the background permissions syncing is not enabled.
-// It is not enabled if:
-//   - Permissions user mapping (aka explicit permissions API) is enabled and unified permissions model is not enabled
-//   - Not purchased with the current license
-//   - `disableAutoCodeHostSyncs` site setting is set to true
-func PermissionSyncingDisabled() bool {
-	return (globals.PermissionsUserMapping().Enabled && !conf.ExperimentalFeatures().UnifiedPermissions) ||
-		licensing.Check(licensing.FeatureACLs) != nil ||
-		conf.Get().DisableAutoCodeHostSyncs
-}
 
 var scheduleReposCounter = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_repoupdater_perms_syncer_schedule_repos_total",
@@ -347,8 +335,8 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 		}
 
 		acct, err := provider.FetchAccount(ctx, user, accts, emails)
-		results.providerStates = append(results.providerStates, database.NewProviderStatus(provider, err, "FetchAccount"))
 		if err != nil {
+			results.providerStates = append(results.providerStates, database.NewProviderStatus(provider, err, "FetchAccount"))
 			providerLogger.Error("could not fetch account from authz provider", log.Error(err))
 			continue
 		}
@@ -743,7 +731,6 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		URI:              repo.URI,
 		ExternalRepoSpec: repo.ExternalRepo,
 	}, fetchOpts)
-	providerStates = append(providerStates, database.NewProviderStatus(provider, err, "FetchRepoPerms"))
 
 	// Detect 404 error (i.e. not authorized to call given APIs) that often happens with GitHub.com
 	// when the owner of the token only has READ access. However, we don't want to fail
@@ -755,6 +742,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 			log.Error(err),
 			log.String("suggestion", "GitHub access token user may only have read access to the repository, but needs write for permissions"),
 		)
+		providerStates = append(providerStates, database.NewProviderStatus(provider, nil, "FetchRepoPerms"))
 		return result, providerStates, nil
 	}
 
@@ -762,8 +750,11 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	if errors.Is(err, &authz.ErrUnimplemented{}) {
 		logger.Debug("unimplemented", log.Error(err))
 
+		providerStates = append(providerStates, database.NewProviderStatus(provider, nil, "FetchRepoPerms"))
 		return result, providerStates, nil
 	}
+
+	providerStates = append(providerStates, database.NewProviderStatus(provider, err, "FetchRepoPerms"))
 
 	if err != nil {
 		// Process partial results if this is an initial fetch.
@@ -1163,7 +1154,7 @@ func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 	return schedule, nil
 }
 
-func (s *PermsSyncer) isDisabled() bool { return PermissionSyncingDisabled() }
+func (s *PermsSyncer) isDisabled() bool { return eiauthz.PermissionSyncingDisabled() }
 
 // runSchedule periodically looks for least updated records and schedule syncs
 // for them.

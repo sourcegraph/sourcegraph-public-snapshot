@@ -600,8 +600,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                     <CardBody>
                         {!step.skipped && (
                             <Tabs
-                                className={styles.stepTabs}
-                                size="small"
+                                size="medium"
                                 behavior="forceRender"
                                 onChange={index =>
                                     eventLogger.log(`batch_change_execution:workspace_tab_${tabsNames[index]}:clicked`)

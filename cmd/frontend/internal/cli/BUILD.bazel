@@ -89,8 +89,8 @@ go_library(
 )
 
 go_test(
-    timeout = "short",
     name = "cli_test",
+    timeout = "short",
     srcs = ["config_test.go"],
     embed = [":cli"],
     tags = [
@@ -101,9 +101,11 @@ go_test(
         "//internal/conf/conftypes",
         "//internal/conf/deploy",
         "//internal/database",
+        "//internal/database/dbtest",
         "//lib/errors",
         "@com_github_google_go_cmp//cmp",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

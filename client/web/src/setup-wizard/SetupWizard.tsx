@@ -20,7 +20,7 @@ import styles from './Setup.module.scss'
 
 const CORE_STEPS: StepConfiguration[] = [
     {
-        id: 'remote-repositoires',
+        id: 'remote-repositories',
         name: 'Add remote repositories',
         path: '/setup/remote-repositories',
         component: RemoteRepositoriesStep,
@@ -33,7 +33,7 @@ const CORE_STEPS: StepConfiguration[] = [
         component: SyncRepositoriesStep,
         onNext: (client: ApolloClient<{}>) => {
             // Mutate initial needsRepositoryConfiguration value
-            // in order to avoid loop in redirection logic
+            // in order to avoid loop in Layout page redirection logic
             // TODO Remove this as soon as we have a proper Sourcegraph context store
             window.context.needsRepositoryConfiguration = false
 
