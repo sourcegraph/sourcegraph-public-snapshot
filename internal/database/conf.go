@@ -147,7 +147,7 @@ SELECT
 FROM (
 	SELECT
 		*,
-		lag(redacted_contents) OVER (ORDER BY id) AS prev_redacted_contents
+		LAG(redacted_contents) OVER (ORDER BY id) AS prev_redacted_contents
 	FROM
 		critical_and_site_config) t
 WHERE
@@ -156,7 +156,7 @@ WHERE
 
 func (s *confStore) ListSiteConfigs(ctx context.Context, paginationArgs *PaginationArgs) ([]*SiteConfig, error) {
 	where := []*sqlf.Query{
-		sqlf.Sprintf("(prev_redacted_contents IS NULL or redacted_contents != prev_redacted_contents)"),
+		sqlf.Sprintf("(prev_redacted_contents IS NULL OR redacted_contents != prev_redacted_contents)"),
 		sqlf.Sprintf("redacted_contents IS NOT NULL"),
 		sqlf.Sprintf(`type = 'site'`),
 	}
