@@ -1057,6 +1057,60 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		mockrequire.NotCalled(t, perms.SetRepoPendingPermissionsFunc)
 	})
 
+	t.Run("repo sync that returns 404 does not have error in provider status", func(t *testing.T) {
+		p := &mockProvider{
+			id:          1,
+			serviceType: extsvc.TypeGitHub,
+			serviceID:   "https://github.com/",
+			fetchRepoPerms: func(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
+				return []extsvc.AccountID{}, &github.APIError{Code: http.StatusNotFound}
+			},
+		}
+
+		authz.SetProviders(false, []authz.Provider{p})
+		t.Cleanup(func() {
+			authz.SetProviders(true, nil)
+		})
+		mockRepos.GetFunc.SetDefaultReturn(
+			&types.Repo{
+				ID:      1,
+				Private: true,
+				ExternalRepo: api.ExternalRepoSpec{
+					ServiceID: p.ServiceID(),
+				},
+				Sources: map[string]*types.SourceInfo{
+					p.URN(): {},
+				},
+			},
+			nil,
+		)
+
+		reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
+		reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
+
+		perms := edb.NewMockPermsStore()
+		perms.TransactFunc.SetDefaultReturn(perms, nil)
+		perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]authz.UserIDWithExternalAccountID{"user": {UserID: 1, ExternalAccountID: 1}}, nil)
+		perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
+			assert.Equal(t, int32(1), p.RepoID)
+			assert.Equal(t, []int32{1}, p.GenerateSortedIDsSlice())
+			return nil, nil
+		})
+
+		s := newPermsSyncer(reposStore, perms)
+
+		_, providerStates, err := s.syncRepoPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for _, ps := range providerStates {
+			if ps.Status == "ERROR" {
+				t.Fatal("Did not expect provider status of ERROR")
+			}
+		}
+	})
+
 	p := &mockProvider{
 		serviceType: extsvc.TypeGitLab,
 		serviceID:   "https://gitlab.com/",
