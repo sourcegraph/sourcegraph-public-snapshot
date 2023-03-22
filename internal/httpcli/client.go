@@ -169,14 +169,6 @@ var ExternalDoer, _ = ExternalClientFactory.Doer()
 // downloading arbitrarily sized files! See UncachedExternalClient instead.
 var ExternalClient, _ = ExternalClientFactory.Client()
 
-// UncachedExternalDoer is a shared client for external communication with caching
-// disabled. This is a convenience for existing uses of http.DefaultClient.
-var UncachedExternalDoer, _ = UncachedExternalClientFactory.Doer()
-
-// UncachedExternalClient returns a shared client for external communication with
-// caching disabled. This is a convenience for existing uses of http.DefaultClient.
-var UncachedExternalClient, _ = UncachedExternalClientFactory.Client()
-
 // InternalClientFactory is a httpcli.Factory with common options
 // and middleware pre-set for communicating with internal services.
 var InternalClientFactory = NewInternalClientFactory("internal")
@@ -558,7 +550,6 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 			if retry || a.Error == nil || a.Index == 0 {
 				return
 			}
-
 		}()
 
 		if a.Response != nil {

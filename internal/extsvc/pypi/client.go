@@ -48,30 +48,63 @@ type Client struct {
 	// A list of PyPI proxies. Each url should point to the root of the simple-API.
 	// For example for pypi.org the url should be https://pypi.org/simple with or
 	// without a trailing slash.
-	urls []string
-	cli  httpcli.Doer
+	urls           []string
+	uncachedClient httpcli.Doer
+	cachedClient   httpcli.Doer
 
 	// Self-imposed rate-limiter. pypi.org does not impose a rate limiting policy.
 	limiter *ratelimit.InstrumentedLimiter
 }
 
-func NewClient(urn string, urls []string, cli httpcli.Doer) *Client {
+func NewClient(urn string, urls []string, httpfactory *httpcli.Factory) *Client {
+	uncached, _ := httpfactory.Doer(httpcli.NewCachedTransportOpt(httpcli.NoopCache{}, false))
+	cached, _ := httpfactory.Doer()
 	return &Client{
-		urls:    urls,
-		cli:     cli,
-		limiter: ratelimit.DefaultRegistry.Get(urn),
+		urls:           urls,
+		uncachedClient: uncached,
+		cachedClient:   cached,
+		limiter:        ratelimit.DefaultRegistry.Get(urn),
 	}
 }
 
 // Project returns the Files of the simple-API /<project>/ endpoint.
 func (c *Client) Project(ctx context.Context, project reposource.PackageName) ([]File, error) {
-	data, err := c.get(ctx, reposource.PackageName(normalize(string(project))))
-	if err != nil {
-		return nil, errors.Wrap(err, "PyPI")
-	}
-	defer data.Close()
+	project = reposource.PackageName(normalize(string(project)))
 
-	return parse(data)
+	var respBody io.ReadCloser
+	for _, baseURL := range c.urls {
+		if err := c.limiter.Wait(ctx); err != nil {
+			return nil, err
+		}
+
+		reqURL, err := url.Parse(baseURL)
+		if err != nil {
+			return nil, errors.Errorf("invalid proxy URL %q", baseURL)
+		}
+
+		// Go-http-client User-Agents are currently blocked from accessing /simple
+		// resources without a trailing slash. This causes a redirect to the
+		// canonicalized URL with the trailing slash. PyPI maintainers have been
+		// struggling to handle a piece of software with this User-Agent overloading our
+		// backends with requests resulting in redirects.
+		reqURL.Path = path.Join(reqURL.Path, string(project)) + "/"
+
+		req, err := http.NewRequestWithContext(ctx, "GET", reqURL.String(), nil)
+		if err != nil {
+			return nil, err
+		}
+
+		// TODO: wont discover new versions for up to week...
+		respBody, err = c.do(c.cachedClient, req)
+		if err == nil || !errcode.IsNotFound(err) {
+			defer respBody.Close()
+			break
+		} else if respBody != nil {
+			respBody.Close()
+		}
+	}
+
+	return parse(respBody)
 }
 
 // Version returns the File of a project at a specific version from
@@ -275,7 +308,7 @@ func (c *Client) Download(ctx context.Context, url string) (io.ReadCloser, error
 		return nil, err
 	}
 
-	b, err := c.do(req)
+	b, err := c.do(c.uncachedClient, req)
 	if err != nil {
 		return nil, errors.Wrap(err, "PyPI")
 	}
@@ -401,45 +434,8 @@ func ToWheel(f File) (*Wheel, error) {
 	}
 }
 
-func (c *Client) get(ctx context.Context, project reposource.PackageName) (respBody io.ReadCloser, err error) {
-	var (
-		reqURL *url.URL
-		req    *http.Request
-	)
-
-	for _, baseURL := range c.urls {
-		if err = c.limiter.Wait(ctx); err != nil {
-			return nil, err
-		}
-
-		reqURL, err = url.Parse(baseURL)
-		if err != nil {
-			return nil, errors.Errorf("invalid proxy URL %q", baseURL)
-		}
-
-		// Go-http-client User-Agents are currently blocked from accessing /simple
-		// resources without a trailing slash. This causes a redirect to the
-		// canonicalized URL with the trailing slash. PyPI maintainers have been
-		// struggling to handle a piece of software with this User-Agent overloading our
-		// backends with requests resulting in redirects.
-		reqURL.Path = path.Join(reqURL.Path, string(project)) + "/"
-
-		req, err = http.NewRequestWithContext(ctx, "GET", reqURL.String(), nil)
-		if err != nil {
-			return nil, err
-		}
-
-		respBody, err = c.do(req)
-		if err == nil || !errcode.IsNotFound(err) {
-			break
-		}
-	}
-
-	return respBody, err
-}
-
-func (c *Client) do(req *http.Request) (io.ReadCloser, error) {
-	resp, err := c.cli.Do(req)
+func (c *Client) do(doer httpcli.Doer, req *http.Request) (io.ReadCloser, error) {
+	resp, err := doer.Do(req)
 	if err != nil {
 		return nil, err
 	}

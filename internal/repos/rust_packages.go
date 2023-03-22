@@ -25,16 +25,11 @@ func NewRustPackagesSource(ctx context.Context, svc *types.ExternalService, cf *
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 
-	cli, err := cf.Doer(httpcli.NewCachedTransportOpt(httpcli.NoopCache{}, false))
-	if err != nil {
-		return nil, err
-	}
-
 	return &PackagesSource{
 		svc:        svc,
 		configDeps: c.Dependencies,
 		scheme:     dependencies.RustPackagesScheme,
-		src:        &rustPackagesSource{client: crates.NewClient(svc.URN(), cli)},
+		src:        &rustPackagesSource{client: crates.NewClient(svc.URN(), cf)},
 	}, nil
 }
 

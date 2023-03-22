@@ -36,11 +36,6 @@ type Client interface {
 	FetchTarball(ctx context.Context, dep *reposource.NpmVersionedPackage) (io.ReadCloser, error)
 }
 
-func init() {
-	// The HTTP client will transparently handle caching,
-	// so we don't need to set up any on-disk caching here.
-}
-
 func FetchSources(ctx context.Context, client Client, dependency *reposource.NpmVersionedPackage) (_ io.ReadCloser, err error) {
 	operations := getOperations()
 
@@ -53,20 +48,24 @@ func FetchSources(ctx context.Context, client Client, dependency *reposource.Npm
 }
 
 type HTTPClient struct {
-	registryURL string
-	doer        httpcli.Doer
-	limiter     *ratelimit.InstrumentedLimiter
-	credentials string
+	registryURL    string
+	uncachedClient httpcli.Doer
+	cachedClient   httpcli.Doer
+	limiter        *ratelimit.InstrumentedLimiter
+	credentials    string
 }
 
 var _ Client = &HTTPClient{}
 
-func NewHTTPClient(urn string, registryURL string, credentials string, doer httpcli.Doer) *HTTPClient {
+func NewHTTPClient(urn string, registryURL string, credentials string, httpfactory *httpcli.Factory) *HTTPClient {
+	uncached, _ := httpfactory.Doer(httpcli.NewCachedTransportOpt(httpcli.NoopCache{}, false))
+	cached, _ := httpfactory.Doer()
 	return &HTTPClient{
-		registryURL: registryURL,
-		doer:        doer,
-		limiter:     ratelimit.DefaultRegistry.Get(urn),
-		credentials: credentials,
+		registryURL:    registryURL,
+		uncachedClient: uncached,
+		cachedClient:   cached,
+		limiter:        ratelimit.DefaultRegistry.Get(urn),
+		credentials:    credentials,
 	}
 }
 
@@ -77,7 +76,7 @@ type PackageInfo struct {
 
 func (client *HTTPClient) GetPackageInfo(ctx context.Context, pkg *reposource.NpmPackageName) (info *PackageInfo, err error) {
 	url := fmt.Sprintf("%s/%s", client.registryURL, pkg.PackageSyntax())
-	body, err := client.makeGetRequest(ctx, url)
+	body, err := client.makeGetRequest(ctx, client.uncachedClient, url)
 	if err != nil {
 		return nil, err
 	}
@@ -111,19 +110,6 @@ func (i illFormedJSONError) Error() string {
 	return fmt.Sprintf("unexpected JSON output from npm request: url=%s", i.url)
 }
 
-func (client *HTTPClient) do(ctx context.Context, req *http.Request) (*http.Response, error) {
-	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), //nolint:staticcheck // Drop once we get rid of OpenTracing
-		req.WithContext(ctx),
-		nethttp.OperationName("npm"),
-		nethttp.ClientTrace(false))
-	defer ht.Finish()
-
-	if err := client.limiter.Wait(ctx); err != nil {
-		return nil, err
-	}
-	return client.doer.Do(req)
-}
-
 type npmError struct {
 	statusCode int
 	err        error
@@ -140,7 +126,7 @@ func (n npmError) NotFound() bool {
 	return n.statusCode == http.StatusNotFound
 }
 
-func (client *HTTPClient) makeGetRequest(ctx context.Context, url string) (io.ReadCloser, error) {
+func (client *HTTPClient) makeGetRequest(ctx context.Context, doer httpcli.Doer, url string) (io.ReadCloser, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
@@ -150,7 +136,20 @@ func (client *HTTPClient) makeGetRequest(ctx context.Context, url string) (io.Re
 		req.Header.Set("Authorization", "Bearer "+client.credentials)
 	}
 
-	resp, err := client.do(ctx, req)
+	do := func() (*http.Response, error) {
+		req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), //nolint:staticcheck // Drop once we get rid of OpenTracing
+			req.WithContext(ctx),
+			nethttp.OperationName("npm"),
+			nethttp.ClientTrace(false))
+		defer ht.Finish()
+
+		if err := client.limiter.Wait(ctx); err != nil {
+			return nil, err
+		}
+		return doer.Do(req)
+	}
+
+	resp, err := do()
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +170,7 @@ func (client *HTTPClient) makeGetRequest(ctx context.Context, url string) (io.Re
 func (client *HTTPClient) GetDependencyInfo(ctx context.Context, dep *reposource.NpmVersionedPackage) (*DependencyInfo, error) {
 	// https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md#getVersionedPackage
 	url := fmt.Sprintf("%s/%s/%s", client.registryURL, dep.PackageSyntax(), dep.Version)
-	body, err := client.makeGetRequest(ctx, url)
+	body, err := client.makeGetRequest(ctx, client.cachedClient, url)
 	if err != nil {
 		return nil, err
 	}
@@ -190,5 +189,6 @@ func (client *HTTPClient) FetchTarball(ctx context.Context, dep *reposource.NpmV
 		return nil, errors.New("empty TarballURL")
 	}
 
-	return client.makeGetRequest(ctx, dep.TarballURL)
+	// don't want to store these in redis
+	return client.makeGetRequest(ctx, client.uncachedClient, dep.TarballURL)
 }
