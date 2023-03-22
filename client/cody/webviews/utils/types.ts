@@ -9,4 +9,13 @@ export interface ChatMessage extends Message {
     contextFiles?: string[]
 }
 
-export type View = 'chat' | 'recipes' | 'about' | 'login' | 'settings' | 'debug'
+export interface UserLocalHistory {
+    chat: ChatHistory
+    input: string[]
+}
+
+export interface ChatHistory {
+    [chatID: string]: ChatMessage[]
+}
+
+export type View = 'chat' | 'recipes' | 'about' | 'login' | 'settings' | 'debug' | 'history'

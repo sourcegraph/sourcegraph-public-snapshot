@@ -56,7 +56,7 @@
 }
 
 .bubble-content pre,
-.bubble-content p>code {
+.bubble-content p > code {
     /* Our syntax highlighter emits colors intended for dark backgrounds only. */
     background-color: var(--code-background);
 }
@@ -175,7 +175,7 @@
     margin-right: 0.5em;
 }
 
-.context-files-toggle-icon>i {
+.context-files-toggle-icon > i {
     font-size: cal(var(--vscode-editor-font-size) * 0.5) !important;
 }
 

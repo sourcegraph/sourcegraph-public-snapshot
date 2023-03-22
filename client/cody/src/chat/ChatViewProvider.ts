@@ -1,6 +1,9 @@
 import * as vscode from 'vscode'
 
+import { version as packageVersion } from '../../package.json'
+import { ChatHistory } from '../../webviews/utils/types'
 import { CodebaseContext } from '../codebase-context'
+import { LocalStorage } from '../command/LocalStorageProvider'
 import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../command/secret-storage'
 import { updateConfiguration } from '../configuration'
 import { Editor } from '../editor'
@@ -26,8 +29,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     private cancelCompletionCallback: (() => void) | null = null
     private webview?: vscode.Webview
 
-    private tosVersion = 0
+    private tosVersion = packageVersion
     private editor: Editor
+
+    private currentChatID: string = ''
+    private inputHistory: string[] = []
+    private chatHistory: ChatHistory = {}
 
     constructor(
         private extensionPath: string,
@@ -38,12 +45,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         private secretStorage: SecretStorage,
         private contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
         private rgPath: string,
-        private mode: 'development' | 'production'
+        private mode: 'development' | 'production',
+        private localStorage: LocalStorage
     ) {
         if (TestSupport.instance) {
             TestSupport.instance.chatViewProvider.set(this)
         }
         this.editor = new VSCodeEditor()
+        this.createNewChatID()
     }
 
     static async create(
@@ -52,7 +61,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         serverEndpoint: string,
         contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
         debug: boolean,
-        secretStorage: SecretStorage
+        secretStorage: SecretStorage,
+        localStorage: LocalStorage
     ): Promise<ChatViewProvider> {
         const mode = debug ? 'development' : 'production'
         const rgPath = await getRgPath(extensionPath)
@@ -75,7 +85,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             secretStorage,
             contextType,
             rgPath,
-            mode
+            mode,
+            localStorage
         )
     }
 
@@ -84,9 +95,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             case 'initialized':
                 this.sendToken()
                 this.sendTranscript()
+                this.sendChatHistory()
                 break
             case 'reset':
                 this.onResetChat()
+                this.sendChatHistory()
                 break
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text)
@@ -104,6 +117,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             case 'removeToken':
                 await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
                 break
+            case 'removeHistory':
+                await this.localStorage.removeChatHistory()
+                break
             case 'links':
                 await vscode.env.openExternal(vscode.Uri.parse(message.value))
                 break
@@ -112,9 +128,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         }
     }
 
-    private async acceptTOS(version: number): Promise<void> {
+    private async acceptTOS(version: string): Promise<void> {
         this.tosVersion = version
         await vscode.commands.executeCommand('cody.accept-tos', version)
+    }
+
+    private createNewChatID(): void {
+        this.currentChatID = new Date(Date.now()).toUTCString()
     }
 
     private async sendPrompt(promptMessages: Message[], responsePrefix = ''): Promise<void> {
@@ -135,6 +155,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     }
 
     private onResetChat(): void {
+        this.createNewChatID()
         this.cancelCompletion()
         this.isMessageInProgress = false
         this.transcript.reset()
@@ -142,6 +163,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     }
 
     private async onHumanMessageSubmitted(text: string): Promise<void> {
+        this.inputHistory.push(text)
         this.executeRecipe('chat-question', text)
     }
 
@@ -183,7 +205,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             reformattedMessage = reformattedMessage.slice(0, stopSequenceMatch.index)
         }
         // TODO: Detect if bot sent unformatted code without a markdown block.
-        return fixOpenMarkdownCodeBlock(reformattedMessage)
+        return this.fixOpenMarkdownCodeBlock(reformattedMessage)
     }
 
     private onBotMessageChange(text: string): void {
@@ -195,13 +217,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         this.isMessageInProgress = false
         this.cancelCompletionCallback = null
         this.sendTranscript()
+        this.saveChatHistory()
     }
 
     private async showTab(tab: string): Promise<void> {
         await vscode.commands.executeCommand('cody.chat.focus')
         await this.webview?.postMessage({ type: 'showTab', tab })
     }
-
+    /**
+     * Sends chat transcript to webview
+     */
     private sendTranscript(): void {
         this.webview?.postMessage({
             type: 'transcript',
@@ -209,7 +234,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             isMessageInProgress: this.isMessageInProgress,
         })
     }
-
+    /**
+     * Sends access token to webview
+     */
     private async sendToken(): Promise<void> {
         this.webview?.postMessage({
             type: 'token',
@@ -217,7 +244,36 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             mode: this.mode,
         })
     }
-
+    /**
+     * Save chat history
+     */
+    private async saveChatHistory(): Promise<void> {
+        if (this.transcript) {
+            this.chatHistory[this.currentChatID] = this.transcript.toChat()
+            const userHistory = {
+                chat: this.chatHistory,
+                input: this.inputHistory,
+            }
+            await this.localStorage.setChatHistory(userHistory)
+        }
+    }
+    /**
+     * Sends chat history to webview
+     */
+    private sendChatHistory(): void {
+        const localHistory = this.localStorage.getChatHistory()
+        if (localHistory) {
+            this.chatHistory = localHistory.chat
+            this.inputHistory = localHistory.input
+        }
+        this.webview?.postMessage({
+            type: 'history',
+            messages: localHistory,
+        })
+    }
+    /**
+     * create webview resources
+     */
     public async resolveWebviewView(
         webviewView: vscode.WebviewView,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -233,16 +289,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             enableScripts: true,
             localResourceRoots: [webviewPath],
         }
-
-        // await vscode.commands.executeCommand('cody.get-accepted-tos-version')
-
-        //   Create Webview
         const root = vscode.Uri.joinPath(webviewPath, 'index.html')
         const bytes = await vscode.workspace.fs.readFile(root)
         const decoded = new TextDecoder('utf-8').decode(bytes)
         const resources = webviewView.webview.asWebviewUri(webviewPath)
-
-        const nonce = getNonce()
+        const nonce = this.getNonce()
 
         webviewView.webview.html = decoded
             .replaceAll('./', `${resources.toString()}/`)
@@ -282,21 +333,21 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             }
         }
     }
-}
 
-function fixOpenMarkdownCodeBlock(text: string): string {
-    const occurances = text.split('```').length - 1
-    if (occurances % 2 === 1) {
-        return text + '\n```'
+    private getNonce(): string {
+        let text = ''
+        const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+        for (let i = 0; i < 32; i++) {
+            text += possible.charAt(Math.floor(Math.random() * possible.length))
+        }
+        return text
     }
-    return text
-}
 
-function getNonce(): string {
-    let text = ''
-    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    for (let i = 0; i < 32; i++) {
-        text += possible.charAt(Math.floor(Math.random() * possible.length))
+    private fixOpenMarkdownCodeBlock(text: string): string {
+        const occurances = text.split('```').length - 1
+        if (occurances % 2 === 1) {
+            return text + '\n```'
+        }
+        return text
     }
-    return text
 }

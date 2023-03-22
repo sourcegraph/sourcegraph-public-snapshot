@@ -16,6 +16,9 @@ export const Settings: React.FunctionComponent<React.PropsWithChildren<SettingsP
                 <VSCodeButton className="logout-button" type="button" onClick={() => setView('about')}>
                     About
                 </VSCodeButton>
+                <VSCodeButton className="logout-button" type="button" onClick={() => setView('history')}>
+                    History
+                </VSCodeButton>
                 <VSCodeButton className="logout-button" type="button" onClick={onLogout}>
                     Logout
                 </VSCodeButton>

@@ -12,14 +12,22 @@ import './Chat.css'
 interface ChatboxProps {
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
+    formInput: string
+    setFormInput: (input: string) => void
+    inputHistory: string[]
+    setInputHistory: (history: string[]) => void
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
     transcript,
+    formInput,
+    setFormInput,
+    inputHistory,
+    setInputHistory,
 }) => {
     const [inputRows, setInputRows] = useState(5)
-    const [formInput, setFormInput] = useState('')
+    const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
     const chatboxRef = useRef<HTMLInputElement>(null)
 
     const inputHandler = useCallback(
@@ -31,23 +39,41 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 setInputRows(5)
             }
             setFormInput(inputValue)
+            if (inputValue !== inputHistory[historyIndex]) {
+                setHistoryIndex(inputHistory.length)
+            }
         },
-        [setFormInput]
+        [setFormInput, historyIndex, setHistoryIndex]
     )
 
-    const onChatKeyDown = async (event: React.KeyboardEvent<HTMLDivElement>): Promise<void> => {
-        if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault()
-            event.stopPropagation()
-            await onChatSubmit()
-        }
-    }
+    const onChatKeyDown = useCallback(
+        async (event: React.KeyboardEvent<HTMLDivElement>): Promise<void> => {
+            // Submit input on Enter press (without shift)
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault()
+                event.stopPropagation()
+                await onChatSubmit()
+            }
+            // Loop through input history on up arrow press
+            if (event.key === 'ArrowUp' && inputHistory.length) {
+                if (formInput === inputHistory[historyIndex] || !formInput) {
+                    const newIndex = historyIndex - 1 < 0 ? inputHistory.length - 1 : historyIndex - 1
+                    setHistoryIndex(newIndex)
+                    setFormInput(inputHistory[newIndex])
+                    console.log(newIndex, inputHistory[newIndex])
+                }
+            }
+        },
+        [setHistoryIndex, historyIndex, formInput, inputHistory, setFormInput]
+    )
 
     const onChatSubmit = useCallback(async () => {
         vscodeAPI.postMessage({ command: 'submit', text: formInput })
+        setHistoryIndex(inputHistory.length + 1)
+        setInputHistory([...inputHistory, formInput])
         setInputRows(5)
         setFormInput('')
-    }, [formInput, setFormInput])
+    }, [formInput, setFormInput, inputHistory, setHistoryIndex, setInputHistory])
 
     const bubbleClassName = (speaker: string): string => (speaker === 'human' ? 'human' : 'bot')
 
@@ -138,7 +164,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     )
 }
 
-const ContextFiles: React.FunctionComponent<{ contextFiles: string[] }> = ({ contextFiles }) => {
+export const ContextFiles: React.FunctionComponent<{ contextFiles: string[] }> = ({ contextFiles }) => {
     const [isExpanded, setIsExpanded] = useState(false)
 
     if (contextFiles.length === 1) {

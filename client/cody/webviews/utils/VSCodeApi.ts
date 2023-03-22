@@ -33,6 +33,10 @@ interface RemoveTokenWebviewMessage {
     command: 'removeToken'
 }
 
+interface RemoveChatHistoryWebviewMessage {
+    command: 'removeHistory'
+}
+
 interface SettingsWebviewMessage {
     command: 'settings'
     serverEndpoint: string
@@ -56,3 +60,4 @@ type WebviewMessage =
     | SettingsWebviewMessage
     | SubmitWebviewMessage
     | ExecuteRecipeWebviewMessage
+    | RemoveChatHistoryWebviewMessage
