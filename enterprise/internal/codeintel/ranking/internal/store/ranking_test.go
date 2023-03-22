@@ -590,12 +590,12 @@ func TestVacuumStaleGraphs(t *testing.T) {
 	assertCounts(3 * 30)
 
 	// remove records associated with other ranking keys
-	if _, err := store.VacuumStaleGraphs(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 456)); err != nil {
+	if _, err := store.VacuumStaleGraphs(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 456), 50); err != nil {
 		t.Fatalf("unexpected error vacuuming stale graphs: %s", err)
 	}
 
-	// only the non-stale derivative graph key remains
-	assertCounts(1 * 30)
+	// only 10 records of stale derivative graph key remain (batch size of 50, but 2*30 could be deleted)
+	assertCounts(1*30 + 10)
 }
 
 func TestVacuumStaleRanks(t *testing.T) {

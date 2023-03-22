@@ -760,11 +760,11 @@ SELECT
 	(SELECT COUNT(*) FROM deleted_initial_path_ranks)
 `
 
-func (s *store) VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string) (_ int, err error) {
+func (s *store) VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string, batchSize int) (_ int, err error) {
 	ctx, _, endObservation := s.operations.vacuumStaleGraphs.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
 	defer endObservation(1, observation.Args{})
 
-	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumStaleGraphsQuery, derivativeGraphKey)))
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumStaleGraphsQuery, derivativeGraphKey, batchSize)))
 	return count, err
 }
 
@@ -775,7 +775,8 @@ locked_path_counts_inputs AS (
 	FROM codeintel_ranking_path_counts_inputs
 	WHERE graph_key != %s
 	ORDER BY id
-	FOR UPDATE
+	FOR UPDATE SKIP LOCKED
+	LIMIT %s
 ),
 deleted_path_counts_inputs AS (
 	DELETE FROM codeintel_ranking_path_counts_inputs
