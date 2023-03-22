@@ -75,10 +75,15 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
     const steps = useMemo(() => (isSourcegraphApp ? SOURCEGRAPH_APP_STEPS : CORE_STEPS), [isSourcegraphApp])
 
     const handleStepChange = useCallback(
-        (step: StepConfiguration): void => {
-            setStepId(step.id)
+        (nextStep: StepConfiguration): void => {
+            const currentStepIndex = steps.findIndex(step => step.id === nextStep.id)
+            const isLastStep = currentStepIndex === steps.length - 1
+
+            // Reset the last visited step if you're on the last step in the
+            // setup pipeline
+            setStepId(!isLastStep ? nextStep.id : '')
         },
-        [setStepId]
+        [setStepId, steps]
     )
 
     const handleSkip = useCallback(() => {
