@@ -13,10 +13,6 @@ interface LinkifiedProps {
 
 /**
  * Takes a given input string and transforms any matching URLs into <a> tags.
- *
- * Note: Matching URLs within a random string is difficult, as a URL can contain almost any character.
- * For example, it is valid to end a URL with parentheses or other punctuation, but in most cases this will not be desired.
- * We use linkifyjs to capture these edge cases and focus on the most common URLs.
  */
 export const Linkified = forwardRef((props, ref) => {
     const { input, externalURLs, as: Component = React.Fragment, ...otherProps } = props
