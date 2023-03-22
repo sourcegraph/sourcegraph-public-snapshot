@@ -32,11 +32,10 @@ bgw72=$(bc <<<"${_BACKGROUND_IMAGE_DPI_W} != 72.0" 2>/dev/null)
 }
 rm -rf "${STAGING_DIR}" "${DMG_TMP}" "${DMG_FINAL}"
 mkdir -p "${STAGING_DIR}"
-cp -R "${apppath}" "${STAGING_DIR}"
 
 sync
 
-szh=$(du -sh "${STAGING_DIR}" | awk '{print $1}')
+szh=$(du -sh "${apppath}" | awk '{print $1}')
 size_units="${szh: -1:1}"
 size="$(bc <<<"${szh%?} + 10")" || {
   echo "Error: Cannot compute size of staging dir"
@@ -70,8 +69,12 @@ trap "hdiutil detach \"${DEVICE}\";[ -d \"${tempdir}\" ] && rm -rf \"${tempdir}\
 sync
 
 sleep 2
+
+# copy the contents after creating the volume to avoid "permission denied" errors
+cp -R "${apppath}" "/Volumes/${VOL_NAME}"
+
 echo "Add link to /Applications"
-ln -s /Applications /Volumes/"${VOL_NAME}"/Applications || {
+ln -s /Applications "/Volumes/${VOL_NAME}/Applications" || {
   echo "unable to add link to /Applications" 1>&2
   exit 1
 }
