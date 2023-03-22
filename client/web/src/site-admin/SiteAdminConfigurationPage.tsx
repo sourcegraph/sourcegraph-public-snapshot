@@ -1,13 +1,16 @@
 import * as React from 'react'
-import { FC } from 'react'
+import { FC, useState } from 'react'
 
 import { ApolloClient, useApolloClient } from '@apollo/client'
+import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 import * as jsonc from 'jsonc-parser'
 import { Subject, Subscription } from 'rxjs'
 import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { logger } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
@@ -21,11 +24,24 @@ import {
     PageHeader,
     Container,
     ErrorAlert,
+    PageSwitcher,
+    Collapse,
+    CollapseHeader,
+    CollapsePanel,
+    Icon,
+    H3,
 } from '@sourcegraph/wildcard'
 
 import siteSchemaJSON from '../../../../schema/site.schema.json'
+import { DiffStatStack } from '../components/diff/DiffStat'
+import { usePageSwitcherPagination } from '../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { PageTitle } from '../components/PageTitle'
-import { SiteResult } from '../graphql-operations'
+import {
+    SiteConfigurationChangeNode,
+    SiteConfigurationHistoryResult,
+    SiteConfigurationHistoryVariables,
+    SiteResult,
+} from '../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
@@ -446,6 +462,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
                         </div>
                     )}
                 </Container>
+                <SiteConfigurationChangeListPage />
             </div>
         )
     }
@@ -526,3 +543,142 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
         this.siteReloads.next()
     }
 }
+
+interface SiteConfigurationChangeProps {}
+
+const SiteConfigurationChangeListPage: React.FunctionComponent<SiteConfigurationChangeProps> = () => {
+    const { connection, loading, error, refetch, ...paginationProps } = usePageSwitcherPagination<
+        SiteConfigurationHistoryResult,
+        SiteConfigurationHistoryVariables,
+        SiteConfigurationChangeNode
+    >({
+        query: SITE_CONFIGURATION_CHANGE_CONNECTION_QUERY,
+        variables: {},
+        getConnection: ({ data }) => data?.site?.configuration?.history || undefined,
+    })
+
+    return (
+        <div>
+            <Container className="mb-3">
+                <H3>History</H3>
+                <div className="mt-4">
+                    {(connection?.nodes || [])
+                        .filter(node => node.diff)
+                        .map(node => (
+                            <>
+                                <SiteConfigurationHistoryItem node={node} /> <hr className="mb-3 mt-3" />{' '}
+                            </>
+                        ))}
+                </div>
+                <PageSwitcher {...paginationProps} className="mt-4" totalCount={connection?.totalCount || 0} />
+            </Container>
+        </div>
+    )
+}
+
+interface SiteConfigurationHistoryItemProps {
+    node: SiteConfigurationChangeNode
+}
+
+const linesChanged = (diffString: string): [number, number] =>
+    diffString
+        .split('\n')
+        .slice(3)
+        .reduce(
+            (summary, line) => {
+                if (line.startsWith('-')) {
+                    summary[0]++
+                }
+                if (line.startsWith('+')) {
+                    summary[1]++
+                }
+                return summary
+            },
+            [0, 0]
+        )
+
+const SiteConfigurationHistoryItem: React.FunctionComponent<SiteConfigurationHistoryItemProps> = ({ node }) => {
+    const [open, setOpen] = useState<boolean>(false)
+
+    const icon = open ? mdiChevronUp : mdiChevronDown
+
+    if (node.reproducedDiff) {
+        const [removedLines, addedLines] = node.diff ? linesChanged(node.diff) : [0, 0]
+
+        return (
+            <Collapse key={node.id} isOpen={open} onOpenChange={setOpen}>
+                <CollapseHeader
+                    as={Button}
+                    aria-expanded={open}
+                    type="button"
+                    className="d-flex p-0 justify-content-start w-100"
+                >
+                    <Icon aria-hidden={true} svgPath={icon} />
+                    <span>
+                        <Timestamp date={node.createdAt} />
+                    </span>{' '}
+                    {node.author && (
+                        <span className="ml-1">
+                            by{' '}
+                            <Link to={`/users/${node.author.username}`} className="text-truncate">
+                                {node.author.displayName}
+                            </Link>
+                        </span>
+                    )}
+                    {node.diff && (
+                        <span className="ml-auto">
+                            <DiffStatStack className="mr-1" added={addedLines} deleted={removedLines} />
+                        </span>
+                    )}
+                </CollapseHeader>
+                <CollapsePanel>
+                    <Code className={classNames('p-2', 'mt-2', styles.diffblock)}>{node.diff}</Code>
+                </CollapsePanel>
+            </Collapse>
+        )
+    }
+    return (
+        <CollapseHeader className="d-block mb-3">
+            <>
+                {node.author} {node.createdAt}
+            </>
+        </CollapseHeader>
+    )
+}
+
+const SITE_CONFIGURATION_CHANGE_CONNECTION_QUERY = gql`
+    query SiteConfigurationHistory($first: Int, $last: Int, $after: String, $before: String) {
+        site {
+            __typename
+            configuration {
+                history(first: $first, last: $last, after: $after, before: $before) {
+                    __typename
+                    totalCount
+                    nodes {
+                        __typename
+                        ...SiteConfigurationChangeNode
+                    }
+                    pageInfo {
+                        hasNextPage
+                        hasPreviousPage
+                        endCursor
+                        startCursor
+                    }
+                }
+            }
+        }
+    }
+
+    fragment SiteConfigurationChangeNode on SiteConfigurationChange {
+        id
+        author {
+            id
+            username
+            displayName
+        }
+        reproducedDiff
+        diff
+        createdAt
+        updatedAt
+    }
+`
