@@ -257,6 +257,7 @@ npm_package(
 
 jest_test(
     name = "test",
+    timeout = "moderate",
     data = [
         ":branded_tests",
     ],
