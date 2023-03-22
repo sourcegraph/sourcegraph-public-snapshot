@@ -3,7 +3,7 @@
 # This script builds the migrator docker image.
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
-set -eu
+set -ex
 
 OUTPUT=$(mktemp -d -t sgdockerbuild_XXXXXXX)
 cleanup() {
