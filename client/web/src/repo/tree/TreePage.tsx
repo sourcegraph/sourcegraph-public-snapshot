@@ -5,9 +5,12 @@ import {
     mdiBrain,
     mdiCog,
     mdiFolder,
-    mdiHistory, mdiPackageVariantClosed,
-    mdiSourceBranch, mdiSourceFork, mdiSourceRepository,
-    mdiTag
+    mdiHistory,
+    mdiPackageVariantClosed,
+    mdiSourceBranch,
+    mdiSourceFork,
+    mdiSourceRepository,
+    mdiTag,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { Navigate } from 'react-router-dom'
@@ -36,7 +39,7 @@ import {
     PageHeader,
     Text,
     Tooltip,
-    useObservable
+    useObservable,
 } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
@@ -217,10 +220,8 @@ export const TreePage: FC<Props> = ({
             <div className={styles.header}>
                 <PageHeader className="mb-3 test-tree-page-title">
                     <PageHeader.Heading as="h2" styleAs="h1">
-                        <Icon svgPath={getIcon()} className="mr-2"/>
-                        <span>
-                            {displayRepoName(repo?.name || '')}
-                        </span>
+                        <Icon svgPath={getIcon()} className="mr-2" />
+                        <span>{displayRepoName(repo?.name || '')}</span>
                         {repo?.isFork && (
                             <Badge variant="outlineSecondary" className="mx-2 mt-2" data-testid="repo-fork-badge">
                                 Fork
