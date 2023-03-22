@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import { logger } from '@sourcegraph/common'
 import { SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 
+import { getLinksFromString } from '../../linkifiy/get-links'
 import { BlobInfo } from '../CodeMirrorBlob'
 
 import { syntaxHighlight } from './highlight'
@@ -12,9 +13,6 @@ import { syntaxHighlight } from './highlight'
 import styles from './links.module.scss'
 
 const SUPPORTED_KINDS = new Set<SyntaxKind>([SyntaxKind.Comment, SyntaxKind.StringLiteral])
-
-const LINK_REGEX =
-    /(?:(?:https?|ftp|file):\/\/|www\.|ftp\.)(?:\([\w!#$%&+,./:=?@|~-]*\)|[\w!#$%&+,./:=?@|~-])*(?:\([\w!#$%&+,./:=?@|~-]*\)|[\w#$%&+/=@|~])/gim
 
 /**
  * Iterates through `SUPPORTED_KINDS` highlighting occurrences and match any URLs within.
@@ -43,6 +41,7 @@ class LinkBuilder implements PluginValue {
             const toLine = view.state.doc.lineAt(to)
 
             const { occurrences, lineIndex } = view.state.facet(syntaxHighlight)
+            const blobInfo = view.state.facet(buildLinks)
 
             // Find index of first relevant token
             let startIndex: number | undefined
@@ -79,25 +78,22 @@ class LinkBuilder implements PluginValue {
                     }
 
                     const line = textDocument.line(occurrenceStartLine)
-                    const matches = line.text.matchAll(LINK_REGEX)
+                    const links = getLinksFromString({ input: line.text, externalURLs: blobInfo[0].externalURLs })
 
-                    for (const match of matches) {
-                        // https://github.com/microsoft/TypeScript/issues/36788
-                        if (match.index) {
-                            const from = Math.min(line.from + match.index, line.to)
-                            const to = Math.min(line.from + match.index + match[0].length, line.to)
+                    for (const link of links) {
+                        const from = Math.min(line.from + link.start, line.to)
+                        const to = Math.min(line.from + link.end, line.to)
 
-                            const decoration = Decoration.mark({
-                                tagName: 'a',
-                                class: classNames(styles.link, `hl-typed-${SyntaxKind[occurrence.kind]}`),
-                                attributes: {
-                                    href: match[0],
-                                    rel: 'noreferrer noopener',
-                                },
-                            })
+                        const decoration = Decoration.mark({
+                            tagName: 'a',
+                            class: classNames(styles.link, `hl-typed-${SyntaxKind[occurrence.kind]}`),
+                            attributes: {
+                                href: link.href,
+                                rel: 'noreferrer noopener',
+                            },
+                        })
 
-                            builder.add(from, to, decoration)
-                        }
+                        builder.add(from, to, decoration)
                     }
                 }
             }
