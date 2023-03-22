@@ -1,12 +1,23 @@
 use std::{fs, path::Path};
 
+use clap::Parser;
 use scip::{types::Document, write_message_to_file};
 use scip_syntax::{languages::LocalConfiguration, locals::parse_tree};
 use scip_treesitter_languages::parsers::BundledParser;
 use walkdir::WalkDir;
 
+// TODO: Could probably add some filters here for managing/enabling/disabling
+// certain filetypes.
+
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Arguments {
+    /// Root directory to run local navigation over
+    root_dir: String,
+}
+
 fn parse_files(config: &mut LocalConfiguration, root: &Path, dir: &Path) -> Vec<Document> {
-    // TODO: Filtr
+    // TODO: Filter
 
     let extension = "go";
 
@@ -61,7 +72,8 @@ fn parse_files(config: &mut LocalConfiguration, root: &Path, dir: &Path) -> Vec<
 fn main() {
     println!("scip-local-nav");
 
-    let directory = Path::new("/home/tjdevries/sourcegraph/sourcegraph.git/main/");
+    let args = Arguments::parse();
+    let directory = Path::new(&args.root_dir);
 
     let mut index = scip::types::Index {
         metadata: Some(scip::types::Metadata {

@@ -34,9 +34,10 @@ By default, requests to the npm registry will be rate-limited based on a default
 ```json
 "rateLimit": {
   "enabled": true,
-  "requestsPerHour": 3000.0
+  "requestsPerHour": 3000
 }
 ```
+
 where the `requestsPerHour` field is set based on your requirements.
 
 **Not recommended**: Rate-limiting can be turned off entirely as well.

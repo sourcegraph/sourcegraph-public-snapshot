@@ -1,11 +1,28 @@
 use std::{fs, path::Path};
 
+use clap::Parser;
+
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Arguments {
+    /// Path to the input file
+    input: String,
+
+    /// Path to the output file
+    output: String,
+
+    /// Include locals, default false
+    #[arg(long)]
+    include_locals: bool,
+}
+
 fn main() -> Result<(), std::io::Error> {
     println!("scip-dump-response - write a dump for a filepath");
 
+    let args = Arguments::parse();
+
     // read file from args
-    let path = std::env::args().nth(1).expect("pass an input filepath");
-    let path = Path::new(&path);
+    let path = Path::new(&args.input);
     if !path.exists() {
         return Err(std::io::Error::new(
             std::io::ErrorKind::NotFound,
@@ -13,10 +30,9 @@ fn main() -> Result<(), std::io::Error> {
         ));
     }
 
-    let output = std::env::args().nth(2).expect("pass an output path");
-    let output = Path::new(&output);
-
+    let output = Path::new(&args.output);
     println!("  reading {:?}", path);
+
     let contents = fs::read_to_string(path)?;
     println!("  read {} bytes", contents.len());
 
@@ -37,8 +53,8 @@ fn main() -> Result<(), std::io::Error> {
 
     println!("  filetype: {:?}", filetype);
 
-    let document =
-        sg_syntax::treesitter_index(&filetype, &contents, false).expect("parse document");
+    let document = sg_syntax::treesitter_index(&filetype, &contents, args.include_locals)
+        .expect("parse document");
     println!("  parsed document");
 
     scip::write_message_to_file(output, document).expect("writes document");

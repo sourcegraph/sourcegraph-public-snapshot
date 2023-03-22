@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -20,17 +21,17 @@ import (
 type IdentityProvider string
 
 const (
-	SCIM_AZURE_AD IdentityProvider = "Azure AD"
-	SCIM_STANDARD IdentityProvider = "STANDARD"
+	IDPAzureAd  IdentityProvider = "Azure AD"
+	IDPStandard IdentityProvider = "standards-compatible"
 )
 
 func getConfiguredIdentityProvider() IdentityProvider {
 	value := conf.Get().ScimIdentityProvider
 	switch value {
-	case string(SCIM_AZURE_AD):
-		return SCIM_AZURE_AD
+	case string(IDPAzureAd):
+		return IDPAzureAd
 	default:
-		return SCIM_STANDARD
+		return IDPStandard
 	}
 }
 
@@ -69,18 +70,37 @@ func newHandler(ctx context.Context, db database.DB, observationCtx *observation
 		ResourceTypes: resourceTypes,
 	}
 
-	// wrap server into logger handler
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return scimAuthMiddleware(scimLicenseCheckMiddleware(scimRewriteMiddleware(server)))
+}
+
+func scimAuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		confToken := conf.Get().ScimAuthToken
+		gotToken := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
 		// 🚨 SECURITY: Use constant-time comparisons to avoid leaking the verification
 		// code via timing attack.
-		if subtle.ConstantTimeCompare([]byte(conf.Get().ScimAuthToken),
-			[]byte(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))) != 1 {
+		if len(confToken) == 0 || subtle.ConstantTimeCompare([]byte(confToken), []byte(gotToken)) != 1 {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
-		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/.api/scim")
-		server.ServeHTTP(w, r)
+		next.ServeHTTP(w, r)
 	})
+}
 
-	return handler
+func scimLicenseCheckMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		licenseError := licensing.Check(licensing.FeatureSCIM)
+		if licenseError != nil {
+			http.Error(w, licenseError.Error(), http.StatusForbidden)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func scimRewriteMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/.api/scim")
+		next.ServeHTTP(w, r)
+	})
 }

@@ -56,7 +56,6 @@ interface QuerySpec {
 interface RepositoryContributorNodeProps extends QuerySpec {
     node: RepositoryContributorNodeFields
     repoName: string
-    globbing: boolean
 }
 
 const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren<RepositoryContributorNodeProps>> = ({
@@ -65,12 +64,11 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
     revisionRange,
     after,
     path,
-    globbing,
 }) => {
     const commit = node.commits.nodes[0] as RepositoryContributorNodeFields['commits']['nodes'][number] | undefined
 
     const query: string = [
-        searchQueryForRepoRevision(repoName, globbing),
+        searchQueryForRepoRevision(repoName),
         'type:diff',
         `author:${quoteIfNeeded(node.person.email)}`,
         after ? `after:${quoteIfNeeded(after)}` : '',
@@ -193,9 +191,7 @@ const BATCH_COUNT = 20
 
 const equalOrEmpty = (a: string | undefined, b: string | undefined): boolean => a === b || (!a && !b)
 
-interface Props extends RepositoryStatsAreaPageProps {
-    globbing: boolean
-}
+interface Props extends RepositoryStatsAreaPageProps {}
 
 const contributorsPageInputIds: Record<string, string> = {
     REVISION_RANGE: 'repository-stats-contributors-page__revision-range',
@@ -215,7 +211,7 @@ const getUrlQuery = (spec: Partial<QuerySpec>): string => {
 }
 
 /** A page that shows a repository's contributors. */
-export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = ({ repo, globbing }) => {
+export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = ({ repo }) => {
     const location = useLocation()
     const navigate = useNavigate()
     const queryParameters = new URLSearchParams(location.search)
@@ -325,7 +321,6 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
                             key={`${node.person.displayName}:${node.count}`}
                             node={node}
                             repoName={repo.name}
-                            globbing={globbing}
                             {...spec}
                         />
                     ))}

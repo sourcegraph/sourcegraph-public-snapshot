@@ -1,6 +1,6 @@
 import { FC, useEffect, useState } from 'react'
 
-import { mdiCog } from '@mdi/js'
+import { mdiWebhook } from '@mdi/js'
 import { noop } from 'lodash'
 import { useNavigate } from 'react-router-dom'
 
@@ -41,20 +41,20 @@ export const CreatePage: FC<CreatePageProps> = ({ telemetryService }) => {
                 url,
             },
         },
-        onCompleted: () => navigate('/site-admin/outbound-webhooks'),
+        onCompleted: () => navigate('/site-admin/webhooks/outgoing'),
     })
 
     return (
         <div>
-            <PageTitle title="Add outgoing webhook" />
+            <PageTitle title="Create outgoing webhook" />
             <PageHeader
                 path={[
-                    { icon: mdiCog },
-                    { to: '/site-admin/outbound-webhooks', text: 'Outgoing webhooks' },
-                    { to: '/site-admin/outbound-webhooks/create', text: 'Add' },
+                    { icon: mdiWebhook },
+                    { to: '/site-admin/webhooks/outgoing', text: 'Outgoing webhooks' },
+                    { text: 'Create' },
                 ]}
                 headingElement="h2"
-                description="Add a new outgoing webhook"
+                description="Create a new outgoing webhook"
                 className="mb-3"
             />
 

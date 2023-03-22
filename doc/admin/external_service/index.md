@@ -170,11 +170,13 @@ We recognize there are other code hosts including CVS, SVN, and many more. Today
 - [Non-Git code hosts](non-git.md)
   - [Perforce](../repo/perforce.md)
   - [Plastic SCM](../repo/plasticscm.md)
-  - [JVM dependencies](jvm.md)
-  - [Go dependencies](go.md)
-  - [npm dependencies](npm.md)
-  - [Python dependencies](python.md)
-  - [Ruby dependencies](ruby.md)
+  - [Package repository hosts](package-repos.md)
+    - [JVM dependencies](jvm.md)
+    - [Go dependencies](go.md)
+    - [npm dependencies](npm.md)
+    - [Python dependencies](python.md)
+    - [Ruby dependencies](ruby.md)
+    - [Rust dependencies](rust.md)
 
 **Users** can configure the following public code hosts:
 

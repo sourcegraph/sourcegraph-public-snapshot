@@ -491,7 +491,7 @@ func getVCSSyncer(
 		if err != nil {
 			return nil, err
 		}
-		cli := npm.NewHTTPClient(urn, c.Registry, c.Credentials, httpcli.ExternalDoer)
+		cli := npm.NewHTTPClient(urn, c.Registry, c.Credentials, httpcli.ExternalClientFactory)
 		return server.NewNpmPackagesSyncer(c, depsSvc, cli), nil
 	case extsvc.TypeGoModules:
 		var c schema.GoModulesConnection
@@ -499,7 +499,7 @@ func getVCSSyncer(
 		if err != nil {
 			return nil, err
 		}
-		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalDoer)
+		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
 		return server.NewGoModulesSyncer(&c, depsSvc, cli), nil
 	case extsvc.TypePythonPackages:
 		var c schema.PythonPackagesConnection
@@ -507,7 +507,7 @@ func getVCSSyncer(
 		if err != nil {
 			return nil, err
 		}
-		cli := pypi.NewClient(urn, c.Urls, httpcli.ExternalDoer)
+		cli := pypi.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
 		return server.NewPythonPackagesSyncer(&c, depsSvc, cli, reposDir), nil
 	case extsvc.TypeRustPackages:
 		var c schema.RustPackagesConnection
@@ -515,7 +515,7 @@ func getVCSSyncer(
 		if err != nil {
 			return nil, err
 		}
-		cli := crates.NewClient(urn, httpcli.ExternalDoer)
+		cli := crates.NewClient(urn, httpcli.ExternalClientFactory)
 		return server.NewRustPackagesSyncer(&c, depsSvc, cli), nil
 	case extsvc.TypeRubyPackages:
 		var c schema.RubyPackagesConnection
@@ -523,7 +523,7 @@ func getVCSSyncer(
 		if err != nil {
 			return nil, err
 		}
-		cli := rubygems.NewClient(urn, c.Repository, httpcli.ExternalDoer)
+		cli := rubygems.NewClient(urn, c.Repository, httpcli.ExternalClientFactory)
 		return server.NewRubyPackagesSyncer(&c, depsSvc, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil

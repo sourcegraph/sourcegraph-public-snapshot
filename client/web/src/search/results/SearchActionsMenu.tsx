@@ -3,9 +3,10 @@ import React, { useCallback } from 'react'
 import { mdiArrowCollapseUp, mdiArrowExpandDown, mdiBookmarkOutline, mdiChevronDown, mdiDownload } from '@mdi/js'
 import classNames from 'classnames'
 
+import { logger } from '@sourcegraph/common'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
-import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Icon,
@@ -32,6 +33,7 @@ interface SearchActionsMenuProps
         Pick<PlatformContext, 'sourcegraphURL'>,
         TelemetryProps {
     query?: string
+    options: StreamSearchOptions
     results?: AggregateStreamingSearchResults
     authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
     createActions: CreateAction[]
@@ -45,6 +47,7 @@ interface SearchActionsMenuProps
 export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> = ({
     query = '',
     results,
+    options,
     sourcegraphURL,
     authenticatedUser,
     createActions,
@@ -60,8 +63,8 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
         if (query.includes('select:file.owners')) {
             telemetryService.log('searchResults:ownershipCsv:exported')
         }
-        return results ? downloadSearchResults(results, sourcegraphURL, query) : undefined
-    }, [results, sourcegraphURL, query, telemetryService])
+        downloadSearchResults(sourcegraphURL, query, options).catch(error => logger.error(error))
+    }, [query, options, sourcegraphURL, telemetryService])
 
     return (
         <Menu>
@@ -97,16 +100,18 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                         )}
                         <MenuHeader>Search query</MenuHeader>
                         {createActions.map(createAction => (
-                            <MenuLink key={createAction.label} as={Link} to={createAction.url}>
-                                <Icon
-                                    aria-hidden="true"
-                                    className="mr-1"
-                                    {...(typeof createAction.icon === 'string'
-                                        ? { svgPath: createAction.icon }
-                                        : { as: createAction.icon })}
-                                />
-                                {createAction.label}
-                            </MenuLink>
+                            <Tooltip content={createAction.tooltip} key={createAction.label} placement="left">
+                                <MenuLink as={Link} to={createAction.url} disabled={createAction.disabled}>
+                                    <Icon
+                                        aria-hidden="true"
+                                        className="mr-1"
+                                        {...(typeof createAction.icon === 'string'
+                                            ? { svgPath: createAction.icon }
+                                            : { as: createAction.icon })}
+                                    />
+                                    {createAction.label}
+                                </MenuLink>
+                            </Tooltip>
                         ))}
                         {createCodeMonitorAction && (
                             <Tooltip
@@ -115,6 +120,7 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                                         ? 'Code monitors only support type:diff or type:commit searches.'
                                         : undefined
                                 }
+                                placement="left"
                             >
                                 <MenuLink
                                     as={Link}

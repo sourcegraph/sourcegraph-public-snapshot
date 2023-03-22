@@ -99,7 +99,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                             isSourcegraphDotCom={props.isSourcegraphDotCom}
                         />
                         <Tabs
-                            className="w-100 test-repo-revision-sidebar pr-3 h-25 d-flex flex-column flex-grow-1"
+                            className="w-100 test-repo-revision-sidebar h-25 d-flex flex-column flex-grow-1"
                             index={persistedTabIndex}
                             onChange={setPersistedTabIndex}
                             lazy={true}
@@ -108,6 +108,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                             behavior="memoize"
                         >
                             <TabList
+                                wrapperClassName="mr-3"
                                 actions={
                                     <Tooltip content="Hide sidebar" placement="right">
                                         <Button
@@ -132,7 +133,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                                 </Tab>
                             </TabList>
                             <div
-                                className={classNames('flex w-100 overflow-auto explorer', styles.tabpanels)}
+                                className={classNames('flex w-100 overflow-auto explorer pr-2', styles.tabpanels)}
                                 tabIndex={-1}
                             >
                                 {/* TODO: See if we can render more here, instead of waiting for these props */}

@@ -42,7 +42,7 @@ def linter_dependencies():
   )
 
   go_repository(
-    name = "com_github_gocritic_gocritic",
+    name = "com_github_go_critic_go_critic",
     build_file_proto_mode = "disable_global",
     importpath = "github.com/go-critic/go-critic",
     version = "v0.6.7",
@@ -146,4 +146,11 @@ def linter_dependencies():
     importpath = "golang.org/x/exp/typeparams",
     version = "v0.0.0-20230203172020-98cc5a0785f9",
     sum = "h1:6WHiuFL9FNjg8RljAaT7FNUuKDbvMqS1i5cr2OE2sLQ=",
+  )
+
+  go_repository(
+    name = "com_github_kyoh86_exportloopref",
+    importpath = "github.com/kyoh86/exportloopref",
+    version = "v0.1.11",
+    sum = "h1:1Z0bcmTypkL3Q4k+IDHMWTcnCliEZcaPiIe0/ymEyhQ=",
   )

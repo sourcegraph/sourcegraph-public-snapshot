@@ -1,7 +1,6 @@
 package graphql
 
 import (
-	"context"
 	"time"
 
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -20,10 +19,10 @@ func NewCommitGraphResolver(stale bool, updatedAt *time.Time) resolverstubs.Code
 	}
 }
 
-func (r *CommitGraphResolver) Stale(ctx context.Context) (bool, error) {
-	return r.stale, nil
+func (r *CommitGraphResolver) Stale() bool {
+	return r.stale
 }
 
-func (r *CommitGraphResolver) UpdatedAt(ctx context.Context) (*gqlutil.DateTime, error) {
-	return gqlutil.DateTimeOrNil(r.updatedAt), nil
+func (r *CommitGraphResolver) UpdatedAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.updatedAt)
 }

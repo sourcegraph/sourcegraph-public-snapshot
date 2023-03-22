@@ -221,7 +221,7 @@ func ExcludableRepoName(repository *types.Repo, logger log.Logger) (name string)
 			if repo.Project == nil {
 				return
 			}
-			name = fmt.Sprintf("%s/%s", repo.Project.Name, repo.Name)
+			name = fmt.Sprintf("%s/%s", repo.Project.Key, repo.Name)
 		} else {
 			logger.Error("invalid repo metadata schema", log.String("extSvcType", extsvc.TypeBitbucketServer))
 		}

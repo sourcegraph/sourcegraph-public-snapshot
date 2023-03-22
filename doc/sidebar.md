@@ -55,6 +55,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Configuration](admin/config/index.md)
   - [Code hosts](admin/external_service/index.md)
   - [User authentication](admin/auth/index.md)
+  - [Access control](admin/access_control/index.md)
   - [Repository permissions](admin/permissions/index.md)
   - [Observability](admin/observability/index.md)
   - [Analytics](admin/analytics.md)

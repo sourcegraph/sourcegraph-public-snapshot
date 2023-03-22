@@ -1,0 +1,10 @@
+.external-service-page {
+    // hide cursor and bracket match in monaco editor
+    div[data-editor='monaco'] {
+        textarea,
+        canvas,
+        :global(.cdr.bracket-match) {
+            display: none;
+        }
+    }
+}

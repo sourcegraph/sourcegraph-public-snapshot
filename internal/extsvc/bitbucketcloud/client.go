@@ -225,8 +225,8 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 		if err != nil {
 			return err
 		}
-		req.Body = io.NopCloser(bytes.NewReader(reqBody))
 	}
+	req.Body = io.NopCloser(bytes.NewReader(reqBody))
 
 	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), //nolint:staticcheck // Drop once we get rid of OpenTracing
 		req.WithContext(ctx),
@@ -234,7 +234,7 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
-	if err := c.rateLimit.Wait(ctx); err != nil {
+	if err = c.rateLimit.Wait(ctx); err != nil {
 		return err
 	}
 
@@ -258,9 +258,7 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 		if sleepTime.Seconds() > 160 {
 			break
 		}
-		if req.Body != nil {
-			req.Body = io.NopCloser(bytes.NewReader(reqBody))
-		}
+		req.Body = io.NopCloser(bytes.NewReader(reqBody))
 	}
 
 	defer resp.Body.Close()

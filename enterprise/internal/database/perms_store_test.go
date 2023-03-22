@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"sort"
 	"sync"
@@ -38,6 +39,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+// Toggles particularly slow tests. To enable, use `go test` with this flag, for example:
+//
+//	go test -timeout 360s -v -run ^TestIntegration_PermsStore$ github.com/sourcegraph/sourcegraph/enterprise/internal/database -slow-tests
+var slowTests = flag.Bool("slow-tests", false, "Enable very slow tests")
+
+// postgresParameterLimitTest names tests that are focused on ensuring the default
+// behaviour of various queries do not run into the Postgres parameter limit at scale
+// (error `extended protocol limited to 65535 parameters`).
+//
+// They are typically flagged behind `-slow-tests` - when changing queries make sure to
+// enable these tests and add more where relevant (see `slowTests`).
+const postgresParameterLimitTest = "ensure we do not exceed postgres parameter limit"
 
 func cleanupPermsTables(t *testing.T, s *permsStore) {
 	t.Helper()
@@ -1624,175 +1638,181 @@ func TestPermsStore_SetRepoPermissions(t *testing.T) {
 	}
 }
 
-func testPermsStore_LoadUserPendingPermissions(db database.DB) func(*testing.T) {
-	return func(t *testing.T) {
-		logger := logtest.Scoped(t)
-		t.Run("no matching with different account ID", func(t *testing.T) {
-			s := perms(logger, db, clock)
-			t.Cleanup(func() {
-				cleanupPermsTables(t, s)
-			})
-
-			accounts := &extsvc.Accounts{
-				ServiceType: authz.SourcegraphServiceType,
-				ServiceID:   authz.SourcegraphServiceID,
-				AccountIDs:  []string{"bob"},
-			}
-			rp := &authz.RepoPermissions{
-				RepoID: 1,
-				Perm:   authz.Read,
-			}
-			if err := s.SetRepoPendingPermissions(context.Background(), accounts, rp); err != nil {
-				t.Fatal(err)
-			}
-
-			alice := &authz.UserPendingPermissions{
-				ServiceType: authz.SourcegraphServiceType,
-				ServiceID:   authz.SourcegraphServiceID,
-				BindID:      "alice",
-				Perm:        authz.Read,
-				Type:        authz.PermRepos,
-			}
-			err := s.LoadUserPendingPermissions(context.Background(), alice)
-			if err != authz.ErrPermsNotFound {
-				t.Fatalf("err: want %q but got %q", authz.ErrPermsNotFound, err)
-			}
-			equal(t, "IDs", 0, len(mapsetToArray(alice.IDs)))
-		})
-
-		t.Run("no matching with different service ID", func(t *testing.T) {
-			s := perms(logger, db, clock)
-			t.Cleanup(func() {
-				cleanupPermsTables(t, s)
-			})
-
-			accounts := &extsvc.Accounts{
-				ServiceType: authz.SourcegraphServiceType,
-				ServiceID:   authz.SourcegraphServiceID,
-				AccountIDs:  []string{"alice"},
-			}
-			rp := &authz.RepoPermissions{
-				RepoID: 1,
-				Perm:   authz.Read,
-			}
-			if err := s.SetRepoPendingPermissions(context.Background(), accounts, rp); err != nil {
-				t.Fatal(err)
-			}
-
-			alice := &authz.UserPendingPermissions{
-				ServiceType: extsvc.TypeGitLab,
-				ServiceID:   "https://gitlab.com/",
-				BindID:      "alice",
-				Perm:        authz.Read,
-				Type:        authz.PermRepos,
-			}
-			err := s.LoadUserPendingPermissions(context.Background(), alice)
-			if err != authz.ErrPermsNotFound {
-				t.Fatalf("err: want %q but got %q", authz.ErrPermsNotFound, err)
-			}
-			equal(t, "IDs", 0, len(mapsetToArray(alice.IDs)))
-		})
-
-		t.Run("found matching", func(t *testing.T) {
-			s := perms(logger, db, clock)
-			t.Cleanup(func() {
-				cleanupPermsTables(t, s)
-			})
-
-			accounts := &extsvc.Accounts{
-				ServiceType: authz.SourcegraphServiceType,
-				ServiceID:   authz.SourcegraphServiceID,
-				AccountIDs:  []string{"alice"},
-			}
-			rp := &authz.RepoPermissions{
-				RepoID: 1,
-				Perm:   authz.Read,
-			}
-			if err := s.SetRepoPendingPermissions(context.Background(), accounts, rp); err != nil {
-				t.Fatal(err)
-			}
-
-			alice := &authz.UserPendingPermissions{
-				ServiceType: authz.SourcegraphServiceType,
-				ServiceID:   authz.SourcegraphServiceID,
-				BindID:      "alice",
-				Perm:        authz.Read,
-				Type:        authz.PermRepos,
-			}
-			if err := s.LoadUserPendingPermissions(context.Background(), alice); err != nil {
-				t.Fatal(err)
-			}
-			equal(t, "IDs", []int{1}, mapsetToArray(alice.IDs))
-			equal(t, "UpdatedAt", now, alice.UpdatedAt.UnixNano())
-		})
-
-		t.Run("add and change", func(t *testing.T) {
-			s := perms(logger, db, clock)
-			t.Cleanup(func() {
-				cleanupPermsTables(t, s)
-			})
-
-			accounts := &extsvc.Accounts{
-				ServiceType: authz.SourcegraphServiceType,
-				ServiceID:   authz.SourcegraphServiceID,
-				AccountIDs:  []string{"alice", "bob"},
-			}
-			rp := &authz.RepoPermissions{
-				RepoID: 1,
-				Perm:   authz.Read,
-			}
-			if err := s.SetRepoPendingPermissions(context.Background(), accounts, rp); err != nil {
-				t.Fatal(err)
-			}
-
-			accounts.AccountIDs = []string{"bob", "cindy"}
-			rp = &authz.RepoPermissions{
-				RepoID: 1,
-				Perm:   authz.Read,
-			}
-			if err := s.SetRepoPendingPermissions(context.Background(), accounts, rp); err != nil {
-				t.Fatal(err)
-			}
-
-			alice := &authz.UserPendingPermissions{
-				ServiceType: authz.SourcegraphServiceType,
-				ServiceID:   authz.SourcegraphServiceID,
-				BindID:      "alice",
-				Perm:        authz.Read,
-				Type:        authz.PermRepos,
-			}
-			if err := s.LoadUserPendingPermissions(context.Background(), alice); err != nil {
-				t.Fatal(err)
-			}
-			equal(t, "IDs", 0, len(mapsetToArray(alice.IDs)))
-
-			bob := &authz.UserPendingPermissions{
-				ServiceType: authz.SourcegraphServiceType,
-				ServiceID:   authz.SourcegraphServiceID,
-				BindID:      "bob",
-				Perm:        authz.Read,
-				Type:        authz.PermRepos,
-			}
-			if err := s.LoadUserPendingPermissions(context.Background(), bob); err != nil {
-				t.Fatal(err)
-			}
-			equal(t, "IDs", []int{1}, mapsetToArray(bob.IDs))
-			equal(t, "UpdatedAt", now, bob.UpdatedAt.UnixNano())
-
-			cindy := &authz.UserPendingPermissions{
-				ServiceType: authz.SourcegraphServiceType,
-				ServiceID:   authz.SourcegraphServiceID,
-				BindID:      "cindy",
-				Perm:        authz.Read,
-				Type:        authz.PermRepos,
-			}
-			if err := s.LoadUserPendingPermissions(context.Background(), cindy); err != nil {
-				t.Fatal(err)
-			}
-			equal(t, "IDs", []int{1}, mapsetToArray(cindy.IDs))
-			equal(t, "UpdatedAt", now, cindy.UpdatedAt.UnixNano())
-		})
+func TestPermsStore_LoadUserPendingPermissions(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
 	}
+
+	logger := logtest.Scoped(t)
+
+	testDb := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, testDb)
+
+	t.Run("no matching with different account ID", func(t *testing.T) {
+		s := perms(logger, db, clock)
+		t.Cleanup(func() {
+			cleanupPermsTables(t, s)
+		})
+
+		accounts := &extsvc.Accounts{
+			ServiceType: authz.SourcegraphServiceType,
+			ServiceID:   authz.SourcegraphServiceID,
+			AccountIDs:  []string{"bob"},
+		}
+		rp := &authz.RepoPermissions{
+			RepoID: 1,
+			Perm:   authz.Read,
+		}
+		if err := s.SetRepoPendingPermissions(context.Background(), accounts, rp); err != nil {
+			t.Fatal(err)
+		}
+
+		alice := &authz.UserPendingPermissions{
+			ServiceType: authz.SourcegraphServiceType,
+			ServiceID:   authz.SourcegraphServiceID,
+			BindID:      "alice",
+			Perm:        authz.Read,
+			Type:        authz.PermRepos,
+		}
+		err := s.LoadUserPendingPermissions(context.Background(), alice)
+		if err != authz.ErrPermsNotFound {
+			t.Fatalf("err: want %q but got %q", authz.ErrPermsNotFound, err)
+		}
+		equal(t, "IDs", 0, len(mapsetToArray(alice.IDs)))
+	})
+
+	t.Run("no matching with different service ID", func(t *testing.T) {
+		s := perms(logger, db, clock)
+		t.Cleanup(func() {
+			cleanupPermsTables(t, s)
+		})
+
+		accounts := &extsvc.Accounts{
+			ServiceType: authz.SourcegraphServiceType,
+			ServiceID:   authz.SourcegraphServiceID,
+			AccountIDs:  []string{"alice"},
+		}
+		rp := &authz.RepoPermissions{
+			RepoID: 1,
+			Perm:   authz.Read,
+		}
+		if err := s.SetRepoPendingPermissions(context.Background(), accounts, rp); err != nil {
+			t.Fatal(err)
+		}
+
+		alice := &authz.UserPendingPermissions{
+			ServiceType: extsvc.TypeGitLab,
+			ServiceID:   "https://gitlab.com/",
+			BindID:      "alice",
+			Perm:        authz.Read,
+			Type:        authz.PermRepos,
+		}
+		err := s.LoadUserPendingPermissions(context.Background(), alice)
+		if err != authz.ErrPermsNotFound {
+			t.Fatalf("err: want %q but got %q", authz.ErrPermsNotFound, err)
+		}
+		equal(t, "IDs", 0, len(mapsetToArray(alice.IDs)))
+	})
+
+	t.Run("found matching", func(t *testing.T) {
+		s := perms(logger, db, clock)
+		t.Cleanup(func() {
+			cleanupPermsTables(t, s)
+		})
+
+		accounts := &extsvc.Accounts{
+			ServiceType: authz.SourcegraphServiceType,
+			ServiceID:   authz.SourcegraphServiceID,
+			AccountIDs:  []string{"alice"},
+		}
+		rp := &authz.RepoPermissions{
+			RepoID: 1,
+			Perm:   authz.Read,
+		}
+		if err := s.SetRepoPendingPermissions(context.Background(), accounts, rp); err != nil {
+			t.Fatal(err)
+		}
+
+		alice := &authz.UserPendingPermissions{
+			ServiceType: authz.SourcegraphServiceType,
+			ServiceID:   authz.SourcegraphServiceID,
+			BindID:      "alice",
+			Perm:        authz.Read,
+			Type:        authz.PermRepos,
+		}
+		if err := s.LoadUserPendingPermissions(context.Background(), alice); err != nil {
+			t.Fatal(err)
+		}
+		equal(t, "IDs", []int{1}, mapsetToArray(alice.IDs))
+		equal(t, "UpdatedAt", now, alice.UpdatedAt.UnixNano())
+	})
+
+	t.Run("add and change", func(t *testing.T) {
+		s := perms(logger, db, clock)
+		t.Cleanup(func() {
+			cleanupPermsTables(t, s)
+		})
+
+		accounts := &extsvc.Accounts{
+			ServiceType: authz.SourcegraphServiceType,
+			ServiceID:   authz.SourcegraphServiceID,
+			AccountIDs:  []string{"alice", "bob"},
+		}
+		rp := &authz.RepoPermissions{
+			RepoID: 1,
+			Perm:   authz.Read,
+		}
+		if err := s.SetRepoPendingPermissions(context.Background(), accounts, rp); err != nil {
+			t.Fatal(err)
+		}
+
+		accounts.AccountIDs = []string{"bob", "cindy"}
+		rp = &authz.RepoPermissions{
+			RepoID: 1,
+			Perm:   authz.Read,
+		}
+		if err := s.SetRepoPendingPermissions(context.Background(), accounts, rp); err != nil {
+			t.Fatal(err)
+		}
+
+		alice := &authz.UserPendingPermissions{
+			ServiceType: authz.SourcegraphServiceType,
+			ServiceID:   authz.SourcegraphServiceID,
+			BindID:      "alice",
+			Perm:        authz.Read,
+			Type:        authz.PermRepos,
+		}
+		if err := s.LoadUserPendingPermissions(context.Background(), alice); err != nil {
+			t.Fatal(err)
+		}
+		equal(t, "IDs", 0, len(mapsetToArray(alice.IDs)))
+
+		bob := &authz.UserPendingPermissions{
+			ServiceType: authz.SourcegraphServiceType,
+			ServiceID:   authz.SourcegraphServiceID,
+			BindID:      "bob",
+			Perm:        authz.Read,
+			Type:        authz.PermRepos,
+		}
+		if err := s.LoadUserPendingPermissions(context.Background(), bob); err != nil {
+			t.Fatal(err)
+		}
+		equal(t, "IDs", []int{1}, mapsetToArray(bob.IDs))
+		equal(t, "UpdatedAt", now, bob.UpdatedAt.UnixNano())
+
+		cindy := &authz.UserPendingPermissions{
+			ServiceType: authz.SourcegraphServiceType,
+			ServiceID:   authz.SourcegraphServiceID,
+			BindID:      "cindy",
+			Perm:        authz.Read,
+			Type:        authz.PermRepos,
+		}
+		if err := s.LoadUserPendingPermissions(context.Background(), cindy); err != nil {
+			t.Fatal(err)
+		}
+		equal(t, "IDs", []int{1}, mapsetToArray(cindy.IDs))
+		equal(t, "UpdatedAt", now, cindy.UpdatedAt.UnixNano())
+	})
 }
 
 func checkUserPendingPermsTable(
@@ -1915,7 +1935,16 @@ func checkRepoPendingPermsTable(
 	return nil
 }
 
-func testPermsStore_SetRepoPendingPermissions(db database.DB) func(*testing.T) {
+func TestPermsStore_SetRepoPendingPermissions(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+
+	testDb := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, testDb)
+
 	alice := extsvc.AccountSpec{
 		ServiceType: authz.SourcegraphServiceType,
 		ServiceID:   authz.SourcegraphServiceID,
@@ -2138,61 +2167,67 @@ func testPermsStore_SetRepoPendingPermissions(db database.DB) func(*testing.T) {
 		},
 	}
 
-	return func(t *testing.T) {
-		logger := logtest.Scoped(t)
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				if test.slowTest && !*slowTests {
-					t.Skip("slow-tests not enabled")
-				}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if test.slowTest && !*slowTests {
+				t.Skip("slow-tests not enabled")
+			}
 
-				s := perms(logger, db, clock)
-				t.Cleanup(func() {
-					cleanupPermsTables(t, s)
-				})
-
-				ctx := context.Background()
-
-				for _, update := range test.updates {
-					const numOps = 30
-					g, ctx := errgroup.WithContext(ctx)
-					for i := 0; i < numOps; i++ {
-						// Make local copy to prevent race conditions
-						accounts := *update.accounts
-						perm := &authz.RepoPermissions{
-							RepoID:    update.perm.RepoID,
-							Perm:      update.perm.Perm,
-							UpdatedAt: update.perm.UpdatedAt,
-						}
-						if update.perm.UserIDs != nil {
-							perm.UserIDs = update.perm.UserIDs
-						}
-						g.Go(func() error {
-							return s.SetRepoPendingPermissions(ctx, &accounts, perm)
-						})
-					}
-					if err := g.Wait(); err != nil {
-						t.Fatal(err)
-					}
-				}
-
-				// Query and check rows in "user_pending_permissions" table.
-				idToSpecs, err := checkUserPendingPermsTable(ctx, s, test.expectUserPendingPerms)
-				if err != nil {
-					t.Fatal("user_pending_permissions:", err)
-				}
-
-				// Query and check rows in "repo_pending_permissions" table.
-				err = checkRepoPendingPermsTable(ctx, s, idToSpecs, test.expectRepoPendingPerms)
-				if err != nil {
-					t.Fatal("repo_pending_permissions:", err)
-				}
+			s := perms(logger, db, clock)
+			t.Cleanup(func() {
+				cleanupPermsTables(t, s)
 			})
-		}
+
+			ctx := context.Background()
+
+			for _, update := range test.updates {
+				const numOps = 30
+				g, ctx := errgroup.WithContext(ctx)
+				for i := 0; i < numOps; i++ {
+					// Make local copy to prevent race conditions
+					accounts := *update.accounts
+					perm := &authz.RepoPermissions{
+						RepoID:    update.perm.RepoID,
+						Perm:      update.perm.Perm,
+						UpdatedAt: update.perm.UpdatedAt,
+					}
+					if update.perm.UserIDs != nil {
+						perm.UserIDs = update.perm.UserIDs
+					}
+					g.Go(func() error {
+						return s.SetRepoPendingPermissions(ctx, &accounts, perm)
+					})
+				}
+				if err := g.Wait(); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			// Query and check rows in "user_pending_permissions" table.
+			idToSpecs, err := checkUserPendingPermsTable(ctx, s, test.expectUserPendingPerms)
+			if err != nil {
+				t.Fatal("user_pending_permissions:", err)
+			}
+
+			// Query and check rows in "repo_pending_permissions" table.
+			err = checkRepoPendingPermsTable(ctx, s, idToSpecs, test.expectRepoPendingPerms)
+			if err != nil {
+				t.Fatal("repo_pending_permissions:", err)
+			}
+		})
 	}
 }
 
-func testPermsStore_ListPendingUsers(db database.DB) func(*testing.T) {
+func TestPermsStore_ListPendingUsers(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+
+	testDb := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, testDb)
+
 	type update struct {
 		accounts *extsvc.Accounts
 		perm     *authz.RepoPermissions
@@ -2268,38 +2303,36 @@ func testPermsStore_ListPendingUsers(db database.DB) func(*testing.T) {
 			expectPendingUsers: nil,
 		},
 	}
-	return func(t *testing.T) {
-		logger := logtest.Scoped(t)
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				s := perms(logger, db, clock)
-				t.Cleanup(func() {
-					cleanupPermsTables(t, s)
-				})
 
-				ctx := context.Background()
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			s := perms(logger, db, clock)
+			t.Cleanup(func() {
+				cleanupPermsTables(t, s)
+			})
 
-				for _, update := range test.updates {
-					tmp := &authz.RepoPermissions{
-						RepoID:    update.perm.RepoID,
-						Perm:      update.perm.Perm,
-						UpdatedAt: update.perm.UpdatedAt,
-					}
-					if update.perm.UserIDs != nil {
-						tmp.UserIDs = update.perm.UserIDs
-					}
-					if err := s.SetRepoPendingPermissions(ctx, update.accounts, tmp); err != nil {
-						t.Fatal(err)
-					}
+			ctx := context.Background()
+
+			for _, update := range test.updates {
+				tmp := &authz.RepoPermissions{
+					RepoID:    update.perm.RepoID,
+					Perm:      update.perm.Perm,
+					UpdatedAt: update.perm.UpdatedAt,
 				}
-
-				bindIDs, err := s.ListPendingUsers(ctx, authz.SourcegraphServiceType, authz.SourcegraphServiceID)
-				if err != nil {
+				if update.perm.UserIDs != nil {
+					tmp.UserIDs = update.perm.UserIDs
+				}
+				if err := s.SetRepoPendingPermissions(ctx, update.accounts, tmp); err != nil {
 					t.Fatal(err)
 				}
-				equal(t, "bindIDs", test.expectPendingUsers, bindIDs)
-			})
-		}
+			}
+
+			bindIDs, err := s.ListPendingUsers(ctx, authz.SourcegraphServiceType, authz.SourcegraphServiceID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			equal(t, "bindIDs", test.expectPendingUsers, bindIDs)
+		})
 	}
 }
 
@@ -3079,62 +3112,67 @@ func TestPermsStore_DeleteAllUserPermissions(t *testing.T) {
 	equal(t, "unified IDs", []int32{1, 2}, results)
 }
 
-func testPermsStore_DeleteAllUserPendingPermissions(db database.DB) func(*testing.T) {
-	return func(t *testing.T) {
-		logger := logtest.Scoped(t)
-		s := perms(logger, db, clock)
-		t.Cleanup(func() {
-			cleanupPermsTables(t, s)
-		})
-
-		ctx := context.Background()
-
-		accounts := &extsvc.Accounts{
-			ServiceType: authz.SourcegraphServiceType,
-			ServiceID:   authz.SourcegraphServiceID,
-			AccountIDs:  []string{"alice", "bob"},
-		}
-
-		// Set pending permissions for "alice" and "bob"
-		if err := s.SetRepoPendingPermissions(ctx, accounts, &authz.RepoPermissions{
-			RepoID: 1,
-			Perm:   authz.Read,
-		}); err != nil {
-			t.Fatal(err)
-		}
-
-		// Remove all pending permissions for "alice"
-		accounts.AccountIDs = []string{"alice"}
-		if err := s.DeleteAllUserPendingPermissions(ctx, accounts); err != nil {
-			t.Fatal(err)
-		}
-
-		// Check alice should not have any pending permissions now
-		err := s.LoadUserPendingPermissions(ctx, &authz.UserPendingPermissions{
-			ServiceType: authz.SourcegraphServiceType,
-			ServiceID:   authz.SourcegraphServiceID,
-			BindID:      "alice",
-			Perm:        authz.Read,
-			Type:        authz.PermRepos,
-		})
-		if err != authz.ErrPermsNotFound {
-			t.Fatalf("err: want %q but got %v", authz.ErrPermsNotFound, err)
-		}
-
-		// Check bob shoud not be affected
-		p := &authz.UserPendingPermissions{
-			ServiceType: authz.SourcegraphServiceType,
-			ServiceID:   authz.SourcegraphServiceID,
-			BindID:      "bob",
-			Perm:        authz.Read,
-			Type:        authz.PermRepos,
-		}
-		err = s.LoadUserPendingPermissions(ctx, p)
-		if err != nil {
-			t.Fatal(err)
-		}
-		equal(t, "p.IDs", []int{1}, mapsetToArray(p.IDs))
+func TestPermsStore_DeleteAllUserPendingPermissions(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
 	}
+
+	logger := logtest.Scoped(t)
+
+	testDb := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, testDb)
+	s := perms(logger, db, clock)
+	t.Cleanup(func() {
+		cleanupPermsTables(t, s)
+	})
+
+	ctx := context.Background()
+
+	accounts := &extsvc.Accounts{
+		ServiceType: authz.SourcegraphServiceType,
+		ServiceID:   authz.SourcegraphServiceID,
+		AccountIDs:  []string{"alice", "bob"},
+	}
+
+	// Set pending permissions for "alice" and "bob"
+	if err := s.SetRepoPendingPermissions(ctx, accounts, &authz.RepoPermissions{
+		RepoID: 1,
+		Perm:   authz.Read,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Remove all pending permissions for "alice"
+	accounts.AccountIDs = []string{"alice"}
+	if err := s.DeleteAllUserPendingPermissions(ctx, accounts); err != nil {
+		t.Fatal(err)
+	}
+
+	// Check alice should not have any pending permissions now
+	err := s.LoadUserPendingPermissions(ctx, &authz.UserPendingPermissions{
+		ServiceType: authz.SourcegraphServiceType,
+		ServiceID:   authz.SourcegraphServiceID,
+		BindID:      "alice",
+		Perm:        authz.Read,
+		Type:        authz.PermRepos,
+	})
+	if err != authz.ErrPermsNotFound {
+		t.Fatalf("err: want %q but got %v", authz.ErrPermsNotFound, err)
+	}
+
+	// Check bob shoud not be affected
+	p := &authz.UserPendingPermissions{
+		ServiceType: authz.SourcegraphServiceType,
+		ServiceID:   authz.SourcegraphServiceID,
+		BindID:      "bob",
+		Perm:        authz.Read,
+		Type:        authz.PermRepos,
+	}
+	err = s.LoadUserPendingPermissions(ctx, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	equal(t, "p.IDs", []int{1}, mapsetToArray(p.IDs))
 }
 
 func TestPermsStore_DatabaseDeadlocks(t *testing.T) {
@@ -3729,70 +3767,76 @@ func TestPermsStore_ReposIDsWithOldestPerms(t *testing.T) {
 	})
 }
 
-func testPermsStore_MapUsers(db database.DB) func(*testing.T) {
-	return func(t *testing.T) {
-		logger := logtest.Scoped(t)
-		s := perms(logger, db, clock)
-		ctx := context.Background()
-		t.Cleanup(func() {
-			if t.Failed() {
-				return
-			}
-
-			q := `TRUNCATE TABLE external_services, orgs, users CASCADE`
-			if err := s.execute(ctx, sqlf.Sprintf(q)); err != nil {
-				t.Fatal(err)
-			}
-		})
-
-		// Set up 3 users
-		users := db.Users()
-
-		igor, err := users.Create(ctx,
-			database.NewUser{
-				Email:           "igor@example.com",
-				Username:        "igor",
-				EmailIsVerified: true,
-			},
-		)
-		require.NoError(t, err)
-		shreah, err := users.Create(ctx,
-			database.NewUser{
-				Email:           "shreah@example.com",
-				Username:        "shreah",
-				EmailIsVerified: true,
-			},
-		)
-		require.NoError(t, err)
-		omar, err := users.Create(ctx,
-			database.NewUser{
-				Email:           "omar@example.com",
-				Username:        "omar",
-				EmailIsVerified: true,
-			},
-		)
-		require.NoError(t, err)
-
-		// emails: map with a mixed load of existing, space only and non existing users
-		has, err := s.MapUsers(ctx, []string{"igor@example.com", "", "omar@example.com", "  	", "sayako@example.com"}, &schema.PermissionsUserMapping{BindID: "email"})
-		assert.NoError(t, err)
-		assert.Equal(t, map[string]int32{
-			"igor@example.com": igor.ID,
-			"omar@example.com": omar.ID,
-		}, has)
-
-		// usernames: map with a mixed load of existing, space only and non existing users
-		has, err = s.MapUsers(ctx, []string{"igor", "", "shreah", "  	", "carlos"}, &schema.PermissionsUserMapping{BindID: "username"})
-		assert.NoError(t, err)
-		assert.Equal(t, map[string]int32{
-			"igor":   igor.ID,
-			"shreah": shreah.ID,
-		}, has)
-
-		// use a non-existing mapping
-		_, err = s.MapUsers(ctx, []string{"igor", "", "shreah", "  	", "carlos"}, &schema.PermissionsUserMapping{BindID: "shoeSize"})
-		assert.Error(t, err)
+func TestPermsStore_MapUsers(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
 	}
+
+	logger := logtest.Scoped(t)
+
+	testDb := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, testDb)
+	s := perms(logger, db, clock)
+	ctx := context.Background()
+
+	t.Cleanup(func() {
+		if t.Failed() {
+			return
+		}
+
+		q := `TRUNCATE TABLE external_services, orgs, users CASCADE`
+		if err := s.execute(ctx, sqlf.Sprintf(q)); err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	// Set up 3 users
+	users := db.Users()
+
+	igor, err := users.Create(ctx,
+		database.NewUser{
+			Email:           "igor@example.com",
+			Username:        "igor",
+			EmailIsVerified: true,
+		},
+	)
+	require.NoError(t, err)
+	shreah, err := users.Create(ctx,
+		database.NewUser{
+			Email:           "shreah@example.com",
+			Username:        "shreah",
+			EmailIsVerified: true,
+		},
+	)
+	require.NoError(t, err)
+	omar, err := users.Create(ctx,
+		database.NewUser{
+			Email:           "omar@example.com",
+			Username:        "omar",
+			EmailIsVerified: true,
+		},
+	)
+	require.NoError(t, err)
+
+	// emails: map with a mixed load of existing, space only and non existing users
+	has, err := s.MapUsers(ctx, []string{"igor@example.com", "", "omar@example.com", "  	", "sayako@example.com"}, &schema.PermissionsUserMapping{BindID: "email"})
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]int32{
+		"igor@example.com": igor.ID,
+		"omar@example.com": omar.ID,
+	}, has)
+
+	// usernames: map with a mixed load of existing, space only and non existing users
+	has, err = s.MapUsers(ctx, []string{"igor", "", "shreah", "  	", "carlos"}, &schema.PermissionsUserMapping{BindID: "username"})
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]int32{
+		"igor":   igor.ID,
+		"shreah": shreah.ID,
+	}, has)
+
+	// use a non-existing mapping
+	_, err = s.MapUsers(ctx, []string{"igor", "", "shreah", "  	", "carlos"}, &schema.PermissionsUserMapping{BindID: "shoeSize"})
+	assert.Error(t, err)
 }
 
 func TestPermsStore_Metrics(t *testing.T) {

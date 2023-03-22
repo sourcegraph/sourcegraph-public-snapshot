@@ -19,6 +19,28 @@ func (f MultiFactoryFunc[K, V]) Load(ctx context.Context, id K) ([]V, error) {
 	return f(ctx, id)
 }
 
+func MultiFactoryFromFactoryFunc[K, V any](f func(ctx context.Context, id K) (V, error)) MultiFactory[K, V] {
+	return MultiFactoryFunc[K, V](func(ctx context.Context, id K) ([]V, error) {
+		v, err := f(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+
+		return []V{v}, nil
+	})
+}
+
+func MultiFactoryFromFallibleFactoryFunc[K, V any](f func(ctx context.Context, id K) (*V, error)) MultiFactory[K, V] {
+	return MultiFactoryFunc[K, V](func(ctx context.Context, id K) ([]V, error) {
+		v, err := f(ctx, id)
+		if err != nil || v == nil {
+			return nil, err
+		}
+
+		return []V{*v}, nil
+	})
+}
+
 type DoubleLockedCache[K comparable, V Identifier[K]] struct {
 	sync.RWMutex
 	factory MultiFactory[K, V]
