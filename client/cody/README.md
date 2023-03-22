@@ -14,7 +14,9 @@
 
 ## Cody for Enterprise
 
-Cody is in private alpha at this stage. Contact your techical advisor or [signup here](https://sourcegraph.typeform.com/to/pIXTgwrd?typeform-source=t.co) to get access. We have limited capacity to onboard customers at first, but we're working hard to open Cody up to the world fast!
+Cody is in private alpha (experimental) at this stage. Please contact your techical advisor or [signup here](https://sourcegraph.typeform.com/to/pIXTgwrd?typeform-source=t.co) to get access.
+
+We have limited capacity to onboard customers at first, but we're working hard to open Cody up to the world fast!
 
 ## What is Cody?
 
