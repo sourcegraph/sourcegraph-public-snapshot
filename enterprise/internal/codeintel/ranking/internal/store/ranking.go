@@ -760,6 +760,84 @@ SELECT
 	(SELECT COUNT(*) FROM deleted_initial_path_ranks)
 `
 
+func (s *store) VacuumAbandonedDefinitions(ctx context.Context, graphKey string, batchSize int) (_ int, err error) {
+	ctx, _, endObservation := s.operations.vacuumAbandonedDefinitions.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumAbandonedDefinitionsQuery, graphKey, batchSize)))
+	return count, err
+}
+
+const vacuumAbandonedDefinitionsQuery = `
+WITH
+locked_definitions AS (
+	SELECT id
+	FROM codeintel_ranking_definitions
+	WHERE graph_key != %s
+	ORDER BY id
+	FOR UPDATE SKIP LOCKED
+	LIMIT %s
+),
+deleted_definitions AS (
+	DELETE FROM codeintel_ranking_definitions
+	WHERE id IN (SELECT id FROM locked_definitions)
+	RETURNING 1
+)
+SELECT COUNT(*) FROM deleted_definitions
+`
+
+func (s *store) VacuumAbandonedReferences(ctx context.Context, graphKey string, batchSize int) (_ int, err error) {
+	ctx, _, endObservation := s.operations.vacuumAbandonedReferences.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumAbandonedReferencesQuery, graphKey, batchSize)))
+	return count, err
+}
+
+const vacuumAbandonedReferencesQuery = `
+WITH
+locked_references AS (
+	SELECT id
+	FROM codeintel_ranking_references
+	WHERE graph_key != %s
+	ORDER BY id
+	FOR UPDATE SKIP LOCKED
+	LIMIT %s
+),
+deleted_references AS (
+	DELETE FROM codeintel_ranking_references
+	WHERE id IN (SELECT id FROM locked_references)
+	RETURNING 1
+)
+SELECT COUNT(*) FROM deleted_references
+`
+
+func (s *store) VacuumAbandonedInitialPathCounts(ctx context.Context, graphKey string, batchSize int) (_ int, err error) {
+	ctx, _, endObservation := s.operations.vacuumAbandonedInitialPathCounts.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumAbandonedInitialPathCountsQuery, graphKey, batchSize)))
+	return count, err
+}
+
+const vacuumAbandonedInitialPathCountsQuery = `
+WITH
+locked_initial_path_counts AS (
+	SELECT id
+	FROM codeintel_ranking_initial_path_counts
+	WHERE graph_key != %s
+	ORDER BY id
+	FOR UPDATE SKIP LOCKED
+	LIMIT %s
+),
+deleted_initial_path_counts AS (
+	DELETE FROM codeintel_ranking_initial_path_counts
+	WHERE id IN (SELECT id FROM locked_initial_path_counts)
+	RETURNING 1
+)
+SELECT COUNT(*) FROM deleted_initial_path_counts
+`
+
 func (s *store) VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string, batchSize int) (_ int, err error) {
 	ctx, _, endObservation := s.operations.vacuumStaleGraphs.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
 	defer endObservation(1, observation.Args{})

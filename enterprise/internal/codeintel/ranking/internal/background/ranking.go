@@ -167,6 +167,30 @@ func vacuumStaleInitialPaths(ctx context.Context, store store.Store) (int, int, 
 	return numPathRecordsScanned, numStalePathRecordsDeleted, err
 }
 
+func vacuumAbandonedDefinitions(ctx context.Context, store store.Store, batchSize int) (int, error) {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+		return 0, nil
+	}
+
+	return store.VacuumAbandonedDefinitions(ctx, rankingshared.GraphKey(), batchSize)
+}
+
+func vacuumAbandonedReferences(ctx context.Context, store store.Store, batchSize int) (int, error) {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+		return 0, nil
+	}
+
+	return store.VacuumAbandonedReferences(ctx, rankingshared.GraphKey(), batchSize)
+}
+
+func vacuumAbandonedInitialPathCounts(ctx context.Context, store store.Store, batchSize int) (int, error) {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+		return 0, nil
+	}
+
+	return store.VacuumAbandonedInitialPathCounts(ctx, rankingshared.GraphKey(), batchSize)
+}
+
 func vacuumStaleGraphs(ctx context.Context, store store.Store, batchSize int) (int, error) {
 	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return 0, nil
