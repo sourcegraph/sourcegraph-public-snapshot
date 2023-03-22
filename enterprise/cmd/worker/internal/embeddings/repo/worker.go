@@ -47,7 +47,6 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 
 	workCtx := actor.WithInternalActor(context.Background())
 	return []goroutine.BackgroundRoutine{
-
 		newRepoEmbeddingJobWorker(
 			workCtx,
 			observationCtx,
@@ -67,7 +66,6 @@ func newRepoEmbeddingJobWorker(
 	uploadStore uploadstore.Store,
 	gitserverClient gitserver.Client,
 ) *workerutil.Worker[*repoembeddingsbg.RepoEmbeddingJob] {
-
 	handler := &handler{
 		db:              db,
 		uploadStore:     uploadStore,
