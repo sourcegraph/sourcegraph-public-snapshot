@@ -61,7 +61,7 @@ done
   exit 1
 }
 
-[ -f "${artifact_path}" ] || {
+[[ -f "${artifact_path}" || -d "${artifact_path}" ]] || {
   echo "invalid artifact path on command line or in \"artifact\" env var" 1>&2
   exit 1
 }
