@@ -16,14 +16,10 @@ type AutoIndexingService interface {
 	sharedresolvers.AutoIndexingService
 
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error)
-	GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error)
 	GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []shared.IndexesWithRepositoryNamespace, err error)
 	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) (err error)
-	DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
-	DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) (err error)
-	ReindexIndexByID(ctx context.Context, id int) (err error)
-	ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) (err error)
+
 	GetInferenceScript(ctx context.Context) (script string, err error)
 	SetInferenceScript(ctx context.Context, script string) (err error)
 
@@ -38,6 +34,12 @@ type AutoIndexingService interface {
 
 type UploadsService interface {
 	sharedresolvers.UploadsService
+
+	GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error)
+	DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
+	DeleteIndexes(ctx context.Context, opts uploadshared.DeleteIndexesOptions) (err error)
+	ReindexIndexByID(ctx context.Context, id int) (err error)
+	ReindexIndexes(ctx context.Context, opts uploadshared.ReindexIndexesOptions) (err error)
 
 	GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
 	GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []uploadshared.UploadsWithRepositoryNamespace, err error)
