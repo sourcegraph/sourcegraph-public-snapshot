@@ -112,7 +112,9 @@ func (s *Service) ApplyBatchChange(
 		err = tx.Done(err)
 		// Only enqueue the webhook if after the transaction is finished, or the batch
 		// change payload will still show the unapplied old state.
-		s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeApply, bgql.MarshalBatchChangeID(batchChange.ID))
+		if err == nil && batchChange.ID != 0 {
+			s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeApply, bgql.MarshalBatchChangeID(batchChange.ID))
+		}
 	}()
 
 	l := locker.NewWith(tx, "batches_apply")

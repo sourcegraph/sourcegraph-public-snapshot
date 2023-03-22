@@ -998,7 +998,9 @@ func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangeset
 		err = tx.Done(err)
 		// Only enqueue the webhook if after the transaction is finished, or the batch
 		// change payload will still show the open old state.
-		s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeClose, bgql.MarshalBatchChangeID(batchChange.ID))
+		if err == nil {
+			s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeClose, bgql.MarshalBatchChangeID(batchChange.ID))
+		}
 	}()
 
 	batchChange.ClosedAt = s.clock()
