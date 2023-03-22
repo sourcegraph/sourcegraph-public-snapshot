@@ -11,11 +11,11 @@ import (
 )
 
 type rootResolver struct {
-	uploadSvc  UploadService
+	uploadSvc  UploadsService
 	operations *operations
 }
 
-func NewRootResolver(observationCtx *observation.Context, uploadSvc UploadService) resolverstubs.UploadsServiceResolver {
+func NewRootResolver(observationCtx *observation.Context, uploadSvc UploadsService) resolverstubs.UploadsServiceResolver {
 	return &rootResolver{
 		uploadSvc:  uploadSvc,
 		operations: newOperations(observationCtx),
