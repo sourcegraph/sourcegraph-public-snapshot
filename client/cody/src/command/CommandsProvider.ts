@@ -71,8 +71,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         // TOS
         vscode.commands.registerCommand('cody.accept-tos', async version => {
             if (typeof version !== 'number') {
-                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                void vscode.window.showErrorMessage(`TOS version was not a number: ${version}`)
+                vscode.window.showErrorMessage(`TOS version was not a number: ${version}`)
                 return
             }
             await context.globalState.update('cody.tos-version-accepted', version)

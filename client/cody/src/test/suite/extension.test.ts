@@ -48,7 +48,7 @@ async function getTranscript(api: vscode.Extension<ExtensionApi>, index: number)
 }
 
 suite('End-to-end', () => {
-    void vscode.window.showInformationMessage('Starting end-to-end tests.')
+    vscode.window.showInformationMessage('Starting end-to-end tests.')
 
     test('Cody registers some commands', async () => {
         const commands = await vscode.commands.getCommands(true)
