@@ -1,7 +1,7 @@
 {
   "name": "cody",
   "private": true,
-  "displayName": "Cody",
+  "displayName": "Cody for Enterprise",
   "version": "0.0.6",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",

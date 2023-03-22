@@ -1,4 +1,4 @@
-# Sourcegraph Cody for Visual Studio Code
+# Sourcegraph Cody for Enterprise for Visual Studio Code
 
 [![vs marketplace](https://img.shields.io/vscode-marketplace/v/sourcegraph.cody.svg?label=vs%20marketplace)](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody)
 
@@ -12,7 +12,7 @@
 ### From within VS Code:
 
 1. Open the extensions tab on the left side of VS Code (<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd>).
-2. Search for `Sourcegraph Cody` -> `Install` and `Reload`.
+2. Search for `Sourcegraph Cody for Enterprise` -> `Install` and `Reload`.
 
 ## Setting up the Cody extension
 
