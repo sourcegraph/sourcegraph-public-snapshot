@@ -146,23 +146,23 @@ gsutil cp "sourcegraph_${VERSION}_macOS_universal_app_bundle.zip" checksums.txt 
 command -v hdiutil 1>/dev/null 2>&1 && command -v osascript 1>/dev/null 2>&1 && {
 
   info "creating the macOS dmg container"
-  "${exedir}/macos_app/create_sourcegraph_app_dmg.sh" "${PWD}/Sourcegraph App.app"
+  "${exedir}/macos_app/create_sourcegraph_app_dmg.sh" "${PWD}/Sourcegraph App.app" || exit 1
 
   # sign the dmg
   info "signing the macOS dmg container"
-  "${exedir}/sign_macos_artifact.sh" "${PWD}/Sourcegraph App.dmg"
+  "${exedir}/sign_macos_artifact.sh" "${PWD}/Sourcegraph App.dmg" || exit 1
 
   # gotta notarize the dmg also, even though the app is already notarized!
   info "notarizing the macOS dmg container"
-  "${exedir}/notarize_macos_artifact.sh" --staple "${PWD}/Sourcegraph App.dmg"
+  "${exedir}/notarize_macos_artifact.sh" --staple "${PWD}/Sourcegraph App.dmg" || exit 1
 
   # add its checksum to the checksums file
-  sha256sum "Sourcegraph App.dmg" >>checksums.txt
+  sha256sum "Sourcegraph App.dmg" >>checksums.txt || exit 1
 
   info "uploading the macOS dmg container"
 
   # and upload it
-  gsutil cp "${PWD}/Sourcegraph App.dmg" checksums.txt "gs://sourcegraph-app-releases/${VERSION}/"
+  gsutil cp "${PWD}/Sourcegraph App.dmg" checksums.txt "gs://sourcegraph-app-releases/${VERSION}/" || exit 1
 }
 
 info "replicating artifacts to /latest"
@@ -172,9 +172,8 @@ while IFS= read -r gcs_file; do
   gsutil cp "${gcs_file}" "${gcs_file//${VERSION}/latest}"
 done < <(gsutil ls "gs://sourcegraph-app-releases/${VERSION}/")
 # change the checksum names and upload that
-sed "s/${VERSION}/latest/g" checksums.txt >checksums.txt.2
-mv checksums.txt.2 checksums.txt
-gsutil cp checksums.txt gs://sourcegraph-app-releases/latest/
+sed "s/${VERSION}/latest/g" checksums.txt >checksums-latest.txt
+gsutil cp checksums-latest.txt gs://sourcegraph-app-releases/latest/
 # include a file with the version number so we can track it for updates and such
 printf '%s' "${VERSION}" >version.txt
 gsutil cp version.txt gs://sourcegraph-app-releases/latest/
