@@ -94,7 +94,7 @@ Advantages of the site-to-site GCP to AWS VPN include:
 instance and customer code host
 
 Advantages of AWS Private Link include:
-- ensures customer only opens connectivity to their code host inside AWS network
+- connectivity to customer VPC is only available inside AWS network
 - provides customer mechanism to select AWS Princincal (AWS Account or more granular), who can connect to their code host
 - allows customer to control incoming connections
 - supports private DNS
