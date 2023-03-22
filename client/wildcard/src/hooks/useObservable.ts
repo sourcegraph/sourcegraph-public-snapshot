@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useLayoutEffect, useEffect, useState, useMemo, useCallback } from 'react'
 
 import { Observable, Observer, Subject } from 'rxjs'
 
@@ -17,7 +17,7 @@ export function useObservable<T>(observable: Observable<T>): T | undefined {
     const [error, setError] = useState<any>()
     const [currentValue, setCurrentValue] = useState<T>()
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         setCurrentValue(undefined)
         const subscription = observable.subscribe({ next: setCurrentValue, error: setError })
         return () => subscription.unsubscribe()
