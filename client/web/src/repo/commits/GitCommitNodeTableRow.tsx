@@ -62,11 +62,11 @@ export const GitCommitNodeTableRow: React.FC<
     )
 
     const commitMessageBody =
-        (expandCommitMessageBody || showCommitMessageBody) && node.body ? (
+        expandCommitMessageBody || showCommitMessageBody ? (
             <tr className={classNames(styles.tableRow, className)}>
                 <td colSpan={3}>
                     <pre className={styles.messageBody}>
-                        <Linkified input={node.body} externalURLs={node.externalURLs} />
+                        {node.body && <Linkified input={node.body} externalURLs={node.externalURLs} />}
                     </pre>
                 </td>
             </tr>

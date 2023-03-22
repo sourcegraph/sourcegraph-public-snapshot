@@ -59,7 +59,7 @@ describe('get-links', () => {
     })
 
     test('does not parse file names', () => {
-        const example = 'This contains a file name that could be mistaken for a URL: /example/test/rust.rs'
+        const example = 'This contains a file name that could be mistaken for a URL: example/test/rust.rs'
         const result = getLinksFromString({
             input: example,
             externalURLs: [externalURL],

@@ -22,7 +22,7 @@ function githubRepoUrl(url: string): string {
 //  - Create search and search-ui packages (#29773)
 //  - Fix #123 for xyz
 //
-// However it is supposed not to mach in:
+// However it is supposed not to match in:
 //
 // - Something sourcegraph/other-repo#123 or so
 // - 123#123
@@ -52,7 +52,7 @@ const getGitHubIssueLinks = (input: string, externalServiceUrl: string): LinkFro
     return links
 }
 
-const getStandardLinks = (input: string): LinkFromString[] => {
+const getLinks = (input: string): LinkFromString[] => {
     const links = linkifyFind(input)
     return links
         .filter(({ value }) =>
@@ -86,7 +86,7 @@ export const getLinksFromString = ({ input, externalURLs }: GetLinksFromStringPa
     const github = externalURLs ? externalURLs.find(url => url.serviceKind === ExternalServiceKind.GITHUB) : null
     const githubLinks = github ? getGitHubIssueLinks(input, github.url) : []
 
-    const links = [...getStandardLinks(input), ...githubLinks]
+    const links = [...getLinks(input), ...githubLinks]
         .sort((a, b) => a.start - b.start)
         .filter((link, index, links) => {
             // Filter out links that are contained within another link.

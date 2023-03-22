@@ -147,10 +147,10 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     )
 
     const commitMessageBody =
-        (expandCommitMessageBody || showCommitMessageBody) && node.body ? (
+        expandCommitMessageBody || showCommitMessageBody ? (
             <div className="w-100">
                 <pre className={styles.messageBody}>
-                    <Linkified input={node.body} externalURLs={node.externalURLs} />
+                    {node.body && <Linkified input={node.body} externalURLs={node.externalURLs} />}
                 </pre>
             </div>
         ) : undefined
@@ -230,7 +230,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     }
 
     const viewFilesCommitElement = node.tree && (
-        <div className="d-flex justify-content-between align-items-start mt-3">
+        <div className="d-flex justify-content-between align-items-start">
             <Tooltip content="Browse files in the repository at this point in history">
                 <Button
                     className="align-center d-inline-flex"
