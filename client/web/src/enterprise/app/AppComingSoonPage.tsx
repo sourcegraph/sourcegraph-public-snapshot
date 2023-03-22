@@ -47,7 +47,7 @@ export const AppComingSoonPage: React.FC = () => {
                             inside your editor. Cody knows about your local code and can learn from all the code and
                             documentation inside your organization.
                         </Text>
-                        <Link className={styles.link} to="/help/own" target="_blank" rel="noopener">
+                        <Link className={styles.link} to="/help/cody" target="_blank" rel="noopener">
                             Learn more <Icon role="img" aria-label="Open in a new tab" svgPath={mdiChevronRight} />
                         </Link>
                     </div>
@@ -81,7 +81,7 @@ export const AppComingSoonPage: React.FC = () => {
                             Escalate in one click. Don’t waste time emailing around to find who can help. Fast
                             collaboration, fast remediation.
                         </Text>
-                        <Link className={styles.link} to="/help/cody" target="_blank" rel="noopener">
+                        <Link className={styles.link} to="/help/own" target="_blank" rel="noopener">
                             Learn more <Icon role="img" aria-label="Open in a new tab" svgPath={mdiChevronRight} />
                         </Link>
                     </div>
