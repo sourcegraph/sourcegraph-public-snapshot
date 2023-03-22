@@ -1,5 +1,3 @@
-# Cody for Enterprise
-
 <div align="center">
     <p>Cody: An AI-Powered Programming Assistant</p>
     <a href="https://docs.sourcegraph.com/cody">Docs</a> •
@@ -14,7 +12,7 @@
     </a>
 </div>
 
-## What is Cody?
+# Cody for Enterprise
 
 - Cody is your hyper intelligent programming sidekick - an AI assistant developed by Sourcegraph to supercharge your productivity as a developer.
 - Cody frees you from mundane, repetitive tasks so you can focus on solving complex problems and building amazing things. Powered by advanced AI and Sourcegraph's code search and intelligence.

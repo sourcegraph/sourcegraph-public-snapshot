@@ -1,14 +1,21 @@
 {
   "name": "cody",
   "private": true,
-  "displayName": "Cody",
+  "displayName": "Cody for Enterprise",
   "version": "0.0.6",
-  "publisher": "sourcegraph",
+  "publisher": "Sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
-  "description": "",
+  "description": "Your programming sidekick powered by AI and Sourcegraph's code search and intelligence.",
   "categories": [
     "Other"
+  ],
+  "keywords": [
+    "openai",
+    "chatgpt",
+    "developer tools",
+    "ai",
+    "unit testing"
   ],
   "repository": {
     "type": "git",
@@ -29,8 +36,10 @@
     "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "test:integration": "pnpm compile:test && node ./dist/test/src/test/runTest.js",
     "test:unit": "pnpm compile:test && mocha './dist/test/src/test/unit/*.test.js'",
-    "vsce:package": "scripts/check-rg.sh && pnpm --silent build && vsce package --no-dependencies -o dist/cody.vsix",
-    "vsce:publish": "scripts/check-rg.sh && vsce publish --packagePath dist/cody.vsix",
+    "vscode:prepublish": "scripts/check-rg.sh",
+    "vsce:package": "pnpm --silent build && vsce package --no-dependencies -o dist/cody.vsix",
+    "vsce:prerelease": "pnpm --silent build && vsce package patch --pre-release --no-dependencies -o dist/cody.vsix",
+    "vsce:publish": "vsce publish --packagePath dist/cody.vsix",
     "watch": "concurrently \"pnpm watch:esbuild\" \"pnpm watch:webview\"",
     "watch:esbuild": "pnpm esbuild --sourcemap --watch",
     "watch:webview": "vite build --mode development --watch",
