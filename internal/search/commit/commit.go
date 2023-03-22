@@ -2,6 +2,7 @@ package commit
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -101,17 +102,22 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 
 	p := pool.New().WithContext(ctx).WithMaxGoroutines(j.Concurrency).WithFirstError()
 
+	count := 0
 	for it.Next() {
 		page := it.Current()
 		page.MaybeSendStats(stream)
 
 		for _, repoRev := range page.RepoRevs {
+			count += 1
+
 			repoRev := repoRev
 			p.Go(func(ctx context.Context) error {
 				return searchRepoRev(ctx, repoRev)
 			})
 		}
 	}
+
+	fmt.Println(">>>>>>>>>> repoRev count: ", count)
 
 	if err := p.Wait(); err != nil {
 		return nil, err

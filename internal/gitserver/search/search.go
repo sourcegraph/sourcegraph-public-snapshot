@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os/exec"
 	"strings"
@@ -119,11 +120,17 @@ func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*protocol.Com
 		})
 	}
 
+	printed := false
+
 	// Consumer goroutine that consumes results in the order jobs were
 	// submitted to the job queue
 	g.Go(func() error {
 		for resultChan := range resultChans {
 			for res := range resultChan {
+				if !printed {
+					fmt.Println(res)
+					printed = true
+				}
 				onMatch(res)
 			}
 		}
@@ -145,6 +152,8 @@ func (cs *CommitSearcher) gitArgs() []string {
 
 func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, resultChans chan chan *protocol.CommitMatch) (err error) {
 	cmd := exec.CommandContext(ctx, "git", cs.gitArgs()...)
+	fmt.Printf(">>>>>>>>>>>>>>>>>>>> git command: %#v\n", cmd)
+
 	cmd.Dir = cs.RepoDir
 	stdoutReader, err := cmd.StdoutPipe()
 	if err != nil {

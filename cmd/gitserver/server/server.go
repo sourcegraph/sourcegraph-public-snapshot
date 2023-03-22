@@ -1411,6 +1411,7 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMat
 		}
 	}
 
+	count := 0
 	for _, rev := range args.Revisions {
 		// TODO add result to trace
 		if rev.RevSpec != "" {
@@ -1418,7 +1419,10 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMat
 		} else if rev.RefGlob != "" {
 			_ = s.ensureRevision(ctx, args.Repo, rev.RefGlob, dir)
 		}
+		count += 1
 	}
+
+	fmt.Printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> REVISION COUNT: %d\n", count)
 
 	mt, err := search.ToMatchTree(args.Query)
 	if err != nil {
