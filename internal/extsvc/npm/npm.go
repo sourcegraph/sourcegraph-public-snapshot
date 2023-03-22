@@ -190,14 +190,5 @@ func (client *HTTPClient) FetchTarball(ctx context.Context, dep *reposource.NpmV
 		return nil, errors.New("empty TarballURL")
 	}
 
-	// WARN: The default external doer caches responses, meaning we will store
-	// entire package contents in redis! We switch to the UncachedExternalDoer for
-	// this specific method.
-	return client.withDoer(httpcli.UncachedExternalDoer).makeGetRequest(ctx, dep.TarballURL)
-}
-
-func (client *HTTPClient) withDoer(cli httpcli.Doer) *HTTPClient {
-	c := *client
-	c.doer = cli
-	return &c
+	return client.makeGetRequest(ctx, dep.TarballURL)
 }

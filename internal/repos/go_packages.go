@@ -25,7 +25,7 @@ func NewGoPackagesSource(ctx context.Context, svc *types.ExternalService, cf *ht
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 
-	cli, err := cf.Doer()
+	cli, err := cf.Doer(httpcli.NewCachedTransportOpt(httpcli.NoopCache{}, false))
 	if err != nil {
 		return nil, err
 	}
