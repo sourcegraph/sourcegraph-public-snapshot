@@ -7,8 +7,8 @@
     <a href="https://srcgr.ph/discord">
         <img src="https://img.shields.io/discord/969688426372825169?color=5765F2" alt="Discord" />
     </a>
-    <a href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody">
-        <img src="https://img.shields.io/vscode-marketplace/v/sourcegraph.cody.svg?label=vs%20marketplace" alt="VS Marketplace" />
+    <a href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai">
+        <img src="https://img.shields.io/vscode-marketplace/v/sourcegraph.cody-ai.svg?label=vs%20marketplace" alt="VS Marketplace" />
     </a>
 </div>
 
@@ -43,7 +43,7 @@ Here are the ways to install Cody in Visual Studio Code:
 
 ### Through the Visual Studio Marketplace
 
-1. Install Cody from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody).
+1. Install Cody from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai).
 2. After installing the plugin, click the Cody icon in the VS Code Activity Bar to open the extension.
 
 ## Setting up the Cody extension
