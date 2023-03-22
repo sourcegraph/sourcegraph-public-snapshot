@@ -142,7 +142,6 @@ type RepoUpdaterServiceServer interface {
 	// future. It does not wait for the update.
 	EnqueueRepoUpdate(context.Context, *EnqueueRepoUpdateRequest) (*EnqueueRepoUpdateResponse, error)
 	EnqueueChangesetSync(context.Context, *EnqueueChangesetSyncRequest) (*EnqueueChangesetSyncResponse, error)
-	SchedulePermsSync(context.Context, *SchedulePermsSyncRequest) (*SchedulePermsSyncResponse, error)
 	// SyncExternalService requests the given external service to be synced.
 	SyncExternalService(context.Context, *SyncExternalServiceRequest) (*SyncExternalServiceResponse, error)
 	// ExternalServiceNamespaces retrieves a list of namespaces available to the given external service configuration
@@ -167,9 +166,6 @@ func (UnimplementedRepoUpdaterServiceServer) EnqueueRepoUpdate(context.Context, 
 }
 func (UnimplementedRepoUpdaterServiceServer) EnqueueChangesetSync(context.Context, *EnqueueChangesetSyncRequest) (*EnqueueChangesetSyncResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EnqueueChangesetSync not implemented")
-}
-func (UnimplementedRepoUpdaterServiceServer) SchedulePermsSync(context.Context, *SchedulePermsSyncRequest) (*SchedulePermsSyncResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SchedulePermsSync not implemented")
 }
 func (UnimplementedRepoUpdaterServiceServer) SyncExternalService(context.Context, *SyncExternalServiceRequest) (*SyncExternalServiceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SyncExternalService not implemented")
@@ -265,24 +261,6 @@ func _RepoUpdaterService_EnqueueChangesetSync_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RepoUpdaterService_SchedulePermsSync_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SchedulePermsSyncRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RepoUpdaterServiceServer).SchedulePermsSync(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: RepoUpdaterService_SchedulePermsSync_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RepoUpdaterServiceServer).SchedulePermsSync(ctx, req.(*SchedulePermsSyncRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _RepoUpdaterService_SyncExternalService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SyncExternalServiceRequest)
 	if err := dec(in); err != nil {
@@ -359,10 +337,6 @@ var RepoUpdaterService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "EnqueueChangesetSync",
 			Handler:    _RepoUpdaterService_EnqueueChangesetSync_Handler,
-		},
-		{
-			MethodName: "SchedulePermsSync",
-			Handler:    _RepoUpdaterService_SchedulePermsSync_Handler,
 		},
 		{
 			MethodName: "SyncExternalService",

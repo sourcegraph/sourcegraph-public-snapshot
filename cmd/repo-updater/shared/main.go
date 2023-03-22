@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -69,7 +68,7 @@ type EnterpriseInit func(
 	keyring keyring.Ring,
 	cf *httpcli.Factory,
 	server *repoupdater.Server,
-) (map[string]debugserver.Dumper, func(ctx context.Context, repo api.RepoID, syncReason database.PermissionsSyncJobReason) error)
+)
 
 type LazyDebugserverEndpoint struct {
 	repoUpdaterStateEndpoint     http.HandlerFunc
@@ -136,9 +135,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		Scheduler:             updateScheduler,
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 		RateLimitSyncer:       repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore(), repos.RateLimitSyncerOpts{}),
-		DatabaseBackedPermissionSyncerEnabled: func(ctx context.Context) bool {
-			return permssync.PermissionSyncWorkerEnabled(ctx, db, logger)
-		},
 	}
 
 	serviceServer := &repoupdater.RepoUpdaterServiceServer{
@@ -166,12 +162,11 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	// All dependencies ready
 	debugDumpers := make(map[string]debugserver.Dumper)
-	var enqueueRepoPerms func(context.Context, api.RepoID, database.PermissionsSyncJobReason) error
 	if enterpriseInit != nil {
-		debugDumpers, enqueueRepoPerms = enterpriseInit(observationCtx, db, store, keyring.Default(), cf, server)
+		enterpriseInit(observationCtx, db, store, keyring.Default(), cf, server)
 	}
 
-	go watchSyncer(ctx, logger, syncer, updateScheduler, enqueueRepoPerms, server.ChangesetSyncRegistry)
+	go watchSyncer(ctx, logger, syncer, updateScheduler, server.ChangesetSyncRegistry)
 	go func() {
 		err := syncer.Run(ctx, store, repos.RunOptions{
 			EnqueueInterval: repos.ConfRepoListUpdateInterval,
@@ -465,7 +460,6 @@ func watchSyncer(
 	logger log.Logger,
 	syncer *repos.Syncer,
 	sched *repos.UpdateScheduler,
-	enqueueRepoPermsJob func(ctx context.Context, repo api.RepoID, syncReason database.PermissionsSyncJobReason) error,
 	changesetSyncer batches.UnarchivedChangesetSyncRegistry,
 ) {
 	logger.Debug("started new repo syncer updates scheduler relay thread")
@@ -479,17 +473,6 @@ func watchSyncer(
 				sched.UpdateFromDiff(diff)
 			}
 
-			// Schedule a repo permissions sync for all private repos that were added or
-			// modified.
-			if enqueueRepoPermsJob != nil {
-				for _, repo := range getPrivateAddedOrModifiedRepos(diff) {
-					err := enqueueRepoPermsJob(ctx, repo, database.ReasonRepoUpdatedFromCodeHost)
-					if err != nil {
-						logger.Warn("failed to create repo sync job", log.Error(err), log.Int32("repo", int32(repo)))
-					}
-				}
-			}
-
 			// Similarly, changesetSyncer is only available in enterprise mode.
 			if changesetSyncer != nil {
 				repositories := diff.Modified.ReposModified(types.RepoModifiedArchived)
@@ -501,24 +484,6 @@ func watchSyncer(
 			}
 		}
 	}
-}
-
-func getPrivateAddedOrModifiedRepos(diff repos.Diff) []api.RepoID {
-	repoIDs := make([]api.RepoID, 0, len(diff.Added)+len(diff.Modified))
-
-	for _, r := range diff.Added {
-		if r.Private {
-			repoIDs = append(repoIDs, r.ID)
-		}
-	}
-
-	for _, r := range diff.Modified.Repos() {
-		if r.Private {
-			repoIDs = append(repoIDs, r.ID)
-		}
-	}
-
-	return repoIDs
 }
 
 // manageUnclonedRepos will periodically list the uncloned repositories on gitserver

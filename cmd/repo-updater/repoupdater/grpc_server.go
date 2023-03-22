@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -24,7 +23,7 @@ type RepoUpdaterServiceServer struct {
 	proto.UnimplementedRepoUpdaterServiceServer
 }
 
-func (s *RepoUpdaterServiceServer) RepoUpdateSchedulerInfo(ctx context.Context, req *proto.RepoUpdateSchedulerInfoRequest) (*proto.RepoUpdateSchedulerInfoResponse, error) {
+func (s *RepoUpdaterServiceServer) RepoUpdateSchedulerInfo(_ context.Context, req *proto.RepoUpdateSchedulerInfoRequest) (*proto.RepoUpdateSchedulerInfoResponse, error) {
 	res := s.Server.Scheduler.ScheduleInfo(api.RepoID(req.GetId()))
 	return res.ToProto(), nil
 }
@@ -69,32 +68,6 @@ func (s *RepoUpdaterServiceServer) EnqueueChangesetSync(ctx context.Context, req
 	}
 
 	return &proto.EnqueueChangesetSyncResponse{}, s.Server.ChangesetSyncRegistry.EnqueueChangesetSyncs(ctx, req.Ids)
-}
-
-func (s *RepoUpdaterServiceServer) SchedulePermsSync(ctx context.Context, req *proto.SchedulePermsSyncRequest) (*proto.SchedulePermsSyncResponse, error) {
-	if s.Server.DatabaseBackedPermissionSyncerEnabled != nil && s.Server.DatabaseBackedPermissionSyncerEnabled(ctx) {
-		s.Server.Logger.Warn("Dropping schedule-perms-sync request because PermissionSyncWorker is enabled. This should not happen.")
-		return &proto.SchedulePermsSyncResponse{}, nil
-	}
-
-	if s.Server.PermsSyncer == nil {
-		return nil, status.Error(codes.Internal, "perms syncer not configured")
-	}
-
-	repoIDs := make([]api.RepoID, len(req.GetRepoIds()))
-	for i, id := range req.GetRepoIds() {
-		repoIDs[i] = api.RepoID(id)
-	}
-
-	if len(req.UserIds) == 0 && len(repoIDs) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "neither user IDs nor repo IDs was provided in request (must provide at least one)")
-	}
-
-	opts := authz.FetchPermsOptions{InvalidateCaches: req.GetOptions().GetInvalidateCaches()}
-	s.Server.PermsSyncer.ScheduleUsers(ctx, opts, req.UserIds...)
-	s.Server.PermsSyncer.ScheduleRepos(ctx, repoIDs...)
-
-	return &proto.SchedulePermsSyncResponse{}, nil
 }
 
 func (s *RepoUpdaterServiceServer) SyncExternalService(ctx context.Context, req *proto.SyncExternalServiceRequest) (*proto.SyncExternalServiceResponse, error) {
