@@ -57,4 +57,3 @@ The following setting(s) apply to adding new data to a previously backfilled Cod
 
 The following setting(s) apply to both backfilling data and adding new data
 - `insights.query.worker.rateLimit` - Maximum number of Code Insights queries initiated per second on a worker node.
-
