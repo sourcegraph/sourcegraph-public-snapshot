@@ -36,7 +36,7 @@ func (err OutboundWebhookJobNotFoundErr) Error() string {
 	if err.id != nil {
 		return fmt.Sprintf("outbound webhook job with id %v not found", err.id)
 	}
-	return fmt.Sprint("outbound webhook job not found")
+	return "outbound webhook job not found"
 }
 
 func (OutboundWebhookJobNotFoundErr) NotFound() bool { return true }
