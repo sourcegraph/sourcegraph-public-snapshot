@@ -83,10 +83,7 @@ Environmental variables
 				return err
 			}
 
-			_, err = fmt.Fprintf(flag.CommandLine.Output(), "%s\n", token)
-			if err != nil {
-				return err
-			}
+			fmt.Println(token)
 		}
 
 		return nil

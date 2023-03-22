@@ -17,6 +17,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- Fixed `src admin create` returning token to stderr instead of stdout.
+
 ### Removed
 
 ## 5.0.2
