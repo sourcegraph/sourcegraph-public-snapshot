@@ -49,7 +49,14 @@ import {
 } from './github'
 import { calendarTime, ensureEvent, EventOptions, getClient } from './google-calendar'
 import { postMessage, slackURL } from './slack'
-import { bakeSrcCliSteps, batchChangesInAppChangelog, combyReplace, indexerUpdate } from './static-updates'
+import {
+    bakeAWSExecutorsSteps,
+    bakeGoogleExecutorsSteps,
+    bakeSrcCliSteps,
+    batchChangesInAppChangelog,
+    combyReplace,
+    indexerUpdate,
+} from './static-updates'
 import {
     backportStatus,
     cacheFolder,
@@ -106,8 +113,6 @@ export type StepID =
     | 'release:src-cli'
     | 'release:verify-src-cli'
     // executors
-    | 'release:prepare-google-executors'
-    | 'release:prepare-aws-executors'
     | 'release:google-executors-tags'
     | 'release:aws-executors-tags'
     // util
@@ -1066,6 +1071,10 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                 exit(1)
             }
 
+            // Creates PR's for executor release steps
+            await bakeGoogleExecutorsSteps(config)
+            await bakeAWSExecutorsSteps(config)
+
             const releaseBranch = release.branch
             const version = release.version.version
             ensureReleaseBranchUpToDate(releaseBranch)
@@ -1201,98 +1210,6 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
             } else {
                 console.log(chalk.red('Failed to verify src-cli versions'))
                 exit(1)
-            }
-        },
-    },
-    {
-        id: 'release:prepare-google-executors',
-        description: 'Prepare changesets for executor releases',
-        run: async config => {
-            const release = await getActiveRelease(config)
-            if (release.version.patch !== 0) {
-                console.log('executor releases are only supported in this tool for major / minor releases')
-                exit(1)
-            }
-            const client = await getAuthenticatedGitHubClient()
-            const { workdir } = await cloneRepo(client, 'sourcegraph', 'terraform-google-executors', {
-                revision: 'master',
-                revisionMustExist: true,
-            })
-            console.log(`Cloned sourcegraph/terraform-google-executors to ${workdir}`)
-
-            const next = await nextGoogleExecutorVersionInputWithAutodetect(config, workdir)
-            setGoogleExecutorVersion(config, next.version)
-
-            const prDetails = {
-                body: pullRequestBody(`Update files for ${next.version} release`),
-                title: `executor: v${next.version}`,
-                commitMessage: `executor: v${next.version}`,
-            }
-            const sets = await createChangesets({
-                requiredCommands: [],
-                changes: [
-                    {
-                        ...prDetails,
-                        repo: 'terraform-google-executors',
-                        owner: 'sourcegraph',
-                        base: 'master',
-                        head: `release/prepare-${next.version}`,
-                        edits: [`./prepare-release.sh ${next.version}`],
-                        labels: [releaseBlockerLabel],
-                        draft: true,
-                    },
-                ],
-                dryRun: config.dryRun.changesets,
-            })
-            console.log('Merge the following pull requests:\n')
-            for (const set of sets) {
-                console.log(set.pullRequestURL)
-            }
-        },
-    },
-    {
-        id: 'release:prepare-aws-executors',
-        description: 'Prepare changesets for executor releases',
-        run: async config => {
-            const release = await getActiveRelease(config)
-            if (release.version.patch !== 0) {
-                console.log('executor releases are only supported in this tool for major / minor releases')
-                exit(1)
-            }
-            const client = await getAuthenticatedGitHubClient()
-            const { workdir } = await cloneRepo(client, 'sourcegraph', 'terraform-aws-executors', {
-                revision: 'master',
-                revisionMustExist: true,
-            })
-
-            const next = await nextAWSExecutorVersionInputWithAutodetect(config, workdir)
-            setAWSExecutorVersion(config, next.version)
-            console.log(next)
-
-            const prDetails = {
-                body: pullRequestBody(`Update files for ${next.version} release`),
-                title: `executor: v${next.version}`,
-                commitMessage: `executor: v${next.version}`,
-            }
-            const sets = await createChangesets({
-                requiredCommands: [],
-                changes: [
-                    {
-                        ...prDetails,
-                        repo: 'sourcegraph',
-                        owner: 'terraform-aws-executors',
-                        base: 'master',
-                        head: `release/prepare-${next.version}`,
-                        edits: [`./prepare-release.sh ${next.version}`],
-                        labels: [releaseBlockerLabel],
-                        draft: true,
-                    },
-                ],
-                dryRun: config.dryRun.changesets,
-            })
-            console.log('Merge the following pull requests:\n')
-            for (const set of sets) {
-                console.log(set.pullRequestURL)
             }
         },
     },

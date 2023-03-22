@@ -412,7 +412,7 @@ export async function nextGoogleExecutorVersionInputWithAutodetect(
         next = new SemVer(config.in_progress.googleExecutorVersion)
     }
 
-    if (!(await softVerifyWithInput(`Confirm next version of executor should be: ${next.version}`))) {
+    if (!(await softVerifyWithInput(`Confirm next version of sourcegraph/terraform-google-executors should be: ${next.version}`))) {
         return new SemVer(
             await retryInput(
                 'Enter the next version of executor: ',
@@ -440,7 +440,7 @@ export async function nextAWSExecutorVersionInputWithAutodetect(
         }
         console.log('Attempting to detect previous executor version...')
         const previous = getPreviousVersionExecutor(repoPath)
-        console.log(chalk.blue(`Detected previous executor version: ${previous.version}`))
+        console.log(chalk.blue(`Detected previous sourcegraph/terraform-aws-executors version: ${previous.version}`))
         next = previous.inc('minor')
     } else {
         next = new SemVer(config.in_progress.awsExecutorVersion)
