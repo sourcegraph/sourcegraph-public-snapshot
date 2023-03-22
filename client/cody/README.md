@@ -12,7 +12,11 @@
     </a>
 </div>
 
-# Cody for Enterprise
+## Cody for Enterprise
+
+Cody is in private alpha at this stage. Contact your techical advisor or [signup here](https://sourcegraph.typeform.com/to/pIXTgwrd?typeform-source=t.co) to get access. We have limited capacity to onboard customers at first, but we're working hard to open Cody up to the world fast!
+
+## What is Cody?
 
 - Cody is your hyper intelligent programming sidekick - an AI assistant developed by Sourcegraph to supercharge your productivity as a developer.
 - Cody frees you from mundane, repetitive tasks so you can focus on solving complex problems and building amazing things. Powered by advanced AI and Sourcegraph's code search and intelligence.
