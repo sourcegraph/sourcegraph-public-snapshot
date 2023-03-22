@@ -78,7 +78,10 @@ class LinkBuilder implements PluginValue {
                     }
 
                     const line = textDocument.line(occurrenceStartLine)
-                    const links = getLinksFromString({ input: line.text, externalURLs: blobInfo[0].externalURLs })
+                    const links = getLinksFromString({
+                        input: line.text,
+                        externalURLs: occurrence.kind === SyntaxKind.Comment ? blobInfo[0].externalURLs : undefined,
+                    })
 
                     for (const link of links) {
                         const from = Math.min(line.from + link.start, line.to)
