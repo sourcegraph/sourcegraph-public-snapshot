@@ -25,17 +25,12 @@ func NewGoPackagesSource(ctx context.Context, svc *types.ExternalService, cf *ht
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 
-	cli, err := cf.Doer()
-	if err != nil {
-		return nil, err
-	}
-
 	return &PackagesSource{
 		svc:        svc,
 		configDeps: c.Dependencies,
 		scheme:     dependencies.GoPackagesScheme,
 		src: &goPackagesSource{
-			client: gomodproxy.NewClient(svc.URN(), c.Urls, cli),
+			client: gomodproxy.NewClient(svc.URN(), c.Urls, cf),
 		},
 	}, nil
 }

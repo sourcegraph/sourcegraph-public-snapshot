@@ -33,7 +33,6 @@ export interface GlobalNotebooksAreaProps
     isSourcegraphDotCom: boolean
     isSourcegraphApp: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-    globbing: boolean
 }
 /**
  * The global code monitoring area.

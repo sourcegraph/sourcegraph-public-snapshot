@@ -35,14 +35,13 @@ interface SearchConsolePageProps
             'allExpanded' | 'executedQuery' | 'showSearchContext' | 'enableOwnershipSearch'
         >,
         OwnConfigProps {
-    globbing: boolean
     isMacPlatform: boolean
 }
 
 export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<SearchConsolePageProps>> = props => {
     const location = useLocation()
     const navigate = useNavigate()
-    const { globbing, streamSearch, isSourcegraphDotCom, ownEnabled } = props
+    const { streamSearch, isSourcegraphDotCom, ownEnabled } = props
     const { applySuggestionsOnEnter } = useExperimentalFeatures(features => ({
         applySuggestionsOnEnter: features.applySearchQuerySuggestionOnEnter ?? true,
     }))
@@ -74,11 +73,10 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
         () =>
             createDefaultSuggestions({
                 fetchSuggestions: query => fetchStreamSuggestions(query),
-                globbing,
                 isSourcegraphDotCom,
                 applyOnEnter: applySuggestionsOnEnter,
             }),
-        [globbing, isSourcegraphDotCom, applySuggestionsOnEnter]
+        [isSourcegraphDotCom, applySuggestionsOnEnter]
     )
 
     const extensions = useMemo(

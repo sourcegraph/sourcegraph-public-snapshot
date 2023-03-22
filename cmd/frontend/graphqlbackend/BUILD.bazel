@@ -175,7 +175,6 @@ go_library(
         "authz.graphql",
         "batches.graphql",
         "code_monitors.graphql",
-        "codeintel.graphql",
         "compute.graphql",
         "dotcom.graphql",
         "insights.graphql",
@@ -189,6 +188,10 @@ go_library(
         "own.graphql",
         "embeddings.graphql",
         "app.graphql",
+        "codeintel.autoindexing.graphql",
+        "codeintel.codenav.graphql",
+        "codeintel.policies.graphql",
+        "codeintel.sentinel.graphql",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend",
     deps = [

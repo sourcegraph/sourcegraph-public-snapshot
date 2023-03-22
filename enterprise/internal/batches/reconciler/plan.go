@@ -83,6 +83,15 @@ func (ops Operations) ExecutionOrder() []btypes.ReconcilerOperation {
 	return uniqueOps
 }
 
+func (ops Operations) Contains(op btypes.ReconcilerOperation) bool {
+	for _, o := range ops {
+		if o == op {
+			return true
+		}
+	}
+	return false
+}
+
 // Plan represents the possible operations the reconciler needs to do
 // to reconcile the current and the desired state of a changeset.
 type Plan struct {

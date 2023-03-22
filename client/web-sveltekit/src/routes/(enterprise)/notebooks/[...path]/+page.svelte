@@ -1,7 +1,7 @@
 <!--
     This page is rendered by using the corresponding React component.
 
-    CAVEAT: Using back/forward buttons to navigate between headings inside a 
+    CAVEAT: Using back/forward buttons to navigate between headings inside a
     Notebook (has navigation) doesn't scroll the target into view.
     We need to investigate if that's a fundamental problem with
     SvelteKit<->ReactRouter of if Notebooks are doing something that prevents
@@ -36,7 +36,6 @@
         platformContext: data.platformContext as any,
         authenticatedUser: data.user,
         notebooksEnabled: true,
-        globbing: false,
         settingsCascade: data.settings,
         searchContextsEnabled: false,
         streamSearch: aggregateStreamingSearch,

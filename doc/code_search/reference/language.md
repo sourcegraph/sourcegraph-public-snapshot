@@ -575,12 +575,54 @@ or structural search. This parameter is available as a command-line and accessib
 <script>
 ComplexDiagram(
     Choice(0,
+        Terminal("has(...)", {href: "#repo-has"}),
+        Terminal("has.key(...)", {href: "#repo-has-key"}),
         Terminal("has.file(...)", {href: "#repo-has-file"}),
         Terminal("has.content(...)", {href: "#repo-has-content"}),
         Terminal("has.path(...)", {href: "#repo-has-path"}),
         Terminal("has.commit.after(...)", {href: "#repo-has-commit-after"}),
+        Terminal("has.topic(...)", {href: "#repo-has-topic"}),
         Terminal("has.description(...)", {href: "#repo-has-description"}))).addTo();
 </script>
+
+### Repo has
+
+<aside class="experimental">
+<span class="badge badge-experimental">Experimental</span> Tagging repositories with key/value pairs is an experimental feature in Sourcegraph 4.0. It's a <b>preview</b> of functionality we're currently exploring to make searching large numbers of repositories easier. To enable this feature, enable the `repository-metadata` feature flag for your org. If you have any feedback, please let us know!
+</aside>
+
+<script>
+ComplexDiagram(
+    Terminal("has"),
+    Terminal("("),
+    Sequence(
+      Terminal("string", {href: "#string"}),
+      Terminal(":"),
+      Terminal("string", {href: "#string"})),
+    Terminal(")")).addTo();
+</script>
+
+Search only inside repositories that are associated with the provided key-value pair.
+
+**Example:** `repo:has(owning-team:security)`
+
+### Repo has key
+
+<aside class="experimental">
+<span class="badge badge-experimental">Experimental</span> Tagging repositories with key/value pairs is an experimental feature in Sourcegraph 4.0. It's a <b>preview</b> of functionality we're currently exploring to make searching large numbers of repositories easier. To enable this feature, enable the `repository-metadata` feature flag for your org. If you have any feedback, please let us know!
+</aside>
+
+<script>
+ComplexDiagram(
+    Terminal("has.key"),
+    Terminal("("),
+    Terminal("string", {href: "#string"}),
+    Terminal(")")).addTo();
+</script>
+
+Search only inside repositories that are associated with at least one key-value with the provided key.
+
+**Example:** `repo:has.key(owning-team)`
 
 ### Repo has file and content
 

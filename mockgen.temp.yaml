@@ -83,10 +83,6 @@
   path: github.com/sourcegraph/sourcegraph/internal/gitserver
   interfaces:
     - Client
-- filename: internal/insights/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/internal/insights
-  interfaces:
-    - Loader
 - filename: internal/repos/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/repos
   interfaces:

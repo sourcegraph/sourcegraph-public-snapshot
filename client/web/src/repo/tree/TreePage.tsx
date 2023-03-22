@@ -71,7 +71,6 @@ export interface Props
     filePath: string
     commitID: string
     revision: string
-    globbing: boolean
     isSourcegraphDotCom: boolean
     className?: string
 }

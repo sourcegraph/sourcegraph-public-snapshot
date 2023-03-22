@@ -79,6 +79,18 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 		// ID: 5
 		{
 			AuthorUserID: 1,
+			// Nothing is changed.
+			//
+			// This is the same as the previous entry, and this should not show up in the output of
+			// any query that lists the diffs.
+			Contents: `{
+  "disableAutoGitUpdates": false,
+  "auth.Providers": []
+}`,
+		},
+		// ID: 6
+		{
+			AuthorUserID: 1,
 			// Existing line is removed.
 			Contents: `{
   "auth.Providers": []
@@ -99,8 +111,15 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 	}
 
 	expectedDiffs := map[int32]string{
-		5: `--- ID: 4
-+++ ID: 5
+		// This first diff is between 6 and 4 and not 5 and 4 because:
+		// 4 and 5 are identical entries
+		//
+		// Also, the diff is not between 6 and 5 because:
+		// 4 came first in the series and 5 is the redundant / duplicate config and not 4. And 6 is
+		// the next item that is different, we want to calculate the diff between these two and not
+		// 6 and 5.
+		6: `--- ID: 4
++++ ID: 6
 @@ -1,4 +1,3 @@
  {
 -  "disableAutoGitUpdates": false,
@@ -231,9 +250,9 @@ func TestSiteConfigConnection(t *testing.T) {
 				"site": {
 					"id": "U2l0ZToic2l0ZSI=",
 					"configuration": {
-						"id": 5,
+						"id": 6,
 						"history": {
-							"totalCount": 5,
+							"totalCount": 6,
 							"nodes": [
 								{
 									"id": %[1]q,
@@ -266,7 +285,7 @@ func TestSiteConfigConnection(t *testing.T) {
 					}
 				}
 			}
-		`, marshalSiteConfigurationChangeID(5), marshalSiteConfigurationChangeID(4), expectedDiffs[5], expectedDiffs[4]),
+		`, marshalSiteConfigurationChangeID(6), marshalSiteConfigurationChangeID(4), expectedDiffs[6], expectedDiffs[4]),
 		},
 		{
 			Schema:  mustParseGraphQLSchema(t, stubs.db),
@@ -306,9 +325,9 @@ func TestSiteConfigConnection(t *testing.T) {
 						"site": {
 							"id": "U2l0ZToic2l0ZSI=",
 							"configuration": {
-								"id": 5,
+								"id": 6,
 								"history": {
-									"totalCount": 5,
+									"totalCount": 6,
 									"nodes": [
 										{
 											"id": %[1]q,
@@ -379,15 +398,15 @@ func TestSiteConfigConnection(t *testing.T) {
 					}
 				}
 			}
-		`, marshalSiteConfigurationChangeID(5)),
+		`, marshalSiteConfigurationChangeID(6)),
 			ExpectedResult: fmt.Sprintf(`
 			{
 				"site": {
 					"id": "U2l0ZToic2l0ZSI=",
 					"configuration": {
-						"id": 5,
+						"id": 6,
 						"history": {
-							"totalCount": 5,
+							"totalCount": 6,
 							"nodes": [
 								{
 									"id": %[1]q,
@@ -454,36 +473,40 @@ func TestSiteConfigConnection(t *testing.T) {
 					}
 			  }
 			}
-		`, marshalSiteConfigurationChangeID(1)),
+		`, marshalSiteConfigurationChangeID(3)),
 			ExpectedResult: fmt.Sprintf(`
 			{
 				"site": {
 					"id": "U2l0ZToic2l0ZSI=",
 					"configuration": {
-						"id": 5,
+						"id": 6,
 						"history": {
-							"totalCount": 5,
+							"totalCount": 6,
 							"nodes": [
-								 {
+								{
 									"id": %[1]q,
 									"author": {
-										"id": "VXNlcjoy",
-										"username": "bar",
-										"displayName": "bar user"
+										"id": "VXNlcjox",
+										"username": "foo",
+										"displayName": "foo user"
 									},
 									"reproducedDiff": true,
 									"diff": %[3]q
-								 },
-								 {
+								},
+								{
 									"id": %[2]q,
-									"author": null,
+									"author": {
+										"id": "VXNlcjox",
+										"username": "foo",
+										"displayName": "foo user"
+									},
 									"reproducedDiff": true,
 									"diff": %[4]q
-								 }
+								}
 							],
 							"pageInfo": {
 							  "hasNextPage": true,
-							  "hasPreviousPage": true,
+							  "hasPreviousPage": false,
 							  "endCursor": %[2]q,
 							  "startCursor": %[1]q
 							}
@@ -491,7 +514,7 @@ func TestSiteConfigConnection(t *testing.T) {
 					}
 				}
 			}
-		`, marshalSiteConfigurationChangeID(3), marshalSiteConfigurationChangeID(2), expectedDiffs[3], expectedDiffs[2]),
+		`, marshalSiteConfigurationChangeID(6), marshalSiteConfigurationChangeID(4), expectedDiffs[6], expectedDiffs[4]),
 		},
 	})
 }
@@ -518,15 +541,16 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			paginationArgs: &database.PaginationArgs{
 				First: intPtr(2),
 			},
-			expectedSiteConfigIDs:         []int32{5, 4},
+			// 5 is skipped because it is the same as 4.
+			expectedSiteConfigIDs:         []int32{6, 4},
 			expectedPreviousSiteConfigIDs: []int32{4, 3},
 		},
 		{
-			name: "first: 5 (exact number of items that exist in the database)",
+			name: "first: 6 (exact number of items that exist in the database)",
 			paginationArgs: &database.PaginationArgs{
-				First: intPtr(5),
+				First: intPtr(6),
 			},
-			expectedSiteConfigIDs:         []int32{5, 4, 3, 2, 1},
+			expectedSiteConfigIDs:         []int32{6, 4, 3, 2, 1},
 			expectedPreviousSiteConfigIDs: []int32{4, 3, 2, 1, 0},
 		},
 		{
@@ -534,7 +558,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			paginationArgs: &database.PaginationArgs{
 				First: intPtr(20),
 			},
-			expectedSiteConfigIDs:         []int32{5, 4, 3, 2, 1},
+			expectedSiteConfigIDs:         []int32{6, 4, 3, 2, 1},
 			expectedPreviousSiteConfigIDs: []int32{4, 3, 2, 1, 0},
 		},
 		{
@@ -546,11 +570,11 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			expectedPreviousSiteConfigIDs: []int32{0, 1},
 		},
 		{
-			name: "last: 5 (exact number of items that exist in the database)",
+			name: "last: 6 (exact number of items that exist in the database)",
 			paginationArgs: &database.PaginationArgs{
-				Last: intPtr(5),
+				Last: intPtr(6),
 			},
-			expectedSiteConfigIDs:         []int32{1, 2, 3, 4, 5},
+			expectedSiteConfigIDs:         []int32{1, 2, 3, 4, 6},
 			expectedPreviousSiteConfigIDs: []int32{0, 1, 2, 3, 4},
 		},
 		{
@@ -558,26 +582,26 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			paginationArgs: &database.PaginationArgs{
 				Last: intPtr(20),
 			},
-			expectedSiteConfigIDs:         []int32{1, 2, 3, 4, 5},
+			expectedSiteConfigIDs:         []int32{1, 2, 3, 4, 6},
 			expectedPreviousSiteConfigIDs: []int32{0, 1, 2, 3, 4},
 		},
 		{
-			name: "first: 2, after: 4",
+			name: "first: 2, after: 6",
 			paginationArgs: &database.PaginationArgs{
 				First: intPtr(2),
-				After: toStringPtr(4),
+				After: toStringPtr(6),
 			},
-			expectedSiteConfigIDs:         []int32{3, 2},
-			expectedPreviousSiteConfigIDs: []int32{2, 1},
+			expectedSiteConfigIDs:         []int32{4, 3},
+			expectedPreviousSiteConfigIDs: []int32{3, 2},
 		},
 		{
-			name: "first: 10, after: 4",
+			name: "first: 10, after: 6",
 			paginationArgs: &database.PaginationArgs{
 				First: intPtr(10),
-				After: toStringPtr(4),
+				After: toStringPtr(6),
 			},
-			expectedSiteConfigIDs:         []int32{3, 2, 1},
-			expectedPreviousSiteConfigIDs: []int32{2, 1, 0},
+			expectedSiteConfigIDs:         []int32{4, 3, 2, 1},
+			expectedPreviousSiteConfigIDs: []int32{3, 2, 1, 0},
 		},
 		{
 			name: "first: 2, after: 1",
@@ -603,14 +627,14 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 				Last:   intPtr(10),
 				Before: toStringPtr(2),
 			},
-			expectedSiteConfigIDs:         []int32{3, 4, 5},
+			expectedSiteConfigIDs:         []int32{3, 4, 6},
 			expectedPreviousSiteConfigIDs: []int32{2, 3, 4},
 		},
 		{
-			name: "last: 2, before: 5",
+			name: "last: 2, before: 6",
 			paginationArgs: &database.PaginationArgs{
 				Last:   intPtr(2),
-				Before: toStringPtr(5),
+				Before: toStringPtr(6),
 			},
 			expectedSiteConfigIDs:         []int32{},
 			expectedPreviousSiteConfigIDs: []int32{},
@@ -636,7 +660,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			}
 
 			if diff := cmp.Diff(tc.expectedSiteConfigIDs, gotIDs); diff != "" {
-				t.Errorf("mismatched siteConfig.ID, diff %v", diff)
+				t.Errorf("mismatched siteConfig.ID, diff (-want, +got)\n%s", diff)
 			}
 
 			if len(tc.expectedPreviousSiteConfigIDs) == 0 {

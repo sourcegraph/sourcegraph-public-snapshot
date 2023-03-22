@@ -88,6 +88,11 @@ func (r *appResolver) LocalDirectory(ctx context.Context, args *LocalDirectoryAr
 		return nil, err
 	}
 
+	// we will not assume current working directory when localDirectoryResolver conducts discovery on path
+	if args.Dir == "" {
+		return nil, errors.New("Path must be non-empty string")
+	}
+
 	path, err := filepath.Abs(args.Dir)
 	if err != nil {
 		return nil, err

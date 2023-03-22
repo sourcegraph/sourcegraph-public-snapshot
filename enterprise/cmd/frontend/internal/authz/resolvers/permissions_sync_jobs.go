@@ -266,7 +266,7 @@ func (c codeHostStateResolver) ProviderType() string {
 }
 
 func (c codeHostStateResolver) Status() string {
-	return c.state.Status
+	return string(c.state.Status)
 }
 
 func (c codeHostStateResolver) Message() string {
@@ -281,8 +281,14 @@ type permissionSyncJobReasonResolver struct {
 func (p permissionSyncJobReasonResolver) Group() string {
 	return string(p.group)
 }
-func (p permissionSyncJobReasonResolver) Reason() string {
-	return string(p.reason)
+func (p permissionSyncJobReasonResolver) Reason() *string {
+	if p.reason == "" {
+		return nil
+	}
+
+	reason := string(p.reason)
+
+	return &reason
 }
 
 type subject struct {
