@@ -18,6 +18,11 @@ function sanitizeCodebase(codebase: string | undefined): string {
     return codebase.replace(protocolRegexp, '')
 }
 
+function sanitizeServerEndpoint(serverEndpoint: string): string {
+    const trailingSlashRegexp = /\/$/
+    return serverEndpoint.trim().replace(trailingSlashRegexp, '')
+}
+
 // Registers Commands and Webview at extension start up
 export const CommandsProvider = async (context: vscode.ExtensionContext): Promise<ExtensionApi> => {
     // for tests
@@ -30,7 +35,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
     const chatProvider = await ChatViewProvider.create(
         context.extensionPath,
         sanitizeCodebase(config.codebase),
-        config.serverEndpoint,
+        sanitizeServerEndpoint(config.serverEndpoint),
         config.useContext,
         config.debug,
         secretStorage
@@ -101,15 +106,24 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         vscode.workspace.onDidChangeConfiguration(async event => {
             if (event.affectsConfiguration('cody') || event.affectsConfiguration('sourcegraph')) {
                 const config = getConfiguration(vscode.workspace.getConfiguration())
-                await chatProvider.onConfigChange('endpoint', sanitizeCodebase(config.codebase), config.serverEndpoint)
+                await chatProvider.onConfigChange(
+                    'endpoint',
+                    sanitizeCodebase(config.codebase),
+                    sanitizeServerEndpoint(config.serverEndpoint)
+                )
             }
         })
     )
+
     context.subscriptions.push(
         secretStorage.onDidChange(async key => {
             if (key === CODY_ACCESS_TOKEN_SECRET) {
                 const config = getConfiguration(vscode.workspace.getConfiguration())
-                await chatProvider.onConfigChange('token', sanitizeCodebase(config.codebase), config.serverEndpoint)
+                await chatProvider.onConfigChange(
+                    'token',
+                    sanitizeCodebase(config.codebase),
+                    sanitizeServerEndpoint(config.serverEndpoint)
+                )
             }
         })
     )
