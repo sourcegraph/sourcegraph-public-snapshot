@@ -3,6 +3,7 @@ package runner
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 )
@@ -44,6 +45,10 @@ type Options struct {
 // TODO: this is for backwards compatibility with the old command runner. It will be removed in favor of the runtime
 // implementation.
 func NewRunner(cmd command.Command, dir, vmName string, logger command.Logger, options Options, dockerAuthConfig types.DockerAuthConfig, operations *command.Operations) Runner {
+	if util.HasShellBuildTag() {
+		return NewShellRunner(cmd, logger, dir, options.DockerOptions)
+	}
+
 	if !options.FirecrackerOptions.Enabled {
 		return NewDockerRunner(cmd, logger, dir, options.DockerOptions, dockerAuthConfig)
 	}

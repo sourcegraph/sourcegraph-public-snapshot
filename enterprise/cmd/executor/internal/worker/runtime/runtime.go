@@ -42,6 +42,18 @@ func New(
 	runner util.CmdRunner,
 	cmd command.Command,
 ) (Runtime, error) {
+	// TODO: eventually remove this. It was a quick workaround.
+	if util.HasShellBuildTag() {
+		logger.Info("runtime 'shell' is supported")
+		return &shellRuntime{
+			cmd:          cmd,
+			operations:   ops,
+			filesStore:   filesStore,
+			cloneOptions: cloneOpts,
+			dockerOpts:   dockerOpts,
+		}, nil
+	}
+
 	if runnerOpts.FirecrackerOptions.Enabled {
 		// We explicitly want a Firecracker runtime. So validation must pass.
 		if err := util.ValidateFirecrackerTools(runner); err != nil {
@@ -101,4 +113,5 @@ type Name string
 const (
 	NameDocker      Name = "docker"
 	NameFirecracker Name = "firecracker"
+	NameShell  Name = "shell"
 )

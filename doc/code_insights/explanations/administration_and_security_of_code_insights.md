@@ -31,6 +31,15 @@ Because there are no separate read/write permissions and no dashboard owners, an
 
 If a user gets deleted, any insights they created will still be visible to other users via the dashboards they appear on. However, if one of these insights is removed from all dashboards, it will no longer be accessible.
 
+## Code Insights Admin  (>=5.0)
+
+Sourcegraph administrators can view and manage the background jobs that Code Insights runs when historically backfilling an insight. The following functionality is available under _Code Insights jobs_ in the _Maintenance_ section within the Site Admin (`/site-admin/code-insights-jobs`):
+  - See a list of the jobs that backfill an insight and their current state
+  - See any errors that occurred when backfilling an insight
+  - Retry a failed backfill
+  - Move a backfill job to the front or back of the processing queue
+  
+The jobs can be searched by state and by an insight's title or the label of any of its series.
 ## Code Insights Site Configuration
 
 While the default configuration is appropriate for most deployments, in the site configuration there are values that allow admins more control over the rate at which insights runs in the background. 
@@ -48,4 +57,3 @@ The following setting(s) apply to adding new data to a previously backfilled Cod
 
 The following setting(s) apply to both backfilling data and adding new data
 - `insights.query.worker.rateLimit` - Maximum number of Code Insights queries initiated per second on a worker node.
-

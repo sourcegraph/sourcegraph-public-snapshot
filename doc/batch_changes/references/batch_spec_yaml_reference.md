@@ -199,7 +199,7 @@ steps:
 
 ### Environment array
 
-> NOTE: This feature is only available in Sourcegraph 3.23 and later.
+<span class="badge badge-note">Sourcegraph 3.23+</span>
 
 In this case, `steps.env` is an array. Each array item is either:
 
@@ -234,7 +234,7 @@ For instance, if `USER` is set to `adam`, this would append `Hello world! from a
 
 ## [`steps.files`](#steps-files)
 
-> NOTE: This feature is only available in Sourcegraph 3.22 and later.
+<span class="badge badge-note">Sourcegraph 3.22+</span>
 
 Files to create on the host machine and mount into the container when running `steps.run`.
 
@@ -275,7 +275,7 @@ steps:
 
 ## [`steps.outputs`](#steps-outputs)
 
-> NOTE: This feature is only available in Sourcegraph 3.24 and later.
+<span class="badge badge-note">Sourcegraph 3.24+</span>
 
 Output variables that are set after the [`steps.run`](#steps-run) command has been executed. These variables are available in the global `outputs` namespace as `outputs.<name>` <a href="batch_spec_templating">template variables</a> in the `run`, `env`, and `outputs` properties of subsequent steps, and the [`changesetTemplate`](#changesettemplate). Two steps with the same output variable name will overwrite the previous contents.
 
@@ -350,7 +350,7 @@ Possible values: `text`, `yaml`, `json`. Default is `text`.
 
 ## [`steps.if`](#steps-if)
 
-> NOTE: This feature is only available in Sourcegraph 3.28 and later with Sourcegraph CLI 3.28 and later.
+<span class="badge badge-note">Sourcegraph 3.28+</span>with Sourcegraph CLI 3.28 and later.
 
 Condition to check before executing the step. If the value of the `if:` attribute is `true` (boolean) or `"true"` (string) then the step is executed in the given repository (or workspace, in case [workspaces](#workspaces) are used). Otherwise the step is skipped.
 

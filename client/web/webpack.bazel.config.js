@@ -52,7 +52,7 @@ const {
   SENTRY_PROJECT,
 } = ENVIRONMENT_CONFIG
 
-const IS_PERSISTENT_CACHE_ENABLED = IS_DEVELOPMENT && !IS_CI
+const IS_PERSISTENT_CACHE_ENABLED = false // Disabled in Bazel
 const IS_EMBED_ENTRY_POINT_ENABLED = ENTERPRISE && (IS_PRODUCTION || (IS_DEVELOPMENT && EMBED_DEVELOPMENT))
 
 const RUNTIME_ENV_VARIABLES = {
@@ -125,11 +125,8 @@ const config = {
     }),
   },
   // entry: { ... SET BY BAZEL RULE ... }
-  devServer: {
-    port: 8080,
-  },
   output: {
-    // path: STATIC_ASSETS_PATH,
+    path: STATIC_ASSETS_PATH,
     // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
     // Note: [name] will vary depending on the Webpack chunk. If specified, it will use a provided chunk name, otherwise it will fallback to a deterministic id.
     filename:
@@ -164,7 +161,7 @@ const config = {
     }),
     getMonacoWebpackPlugin(),
     new WebpackManifestPlugin({
-      writeToFileEmit: false,
+      writeToFileEmit: true,
       fileName: 'webpack.manifest.json',
       seed: {
         environment: NODE_ENV,

@@ -83,6 +83,7 @@ const (
 	routeCody                    = "cody"
 	routeOwn                     = "own"
 	routeAppComingSoon           = "app-coming-soon"
+	routeAppAuthCallback         = "app-auth-callback"
 
 	routeSearchStream  = "search.stream"
 	routeSearchConsole = "search.console"
@@ -180,6 +181,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/cody").Methods("GET").Name(routeCody)
 	r.PathPrefix("/own").Methods("GET").Name(routeOwn)
 	r.Path("/app/coming-soon").Methods("GET").Name(routeAppComingSoon)
+	r.Path("/app/auth/callback").Methods("GET").Name(routeAppAuthCallback)
 	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted)
 
 	// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
@@ -295,6 +297,7 @@ func initRouter(db database.DB, enterpriseJobs jobutil.EnterpriseJobs, router *m
 	router.Get(routeCody).Handler(brandedNoIndex("Cody"))
 	router.Get(routeOwn).Handler(brandedNoIndex("Own"))
 	router.Get(routeAppComingSoon).Handler(brandedNoIndex("Coming soon"))
+	router.Get(routeAppAuthCallback).Handler(brandedNoIndex("Auth callback"))
 	router.Get(uirouter.RoutePingFromSelfHosted).Handler(handler(db, servePingFromSelfHosted))
 
 	// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.

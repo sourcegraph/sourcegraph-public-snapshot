@@ -251,17 +251,17 @@ ts_project(
     srcs = [
         "src/shared/code-hosts/bitbucket-cloud/codeHost.test.ts",
         "src/shared/code-hosts/bitbucket/codeHost.test.ts",
-        "src/shared/code-hosts/bitbucket/domFunctions.test.ts",
+        "src/shared/code-hosts/bitbucket/domFunctions.test.tsx",
         "src/shared/code-hosts/bitbucket/scrape.test.ts",
         "src/shared/code-hosts/github/codeHost.test.ts",
-        "src/shared/code-hosts/github/domFunctions.test.ts",
+        "src/shared/code-hosts/github/domFunctions.test.tsx",
         "src/shared/code-hosts/github/fileInfo.test.ts",
-        "src/shared/code-hosts/github/util.test.ts",
+        "src/shared/code-hosts/github/util.test.tsx",
         "src/shared/code-hosts/gitlab/codeHost.test.ts",
-        "src/shared/code-hosts/gitlab/domFunctions.test.ts",
+        "src/shared/code-hosts/gitlab/domFunctions.test.tsx",
         "src/shared/code-hosts/gitlab/scrape.test.ts",
         "src/shared/code-hosts/phabricator/codeHost.test.ts",
-        "src/shared/code-hosts/phabricator/domFunctions.test.ts",
+        "src/shared/code-hosts/phabricator/domFunctions.test.tsx",
         "src/shared/code-hosts/phabricator/fileInfo.test.ts",
         "src/shared/code-hosts/shared/ViewOnSourcegraphButton.test.tsx",
         "src/shared/code-hosts/shared/codeHost.test.tsx",
@@ -293,9 +293,8 @@ ts_project(
 
 jest_test(
     name = "test",
+    timeout = "moderate",
     data = [
         ":browser_tests",
     ],
-    # TODO(bazel): enable when snapshots updated to support pre-compiled .js files
-    tags = ["manual"],
 )

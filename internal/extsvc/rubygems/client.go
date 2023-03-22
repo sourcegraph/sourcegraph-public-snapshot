@@ -16,38 +16,39 @@ import (
 type Client struct {
 	registryURL string
 
-	cli httpcli.Doer
+	uncachedClient httpcli.Doer
 
 	// Self-imposed rate-limiter.
 	limiter *ratelimit.InstrumentedLimiter
 }
 
-func NewClient(urn string, registryURL string, cli httpcli.Doer) *Client {
+func NewClient(urn string, registryURL string, httpfactory *httpcli.Factory) *Client {
+	uncached, _ := httpfactory.Doer(httpcli.NewCachedTransportOpt(httpcli.NoopCache{}, false))
 	return &Client{
-		registryURL: registryURL,
-		cli:         cli,
-		limiter:     ratelimit.DefaultRegistry.Get(urn),
+		registryURL:    registryURL,
+		uncachedClient: uncached,
+		limiter:        ratelimit.DefaultRegistry.Get(urn),
 	}
 }
 
-func (c *Client) GetPackageContents(ctx context.Context, dep reposource.VersionedPackage) (body io.ReadCloser, url string, err error) {
-	url = fmt.Sprintf("%s/gems/%s-%s.gem", strings.TrimSuffix(c.registryURL, "/"), dep.PackageSyntax(), dep.PackageVersion())
+func (c *Client) GetPackageContents(ctx context.Context, dep reposource.VersionedPackage) (body io.ReadCloser, err error) {
+	url := fmt.Sprintf("%s/gems/%s-%s.gem", strings.TrimSuffix(c.registryURL, "/"), dep.PackageSyntax(), dep.PackageVersion())
 
 	if err := c.limiter.Wait(ctx); err != nil {
-		return nil, url, err
+		return nil, err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return nil, url, err
+		return nil, err
 	}
 	req.Header.Add("User-Agent", "sourcegraph-rubygems-syncer (sourcegraph.com)")
 
-	body, err = c.do(req)
+	body, err = c.do(c.uncachedClient, req)
 	if err != nil {
-		return nil, url, err
+		return nil, err
 	}
-	return body, url, nil
+	return body, nil
 }
 
 type Error struct {
@@ -64,8 +65,8 @@ func (e *Error) NotFound() bool {
 	return e.code == http.StatusNotFound
 }
 
-func (c *Client) do(req *http.Request) (io.ReadCloser, error) {
-	resp, err := c.cli.Do(req)
+func (c *Client) do(doer httpcli.Doer, req *http.Request) (io.ReadCloser, error) {
+	resp, err := doer.Do(req)
 	if err != nil {
 		return nil, err
 	}

@@ -1,5 +1,8 @@
 use tree_sitter::Node;
 
+pub mod snapshot;
+pub mod types;
+
 pub mod prelude {
     pub use super::{ContainsNode, NodeToScipRange};
 }

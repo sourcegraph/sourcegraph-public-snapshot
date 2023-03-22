@@ -93,7 +93,15 @@ var CachedTransportOpt = NewCachedTransportOpt(redisCache, true)
 
 // ExternalClientFactory is a httpcli.Factory with common options
 // and middleware pre-set for communicating with external services.
+// WARN: Clients from this factory cache entire responses for etag matching. Do not
+// use them for one-off requests if possible, and definitely not for larger payloads,
+// like downloading arbitrarily sized files! See UncachedExternalClientFactory instead.
 var ExternalClientFactory = NewExternalClientFactory()
+
+// UncachedExternalClientFactory is a httpcli.Factory with common options
+// and middleware pre-set for communicating with external services, but with caching
+// responses disabled.
+var UncachedExternalClientFactory = newExternalClientFactory(false)
 
 var (
 	externalTimeout, _          = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_TIMEOUT", "5m", "Timeout for external HTTP requests"))
@@ -105,7 +113,19 @@ var (
 // NewExternalClientFactory returns a httpcli.Factory with common options
 // and middleware pre-set for communicating with external services. Additional
 // middleware can also be provided to e.g. enable logging with NewLoggingMiddleware.
+// WARN: Clients from this factory cache entire responses for etag matching. Do not
+// use them for one-off requests if possible, and definitely not for larger payloads,
+// like downloading arbitrarily sized files!
 func NewExternalClientFactory(middleware ...Middleware) *Factory {
+	return newExternalClientFactory(true, middleware...)
+}
+
+// NewExternalClientFactory returns a httpcli.Factory with common options
+// and middleware pre-set for communicating with external services. Additional
+// middleware can also be provided to e.g. enable logging with NewLoggingMiddleware.
+// If cache is true, responses will be cached in redis for improved rate limiting
+// and reduced byte transfer sizes.
+func newExternalClientFactory(cache bool, middleware ...Middleware) *Factory {
 	mw := []Middleware{
 		ContextErrorMiddleware,
 		HeadersMiddleware("User-Agent", "Sourcegraph-Bot"),
@@ -113,8 +133,7 @@ func NewExternalClientFactory(middleware ...Middleware) *Factory {
 	}
 	mw = append(mw, middleware...)
 
-	return NewFactory(
-		NewMiddleware(mw...),
+	opts := []Opt{
 		NewTimeoutOpt(externalTimeout),
 		// ExternalTransportOpt needs to be before TracedTransportOpt and
 		// NewCachedTransportOpt since it wants to extract a http.Transport,
@@ -125,16 +144,29 @@ func NewExternalClientFactory(middleware ...Middleware) *Factory {
 			ExpJitterDelay(externalRetryDelayBase, externalRetryDelayMax),
 		),
 		TracedTransportOpt,
-		CachedTransportOpt,
+	}
+	if cache {
+		opts = append(opts, CachedTransportOpt)
+	}
+
+	return NewFactory(
+		NewMiddleware(mw...),
+		opts...,
 	)
 }
 
 // ExternalDoer is a shared client for external communication. This is a
 // convenience for existing uses of http.DefaultClient.
+// WARN: This client caches entire responses for etag matching. Do not use it for
+// one-off requests if possible, and definitely not for larger payloads, like
+// downloading arbitrarily sized files! See UncachedExternalClient instead.
 var ExternalDoer, _ = ExternalClientFactory.Doer()
 
 // ExternalClient returns a shared client for external communication. This is
 // a convenience for existing uses of http.DefaultClient.
+// WARN: This client caches entire responses for etag matching. Do not use it for
+// one-off requests if possible, and definitely not for larger payloads, like
+// downloading arbitrarily sized files! See UncachedExternalClient instead.
 var ExternalClient, _ = ExternalClientFactory.Client()
 
 // InternalClientFactory is a httpcli.Factory with common options
@@ -518,7 +550,6 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 			if retry || a.Error == nil || a.Index == 0 {
 				return
 			}
-
 		}()
 
 		if a.Response != nil {

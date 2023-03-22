@@ -251,8 +251,8 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (respons
 		if err != nil {
 			return nil, 0, err
 		}
-		req.Body = io.NopCloser(bytes.NewReader(reqBody))
 	}
+	req.Body = io.NopCloser(bytes.NewReader(reqBody))
 	req.URL = c.baseURL.ResolveReference(req.URL)
 	respHeader, respCode, err := c.doWithBaseURL(ctx, req, result)
 
@@ -260,9 +260,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (respons
 	numRetries := 0
 	for c.waitForRateLimit && numRetries < c.maxRateLimitRetries && respCode == http.StatusTooManyRequests {
 		if c.externalRateLimiter.WaitForRateLimit(ctx, 1) {
-			if req.Body != nil {
-				req.Body = io.NopCloser(bytes.NewReader(reqBody))
-			}
+			req.Body = io.NopCloser(bytes.NewReader(reqBody))
 			respHeader, respCode, err = c.doWithBaseURL(ctx, req, result)
 			numRetries += 1
 		} else {

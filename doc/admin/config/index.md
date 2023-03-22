@@ -24,7 +24,7 @@ This page documents how to configure a Sourcegraph instance. For deployment conf
 - [Using external services (PostgreSQL, Redis, S3/GCS)](../external_services/index.md)
 - [PostgreSQL Config](./postgres-conf.md)
 - [Disabling user invitations](./user_invitations.md)
-- [Configuring incoming webhooks](./webhooks.md)
+- [Configuring webhooks](./webhooks/index.md)
 
 ## Advanced tasks
 

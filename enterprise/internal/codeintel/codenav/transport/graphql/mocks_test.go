@@ -850,9 +850,6 @@ type MockCodeNavService struct {
 	// GetDiagnosticsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetDiagnostics.
 	GetDiagnosticsFunc *CodeNavServiceGetDiagnosticsFunc
-	// GetDumpsByIDsFunc is an instance of a mock function object
-	// controlling the behavior of the method GetDumpsByIDs.
-	GetDumpsByIDsFunc *CodeNavServiceGetDumpsByIDsFunc
 	// GetHoverFunc is an instance of a mock function object controlling the
 	// behavior of the method GetHover.
 	GetHoverFunc *CodeNavServiceGetHoverFunc
@@ -886,11 +883,6 @@ func NewMockCodeNavService() *MockCodeNavService {
 		},
 		GetDiagnosticsFunc: &CodeNavServiceGetDiagnosticsFunc{
 			defaultHook: func(context.Context, shared1.RequestArgs, codenav.RequestState) (r0 []shared1.DiagnosticAtUpload, r1 int, r2 error) {
-				return
-			},
-		},
-		GetDumpsByIDsFunc: &CodeNavServiceGetDumpsByIDsFunc{
-			defaultHook: func(context.Context, []int) (r0 []types.Dump, r1 error) {
 				return
 			},
 		},
@@ -941,11 +933,6 @@ func NewStrictMockCodeNavService() *MockCodeNavService {
 				panic("unexpected invocation of MockCodeNavService.GetDiagnostics")
 			},
 		},
-		GetDumpsByIDsFunc: &CodeNavServiceGetDumpsByIDsFunc{
-			defaultHook: func(context.Context, []int) ([]types.Dump, error) {
-				panic("unexpected invocation of MockCodeNavService.GetDumpsByIDs")
-			},
-		},
 		GetHoverFunc: &CodeNavServiceGetHoverFunc{
 			defaultHook: func(context.Context, shared1.RequestArgs, codenav.RequestState) (string, types.Range, bool, error) {
 				panic("unexpected invocation of MockCodeNavService.GetHover")
@@ -987,9 +974,6 @@ func NewMockCodeNavServiceFrom(i CodeNavService) *MockCodeNavService {
 		},
 		GetDiagnosticsFunc: &CodeNavServiceGetDiagnosticsFunc{
 			defaultHook: i.GetDiagnostics,
-		},
-		GetDumpsByIDsFunc: &CodeNavServiceGetDumpsByIDsFunc{
-			defaultHook: i.GetDumpsByIDs,
 		},
 		GetHoverFunc: &CodeNavServiceGetHoverFunc{
 			defaultHook: i.GetHover,
@@ -1358,115 +1342,6 @@ func (c CodeNavServiceGetDiagnosticsFuncCall) Args() []interface{} {
 // invocation.
 func (c CodeNavServiceGetDiagnosticsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// CodeNavServiceGetDumpsByIDsFunc describes the behavior when the
-// GetDumpsByIDs method of the parent MockCodeNavService instance is
-// invoked.
-type CodeNavServiceGetDumpsByIDsFunc struct {
-	defaultHook func(context.Context, []int) ([]types.Dump, error)
-	hooks       []func(context.Context, []int) ([]types.Dump, error)
-	history     []CodeNavServiceGetDumpsByIDsFuncCall
-	mutex       sync.Mutex
-}
-
-// GetDumpsByIDs delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockCodeNavService) GetDumpsByIDs(v0 context.Context, v1 []int) ([]types.Dump, error) {
-	r0, r1 := m.GetDumpsByIDsFunc.nextHook()(v0, v1)
-	m.GetDumpsByIDsFunc.appendCall(CodeNavServiceGetDumpsByIDsFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetDumpsByIDs method
-// of the parent MockCodeNavService instance is invoked and the hook queue
-// is empty.
-func (f *CodeNavServiceGetDumpsByIDsFunc) SetDefaultHook(hook func(context.Context, []int) ([]types.Dump, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetDumpsByIDs method of the parent MockCodeNavService instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *CodeNavServiceGetDumpsByIDsFunc) PushHook(hook func(context.Context, []int) ([]types.Dump, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *CodeNavServiceGetDumpsByIDsFunc) SetDefaultReturn(r0 []types.Dump, r1 error) {
-	f.SetDefaultHook(func(context.Context, []int) ([]types.Dump, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *CodeNavServiceGetDumpsByIDsFunc) PushReturn(r0 []types.Dump, r1 error) {
-	f.PushHook(func(context.Context, []int) ([]types.Dump, error) {
-		return r0, r1
-	})
-}
-
-func (f *CodeNavServiceGetDumpsByIDsFunc) nextHook() func(context.Context, []int) ([]types.Dump, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *CodeNavServiceGetDumpsByIDsFunc) appendCall(r0 CodeNavServiceGetDumpsByIDsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of CodeNavServiceGetDumpsByIDsFuncCall objects
-// describing the invocations of this function.
-func (f *CodeNavServiceGetDumpsByIDsFunc) History() []CodeNavServiceGetDumpsByIDsFuncCall {
-	f.mutex.Lock()
-	history := make([]CodeNavServiceGetDumpsByIDsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// CodeNavServiceGetDumpsByIDsFuncCall is an object that describes an
-// invocation of method GetDumpsByIDs on an instance of MockCodeNavService.
-type CodeNavServiceGetDumpsByIDsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 []int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []types.Dump
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c CodeNavServiceGetDumpsByIDsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c CodeNavServiceGetDumpsByIDsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // CodeNavServiceGetHoverFunc describes the behavior when the GetHover

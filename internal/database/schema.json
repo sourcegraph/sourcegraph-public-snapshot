@@ -490,10 +490,10 @@
     },
     {
       "Name": "codeintel_ranking_references_processed_id_seq",
-      "TypeName": "integer",
+      "TypeName": "bigint",
       "StartValue": 1,
       "MinimumValue": 1,
-      "MaximumValue": 2147483647,
+      "MaximumValue": 9223372036854775807,
       "Increment": 1,
       "CycleOption": "NO"
     },
@@ -5449,6 +5449,16 @@
           "IndexDefinition": "CREATE INDEX cm_action_jobs_state_idx ON cm_action_jobs USING btree (state)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
+        },
+        {
+          "Name": "cm_action_jobs_trigger_event",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX cm_action_jobs_trigger_event ON cm_action_jobs USING btree (trigger_event)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -7679,6 +7689,16 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
+          "Name": "codeintel_ranking_path_counts_inputs_graph_key_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "codeintel_ranking_path_counts_inputs_graph_key_repository_id_id",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -7839,8 +7859,8 @@
         },
         {
           "Name": "id",
-          "Index": 1,
-          "TypeName": "integer",
+          "Index": 4,
+          "TypeName": "bigint",
           "IsNullable": false,
           "Default": "nextval('codeintel_ranking_references_processed_id_seq'::regclass)",
           "CharacterMaximumLength": 0,
@@ -7871,6 +7891,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_references_processed_pkey ON codeintel_ranking_references_processed USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "codeintel_ranking_references_processed_reference_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_references_processed_reference_id ON codeintel_ranking_references_processed USING btree (codeintel_ranking_reference_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -13357,7 +13387,7 @@
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX lsif_dependency_repos_last_checked_at ON lsif_dependency_repos USING btree (last_checked_at)",
+          "IndexDefinition": "CREATE INDEX lsif_dependency_repos_last_checked_at ON lsif_dependency_repos USING btree (last_checked_at NULLS FIRST)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
@@ -18365,7 +18395,7 @@
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX package_repo_versions_last_checked_at ON package_repo_versions USING btree (last_checked_at)",
+          "IndexDefinition": "CREATE INDEX package_repo_versions_last_checked_at ON package_repo_versions USING btree (last_checked_at NULLS FIRST)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }

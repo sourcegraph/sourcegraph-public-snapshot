@@ -16,45 +16,6 @@ import (
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestCursor(t *testing.T) {
-	expected := "test"
-	pageInfo := EncodeCursor(&expected)
-
-	if !pageInfo.HasNextPage() {
-		t.Fatalf("expected next page")
-	}
-	if pageInfo.EndCursor() == nil {
-		t.Fatalf("unexpected nil cursor")
-	}
-
-	value, err := DecodeCursor(pageInfo.EndCursor())
-	if err != nil {
-		t.Fatalf("unexpected error decoding cursor: %s", err)
-	}
-	if value != expected {
-		t.Errorf("unexpected decoded cursor. want=%s have=%s", expected, value)
-	}
-}
-
-func TestCursorEmpty(t *testing.T) {
-	pageInfo := EncodeCursor(nil)
-
-	if pageInfo.HasNextPage() {
-		t.Errorf("unexpected next page")
-	}
-	if pageInfo.EndCursor() != nil {
-		t.Errorf("unexpected encoded cursor: %s", *pageInfo.EndCursor())
-	}
-
-	value, err := DecodeCursor(nil)
-	if err != nil {
-		t.Fatalf("unexpected error decoding cursor: %s", err)
-	}
-	if value != "" {
-		t.Errorf("unexpected decoded cursor: %s", value)
-	}
-}
-
 func TestResolveLocations(t *testing.T) {
 	repos := database.NewStrictMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*sgtypes.Repo, error) {

@@ -36,7 +36,7 @@ func instanceStateDiff(ctx context.Context) (string, error) {
 		expectedCommitsByRepo[internal.MakeTestRepoName(repoName)] = commits
 	}
 
-	uploadedCommitsByRepo, err := queryUploads(ctx)
+	uploadedCommitsByRepo, err := queryPreciseIndexes(ctx)
 	if err != nil {
 		return "", err
 	}

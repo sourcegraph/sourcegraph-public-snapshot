@@ -1596,6 +1596,22 @@
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
+			},
+			{
+				"ID": 1679010276,
+				"Name": "Add missing index",
+				"UpQuery": "CREATE INDEX CONCURRENTLY IF NOT EXISTS codeintel_scip_metadata_upload_id ON codeintel_scip_metadata(upload_id);",
+				"DownQuery": "DROP INDEX IF EXISTS codeintel_scip_metadata_upload_id;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1678899132
+				],
+				"IsCreateIndexConcurrently": true,
+				"IndexMetadata": {
+					"TableName": "codeintel_scip_metadata",
+					"IndexName": "codeintel_scip_metadata_upload_id"
+				}
 			}
 		],
 		"BoundsByRev": {
@@ -1808,7 +1824,7 @@
 			"v5.0.0": {
 				"RootID": 1000000033,
 				"LeafIDs": [
-					1678899132
+					1679010276
 				],
 				"PreCreation": false
 			}
@@ -9268,6 +9284,19 @@
 				"IndexMetadata": null
 			},
 			{
+				"ID": 1678899992,
+				"Name": "add_codeintel_ranking_paths",
+				"UpQuery": "CREATE TABLE IF NOT EXISTS codeintel_initial_path_ranks(\n    id               BIGSERIAL PRIMARY KEY NOT NULL,\n    upload_id        INTEGER NOT NULL,\n    document_path    TEXT NOT NULL,\n    graph_key        TEXT NOT NULL,\n    last_scanned_at  TIMESTAMP WITH TIME ZONE\n);\n\nCREATE INDEX IF NOT EXISTS codeintel_initial_path_ranks_graph_key_id ON codeintel_initial_path_ranks(graph_key, id);\nCREATE INDEX IF NOT EXISTS codeintel_initial_path_ranks_graph_key_last_scanned_at ON codeintel_initial_path_ranks(graph_key, last_scanned_at NULLS FIRST, id);\nCREATE INDEX IF NOT EXISTS codeintel_initial_path_upload_id ON codeintel_initial_path_ranks(upload_id);\n\nCREATE TABLE IF NOT EXISTS codeintel_initial_path_ranks_processed(\n    id                               BIGSERIAL PRIMARY KEY,\n    graph_key                        TEXT NOT NULL,\n    codeintel_initial_path_ranks_id  BIGINT NOT NULL,\n\n    CONSTRAINT fk_codeintel_initial_path_ranks FOREIGN KEY (codeintel_initial_path_ranks_id) REFERENCES codeintel_initial_path_ranks(id) ON DELETE CASCADE\n);\n\nCREATE UNIQUE INDEX IF NOT EXISTS codeintel_initial_path_ranks_processed_cgraph_key_codeintel_initial_path_ranks_id ON codeintel_initial_path_ranks_processed(graph_key, codeintel_initial_path_ranks_id);",
+				"DownQuery": "DROP TABLE IF EXISTS codeintel_initial_path_ranks_processed;\nDROP TABLE IF EXISTS codeintel_initial_path_ranks;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1678601228
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
 				"ID": 1678832491,
 				"Name": "remove sg_jsonb_concat_agg",
 				"UpQuery": "-- Perform migration here.\n--\n-- See /migrations/README.md. Highlights:\n--  * Make migrations idempotent (use IF EXISTS)\n--  * Make migrations backwards-compatible (old readers/writers must continue to work)\n--  * If you are using CREATE INDEX CONCURRENTLY, then make sure that only one statement\n--    is defined per file, and that each such statement is NOT wrapped in a transaction.\n--    Each such migration must also declare \"createIndexConcurrently: true\" in their\n--    associated metadata.yaml file.\n--  * If you are modifying Postgres extensions, you must also declare \"privileged: true\"\n--    in the associated metadata.yaml file.\n\nDROP AGGREGATE IF EXISTS sg_jsonb_concat_agg(jsonb);",
@@ -9278,6 +9307,20 @@
 					1676420496,
 					1678409821,
 					1678456448
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1678994673,
+				"Name": "package_repos_last_checked_at_index",
+				"UpQuery": "DROP INDEX IF EXISTS lsif_dependency_repos_last_checked_at;\nDROP INDEX IF EXISTS package_repo_versions_last_checked_at;\n\nCREATE INDEX IF NOT EXISTS lsif_dependency_repos_last_checked_at\nON lsif_dependency_repos\nUSING btree (last_checked_at ASC NULLS FIRST);\n\nCREATE INDEX IF NOT EXISTS package_repo_versions_last_checked_at\nON package_repo_versions\nUSING btree (last_checked_at ASC NULLS FIRST);",
+				"DownQuery": "DROP INDEX IF EXISTS lsif_dependency_repos_last_checked_at;\nDROP INDEX IF EXISTS package_repo_versions_last_checked_at;\n\nCREATE INDEX IF NOT EXISTS lsif_dependency_repos_last_checked_at\nON lsif_dependency_repos\nUSING btree (last_checked_at);\n\nCREATE INDEX IF NOT EXISTS package_repo_versions_last_checked_at\nON package_repo_versions\nUSING btree (last_checked_at);",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1678601228,
+					1678832491
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
@@ -9510,8 +9553,8 @@
 			"v5.0.0": {
 				"RootID": 1648051770,
 				"LeafIDs": [
-					1678601228,
-					1678832491
+					1678899992,
+					1678994673
 				],
 				"PreCreation": false
 			}

@@ -31,7 +31,6 @@ export interface SearchBoxProps
             | 'autoFocus'
             | 'onFocus'
             | 'onSubmit'
-            | 'globbing'
             | 'interpretComments'
             | 'onChange'
             | 'onCompletionItemSelected'
@@ -181,7 +180,6 @@ export const SearchBox: FC<SearchBoxProps> = props => {
                         autoFocus={props.autoFocus}
                         caseSensitive={props.caseSensitive}
                         fetchStreamSuggestions={props.fetchStreamSuggestions}
-                        globbing={props.globbing}
                         interpretComments={props.interpretComments}
                         isSourcegraphDotCom={props.isSourcegraphDotCom}
                         onChange={props.onChange}

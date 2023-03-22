@@ -240,7 +240,6 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                     caseSensitive={false}
                                     queryState={queryState}
                                     onChange={setQueryState}
-                                    globbing={false}
                                     preventNewLine={true}
                                     autoFocus={true}
                                     applySuggestionsOnEnter={applySuggestionsOnEnter}

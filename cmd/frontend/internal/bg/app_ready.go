@@ -1,6 +1,7 @@
 package bg
 
 import (
+	"context"
 	"os"
 	"strings"
 
@@ -9,21 +10,40 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 // AppReady is called once the frontend has reported it is ready to serve
 // requests. It contains tasks related to Sourcegraph App (single binary).
-func AppReady(logger log.Logger) {
+func AppReady(db database.DB, logger log.Logger) {
 	if !deploy.IsApp() {
 		return
 	}
 
-	externalURL := globals.ExternalURL().String()
-	printExternalURL(externalURL)
-	if err := browser.OpenURL(externalURL); err != nil {
-		logger.Error("failed to open browser", log.String("url", externalURL), log.Error(err))
+	ctx := context.Background()
+
+	// Our goal is to open the browser to a special sign-in URL containing a
+	// nonce (signInURL). We additionally want to display the URL without the
+	// nonce since it can only be used once (displayURL)
+	displayURL := globals.ExternalURL().String()
+	browserURL := displayURL
+
+	if signInURL, err := userpasswd.AppSiteInit(ctx, logger, db); err != nil {
+		logger.Error("failed to initialize app user account", log.Error(err))
+	} else {
+		browserURL = signInURL
 	}
+
+	if err := browser.OpenURL(browserURL); err != nil {
+		logger.Error("failed to open browser", log.String("url", browserURL), log.Error(err))
+		// We failed to open the browser, so rather display that URL so the
+		// user can click it.
+		displayURL = browserURL
+	}
+
+	printExternalURL(displayURL)
 }
 
 func printExternalURL(externalURL string) {

@@ -84,6 +84,7 @@ func TestMarshalChangeset(t *testing.T) {
 	icReviewState := string(btypes.ChangesetReviewStateChangesRequested)
 
 	authorName := "TestUser"
+	authorEmail := "test@sourcegraph.com"
 
 	testcases := []struct {
 		changeset    *btypes.Changeset
@@ -95,7 +96,7 @@ func TestMarshalChangeset(t *testing.T) {
 			changeset: uc,
 			name:      "unimported changeset",
 			httpResponse: fmt.Sprintf(
-				`{"data": {"node": {"id": "%s","externalID": "%s","batchChanges": {"nodes": [{"id": "%s"}]},"repository": {"id": "%s","name": "github.com/test/test"},"createdAt": "2023-02-25T00:53:50Z","updatedAt": "2023-02-25T00:53:50Z","title": "%s","body": "%s","author": {"name": "%s"},"state": "%s","labels": [],"externalURL": {"url": "%s"},"forkNamespace": null,"reviewState": "%s","checkState": null,"error": null,"syncerError": null,"forkName": null,"ownedByBatchChange": "%s"}}}`,
+				`{"data": {"node": {"id": "%s","externalID": "%s","batchChanges": {"nodes": [{"id": "%s"}]},"repository": {"id": "%s","name": "github.com/test/test"},"createdAt": "2023-02-25T00:53:50Z","updatedAt": "2023-02-25T00:53:50Z","title": "%s","body": "%s","author": {"name": "%s", "email": "%s"},"state": "%s","labels": [],"externalURL": {"url": "%s"},"forkNamespace": null,"reviewState": "%s","checkState": null,"error": null,"syncerError": null,"forkName": null,"ownedByBatchChange": "%s"}}}`,
 				mucID,
 				uc.ExternalID,
 				mbID,
@@ -103,6 +104,7 @@ func TestMarshalChangeset(t *testing.T) {
 				ucTitle,
 				ucBody,
 				authorName,
+				authorEmail,
 				uc.State,
 				ucExternalURL,
 				ucReviewState,
@@ -120,6 +122,7 @@ func TestMarshalChangeset(t *testing.T) {
 				Title:              &ucTitle,
 				Body:               &ucBody,
 				AuthorName:         &authorName,
+				AuthorEmail:        &authorEmail,
 				ExternalURL:        &ucExternalURL,
 				ReviewState:        &ucReviewState,
 			},
@@ -128,7 +131,7 @@ func TestMarshalChangeset(t *testing.T) {
 			changeset: ic,
 			name:      "imported changeset",
 			httpResponse: fmt.Sprintf(
-				`{"data": {"node": {"id": "%s","externalID": "%s","batchChanges": {"nodes": [{"id": "%s"}]},"repository": {"id": "%s","name": "github.com/test/test"},"createdAt": "2023-02-25T00:53:50Z","updatedAt": "2023-02-25T00:53:50Z","title": "%s","body": "%s","author": {"name": "%s"},"state": "%s","labels": [],"externalURL": {"url": "%s"},"forkNamespace": null,"reviewState": "%s","checkState": null,"error": null,"syncerError": null,"forkName": null,"ownedByBatchChange": null}}}`,
+				`{"data": {"node": {"id": "%s","externalID": "%s","batchChanges": {"nodes": [{"id": "%s"}]},"repository": {"id": "%s","name": "github.com/test/test"},"createdAt": "2023-02-25T00:53:50Z","updatedAt": "2023-02-25T00:53:50Z","title": "%s","body": "%s","author": {"name": "%s", "email": "%s"},"state": "%s","labels": [],"externalURL": {"url": "%s"},"forkNamespace": null,"reviewState": "%s","checkState": null,"error": null,"syncerError": null,"forkName": null,"ownedByBatchChange": null}}}`,
 				micID,
 				ic.ExternalID,
 				mbID,
@@ -136,6 +139,7 @@ func TestMarshalChangeset(t *testing.T) {
 				icTitle,
 				icBody,
 				authorName,
+				authorEmail,
 				ic.State,
 				icExternalURL,
 				icReviewState,
@@ -152,6 +156,7 @@ func TestMarshalChangeset(t *testing.T) {
 				Title:              &icTitle,
 				Body:               &icBody,
 				AuthorName:         &authorName,
+				AuthorEmail:        &authorEmail,
 				ExternalURL:        &icExternalURL,
 				ReviewState:        &icReviewState,
 			},

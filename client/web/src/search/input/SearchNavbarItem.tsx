@@ -25,7 +25,6 @@ interface Props
         PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
-    globbing: boolean
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
     isLightTheme: boolean
@@ -115,6 +114,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                         setSearchMode={setSearchMode}
                         settingsCascade={props.settingsCascade}
                         navbarSearchQuery={queryState.query}
+                        submitSearch={submitSearchOnChange}
                     />
                 </LazyExperimentalSearchInput>
             </Form>

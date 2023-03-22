@@ -433,8 +433,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         patternType={patternType}
                         caseSensitive={caseSensitive}
                         query={submittedURLQuery}
-                        enableCodeMonitoring={codeMonitoringEnabled}
                         results={results}
+                        options={options}
+                        enableCodeMonitoring={codeMonitoringEnabled}
                         className={styles.infobar}
                         allExpanded={allExpanded}
                         onExpandAllResultsToggle={onExpandAllResultsToggle}
