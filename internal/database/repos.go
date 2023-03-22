@@ -923,8 +923,6 @@ func (s *repoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 		return err
 	}
 
-	tr.LogFields(trace.SQL(q)) //nolint:staticcheck // TODO when updating observation package
-
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		if e, ok := err.(*net.OpError); ok && e.Timeout() {
