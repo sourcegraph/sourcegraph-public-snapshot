@@ -29,7 +29,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                             type={TextFieldType.password}
                             onInput={(e: any) => setToken(e.target.value)}
                         />
-                        <p>Endpoint for Cody</p>
+                        <p>Sourcegraph Instance</p>
                         <VSCodeTextField
                             value={endpoint}
                             placeholder="https://<instance>.sourcegraph.com"

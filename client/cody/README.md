@@ -1,86 +1,47 @@
-# Cody
+# Sourcegraph Cody for Visual Studio Code
 
-## Usage and features
+[![vs marketplace](https://img.shields.io/vscode-marketplace/v/sourcegraph.cody.svg?label=vs%20marketplace)](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody)
 
-- Autocomplete: `alt-\` to show autocompletion suggestions
-- Chatbot: Click the robot icon in the primary side panel
+## Installation
 
-## Install
+### From the Visual Studio Marketplace:
 
-See the [#announce-cody Slack channel](https://app.slack.com/client/T02FSM7DL/C04MZPE4JKD) for instructions.
+1. Install Sourcegraph from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody).
+2. Launch VS Code, and click on the Cody icon in the VS Code Activity Bar to open the extension. Alternatively, you can launch the extension by pressing <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> and searching for "Cody: Focus on chat view".
 
-## Developing
+### From within VS Code:
 
-1. Update your VS Code user setting to turn on debugging mode:
+1. Open the extensions tab on the left side of VS Code (<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd>).
+2. Search for `Sourcegraph Cody` -> `Install` and `Reload`.
 
-   ```json
-   "cody.debug": true,
-   ```
+## Setting up the Cody extension
 
-2. Run `pnpm install` from the **root** of this repository
-3. Select `Launch Cody Extension` from the dropdown menu in the `RUN AND DEBUG` sidebar
-   1. Remove `node_modeules` from `root` and `client/cody` before re-running `pnpm install` if the start up failed
-4. Refresh the extension to see updated changes
+To set up the Cody extension, you will need to enter the URL of your Sourcegraph instance and an access token used for authentication.
 
-### File structure
+1. Open the Cody chat view by clicking on the Cody icon in the sidebar.
+2. If you are setting up Cody for the first time, you should see the terms of service.
+3. To proceed, read the terms and click "I accept", if you accept the terms of service.
+4. Aftewards, you should see the login screen, where you have to enter the URL of your Sourcegraph instance and an access token used for authentication.
 
-- `src`: source code of the components for the extension
-  host
-- `webviews`: source code of the extension UI (webviews),
-  build with Vite and rollup.js using the `vite.config.ts` file at directory
-  root
-- `dist`: build outputs from both webpack and vite
-- `resources`: everything in this directory will be move to
-  the ./dist directory automatically during build time for easy packaging
-- `index.html`: the entry file that Vite looks for to build
-  the webviews. The extension host reads this file at run time and replace
-  the variables inside the file with webview specific uri and info
+> To generate an access token: go to your Sourcegraph instance, then in your account settings, navigate to `Access tokens`, click `Generate new token`, and copy the token.
 
-## Testing
+5. Once you have filled out the form, click the Login button to login into Cody.
 
-1. Unit tests:
+### Codebase
 
-   ```shell
-   $ cd client/cody
-   $ pnpm test:unit
-   ```
+To enable codebase-aware answers, you have to set the codebase setting to let Cody know which repository you are working on in the current workspace. You can do that by opening the VSCode workspace settings, search for the "Cody: Codebase" setting, and enter the repository name as listed on your Sourcegraph instance. Setting the codebase will edit the `.vscode/settings.json` file in your repository, which you can then commit and save for future usage.
 
-2. Integration tests:
+## Extension Settings
 
-   ```shell
-   $ cd client/cody
-   $ pnpm test:integration
-   ```
+This extension contributes the following settings:
 
-## Release Process
+| Setting             | Description                                                                                                                  | Example                              |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| cody.enabled        | Enable or disable Cody.                                                                                                      | true/false                           |
+| cody.serverEndpoint | URL of the Sourcegraph instance.                                                                                             | "https://<instance>.sourcegraph.com" |
+| cody.codebase       | Name of the repository opened in the current workspace. Use the same repository name as listed on your Sourcegraph instance. | "github.com/sourcegraph/sourcegraph" |
+| cody.useContext     | Context source for Cody. One of: "embeddings", "keyword", "blended", or "none".                                              | "embeddings"                         |
 
-Follow the steps below to package and publish the VS Code extension.
+## Development
 
-> NOTE: Since the extension has already been bundled during build, we will need to add the `--no-dependencies` flag to the `vsce` step during the packaging step to exclude the npm dependencies ([source](https://github.com/microsoft/vscode-vsce/issues/421#issuecomment-1038911725))
-
-### Prerequisite
-
-- Install the [VSCE CLI tool](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce)
-- Obtain the marketplace token for publishing Cody from 1Password
-
-### Release Steps
-
-1. Increment the `version` in [`package.json`](package.json) and then run:
-
-   ```shell
-   $ cd client/cody
-   $ pnpm run vsce:package
-   ```
-
-2. To try the packaged extension locally, disable any other installations of it and then run:
-
-   ```sh
-   $ code --install-extension dist/cody.vsix
-   ```
-
-3. To publish the packaged extension to the VS Code Extension Marketplace:
-
-   ```sh
-   $ cd client/cody
-   $ pnpm run vsce:publish
-   ```
+Please see the [CONTRIBUTING](./CONTRIBUTING.md) document if you are interested in contributing to our code base.
