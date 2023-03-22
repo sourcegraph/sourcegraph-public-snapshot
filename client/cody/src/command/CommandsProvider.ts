@@ -10,6 +10,14 @@ function getSecretStorage(context: vscode.ExtensionContext): SecretStorage {
     return process.env.CODY_TESTING === 'true' ? new InMemorySecretStorage() : new VSCodeSecretStorage(context.secrets)
 }
 
+function sanitizeCodebase(codebase: string | undefined): string {
+    if (!codebase) {
+        return ''
+    }
+    const protocolRegexp = /^(https?):\/\//
+    return codebase.replace(protocolRegexp, '')
+}
+
 // Registers Commands and Webview at extension start up
 export const CommandsProvider = async (context: vscode.ExtensionContext): Promise<ExtensionApi> => {
     // for tests
@@ -21,7 +29,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
     // Create chat webview
     const chatProvider = await ChatViewProvider.create(
         context.extensionPath,
-        config.codebase ?? '',
+        sanitizeCodebase(config.codebase),
         config.serverEndpoint,
         config.useContext,
         config.debug,
@@ -93,7 +101,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         vscode.workspace.onDidChangeConfiguration(async event => {
             if (event.affectsConfiguration('cody') || event.affectsConfiguration('sourcegraph')) {
                 const config = getConfiguration(vscode.workspace.getConfiguration())
-                await chatProvider.onConfigChange('endpoint', config.codebase ?? '', config.serverEndpoint)
+                await chatProvider.onConfigChange('endpoint', sanitizeCodebase(config.codebase), config.serverEndpoint)
             }
         })
     )
@@ -101,7 +109,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         secretStorage.onDidChange(async key => {
             if (key === CODY_ACCESS_TOKEN_SECRET) {
                 const config = getConfiguration(vscode.workspace.getConfiguration())
-                await chatProvider.onConfigChange('token', config.codebase ?? '', config.serverEndpoint)
+                await chatProvider.onConfigChange('token', sanitizeCodebase(config.codebase), config.serverEndpoint)
             }
         })
     )

@@ -1,6 +1,7 @@
 import { ChatClient } from './chat/chat'
 import { CodebaseContext } from './codebase-context'
 import { getAccessToken, SecretStorage } from './command/secret-storage'
+import { Editor } from './editor'
 import { SourcegraphEmbeddingsSearchClient } from './embeddings/client'
 import { IntentDetector } from './intent-detector'
 import { SourcegraphIntentDetectorClient } from './intent-detector/client'
@@ -16,11 +17,12 @@ interface ExternalServices {
 }
 
 export async function configureExternalServices(
-    contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
+    serverEndpoint: string,
     codebase: string,
     rgPath: string,
-    serverEndpoint: string,
+    editor: Editor,
     secretStorage: SecretStorage,
+    contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
     mode: 'development' | 'production'
 ): Promise<ExternalServices> {
     const accessToken = await getAccessToken(secretStorage)
@@ -29,7 +31,11 @@ export async function configureExternalServices(
 
     const repoId = codebase ? await client.getRepoId(codebase) : null
     if (isError(repoId)) {
-        console.error('error fetching codebase', codebase)
+        const errorMessage =
+            `Cody could not find the '${codebase}' repository on your Sourcegraph instance.\n` +
+            `Please check that the repository exists and is entered correctly in the cody.codebase setting.`
+        console.error(errorMessage)
+        editor.showWarningMessage(errorMessage)
     }
     const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
 

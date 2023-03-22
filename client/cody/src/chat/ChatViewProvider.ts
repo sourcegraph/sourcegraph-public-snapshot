@@ -27,7 +27,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     private webview?: vscode.Webview
 
     private tosVersion = 0
-    private editor: Editor
 
     constructor(
         private extensionPath: string,
@@ -35,6 +34,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         private chat: ChatClient,
         private intentDetector: IntentDetector,
         private codebaseContext: CodebaseContext,
+        private editor: Editor,
         private secretStorage: SecretStorage,
         private contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
         private rgPath: string,
@@ -43,7 +43,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         if (TestSupport.instance) {
             TestSupport.instance.chatViewProvider.set(this)
         }
-        this.editor = new VSCodeEditor()
     }
 
     static async create(
@@ -56,13 +55,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     ): Promise<ChatViewProvider> {
         const mode = debug ? 'development' : 'production'
         const rgPath = await getRgPath(extensionPath)
+        const editor = new VSCodeEditor()
 
         const { intentDetector, codebaseContext, chatClient } = await configureExternalServices(
-            contextType,
+            serverEndpoint,
             codebase,
             rgPath,
-            serverEndpoint,
+            editor,
             secretStorage,
+            contextType,
             mode
         )
 
@@ -72,6 +73,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             chatClient,
             intentDetector,
             codebaseContext,
+            editor,
             secretStorage,
             contextType,
             rgPath,
@@ -265,11 +267,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             case 'token':
             case 'endpoint': {
                 const { intentDetector, codebaseContext, chatClient } = await configureExternalServices(
-                    this.contextType,
+                    serverEndpoint,
                     codebase,
                     this.rgPath,
-                    serverEndpoint,
+                    this.editor,
                     this.secretStorage,
+                    this.contextType,
                     this.mode
                 )
 
