@@ -174,7 +174,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		VacuumStaleGraphsFunc: &StoreVacuumStaleGraphsFunc{
-			defaultHook: func(context.Context, string) (r0 int, r1 int, r2 error) {
+			defaultHook: func(context.Context, string) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -281,7 +281,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		VacuumStaleGraphsFunc: &StoreVacuumStaleGraphsFunc{
-			defaultHook: func(context.Context, string) (int, int, error) {
+			defaultHook: func(context.Context, string) (int, error) {
 				panic("unexpected invocation of MockStore.VacuumStaleGraphs")
 			},
 		},
@@ -2144,24 +2144,24 @@ func (c StoreVacuumStaleDefinitionsFuncCall) Results() []interface{} {
 // StoreVacuumStaleGraphsFunc describes the behavior when the
 // VacuumStaleGraphs method of the parent MockStore instance is invoked.
 type StoreVacuumStaleGraphsFunc struct {
-	defaultHook func(context.Context, string) (int, int, error)
-	hooks       []func(context.Context, string) (int, int, error)
+	defaultHook func(context.Context, string) (int, error)
+	hooks       []func(context.Context, string) (int, error)
 	history     []StoreVacuumStaleGraphsFuncCall
 	mutex       sync.Mutex
 }
 
 // VacuumStaleGraphs delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) VacuumStaleGraphs(v0 context.Context, v1 string) (int, int, error) {
-	r0, r1, r2 := m.VacuumStaleGraphsFunc.nextHook()(v0, v1)
-	m.VacuumStaleGraphsFunc.appendCall(StoreVacuumStaleGraphsFuncCall{v0, v1, r0, r1, r2})
-	return r0, r1, r2
+func (m *MockStore) VacuumStaleGraphs(v0 context.Context, v1 string) (int, error) {
+	r0, r1 := m.VacuumStaleGraphsFunc.nextHook()(v0, v1)
+	m.VacuumStaleGraphsFunc.appendCall(StoreVacuumStaleGraphsFuncCall{v0, v1, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the VacuumStaleGraphs
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreVacuumStaleGraphsFunc) SetDefaultHook(hook func(context.Context, string) (int, int, error)) {
+func (f *StoreVacuumStaleGraphsFunc) SetDefaultHook(hook func(context.Context, string) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -2169,7 +2169,7 @@ func (f *StoreVacuumStaleGraphsFunc) SetDefaultHook(hook func(context.Context, s
 // VacuumStaleGraphs method of the parent MockStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *StoreVacuumStaleGraphsFunc) PushHook(hook func(context.Context, string) (int, int, error)) {
+func (f *StoreVacuumStaleGraphsFunc) PushHook(hook func(context.Context, string) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2177,20 +2177,20 @@ func (f *StoreVacuumStaleGraphsFunc) PushHook(hook func(context.Context, string)
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreVacuumStaleGraphsFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, string) (int, int, error) {
-		return r0, r1, r2
+func (f *StoreVacuumStaleGraphsFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) (int, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreVacuumStaleGraphsFunc) PushReturn(r0 int, r1 int, r2 error) {
-	f.PushHook(func(context.Context, string) (int, int, error) {
-		return r0, r1, r2
+func (f *StoreVacuumStaleGraphsFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, string) (int, error) {
+		return r0, r1
 	})
 }
 
-func (f *StoreVacuumStaleGraphsFunc) nextHook() func(context.Context, string) (int, int, error) {
+func (f *StoreVacuumStaleGraphsFunc) nextHook() func(context.Context, string) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2234,10 +2234,7 @@ type StoreVacuumStaleGraphsFuncCall struct {
 	Result0 int
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 int
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -2249,7 +2246,7 @@ func (c StoreVacuumStaleGraphsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreVacuumStaleGraphsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // StoreVacuumStaleInitialPathsFunc describes the behavior when the
