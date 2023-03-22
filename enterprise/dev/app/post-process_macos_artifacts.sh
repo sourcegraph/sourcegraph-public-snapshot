@@ -142,13 +142,27 @@ gsutil cp "sourcegraph_${VERSION}_macOS_universal_app_bundle.zip" checksums.txt 
   exit 1
 }
 
-# if we're running on macOS, build a .dmg as well as a zip
+# if we're running on macOS, build a dmg container as well as a zip archive
 command -v hdiutil 1>/dev/null 2>&1 && command -v osascript 1>/dev/null 2>&1 && {
-  "${exedir}/macos_app/create_sourcegraph_app_dmg" "${PWD}/Sourcegraph App.app"
-  # since we're signing and notarizing the .app, we just need to sign the dmg - don't need to notarize it also
-  # I think the recommendation is to noatrize the outermost package,
-  # but since we're distributing both a zip and/or a dmg, we'll notarize the .app
 
+  info "creating the macOS dmg container"
+  "${exedir}/macos_app/create_sourcegraph_app_dmg.sh" "${PWD}/Sourcegraph App.app"
+
+  # sign the dmg
+  info "signing the macOS dmg container"
+  "${exedir}/sign_macos_artifact.sh" "${PWD}/Sourcegraph App.dmg"
+
+  # gotta notarize the dmg also, even though the app is already notarized!
+  info "notarizing the macOS dmg container"
+  "${exedir}/notarize_macos_artifact.sh" --staple "${PWD}/Sourcegraph App.dmg"
+
+  # add its checksum to the checksums file
+  sha256sum "Sourcegraph App.dmg" >>checksums.txt
+
+  info "uploading the macOS dmg container"
+
+  # and upload it
+  gsutil cp "${PWD}/Sourcegraph App.dmg" checksums.txt "gs://sourcegraph-app-releases/${VERSION}/"
 }
 
 info "replicating artifacts to /latest"
