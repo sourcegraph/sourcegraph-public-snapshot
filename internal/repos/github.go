@@ -411,12 +411,17 @@ func (s *GitHubSource) GetRepo(ctx context.Context, nameWithOwner string) (*type
 	return s.makeRepo(r), nil
 }
 
+func sanitizeToUTF8(s string) string {
+	return strings.ToValidUTF8(strings.ReplaceAll(s, "\x00", ""), "")
+}
+
 func (s *GitHubSource) makeRepo(r *github.Repository) *types.Repo {
 	urn := s.svc.URN()
 	metadata := *r
 	// This field flip flops depending on which token was used to retrieve the repo
 	// so we don't want to store it.
 	metadata.ViewerPermission = ""
+	metadata.Description = sanitizeToUTF8(metadata.Description)
 	return &types.Repo{
 		Name: reposource.GitHubRepoName(
 			s.config.RepositoryPathPattern,
@@ -429,7 +434,7 @@ func (s *GitHubSource) makeRepo(r *github.Repository) *types.Repo {
 			r.NameWithOwner,
 		)),
 		ExternalRepo: github.ExternalRepoSpec(r, s.baseURL),
-		Description:  strings.ReplaceAll(r.Description, "\x00", ""), // Postgres does not support the NULL character in text fields
+		Description:  sanitizeToUTF8(r.Description),
 		Fork:         r.IsFork,
 		Archived:     r.IsArchived,
 		Stars:        r.StargazerCount,
