@@ -275,9 +275,6 @@ func (c *Client) Download(ctx context.Context, url string) (io.ReadCloser, error
 		return nil, err
 	}
 
-	// WARN: The default external doer caches responses, meaning we will store
-	// entire package contents in redis! We switch to the UncachedExternalDoer for
-	// this specific method.
 	b, err := c.do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "PyPI")
