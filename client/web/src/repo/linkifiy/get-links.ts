@@ -56,7 +56,7 @@ const getGitHubIssueLinks = (input: string, externalServiceUrl: string): LinkFro
  * Note: Matching URLs within a random string is difficult, as a URL can contain almost any character.
  * For example, it is valid to end a URL with parentheses or other punctuation, but in most cases this will not be desired.
  * We use linkifyjs to capture these edge cases and focus on the most common URLs.
- */
+] */
 const getLinks = (input: string): LinkFromString[] => {
     const links = linkifyFind(input)
     return links
@@ -87,6 +87,10 @@ interface LinkFromString {
     type: 'url' | 'gh-issue'
 }
 
+/**
+ * Given an input string, returns a sorted array of links found within the string.
+ * If `externalURLs` is provided, GitHub issue references (e.g. #1234) will be parsed and included as links.
+ */
 export const getLinksFromString = ({ input, externalURLs }: GetLinksFromStringParams): LinkFromString[] => {
     const github = externalURLs ? externalURLs.find(url => url.serviceKind === ExternalServiceKind.GITHUB) : null
     const githubLinks = github ? getGitHubIssueLinks(input, github.url) : []
