@@ -94,7 +94,7 @@ func embedFiles(
 		Embeddings:      make([]float32, 0, len(fileNames)*dimensions),
 		RowMetadata:     make([]embeddings.RepoEmbeddingRowMetadata, 0, len(fileNames)),
 		ColumnDimension: dimensions,
-		Ranks:           make([]float64, 0, len(fileNames)),
+		Ranks:           make([]float32, 0, len(fileNames)),
 	}
 
 	// addEmbeddableChunks batches embeddable chunks, gets embeddings for the batches, and appends them to the index above.
@@ -112,7 +112,7 @@ func embedFiles(
 				// Unknown documents have rank 0. Zoekt is a bit smarter about this, assigning 0
 				// to "unimportant" files and the average for unknown files. We should probably
 				// add this here, too.
-				index.Ranks = append(index.Ranks, repoPathRanks.Paths[chunk.FileName])
+				index.Ranks = append(index.Ranks, float32(repoPathRanks.Paths[chunk.FileName]))
 			}
 
 			batchEmbeddings, err := client.GetEmbeddingsWithRetries(batchChunks, GET_EMBEDDINGS_MAX_RETRIES)
