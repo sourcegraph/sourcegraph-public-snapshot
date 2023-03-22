@@ -1,12 +1,4 @@
-import React, {
-    KeyboardEvent as ReactKeyboardEvent,
-    MouseEvent,
-    useCallback,
-    useEffect,
-    useLayoutEffect,
-    useMemo,
-    useState,
-} from 'react'
+import React, { MouseEvent, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 
 import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronUp, mdiFilterOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
@@ -16,7 +8,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { CodeExcerpt, onClickCodeExcerptHref } from '@sourcegraph/branded'
+import { CodeExcerpt } from '@sourcegraph/branded'
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import { ErrorLike, logger, pluralize } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-classes'
