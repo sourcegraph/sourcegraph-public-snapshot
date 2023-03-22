@@ -82,7 +82,10 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         vscode.commands.registerCommand('cody.recipe.translate-to-language', async () =>
             executeRecipe('translate-to-language')
         ),
-        vscode.commands.registerCommand('cody.recipe.git-history', async () => executeRecipe('git-history'))
+        vscode.commands.registerCommand('cody.recipe.git-history', async () => executeRecipe('git-history')),
+        vscode.commands.registerCommand('cody.recipe.improve-variable-names', async () =>
+            executeRecipe('improve-variable-names')
+        )
     )
 
     // Watch all relevant configuration and secrets for changes.

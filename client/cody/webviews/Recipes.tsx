@@ -9,6 +9,7 @@ export const recipesList = {
     'explain-code-high-level': 'Explain selected code (high level)',
     'generate-unit-test': 'Generate a unit test',
     'generate-docstring': 'Generate a docstring',
+    'improve-variable-names': 'Improve variable names',
     'translate-to-language': 'Translate to different language',
     'git-history': 'Recent history',
 }
