@@ -99,11 +99,11 @@ func (p *mockProvider) URN() string         { return extsvc.URN(p.serviceType, p
 
 func (*mockProvider) ValidateConnection(context.Context) error { return nil }
 
-func (p *mockProvider) FetchUserPerms(ctx context.Context, acct *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+func (p *mockProvider) FetchUserPerms(ctx context.Context, acct *extsvc.Account, _ authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	return p.fetchUserPerms(ctx, acct)
 }
 
-func (p *mockProvider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+func (p *mockProvider) FetchUserPermsByToken(ctx context.Context, token string, _ authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	return p.fetchUserPermsByToken(ctx, token)
 }
 
@@ -201,7 +201,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	assert.Equal(t, database.CodeHostStatusesSet{{
 		ProviderID:   "https://gitlab.com/",
 		ProviderType: "gitlab",
-		Status:       "SUCCESS",
+		Status:       database.CodeHostStatusSuccess,
 		Message:      "FetchUserPerms",
 	}}, providers)
 }
@@ -384,7 +384,7 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 			statuses: database.CodeHostStatusesSet{{
 				ProviderID:   p1.serviceID,
 				ProviderType: p1.serviceType,
-				Status:       "SUCCESS",
+				Status:       database.CodeHostStatusSuccess,
 				Message:      "FetchUserPerms",
 			}},
 		},
@@ -393,12 +393,12 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 			statuses: database.CodeHostStatusesSet{{
 				ProviderID:   p2.serviceID,
 				ProviderType: p2.serviceType,
-				Status:       "ERROR",
+				Status:       database.CodeHostStatusError,
 				Message:      "FetchAccount: no account found for this user",
 			}, {
 				ProviderID:   p1.serviceID,
 				ProviderType: p1.serviceType,
-				Status:       "SUCCESS",
+				Status:       database.CodeHostStatusSuccess,
 				Message:      "FetchUserPerms",
 			}},
 			fetchAccountError: errors.New("no account found for this user"),
@@ -408,7 +408,7 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 			statuses: database.CodeHostStatusesSet{{
 				ProviderID:   p1.serviceID,
 				ProviderType: p1.serviceType,
-				Status:       "ERROR",
+				Status:       database.CodeHostStatusError,
 				Message:      "FetchUserPerms: horse error",
 			}},
 			fetchUserPermsError: errors.New("horse error"),
@@ -418,12 +418,12 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 			statuses: database.CodeHostStatusesSet{{
 				ProviderID:   p2.serviceID,
 				ProviderType: p2.serviceType,
-				Status:       "ERROR",
+				Status:       database.CodeHostStatusError,
 				Message:      "FetchAccount: no account found for this user",
 			}, {
 				ProviderID:   p1.serviceID,
 				ProviderType: p1.serviceType,
-				Status:       "ERROR",
+				Status:       database.CodeHostStatusError,
 				Message:      "FetchUserPerms: horse error",
 			}},
 			fetchAccountError:   errors.New("no account found for this user"),
@@ -549,7 +549,7 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 	assert.Equal(t, database.CodeHostStatusesSet{{
 		ProviderID:   "https://gitlab.com/",
 		ProviderType: "gitlab",
-		Status:       "ERROR",
+		Status:       database.CodeHostStatusError,
 		Message:      "FetchUserPerms: context deadline exceeded",
 	}}, providers)
 }
@@ -1106,7 +1106,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 
 		assert.Greater(t, len(providerStates), 0)
 		for _, ps := range providerStates {
-			if ps.Status == "ERROR" {
+			if ps.Status == database.CodeHostStatusError {
 				t.Fatal("Did not expect provider status of ERROR")
 			}
 		}

@@ -853,13 +853,13 @@ func getSampleCodeHostStates() []PermissionSyncCodeHostState {
 		{
 			ProviderID:   "ID",
 			ProviderType: "Type",
-			Status:       "SUCCESS",
+			Status:       CodeHostStatusSuccess,
 			Message:      "successful success",
 		},
 		{
 			ProviderID:   "ID",
 			ProviderType: "Type",
-			Status:       "ERROR",
+			Status:       CodeHostStatusError,
 			Message:      "unsuccessful unsuccess :(",
 		},
 	}

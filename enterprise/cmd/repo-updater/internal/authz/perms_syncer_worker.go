@@ -106,7 +106,7 @@ func (h *permsSyncerWorker) handlePermsSync(ctx context.Context, reqType request
 	if err == nil {
 		allProvidersFailedToSync := len(providerStates) > 0
 		for _, state := range providerStates {
-			if state.Status != "ERROR" {
+			if state.Status != database.CodeHostStatusError {
 				allProvidersFailedToSync = false
 				break
 			}
