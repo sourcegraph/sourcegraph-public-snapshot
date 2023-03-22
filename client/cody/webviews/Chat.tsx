@@ -75,9 +75,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                                     <div
                                         className={`bubble-content ${bubbleClassName(message.speaker)}-bubble-content`}
                                     >
-                                        {message.displayText && (
-                                            <p dangerouslySetInnerHTML={{ __html: message.displayText }} />
-                                        )}
+                                        {message.displayText && <CodeBlocks displayText={message.displayText} />}
                                         {message.contextFiles && message.contextFiles.length > 0 && (
                                             <ContextFiles contextFiles={message.contextFiles} />
                                         )}
@@ -184,5 +182,40 @@ const ContextFiles: React.FunctionComponent<{ contextFiles: string[] }> = ({ con
                 </span>
             </div>
         </p>
+    )
+}
+
+const CodeBlocks: React.FunctionComponent<{ displayText: string }> = ({ displayText }) => {
+    const [copiedText, setCopiedText] = useState('')
+    const preBlocks = displayText.match(/<(\w+)[^>]*>(.*?)<\/\1>|<pre[^>]*>[\s\S]*?<\/pre>/g) || []
+    const copyText = (text: string) => {
+        navigator.clipboard.writeText(text.replace(/<[^>]*>?/gm, ''))
+        setCopiedText(text)
+    }
+    return (
+        <>
+            {preBlocks.map((block, index) => {
+                if (block.match(/^<pre/)) {
+                    return (
+                        <div className="chat-code-block-container" key={index}>
+                            <pre dangerouslySetInnerHTML={{ __html: block }} />
+                            <VSCodeButton
+                                title="Copy code"
+                                className="chat-code-block-copy-btn"
+                                appearance="icon"
+                                onClick={() => copyText(block)}
+                            >
+                                {copiedText == block ? (
+                                    <i className="codicon codicon-check" />
+                                ) : (
+                                    <i className="codicon codicon-copy" />
+                                )}
+                            </VSCodeButton>
+                        </div>
+                    )
+                }
+                return <p key={index} dangerouslySetInnerHTML={{ __html: block }} />
+            })}
+        </>
     )
 }

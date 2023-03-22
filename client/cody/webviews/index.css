@@ -5,8 +5,8 @@
     --human-bubble-color: #565eb9;
     --human-text-color: var(--vscode-dropdown-foreground);
     --bot-bubble-color: var(--vscode-input-background);
-    --bubble-text-color: var(--vscode-inputOption-activeForeground);
-    --code-background: var(--vscode-textCodeBlock-background);
+    --bubble-text-color: var(--vscode-input-activeForeground);
+    --code-background: var(--vscode-editor-background);
 }
 
 #root {
@@ -22,8 +22,8 @@ body[data-vscode-theme-kind='vscode-high-contrast-light'] {
     --human-bubble-color: var(--vscode-dropdown-background);
     --human-text-color: var(--vscode-dropdown-foreground);
     --bot-bubble-color: var(--vscode-input-background);
-    --bubble-text-color: var(--vscode-inputOption-activeForeground);
-    --code-background: var(--vscode-textCodeBlock-background);
+    --bubble-text-color: var(--vscode-input-foreground);
+    --code-background: var(--vscode-editor-background);
 }
 
 html,
