@@ -1,8 +1,12 @@
 package processor
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"fmt"
+	"io"
+	"net/http"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
@@ -13,12 +17,14 @@ import (
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -27,11 +33,39 @@ func TestBulkProcessor(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
+	orig := httpcli.InternalDoer
+	httpcli.InternalDoer = httpcli.MockDoer{
+		DoFunc: func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body: io.NopCloser(bytes.NewReader([]byte(fmt.Sprintf(
+					// The actual changeset returned by the mock client is not important,
+					// as long as it satisfies the type for webhooks.gqlChangesetResponse
+					`{"data": {"node": {"id": "%s","externalID": "%s","batchChanges": {"nodes": [{"id": "%s"}]},"repository": {"id": "%s","name": "github.com/test/test"},"createdAt": "2023-02-25T00:53:50Z","updatedAt": "2023-02-25T00:53:50Z","title": "%s","body": "%s","author": {"name": "%s", "email": "%s"},"state": "%s","labels": [],"externalURL": {"url": "%s"},"forkNamespace": null,"reviewState": "%s","checkState": null,"error": null,"syncerError": null,"forkName": null,"ownedByBatchChange": null}}}`,
+					"123",
+					"123",
+					"123",
+					"123",
+					"title",
+					"body",
+					"author",
+					"email",
+					"OPEN",
+					"some-url",
+					"PENDING",
+				)))),
+			}, nil
+		},
+	}
+	t.Cleanup(func() { httpcli.InternalDoer = orig })
+
 	ctx := context.Background()
 	sqlDB := dbtest.NewDB(logger, t)
 	tx := dbtest.NewTx(t, sqlDB)
 	db := database.NewDB(logger, sqlDB)
 	bstore := store.New(database.NewDBWith(logger, basestore.NewWithHandle(basestore.NewHandleWithTx(tx, sql.TxOptions{}))), &observation.TestContext, nil)
+	wstore := database.OutboundWebhookJobsWith(bstore, nil)
+
 	user := bt.CreateTestUser(t, db, true)
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
 	bt.CreateTestSiteCredential(t, bstore, repo)
@@ -60,9 +94,12 @@ func TestBulkProcessor(t *testing.T) {
 			logger:  logtest.Scoped(t),
 		}
 		job := &types.ChangesetJob{JobType: types.ChangesetJobType("UNKNOWN"), UserID: user.ID}
-		err, _ := bp.Process(ctx, job)
+		err, afterDone := bp.Process(ctx, job)
 		if err == nil || err.Error() != `invalid job type "UNKNOWN"` {
 			t.Fatalf("unexpected error returned %s", err)
+		}
+		if afterDone != nil {
+			t.Fatal("unexpected non-nil afterDone")
 		}
 	})
 
@@ -87,9 +124,12 @@ func TestBulkProcessor(t *testing.T) {
 		}
 
 		bp := &bulkProcessor{tx: bstore, logger: logtest.Scoped(t)}
-		err, _ := bp.Process(ctx, job)
+		err, afterDone := bp.Process(ctx, job)
 		if err != changesetIsProcessingErr {
 			t.Fatalf("unexpected error. want=%s, got=%s", changesetIsProcessingErr, err)
+		}
+		if afterDone != nil {
+			t.Fatal("unexpected non-nil afterDone")
 		}
 	})
 
@@ -109,12 +149,15 @@ func TestBulkProcessor(t *testing.T) {
 		if err := bstore.CreateChangesetJob(ctx, job); err != nil {
 			t.Fatal(err)
 		}
-		err, _ := bp.Process(ctx, job)
+		err, afterDone := bp.Process(ctx, job)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if !fake.CreateCommentCalled {
 			t.Fatal("expected CreateComment to be called but wasn't")
+		}
+		if afterDone != nil {
+			t.Fatal("unexpected non-nil afterDone")
 		}
 	})
 
@@ -133,13 +176,16 @@ func TestBulkProcessor(t *testing.T) {
 			Payload:       &btypes.ChangesetJobDetachPayload{},
 		}
 
-		err, _ := bp.Process(ctx, job)
+		err, afterDone := bp.Process(ctx, job)
 		if err != nil {
 			t.Fatal(err)
 		}
 		ch, err := bstore.GetChangesetByID(ctx, changeset.ID)
 		if err != nil {
 			t.Fatal(err)
+		}
+		if afterDone != nil {
+			t.Fatal("unexpected non-nil afterDone")
 		}
 		if len(ch.BatchChanges) != 1 {
 			t.Fatalf("invalid batch changes associated, expected one, got=%+v", ch.BatchChanges)
@@ -169,9 +215,12 @@ func TestBulkProcessor(t *testing.T) {
 		if err := bstore.UpdateChangeset(ctx, changeset); err != nil {
 			t.Fatal(err)
 		}
-		err, _ := bp.Process(ctx, job)
+		err, afterDone := bp.Process(ctx, job)
 		if err != nil {
 			t.Fatal(err)
+		}
+		if afterDone != nil {
+			t.Fatal("unexpected non-nil afterDone")
 		}
 		changeset, err = bstore.GetChangesetByID(ctx, changeset.ID)
 		if err != nil {
@@ -195,12 +244,29 @@ func TestBulkProcessor(t *testing.T) {
 			UserID:      user.ID,
 			Payload:     &btypes.ChangesetJobMergePayload{},
 		}
-		err, _ := bp.Process(ctx, job)
+		err, afterDone := bp.Process(ctx, job)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if !fake.MergeChangesetCalled {
 			t.Fatal("expected MergeChangeset to be called but wasn't")
+		}
+		if afterDone == nil {
+			t.Fatal("unexpected nil afterDone")
+		}
+
+		// Ensure that the appropriate webhook job will be created
+		afterDone(bstore)
+		webhook, err := wstore.GetLast(ctx)
+
+		if err != nil {
+			t.Fatalf("could not get latest webhook job: %s", err)
+		}
+		if webhook == nil {
+			t.Fatalf("expected webhook job to be created")
+		}
+		if webhook.EventType != webhooks.ChangesetClose {
+			t.Fatalf("wrong webhook job type. want=%s, have=%s", webhooks.ChangesetClose, webhook.EventType)
 		}
 	})
 
@@ -217,12 +283,29 @@ func TestBulkProcessor(t *testing.T) {
 			UserID:      user.ID,
 			Payload:     &btypes.ChangesetJobClosePayload{},
 		}
-		err, _ := bp.Process(ctx, job)
+		err, afterDone := bp.Process(ctx, job)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if !fake.CloseChangesetCalled {
 			t.Fatal("expected CloseChangeset to be called but wasn't")
+		}
+		if afterDone == nil {
+			t.Fatal("unexpected nil afterDone")
+		}
+
+		// Ensure that the appropriate webhook job will be created
+		afterDone(bstore)
+		webhook, err := wstore.GetLast(ctx)
+
+		if err != nil {
+			t.Fatalf("could not get latest webhook job: %s", err)
+		}
+		if webhook == nil {
+			t.Fatalf("expected webhook job to be created")
+		}
+		if webhook.EventType != webhooks.ChangesetClose {
+			t.Fatalf("wrong webhook job type. want=%s, have=%s", webhooks.ChangesetClose, webhook.EventType)
 		}
 	})
 
@@ -303,12 +386,22 @@ func TestBulkProcessor(t *testing.T) {
 						},
 					}
 
-					if err, _ := bp.Process(ctx, job); err == nil {
-						t.Error("unexpected nil error")
-					} else if tc.wantRetryable && errcode.IsNonRetryable(err) {
+					err, afterDone := bp.Process(ctx, job)
+					if err == nil {
+						t.Errorf("unexpected nil error")
+					}
+					if tc.wantRetryable && errcode.IsNonRetryable(err) {
 						t.Errorf("error is not retryable: %v", err)
-					} else if !tc.wantRetryable && !errcode.IsNonRetryable(err) {
+					}
+					if !tc.wantRetryable && !errcode.IsNonRetryable(err) {
 						t.Errorf("error is retryable: %v", err)
+					}
+					// We don't expect any afterDone function to be returned
+					// because the bulk operation just enqueues the changesets for
+					// publishing via the reconciler and does not actually perform
+					// the publishing itself.
+					if afterDone != nil {
+						t.Fatal("unexpected non-nil afterDone")
 					}
 				})
 			}
@@ -353,11 +446,19 @@ func TestBulkProcessor(t *testing.T) {
 								},
 							}
 
-							if err, _ := bp.Process(ctx, job); err != nil {
+							err, afterDone := bp.Process(ctx, job)
+							if err != nil {
 								t.Errorf("unexpected error: %v", err)
 							}
+							// We don't expect any afterDone function to be returned
+							// because the bulk operation just enqueues the changesets for
+							// publishing via the reconciler and does not actually perform
+							// the publishing itself.
+							if afterDone != nil {
+								t.Fatal("unexpected non-nil afterDone")
+							}
 
-							changeset, err := bstore.GetChangesetByID(ctx, changeset.ID)
+							changeset, err = bstore.GetChangesetByID(ctx, changeset.ID)
 							if err != nil {
 								t.Fatal(err)
 							}
