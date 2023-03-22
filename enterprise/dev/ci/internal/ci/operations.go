@@ -178,7 +178,7 @@ func addCIScriptsTests(pipeline *bk.Pipeline) {
 //	pipeline.AddStep(":lock: Checkov Terraform scanning",
 //		bk.Cmd("dev/ci/ci-checkov.sh"),
 //		bk.SoftFail(222))
-//}
+// }
 
 // pnpm ~41s + ~1s
 func addGraphQLLint(pipeline *bk.Pipeline) {
@@ -666,6 +666,8 @@ func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operatio
 		previousMinorVersion := fmt.Sprintf("%d.%d", version.Major(), version.Minor()-1)
 		if version.Major() == 4 && version.Minor() == 0 {
 			previousMinorVersion = "3.43"
+		} else if version.Major() == 5 && version.Minor() == 0 {
+			previousMinorVersion = "4.5"
 		}
 
 		for _, branch := range []string{
