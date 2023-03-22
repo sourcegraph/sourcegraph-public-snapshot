@@ -266,7 +266,7 @@ func (c codeHostStateResolver) ProviderType() string {
 }
 
 func (c codeHostStateResolver) Status() string {
-	return c.state.Status
+	return string(c.state.Status)
 }
 
 func (c codeHostStateResolver) Message() string {

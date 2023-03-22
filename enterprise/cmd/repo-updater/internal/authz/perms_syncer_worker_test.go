@@ -502,10 +502,10 @@ func (d *dummySyncerWithErrors) syncRepoPerms(_ context.Context, repoID api.Repo
 		Options: options,
 	}
 
-	codeHostStates := database.CodeHostStatusesSet{{ProviderID: "id1", Status: "SUCCESS"}, {ProviderID: "id2", Status: "SUCCESS"}}
+	codeHostStates := database.CodeHostStatusesSet{{ProviderID: "id1", Status: database.CodeHostStatusSuccess}, {ProviderID: "id2", Status: database.CodeHostStatusSuccess}}
 	if typ, ok := d.repoIDErrors[repoID]; ok && typ == allProvidersFailed {
 		for idx := range codeHostStates {
-			codeHostStates[idx].Status = "ERROR"
+			codeHostStates[idx].Status = database.CodeHostStatusError
 		}
 	}
 
@@ -524,10 +524,10 @@ func (d *dummySyncerWithErrors) syncUserPerms(_ context.Context, userID int32, n
 		Options: options,
 	}
 
-	codeHostStates := database.CodeHostStatusesSet{{ProviderID: "id1", Status: "ERROR"}, {ProviderID: "id2", Status: "SUCCESS"}}
+	codeHostStates := database.CodeHostStatusesSet{{ProviderID: "id1", Status: database.CodeHostStatusError}, {ProviderID: "id2", Status: database.CodeHostStatusSuccess}}
 	if typ, ok := d.userIDErrors[userID]; ok && typ == allProvidersFailed {
 		for idx := range codeHostStates {
-			codeHostStates[idx].Status = "ERROR"
+			codeHostStates[idx].Status = database.CodeHostStatusError
 		}
 	}
 

@@ -145,7 +145,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			assert.Equal(t, database.CodeHostStatusesSet{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				Status:       "SUCCESS",
+				Status:       database.CodeHostStatusSuccess,
 				Message:      "FetchRepoPerms",
 			}}, providerStates)
 
@@ -230,7 +230,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			assert.Equal(t, database.CodeHostStatusesSet{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				Status:       "SUCCESS",
+				Status:       database.CodeHostStatusSuccess,
 				Message:      "FetchRepoPerms",
 			}}, providerStates)
 
@@ -256,7 +256,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			assert.Equal(t, database.CodeHostStatusesSet{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				Status:       "SUCCESS",
+				Status:       database.CodeHostStatusSuccess,
 				Message:      "FetchRepoPerms",
 			}}, providerStates)
 
@@ -353,7 +353,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			assert.Equal(t, database.CodeHostStatusesSet{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				Status:       "SUCCESS",
+				Status:       database.CodeHostStatusSuccess,
 				Message:      "FetchUserPerms",
 			}}, providerStates)
 
@@ -441,7 +441,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			assert.Equal(t, database.CodeHostStatusesSet{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				Status:       "SUCCESS",
+				Status:       database.CodeHostStatusSuccess,
 				Message:      "FetchUserPerms",
 			}}, providerStates)
 
@@ -467,7 +467,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			assert.Equal(t, database.CodeHostStatusesSet{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				Status:       "SUCCESS",
+				Status:       database.CodeHostStatusSuccess,
 				Message:      "FetchUserPerms",
 			}}, providerStates)
 
