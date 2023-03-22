@@ -12,7 +12,7 @@
     </a>
 </div>
 
-## Cody for Enterprise
+## Cody Enterprise
 
 Cody is in private alpha (experimental) at this stage. Please contact your techical advisor or [signup here](https://sourcegraph.typeform.com/to/pIXTgwrd?typeform-source=t.co) to get access.
 
