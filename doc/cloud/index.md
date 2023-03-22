@@ -95,7 +95,7 @@ instance and customer code host
 
 Advantages of AWS Private Link include:
 - connectivity to customer VPC is only available inside AWS network
-- provides customer mechanism to select AWS Princincal (AWS Account or more granular), who can connect to their code host
+-  ability to select AWS Principal (AWS Account or more granular) that can connect to customer code host
 - allows customer to control incoming connections
 - supports private DNS
 
