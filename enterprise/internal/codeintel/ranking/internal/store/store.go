@@ -36,11 +36,7 @@ type Store interface {
 	InsertInitialPathRanks(ctx context.Context, uploadID int, documentPath []string, graphKey string) (err error)
 	InsertPathRanks(ctx context.Context, graphKey string, batchSize int) (numPathRanksInserted int, numInputsProcessed int, err error)
 
-	VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string) (
-		metadataRecordsDeleted int,
-		inputRecordsDeleted int,
-		err error,
-	)
+	VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string) (inputRecordsDeleted int, err error)
 
 	VacuumStaleRanks(ctx context.Context, derivativeGraphKey string) (
 		rankRecordsScanned int,

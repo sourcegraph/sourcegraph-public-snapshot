@@ -760,41 +760,16 @@ SELECT
 	(SELECT COUNT(*) FROM deleted_initial_path_ranks)
 `
 
-func (s *store) VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string) (
-	metadataRecordsDeleted int,
-	inputRecordsDeleted int,
-	err error,
-) {
+func (s *store) VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string) (_ int, err error) {
 	ctx, _, endObservation := s.operations.vacuumStaleGraphs.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
 	defer endObservation(1, observation.Args{})
 
-	rows, err := s.db.Query(ctx, sqlf.Sprintf(vacuumStaleGraphsQuery, derivativeGraphKey, derivativeGraphKey))
-	if err != nil {
-		return 0, 0, err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	for rows.Next() {
-		if err := rows.Scan(
-			&metadataRecordsDeleted,
-			&inputRecordsDeleted,
-		); err != nil {
-			return 0, 0, err
-		}
-	}
-
-	return metadataRecordsDeleted, inputRecordsDeleted, nil
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumStaleGraphsQuery, derivativeGraphKey)))
+	return count, err
 }
 
 const vacuumStaleGraphsQuery = `
 WITH
-locked_references_processed AS (
-	SELECT id
-	FROM codeintel_ranking_references_processed
-	WHERE graph_key != %s
-	ORDER BY id
-	FOR UPDATE
-),
 locked_path_counts_inputs AS (
 	SELECT id
 	FROM codeintel_ranking_path_counts_inputs
@@ -802,19 +777,12 @@ locked_path_counts_inputs AS (
 	ORDER BY id
 	FOR UPDATE
 ),
-deleted_references_processed AS (
-	DELETE FROM codeintel_ranking_references_processed
-	WHERE id IN (SELECT id FROM locked_references_processed)
-	RETURNING 1
-),
 deleted_path_counts_inputs AS (
 	DELETE FROM codeintel_ranking_path_counts_inputs
 	WHERE id IN (SELECT id FROM locked_path_counts_inputs)
 	RETURNING 1
 )
-SELECT
-	(SELECT COUNT(*) FROM deleted_references_processed),
-	(SELECT COUNT(*) FROM deleted_path_counts_inputs)
+SELECT COUNT(*) FROM deleted_path_counts_inputs
 `
 
 func (s *store) VacuumStaleRanks(ctx context.Context, derivativeGraphKey string) (rankRecordsDeleted, rankRecordsScanned int, err error) {

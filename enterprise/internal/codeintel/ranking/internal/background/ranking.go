@@ -167,9 +167,9 @@ func vacuumStaleInitialPaths(ctx context.Context, store store.Store) (int, int, 
 	return numPathRecordsScanned, numStalePathRecordsDeleted, err
 }
 
-func vacuumStaleGraphs(ctx context.Context, store store.Store) (int, int, error) {
+func vacuumStaleGraphs(ctx context.Context, store store.Store) (int, error) {
 	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
-		return 0, 0, nil
+		return 0, nil
 	}
 
 	return store.VacuumStaleGraphs(ctx, rankingshared.DerivativeGraphKeyFromTime(time.Now()))
