@@ -731,7 +731,6 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		URI:              repo.URI,
 		ExternalRepoSpec: repo.ExternalRepo,
 	}, fetchOpts)
-	providerStates = append(providerStates, database.NewProviderStatus(provider, err, "FetchRepoPerms"))
 
 	// Detect 404 error (i.e. not authorized to call given APIs) that often happens with GitHub.com
 	// when the owner of the token only has READ access. However, we don't want to fail
@@ -743,6 +742,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 			log.Error(err),
 			log.String("suggestion", "GitHub access token user may only have read access to the repository, but needs write for permissions"),
 		)
+		providerStates = append(providerStates, database.NewProviderStatus(provider, nil, "FetchRepoPerms"))
 		return result, providerStates, nil
 	}
 
@@ -750,8 +750,11 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	if errors.Is(err, &authz.ErrUnimplemented{}) {
 		logger.Debug("unimplemented", log.Error(err))
 
+		providerStates = append(providerStates, database.NewProviderStatus(provider, nil, "FetchRepoPerms"))
 		return result, providerStates, nil
 	}
+
+	providerStates = append(providerStates, database.NewProviderStatus(provider, err, "FetchRepoPerms"))
 
 	if err != nil {
 		// Process partial results if this is an initial fetch.
