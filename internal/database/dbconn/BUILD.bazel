@@ -24,6 +24,7 @@ go_library(
         "//lib/errors",
         "@com_github_jackc_pgx_v4//:pgx",
         "@com_github_jackc_pgx_v4//stdlib",
+        "@com_github_lib_pq//:pq",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_qustavo_sqlhooks_v2//:sqlhooks",
