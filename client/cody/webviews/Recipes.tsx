@@ -11,7 +11,7 @@ export const recipesList = {
     'generate-docstring': 'Generate a docstring',
     'improve-variable-names': 'Improve variable names',
     'translate-to-language': 'Translate to different language',
-    'git-history': 'Recent history',
+    'git-history': 'Summarize recent code changes',
 }
 
 export function Recipes(): React.ReactElement {

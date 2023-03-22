@@ -16,7 +16,7 @@ interface NavBarItem {
 }
 
 const navBarItems: NavBarItem[] = [
-    { tab: 'chat', title: 'Ask' },
+    { tab: 'chat', title: 'Chat' },
     { tab: 'recipes', title: 'Recipes' },
 ]
 

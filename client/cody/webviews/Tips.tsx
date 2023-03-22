@@ -7,13 +7,19 @@ export const Tips: React.FunctionComponent<{}> = () => (
         <h3>Example questions</h3>
         <ul>
             <li>What are the most popular Go CLI libraries?</li>
-            <li>Write a function that parses JSON in Python</li>
-            <li>Summarize the code in this file.</li>
-            <li>Which files handle SAML authentication in my codebase?</li>
+            <li>Write a function that parses JSON in Python.</li>
+            <li>Which files handle SAML authentication?</li>
         </ul>
         <h3>Recommendations</h3>
         <ul>
-            <li>Visit the Recipes tab for special actions like Write a unit test or Summarize code history.</li>
+            <li>
+                Set the codebase setting to let Cody know which repository you are working on in the current workspace.
+                Open the VSCode workspace settings, search for the "Cody: Codebase" setting, and enter the repository
+                name as listed on your Sourcegraph instance.
+            </li>
+            <li>
+                Visit the Recipes tab for special actions like Generate a unit test or Summarize recent code changes.
+            </li>
             <li>
                 Use the <ResetIcon /> button in the upper right to reset the chat when you want to start a new line of
                 thought. Cody does not remember anything outside the current chat.
