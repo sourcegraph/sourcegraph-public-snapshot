@@ -69,42 +69,13 @@ func NewClient(urn string, urls []string, httpfactory *httpcli.Factory) *Client 
 
 // Project returns the Files of the simple-API /<project>/ endpoint.
 func (c *Client) Project(ctx context.Context, project reposource.PackageName) ([]File, error) {
-	project = reposource.PackageName(normalize(string(project)))
-
-	var respBody io.ReadCloser
-	for _, baseURL := range c.urls {
-		if err := c.limiter.Wait(ctx); err != nil {
-			return nil, err
-		}
-
-		reqURL, err := url.Parse(baseURL)
-		if err != nil {
-			return nil, errors.Errorf("invalid proxy URL %q", baseURL)
-		}
-
-		// Go-http-client User-Agents are currently blocked from accessing /simple
-		// resources without a trailing slash. This causes a redirect to the
-		// canonicalized URL with the trailing slash. PyPI maintainers have been
-		// struggling to handle a piece of software with this User-Agent overloading our
-		// backends with requests resulting in redirects.
-		reqURL.Path = path.Join(reqURL.Path, string(project)) + "/"
-
-		req, err := http.NewRequestWithContext(ctx, "GET", reqURL.String(), nil)
-		if err != nil {
-			return nil, err
-		}
-
-		// TODO: wont discover new versions for up to week...
-		respBody, err = c.do(c.cachedClient, req)
-		if err == nil || !errcode.IsNotFound(err) {
-			defer respBody.Close()
-			break
-		} else if respBody != nil {
-			respBody.Close()
-		}
+	data, err := c.get(ctx, c.cachedClient, reposource.PackageName(normalize(string(project))))
+	if err != nil {
+		return nil, errors.Wrap(err, "PyPI")
 	}
+	defer data.Close()
 
-	return parse(respBody)
+	return parse(data)
 }
 
 // Version returns the File of a project at a specific version from
@@ -432,6 +403,43 @@ func ToWheel(f File) (*Wheel, error) {
 	default:
 		return nil, errors.Errorf("%s does not conform to pep 491", name)
 	}
+}
+
+func (c *Client) get(ctx context.Context, doer httpcli.Doer, project reposource.PackageName) (respBody io.ReadCloser, err error) {
+	var (
+		reqURL *url.URL
+		req    *http.Request
+	)
+
+	for _, baseURL := range c.urls {
+		if err = c.limiter.Wait(ctx); err != nil {
+			return nil, err
+		}
+
+		reqURL, err = url.Parse(baseURL)
+		if err != nil {
+			return nil, errors.Errorf("invalid proxy URL %q", baseURL)
+		}
+
+		// Go-http-client User-Agents are currently blocked from accessing /simple
+		// resources without a trailing slash. This causes a redirect to the
+		// canonicalized URL with the trailing slash. PyPI maintainers have been
+		// struggling to handle a piece of software with this User-Agent overloading our
+		// backends with requests resulting in redirects.
+		reqURL.Path = path.Join(reqURL.Path, string(project)) + "/"
+
+		req, err = http.NewRequestWithContext(ctx, "GET", reqURL.String(), nil)
+		if err != nil {
+			return nil, err
+		}
+
+		respBody, err = c.do(doer, req)
+		if err == nil || !errcode.IsNotFound(err) {
+			break
+		}
+	}
+
+	return respBody, err
 }
 
 func (c *Client) do(doer httpcli.Doer, req *http.Request) (io.ReadCloser, error) {

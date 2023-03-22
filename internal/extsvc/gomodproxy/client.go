@@ -93,18 +93,24 @@ func (c *Client) get(ctx context.Context, doer httpcli.Doer, mod reposource.Pack
 		return nil, errors.Wrap(err, "failed to escape module path")
 	}
 
+	// so err isnt shadowed below
+	var (
+		reqURL *url.URL
+		req    *http.Request
+	)
+
 	for _, baseURL := range c.urls {
 		if err = c.limiter.Wait(ctx); err != nil {
 			return nil, err
 		}
 
-		reqURL, err := url.Parse(baseURL)
+		reqURL, err = url.Parse(baseURL)
 		if err != nil {
 			return nil, errors.Errorf("invalid go modules proxy URL %q", baseURL)
 		}
 		reqURL.Path = path.Join(escapedMod, path.Join(paths...))
 
-		req, err := http.NewRequestWithContext(ctx, "GET", reqURL.String(), nil)
+		req, err = http.NewRequestWithContext(ctx, "GET", reqURL.String(), nil)
 		if err != nil {
 			return nil, err
 		}
@@ -138,6 +144,7 @@ func (c *Client) do(doer httpcli.Doer, req *http.Request) (io.ReadCloser, error)
 		if err != nil {
 			bs = []byte(errors.Wrap(err, "failed to read body").Error())
 		}
+		resp.Body.Close()
 		return nil, &Error{Path: req.URL.Path, Code: resp.StatusCode, Message: string(bs)}
 	}
 
