@@ -1104,6 +1104,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		assert.Greater(t, len(providerStates), 0)
 		for _, ps := range providerStates {
 			if ps.Status == "ERROR" {
 				t.Fatal("Did not expect provider status of ERROR")
