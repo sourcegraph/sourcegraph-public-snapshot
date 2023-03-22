@@ -60,7 +60,7 @@ func TestBulkProcessor(t *testing.T) {
 			logger:  logtest.Scoped(t),
 		}
 		job := &types.ChangesetJob{JobType: types.ChangesetJobType("UNKNOWN"), UserID: user.ID}
-		err := bp.Process(ctx, job)
+		err, _ := bp.Process(ctx, job)
 		if err == nil || err.Error() != `invalid job type "UNKNOWN"` {
 			t.Fatalf("unexpected error returned %s", err)
 		}
@@ -87,7 +87,7 @@ func TestBulkProcessor(t *testing.T) {
 		}
 
 		bp := &bulkProcessor{tx: bstore, logger: logtest.Scoped(t)}
-		err := bp.Process(ctx, job)
+		err, _ := bp.Process(ctx, job)
 		if err != changesetIsProcessingErr {
 			t.Fatalf("unexpected error. want=%s, got=%s", changesetIsProcessingErr, err)
 		}
@@ -109,7 +109,7 @@ func TestBulkProcessor(t *testing.T) {
 		if err := bstore.CreateChangesetJob(ctx, job); err != nil {
 			t.Fatal(err)
 		}
-		err := bp.Process(ctx, job)
+		err, _ := bp.Process(ctx, job)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -133,7 +133,7 @@ func TestBulkProcessor(t *testing.T) {
 			Payload:       &btypes.ChangesetJobDetachPayload{},
 		}
 
-		err := bp.Process(ctx, job)
+		err, _ := bp.Process(ctx, job)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -169,7 +169,7 @@ func TestBulkProcessor(t *testing.T) {
 		if err := bstore.UpdateChangeset(ctx, changeset); err != nil {
 			t.Fatal(err)
 		}
-		err := bp.Process(ctx, job)
+		err, _ := bp.Process(ctx, job)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -195,7 +195,7 @@ func TestBulkProcessor(t *testing.T) {
 			UserID:      user.ID,
 			Payload:     &btypes.ChangesetJobMergePayload{},
 		}
-		err := bp.Process(ctx, job)
+		err, _ := bp.Process(ctx, job)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -217,7 +217,7 @@ func TestBulkProcessor(t *testing.T) {
 			UserID:      user.ID,
 			Payload:     &btypes.ChangesetJobClosePayload{},
 		}
-		err := bp.Process(ctx, job)
+		err, _ := bp.Process(ctx, job)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -303,7 +303,7 @@ func TestBulkProcessor(t *testing.T) {
 						},
 					}
 
-					if err := bp.Process(ctx, job); err == nil {
+					if err, _ := bp.Process(ctx, job); err == nil {
 						t.Error("unexpected nil error")
 					} else if tc.wantRetryable && errcode.IsNonRetryable(err) {
 						t.Errorf("error is not retryable: %v", err)
@@ -353,7 +353,7 @@ func TestBulkProcessor(t *testing.T) {
 								},
 							}
 
-							if err := bp.Process(ctx, job); err != nil {
+							if err, _ := bp.Process(ctx, job); err != nil {
 								t.Errorf("unexpected error: %v", err)
 							}
 
