@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -19,7 +18,6 @@ type Client struct {
 }
 
 func NewClient(urn string, httpfactory *httpcli.Factory) (*Client, error) {
-	time.Sleep(time.Second * 30)
 	uncached, err := httpfactory.Doer(httpcli.NewCachedTransportOpt(httpcli.NoopCache{}, false))
 	if err != nil {
 		return nil, err
