@@ -4,7 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/grafana/regexp"
-	lru "github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/mattn/go-sqlite3"
 )
 
@@ -19,12 +19,12 @@ func Init() {
 
 var (
 	cacheSize     = 1000
-	regexCache, _ = lru.New(cacheSize)
+	regexCache, _ = lru.New[string, *regexp.Regexp](cacheSize)
 )
 
 func MatchString(pattern string, s string) (bool, error) {
 	if re, ok := regexCache.Get(pattern); ok {
-		return re.(*regexp.Regexp).MatchString(s), nil
+		return re.MatchString(s), nil
 	}
 
 	re, err := regexp.Compile(pattern)
