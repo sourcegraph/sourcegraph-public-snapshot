@@ -114,7 +114,7 @@ func NewRankCountsJanitor(
 		Interval:    interval,
 		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
-			numDeleted, err := vacuumStaleGraphs(ctx, store)
+			numDeleted, err := vacuumStaleGraphs(ctx, store, 100) // TODO - configure
 			return numDeleted, numDeleted, err
 		},
 	})
