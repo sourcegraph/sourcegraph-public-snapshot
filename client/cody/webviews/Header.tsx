@@ -20,7 +20,7 @@ export const Header: React.FunctionComponent<React.PropsWithChildren<HeaderProps
             </div>
             <div className="header-title">
                 <span className="header-cody">Cody</span>
-                <VSCodeTag className="tag-beta">Beta</VSCodeTag>
+                <VSCodeTag className="tag-beta">experimental</VSCodeTag>
             </div>
         </div>
         <div className="header-container-right">
