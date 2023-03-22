@@ -33230,6 +33230,9 @@ type MockOutboundWebhookJobStore struct {
 	// GetByIDFunc is an instance of a mock function object controlling the
 	// behavior of the method GetByID.
 	GetByIDFunc *OutboundWebhookJobStoreGetByIDFunc
+	// GetLastFunc is an instance of a mock function object controlling the
+	// behavior of the method GetLast.
+	GetLastFunc *OutboundWebhookJobStoreGetLastFunc
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *OutboundWebhookJobStoreHandleFunc
@@ -33266,6 +33269,11 @@ func NewMockOutboundWebhookJobStore() *MockOutboundWebhookJobStore {
 		},
 		GetByIDFunc: &OutboundWebhookJobStoreGetByIDFunc{
 			defaultHook: func(context.Context, int64) (r0 *types.OutboundWebhookJob, r1 error) {
+				return
+			},
+		},
+		GetLastFunc: &OutboundWebhookJobStoreGetLastFunc{
+			defaultHook: func(context.Context) (r0 *types.OutboundWebhookJob, r1 error) {
 				return
 			},
 		},
@@ -33317,6 +33325,11 @@ func NewStrictMockOutboundWebhookJobStore() *MockOutboundWebhookJobStore {
 				panic("unexpected invocation of MockOutboundWebhookJobStore.GetByID")
 			},
 		},
+		GetLastFunc: &OutboundWebhookJobStoreGetLastFunc{
+			defaultHook: func(context.Context) (*types.OutboundWebhookJob, error) {
+				panic("unexpected invocation of MockOutboundWebhookJobStore.GetLast")
+			},
+		},
 		HandleFunc: &OutboundWebhookJobStoreHandleFunc{
 			defaultHook: func() basestore.TransactableHandle {
 				panic("unexpected invocation of MockOutboundWebhookJobStore.Handle")
@@ -33356,6 +33369,9 @@ func NewMockOutboundWebhookJobStoreFrom(i OutboundWebhookJobStore) *MockOutbound
 		},
 		GetByIDFunc: &OutboundWebhookJobStoreGetByIDFunc{
 			defaultHook: i.GetByID,
+		},
+		GetLastFunc: &OutboundWebhookJobStoreGetLastFunc{
+			defaultHook: i.GetLast,
 		},
 		HandleFunc: &OutboundWebhookJobStoreHandleFunc{
 			defaultHook: i.Handle,
@@ -33804,6 +33820,113 @@ func (c OutboundWebhookJobStoreGetByIDFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c OutboundWebhookJobStoreGetByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// OutboundWebhookJobStoreGetLastFunc describes the behavior when the
+// GetLast method of the parent MockOutboundWebhookJobStore instance is
+// invoked.
+type OutboundWebhookJobStoreGetLastFunc struct {
+	defaultHook func(context.Context) (*types.OutboundWebhookJob, error)
+	hooks       []func(context.Context) (*types.OutboundWebhookJob, error)
+	history     []OutboundWebhookJobStoreGetLastFuncCall
+	mutex       sync.Mutex
+}
+
+// GetLast delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockOutboundWebhookJobStore) GetLast(v0 context.Context) (*types.OutboundWebhookJob, error) {
+	r0, r1 := m.GetLastFunc.nextHook()(v0)
+	m.GetLastFunc.appendCall(OutboundWebhookJobStoreGetLastFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetLast method of
+// the parent MockOutboundWebhookJobStore instance is invoked and the hook
+// queue is empty.
+func (f *OutboundWebhookJobStoreGetLastFunc) SetDefaultHook(hook func(context.Context) (*types.OutboundWebhookJob, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetLast method of the parent MockOutboundWebhookJobStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *OutboundWebhookJobStoreGetLastFunc) PushHook(hook func(context.Context) (*types.OutboundWebhookJob, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *OutboundWebhookJobStoreGetLastFunc) SetDefaultReturn(r0 *types.OutboundWebhookJob, r1 error) {
+	f.SetDefaultHook(func(context.Context) (*types.OutboundWebhookJob, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *OutboundWebhookJobStoreGetLastFunc) PushReturn(r0 *types.OutboundWebhookJob, r1 error) {
+	f.PushHook(func(context.Context) (*types.OutboundWebhookJob, error) {
+		return r0, r1
+	})
+}
+
+func (f *OutboundWebhookJobStoreGetLastFunc) nextHook() func(context.Context) (*types.OutboundWebhookJob, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *OutboundWebhookJobStoreGetLastFunc) appendCall(r0 OutboundWebhookJobStoreGetLastFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of OutboundWebhookJobStoreGetLastFuncCall
+// objects describing the invocations of this function.
+func (f *OutboundWebhookJobStoreGetLastFunc) History() []OutboundWebhookJobStoreGetLastFuncCall {
+	f.mutex.Lock()
+	history := make([]OutboundWebhookJobStoreGetLastFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// OutboundWebhookJobStoreGetLastFuncCall is an object that describes an
+// invocation of method GetLast on an instance of
+// MockOutboundWebhookJobStore.
+type OutboundWebhookJobStoreGetLastFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.OutboundWebhookJob
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c OutboundWebhookJobStoreGetLastFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c OutboundWebhookJobStoreGetLastFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
