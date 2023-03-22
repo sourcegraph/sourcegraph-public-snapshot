@@ -3,7 +3,7 @@
   "private": true,
   "displayName": "Cody Enterprise",
   "version": "0.0.1",
-  "publisher": "sourcegraph",
+  "publisher": "Sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
   "description": "Your programming sidekick powered by AI and Sourcegraph's code search and intelligence.",

@@ -28,7 +28,6 @@ Cody is your hyper-intelligent programming sidekick - an AI assistant developed 
 - Generate documentation and unit tests on demand
 - Write code snippets and prototypes for you
 - Translate comments and functions in your code between languages
-- Find and fix vulnerabilities or anti-patterns in your code
 
 ## Installation
 
