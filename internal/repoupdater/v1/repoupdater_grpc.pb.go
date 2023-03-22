@@ -23,7 +23,6 @@ const (
 	RepoUpdaterService_RepoLookup_FullMethodName                  = "/repoupdater.v1.RepoUpdaterService/RepoLookup"
 	RepoUpdaterService_EnqueueRepoUpdate_FullMethodName           = "/repoupdater.v1.RepoUpdaterService/EnqueueRepoUpdate"
 	RepoUpdaterService_EnqueueChangesetSync_FullMethodName        = "/repoupdater.v1.RepoUpdaterService/EnqueueChangesetSync"
-	RepoUpdaterService_SchedulePermsSync_FullMethodName           = "/repoupdater.v1.RepoUpdaterService/SchedulePermsSync"
 	RepoUpdaterService_SyncExternalService_FullMethodName         = "/repoupdater.v1.RepoUpdaterService/SyncExternalService"
 	RepoUpdaterService_ExternalServiceNamespaces_FullMethodName   = "/repoupdater.v1.RepoUpdaterService/ExternalServiceNamespaces"
 	RepoUpdaterService_ExternalServiceRepositories_FullMethodName = "/repoupdater.v1.RepoUpdaterService/ExternalServiceRepositories"
@@ -41,7 +40,6 @@ type RepoUpdaterServiceClient interface {
 	// future. It does not wait for the update.
 	EnqueueRepoUpdate(ctx context.Context, in *EnqueueRepoUpdateRequest, opts ...grpc.CallOption) (*EnqueueRepoUpdateResponse, error)
 	EnqueueChangesetSync(ctx context.Context, in *EnqueueChangesetSyncRequest, opts ...grpc.CallOption) (*EnqueueChangesetSyncResponse, error)
-	SchedulePermsSync(ctx context.Context, in *SchedulePermsSyncRequest, opts ...grpc.CallOption) (*SchedulePermsSyncResponse, error)
 	// SyncExternalService requests the given external service to be synced.
 	SyncExternalService(ctx context.Context, in *SyncExternalServiceRequest, opts ...grpc.CallOption) (*SyncExternalServiceResponse, error)
 	// ExternalServiceNamespaces retrieves a list of namespaces available to the given external service configuration
@@ -88,15 +86,6 @@ func (c *repoUpdaterServiceClient) EnqueueRepoUpdate(ctx context.Context, in *En
 func (c *repoUpdaterServiceClient) EnqueueChangesetSync(ctx context.Context, in *EnqueueChangesetSyncRequest, opts ...grpc.CallOption) (*EnqueueChangesetSyncResponse, error) {
 	out := new(EnqueueChangesetSyncResponse)
 	err := c.cc.Invoke(ctx, RepoUpdaterService_EnqueueChangesetSync_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *repoUpdaterServiceClient) SchedulePermsSync(ctx context.Context, in *SchedulePermsSyncRequest, opts ...grpc.CallOption) (*SchedulePermsSyncResponse, error) {
-	out := new(SchedulePermsSyncResponse)
-	err := c.cc.Invoke(ctx, RepoUpdaterService_SchedulePermsSync_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
