@@ -54,8 +54,8 @@ ts_project(
 
 mocha_test(
     name = "e2e",
+    tags = ["requires-network"],
     tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
     use_xvfb = False,
-    tags = ["requires-network"],
     deps = [":end-to-end_tests"],
 )
