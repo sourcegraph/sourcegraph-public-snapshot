@@ -1525,6 +1525,7 @@ dependencies = [
  "tree-sitter-javascript",
  "tree-sitter-jsonnet",
  "tree-sitter-nickel",
+ "tree-sitter-ocaml",
  "tree-sitter-perl",
  "tree-sitter-pod",
  "tree-sitter-python",
@@ -2171,6 +2172,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "tree-sitter-ocaml"
+version = "0.20.1"
+source = "git+https://github.com/tree-sitter/tree-sitter-ocaml?rev=f1106bf834703f1f2f795da1a3b5f8f40174ffcc#f1106bf834703f1f2f795da1a3b5f8f40174ffcc"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
 name = "tree-sitter-perl"
 version = "0.0.1"
 source = "git+https://github.com/sourcegraph/tree-sitter-perl#98bd94b172221c8816d74a6bb7866c53d01f18da"
@@ -2221,7 +2231,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-scala"
 version = "0.20.7"
-source = "git+https://github.com/sourcegraph/tree-sitter-scala#6cd3cb6074624dd3d88e458343475ca4c701cb06"
+source = "git+https://github.com/sourcegraph/tree-sitter-scala?rev=6cd3cb6074624dd3d88e458343475ca4c701cb06#6cd3cb6074624dd3d88e458343475ca4c701cb06"
 dependencies = [
  "cc",
  "tree-sitter",

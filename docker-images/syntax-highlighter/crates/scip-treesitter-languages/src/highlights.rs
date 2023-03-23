@@ -151,6 +151,7 @@ lazy_static::lazy_static! {
             Javascript,
             Jsonnet,
             Nickel,
+            OCaml,
             Perl,
             Pod,
             Python,

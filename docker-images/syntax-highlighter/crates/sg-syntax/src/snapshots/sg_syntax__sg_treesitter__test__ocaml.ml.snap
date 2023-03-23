@@ -1,0 +1,39 @@
+---
+source: crates/sg-syntax/src/sg_treesitter.rs
+assertion_line: 362
+expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
+---
+  module X = struct
+//^^^^^^ Keyword
+//         ^ PunctuationDelimiter
+//           ^^^^^^ Keyword
+    let x = 0
+//  ^^^ Keyword
+//      ^ Identifier
+//        ^ PunctuationDelimiter
+//          ^ NumericLiteral
+  end
+//^^^ Keyword
+  
+  let x = 1
+//^^^ Keyword
+//    ^ Identifier
+//      ^ PunctuationDelimiter
+//        ^ NumericLiteral
+  
+  let x()=
+//^^^ Keyword
+//    ^ IdentifierFunction
+//       ^ PunctuationDelimiter
+    let x = x in
+//  ^^^ Keyword
+//      ^ Identifier
+//        ^ PunctuationDelimiter
+//          ^ Identifier
+//            ^^ Keyword
+    x + X.x
+//  ^ Identifier
+//    ^ IdentifierOperator
+//       ^ PunctuationDelimiter
+//        ^ Identifier
+

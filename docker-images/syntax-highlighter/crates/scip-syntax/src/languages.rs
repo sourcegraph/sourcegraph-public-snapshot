@@ -70,9 +70,24 @@ fn perl_locals() -> LocalConfiguration {
     }
 }
 
+fn ocaml_locals() -> LocalConfiguration {
+    let language = BundledParser::OCaml.get_language();
+    let query = include_scip_query!("ocaml", "scip-locals");
+
+    let mut parser = Parser::new();
+    parser.set_language(language).unwrap();
+
+    LocalConfiguration {
+        language,
+        parser,
+        query: Query::new(language, query).unwrap(),
+    }
+}
+
 pub fn get_local_configuration(parser: BundledParser) -> Option<LocalConfiguration> {
     match parser {
         BundledParser::Go => Some(go_locals()),
+        BundledParser::OCaml => Some(ocaml_locals()),
         BundledParser::Perl => Some(perl_locals()),
         _ => None,
     }

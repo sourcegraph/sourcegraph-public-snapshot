@@ -1,0 +1,20 @@
+---
+source: crates/scip-syntax/src/locals.rs
+assertion_line: 533
+expression: dumped
+---
+  module Something = struct
+//       ^^^^^^^^^ definition local 1
+    type t = Cmt of string | Cmti of string
+  
+    let to_string = function
+//      ^^^^^^^^^ definition local 2
+      | Cmt s -> s
+//          ^ definition local 3
+//               ^ reference local 3
+      | Cmti s -> s
+//           ^ definition local 4
+//                ^ reference local 4
+    ;;
+  end
+

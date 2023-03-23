@@ -1,0 +1,23 @@
+---
+source: crates/scip-syntax/src/locals.rs
+assertion_line: 521
+expression: dumped
+---
+  module X = struct
+//       ^ definition local 1
+    let x = 0
+//      ^ definition local 2
+  end
+  
+  let x = 1
+//    ^ definition local 3
+  
+  let x()=
+//    ^ definition local 4
+    let x = x in
+//      ^ definition local 5
+//          ^ reference local 5
+    x + X.x
+//  ^ reference local 4
+//      ^ reference local 1
+

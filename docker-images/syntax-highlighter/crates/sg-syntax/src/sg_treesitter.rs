@@ -352,7 +352,7 @@ SELECT * FROM my_table
             let indexed = index_language(filetype, &contents, true);
             if indexed.is_err() {
                 // assert failure
-                panic!("unknown filetype {:?}", filetype);
+                panic!("unknown filetype {:?} {:?}", filetype, indexed);
             }
             let document = indexed.unwrap();
 
