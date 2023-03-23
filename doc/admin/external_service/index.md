@@ -185,9 +185,8 @@ We recognize there are other code hosts including CVS, SVN, and many more. Today
 
 ## Rate limits
 
-Sourcegraph makes our best effort to use the least amount of calls to your code host. However, it is possible for Sourcegraph 
-to encounter rate limits in some scenarios. Please see the specific code host documentation for more information and how to 
-mitigate these issues, or read about [configuring rate limits on Sourcegraph](../config/rate_limits.md).
+Sourcegraph makes the best effort to use the least amount of calls to your code host. However, it is possible for Sourcegraph 
+to encounter rate limits in some scenarios. For more information, see [configuring rate limits on Sourcegraph](../config/rate_limits.md).
 
 ### Internal rate limit syncing
 

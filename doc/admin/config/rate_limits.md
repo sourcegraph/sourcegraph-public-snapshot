@@ -4,14 +4,14 @@ Sourcegraph has various [rate limiting](../external_service#rate-limits) mechani
 
 ## External rate limits
 
-Many code hosts have their own rate limits configured, and will provide feedback on requests when these rate limits are triggered. When Sourcegraph encounters a rate limit from the code host, the appropriate amount of time, as specified by the code host, will be waited before a request is retried.
+Many code hosts have their own rate limits configured, and will provide feedback on requests when these rate limits are triggered. When Sourcegraph makes a request that is rate limit by the code host, it will wait the appropriate amount of time (as specified by the code host) before a request is retried.
 
 Sourcegraph monitors external rate limits for the following code hosts:
 
-1. [GitHub](../external_service/github.md#github-com-rate-limits)
-2. [GitLab](../external_service/gitlab.md#gitlab-com-rate-limits)
-3. [Azure DevOps](../external_service/azuredevops.md#azure-devops-rate-limits)
-4. [Bitbucket Cloud](../external_service/bitbucket_cloud.md#bitbucket-cloud-rate-limits)
+1. [GitHub](../external_service/github.md#rate-limits)
+2. [GitLab](../external_service/gitlab.md#rate-limits)
+3. [Azure DevOps](../external_service/azuredevops.md#rate-limits)
+4. [Bitbucket Cloud](../external_service/bitbucket_cloud.md#rate-limits)
 
 ## Internal rate limits
 
@@ -28,4 +28,4 @@ Internal rate limits can be configured for each code host connection:
 
 These internal rate limits will also be applied when syncing user permissions from the code host.
 
-Note that, if there are multiple code host connections to the same code host, then each connection will have separate internal rate limits.
+> NOTE: If there are multiple code host connections to the same code host, then each connection will have a separate internal rate limit.

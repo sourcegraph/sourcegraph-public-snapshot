@@ -146,13 +146,13 @@ because Sourcegraph usernames are mutable.
 To configure GitLab as an authentication provider (which will enable sign-in via GitLab), see the
 [authentication documentation](../auth/index.md#gitlab).
 
-## GitLab.com rate limits
+## Rate limits
 
 You should always include a token in a configuration for a GitLab.com URL to avoid being denied service by GitLab's [unauthenticated rate limits](https://docs.gitlab.com/ee/user/gitlab_com/index.html#gitlabcom-specific-rate-limits).
 
-If Sourcegraph hits a rate limit imposed by GitLab.com, Sourcegraph will wait the appropriate amount of time specified by GitLab.com before retrying the request. This can be several minutes in extreme cases.
+If Sourcegraph hits a rate limit imposed by GitLab, Sourcegraph will wait the appropriate amount of time specified by GitLab before retrying the request. This can be several minutes in extreme cases.
 
-## Internal rate limits
+### Internal rate limits
 
 Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to GitLab.
 
@@ -161,7 +161,7 @@ If enabled, the default rate is set at 36,000 per hour (10 per second) which can
 - For Sourcegraph <=3.38, if rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
 - For Sourcegraph >=3.39, rate limiting should be enabled and configured for each individual code host connection.
 
-**NOTE** Internal rate limiting is only currently applied when synchronising changesets in [batch changes](../../batch_changes/index.md), repository permissions and repository metadata from code hosts.
+> NOTE: Internal rate limiting is only currently applied when synchronising changesets in [batch changes](../../batch_changes/index.md), repository permissions and repository metadata from code hosts.
 
 ## Configuration
 
