@@ -39,6 +39,7 @@ import {
     CancelPermissionsSyncJobResultMessage,
     CancelPermissionsSyncJobVariables,
     CodeHostState,
+    CodeHostStatus,
     PermissionsSyncJob,
     PermissionsSyncJobReasonGroup,
     PermissionsSyncJobsResult,
@@ -596,8 +597,8 @@ const CodeHostStatesTableColumns: IColumn<CodeHostState>[] = [
         header: 'Status',
         render: (state: CodeHostState) => (
             <Badge
-                tooltip={state.status.toLowerCase() === 'error' ? state.message : undefined}
-                variant={CodeHostStateStatusVariants[state.status.toLowerCase()] || 'secondary'}
+                tooltip={state.status === CodeHostStatus.ERROR ? state.message : undefined}
+                variant={CodeHostStateStatusVariants[state.status]}
             >
                 {state.status}
             </Badge>
@@ -605,9 +606,9 @@ const CodeHostStatesTableColumns: IColumn<CodeHostState>[] = [
     },
 ]
 
-const CodeHostStateStatusVariants: Record<string, BadgeVariantType> = {
-    success: 'success',
-    error: 'danger',
+const CodeHostStateStatusVariants: Record<CodeHostStatus, BadgeVariantType> = {
+    SUCCESS: 'success',
+    ERROR: 'danger',
 }
 
 const JobPriorityBadgeVariants: Record<PermissionsSyncJobPriority, BadgeVariantType> = {
