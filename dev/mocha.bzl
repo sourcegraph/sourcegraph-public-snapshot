@@ -62,7 +62,6 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, use_xvfb 
 
 
     env = dict(env, **{
-        "BUILDKITE": "$$BUILDKITE",
         "HEADLESS": "$$E2E_HEADLESS",
         # Add environment variable so that mocha writes its test xml
         # to the location Bazel expects.
@@ -100,5 +99,4 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, use_xvfb 
             args = ["$(location :%s)" % mocha_name] + args,
             data = args_data + [":%s" % mocha_name],
             env = env,
-            tags = ["requires-network"],
         )
