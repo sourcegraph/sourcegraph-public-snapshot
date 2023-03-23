@@ -9,8 +9,8 @@
 </aside>
 
 [Terraform modules](https://learn.hashicorp.com/tutorials/terraform/module-use?in=terraform/modules) are provided to
-provision machines running executors on [AWS](https://github.com/sourcegraph/terraform-aws-executors)
-and [Google Cloud](https://github.com/sourcegraph/terraform-google-executors).
+provision machines running executors on [AWS](https://sourcegraph.com/github.com/sourcegraph/terraform-aws-executors)
+and [Google Cloud](https://sourcegraph.com/github.com/sourcegraph/terraform-google-executors).
 
 ## Basic Definition
 
@@ -59,7 +59,7 @@ See the Terraform Modules for additional configurations.
 
 Terraform modules `4.2.x` and above allow Terraform from `1.1.x` to `< 2.x` to be used.
 
-If using a Terraform module `4.1.x` or below, use [tfenv](https://github.com/tfutils/tfenv) to install Terraform
+If using a Terraform module `4.1.x` or below, use [tfenv](https://sourcegraph.com/github.com/tfutils/tfenv) to install Terraform
 1.1+.
 
 ```shell
@@ -160,16 +160,16 @@ All regions are supported.
 
 The following examples provision a single executor to pull from the `codeintel` queue.
 
-- [AWS example](https://github.com/sourcegraph/terraform-aws-executors/tree/master/examples/single-executor)
-- [Google example](https://github.com/sourcegraph/terraform-google-executors/tree/master/examples/single-executor)
-
+- [AWS example](https://sourcegraph.com/github.com/sourcegraph/terraform-aws-executors/-/tree/examples/single-executor)
+- [Google example](https://sourcegraph.com/github.com/sourcegraph/terraform-google-executors/-/tree/examples/single-executor)
+                    
 ### Multiple Executors
 
 The following examples provision two executors, one to pull from the `codeintel` queue and the other for the `batches`
 queue.
 
-- [AWS example](https://github.com/sourcegraph/terraform-aws-executors/tree/master/examples/multiple-executors)
-- [Google example](https://github.com/sourcegraph/terraform-google-executors/tree/master/examples/multiple-executors)
+- [AWS example](https://sourcegraph.com/github.com/sourcegraph/terraform-aws-executors/-/tree/examples/multiple-executors)
+- [Google example](https://sourcegraph.com/github.com/sourcegraph/terraform-google-executors/-/tree/examples/multiple-executors)
 
 ### Step-by-step Guide
 
@@ -193,7 +193,7 @@ The following is a step-by-step guide on provisioning a single `codeintel` execu
         - `"codeIntelAutoIndexing.enabled": true`
             - *This is only for `codeintel` executors.*
 5. Download
-   the [example files](https://github.com/sourcegraph/terraform-google-executors/blob/master/examples/single-executor)
+   the [example files](https://sourcegraph.com/github.com/sourcegraph/terraform-google-executors/-/blob/examples/single-executor)
 6. Change the following in `providers.tf`
     - `project` to the GCP project to provision the executor in
     - `region` to the GCP region to provision the executor in
