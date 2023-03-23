@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 [ $# -lt 2 ] && {
-    echo "${0} <path to app bundle> <path to 1024x1024 PNG icon file>"
-    exit 1
+  echo "${0} <path to original (aty least 1024x1024) icon>"
+  exit 1
 }
 
 # cleanup() {
@@ -16,13 +16,13 @@ ICONDIR=${APP}/Contents/Resources/new.iconset
 mkdir "${ICONDIR}"
 
 # Normal screen icons
-for SIZE in 16 32 64 128 256 512; do
-sips -z ${SIZE} ${SIZE} "${ORIGICON}" --out "${ICONDIR}"/icon_${SIZE}x${SIZE}.png ;
+for SIZE in 16 32 128 256 512; do
+  sips -z ${SIZE} ${SIZE} "${ORIGICON}" --out "${ICONDIR}"/icon_${SIZE}x${SIZE}.png
 done
 
 # Retina display icons
-for SIZE in 32 64 256 512; do
-sips -z ${SIZE} ${SIZE} "${ORIGICON}" --out "${ICONDIR}"/icon_$((SIZE / 2))x$((SIZE / 2))x2.png ;
+for SIZE in 16 32 128 256 512; do
+  sips -z ${SIZE} ${SIZE} "${ORIGICON}" --out "${ICONDIR}"/icon_$((SIZE / 2))x$((SIZE / 2))x2.png
 done
 
 # find the name of the icon bundle in the app
