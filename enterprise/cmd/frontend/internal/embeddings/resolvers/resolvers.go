@@ -44,18 +44,15 @@ type Resolver struct {
 }
 
 func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.EmbeddingsSearchInputArgs) (graphqlbackend.EmbeddingsSearchResultsResolver, error) {
+	if !conf.EmbeddingsEnabled() {
+		return nil, errors.New("embeddings are not configured or disabled")
+	}
+
 	if envvar.SourcegraphDotComMode() {
-		isEnabled, err := cody.IsCodyExperimentalFeatureFlagEnabled(ctx, r.db)
-		if err != nil {
-			return nil, err
-		}
+		isEnabled := cody.IsCodyExperimentalFeatureFlagEnabled(ctx)
 		if !isEnabled {
 			return nil, errors.New("cody experimental feature flag is not enabled for current user")
 		}
-	}
-
-	if !conf.EmbeddingsEnabled() {
-		return nil, errors.New("embeddings are not configured or disabled")
 	}
 
 	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.Repo)
@@ -82,17 +79,14 @@ func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.Emb
 }
 
 func (r *Resolver) IsContextRequiredForChatQuery(ctx context.Context, args graphqlbackend.IsContextRequiredForChatQueryInputArgs) (bool, error) {
+	if !conf.EmbeddingsEnabled() {
+		return false, errors.New("embeddings are not configured or disabled")
+	}
 	if envvar.SourcegraphDotComMode() {
-		isEnabled, err := cody.IsCodyExperimentalFeatureFlagEnabled(ctx, r.db)
-		if err != nil {
-			return false, err
-		}
+		isEnabled := cody.IsCodyExperimentalFeatureFlagEnabled(ctx)
 		if !isEnabled {
 			return false, errors.New("cody experimental feature flag is not enabled for current user")
 		}
-	}
-	if !conf.EmbeddingsEnabled() {
-		return false, errors.New("embeddings are not configured or disabled")
 	}
 	return r.embeddingsClient.IsContextRequiredForChatQuery(ctx, embeddings.IsContextRequiredForChatQueryParameters{Query: args.Query})
 }
