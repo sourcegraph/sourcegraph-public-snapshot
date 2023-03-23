@@ -37,8 +37,6 @@ describe('TreePage', () => {
         filePath: '',
         commitID: 'asdf1234',
         revision: 'asdf1234',
-        globbing: false,
-        useActionItemsBar: sinon.spy(),
         isSourcegraphDotCom: false,
         settingsCascade: {
             subjects: null,
@@ -51,7 +49,6 @@ describe('TreePage', () => {
             getGraphQLClient: () => Promise.reject(new Error('getGraphQLClient not implemented')),
             requestGraphQL: () => EMPTY,
             createExtensionHost: () => Promise.reject(new Error('createExtensionHost not implemented')),
-            getScriptURLForExtension: () => () => Promise.reject(new Error('getScriptURLForExtension not implemented')),
             urlToFile: () => '',
             sourcegraphURL: 'https://sourcegraph.com',
             clientApplication: 'sourcegraph',
@@ -64,6 +61,7 @@ describe('TreePage', () => {
         selectedSearchContextSpec: '',
         setBreadcrumb: sinon.spy(),
         useBreadcrumb: sinon.spy(),
+        ownEnabled: false,
     })
 
     describe('repo page', () => {
