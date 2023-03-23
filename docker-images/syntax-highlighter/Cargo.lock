@@ -1467,7 +1467,7 @@ dependencies = [
 [[package]]
 name = "scip"
 version = "0.1.1"
-source = "git+https://github.com/sourcegraph/scip?branch=main#3856df76147ca4b86df7821a881594358d4ba870"
+source = "git+https://github.com/sourcegraph/scip?rev=3856df76147ca4b86df7821a881594358d4ba870#3856df76147ca4b86df7821a881594358d4ba870"
 dependencies = [
  "protobuf",
 ]
@@ -1788,7 +1788,7 @@ dependencies = [
 [[package]]
 name = "syntect"
 version = "4.7.0"
-source = "git+https://github.com/sourcegraph/syntect?branch=main#7e02c5b4085e6d935b960b8106cdd85da04532d2"
+source = "git+https://github.com/sourcegraph/syntect?rev=7e02c5b4085e6d935b960b8106cdd85da04532d2#7e02c5b4085e6d935b960b8106cdd85da04532d2"
 dependencies = [
  "bincode",
  "bitflags 1.3.2",
@@ -2164,7 +2164,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-nickel"
 version = "0.0.1"
-source = "git+https://github.com/nickel-lang/tree-sitter-nickel?branch=main#d6c7eeb751038f934b5b1aa7ff236376d0235c56"
+source = "git+https://github.com/nickel-lang/tree-sitter-nickel?rev=d6c7eeb751038f934b5b1aa7ff236376d0235c56#d6c7eeb751038f934b5b1aa7ff236376d0235c56"
 dependencies = [
  "cc",
  "tree-sitter",
@@ -2173,7 +2173,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-perl"
 version = "0.0.1"
-source = "git+https://github.com/sourcegraph/tree-sitter-perl#98bd94b172221c8816d74a6bb7866c53d01f18da"
+source = "git+https://github.com/sourcegraph/tree-sitter-perl?rev=e1b4844afd17b7dc019a436b1ac890568d79a1f2#e1b4844afd17b7dc019a436b1ac890568d79a1f2"
 dependencies = [
  "cc",
  "tree-sitter",
@@ -2182,7 +2182,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-pod"
 version = "0.0.1"
-source = "git+https://github.com/sourcegraph/tree-sitter-pod?branch=main#f422a0dca6847c692e811f06fd92c6a75d647222"
+source = "git+https://github.com/sourcegraph/tree-sitter-pod?rev=f422a0dca6847c692e811f06fd92c6a75d647222#f422a0dca6847c692e811f06fd92c6a75d647222"
 dependencies = [
  "cc",
  "tree-sitter",
@@ -2221,7 +2221,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-scala"
 version = "0.20.7"
-source = "git+https://github.com/sourcegraph/tree-sitter-scala#6cd3cb6074624dd3d88e458343475ca4c701cb06"
+source = "git+https://github.com/sourcegraph/tree-sitter-scala?rev=6cd3cb6074624dd3d88e458343475ca4c701cb06#6cd3cb6074624dd3d88e458343475ca4c701cb06"
 dependencies = [
  "cc",
  "tree-sitter",
@@ -2230,7 +2230,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-sql"
 version = "0.0.2"
-source = "git+https://github.com/sourcegraph/tree-sitter-sql?branch=main#6ea62b8d33c9e39f6de8a398a6885d1873ed7e91"
+source = "git+https://github.com/sourcegraph/tree-sitter-sql?rev=6ea62b8d33c9e39f6de8a398a6885d1873ed7e91#6ea62b8d33c9e39f6de8a398a6885d1873ed7e91"
 dependencies = [
  "cc",
  "tree-sitter",
@@ -2249,7 +2249,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-xlsg"
 version = "0.0.1"
-source = "git+https://github.com/sourcegraph/tree-sitter-xlsg#945a7290bf211c57b43bed044c6d73092ca0484b"
+source = "git+https://github.com/sourcegraph/tree-sitter-xlsg?rev=d956b54ea151b12f19c945f7be421c3dcd3a77ba#d956b54ea151b12f19c945f7be421c3dcd3a77ba"
 dependencies = [
  "cc",
  "tree-sitter",
