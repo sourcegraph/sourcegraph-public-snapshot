@@ -16,7 +16,7 @@
       "args": [
         "--extensionDevelopmentPath=${workspaceRoot}/client/cody",
         "--disable-extension=hpargecruos.kodj",
-        "--disable-extension=sourcegraph.cody"
+        "--disable-extension=sourcegraph.cody-ai"
       ],
       "sourceMaps": true,
       "outFiles": ["${workspaceRoot}/client/cody/dist/*.js"],

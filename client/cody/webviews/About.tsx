@@ -21,7 +21,6 @@ interface TermsProps {
 export const Terms: React.FunctionComponent<React.PropsWithChildren<TermsProps>> = ({ setTermsAccepted }) => (
     <div className="non-transcript-container">
         <p className="terms-header-container">Notice and Usage Policies</p>
-
         <div className="terms-container">
             <p>
                 Sourcegraph Cody is an AI coding assistant that finds, explains, and writes code using context from your
@@ -46,7 +45,6 @@ export const Terms: React.FunctionComponent<React.PropsWithChildren<TermsProps>>
         </div>
 
         <p className="terms-header-container">FAQs</p>
-
         <div className="terms-container">
             <p className="question">
                 Q: Will my queries or Cody's responses to my queries be used as training data for any machine learning

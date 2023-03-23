@@ -4,6 +4,7 @@
     font-family: var(--vscode-font-family);
     border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border);
     padding: 1rem;
+    color: var(--vscode-sideBarTitle-foreground);
 }
 
 .header-container-left,

@@ -15,7 +15,7 @@ interface LoginProps {
 export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>> = ({ isValidLogin, onLogin }) => {
     const [termsAccepted, setTermsAccepted] = useState(false)
     const [token, setToken] = useState<string>('')
-    const [endpoint, setEndpoint] = useState('https://<instance>.sourcegraph.com')
+    const [endpoint, setEndpoint] = useState('')
 
     return (
         <div className="inner-container">
@@ -25,7 +25,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                         <p>Access Token</p>
                         <VSCodeTextField
                             value={token}
-                            placeholder="12345a678b91c2d34e567"
+                            placeholder="ex 6dfc880b320dff712d9f6cfcac5cbd13ebfad1d8"
                             className="w-100"
                             type={TextFieldType.password}
                             onInput={(e: any) => setToken(e.target.value)}
@@ -33,7 +33,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                         <p>Sourcegraph Instance</p>
                         <VSCodeTextField
                             value={endpoint}
-                            placeholder="https://<instance>.sourcegraph.com"
+                            placeholder="ex https://example.sourcegraph.com"
                             className="w-100"
                             autofocus={true}
                             onInput={(e: any) => setEndpoint(e.target.value)}
