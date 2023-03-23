@@ -4,7 +4,7 @@
  # x11vnc -display "$DISPLAY" -forever -rfbport 5900 >/x11vnc.log 2>&1 &
  # ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p qatest.mp4 >ffmpeg.log 2>&1 &
 
-BUILDKITE=${BUILDKITE:-"false"}
+BUILDKITE=${BUILDKITE:="false"}
 
 if [[ $BUILDKITE == "false" ]]; then
   /usr/X11/bin/Xvfb ":99" -screen 0 1280x1024x24 &
