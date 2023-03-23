@@ -36,7 +36,6 @@ go_test(
         "//dev/build-tracker/notify",
         "//dev/team",
         "@com_github_buildkite_go_buildkite_v3//buildkite",
-        "@com_github_gorilla_mux//:mux",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
     ],
