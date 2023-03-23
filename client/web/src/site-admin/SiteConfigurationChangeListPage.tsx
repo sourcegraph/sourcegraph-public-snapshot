@@ -44,14 +44,14 @@ export const SiteConfigurationChangeListPage: FC = () => {
 
     return (
         <>
-            {loading && <ConnectionLoading />}
-            {error && <ConnectionError errors={[error.message]} />}
             {connection?.nodes?.length === 0 ? (
                 <></>
             ) : (
                 <div>
                     <Container className="mb-3">
                         <H3>History</H3>
+                        {loading && <ConnectionLoading />}
+                        {error && <ConnectionError errors={[error.message]} />}
                         <div className="mt-4">
                             {connection?.nodes
                                 .filter(node => node.diff)
