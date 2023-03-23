@@ -56,7 +56,7 @@ export const UserAreaHeader: React.FunctionComponent<React.PropsWithChildren<Pro
                       ),
                       icon: () => <UserAvatar className={styles.avatar} user={props.user} />,
                   },
-        [props.user]
+        [props.user, props.isSourcegraphApp]
     )
 
     return (
