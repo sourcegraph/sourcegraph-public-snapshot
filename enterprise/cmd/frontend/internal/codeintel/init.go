@@ -98,6 +98,13 @@ func Init(
 	uploadRootResolver := uploadgraphql.NewRootResolver(
 		scopedContext("upload"),
 		codeIntelServices.UploadsService,
+		codeIntelServices.AutoIndexingService,
+		codeIntelServices.PoliciesService,
+		codeIntelServices.GitserverClient,
+		siteAdminChecker,
+		repoStore,
+		prefetcherFactory,
+		locationResolverFactory,
 	)
 
 	sentinelRootResolver := sentinelgraphql.NewRootResolver(

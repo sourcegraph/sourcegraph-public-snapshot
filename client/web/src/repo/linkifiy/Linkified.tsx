@@ -33,7 +33,7 @@ export const Linkified = forwardRef((props, ref) => {
                 )
             }
             result.push(
-                <Link key={`${start}-${end}`} to={href} target="blank" rel="noreferrer noopener">
+                <Link key={`${start}-${end}`} to={href} target="_blank" rel="noreferrer noopener">
                     {value}
                 </Link>
             )

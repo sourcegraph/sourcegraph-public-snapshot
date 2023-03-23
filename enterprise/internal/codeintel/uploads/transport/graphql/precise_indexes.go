@@ -9,7 +9,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 
-	autoindexingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -167,7 +166,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 	var indexes []types.Index
 	totalIndexCount := 0
 	if !skipIndexes {
-		if indexes, totalIndexCount, err = r.autoindexSvc.GetIndexes(ctx, autoindexingshared.GetIndexesOptions{
+		if indexes, totalIndexCount, err = r.uploadSvc.GetIndexes(ctx, uploadsshared.GetIndexesOptions{
 			RepositoryID:  repositoryID,
 			States:        indexStates,
 			Term:          term,
@@ -261,7 +260,7 @@ func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ r
 		return sharedresolvers.NewPreciseIndexResolver(ctx, r.uploadSvc, r.policySvc, r.gitserverClient, r.prefetcherFactory.Create(), r.siteAdminChecker, r.repoStore, r.locationResolverFactory.Create(), errTracer, &upload, nil)
 	}
 	if indexID != 0 {
-		index, ok, err := r.autoindexSvc.GetIndexByID(ctx, indexID)
+		index, ok, err := r.uploadSvc.GetIndexByID(ctx, indexID)
 		if err != nil || !ok {
 			return nil, err
 		}
@@ -290,7 +289,7 @@ func (r *rootResolver) DeletePreciseIndex(ctx context.Context, args *struct{ ID 
 			return nil, err
 		}
 	} else if indexID != 0 {
-		if _, err := r.autoindexSvc.DeleteIndexByID(ctx, indexID); err != nil {
+		if _, err := r.uploadSvc.DeleteIndexByID(ctx, indexID); err != nil {
 			return nil, err
 		}
 	}
@@ -349,7 +348,7 @@ func (r *rootResolver) DeletePreciseIndexes(ctx context.Context, args *resolvers
 		}
 	}
 	if !skipIndexes {
-		if err := r.autoindexSvc.DeleteIndexes(ctx, autoindexingshared.DeleteIndexesOptions{
+		if err := r.uploadSvc.DeleteIndexes(ctx, uploadsshared.DeleteIndexesOptions{
 			RepositoryID:  repositoryID,
 			States:        indexStates,
 			IndexerNames:  indexerNames,
@@ -381,7 +380,7 @@ func (r *rootResolver) ReindexPreciseIndex(ctx context.Context, args *struct{ ID
 			return nil, err
 		}
 	} else if indexID != 0 {
-		if err := r.autoindexSvc.ReindexIndexByID(ctx, indexID); err != nil {
+		if err := r.uploadSvc.ReindexIndexByID(ctx, indexID); err != nil {
 			return nil, err
 		}
 	}
@@ -440,7 +439,7 @@ func (r *rootResolver) ReindexPreciseIndexes(ctx context.Context, args *resolver
 		}
 	}
 	if !skipIndexes {
-		if err := r.autoindexSvc.ReindexIndexes(ctx, autoindexingshared.ReindexIndexesOptions{
+		if err := r.uploadSvc.ReindexIndexes(ctx, uploadsshared.ReindexIndexesOptions{
 			States:        indexStates,
 			IndexerNames:  indexerNames,
 			Term:          term,
