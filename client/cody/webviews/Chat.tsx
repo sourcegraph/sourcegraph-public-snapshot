@@ -193,7 +193,11 @@ const CodeBlocks: React.FunctionComponent<{ displayText: string }> = ({ displayT
         element.innerHTML = text
         navigator.clipboard.writeText(text.replace(/<[^>]*>?/gm, ''))
         setCopiedText(text)
+        setTimeout(() => {
+            setCopiedText('')
+        }, 3000)
     }
+
     return (
         <>
             {preBlocks.map((block, index) => {
