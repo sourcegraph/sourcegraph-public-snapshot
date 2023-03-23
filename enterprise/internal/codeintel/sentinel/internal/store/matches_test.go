@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"fmt"
-	"math"
 	"strings"
 	"testing"
 	"time"
@@ -62,100 +61,165 @@ func TestGetVulnerabilityMatches(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
+	/*
+	 * Setup references is inserting seven (7) total references.
+	 * Five (5) of them are vulnerable versions
+	 * (three (3) for go-nacelle/config and two (2) for go-mockgen/xtools)
+	 * the remaining two (2) of the references is of the fixed version.
+	 */
 	setupReferences(t, db)
+	highVulnerabilityCount := 3
+	mediumVulnerabilityCount := 2
+	totalVulnerableVersionsInserted := highVulnerabilityCount + mediumVulnerabilityCount // 5
 
-	if _, err := store.InsertVulnerabilities(ctx, testVulnerabilities); err != nil {
+	highAffectedPackage := shared.AffectedPackage{
+		Language:          "go",
+		PackageName:       "go-nacelle/config",
+		VersionConstraint: []string{"<= v1.2.5"},
+	}
+	mediumAffectedPackage := shared.AffectedPackage{
+		Language:          "go",
+		PackageName:       "go-mockgen/xtools",
+		VersionConstraint: []string{"<= v1.3.5"},
+	}
+
+	mockVulnerabilities := []shared.Vulnerability{
+		{ID: 1, SourceID: "CVE-ABC", Severity: "HIGH", AffectedPackages: []shared.AffectedPackage{highAffectedPackage}},
+		{ID: 2, SourceID: "CVE-DEF", Severity: "HIGH"},
+		{ID: 3, SourceID: "CVE-GHI", Severity: "HIGH"},
+		{ID: 4, SourceID: "CVE-JKL", Severity: "MEDIUM", AffectedPackages: []shared.AffectedPackage{mediumAffectedPackage}},
+		{ID: 5, SourceID: "CVE-MNO", Severity: "MEDIUM"},
+		{ID: 6, SourceID: "CVE-PQR", Severity: "MEDIUM"},
+		{ID: 7, SourceID: "CVE-STU", Severity: "LOW"},
+		{ID: 8, SourceID: "CVE-VWX", Severity: "LOW"},
+		{ID: 9, SourceID: "CVE-Y&Z", Severity: "CRITICAL"},
+	}
+
+	if _, err := store.InsertVulnerabilities(ctx, mockVulnerabilities); err != nil {
 		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
 	}
 
-	if _, _, err := store.ScanMatches(ctx, 100); err != nil {
+	if _, _, err := store.ScanMatches(ctx, 1000); err != nil {
 		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
 	}
 
-	type testCase struct {
-		name            string
-		expectedMatches []shared.VulnerabilityMatch
-	}
-	testCases := []testCase{
-		{
-			name: "all",
-			expectedMatches: []shared.VulnerabilityMatch{
-				{
-					ID:              1,
-					UploadID:        50,
-					VulnerabilityID: 1,
-					AffectedPackage: badConfig,
-				}, {
-					ID:              2,
-					UploadID:        51,
-					VulnerabilityID: 1,
-					AffectedPackage: badConfig,
-				}, {
-					ID:              3,
-					UploadID:        52,
-					VulnerabilityID: 1,
-					AffectedPackage: badConfig,
-				},
-			},
-		},
+	/*
+	 * Test
+	 */
+
+	args := shared.GetVulnerabilityMatchesArgs{Limit: 10, Offset: 0}
+	matches, totalCount, err := store.GetVulnerabilityMatches(ctx, args)
+	if err != nil {
+		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
 	}
 
-	runTest := func(testCase testCase, lo, hi int) (errors int) {
-		t.Run(testCase.name, func(t *testing.T) {
-			matches, totalCount, err := store.GetVulnerabilityMatches(ctx, shared.GetVulnerabilityMatchesArgs{
-				Limit:  3,
-				Offset: lo,
-			})
-			if err != nil {
-				t.Fatalf("unexpected error getting vulnerability matches: %s", err)
-			}
-			if totalCount != len(testCase.expectedMatches) {
-				t.Errorf("unexpected total count. want=%d have=%d", len(testCase.expectedMatches), totalCount)
-			}
-
-			if totalCount != 0 {
-				if diff := cmp.Diff(testCase.expectedMatches[lo:hi], matches); diff != "" {
-					t.Errorf("unexpected vulnerability matches at offset %d-%d (-want +got):\n%s", lo, hi, diff)
-					errors++
-				}
-			}
-		})
-
-		return
+	if len(matches) != totalVulnerableVersionsInserted {
+		t.Errorf("unexpected total count. want=%d have=%d", len(matches), totalCount)
 	}
 
-	for _, testCase := range testCases {
-		if n := len(testCase.expectedMatches); n == 0 {
-			runTest(testCase, 0, 0)
-		} else {
-			for lo := 0; lo < n; lo++ {
-				if numErrors := runTest(testCase, lo, int(math.Min(float64(lo)+3, float64(n)))); numErrors > 0 {
-					break
-				}
-			}
+	/*
+	 * Test Severity filter
+	 */
+
+	t.Run("Test severity filter", func(t *testing.T) {
+		args.Severity = "HIGH"
+		high, totalCount, err := store.GetVulnerabilityMatches(ctx, args)
+		if err != nil {
+			t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
 		}
-	}
+
+		if len(high) != highVulnerabilityCount {
+			t.Errorf("unexpected total count. want=%d have=%d", 3, totalCount)
+		}
+
+		args.Severity = "MEDIUM"
+		medium, totalCount, err := store.GetVulnerabilityMatches(ctx, args)
+		if err != nil {
+			t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+		}
+
+		if len(medium) != mediumVulnerabilityCount {
+			t.Errorf("unexpected total count. want=%d have=%d", 2, totalCount)
+		}
+	})
+
+	/*
+	 * Test Language filter
+	 */
+
+	t.Run("Test language filter", func(t *testing.T) {
+		args = shared.GetVulnerabilityMatchesArgs{Limit: 10, Offset: 0, Language: "go", Severity: ""}
+		goMatches, totalCount, err := store.GetVulnerabilityMatches(ctx, args)
+		if err != nil {
+			t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+		}
+
+		if len(goMatches) != totalVulnerableVersionsInserted {
+			t.Errorf("unexpected total count. want=%d have=%d", 2, totalCount)
+		}
+
+		args = shared.GetVulnerabilityMatchesArgs{Limit: 10, Offset: 0, Language: "typescript", Severity: ""}
+		typescriptMatches, totalCount, err := store.GetVulnerabilityMatches(ctx, args)
+		if err != nil {
+			t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+		}
+
+		if len(typescriptMatches) != 0 {
+			t.Errorf("unexpected total count. want=%d have=%d", 2, totalCount)
+		}
+	})
+
+	/*
+	 * Test Repository filter
+	 */
+
+	t.Run("Test repository filter", func(t *testing.T) {
+		args = shared.GetVulnerabilityMatchesArgs{Limit: 10, Offset: 0, RepositoryName: "github.com/go-nacelle/config"}
+		nacelleMatches, totalCount, err := store.GetVulnerabilityMatches(ctx, args)
+		if err != nil {
+			t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+		}
+
+		if len(nacelleMatches) != highVulnerabilityCount {
+			t.Errorf("unexpected total count. want=%d have=%d", 2, totalCount)
+		}
+
+		args = shared.GetVulnerabilityMatchesArgs{Limit: 10, Offset: 0, RepositoryName: "github.com/go-mockgen/xtools"}
+		xToolsMatches, totalCount, err := store.GetVulnerabilityMatches(ctx, args)
+		if err != nil {
+			t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+		}
+
+		if len(xToolsMatches) != mediumVulnerabilityCount {
+			t.Errorf("unexpected total count. want=%d have=%d", 2, totalCount)
+		}
+	})
 }
 
 func setupReferences(t *testing.T, db database.DB) {
 	store := basestore.NewWithHandle(db.Handle())
 
 	insertUploads(t, db,
-		types.Upload{ID: 50},
-		types.Upload{ID: 51},
-		types.Upload{ID: 52},
-		types.Upload{ID: 53},
-		types.Upload{ID: 54},
-		types.Upload{ID: 55},
+		types.Upload{ID: 50, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
+		types.Upload{ID: 51, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
+		types.Upload{ID: 52, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
+		types.Upload{ID: 53, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
+		types.Upload{ID: 54, RepositoryID: 75, RepositoryName: "github.com/go-mockgen/xtools"},
+		types.Upload{ID: 55, RepositoryID: 75, RepositoryName: "github.com/go-mockgen/xtools"},
+		types.Upload{ID: 56, RepositoryID: 75, RepositoryName: "github.com/go-mockgen/xtools"},
 	)
 
 	if err := store.Exec(context.Background(), sqlf.Sprintf(`
+		-- Insert five (5) total vulnerable package reference.
 		INSERT INTO lsif_references (scheme, name, version, dump_id)
 		VALUES
-			('gomod', 'github.com/go-nacelle/config', 'v1.2.3', 50),
-			('gomod', 'github.com/go-nacelle/config', 'v1.2.4', 51),
-			('gomod', 'github.com/go-nacelle/config', 'v1.2.5', 52),
-			('gomod', 'github.com/go-nacelle/config', 'v1.2.6', 53)
+			('gomod', 'github.com/go-nacelle/config', 'v1.2.3', 50), -- vulnerability
+			('gomod', 'github.com/go-nacelle/config', 'v1.2.4', 51), -- vulnerability
+			('gomod', 'github.com/go-nacelle/config', 'v1.2.5', 52), -- vulnerability
+			('gomod', 'github.com/go-nacelle/config', 'v1.2.6', 53),
+			('gomod', 'github.com/go-mockgen/xtools', 'v1.3.2', 54), -- vulnerability
+			('gomod', 'github.com/go-mockgen/xtools', 'v1.3.3', 55), -- vulnerability
+			('gomod', 'github.com/go-mockgen/xtools', 'v1.3.6', 56)
 	`)); err != nil {
 		t.Fatalf("failed to insert references: %s", err)
 	}

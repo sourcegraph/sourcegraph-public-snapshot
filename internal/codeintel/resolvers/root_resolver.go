@@ -53,13 +53,13 @@ func (r *Resolver) NodeResolvers() map[string]NodeByIDFunc {
 				return nil, err
 			}
 
-			return r.autoIndexingRootResolver.PreciseIndexByID(ctx, MarshalID("PreciseIndex", fmt.Sprintf("U:%d", uploadID)))
+			return r.uploadsRootResolver.PreciseIndexByID(ctx, MarshalID("PreciseIndex", fmt.Sprintf("U:%d", uploadID)))
 		},
 		"CodeIntelligenceConfigurationPolicy": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.policiesRootResolver.ConfigurationPolicyByID(ctx, id)
 		},
 		"PreciseIndex": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return r.autoIndexingRootResolver.PreciseIndexByID(ctx, id)
+			return r.uploadsRootResolver.PreciseIndexByID(ctx, id)
 		},
 		"Vulnerability": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.sentinelRootResolver.VulnerabilityByID(ctx, id)
@@ -110,31 +110,31 @@ func (r *Resolver) VulnerabilityMatchesSummaryCounts(ctx context.Context) (_ Vul
 }
 
 func (r *Resolver) IndexerKeys(ctx context.Context, opts *IndexerKeyQueryArgs) (_ []string, err error) {
-	return r.autoIndexingRootResolver.IndexerKeys(ctx, opts)
+	return r.uploadsRootResolver.IndexerKeys(ctx, opts)
 }
 
 func (r *Resolver) PreciseIndexes(ctx context.Context, args *PreciseIndexesQueryArgs) (_ PreciseIndexConnectionResolver, err error) {
-	return r.autoIndexingRootResolver.PreciseIndexes(ctx, args)
+	return r.uploadsRootResolver.PreciseIndexes(ctx, args)
 }
 
 func (r *Resolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ PreciseIndexResolver, err error) {
-	return r.autoIndexingRootResolver.PreciseIndexByID(ctx, id)
+	return r.uploadsRootResolver.PreciseIndexByID(ctx, id)
 }
 
 func (r *Resolver) DeletePreciseIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
-	return r.autoIndexingRootResolver.DeletePreciseIndex(ctx, args)
+	return r.uploadsRootResolver.DeletePreciseIndex(ctx, args)
 }
 
 func (r *Resolver) DeletePreciseIndexes(ctx context.Context, args *DeletePreciseIndexesArgs) (*EmptyResponse, error) {
-	return r.autoIndexingRootResolver.DeletePreciseIndexes(ctx, args)
+	return r.uploadsRootResolver.DeletePreciseIndexes(ctx, args)
 }
 
 func (r *Resolver) ReindexPreciseIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
-	return r.autoIndexingRootResolver.ReindexPreciseIndex(ctx, args)
+	return r.uploadsRootResolver.ReindexPreciseIndex(ctx, args)
 }
 
 func (r *Resolver) ReindexPreciseIndexes(ctx context.Context, args *ReindexPreciseIndexesArgs) (*EmptyResponse, error) {
-	return r.autoIndexingRootResolver.ReindexPreciseIndexes(ctx, args)
+	return r.uploadsRootResolver.ReindexPreciseIndexes(ctx, args)
 }
 
 func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (_ CodeIntelligenceCommitGraphResolver, err error) {

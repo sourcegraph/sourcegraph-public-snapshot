@@ -20,7 +20,7 @@ import styles from './Setup.module.scss'
 
 const CORE_STEPS: StepConfiguration[] = [
     {
-        id: 'remote-repositoires',
+        id: 'remote-repositories',
         name: 'Add remote repositories',
         path: '/setup/remote-repositories',
         component: RemoteRepositoriesStep,
@@ -32,10 +32,10 @@ const CORE_STEPS: StepConfiguration[] = [
         nextURL: '/search',
         component: SyncRepositoriesStep,
         onNext: (client: ApolloClient<{}>) => {
-            // Mutate initial totalRemoteRepositories value
+            // Mutate initial needsRepositoryConfiguration value
             // in order to avoid loop in Layout page redirection logic
             // TODO Remove this as soon as we have a proper Sourcegraph context store
-            window.context.totalRemoteRepositories = 1
+            window.context.needsRepositoryConfiguration = false
 
             // Update global site flags in order to fix global navigation items about
             // setup instance state
@@ -75,10 +75,15 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
     const steps = useMemo(() => (isSourcegraphApp ? SOURCEGRAPH_APP_STEPS : CORE_STEPS), [isSourcegraphApp])
 
     const handleStepChange = useCallback(
-        (step: StepConfiguration): void => {
-            setStepId(step.id)
+        (nextStep: StepConfiguration): void => {
+            const currentStepIndex = steps.findIndex(step => step.id === nextStep.id)
+            const isLastStep = currentStepIndex === steps.length - 1
+
+            // Reset the last visited step if you're on the last step in the
+            // setup pipeline
+            setStepId(!isLastStep ? nextStep.id : '')
         },
-        [setStepId]
+        [setStepId, steps]
     )
 
     const handleSkip = useCallback(() => {

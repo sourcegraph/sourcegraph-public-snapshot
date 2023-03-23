@@ -38,7 +38,7 @@ func NewPrefetcher(autoindexingSvc AutoIndexingService, uploadSvc UploadsService
 			return uploadSvc.GetUploadsByIDs(ctx, ids...)
 		})),
 		indexLoader: NewDataLoader[int, types.Index](DataLoaderBackingServiceFunc[int, types.Index](func(ctx context.Context, ids ...int) ([]types.Index, error) {
-			return autoindexingSvc.GetIndexesByIDs(ctx, ids...)
+			return uploadSvc.GetIndexesByIDs(ctx, ids...)
 		})),
 	}
 }

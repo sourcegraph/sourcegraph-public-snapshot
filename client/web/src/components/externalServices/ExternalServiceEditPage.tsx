@@ -124,17 +124,18 @@ export const ExternalServiceEditPage: FC<Props> = ({
                             { icon: mdiCog },
                             { to: '/site-admin/external-services', text: 'Code hosts' },
                             {
+                                to: `/site-admin/external-services/${externalService.id}`,
                                 text: (
                                     <>
-                                        {externalService.displayName}
                                         {externalServiceCategory && (
                                             <Icon
                                                 inline={true}
                                                 as={externalServiceCategory.icon}
                                                 aria-label="Code host logo"
-                                                className="ml-2"
+                                                className="mr-2"
                                             />
                                         )}
+                                        {externalService.displayName}
                                     </>
                                 ),
                             },

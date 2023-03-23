@@ -162,7 +162,9 @@ func (r PermissionsSyncJobReason) ResolveGroup() PermissionsSyncJobReasonGroup {
 		ReasonUserEmailVerified,
 		ReasonUserAddedToOrg,
 		ReasonUserRemovedFromOrg,
-		ReasonUserAcceptedOrgInvite:
+		ReasonUserAcceptedOrgInvite,
+		ReasonExternalAccountAdded,
+		ReasonExternalAccountDeleted:
 		return PermissionsSyncJobReasonGroupSourcegraph
 	default:
 		return PermissionsSyncJobReasonGroupUnknown
@@ -180,11 +182,13 @@ const (
 
 	// ReasonUserEmailRemoved and below are reasons of permission syncs scheduled due
 	// to Sourcegraph internal events.
-	ReasonUserEmailRemoved      PermissionsSyncJobReason = "REASON_USER_EMAIL_REMOVED"
-	ReasonUserEmailVerified     PermissionsSyncJobReason = "REASON_USER_EMAIL_VERIFIED"
-	ReasonUserAddedToOrg        PermissionsSyncJobReason = "REASON_USER_ADDED_TO_ORG"
-	ReasonUserRemovedFromOrg    PermissionsSyncJobReason = "REASON_USER_REMOVED_FROM_ORG"
-	ReasonUserAcceptedOrgInvite PermissionsSyncJobReason = "REASON_USER_ACCEPTED_ORG_INVITE"
+	ReasonUserEmailRemoved       PermissionsSyncJobReason = "REASON_USER_EMAIL_REMOVED"
+	ReasonUserEmailVerified      PermissionsSyncJobReason = "REASON_USER_EMAIL_VERIFIED"
+	ReasonUserAddedToOrg         PermissionsSyncJobReason = "REASON_USER_ADDED_TO_ORG"
+	ReasonUserRemovedFromOrg     PermissionsSyncJobReason = "REASON_USER_REMOVED_FROM_ORG"
+	ReasonUserAcceptedOrgInvite  PermissionsSyncJobReason = "REASON_USER_ACCEPTED_ORG_INVITE"
+	ReasonExternalAccountAdded   PermissionsSyncJobReason = "REASON_EXTERNAL_ACCOUNT_ADDED"
+	ReasonExternalAccountDeleted PermissionsSyncJobReason = "REASON_EXTERNAL_ACCOUNT_DELETED"
 
 	// ReasonGitHubUserEvent and below are reasons of permission syncs triggered by
 	// webhook events.
@@ -228,6 +232,8 @@ type PermissionSyncJobStore interface {
 	List(ctx context.Context, opts ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error)
 	GetLatestFinishedSyncJob(ctx context.Context, opts ListPermissionSyncJobOpts) (*PermissionSyncJob, error)
 	Count(ctx context.Context, opts ListPermissionSyncJobOpts) (int, error)
+	CountUsersWithFailingSyncJob(ctx context.Context) (int32, error)
+	CountReposWithFailingSyncJob(ctx context.Context) (int32, error)
 	CancelQueuedJob(ctx context.Context, reason string, id int) error
 	SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, codeHostStatuses CodeHostStatusesSet) error
 }
@@ -431,6 +437,12 @@ type SetPermissionsResult struct {
 }
 
 func (s *permissionSyncJobStore) SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, statuses CodeHostStatusesSet) error {
+	var added, removed, found int
+	if result != nil {
+		added = result.Added
+		removed = result.Removed
+		found = result.Found
+	}
 	q := sqlf.Sprintf(`
 		UPDATE permission_sync_jobs
 		SET
@@ -439,7 +451,7 @@ func (s *permissionSyncJobStore) SaveSyncResult(ctx context.Context, id int, res
 			permissions_found = %d,
 			code_host_states = %s
 		WHERE id = %d
-		`, result.Added, result.Removed, result.Found, pq.Array(statuses), id)
+		`, added, removed, found, pq.Array(statuses), id)
 
 	_, err := s.ExecResult(ctx, q)
 	return err
@@ -650,6 +662,50 @@ func (s *permissionSyncJobStore) Count(ctx context.Context, opts ListPermissionS
 		return 0, err
 	}
 	return count, nil
+}
+
+const countUsersWithFailingSyncJobsQuery = `
+SELECT COUNT(*)
+FROM (
+  SELECT DISTINCT ON (user_id) id, state
+  FROM permission_sync_jobs
+  WHERE
+	user_id is NOT NULL
+	AND state IN ('completed', 'failed')
+  ORDER BY user_id, finished_at DESC
+) AS tmp
+WHERE state = 'failed';
+`
+
+// CountUsersWithFailingSyncJob returns count of users with LATEST sync job failing.
+func (s *permissionSyncJobStore) CountUsersWithFailingSyncJob(ctx context.Context) (int32, error) {
+	var count int32
+
+	err := s.QueryRow(ctx, sqlf.Sprintf(countUsersWithFailingSyncJobsQuery)).Scan(&count)
+
+	return count, err
+}
+
+const countReposWithFailingSyncJobsQuery = `
+SELECT COUNT(*)
+FROM (
+  SELECT DISTINCT ON (repository_id) id, state
+  FROM permission_sync_jobs
+  WHERE
+	repository_id is NOT NULL
+	AND state IN ('completed', 'failed')
+  ORDER BY repository_id, finished_at DESC
+) AS tmp
+WHERE state = 'failed';
+`
+
+// CountReposWithFailingSyncJob returns count of repos with LATEST sync job failing.
+func (s *permissionSyncJobStore) CountReposWithFailingSyncJob(ctx context.Context) (int32, error) {
+	var count int32
+
+	err := s.QueryRow(ctx, sqlf.Sprintf(countReposWithFailingSyncJobsQuery)).Scan(&count)
+
+	return count, err
 }
 
 type PermissionSyncJob struct {

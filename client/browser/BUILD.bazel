@@ -293,7 +293,11 @@ ts_project(
 
 jest_test(
     name = "test",
+    timeout = "moderate",
     data = [
         ":browser_tests",
     ],
+    patch_node_fs = False,
+    shard_count = 6,
+    tags = ["no-sandbox"],
 )

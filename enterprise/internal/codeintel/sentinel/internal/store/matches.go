@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+// VulnerabilityMatchByID returns the vulnerability match with the given identifier.
 func (s *store) VulnerabilityMatchByID(ctx context.Context, id int) (_ shared.VulnerabilityMatch, _ bool, err error) {
 	ctx, _, endObservation := s.operations.vulnerabilityMatchByID.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -33,15 +34,24 @@ SELECT
 	m.id,
 	m.upload_id,
 	vap.vulnerability_id,
-	` + vulnerabilityAffectedPackageFields + `,
-	` + vulnerabilityAffectedSymbolFields + `,
+	vap.package_name,
+	vap.language,
+	vap.namespace,
+	vap.version_constraint,
+	vap.fixed,
+	vap.fixed_in,
+	vas.path,
+	vas.symbols,
+	vul.severity,
 	0 AS count
 FROM vulnerability_matches m
 LEFT JOIN vulnerability_affected_packages vap ON vap.id = m.vulnerability_affected_package_id
 LEFT JOIN vulnerability_affected_symbols vas ON vas.vulnerability_affected_package_id = vap.id
+LEFT JOIN vulnerabilities vul ON vap.vulnerability_id = vul.id
 WHERE m.id = %s
 `
 
+// GetVulnerabilityMatches returns a list of vulnerability matches for the given language, severity, and/or repository name.
 func (s *store) GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) (_ []shared.VulnerabilityMatch, _ int, err error) {
 	ctx, _, endObservation := s.operations.getVulnerabilityMatches.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})

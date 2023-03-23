@@ -1,10 +1,10 @@
 # Pings
 
-Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and customer teams. It sends only the high-level data below. It never sends code, repository names, usernames, or any other specific data. To learn more, go to the **Site admin > Pings** page on your instance. (The URL is `https://sourcegraph.example.com/site-admin/pings`.)
+Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and customer teams. It sends only the high-level data below. It never sends code, repository names, usernames, or any other specific data. To learn more, go to the **Site admin > Pings** page on your instance (the URL is `https://sourcegraph.example.com/site-admin/pings`) or, for users of the Sourcegraph app, see [Sourcegraph app telemetry](#sourcegraph-app-telemetry). 
 
 ## Telemetry
 
-Sourcegraph aggregates usage and performance metrics for some product features. No personal or specific information is ever included.
+Sourcegraph aggregates usage and performance metrics for some product features in our enterprise deployments. No personal or specific information is ever included.
 
 <details>
 <summary>Click to expand a list of other telemetry</summary>
@@ -197,6 +197,17 @@ Sourcegraph aggregates usage and performance metrics for some product features. 
     - Displaying ownership panel in file view.
 - Histogram of cloned repository sizes
 </details>
+
+## Sourcegraph app telemetry
+
+We collect extremely limited telemetry from the Sourcegraph app to infer value to our users and send update notifications: 
+
+- Randomly generated site identifier
+- Deployment type (the Sourcegraph app)
+- Release version
+- Operating system
+- Total number of repositories added
+- Whether a user was active today (boolean) 
 
 ## CIDR Range for Sourcegraph
 
