@@ -81,11 +81,15 @@ class LinkBuilder implements PluginValue {
                     }
 
                     const line = textDocument.line(occurrenceStartLine)
-                    const links = getLinksFromString({ input: line.text })
+                    const start = line.from + occurrence.range.start.character
+                    const end = line.from + occurrence.range.end.character
+                    const links = getLinksFromString({
+                        input: textDocument.sliceString(start, end),
+                    })
 
                     for (const link of links) {
-                        const from = Math.min(line.from + link.start, line.to)
-                        const to = Math.min(line.from + link.end, line.to)
+                        const from = Math.min(start + link.start, line.to)
+                        const to = Math.min(start + link.end, line.to)
 
                         const decoration = Decoration.mark({
                             tagName: 'a',
