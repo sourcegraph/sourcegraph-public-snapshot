@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -173,6 +174,7 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 
 	for c.waitForRateLimit && err != nil && numRetries < c.maxRateLimitRetries &&
 		errors.As(err, &apiError) && apiError.Code == http.StatusForbidden {
+		req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
 		if c.externalRateLimiter.WaitForRateLimit(ctx, cost) {
 			_, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, &respBody)
 			numRetries++

@@ -7,7 +7,6 @@ import (
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -38,10 +37,8 @@ func (j *autoindexingJanitorJob) Routines(_ context.Context, observationCtx *obs
 		return nil, err
 	}
 
-	gitserverClient := gitserver.New(observationCtx, db)
-
 	return append(
-		autoindexing.NewJanitorJobs(observationCtx, services.AutoIndexingService, gitserverClient),
+		autoindexing.NewJanitorJobs(observationCtx, services.AutoIndexingService, services.GitserverClient),
 		autoindexing.NewResetters(observationCtx, db)...,
 	), nil
 }

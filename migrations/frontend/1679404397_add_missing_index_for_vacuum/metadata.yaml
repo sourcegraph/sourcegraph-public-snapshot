@@ -1,0 +1,3 @@
+name: Add missing index for vacuum
+parents: [1678899992, 1678994673, 1679058200]
+createIndexConcurrently: true

@@ -12,13 +12,18 @@ import (
 
 // PermissionSyncCodeHostState describes the state of a provider during an authz sync job.
 type PermissionSyncCodeHostState struct {
-	ProviderID   string `json:"provider_id"`
-	ProviderType string `json:"provider_type"`
-
-	// Status is one of "ERROR" or "SUCCESS".
-	Status  string `json:"status"`
-	Message string `json:"message"`
+	ProviderID   string         `json:"provider_id"`
+	ProviderType string         `json:"provider_type"`
+	Status       CodeHostStatus `json:"status"`
+	Message      string         `json:"message"`
 }
+
+type CodeHostStatus string
+
+const (
+	CodeHostStatusSuccess CodeHostStatus = "SUCCESS"
+	CodeHostStatusError   CodeHostStatus = "ERROR"
+)
 
 func (e *PermissionSyncCodeHostState) Scan(value any) error {
 	b, ok := value.([]byte)
@@ -38,14 +43,14 @@ func NewProviderStatus(provider authz.Provider, err error, action string) Permis
 		return PermissionSyncCodeHostState{
 			ProviderID:   provider.ServiceID(),
 			ProviderType: provider.ServiceType(),
-			Status:       "ERROR",
+			Status:       CodeHostStatusError,
 			Message:      fmt.Sprintf("%s: %s", action, err.Error()),
 		}
 	} else {
 		return PermissionSyncCodeHostState{
 			ProviderID:   provider.ServiceID(),
 			ProviderType: provider.ServiceType(),
-			Status:       "SUCCESS",
+			Status:       CodeHostStatusSuccess,
 			Message:      action,
 		}
 	}
@@ -62,12 +67,12 @@ func (ps CodeHostStatusesSet) SummaryField() log.Field {
 	for _, p := range ps {
 		key := fmt.Sprintf("%s:%s", p.ProviderType, p.ProviderID)
 		switch p.Status {
-		case "ERROR":
+		case CodeHostStatusError:
 			errored = append(errored, log.String(
 				key,
 				p.Message,
 			))
-		case "SUCCESS":
+		case CodeHostStatusSuccess:
 			succeeded = append(errored, log.String(
 				key,
 				p.Message,

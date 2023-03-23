@@ -22,9 +22,9 @@ http_archive(
 
 http_archive(
     name = "aspect_rules_js",
-    sha256 = "1aa0ab76d1f9520bb8993e2d84f82da2a9c87da1e6e8d121dbb4c857a292c2cd",
-    strip_prefix = "rules_js-1.20.1",
-    url = "https://github.com/aspect-build/rules_js/releases/download/v1.20.1/rules_js-v1.20.1.tar.gz",
+    sha256 = "a592fafd8a27b2828318cebbda0003686c6da3318df366b563e8beeffa05a02c",
+    strip_prefix = "rules_js-1.21.0",
+    url = "https://github.com/aspect-build/rules_js/releases/download/v1.21.0/rules_js-v1.21.0.tar.gz",
 )
 
 http_archive(
@@ -36,9 +36,9 @@ http_archive(
 
 http_archive(
     name = "aspect_rules_jest",
-    sha256 = "fa103b278137738ef08fd23d3c8c9157897a7159af2aa22714bc71680da58583",
-    strip_prefix = "rules_jest-0.16.1",
-    url = "https://github.com/aspect-build/rules_jest/archive/refs/tags/v0.16.1.tar.gz",
+    sha256 = "11f6685db09c54d401e084ab588b2dbc77913627bb3cde98576fa4c1be183853",
+    strip_prefix = "rules_jest-e78c8113b83436973e53384e5339f994d1103959",
+    url = "https://github.com/aspect-build/rules_jest/archive/e78c8113b83436973e53384e5339f994d1103959.tar.gz"
 )
 
 http_archive(
@@ -77,12 +77,11 @@ http_archive(
     ],
 )
 
+
 http_archive(
     name = "rules_rust",
-    sha256 = "d125fb75432dc3b20e9b5a19347b45ec607fabe75f98c6c4ba9badaab9c193ce",
-    # As of Mar 8 2023, the latest release is 0.18.0, but that release
-    # has a bug which triggers a compilation error in futures-util-0.3.21
-    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.17.0/rules_rust-v0.17.0.tar.gz"],
+    sha256 = "dc8d79fe9a5beb79d93e482eb807266a0e066e97a7b8c48d43ecf91f32a3a8f3",
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.19.0/rules_rust-v0.19.0.tar.gz"],
 )
 
 # rules_js setup ================================
@@ -155,11 +154,12 @@ esbuild_register_toolchains(
 )
 
 # rules_webpack setup ===========================
+# Commit to include unreleased https://github.com/aspect-build/rules_webpack/commit/4a5f04a4bc504f71d32825124c7872ff721aa1b0
 http_archive(
     name = "aspect_rules_webpack",
-    sha256 = "4f30fb310d625a4045e37b9e04afb2366c56b547a73c935f308e3d9c31b77519",
-    strip_prefix = "rules_webpack-0.9.1",
-    url = "https://github.com/aspect-build/rules_webpack/releases/download/v0.9.1/rules_webpack-v0.9.1.tar.gz",
+    sha256 = "8d81f8d018127c72270ea4b7287be5c4ff63d9656a34334c305d52f14e0c922f",
+    strip_prefix = "rules_webpack-4a5f04a4bc504f71d32825124c7872ff721aa1b0",
+    url = "https://github.com/aspect-build/rules_webpack/archive/4a5f04a4bc504f71d32825124c7872ff721aa1b0.tar.gz",
 )
 
 load("@aspect_rules_webpack//webpack:dependencies.bzl", "rules_webpack_dependencies")
@@ -225,7 +225,6 @@ protobuf_deps()
 
 # rust toolchain setup
 load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 rules_rust_dependencies()
 

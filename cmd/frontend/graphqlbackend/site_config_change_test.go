@@ -112,9 +112,9 @@ func TestSiteConfigurationDiff(t *testing.T) {
 		Diff         *string
 	}{
 		{
-			ID:           5,
+			ID:           6,
 			AuthorUserID: 1,
-			Diff:         stringPtr(expectedDiffs[5]),
+			Diff:         stringPtr(expectedDiffs[6]),
 		},
 		{
 			ID:           4,

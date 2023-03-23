@@ -32,7 +32,9 @@ ts_project(
     tsconfig = ":tsconfig",
     # TODO(bazel): type-only imports
     deps = [
+        "//:node_modules/@types/lodash",
         "//:node_modules/@types/pollyjs__core",  #keep
+        "//:node_modules/lodash",
         "//:node_modules/puppeteer",  #keep
         "//client/web:graphql_operations",
         "//client/web:node_modules/@sourcegraph/common",

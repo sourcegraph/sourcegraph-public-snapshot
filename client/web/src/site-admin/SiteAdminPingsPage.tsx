@@ -16,7 +16,7 @@ import {
     useCodeMirror,
 } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Container, H3, LoadingSpinner, PageHeader, Text, useObservable } from '@sourcegraph/wildcard'
+import { Container, H3, Link, LoadingSpinner, PageHeader, Text, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
@@ -35,7 +35,6 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
         eventLogger.logViewEvent('SiteAdminPings')
     }, [])
 
-    const nonCriticalTelemetryDisabled = window.context.site.disableNonCriticalTelemetry === true
     const updatesDisabled = window.context.site['update.channel'] !== 'release'
     const jsonEditorContainerRef = useRef<HTMLDivElement | null>(null)
     const editorRef = useRef<EditorView | null>(null)
@@ -291,37 +290,10 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                     <li>
                         Code insights usage data
                         <ul>
-                            <li>Total count of page views on the insights page</li>
-                            <li>Count of unique viewers on the insights page</li>
                             <li>
-                                Total counts of hovers, clicks, and drags of insights by type (e.g. search, code stats)
-                            </li>
-                            <li>Total counts of edits, additions, and removals of insights by type</li>
-                            <li>
-                                Total count of clicks on the "Add more insights" and "Configure insights" buttons on the
-                                insights page
-                            </li>
-                            <li>
-                                Weekly count of users that have created an insight, and count of users that have created
-                                their first insight this week
-                            </li>
-                            <li>
-                                Weekly count of total and unique views to the Create new insight, Create search insight,
-                                and Create language insight pages
-                            </li>
-                            <li>
-                                Weekly count of total and unique clicks of the Create search insight, Create language
-                                usage insight, and Explore the extensions buttons on the Create new insight page
-                            </li>
-                            <li>
-                                Weekly count of total and unique clicks of the Create and Cancel buttons on the Create
-                                search insight and Create language insight pages
-                            </li>
-                            <li>Total count of insights grouped by time interval (step size) in days</li>
-                            <li>Total count of insights set organization visible grouped by insight type</li>
-                            <li>
-                                Total count of insight views grouped by presentation type, series type, and
-                                presentation-series type
+                                <Link to="/help/admin/pings#other-telemetry">
+                                    See a full list of Code Insights pings.
+                                </Link>
                             </li>
                         </ul>
                     </li>
@@ -417,34 +389,24 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                         </ul>
                     </li>
                     <li>
-                        Sourcegraph Own usage data.
+                        Sourcegraph Own usage data
                         <ul>
-                            <li>
-                                Whether the <pre>search-ownership</pre> feature flag is turned on.
-                            </li>
+                            <li>Whether the search-ownership feature flag is turned on.</li>
                             <li>
                                 Number and ratio of repositories for which ownership data is available via CODEOWNERS
                                 file or the API.
                             </li>
                             <li>Aggregate monthly weekly and daily active users for the following activities:</li>
                             <ul>
-                                <li>
-                                    Narrowing search results by owner using <pre>file:has.owners</pre> predicate.
-                                </li>
-                                <li>
-                                    Selecting owner search result through <pre>select:file.owners</pre>.
-                                </li>
+                                <li>Narrowing search results by owner using file:has.owner() predicate.</li>
+                                <li>Selecting owner search result through select:file.owners.</li>
                                 <li>Displaying ownership panel in file view.</li>
                             </ul>
                         </ul>
                     </li>
                     <li>Histogram of cloned repository sizes</li>
                 </ul>
-                {updatesDisabled ? (
-                    <Text>All telemetry is disabled.</Text>
-                ) : (
-                    nonCriticalTelemetryDisabled && <Text>Non-critical telemetry is disabled.</Text>
-                )}
+                {updatesDisabled && <Text>All telemetry is disabled.</Text>}
             </Container>
         </div>
     )

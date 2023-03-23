@@ -1,9 +1,10 @@
 import React, { useCallback, useState } from 'react'
 
-import { mdiAccount, mdiChevronDown } from '@mdi/js'
+import { mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import {
     Badge,
     BADGE_VARIANTS,
@@ -63,6 +64,8 @@ const JOB_REASON_TO_READABLE_REASON: Record<PermissionsSyncJobReason, string> = 
     REASON_USER_NO_PERMS: 'User had no permissions',
     REASON_USER_OUTDATED_PERMS: 'Regular refresh of user permissions',
     REASON_USER_REMOVED_FROM_ORG: 'User removed from organization',
+    REASON_EXTERNAL_ACCOUNT_ADDED: 'Third-party login service added for the user',
+    REASON_EXTERNAL_ACCOUNT_DELETED: 'Third-party login service removed for the user',
 }
 
 export const JOB_STATE_METADATA_MAPPING: Record<PermissionsSyncJobState, JobStateMetadata> = {
@@ -162,7 +165,7 @@ export const PermissionsSyncJobSubject: React.FunctionComponent<{ job: Permissio
                     </>
                 ) : (
                     <>
-                        <Icon className="mr-2" aria-hidden={true} svgPath={mdiAccount} />
+                        <UserAvatar className={classNames(styles.userAvatar, 'mr-2')} user={job.subject} />
                         <Link to={`/users/${job.subject.username}`} className="text-truncate">
                             {job.subject.username}
                         </Link>
@@ -201,11 +204,19 @@ export const PermissionsSyncJobSubject: React.FunctionComponent<{ job: Permissio
     )
 }
 
+const getReadableReason = (reason: PermissionsSyncJobReason | null): string => {
+    if (reason !== null) {
+        return JOB_REASON_TO_READABLE_REASON[reason] || 'Unknown reason'
+    }
+
+    return 'Unknown reason'
+}
+
 export const PermissionsSyncJobReasonByline: React.FunctionComponent<{ job: PermissionsSyncJob }> = ({ job }) => {
     const message =
         job.reason.group === PermissionsSyncJobReasonGroup.MANUAL && job.triggeredByUser?.username
             ? `by ${job.triggeredByUser.username}`
-            : JOB_REASON_TO_READABLE_REASON[job.reason.reason]
+            : getReadableReason(job.reason.reason)
 
     return (
         <Tooltip content={message}>
@@ -226,11 +237,11 @@ export const PermissionsSyncJobNumbers: React.FunctionComponent<{ job: Permissio
     added,
 }) =>
     added ? (
-        <div className="text-success text-right mr-2">
+        <div className="text-success text-right">
             +<b>{job.permissionsAdded}</b>
         </div>
     ) : (
-        <div className="text-danger text-right mr-2">
+        <div className="text-danger text-right">
             -<b>{job.permissionsRemoved}</b>
         </div>
     )

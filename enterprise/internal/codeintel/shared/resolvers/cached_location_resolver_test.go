@@ -76,7 +76,7 @@ func TestCachedLocationResolver(t *testing.T) {
 					errs <- err
 					return
 				}
-				repoID, err := UnmarshalRepositoryID(repositoryResolver.ID())
+				repoID, err := resolverstubs.UnmarshalID[api.RepoID](repositoryResolver.ID())
 				if err != nil {
 					errs <- err
 					return

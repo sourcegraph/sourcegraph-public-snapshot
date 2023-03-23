@@ -39,4 +39,6 @@ export enum EnterprisePageRoutes {
     SearchNotebook = '/search/notebook',
     Cody = '/cody/*',
     Own = '/own',
+    AppComingSoon = '/app/coming-soon',
+    AppAuthCallback = '/app/auth/callback',
 }

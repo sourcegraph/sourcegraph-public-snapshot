@@ -89,6 +89,7 @@ interface user {
     username: string
     displayName: string | null
     email: string
+    avatarURL: string | null
 }
 
 type subject = repo | user
@@ -169,6 +170,7 @@ function getSyncJobs(): PermissionsSyncJob[] {
                       username: `username-${index}`,
                       displayName: 'Test User',
                       email: 'example@sourcegraph.com',
+                      avatarURL: null,
                   }
 
         jobs.push(createSyncJobMock(index.toString(), state, subject, reason))

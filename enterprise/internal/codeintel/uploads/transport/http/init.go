@@ -22,7 +22,7 @@ var (
 	handlerOnce     sync.Once
 )
 
-func GetHandler(svc *uploads.Service, db database.DB, uploadStore uploadstore.Store, withCodeHostAuthAuth bool) http.Handler {
+func GetHandler(svc *uploads.Service, db database.DB, gitserverClient gitserver.Client, uploadStore uploadstore.Store, withCodeHostAuthAuth bool) http.Handler {
 	handlerOnce.Do(func() {
 		logger := log.Scoped(
 			"uploads.handler",
@@ -35,7 +35,7 @@ func GetHandler(svc *uploads.Service, db database.DB, uploadStore uploadstore.St
 		uploadHandlerOperations := uploadhandler.NewOperations(observationCtx, "codeintel")
 
 		userStore := db.Users()
-		repoStore := backend.NewRepos(logger, db, gitserver.NewClient())
+		repoStore := backend.NewRepos(logger, db, gitserverClient)
 
 		// Construct base handler, used in internal routes and as internal handler wrapped
 		// in the auth middleware defined on the next few lines

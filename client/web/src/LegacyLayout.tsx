@@ -3,14 +3,12 @@ import { FC, Suspense, useCallback, useLayoutEffect, useState } from 'react'
 import classNames from 'classnames'
 import { matchPath, useLocation, Route, Routes, Navigate } from 'react-router-dom'
 
-import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { FeedbackPrompt, LoadingSpinner, Panel, useLocalStorage } from '@sourcegraph/wildcard'
+import { FeedbackPrompt, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
@@ -30,7 +28,6 @@ import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery } from './search'
 import { NotepadContainer } from './search/Notepad'
 import { SearchQueryStateObserver } from './SearchQueryStateObserver'
-import { parseBrowserRepoURL } from './util/url'
 
 import styles from './storm/pages/LayoutPage/LayoutPage.module.scss'
 
@@ -83,6 +80,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     // so that Layout can always render the navbar.
     const needsSiteInit = window.context?.needsSiteInit
     const disableFeedbackSurvey = window.context?.disableFeedbackSurvey
+    const needsRepositoryConfiguration = window.context?.needsRepositoryConfiguration
     const isSiteInit = location.pathname === PageRoutes.SiteAdminInit
     const isSignInOrUp =
         routeMatch &&
@@ -151,7 +149,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     // setup wizard state, since we don't have a good solution for this at the
     // moment, we use mutable window.context object here.
     // TODO remove window.context and use injected context store/props
-    if (window.context.needsRepositoryConfiguration && !wasSetupWizardSkipped && props.authenticatedUser?.siteAdmin) {
+    if (needsRepositoryConfiguration && !wasSetupWizardSkipped && props.authenticatedUser?.siteAdmin) {
         return <Navigate to={PageRoutes.SetupWizard} replace={true} />
     }
 
@@ -224,23 +222,16 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                         ))}
                     </Routes>
                 </AppRouterContainer>
+                {/**
+                 * The portal root is inside the suspense boundary so that it is hidden
+                 * when we navigate to the lazily loaded routes or other actions which trigger
+                 * the Suspense boundary to show the fallback UI. Existing children are not unmounted
+                 * until the promise is resolved.
+                 *
+                 * See: https://github.com/facebook/react/pull/15861
+                 */}
+                <div id="references-panel-react-portal" />
             </Suspense>
-            {parseQueryAndHash(location.search, location.hash).viewState && location.pathname !== PageRoutes.SignIn && (
-                <Panel
-                    className={styles.panel}
-                    position="bottom"
-                    defaultSize={350}
-                    storageKey="panel-size"
-                    ariaLabel="References panel"
-                    id="references-panel"
-                >
-                    <TabbedPanelContent
-                        {...props}
-                        repoName={`git://${parseBrowserRepoURL(location.pathname).repoName}`}
-                        fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
-                    />
-                </Panel>
-            )}
             <GlobalContributions
                 key={3}
                 extensionsController={props.extensionsController}

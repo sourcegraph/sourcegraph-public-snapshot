@@ -130,7 +130,7 @@ A [token that has the prerequisite scopes](#github-api-token-and-access) and bot
 
 <span class="virtual-br"></span>
 
-> IMPORTANT: Optional, but strongly recommended - [continue with configuring webhoooks for permissions](../config/webhooks.md#user-permissions).
+> IMPORTANT: Optional, but strongly recommended - [continue with configuring webhoooks for permissions](../config/webhooks/incoming.md#user-permissions).
 
 <span class="virtual-br"></span>
 
@@ -138,13 +138,13 @@ A [token that has the prerequisite scopes](#github-api-token-and-access) and bot
 
 ### Trigger permissions sync from GitHub webhooks
 
-Follow the link to [configure webhooks for permissions for Github](../config/webhooks.md#user-permissions)
+Follow the link to [configure webhooks for permissions for Github](../config/webhooks/incoming.md#user-permissions)
 
 ### Teams and organizations permissions caching
 
 <span class="badge badge-experimental">Experimental</span>
 
-> WARNING: The following section is experimental and might not work properly anymore on new Sourcegraph versions (post 4.0+). Please prefer [configuring webhooks for permissions instead](../config/webhooks.md#user-permissions)
+> WARNING: The following section is experimental and might not work properly anymore on new Sourcegraph versions (post 4.0+). Please prefer [configuring webhooks for permissions instead](../config/webhooks/incoming.md#user-permissions)
 
 Github code host can leverage caching mechanisms to reduce the number of API calls used when syncing permissions. This can significantly reduce the amount of time it takes to perform a full cycle of permissions sync due to reduced instances of being rate limited by the code host, and is useful for code hosts with very large numbers of users and repositories.
 
@@ -209,7 +209,7 @@ To configure GitHub as an authentication provider (which will enable sign-in via
 
 Using the `webhooks` property on the external service has been deprecated.
 
-Please consult [this page](../config/webhooks.md) in order to configure webhooks.
+Please consult [this page](../config/webhooks/incoming.md) in order to configure webhooks.
 
 ## Configuration
 

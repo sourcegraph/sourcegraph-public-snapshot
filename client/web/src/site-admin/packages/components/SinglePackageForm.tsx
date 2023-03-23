@@ -16,12 +16,11 @@ import {
     Badge,
     useDebounce,
     Form,
-    Alert,
     Link,
 } from '@sourcegraph/wildcard'
 
 import { FilteredConnectionFilterValue } from '../../../components/FilteredConnection'
-import { SiteAdminPackageFields, PackageRepoReferenceKind, PackageRepoMatchFields } from '../../../graphql-operations'
+import { PackageRepoReferenceKind, PackageRepoMatchFields } from '../../../graphql-operations'
 import { useMatchingPackages } from '../hooks/useMatchingPackages'
 import { useMatchingVersions } from '../hooks/useMatchingVersions'
 import { BlockType } from '../modal-content/AddPackageFilterModalContent'
@@ -36,33 +35,24 @@ export interface SinglePackageState {
     versionFilter: string
 }
 
-interface BaseSinglePackageFormProps {
+interface SinglePackageFormProps {
+    initialState: SinglePackageState
     filters: FilteredConnectionFilterValue[]
     setType: (type: BlockType) => void
     onDismiss: () => void
     onSave: (state: SinglePackageState) => Promise<unknown>
 }
 
-interface AddSinglePackageFormProps extends BaseSinglePackageFormProps {
-    node: SiteAdminPackageFields
-}
+export const SinglePackageForm: React.FunctionComponent<SinglePackageFormProps> = ({
+    initialState,
+    filters,
+    setType,
+    onDismiss,
+    onSave,
+}) => {
+    const [blockState, setBlockState] = useState<SinglePackageState>(initialState)
 
-interface EditSinglePackageFormProps extends BaseSinglePackageFormProps {
-    initialState: SinglePackageState
-}
-
-type SinglePackageFormProps = AddSinglePackageFormProps | EditSinglePackageFormProps
-
-export const SinglePackageForm: React.FunctionComponent<SinglePackageFormProps> = props => {
-    const defaultName = 'initialState' in props ? props.initialState.name : props.node.name
-    const defaultVersionFilter = 'initialState' in props ? props.initialState.versionFilter : '*'
-    const defaultEcosystem = 'initialState' in props ? props.initialState.ecosystem : props.node.kind
-
-    const [blockState, setBlockState] = useState<SinglePackageState>({
-        name: defaultName,
-        versionFilter: defaultVersionFilter,
-        ecosystem: defaultEcosystem,
-    })
+    const nameQuery = useDebounce(blockState.name, 200)
     const versionQuery = useDebounce(blockState.versionFilter, 200)
 
     const { nodes } = useMatchingPackages({
@@ -70,13 +60,13 @@ export const SinglePackageForm: React.FunctionComponent<SinglePackageFormProps> 
         kind: blockState.ecosystem,
         filter: {
             nameFilter: {
-                packageGlob: defaultName,
+                packageGlob: nameQuery,
             },
         },
     })
 
     const isValid = useCallback((): boolean => {
-        if (blockState.versionFilter === '') {
+        if (blockState.versionFilter === '' || blockState.name === '') {
             return false
         }
 
@@ -91,9 +81,9 @@ export const SinglePackageForm: React.FunctionComponent<SinglePackageFormProps> 
                 return Promise.resolve()
             }
 
-            return props.onSave(blockState)
+            return onSave(blockState)
         },
-        [blockState, isValid, props]
+        [blockState, isValid, onSave]
     )
 
     return (
@@ -107,12 +97,11 @@ export const SinglePackageForm: React.FunctionComponent<SinglePackageFormProps> 
                         name="single-ecosystem-select"
                         className={classNames('mr-1 mb-0', styles.ecosystemSelect)}
                         value={blockState.ecosystem}
-                        disabled={true}
                         isCustomStyle={true}
                         required={true}
                         aria-label="Ecosystem"
                     >
-                        {props.filters.map(({ label, value }) => (
+                        {filters.map(({ label, value }) => (
                             <option value={value} key={label}>
                                 {label}
                             </option>
@@ -122,7 +111,7 @@ export const SinglePackageForm: React.FunctionComponent<SinglePackageFormProps> 
                         name="single-package-input"
                         className="mr-2 flex-1"
                         value={blockState.name}
-                        disabled={true}
+                        onChange={event => setBlockState({ ...blockState, name: event.target.value })}
                         required={true}
                         aria-labelledby="package-name"
                     />
@@ -131,7 +120,7 @@ export const SinglePackageForm: React.FunctionComponent<SinglePackageFormProps> 
                             className={styles.inputRowButton}
                             variant="secondary"
                             outline={true}
-                            onClick={() => props.setType('multiple')}
+                            onClick={() => setType('multiple')}
                         >
                             <Icon aria-hidden={true} svgPath={mdiPlus} className="mr-1" />
                             Filter
@@ -155,28 +144,42 @@ export const SinglePackageForm: React.FunctionComponent<SinglePackageFormProps> 
                     />
                 </div>
             </div>
-            <VersionList blockState={blockState} query={versionQuery} node={nodes[0]} />
-            <FilterPackagesActions valid={isValid()} onDismiss={props.onDismiss} />
+            <VersionFilterSummary
+                blockState={blockState}
+                versionQuery={versionQuery}
+                nameQuery={nameQuery}
+                node={nodes[0]}
+            />
+            <FilterPackagesActions valid={isValid()} onDismiss={onDismiss} />
         </Form>
     )
 }
 
-interface VersionListProps {
-    node?: PackageRepoMatchFields
+interface VersionFilterSummaryProps {
+    node: PackageRepoMatchFields
     blockState: SinglePackageState
-    query: string
+    nameQuery: string
+    versionQuery: string
 }
-const VersionList: React.FunctionComponent<VersionListProps> = ({ blockState, query, node }) => {
+const VersionFilterSummary: React.FunctionComponent<VersionFilterSummaryProps> = ({
+    blockState,
+    nameQuery,
+    versionQuery,
+    node,
+}) => {
     const [versionFetchLimit, setVersionFetchLimit] = useState(15)
     const { versions, totalCount, loading, error } = useMatchingVersions({
-        kind: blockState.ecosystem,
-        filter: {
-            versionFilter: {
-                packageName: blockState.name,
-                versionGlob: query,
+        variables: {
+            kind: blockState.ecosystem,
+            filter: {
+                versionFilter: {
+                    packageName: nameQuery,
+                    versionGlob: versionQuery,
+                },
             },
+            first: versionFetchLimit,
         },
-        first: versionFetchLimit,
+        skip: !node,
     })
 
     // Limit fetching more than 1000 versions
@@ -190,25 +193,20 @@ const VersionList: React.FunctionComponent<VersionListProps> = ({ blockState, qu
         return <ErrorAlert error={error} className="mt-2" />
     }
 
-    if (versions.length === 0) {
-        return (
-            <Alert variant="warning" className="mt-2">
-                This filter does not match any current version.
-            </Alert>
-        )
-    }
-
     return (
-        <div className="mt-2">
+        <div className="mt-3">
+            <Label className="mb-2">Summary</Label>
             <div className="d-flex justify-content-between text-muted">
                 <span>
-                    {totalCount === 1 ? (
-                        <>{totalCount} version currently matches</>
+                    {!node ? (
+                        <>No package currently matches this filter</>
                     ) : (
-                        <>{totalCount} versions currently match</>
-                    )}{' '}
-                    this filter
-                    {versions.length < totalCount && <> (showing only {versions.length})</>}:
+                        <>
+                            1 package currently matches this filter, across{' '}
+                            {totalCount === 1 ? <>{totalCount} version</> : <>{totalCount} versions</>}
+                            {versions.length < totalCount && <> (showing only {versions.length})</>}
+                        </>
+                    )}
                 </span>
                 {versions.length < totalCount && (
                     <Button variant="link" className="p-0 mr-3" onClick={() => setVersionFetchLimit(nextFetchLimit)}>
@@ -216,30 +214,32 @@ const VersionList: React.FunctionComponent<VersionListProps> = ({ blockState, qu
                     </Button>
                 )}
             </div>
-            <ul className={classNames('list-group mt-1', styles.list)}>
-                {versions.map(version => (
-                    <li className="list-group-item" key={version}>
-                        {node?.repository ? (
-                            <div className="d-flex justify-content-between">
-                                <Link
-                                    to={toRepoURL({
-                                        repoName: node.repository.name,
-                                        revision: `v${version}`,
-                                    })}
-                                >
-                                    <Badge className="px-2 py-0" as="code">
-                                        {version}
-                                    </Badge>
-                                </Link>
-                            </div>
-                        ) : (
-                            <Badge className="px-2 py-0" as="code">
-                                {version}
-                            </Badge>
-                        )}
-                    </li>
-                ))}
-            </ul>
+            {node && (
+                <ul className={classNames('list-group mt-1', styles.list)}>
+                    {versions.map(version => (
+                        <li className="list-group-item" key={version}>
+                            {node?.repository ? (
+                                <div className="d-flex justify-content-between">
+                                    <Link
+                                        to={toRepoURL({
+                                            repoName: node.repository.name,
+                                            revision: `v${version}`,
+                                        })}
+                                    >
+                                        <Badge className="px-2 py-0" as="code">
+                                            {node.name}@{version}
+                                        </Badge>
+                                    </Link>
+                                </div>
+                            ) : (
+                                <Badge className="px-2 py-0" as="code">
+                                    {node.name}@{version}
+                                </Badge>
+                            )}
+                        </li>
+                    ))}
+                </ul>
+            )}
         </div>
     )
 }

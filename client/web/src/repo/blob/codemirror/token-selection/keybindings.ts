@@ -93,13 +93,14 @@ const keybindings: KeyBinding[] = [
             // show loading tooltip
             view.dispatch({ effects: setFocusedOccurrenceTooltip.of(new LoadingTooltip(offset)) })
 
+            const startTime = Date.now()
             goToDefinitionAtOccurrence(view, selected.occurrence)
                 .then(
                     ({ handler, url }) => {
                         if (view.state.field(isModifierKeyHeld) && url) {
                             window.open(url, '_blank')
                         } else {
-                            handler(selected.occurrence.range.start)
+                            handler(selected.occurrence.range.start, startTime)
                         }
                     },
                     () => {}

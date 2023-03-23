@@ -5,7 +5,6 @@ go_library(
     srcs = [
         "config.go",
         "init.go",
-        "resolvers.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel",
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
@@ -17,7 +16,6 @@ go_library(
         "//enterprise/internal/codeintel/codenav/transport/graphql",
         "//enterprise/internal/codeintel/policies/transport/graphql",
         "//enterprise/internal/codeintel/sentinel/transport/graphql",
-        "//enterprise/internal/codeintel/shared/gitserver",
         "//enterprise/internal/codeintel/shared/lsifuploadstore",
         "//enterprise/internal/codeintel/shared/resolvers",
         "//enterprise/internal/codeintel/uploads/transport/graphql",
@@ -28,10 +26,8 @@ go_library(
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/env",
-        "//internal/gitserver",
         "//internal/observation",
         "//lib/errors",
-        "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_sourcegraph_log//:log",
     ],
 )

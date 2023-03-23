@@ -1,6 +1,6 @@
 import { FC, useCallback, useEffect, useState } from 'react'
 
-import { mdiCog } from '@mdi/js'
+import { mdiWebhook } from '@mdi/js'
 import { noop } from 'lodash'
 import { useNavigate, useParams } from 'react-router-dom'
 
@@ -40,7 +40,7 @@ export const EditPage: FC<EditPageProps> = ({ telemetryService }) => {
     const webhookURL = data?.node?.__typename === 'OutboundWebhook' ? data.node.url : undefined
 
     const onDeleted = useCallback(() => {
-        navigate('/site-admin/outbound-webhooks')
+        navigate('/site-admin/webhooks/outgoing')
     }, [navigate])
 
     if (error) {
@@ -150,10 +150,10 @@ const Header: FC<HeaderProps> = ({ id, onDeleted, url }) => (
         <PageTitle title="Edit outgoing webhook" />
         <PageHeader
             path={[
-                { icon: mdiCog },
-                { to: '/site-admin/outbound-webhooks', text: 'Outgoing webhooks' },
+                { icon: mdiWebhook },
+                { to: '/site-admin/webhooks/outgoing', text: 'Outgoing webhooks' },
                 {
-                    to: `/site-admin/outbound-webhooks/${id}`,
+                    to: `/site-admin/webhooks/outgoing/${id}`,
                     text: url || 'Edit',
                 },
             ]}

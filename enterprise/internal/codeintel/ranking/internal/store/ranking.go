@@ -289,6 +289,159 @@ SELECT
 	(SELECT COUNT(*) FROM ins)
 `
 
+func (s *store) InsertInitialPathCounts(
+	ctx context.Context,
+	derivativeGraphKey string,
+	batchSize int,
+) (
+	numInitialPathsProcessed int,
+	numInitialPathRanksInserted int,
+	err error,
+) {
+	ctx, _, endObservation := s.operations.insertInitialPathCounts.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	graphKey, ok := rankingshared.GraphKeyFromDerivativeGraphKey(derivativeGraphKey)
+	if !ok {
+		return 0, 0, errors.Newf("unexpected derivative graph key %q", derivativeGraphKey)
+	}
+
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(
+		insertInitialPathCountsInputsQuery,
+		graphKey,
+		derivativeGraphKey,
+		batchSize,
+		derivativeGraphKey,
+		derivativeGraphKey,
+	))
+	if err != nil {
+		return 0, 0, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(
+			&numInitialPathsProcessed,
+			&numInitialPathRanksInserted,
+		); err != nil {
+			return 0, 0, err
+		}
+	}
+
+	return numInitialPathsProcessed, numInitialPathRanksInserted, nil
+}
+
+const insertInitialPathCountsInputsQuery = `
+WITH
+unprocessed_path_counts AS (
+	SELECT
+		ipr.id,
+		ipr.upload_id,
+		ipr.document_path,
+		ipr.graph_key
+	FROM codeintel_initial_path_ranks ipr
+	WHERE
+		ipr.graph_key = %s AND
+		NOT EXISTS (
+			SELECT 1
+			FROM codeintel_initial_path_ranks_processed prp
+			WHERE
+				prp.graph_key = %s AND
+				prp.codeintel_initial_path_ranks_id = ipr.id
+		)
+	ORDER BY ipr.id
+	LIMIT %s
+),
+locked_path_counts AS (
+	INSERT INTO codeintel_initial_path_ranks_processed (graph_key, codeintel_initial_path_ranks_id)
+	SELECT
+		%s,
+		upc.id
+	FROM unprocessed_path_counts upc
+	ON CONFLICT DO NOTHING
+	RETURNING codeintel_initial_path_ranks_id
+),
+ins AS (
+	INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
+	SELECT
+		u.repository_id,
+		upc.document_path,
+		0,
+		%s
+	FROM locked_path_counts lpc
+	JOIN unprocessed_path_counts upc on upc.id = lpc.codeintel_initial_path_ranks_id
+	JOIN lsif_uploads u ON u.id = upc.upload_id
+	RETURNING 1
+)
+SELECT
+	(SELECT COUNT(*) FROM locked_path_counts),
+	(SELECT COUNT(*) FROM ins)
+`
+
+func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, documentPath []string, graphKey string) (err error) {
+	ctx, _, endObservation := s.operations.insertInitialPathRanks.With(
+		ctx,
+		&err,
+		observation.Args{LogFields: []otlog.Field{
+			otlog.String("graphKey", graphKey),
+		}},
+	)
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.db.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	inserter := func(inserter *batch.Inserter) error {
+		for _, path := range documentPath {
+			if err := inserter.Insert(ctx, path); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
+	if err := tx.Exec(ctx, sqlf.Sprintf(createInitialPathTemporaryTableQuery)); err != nil {
+		return err
+	}
+
+	if err := batch.WithInserter(
+		ctx,
+		tx.Handle(),
+		"t_codeintel_initial_path_ranks",
+		batch.MaxNumPostgresParameters,
+		[]string{"document_path"},
+		inserter,
+	); err != nil {
+		return err
+	}
+
+	if err = tx.Exec(ctx, sqlf.Sprintf(insertInitialPathRankCountsQuery, uploadID, graphKey)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+const createInitialPathTemporaryTableQuery = `
+CREATE TEMPORARY TABLE IF NOT EXISTS t_codeintel_initial_path_ranks (
+	document_path text NOT NULL
+)
+ON COMMIT DROP
+`
+
+const insertInitialPathRankCountsQuery = `
+INSERT INTO codeintel_initial_path_ranks (upload_id, document_path, graph_key)
+	SELECT
+		%s,
+		document_path,
+		%s
+	FROM t_codeintel_initial_path_ranks
+`
+
 func (s *store) InsertPathRanks(
 	ctx context.Context,
 	derivativeGraphKey string,
@@ -440,28 +593,36 @@ WITH
 locked_definitions AS (
 	SELECT
 		rd.id,
-		rd.upload_id,
-		EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip uvt WHERE uvt.upload_id = rd.upload_id AND uvt.is_default_branch) AS safe
+		u.repository_id,
+		rd.upload_id
 	FROM codeintel_ranking_definitions rd
+	JOIN lsif_uploads u ON u.id = rd.upload_id
 	WHERE
 		rd.graph_key = %s AND
 		(rd.last_scanned_at IS NULL OR NOW() - rd.last_scanned_at >= %s * '1 hour'::interval)
-	ORDER BY rd.last_scanned_at ASC NULLS FIRST
+	ORDER BY rd.last_scanned_at ASC NULLS FIRST, rd.id
 	FOR UPDATE SKIP LOCKED
 	LIMIT %s
+),
+candidates AS (
+	SELECT
+		ld.id,
+		uvt.is_default_branch IS TRUE AS safe
+	FROM locked_definitions ld
+	LEFT JOIN lsif_uploads_visible_at_tip uvt ON uvt.repository_id = ld.repository_id AND uvt.upload_id = ld.upload_id
 ),
 updated_definitions AS (
 	UPDATE codeintel_ranking_definitions
 	SET last_scanned_at = NOW()
-	WHERE id IN (SELECT ld.id FROM locked_definitions ld WHERE ld.safe)
+	WHERE id IN (SELECT c.id FROM candidates c WHERE c.safe)
 ),
 deleted_definitions AS (
 	DELETE FROM codeintel_ranking_definitions
-	WHERE id IN (SELECT ld.id FROM locked_definitions ld WHERE NOT ld.safe)
+	WHERE id IN (SELECT c.id FROM candidates c WHERE NOT c.safe)
 	RETURNING 1
 )
 SELECT
-	(SELECT COUNT(*) FROM locked_definitions),
+	(SELECT COUNT(*) FROM candidates),
 	(SELECT COUNT(*) FROM deleted_definitions)
 `
 
@@ -499,29 +660,104 @@ WITH
 locked_references AS (
 	SELECT
 		rr.id,
-		rr.upload_id,
-		EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip uvt WHERE uvt.upload_id = rr.upload_id AND uvt.is_default_branch) AS safe
+		u.repository_id,
+		rr.upload_id
 	FROM codeintel_ranking_references rr
+	JOIN lsif_uploads u ON u.id = rr.upload_id
 	WHERE
 		rr.graph_key = %s AND
 		(rr.last_scanned_at IS NULL OR NOW() - rr.last_scanned_at >= %s * '1 hour'::interval)
-	ORDER BY rr.last_scanned_at ASC NULLS FIRST
+	ORDER BY rr.last_scanned_at ASC NULLS FIRST, rr.id
 	FOR UPDATE SKIP LOCKED
 	LIMIT %s
+),
+candidates AS (
+	SELECT
+		lr.id,
+		uvt.is_default_branch IS TRUE AS safe
+	FROM locked_references lr
+	LEFT JOIN lsif_uploads_visible_at_tip uvt ON uvt.repository_id = lr.repository_id AND uvt.upload_id = lr.upload_id
 ),
 updated_references AS (
 	UPDATE codeintel_ranking_references
 	SET last_scanned_at = NOW()
-	WHERE id IN (SELECT lr.id FROM locked_references lr WHERE lr.safe)
+	WHERE id IN (SELECT c.id FROM candidates c WHERE c.safe)
 ),
 deleted_references AS (
 	DELETE FROM codeintel_ranking_references
-	WHERE id IN (SELECT lr.id FROM locked_references lr WHERE NOT lr.safe)
+	WHERE id IN (SELECT c.id FROM candidates c WHERE NOT c.safe)
 	RETURNING 1
 )
 SELECT
-	(SELECT COUNT(*) FROM locked_references),
+	(SELECT COUNT(*) FROM candidates),
 	(SELECT COUNT(*) FROM deleted_references)
+`
+
+func (s *store) VacuumStaleInitialPaths(ctx context.Context, graphKey string) (
+	numPathRecordsScanned int,
+	numStalePathRecordsDeleted int,
+	err error,
+) {
+	ctx, _, endObservation := s.operations.vacuumStalePaths.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(
+		vacuumStalePathsQuery,
+		graphKey, int(threshold/time.Hour), vacuumBatchSize,
+	))
+	if err != nil {
+		return 0, 0, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(
+			&numPathRecordsScanned,
+			&numStalePathRecordsDeleted,
+		); err != nil {
+			return 0, 0, err
+		}
+	}
+
+	return numPathRecordsScanned, numStalePathRecordsDeleted, nil
+}
+
+const vacuumStalePathsQuery = `
+WITH
+locked_initial_path_ranks AS (
+	SELECT
+		ipr.id,
+		u.repository_id,
+		ipr.upload_id
+	FROM codeintel_initial_path_ranks ipr
+	JOIN lsif_uploads u ON u.id = ipr.upload_id
+	WHERE
+		ipr.graph_key = %s AND
+		(ipr.last_scanned_at IS NULL OR NOW() - ipr.last_scanned_at >= %s * '1 hour'::interval)
+	ORDER BY ipr.last_scanned_at ASC NULLS FIRST, ipr.id
+	FOR UPDATE SKIP LOCKED
+	LIMIT %s
+),
+candidates AS (
+	SELECT
+		lipr.id,
+		uvt.is_default_branch IS TRUE AS safe
+	FROM locked_initial_path_ranks lipr
+	LEFT JOIN lsif_uploads_visible_at_tip uvt ON uvt.repository_id = lipr.repository_id AND uvt.upload_id = lipr.upload_id
+),
+updated_initial_path_ranks AS (
+	UPDATE codeintel_initial_path_ranks
+	SET last_scanned_at = NOW()
+	WHERE id IN (SELECT c.id FROM candidates c WHERE c.safe)
+),
+deleted_initial_path_ranks AS (
+	DELETE FROM codeintel_initial_path_ranks
+	WHERE id IN (SELECT c.id FROM candidates c WHERE NOT c.safe)
+	RETURNING 1
+)
+SELECT
+	(SELECT COUNT(*) FROM candidates),
+	(SELECT COUNT(*) FROM deleted_initial_path_ranks)
 `
 
 func (s *store) VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string) (

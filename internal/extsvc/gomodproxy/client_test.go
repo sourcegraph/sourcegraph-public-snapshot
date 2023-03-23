@@ -15,8 +15,9 @@ import (
 
 	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"golang.org/x/mod/module"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
@@ -131,10 +132,7 @@ func newTestClient(t testing.TB, name string, update bool) *Client {
 		}
 	})
 
-	hc, err := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
-	if err != nil {
-		t.Fatal(err)
-	}
+	hc := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec))
 
 	c := &schema.GoModulesConnection{
 		Urls: []string{"https://proxy.golang.org"},
