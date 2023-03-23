@@ -76,7 +76,7 @@
 
 ## Deploy Sourcegraph
 
-### Recommended
+### Recommendedd
 
 - [Sourcegraph Cloud](https://docs.sourcegraph.com/cloud): create a single-tenant instance managed by Sourcegraph
 
