@@ -25,3 +25,4 @@ build --test_env=CI
 build --test_env=GOMAXPROCS=10
 build --test_env=TESTDB_MAXOPENCONNS=15
 build --test_env=E2E_HEADLESS=false
+build --test_env=E2E_SOURCEGRAPH_BASE_URL="https://sourcegraph.com"

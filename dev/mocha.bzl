@@ -70,7 +70,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, use_xvfb 
         # TODO(bazel): e2e test environment
         "TEST_USER_EMAIL": "test@sourcegraph.com",
         "TEST_USER_PASSWORD": "supersecurepassword",
-        "SOURCEGRAPH_BASE_URL": "https://sourcegraph.test:3443",
+        "SOURCEGRAPH_BASE_URL": "$$E2E_SOURCEGRAPH_BASE_URL",
         "GH_TOKEN": "fake-gh-token",
         "SOURCEGRAPH_SUDO_TOKEN": "fake-sg-token",
         "NO_CLEANUP": "true",

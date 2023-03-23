@@ -19,3 +19,4 @@ try-import %workspace%/.aspect/bazelrc/user.bazelrc
 build --test_env=ENABLE_BAZEL_PACKAGES_LOAD_HACK=true
 # Except in CI run E2E tests in headless mode
 build --test_env=E2E_HEADLESS=true
+build --test_env=E2E_SOURCEGRAPH_BASE_URL="https://sourcegraph.test:3443"
