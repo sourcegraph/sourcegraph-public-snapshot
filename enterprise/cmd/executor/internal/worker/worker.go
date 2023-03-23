@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runtime"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -108,10 +109,10 @@ func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, op
 
 	// Configure the supported runtimes
 	// TODO: uncomment when firecracker runtime is complete
-	//jobRuntime, err := runtime.New(observationCtx.Logger, commandOps, filesClient, cloneOptions, options.RunnerOptions.DockerOptions, cmdRunner, cmd)
-	//if err != nil {
-	//	return nil, err
-	//}
+	jobRuntime, err := runtime.New(observationCtx.Logger, commandOps, filesClient, cloneOptions, options.RunnerOptions.DockerOptions, cmdRunner, cmd)
+	if err != nil {
+		return nil, err
+	}
 
 	h := &handler{
 		nameSet:      nameSet,
@@ -123,7 +124,7 @@ func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, op
 		cloneOptions: cloneOptions,
 		operations:   commandOps,
 		// TODO: uncomment when firecracker runtime is complete
-		//jobRuntime: jobRuntime,
+		jobRuntime: jobRuntime,
 	}
 
 	return workerutil.NewWorker[types.Job](context.Background(), queueClient, h, options.WorkerOptions), nil
