@@ -1,7 +1,7 @@
 /** Component exports */
 export { BeforeUnloadPrompt } from './BeforeUnloadPrompt'
 export { Button, ButtonGroup, BUTTON_SIZES } from './Button'
-export { Alert, AlertLink } from './Alert'
+export { Alert, AlertLink, useAnimatedAlert } from './Alert'
 export { Container } from './Container'
 export { ErrorAlert } from './ErrorAlert'
 export { ErrorMessage, renderError } from './ErrorMessage'
