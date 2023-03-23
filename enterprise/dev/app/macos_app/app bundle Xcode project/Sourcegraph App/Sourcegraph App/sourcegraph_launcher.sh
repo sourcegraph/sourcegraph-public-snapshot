@@ -3,7 +3,7 @@
 exedir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 log="${HOME}/Library/Application Support/sourcegraph-sp/sourcegraph.log"
-for x in $(seq 1 50); do
+for x in $(seq 1 20); do
   sleep 0.1
   echo "line ${x}" | tee -a "${log}"
 done

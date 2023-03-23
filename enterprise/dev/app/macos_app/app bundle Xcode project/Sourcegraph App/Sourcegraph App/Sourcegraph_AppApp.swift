@@ -94,6 +94,23 @@ struct EOLBuffer {
 var appTask: Process = Process()
 var stdout = Pipe()
 
+
+var statusBarItem: NSStatusItem!
+
+let startItem = NSMenuItem()
+let openItem = NSMenuItem()
+let stopItem = NSMenuItem()
+let logItem = NSMenuItem()
+
+// the menubar icon is a Image Set in the Xcode assets
+// that contains two icons: one light and one dark
+// it needs to be rendered as a template to auto-adjust to the menu bar background color
+// that rendering can be set in the Image Set's attributes using the Xcode Attributes pane
+// or it can be set programmatically when it is created
+let activeMenuBarIcon = NSImage(named: "ActiveMenubarIcon")
+let inactiveMenuBarIcon = NSImage(named: "InactiveMenubarIcon")
+let loadingMenuBarIcon = NSImage(named: "LoadingMenubarIcon")
+
 extension String: LocalizedError {
     public var errorDescription: String? { return self }
 }
@@ -145,23 +162,54 @@ struct Sourcegraph_AppApp: App {
         WindowGroup {
             ContentView()
         }
+        // 13.0+
+//        MenuBarExtra("Sourcegraph App Menu Bar Extra", image: "wildcard-black") {
+//        }
+    }
+    
+    class clickables {
+        
+        @objc func onStartClick(_ sender: Any?) {
+            do {
+                try StartApp()
+            } catch {
+                
+            }
+        }
     }
     
     class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
-//        private var statusBarItem: NSStatusItem!
-//        private var menuBarWindow: NSWindow!
-//        func applicationDidFinishLaunching(_ notification: Notification) {
-//            // Create a new status bar item with the app icon
-//            statusBarItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-//            statusBarItem.button?.image = NSImage(named: "AppIcon")
-//            statusBarItem.menu = NSMenu()
-//            statusBarItem.menu?.addItem(NSMenuItem(title: "Start", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
-//            statusBarItem.menu?.addItem(NSMenuItem(title: "Stop", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
-//            statusBarItem.menu?.addItem(NSMenuItem(title: "Restart", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
-//            // Add a menu item to quit the app
-//            let quitItem = NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
-//            statusBarItem.menu?.addItem(quitItem)
-//        }
+        
+        func applicationDidFinishLaunching(_ notification: Notification) {
+            
+            // Create a new status bar item with the app icon
+            statusBarItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+            statusBarItem.button?.setFrameSize(NSSize(width: 60, height: 20))
+            statusBarItem.button?.image = inactiveMenuBarIcon
+            statusBarItem.button?.needsDisplay = true
+            statusBarItem.menu = NSMenu()
+            statusBarItem.menu?.autoenablesItems = false
+            
+            startItem.title = "Start"
+            startItem.action = #selector(self.onStartClick(_:))
+            statusBarItem.menu?.addItem(startItem)
+            
+            openItem.title = "Open"
+            openItem.action = #selector(self.onOpenClick(_:))
+            statusBarItem.menu?.addItem(openItem)
+            
+            stopItem.title = "Stop"
+            stopItem.action = #selector(self.onStopClick(_:))
+            statusBarItem.menu?.addItem(stopItem)
+            
+            logItem.title = "Logs"
+            logItem.action = #selector(self.onLogsClick(_:))
+            statusBarItem.menu?.addItem(logItem)
+            
+            let quitItem = NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+            statusBarItem.menu?.addItem(quitItem)
+        }
+
         func applicationWillFinishLaunching(_ notification: Notification) {
             // another place to run stuff when the app starts
         }
@@ -173,6 +221,26 @@ struct Sourcegraph_AppApp: App {
             // this is the only place that I have found to run stuff when the app quits
             StopApp()
         }
+        @objc func onStartClick(_ sender: Any?) {
+            do {
+                try StartApp()
+            } catch {
+                
+            }
+        }
+        @objc func onStopClick(_ sender: Any?) {
+            StopApp()
+        }
+        @objc func onOpenClick(_ sender: Any?) {
+            if let url = URL(string: "http://127.0.0.1:3080") {
+                NSWorkspace.shared.open(url)
+            }
+        }
+        @objc func onLogsClick(_ sender: Any?) {
+            let logFileURL = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/sourcegraph-sp/sourcegraph.log")
+            if FileManager.default.fileExists(atPath: logFileURL.path) {
+                NSWorkspace.shared.open(logFileURL)
+            }
+        }
     }
 }
-

@@ -23,7 +23,7 @@ struct ContentView: View {
     private var STATUS_STARTING: Int = 1
     private var STATUS_RUNNING: Int = 2
     
-    @State private var previousStatus: Int = 0
+    @State private var previousStatus: Int = -1
     
     init() {
         
@@ -65,7 +65,7 @@ struct ContentView: View {
 //        }
 //    }
     
-    private var animationDuration: Double = 1.5
+    private var animationDuration: Double = 1.2
     
     @State private var watchdogRunning: Bool = false
     
@@ -92,6 +92,15 @@ struct ContentView: View {
                 HStack {
                     ProgressView().progressViewStyle(CircularProgressViewStyle())
                     Text("Starting Sourcegraph...").padding(.leading, 10).font(.title2)
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        StopApp()
+                    }) {
+                        Text("Cancel").frame(maxWidth: 60)
+                    }
+                    .disabled(self.startingOpacity == 0.0)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .opacity(self.startingOpacity)
@@ -101,6 +110,7 @@ struct ContentView: View {
                         self.startingOpacity = 1.0
                     }
                 }
+                
                 HStack {
                     Text("Sourcegraph is running.")
                         .font(.title2)
@@ -110,14 +120,6 @@ struct ContentView: View {
                     Spacer()
                     
                     Button(action: {
-                        StopApp()
-                    }) {
-                        Text("Stop").frame(maxWidth: 60)
-                    }
-                    .disabled(self.runningOpacity == 0.0)
-                    .gridColumnAlignment(.trailing)
-                    
-                    Button(action: {
                         if let url = URL(string: "http://127.0.0.1:3080") {
                             NSWorkspace.shared.open(url)
                         }
@@ -125,7 +127,14 @@ struct ContentView: View {
                         Text("Open").frame(maxWidth: 60)
                     }
                     .disabled(self.runningOpacity == 0.0)
-                    .padding()
+                    
+                    Button(action: {
+                        StopApp()
+                    }) {
+                        Text("Stop").frame(maxWidth: 60)
+                    }
+                    .disabled(self.runningOpacity == 0.0)
+                    .padding(.trailing)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .opacity(self.runningOpacity)
@@ -159,11 +168,9 @@ struct ContentView: View {
                             self.stoppedOpacity = 1.0
                     }
                 }
-                .padding()
                 .frame(maxWidth: .infinity, alignment: .leading)
-                
+                .padding()
             }
-            .ignoresSafeArea()
             
             // the buttons used to all be here before moving them into the same location as the loading display
 //            GridRow {
@@ -281,8 +288,8 @@ struct ContentView: View {
 //                .gridColumnAlignment(.trailing)
 //            }
         }
-        .padding(.all, 20)
-        .frame(minWidth: 460, idealWidth: 572, minHeight: 220, idealHeight: 282)
+        .padding(.all, 12)
+        .frame(minWidth: 460, idealWidth: 572, minHeight: 120, idealHeight: 120)
         .onAppear {
             
             // set the window size, but have to delay a bit to wait for the window to be created
@@ -292,24 +299,79 @@ struct ContentView: View {
                 }
             }
             
-            // this feels like a hack, but I can't figure out how/why to make the elements
+            // anytime we use a watchdog, it's a baindaid on the actual problem,
+            // but I can't figure out how/why to make the elements
             // read updated values in order to change how they display
             if !self.watchdogRunning {
                 Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { timer in
                     self.watchdogRunning = true
-                    if appIsRunning() {
+                    // keep track of the previously-discovered state to avoid re-setting things over and over
+                    if appIsRunning() && previousStatus != STATUS_RUNNING {
+                        
+                        if let button = statusBarItem.button {
+                            button.image = activeMenuBarIcon
+                            button.needsDisplay = true
+                        }
+                        
+                        startItem.isEnabled = false
+                        startItem.isHidden = true
+                        
+                        stopItem.isEnabled = true
+                        stopItem.isHidden = false
+                        
+                        openItem.isEnabled = true
+                        openItem.isHidden = false
+                        
+                        previousStatus = STATUS_RUNNING
+                        
                         withAnimation(.easeInOut(duration: animationDuration)) {
                             self.stoppedOpacity = 0.0
                             self.startingOpacity = 0.0
                             self.runningOpacity = 1.0
                         }
-                    } else if appIsStarting() {
+                    } else if appIsStarting() && previousStatus != STATUS_STARTING {
+                        
+                        if let button = statusBarItem.button {
+                            button.image = loadingMenuBarIcon
+                            button.needsDisplay = true
+                        }
+                        
+                        startItem.isEnabled = false
+                        startItem.isHidden = true
+                        
+                        stopItem.isEnabled = true
+                        stopItem.isHidden = false
+                        
+                        openItem.isEnabled = false
+                        openItem.isHidden = true
+                        
+                        previousStatus = STATUS_STARTING
+                        
                         withAnimation(.easeInOut(duration: animationDuration)) {
                             self.stoppedOpacity = 0.0
                             self.startingOpacity = 1.0
                             self.runningOpacity = 0.0
                         }
-                    } else {
+                    } else if appIsStopped() && previousStatus != STATUS_STOPPED {
+                        
+                        if let button = statusBarItem.button {
+                            button.image = inactiveMenuBarIcon
+                            button.needsDisplay = true
+                        }
+                        
+                        statusBarItem.button?.image?.recache()
+                        
+                        startItem.isEnabled = true
+                        startItem.isHidden = false
+                        
+                        stopItem.isEnabled = false
+                        stopItem.isHidden = true
+                        
+                        openItem.isEnabled = false
+                        openItem.isHidden = true
+                        
+                        previousStatus = STATUS_STOPPED
+                        
                         withAnimation(.easeInOut(duration: animationDuration)) {
                             self.stoppedOpacity = 1.0
                             self.startingOpacity = 0.0
