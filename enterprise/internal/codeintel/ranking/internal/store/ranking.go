@@ -822,20 +822,20 @@ func (s *store) VacuumAbandonedInitialPathCounts(ctx context.Context, graphKey s
 
 const vacuumAbandonedInitialPathCountsQuery = `
 WITH
-locked_initial_path_counts AS (
+locked_initial_paths AS (
 	SELECT id
-	FROM codeintel_ranking_initial_path_counts
+	FROM codeintel_initial_path_ranks
 	WHERE graph_key != %s
 	ORDER BY id
 	FOR UPDATE SKIP LOCKED
 	LIMIT %s
 ),
-deleted_initial_path_counts AS (
-	DELETE FROM codeintel_ranking_initial_path_counts
-	WHERE id IN (SELECT id FROM locked_initial_path_counts)
+deleted_initial_paths AS (
+	DELETE FROM codeintel_initial_path_ranks
+	WHERE id IN (SELECT id FROM locked_initial_paths)
 	RETURNING 1
 )
-SELECT COUNT(*) FROM deleted_initial_path_counts
+SELECT COUNT(*) FROM deleted_initial_paths
 `
 
 func (s *store) VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string, batchSize int) (_ int, err error) {

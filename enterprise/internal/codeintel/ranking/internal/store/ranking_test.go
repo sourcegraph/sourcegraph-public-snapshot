@@ -23,8 +23,8 @@ import (
 )
 
 const (
-	mockRankingGraphKey    = "mockDev" // NOTE: ensure we don't have hyphens so we can validate derivative keys easily
-	mockRankingBatchNumber = 10
+	mockRankingGraphKey  = "mockDev" // NOTE: ensure we don't have hyphens so we can validate derivative keys easily
+	mockRankingBatchSize = 10
 )
 
 func TestInsertDefinition(t *testing.T) {
@@ -53,7 +53,7 @@ func TestInsertDefinition(t *testing.T) {
 	}
 
 	// Test InsertDefinitionsForRanking
-	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockDefinitions); err != nil {
+	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, mockDefinitions); err != nil {
 		t.Fatalf("unexpected error inserting definitions: %s", err)
 	}
 
@@ -81,7 +81,7 @@ func TestInsertReferences(t *testing.T) {
 
 	for _, reference := range mockReferences {
 		// Test InsertReferencesForRanking
-		if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, reference); err != nil {
+		if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, reference); err != nil {
 			t.Fatalf("unexpected error inserting references: %s", err)
 		}
 	}
@@ -127,7 +127,7 @@ func TestInsertPathRanks(t *testing.T) {
 			DocumentPath: "foo.go",
 		},
 	}
-	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockDefinitions); err != nil {
+	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, mockDefinitions); err != nil {
 		t.Fatalf("unexpected error inserting definitions: %s", err)
 	}
 
@@ -140,7 +140,7 @@ func TestInsertPathRanks(t *testing.T) {
 			mockDefinitions[2].SymbolName,
 		},
 	}
-	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
@@ -286,7 +286,7 @@ func TestInsertPathCountInputs(t *testing.T) {
 			DocumentPath: "bonk.go",
 		},
 	}
-	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockDefinitions); err != nil {
+	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, mockDefinitions); err != nil {
 		t.Fatalf("unexpected error inserting definitions: %s", err)
 	}
 
@@ -300,7 +300,7 @@ func TestInsertPathCountInputs(t *testing.T) {
 			mockDefinitions[1].SymbolName,
 		},
 	}
-	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
@@ -315,7 +315,7 @@ func TestInsertPathCountInputs(t *testing.T) {
 			mockDefinitions[2].SymbolName,
 		},
 	}
-	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 	mockReferences = shared.RankingReferences{
@@ -324,7 +324,7 @@ func TestInsertPathCountInputs(t *testing.T) {
 			mockDefinitions[3].SymbolName,
 		},
 	}
-	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
@@ -338,7 +338,7 @@ func TestInsertPathCountInputs(t *testing.T) {
 			mockDefinitions[3].SymbolName,
 		},
 	}
-	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
@@ -357,7 +357,7 @@ func TestInsertPathCountInputs(t *testing.T) {
 			mockDefinitions[1].SymbolName,
 		},
 	}
-	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
@@ -378,7 +378,7 @@ func TestInsertPathCountInputs(t *testing.T) {
 			mockDefinitions[3].SymbolName,
 		},
 	}
-	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
@@ -436,11 +436,11 @@ func TestVacuumStaleDefinitionsAndReferences(t *testing.T) {
 		{UploadID: 3, SymbolNames: []string{"baz"}},
 	}
 
-	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockDefinitions); err != nil {
+	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, mockDefinitions); err != nil {
 		t.Fatalf("unexpected error inserting definitions: %s", err)
 	}
 	for _, reference := range mockReferences {
-		if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, reference); err != nil {
+		if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, reference); err != nil {
 			t.Fatalf("unexpected error inserting references: %s", err)
 		}
 	}
@@ -534,6 +534,159 @@ func TestVacuumStaleInitialPaths(t *testing.T) {
 	assertCounts(3)
 }
 
+func TestVacuumAbandonedDefinitions(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	symbols := []string{}
+	for j := 0; j < 30; j++ {
+		symbols = append(symbols, fmt.Sprintf("s%d", j+1))
+	}
+
+	// Insert definitions
+	mockDefinitions := []shared.RankingDefinitions{}
+	for _, symbol := range symbols {
+		mockDefinitions = append(mockDefinitions, shared.RankingDefinitions{
+			UploadID:     1,
+			SymbolName:   symbol,
+			DocumentPath: "foo.go",
+		})
+	}
+	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey+"-abandoned", mockRankingBatchSize, mockDefinitions); err != nil {
+		t.Fatalf("unexpected error inserting definitions: %s", err)
+	}
+	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, mockDefinitions); err != nil {
+		t.Fatalf("unexpected error inserting definitions: %s", err)
+	}
+	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey+"-abandoned", mockRankingBatchSize, mockDefinitions); err != nil {
+		t.Fatalf("unexpected error inserting definitions: %s", err)
+	}
+
+	assertCounts := func(expectedDefinitionRecords int) {
+		store := basestore.NewWithHandle(db.Handle())
+
+		numDefinitionRecords, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM codeintel_ranking_definitions`)))
+		if err != nil {
+			t.Fatalf("failed to definition records: %s", err)
+		}
+		if expectedDefinitionRecords != numDefinitionRecords {
+			t.Fatalf("unexpected number of definition records. want=%d have=%d", expectedDefinitionRecords, numDefinitionRecords)
+		}
+	}
+
+	// assert initial count
+	assertCounts(3 * 30)
+
+	// remove records associated with other ranking keys
+	if _, err := store.VacuumAbandonedDefinitions(ctx, mockRankingGraphKey, 50); err != nil {
+		t.Fatalf("unexpected error vacuuming abandoned definitions: %s", err)
+	}
+
+	// only 10 records of stale derivative graph key remain (batch size of 50, but 2*30 could be deleted)
+	assertCounts(1*30 + 10)
+}
+
+func TestVacuumAbandonedReferences(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	symbols := []string{}
+	for j := 0; j < 30; j++ {
+		symbols = append(symbols, fmt.Sprintf("s%d", j+1))
+	}
+
+	mockReferences := []shared.RankingReferences{
+		{UploadID: 1, SymbolNames: symbols},
+		{UploadID: 2, SymbolNames: symbols},
+		{UploadID: 3, SymbolNames: symbols},
+	}
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey+"-abandoned", 1, mockReferences[0]); err != nil {
+		t.Fatalf("unexpected error inserting references: %s", err)
+	}
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, 1, mockReferences[1]); err != nil {
+		t.Fatalf("unexpected error inserting references: %s", err)
+	}
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey+"-abandoned", 1, mockReferences[2]); err != nil {
+		t.Fatalf("unexpected error inserting references: %s", err)
+	}
+
+	assertCounts := func(expectedReferenceRecords int) {
+		store := basestore.NewWithHandle(db.Handle())
+
+		numReferenceRecords, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf(`
+			WITH symbols AS (
+				SELECT unnest(symbol_names) AS symbol_name
+				FROM codeintel_ranking_references
+			)
+			SELECT COUNT(*) FROM symbols
+		`)))
+		if err != nil {
+			t.Fatalf("failed to definition records: %s", err)
+		}
+		if expectedReferenceRecords != numReferenceRecords {
+			t.Fatalf("unexpected number of references records. want=%d have=%d", expectedReferenceRecords, numReferenceRecords)
+		}
+	}
+
+	// assert initial count
+	assertCounts(3 * 30)
+
+	// remove records associated with other ranking keys
+	if _, err := store.VacuumAbandonedReferences(ctx, mockRankingGraphKey, 50); err != nil {
+		t.Fatalf("unexpected error vacuuming abandoned references: %s", err)
+	}
+
+	// only 10 records of stale graph key remain (batch size of 50, but 2*30 could be deleted)
+	assertCounts(1*30 + 10)
+}
+
+func TestVacuumAbandonedInitialPathCounts(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	if _, err := db.ExecContext(ctx, `
+		INSERT INTO codeintel_initial_path_ranks (upload_id, document_path, graph_key)
+		SELECT 50, '', $1 FROM generate_series(1, 30)
+	`, mockRankingGraphKey); err != nil {
+		t.Fatalf("failed to insert ranking path count inputs: %s", err)
+	}
+	if _, err := db.ExecContext(ctx, `
+		INSERT INTO codeintel_initial_path_ranks (upload_id, document_path, graph_key)
+		SELECT 50, '', $1 FROM generate_series(1, 60)
+	`, mockRankingGraphKey+"-abandoned"); err != nil {
+		t.Fatalf("failed to insert ranking path count inputs: %s", err)
+	}
+
+	assertCounts := func(expectedInitialPathCountRecords int) {
+		store := basestore.NewWithHandle(db.Handle())
+
+		numInitialPathCountRecords, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM codeintel_initial_path_ranks`)))
+		if err != nil {
+			t.Fatalf("failed to definition records: %s", err)
+		}
+		if expectedInitialPathCountRecords != numInitialPathCountRecords {
+			t.Fatalf("unexpected number of initial path counts records. want=%d have=%d", expectedInitialPathCountRecords, numInitialPathCountRecords)
+		}
+	}
+
+	// assert initial count
+	assertCounts(3 * 30)
+
+	// remove records associated with other ranking keys
+	if _, err := store.VacuumAbandonedInitialPathCounts(ctx, mockRankingGraphKey, 50); err != nil {
+		t.Fatalf("unexpected error vacuuming initial path counts: %s", err)
+	}
+
+	// only 10 records of stale derivative graph key remain (batch size of 50, but 2*30 could be deleted)
+	assertCounts(1*30 + 10)
+}
+
 func TestVacuumStaleGraphs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
@@ -550,7 +703,7 @@ func TestVacuumStaleGraphs(t *testing.T) {
 		{UploadID: 3, SymbolNames: []string{"baz"}},
 	}
 	for _, reference := range mockReferences {
-		if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, reference); err != nil {
+		if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, reference); err != nil {
 			t.Fatalf("unexpected error inserting references: %s", err)
 		}
 	}
@@ -563,13 +716,13 @@ func TestVacuumStaleGraphs(t *testing.T) {
 		if _, err := db.ExecContext(ctx, `
 			INSERT INTO codeintel_ranking_references_processed (graph_key, codeintel_ranking_reference_id)
 			SELECT $1, id FROM codeintel_ranking_references
-	`, graphKey); err != nil {
+		`, graphKey); err != nil {
 			t.Fatalf("failed to insert ranking references processed: %s", err)
 		}
 		if _, err := db.ExecContext(ctx, `
 			INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
 			SELECT 50, '', 100, $1 FROM generate_series(1, 30)
-	`, graphKey); err != nil {
+		`, graphKey); err != nil {
 			t.Fatalf("failed to insert ranking path count inputs: %s", err)
 		}
 	}
