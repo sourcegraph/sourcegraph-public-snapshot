@@ -15,7 +15,6 @@ import (
 
 	gogithub "github.com/google/go-github/v41/github"
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -23,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -41,6 +41,12 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
+	logger := observationCtx.Logger.Scoped("app", "sourcegraph app specific")
+
+	if deploy.IsApp() {
+		enterpriseServices.OptionalResolver.AppResolver = newAppResolver(logger, db)
+	}
+
 	config, err := conf.GitHubAppConfig()
 	if err != nil {
 		return errors.Wrap(err, "getting GitHubApp config")
@@ -64,7 +70,7 @@ func Init(
 	if err != nil {
 		return errors.Wrap(err, "parse github.com")
 	}
-	client := github.NewV3Client(log.Scoped("app.github.v3", "github v3 client for frontend app"), extsvc.URNGitHubApp, apiURL, auther, nil)
+	client := github.NewV3Client(logger.Scoped("app.github.v3", "github v3 client for frontend app"), extsvc.URNGitHubApp, apiURL, auther, nil)
 
 	enterpriseServices.NewGitHubAppSetupHandler = func() http.Handler {
 		return newGitHubAppSetupHandler(db, apiURL, client)
