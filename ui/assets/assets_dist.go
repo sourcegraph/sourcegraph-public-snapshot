@@ -11,7 +11,9 @@ import (
 
 //go:embed *
 var assetsFS embed.FS
-var Assets http.Filesystem
+var afs fs.FS = assetsFS
+
+var Assets http.FileSystem
 
 func init() {
 	// When we're building this package with Bazel, we cannot directly output the files in this current folder, because
@@ -20,11 +22,12 @@ func init() {
 	//
 	// Therefore, this code works with both the traditionnal build approach and when built with Bazel.
 	if fs.ValidPath("dist") {
-		assetsFS, err = fs.Sub(assetsFS, "dist")
+		var err error
+		afs, err = fs.Sub(assetsFS, "dist")
 		if err != nil {
 			panic("incorrect embed")
 		}
 	}
 
-	Assets = http.FS(assetsFS)
+	Assets = http.FS(afs)
 }
