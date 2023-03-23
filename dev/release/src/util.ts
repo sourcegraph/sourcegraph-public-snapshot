@@ -17,6 +17,12 @@ import * as update from './update'
 
 const SOURCEGRAPH_RELEASE_INSTANCE_URL = 'https://k8s.sgdev.org'
 
+export interface ReleaseTag {
+    repo: string
+    nextTag: string
+    workDir: string
+}
+
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
 export function formatDate(date: Date): string {
     return `${date.toLocaleString('en-US', {
@@ -412,7 +418,11 @@ export async function nextGoogleExecutorVersionInputWithAutodetect(
         next = new SemVer(config.in_progress.googleExecutorVersion)
     }
 
-    if (!(await softVerifyWithInput(`Confirm next version of sourcegraph/terraform-google-executors should be: ${next.version}`))) {
+    if (
+        !(await softVerifyWithInput(
+            `Confirm next version of sourcegraph/terraform-google-executors should be: ${next.version}`
+        ))
+    ) {
         return new SemVer(
             await retryInput(
                 'Enter the next version of executor: ',

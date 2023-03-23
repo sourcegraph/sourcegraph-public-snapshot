@@ -81,6 +81,7 @@ import {
     validateNoOpenBackports,
     validateNoReleaseBlockers,
     verifyWithInput,
+    ReleaseTag,
 } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
@@ -109,12 +110,9 @@ export type StepID =
     | 'release:remove'
     | 'release:activate-release'
     | 'release:deactivate-release'
-    // src-cli
-    | 'release:src-cli'
+    // src-cli and executors
+    | 'release:create-tags'
     | 'release:verify-src-cli'
-    // executors
-    | 'release:google-executors-tags'
-    | 'release:aws-executors-tags'
     // util
     | 'util:clear-cache'
     | 'util:previous-version'
@@ -1142,31 +1140,76 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         },
     },
     {
-        id: 'release:src-cli',
-        description: 'Release a new version of src-cli. Only required for minor and major versions',
+        id: 'release:create-tags',
+        description: 'Release a new version of src-cli and executors. Only required for minor and major versions',
         run: async config => {
             const release = await getActiveRelease(config)
             if (release.version.patch !== 0) {
-                console.log('src-cli releases are only supported in this tool for major / minor releases')
+                console.log('src-cli and executors releases are only supported in this tool for major / minor releases')
                 exit(1)
             }
-            const client = await getAuthenticatedGitHubClient()
-            const { workdir } = await cloneRepo(client, 'sourcegraph', 'src-cli', {
-                revision: 'main',
-                revisionMustExist: true,
-            })
-            const next = await nextSrcCliVersionInputWithAutodetect(config, workdir)
-            setSrcCliVersion(config, next.version)
 
-            if (!config.dryRun.changesets) {
-                // actually execute the release
-                await execa('bash', ['-c', 'yes | ./release.sh'], {
-                    stdio: 'inherit',
-                    cwd: workdir,
-                    env: { ...process.env, VERSION: next.version },
+            const repos = ['src-cli', 'terraform-google-executors', 'terraform-aws-executors']
+            let tags: ReleaseTag[] = []
+
+            const client = await getAuthenticatedGitHubClient()
+
+            for (const repo of repos) {
+                const { workdir } = await cloneRepo(client, 'sourcegraph', repo, {
+                    revision: repo === 'src-cli' ? 'main' : 'master',
+                    revisionMustExist: true,
                 })
-            } else {
-                console.log(chalk.blue('Skipping src-cli release for dry run'))
+
+                switch (repo) {
+                    case 'src-cli':
+                        const next = await nextSrcCliVersionInputWithAutodetect(config, workdir)
+                        setSrcCliVersion(config, next.version)
+                        tags.push({
+                            repo,
+                            nextTag: next.version,
+                            workDir: workdir,
+                        })
+                        break
+                    case 'terraform-google-executors':
+                        const nextGoogle = await nextGoogleExecutorVersionInputWithAutodetect(config, workdir)
+                        setGoogleExecutorVersion(config, nextGoogle.version)
+                        tags.push({
+                            repo,
+                            nextTag: nextGoogle.version,
+                            workDir: workdir,
+                        })
+                        break
+                    case 'terraform-aws-executors':
+                        const nextAWS = await nextAWSExecutorVersionInputWithAutodetect(config, workdir)
+                        setAWSExecutorVersion(config, nextAWS.version)
+                        tags.push({
+                            repo,
+                            nextTag: nextAWS.version,
+                            workDir: workdir,
+                        })
+                        break
+                }
+            }
+
+            for (const tag of tags) {
+                const { repo, nextTag, workDir } = tag
+                if (!config.dryRun.changesets) {
+                    // actually execute the release
+                    if (repo === `src-cli`) {
+                        await execa('bash', ['-c', 'yes | ./release.sh'], {
+                            stdio: 'inherit',
+                            cwd: workDir,
+                            env: { ...process.env, VERSION: nextTag },
+                        })
+                    } else {
+                        await execa('bash', ['-c', `yes | ./release.sh ${nextTag}`], {
+                            stdio: 'inherit',
+                            cwd: workDir,
+                        })
+                    }
+                } else {
+                    console.log(chalk.blue(`Skipping ${repo} release for dry run`))
+                }
             }
         },
     },
@@ -1210,80 +1253,6 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
             } else {
                 console.log(chalk.red('Failed to verify src-cli versions'))
                 exit(1)
-            }
-        },
-    },
-    {
-        id: 'release:google-executors-tags',
-        description: 'Release a new version of google executors. Only required for minor and major versions',
-        run: async config => {
-            const release = await getActiveRelease(config)
-            if (release.version.patch !== 0) {
-                console.log('executor releases are only supported in this tool for major / minor releases')
-                exit(1)
-            }
-            const client = await getAuthenticatedGitHubClient()
-            const { workdir } = await cloneRepo(client, 'sourcegraph', 'terraform-google-executors', {
-                revision: 'master',
-                revisionMustExist: true,
-            })
-
-            const next = await nextAWSExecutorVersionInputWithAutodetect(config, workdir)
-            setAWSExecutorVersion(config, next.version)
-
-            const mergedPR = await client.search.issuesAndPullRequests({
-                q: `repo:sourcegraph/terraform-google-executors is:pr is:closed is:merged in:title Update files for ${next.version} release `,
-            })
-            if (!config.dryRun.changesets) {
-                // actually execute the release
-                if (mergedPR.data.total_count > 0) {
-                    await execa('bash', ['-c', `yes | ./release.sh ${next.version}`], {
-                        stdio: 'inherit',
-                        cwd: workdir,
-                    })
-                } else {
-                    console.log(chalk.blue('Skipping sourcegraph/terraform-google-executors release PR is not merged'))
-                }
-            } else {
-                console.log(chalk.blue('Skipping sourcegraph/terraform-google-executors release for dry run'))
-            }
-        },
-    },
-    {
-        id: 'release:aws-executors-tags',
-        description: 'Release a new version of aws executors. Only required for minor and major versions',
-        run: async config => {
-            const release = await getActiveRelease(config)
-            if (release.version.patch !== 0) {
-                console.log('executor releases are only supported in this tool for major / minor releases')
-                exit(1)
-            }
-            const client = await getAuthenticatedGitHubClient()
-            const { workdir } = await cloneRepo(client, 'sourcegraph', 'terraform-aws-executors', {
-                revision: 'master',
-                revisionMustExist: true,
-            })
-
-            const next = await nextAWSExecutorVersionInputWithAutodetect(config, workdir)
-            setAWSExecutorVersion(config, next.version)
-
-            // check if the release PR is already merged
-            const mergedPR = await client.search.issuesAndPullRequests({
-                q: `repo:sourcegraph/terraform-aws-executors is:pr is:closed is:merged in:title Update files for ${next.version} release `,
-            })
-
-            if (!config.dryRun.changesets) {
-                // actually execute the release
-                if (mergedPR.data.total_count > 0) {
-                    await execa('bash', ['-c', `yes | ./release.sh ${next.version}`], {
-                        stdio: 'inherit',
-                        cwd: workdir,
-                    })
-                } else {
-                    console.log(chalk.blue('Skipping sourcegraph/terraform-aws-executors release PR is not merged'))
-                }
-            } else {
-                console.log(chalk.blue('Skipping sourcegraph/terraform-aws-executors release for dry run'))
             }
         },
     },
