@@ -44,9 +44,7 @@ export const SiteConfigurationChangeListPage: FC = () => {
 
     return (
         <>
-            {connection?.nodes?.length === 0 ? (
-                <></>
-            ) : (
+            {!!connection?.nodes?.length && (
                 <div>
                     <Container className="mb-3">
                         <H3>History</H3>
@@ -143,7 +141,7 @@ const SiteConfigurationHistoryItem: FC<SiteConfigurationHistoryItemProps> = ({ n
                         <Code className={classNames('p-2', 'mt-2', styles.diffblock)}>{node.diff}</Code>
                     </CollapsePanel>
                 </Collapse>
-                <hr className="mb-3 mt-3" />{' '}
+                <hr className="mb-3 mt-3" />
             </>
         )
     }
