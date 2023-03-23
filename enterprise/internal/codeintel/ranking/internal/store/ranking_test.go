@@ -574,16 +574,8 @@ func TestVacuumStaleGraphs(t *testing.T) {
 		}
 	}
 
-	assertCounts := func(expectedMetadataRecords, expectedInputRecords int) {
+	assertCounts := func(expectedInputRecords int) {
 		store := basestore.NewWithHandle(db.Handle())
-
-		numMetadataRecords, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM codeintel_ranking_references_processed`)))
-		if err != nil {
-			t.Fatalf("failed to count metadata records: %s", err)
-		}
-		if expectedMetadataRecords != numMetadataRecords {
-			t.Fatalf("unexpected number of metadata records. want=%d have=%d", expectedMetadataRecords, numMetadataRecords)
-		}
 
 		numInputRecords, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM codeintel_ranking_path_counts_inputs`)))
 		if err != nil {
@@ -595,22 +587,15 @@ func TestVacuumStaleGraphs(t *testing.T) {
 	}
 
 	// assert initial count
-	assertCounts(3*7, 3*30)
+	assertCounts(3 * 30)
 
 	// remove records associated with other ranking keys
-	metadataRecordsDeleted, inputRecordsDeleted, err := store.VacuumStaleGraphs(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 456))
-	if err != nil {
+	if _, err := store.VacuumStaleGraphs(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 456)); err != nil {
 		t.Fatalf("unexpected error vacuuming stale graphs: %s", err)
-	}
-	if expected := 2 * 7; metadataRecordsDeleted != expected {
-		t.Fatalf("unexpected number of metadata records deleted. want=%d have=%d", expected, metadataRecordsDeleted)
-	}
-	if expected := 2 * 30; inputRecordsDeleted != expected {
-		t.Fatalf("unexpected number of input records deleted. want=%d have=%d", expected, inputRecordsDeleted)
 	}
 
 	// only the non-stale derivative graph key remains
-	assertCounts(1*7, 1*30)
+	assertCounts(1 * 30)
 }
 
 func TestVacuumStaleRanks(t *testing.T) {
