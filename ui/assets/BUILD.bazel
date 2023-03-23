@@ -17,16 +17,19 @@ go_library(
 
 filegroup(
     name = "assets_files_oss",
-    srcs = ["//client/web:bundle", "//ui/assets/img:img"],
+    srcs = [
+        "//client/web:bundle",
+        "//ui/assets/img",
+    ],
 )
 
 copy_to_directory(
-    out = "dist",
     name = "copy_bundle_oss",
     srcs = ["//ui/assets:assets_files_oss"],
+    out = "dist",
     replace_prefixes = {
         "client/web/bundle": "",
-    }
+    },
 )
 
 go_library(
@@ -45,7 +48,10 @@ go_library(
 
 filegroup(
     name = "assets_files_enterprise",
-    srcs = ["//client/web:bundle-enterprise", "//ui/assets/img:img"],
+    srcs = [
+        "//client/web:bundle-enterprise",
+        "//ui/assets/img",
+    ],
 )
 
 copy_to_directory(
@@ -53,7 +59,7 @@ copy_to_directory(
     srcs = ["//ui/assets:assets_files_enterprise"],
     replace_prefixes = {
         "client/web/bundle-enterprise": "",
-    }
+    },
 )
 
 go_library(

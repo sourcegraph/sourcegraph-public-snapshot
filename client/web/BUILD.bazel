@@ -1168,6 +1168,7 @@ ts_project(
         "src/repo/blob/codemirror/hovercard.tsx",
         "src/repo/blob/codemirror/index.ts",
         "src/repo/blob/codemirror/linenumbers.ts",
+        "src/repo/blob/codemirror/links.ts",
         "src/repo/blob/codemirror/lock-line.ts",
         "src/repo/blob/codemirror/navigate-to-any-line-on-click.ts",
         "src/repo/blob/codemirror/occurrence-utils.ts",
@@ -1773,6 +1774,7 @@ ts_project(
         "src/repo/commits/GitCommitNodeByline.test.tsx",
         "src/repo/linkifiy/get-links.test.ts",
         "src/repo/releases/RepositoryReleasesTagsPage.test.tsx",
+        "src/repo/tree/TreePage.test.tsx",
         "src/search/Notepad.test.tsx",
         "src/search/helpers.test.tsx",
         "src/search/index.test.ts",
@@ -1924,9 +1926,9 @@ ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
             "NODE_ENV": "production" if prod else "development",
         },
         output_dir = True,
+        visibility = ["//ui/assets:__subpackages__"],
         webpack_config = "webpack.bazel.config.js",
         deps = WEBPACK_CONFIG_DEPS,
-        visibility = ["//ui/assets:__subpackages__"],
     )
     for prod in [
         True,
