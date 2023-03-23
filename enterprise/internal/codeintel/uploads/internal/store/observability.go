@@ -80,6 +80,14 @@ type operations struct {
 
 	reindexUploads    *observation.Operation
 	reindexUploadByID *observation.Operation
+
+	getIndexes       *observation.Operation
+	getIndexByID     *observation.Operation
+	getIndexesByIDs  *observation.Operation
+	deleteIndexByID  *observation.Operation
+	deleteIndexes    *observation.Operation
+	reindexIndexByID *observation.Operation
+	reindexIndexes   *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -176,5 +184,13 @@ func newOperations(observationCtx *observation.Context) *operations {
 
 		reindexUploads:    op("ReindexUploads"),
 		reindexUploadByID: op("ReindexUploadByID"),
+
+		getIndexes:       op("GetIndexes"),
+		getIndexByID:     op("GetIndexByID"),
+		getIndexesByIDs:  op("GetIndexesByIDs"),
+		deleteIndexByID:  op("DeleteIndexByID"),
+		deleteIndexes:    op("DeleteIndexes"),
+		reindexIndexByID: op("ReindexIndexByID"),
+		reindexIndexes:   op("ReindexIndexes"),
 	}
 }
