@@ -207,6 +207,7 @@ func (s BitbucketServerSource) UpdateChangeset(ctx context.Context, c *Changeset
 		Title:         c.Title,
 		Description:   c.Body,
 		Version:       pr.Version,
+		Reviewers:     pr.Reviewers,
 	}
 	update.ToRef.ID = c.BaseRef
 	update.ToRef.Repository.Slug = pr.ToRef.Repository.Slug
