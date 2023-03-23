@@ -100,4 +100,3 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, use_xvfb 
             env = env,
             tags = ["requires-network"],
         )
-   )
