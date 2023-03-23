@@ -4,13 +4,16 @@ import { action } from '@storybook/addon-actions'
 import { Story, Meta } from '@storybook/react'
 import classNames from 'classnames'
 import { flow } from 'lodash'
+import { animated } from 'react-spring'
 
 import 'storybook-addon-designs'
 
-import { H1, H4, Text } from '..'
+import { mdiClose } from '@mdi/js'
+
+import { Button, Code, H1, H2, H4, Icon, Text } from '..'
 import { BrandedStory } from '../../stories/BrandedStory'
 
-import { AlertLink } from '.'
+import { AlertLink, useAnimatedAlert } from '.'
 import { Alert } from './Alert'
 import { ALERT_VARIANTS } from './constants'
 
@@ -45,29 +48,76 @@ const config: Meta = {
 
 export default config
 
-export const Alerts: Story = () => (
-    <>
-        <H1>Alerts</H1>
-        <Text>
-            Provide contextual feedback messages for typical user actions with the handful of available and flexible
-            alert messages.
-        </Text>
-        <div className="mb-2">
-            {ALERT_VARIANTS.map(variant => (
-                <Alert key={variant} variant={variant}>
-                    <H4>Too many matching repositories</H4>
-                    Use a 'repo:' filter to narrow your search.
+export const Alerts: Story = () => {
+    const { isShown, show, ref, style } = useAnimatedAlert({ autoDuration: 'short' })
+    const { show: showManual, dismiss, ref: refManual, style: styleManual } = useAnimatedAlert()
+
+    return (
+        <>
+            <H1>Alerts</H1>
+            <Text>
+                Provide contextual feedback messages for typical user actions with the handful of available and flexible
+                alert messages.
+            </Text>
+            <div className="mb-2">
+                {ALERT_VARIANTS.map(variant => (
+                    <Alert key={variant} variant={variant}>
+                        <H4>Too many matching repositories</H4>
+                        Use a 'repo:' filter to narrow your search.
+                    </Alert>
+                ))}
+                <Alert variant="info" className="d-flex align-items-center">
+                    <div className="flex-grow-1">
+                        <H4>Too many matching repositories</H4>
+                        Use a 'repo:' filter to narrow your search.
+                    </div>
+                    <AlertLink
+                        className="mr-2"
+                        to="/"
+                        onClick={flow(preventDefault, action(classNames('link clicked')))}
+                    >
+                        Dismiss
+                    </AlertLink>
                 </Alert>
-            ))}
-            <Alert variant="info" className="d-flex align-items-center">
-                <div className="flex-grow-1">
-                    <H4>Too many matching repositories</H4>
-                    Use a 'repo:' filter to narrow your search.
+                <hr className="my-4" />
+                <H2>Auto-dismissing alerts</H2>
+                <div className="w-100 d-flex align-items-center justify-content-between mb-3">
+                    <Text className="m-0">
+                        Alerts can be automatically dismissed with an animation using the <Code>useAnimatedAlert</Code>{' '}
+                        hook.
+                    </Text>
+                    <Button
+                        variant="primary"
+                        className="ml-2"
+                        onClick={() => {
+                            show()
+                            showManual()
+                        }}
+                        disabled={isShown}
+                    >
+                        Show alert
+                    </Button>
                 </div>
-                <AlertLink className="mr-2" to="/" onClick={flow(preventDefault, action(classNames('link clicked')))}>
-                    Dismiss
-                </AlertLink>
-            </Alert>
-        </div>
-    </>
-)
+                <animated.div style={style}>
+                    <Alert ref={ref} variant="success" className="my-2">
+                        Success! This alert will now be shown for a couple seconds!
+                    </Alert>
+                </animated.div>
+                <Text>I'm some text to demonstrate what happens when alerts appear around me.</Text>
+                <animated.div style={styleManual}>
+                    <Alert
+                        ref={refManual}
+                        variant="warning"
+                        className="my-2 d-flex align-items-center justify-content-between"
+                    >
+                        Warning! This alert will stay visible until it is dismissed.
+                        <Button variant="icon" onClick={dismiss}>
+                            <Icon aria-hidden={true} svgPath={mdiClose} />
+                        </Button>
+                    </Alert>
+                </animated.div>
+                <Text>I'm some text to demonstrate what happens when an alert appears above me.</Text>
+            </div>
+        </>
+    )
+}
