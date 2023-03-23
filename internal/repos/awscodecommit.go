@@ -54,15 +54,18 @@ func newAWSCodeCommitSource(svc *types.ExternalService, c *schema.AWSCodeCommitC
 		cf = httpcli.ExternalClientFactory
 	}
 
-	cli, err := cf.Doer(func(c *http.Client) error {
-		tr := awshttp.NewBuildableClient().GetTransport()
-		if err := http2.ConfigureTransport(tr); err != nil {
-			return err
-		}
-		c.Transport = tr
-		wrapWithoutRedirect(c)
+	cli, err := cf.Doer(httpcli.Opt{
+		Name: "AwsCodeCommitClientTransportOpt",
+		Apply: func(c *http.Client) error {
+			tr := awshttp.NewBuildableClient().GetTransport()
+			if err := http2.ConfigureTransport(tr); err != nil {
+				return err
+			}
+			c.Transport = tr
+			wrapWithoutRedirect(c)
 
-		return nil
+			return nil
+		},
 	})
 	if err != nil {
 		return nil, err

@@ -68,7 +68,10 @@ func NewMiddleware(mws ...Middleware) Middleware {
 
 // Opt configures an aspect of a given *http.Client,
 // returning an error in case of failure.
-type Opt func(*http.Client) error
+type Opt struct {
+	Name  string
+	Apply func(*http.Client) error
+}
 
 // A Factory constructs an http.Client with the given functional
 // options applied, returning an aggregate error of the errors returned by
@@ -232,16 +235,20 @@ func (f Factory) Doer(extras ...Opt) (Doer, error) {
 // given common and extra opts, but not wrapped with any
 // middleware.
 func (f Factory) Client(extras ...Opt) (*http.Client, error) {
-	opts := make([]Opt, 0, len(f.common)+len(extras))
+	opts := make(map[string]Opt, len(f.common)+len(extras))
 	// apply common first so that extras can overwrite if necessary
-	opts = append(opts, f.common...)
-	opts = append(opts, extras...)
+	for _, opt := range f.common {
+		opts[opt.Name] = opt
+	}
+	for _, opt := range extras {
+		opts[opt.Name] = opt
+	}
 
 	var cli http.Client
 	var err error
 
 	for _, opt := range opts {
-		err = errors.Append(err, opt(&cli))
+		err = errors.Append(err, opt.Apply(&cli))
 	}
 
 	return &cli, err
@@ -388,46 +395,52 @@ func NewLoggingMiddleware(logger log.Logger) Middleware {
 // ExternalTransportOpt returns an Opt that ensures the http.Client.Transport
 // can contact non-Sourcegraph services. For example Admins can configure
 // TLS/SSL settings.
-func ExternalTransportOpt(cli *http.Client) error {
-	tr, err := getTransportForMutation(cli)
-	if err != nil {
-		return errors.Wrap(err, "httpcli.ExternalTransportOpt")
-	}
+var ExternalTransportOpt = Opt{
+	Name: "ExternalTransportOpt",
+	Apply: func(cli *http.Client) error {
+		tr, err := getTransportForMutation(cli)
+		if err != nil {
+			return errors.Wrap(err, "httpcli.ExternalTransportOpt")
+		}
 
-	cli.Transport = &wrappedTransport{
-		RoundTripper: &externalTransport{base: tr},
-		Wrapped:      tr,
-	}
-	return nil
+		cli.Transport = &wrappedTransport{
+			RoundTripper: &externalTransport{base: tr},
+			Wrapped:      tr,
+		}
+		return nil
+	},
 }
 
 // NewCertPoolOpt returns an Opt that sets the RootCAs pool of an http.Client's
 // transport.
 func NewCertPoolOpt(certs ...string) Opt {
-	return func(cli *http.Client) error {
-		if len(certs) == 0 {
-			return nil
-		}
-
-		tr, err := getTransportForMutation(cli)
-		if err != nil {
-			return errors.Wrap(err, "httpcli.NewCertPoolOpt")
-		}
-
-		if tr.TLSClientConfig == nil {
-			tr.TLSClientConfig = new(tls.Config)
-		}
-
-		pool := x509.NewCertPool()
-		tr.TLSClientConfig.RootCAs = pool
-
-		for _, cert := range certs {
-			if ok := pool.AppendCertsFromPEM([]byte(cert)); !ok {
-				return errors.New("httpcli.NewCertPoolOpt: invalid certificate")
+	return Opt{
+		Name: "CertPoolOpt",
+		Apply: func(cli *http.Client) error {
+			if len(certs) == 0 {
+				return nil
 			}
-		}
 
-		return nil
+			tr, err := getTransportForMutation(cli)
+			if err != nil {
+				return errors.Wrap(err, "httpcli.NewCertPoolOpt")
+			}
+
+			if tr.TLSClientConfig == nil {
+				tr.TLSClientConfig = new(tls.Config)
+			}
+
+			pool := x509.NewCertPool()
+			tr.TLSClientConfig.RootCAs = pool
+
+			for _, cert := range certs {
+				if ok := pool.AppendCertsFromPEM([]byte(cert)); !ok {
+					return errors.New("httpcli.NewCertPoolOpt: invalid certificate")
+				}
+			}
+
+			return nil
+		},
 	}
 }
 
@@ -437,47 +450,53 @@ func NewCertPoolOpt(certs ...string) Opt {
 // If markCachedResponses, responses returned from the cache will be given an extra header,
 // X-From-Cache.
 func NewCachedTransportOpt(c httpcache.Cache, markCachedResponses bool) Opt {
-	return func(cli *http.Client) error {
-		if cli.Transport == nil {
-			cli.Transport = http.DefaultTransport
-		}
-
-		var overwroteExisting bool
-		for unwrapper, ok := cli.Transport.(WrappedTransport); ok; unwrapper, ok = cli.Transport.(WrappedTransport) {
-			if unwrapped, iscache := (*unwrapper.Unwrap()).(*httpcache.Transport); iscache {
-				unwrapped.Cache = c
-				unwrapped.MarkCachedResponses = markCachedResponses
-				overwroteExisting = true
+	return Opt{
+		Name: "CachedTransportOpt",
+		Apply: func(cli *http.Client) error {
+			if cli.Transport == nil {
+				cli.Transport = http.DefaultTransport
 			}
-		}
 
-		if !overwroteExisting {
-			cli.Transport = &wrappedTransport{
-				RoundTripper: &httpcache.Transport{
-					Transport:           cli.Transport,
-					Cache:               c,
-					MarkCachedResponses: markCachedResponses,
-				},
-				Wrapped: cli.Transport,
+			var overwroteExisting bool
+			for unwrapper, ok := cli.Transport.(WrappedTransport); ok; unwrapper, ok = cli.Transport.(WrappedTransport) {
+				if unwrapped, iscache := (*unwrapper.Unwrap()).(*httpcache.Transport); iscache {
+					unwrapped.Cache = c
+					unwrapped.MarkCachedResponses = markCachedResponses
+					overwroteExisting = true
+				}
 			}
-		}
 
-		return nil
+			if !overwroteExisting {
+				cli.Transport = &wrappedTransport{
+					RoundTripper: &httpcache.Transport{
+						Transport:           cli.Transport,
+						Cache:               c,
+						MarkCachedResponses: markCachedResponses,
+					},
+					Wrapped: cli.Transport,
+				}
+			}
+
+			return nil
+		},
 	}
 }
 
 // TracedTransportOpt wraps an existing http.Transport of an http.Client with
 // tracing functionality.
-func TracedTransportOpt(cli *http.Client) error {
-	if cli.Transport == nil {
-		cli.Transport = http.DefaultTransport
-	}
+var TracedTransportOpt = Opt{
+	Name: "TracedTransportOpt",
+	Apply: func(cli *http.Client) error {
+		if cli.Transport == nil {
+			cli.Transport = http.DefaultTransport
+		}
 
-	cli.Transport = &wrappedTransport{
-		RoundTripper: &policy.Transport{RoundTripper: cli.Transport},
-		Wrapped:      cli.Transport,
-	}
-	return nil
+		cli.Transport = &wrappedTransport{
+			RoundTripper: &policy.Transport{RoundTripper: cli.Transport},
+			Wrapped:      cli.Transport,
+		}
+		return nil
+	},
 }
 
 // MeteredTransportOpt returns an opt that wraps an existing http.Transport of a http.Client with
@@ -493,22 +512,25 @@ func MeteredTransportOpt(subsystem string) Opt {
 		"Total number of requests sent to "+subsystem,
 	)
 
-	return func(cli *http.Client) error {
-		if cli.Transport == nil {
-			cli.Transport = http.DefaultTransport
-		}
+	return Opt{
+		Name: "MeteredTransportOpt",
+		Apply: func(cli *http.Client) error {
+			if cli.Transport == nil {
+				cli.Transport = http.DefaultTransport
+			}
 
-		cli.Transport = &wrappedTransport{
-			RoundTripper: meter.Transport(cli.Transport, func(u *url.URL) string {
-				// We don't have a way to return a low cardinality label here (for
-				// the prometheus label "category"). Previously we returned u.Path
-				// but that blew up prometheus. So we just return unknown.
-				return "unknown"
-			}),
-			Wrapped: cli.Transport,
-		}
+			cli.Transport = &wrappedTransport{
+				RoundTripper: meter.Transport(cli.Transport, func(u *url.URL) string {
+					// We don't have a way to return a low cardinality label here (for
+					// the prometheus label "category"). Previously we returned u.Path
+					// but that blew up prometheus. So we just return unknown.
+					return "unknown"
+				}),
+				Wrapped: cli.Transport,
+			}
 
-		return nil
+			return nil
+		},
 	}
 }
 
@@ -667,56 +689,68 @@ func ExpJitterDelay(base, max time.Duration) rehttp.DelayFn {
 // NewErrorResilientTransportOpt returns an Opt that wraps an existing
 // http.Transport of an http.Client with automatic retries.
 func NewErrorResilientTransportOpt(retry rehttp.RetryFn, delay rehttp.DelayFn) Opt {
-	return func(cli *http.Client) error {
-		if cli.Transport == nil {
-			cli.Transport = http.DefaultTransport
-		}
+	return Opt{
+		Name: "ErrorResilientTransportOpt",
+		Apply: func(cli *http.Client) error {
+			if cli.Transport == nil {
+				cli.Transport = http.DefaultTransport
+			}
 
-		cli.Transport = &wrappedTransport{
-			RoundTripper: rehttp.NewTransport(cli.Transport, retry, delay),
-			Wrapped:      cli.Transport,
-		}
-		return nil
+			cli.Transport = &wrappedTransport{
+				RoundTripper: rehttp.NewTransport(cli.Transport, retry, delay),
+				Wrapped:      cli.Transport,
+			}
+			return nil
+		},
 	}
 }
 
 // NewIdleConnTimeoutOpt returns a Opt that sets the IdleConnTimeout of an
 // http.Client's transport.
 func NewIdleConnTimeoutOpt(timeout time.Duration) Opt {
-	return func(cli *http.Client) error {
-		tr, err := getTransportForMutation(cli)
-		if err != nil {
-			return errors.Wrap(err, "httpcli.NewIdleConnTimeoutOpt")
-		}
+	return Opt{
+		Name: "IdleConnTimeoutOpt",
+		Apply: func(cli *http.Client) error {
+			tr, err := getTransportForMutation(cli)
+			if err != nil {
+				return errors.Wrap(err, "httpcli.NewIdleConnTimeoutOpt")
+			}
 
-		tr.IdleConnTimeout = timeout
+			tr.IdleConnTimeout = timeout
 
-		return nil
+			return nil
+		},
 	}
 }
 
 // NewMaxIdleConnsPerHostOpt returns a Opt that sets the MaxIdleConnsPerHost field of an
 // http.Client's transport.
 func NewMaxIdleConnsPerHostOpt(max int) Opt {
-	return func(cli *http.Client) error {
-		tr, err := getTransportForMutation(cli)
-		if err != nil {
-			return errors.Wrap(err, "httpcli.NewMaxIdleConnsOpt")
-		}
+	return Opt{
+		Name: "MaxIdleConnsPerHostOpt",
+		Apply: func(cli *http.Client) error {
+			tr, err := getTransportForMutation(cli)
+			if err != nil {
+				return errors.Wrap(err, "httpcli.NewMaxIdleConnsOpt")
+			}
 
-		tr.MaxIdleConnsPerHost = max
+			tr.MaxIdleConnsPerHost = max
 
-		return nil
+			return nil
+		},
 	}
 }
 
 // NewTimeoutOpt returns a Opt that sets the Timeout field of an http.Client.
 func NewTimeoutOpt(timeout time.Duration) Opt {
-	return func(cli *http.Client) error {
-		if timeout > 0 {
-			cli.Timeout = timeout
-		}
-		return nil
+	return Opt{
+		Name: "TimeoutOpt",
+		Apply: func(cli *http.Client) error {
+			if timeout > 0 {
+				cli.Timeout = timeout
+			}
+			return nil
+		},
 	}
 }
 
@@ -760,34 +794,40 @@ func getTransportForMutation(cli *http.Client) (*http.Transport, error) {
 // from the context and add it to each request's HTTP headers.
 //
 // Servers can use actor.HTTPMiddleware to populate actor context from incoming requests.
-func ActorTransportOpt(cli *http.Client) error {
-	if cli.Transport == nil {
-		cli.Transport = http.DefaultTransport
-	}
+var ActorTransportOpt = Opt{
+	Name: "ActorTransportOpt",
+	Apply: func(cli *http.Client) error {
+		if cli.Transport == nil {
+			cli.Transport = http.DefaultTransport
+		}
 
-	cli.Transport = &wrappedTransport{
-		RoundTripper: &actor.HTTPTransport{RoundTripper: cli.Transport},
-		Wrapped:      cli.Transport,
-	}
+		cli.Transport = &wrappedTransport{
+			RoundTripper: &actor.HTTPTransport{RoundTripper: cli.Transport},
+			Wrapped:      cli.Transport,
+		}
 
-	return nil
+		return nil
+	},
 }
 
 // RequestClientTransportOpt wraps an existing http.Transport of an http.Client to pull
 // the original client's IP from the context and add it to each request's HTTP headers.
 //
 // Servers can use requestclient.HTTPMiddleware to populate client context from incoming requests.
-func RequestClientTransportOpt(cli *http.Client) error {
-	if cli.Transport == nil {
-		cli.Transport = http.DefaultTransport
-	}
+var RequestClientTransportOpt = Opt{
+	Name: "RequestClientTransportOpt",
+	Apply: func(cli *http.Client) error {
+		if cli.Transport == nil {
+			cli.Transport = http.DefaultTransport
+		}
 
-	cli.Transport = &wrappedTransport{
-		RoundTripper: &requestclient.HTTPTransport{RoundTripper: cli.Transport},
-		Wrapped:      cli.Transport,
-	}
+		cli.Transport = &wrappedTransport{
+			RoundTripper: &requestclient.HTTPTransport{RoundTripper: cli.Transport},
+			Wrapped:      cli.Transport,
+		}
 
-	return nil
+		return nil
+	},
 }
 
 // IsRiskyHeader returns true if the request or response header is likely to contain private data.

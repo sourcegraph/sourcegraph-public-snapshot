@@ -201,7 +201,7 @@ func TestNewCertPool(t *testing.T) {
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			err := NewCertPoolOpt(tc.certs...)(tc.cli)
+			err := NewCertPoolOpt(tc.certs...).Apply(tc.cli)
 
 			if tc.err == "" {
 				tc.err = "<nil>"
@@ -282,7 +282,7 @@ func TestNewIdleConnTimeoutOpt(t *testing.T) {
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			err := NewIdleConnTimeoutOpt(tc.timeout)(tc.cli)
+			err := NewIdleConnTimeoutOpt(tc.timeout).Apply(tc.cli)
 
 			if tc.err == "" {
 				tc.err = "<nil>"
@@ -303,7 +303,7 @@ func TestNewTimeoutOpt(t *testing.T) {
 	var cli http.Client
 
 	timeout := 42 * time.Second
-	err := NewTimeoutOpt(timeout)(&cli)
+	err := NewTimeoutOpt(timeout).Apply(&cli)
 	if err != nil {
 		t.Fatalf("unexpected error %v", err)
 	}
@@ -400,7 +400,7 @@ func TestErrorResilience(t *testing.T) {
 			NewMiddleware(
 				ContextErrorMiddleware,
 			),
-			func(cli *http.Client) error {
+			Opt{Apply: func(cli *http.Client) error {
 				// Some DNS servers do not respect RFC 6761 section 6.4, so we
 				// hardcode what go returns for DNS not found to avoid
 				// flakiness across machines. However, CI correctly respects
@@ -409,7 +409,7 @@ func TestErrorResilience(t *testing.T) {
 					cli.Transport = notFoundTransport{}
 				}
 				return nil
-			},
+			}},
 			NewErrorResilientTransportOpt(
 				wrapped,
 				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
@@ -466,10 +466,10 @@ func TestLoggingMiddleware(t *testing.T) {
 				ContextErrorMiddleware,
 				NewLoggingMiddleware(logger),
 			),
-			func(c *http.Client) error {
+			Opt{Apply: func(c *http.Client) error {
 				c.Transport = &notFoundTransport{} // returns an error
 				return nil
-			},
+			}},
 		).Doer()
 
 		resp, err := cli.Do(req)

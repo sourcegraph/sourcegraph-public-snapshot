@@ -39,9 +39,11 @@ func TestRoundtrip(t *testing.T) {
 	defer save(t)
 
 	// Create http cli with aws defaults.
-	cli, err := cf.Doer(func(c *http.Client) error {
-		c.Transport = awshttp.NewBuildableClient().GetTransport()
-		return nil
+	cli, err := cf.Doer(httpcli.Opt{
+		Apply: func(c *http.Client) error {
+			c.Transport = awshttp.NewBuildableClient().GetTransport()
+			return nil
+		},
 	})
 	if err != nil {
 		t.Fatal(err)

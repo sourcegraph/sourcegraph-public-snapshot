@@ -40,16 +40,19 @@ func NewRecorder(file string, record bool, filters ...cassette.Filter) (*recorde
 // NewRecorderOpt returns an httpcli.Opt that wraps the Transport
 // of an http.Client with the given recorder.
 func NewRecorderOpt(rec *recorder.Recorder) httpcli.Opt {
-	return func(c *http.Client) error {
-		tr := c.Transport
-		if tr == nil {
-			tr = http.DefaultTransport
-		}
+	return httpcli.Opt{
+		Name: "RecorderOpt",
+		Apply: func(c *http.Client) error {
+			tr := c.Transport
+			if tr == nil {
+				tr = http.DefaultTransport
+			}
 
-		rec.SetTransport(tr)
-		c.Transport = rec
+			rec.SetTransport(tr)
+			c.Transport = rec
 
-		return nil
+			return nil
+		},
 	}
 }
 
