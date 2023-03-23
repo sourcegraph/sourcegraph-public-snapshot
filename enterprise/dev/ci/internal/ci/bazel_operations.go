@@ -111,6 +111,7 @@ func bazelBuildAndTest(optional bool, targets ...string) func(*bk.Pipeline) {
 			"--google_credentials=/mnt/gcloud-service-account/gcloud-service-account.json",
 		}
 
+		target = "//client/web/src/end-to-end:e2e"
 		bazelTestCmd := []string{
 			"bazel",
 			"--bazelrc=.bazelrc",
