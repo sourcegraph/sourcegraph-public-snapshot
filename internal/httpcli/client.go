@@ -457,24 +457,13 @@ func NewCachedTransportOpt(c httpcache.Cache, markCachedResponses bool) Opt {
 				cli.Transport = http.DefaultTransport
 			}
 
-			var overwroteExisting bool
-			for unwrapper, ok := cli.Transport.(WrappedTransport); ok; unwrapper, ok = cli.Transport.(WrappedTransport) {
-				if unwrapped, iscache := (*unwrapper.Unwrap()).(*httpcache.Transport); iscache {
-					unwrapped.Cache = c
-					unwrapped.MarkCachedResponses = markCachedResponses
-					overwroteExisting = true
-				}
-			}
-
-			if !overwroteExisting {
-				cli.Transport = &wrappedTransport{
-					RoundTripper: &httpcache.Transport{
-						Transport:           cli.Transport,
-						Cache:               c,
-						MarkCachedResponses: markCachedResponses,
-					},
-					Wrapped: cli.Transport,
-				}
+			cli.Transport = &wrappedTransport{
+				RoundTripper: &httpcache.Transport{
+					Transport:           cli.Transport,
+					Cache:               c,
+					MarkCachedResponses: markCachedResponses,
+				},
+				Wrapped: cli.Transport,
 			}
 
 			return nil
