@@ -8,7 +8,6 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -19,7 +18,7 @@ import (
 )
 
 type rootResolver struct {
-	sentinelSvc             *sentinel.Service
+	sentinelSvc             SentinelService
 	uploadSvc               sharedresolvers.UploadsService
 	policySvc               sharedresolvers.PolicyService
 	gitserverClient         gitserver.Client
@@ -33,7 +32,7 @@ type rootResolver struct {
 
 func NewRootResolver(
 	observationCtx *observation.Context,
-	sentinelSvc *sentinel.Service,
+	sentinelSvc SentinelService,
 	uploadSvc sharedresolvers.UploadsService,
 	policySvc sharedresolvers.PolicyService,
 	gitserverClient gitserver.Client,
@@ -156,19 +155,9 @@ func (r *rootResolver) VulnerabilityMatchesGroupByRepository(ctx context.Context
 	ctx, _, endObservation := r.operations.vulnerabilityMatchesGroupByRepository.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	limit := 50
-	if args.First != nil {
-		limit = int(*args.First)
-	}
-
-	offset := 0
-	if args.After != nil {
-		after, err := strconv.Atoi(*args.After)
-		if err != nil {
-			return nil, err
-		}
-
-		offset = after
+	limit, offset, err := args.ParseLimitOffset(50)
+	if err != nil {
+		return nil, err
 	}
 
 	repositoryName := ""
@@ -177,8 +166,8 @@ func (r *rootResolver) VulnerabilityMatchesGroupByRepository(ctx context.Context
 	}
 
 	groupedMatches, totalCount, err := r.sentinelSvc.GetVulnerabilityMatchesCountByRepository(ctx, shared.GetVulnerabilityMatchesGroupByRepositoryArgs{
-		Limit:          limit,
-		Offset:         offset,
+		Limit:          int(limit),
+		Offset:         int(offset),
 		RepositoryName: repositoryName,
 	})
 	if err != nil {
@@ -187,7 +176,7 @@ func (r *rootResolver) VulnerabilityMatchesGroupByRepository(ctx context.Context
 
 	return &vulnerabilityMatchGroupByRepositoryConnectionResolver{
 		groupedMatches: groupedMatches,
-		offset:         offset,
+		offset:         int(offset),
 		totalCount:     totalCount,
 	}, nil
 }
