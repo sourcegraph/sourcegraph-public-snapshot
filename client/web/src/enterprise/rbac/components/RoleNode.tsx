@@ -1,10 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import { mdiChevronUp, mdiChevronDown, mdiDelete, mdiLock } from '@mdi/js'
 import { noop } from 'lodash'
-import { animated, useSpring } from 'react-spring'
+import { animated } from 'react-spring'
 
-import { convertREMToPX } from '@sourcegraph/shared/src/components/utils/size'
 import {
     Button,
     Icon,
@@ -20,7 +19,7 @@ import {
     Form,
     SubmissionResult,
     Alert,
-    useStopwatch,
+    useAnimatedAlert,
 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -43,26 +42,11 @@ interface RoleNodePermissionsFormValues {
     permissions: string[]
 }
 
-const SUCCESS_ALERT_BANNER_DURATION_S = 4
-
 const ModifiableRoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch, allPermissions }) => {
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState<boolean>(false)
-    const [showAlert, setShowAlert] = useState<boolean>(false)
 
-    // On role update success, we show the success alert message for a few seconds, then hide it again.
-    const {
-        time: { seconds },
-        start: startTimer,
-        stop: stopTimer,
-        isRunning,
-    } = useStopwatch(false)
-    useEffect(() => {
-        if (isRunning && seconds > SUCCESS_ALERT_BANNER_DURATION_S) {
-            stopTimer()
-            setShowAlert(false)
-        }
-    }, [isRunning, stopTimer, seconds])
+    const { show: showAlert, ref: alertRef, style: alertStyle } = useAnimatedAlert({ autoDuration: 'short' })
 
     const handleOpenChange = (isOpen: boolean): void => {
         setIsExpanded(isOpen)
@@ -95,8 +79,7 @@ const ModifiableRoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refe
 
     const [setPermissions, { loading: setPermissionsLoading, error: setPermissionsError }] = useSetPermissions(() => {
         refetch()
-        setShowAlert(true)
-        startTimer()
+        showAlert()
     })
 
     const onSubmit = (values: RoleNodePermissionsFormValues): SubmissionResult => {
@@ -186,7 +169,11 @@ const ModifiableRoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refe
                     ref={ref}
                     onSubmit={handleSubmit}
                 >
-                    <SuccessAlert visible={showAlert}>Permissions successfully updated.</SuccessAlert>
+                    <animated.div style={alertStyle}>
+                        <Alert ref={alertRef} variant="success" className="mb-3">
+                            Permissions successfully updated.
+                        </Alert>
+                    </animated.div>
                     <PermissionsList
                         allPermissions={allPermissions}
                         isChecked={isChecked}
@@ -277,26 +264,3 @@ const SystemLabel: React.FunctionComponent = () => (
         <Text className={styles.roleNodeSystemText}>System</Text>
     </Tooltip>
 )
-
-// The Alert banner has a 1rem bottom margin
-const ONE_REM_IN_PX = convertREMToPX(1)
-const APPROX_BANNER_HEIGHT_PX = 40
-
-const SuccessAlert: React.FunctionComponent<React.PropsWithChildren<{ visible: boolean }>> = ({
-    visible,
-    children,
-}) => {
-    const ref = useRef<HTMLDivElement>(null)
-    const style = useSpring({
-        height: visible ? `${(ref.current?.offsetHeight || APPROX_BANNER_HEIGHT_PX) + ONE_REM_IN_PX}px` : '0px',
-        opacity: visible ? 1 : 0,
-    })
-    return (
-        <animated.div style={style}>
-            {/* Keep this in sync with calculation above: mb-3 = 1rem */}
-            <Alert ref={ref} variant="success" className="mb-3">
-                {children}
-            </Alert>
-        </animated.div>
-    )
-}
