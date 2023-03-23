@@ -52,8 +52,9 @@ ts_project(
     ],
 )
 
-# mocha_test(
-#     name = "e2e",
-#     tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
-#     deps = [":end-to-end_tests"],
-# )
+mocha_test(
+    name = "e2e",
+    use_xvfb = True,
+    tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
+    deps = [":end-to-end_tests"],
+)
