@@ -2,11 +2,11 @@ import { MockedResponse } from '@apollo/client/testing'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 
-import { StatusAndRepoStatsResult } from '../graphql-operations'
+import { StatusAndRepoCountResult } from '../graphql-operations'
 
-import { STATUS_AND_REPO_STATS } from './StatusMessagesNavItemQueries'
+import { STATUS_AND_REPO_COUNT } from './StatusMessagesNavItemQueries'
 
-export const allStatusMessages: StatusAndRepoStatsResult['statusMessages'] = [
+export const allStatusMessages: StatusAndRepoCountResult['statusMessages'] = [
     {
         __typename: 'ExternalServiceSyncError',
         externalService: {
@@ -31,22 +31,16 @@ export const allStatusMessages: StatusAndRepoStatsResult['statusMessages'] = [
 ]
 
 export const newStatusMessageMock = (
-    messages: StatusAndRepoStatsResult['statusMessages']
-): MockedResponse<StatusAndRepoStatsResult> => ({
+    messages: StatusAndRepoCountResult['statusMessages']
+): MockedResponse<StatusAndRepoCountResult> => ({
     request: {
-        query: getDocumentNode(STATUS_AND_REPO_STATS),
+        query: getDocumentNode(STATUS_AND_REPO_COUNT),
     },
     result: {
         data: {
             statusMessages: messages,
             repositoryStats: {
                 __typename: 'RepositoryStats',
-                cloned: 7,
-                cloning: 0,
-                corrupted: 0,
-                failedFetch: 0,
-                indexed: 7,
-                notCloned: 0,
                 total: 7,
             },
         },

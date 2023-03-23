@@ -57,20 +57,22 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
                 className={styles.rolesPageHeader}
                 description={
                     <>
-                        Roles represent a set of permissions that are granted to a user. Roles are currently only
-                        available for Batch Changes functionality. Use the{' '}
-                        <Link to="/site-admin/users">user administration page</Link> to assign roles.
+                        Roles are a part of the{' '}
+                        <Link to="/help/admin/access_control">Role-Based Access Control system</Link> for Sourcegraph
+                        and represent a set of in-product permissions. Roles are currently only available for Batch
+                        Changes functionality. Use the <Link to="/site-admin/users">user administration page</Link> to
+                        assign roles.
                     </>
                 }
                 actions={
                     <Button variant="primary" onClick={openModal}>
-                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Create Role
+                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Create role
                     </Button>
                 }
             >
                 <PageHeader.Heading as="h2">
                     <PageHeader.Breadcrumb>
-                        Roles <ProductStatusBadge status="experimental" />
+                        Roles <ProductStatusBadge status="beta" />
                     </PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>

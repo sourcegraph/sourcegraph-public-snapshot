@@ -42,7 +42,7 @@ type PermissionsSyncJobResolver interface {
 
 type PermissionsSyncJobReasonResolver interface {
 	Group() string
-	Reason() string
+	Reason() *string
 }
 
 type CodeHostStateResolver interface {

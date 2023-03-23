@@ -210,6 +210,7 @@ ts_project(
         "src/search-ui/input/SearchContextDropdown.test.tsx",
         "src/search-ui/input/SearchContextMenu.test.tsx",
         "src/search-ui/input/codemirror/completion.test.ts",
+        "src/search-ui/input/experimental/codemirror/searchcontext.test.ts",
         "src/search-ui/input/experimental/utils.test.ts",
         "src/search-ui/input/toggles/Toggles.test.tsx",
         "src/search-ui/results/progress/StreamingProgressCount.test.tsx",
@@ -227,6 +228,7 @@ ts_project(
         ":node_modules/@sourcegraph/shared",
         ":node_modules/@sourcegraph/testing",
         ":node_modules/@sourcegraph/wildcard",
+        "//:node_modules/@codemirror/state",
         "//:node_modules/@testing-library/react",
         "//:node_modules/@testing-library/user-event",
         "//:node_modules/@types/history",
@@ -255,6 +257,7 @@ npm_package(
 
 jest_test(
     name = "test",
+    timeout = "moderate",
     data = [
         ":branded_tests",
     ],

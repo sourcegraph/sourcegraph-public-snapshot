@@ -69,6 +69,21 @@ exports[`FeedbackPrompt should render correctly 1`] = `
         >
           You're not signed in. Please tell us how to contact you if you want a reply.
         </p>
+        <p
+          class="d-flex align-items-center justify-content-between mt-2"
+        >
+          <span>
+            By submitting your feedback, you agree to the
+             
+            <a
+              class="anchorLink"
+              href="https://about.sourcegraph.com/terms/privacy"
+            >
+              Sourcegraph Privacy Policy
+            </a>
+            .
+          </span>
+        </p>
         <button
           aria-disabled="true"
           class="btn btnSecondary btnBlock button"
@@ -175,6 +190,21 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
             Something went really wrong
           </span>
         </div>
+        <p
+          class="d-flex align-items-center justify-content-between mt-2"
+        >
+          <span>
+            By submitting your feedback, you agree to the
+             
+            <a
+              class="anchorLink"
+              href="https://about.sourcegraph.com/terms/privacy"
+            >
+              Sourcegraph Privacy Policy
+            </a>
+            .
+          </span>
+        </p>
         <button
           aria-disabled="false"
           class="btn btnSecondary btnBlock button"

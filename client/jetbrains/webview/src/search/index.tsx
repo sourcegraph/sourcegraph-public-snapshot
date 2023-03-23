@@ -25,7 +25,6 @@ setLinkComponent(AnchorLink)
 
 let isDarkTheme = false
 let instanceURL = 'https://sourcegraph.com/'
-let isGlobbingEnabled = false
 let accessToken: string | null = null
 let customRequestHeaders: Record<string, string> | null = {}
 let anonymousUserId: string
@@ -72,7 +71,6 @@ export function renderReactApp(): void {
             key={`${instanceURL}-${accessToken}-${errorRetryIndex}`}
             isDarkTheme={isDarkTheme}
             instanceURL={instanceURL}
-            isGlobbingEnabled={isGlobbingEnabled}
             accessToken={accessToken}
             customRequestHeaders={customRequestHeaders}
             initialSearch={initialSearch}
@@ -90,7 +88,6 @@ export function renderReactApp(): void {
 
 export function applyConfig(config: PluginConfig): void {
     instanceURL = config.instanceURL
-    isGlobbingEnabled = config.isGlobbingEnabled || false
     accessToken = config.accessToken || null
     customRequestHeaders = parseCustomRequestHeadersString(config.customRequestHeadersAsString)
     anonymousUserId = config.anonymousUserId || 'no-user-id'

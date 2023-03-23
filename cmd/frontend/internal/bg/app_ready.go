@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/pkg/browser"
@@ -36,6 +37,16 @@ func AppReady(db database.DB, logger log.Logger) {
 		browserURL = signInURL
 	}
 
+	// See cmd/frontend/graphqlbackend/site_flags.go:needsRepositoryConfiguration
+	// There is technically a small race condition where we need repository discovery
+	// to finish before we decide whether or not to render the setup wizard.
+	//
+	// The impact of this race condition is very minimal (worst case scenario it
+	// displays the setup wizard when the user doesn't need it to.) We sleep for a second
+	// before opening the browser just to reduce the chance of it.
+	//
+	// https://github.com/sourcegraph/sourcegraph/pull/49820#issuecomment-1479959514
+	time.Sleep(1 * time.Second)
 	if err := browser.OpenURL(browserURL); err != nil {
 		logger.Error("failed to open browser", log.String("url", browserURL), log.Error(err))
 		// We failed to open the browser, so rather display that URL so the

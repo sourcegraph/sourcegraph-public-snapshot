@@ -94,6 +94,43 @@ func TestReposHandler(t *testing.T) {
 	}
 }
 
+func TestReposHandler_EmptyResults(t *testing.T) {
+	cases := []struct {
+		name  string
+		root  string
+		repos []string
+		want  []Repo
+	}{{
+		name:  "empty path",
+		root:  "",
+		repos: []string{"repo"},
+	}, {
+		name:  "whitespace path",
+		root:  "  ",
+		repos: []string{"repo"},
+	}, {
+		name:  "padded separator path",
+		root:  " / ",
+		repos: []string{"repo"},
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			root := gitInitRepos(t, tc.repos...)
+			depth := len(strings.Split(root, "/"))
+			h := (&Serve{
+				Logger: logtest.Scoped(t),
+				ServeConfig: ServeConfig{
+					Addr:     testAddress,
+					MaxDepth: depth + 1,
+				},
+			}).handler()
+			testReposHandler(t, h, tc.want, tc.root)
+		})
+	}
+
+}
+
 func testReposHandler(t *testing.T, h http.Handler, repos []Repo, root string) {
 	ts := httptest.NewServer(h)
 	t.Cleanup(ts.Close)

@@ -8,7 +8,7 @@ import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { buildEnterpriseTrialURL, addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
+import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
 import { Button, PageHeader, Link, Container, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -180,14 +180,14 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                 </PageHeader.Heading>
             </PageHeader>
             {isSourcegraphApp && (
-                <LimitedAccessBanner storageKey="app.limitedAccessBannerDismissed.batchChanges">
+                <LimitedAccessBanner storageKey="app.limitedAccessBannerDismissed.batchChanges" className="my-4">
                     Batch Changes is currently available to try for free, up to 10 changesets, while Sourcegraph App is
                     in beta. Pricing and availability for Batch Changes is subject to change in future releases.{' '}
                     <strong>
                         For unlimited access to Batch Changes,{' '}
                         <Link
                             to={addSourcegraphAppOutboundUrlParameters(
-                                buildEnterpriseTrialURL(authenticatedUser),
+                                'https://about.sourcegraph.com/get-started?t=enterprise',
                                 'batch-changes'
                             )}
                         >
@@ -197,13 +197,16 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                 </LimitedAccessBanner>
             )}
             <BatchChangesListIntro isLicensed={licenseAndUsageInfo?.batchChanges || licenseAndUsageInfo?.campaigns} />
-            <BatchChangeListTabHeader
-                selectedTab={selectedTab}
-                setSelectedTab={setSelectedTab}
-                isSourcegraphDotCom={isSourcegraphDotCom}
-            />
+            {!isSourcegraphDotCom && (
+                <BatchChangeListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
+            )}
             {selectedTab === 'gettingStarted' && (
-                <GettingStarted canCreate={canCreate} isSourcegraphDotCom={isSourcegraphDotCom} className="mb-4" />
+                <GettingStarted
+                    canCreate={canCreate}
+                    isSourcegraphApp={isSourcegraphApp}
+                    isSourcegraphDotCom={isSourcegraphDotCom}
+                    className="mb-4"
+                />
             )}
             {selectedTab === 'batchChanges' && (
                 <>
@@ -326,9 +329,8 @@ const BatchChangeListTabHeader: React.FunctionComponent<
     React.PropsWithChildren<{
         selectedTab: SelectedTab
         setSelectedTab: (selectedTab: SelectedTab) => void
-        isSourcegraphDotCom: boolean
     }>
-> = ({ selectedTab, setSelectedTab, isSourcegraphDotCom }) => {
+> = ({ selectedTab, setSelectedTab }) => {
     const onSelectBatchChanges = useCallback<React.MouseEventHandler>(
         event => {
             event.preventDefault()
@@ -346,21 +348,19 @@ const BatchChangeListTabHeader: React.FunctionComponent<
     return (
         <nav className="overflow-auto mb-2" aria-label="Batch Changes">
             <div className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap" role="tablist">
-                {!isSourcegraphDotCom && (
-                    <div className="nav-item">
-                        <Link
-                            to=""
-                            onClick={onSelectBatchChanges}
-                            className={classNames('nav-link', selectedTab === 'batchChanges' && 'active')}
-                            aria-selected={selectedTab === 'batchChanges'}
-                            role="tab"
-                        >
-                            <span className="text-content" data-tab-content="All batch changes">
-                                All batch changes
-                            </span>
-                        </Link>
-                    </div>
-                )}
+                <div className="nav-item">
+                    <Link
+                        to=""
+                        onClick={onSelectBatchChanges}
+                        className={classNames('nav-link', selectedTab === 'batchChanges' && 'active')}
+                        aria-selected={selectedTab === 'batchChanges'}
+                        role="tab"
+                    >
+                        <span className="text-content" data-tab-content="All batch changes">
+                            All batch changes
+                        </span>
+                    </Link>
+                </div>
                 <div className="nav-item">
                     <Link
                         to=""

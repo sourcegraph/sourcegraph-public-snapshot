@@ -7,7 +7,6 @@ import (
 	autoindexingShared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
-	uploadsShared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 )
 
 type AutoIndexingService interface {
@@ -28,11 +27,4 @@ type UploadsService interface {
 
 type PolicyService interface {
 	GetRetentionPolicyOverview(ctx context.Context, upload types.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []types.RetentionPolicyMatchCandidate, totalCount int, err error)
-}
-
-type RepositorySummary struct {
-	RecentUploads           []uploadsShared.UploadsWithRepositoryNamespace
-	RecentIndexes           []autoindexingShared.IndexesWithRepositoryNamespace
-	LastUploadRetentionScan *time.Time
-	LastIndexScan           *time.Time
 }

@@ -355,7 +355,7 @@ func (r *preciseIndexResolver) RetentionPolicyOverview(ctx context.Context, args
 	var afterID int64
 	if args.After != nil {
 		var err error
-		afterID, err = unmarshalConfigurationPolicyGQLID(graphql.ID(*args.After))
+		afterID, err = resolverstubs.UnmarshalID[int64](graphql.ID(*args.After))
 		if err != nil {
 			return nil, err
 		}
@@ -376,7 +376,12 @@ func (r *preciseIndexResolver) RetentionPolicyOverview(ctx context.Context, args
 		return nil, err
 	}
 
-	return NewCodeIntelligenceRetentionPolicyMatcherConnectionResolver(r.repoStore, matches, totalCount, r.traceErrs), nil
+	resolvers := make([]resolverstubs.CodeIntelligenceRetentionPolicyMatchResolver, 0, len(matches))
+	for _, policy := range matches {
+		resolvers = append(resolvers, NewRetentionPolicyMatcherResolver(r.repoStore, policy))
+	}
+
+	return resolverstubs.NewTotalCountConnectionResolver(resolvers, 0, int32(totalCount)), nil
 }
 
 func (r *preciseIndexResolver) AuditLogs(ctx context.Context) (*[]resolverstubs.LSIFUploadsAuditLogsResolver, error) {

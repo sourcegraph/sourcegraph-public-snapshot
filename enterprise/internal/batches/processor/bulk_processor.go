@@ -183,6 +183,8 @@ func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.Changese
 		return err
 	}
 
+	b.enqueueWebhook(ctx, webhooks.ChangesetClose)
+
 	events, err := cs.Changeset.Events()
 	if err != nil {
 		b.logger.Error("Events", log.Error(err))
@@ -218,6 +220,8 @@ func (b *bulkProcessor) closeChangeset(ctx context.Context) (err error) {
 		return err
 	}
 
+	b.enqueueWebhook(ctx, webhooks.ChangesetClose)
+
 	events, err := cs.Changeset.Events()
 	if err != nil {
 		b.logger.Error("Events", log.Error(err))
@@ -235,7 +239,6 @@ func (b *bulkProcessor) closeChangeset(ctx context.Context) (err error) {
 		return errcode.MakeNonRetryable(err)
 	}
 
-	webhooks.EnqueueChangeset(ctx, b.logger, b.tx, webhooks.ChangesetClose, bgql.MarshalChangesetID(cs.Changeset.ID))
 	return nil
 }
 
@@ -286,4 +289,8 @@ func (b *bulkProcessor) publishChangeset(ctx context.Context, job *btypes.Change
 	}
 
 	return nil
+}
+
+func (b *bulkProcessor) enqueueWebhook(ctx context.Context, eventType string) {
+	webhooks.EnqueueChangeset(ctx, b.logger, b.tx, eventType, bgql.MarshalChangesetID(b.ch.ID))
 }

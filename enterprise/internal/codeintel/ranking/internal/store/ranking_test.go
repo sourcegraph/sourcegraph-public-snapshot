@@ -413,6 +413,12 @@ func TestVacuumStaleDefinitionsAndReferences(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
+	insertUploads(t, db,
+		types.Upload{ID: 1},
+		types.Upload{ID: 2},
+		types.Upload{ID: 3},
+	)
+
 	mockDefinitions := []shared.RankingDefinitions{
 		{UploadID: 1, SymbolName: "foo", DocumentPath: "foo.go"},
 		{UploadID: 1, SymbolName: "bar", DocumentPath: "bar.go"},
