@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"net/mail"
 	"net/smtp"
 	"net/textproto"
 	"strconv"
@@ -29,14 +30,12 @@ var emailSendCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 
 // render returns the rendered message contents without sending email.
 func render(fromAddress, fromName string, message Message) (*email.Email, error) {
-	from := fromAddress
-	if fromName != "" {
-		from = fmt.Sprintf(`"%s" <%s>`, fromName, fromAddress)
-	}
-
 	m := email.Email{
-		To:      message.To,
-		From:    from,
+		To: message.To,
+		From: (&mail.Address{
+			Name:    fromName,
+			Address: fromAddress,
+		}).String(),
 		Headers: make(textproto.MIMEHeader),
 	}
 	if message.ReplyTo != nil {
