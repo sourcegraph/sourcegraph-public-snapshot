@@ -143,7 +143,9 @@ func (s BitbucketCloudSource) CloseChangeset(ctx context.Context, cs *Changeset)
 func (s BitbucketCloudSource) UpdateChangeset(ctx context.Context, cs *Changeset) error {
 	opts := s.changesetToPullRequestInput(cs)
 	targetRepo := cs.TargetRepo.Metadata.(*bitbucketcloud.Repo)
+
 	pr := cs.Metadata.(*bbcs.AnnotatedPullRequest)
+	opts.Reviewers = pr.Reviewers
 
 	updated, err := s.client.UpdatePullRequest(ctx, targetRepo, pr.ID, opts)
 	if err != nil {
