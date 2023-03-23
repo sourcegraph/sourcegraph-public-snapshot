@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -36,11 +37,6 @@ func MakePermsSyncerWorker(observationCtx *observation.Context, syncer permsSync
 		syncType:  syncType,
 		jobsStore: jobsStore,
 	}
-}
-
-type permsSyncer interface {
-	syncRepoPerms(context.Context, api.RepoID, bool, authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error)
-	syncUserPerms(context.Context, int32, bool, authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error)
 }
 
 type permsSyncerWorker struct {
@@ -180,4 +176,12 @@ func MakeResetter(observationCtx *observation.Context, workerStore dbworkerstore
 		Interval: time.Second * 30, // Check for orphaned jobs every 30 seconds
 		Metrics:  dbworker.NewResetterMetrics(observationCtx, "permissions_sync_job_worker"),
 	})
+}
+
+func syncUsersMaxConcurrency() int {
+	n := conf.Get().PermissionsSyncUsersMaxConcurrency
+	if n <= 0 {
+		return 1
+	}
+	return n
 }
