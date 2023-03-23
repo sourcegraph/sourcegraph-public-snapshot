@@ -996,9 +996,11 @@ func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangeset
 	}
 	defer func() {
 		err = tx.Done(err)
-		// Only enqueue the webhook if after the transaction is finished, or the batch
-		// change payload will still show the open old state.
-		if err == nil {
+		// We only enqueue the webhook after the transaction succeeds. If it fails and all
+		// the DB changes are rolled back, the batch change will still be open. This
+		// ensures we only send a webhook when the batch change is *actually* closed, and
+		// ensures the batch change payload in the webhook is up-to-date as well.
+		if err != nil {
 			s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeClose, bgql.MarshalBatchChangeID(batchChange.ID))
 		}
 	}()

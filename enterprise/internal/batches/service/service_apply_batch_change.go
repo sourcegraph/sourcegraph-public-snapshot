@@ -110,8 +110,11 @@ func (s *Service) ApplyBatchChange(
 	}
 	defer func() {
 		err = tx.Done(err)
-		// Only enqueue the webhook if after the transaction is finished, or the batch
-		// change payload will still show the unapplied old state.
+		// We only enqueue the webhook after the transaction succeeds. If it fails and all
+		// the DB changes are rolled back, the batch change will still be in whatever
+		// state it was before ApplyBatchChange was called. This ensures we only send a
+		// webhook when the batch change is *actually* applied, and ensures the batch
+		// change payload in the webhook is up-to-date as well.
 		if err == nil && batchChange.ID != 0 {
 			s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeApply, bgql.MarshalBatchChangeID(batchChange.ID))
 		}
