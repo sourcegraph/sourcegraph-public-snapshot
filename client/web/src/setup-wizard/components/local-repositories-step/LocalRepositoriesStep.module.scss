@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .content {
     min-height: 30rem;
     display: flex;
@@ -7,6 +9,9 @@
 
 .file-picker {
     width: 65%;
+    @media (--sm-breakpoint-down) {
+        width: 100%;
+    }
 }
 
 .input-root {
@@ -17,8 +22,22 @@
 .input {
     // Reserve place for input loader
     padding-right: 2rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    &:disabled {
+        color: inherit;
+        background-color: inherit;
+    }
+
+    &-loader {
+        flex-grow: 1;
+    }
 
     &--with-action {
+        // In case if input is in file picker mode the whole input is clickable
+        // enforce cursor point to make it more explicit for user
+        cursor: pointer;
         border-top-right-radius: 0;
         border-bottom-right-radius: 0;
     }
@@ -38,6 +57,7 @@
 .list {
     display: flex;
     flex-direction: column;
+    overflow-x: auto;
     gap: 0.5rem;
     padding: 0;
     margin: 1rem 0 0 0.5rem;
@@ -45,6 +65,10 @@
 
     &:empty {
         display: none;
+    }
+
+    svg {
+        overflow: initial;
     }
 }
 

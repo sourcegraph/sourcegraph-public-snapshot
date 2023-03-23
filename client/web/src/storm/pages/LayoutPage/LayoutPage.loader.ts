@@ -19,6 +19,9 @@ export const siteFlagFieldsFragment = gql`
             }
             noLicenseWarningUserCount
         }
+        externalServicesCounts {
+            remoteExternalServicesCount
+        }
     }
 
     fragment SiteFlagAlertFields on Alert {

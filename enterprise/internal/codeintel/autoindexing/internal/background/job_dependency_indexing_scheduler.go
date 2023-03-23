@@ -126,7 +126,6 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 		}
 	}
 
-	var errs []error
 	scanner, err := h.uploadsSvc.ReferencesForUpload(ctx, job.UploadID)
 	if err != nil {
 		return errors.Wrap(err, "dbstore.ReferencesForUpload")
@@ -160,6 +159,11 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 		}
 		repoToPackages[repoName] = append(repoToPackages[repoName], pkg)
 		repoNames = append(repoNames, repoName)
+	}
+
+	// No dependencies found, we can return early.
+	if len(repoNames) == 0 {
+		return nil
 	}
 
 	// if this job is not associated with an external service kind that was just synced, then we need to guarantee
@@ -215,6 +219,7 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 		}
 	}
 
+	var errs []error
 	for _, pkgs := range repoToPackages {
 		for _, pkg := range pkgs {
 			if err := h.indexEnqueuer.QueueIndexesForPackage(ctx, pkg, true); err != nil {

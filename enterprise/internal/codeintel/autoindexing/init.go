@@ -5,6 +5,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	autoindexingstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -24,14 +25,14 @@ func NewService(
 	db database.DB,
 	depsSvc DependenciesService,
 	policiesSvc PoliciesService,
-	gitserver GitserverClient,
+	gitserverClient gitserver.Client,
 ) *Service {
 	store := autoindexingstore.New(scopedContext("store", observationCtx), db)
 	symbolsClient := symbols.DefaultClient
 	repoUpdater := repoupdater.DefaultClient
 	inferenceSvc := inference.NewService()
 
-	svc := newService(scopedContext("service", observationCtx), store, inferenceSvc, repoUpdater, db.Repos(), gitserver, symbolsClient)
+	svc := newService(scopedContext("service", observationCtx), store, inferenceSvc, repoUpdater, db.Repos(), gitserverClient, symbolsClient)
 
 	return svc
 }
@@ -51,7 +52,7 @@ func NewResetters(observationCtx *observation.Context, db database.DB) []gorouti
 	}
 }
 
-func NewJanitorJobs(observationCtx *observation.Context, autoindexingSvc *Service, gitserver GitserverClient) []goroutine.BackgroundRoutine {
+func NewJanitorJobs(observationCtx *observation.Context, autoindexingSvc *Service, gitserverClient gitserver.Client) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewUnknownRepositoryJanitor(
 			autoindexingSvc.store,
@@ -61,7 +62,7 @@ func NewJanitorJobs(observationCtx *observation.Context, autoindexingSvc *Servic
 
 		background.NewUnknownCommitJanitor(
 			autoindexingSvc.store,
-			gitserver,
+			gitserverClient,
 			ConfigCleanupInst.Interval,
 			ConfigCleanupInst.CommitResolverBatchSize,
 			ConfigCleanupInst.MinimumTimeSinceLastCheck,
@@ -71,7 +72,6 @@ func NewJanitorJobs(observationCtx *observation.Context, autoindexingSvc *Servic
 
 		background.NewExpiredRecordJanitor(
 			autoindexingSvc.store,
-			gitserver,
 			ConfigCleanupInst.Interval,
 			ConfigCleanupInst.FailedIndexBatchSize,
 			ConfigCleanupInst.FailedIndexMaxAge,
@@ -86,11 +86,12 @@ func NewIndexSchedulers(
 	policiesSvc PoliciesService,
 	policyMatcher PolicyMatcher,
 	autoindexingSvc *Service,
+	repoStore database.RepoStore,
 ) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewScheduler(
 			observationCtx,
-			uploadSvc, policiesSvc, policyMatcher, autoindexingSvc.indexEnqueuer,
+			uploadSvc, policiesSvc, policyMatcher, autoindexingSvc.indexEnqueuer, repoStore,
 			ConfigIndexingInst.SchedulerInterval,
 			background.IndexSchedulerConfig{
 				RepositoryProcessDelay: ConfigIndexingInst.RepositoryProcessDelay,

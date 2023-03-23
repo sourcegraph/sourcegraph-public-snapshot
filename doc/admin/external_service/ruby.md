@@ -36,9 +36,10 @@ To manually set the value, add the following to your code host configuration:
 ```json
 "rateLimit": {
   "enabled": true,
-  "requestsPerHour": 600.0
+  "requestsPerHour": 600
 }
 ```
+
 where the `requestsPerHour` field is set based on your requirements.
 
 **Not recommended**: Rate-limiting can be turned off entirely as well.

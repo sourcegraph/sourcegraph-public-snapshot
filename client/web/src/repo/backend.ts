@@ -51,6 +51,7 @@ export const repositoryFragment = gql`
             displayName
             abbrevName
         }
+        isFork
     }
 `
 

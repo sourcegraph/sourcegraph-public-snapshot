@@ -11,7 +11,6 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//internal/api",
-        "//internal/authz",
         "//internal/batches",
         "//internal/codeintel/dependencies",
         "//internal/database",
@@ -50,7 +49,6 @@ go_test(
     ],
     deps = [
         "//internal/api",
-        "//internal/authz",
         "//internal/conf/reposource",
         "//internal/database",
         "//internal/database/dbtest",

@@ -87,7 +87,7 @@ func newGRPCConnection(address string) connAndError {
 
 // closeGRPCConnection closes the gRPC connection specified by conn.
 func closeGRPCConnection(_ string, conn connAndError) {
-	if conn.dialErr != nil {
+	if conn.conn != nil {
 		_ = conn.conn.Close()
 	}
 }

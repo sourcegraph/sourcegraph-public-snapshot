@@ -77,11 +77,18 @@ type EnterpriseInit func(db database.DB)
 type Config struct {
 	env.BaseConfig
 
-	ReposDir string
+	ReposDir         string
+	CoursierCacheDir string
 }
 
 func (c *Config) Load() {
 	c.ReposDir = c.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
+
+	// if COURSIER_CACHE_DIR is set, try create that dir and use it. If not set, use the SRC_REPOS_DIR value (or default).
+	c.CoursierCacheDir = env.Get("COURSIER_CACHE_DIR", "", "Directory in which coursier data is cached for JVM package repos.")
+	if c.CoursierCacheDir == "" && c.ReposDir != "" {
+		c.CoursierCacheDir = filepath.Join(c.ReposDir, "coursier")
+	}
 }
 
 func LoadConfig() *Config {
@@ -137,7 +144,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, nil, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
-			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo, config.ReposDir)
+			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo, config.ReposDir, config.CoursierCacheDir)
 		},
 		Hostname:                externalAddress(),
 		DB:                      db,
@@ -421,6 +428,7 @@ func getVCSSyncer(
 	depsSvc *dependencies.Service,
 	repo api.RepoName,
 	reposDir string,
+	coursierCacheDir string,
 ) (server.VCSSyncer, error) {
 	// We need an internal actor in case we are trying to access a private repo. We
 	// only need access in order to find out the type of code host we're using, so
@@ -476,14 +484,17 @@ func getVCSSyncer(
 		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
-		return server.NewJVMPackagesSyncer(&c, depsSvc), nil
+		return server.NewJVMPackagesSyncer(&c, depsSvc, coursierCacheDir), nil
 	case extsvc.TypeNpmPackages:
 		var c schema.NpmPackagesConnection
 		urn, err := extractOptions(&c)
 		if err != nil {
 			return nil, err
 		}
-		cli := npm.NewHTTPClient(urn, c.Registry, c.Credentials, httpcli.ExternalDoer)
+		cli, err := npm.NewHTTPClient(urn, c.Registry, c.Credentials, httpcli.ExternalClientFactory)
+		if err != nil {
+			return nil, err
+		}
 		return server.NewNpmPackagesSyncer(c, depsSvc, cli), nil
 	case extsvc.TypeGoModules:
 		var c schema.GoModulesConnection
@@ -491,7 +502,7 @@ func getVCSSyncer(
 		if err != nil {
 			return nil, err
 		}
-		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalDoer)
+		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
 		return server.NewGoModulesSyncer(&c, depsSvc, cli), nil
 	case extsvc.TypePythonPackages:
 		var c schema.PythonPackagesConnection
@@ -499,7 +510,10 @@ func getVCSSyncer(
 		if err != nil {
 			return nil, err
 		}
-		cli := pypi.NewClient(urn, c.Urls, httpcli.ExternalDoer)
+		cli, err := pypi.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
+		if err != nil {
+			return nil, err
+		}
 		return server.NewPythonPackagesSyncer(&c, depsSvc, cli, reposDir), nil
 	case extsvc.TypeRustPackages:
 		var c schema.RustPackagesConnection
@@ -507,7 +521,10 @@ func getVCSSyncer(
 		if err != nil {
 			return nil, err
 		}
-		cli := crates.NewClient(urn, httpcli.ExternalDoer)
+		cli, err := crates.NewClient(urn, httpcli.ExternalClientFactory)
+		if err != nil {
+			return nil, err
+		}
 		return server.NewRustPackagesSyncer(&c, depsSvc, cli), nil
 	case extsvc.TypeRubyPackages:
 		var c schema.RubyPackagesConnection
@@ -515,7 +532,10 @@ func getVCSSyncer(
 		if err != nil {
 			return nil, err
 		}
-		cli := rubygems.NewClient(urn, c.Repository, httpcli.ExternalDoer)
+		cli, err := rubygems.NewClient(urn, c.Repository, httpcli.ExternalClientFactory)
+		if err != nil {
+			return nil, err
+		}
 		return server.NewRubyPackagesSyncer(&c, depsSvc, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil

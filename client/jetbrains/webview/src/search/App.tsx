@@ -36,7 +36,6 @@ import styles from './App.module.scss'
 interface Props {
     isDarkTheme: boolean
     instanceURL: string
-    isGlobbingEnabled: boolean
     accessToken: string | null
     customRequestHeaders: Record<string, string> | null
     onPreviewChange: (match: SearchMatch, lineOrSymbolMatchIndex?: number) => Promise<void>
@@ -69,7 +68,6 @@ function fallbackToLiteralSearchIfNeeded(
 export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     isDarkTheme,
     instanceURL,
-    isGlobbingEnabled,
     accessToken,
     customRequestHeaders,
     onPreviewChange,
@@ -276,7 +274,6 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                                 getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                                 fetchStreamSuggestions={fetchStreamSuggestionsWithStaticUrl}
                                 settingsCascade={settingsCascade}
-                                globbing={isGlobbingEnabled}
                                 telemetryService={telemetryService}
                                 platformContext={platformContext}
                                 className=""

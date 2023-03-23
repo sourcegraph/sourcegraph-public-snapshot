@@ -532,9 +532,25 @@ mod test {
     };
 
     use pretty_assertions::assert_eq;
+    use scip_treesitter::snapshot::{
+        dump_document_with_config, EmitSymbol, EmitSyntax, SnapshotOptions,
+    };
+
+    fn snapshot_sciptect_documents(doc: &Document, source: &str) -> String {
+        dump_document_with_config(
+            doc,
+            source,
+            SnapshotOptions {
+                emit_syntax: EmitSyntax::Highlighted,
+                emit_symbol: EmitSymbol::Unqualified,
+                ..Default::default()
+            },
+        )
+        .expect("dump document")
+    }
 
     use super::*;
-    use crate::{determine_language, dump_document, SourcegraphQuery};
+    use crate::{determine_language, SourcegraphQuery};
 
     #[test]
     fn test_generates_empty_file() {
@@ -599,7 +615,7 @@ mod test {
             match std::panic::catch_unwind(|| {
                 insta::assert_snapshot!(
                     filepath.strip_prefix(&input_dir).unwrap().to_str().unwrap(),
-                    dump_document(&document, &contents)
+                    snapshot_sciptect_documents(&document, &contents)
                 );
             }) {
                 Ok(_) => {}

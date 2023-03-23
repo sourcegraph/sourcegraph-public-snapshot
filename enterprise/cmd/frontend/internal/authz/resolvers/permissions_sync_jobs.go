@@ -190,7 +190,7 @@ func (p *permissionsSyncJobResolver) ProcessAfter() *gqlutil.DateTime {
 
 func (p *permissionsSyncJobResolver) RanForMs() *int32 {
 	var ranFor int32
-	if !p.job.FinishedAt.IsZero() {
+	if !p.job.FinishedAt.IsZero() && !p.job.StartedAt.IsZero() {
 		// Job runtime in ms shouldn't take more than a 32-bit int value.
 		ranFor = int32(p.job.FinishedAt.Sub(p.job.StartedAt).Milliseconds())
 	}
@@ -265,7 +265,7 @@ func (c codeHostStateResolver) ProviderType() string {
 	return c.state.ProviderType
 }
 
-func (c codeHostStateResolver) Status() string {
+func (c codeHostStateResolver) Status() database.CodeHostStatus {
 	return c.state.Status
 }
 
@@ -281,8 +281,14 @@ type permissionSyncJobReasonResolver struct {
 func (p permissionSyncJobReasonResolver) Group() string {
 	return string(p.group)
 }
-func (p permissionSyncJobReasonResolver) Reason() string {
-	return string(p.reason)
+func (p permissionSyncJobReasonResolver) Reason() *string {
+	if p.reason == "" {
+		return nil
+	}
+
+	reason := string(p.reason)
+
+	return &reason
 }
 
 type subject struct {

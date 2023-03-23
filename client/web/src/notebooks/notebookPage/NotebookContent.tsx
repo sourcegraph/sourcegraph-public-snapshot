@@ -25,7 +25,6 @@ export interface NotebookContentProps
         PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'>,
         OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
-    globbing: boolean
     viewerCanManage: boolean
     blocks: NotebookFields['blocks']
     exportedFileName: string
@@ -42,7 +41,6 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
         exportedFileName,
         onCopyNotebook,
         onUpdateBlocks,
-        globbing,
         streamSearch,
         telemetryService,
         searchContextsEnabled,
@@ -82,7 +80,6 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
 
         return (
             <NotebookComponent
-                globbing={globbing}
                 streamSearch={streamSearch}
                 telemetryService={telemetryService}
                 searchContextsEnabled={searchContextsEnabled}

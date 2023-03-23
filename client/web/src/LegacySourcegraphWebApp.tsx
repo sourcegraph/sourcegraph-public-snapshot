@@ -37,7 +37,6 @@ import {
 } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
-import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { setLinkComponent, RouterLink, WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
 
 import { authenticatedUser as authenticatedUserSubject, AuthenticatedUser, authenticatedUserValue } from './auth'
@@ -77,11 +76,6 @@ interface LegacySourcegraphWebAppState extends SettingsCascadeProps {
     viewerSubject: LegacyLayoutProps['viewerSubject']
 
     selectedSearchContextSpec?: string
-
-    /**
-     * Whether globbing is enabled for filters.
-     */
-    globbing: boolean
 }
 
 const WILDCARD_THEME: WildcardTheme = {
@@ -109,7 +103,6 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
             authenticatedUser: authenticatedUserValue,
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: siteSubjectNoAdmin(),
-            globbing: false,
         }
     }
 
@@ -143,7 +136,6 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                 this.setState({
                     settingsCascade,
                     authenticatedUser,
-                    globbing: globbingEnabledFromSettings(settingsCascade),
                     viewerSubject: viewerSubjectFromSettings(settingsCascade, authenticatedUser),
                 })
             })
@@ -236,7 +228,6 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                             updateSearchContext={updateSearchContext}
                             deleteSearchContext={deleteSearchContext}
                             isSearchContextSpecAvailable={isSearchContextSpecAvailable}
-                            globbing={this.state.globbing}
                             streamSearch={aggregateStreamingSearch}
                         />
                     }

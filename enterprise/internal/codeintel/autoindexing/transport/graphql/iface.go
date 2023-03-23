@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/grafana/regexp"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -32,8 +30,6 @@ type AutoIndexingService interface {
 	InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) ([]config.IndexJob, error)
 	InferIndexConfiguration(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) (_ *config.IndexConfiguration, hints []config.IndexJobHint, err error)
 	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force bool, bypassLimit bool) (_ []types.Index, err error)
-
-	ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
 
 	GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error)
 	GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error)

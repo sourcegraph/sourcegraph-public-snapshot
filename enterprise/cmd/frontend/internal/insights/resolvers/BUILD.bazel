@@ -50,7 +50,7 @@ go_library(
         "//lib/errors",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_graph_gophers_graphql_go//relay",
-        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_masterminds_semver//:semver",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_segmentio_ksuid//:ksuid",

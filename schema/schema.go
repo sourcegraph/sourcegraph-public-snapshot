@@ -65,6 +65,12 @@ type ApiRatelimit struct {
 	// PerUser description: Limit granted per user per hour
 	PerUser int `json:"perUser"`
 }
+
+// App description: Configuration options for App only.
+type App struct {
+	// DotcomAuthToken description: Authentication token for Sourcegraph.com. If present, indicates that the App account is connected to a Sourcegraph.com account.
+	DotcomAuthToken string `json:"dotcomAuthToken,omitempty"`
+}
 type AppNotifications struct {
 	// Key description: e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.
 	Key string `json:"key"`
@@ -1347,7 +1353,7 @@ type InsightSeries struct {
 // JVMPackagesConnection description: Configuration for a connection to a JVM packages repository.
 type JVMPackagesConnection struct {
 	// Maven description: Configuration for resolving from Maven repositories.
-	Maven *Maven `json:"maven,omitempty"`
+	Maven Maven `json:"maven"`
 }
 
 // Log description: Configuration for logging and alerting, including to external services.
@@ -1360,7 +1366,7 @@ type Log struct {
 
 // Maven description: Configuration for resolving from Maven repositories.
 type Maven struct {
-	// Credentials description: Contents of a coursier.credentials file needed for accessing the Maven repositories.
+	// Credentials description: Contents of a coursier.credentials file needed for accessing the Maven repositories. See the 'Inline' section at https://get-coursier.io/docs/other-credentials#inline for more details.
 	Credentials string `json:"credentials,omitempty"`
 	// Dependencies description: An array of artifact "groupID:artifactID:version" strings specifying which Maven artifacts to mirror on Sourcegraph.
 	Dependencies []string `json:"dependencies,omitempty"`
@@ -1859,7 +1865,7 @@ type RubyRateLimit struct {
 type RustPackagesConnection struct {
 	// Dependencies description: An array of strings specifying Rust packages to mirror in Sourcegraph.
 	Dependencies []string `json:"dependencies,omitempty"`
-	// IndexRepositoryName description: Name of the git repository containing the crates.io index. Empty by default, which means no syncing happens. Updating this setting does not trigger a sync immediately, you must wait until the next scheduled sync for the value to get picked up.
+	// IndexRepositoryName description: Name of the git repository containing the crates.io index. Only set if you intend to sync every crate from the index. Updating this setting does not trigger a sync immediately, you must wait until the next scheduled sync for the value to get picked up.
 	IndexRepositoryName string `json:"indexRepositoryName,omitempty"`
 	// IndexRepositorySyncInterval description: How frequently to sync with the index repository. String formatted as a Go time.Duration. The Sourcegraph server needs to be restarted to pick up a new value of this configuration option.
 	IndexRepositorySyncInterval string `json:"indexRepositorySyncInterval,omitempty"`
@@ -2303,6 +2309,8 @@ type SiteConfiguration struct {
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser,omitempty"`
 	// ApiRatelimit description: Configuration for API rate limiting
 	ApiRatelimit *ApiRatelimit `json:"api.ratelimit,omitempty"`
+	// App description: Configuration options for App only.
+	App *App `json:"app,omitempty"`
 	// AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
 	AuthAccessTokens *AuthAccessTokens `json:"auth.accessTokens,omitempty"`
 	// AuthEnableUsernameChanges description: Enables users to change their username after account creation. Warning: setting this to be true has security implications if you have enabled (or will at any point in the future enable) repository permissions with an option that relies on username equivalency between Sourcegraph and an external service or authentication provider. Do NOT set this to true if you are using non-built-in authentication OR rely on username equivalency for repository permissions.
@@ -2391,7 +2399,7 @@ type SiteConfiguration struct {
 	DisableAutoGitUpdates bool `json:"disableAutoGitUpdates,omitempty"`
 	// DisableFeedbackSurvey description: Disable the feedback survey
 	DisableFeedbackSurvey bool `json:"disableFeedbackSurvey,omitempty"`
-	// DisableNonCriticalTelemetry description: Disable aggregated event counts from being sent to Sourcegraph.com via pings.
+	// DisableNonCriticalTelemetry description: DEPRECATED. Has no effect.
 	DisableNonCriticalTelemetry bool `json:"disableNonCriticalTelemetry,omitempty"`
 	// DisablePublicRepoRedirects description: Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.
 	DisablePublicRepoRedirects bool `json:"disablePublicRepoRedirects,omitempty"`
@@ -2400,6 +2408,8 @@ type SiteConfiguration struct {
 	// EmailAddress description: The "from" address for emails sent by this server.
 	// Please see https://docs.sourcegraph.com/admin/config/email
 	EmailAddress string `json:"email.address,omitempty"`
+	// EmailSenderName description: The name to use in the "from" address for emails sent by this server.
+	EmailSenderName string `json:"email.senderName,omitempty"`
 	// EmailSmtp description: The SMTP server used to send transactional emails.
 	// Please see https://docs.sourcegraph.com/admin/config/email
 	EmailSmtp *SMTPServerConfig `json:"email.smtp,omitempty"`
@@ -2583,6 +2593,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	}
 	delete(m, "RedirectUnsupportedBrowser")
 	delete(m, "api.ratelimit")
+	delete(m, "app")
 	delete(m, "auth.accessTokens")
 	delete(m, "auth.enableUsernameChanges")
 	delete(m, "auth.lockout")
@@ -2624,6 +2635,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "disablePublicRepoRedirects")
 	delete(m, "dotcom")
 	delete(m, "email.address")
+	delete(m, "email.senderName")
 	delete(m, "email.smtp")
 	delete(m, "email.templates")
 	delete(m, "embeddings")

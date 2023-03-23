@@ -13,10 +13,10 @@ go_library(
         "//enterprise/internal/codeintel/ranking",
         "//enterprise/internal/codeintel/sentinel",
         "//enterprise/internal/codeintel/shared",
-        "//enterprise/internal/codeintel/shared/gitserver",
         "//enterprise/internal/codeintel/uploads",
         "//internal/codeintel/dependencies",
         "//internal/database",
+        "//internal/gitserver",
         "//internal/observation",
     ],
 )

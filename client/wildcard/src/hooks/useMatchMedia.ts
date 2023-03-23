@@ -22,3 +22,15 @@ export function useMatchMedia(query: string, observe = true): boolean {
 
     return isMatch
 }
+
+/**
+ * Returns `true` if the user has opted for reduced motion.
+ *
+ * Using `no-preference` instead of `reduce` here is better because if the user
+ * is using a browser that does not support reduced motion, the media query
+ * will not match and the user will get the reduced motion experience,
+ * which is the safer choice.
+ */
+export function useReducedMotion(): boolean {
+    return !useMatchMedia('(prefers-reduced-motion: no-preference)')
+}

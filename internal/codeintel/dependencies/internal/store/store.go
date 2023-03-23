@@ -253,10 +253,10 @@ func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.Minimal
 		tx.Handle(),
 		"t_package_repo_refs",
 		batch.MaxNumPostgresParameters,
-		[]string{"scheme", "name"},
+		[]string{"scheme", "name", "blocked", "last_checked_at"},
 		func(inserter *batch.Inserter) error {
 			for _, pkg := range deps {
-				if err := inserter.Insert(ctx, pkg.Scheme, pkg.Name); err != nil {
+				if err := inserter.Insert(ctx, pkg.Scheme, pkg.Name, pkg.Blocked, pkg.LastCheckedAt); err != nil {
 					return err
 				}
 			}
@@ -268,7 +268,7 @@ func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.Minimal
 	}
 
 	newDeps, err = basestore.NewSliceScanner(func(rows dbutil.Scanner) (dep shared.PackageRepoReference, err error) {
-		err = rows.Scan(&dep.ID, &dep.Scheme, &dep.Name)
+		err = rows.Scan(&dep.ID, &dep.Scheme, &dep.Name, &dep.Blocked, &dep.LastCheckedAt)
 		return
 	})(tx.Query(ctx, sqlf.Sprintf(transferPackageRepoRefsQuery)))
 	if err != nil {
@@ -324,11 +324,11 @@ func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.Minimal
 		tx.Handle(),
 		"t_package_repo_versions",
 		batch.MaxNumPostgresParameters,
-		[]string{"package_id", "version"},
+		[]string{"package_id", "version", "blocked", "last_checked_at"},
 		func(inserter *batch.Inserter) error {
 			for i, dep := range deps {
 				for _, version := range dep.Versions {
-					if err := inserter.Insert(ctx, allIDs[i], version); err != nil {
+					if err := inserter.Insert(ctx, allIDs[i], version.Version, version.Blocked, version.LastCheckedAt); err != nil {
 						return err
 					}
 				}
@@ -340,7 +340,7 @@ func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.Minimal
 	}
 
 	newVersions, err = basestore.NewSliceScanner(func(rows dbutil.Scanner) (version shared.PackageRepoRefVersion, err error) {
-		err = rows.Scan(&version.ID, &version.PackageRefID, &version.Version)
+		err = rows.Scan(&version.ID, &version.PackageRefID, &version.Version, &version.Blocked, &version.LastCheckedAt)
 		return
 	})(tx.Query(ctx, sqlf.Sprintf(transferPackageRepoRefVersionsQuery)))
 	if err != nil {
@@ -353,20 +353,24 @@ func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.Minimal
 const temporaryPackageRepoRefsTableQuery = `
 CREATE TEMPORARY TABLE t_package_repo_refs (
 	scheme TEXT NOT NULL,
-	name TEXT NOT NULL
+	name TEXT NOT NULL,
+	blocked BOOLEAN NOT NULL,
+	last_checked_at TIMESTAMPTZ
 ) ON COMMIT DROP
 `
 
 const temporaryPackageRepoRefVersionsTableQuery = `
 CREATE TEMPORARY TABLE t_package_repo_versions (
 	package_id BIGINT NOT NULL,
-	version TEXT NOT NULL
+	version TEXT NOT NULL,
+	blocked BOOLEAN NOT NULL,
+	last_checked_at TIMESTAMPTZ
 ) ON COMMIT DROP
 `
 
 const transferPackageRepoRefsQuery = `
-INSERT INTO lsif_dependency_repos (scheme, name)
-SELECT scheme, name
+INSERT INTO lsif_dependency_repos (scheme, name, blocked, last_checked_at)
+SELECT scheme, name, blocked, last_checked_at
 FROM t_package_repo_refs t
 WHERE NOT EXISTS (
 	SELECT scheme, name
@@ -375,14 +379,14 @@ WHERE NOT EXISTS (
 	name = t.name
 )
 ORDER BY name
-RETURNING id, scheme, name
+RETURNING id, scheme, name, blocked, last_checked_at
 `
 
 const transferPackageRepoRefVersionsQuery = `
-INSERT INTO package_repo_versions (package_id, version)
+INSERT INTO package_repo_versions (package_id, version, blocked, last_checked_at)
 -- we dont reduce package repo versions,
 -- so DISTINCT here to avoid conflict
-SELECT DISTINCT package_id, version
+SELECT DISTINCT ON (package_id, version) package_id, version, blocked, last_checked_at
 FROM t_package_repo_versions t
 WHERE NOT EXISTS (
 	SELECT package_id, version
@@ -392,7 +396,7 @@ WHERE NOT EXISTS (
 )
 -- unit tests rely on a certain order
 ORDER BY package_id, version
-RETURNING id, package_id, version
+RETURNING id, package_id, version, blocked, last_checked_at
 `
 
 const getAttemptedInsertDependencyReposQuery = `
@@ -672,32 +676,46 @@ func (s *store) ShouldRefilterPackageRepoRefs(ctx context.Context) (exists bool,
 	ctx, _, endObservation := s.operations.shouldRefilterPackageRepoRefs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	exists, _, err = basestore.ScanFirstBool(s.db.Query(ctx, sqlf.Sprintf(doPackageRepoRefsRequireRefilteringQuery)))
+	_, exists, err = basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(doPackageRepoRefsRequireRefilteringQuery)))
 	return
 }
 
 const doPackageRepoRefsRequireRefilteringQuery = `
-WITH most_recent_filters_change AS (
-	SELECT COALESCE(deleted_at, updated_at)
+WITH least_recently_checked AS (
+	-- select oldest last_checked_at from either package_repo_versions
+	-- or lsif_dependency_repos, prioritising NULL
+    SELECT * FROM (
+        (
+			SELECT last_checked_at FROM lsif_dependency_repos
+			ORDER BY last_checked_at ASC NULLS FIRST
+			LIMIT 1
+		)
+        UNION ALL
+        (
+			SELECT last_checked_at FROM package_repo_versions
+			ORDER BY last_checked_at ASC NULLS FIRST
+			LIMIT 1
+		)
+    ) p
+    ORDER BY last_checked_at ASC NULLS FIRST
+    LIMIT 1
+),
+most_recently_updated_filter AS (
+    SELECT COALESCE(deleted_at, updated_at)
 	FROM package_repo_filters
 	ORDER BY COALESCE(deleted_at, updated_at) DESC
 	LIMIT 1
 )
-SELECT EXISTS (
-	SELECT 1
-	FROM lsif_dependency_repos
-	WHERE
-		last_checked_at IS NULL
-		OR last_checked_at < (SELECT * FROM most_recent_filters_change)
-	LIMIT 1
-) OR EXISTS (
-	SELECT 1
-	FROM package_repo_versions
-	WHERE
-		last_checked_at IS NULL
-		OR last_checked_at < (SELECT * FROM most_recent_filters_change)
-	LIMIT 1
-)
+SELECT 1
+WHERE
+	-- comparisons on empty table from either least_recently_checked or most_recently_updated_filter
+	-- will yield NULL, making the query return 1 if either CTE returns nothing
+    (SELECT COUNT(*) FROM most_recently_updated_filter) <> 0 AND
+    (SELECT COUNT(*) FROM least_recently_checked) <> 0 AND
+    (
+        (SELECT * FROM least_recently_checked) IS NULL OR
+        (SELECT * FROM least_recently_checked) < (SELECT * FROM most_recently_updated_filter)
+    );
 `
 
 func (s *store) UpdateAllBlockedStatuses(ctx context.Context, pkgs []shared.PackageRepoReference, startTime time.Time) (pkgsUpdated, versionsUpdated int, err error) {

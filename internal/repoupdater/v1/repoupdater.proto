@@ -15,7 +15,6 @@ service RepoUpdaterService {
   // future. It does not wait for the update.
   rpc EnqueueRepoUpdate(EnqueueRepoUpdateRequest) returns (EnqueueRepoUpdateResponse);
   rpc EnqueueChangesetSync(EnqueueChangesetSyncRequest) returns (EnqueueChangesetSyncResponse);
-  rpc SchedulePermsSync(SchedulePermsSyncRequest) returns (SchedulePermsSyncResponse);
   // SyncExternalService requests the given external service to be synced.
   rpc SyncExternalService(SyncExternalServiceRequest) returns (SyncExternalServiceResponse);
   // ExternalServiceNamespaces retrieves a list of namespaces available to the given external service configuration
@@ -156,24 +155,9 @@ message EnqueueChangesetSyncRequest {
 
 message EnqueueChangesetSyncResponse {}
 
-message SchedulePermsSyncRequest {
-  repeated int32 user_ids = 1;
-  repeated int32 repo_ids = 2;
-  FetchPermsOptions options = 3;
-  // TODO(camdencheek): should we model this strictly with protobuf?
-  // The type is database.PermissionSyncJobReason. I'm worried
-  // that the generated string conversion won't exactly match what's
-  // in the database. For now, we'll just cast between the two.
-  string reason = 4;
-  int32 triggered_by_user_id = 5;
-  google.protobuf.Timestamp process_after = 6;
-}
-
 message FetchPermsOptions {
   bool invalidate_caches = 1;
 }
-
-message SchedulePermsSyncResponse {}
 
 message SyncExternalServiceRequest {
   int64 external_service_id = 1;

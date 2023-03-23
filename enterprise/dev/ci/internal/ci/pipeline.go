@@ -56,6 +56,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 	bk.FeatureFlags.ApplyEnv(env)
 
+	// If we detect the author to be a folk from Aspect.dev, force the Bazel flag.
+	// This is to avoid incorrectly assuming that the CI will run Bazel task and
+	// missing regressions being introduced in a PR.
+	authorEmail := os.Getenv("BUILDKITE_BUILD_AUTHOR_EMAIL")
+	if strings.HasSuffix(authorEmail, "@aspect.dev") {
+		c.MessageFlags.ForceBazel = true
+	}
+
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
 	if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) {
 		env["PERCY_TARGET_BRANCH"] = c.Branch
@@ -76,7 +84,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "4.5.0"
+	const minimumUpgradeableVersion = "5.0.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
@@ -274,6 +282,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		)
 
 	default:
+		if c.RunType.Is(runtype.MainBranch) {
+			// If we're on the main branch, we test a few Bazel invariants.
+			ops.Merge(BazelIncrementalMainOperations())
+		}
 		// Slow async pipeline
 		ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
 			triggerAsync(buildOptions)))
@@ -312,7 +324,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Core tests
 		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
-			ChromaticShouldAutoAccept: c.RunType.Is(runtype.MainBranch),
+			ChromaticShouldAutoAccept: c.RunType.Is(runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease),
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun),

@@ -21,7 +21,6 @@ interface NotebookSymbolBlockInputProps extends Pick<BlockProps, 'onRunBlock'> {
     onEditorCreated: (editor: EditorView) => void
     setQueryInput: (value: string) => void
     onSymbolSelected: (symbol: SymbolBlockInput) => void
-    globbing: boolean
     isSourcegraphDotCom: boolean
 }
 
@@ -40,7 +39,7 @@ const editorAttributes = [
 
 export const NotebookSymbolBlockInput: React.FunctionComponent<
     React.PropsWithChildren<NotebookSymbolBlockInputProps>
-> = ({ onSymbolSelected, isSourcegraphDotCom, globbing, ...inputProps }) => {
+> = ({ onSymbolSelected, isSourcegraphDotCom, ...inputProps }) => {
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
@@ -70,12 +69,11 @@ export const NotebookSymbolBlockInput: React.FunctionComponent<
         () =>
             createDefaultSuggestions({
                 isSourcegraphDotCom,
-                globbing,
                 fetchSuggestions: fetchStreamSuggestions,
                 applyOnEnter: applySuggestionsOnEnter,
                 disableSymbolCompletion: true,
             }),
-        [isSourcegraphDotCom, globbing, applySuggestionsOnEnter]
+        [isSourcegraphDotCom, applySuggestionsOnEnter]
     )
 
     return (

@@ -33,5 +33,5 @@ func (j *commitGraphUpdaterJob) Routines(_ context.Context, observationCtx *obse
 		return nil, err
 	}
 
-	return uploads.NewCommitGraphUpdater(services.UploadsService), nil
+	return uploads.NewCommitGraphUpdater(services.UploadsService, services.GitserverClient), nil
 }

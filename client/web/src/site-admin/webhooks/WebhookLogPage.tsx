@@ -50,7 +50,7 @@ export const WebhookLogPage: React.FunctionComponent<React.PropsWithChildren<Pro
             />
             <Alert variant="warning">
                 This webhooks page has been deprecated, please see our{' '}
-                <Link to="/site-admin/webhooks/">new webhooks page</Link>.
+                <Link to="/site-admin/webhooks/incoming">new webhooks page</Link>.
             </Alert>
             <Container>
                 <WebhookLogPageHeader

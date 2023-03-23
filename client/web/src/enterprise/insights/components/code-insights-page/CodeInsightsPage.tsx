@@ -19,7 +19,7 @@ export const CodeInsightsPage: React.FunctionComponent<React.PropsWithChildren<C
 
     return (
         <Page {...props}>
-            {props.isSourcegraphApp && <CodeInsightsLimitedAccessAppBanner authenticatedUser={null} />}
+            {props.isSourcegraphApp && <CodeInsightsLimitedAccessAppBanner authenticatedUser={null} className="mb-4" />}
             {!licensed && !props.isSourcegraphApp && <CodeInsightsLimitAccessBanner className="mb-4" />}
             {props.children}
         </Page>

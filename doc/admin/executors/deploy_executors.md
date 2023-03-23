@@ -17,7 +17,7 @@
 
 ## Requirements
 
-Executors by default use KVM-based micro VMs powered by [Firecracker](https://github.com/firecracker-microvm/firecracker) in accordance with our [sandboxing model](index.md#how-it-works) to isolate jobs from each other and the host.
+Executors by default use KVM-based micro VMs powered by [Firecracker](https://sourcegraph.com/github.com/firecracker-microvm/firecracker) in accordance with our [sandboxing model](index.md#how-it-works) to isolate jobs from each other and the host.
 This requires executors to be run on machines capable of running Linux KVM extensions. On the most popular cloud providers, this either means running executors on bare-metal machines (AWS) or machines capable of nested virtualization (GCP).
 
 Optionally, executors can be run without using KVM-based isolation, which is less secure but might be easier to run on common machines.
@@ -50,7 +50,7 @@ The maximum number of Jobs an Executor instance can run in parallel is configure
 The CPU and Memory usage of an individual Job is configured by the Environment Variables `EXECUTOR_JOB_NUM_CPUS`
 and `EXECUTOR_JOB_MEMORY`. 
 
-See [Environment Variables](./deploy_executors_binary.md#step-2-setup-environment-variables) for additional Environment Variables.
+See [Environment Variables](deploy_executors_binary.md#step-2-setup-environment-variables) for additional Environment Variables.
 
 <sub>Note: changing CPU and Memory for jobs will affect the overall requirements for an Executor instance.</sub>
 
@@ -69,7 +69,7 @@ It is recommended to add the following **Disk** configuration in AWS.
 #### Firecracker Requirements
 
 To run Executors with Firecracker enabled requires the machine to support [Kernel-based Virtual Machine](https://en.wikipedia.org/wiki/Kernel-based_Virtual_Machine).
-See [deploying Executors binary](./deploy_executors_binary.md) for additional information on configuring Linux Machines. 
+See [deploying Executors binary](deploy_executors_binary.md) for additional information on configuring Linux Machines. 
 
 ##### Cloud Providers
 
@@ -95,33 +95,34 @@ Once the shared secret is set in Sourcegraph, you can start setting up executors
 ### Supported installation types
 
 <div class="grid">
-  <a class="btn-app btn" href="/admin/deploy_executors_terraform">
+  <a class="btn-app btn" href="/admin/executors/deploy_executors_terraform">
     <h3>Terraform</h3>
     <p>Simply launch executors on AWS or GCP using Sourcegraph-maintained modules and machine images.</p>
     <p>Supports auto scaling.</p>
   </a>
-  <a class="btn-app btn" href="/admin/deploy_executors_binary">
+  <a class="btn-app btn" href="/admin/executors/deploy_executors_binary">
     <h3>Install executor on your machine</h3>
     <p>Run executors on any linux amd64 machine.</p>
   </a>
 </div>
 
-<div class="grid">
-  <a class="btn-app btn" href="/admin/deploy_executors_kubernetes">
+<!-- Hidden for now while they're still experimental. -->
+<!-- <div class="grid">
+  <a class="btn-app btn" href="/admin/executors/deploy_executors_kubernetes">
     <h3>Kubernetes</h3>
     <p>Run executors on kubernetes</p>
     <p>Requires privileged access to a container runtime.</p>
   </a>
-  <a class="btn-app btn" href="/admin/deploy_executors_docker">
+  <a class="btn-app btn" href="/admin/executors/deploy_executors_docker">
     <h3>Docker Compose</h3>
     <p>Run executors on any linux amd64 machine with docker-compose</p>
     <p>Requires privileged access to a container runtime.</p>
   </a>
-</div>
+</div> -->
 
 ## Confirm executors are working
 
-If executor instances boot correctly and can authenticate with the Sourcegraph frontend, they will show up in the _Executors_ page under _Site Admin_ > _Maintenance_.
+If executor instances boot correctly and can authenticate with the Sourcegraph frontend, they will show up in the **Executors** page under **Site admin > Maintenance**.
 
 ![Executor list in UI](https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/executor-ui-test.png)
 
@@ -131,7 +132,7 @@ If you want to use docker images stored in a private registry that requires auth
 
 Depending on the executor runtime that is being used, different options exist for provisioning access to private container registries:
 
-- Through a special secret called `DOCKER_AUTH_CONFIG`, set in [executor secrets](./executor_secrets.md) in Sourcegraph.
+- Through a special secret called `DOCKER_AUTH_CONFIG`, set in [executor secrets](executor_secrets.md) in Sourcegraph.
 - Through the `EXECUTOR_DOCKER_AUTH_CONFIG` environment variable (also available as a variable in the terraform modules for executors).
 - Through the [`config.json` file in `~/.docker`](https://docs.docker.com/engine/reference/commandline/login/). **If using executors with firecracker enabled (recommended) this option is not available.**
 
@@ -197,4 +198,4 @@ For Google Container Registry, [follow this guide](https://cloud.google.com/cont
 
 ### Configuring the auth config for use in executors
 
-Now that the config has been obtained, it can be used for the `EXECUTOR_DOCKER_AUTH_CONFIG` environment variable (and terraform variable `docker_auth_config`) or you can create an [executor secret](./executor_secrets.md#creating-a-new-secret) called `DOCKER_AUTH_CONFIG`. Global executor secrets will be available to every execution, while user and organization level executor secrets will only be available to the namespaces executions.
+Now that the config has been obtained, it can be used for the `EXECUTOR_DOCKER_AUTH_CONFIG` environment variable (and terraform variable `docker_auth_config`) or you can create an [executor secret](executor_secrets.md#creating-a-new-secret) called `DOCKER_AUTH_CONFIG`. Global executor secrets will be available to every execution, while user and organization level executor secrets will only be available to the namespaces executions.

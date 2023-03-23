@@ -37,6 +37,7 @@ import { querySyntaxHighlighting } from '../codemirror/syntax-highlighting'
 import { tokenInfo } from '../codemirror/token-info'
 import { useUpdateEditorFromQueryState } from '../CodeMirrorQueryInput'
 
+import { overrideContextOnPaste } from './codemirror/searchcontext'
 import { filterDecoration } from './codemirror/syntax-highlighting'
 import { modeScope, useInputMode } from './modes'
 import { Source, suggestions, startCompletion } from './suggestionsExtension'
@@ -206,7 +207,7 @@ const staticExtensions: Extension = [
     keymap.of(defaultKeymap),
     codemirrorHistory(),
     filterPlaceholder,
-    queryDiagnostic(),
+    modeScope([queryDiagnostic(), overrideContextOnPaste], [null]),
     Prec.low([querySyntaxHighlighting, modeScope([tokenInfo(), filterDecoration], [null])]),
     EditorView.theme({
         '&': {
@@ -380,9 +381,12 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
                 () => [
                     EditorView.contentAttributes.of({
                         role: 'combobox',
+                        // CodeMirror sets aria-multiline: true by default but it seems
+                        // comboboxes are not allowed to be multiline
+                        'aria-multiline': 'false',
                         'aria-controls': popoverID,
-                        'aria-owns': popoverID,
                         'aria-haspopup': 'grid',
+                        'aria-label': 'Search query',
                     }),
                     staticExtensions,
                     extensionsCompartment.of(dynamicExtensions),
@@ -433,13 +437,19 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
         return (
             <div
                 ref={inputContainerRef}
-                className={classNames(styles.container, className, {
+                className={classNames(styles.container, className, 'test-experimental-search-input', 'test-editor', {
                     [styles.containerCompact]: visualMode === QueryInputVisualMode.Compact,
                 })}
+                role="search"
+                data-editor="experimental-search-input"
             >
                 <div className={styles.focusContainer}>
                     <SearchModeSwitcher mode={mode} onModeChange={toggleHistoryMode} />
-                    <div ref={editorContainerRef} className={styles.input} />
+                    <div
+                        ref={editorContainerRef}
+                        className={classNames(styles.input, 'test-query-input', 'test-editor')}
+                        data-editor="codemirror6"
+                    />
                     {!mode && children}
                 </div>
                 <div
@@ -468,9 +478,9 @@ const SearchModeSwitcher: FC<SearchModeSwitcherProps> = props => {
             <Tooltip content="Recent searches">
                 <Button variant="icon" aria-label="Open search history" onClick={onModeChange}>
                     <Icon svgPath={mdiClockOutline} aria-hidden="true" />
+                    {mode && <span className="ml-1">{mode}:</span>}
                 </Button>
             </Tooltip>
-            {mode && <span className="ml-1">{mode}:</span>}
         </div>
     )
 }

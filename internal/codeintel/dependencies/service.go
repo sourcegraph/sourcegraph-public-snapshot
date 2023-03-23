@@ -32,6 +32,7 @@ type (
 	PackageRepoRefVersion        = shared.PackageRepoRefVersion
 	MinimalPackageRepoRef        = shared.MinimalPackageRepoRef
 	MinimialVersionedPackageRepo = shared.MinimialVersionedPackageRepo
+	MinimalPackageRepoRefVersion = shared.MinimalPackageRepoRefVersion
 	PackageRepoFilter            = shared.PackageRepoFilter
 )
 

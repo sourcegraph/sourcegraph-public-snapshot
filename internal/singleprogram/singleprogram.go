@@ -15,10 +15,16 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
 func Init(logger log.Logger) {
+	if deploy.IsApp() {
+		fmt.Fprintln(os.Stderr, "✱ Sourcegraph App version:", version.Version())
+	}
+
 	// TODO(sqs) TODO(single-binary): see the env.HackClearEnvironCache docstring, we should be able to remove this
 	// eventually.
 	env.HackClearEnvironCache()

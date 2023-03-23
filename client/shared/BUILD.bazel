@@ -316,7 +316,6 @@ ts_project(
         "src/types/storybook-chromatic/index.d.ts",
         "src/types/web-ext/index.d.ts",
         "src/util/dom.ts",
-        "src/util/globbing.ts",
         "src/util/lazyComponent.tsx",
         "src/util/url.ts",
         "src/util/useInputValidation.ts",
@@ -515,10 +514,13 @@ filegroup(
 
 jest_test(
     name = "test",
+    size = "enormous",  # make sure bazel reserves enough RAM for this.
+    timeout = "moderate",
     data = [
         ":shared_tests",
         ":snapshots",
     ],
-    # TODO(bazel): enable when snapshots updated to support pre-compiled .js files
-    tags = ["manual"],
+    patch_node_fs = False,
+    shard_count = 6,
+    tags = ["no-sandbox"],
 )
