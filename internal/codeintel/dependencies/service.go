@@ -65,7 +65,21 @@ func (s *Service) ListPackageRepoRefs(ctx context.Context, opts ListDependencyRe
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts(opts))
+	storeopts := store.ListDependencyReposOpts{
+		Scheme:         opts.Scheme,
+		Name:           opts.Name,
+		After:          opts.After,
+		Limit:          opts.Limit,
+		IncludeBlocked: opts.IncludeBlocked,
+	}
+
+	if opts.ExactNameOnly {
+		storeopts.Fuzziness = store.ExactMatch
+	} else {
+		storeopts.Fuzziness = store.Wildcard
+	}
+
+	return s.store.ListPackageRepoRefs(ctx, storeopts)
 }
 
 func (s *Service) InsertPackageRepoRefs(ctx context.Context, deps []MinimalPackageRepoRef) (_ []shared.PackageRepoReference, _ []shared.PackageRepoRefVersion, err error) {
@@ -233,10 +247,16 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 	)
 
 	if filter.NameFilter != nil {
-		var lastID int
+		var (
+			lastID    int
+			nameRegex = packagefilters.GlobToRegex(filter.NameFilter.PackageGlob)
+		)
 		for {
 			pkgs, _, _, err := s.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{
 				Scheme: filter.PackageScheme,
+				// we filter down here else we have to page through a huge number of non-matching packages
+				Name:      reposource.PackageName(nameRegex),
+				Fuzziness: store.Regex,
 				// doing this so we don't have to load everything in at once
 				Limit:          500,
 				After:          lastID,
@@ -270,9 +290,9 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 		}
 	} else {
 		pkgs, _, _, err := s.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{
-			Scheme:        filter.PackageScheme,
-			Name:          reposource.PackageName(nameToMatch),
-			ExactNameOnly: true,
+			Scheme:    filter.PackageScheme,
+			Name:      reposource.PackageName(nameToMatch),
+			Fuzziness: store.ExactMatch,
 			// should only have 1 matching package ref
 			Limit:          1,
 			IncludeBlocked: true,
