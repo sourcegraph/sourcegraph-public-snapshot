@@ -1,4 +1,4 @@
-import { Facet, RangeSetBuilder } from '@codemirror/state'
+import { codePointAt, codePointSize, countColumn, Facet, RangeSetBuilder } from '@codemirror/state'
 import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
 
 import { logger } from '@sourcegraph/common'
@@ -124,9 +124,20 @@ class SyntaxHighlightManager implements PluginValue {
                     const from = Math.min(line.from + occurrence.range.start.character, line.to)
                     // Should the range end be not a valid position in the
                     // document we fall back to the end of the current line
+                    const column = countColumn(line.text, occurrence.range.end.character, 2)
                     const to = occurrence.range.isSingleLine()
                         ? Math.min(line.from + occurrence.range.end.character, line.to)
                         : positionToOffset(textDocument, occurrence.range.end) ?? line.to
+                    if (occurrence.range.start.line === 104) {
+                        const x = '🚨'
+                        console.log({ x, y: codePointAt(x, 0), z: codePointSize(codePointAt(x, 0)) })
+                        console.log({
+                            line: occurrence.range.start.line,
+                            text: line.text,
+                            column,
+                            end: occurrence.range.end.character,
+                        })
+                    }
 
                     const decoration =
                         this.decorationCache[occurrence.kind] ||
