@@ -42,11 +42,6 @@ func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *depende
 		panic(fmt.Sprintf("expected placeholder package to parse but got %v", err))
 	}
 
-	var configDeps []string
-	if connection.Maven != nil {
-		configDeps = connection.Maven.Dependencies
-	}
-
 	chandle := coursier.NewCoursierHandle(observation.NewContext(log.Scoped("gitserver.jvmsyncer", "")), cacheDir)
 
 	return &vcsPackagesSyncer{
@@ -55,7 +50,7 @@ func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *depende
 		scheme:      dependencies.JVMPackagesScheme,
 		placeholder: placeholder,
 		svc:         svc,
-		configDeps:  configDeps,
+		configDeps:  connection.Maven.Dependencies,
 		source: &jvmPackagesSyncer{
 			coursier: chandle,
 			config:   connection,

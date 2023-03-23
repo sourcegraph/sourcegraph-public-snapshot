@@ -83,17 +83,23 @@ const MOCKS_FOR_NAMESPACE = new WildcardMockLink([
     },
 ])
 
-export const ListOfBatchChanges: Story = args => (
+interface Args {
+    canCreate: boolean
+    isDotCom: boolean
+    isApp: boolean
+}
+
+export const ListOfBatchChanges: Story<Args> = args => (
     <WebStory>
         {props => (
             <MockedTestProvider link={buildMocks()}>
                 <BatchChangeListPage
                     {...props}
                     headingElement="h1"
-                    canCreate={args.canCreate}
+                    canCreate={args.canCreate || "You don't have permission to create batch changes"}
                     settingsCascade={EMPTY_SETTINGS_CASCADE}
-                    isSourcegraphDotCom={false}
-                    isSourcegraphApp={false}
+                    isSourcegraphDotCom={args.isDotCom}
+                    isSourcegraphApp={args.isApp}
                     authenticatedUser={null}
                 />
             </MockedTestProvider>
@@ -105,6 +111,16 @@ ListOfBatchChanges.argTypes = {
         name: 'can create batch changes',
         control: { type: 'boolean' },
         defaultValue: true,
+    },
+    isDotCom: {
+        name: 'is sourcegraph.com',
+        control: { type: 'boolean' },
+        defaultValue: false,
+    },
+    isApp: {
+        name: 'is Sourcegraph App',
+        control: { type: 'boolean' },
+        defaultValue: false,
     },
 }
 

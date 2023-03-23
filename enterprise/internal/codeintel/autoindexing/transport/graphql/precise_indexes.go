@@ -7,13 +7,13 @@ import (
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/opentracing/opentracing-go/log"
 
 	autoindexingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -24,7 +24,7 @@ const DefaultPageSize = 50
 func (r *rootResolver) IndexerKeys(ctx context.Context, args *resolverstubs.IndexerKeyQueryArgs) ([]string, error) {
 	var repositoryID int
 	if args.Repo != nil {
-		v, err := UnmarshalRepositoryID(*args.Repo)
+		v, err := resolverstubs.UnmarshalID[api.RepoID](*args.Repo)
 		if err != nil {
 			return nil, err
 		}
@@ -128,7 +128,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 
 	var repositoryID int
 	if args.Repo != nil {
-		v, err := UnmarshalRepositoryID(*args.Repo)
+		v, err := resolverstubs.UnmarshalID[api.RepoID](*args.Repo)
 		if err != nil {
 			return nil, err
 		}
@@ -238,7 +238,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 		resolvers = append(resolvers, resolver)
 	}
 
-	return NewPreciseIndexConnectionResolver(resolvers, totalUploadCount+totalIndexCount, cursor), nil
+	return resolverstubs.NewCursorWithTotalCountConnectionResolver(resolvers, cursor, int32(totalUploadCount+totalIndexCount)), nil
 }
 
 func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ resolverstubs.PreciseIndexResolver, err error) {
@@ -295,7 +295,7 @@ func (r *rootResolver) DeletePreciseIndex(ctx context.Context, args *struct{ ID 
 		}
 	}
 
-	return &resolverstubs.EmptyResponse{}, nil
+	return resolverstubs.Empty, nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data
@@ -324,12 +324,12 @@ func (r *rootResolver) DeletePreciseIndexes(ctx context.Context, args *resolvers
 
 	repositoryID := 0
 	if args.Repository != nil {
-		repositoryID, err = resolveRepositoryID(*args.Repository)
+		repositoryID, err = resolverstubs.UnmarshalID[int](*args.Repository)
 		if err != nil {
 			return nil, err
 		}
 	}
-	term := derefString(args.Query, "")
+	term := resolverstubs.Deref(args.Query, "")
 
 	visibleAtTip := false
 	if args.IsLatestForRepo != nil {
@@ -360,7 +360,7 @@ func (r *rootResolver) DeletePreciseIndexes(ctx context.Context, args *resolvers
 		}
 	}
 
-	return &resolverstubs.EmptyResponse{}, nil
+	return resolverstubs.Empty, nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data
@@ -386,7 +386,7 @@ func (r *rootResolver) ReindexPreciseIndex(ctx context.Context, args *struct{ ID
 		}
 	}
 
-	return &resolverstubs.EmptyResponse{}, nil
+	return resolverstubs.Empty, nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data
@@ -415,12 +415,12 @@ func (r *rootResolver) ReindexPreciseIndexes(ctx context.Context, args *resolver
 
 	repositoryID := 0
 	if args.Repository != nil {
-		repositoryID, err = resolveRepositoryID(*args.Repository)
+		repositoryID, err = resolverstubs.UnmarshalID[int](*args.Repository)
 		if err != nil {
 			return nil, err
 		}
 	}
-	term := derefString(args.Query, "")
+	term := resolverstubs.Deref(args.Query, "")
 
 	visibleAtTip := false
 	if args.IsLatestForRepo != nil {
@@ -451,42 +451,7 @@ func (r *rootResolver) ReindexPreciseIndexes(ctx context.Context, args *resolver
 		}
 	}
 
-	return &resolverstubs.EmptyResponse{}, nil
-}
-
-type preciseIndexConnectionResolver struct {
-	nodes      []resolverstubs.PreciseIndexResolver
-	totalCount int
-	cursor     string
-}
-
-func NewPreciseIndexConnectionResolver(
-	nodes []resolverstubs.PreciseIndexResolver,
-	totalCount int,
-	cursor string,
-) resolverstubs.PreciseIndexConnectionResolver {
-	return &preciseIndexConnectionResolver{
-		nodes:      nodes,
-		totalCount: totalCount,
-		cursor:     cursor,
-	}
-}
-
-func (r *preciseIndexConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.PreciseIndexResolver, error) {
-	return r.nodes, nil
-}
-
-func (r *preciseIndexConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {
-	count := int32(r.totalCount)
-	return &count, nil
-}
-
-func (r *preciseIndexConnectionResolver) PageInfo(ctx context.Context) (resolverstubs.PageInfo, error) {
-	if r.cursor != "" {
-		return &pageInfo{hasNextPage: true, endCursor: &r.cursor}, nil
-	}
-
-	return &pageInfo{hasNextPage: false}, nil
+	return resolverstubs.Empty, nil
 }
 
 func unmarshalPreciseIndexGQLID(id graphql.ID) (uploadID, indexID int, err error) {
@@ -501,8 +466,8 @@ func unmarshalPreciseIndexGQLID(id graphql.ID) (uploadID, indexID int, err error
 var errExpectedPairs = errors.New("expected pairs of `U:<id>`, `I:<id>`")
 
 func unmarshalRawPreciseIndexGQLID(id graphql.ID) (uploadID, indexID int, err error) {
-	var rawPayload string
-	if err := relay.UnmarshalSpec(id, &rawPayload); err != nil {
+	rawPayload, err := resolverstubs.UnmarshalID[string](id)
+	if err != nil {
 		return 0, 0, errors.Wrap(err, "unexpected precise index ID")
 	}
 
@@ -528,14 +493,6 @@ func unmarshalRawPreciseIndexGQLID(id graphql.ID) (uploadID, indexID int, err er
 
 	return uploadID, indexID, nil
 }
-
-type pageInfo struct {
-	endCursor   *string
-	hasNextPage bool
-}
-
-func (r *pageInfo) EndCursor() *string { return r.endCursor }
-func (r *pageInfo) HasNextPage() bool  { return r.hasNextPage }
 
 func bifurcateStates(states []string) (uploadStates, indexStates []string, _ error) {
 	for _, state := range states {

@@ -28,7 +28,7 @@ import {
     createFileTreeEntriesResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
-import { createEditorAPI, percySnapshotWithVariants } from './utils'
+import { createEditorAPI, percySnapshotWithVariants, removeContextFromQuery } from './utils'
 
 export const getCommonRepositoryGraphQlResults = (
     repositoryName: string,
@@ -540,9 +540,9 @@ describe('Repository', () => {
             ])
 
             {
-                const queryInput = await createEditorAPI(driver, '[data-testid="searchbox"] .test-query-input')
+                const queryInput = await createEditorAPI(driver, '.test-query-input')
                 assert.strictEqual(
-                    await queryInput.getValue(),
+                    removeContextFromQuery((await queryInput.getValue()) ?? ''),
                     "repo:^github\\.com/ggilmore/q-test$ file:^Geoffrey's\\ random\\ queries\\.32r242442bf/%\\ token\\.4288249258\\.sql"
                 )
             }
@@ -578,8 +578,11 @@ describe('Repository', () => {
             await assertSelectorHasText('.test-tree-entry-file', 'readme.md')
 
             {
-                const queryInput = await createEditorAPI(driver, '[data-testid="searchbox"] .test-query-input')
-                assert.strictEqual(await queryInput.getValue(), 'repo:^ubuntu/\\+source/quemu$ ') // + should be escaped in regular expression
+                const queryInput = await createEditorAPI(driver, '.test-query-input')
+                assert.strictEqual(
+                    removeContextFromQuery((await queryInput.getValue()) ?? ''),
+                    'repo:^ubuntu/\\+source/quemu$ '
+                ) // + should be escaped in regular expression
             }
 
             // page.click() fails for some reason with Error: Node is either not visible or not an HTMLElement

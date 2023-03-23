@@ -40,4 +40,5 @@ export enum EnterprisePageRoutes {
     Cody = '/cody/*',
     Own = '/own',
     AppComingSoon = '/app/coming-soon',
+    AppAuthCallback = '/app/auth/callback',
 }

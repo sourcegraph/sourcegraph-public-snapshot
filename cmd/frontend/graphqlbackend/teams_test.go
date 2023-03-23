@@ -769,6 +769,69 @@ func TestUpdateParentErrorBothNameAndID(t *testing.T) {
 	})
 }
 
+func TestUpdateParentCircular(t *testing.T) {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	userID := fs.AddUser(types.User{SiteAdmin: true})
+	ctx := userCtx(userID)
+	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
+	parentTeamID := fs.AddTeam(&types.Team{Name: "parent"})
+	fs.AddTeam(&types.Team{Name: "child", ParentTeamID: parentTeamID})
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `mutation UpdateTeam($name: String!, $newParentName: String!) {
+			updateTeam(name: $name, parentTeamName: $newParentName) {
+				parentTeam {
+					name
+				}
+			}
+		}`,
+		ExpectedResult: `null`,
+		ExpectedErrors: []*gqlerrors.QueryError{
+			{
+				Message: `circular dependency: new parent "child" is descendant of updated team "parent"`,
+				Path:    []any{"updateTeam"},
+			},
+		},
+		Variables: map[string]any{
+			"name":          "parent",
+			"newParentName": "child",
+		},
+	})
+}
+
+func TestTeamMakeRoot(t *testing.T) {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	userID := fs.AddUser(types.User{SiteAdmin: true})
+	ctx := userCtx(userID)
+	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
+	parentTeamID := fs.AddTeam(&types.Team{Name: "parent"})
+	fs.AddTeam(&types.Team{Name: "child", ParentTeamID: parentTeamID})
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `mutation UpdateTeam($name: String!) {
+			updateTeam(name: $name, makeRoot: true) {
+				parentTeam {
+					name
+				}
+			}
+		}`,
+		ExpectedResult: `{
+			"updateTeam": {
+				"parentTeam": null
+			}
+		}`,
+		Variables: map[string]any{
+			"name": "child",
+		},
+	})
+}
+
 func TestDeleteTeamByID(t *testing.T) {
 	fs := fakedb.New()
 	db := database.NewMockDB()
@@ -1162,6 +1225,98 @@ func TestTeamsNameSearch(t *testing.T) {
 			}
 		}`,
 	})
+}
+
+func TestTeamsExceptAncestorID(t *testing.T) {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	userID := fs.AddUser(types.User{SiteAdmin: true})
+	ctx := userCtx(userID)
+	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
+	parentTeamID := fs.AddTeam(&types.Team{Name: "parent-include"})
+	fs.AddTeam(&types.Team{Name: "child-include", ParentTeamID: parentTeamID})
+	topLevelNotExcluded := fs.AddTeam(&types.Team{Name: "top-level-not-excluded"})
+	ancestorExcluded := fs.AddTeam(&types.Team{Name: "ancestor-excluded", ParentTeamID: topLevelNotExcluded})
+	fs.AddTeam(&types.Team{Name: "excluded-ancestors-sibling-included", ParentTeamID: topLevelNotExcluded})
+	parentExcluded := fs.AddTeam(&types.Team{Name: "parent-excluded", ParentTeamID: ancestorExcluded})
+	fs.AddTeam(&types.Team{Name: "child-excluded", ParentTeamID: parentExcluded})
+	for name, testCase := range map[string]struct {
+		query          string
+		expectedResult string
+	}{
+		"exceptAncestor": {
+			query: `query ExcludeAncestorId($id: ID!){
+				teams(exceptAncestor: $id) {
+					nodes {
+						name
+					}
+				}
+			}`,
+			expectedResult: `{
+				"teams": {
+					"nodes": [
+						{"name": "parent-include"},
+						{"name": "top-level-not-excluded"}
+					]
+				}
+			}`,
+		},
+		"exceptAncestor and includeChildTeams": {
+			query: `query ExcludeAncestorId($id: ID!){
+				teams(exceptAncestor: $id, includeChildTeams: true) {
+					nodes {
+						name
+					}
+				}
+			}`,
+			expectedResult: `{
+				"teams": {
+					"nodes": [
+						{"name": "parent-include"},
+						{"name": "child-include"},
+						{"name": "top-level-not-excluded"},
+						{"name": "excluded-ancestors-sibling-included"}
+					]
+				}
+			}`,
+		},
+		"includeChildTeams": {
+			query: `{
+				teams(includeChildTeams: true) {
+					nodes {
+						name
+					}
+				}
+			}`,
+			expectedResult: `{
+				"teams": {
+					"nodes": [
+						{"name": "parent-include"},
+						{"name": "child-include"},
+						{"name": "top-level-not-excluded"},
+						{"name": "ancestor-excluded"},
+						{"name": "excluded-ancestors-sibling-included"},
+						{"name": "parent-excluded"},
+						{"name": "child-excluded"}
+					]
+				}
+			}`,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			RunTest(t, &Test{
+				Schema:  mustParseGraphQLSchema(t, db),
+				Context: ctx,
+				Query:   testCase.query,
+				// child-include team will not be returned - by default only top-level teams are included.
+				ExpectedResult: testCase.expectedResult,
+				Variables: map[string]any{
+					"id": string(MarshalTeamID(ancestorExcluded)),
+				},
+			})
+		})
+	}
 }
 
 func TestTeamsCount(t *testing.T) {

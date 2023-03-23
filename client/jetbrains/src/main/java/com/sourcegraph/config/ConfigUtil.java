@@ -21,7 +21,6 @@ public class ConfigUtil {
         configAsJson.addProperty("instanceURL", ConfigUtil.getSourcegraphUrl(project));
         configAsJson.addProperty("accessToken", ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.ENTERPRISE ? ConfigUtil.getAccessToken(project) : null);
         configAsJson.addProperty("customRequestHeadersAsString", ConfigUtil.getCustomRequestHeaders(project));
-        configAsJson.addProperty("isGlobbingEnabled", ConfigUtil.isGlobbingEnabled(project));
         configAsJson.addProperty("pluginVersion", ConfigUtil.getPluginVersion());
         configAsJson.addProperty("anonymousUserId", ConfigUtil.getAnonymousUserId());
         return configAsJson;
@@ -140,12 +139,6 @@ public class ConfigUtil {
         // User level or default
         String userLevelRemoteUrlReplacements = UserLevelConfig.getRemoteUrlReplacements();
         return userLevelRemoteUrlReplacements != null ? userLevelRemoteUrlReplacements : "";
-    }
-
-    public static boolean isGlobbingEnabled(@NotNull Project project) {
-        // Project level → application level
-        Boolean projectLevelIsGlobbingEnabled = getProjectLevelConfig(project).isGlobbingEnabled();
-        return projectLevelIsGlobbingEnabled != null ? projectLevelIsGlobbingEnabled : getApplicationLevelConfig().isGlobbingEnabled();
     }
 
     @Nullable

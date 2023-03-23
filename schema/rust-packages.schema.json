@@ -8,7 +8,7 @@
   "additionalProperties": false,
   "properties": {
     "indexRepositoryName": {
-      "description": "Name of the git repository containing the crates.io index. Empty by default, which means no syncing happens. Updating this setting does not trigger a sync immediately, you must wait until the next scheduled sync for the value to get picked up.",
+      "description": "Name of the git repository containing the crates.io index. Only set if you intend to sync every crate from the index. Updating this setting does not trigger a sync immediately, you must wait until the next scheduled sync for the value to get picked up.",
       "title": "RustIndexRepositoryName",
       "type": "string",
       "examples": ["github.com/crates.io/index"]

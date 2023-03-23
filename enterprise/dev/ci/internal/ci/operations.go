@@ -178,7 +178,7 @@ func addCIScriptsTests(pipeline *bk.Pipeline) {
 //	pipeline.AddStep(":lock: Checkov Terraform scanning",
 //		bk.Cmd("dev/ci/ci-checkov.sh"),
 //		bk.SoftFail(222))
-//}
+// }
 
 // pnpm ~41s + ~1s
 func addGraphQLLint(pipeline *bk.Pipeline) {
@@ -199,6 +199,10 @@ func addClientLintersForAllFiles(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":eslint: ESLint (all)",
 		withPnpmCache(),
 		bk.Cmd("dev/ci/pnpm-run.sh lint:js:all"))
+
+	pipeline.AddStep(":eslint: ESLint (web)",
+		withPnpmCache(),
+		bk.Cmd("dev/ci/pnpm-run.sh lint:js:web"))
 
 	pipeline.AddStep(":stylelint: Stylelint (all)",
 		withPnpmCache(),
@@ -625,7 +629,7 @@ func addAppReleaseSteps(c Config, insiders bool) operations.Operation {
 	if insiders {
 		insidersStr = "-insiders"
 	}
-	version := fmt.Sprintf("%s%s+%d.%.6s", c.Time.Format("2006.01.06"), insidersStr, c.BuildNumber, c.Commit)
+	version := fmt.Sprintf("%s%s+%d.%.6s", c.Time.Format("2006.01.02"), insidersStr, c.BuildNumber, c.Commit)
 
 	return func(pipeline *bk.Pipeline) {
 		// Release App (.zip/.deb/.rpm to Google Cloud Storage, new tap for Homebrew, etc.).
@@ -662,6 +666,8 @@ func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operatio
 		previousMinorVersion := fmt.Sprintf("%d.%d", version.Major(), version.Minor()-1)
 		if version.Major() == 4 && version.Minor() == 0 {
 			previousMinorVersion = "3.43"
+		} else if version.Major() == 5 && version.Minor() == 0 {
+			previousMinorVersion = "4.5"
 		}
 
 		for _, branch := range []string{

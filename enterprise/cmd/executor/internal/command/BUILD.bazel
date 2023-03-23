@@ -6,6 +6,7 @@ go_library(
         "docker.go",
         "firecracker.go",
         "logger.go",
+        "newrunner.go",
         "observability.go",
         "run.go",
         "runner.go",

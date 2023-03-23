@@ -4280,9 +4280,9 @@ Query: `sum by (ranked) (increase(src_search_ranking_result_clicked_count[6h]))`
 
 <br />
 
-#### frontend: percent_file_clicks_on_top_search_result
+#### frontend: percent_clicks_on_top_search_result
 
-<p class="subtitle">Percent of file clicks on top search result over 6h</p>
+<p class="subtitle">Percent of clicks on top search result over 6h</p>
 
 The percent of clicks that were on the top search result, excluding searches with very few results (3 or fewer).
 
@@ -4295,17 +4295,17 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103101`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (ranked) (increase(src_search_ranking_result_clicked_bucket{le="1",resultsLength=">3",type="fileMatch"}[6h])) / sum by (ranked) (increase(src_search_ranking_result_clicked_count{type="fileMatch"}[6h])) * 100`
+Query: `sum by (ranked) (increase(src_search_ranking_result_clicked_bucket{le="1",resultsLength=">3"}[6h])) / sum by (ranked) (increase(src_search_ranking_result_clicked_count[6h])) * 100`
 
 </details>
 
 <br />
 
-#### frontend: percent_file_clicks_on_top_3_search_results
+#### frontend: percent_clicks_on_top_3_search_results
 
-<p class="subtitle">Percent of file clicks on top 3 search results over 6h</p>
+<p class="subtitle">Percent of clicks on top 3 search results over 6h</p>
 
-The percent of file clicks that were on the first 3 search results, excluding searches with very few results (3 or fewer).
+The percent of clicks that were on the first 3 search results, excluding searches with very few results (3 or fewer).
 
 This panel has no related alerts.
 
@@ -4316,7 +4316,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103102`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (ranked) (increase(src_search_ranking_result_clicked_bucket{le="3",resultsLength=">3",type="fileMatch"}[6h])) / sum by (ranked) (increase(src_search_ranking_result_clicked_count{type="fileMatch"}[6h])) * 100`
+Query: `sum by (ranked) (increase(src_search_ranking_result_clicked_bucket{le="3",resultsLength=">3"}[6h])) / sum by (ranked) (increase(src_search_ranking_result_clicked_count[6h])) * 100`
 
 </details>
 
@@ -4337,7 +4337,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103110`
 <details>
 <summary>Technical details</summary>
 
-Query: `round(sum(increase(src_search_ranking_result_clicked_count{type="repo"}[6h])) / sum (increase(src_search_ranking_result_clicked_count[6h]))) * 100`
+Query: `sum(increase(src_search_ranking_result_clicked_count{type="repo"}[6h])) / sum(increase(src_search_ranking_result_clicked_count[6h])) * 100`
 
 </details>
 
@@ -4712,7 +4712,7 @@ Query: `sum(rate(src_graphql_search_response{source=~"searchblitz.*", status!="s
 
 							Increases in response time can point to too much load on the database to keep up with the incoming requests.
 
-							See this documentation page for more details on webhook requests: (https://docs.sourcegraph.com/admin/config/webhooks)
+							See this documentation page for more details on webhook requests: (https://docs.sourcegraph.com/admin/config/webhooks/incoming)
 
 This panel has no related alerts.
 

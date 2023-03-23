@@ -505,7 +505,7 @@
         color: var(--hl-blue);
     }
     .hl-typed-IdentifierBuiltin {
-        color: var(--hl-pink);
+        color: var(--hl-green);
         // filter: brightness(105%);
     }
     .hl-typed-IdentifierBuiltinType {
@@ -933,8 +933,11 @@
         color: var(--hl-gray-1);
     }
     .hl-typed-IdentifierBuiltin {
-        color: var(--hl-purple);
+        color: var(--hl-dark-blue-2);
         // filter: brightness(105%);
+    }
+    .hl-typed-IdentifierBuiltinType {
+        color: var(--hl-dark-blue-2);
     }
     .hl-typed-IdentifierNull {
         color: var(--hl-orange);
@@ -970,9 +973,6 @@
     }
     .hl-typed-IdentifierMacroDefinition {
         color: var(--hl-yellow);
-    }
-    .hl-typed-IdentifierBuiltinType {
-        color: var(--hl-orange);
     }
     .hl-typed-IdentifierAttribute {
         color: var(--hl-purple);

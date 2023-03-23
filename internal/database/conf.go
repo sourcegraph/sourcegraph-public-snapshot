@@ -141,15 +141,25 @@ SELECT
 	id,
 	author_user_id,
 	contents,
-    redacted_contents,
+	redacted_contents,
 	created_at,
 	updated_at
-FROM critical_and_site_config
-WHERE (%s)
+FROM (
+	SELECT
+		*,
+		LAG(redacted_contents) OVER (ORDER BY id) AS prev_redacted_contents
+	FROM
+		critical_and_site_config) t
+WHERE
+(%s)
 `
 
 func (s *confStore) ListSiteConfigs(ctx context.Context, paginationArgs *PaginationArgs) ([]*SiteConfig, error) {
-	where := []*sqlf.Query{sqlf.Sprintf(`type = 'site'`)}
+	where := []*sqlf.Query{
+		sqlf.Sprintf("(prev_redacted_contents IS NULL OR redacted_contents != prev_redacted_contents)"),
+		sqlf.Sprintf("redacted_contents IS NOT NULL"),
+		sqlf.Sprintf(`type = 'site'`),
+	}
 
 	// This will fetch all site configs.
 	if paginationArgs == nil {

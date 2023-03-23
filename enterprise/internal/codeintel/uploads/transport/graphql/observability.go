@@ -8,13 +8,6 @@ import (
 )
 
 type operations struct {
-	// LSIF Uploads
-	lsifUploadByID    *observation.Operation
-	lsifUploadsByRepo *observation.Operation
-	deleteLsifUpload  *observation.Operation
-	deleteLsifUploads *observation.Operation
-
-	// Commit Graph
 	commitGraph *observation.Operation
 }
 
@@ -35,13 +28,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		// LSIF Uploads
-		lsifUploadByID:    op("LSIFUploadByID"),
-		lsifUploadsByRepo: op("LSIFUploadsByRepo"),
-		deleteLsifUpload:  op("DeleteLSIFUpload"),
-		deleteLsifUploads: op("DeleteLSIFUploads"),
-
-		// Commit Graph
 		commitGraph: op("CommitGraph"),
 	}
 }

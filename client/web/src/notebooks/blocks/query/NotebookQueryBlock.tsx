@@ -41,7 +41,6 @@ interface NotebookQueryBlockProps
         TelemetryProps,
         PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings'>,
         OwnConfigProps {
-    globbing: boolean
     isSourcegraphDotCom: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     authenticatedUser: AuthenticatedUser | null
@@ -69,7 +68,6 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
         onBlockInputChange,
         fetchHighlightedFileLineRanges,
         onRunBlock,
-        globbing,
         isSourcegraphDotCom,
         searchContextsEnabled,
         ownEnabled,
@@ -134,11 +132,10 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
             () =>
                 createDefaultSuggestions({
                     isSourcegraphDotCom,
-                    globbing,
                     fetchSuggestions: fetchStreamSuggestions,
                     applyOnEnter: applySuggestionsOnEnter,
                 }),
-            [isSourcegraphDotCom, globbing, applySuggestionsOnEnter]
+            [isSourcegraphDotCom, applySuggestionsOnEnter]
         )
 
         // Focus editor on component creation if necessary

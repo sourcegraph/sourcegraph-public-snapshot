@@ -101,3 +101,19 @@ func TestListTriggerJobs(t *testing.T) {
 		require.Len(t, js, 1)
 	})
 }
+
+func TestEnqueueTriggerJobs(t *testing.T) {
+	logger := logtest.Scoped(t)
+	t.Run("does not enqueue jobs for deleted users", func(t *testing.T) {
+		ctx := context.Background()
+		db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+		f := populateCodeMonitorFixtures(t, db)
+
+		err := db.Users().Delete(ctx, f.User.ID)
+		require.NoError(t, err)
+
+		jobs, err := db.CodeMonitors().EnqueueQueryTriggerJobs(ctx)
+		require.NoError(t, err)
+		require.Len(t, jobs, 0)
+	})
+}
