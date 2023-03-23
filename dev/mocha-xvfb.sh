@@ -1,4 +1,4 @@
-#!/usr/env/bin bash
+#!/usr/bin/env bash
 
  # Xvfb "$DISPLAY" -screen 0 1280x1024x24 &
  # x11vnc -display "$DISPLAY" -forever -rfbport 5900 >/x11vnc.log 2>&1 &
@@ -16,4 +16,4 @@ cmd=$1
 shift
 
 echo "Running: '$cmd'"
-"$cmd" $@ || exit 1
+"$cmd" "$@" || exit 1
