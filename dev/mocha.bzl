@@ -79,7 +79,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, use_xvfb 
         "BROWSER": "chrome",
 
         # Puppeteer config
-        "DISPLAY": "88",
+        "DISPLAY": "99",
     })
 
     mocha_name = "%s_mocha" % name if use_xvfb else name
