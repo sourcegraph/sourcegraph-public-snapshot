@@ -1,4 +1,4 @@
-# Rate limits on Sourcegraph
+# Configuring rate limits on Sourcegraph
 
 Sourcegraph has various mechanisms in place to ensure that communication with external services happen in a controlled and reliable manner.
 
