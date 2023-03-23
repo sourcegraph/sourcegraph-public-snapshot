@@ -55,6 +55,7 @@ Do the [branch cut](./index.md#release-branches) for the release:
 - [ ] Enable the `release-protector` github action in the sourcegraph/sourcegraph repo. This may require you to request admin permissions using Entitle.
 
 - [ ] Create the `$MAJOR.$MINOR` branch off the CHANGELOG commit in the previous step:
+
   ```sh
   pnpm run release release:branch-cut
   ```
@@ -104,11 +105,10 @@ Revert or disable features that may cause delays. As necessary, `git cherry-pick
   ```
   Hey team, I'm the release captain for the $MAJOR.$MINOR release, posting here for asking for a release candidate (v$MAJOR.$MINOR.$PATCH-rc.N) to be deployed to a test managed instance. Could someone help here? :ty:
   ```
-  
+
 ## Code Freeze
 
 Create candidates as necessary
-
 
 ```shell
 pnpm run release release:create-candidate
