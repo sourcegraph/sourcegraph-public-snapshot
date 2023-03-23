@@ -29,12 +29,13 @@ func TestNewVersionFromString(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.v, func(t *testing.T) {
 			version, patch, ok := NewVersionAndPatchFromString(testCase.v)
-			fmt.Printf("%x\n", version)
-			fmt.Printf("%x\n", testCase.version)
+
 			if ok != testCase.ok {
 				t.Errorf("unexpected ok. want=%v have=%v", testCase.ok, ok)
 			} else {
 				if version != testCase.version {
+					fmt.Printf("%x\n", version)
+					fmt.Printf("%x\n", testCase.version)
 					t.Errorf("unexpected version. want=%s have=%s", testCase.version, version)
 				}
 				if patch != testCase.patch {
