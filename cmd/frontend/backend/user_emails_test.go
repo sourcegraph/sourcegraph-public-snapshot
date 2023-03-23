@@ -151,7 +151,6 @@ func TestSendUserEmailVerificationEmail(t *testing.T) {
 		t.Fatal("want sent != nil")
 	}
 	if want := (txemail.Message{
-		FromName: "",
 		To:       []string{"a@example.com"},
 		Template: verifyEmailTemplates,
 		Data: struct {
@@ -195,7 +194,6 @@ func TestSendUserEmailOnFieldUpdate(t *testing.T) {
 		t.Fatal("want sent != nil")
 	}
 	if want := (txemail.Message{
-		FromName: "",
 		To:       []string{"a@example.com"},
 		Template: updateAccountEmailTemplate,
 		Data: struct {
