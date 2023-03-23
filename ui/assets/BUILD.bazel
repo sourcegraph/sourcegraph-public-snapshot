@@ -15,17 +15,18 @@ go_library(
     deps = ["//lib/errors"],
 )
 
-copy_to_directory(
-    out = "dist",
-    name = "copy_bundle_oss",
-    srcs = ["//client/web:bundle"],
-    root_paths = ["**"],
+filegroup(
+    name = "assets_files_oss",
+    srcs = ["//client/web:bundle", "//ui/assets/img:img"],
 )
 
 copy_to_directory(
-    name = "copy_img",
     out = "dist",
-    srcs = ["img"],
+    name = "copy_bundle_oss",
+    srcs = ["//ui/assets:assets_files_oss"],
+    replace_prefixes = {
+        "client/web/bundle": "",
+    }
 )
 
 go_library(
@@ -36,16 +37,23 @@ go_library(
         "load_manifest_dist.go",  #keep
         "manifest.go",
     ],
-    embedsrcs = ["copy_bundle_oss", "copy_img"],
+    embedsrcs = ["copy_bundle_oss"],
     importpath = "github.com/sourcegraph/sourcegraph/ui/assets",
     visibility = ["//visibility:public"],
     deps = ["//lib/errors"],
 )
 
+filegroup(
+    name = "assets_files_enterprise",
+    srcs = ["//client/web:bundle-enterprise", "//ui/assets/img:img"],
+)
+
 copy_to_directory(
     name = "copy_bundle_enterprise",
-    srcs = ["//client/web:bundle-enterprise"],
-    root_paths = ["**"],
+    srcs = ["//ui/assets:assets_files_enterprise"],
+    replace_prefixes = {
+        "client/web/bundle-enterprise": "",
+    }
 )
 
 go_library(
@@ -61,4 +69,3 @@ go_library(
     visibility = ["//visibility:public"],
     deps = ["//lib/errors"],
 )
-
