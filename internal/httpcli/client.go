@@ -214,9 +214,9 @@ var InternalClient, _ = InternalClientFactory.Client()
 
 // Doer returns a new Doer wrapped with the middleware stack
 // provided in the Factory constructor and with the given common
-// and base opts applied to it.
-func (f Factory) Doer(base ...Opt) (Doer, error) {
-	cli, err := f.Client(base...)
+// and extra opts applied to it.
+func (f Factory) Doer(extras ...Opt) (Doer, error) {
+	cli, err := f.Client(extras...)
 	if err != nil {
 		return nil, err
 	}
