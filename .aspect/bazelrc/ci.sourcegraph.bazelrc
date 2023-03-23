@@ -24,3 +24,5 @@ build --test_env=CI
 # Ensure we're not exhausting database connections.
 build --test_env=GOMAXPROCS=10
 build --test_env=TESTDB_MAXOPENCONNS=15
+
+build --test_env=MOCHA_HEADLESS='true'

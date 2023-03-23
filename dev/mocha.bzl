@@ -60,6 +60,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, use_xvfb 
     ]
 
     env = dict(env, **{
+        "HEADLESS": "$$MOCHA_HEADLESS",
         # Add environment variable so that mocha writes its test xml
         # to the location Bazel expects.
         "MOCHA_FILE": "$$XML_OUTPUT_FILE",
