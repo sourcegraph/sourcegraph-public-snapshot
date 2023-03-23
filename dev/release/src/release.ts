@@ -49,6 +49,7 @@ import { calendarTime, ensureEvent, EventOptions, getClient } from './google-cal
 import { postMessage, slackURL } from './slack'
 import { bakeSrcCliSteps, batchChangesInAppChangelog, combyReplace, indexerUpdate } from './static-updates'
 import {
+    backportStatus,
     cacheFolder,
     changelogURL,
     ensureDocker,
@@ -66,6 +67,7 @@ import {
     retryInput,
     timezoneLink,
     updateUpgradeGuides,
+    validateNoOpenBackports,
     validateNoReleaseBlockers,
     verifyWithInput,
 } from './util'
@@ -82,6 +84,7 @@ export type StepID =
     | 'release:branch-cut'
     // release
     | 'release:status'
+    | 'release:backport-status'
     | 'release:create-candidate'
     | 'release:promote-candidate'
     | 'release:check-candidate'
@@ -461,6 +464,16 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         },
     },
     {
+        id: 'release:backport-status',
+        description: 'Check for backport issues on the currently active release',
+        run: async config => {
+            const release = await getActiveRelease(config)
+            getAuthenticatedGitHubClient()
+                .then(client => backportStatus(client, release.version))
+                .then(str => console.log(str))
+        },
+    },
+    {
         id: 'release:create-candidate',
         description: 'Generate the Nth release candidate. Set <candidate> to "final" to generate a final release',
         run: async config => {
@@ -511,11 +524,12 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             'Promote a release candidate to release build. Specify the full candidate tag to promote the tagged commit to release.',
         argNames: ['candidate'],
         run: async (config, candidate) => {
-            const client = await getAuthenticatedGitHubClient()
-            await validateNoReleaseBlockers(client)
-
             const release = await getActiveRelease(config)
             ensureReleaseBranchUpToDate(release.branch)
+
+            const client = await getAuthenticatedGitHubClient()
+            await validateNoReleaseBlockers(client)
+            await validateNoOpenBackports(client, release.version)
 
             const warnMsg =
                 'Verify the provided tag is correct to promote to release. Note: it is very unusual to require a non-standard tag to promote to release, proceed with caution.'
