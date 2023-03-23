@@ -25,6 +25,7 @@ This page documents how to configure a Sourcegraph instance. For deployment conf
 - [PostgreSQL Config](./postgres-conf.md)
 - [Disabling user invitations](./user_invitations.md)
 - [Configuring webhooks](./webhooks/index.md)
+- [Configuring rate limits](./rate_limits.md)
 
 ## Advanced tasks
 

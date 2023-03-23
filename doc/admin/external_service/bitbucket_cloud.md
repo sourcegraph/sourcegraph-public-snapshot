@@ -33,6 +33,12 @@ If enabled, the default rate is set at 7200 per hour (2 per second), which can b
 
 **NOTE** Internal rate limiting is only currently applied when synchronizing changesets in [batch changes](../../batch_changes/index.md), repository permissions, and repository metadata from code hosts.
 
+## Bitbucket Cloud rate limits
+
+You can read about how Bitbucket Cloud applies rate limits [here](https://support.atlassian.com/bitbucket-cloud/docs/api-request-limits/).
+
+If Sourcegraph encounters rate limits on Bitbucket Cloud, it will retry the request with exponential back-off, until 5 minutes have passed. If the connection is still being rate limited after 5 minutes, the request will be dropped.
+
 ## User authentication
 
 To configure Bitbucket Cloud as an authentication provider (which will enable sign-in via Bitbucket Cloud), see the

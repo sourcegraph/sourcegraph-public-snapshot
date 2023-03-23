@@ -68,3 +68,7 @@ Please consult [this page](../config/webhooks/incoming.md) in order to configure
 **Note:** We do not support preemptive permissions syncing at this point. Once a user signs up / logins to Sourcegraph with their Azure DevOps account, Sourcegraph uses the authenticated `access_token` to calculate permissions by listing the organizations and projects that the user has access to. As a result, immediately after signing up user level permissions may not be 100% up to date. Users are advised to wait for an initial permissions sync to complete, whose status they may check from the `Permissions` tab under their account settings page. Alternatively they may also trigger a permissions sync for their account from the same page.
 
 Since permissions are already enforced by setting `enforcePermission` in the code host configuration, even though user permissions may not have synced completely, users will not have access to any repositories that they cannot access on Azure DevOps. As the user permissions sync progresses and eventually completes, they will be able to access the complete set of repositories on Sourcegraph that they can already access on Azure DevOps.
+
+## Azure DevOps rate limits
+
+If Sourcegraph hits a rate limit imposed by Azure DevOps, Sourcegraph will wait the appropriate amount of time specified by the code host before retrying the request. You can read more about how Azure DevOps imposes rate limits [here](https://learn.microsoft.com/en-us/azure/devops/integrate/concepts/rate-limits).

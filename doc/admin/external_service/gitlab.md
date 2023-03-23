@@ -146,6 +146,12 @@ because Sourcegraph usernames are mutable.
 To configure GitLab as an authentication provider (which will enable sign-in via GitLab), see the
 [authentication documentation](../auth/index.md#gitlab).
 
+## GitLab.com rate limits
+
+You should always include a token in a configuration for a GitLab.com URL to avoid being denied service by GitLab's [unauthenticated rate limits](https://docs.gitlab.com/ee/user/gitlab_com/index.html#gitlabcom-specific-rate-limits).
+
+If Sourcegraph hits a rate limit imposed by GitLab.com, Sourcegraph will wait the appropriate amount of time specified by GitLab.com before retrying the request. This can be several minutes in extreme cases.
+
 ## Internal rate limits
 
 Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to GitLab.
