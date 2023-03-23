@@ -129,15 +129,16 @@ func (index *EmbeddingIndex[T]) SimilaritySearch(query []float32, numResults int
 		RowMetadata: make([]*T, numResults),
 	}
 
-	if debug {
-		results.Debug = make([]string, numResults)
-	}
 	for idx := 0; idx < min(numResults, len(neighbors)); idx++ {
 		results.RowMetadata[idx] = &index.RowMetadata[neighbors[idx].index]
 		if debug {
+			if results.Debug == nil {
+				results.Debug = make([]string, numResults)
+			}
 			results.Debug[idx] = neighbors[idx].score.debug
 		}
 	}
+
 	return results
 }
 
