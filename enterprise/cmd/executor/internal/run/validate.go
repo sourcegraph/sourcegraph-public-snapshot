@@ -42,7 +42,7 @@ func RunValidate(cliCtx *cli.Context, logger log.Logger, config *config.Config) 
 	}
 
 	// Validate frontend access token returns status 200.
-	if err = validateAuthorizationToken(cliCtx.Context, client, copts.BaseClientOptions.EndpointOptions); err != nil {
+	if err = validateAuthorizationToken(cliCtx.Context, copts.BaseClientOptions); err != nil {
 		return err
 	}
 
@@ -78,15 +78,21 @@ func RunValidate(cliCtx *cli.Context, logger log.Logger, config *config.Config) 
 
 var authorizationFailedErr = errors.New("failed to authorize with frontend, is executors.accessToken set correctly in the site-config?")
 
-func validateAuthorizationToken(ctx context.Context, client *apiclient.BaseClient, options apiclient.EndpointOptions) error {
-	req, err := apiclient.NewRequest(http.MethodGet, options.URL, ".executors/test/auth", nil)
+func validateAuthorizationToken(ctx context.Context, options apiclient.BaseClientOptions) error {
+	options.EndpointOptions.PathPrefix = ""
+	client, err := apiclient.NewBaseClient(options)
+	if err != nil {
+		return err
+	}
+
+	req, err := client.NewRequest(0, "", http.MethodGet, ".executors/test/auth", nil)
 	if err != nil {
 		return err
 	}
 
 	if err = client.DoAndDrop(ctx, req); err != nil {
 		var unexpectedStatusCodeError *apiclient.UnexpectedStatusCodeErr
-		if errors.As(err, &unexpectedStatusCodeError) && unexpectedStatusCodeError.StatusCode == http.StatusUnauthorized {
+		if errors.As(err, &unexpectedStatusCodeError) && (unexpectedStatusCodeError.StatusCode == http.StatusUnauthorized || unexpectedStatusCodeError.StatusCode == http.StatusForbidden) {
 			return authorizationFailedErr
 		} else {
 			return errors.Wrap(err, "failed to validate authorization token")
