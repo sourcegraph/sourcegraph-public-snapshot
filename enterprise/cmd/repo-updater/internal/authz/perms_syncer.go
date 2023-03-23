@@ -33,8 +33,8 @@ type permsSyncer interface {
 	syncUserPerms(context.Context, int32, bool, authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error)
 }
 
-// PermsSyncer is a permissions syncing manager that is in charge of keeping
-// permissions up-to-date for users and repositories.
+// PermsSyncer is in charge of keeping permissions up-to-date for users and
+// repositories.
 type PermsSyncer struct {
 	// The logger to use when logging messages and errors.
 	logger log.Logger
@@ -59,7 +59,7 @@ type PermsSyncer struct {
 	permsStore edb.PermsStore
 }
 
-// NewPermsSyncer returns a new permissions syncing manager.
+// NewPermsSyncer returns a new permissions syncer.
 func NewPermsSyncer(
 	logger log.Logger,
 	db database.DB,
