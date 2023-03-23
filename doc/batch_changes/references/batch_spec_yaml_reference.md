@@ -162,7 +162,7 @@ steps:
 The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.
 
 <aside class="note">
-<span class="badge badge-feature">Templating</span> <code>steps.run</code> can include <a href="batch_spec_templating">template variables</a> in Sourcegraph 3.22 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5.
+<span class="badge badge-feature">Templating</span> <code>steps.run</code> can include <a href="batch_spec_templating">template variables</a> in Sourcegraph 3.22 and <a href="https://sourcegraph.com/github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5.
 </aside>
 
 ## [`steps.container`](#steps-container)
@@ -171,7 +171,7 @@ The Docker image used to launch the Docker container in which the shell command 
 
 The image has to have either the `/bin/sh` or the `/bin/bash` shell.
 
-It is executed using `docker` on the machine on which the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) is executed. If the image exists locally, that is used. Otherwise it's pulled using `docker pull`.
+It is executed using `docker` on the machine on which the [Sourcegraph CLI (`src`)](https://sourcegraph.com/github.com/sourcegraph/src-cli) is executed. If the image exists locally, that is used. Otherwise it's pulled using `docker pull`.
 
 ## [`steps.env`](#steps-env)
 
@@ -180,7 +180,7 @@ Environment variables to set in the environment when running this command.
 These may be defined either as an [object](#environment-object) or (in Sourcegraph 3.23 and later) as an [array](#environment-array).
 
 <aside class="note">
-<span class="badge badge-feature">Templating</span> The value for each entry in <code>steps.env</code> can include <a href="batch_spec_templating">template variables</a> in Sourcegraph 3.22 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5.
+<span class="badge badge-feature">Templating</span> The value for each entry in <code>steps.env</code> can include <a href="batch_spec_templating">template variables</a> in Sourcegraph 3.22 and <a href="https://sourcegraph.com/github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5.
 </aside>
 
 ### Environment object
@@ -241,7 +241,7 @@ Files to create on the host machine and mount into the container when running `s
 `steps.files` is an object, where the key is the name of the file _inside the container_ and the value is the content of the file.
 
 <aside class="note">
-<span class="badge badge-feature">Templating</span> The value for each entry in <code>steps.files</code> can include <a href="batch_spec_templating">template variables</a> in Sourcegraph 3.22 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5.
+<span class="badge badge-feature">Templating</span> The value for each entry in <code>steps.files</code> can include <a href="batch_spec_templating">template variables</a> in Sourcegraph 3.22 and <a href="https://sourcegraph.com/github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5.
 </aside>
 
 ### Examples
@@ -422,10 +422,10 @@ steps:
 ## [`steps.mount`](#steps-mount)
 
 <aside class="note">
-<span class="badge badge-note">New</span> <code>mount</code> is a new feature. Using <code>mount</code> locally is supported in Sourcegraph 3.41 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.41. Using <code>mount</code> in batch changes server-side is supported in Sourcegraph 4.1 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 4.0.1. It's a <b>preview</b> of functionality we're currently exploring to make running custom scripts/binaries easier. If you have any feedback, please let us know!
+<span class="badge badge-note">New</span> <code>mount</code> is a new feature. Using <code>mount</code> locally is supported in Sourcegraph 3.41 and <a href="https://sourcegraph.com/github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.41. Using <code>mount</code> in batch changes server-side is supported in Sourcegraph 4.1 and <a href="https://sourcegraph.com/github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 4.0.1. It's a <b>preview</b> of functionality we're currently exploring to make running custom scripts/binaries easier. If you have any feedback, please let us know!
 </aside>
 
-> NOTE: This feature is currently only available for <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a>.
+> NOTE: This feature is currently only available for <a href="https://sourcegraph.com/github.com/sourcegraph/src-cli">Sourcegraph CLI</a>.
 
 Mounts a local path to a path in a Docker container. Mounted paths are accessible to the step's `run` command.
 
@@ -738,7 +738,7 @@ changesetTemplate:
 ## [`transformChanges`](#transformchanges)
 
 <aside class="experimental">
-<span class="badge badge-experimental">Experimental</span> <code>transformChanges</code> is an experimental feature in Sourcegraph 3.23 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.23. It's a <b>preview</b> of functionality we're currently exploring to make managing large changes in large repositories easier. If you have any feedback, please let us know!
+<span class="badge badge-experimental">Experimental</span> <code>transformChanges</code> is an experimental feature in Sourcegraph 3.23 and <a href="https://sourcegraph.com/github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.23. It's a <b>preview</b> of functionality we're currently exploring to make managing large changes in large repositories easier. If you have any feedback, please let us know!
 </aside>
 
 A description of how to transform the changes (diffs) produced in each repository before turning them into separate changeset specs by inserting them into the [`changesetTemplate`](#changesettemplate).
@@ -801,7 +801,7 @@ Optional: the file diffs matching the given directory will only be grouped in a 
 ## [`workspaces`](#workspaces)
 
 <aside class="experimental">
-<span class="badge badge-experimental">Experimental</span> <code>workspaces</code> is an experimental feature in Sourcegraph 3.25 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.25. It's a <b>preview</b> of functionality we're currently exploring to make managing large changes in large repositories easier. If you have any feedback, please let us know!
+<span class="badge badge-experimental">Experimental</span> <code>workspaces</code> is an experimental feature in Sourcegraph 3.25 and <a href="https://sourcegraph.com/github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.25. It's a <b>preview</b> of functionality we're currently exploring to make managing large changes in large repositories easier. If you have any feedback, please let us know!
 </aside>
 
 The optional `workspaces` property allows users to define where projects are located in repositories and cause the [`steps`](#steps) to be executed for each project, instead of once per repository. That allows easier creation of multiple changesets in large repositories.
