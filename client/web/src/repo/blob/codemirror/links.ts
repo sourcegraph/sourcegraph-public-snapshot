@@ -12,6 +12,10 @@ import { syntaxHighlight } from './highlight'
 
 import styles from './links.module.scss'
 
+/**
+ * SyntaxKinds where we will check for URLs.
+ * We only match URLs within comments and string literals to reduce false positives.
+ */
 const SUPPORTED_KINDS = new Set<SyntaxKind>([SyntaxKind.Comment, SyntaxKind.StringLiteral])
 
 /**
@@ -41,7 +45,6 @@ class LinkBuilder implements PluginValue {
             const toLine = view.state.doc.lineAt(to)
 
             const { occurrences, lineIndex } = view.state.facet(syntaxHighlight)
-            const blobInfo = view.state.facet(buildLinks)
 
             // Find index of first relevant token
             let startIndex: number | undefined
@@ -78,10 +81,7 @@ class LinkBuilder implements PluginValue {
                     }
 
                     const line = textDocument.line(occurrenceStartLine)
-                    const links = getLinksFromString({
-                        input: line.text,
-                        externalURLs: occurrence.kind === SyntaxKind.Comment ? blobInfo[0].externalURLs : undefined,
-                    })
+                    const links = getLinksFromString({ input: line.text })
 
                     for (const link of links) {
                         const from = Math.min(line.from + link.start, line.to)
@@ -108,6 +108,9 @@ class LinkBuilder implements PluginValue {
     }
 }
 
+/**
+ * Transforms URLs within code comments and string literals into links.
+ */
 export const buildLinks = Facet.define<BlobInfo>({
     static: true,
     compareInput: (blobInfoA, blobInfoB) => blobInfoA.lsif === blobInfoB.lsif,
