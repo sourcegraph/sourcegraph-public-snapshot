@@ -1,11 +1,11 @@
-import React, { useCallback, useContext, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useState } from 'react'
 
-import { mdiMagnify } from '@mdi/js'
+import { mdiClose, mdiMagnify } from '@mdi/js'
+import { animated } from 'react-spring'
 import { tap } from 'rxjs/operators'
 
-import { Container, Icon } from '@sourcegraph/wildcard'
+import { Alert, Button, Container, Icon, useAnimatedAlert } from '@sourcegraph/wildcard'
 
-import { DismissibleAlert } from '../../../../components/DismissibleAlert'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { BatchSpecApplyPreviewVariables, ChangesetApplyPreviewFields, Scalars } from '../../../../graphql-operations'
 import { MultiSelectContext } from '../../MultiSelectContext'
@@ -127,7 +127,6 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
                 Omit<ChangesetApplyPreviewNodeProps, 'node'>,
                 PreviewListHeaderProps
             >
-                className="mt-2"
                 nodeComponent={ChangesetApplyPreviewNode}
                 nodeComponentProps={{
                     authenticatedUser,
@@ -182,15 +181,36 @@ const PublicationStatesUpdateAlerts: React.FunctionComponent<React.PropsWithChil
 
     return (
         <div className="mt-2">
-            {recalculationUpdates.map(([timestamp, status]) =>
-                // Wait to show publication state update alerts until the connection query
-                // request resolves.
-                status === 'complete' ? (
-                    <DismissibleAlert variant="success" key={timestamp}>
-                        Publication state actions were recalculated.
-                    </DismissibleAlert>
-                ) : null
-            )}
+            {recalculationUpdates.map(([timestamp, status]) => (
+                <AnimatedDismissibleAlert key={timestamp} status={status}>
+                    Publication state actions were recalculated.
+                </AnimatedDismissibleAlert>
+            ))}
         </div>
+    )
+}
+
+const AnimatedDismissibleAlert: React.FunctionComponent<
+    React.PropsWithChildren<{ status: 'pending' | 'complete' }>
+> = ({ children, status }) => {
+    const { ref, style, show, dismiss } = useAnimatedAlert({ autoDuration: 'short' })
+
+    useEffect(() => {
+        // Wait to show publication state update alerts until the connection query
+        // request resolves.
+        if (status === 'complete') {
+            show()
+        }
+    }, [status, show])
+
+    return (
+        <animated.div style={style}>
+            <Alert ref={ref} variant="success" className="mb-3 d-flex align-items-center justify-content-between">
+                {children}
+                <Button aria-label="Dismiss alert" variant="icon" className={styles.closeButton} onClick={dismiss}>
+                    <Icon aria-hidden={true} svgPath={mdiClose} />
+                </Button>
+            </Alert>
+        </animated.div>
     )
 }
