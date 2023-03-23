@@ -116,7 +116,6 @@ const SiteConfigurationHistoryItem: FC<SiteConfigurationHistoryItemProps> = ({ n
                             Changed <Timestamp date={node.createdAt} />
                             {node.author ? (
                                 <>
-                                    {' '}
                                     <span className="ml-1">
                                         by{' '}
                                         <Link to={`/users/${node.author.username}`} className="text-truncate">
