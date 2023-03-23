@@ -218,12 +218,11 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) (err err
 	// actually cause errors on the Bitbucket side. So we need to pick apart the
 	// request just a touch to figure out if we should add the header.
 	var reqBody []byte
-	var err error
 	if req.Body != nil {
 		req.Header.Set("Content-Type", "application/json; charset=utf-8")
 		reqBody, err = io.ReadAll(req.Body)
 		if err != nil {
-			return err
+			return err, code
 		}
 	}
 	req.Body = io.NopCloser(bytes.NewReader(reqBody))
