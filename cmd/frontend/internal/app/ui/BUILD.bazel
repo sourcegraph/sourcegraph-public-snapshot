@@ -1,5 +1,6 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
+# gazelle:resolve go github.com/sourcegraph/sourcegraph/ui/assets //ui/assets:assets
 go_library(
     name = "ui",
     srcs = [
