@@ -139,7 +139,7 @@ func hydrateMetadataFromFile(fs fs.FS, schemaBasePath, metadataFilename string, 
 			class:       "malformed concurrent index creation",
 			description: fmt.Sprintf("did not expect down query of migration at '%s' to contain concurrent creation of an index", schemaPath),
 			instructions: strings.Join([]string{
-				"Remove `CONCURRENTLY` when re-creating an old index in down migrations (if you're seeing this in a local dev, try running `sg update` to see if it fixes the issue first).",
+				"Remove `CONCURRENTLY` when re-creating an old index in down migrations (if you're seeing this in a local dev environment, try running `sg update` to see if it fixes the issue first).",
 				"Downgrades indicate an instance stability error which generally requires a maintenance window.",
 			}, " "),
 		}
