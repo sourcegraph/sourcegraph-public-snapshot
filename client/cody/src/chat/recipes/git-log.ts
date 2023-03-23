@@ -61,13 +61,15 @@ export class GitHistory implements Recipe {
         const gitLogOutput = gitLogCommand.stdout.toString().trim()
 
         if (!gitLogOutput) {
-            editor.showWarningMessage('No git history found for the selected option.')
+            // TODO: Show the warning within the Chat UI.
+            // editor.showWarningMessage('No git history found for the selected option.')
             return null
         }
 
         const truncatedGitLogOutput = truncateText(gitLogOutput, MAX_RECIPE_INPUT_TOKENS)
         if (truncatedGitLogOutput.length < gitLogOutput.length) {
-            editor.showWarningMessage('Truncated extra long git log output, so summary may be incomplete')
+            // TODO: Show the warning within the Chat UI.
+            // editor.showWarningMessage('Truncated extra long git log output, so summary may be incomplete.')
         }
 
         const timestamp = getShortTimestamp()

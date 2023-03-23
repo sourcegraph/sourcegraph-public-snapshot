@@ -28,7 +28,8 @@ export class TranslateToLanguage implements Recipe {
 
         const toLanguage = await editor.showQuickPick(languageNames)
         if (!toLanguage) {
-            editor.showWarningMessage('Must pick a language to translate to')
+            // TODO: Show the warning within the Chat UI.
+            // editor.showWarningMessage('Must pick a language to translate to.')
             return null
         }
 
