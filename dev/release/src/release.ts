@@ -471,6 +471,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             getAuthenticatedGitHubClient()
                 .then(client => backportStatus(client, release.version))
                 .then(str => console.log(str))
+                .catch(error => error)
         },
     },
     {
