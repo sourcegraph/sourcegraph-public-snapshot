@@ -15,7 +15,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -578,18 +577,7 @@ func TestCloneRepo(t *testing.T) {
 
 	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
-	rawDB := database.NewDB(logger, dbtest.NewDB(logger, t))
-	db := database.NewMockDBFrom(rawDB)
-	gitserverReposSpy := database.NewMockGitserverRepoStoreFrom(db.GitserverRepos())
-	var mu sync.Mutex
-	var cloningProgressUpdates []string
-	gitserverReposSpy.SetCloningProgressFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, text string) error {
-		mu.Lock()
-		cloningProgressUpdates = append(cloningProgressUpdates, text)
-		mu.Unlock()
-		return rawDB.GitserverRepos().SetCloningProgress(ctx, repo, text)
-	})
-	db.GitserverReposFunc.SetDefaultReturn(gitserverReposSpy)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	dbRepo := &types.Repo{
 		Name:        repoName,
 		Description: "Test",
@@ -677,6 +665,13 @@ func TestCloneRepo(t *testing.T) {
 	gotCommit = cmd("git", "rev-parse", "HEAD")
 	if wantCommit != gotCommit {
 		t.Fatal("failed to clone:", gotCommit)
+	}
+	gitserverRepo, err := db.GitserverRepos().GetByName(ctx, repoName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gitserverRepo.CloningProgress == "" {
+		t.Error("want non-empty CloningProgress")
 	}
 }
 
