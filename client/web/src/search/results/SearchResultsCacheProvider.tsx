@@ -33,7 +33,8 @@ const SearchResultsCacheContext = createContext<MutableRefObject<CachedResults |
  * Otherwise, executes a new search and caches the value once
  * the search completes.
  *
- * @param streamSearch Search function.
+ * @param streamSearch Search function to call the backend with.
+ * @param query Search query.
  * @param options Options to pass on to `streamSeach`. MUST be wrapped in `useMemo` for this to work.
  * @returns Search results, either from cache or from running a new search (updated as new streaming results come in).
  */
