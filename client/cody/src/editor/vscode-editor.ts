@@ -7,15 +7,17 @@ const SURROUNDING_LINES = 50
 export class VSCodeEditor implements Editor {
     public getActiveTextEditor(): ActiveTextEditor | null {
         const activeEditor = vscode.window.activeTextEditor
-        const documentUri = activeEditor?.document.uri
-        const documentText = activeEditor?.document.getText()
-        return documentUri && documentText ? { content: documentText, filePath: documentUri.fsPath } : null
+        if (!activeEditor || activeEditor.document.uri.scheme !== 'file') {
+            return null
+        }
+        const documentUri = activeEditor.document.uri
+        const documentText = activeEditor.document.getText()
+        return { content: documentText, filePath: documentUri.fsPath }
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
         const activeEditor = vscode.window.activeTextEditor
-        if (!activeEditor) {
-            vscode.window.showErrorMessage('No code selected. Please select some code and try again.')
+        if (!activeEditor || activeEditor.document.uri.scheme !== 'file') {
             return null
         }
         const selection = activeEditor.selection
@@ -44,7 +46,7 @@ export class VSCodeEditor implements Editor {
 
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
         const activeEditor = vscode.window.activeTextEditor
-        if (!activeEditor) {
+        if (!activeEditor || activeEditor.document.uri.scheme !== 'file') {
             return null
         }
 
