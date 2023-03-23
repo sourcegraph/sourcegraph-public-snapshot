@@ -56,7 +56,7 @@ export const SiteConfigurationChangeListPage: FC = () => {
                             {connection?.nodes
                                 .filter(node => node.diff)
                                 .map(node => (
-                                    <SiteConfigurationHistoryItem node={node} />
+                                    <SiteConfigurationHistoryItem key={node.id} node={node} />
                                 ))}
                         </div>
                         <PageSwitcher
