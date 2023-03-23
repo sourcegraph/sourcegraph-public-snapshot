@@ -169,6 +169,10 @@
         background-color: var(--color-bg-3);
     }
 
+    &--link:focus-visible {
+        box-shadow: var(--focus-box-shadow);
+    }
+
     code {
         font-family: var(--code-font-family);
         overflow: hidden;

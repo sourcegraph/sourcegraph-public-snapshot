@@ -989,6 +989,19 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                     isActive && !(index > 0 && isActiveLocation(group.locations[index - 1]))
                                 const locationActive = isActive ? styles.locationActive : ''
                                 const clickReference = (event: MouseEvent<HTMLElement>): void => {
+                                    // If anything other than a normal primary click is detected,
+                                    // treat this as a normal link click and let the browser handle
+                                    // it.
+                                    if (
+                                        event.button !== 0 ||
+                                        event.altKey ||
+                                        event.ctrlKey ||
+                                        event.metaKey ||
+                                        event.shiftKey
+                                    ) {
+                                        return
+                                    }
+
                                     event.preventDefault()
                                     if (isActive) {
                                         navigateToUrl(locationToUrl(reference))
