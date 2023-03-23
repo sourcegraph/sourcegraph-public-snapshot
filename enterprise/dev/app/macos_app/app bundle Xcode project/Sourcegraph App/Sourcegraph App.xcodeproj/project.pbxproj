@@ -1,0 +1,615 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		93341A9F299713F90030F58F /* Sourcegraph_AppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93341A9E299713F90030F58F /* Sourcegraph_AppApp.swift */; };
+		93341AA1299713F90030F58F /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93341AA0299713F90030F58F /* ContentView.swift */; };
+		93341AA3299713FA0030F58F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 93341AA2299713FA0030F58F /* Assets.xcassets */; };
+		93341AA6299713FA0030F58F /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 93341AA5299713FA0030F58F /* Preview Assets.xcassets */; };
+		93341AB1299713FA0030F58F /* Sourcegraph_AppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93341AB0299713FA0030F58F /* Sourcegraph_AppTests.swift */; };
+		93341ABB299713FA0030F58F /* Sourcegraph_AppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93341ABA299713FA0030F58F /* Sourcegraph_AppUITests.swift */; };
+		93341ABD299713FA0030F58F /* Sourcegraph_AppUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93341ABC299713FA0030F58F /* Sourcegraph_AppUITestsLaunchTests.swift */; };
+		93E4DF0629C1601300500D3C /* sourcegraph_launcher.sh in Resources */ = {isa = PBXBuildFile; fileRef = 93E4DF0529C1601300500D3C /* sourcegraph_launcher.sh */; };
+		93E4DF0829C3643C00500D3C /* uninstall.sh in Resources */ = {isa = PBXBuildFile; fileRef = 93E4DF0729C3643C00500D3C /* uninstall.sh */; };
+		93E4DF1029CBAB2700500D3C /* mock-http-server.py in Resources */ = {isa = PBXBuildFile; fileRef = 93E4DF0F29CBAB2700500D3C /* mock-http-server.py */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		93341AAD299713FA0030F58F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 93341A93299713F90030F58F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 93341A9A299713F90030F58F;
+			remoteInfo = "Sourcegraph App";
+		};
+		93341AB7299713FA0030F58F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 93341A93299713F90030F58F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 93341A9A299713F90030F58F;
+			remoteInfo = "Sourcegraph App";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		93341A9B299713F90030F58F /* Sourcegraph App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Sourcegraph App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		93341A9E299713F90030F58F /* Sourcegraph_AppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sourcegraph_AppApp.swift; sourceTree = "<group>"; };
+		93341AA0299713F90030F58F /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		93341AA2299713FA0030F58F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		93341AA5299713FA0030F58F /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		93341AA7299713FA0030F58F /* Sourcegraph_App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Sourcegraph_App.entitlements; sourceTree = "<group>"; };
+		93341AAC299713FA0030F58F /* Sourcegraph AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Sourcegraph AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		93341AB0299713FA0030F58F /* Sourcegraph_AppTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sourcegraph_AppTests.swift; sourceTree = "<group>"; };
+		93341AB6299713FA0030F58F /* Sourcegraph AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Sourcegraph AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		93341ABA299713FA0030F58F /* Sourcegraph_AppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sourcegraph_AppUITests.swift; sourceTree = "<group>"; };
+		93341ABC299713FA0030F58F /* Sourcegraph_AppUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sourcegraph_AppUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		93E4DF0529C1601300500D3C /* sourcegraph_launcher.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = sourcegraph_launcher.sh; sourceTree = "<group>"; };
+		93E4DF0729C3643C00500D3C /* uninstall.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = uninstall.sh; sourceTree = "<group>"; };
+		93E4DF0A29C3CB6900500D3C /* build_app_bundle_template.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = build_app_bundle_template.sh; sourceTree = "<group>"; };
+		93E4DF0E29C8CD6500500D3C /* Sourcegraph AppDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Sourcegraph AppDebug.entitlements"; sourceTree = "<group>"; };
+		93E4DF0F29CBAB2700500D3C /* mock-http-server.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "mock-http-server.py"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		93341A98299713F90030F58F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		93341AA9299713FA0030F58F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		93341AB3299713FA0030F58F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		93341A92299713F90030F58F = {
+			isa = PBXGroup;
+			children = (
+				93341A9D299713F90030F58F /* Sourcegraph App */,
+				93341AAF299713FA0030F58F /* Sourcegraph AppTests */,
+				93341AB9299713FA0030F58F /* Sourcegraph AppUITests */,
+				93341A9C299713F90030F58F /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		93341A9C299713F90030F58F /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				93341A9B299713F90030F58F /* Sourcegraph App.app */,
+				93341AAC299713FA0030F58F /* Sourcegraph AppTests.xctest */,
+				93341AB6299713FA0030F58F /* Sourcegraph AppUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		93341A9D299713F90030F58F /* Sourcegraph App */ = {
+			isa = PBXGroup;
+			children = (
+				93E4DF0E29C8CD6500500D3C /* Sourcegraph AppDebug.entitlements */,
+				93E4DF0529C1601300500D3C /* sourcegraph_launcher.sh */,
+				93E4DF0729C3643C00500D3C /* uninstall.sh */,
+				93341A9E299713F90030F58F /* Sourcegraph_AppApp.swift */,
+				93341AA0299713F90030F58F /* ContentView.swift */,
+				93341AA2299713FA0030F58F /* Assets.xcassets */,
+				93341AA7299713FA0030F58F /* Sourcegraph_App.entitlements */,
+				93341AA4299713FA0030F58F /* Preview Content */,
+				93E4DF0A29C3CB6900500D3C /* build_app_bundle_template.sh */,
+				93E4DF0F29CBAB2700500D3C /* mock-http-server.py */,
+			);
+			path = "Sourcegraph App";
+			sourceTree = "<group>";
+		};
+		93341AA4299713FA0030F58F /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				93341AA5299713FA0030F58F /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		93341AAF299713FA0030F58F /* Sourcegraph AppTests */ = {
+			isa = PBXGroup;
+			children = (
+				93341AB0299713FA0030F58F /* Sourcegraph_AppTests.swift */,
+			);
+			path = "Sourcegraph AppTests";
+			sourceTree = "<group>";
+		};
+		93341AB9299713FA0030F58F /* Sourcegraph AppUITests */ = {
+			isa = PBXGroup;
+			children = (
+				93341ABA299713FA0030F58F /* Sourcegraph_AppUITests.swift */,
+				93341ABC299713FA0030F58F /* Sourcegraph_AppUITestsLaunchTests.swift */,
+			);
+			path = "Sourcegraph AppUITests";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		93341A9A299713F90030F58F /* Sourcegraph App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 93341AC0299713FA0030F58F /* Build configuration list for PBXNativeTarget "Sourcegraph App" */;
+			buildPhases = (
+				93341A97299713F90030F58F /* Sources */,
+				93341A98299713F90030F58F /* Frameworks */,
+				93341A99299713F90030F58F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Sourcegraph App";
+			productName = "Sourcegraph App";
+			productReference = 93341A9B299713F90030F58F /* Sourcegraph App.app */;
+			productType = "com.apple.product-type.application";
+		};
+		93341AAB299713FA0030F58F /* Sourcegraph AppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 93341AC3299713FA0030F58F /* Build configuration list for PBXNativeTarget "Sourcegraph AppTests" */;
+			buildPhases = (
+				93341AA8299713FA0030F58F /* Sources */,
+				93341AA9299713FA0030F58F /* Frameworks */,
+				93341AAA299713FA0030F58F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				93341AAE299713FA0030F58F /* PBXTargetDependency */,
+			);
+			name = "Sourcegraph AppTests";
+			productName = "Sourcegraph AppTests";
+			productReference = 93341AAC299713FA0030F58F /* Sourcegraph AppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		93341AB5299713FA0030F58F /* Sourcegraph AppUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 93341AC6299713FA0030F58F /* Build configuration list for PBXNativeTarget "Sourcegraph AppUITests" */;
+			buildPhases = (
+				93341AB2299713FA0030F58F /* Sources */,
+				93341AB3299713FA0030F58F /* Frameworks */,
+				93341AB4299713FA0030F58F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				93341AB8299713FA0030F58F /* PBXTargetDependency */,
+			);
+			name = "Sourcegraph AppUITests";
+			productName = "Sourcegraph AppUITests";
+			productReference = 93341AB6299713FA0030F58F /* Sourcegraph AppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		93341A93299713F90030F58F /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				CLASSPREFIX = com.sourcegraph;
+				LastSwiftUpdateCheck = 1420;
+				LastUpgradeCheck = 1420;
+				ORGANIZATIONNAME = "Sourcegraph, Inc.";
+				TargetAttributes = {
+					93341A9A299713F90030F58F = {
+						CreatedOnToolsVersion = 14.2;
+					};
+					93341AAB299713FA0030F58F = {
+						CreatedOnToolsVersion = 14.2;
+						TestTargetID = 93341A9A299713F90030F58F;
+					};
+					93341AB5299713FA0030F58F = {
+						CreatedOnToolsVersion = 14.2;
+						TestTargetID = 93341A9A299713F90030F58F;
+					};
+				};
+			};
+			buildConfigurationList = 93341A96299713F90030F58F /* Build configuration list for PBXProject "Sourcegraph App" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 93341A92299713F90030F58F;
+			productRefGroup = 93341A9C299713F90030F58F /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				93341A9A299713F90030F58F /* Sourcegraph App */,
+				93341AAB299713FA0030F58F /* Sourcegraph AppTests */,
+				93341AB5299713FA0030F58F /* Sourcegraph AppUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		93341A99299713F90030F58F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				93341AA6299713FA0030F58F /* Preview Assets.xcassets in Resources */,
+				93341AA3299713FA0030F58F /* Assets.xcassets in Resources */,
+				93E4DF0629C1601300500D3C /* sourcegraph_launcher.sh in Resources */,
+				93E4DF1029CBAB2700500D3C /* mock-http-server.py in Resources */,
+				93E4DF0829C3643C00500D3C /* uninstall.sh in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		93341AAA299713FA0030F58F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		93341AB4299713FA0030F58F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		93341A97299713F90030F58F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				93341AA1299713F90030F58F /* ContentView.swift in Sources */,
+				93341A9F299713F90030F58F /* Sourcegraph_AppApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		93341AA8299713FA0030F58F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				93341AB1299713FA0030F58F /* Sourcegraph_AppTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		93341AB2299713FA0030F58F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				93341ABD299713FA0030F58F /* Sourcegraph_AppUITestsLaunchTests.swift in Sources */,
+				93341ABB299713FA0030F58F /* Sourcegraph_AppUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		93341AAE299713FA0030F58F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 93341A9A299713F90030F58F /* Sourcegraph App */;
+			targetProxy = 93341AAD299713FA0030F58F /* PBXContainerItemProxy */;
+		};
+		93341AB8299713FA0030F58F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 93341A9A299713F90030F58F /* Sourcegraph App */;
+			targetProxy = 93341AB7299713FA0030F58F /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		93341ABE299713FA0030F58F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SELECTED_FILES = readwrite;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				MACOSX_DEPLOYMENT_TARGET = 13.1;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		93341ABF299713FA0030F58F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SELECTED_FILES = readwrite;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				MACOSX_DEPLOYMENT_TARGET = 13.1;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		93341AC1299713FA0030F58F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_ENTITLEMENTS = "Sourcegraph App/Sourcegraph AppDebug.entitlements";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"Sourcegraph App/Preview Content\"";
+				DEVELOPMENT_TEAM = 74A5FJ7P96;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Sourcegraph App";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				"INFOPLIST_KEY_NSHumanReadableCopyright[sdk=*]" = "Sourcegraph, Inc.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sourcegraph.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		93341AC2299713FA0030F58F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_ENTITLEMENTS = "Sourcegraph App/Sourcegraph_App.entitlements";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"Sourcegraph App/Preview Content\"";
+				DEVELOPMENT_TEAM = 74A5FJ7P96;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Sourcegraph App";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				"INFOPLIST_KEY_NSHumanReadableCopyright[sdk=*]" = "Sourcegraph, Inc.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sourcegraph.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		93341AC4299713FA0030F58F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 74A5FJ7P96;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.1;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "som.sourcegraph.app.Sourcegraph-AppTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Sourcegraph App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Sourcegraph App";
+			};
+			name = Debug;
+		};
+		93341AC5299713FA0030F58F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 74A5FJ7P96;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.1;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "som.sourcegraph.app.Sourcegraph-AppTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Sourcegraph App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Sourcegraph App";
+			};
+			name = Release;
+		};
+		93341AC7299713FA0030F58F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 74A5FJ7P96;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "som.sourcegraph.app.Sourcegraph-AppUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = "Sourcegraph App";
+			};
+			name = Debug;
+		};
+		93341AC8299713FA0030F58F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 74A5FJ7P96;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "som.sourcegraph.app.Sourcegraph-AppUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = "Sourcegraph App";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		93341A96299713F90030F58F /* Build configuration list for PBXProject "Sourcegraph App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				93341ABE299713FA0030F58F /* Debug */,
+				93341ABF299713FA0030F58F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		93341AC0299713FA0030F58F /* Build configuration list for PBXNativeTarget "Sourcegraph App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				93341AC1299713FA0030F58F /* Debug */,
+				93341AC2299713FA0030F58F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		93341AC3299713FA0030F58F /* Build configuration list for PBXNativeTarget "Sourcegraph AppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				93341AC4299713FA0030F58F /* Debug */,
+				93341AC5299713FA0030F58F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		93341AC6299713FA0030F58F /* Build configuration list for PBXNativeTarget "Sourcegraph AppUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				93341AC7299713FA0030F58F /* Debug */,
+				93341AC8299713FA0030F58F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 93341A93299713F90030F58F /* Project object */;
+}

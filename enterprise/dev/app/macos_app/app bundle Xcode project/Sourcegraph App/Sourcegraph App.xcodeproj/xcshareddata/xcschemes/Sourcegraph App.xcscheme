@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Scheme
+   LastUpgradeVersion = "1420"
+   version = "1.7">
+   <BuildAction
+      parallelizeBuildables = "YES"
+      buildImplicitDependencies = "YES">
+      <BuildActionEntries>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "93341A9A299713F90030F58F"
+               BuildableName = "Sourcegraph App.app"
+               BlueprintName = "Sourcegraph App"
+               ReferencedContainer = "container:Sourcegraph App.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+      </BuildActionEntries>
+   </BuildAction>
+   <TestAction
+      buildConfiguration = "Debug"
+      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      shouldUseLaunchSchemeArgsEnv = "YES">
+      <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "93341AAB299713FA0030F58F"
+               BuildableName = "Sourcegraph AppTests.xctest"
+               BlueprintName = "Sourcegraph AppTests"
+               ReferencedContainer = "container:Sourcegraph App.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "93341AB5299713FA0030F58F"
+               BuildableName = "Sourcegraph AppUITests.xctest"
+               BlueprintName = "Sourcegraph AppUITests"
+               ReferencedContainer = "container:Sourcegraph App.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+      </Testables>
+   </TestAction>
+   <LaunchAction
+      buildConfiguration = "Debug"
+      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      launchStyle = "0"
+      useCustomWorkingDirectory = "NO"
+      ignoresPersistentStateOnLaunch = "NO"
+      debugDocumentVersioning = "YES"
+      debugServiceExtension = "internal"
+      allowLocationSimulation = "YES">
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "93341A9A299713F90030F58F"
+            BuildableName = "Sourcegraph App.app"
+            BlueprintName = "Sourcegraph App"
+            ReferencedContainer = "container:Sourcegraph App.xcodeproj">
+         </BuildableReference>
+      </BuildableProductRunnable>
+   </LaunchAction>
+   <ProfileAction
+      buildConfiguration = "Release"
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      savedToolIdentifier = ""
+      useCustomWorkingDirectory = "NO"
+      debugDocumentVersioning = "YES">
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "93341A9A299713F90030F58F"
+            BuildableName = "Sourcegraph App.app"
+            BlueprintName = "Sourcegraph App"
+            ReferencedContainer = "container:Sourcegraph App.xcodeproj">
+         </BuildableReference>
+      </BuildableProductRunnable>
+   </ProfileAction>
+   <AnalyzeAction
+      buildConfiguration = "Debug">
+   </AnalyzeAction>
+   <ArchiveAction
+      buildConfiguration = "Release"
+      revealArchiveInOrganizer = "YES">
+      <PostActions>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "Run Script"
+               scriptText = "### if the script stops working, and you can&apos;t tell why, uncomment this and then run the resulting script file in Downloads to see what the error message is&#10;cat &gt;&quot;${HOME}/Downloads/sourcegraph_app_build_app_bundle_template.sh&quot; &lt;&lt;EOF&#10;#!/usr/bin/env bash&#10;export ARCHIVE_PRODUCTS_PATH=&quot;${ARCHIVE_PRODUCTS_PATH}&quot;&#10;&quot;${PROJECT_DIR}/Sourcegraph App/build_app_bundle_template.sh&quot;&#10;EOF&#10;chmod 755 &quot;${HOME}/Downloads/sourcegraph_app_build_app_bundle_template.sh&quot;&#10;&#10;# make sure to provide build settings from Sourcegraph App so that PROJECT_DIR is included in the environment&#10;&quot;${PROJECT_DIR}/Sourcegraph App/build_app_bundle_template.sh&quot; 2&gt;&amp;1 | tee -a &quot;${HOME}/Downloads/sourcegraph_app_build_app_bundle_template.log&quot;&#10;">
+               <EnvironmentBuildable>
+                  <BuildableReference
+                     BuildableIdentifier = "primary"
+                     BlueprintIdentifier = "93341A9A299713F90030F58F"
+                     BuildableName = "Sourcegraph App.app"
+                     BlueprintName = "Sourcegraph App"
+                     ReferencedContainer = "container:Sourcegraph App.xcodeproj">
+                  </BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
+      </PostActions>
+   </ArchiveAction>
+</Scheme>
