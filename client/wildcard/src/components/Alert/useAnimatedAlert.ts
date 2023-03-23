@@ -1,10 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { Assertiveness } from '@react-aria/live-announcer'
 import { SpringValue, useSpring } from 'react-spring'
 
 import { useStopwatch } from '../../hooks'
+import { screenReaderAnnounce } from '../../utils'
 
 interface AnimatedAlertOptions {
+    ariaAnnouncement: {
+        /** The message to announce to screen readers when the alert is shown. */
+        message: string
+        /** The politeness level of the announcement. Defaults 'polite'. */
+        politeness?: Assertiveness
+    }
     /** Whether the alert starts visible or not. Defaults false. */
     defaultShown?: boolean
     /**
@@ -38,17 +46,18 @@ const DURATION_LONG_S = 10
 const APPROX_MIN_BANNER_HEIGHT_PX = 40
 
 /**
- * Custom hook to show and hide an alert with an animated transition. The alert can be
- * controlled with the callback functions returned by this hook, or it can be
+ * Custom hook to show and hide an accessible alert with an animated transition. The alert
+ * can be controlled with the callback functions returned by this hook, or it can be
  * automatically hidden after a certain duration by passing an autoDuration option.
  *
  * @param opts any AnimatedAlertOptions to apply to the controls for this alert
  * @returns the AnimatedAlertControls for this alert
  */
-export const useAnimatedAlert = (opts?: AnimatedAlertOptions): AnimatedAlertControls => {
-    const defaultShown = opts?.defaultShown || false
-    const autoDuration = opts?.autoDuration
-
+export const useAnimatedAlert = ({
+    defaultShown = false,
+    autoDuration,
+    ariaAnnouncement,
+}: AnimatedAlertOptions): AnimatedAlertControls => {
     const [showAlert, setShowAlert] = useState<boolean>(defaultShown)
 
     // Use a stopwatch to show the alert for a certain duration.
@@ -68,9 +77,10 @@ export const useAnimatedAlert = (opts?: AnimatedAlertOptions): AnimatedAlertCont
     }, [isRunning, stopTimer, seconds, autoDuration])
 
     const show = useCallback(() => {
+        screenReaderAnnounce(ariaAnnouncement.message, ariaAnnouncement.politeness)
         setShowAlert(true)
         startTimer()
-    }, [startTimer])
+    }, [startTimer, ariaAnnouncement.message, ariaAnnouncement.politeness])
 
     const dismiss = useCallback(() => {
         setShowAlert(false)

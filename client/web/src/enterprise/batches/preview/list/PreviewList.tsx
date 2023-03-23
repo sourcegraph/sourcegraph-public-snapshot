@@ -182,18 +182,23 @@ const PublicationStatesUpdateAlerts: React.FunctionComponent<React.PropsWithChil
     return (
         <div className="mt-2">
             {recalculationUpdates.map(([timestamp, status]) => (
-                <AnimatedDismissibleAlert key={timestamp} status={status}>
-                    Publication state actions were recalculated.
-                </AnimatedDismissibleAlert>
+                <AnimatedDismissibleAlert
+                    key={timestamp}
+                    status={status}
+                    message="Publication state actions were recalculated."
+                />
             ))}
         </div>
     )
 }
 
 const AnimatedDismissibleAlert: React.FunctionComponent<
-    React.PropsWithChildren<{ status: 'pending' | 'complete' }>
-> = ({ children, status }) => {
-    const { ref, style, show, dismiss } = useAnimatedAlert({ autoDuration: 'short' })
+    React.PropsWithChildren<{ status: 'pending' | 'complete'; message: string }>
+> = ({ message, status }) => {
+    const { ref, style, isShown, show, dismiss } = useAnimatedAlert({
+        autoDuration: 'short',
+        ariaAnnouncement: { message },
+    })
 
     useEffect(() => {
         // Wait to show publication state update alerts until the connection query
@@ -205,8 +210,14 @@ const AnimatedDismissibleAlert: React.FunctionComponent<
 
     return (
         <animated.div style={style}>
-            <Alert ref={ref} variant="success" className="mb-3 d-flex align-items-center justify-content-between">
-                {children}
+            <Alert
+                ref={ref}
+                variant="success"
+                className="mb-3 d-flex align-items-center justify-content-between"
+                aria-hidden={isShown}
+                aria-live="off"
+            >
+                {message}
                 <Button aria-label="Dismiss alert" variant="icon" className={styles.closeButton} onClick={dismiss}>
                     <Icon aria-hidden={true} svgPath={mdiClose} />
                 </Button>

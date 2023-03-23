@@ -46,7 +46,13 @@ const ModifiableRoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refe
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState<boolean>(false)
 
-    const { show: showAlert, ref: alertRef, style: alertStyle } = useAnimatedAlert({ autoDuration: 'short' })
+    const successMessage = 'Permissions successfully updated.'
+    const {
+        isShown: alertIsShown,
+        show: showAlert,
+        ref: alertRef,
+        style: alertStyle,
+    } = useAnimatedAlert({ autoDuration: 'short', ariaAnnouncement: { message: successMessage } })
 
     const handleOpenChange = (isOpen: boolean): void => {
         setIsExpanded(isOpen)
@@ -170,8 +176,15 @@ const ModifiableRoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refe
                     onSubmit={handleSubmit}
                 >
                     <animated.div style={alertStyle}>
-                        <Alert ref={alertRef} variant="success" className="mb-3">
-                            Permissions successfully updated.
+                        <Alert
+                            ref={alertRef}
+                            variant="success"
+                            className="mb-3"
+                            // The alert announcement is handled by the useAnimatedAlert hook
+                            aria-live="off"
+                            aria-hidden={!alertIsShown}
+                        >
+                            {successMessage}
                         </Alert>
                     </animated.div>
                     <PermissionsList
