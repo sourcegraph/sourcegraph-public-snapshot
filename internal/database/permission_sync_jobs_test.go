@@ -646,6 +646,20 @@ func TestPermissionSyncJobs_SaveSyncResult(t *testing.T) {
 	require.Equal(t, 2, theJob.PermissionsRemoved)
 	require.Equal(t, 5, theJob.PermissionsFound)
 	require.Equal(t, codeHostStates, theJob.CodeHostStates)
+
+	// Saving nil result (in case of errors from code host) should be also successful.
+	err = store.SaveSyncResult(ctx, 1, nil, codeHostStates[1:])
+	require.NoError(t, err)
+
+	// Checking that all the results are set.
+	jobs, err = store.List(ctx, ListPermissionSyncJobOpts{RepoID: int(repo1.ID)})
+	require.NoError(t, err)
+	require.Len(t, jobs, 1)
+	theJob = jobs[0]
+	require.Equal(t, 0, theJob.PermissionsAdded)
+	require.Equal(t, 0, theJob.PermissionsRemoved)
+	require.Equal(t, 0, theJob.PermissionsFound)
+	require.Equal(t, codeHostStates[1:], theJob.CodeHostStates)
 }
 
 func TestPermissionSyncJobs_CascadeOnRepoDelete(t *testing.T) {
