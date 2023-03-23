@@ -1150,7 +1150,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
             }
 
             const repos = ['src-cli', 'terraform-google-executors', 'terraform-aws-executors']
-            let tags: ReleaseTag[] = []
+            const tags: ReleaseTag[] = []
 
             const client = await getAuthenticatedGitHubClient()
 
@@ -1161,7 +1161,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                 })
 
                 switch (repo) {
-                    case 'src-cli':
+                    case 'src-cli': {
                         const next = await nextSrcCliVersionInputWithAutodetect(config, workdir)
                         setSrcCliVersion(config, next.version)
                         tags.push({
@@ -1170,7 +1170,8 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                             workDir: workdir,
                         })
                         break
-                    case 'terraform-google-executors':
+                    }
+                    case 'terraform-google-executors': {
                         const nextGoogle = await nextGoogleExecutorVersionInputWithAutodetect(config, workdir)
                         setGoogleExecutorVersion(config, nextGoogle.version)
                         tags.push({
@@ -1179,7 +1180,8 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                             workDir: workdir,
                         })
                         break
-                    case 'terraform-aws-executors':
+                    }
+                    case 'terraform-aws-executors': {
                         const nextAWS = await nextAWSExecutorVersionInputWithAutodetect(config, workdir)
                         setAWSExecutorVersion(config, nextAWS.version)
                         tags.push({
@@ -1188,6 +1190,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                             workDir: workdir,
                         })
                         break
+                    }
                 }
             }
 
@@ -1195,7 +1198,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                 const { repo, nextTag, workDir } = tag
                 if (!config.dryRun.changesets) {
                     // actually execute the release
-                    if (repo === `src-cli`) {
+                    if (repo === 'src-cli') {
                         await execa('bash', ['-c', 'yes | ./release.sh'], {
                             stdio: 'inherit',
                             cwd: workDir,
