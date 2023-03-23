@@ -16,6 +16,7 @@ func TestParseVersion(t *testing.T) {
 		{"201149_2023-02-23_4.5-dc8d16268c06_patch", oobmigration.NewVersion(4, 5)},
 		{"main-dry-run-ef-un-revert_201149_2023-02-23_4.5-dc8d16268c06", oobmigration.NewVersion(4, 5)},
 		{"main-dry-run-ef-un-revert_201149_2023-02-23_4.5-dc8d16268c06_patch", oobmigration.NewVersion(4, 5)},
+		{"205081_2023-03-09_4.5-7d653173d315", oobmigration.NewVersion(4, 5)},
 	}
 
 	for _, testCase := range testCases {
