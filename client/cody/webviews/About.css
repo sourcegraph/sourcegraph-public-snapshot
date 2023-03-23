@@ -8,7 +8,8 @@
     justify-content: center;
     padding: 0;
     border-bottom: 1px solid var(--vscode-editorGroupHeader-tabsBorder);
-    background-color: var(--vscode-editorGroupHeader-tabsBackground);
+    background-color: var(--vscode-editor-background);
+    color: var(--vscode-editor-foreground);
     margin-bottom: 0.5rem;
     padding: 0.5rem;
     font-weight: bold;
@@ -16,7 +17,8 @@
 
 .terms-container {
     margin-bottom: 1rem;
-    background-color: var(--vscode-editorGroupHeader-tabsBackground);
+    color: var(--vscode-editor-foreground);
+    background-color: var(--vscode-editor-background);
     overflow-wrap: break-word;
     padding: 0.5rem;
 }

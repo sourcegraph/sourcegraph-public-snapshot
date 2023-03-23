@@ -1,5 +1,3 @@
-import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
-
 import { View } from './utils/types'
 
 import './NavBar.css'
@@ -24,33 +22,26 @@ export const NavBar: React.FunctionComponent<React.PropsWithChildren<NavBarProps
     <div className="tab-menu-container">
         <div className="tab-menu-group">
             {navBarItems.map(({ title, tab }) => (
-                <VSCodeButton onClick={() => setView(tab)} className="tab-menu-item" appearance="icon" type="button">
-                    <p className={view === tab ? 'tab-menu-item-selected' : ''}>{title}</p>
-                </VSCodeButton>
+                <button onClick={() => setView(tab)} className="tab-btn" type="button">
+                    <p className={view === tab ? 'tab-btn-selected' : ''}>{title}</p>
+                </button>
             ))}
             {devMode && (
-                <VSCodeButton
-                    onClick={() => setView('debug')}
-                    className="tab-menu-item"
-                    appearance="icon"
-                    type="button"
-                >
-                    <p className={view === 'debug' ? 'tab-menu-item-selected' : ''}>Debug</p>
-                </VSCodeButton>
+                <button onClick={() => setView('debug')} className="tab-btn" type="button">
+                    <p className={view === 'debug' ? 'tab-btn-selected' : ''}>Debug</p>
+                </button>
             )}
         </div>
         <div className="tab-menu-group">
-            <VSCodeButton
-                onClick={() => setView('settings')}
-                className="tab-menu-item"
-                appearance="icon"
-                type="button"
-                title="Settings"
-            >
-                <p className={view === 'settings' ? 'tab-menu-item-selected' : ''}>
-                    <i className="codicon codicon-three-bars" />
-                </p>
-            </VSCodeButton>
+            <button onClick={() => setView('settings')} className="tab-btn" type="button" title="Settings">
+                <i
+                    className={
+                        view === 'settings'
+                            ? 'codicon codicon-three-bars tab-btn-selected'
+                            : 'codicon codicon-three-bars'
+                    }
+                />
+            </button>
         </div>
     </div>
 )

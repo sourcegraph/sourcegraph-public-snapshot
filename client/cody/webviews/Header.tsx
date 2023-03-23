@@ -1,4 +1,4 @@
-import { VSCodeButton, VSCodeTag } from '@vscode/webview-ui-toolkit/react'
+import { VSCodeTag } from '@vscode/webview-ui-toolkit/react'
 
 import { CodySvg, ResetSvg } from './utils/icons'
 
@@ -24,15 +24,13 @@ export const Header: React.FunctionComponent<React.PropsWithChildren<HeaderProps
             </div>
         </div>
         <div className="header-container-right">
-            <VSCodeButton
+            <div
                 className="reset-conversation"
                 title="Start a new conversation with Cody"
                 onClick={() => onResetClick()}
-                appearance="icon"
-                type="button"
             >
                 {showResetButton && <ResetSvg />}
-            </VSCodeButton>
+            </div>
         </div>
     </div>
 )

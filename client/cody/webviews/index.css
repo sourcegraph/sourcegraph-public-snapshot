@@ -3,24 +3,24 @@
 
 :root {
     --human-bubble-color: #565eb9;
-    --human-text-color: var(--vscode-dropdown-foreground);
+    --human-text-color: #e1e1e1;
     --bot-bubble-color: var(--vscode-input-background);
-    --bubble-text-color: var(--vscode-input-activeForeground);
+    --bubble-text-color: var(--vscode-input-foreground);
     --code-background: var(--vscode-editor-background);
 }
 
 #root {
     margin: 0 auto;
     font-family: var(--vscode-font-family);
-    color: var(--vscode-foreground);
-    background-color: var(--vscode-background);
+    color: var(--vscode-sideBar-foreground);
+    background-color: var(--vscode-sideBar-background);
     height: 100%;
 }
 
 body[data-vscode-theme-kind='vscode-light'],
 body[data-vscode-theme-kind='vscode-high-contrast-light'] {
-    --human-bubble-color: var(--vscode-dropdown-background);
-    --human-text-color: var(--vscode-dropdown-foreground);
+    --human-bubble-color: var(--vscode-button-background);
+    --human-text-color: var(--vscode-button-foreground);
     --bot-bubble-color: var(--vscode-input-background);
     --bubble-text-color: var(--vscode-input-foreground);
     --code-background: var(--vscode-editor-background);
