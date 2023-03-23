@@ -2,11 +2,20 @@ import fetch, { Response } from 'node-fetch'
 
 import { isError } from '../../utils'
 
-import { IS_CONTEXT_REQUIRED_QUERY, REPOSITORY_ID_QUERY, SEARCH_EMBEDDINGS_QUERY } from './queries'
+import {
+    CURRENT_USER_ID_QUERY,
+    IS_CONTEXT_REQUIRED_QUERY,
+    REPOSITORY_ID_QUERY,
+    SEARCH_EMBEDDINGS_QUERY,
+} from './queries'
 
 interface APIResponse<T> {
     data?: T
     errors?: string[]
+}
+
+interface CurrentUserIdResponse {
+    currentUser: { id: string } | null
 }
 
 interface RepositoryIdResponse {
@@ -48,6 +57,14 @@ function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (da
 
 export class SourcegraphGraphQLAPIClient {
     constructor(private instanceUrl: string, private accessToken: string) {}
+
+    public async getCurrentUserId(): Promise<string | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdResponse>>(CURRENT_USER_ID_QUERY, {}).then(response =>
+            extractDataOrError(response, data =>
+                data.currentUser ? data.currentUser.id : new Error(`current user not found`)
+            )
+        )
+    }
 
     public async getRepoId(repoName: string): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<RepositoryIdResponse>>(REPOSITORY_ID_QUERY, {

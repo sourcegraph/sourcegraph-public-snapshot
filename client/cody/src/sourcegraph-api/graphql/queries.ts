@@ -1,3 +1,10 @@
+export const CURRENT_USER_ID_QUERY = `
+query CurrentUser {
+    currentUser {
+        id
+    }
+}`
+
 export const REPOSITORY_ID_QUERY = `
 query Repository($name: String!) {
 	repository(name: $name) {

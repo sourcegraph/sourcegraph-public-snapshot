@@ -9,7 +9,9 @@ import { configureExternalServices } from '../external-services'
 import { IntentDetector } from '../intent-detector'
 import { getRgPath } from '../rg'
 import { Message } from '../sourcegraph-api'
+import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { TestSupport } from '../test-support'
+import { isError } from '../utils'
 
 import { ChatClient } from './chat'
 import { renderMarkdown } from './markdown'
@@ -20,6 +22,12 @@ import { ChatMessage } from './transcript/messages'
 // If the bot message ends with some prefix of the `Human:` stop
 // sequence, trim if from the end.
 const STOP_SEQUENCE_REGEXP = /(H|Hu|Hum|Huma|Human|Human:)$/
+
+async function isValidLogin(serverEndpoint: string, accessToken: string): Promise<boolean> {
+    const client = new SourcegraphGraphQLAPIClient(serverEndpoint, accessToken)
+    const userId = await client.getCurrentUserId()
+    return !isError(userId)
+}
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
     private isMessageInProgress = false
@@ -99,10 +107,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             case 'acceptTOS':
                 await this.acceptTOS(message.version)
                 break
-            case 'settings':
-                await updateConfiguration('serverEndpoint', message.serverEndpoint)
-                await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
+            case 'settings': {
+                const isValid = await isValidLogin(message.serverEndpoint, message.accessToken)
+                if (isValid) {
+                    await updateConfiguration('serverEndpoint', message.serverEndpoint)
+                    await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
+                }
+                this.sendLogin(isValid)
                 break
+            }
             case 'removeToken':
                 await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
                 break
@@ -210,6 +223,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             messages: this.transcript.toChat(),
             isMessageInProgress: this.isMessageInProgress,
         })
+    }
+
+    private sendLogin(isValid: boolean): void {
+        this.webview?.postMessage({ type: 'login', isValid })
     }
 
     private async sendToken(): Promise<void> {

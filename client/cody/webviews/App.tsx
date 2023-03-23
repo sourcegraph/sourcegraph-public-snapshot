@@ -20,6 +20,7 @@ function App(): React.ReactElement {
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
+    const [isValidLogin, setIsValidLogin] = useState<boolean>()
 
     useEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -39,6 +40,10 @@ function App(): React.ReactElement {
                     const hasToken = !!message.data.value
                     setView(hasToken ? 'chat' : 'login')
                     setDevMode(message.data.mode === 'development')
+                    break
+                case 'login':
+                    setIsValidLogin(message.data.isValid)
+                    setView(message.data.isValid ? 'chat' : 'login')
                     break
                 case 'showTab':
                     if (message.data.tab === 'chat') {
@@ -60,8 +65,8 @@ function App(): React.ReactElement {
             if (!token || !endpoint) {
                 return
             }
+            setIsValidLogin(undefined)
             vscodeAPI.postMessage({ command: 'settings', serverEndpoint: endpoint, accessToken: token })
-            setView('chat')
         },
         [setView]
     )
@@ -86,7 +91,7 @@ function App(): React.ReactElement {
     return (
         <div className="outer-container">
             <Header showResetButton={view && view !== 'login'} onResetClick={onResetClick} />
-            {view === 'login' && <Login onLogin={onLogin} />}
+            {view === 'login' && <Login onLogin={onLogin} isValidLogin={isValidLogin} />}
             {view && view !== 'login' && <NavBar view={view} setView={setView} devMode={devMode} />}
             {view === 'about' && <About />}
             {view === 'debug' && devMode && <Debug debugLog={debugLog} />}

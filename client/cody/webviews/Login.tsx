@@ -8,10 +8,11 @@ import { Terms } from './About'
 import './Login.css'
 
 interface LoginProps {
+    isValidLogin?: boolean
     onLogin: (token: string, endpoint: string) => void
 }
 
-export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>> = ({ onLogin }) => {
+export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>> = ({ isValidLogin, onLogin }) => {
     const [termsAccepted, setTermsAccepted] = useState(false)
     const [token, setToken] = useState<string>('')
     const [endpoint, setEndpoint] = useState('https://<instance>.sourcegraph.com')
@@ -40,6 +41,12 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                         <VSCodeButton className="login-button" type="button" onClick={() => onLogin(token, endpoint)}>
                             Login
                         </VSCodeButton>
+                        {isValidLogin === false && (
+                            <p className="invalid-login-message">
+                                Invalid login credentials. Please check that you have entered the correct instance URL
+                                and a valid access token.
+                            </p>
+                        )}
                     </div>
                 ) : (
                     <div className="container-getting-started">
