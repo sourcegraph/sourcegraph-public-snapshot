@@ -42,3 +42,7 @@ func (s *Service) GetVulnerabilities(ctx context.Context, args shared.GetVulnera
 func (s *Service) GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) ([]shared.VulnerabilityMatch, int, error) {
 	return s.store.GetVulnerabilityMatches(ctx, args)
 }
+
+func (s *Service) GetVulnerabilityMatchesCountByRepository(ctx context.Context, args shared.GetVulnerabilityMatchesGroupByRepositoryArgs) ([]shared.VulnerabilityMatchesByRepository, int, error) {
+	return s.store.GetVulnerabilityMatchesCountByRepository(ctx, args)
+}

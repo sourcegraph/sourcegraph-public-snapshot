@@ -28,6 +28,26 @@ extend type Query {
         """
         after: String
     ): VulnerabilityMatchConnection!
+
+    """
+    Return known vulnerability matches grouped by repository.
+    """
+    vulnerabilityMatchesGroupByRepository(
+        """
+        The maximum number of results to return.
+        """
+        first: Int
+
+        """
+        If supplied, indicates which results to skip over during pagination.
+        """
+        after: String
+
+        """
+        The name of the repository to group by.
+        """
+        repositoryName: String
+    ): VulnerabilityMatchGroupByRepositoryConnection!
 }
 
 """
@@ -238,4 +258,43 @@ type VulnerabilityMatch implements Node {
     The index record that contains a direct use of the affected package.
     """
     preciseIndex: PreciseIndex!
+}
+
+"""
+A page of vulnerability matches grouped by repository.
+"""
+type VulnerabilityMatchGroupByRepositoryConnection {
+    """
+    The vulnerability matches on the page.
+    """
+    nodes: [VulnerabilityMatchGroupByRepository!]!
+
+    """
+    The total number of vulnerability matches across all pages.
+    """
+    totalCount: Int
+
+    """
+    Information on how to fetch the next page.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+Vulnerability matches count group by repository.
+"""
+type VulnerabilityMatchGroupByRepository {
+    """
+    The id of the grouping.
+    """
+    id: ID!
+    """
+    The repository name.
+    """
+    repositoryName: String!
+
+    """
+    The vulnerability matches count.
+    """
+    matchCount: Int!
 }
