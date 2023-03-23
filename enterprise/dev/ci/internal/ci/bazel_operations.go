@@ -77,7 +77,7 @@ func bazelConfigure(optional bool) func(*bk.Pipeline) {
 			cmds = append(cmds, bk.SoftFail())
 		}
 
-		pipeline.AddStep(":bazel: Lint configure",
+		pipeline.AddStep(":bazel: Ensure buildfiles are up to date",
 			cmds...,
 		)
 	}
