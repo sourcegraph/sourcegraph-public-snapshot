@@ -229,12 +229,13 @@ func (f Factory) Doer(base ...Opt) (Doer, error) {
 }
 
 // Client returns a new http.Client configured with the
-// given common and base opts, but not wrapped with any
+// given common and extra opts, but not wrapped with any
 // middleware.
-func (f Factory) Client(base ...Opt) (*http.Client, error) {
-	opts := make([]Opt, 0, len(f.common)+len(base))
-	opts = append(opts, base...)
+func (f Factory) Client(extras ...Opt) (*http.Client, error) {
+	opts := make([]Opt, 0, len(f.common)+len(extras))
+	// apply common first so that extras can overwrite if necessary
 	opts = append(opts, f.common...)
+	opts = append(opts, extras...)
 
 	var cli http.Client
 	var err error
@@ -393,7 +394,10 @@ func ExternalTransportOpt(cli *http.Client) error {
 		return errors.Wrap(err, "httpcli.ExternalTransportOpt")
 	}
 
-	cli.Transport = &externalTransport{base: tr}
+	cli.Transport = &wrappedTransport{
+		RoundTripper: &externalTransport{base: tr},
+		Wrapped:      tr,
+	}
 	return nil
 }
 
@@ -438,13 +442,24 @@ func NewCachedTransportOpt(c httpcache.Cache, markCachedResponses bool) Opt {
 			cli.Transport = http.DefaultTransport
 		}
 
-		cli.Transport = &wrappedTransport{
-			RoundTripper: &httpcache.Transport{
-				Transport:           cli.Transport,
-				Cache:               c,
-				MarkCachedResponses: markCachedResponses,
-			},
-			Wrapped: cli.Transport,
+		var overwroteExisting bool
+		for unwrapper, ok := cli.Transport.(WrappedTransport); ok; unwrapper, ok = cli.Transport.(WrappedTransport) {
+			if unwrapped, iscache := (*unwrapper.Unwrap()).(*httpcache.Transport); iscache {
+				unwrapped.Cache = c
+				unwrapped.MarkCachedResponses = markCachedResponses
+				overwroteExisting = true
+			}
+		}
+
+		if !overwroteExisting {
+			cli.Transport = &wrappedTransport{
+				RoundTripper: &httpcache.Transport{
+					Transport:           cli.Transport,
+					Cache:               c,
+					MarkCachedResponses: markCachedResponses,
+				},
+				Wrapped: cli.Transport,
+			}
 		}
 
 		return nil
@@ -458,7 +473,10 @@ func TracedTransportOpt(cli *http.Client) error {
 		cli.Transport = http.DefaultTransport
 	}
 
-	cli.Transport = &policy.Transport{RoundTripper: cli.Transport}
+	cli.Transport = &wrappedTransport{
+		RoundTripper: &policy.Transport{RoundTripper: cli.Transport},
+		Wrapped:      cli.Transport,
+	}
 	return nil
 }
 
@@ -480,12 +498,15 @@ func MeteredTransportOpt(subsystem string) Opt {
 			cli.Transport = http.DefaultTransport
 		}
 
-		cli.Transport = meter.Transport(cli.Transport, func(u *url.URL) string {
-			// We don't have a way to return a low cardinality label here (for
-			// the prometheus label "category"). Previously we returned u.Path
-			// but that blew up prometheus. So we just return unknown.
-			return "unknown"
-		})
+		cli.Transport = &wrappedTransport{
+			RoundTripper: meter.Transport(cli.Transport, func(u *url.URL) string {
+				// We don't have a way to return a low cardinality label here (for
+				// the prometheus label "category"). Previously we returned u.Path
+				// but that blew up prometheus. So we just return unknown.
+				return "unknown"
+			}),
+			Wrapped: cli.Transport,
+		}
 
 		return nil
 	}
@@ -651,7 +672,10 @@ func NewErrorResilientTransportOpt(retry rehttp.RetryFn, delay rehttp.DelayFn) O
 			cli.Transport = http.DefaultTransport
 		}
 
-		cli.Transport = rehttp.NewTransport(cli.Transport, retry, delay)
+		cli.Transport = &wrappedTransport{
+			RoundTripper: rehttp.NewTransport(cli.Transport, retry, delay),
+			Wrapped:      cli.Transport,
+		}
 		return nil
 	}
 }
