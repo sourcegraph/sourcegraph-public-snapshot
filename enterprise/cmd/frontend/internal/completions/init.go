@@ -17,12 +17,12 @@ import (
 func Init(
 	ctx context.Context,
 	observationCtx *observation.Context,
-	_ database.DB,
+	db database.DB,
 	_ codeintel.Services,
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
 	logger := log.Scoped("completions", "")
-	enterpriseServices.NewCompletionsStreamHandler = func() http.Handler { return streaming.NewCompletionsStreamHandler(logger) }
+	enterpriseServices.NewCompletionsStreamHandler = func() http.Handler { return streaming.NewCompletionsStreamHandler(logger, db) }
 	return nil
 }

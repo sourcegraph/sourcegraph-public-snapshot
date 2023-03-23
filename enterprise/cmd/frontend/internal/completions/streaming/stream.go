@@ -9,9 +9,12 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/streaming/anthropic"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -21,12 +24,13 @@ import (
 const maxRequestDuration = time.Minute
 
 // NewCompletionsStreamHandler is an http handler which streams back completions results.
-func NewCompletionsStreamHandler(logger log.Logger) http.Handler {
-	return &streamHandler{logger: logger}
+func NewCompletionsStreamHandler(logger log.Logger, db database.DB) http.Handler {
+	return &streamHandler{logger: logger, db: db}
 }
 
 type streamHandler struct {
 	logger log.Logger
+	db     database.DB
 }
 
 func getCompletionStreamClient(provider string, accessToken string, model string) (types.CompletionStreamClient, error) {
@@ -39,6 +43,21 @@ func getCompletionStreamClient(provider string, accessToken string, model string
 }
 
 func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), maxRequestDuration)
+	defer cancel()
+
+	if envvar.SourcegraphDotComMode() {
+		isEnabled, err := cody.IsCodyExperimentalFeatureFlagEnabled(ctx, h.db)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if !isEnabled {
+			http.Error(w, "cody experimental feature flag is not enabled for current user", http.StatusUnauthorized)
+			return
+		}
+	}
+
 	completionsConfig := conf.Get().Completions
 	if completionsConfig == nil || !completionsConfig.Enabled {
 		http.Error(w, "completions are not configured or disabled", http.StatusInternalServerError)
@@ -55,9 +74,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "could not decode request body", http.StatusBadRequest)
 		return
 	}
-
-	ctx, cancel := context.WithTimeout(r.Context(), maxRequestDuration)
-	defer cancel()
 
 	var err error
 	tr, ctx := trace.New(ctx, "completions.ServeStream", "Completions")
