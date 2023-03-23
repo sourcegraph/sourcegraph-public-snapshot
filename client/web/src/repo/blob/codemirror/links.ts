@@ -18,12 +18,19 @@ import styles from './links.module.scss'
  */
 const SUPPORTED_KINDS = new Set<SyntaxKind>([SyntaxKind.Comment, SyntaxKind.StringLiteral])
 
+interface LineDecoration {
+    from: number
+    to: number
+    decoration: Decoration
+}
+
 /**
  * Iterates through `SUPPORTED_KINDS` highlighting occurrences and match any URLs within.
  * Converts matches into <a> tags with a permanent underline and a relevant href.
  */
 class LinkBuilder implements PluginValue {
     public decorations: DecorationSet = Decoration.none
+    private lineCache: Map<number, LineDecoration[]> = new Map()
 
     constructor(view: EditorView) {
         this.decorations = this.computeDecorations(view)
@@ -81,26 +88,42 @@ class LinkBuilder implements PluginValue {
                     }
 
                     const line = textDocument.line(occurrenceStartLine)
-                    const start = line.from + occurrence.range.start.character
-                    const end = line.from + occurrence.range.end.character
-                    const links = getLinksFromString({
-                        input: textDocument.sliceString(start, end),
-                    })
 
-                    for (const link of links) {
-                        const from = Math.min(start + link.start, line.to)
-                        const to = Math.min(start + link.end, line.to)
+                    // Check if the line is already in the cache
+                    let lineDecorations = this.lineCache.get(occurrenceStartLine)
 
-                        const decoration = Decoration.mark({
-                            tagName: 'a',
-                            class: classNames(styles.link, `hl-typed-${SyntaxKind[occurrence.kind]}`),
-                            attributes: {
-                                href: link.href,
-                                target: '_blank',
-                                rel: 'noreferrer noopener',
-                            },
+                    if (!lineDecorations) {
+                        lineDecorations = []
+
+                        const start = line.from + occurrence.range.start.character
+                        const end = line.from + occurrence.range.end.character
+
+                        const links = getLinksFromString({
+                            input: textDocument.sliceString(start, end),
                         })
 
+                        for (const link of links) {
+                            lineDecorations.push({
+                                from: Math.min(start + link.start, line.to),
+                                to: Math.min(start + link.end, line.to),
+                                decoration: Decoration.mark({
+                                    tagName: 'a',
+                                    class: classNames(styles.link, `hl-typed-${SyntaxKind[occurrence.kind]}`),
+                                    attributes: {
+                                        href: link.href,
+                                        target: '_blank',
+                                        rel: 'noreferrer noopener',
+                                    },
+                                }),
+                            })
+                        }
+
+                        // Cache the decorations for the current line
+                        this.lineCache.set(occurrenceStartLine, lineDecorations)
+                    }
+
+                    // Add the decorations to the builder
+                    for (const { from, to, decoration } of lineDecorations) {
                         builder.add(from, to, decoration)
                     }
                 }
