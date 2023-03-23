@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -40,6 +41,7 @@ func TestSearch(t *testing.T) {
 				"sgtest/go-diff",
 				"sgtest/appdash",
 				"sgtest/sourcegraph-typescript",
+				"sgtest/own",
 				"sgtest/private",  // Private
 				"sgtest/mux",      // Fork
 				"sgtest/archived", // Archived
@@ -58,6 +60,7 @@ func TestSearch(t *testing.T) {
 		"github.com/sgtest/go-diff",
 		"github.com/sgtest/appdash",
 		"github.com/sgtest/sourcegraph-typescript",
+		"github.com/sgtest/own",
 		"github.com/sgtest/private",  // Private
 		"github.com/sgtest/mux",      // Fork
 		"github.com/sgtest/archived", // Archived
@@ -68,6 +71,7 @@ func TestSearch(t *testing.T) {
 
 	err = client.WaitForReposToBeIndexed(
 		"github.com/sgtest/java-langserver",
+		"github.com/sgtest/own",
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -1078,6 +1082,60 @@ func testSearchClient(t *testing.T, client searchClient) {
 				}
 				if test.exactMatchCount != 0 && results.MatchCount != test.exactMatchCount {
 					t.Fatalf("Want exactly %d results but got %d", test.exactMatchCount, results.MatchCount)
+				}
+			})
+		}
+	})
+
+	t.Run("ownership queries", func(t *testing.T) {
+		tests := []struct {
+			name       string
+			query      string
+			zeroResult bool
+			wantAlert  *gqltestutil.SearchAlert
+		}{
+			{
+				name:  `select:file.owners`,
+				query: `repo:^github\.com/sgtest/own$ file:readme select:file.owners`,
+			},
+			{
+				name:       `select:file.owners no result`,
+				query:      `repo:^github\.com/sgtest/go-diff$ func readLine select:file.owners`,
+				zeroResult: true,
+				wantAlert: &gqltestutil.SearchAlert{
+					Title:       search.AlertForUnownedResult().Title,
+					Description: search.AlertForUnownedResult().Description,
+				},
+			},
+			{
+				name:  `file:has.owner()`,
+				query: `repo:^github\.com/sgtest/own$ file:has.owner()`,
+			},
+			{
+				name:       `-file:has.owner()`,
+				query:      `repo:^github\.com/sgtest/own$ -file:has.owner()`,
+				zeroResult: true,
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				results, err := client.SearchFiles(test.query)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(test.wantAlert, results.Alert); diff != "" {
+					t.Fatalf("Alert mismatch (-want +got):\n%s", diff)
+				}
+
+				if test.zeroResult {
+					if len(results.Results) > 0 {
+						t.Fatalf("Want zero result but got %d", len(results.Results))
+					}
+				} else {
+					if len(results.Results) == 0 {
+						t.Fatal("Want non-zero results but got 0")
+					}
 				}
 			})
 		}
