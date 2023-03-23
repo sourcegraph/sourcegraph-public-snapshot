@@ -9,7 +9,8 @@ BUILDKITE=${BUILDKITE:="false"}
 if [[ $BUILDKITE == "false" ]]; then
   /usr/X11/bin/Xvfb ":${DISPLAY}" -screen 0 1280x1024x24 &
 else
-  /usr/bin/Xvfb ":${DISPLAY}" -screen 0 1280x1024x24 &
+  echo "STARTING Xvfb = $(which Xvfb)"
+  Xvfb ":${DISPLAY}" -screen 0 1280x1024x24 &
 fi
 
 cmd=$1
