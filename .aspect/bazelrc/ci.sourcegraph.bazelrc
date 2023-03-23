@@ -24,5 +24,8 @@ build --test_env=CI
 # Ensure we're not exhausting database connections.
 build --test_env=GOMAXPROCS=10
 build --test_env=TESTDB_MAXOPENCONNS=15
+
+# Need for E2E
+build --test_env=DISPLAY
 build --test_env=E2E_HEADLESS=false
 build --test_env=E2E_SOURCEGRAPH_BASE_URL="https://sourcegraph.com"
