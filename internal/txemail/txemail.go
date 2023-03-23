@@ -28,10 +28,15 @@ var emailSendCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 }, []string{"success", "email_source"})
 
 // render returns the rendered message contents without sending email.
-func render(message Message) (*email.Email, error) {
+func render(fromAddress, fromName string, message Message) (*email.Email, error) {
+	from := fromAddress
+	if fromName != "" {
+		from = fmt.Sprintf(`"%s" <%s>`, fromName, fromAddress)
+	}
+
 	m := email.Email{
 		To:      message.To,
-		From:    conf.Get().EmailAddress,
+		From:    from,
 		Headers: make(textproto.MIMEHeader),
 	}
 	if message.ReplyTo != nil {
@@ -39,9 +44,6 @@ func render(message Message) (*email.Email, error) {
 	}
 	if message.MessageID != nil {
 		m.Headers["Message-ID"] = []string{*message.MessageID}
-	}
-	if message.FromName != "" {
-		m.From = message.FromName
 	}
 	if len(message.References) > 0 {
 		// jordan-wright/email does not support lists, so we must build it ourself.
@@ -100,7 +102,7 @@ func Send(ctx context.Context, source string, message Message) (err error) {
 		emailSendCounter.WithLabelValues(strconv.FormatBool(err == nil), source).Inc()
 	}()
 
-	m, err := render(message)
+	m, err := render(config.EmailAddress, config.EmailSenderName, message)
 	if err != nil {
 		return errors.Wrap(err, "render")
 	}
