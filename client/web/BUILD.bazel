@@ -1946,6 +1946,7 @@ webpack_bundle(
         "NODE_ENV": "production",
     },
     output_dir = True,
+    visibility = ["//client/web:__subpackages__"],
     webpack_config = "webpack.bazel.config.js",
     deps = WEBPACK_CONFIG_DEPS,
 )
