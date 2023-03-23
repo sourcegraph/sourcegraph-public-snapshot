@@ -67,7 +67,7 @@ func bazelConfigure(optional bool) func(*bk.Pipeline) {
 		bk.AnnotatedCmd("dev/ci/bazel-configure.sh", bk.AnnotatedCmdOpts{
 			Annotations: &bk.AnnotationOpts{
 				Type:         bk.AnnotationTypeWarning,
-				IncludeNames: true,
+				IncludeNames: false,
 			},
 		}),
 	}
