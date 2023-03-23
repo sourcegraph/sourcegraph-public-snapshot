@@ -38100,6 +38100,14 @@ type MockPermissionSyncJobStore struct {
 	// CountFunc is an instance of a mock function object controlling the
 	// behavior of the method Count.
 	CountFunc *PermissionSyncJobStoreCountFunc
+	// CountReposWithFailingSyncJobFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// CountReposWithFailingSyncJob.
+	CountReposWithFailingSyncJobFunc *PermissionSyncJobStoreCountReposWithFailingSyncJobFunc
+	// CountUsersWithFailingSyncJobFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// CountUsersWithFailingSyncJob.
+	CountUsersWithFailingSyncJobFunc *PermissionSyncJobStoreCountUsersWithFailingSyncJobFunc
 	// CreateRepoSyncJobFunc is an instance of a mock function object
 	// controlling the behavior of the method CreateRepoSyncJob.
 	CreateRepoSyncJobFunc *PermissionSyncJobStoreCreateRepoSyncJobFunc
@@ -38141,6 +38149,16 @@ func NewMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
 		},
 		CountFunc: &PermissionSyncJobStoreCountFunc{
 			defaultHook: func(context.Context, ListPermissionSyncJobOpts) (r0 int, r1 error) {
+				return
+			},
+		},
+		CountReposWithFailingSyncJobFunc: &PermissionSyncJobStoreCountReposWithFailingSyncJobFunc{
+			defaultHook: func(context.Context) (r0 int32, r1 error) {
+				return
+			},
+		},
+		CountUsersWithFailingSyncJobFunc: &PermissionSyncJobStoreCountUsersWithFailingSyncJobFunc{
+			defaultHook: func(context.Context) (r0 int32, r1 error) {
 				return
 			},
 		},
@@ -38207,6 +38225,16 @@ func NewStrictMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
 				panic("unexpected invocation of MockPermissionSyncJobStore.Count")
 			},
 		},
+		CountReposWithFailingSyncJobFunc: &PermissionSyncJobStoreCountReposWithFailingSyncJobFunc{
+			defaultHook: func(context.Context) (int32, error) {
+				panic("unexpected invocation of MockPermissionSyncJobStore.CountReposWithFailingSyncJob")
+			},
+		},
+		CountUsersWithFailingSyncJobFunc: &PermissionSyncJobStoreCountUsersWithFailingSyncJobFunc{
+			defaultHook: func(context.Context) (int32, error) {
+				panic("unexpected invocation of MockPermissionSyncJobStore.CountUsersWithFailingSyncJob")
+			},
+		},
 		CreateRepoSyncJobFunc: &PermissionSyncJobStoreCreateRepoSyncJobFunc{
 			defaultHook: func(context.Context, api.RepoID, PermissionSyncJobOpts) error {
 				panic("unexpected invocation of MockPermissionSyncJobStore.CreateRepoSyncJob")
@@ -38265,6 +38293,12 @@ func NewMockPermissionSyncJobStoreFrom(i PermissionSyncJobStore) *MockPermission
 		},
 		CountFunc: &PermissionSyncJobStoreCountFunc{
 			defaultHook: i.Count,
+		},
+		CountReposWithFailingSyncJobFunc: &PermissionSyncJobStoreCountReposWithFailingSyncJobFunc{
+			defaultHook: i.CountReposWithFailingSyncJob,
+		},
+		CountUsersWithFailingSyncJobFunc: &PermissionSyncJobStoreCountUsersWithFailingSyncJobFunc{
+			defaultHook: i.CountUsersWithFailingSyncJob,
 		},
 		CreateRepoSyncJobFunc: &PermissionSyncJobStoreCreateRepoSyncJobFunc{
 			defaultHook: i.CreateRepoSyncJob,
@@ -38513,6 +38547,226 @@ func (c PermissionSyncJobStoreCountFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c PermissionSyncJobStoreCountFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermissionSyncJobStoreCountReposWithFailingSyncJobFunc describes the
+// behavior when the CountReposWithFailingSyncJob method of the parent
+// MockPermissionSyncJobStore instance is invoked.
+type PermissionSyncJobStoreCountReposWithFailingSyncJobFunc struct {
+	defaultHook func(context.Context) (int32, error)
+	hooks       []func(context.Context) (int32, error)
+	history     []PermissionSyncJobStoreCountReposWithFailingSyncJobFuncCall
+	mutex       sync.Mutex
+}
+
+// CountReposWithFailingSyncJob delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockPermissionSyncJobStore) CountReposWithFailingSyncJob(v0 context.Context) (int32, error) {
+	r0, r1 := m.CountReposWithFailingSyncJobFunc.nextHook()(v0)
+	m.CountReposWithFailingSyncJobFunc.appendCall(PermissionSyncJobStoreCountReposWithFailingSyncJobFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// CountReposWithFailingSyncJob method of the parent
+// MockPermissionSyncJobStore instance is invoked and the hook queue is
+// empty.
+func (f *PermissionSyncJobStoreCountReposWithFailingSyncJobFunc) SetDefaultHook(hook func(context.Context) (int32, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountReposWithFailingSyncJob method of the parent
+// MockPermissionSyncJobStore instance invokes the hook at the front of the
+// queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *PermissionSyncJobStoreCountReposWithFailingSyncJobFunc) PushHook(hook func(context.Context) (int32, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermissionSyncJobStoreCountReposWithFailingSyncJobFunc) SetDefaultReturn(r0 int32, r1 error) {
+	f.SetDefaultHook(func(context.Context) (int32, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermissionSyncJobStoreCountReposWithFailingSyncJobFunc) PushReturn(r0 int32, r1 error) {
+	f.PushHook(func(context.Context) (int32, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermissionSyncJobStoreCountReposWithFailingSyncJobFunc) nextHook() func(context.Context) (int32, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermissionSyncJobStoreCountReposWithFailingSyncJobFunc) appendCall(r0 PermissionSyncJobStoreCountReposWithFailingSyncJobFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// PermissionSyncJobStoreCountReposWithFailingSyncJobFuncCall objects
+// describing the invocations of this function.
+func (f *PermissionSyncJobStoreCountReposWithFailingSyncJobFunc) History() []PermissionSyncJobStoreCountReposWithFailingSyncJobFuncCall {
+	f.mutex.Lock()
+	history := make([]PermissionSyncJobStoreCountReposWithFailingSyncJobFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermissionSyncJobStoreCountReposWithFailingSyncJobFuncCall is an object
+// that describes an invocation of method CountReposWithFailingSyncJob on an
+// instance of MockPermissionSyncJobStore.
+type PermissionSyncJobStoreCountReposWithFailingSyncJobFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int32
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermissionSyncJobStoreCountReposWithFailingSyncJobFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermissionSyncJobStoreCountReposWithFailingSyncJobFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermissionSyncJobStoreCountUsersWithFailingSyncJobFunc describes the
+// behavior when the CountUsersWithFailingSyncJob method of the parent
+// MockPermissionSyncJobStore instance is invoked.
+type PermissionSyncJobStoreCountUsersWithFailingSyncJobFunc struct {
+	defaultHook func(context.Context) (int32, error)
+	hooks       []func(context.Context) (int32, error)
+	history     []PermissionSyncJobStoreCountUsersWithFailingSyncJobFuncCall
+	mutex       sync.Mutex
+}
+
+// CountUsersWithFailingSyncJob delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockPermissionSyncJobStore) CountUsersWithFailingSyncJob(v0 context.Context) (int32, error) {
+	r0, r1 := m.CountUsersWithFailingSyncJobFunc.nextHook()(v0)
+	m.CountUsersWithFailingSyncJobFunc.appendCall(PermissionSyncJobStoreCountUsersWithFailingSyncJobFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// CountUsersWithFailingSyncJob method of the parent
+// MockPermissionSyncJobStore instance is invoked and the hook queue is
+// empty.
+func (f *PermissionSyncJobStoreCountUsersWithFailingSyncJobFunc) SetDefaultHook(hook func(context.Context) (int32, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountUsersWithFailingSyncJob method of the parent
+// MockPermissionSyncJobStore instance invokes the hook at the front of the
+// queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *PermissionSyncJobStoreCountUsersWithFailingSyncJobFunc) PushHook(hook func(context.Context) (int32, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermissionSyncJobStoreCountUsersWithFailingSyncJobFunc) SetDefaultReturn(r0 int32, r1 error) {
+	f.SetDefaultHook(func(context.Context) (int32, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermissionSyncJobStoreCountUsersWithFailingSyncJobFunc) PushReturn(r0 int32, r1 error) {
+	f.PushHook(func(context.Context) (int32, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermissionSyncJobStoreCountUsersWithFailingSyncJobFunc) nextHook() func(context.Context) (int32, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermissionSyncJobStoreCountUsersWithFailingSyncJobFunc) appendCall(r0 PermissionSyncJobStoreCountUsersWithFailingSyncJobFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// PermissionSyncJobStoreCountUsersWithFailingSyncJobFuncCall objects
+// describing the invocations of this function.
+func (f *PermissionSyncJobStoreCountUsersWithFailingSyncJobFunc) History() []PermissionSyncJobStoreCountUsersWithFailingSyncJobFuncCall {
+	f.mutex.Lock()
+	history := make([]PermissionSyncJobStoreCountUsersWithFailingSyncJobFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermissionSyncJobStoreCountUsersWithFailingSyncJobFuncCall is an object
+// that describes an invocation of method CountUsersWithFailingSyncJob on an
+// instance of MockPermissionSyncJobStore.
+type PermissionSyncJobStoreCountUsersWithFailingSyncJobFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int32
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermissionSyncJobStoreCountUsersWithFailingSyncJobFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermissionSyncJobStoreCountUsersWithFailingSyncJobFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

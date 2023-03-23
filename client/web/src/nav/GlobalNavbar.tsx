@@ -299,7 +299,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             variant="secondary"
                             outline={true}
                             to={addSourcegraphAppOutboundUrlParameters(
-                                'https://about.sourcegraph.com/get-started?app=enterprise'
+                                'https://about.sourcegraph.com/get-started?t=enterprise',
+                                'navbar'
                             )}
                             size="sm"
                             onClick={() =>

@@ -35,7 +35,7 @@ Ensure you have the following tools installed:
 2. Run `cd deploy-sourcegraph-helm/charts/sourcegraph-executor`.
 3. Edit the `values.yaml` with any other customizations you may require.
 4. Run the following command:
-   1. `helm upgrade --install -f values.yaml --version 4.5.1 sg-executor sourcegraph/sourcegraph-executor`
+   1. `helm upgrade --install -f values.yaml --version 5.0.0 sg-executor sourcegraph/sourcegraph-executor`
 5. Confirm executors are working are working by checking the _Executors_ page under **Site admin > Executors > Instances** .
 
 

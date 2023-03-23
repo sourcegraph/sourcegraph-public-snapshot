@@ -77,7 +77,6 @@ http_archive(
     ],
 )
 
-
 http_archive(
     name = "rules_rust",
     sha256 = "dc8d79fe9a5beb79d93e482eb807266a0e066e97a7b8c48d43ecf91f32a3a8f3",

@@ -17,7 +17,7 @@
 
 ## Requirements
 
-Executors by default use KVM-based micro VMs powered by [Firecracker](https://github.com/firecracker-microvm/firecracker) in accordance with our [sandboxing model](index.md#how-it-works) to isolate jobs from each other and the host.
+Executors by default use KVM-based micro VMs powered by [Firecracker](https://sourcegraph.com/github.com/firecracker-microvm/firecracker) in accordance with our [sandboxing model](index.md#how-it-works) to isolate jobs from each other and the host.
 This requires executors to be run on machines capable of running Linux KVM extensions. On the most popular cloud providers, this either means running executors on bare-metal machines (AWS) or machines capable of nested virtualization (GCP).
 
 Optionally, executors can be run without using KVM-based isolation, which is less secure but might be easier to run on common machines.

@@ -24,6 +24,10 @@
 
 <!-- Add changes changes to this section before release. -->
 
+## v4.5.1 ➔ v5.0.0
+
+#### Notes:
+
 ## v4.5.0 ➔ v4.5.1
 
 #### Notes:

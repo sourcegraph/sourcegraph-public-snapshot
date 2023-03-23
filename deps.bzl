@@ -3288,6 +3288,14 @@ def go_dependencies():
         version = "v0.5.4",
     )
     go_repository(
+        name = "com_github_hashicorp_golang_lru_v2",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/hashicorp/golang-lru/v2",
+        sum = "h1:Dwmkdr5Nc/oBiXgJS3CDHNhJtIHkuZ3DZF5twqnfBdU=",
+        version = "v2.0.2",
+    )
+
+    go_repository(
         name = "com_github_hashicorp_hcl",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/hashicorp/hcl",
@@ -5723,8 +5731,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:RFNs++QJ44aSXNpTe/KZjqRZaLnypf5CFnks0VJhobE=",
-        version = "v0.0.0-20230310172732-250c2efdd564",
+        sum = "h1:QFwEbH3rG9OP9EkCuAywj8U3uzFOaf0r5CSskr5s/ac=",
+        version = "v0.0.0-20230315153951-06c1bce6400a",
     )
 
     go_repository(

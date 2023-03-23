@@ -16,7 +16,7 @@ export const CodeInsightsLimitedAccessAppBanner: React.FC<Props> = props => (
             For unlimited access to Insights,{' '}
             <Link
                 to={addSourcegraphAppOutboundUrlParameters(
-                    'https://about.sourcegraph.com/get-started?app=enterprise',
+                    'https://about.sourcegraph.com/get-started?t=enterprise',
                     'code-insights'
                 )}
             >

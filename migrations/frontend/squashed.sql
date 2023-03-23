@@ -780,10 +780,14 @@ END;
 $$;
 
 CREATE FUNCTION soft_deleted_repository_name(name text) RETURNS text
-    LANGUAGE plpgsql STRICT
+    LANGUAGE plpgsql
     AS $$
 BEGIN
-    RETURN 'DELETED-' || extract(epoch from transaction_timestamp()) || '-' || name;
+    IF name LIKE 'DELETED-%' THEN
+        RETURN name;
+    ELSE
+        RETURN 'DELETED-' || extract(epoch from transaction_timestamp()) || '-' || name;
+    END IF;
 END;
 $$;
 
