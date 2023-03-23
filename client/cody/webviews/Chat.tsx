@@ -189,6 +189,8 @@ const CodeBlocks: React.FunctionComponent<{ displayText: string }> = ({ displayT
     const [copiedText, setCopiedText] = useState('')
     const preBlocks = displayText.match(/<(\w+)[^>]*>(.*?)<\/\1>|<pre[^>]*>[\s\S]*?<\/pre>/g) || []
     const copyText = (text: string) => {
+        const element = document.createElement('div')
+        element.innerHTML = text
         navigator.clipboard.writeText(text.replace(/<[^>]*>?/gm, ''))
         setCopiedText(text)
     }
