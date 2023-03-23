@@ -7,7 +7,7 @@ bazel --bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/
 echo "--- Checking if BUILD.bazel files were updated"
 git diff --exit-code
 
-EXIT_CODE=$(echo $?)
+EXIT_CODE=$?
 
 # if we get a non-zero exit code, bazel configure updated files
 if [[ $EXIT_CODE -ne 0 ]]; then
@@ -24,4 +24,4 @@ if [[ $EXIT_CODE -ne 0 ]]; then
 END
 fi
 
-exit $EXIT_CODE
+exit "$EXIT_CODE"
