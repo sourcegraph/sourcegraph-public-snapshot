@@ -76,7 +76,7 @@ func searchEmbeddingIndex(
 			EndLine:   row.EndLine,
 			Content:   strings.Join(lines[startLine:endLine], "\n"),
 		}
-		if debug {
+		if debug && len(res.Debug) > idx {
 			results[idx].Debug = res.Debug[idx]
 		}
 	}
