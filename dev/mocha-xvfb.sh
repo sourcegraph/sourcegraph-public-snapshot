@@ -8,10 +8,10 @@ BUILDKITE=${BUILDKITE:-"0"}
 
 if [[ $BUILDKITE -eq "0" ]]; then
   # only start Xvfb if we're not in CI
-  echo "NOT CI - STARTING Xvfb"
   /usr/X11/bin/Xvfb ":99" -screen 0 1280x1024x24 &
 else
-  echo "IN CI - NOT STARTING Xvfb"
+  echo "IN CI - STARTING Xvfb"
+  /usr/bin/Xvfb ":99" -screen 0 1280x1024x24 &
 fi
 
 cmd=$1
