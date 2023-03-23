@@ -43,26 +43,32 @@ export const SiteConfigurationChangeListPage: FC = () => {
     })
 
     return (
-        <div>
-            <Container className="mb-3">
-                <H3>History</H3>
-                {loading && <ConnectionLoading />}
-                {error && <ConnectionError errors={[error.message]} />}
-                <div className="mt-4">
-                    {connection?.nodes
-                        ?.filter(node => node.diff)
-                        .map(node => (
-                            <SiteConfigurationHistoryItem node={node} />
-                        ))}
+        <>
+            {loading && <ConnectionLoading />}
+            {error && <ConnectionError errors={[error.message]} />}
+            {connection?.nodes?.length === 0 ? (
+                <></>
+            ) : (
+                <div>
+                    <Container className="mb-3">
+                        <H3>History</H3>
+                        <div className="mt-4">
+                            {connection?.nodes
+                                .filter(node => node.diff)
+                                .map(node => (
+                                    <SiteConfigurationHistoryItem node={node} />
+                                ))}
+                        </div>
+                        <PageSwitcher
+                            {...paginationProps}
+                            className="mt-4"
+                            totalCount={connection?.totalCount || 0}
+                            totalLabel="changes"
+                        />
+                    </Container>
                 </div>
-                <PageSwitcher
-                    {...paginationProps}
-                    className="mt-4"
-                    totalCount={connection?.totalCount || 0}
-                    totalLabel="changes"
-                />
-            </Container>
-        </div>
+            )}
+        </>
     )
 }
 interface SiteConfigurationHistoryItemProps {
