@@ -3,6 +3,7 @@ package embed
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
@@ -20,6 +21,7 @@ const EMBEDDING_BATCHES = 5
 const EMBEDDING_BATCH_SIZE = 512
 
 type readFile func(fileName string) ([]byte, error)
+type ranksGetter func(ctx context.Context, repoName string) (types.RepoPathRanks, error)
 
 // EmbedRepo embeds file contents from the given file names for a repository.
 // It separates the file names into code files and text files and embeds them separately.
@@ -33,6 +35,7 @@ func EmbedRepo(
 	client EmbeddingsClient,
 	splitOptions split.SplitOptions,
 	readFile readFile,
+	getDocumentRanks ranksGetter,
 ) (*embeddings.RepoEmbeddingIndex, error) {
 	codeFileNames, textFileNames := []string{}, []string{}
 	for _, fileName := range fileNames {
@@ -47,12 +50,17 @@ func EmbedRepo(
 		}
 	}
 
-	codeIndex, err := embedFiles(codeFileNames, client, splitOptions, readFile, MAX_CODE_EMBEDDING_VECTORS)
+	ranks, err := getDocumentRanks(ctx, string(repoName))
 	if err != nil {
 		return nil, err
 	}
 
-	textIndex, err := embedFiles(textFileNames, client, splitOptions, readFile, MAX_TEXT_EMBEDDING_VECTORS)
+	codeIndex, err := embedFiles(codeFileNames, client, splitOptions, readFile, MAX_CODE_EMBEDDING_VECTORS, ranks)
+	if err != nil {
+		return nil, err
+	}
+
+	textIndex, err := embedFiles(textFileNames, client, splitOptions, readFile, MAX_TEXT_EMBEDDING_VECTORS, ranks)
 	if err != nil {
 		return nil, err
 	}
@@ -78,6 +86,7 @@ func embedFiles(
 	splitOptions split.SplitOptions,
 	readFile readFile,
 	maxEmbeddingVectors int,
+	repoPathRanks types.RepoPathRanks,
 ) (embeddings.EmbeddingIndex[embeddings.RepoEmbeddingRowMetadata], error) {
 	dimensions, err := client.GetDimensions()
 	if err != nil {
@@ -92,7 +101,7 @@ func embedFiles(
 		Embeddings:      make([]float32, 0, len(fileNames)*dimensions),
 		RowMetadata:     make([]embeddings.RepoEmbeddingRowMetadata, 0, len(fileNames)),
 		ColumnDimension: dimensions,
-		Ranks:           []float32{},
+		Ranks:           make([]float32, 0, len(fileNames)),
 	}
 
 	// addEmbeddableChunks batches embeddable chunks, gets embeddings for the batches, and appends them to the index above.
@@ -106,6 +115,11 @@ func embedFiles(
 			for idx, chunk := range batch {
 				batchChunks[idx] = chunk.Content
 				index.RowMetadata = append(index.RowMetadata, embeddings.RepoEmbeddingRowMetadata{FileName: chunk.FileName, StartLine: chunk.StartLine, EndLine: chunk.EndLine})
+
+				// Unknown documents have rank 0. Zoekt is a bit smarter about this, assigning 0
+				// to "unimportant" files and the average for unknown files. We should probably
+				// add this here, too.
+				index.Ranks = append(index.Ranks, float32(repoPathRanks.Paths[chunk.FileName]))
 			}
 
 			batchEmbeddings, err := client.GetEmbeddingsWithRetries(batchChunks, GET_EMBEDDINGS_MAX_RETRIES)

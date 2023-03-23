@@ -66,7 +66,11 @@ func newRepoEmbeddingJobWorker(
 	uploadStore uploadstore.Store,
 	gitserverClient gitserver.Client,
 ) *workerutil.Worker[*repoembeddingsbg.RepoEmbeddingJob] {
-	handler := &handler{db, uploadStore, gitserverClient}
+	handler := &handler{
+		db:              db,
+		uploadStore:     uploadStore,
+		gitserverClient: gitserverClient,
+	}
 	return dbworker.NewWorker[*repoembeddingsbg.RepoEmbeddingJob](ctx, workerStore, handler, workerutil.WorkerOptions{
 		Name:              "repo_embedding_job_worker",
 		Interval:          10 * time.Second, // Poll for a job once every 10 seconds
