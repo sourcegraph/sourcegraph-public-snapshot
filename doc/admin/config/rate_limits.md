@@ -1,6 +1,6 @@
 # Configuring rate limits on Sourcegraph
 
-Sourcegraph has various mechanisms in place to ensure that communication with external services happen in a controlled and reliable manner.
+Sourcegraph has various [rate limiting](../external_service#rate-limits) mechanisms in place to ensure that communication with external services happen in a controlled and reliable manner.
 
 ## External rate limits
 
