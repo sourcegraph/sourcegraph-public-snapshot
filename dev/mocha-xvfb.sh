@@ -7,9 +7,9 @@
 BUILDKITE=${BUILDKITE:="false"}
 
 if [[ $BUILDKITE == "false" ]]; then
-  /usr/X11/bin/Xvfb ":99" -screen 0 1280x1024x24 &
+  /usr/X11/bin/Xvfb ":${DISPLAY}" -screen 0 1280x1024x24 &
 else
-  /usr/bin/Xvfb ":99" -screen 0 1280x1024x24 &
+  /usr/bin/Xvfb ":${DISPLAY}" -screen 0 1280x1024x24 &
 fi
 
 cmd=$1
