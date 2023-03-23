@@ -19,6 +19,22 @@
       "current": "5.1.0",
       "captainGitHubUsername": "coury-clark",
       "captainSlackUsername": "coury"
+    },
+    "5.1.0": {
+      "codeFreezeDate": "2023-03-15T10:34:35.948-07:00",
+      "securityApprovalDate": "2023-03-15T10:34:35.948-07:00",
+      "releaseDate": "2023-03-22T10:34:35.948-07:00",
+      "patches": [
+        "2023-04-05T10:34:35.948-07:00",
+        "2023-04-19T10:34:35.948-07:00",
+        "2023-05-03T10:34:35.948-07:00",
+        "2023-05-17T10:34:35.948-07:00",
+        "2023-05-31T10:34:35.948-07:00",
+        "2023-06-14T10:34:35.948-07:00"
+      ],
+      "current": "5.1.0",
+      "captainGitHubUsername": "coury-clark",
+      "captainSlackUsername": "coury"
     }
   },
   "dryRun": {
@@ -27,5 +43,18 @@
     "trackingIssues": false,
     "calendar": false,
     "slack": false
+  },
+  "in_progress": {
+    "captainGitHubUsername": "coury-clark",
+    "captainSlackUsername": "coury",
+    "releases": [
+      {
+        "version": "5.1.0",
+        "previous": "5.0.0"
+      }
+    ],
+    "srcCliVersion": "5.1.0",
+    "googleExecutorVersion": "5.1.0",
+    "awsExecutorVersion": "5.1.0"
   }
 }

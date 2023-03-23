@@ -2,7 +2,12 @@ import { SemVer } from 'semver'
 
 import { ReleaseConfig, setAWSExecutorVersion, setGoogleExecutorVersion, setSrcCliVersion } from './config'
 import { cloneRepo, createChangesets, Edit, getAuthenticatedGitHubClient, releaseBlockerLabel } from './github'
-import { nextAWSExecutorVersionInputWithAutodetect, nextGoogleExecutorVersionInputWithAutodetect, nextSrcCliVersionInputWithAutodetect, pullRequestBody } from './util'
+import {
+    nextAWSExecutorVersionInputWithAutodetect,
+    nextGoogleExecutorVersionInputWithAutodetect,
+    nextSrcCliVersionInputWithAutodetect,
+    pullRequestBody,
+} from './util'
 
 export async function bakeSrcCliSteps(config: ReleaseConfig): Promise<Edit[]> {
     const client = await getAuthenticatedGitHubClient()
@@ -65,7 +70,6 @@ export async function bakeAWSExecutorsSteps(config: ReleaseConfig): Promise<void
         console.log(set.pullRequestURL)
     }
 }
-
 
 export async function bakeGoogleExecutorsSteps(config: ReleaseConfig): Promise<void> {
     const client = await getAuthenticatedGitHubClient()
