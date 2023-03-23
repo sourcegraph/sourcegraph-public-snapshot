@@ -1,5 +1,5 @@
 {
-  "checksum": "75577b9b5a017805673ca98bd2226be6ba90724e1628869e5c55de6e6cfd5c28",
+  "checksum": "b0e33cbb50771e246788b9121ca0bfd8f1ca2b55bb2acc8bec8932fd72f5487f",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -8143,7 +8143,7 @@
         "Git": {
           "remote": "https://github.com/sourcegraph/scip",
           "commitish": {
-            "Branch": "main"
+            "Rev": "3856df76147ca4b86df7821a881594358d4ba870"
           },
           "strip_prefix": "bindings/rust"
         }
@@ -9844,7 +9844,7 @@
         "Git": {
           "remote": "https://github.com/sourcegraph/syntect",
           "commitish": {
-            "Branch": "main"
+            "Rev": "7e02c5b4085e6d935b960b8106cdd85da04532d2"
           }
         }
       },
@@ -11827,7 +11827,7 @@
         "Git": {
           "remote": "https://github.com/nickel-lang/tree-sitter-nickel",
           "commitish": {
-            "Branch": "main"
+            "Rev": "d6c7eeb751038f934b5b1aa7ff236376d0235c56"
           }
         }
       },
@@ -11895,7 +11895,7 @@
         "Git": {
           "remote": "https://github.com/sourcegraph/tree-sitter-perl",
           "commitish": {
-            "Branch": "master"
+            "Rev": "e1b4844afd17b7dc019a436b1ac890568d79a1f2"
           }
         }
       },
@@ -11963,7 +11963,7 @@
         "Git": {
           "remote": "https://github.com/sourcegraph/tree-sitter-pod",
           "commitish": {
-            "Branch": "main"
+            "Rev": "f422a0dca6847c692e811f06fd92c6a75d647222"
           }
         }
       },
@@ -12229,7 +12229,7 @@
         "Git": {
           "remote": "https://github.com/sourcegraph/tree-sitter-scala",
           "commitish": {
-            "Branch": "master"
+            "Rev": "6cd3cb6074624dd3d88e458343475ca4c701cb06"
           }
         }
       },
@@ -12297,7 +12297,7 @@
         "Git": {
           "remote": "https://github.com/sourcegraph/tree-sitter-sql",
           "commitish": {
-            "Branch": "main"
+            "Rev": "6ea62b8d33c9e39f6de8a398a6885d1873ed7e91"
           }
         }
       },
@@ -12431,7 +12431,7 @@
         "Git": {
           "remote": "https://github.com/sourcegraph/tree-sitter-xlsg",
           "commitish": {
-            "Branch": "master"
+            "Rev": "d956b54ea151b12f19c945f7be421c3dcd3a77ba"
           }
         }
       },

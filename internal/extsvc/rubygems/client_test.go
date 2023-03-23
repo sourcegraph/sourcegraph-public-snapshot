@@ -28,7 +28,8 @@ func newTestHTTPClient(t *testing.T) (client *Client, stop func()) {
 	t.Helper()
 	recorderFactory, stop := httptestutil.NewRecorderFactory(t, *updateRecordings, t.Name())
 
-	return NewClient("rubygems_urn", "https://rubygems.org", recorderFactory), stop
+	client, _ = NewClient("rubygems_urn", "https://rubygems.org", recorderFactory)
+	return client, stop
 }
 
 func TestGetPackageContents(t *testing.T) {

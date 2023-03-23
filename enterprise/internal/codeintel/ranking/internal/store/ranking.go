@@ -609,7 +609,7 @@ candidates AS (
 		ld.id,
 		uvt.is_default_branch IS TRUE AS safe
 	FROM locked_definitions ld
-	LEFT JOIN lsif_uploads_visible_at_tip uvt ON  uvt.upload_id = ld.upload_id
+	LEFT JOIN lsif_uploads_visible_at_tip uvt ON uvt.repository_id = ld.repository_id AND uvt.upload_id = ld.upload_id
 ),
 updated_definitions AS (
 	UPDATE codeintel_ranking_definitions
@@ -743,7 +743,7 @@ candidates AS (
 		lipr.id,
 		uvt.is_default_branch IS TRUE AS safe
 	FROM locked_initial_path_ranks lipr
-	LEFT JOIN lsif_uploads_visible_at_tip uvt ON uvt.upload_id = lipr.upload_id
+	LEFT JOIN lsif_uploads_visible_at_tip uvt ON uvt.repository_id = lipr.repository_id AND uvt.upload_id = lipr.upload_id
 ),
 updated_initial_path_ranks AS (
 	UPDATE codeintel_initial_path_ranks
