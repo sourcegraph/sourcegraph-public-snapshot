@@ -1,7 +1,6 @@
 package oobmigration
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -23,7 +22,7 @@ func TestNewVersionFromString(t *testing.T) {
 		{"350+dev", Version{}, 0, false},
 		{"2023.03.23+204874.db2922", NewVersion(2023, 03), 23, true},          // Sourcegraph App
 		{"2023.03.23-insiders+204874.db2922", NewVersion(2023, 03), 23, true}, // Sourcegraph App
-		{"205081_2023-03-09_4.5-7d653173d315", NewVersion(4, 5), 0, true},
+		{"205081_2023-03-09_4.5-7d653173d315", newDevVersion(4, 5), 0, true},
 	}
 
 	for _, testCase := range testCases {
@@ -34,8 +33,6 @@ func TestNewVersionFromString(t *testing.T) {
 				t.Errorf("unexpected ok. want=%v have=%v", testCase.ok, ok)
 			} else {
 				if version != testCase.version {
-					fmt.Printf("%x\n", version)
-					fmt.Printf("%x\n", testCase.version)
 					t.Errorf("unexpected version. want=%s have=%s", testCase.version, version)
 				}
 				if patch != testCase.patch {
