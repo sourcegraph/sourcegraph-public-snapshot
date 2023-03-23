@@ -2067,7 +2067,7 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 			PermissionsAdded:   1337,
 			PermissionsRemoved: 42,
 			PermissionsFound:   404,
-			CodeHostStates:     []database.PermissionSyncCodeHostState{},
+			CodeHostStates:     []database.PermissionSyncCodeHostState{{ProviderID: "1", ProviderType: "github", Status: database.CodeHostStatusSuccess, Message: "success!"}},
 		},
 		{
 			ID:               4,
@@ -2081,7 +2081,7 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 			Priority:         database.HighPriorityPermissionsSync,
 			NoPerms:          false,
 			InvalidateCaches: false,
-			CodeHostStates:   []database.PermissionSyncCodeHostState{},
+			CodeHostStates:   []database.PermissionSyncCodeHostState{{ProviderID: "1", ProviderType: "github", Status: database.CodeHostStatusError, Message: "error!"}},
 		},
 	}
 	permissionSyncJobStore.ListFunc.SetDefaultReturn(jobs, nil)
@@ -2145,6 +2145,9 @@ query {
 		permissionsFound
 		codeHostStates {
 			providerID
+			providerType
+			status
+			message
 		}
 	}
   }
@@ -2185,7 +2188,14 @@ query {
 				"permissionsAdded": 1337,
 				"permissionsRemoved": 42,
 				"permissionsFound": 404,
-				"codeHostStates": []
+				"codeHostStates": [
+					{
+						"providerID": "1",
+						"providerType": "github",
+						"status": "SUCCESS",
+						"message": "success!"
+					}
+				]
 			},
 			{
 				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjQ=",
@@ -2216,7 +2226,14 @@ query {
 				"permissionsAdded": 0,
 				"permissionsRemoved": 0,
 				"permissionsFound": 0,
-				"codeHostStates": []
+				"codeHostStates": [
+					{
+						"providerID": "1",
+						"providerType": "github",
+						"status": "ERROR",
+						"message": "error!"
+					}
+				]
 			}
 		],
 		"pageInfo": {

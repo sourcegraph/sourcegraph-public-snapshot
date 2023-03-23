@@ -438,6 +438,7 @@
     "js-yaml": "^4.1.0",
     "jsonc-parser": "^3.0.0",
     "linguist-languages": "^7.14.0",
+    "linkifyjs": "^4.1.0",
     "lodash": "^4.17.20",
     "lru-cache": "^7.8.0",
     "marked": "4.0.16",

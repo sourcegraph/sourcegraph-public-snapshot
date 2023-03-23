@@ -19,7 +19,6 @@ go_library(
         "//internal/actor",
         "//internal/api",
         "//internal/auth",
-        "//internal/authz/permssync",
         "//internal/conf",
         "//internal/database",
         "//internal/env",

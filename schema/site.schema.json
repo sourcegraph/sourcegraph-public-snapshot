@@ -1200,7 +1200,13 @@
       "type": "string",
       "format": "email",
       "group": "Email",
-      "default": "noreply@sourcegraph.com"
+      "examples": ["noreply@sourcegraph.example.com"]
+    },
+    "email.senderName": {
+      "description": "The name to use in the \"from\" address for emails sent by this server.",
+      "type": "string",
+      "group": "Email",
+      "examples": ["Sourcegraph"]
     },
     "email.templates": {
       "description": "Configurable templates for some email types sent by Sourcegraph.",

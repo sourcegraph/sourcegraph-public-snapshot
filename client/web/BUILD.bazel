@@ -1216,6 +1216,8 @@ ts_project(
         "src/repo/components/RepoHeaderActions/index.ts",
         "src/repo/components/RepoRevision/RepoRevision.tsx",
         "src/repo/components/RepoRevision/index.ts",
+        "src/repo/linkifiy/Linkified.tsx",
+        "src/repo/linkifiy/get-links.ts",
         "src/repo/packages/isPackageServiceType.ts",
         "src/repo/releases/RepositoryReleasesArea.tsx",
         "src/repo/releases/RepositoryReleasesTagsPage.tsx",
@@ -1358,6 +1360,7 @@ ts_project(
         "src/site-admin/SiteAdminWebhookPage.tsx",
         "src/site-admin/SiteAdminWebhookUpdatePage.tsx",
         "src/site-admin/SiteAdminWebhooksPage.tsx",
+        "src/site-admin/SiteConfigurationChangeListPage.tsx",
         "src/site-admin/UserManagement/components/Calendar/Calendar.tsx",
         "src/site-admin/UserManagement/components/Calendar/index.ts",
         "src/site-admin/UserManagement/components/DateRangeSelect.tsx",
@@ -1646,6 +1649,7 @@ ts_project(
         "//:node_modules/js-yaml",
         "//:node_modules/jsonc-parser",
         "//:node_modules/linguist-languages",
+        "//:node_modules/linkifyjs",
         "//:node_modules/lodash",
         "//:node_modules/lru-cache",
         "//:node_modules/marked",
@@ -1767,6 +1771,7 @@ ts_project(
         "src/repo/blob/codemirror/utils.test.ts",
         "src/repo/commit/CommitMessageWithLinks.test.tsx",
         "src/repo/commits/GitCommitNodeByline.test.tsx",
+        "src/repo/linkifiy/get-links.test.ts",
         "src/repo/releases/RepositoryReleasesTagsPage.test.tsx",
         "src/search/Notepad.test.tsx",
         "src/search/helpers.test.tsx",
@@ -1848,9 +1853,14 @@ npm_package(
 jest_test(
     name = "test",
     size = "enormous",  # make sure bazel reserves enough RAM for this.
-    timeout = "long",
+    timeout = "moderate",
     data = [
         ":web_tests",
+    ],
+    patch_node_fs = False,
+    shard_count = 6,  # this is has a large impact on the duration. We came to this number empirically.
+    tags = [
+        "no-sandbox",  # we are disabling the patch_node_fs, so the sandbox isn't really useful anymore.
     ],
 )
 
