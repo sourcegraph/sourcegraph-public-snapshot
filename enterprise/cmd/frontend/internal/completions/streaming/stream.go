@@ -44,18 +44,18 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), maxRequestDuration)
 	defer cancel()
 
+	completionsConfig := conf.Get().Completions
+	if completionsConfig == nil || !completionsConfig.Enabled {
+		http.Error(w, "completions are not configured or disabled", http.StatusInternalServerError)
+		return
+	}
+
 	if envvar.SourcegraphDotComMode() {
 		isEnabled := cody.IsCodyExperimentalFeatureFlagEnabled(ctx)
 		if !isEnabled {
 			http.Error(w, "cody experimental feature flag is not enabled for current user", http.StatusUnauthorized)
 			return
 		}
-	}
-
-	completionsConfig := conf.Get().Completions
-	if completionsConfig == nil || !completionsConfig.Enabled {
-		http.Error(w, "completions are not configured or disabled", http.StatusInternalServerError)
-		return
 	}
 
 	if r.Method != "POST" {
