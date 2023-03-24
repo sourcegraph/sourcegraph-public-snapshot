@@ -523,8 +523,8 @@ func TestCloningProgress(t *testing.T) {
 		if err != nil {
 			t.Fatalf("GetByName: %s", err)
 		}
-		if got, want := gotRepo.CloningProgress, ""; got != want {
-			t.Errorf("GetByName.CloningProgress, got %q, want %q", got, want)
+		if got := gotRepo.CloningProgress; got != "" {
+			t.Errorf("GetByName.CloningProgress, got %q, want empty string", got)
 		}
 	})
 

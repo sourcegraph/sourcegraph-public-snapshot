@@ -574,10 +574,10 @@ func TestCloneRepo(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
 	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db.FeatureFlags().CreateBool(ctx, "clone-progress-logging", true)
 	dbRepo := &types.Repo{
 		Name:        repoName,
 		Description: "Test",
@@ -617,9 +617,7 @@ func TestCloneRepo(t *testing.T) {
 	s := makeTestServer(ctx, t, reposDir, remote, db)
 
 	_, err := s.cloneRepo(ctx, repoName, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	// Wait until the clone is done. Please do not use this code snippet
 	// outside of a test. We only know this works since our test only starts
