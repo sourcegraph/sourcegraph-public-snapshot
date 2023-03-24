@@ -39,18 +39,18 @@ export class ChatQuestion implements Recipe {
         intentDetector: IntentDetector,
         codebaseContext: CodebaseContext
     ): Promise<ContextMessage[]> {
-        const contextMessages = this.getEditorContext(editor)
-
         const isCodebaseContextRequired = await intentDetector.isCodebaseContextRequired(text)
-        if (isCodebaseContextRequired) {
-            const codebaseContextMessages = await codebaseContext.getContextMessages(text, {
-                numCodeResults: 8,
-                numTextResults: 2,
-            })
-            contextMessages.push(...codebaseContextMessages)
+        if (!isCodebaseContextRequired) {
+            return []
         }
 
-        return contextMessages
+        const editorContextMessages = this.getEditorContext(editor)
+        const codebaseContextMessages = await codebaseContext.getContextMessages(text, {
+            numCodeResults: 8,
+            numTextResults: 2,
+        })
+
+        return editorContextMessages.concat(codebaseContextMessages)
     }
 
     private getEditorContext(editor: Editor): ContextMessage[] {

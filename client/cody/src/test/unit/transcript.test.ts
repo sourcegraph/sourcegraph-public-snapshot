@@ -187,4 +187,34 @@ describe('Transcript', () => {
         ]
         assert.deepStrictEqual(prompt, expectedPrompt)
     })
+
+    it('does not include currently visible content from the editor if no codebase context is required', async () => {
+        const editor = new MockEditor({
+            getActiveTextEditorVisibleContent: () => ({ fileName: 'internal/lib.go', content: 'package lib' }),
+        })
+        const embeddings = new MockEmbeddingsClient({
+            search: async () => ({
+                codeResults: [{ fileName: 'src/main.go', startLine: 0, endLine: 1, content: 'package main' }],
+                textResults: [{ fileName: 'docs/README.md', startLine: 0, endLine: 1, content: '# Main' }],
+            }),
+        })
+        const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => false })
+        const codebaseContext = new CodebaseContext('embeddings', embeddings, defaultKeywordContextFetcher)
+
+        const transcript = new Transcript()
+        const interaction = await new ChatQuestion().getInteraction(
+            'how do access tokens work in sourcegraph',
+            editor,
+            intentDetector,
+            codebaseContext
+        )
+        transcript.addInteraction(interaction)
+
+        const prompt = await transcript.toPrompt()
+        const expectedPrompt = [
+            { speaker: 'human', text: 'how do access tokens work in sourcegraph' },
+            { speaker: 'assistant', text: '' },
+        ]
+        assert.deepStrictEqual(prompt, expectedPrompt)
+    })
 })
