@@ -6,8 +6,12 @@ go_library(
     name = "assets",
     srcs = [
         "assets_dev.go",
+        # Build constraints (go tags) will disambiguate which one to pick
+        "assets_dist.go",  #keep
         "doc.go",
         "load_manifest_dev.go",
+        # Build constraints (go tags) will disambiguate which one to pick
+        "load_manifest_dist.go",  #keep
         "manifest.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/ui/assets",
@@ -16,62 +20,20 @@ go_library(
 )
 
 filegroup(
-    name = "assets_files_oss",
-    srcs = [
-        "//client/web:bundle",
-        "//ui/assets/img",
-    ],
+    name = "assets_dist",
+    srcs = ["//ui/assets/img"] + select({
+        "//:bundle_dist_oss": ["//client/web:bundle"],
+        "//:bundle_dist_enterprise": ["//client/web:bundle-enterprise"],
+        "//conditions:default": [],
+    }),
 )
 
 copy_to_directory(
-    name = "copy_bundle_oss",
-    srcs = ["//ui/assets:assets_files_oss"],
+    name = "copy_bundle_dist",
+    srcs = ["//ui/assets:assets_dist"],
     out = "dist",
     replace_prefixes = {
         "client/web/bundle": "",
-    },
-)
-
-go_library(
-    name = "assets_dist_oss",
-    srcs = [
-        "assets_dist.go",  #keep
-        "doc.go",
-        "load_manifest_dist.go",  #keep
-        "manifest.go",
-    ],
-    embedsrcs = ["copy_bundle_oss"],
-    importpath = "github.com/sourcegraph/sourcegraph/ui/assets",
-    visibility = ["//visibility:public"],
-    deps = ["//lib/errors"],
-)
-
-filegroup(
-    name = "assets_files_enterprise",
-    srcs = [
-        "//client/web:bundle-enterprise",
-        "//ui/assets/img",
-    ],
-)
-
-copy_to_directory(
-    name = "copy_bundle_enterprise",
-    srcs = ["//ui/assets:assets_files_enterprise"],
-    replace_prefixes = {
         "client/web/bundle-enterprise": "",
     },
-)
-
-go_library(
-    name = "assets_dist_enterprise",
-    srcs = [
-        "assets_dist.go",  #keep
-        "doc.go",
-        "load_manifest_dist.go",  #keep
-        "manifest.go",
-    ],
-    embedsrcs = ["copy_bundle_enterprise"],
-    importpath = "github.com/sourcegraph/sourcegraph/ui/assets",
-    visibility = ["//visibility:public"],
-    deps = ["//lib/errors"],
 )

@@ -16,8 +16,7 @@ go_binary(
     embed = [":frontend_lib"],
     gotags = select({
         "//:bundle_dist_oss": ["dist"],
-        "//:bundle_dist_enterprise": ["dist"],
-        "//conditions:default": [],
+        "//conditions:default": [""],
     }),
     visibility = ["//visibility:public"],
 )

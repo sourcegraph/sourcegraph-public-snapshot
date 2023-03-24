@@ -1,6 +1,5 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
-# gazelle:resolve go github.com/sourcegraph/sourcegraph/ui/assets //ui/assets:assets
 go_library(
     name = "assetsutil",
     srcs = [
@@ -12,10 +11,7 @@ go_library(
     deps = [
         "//internal/conf",
         "//internal/env",
+        "//ui/assets",
         "@com_github_shurcool_httpgzip//:httpgzip",
-    ] + select({
-        "//:bundle_dist_enterprise": ["//ui/assets:assets_dist_enterprise"],
-        "//:bundle_dist_oss": ["//ui/assets:assets_dist_oss"],
-        "//conditions:default": ["//ui/assets:assets"],
-    }),
+    ],
 )

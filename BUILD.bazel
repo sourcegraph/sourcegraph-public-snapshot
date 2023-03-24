@@ -219,16 +219,14 @@ exports_files(["go.mod"])
 
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 
+# This settings enable to switch from one compiled "dist" bundle type to the other.
+# Enabling one or the other will enable the `dist` go tag, which will reflect on the build
+# constraints of the //ui/assets package.
+#
+# If none is set, this will default back to the dev bundle.
 string_flag(
     name = "assets_bundle_type",
     build_setting_default = "dev",
-)
-
-config_setting(
-    name = "bundle_dev",
-    flag_values = {
-        ":assets_bundle_type": "dev",
-    },
 )
 
 config_setting(
