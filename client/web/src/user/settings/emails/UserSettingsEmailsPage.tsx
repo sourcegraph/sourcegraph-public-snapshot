@@ -132,7 +132,7 @@ export const UserSettingsEmailsPage: FunctionComponent<React.PropsWithChildren<P
                 className={styles.emailForm}
                 user={user}
                 onDidAdd={fetchEmails}
-                emails={new Set(emails.map(e => e.email))}
+                emails={new Set(emails.map(userEmail => userEmail.email))}
             />
             <hr className="my-4" aria-hidden="true" />
             <SetUserPrimaryEmailForm user={user} emails={emails} onDidSet={fetchEmails} />

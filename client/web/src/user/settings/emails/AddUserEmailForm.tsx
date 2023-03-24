@@ -43,7 +43,7 @@ export const AddUserEmailForm: FunctionComponent<React.PropsWithChildren<Props>>
                 synchronousValidators: [email => validateEmail(email, emails)],
                 asynchronousValidators: [],
             }),
-            [emails, validateEmail]
+            [emails]
         )
     )
 
