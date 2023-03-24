@@ -23,6 +23,7 @@ const repoDefaults: RepositoryFields = {
     id: 'repoid',
     name: 'github.com/sourcegraph/awesome',
     url: 'http://test.test/awesome',
+    isFork: false,
 }
 
 const queryRepoBatchChangeStats: typeof _queryRepoBatchChangeStats = () =>

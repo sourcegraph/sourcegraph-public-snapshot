@@ -8,24 +8,8 @@ import (
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 )
 
-type locationConnectionResolver struct {
-	locations        []types.UploadLocation
-	cursor           *string
-	locationResolver *sharedresolvers.CachedLocationResolver
-}
-
 func NewLocationConnectionResolver(locations []types.UploadLocation, cursor *string, locationResolver *sharedresolvers.CachedLocationResolver) resolverstubs.LocationConnectionResolver {
-	return &locationConnectionResolver{
-		locations:        locations,
-		cursor:           cursor,
-		locationResolver: locationResolver,
-	}
-}
-
-func (r *locationConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.LocationResolver, error) {
-	return resolveLocations(ctx, r.locationResolver, r.locations)
-}
-
-func (r *locationConnectionResolver) PageInfo() resolverstubs.PageInfo {
-	return EncodeCursor(r.cursor)
+	return resolverstubs.NewLazyConnectionResolver(func(ctx context.Context) ([]resolverstubs.LocationResolver, error) {
+		return resolveLocations(ctx, locationResolver, locations)
+	}, encodeCursor(cursor))
 }

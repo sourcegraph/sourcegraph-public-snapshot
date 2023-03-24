@@ -446,11 +446,8 @@ func newTestClient(t testing.TB, name string, update bool) *Client {
 		}
 	})
 
-	doer, err := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
-	if err != nil {
-		t.Fatal(err)
-	}
+	doer := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec))
 
-	c := NewClient("urn", []string{"https://pypi.org/simple"}, doer)
+	c, _ := NewClient("urn", []string{"https://pypi.org/simple"}, doer)
 	return c
 }

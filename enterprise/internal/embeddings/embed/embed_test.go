@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/split"
@@ -60,6 +61,24 @@ func TestEmbedRepo(t *testing.T) {
 		// Should be excluded (binary file),
 		"binary.bin": {0xFF, 0xF, 0xF, 0xF, 0xFF, 0xF, 0xF, 0xA},
 	}
+
+	mockRanks := map[string]float64{
+		"a.go":             0.1,
+		"b.md":             0.2,
+		"c.java":           0.3,
+		"autogen.py":       0.4,
+		"lines_too_long.c": 0.5,
+		"empty.rb":         0.6,
+		"binary.bin":       0.7,
+	}
+
+	getDocumentRanks := func(ctx context.Context, repoName string) (types.RepoPathRanks, error) {
+		return types.RepoPathRanks{
+			MeanRank: 0,
+			Paths:    mockRanks,
+		}, nil
+	}
+
 	readFile := func(fileName string) ([]byte, error) {
 		content, ok := mockFiles[fileName]
 		if !ok {
@@ -69,36 +88,40 @@ func TestEmbedRepo(t *testing.T) {
 	}
 
 	t.Run("no files", func(t *testing.T) {
-		index, err := EmbedRepo(ctx, repoName, revision, []string{}, client, splitOptions, readFile)
+		index, err := EmbedRepo(ctx, repoName, revision, []string{}, client, splitOptions, readFile, getDocumentRanks)
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 0)
 		require.Len(t, index.TextIndex.Embeddings, 0)
 	})
 
 	t.Run("code files only", func(t *testing.T) {
-		index, err := EmbedRepo(ctx, repoName, revision, []string{"a.go"}, client, splitOptions, readFile)
+		index, err := EmbedRepo(ctx, repoName, revision, []string{"a.go"}, client, splitOptions, readFile, getDocumentRanks)
 		require.NoError(t, err)
 		require.Len(t, index.TextIndex.Embeddings, 0)
 		require.Len(t, index.CodeIndex.Embeddings, 6)
 		require.Len(t, index.CodeIndex.RowMetadata, 2)
+		require.Len(t, index.CodeIndex.Ranks, 2)
 	})
 
 	t.Run("text files only", func(t *testing.T) {
-		index, err := EmbedRepo(ctx, repoName, revision, []string{"b.md"}, client, splitOptions, readFile)
+		index, err := EmbedRepo(ctx, repoName, revision, []string{"b.md"}, client, splitOptions, readFile, getDocumentRanks)
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 0)
 		require.Len(t, index.TextIndex.Embeddings, 6)
 		require.Len(t, index.TextIndex.RowMetadata, 2)
+		require.Len(t, index.TextIndex.Ranks, 2)
 	})
 
 	t.Run("mixed code and text files", func(t *testing.T) {
 		files := []string{"a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin"}
-		index, err := EmbedRepo(ctx, repoName, revision, files, client, splitOptions, readFile)
+		index, err := EmbedRepo(ctx, repoName, revision, files, client, splitOptions, readFile, getDocumentRanks)
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 15)
 		require.Len(t, index.CodeIndex.RowMetadata, 5)
+		require.Len(t, index.CodeIndex.Ranks, 5)
 		require.Len(t, index.TextIndex.Embeddings, 6)
 		require.Len(t, index.TextIndex.RowMetadata, 2)
+		require.Len(t, index.TextIndex.Ranks, 2)
 	})
 }
 

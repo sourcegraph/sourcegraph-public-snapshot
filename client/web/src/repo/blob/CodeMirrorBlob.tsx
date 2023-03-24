@@ -36,6 +36,7 @@ import { createBlameDecorationsExtension } from './codemirror/blame-decorations'
 import { codeFoldingExtension } from './codemirror/code-folding'
 import { syntaxHighlight } from './codemirror/highlight'
 import { selectableLineNumbers, SelectedLineRange, selectLines } from './codemirror/linenumbers'
+import { buildLinks } from './codemirror/links'
 import { lockFirstVisibleLine } from './codemirror/lock-line'
 import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-line-on-click'
 import { occurrenceAtPosition, positionAtCmPosition } from './codemirror/occurrence-utils'
@@ -285,6 +286,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : tokenSelectionExtension(),
             syntaxHighlight.of(blobInfo),
             languageSupport.of(blobInfo),
+            buildLinks.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
                 ? sourcegraphExtensions({

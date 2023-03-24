@@ -3,36 +3,10 @@ package graphql
 import (
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-func marshalConfigurationPolicyGQLID(configurationPolicyID int64) graphql.ID {
-	return relay.MarshalID("CodeIntelligenceConfigurationPolicy", configurationPolicyID)
-}
-
-func unmarshalRepositoryID(id graphql.ID) (repositoryID int64, err error) {
-	err = relay.UnmarshalSpec(id, &repositoryID)
-	return repositoryID, err
-}
-
-// PageInfo implements the GraphQL type PageInfo.
-type PageInfo struct {
-	endCursor   *string
-	hasNextPage bool
-}
-
-// HasNextPage returns a new PageInfo with the given hasNextPage value.
-func HasNextPage(hasNextPage bool) *PageInfo {
-	return &PageInfo{hasNextPage: hasNextPage}
-}
-
-func (r *PageInfo) EndCursor() *string { return r.endCursor }
-func (r *PageInfo) HasNextPage() bool  { return r.hasNextPage }
 
 func validateConfigurationPolicy(policy resolverstubs.CodeIntelConfigurationPolicy) error {
 	switch types.GitObjectType(policy.Type) {
@@ -73,11 +47,6 @@ func toDuration(hours *int32) *time.Duration {
 	return &v
 }
 
-func unmarshalConfigurationPolicyGQLID(id graphql.ID) (configurationPolicyID int64, err error) {
-	err = relay.UnmarshalSpec(id, &configurationPolicyID)
-	return configurationPolicyID, err
-}
-
 // toInt32 translates the given int pointer into an int32 pointer.
 func toInt32(val *int) *int32 {
 	if val == nil {
@@ -88,7 +57,11 @@ func toInt32(val *int) *int32 {
 	return &v
 }
 
-func unmarshalLSIFIndexGQLID(id graphql.ID) (indexID int64, err error) {
-	err = relay.UnmarshalSpec(id, &indexID)
-	return indexID, err
+func toHours(duration *time.Duration) *int32 {
+	if duration == nil {
+		return nil
+	}
+
+	v := int32(*duration / time.Hour)
+	return &v
 }

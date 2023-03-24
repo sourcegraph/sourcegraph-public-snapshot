@@ -136,7 +136,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 
 			permsStore := edb.Perms(logger, testDB, timeutil.Now)
-			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
+			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
 
 			_, providerStates, err := syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
@@ -145,7 +145,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			assert.Equal(t, database.CodeHostStatusesSet{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				Status:       "SUCCESS",
+				Status:       database.CodeHostStatusSuccess,
 				Message:      "FetchRepoPerms",
 			}}, providerStates)
 
@@ -221,7 +221,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 
 			permsStore := edb.Perms(logger, testDB, timeutil.Now)
-			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
+			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
 
 			_, providerStates, err := syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
@@ -230,7 +230,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			assert.Equal(t, database.CodeHostStatusesSet{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				Status:       "SUCCESS",
+				Status:       database.CodeHostStatusSuccess,
 				Message:      "FetchRepoPerms",
 			}}, providerStates)
 
@@ -256,7 +256,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			assert.Equal(t, database.CodeHostStatusesSet{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				Status:       "SUCCESS",
+				Status:       database.CodeHostStatusSuccess,
 				Message:      "FetchRepoPerms",
 			}}, providerStates)
 
@@ -344,7 +344,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 
 			permsStore := edb.Perms(logger, testDB, timeutil.Now)
-			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
+			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
 
 			_, providerStates, err := syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
@@ -353,7 +353,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			assert.Equal(t, database.CodeHostStatusesSet{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				Status:       "SUCCESS",
+				Status:       database.CodeHostStatusSuccess,
 				Message:      "FetchUserPerms",
 			}}, providerStates)
 
@@ -432,7 +432,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 
 			permsStore := edb.Perms(logger, testDB, timeutil.Now)
-			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
+			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
 
 			_, providerStates, err := syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
@@ -441,7 +441,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			assert.Equal(t, database.CodeHostStatusesSet{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				Status:       "SUCCESS",
+				Status:       database.CodeHostStatusSuccess,
 				Message:      "FetchUserPerms",
 			}}, providerStates)
 
@@ -467,7 +467,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			assert.Equal(t, database.CodeHostStatusesSet{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				Status:       "SUCCESS",
+				Status:       database.CodeHostStatusSuccess,
 				Message:      "FetchUserPerms",
 			}}, providerStates)
 

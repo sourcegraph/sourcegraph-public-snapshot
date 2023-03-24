@@ -502,14 +502,16 @@ func (d *dummySyncerWithErrors) syncRepoPerms(_ context.Context, repoID api.Repo
 		Options: options,
 	}
 
-	codeHostStates := database.CodeHostStatusesSet{{ProviderID: "id1", Status: "SUCCESS"}, {ProviderID: "id2", Status: "SUCCESS"}}
+	codeHostStates := database.CodeHostStatusesSet{{ProviderID: "id1", Status: database.CodeHostStatusSuccess}, {ProviderID: "id2", Status: database.CodeHostStatusSuccess}}
+	result := database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}
 	if typ, ok := d.repoIDErrors[repoID]; ok && typ == allProvidersFailed {
 		for idx := range codeHostStates {
-			codeHostStates[idx].Status = "ERROR"
+			codeHostStates[idx].Status = database.CodeHostStatusError
 		}
+		result = database.SetPermissionsResult{}
 	}
 
-	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, codeHostStates, nil
+	return &result, codeHostStates, nil
 }
 func (d *dummySyncerWithErrors) syncUserPerms(_ context.Context, userID int32, noPerms bool, options authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
 	d.Lock()
@@ -524,12 +526,14 @@ func (d *dummySyncerWithErrors) syncUserPerms(_ context.Context, userID int32, n
 		Options: options,
 	}
 
-	codeHostStates := database.CodeHostStatusesSet{{ProviderID: "id1", Status: "ERROR"}, {ProviderID: "id2", Status: "SUCCESS"}}
+	codeHostStates := database.CodeHostStatusesSet{{ProviderID: "id1", Status: database.CodeHostStatusError}, {ProviderID: "id2", Status: database.CodeHostStatusSuccess}}
+	result := database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}
 	if typ, ok := d.userIDErrors[userID]; ok && typ == allProvidersFailed {
 		for idx := range codeHostStates {
-			codeHostStates[idx].Status = "ERROR"
+			codeHostStates[idx].Status = database.CodeHostStatusError
 		}
+		result = database.SetPermissionsResult{}
 	}
 
-	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, codeHostStates, nil
+	return &result, codeHostStates, nil
 }

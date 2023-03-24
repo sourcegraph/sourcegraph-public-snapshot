@@ -14,7 +14,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -48,13 +47,6 @@ type Server struct {
 		// our internal rate limiters are kept in sync
 		SyncRateLimiters(ctx context.Context, ids ...int64) error
 	}
-	PermsSyncer interface {
-		// ScheduleUsers schedules new permissions syncing requests for given users.
-		ScheduleUsers(ctx context.Context, opts authz.FetchPermsOptions, userIDs ...int32)
-		// ScheduleRepos schedules new permissions syncing requests for given repositories.
-		ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID)
-	}
-	DatabaseBackedPermissionSyncerEnabled func(ctx context.Context) bool
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
@@ -68,7 +60,6 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/enqueue-repo-update", trace.WithRouteName("enqueue-repo-update", s.handleEnqueueRepoUpdate))
 	mux.HandleFunc("/sync-external-service", trace.WithRouteName("sync-external-service", s.handleExternalServiceSync))
 	mux.HandleFunc("/enqueue-changeset-sync", trace.WithRouteName("enqueue-changeset-sync", s.handleEnqueueChangesetSync))
-	mux.HandleFunc("/schedule-perms-sync", trace.WithRouteName("schedule-perms-sync", s.handleSchedulePermsSync))
 	mux.HandleFunc("/external-service-namespaces", trace.WithRouteName("external-service-namespaces", s.handleExternalServiceNamespaces))
 	mux.HandleFunc("/external-service-repositories", trace.WithRouteName("external-service-repositories", s.handleExternalServiceRepositories))
 	return mux
@@ -189,6 +180,15 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// sync the rate limit first, because externalServiceValidate potentially
+	// makes a call to the code host, which might be rate limited
+	if s.RateLimitSyncer != nil {
+		err = s.RateLimitSyncer.SyncRateLimiters(ctx, req.ExternalServiceID)
+		if err != nil {
+			logger.Warn("Handling rate limiter sync", log.Error(err))
+		}
+	}
+
 	statusCode, resp := handleExternalServiceValidate(ctx, logger, es, genericSrc)
 	if statusCode > 0 {
 		s.respond(w, statusCode, resp)
@@ -197,13 +197,6 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	if statusCode == 0 {
 		// client is gone
 		return
-	}
-
-	if s.RateLimitSyncer != nil {
-		err = s.RateLimitSyncer.SyncRateLimiters(ctx, req.ExternalServiceID)
-		if err != nil {
-			logger.Warn("Handling rate limiter sync", log.Error(err))
-		}
 	}
 
 	if err := s.Syncer.TriggerExternalServiceSync(ctx, req.ExternalServiceID); err != nil {
@@ -373,35 +366,6 @@ func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Reque
 		s.respond(w, http.StatusInternalServerError, resp)
 		return
 	}
-	s.respond(w, http.StatusOK, nil)
-}
-
-// TODO(naman): remove this while removing old perms syncer
-func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request) {
-	if s.DatabaseBackedPermissionSyncerEnabled != nil && s.DatabaseBackedPermissionSyncerEnabled(r.Context()) {
-		s.Logger.Warn("Dropping schedule-perms-sync request because PermissionSyncWorker is enabled. This should not happen.")
-		s.respond(w, http.StatusOK, nil)
-		return
-	}
-
-	if s.PermsSyncer == nil {
-		s.respond(w, http.StatusForbidden, nil)
-		return
-	}
-
-	var req protocol.PermsSyncRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		s.respond(w, http.StatusBadRequest, err)
-		return
-	}
-	if len(req.UserIDs) == 0 && len(req.RepoIDs) == 0 {
-		s.respond(w, http.StatusBadRequest, errors.New("neither user IDs nor repo IDs was provided in request (must provide at least one)"))
-		return
-	}
-
-	s.PermsSyncer.ScheduleUsers(r.Context(), req.Options, req.UserIDs...)
-	s.PermsSyncer.ScheduleRepos(r.Context(), req.RepoIDs...)
-
 	s.respond(w, http.StatusOK, nil)
 }
 

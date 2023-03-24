@@ -20,3 +20,12 @@
         justify-content: space-between;
     }
 }
+
+.diffblock {
+    display: block;
+    background-color: var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 0.65rem;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}

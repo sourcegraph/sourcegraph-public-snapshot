@@ -8,15 +8,8 @@ import (
 	"time"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
-	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"go.uber.org/atomic"
-
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -27,53 +20,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
-
-func init() {
-	collectMetricsDisabled = true
-}
-
-func TestPermsSyncer_ScheduleUsers(t *testing.T) {
-	authz.SetProviders(true, []authz.Provider{&mockProvider{}})
-	t.Cleanup(func() {
-		authz.SetProviders(true, nil)
-	})
-	t.Cleanup(licensing.TestingSkipFeatureChecks())
-	s := NewPermsSyncer(logtest.Scoped(t), nil, nil, nil, nil, nil)
-	s.ScheduleUsers(context.Background(), authz.FetchPermsOptions{}, 1)
-
-	expHeap := []*syncRequest{
-		{requestMeta: &requestMeta{
-			Priority: priorityHigh,
-			Type:     requestTypeUser,
-			ID:       1,
-		}, acquired: false, index: 0},
-	}
-	if diff := cmp.Diff(expHeap, s.queue.heap, cmpOpts); diff != "" {
-		t.Fatalf("heap: %v", diff)
-	}
-}
-
-func TestPermsSyncer_ScheduleRepos(t *testing.T) {
-	authz.SetProviders(true, []authz.Provider{&mockProvider{}})
-	t.Cleanup(func() {
-		authz.SetProviders(true, nil)
-	})
-	t.Cleanup(licensing.TestingSkipFeatureChecks())
-	s := NewPermsSyncer(logtest.Scoped(t), nil, nil, nil, nil, nil)
-	s.ScheduleRepos(context.Background(), 1)
-
-	expHeap := []*syncRequest{
-		{requestMeta: &requestMeta{
-			Priority: priorityHigh,
-			Type:     requestTypeRepo,
-			ID:       1,
-		}, acquired: false, index: 0},
-	}
-	if diff := cmp.Diff(expHeap, s.queue.heap, cmpOpts); diff != "" {
-		t.Fatalf("heap: %v", diff)
-	}
-}
 
 type mockProvider struct {
 	id          int64
@@ -99,11 +48,11 @@ func (p *mockProvider) URN() string         { return extsvc.URN(p.serviceType, p
 
 func (*mockProvider) ValidateConnection(context.Context) error { return nil }
 
-func (p *mockProvider) FetchUserPerms(ctx context.Context, acct *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+func (p *mockProvider) FetchUserPerms(ctx context.Context, acct *extsvc.Account, _ authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	return p.fetchUserPerms(ctx, acct)
 }
 
-func (p *mockProvider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+func (p *mockProvider) FetchUserPermsByToken(ctx context.Context, token string, _ authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	return p.fetchUserPermsByToken(ctx, token)
 }
 
@@ -186,7 +135,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		return &database.SetPermissionsResult{}, nil
 	})
 
-	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
+	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 		return &authz.ExternalUserPermissions{
@@ -201,7 +150,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	assert.Equal(t, database.CodeHostStatusesSet{{
 		ProviderID:   "https://gitlab.com/",
 		ProviderType: "gitlab",
-		Status:       "SUCCESS",
+		Status:       database.CodeHostStatusSuccess,
 		Message:      "FetchUserPerms",
 	}}, providers)
 }
@@ -267,7 +216,7 @@ func TestPermsSyncer_syncUserPerms_listExternalAccountsError(t *testing.T) {
 		return &database.SetPermissionsResult{}, nil
 	})
 
-	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
+	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
 
 	t.Run("fetchUserPermsViaExternalAccounts", func(t *testing.T) {
 		_, _, err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
@@ -371,7 +320,7 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 		return nil, errors.New("should never call fetchUserPerms for github")
 	}
 
-	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
+	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
 
 	tests := []struct {
 		name                string
@@ -384,7 +333,7 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 			statuses: database.CodeHostStatusesSet{{
 				ProviderID:   p1.serviceID,
 				ProviderType: p1.serviceType,
-				Status:       "SUCCESS",
+				Status:       database.CodeHostStatusSuccess,
 				Message:      "FetchUserPerms",
 			}},
 		},
@@ -393,12 +342,12 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 			statuses: database.CodeHostStatusesSet{{
 				ProviderID:   p2.serviceID,
 				ProviderType: p2.serviceType,
-				Status:       "ERROR",
+				Status:       database.CodeHostStatusError,
 				Message:      "FetchAccount: no account found for this user",
 			}, {
 				ProviderID:   p1.serviceID,
 				ProviderType: p1.serviceType,
-				Status:       "SUCCESS",
+				Status:       database.CodeHostStatusSuccess,
 				Message:      "FetchUserPerms",
 			}},
 			fetchAccountError: errors.New("no account found for this user"),
@@ -408,7 +357,7 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 			statuses: database.CodeHostStatusesSet{{
 				ProviderID:   p1.serviceID,
 				ProviderType: p1.serviceType,
-				Status:       "ERROR",
+				Status:       database.CodeHostStatusError,
 				Message:      "FetchUserPerms: horse error",
 			}},
 			fetchUserPermsError: errors.New("horse error"),
@@ -418,12 +367,12 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 			statuses: database.CodeHostStatusesSet{{
 				ProviderID:   p2.serviceID,
 				ProviderType: p2.serviceType,
-				Status:       "ERROR",
+				Status:       database.CodeHostStatusError,
 				Message:      "FetchAccount: no account found for this user",
 			}, {
 				ProviderID:   p1.serviceID,
 				ProviderType: p1.serviceType,
-				Status:       "ERROR",
+				Status:       database.CodeHostStatusError,
 				Message:      "FetchUserPerms: horse error",
 			}},
 			fetchAccountError:   errors.New("no account found for this user"),
@@ -535,7 +484,7 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 		return &database.SetPermissionsResult{}, nil
 	})
 
-	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
+	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 		// DeadlineExceeded implements the Temporary interface
@@ -549,7 +498,7 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 	assert.Equal(t, database.CodeHostStatusesSet{{
 		ProviderID:   "https://gitlab.com/",
 		ProviderType: "gitlab",
-		Status:       "ERROR",
+		Status:       database.CodeHostStatusError,
 		Message:      "FetchUserPerms: context deadline exceeded",
 	}}, providers)
 }
@@ -623,7 +572,7 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 		return &database.SetPermissionsResult{}, nil
 	})
 
-	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
+	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
 
 	tests := []struct {
 		name     string
@@ -707,7 +656,7 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 	reposStore := repos.NewMockStore()
 
 	perms := edb.NewMockPermsStore()
-	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
+	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
 
 	t.Run("invalid token", func(t *testing.T) {
 		p.fetchUserPerms = func(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
@@ -815,7 +764,7 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 
 	perms.SetUserExternalAccountPermsFunc.SetDefaultReturn(&database.SetPermissionsResult{}, nil)
 
-	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
+	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 		return &authz.ExternalUserPermissions{
@@ -894,7 +843,7 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 	perms := edb.NewMockPermsStore()
 	perms.SetUserExternalAccountPermsFunc.SetDefaultReturn(&database.SetPermissionsResult{}, nil)
 
-	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
+	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 		return &authz.ExternalUserPermissions{
@@ -932,7 +881,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	db.PermissionSyncJobsFunc.SetDefaultReturn(mockSyncJobs)
 
 	newPermsSyncer := func(reposStore repos.Store, perms edb.PermsStore) *PermsSyncer {
-		return NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
+		return NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
 	}
 
 	t.Run("Err is nil when no authz provider", func(t *testing.T) {
@@ -1057,6 +1006,61 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		mockrequire.NotCalled(t, perms.SetRepoPendingPermissionsFunc)
 	})
 
+	t.Run("repo sync that returns 404 does not have error in provider status", func(t *testing.T) {
+		p := &mockProvider{
+			id:          1,
+			serviceType: extsvc.TypeGitHub,
+			serviceID:   "https://github.com/",
+			fetchRepoPerms: func(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
+				return []extsvc.AccountID{}, &github.APIError{Code: http.StatusNotFound}
+			},
+		}
+
+		authz.SetProviders(false, []authz.Provider{p})
+		t.Cleanup(func() {
+			authz.SetProviders(true, nil)
+		})
+		mockRepos.GetFunc.SetDefaultReturn(
+			&types.Repo{
+				ID:      1,
+				Private: true,
+				ExternalRepo: api.ExternalRepoSpec{
+					ServiceID: p.ServiceID(),
+				},
+				Sources: map[string]*types.SourceInfo{
+					p.URN(): {},
+				},
+			},
+			nil,
+		)
+
+		reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
+		reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
+
+		perms := edb.NewMockPermsStore()
+		perms.TransactFunc.SetDefaultReturn(perms, nil)
+		perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]authz.UserIDWithExternalAccountID{"user": {UserID: 1, ExternalAccountID: 1}}, nil)
+		perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
+			assert.Equal(t, int32(1), p.RepoID)
+			assert.Equal(t, []int32{1}, p.GenerateSortedIDsSlice())
+			return nil, nil
+		})
+
+		s := newPermsSyncer(reposStore, perms)
+
+		_, providerStates, err := s.syncRepoPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Greater(t, len(providerStates), 0)
+		for _, ps := range providerStates {
+			if ps.Status == database.CodeHostStatusError {
+				t.Fatal("Did not expect provider status of ERROR")
+			}
+		}
+	})
+
 	p := &mockProvider{
 		serviceType: extsvc.TypeGitLab,
 		serviceID:   "https://gitlab.com/",
@@ -1132,107 +1136,4 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestPermsSyncer_syncPerms(t *testing.T) {
-	ctx := context.Background()
-
-	t.Run("invalid type", func(t *testing.T) {
-		request := &syncRequest{
-			requestMeta: &requestMeta{
-				Type: 3,
-				ID:   1,
-			},
-			acquired: true,
-		}
-
-		// Request should be removed from the queue even if error occurred.
-		s := NewPermsSyncer(logtest.Scoped(t), nil, nil, nil, nil, nil)
-		s.queue.Push(request)
-
-		s.syncPerms(context.Background(), nil, request)
-		assert.Equal(t, 0, s.queue.Len())
-	})
-
-	t.Run("max concurrency", func(t *testing.T) {
-		t.Skip("flaky https://github.com/sourcegraph/sourcegraph/issues/40917")
-		// Enough buffer to make two goroutines to send data without being blocked, to
-		// avoid the case that the second goroutine is blocked by trying to send data to
-		// channel rather than being throttled by the max concurrency (1) we imposed.
-		wait := make(chan struct{}, 2)
-		// Enough buffer to send data twice to avoid blocking on failing test
-		ready := make(chan struct{}, 2)
-		called := atomic.NewInt32(0)
-
-		users := database.NewMockUserStore()
-		users.GetByIDFunc.SetDefaultHook(func(_ context.Context, _ int32) (*types.User, error) {
-			wait <- struct{}{}
-			called.Inc()
-			<-ready
-
-			// We only log errors in `syncPerms` method and return an error here would
-			// effectively stop/finish the method call, so we don't need to mock tons of
-			// other things.
-			return nil, errors.New("fail")
-		})
-		db := database.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
-
-		s := NewPermsSyncer(logtest.Scoped(t), db, nil, nil, timeutil.Now, nil)
-
-		syncGroups := map[requestType]*pool.ContextPool{
-			requestTypeUser: pool.New().WithContext(ctx).WithMaxGoroutines(1),
-		}
-
-		request1 := &syncRequest{
-			requestMeta: &requestMeta{
-				Type: requestTypeUser,
-				ID:   1,
-			},
-			acquired: true,
-		}
-		request2 := &syncRequest{
-			requestMeta: &requestMeta{
-				Type: requestTypeUser,
-				ID:   2,
-			},
-			acquired: true,
-		}
-		s.queue.Push(request1)
-		s.queue.Push(request2)
-
-		started := make(chan struct{}, 2)
-		go func() {
-			started <- struct{}{}
-			s.syncPerms(ctx, syncGroups, request1)
-		}()
-		go func() {
-			started <- struct{}{}
-			s.syncPerms(ctx, syncGroups, request2)
-		}()
-
-		getOrFail := func(c <-chan struct{}) (failed bool) {
-			select {
-			case <-c:
-				return false
-			case <-time.After(100 * time.Millisecond): // Fail fast if something went wrong
-				return true
-			}
-		}
-
-		// Wait until two goroutine are started
-		require.False(t, getOrFail(started))
-		require.False(t, getOrFail(started))
-
-		// Only one goroutine should have been called
-		require.False(t, getOrFail(wait))
-		require.True(t, getOrFail(wait)) // There should be no second signal coming in
-		require.Equal(t, int32(1), called.Load())
-		ready <- struct{}{} // Unblock the execution of the first goroutine
-
-		// Now the second goroutine should be called
-		require.False(t, getOrFail(wait))
-		require.Equal(t, int32(2), called.Load())
-		ready <- struct{}{}
-	})
 }

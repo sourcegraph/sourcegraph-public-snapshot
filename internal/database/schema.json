@@ -184,7 +184,7 @@
     },
     {
       "Name": "soft_deleted_repository_name",
-      "Definition": "CREATE OR REPLACE FUNCTION public.soft_deleted_repository_name(name text)\n RETURNS text\n LANGUAGE plpgsql\n STRICT\nAS $function$\nBEGIN\n    RETURN 'DELETED-' || extract(epoch from transaction_timestamp()) || '-' || name;\nEND;\n$function$\n"
+      "Definition": "CREATE OR REPLACE FUNCTION public.soft_deleted_repository_name(name text)\n RETURNS text\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n    IF name LIKE 'DELETED-%' THEN\n        RETURN name;\n    ELSE\n        RETURN 'DELETED-' || extract(epoch from transaction_timestamp()) || '-' || name;\n    END IF;\nEND;\n$function$\n"
     },
     {
       "Name": "update_codeintel_path_ranks_statistics_columns",
@@ -5449,6 +5449,16 @@
           "IndexDefinition": "CREATE INDEX cm_action_jobs_state_idx ON cm_action_jobs USING btree (state)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
+        },
+        {
+          "Name": "cm_action_jobs_trigger_event",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX cm_action_jobs_trigger_event ON cm_action_jobs USING btree (trigger_event)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -7679,6 +7689,16 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
+          "Name": "codeintel_ranking_path_counts_inputs_graph_key_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "codeintel_ranking_path_counts_inputs_graph_key_repository_id_id",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -7871,6 +7891,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_references_processed_pkey ON codeintel_ranking_references_processed USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "codeintel_ranking_references_processed_reference_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_references_processed_reference_id ON codeintel_ranking_references_processed USING btree (codeintel_ranking_reference_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [

@@ -92,13 +92,19 @@ func bazelConfigure(optional bool) func(*bk.Pipeline) {
 		bk.Agent("queue", "bazel"),
 		bk.RawCmd(configureCmd),
 		bk.RawCmd(gitDiff),
+		bk.AnnotatedCmd("dev/ci/bazel-configure.sh", bk.AnnotatedCmdOpts{
+			Annotations: &bk.AnnotationOpts{
+				Type:         bk.AnnotationTypeWarning,
+				IncludeNames: false,
+			},
+		}),
 	}
 
 	return func(pipeline *bk.Pipeline) {
 		if optional {
 			cmds = append(cmds, bk.SoftFail())
 		}
-		pipeline.AddStep(":bazel: Configure",
+		pipeline.AddStep(":bazel: Ensure buildfiles are up to date",
 			cmds...,
 		)
 	}

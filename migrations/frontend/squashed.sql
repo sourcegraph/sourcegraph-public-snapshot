@@ -780,10 +780,14 @@ END;
 $$;
 
 CREATE FUNCTION soft_deleted_repository_name(name text) RETURNS text
-    LANGUAGE plpgsql STRICT
+    LANGUAGE plpgsql
     AS $$
 BEGIN
-    RETURN 'DELETED-' || extract(epoch from transaction_timestamp()) || '-' || name;
+    IF name LIKE 'DELETED-%' THEN
+        RETURN name;
+    ELSE
+        RETURN 'DELETED-' || extract(epoch from transaction_timestamp()) || '-' || name;
+    END IF;
 END;
 $$;
 
@@ -5106,6 +5110,8 @@ CREATE INDEX changesets_reconciler_state_idx ON changesets USING btree (reconcil
 
 CREATE INDEX cm_action_jobs_state_idx ON cm_action_jobs USING btree (state);
 
+CREATE INDEX cm_action_jobs_trigger_event ON cm_action_jobs USING btree (trigger_event);
+
 CREATE INDEX cm_slack_webhooks_monitor ON cm_slack_webhooks USING btree (monitor);
 
 CREATE INDEX cm_trigger_jobs_finished_at ON cm_trigger_jobs USING btree (finished_at);
@@ -5138,6 +5144,8 @@ CREATE INDEX codeintel_ranking_definitions_graph_key_symbol_search ON codeintel_
 
 CREATE UNIQUE INDEX codeintel_ranking_exports_graph_key_upload_id ON codeintel_ranking_exports USING btree (graph_key, upload_id);
 
+CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, id);
+
 CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_repository_id_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository_id, id) WHERE (NOT processed);
 
 CREATE INDEX codeintel_ranking_references_graph_key_id ON codeintel_ranking_references USING btree (graph_key, id);
@@ -5145,6 +5153,8 @@ CREATE INDEX codeintel_ranking_references_graph_key_id ON codeintel_ranking_refe
 CREATE INDEX codeintel_ranking_references_graph_key_last_scanned_at_id ON codeintel_ranking_references USING btree (graph_key, last_scanned_at NULLS FIRST, id);
 
 CREATE UNIQUE INDEX codeintel_ranking_references_processed_graph_key_codeintel_rank ON codeintel_ranking_references_processed USING btree (graph_key, codeintel_ranking_reference_id);
+
+CREATE INDEX codeintel_ranking_references_processed_reference_id ON codeintel_ranking_references_processed USING btree (codeintel_ranking_reference_id);
 
 CREATE INDEX codeintel_ranking_references_upload_id ON codeintel_ranking_references USING btree (upload_id);
 

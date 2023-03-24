@@ -23,12 +23,6 @@ import (
 // github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/transport/graphql)
 // used for unit testing.
 type MockAutoIndexingService struct {
-	// GetIndexesFunc is an instance of a mock function object controlling
-	// the behavior of the method GetIndexes.
-	GetIndexesFunc *AutoIndexingServiceGetIndexesFunc
-	// GetIndexesByIDsFunc is an instance of a mock function object
-	// controlling the behavior of the method GetIndexesByIDs.
-	GetIndexesByIDsFunc *AutoIndexingServiceGetIndexesByIDsFunc
 	// NumRepositoriesWithCodeIntelligenceFunc is an instance of a mock
 	// function object controlling the behavior of the method
 	// NumRepositoriesWithCodeIntelligence.
@@ -50,16 +44,6 @@ type MockAutoIndexingService struct {
 // overwritten.
 func NewMockAutoIndexingService() *MockAutoIndexingService {
 	return &MockAutoIndexingService{
-		GetIndexesFunc: &AutoIndexingServiceGetIndexesFunc{
-			defaultHook: func(context.Context, shared.GetIndexesOptions) (r0 []types.Index, r1 int, r2 error) {
-				return
-			},
-		},
-		GetIndexesByIDsFunc: &AutoIndexingServiceGetIndexesByIDsFunc{
-			defaultHook: func(context.Context, ...int) (r0 []types.Index, r1 error) {
-				return
-			},
-		},
 		NumRepositoriesWithCodeIntelligenceFunc: &AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFunc{
 			defaultHook: func(context.Context) (r0 int, r1 error) {
 				return
@@ -88,16 +72,6 @@ func NewMockAutoIndexingService() *MockAutoIndexingService {
 // overwritten.
 func NewStrictMockAutoIndexingService() *MockAutoIndexingService {
 	return &MockAutoIndexingService{
-		GetIndexesFunc: &AutoIndexingServiceGetIndexesFunc{
-			defaultHook: func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error) {
-				panic("unexpected invocation of MockAutoIndexingService.GetIndexes")
-			},
-		},
-		GetIndexesByIDsFunc: &AutoIndexingServiceGetIndexesByIDsFunc{
-			defaultHook: func(context.Context, ...int) ([]types.Index, error) {
-				panic("unexpected invocation of MockAutoIndexingService.GetIndexesByIDs")
-			},
-		},
 		NumRepositoriesWithCodeIntelligenceFunc: &AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFunc{
 			defaultHook: func(context.Context) (int, error) {
 				panic("unexpected invocation of MockAutoIndexingService.NumRepositoriesWithCodeIntelligence")
@@ -126,12 +100,6 @@ func NewStrictMockAutoIndexingService() *MockAutoIndexingService {
 // implementation, unless overwritten.
 func NewMockAutoIndexingServiceFrom(i AutoIndexingService) *MockAutoIndexingService {
 	return &MockAutoIndexingService{
-		GetIndexesFunc: &AutoIndexingServiceGetIndexesFunc{
-			defaultHook: i.GetIndexes,
-		},
-		GetIndexesByIDsFunc: &AutoIndexingServiceGetIndexesByIDsFunc{
-			defaultHook: i.GetIndexesByIDs,
-		},
 		NumRepositoriesWithCodeIntelligenceFunc: &AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFunc{
 			defaultHook: i.NumRepositoriesWithCodeIntelligence,
 		},
@@ -145,237 +113,6 @@ func NewMockAutoIndexingServiceFrom(i AutoIndexingService) *MockAutoIndexingServ
 			defaultHook: i.RepositoryIDsWithErrors,
 		},
 	}
-}
-
-// AutoIndexingServiceGetIndexesFunc describes the behavior when the
-// GetIndexes method of the parent MockAutoIndexingService instance is
-// invoked.
-type AutoIndexingServiceGetIndexesFunc struct {
-	defaultHook func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error)
-	hooks       []func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error)
-	history     []AutoIndexingServiceGetIndexesFuncCall
-	mutex       sync.Mutex
-}
-
-// GetIndexes delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockAutoIndexingService) GetIndexes(v0 context.Context, v1 shared.GetIndexesOptions) ([]types.Index, int, error) {
-	r0, r1, r2 := m.GetIndexesFunc.nextHook()(v0, v1)
-	m.GetIndexesFunc.appendCall(AutoIndexingServiceGetIndexesFuncCall{v0, v1, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the GetIndexes method of
-// the parent MockAutoIndexingService instance is invoked and the hook queue
-// is empty.
-func (f *AutoIndexingServiceGetIndexesFunc) SetDefaultHook(hook func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetIndexes method of the parent MockAutoIndexingService instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *AutoIndexingServiceGetIndexesFunc) PushHook(hook func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *AutoIndexingServiceGetIndexesFunc) SetDefaultReturn(r0 []types.Index, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *AutoIndexingServiceGetIndexesFunc) PushReturn(r0 []types.Index, r1 int, r2 error) {
-	f.PushHook(func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *AutoIndexingServiceGetIndexesFunc) nextHook() func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *AutoIndexingServiceGetIndexesFunc) appendCall(r0 AutoIndexingServiceGetIndexesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of AutoIndexingServiceGetIndexesFuncCall
-// objects describing the invocations of this function.
-func (f *AutoIndexingServiceGetIndexesFunc) History() []AutoIndexingServiceGetIndexesFuncCall {
-	f.mutex.Lock()
-	history := make([]AutoIndexingServiceGetIndexesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// AutoIndexingServiceGetIndexesFuncCall is an object that describes an
-// invocation of method GetIndexes on an instance of
-// MockAutoIndexingService.
-type AutoIndexingServiceGetIndexesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 shared.GetIndexesOptions
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []types.Index
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 int
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c AutoIndexingServiceGetIndexesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c AutoIndexingServiceGetIndexesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// AutoIndexingServiceGetIndexesByIDsFunc describes the behavior when the
-// GetIndexesByIDs method of the parent MockAutoIndexingService instance is
-// invoked.
-type AutoIndexingServiceGetIndexesByIDsFunc struct {
-	defaultHook func(context.Context, ...int) ([]types.Index, error)
-	hooks       []func(context.Context, ...int) ([]types.Index, error)
-	history     []AutoIndexingServiceGetIndexesByIDsFuncCall
-	mutex       sync.Mutex
-}
-
-// GetIndexesByIDs delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockAutoIndexingService) GetIndexesByIDs(v0 context.Context, v1 ...int) ([]types.Index, error) {
-	r0, r1 := m.GetIndexesByIDsFunc.nextHook()(v0, v1...)
-	m.GetIndexesByIDsFunc.appendCall(AutoIndexingServiceGetIndexesByIDsFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetIndexesByIDs
-// method of the parent MockAutoIndexingService instance is invoked and the
-// hook queue is empty.
-func (f *AutoIndexingServiceGetIndexesByIDsFunc) SetDefaultHook(hook func(context.Context, ...int) ([]types.Index, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetIndexesByIDs method of the parent MockAutoIndexingService instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *AutoIndexingServiceGetIndexesByIDsFunc) PushHook(hook func(context.Context, ...int) ([]types.Index, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *AutoIndexingServiceGetIndexesByIDsFunc) SetDefaultReturn(r0 []types.Index, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...int) ([]types.Index, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *AutoIndexingServiceGetIndexesByIDsFunc) PushReturn(r0 []types.Index, r1 error) {
-	f.PushHook(func(context.Context, ...int) ([]types.Index, error) {
-		return r0, r1
-	})
-}
-
-func (f *AutoIndexingServiceGetIndexesByIDsFunc) nextHook() func(context.Context, ...int) ([]types.Index, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *AutoIndexingServiceGetIndexesByIDsFunc) appendCall(r0 AutoIndexingServiceGetIndexesByIDsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of AutoIndexingServiceGetIndexesByIDsFuncCall
-// objects describing the invocations of this function.
-func (f *AutoIndexingServiceGetIndexesByIDsFunc) History() []AutoIndexingServiceGetIndexesByIDsFuncCall {
-	f.mutex.Lock()
-	history := make([]AutoIndexingServiceGetIndexesByIDsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// AutoIndexingServiceGetIndexesByIDsFuncCall is an object that describes an
-// invocation of method GetIndexesByIDs on an instance of
-// MockAutoIndexingService.
-type AutoIndexingServiceGetIndexesByIDsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg1 []int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []types.Index
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c AutoIndexingServiceGetIndexesByIDsFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg1 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c AutoIndexingServiceGetIndexesByIDsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // AutoIndexingServiceNumRepositoriesWithCodeIntelligenceFunc describes the
@@ -2111,6 +1848,12 @@ type MockUploadsService struct {
 	// GetAuditLogsForUploadFunc is an instance of a mock function object
 	// controlling the behavior of the method GetAuditLogsForUpload.
 	GetAuditLogsForUploadFunc *UploadsServiceGetAuditLogsForUploadFunc
+	// GetIndexesFunc is an instance of a mock function object controlling
+	// the behavior of the method GetIndexes.
+	GetIndexesFunc *UploadsServiceGetIndexesFunc
+	// GetIndexesByIDsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetIndexesByIDs.
+	GetIndexesByIDsFunc *UploadsServiceGetIndexesByIDsFunc
 	// GetUploadDocumentsForPathFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// GetUploadDocumentsForPath.
@@ -2129,6 +1872,16 @@ func NewMockUploadsService() *MockUploadsService {
 	return &MockUploadsService{
 		GetAuditLogsForUploadFunc: &UploadsServiceGetAuditLogsForUploadFunc{
 			defaultHook: func(context.Context, int) (r0 []types.UploadLog, r1 error) {
+				return
+			},
+		},
+		GetIndexesFunc: &UploadsServiceGetIndexesFunc{
+			defaultHook: func(context.Context, shared2.GetIndexesOptions) (r0 []types.Index, r1 int, r2 error) {
+				return
+			},
+		},
+		GetIndexesByIDsFunc: &UploadsServiceGetIndexesByIDsFunc{
+			defaultHook: func(context.Context, ...int) (r0 []types.Index, r1 error) {
 				return
 			},
 		},
@@ -2159,6 +1912,16 @@ func NewStrictMockUploadsService() *MockUploadsService {
 				panic("unexpected invocation of MockUploadsService.GetAuditLogsForUpload")
 			},
 		},
+		GetIndexesFunc: &UploadsServiceGetIndexesFunc{
+			defaultHook: func(context.Context, shared2.GetIndexesOptions) ([]types.Index, int, error) {
+				panic("unexpected invocation of MockUploadsService.GetIndexes")
+			},
+		},
+		GetIndexesByIDsFunc: &UploadsServiceGetIndexesByIDsFunc{
+			defaultHook: func(context.Context, ...int) ([]types.Index, error) {
+				panic("unexpected invocation of MockUploadsService.GetIndexesByIDs")
+			},
+		},
 		GetUploadDocumentsForPathFunc: &UploadsServiceGetUploadDocumentsForPathFunc{
 			defaultHook: func(context.Context, int, string) ([]string, int, error) {
 				panic("unexpected invocation of MockUploadsService.GetUploadDocumentsForPath")
@@ -2184,6 +1947,12 @@ func NewMockUploadsServiceFrom(i UploadsService) *MockUploadsService {
 	return &MockUploadsService{
 		GetAuditLogsForUploadFunc: &UploadsServiceGetAuditLogsForUploadFunc{
 			defaultHook: i.GetAuditLogsForUpload,
+		},
+		GetIndexesFunc: &UploadsServiceGetIndexesFunc{
+			defaultHook: i.GetIndexes,
+		},
+		GetIndexesByIDsFunc: &UploadsServiceGetIndexesByIDsFunc{
+			defaultHook: i.GetIndexesByIDs,
 		},
 		GetUploadDocumentsForPathFunc: &UploadsServiceGetUploadDocumentsForPathFunc{
 			defaultHook: i.GetUploadDocumentsForPath,
@@ -2305,6 +2074,234 @@ func (c UploadsServiceGetAuditLogsForUploadFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UploadsServiceGetAuditLogsForUploadFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// UploadsServiceGetIndexesFunc describes the behavior when the GetIndexes
+// method of the parent MockUploadsService instance is invoked.
+type UploadsServiceGetIndexesFunc struct {
+	defaultHook func(context.Context, shared2.GetIndexesOptions) ([]types.Index, int, error)
+	hooks       []func(context.Context, shared2.GetIndexesOptions) ([]types.Index, int, error)
+	history     []UploadsServiceGetIndexesFuncCall
+	mutex       sync.Mutex
+}
+
+// GetIndexes delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockUploadsService) GetIndexes(v0 context.Context, v1 shared2.GetIndexesOptions) ([]types.Index, int, error) {
+	r0, r1, r2 := m.GetIndexesFunc.nextHook()(v0, v1)
+	m.GetIndexesFunc.appendCall(UploadsServiceGetIndexesFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the GetIndexes method of
+// the parent MockUploadsService instance is invoked and the hook queue is
+// empty.
+func (f *UploadsServiceGetIndexesFunc) SetDefaultHook(hook func(context.Context, shared2.GetIndexesOptions) ([]types.Index, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetIndexes method of the parent MockUploadsService instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *UploadsServiceGetIndexesFunc) PushHook(hook func(context.Context, shared2.GetIndexesOptions) ([]types.Index, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceGetIndexesFunc) SetDefaultReturn(r0 []types.Index, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, shared2.GetIndexesOptions) ([]types.Index, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceGetIndexesFunc) PushReturn(r0 []types.Index, r1 int, r2 error) {
+	f.PushHook(func(context.Context, shared2.GetIndexesOptions) ([]types.Index, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *UploadsServiceGetIndexesFunc) nextHook() func(context.Context, shared2.GetIndexesOptions) ([]types.Index, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceGetIndexesFunc) appendCall(r0 UploadsServiceGetIndexesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadsServiceGetIndexesFuncCall objects
+// describing the invocations of this function.
+func (f *UploadsServiceGetIndexesFunc) History() []UploadsServiceGetIndexesFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceGetIndexesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceGetIndexesFuncCall is an object that describes an
+// invocation of method GetIndexes on an instance of MockUploadsService.
+type UploadsServiceGetIndexesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared2.GetIndexesOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []types.Index
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServiceGetIndexesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceGetIndexesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// UploadsServiceGetIndexesByIDsFunc describes the behavior when the
+// GetIndexesByIDs method of the parent MockUploadsService instance is
+// invoked.
+type UploadsServiceGetIndexesByIDsFunc struct {
+	defaultHook func(context.Context, ...int) ([]types.Index, error)
+	hooks       []func(context.Context, ...int) ([]types.Index, error)
+	history     []UploadsServiceGetIndexesByIDsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetIndexesByIDs delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUploadsService) GetIndexesByIDs(v0 context.Context, v1 ...int) ([]types.Index, error) {
+	r0, r1 := m.GetIndexesByIDsFunc.nextHook()(v0, v1...)
+	m.GetIndexesByIDsFunc.appendCall(UploadsServiceGetIndexesByIDsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetIndexesByIDs
+// method of the parent MockUploadsService instance is invoked and the hook
+// queue is empty.
+func (f *UploadsServiceGetIndexesByIDsFunc) SetDefaultHook(hook func(context.Context, ...int) ([]types.Index, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetIndexesByIDs method of the parent MockUploadsService instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *UploadsServiceGetIndexesByIDsFunc) PushHook(hook func(context.Context, ...int) ([]types.Index, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceGetIndexesByIDsFunc) SetDefaultReturn(r0 []types.Index, r1 error) {
+	f.SetDefaultHook(func(context.Context, ...int) ([]types.Index, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceGetIndexesByIDsFunc) PushReturn(r0 []types.Index, r1 error) {
+	f.PushHook(func(context.Context, ...int) ([]types.Index, error) {
+		return r0, r1
+	})
+}
+
+func (f *UploadsServiceGetIndexesByIDsFunc) nextHook() func(context.Context, ...int) ([]types.Index, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceGetIndexesByIDsFunc) appendCall(r0 UploadsServiceGetIndexesByIDsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadsServiceGetIndexesByIDsFuncCall
+// objects describing the invocations of this function.
+func (f *UploadsServiceGetIndexesByIDsFunc) History() []UploadsServiceGetIndexesByIDsFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceGetIndexesByIDsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceGetIndexesByIDsFuncCall is an object that describes an
+// invocation of method GetIndexesByIDs on an instance of
+// MockUploadsService.
+type UploadsServiceGetIndexesByIDsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg1 []int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []types.Index
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c UploadsServiceGetIndexesByIDsFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg1 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceGetIndexesByIDsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
