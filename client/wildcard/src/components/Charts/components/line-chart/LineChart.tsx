@@ -29,15 +29,17 @@ import styles from './LineChart.module.scss'
 const daysBetween = (date1: Date, date2: Date): number =>
     Math.round(Math.abs((date2.getTime() - date1.getTime()) / (1000 * 60 * 60 * 24)))
 
-/**
- * Returns a formatted time text. It's used primary for X axis tick's text nodes.
- * Number of month day + short name of month.
+/*
+ * Returns a date tick formatter function based on the scale's domain.
  *
- * Example: 01 Jan, 12 Feb, ...
+ * If the domain spans less than a year, it returns a formatter that shows the day of month and month name (e.g. "01 Jan").
+ * Otherwise, it returns a formatter that shows just the month and year (e.g. "Jan 20").
+ *
+ * @param scale - The time scale to base the decision on
+ * @returns A function that formats a date to a string
  */
-
 const getFormatDateTick = (scale: ScaleTime<number, number>): ((date: Date) => string) => {
-    if (scale.domain.length < 2 || daysBetween(scale.domain()[1], scale.domain()[0]) < 365) {
+    if (scale.domain().length < 2 || daysBetween(scale.domain()[1], scale.domain()[0]) < 365) {
         return (date: Date) => timeFormat('%d %b')(date)
     }
     return (date: Date) => timeFormat('%b %y')(date)
