@@ -895,7 +895,7 @@ bazelCommands:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
       # frontend processes need this to be so that the paths to the assets are rendered correctly
-      WEBPACK_DEV_SERVER: 0
+      WEBPACK_DEV_SERVER: 1
   oss-worker:
     target: //cmd/worker
   oss-repo-updater:

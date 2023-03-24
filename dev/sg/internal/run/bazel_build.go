@@ -35,7 +35,6 @@ func BazelBuild(ctx context.Context, cmds ...BazelCommand) error {
 	ctx, cancel = context.WithCancel(ctx)
 
 	args := append([]string{"build"}, targets...)
-	args = append(args, "--//:assets_bundle_type=oss")
 	cmd := exec.CommandContext(ctx, "bazel", args...)
 
 	sc := &startedCmd{
