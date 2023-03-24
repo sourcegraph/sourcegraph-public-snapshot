@@ -82,16 +82,10 @@ func bazelAnalysisPhase(optional bool) func(*bk.Pipeline) {
 }
 func bazelConfigure(optional bool) func(*bk.Pipeline) {
 	// We run :gazelle since 'configure' causes issues on CI, where it doesn't have the go path available
-	configureCmd := bazelRawCmd("run :gazelle")
-
-	// if there are changes diff will exit with 1, and 0 otherwise
-	gitDiff := "git diff --exit-code"
 	cmds := []bk.StepOpt{
 		bk.Key("bazel-configure"),
 		bk.Env("CI_BAZEL_REMOTE_CACHE", bazelRemoteCacheURL),
 		bk.Agent("queue", "bazel"),
-		bk.RawCmd(configureCmd),
-		bk.RawCmd(gitDiff),
 		bk.AnnotatedCmd("dev/ci/bazel-configure.sh", bk.AnnotatedCmdOpts{
 			Annotations: &bk.AnnotationOpts{
 				Type:         bk.AnnotationTypeWarning,
