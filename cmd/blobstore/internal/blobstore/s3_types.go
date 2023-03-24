@@ -57,16 +57,16 @@ type s3CompleteMultipartUploadResult struct {
 	ChecksumSHA256 string
 }
 
-type s3ListBucketResultContentsOwner struct {
+type s3ObjectOwner struct {
 	DisplayName string
 	ID          string
 }
 
-type s3ListBucketResultContents struct {
+type s3Object struct {
 	XMLName      xml.Name `xml:"Contents"`
 	Key          string
 	LastModified string
-	Owner        s3ListBucketResultContentsOwner
+	Owner        s3ObjectOwner
 	Size         int
 	StorageClass string
 }
@@ -79,7 +79,7 @@ type s3ListBucketResult struct {
 	Delimiter             string
 	MaxKeys               int
 	KeyCount              int
-	Contents              []s3ListBucketResultContents
+	Contents              []s3Object
 	ContinuationToken     string
 	NextContinuationToken string
 	StartAfter            string
