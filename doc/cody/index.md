@@ -48,8 +48,11 @@ Now that Cody is turned on on your Sourcegraph instance, any user can configure 
 
 <img width="687" alt="image" src="https://user-images.githubusercontent.com/25070988/227509535-600f7d96-a241-4f5d-a89f-399e6c0f9019.png">
 
-4. Now you'll need to point the Cody extension to your Sourcegraph instance. Add your instance URL. 
-5. On your instance, go to `settings` / `access token` (https://<your-instance>.sourcegraph.com/users/<your-instance>/settings/tokens). Generate an access token, copy it, and set it in the Cody extension.
+4. Now you'll need to point the Cody extension to your Sourcegraph instance. On your instance, go to `settings` / `access token` (https://<your-instance>.sourcegraph.com/users/<your-instance>/settings/tokens). Generate an access token, copy it, and set it in the Cody extension.
+
+<img width="1369" alt="image" src="https://user-images.githubusercontent.com/25070988/227510686-4afcb1f9-a3a5-495f-b1bf-6d661ba53cce.png">
+
+5. In the Cody VS Code extension, set your instance URL and the access token
     
 <img width="553" alt="image" src="https://user-images.githubusercontent.com/25070988/227510233-5ce37649-6ae3-4470-91d0-71ed6c68b7ef.png">
 
