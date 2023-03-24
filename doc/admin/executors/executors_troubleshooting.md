@@ -19,13 +19,14 @@ The next step is to create a temporary Firecracker VM for debugging purposes.
 > NOTE: if the host VM is provisioned with the [Sourcegraph terraform modules](./deploy_executors_terraform), the VMs may be configured to stop automatically. Refer to [Disabling the auto-deletion of Executor VMs](#disabling-the-auto-deletion-of-executor-vms) for information to prevent this.
 
 Run one of the following commands `executor test-vm` to generate a test firecracker VM:
-  * ```shell
-    executor test-vm
-    ````
-  * ```shell
-    # Optionally provide a repo to clone into the VMs workspace, to verify that cloning works properly as well.
-    executor test-vm [--repo=github.com/sourcegraph/sourcegraph --revision=main]
-    ```
+```shell
+# Test if a firecracker VM can be started
+executor test-vm
+
+# Test if a firecracker VM can be started and if a repository can be cloned into the VM's workspace
+executor test-vm [--repo=github.com/sourcegraph/sourcegraph --revision=main]
+```
+
 The command will output a line like:
 ```
 Success! Connect to the VM using
