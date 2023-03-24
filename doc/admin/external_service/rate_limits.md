@@ -2,6 +2,11 @@
 
 Sourcegraph respects and enforces various rate limits to ensure optimal and reliable performance. Sourcegraph has two types of rate limits:
 
+- [External rate limits](#external-rate-limits)
+- [Internal rate limits](#internal-rate-limits)
+
+For other ways in which repo update frequency can be controlled, see [Repository update frequency](../repo/update_frequency.md).
+
 ## External rate limits
 
 External rate limits refer to the rate limits set by external services that Sourcegraph integrates with, such as code hosts (GitHub, GitLab, Bitbucket, etc.). Sourcegraph always respects and never exceeds the external rate limits of integrated services.
