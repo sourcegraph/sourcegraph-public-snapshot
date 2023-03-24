@@ -182,8 +182,23 @@ func (s *confStore) ListSiteConfigs(ctx context.Context, paginationArgs *Paginat
 	return scanSiteConfigs(rows, err)
 }
 
+const getSiteConfigCount = `
+SELECT
+	count(*)
+FROM (
+	SELECT
+		*,
+		lag(redacted_contents) OVER (ORDER BY id) AS prev_redacted_contents
+	FROM
+		critical_and_site_config) t
+WHERE (prev_redacted_contents IS NULL
+	OR redacted_contents != prev_redacted_contents)
+AND redacted_contents IS NOT NULL
+AND type = 'site'
+`
+
 func (s *confStore) GetSiteConfigCount(ctx context.Context) (int, error) {
-	q := sqlf.Sprintf(`SELECT count(*) from critical_and_site_config WHERE type = 'site'`)
+	q := sqlf.Sprintf(getSiteConfigCount)
 
 	var count int
 	err := s.QueryRow(ctx, q).Scan(&count)
