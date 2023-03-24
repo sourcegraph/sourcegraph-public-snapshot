@@ -19,7 +19,7 @@ import { getSeriesData, getMinMaxBoundaries } from './utils'
 
 import styles from './LineChart.module.scss'
 
-/*
+/**
  * Returns the number of days between two dates.
  *
  * @param date1 - The start date
@@ -29,7 +29,7 @@ import styles from './LineChart.module.scss'
 const daysBetween = (date1: Date, date2: Date): number =>
     Math.round(Math.abs((date2.getTime() - date1.getTime()) / (1000 * 60 * 60 * 24)))
 
-/*
+/**
  * Returns a date tick formatter function based on the scale's domain.
  *
  * If the domain spans less than a year, it returns a formatter that shows the day of month and month name (e.g. "01 Jan").
