@@ -337,7 +337,12 @@ unprocessed_path_counts AS (
 	SELECT
 		ipr.id,
 		ipr.upload_id,
-		unnest(ipr.document_paths) AS document_path,
+		unnest(
+			CASE
+				WHEN ipr.document_path != '' THEN ipr.document_path::text[]
+				ELSE ipr.document_paths
+			END
+		) AS document_path,
 		ipr.graph_key
 	FROM codeintel_initial_path_ranks ipr
 	WHERE
