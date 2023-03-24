@@ -514,8 +514,13 @@ filegroup(
 
 jest_test(
     name = "test",
+    size = "enormous",  # make sure bazel reserves enough RAM for this.
+    timeout = "moderate",
     data = [
         ":shared_tests",
         ":snapshots",
     ],
+    patch_node_fs = False,
+    shard_count = 6,
+    tags = ["no-sandbox"],
 )

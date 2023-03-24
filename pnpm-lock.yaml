@@ -184,7 +184,6 @@ importers:
       '@types/vscode': ^1.63.1
       '@types/webpack-bundle-analyzer': ^4.6.0
       '@types/webpack-stats-plugin': ^0.3.2
-      '@types/ws': ^8.5.3
       '@types/yauzl': ^2.9.2
       '@visx/annotation': ^2.10.0
       '@visx/axis': ^2.11.1
@@ -277,7 +276,6 @@ importers:
       https-proxy-agent: ^5.0.1
       identity-obj-proxy: ^3.0.0
       is-absolute-url: ^3.0.3
-      isomorphic-ws: ^5.0.0
       iterare: ^1.2.1
       jest: ^28.1.0
       jest-canvas-mock: ^2.3.0
@@ -296,6 +294,7 @@ importers:
       libhoney: ^3.1.1
       license-checker: ^25.0.1
       linguist-languages: ^7.14.0
+      linkifyjs: ^4.1.0
       lodash: ^4.17.20
       lru-cache: ^7.8.0
       marked: 4.0.16
@@ -407,7 +406,6 @@ importers:
       webpack-stats-plugin: ^1.1.1
       wildcard-mock-link: ^2.0.1
       worker-loader: ^3.0.8
-      ws: ^8.11.0
       yaml: ^2.2.1
       yaml-ast-parser: ^0.0.43
       yauzl: ^2.10.0
@@ -500,7 +498,6 @@ importers:
       https-browserify: 1.0.0
       https-proxy-agent: 5.0.1
       is-absolute-url: 3.0.3
-      isomorphic-ws: 5.0.0_ws@8.11.0
       iterare: 1.2.1
       jest-environment-jsdom: 28.1.3
       js-base64: 3.7.2
@@ -508,6 +505,7 @@ importers:
       js-yaml: 4.1.0
       jsonc-parser: 3.2.0
       linguist-languages: 7.14.0
+      linkifyjs: 4.1.0
       lodash: 4.17.21
       lru-cache: 7.14.0
       marked: 4.0.16
@@ -560,7 +558,6 @@ importers:
       vscode-uri: 3.0.7
       webext-domain-permission-toggle: 1.0.1
       webextension-polyfill: 0.6.0
-      ws: 8.11.0
       yaml-ast-parser: 0.0.43
       zustand: 3.7.2_react@18.1.0
     devDependencies:
@@ -695,7 +692,6 @@ importers:
       '@types/vscode': 1.63.1
       '@types/webpack-bundle-analyzer': 4.6.0_cf7cgeqdkm72g3fdehkr7aaod4
       '@types/webpack-stats-plugin': 0.3.2_cf7cgeqdkm72g3fdehkr7aaod4
-      '@types/ws': 8.5.3
       '@types/yauzl': 2.10.0
       '@vitejs/plugin-react': 3.1.0_vite@4.1.4
       '@vscode/test-electron': 2.1.3
@@ -925,21 +921,6 @@ importers:
 
   client/cody:
     specifiers: {}
-
-  client/cody/common:
-    specifiers: {}
-
-  client/cody/server:
-    specifiers:
-      '@sourcegraph/cody-common': workspace:*
-    dependencies:
-      '@sourcegraph/cody-common': link:../common
-
-  client/cody/vscode-codegen:
-    specifiers:
-      '@sourcegraph/cody-common': workspace:*
-    dependencies:
-      '@sourcegraph/cody-common': link:../common
 
   client/common:
     specifiers:
@@ -17902,6 +17883,7 @@ packages:
       ws: '*'
     dependencies:
       ws: 8.11.0
+    dev: true
 
   /istanbul-lib-coverage/3.2.0:
     resolution: {integrity: sha512-eOeJ5BHCmHYvQK7xt9GkdHuzuCGS1Y6g9Gvnx3Ym33fz/HpLRYxiS0wHNr+m/MBC8B647Xt608vCDEvhl9c6Mw==}
@@ -19425,6 +19407,10 @@ packages:
     resolution: {integrity: sha512-ynTsyrFSdE5oZ/O9GEf00kPngmOfVwazR5GKDq6EYfhlpFug3J2zybX56a2PRRpc9P+FuSoGNAwjlbDs9jJBPQ==}
     dependencies:
       uc.micro: 1.0.5
+
+  /linkifyjs/4.1.0:
+    resolution: {integrity: sha512-Ffv8VoY3+ixI1b3aZ3O+jM6x17cOsgwfB1Wq7pkytbo1WlyRp6ZO0YDMqiWT/gQPY/CmtiGuKfzDIVqxh1aCTA==}
+    dev: false
 
   /listenercount/1.0.1:
     resolution: {integrity: sha512-3mk/Zag0+IJxeDrxSgaDPy4zZ3w05PRZeJNnlWhzFz5OkX49J4krc+A8X2d2M69vGMBEX0uyl8M+W+8gH+kBqQ==}

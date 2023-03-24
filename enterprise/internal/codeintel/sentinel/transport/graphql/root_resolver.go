@@ -93,9 +93,27 @@ func (r *rootResolver) VulnerabilityMatches(ctx context.Context, args resolverst
 		return nil, err
 	}
 
+	language := ""
+	if args.Language != nil {
+		language = *args.Language
+	}
+
+	severity := ""
+	if args.Severity != nil {
+		severity = *args.Severity
+	}
+
+	repositoryName := ""
+	if args.RepositoryName != nil {
+		repositoryName = *args.RepositoryName
+	}
+
 	matches, totalCount, err := r.sentinelSvc.GetVulnerabilityMatches(ctx, shared.GetVulnerabilityMatchesArgs{
-		Limit:  int(limit),
-		Offset: int(offset),
+		Limit:          int(limit),
+		Offset:         int(offset),
+		Language:       language,
+		Severity:       severity,
+		RepositoryName: repositoryName,
 	})
 	if err != nil {
 		return nil, err

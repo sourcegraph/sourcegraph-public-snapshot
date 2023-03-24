@@ -2408,6 +2408,8 @@ type SiteConfiguration struct {
 	// EmailAddress description: The "from" address for emails sent by this server.
 	// Please see https://docs.sourcegraph.com/admin/config/email
 	EmailAddress string `json:"email.address,omitempty"`
+	// EmailSenderName description: The name to use in the "from" address for emails sent by this server.
+	EmailSenderName string `json:"email.senderName,omitempty"`
 	// EmailSmtp description: The SMTP server used to send transactional emails.
 	// Please see https://docs.sourcegraph.com/admin/config/email
 	EmailSmtp *SMTPServerConfig `json:"email.smtp,omitempty"`
@@ -2633,6 +2635,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "disablePublicRepoRedirects")
 	delete(m, "dotcom")
 	delete(m, "email.address")
+	delete(m, "email.senderName")
 	delete(m, "email.smtp")
 	delete(m, "email.templates")
 	delete(m, "embeddings")

@@ -23,7 +23,7 @@ A [docker-compose file](https://github.com/sourcegraph/deploy-sourcegraph-docker
 
 ## Note
 
-Executors deployed via docker-compose do not use [Firecracker](executors.md#how-it-works), meaning they require [privileged access](https://docs.docker.com/engine/reference/run/#runtime-privilege-and-linux-capabilities) to the docker daemon running on the host.
+Executors deployed via docker-compose do not use [Firecracker](index.md#how-it-works), meaning they require [privileged access](https://docs.docker.com/engine/reference/run/#runtime-privilege-and-linux-capabilities) to the docker daemon running on the host.
 
 If you have security concerns, consider deploying via [terraform](deploy_executors_terraform.md) or [installing the binary](deploy_executors_binary.md) directly.
 

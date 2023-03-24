@@ -1,6 +1,13 @@
 import React, { useState, useMemo } from 'react'
 
-import { mdiInformation, mdiAlert, mdiSync, mdiCheckboxMarkedCircle, mdiDatabaseSyncOutline } from '@mdi/js'
+import {
+    mdiInformation,
+    mdiAlert,
+    mdiSync,
+    mdiCheckboxMarkedCircle,
+    mdiDatabaseSyncOutline,
+    mdiInformationOutline,
+} from '@mdi/js'
 import classNames from 'classnames'
 
 import { useQuery } from '@sourcegraph/http-client'
@@ -8,6 +15,7 @@ import {
     CloudAlertIconRefresh,
     CloudSyncIconRefresh,
     CloudCheckIconRefresh,
+    CloudInfoIconRefresh,
 } from '@sourcegraph/shared/src/components/icons'
 import {
     Button,
@@ -30,7 +38,7 @@ import { STATUS_AND_REPO_COUNT } from './StatusMessagesNavItemQueries'
 
 import styles from './StatusMessagesNavItem.module.scss'
 
-type EntryType = 'progress' | 'warning' | 'success' | 'error' | 'indexing'
+type EntryType = 'progress' | 'warning' | 'success' | 'error' | 'indexing' | 'info'
 
 interface StatusMessageEntryProps {
     title: string
@@ -91,6 +99,15 @@ function entryIcon(entryType: EntryType): JSX.Element {
                     aria-label="Indexing"
                 />
             )
+        case 'info':
+            return (
+                <Icon
+                    {...sharedProps}
+                    className={classNames('text-info', styles.icon)}
+                    svgPath={mdiInformationOutline}
+                    aria-label="Information"
+                />
+            )
     }
 }
 
@@ -117,6 +134,8 @@ const getBorderClassname = (entryType: EntryType): string => {
             return styles.entryBorderProgress
         case 'indexing':
             return styles.entryBorderProgress
+        case 'info':
+            return styles.entryBorderInfo
         default:
             return ''
     }
@@ -193,7 +212,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
             iconProps = { as: CloudSyncIconRefresh }
         } else if (data.statusMessages.length === 0 && data.repositoryStats.total === 0) {
             codeHostMessage = 'No repositories detected'
-            iconProps = { as: CloudAlertIconRefresh }
+            iconProps = { as: CloudInfoIconRefresh }
         } else {
             codeHostMessage = 'Repositories up to date'
             iconProps = { as: CloudCheckIconRefresh }
@@ -226,7 +245,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                         linkTo="/setup"
                         linkText="Setup code hosts"
                         linkOnClick={toggleIsOpen}
-                        entryType="warning"
+                        entryType="info"
                     />
                 )
             }

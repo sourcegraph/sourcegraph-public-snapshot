@@ -110,7 +110,10 @@ export const CodeInsightsRootPage: FC<CodeInsightsRootPageProps> = memo(props =>
                     </TabPanel>
                     <TabPanel tabIndex={-1}>
                         <Suspense fallback={<LoadingSpinner aria-label="Loading Code Insights Getting started page" />}>
-                            <LazyCodeInsightsGettingStartedPage telemetryService={telemetryService} />
+                            <LazyCodeInsightsGettingStartedPage
+                                isSourcegraphApp={props.isSourcegraphApp}
+                                telemetryService={telemetryService}
+                            />
                         </Suspense>
                     </TabPanel>
                 </TabPanels>

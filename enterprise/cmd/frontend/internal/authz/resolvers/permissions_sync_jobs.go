@@ -265,7 +265,7 @@ func (c codeHostStateResolver) ProviderType() string {
 	return c.state.ProviderType
 }
 
-func (c codeHostStateResolver) Status() string {
+func (c codeHostStateResolver) Status() database.CodeHostStatus {
 	return c.state.Status
 }
 
