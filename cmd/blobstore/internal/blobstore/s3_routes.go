@@ -1,7 +1,6 @@
 package blobstore
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -60,21 +59,24 @@ func (s *Service) serveS3(w http.ResponseWriter, r *http.Request) error {
 
 // GET /<bucket>
 // https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html
-func (s *Service) serveListObjectsV2(w http.ResponseWriter, _ *http.Request, bucketName string) error {
-	// TODO: Actually implement this endpoint, https://github.com/sourcegraph/sourcegraph/issues/45594.
-	// NOTE: We currently always return an empty list of objects to make code intel ExpiredObjects checks not spam with errors.
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf(`
-<?xml version="1.0" encoding="UTF-8"?>
-<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-    <Name>%s</Name>
-    <Prefix/>
-    <KeyCount>0</KeyCount>
-    <MaxKeys>1000</MaxKeys>
-    <IsTruncated>false</IsTruncated>
-</ListBucketResult>
-`, bucketName)))
-	return nil
+func (s *Service) serveListObjectsV2(w http.ResponseWriter, r *http.Request, bucketName string) error {
+	var contents []s3ListBucketResultContents
+	objects, err := s.listObjects(r.Context(), bucketName)
+	if err != nil {
+		return writeS3Error(w, s3ErrorNoSuchBucket, bucketName, err, http.StatusConflict)
+	}
+	for _, obj := range objects {
+		contents = append(contents, s3ListBucketResultContents{
+			Key:          obj.Name,
+			LastModified: obj.LastModified.Format(time.RFC3339Nano),
+		})
+	}
+	return writeXML(w, http.StatusOK, s3ListBucketResult{
+		Name:        bucketName,
+		KeyCount:    len(contents),
+		IsTruncated: false,
+		Contents:    contents,
+	})
 }
 
 // PUT /<bucket>

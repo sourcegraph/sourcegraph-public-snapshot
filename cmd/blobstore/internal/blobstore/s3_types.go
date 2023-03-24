@@ -57,6 +57,34 @@ type s3CompleteMultipartUploadResult struct {
 	ChecksumSHA256 string
 }
 
+type s3ListBucketResultContentsOwner struct {
+	DisplayName string
+	ID          string
+}
+
+type s3ListBucketResultContents struct {
+	XMLName      xml.Name `xml:"Contents"`
+	Key          string
+	LastModified string
+	Owner        s3ListBucketResultContentsOwner
+	Size         int
+	StorageClass string
+}
+
+type s3ListBucketResult struct {
+	XMLName               xml.Name `xml:"ListBucketResult"`
+	IsTruncated           bool
+	Name                  string
+	Prefix                string
+	Delimiter             string
+	MaxKeys               int
+	KeyCount              int
+	Contents              []s3ListBucketResultContents
+	ContinuationToken     string
+	NextContinuationToken string
+	StartAfter            string
+}
+
 func writeS3Error(w http.ResponseWriter, code, bucketName string, err error, statusCode int) error {
 	return writeXML(w, statusCode,
 		s3Error{Code: code},
