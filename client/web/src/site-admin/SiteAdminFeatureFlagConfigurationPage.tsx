@@ -36,6 +36,7 @@ import { RadioButtons } from '../components/RadioButtons'
 
 import { fetchFeatureFlags as defaultFetchFeatureFlags } from './backend'
 import { getFeatureFlagReferences, parseProductReference } from './SiteAdminFeatureFlagsPage'
+import { UserSelect } from './user-select/UserSelect'
 
 import styles from './SiteAdminFeatureFlagConfigurationPage.module.scss'
 
@@ -368,13 +369,24 @@ const AddFeatureFlagOverride: FunctionComponent<
                             selected={overrideType}
                         />
                     </Label>
-                    <Input
-                        inputClassName="mt-2"
-                        label={`${overrideType} ID`}
-                        type="number"
-                        value={namespaceID}
-                        onChange={setInputValue}
-                    />
+                    {overrideType === 'User' && (
+                        <>
+                            <Label id="add-feature-flag--user">Select user</Label>
+                            <UserSelect
+                                onSelect={user => setNamespaceID(user?.databaseID ?? '')}
+                                htmlID="add-feature-flag--user"
+                            />
+                        </>
+                    )}
+                    {overrideType !== 'User' && (
+                        <Input
+                            inputClassName="mt-2"
+                            label={`${overrideType} ID`}
+                            type="number"
+                            value={namespaceID}
+                            onChange={setInputValue}
+                        />
+                    )}
                     <Label className="w-100">
                         <div className="mb-2 mt-2">Value</div>
                         <Toggle

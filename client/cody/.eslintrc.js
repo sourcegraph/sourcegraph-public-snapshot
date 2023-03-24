@@ -1,4 +1,5 @@
 // @ts-check
+
 const baseConfig = require('../../.eslintrc')
 module.exports = {
   extends: '../../.eslintrc.js',
@@ -7,4 +8,6 @@ module.exports = {
     project: [__dirname + '/tsconfig.json'],
   },
   overrides: baseConfig.overrides,
+  'react/react-in-jsx-scope': 'off',
+  'react/jsx-filename-extension': [1, { extensions: ['.ts', '.tsx'] }],
 }

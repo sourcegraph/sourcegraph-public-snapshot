@@ -50,7 +50,7 @@ The maximum number of Jobs an Executor instance can run in parallel is configure
 The CPU and Memory usage of an individual Job is configured by the Environment Variables `EXECUTOR_JOB_NUM_CPUS`
 and `EXECUTOR_JOB_MEMORY`. 
 
-See [Environment Variables](./deploy_executors_binary.md#step-2-setup-environment-variables) for additional Environment Variables.
+See [Environment Variables](deploy_executors_binary.md#step-2-setup-environment-variables) for additional Environment Variables.
 
 <sub>Note: changing CPU and Memory for jobs will affect the overall requirements for an Executor instance.</sub>
 
@@ -69,7 +69,7 @@ It is recommended to add the following **Disk** configuration in AWS.
 #### Firecracker Requirements
 
 To run Executors with Firecracker enabled requires the machine to support [Kernel-based Virtual Machine](https://en.wikipedia.org/wiki/Kernel-based_Virtual_Machine).
-See [deploying Executors binary](./deploy_executors_binary.md) for additional information on configuring Linux Machines. 
+See [deploying Executors binary](deploy_executors_binary.md) for additional information on configuring Linux Machines. 
 
 ##### Cloud Providers
 
@@ -132,7 +132,7 @@ If you want to use docker images stored in a private registry that requires auth
 
 Depending on the executor runtime that is being used, different options exist for provisioning access to private container registries:
 
-- Through a special secret called `DOCKER_AUTH_CONFIG`, set in [executor secrets](./executor_secrets.md) in Sourcegraph.
+- Through a special secret called `DOCKER_AUTH_CONFIG`, set in [executor secrets](executor_secrets.md) in Sourcegraph.
 - Through the `EXECUTOR_DOCKER_AUTH_CONFIG` environment variable (also available as a variable in the terraform modules for executors).
 - Through the [`config.json` file in `~/.docker`](https://docs.docker.com/engine/reference/commandline/login/). **If using executors with firecracker enabled (recommended) this option is not available.**
 
@@ -198,4 +198,4 @@ For Google Container Registry, [follow this guide](https://cloud.google.com/cont
 
 ### Configuring the auth config for use in executors
 
-Now that the config has been obtained, it can be used for the `EXECUTOR_DOCKER_AUTH_CONFIG` environment variable (and terraform variable `docker_auth_config`) or you can create an [executor secret](./executor_secrets.md#creating-a-new-secret) called `DOCKER_AUTH_CONFIG`. Global executor secrets will be available to every execution, while user and organization level executor secrets will only be available to the namespaces executions.
+Now that the config has been obtained, it can be used for the `EXECUTOR_DOCKER_AUTH_CONFIG` environment variable (and terraform variable `docker_auth_config`) or you can create an [executor secret](executor_secrets.md#creating-a-new-secret) called `DOCKER_AUTH_CONFIG`. Global executor secrets will be available to every execution, while user and organization level executor secrets will only be available to the namespaces executions.

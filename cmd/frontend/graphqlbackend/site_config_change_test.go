@@ -8,92 +8,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 )
-
-func TestSiteConfigurationChangeResolverReproducedDiff(t *testing.T) {
-	testCases := []struct {
-		name     string
-		resolver SiteConfigurationChangeResolver
-		expected bool
-	}{
-		{
-			name:     "both siteConfig and previousSiteConfig are nil",
-			resolver: SiteConfigurationChangeResolver{},
-			expected: false,
-		},
-		{
-			name: "siteConfig is nil",
-			resolver: SiteConfigurationChangeResolver{
-				previousSiteConfig: &database.SiteConfig{},
-			},
-			expected: false,
-		},
-		{
-			name: "previousSiteConfig is nil",
-			resolver: SiteConfigurationChangeResolver{
-				siteConfig: &database.SiteConfig{},
-			},
-			expected: false,
-		},
-
-		{
-			name: "siteConfig.RedactedContents is non-empty but previousSiteConfig is nil",
-			resolver: SiteConfigurationChangeResolver{
-				siteConfig: &database.SiteConfig{
-					RedactedContents: "foo",
-				},
-			},
-			expected: true,
-		},
-
-		{
-			name: "both siteConfig.RedactedContents and previousSiteConfig.RedactedContents are empty",
-			resolver: SiteConfigurationChangeResolver{
-				siteConfig:         &database.SiteConfig{},
-				previousSiteConfig: &database.SiteConfig{},
-			},
-			expected: false,
-		},
-
-		{
-			name: "siteConfig.RedactedContents is empty",
-			resolver: SiteConfigurationChangeResolver{
-				siteConfig:         &database.SiteConfig{},
-				previousSiteConfig: &database.SiteConfig{RedactedContents: "foo"},
-			},
-			expected: false,
-		},
-		{
-			name: "previousSiteConfig.RedactedContents is empty",
-			resolver: SiteConfigurationChangeResolver{
-				siteConfig:         &database.SiteConfig{RedactedContents: "foo"},
-				previousSiteConfig: &database.SiteConfig{},
-			},
-			expected: false,
-		},
-
-		{
-			name: "both siteConfig.RedactedContents and previousSiteConfig.RedactedContents is non-empty",
-			resolver: SiteConfigurationChangeResolver{
-				siteConfig:         &database.SiteConfig{RedactedContents: "foo"},
-				previousSiteConfig: &database.SiteConfig{RedactedContents: "foo"},
-			},
-			expected: true,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			if tc.resolver.ReproducedDiff() != tc.expected {
-				t.Errorf("mismatched value for ReproducedDiff, expected %v, but got %v", tc.expected, tc.resolver.ReproducedDiff())
-			}
-		})
-	}
-
-}
 
 func TestSiteConfigurationDiff(t *testing.T) {
 	stubs := setupSiteConfigStubs(t)
@@ -109,32 +26,32 @@ func TestSiteConfigurationDiff(t *testing.T) {
 	expectedNodes := []struct {
 		ID           int32
 		AuthorUserID int32
-		Diff         *string
+		Diff         string
 	}{
 		{
 			ID:           6,
 			AuthorUserID: 1,
-			Diff:         stringPtr(expectedDiffs[6]),
+			Diff:         expectedDiffs[6],
 		},
 		{
 			ID:           4,
 			AuthorUserID: 1,
-			Diff:         stringPtr(expectedDiffs[4]),
+			Diff:         expectedDiffs[4],
 		},
 		{
 			ID:           3,
 			AuthorUserID: 2,
-			Diff:         stringPtr(expectedDiffs[3]),
+			Diff:         expectedDiffs[3],
 		},
 		{
 			ID:           2,
 			AuthorUserID: 0,
-			Diff:         stringPtr(expectedDiffs[2]),
+			Diff:         expectedDiffs[2],
 		},
 		{
 			ID:           1,
 			AuthorUserID: 0,
-			Diff:         stringPtr(expectedDiffs[1]),
+			Diff:         expectedDiffs[1],
 		},
 	}
 
@@ -182,11 +99,7 @@ func TestSiteConfigurationDiff(t *testing.T) {
 					t.Errorf("mismatched node AuthorUserID, expected: %d, but got: %d", siteConfig.ID, expectedNode.ID)
 				}
 
-				if !nodes[i].ReproducedDiff() {
-					t.Fatal("expected reproducedDiff to be true but got false")
-				}
-
-				if diff := cmp.Diff(*expectedNode.Diff, *nodes[i].Diff()); diff != "" {
+				if diff := cmp.Diff(expectedNode.Diff, nodes[i].Diff()); diff != "" {
 					t.Errorf("mismatched node diff (-want, +got):\n%s ", diff)
 				}
 			}

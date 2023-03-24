@@ -231,3 +231,30 @@ type ExportedUpload struct {
 	Root         string
 	ObjectPrefix string
 }
+
+type GetIndexesOptions struct {
+	RepositoryID  int
+	State         string
+	States        []string
+	Term          string
+	IndexerNames  []string
+	WithoutUpload bool
+	Limit         int
+	Offset        int
+}
+
+type DeleteIndexesOptions struct {
+	States        []string
+	IndexerNames  []string
+	Term          string
+	RepositoryID  int
+	WithoutUpload bool
+}
+
+type ReindexIndexesOptions struct {
+	States        []string
+	IndexerNames  []string
+	Term          string
+	RepositoryID  int
+	WithoutUpload bool
+}
