@@ -54,17 +54,17 @@ func (opts ListTeamsOpts) SQL() (where, joins, ctes []*sqlf.Query) {
 		where = append(where, sqlf.Sprintf("team_members.user_id = %s", opts.ForUserMember))
 	}
 	if opts.ExceptAncestorID != 0 {
-		joins = append(joins, sqlf.Sprintf("LEFT JOIN descendants ON descendants.id = teams.id"))
-		where = append(where, sqlf.Sprintf("descendants.id IS NULL"))
+		joins = append(joins, sqlf.Sprintf("LEFT JOIN descendants ON descendants.team_id = teams.id"))
+		where = append(where, sqlf.Sprintf("descendants.team_id IS NULL"))
 		ctes = append(ctes, sqlf.Sprintf(
 			`WITH RECURSIVE descendants AS (
-				SELECT id, parent_team_id
+				SELECT id AS team_id
 				FROM teams
 				WHERE id = %s
 			UNION ALL
-				SELECT t.id, t.parent_team_id
+				SELECT t.id AS team_id
 				FROM teams t
-				INNER JOIN descendants d ON t.parent_team_id = d.id
+				INNER JOIN descendants d ON t.parent_team_id = d.team_id
 			)`, opts.ExceptAncestorID))
 	}
 

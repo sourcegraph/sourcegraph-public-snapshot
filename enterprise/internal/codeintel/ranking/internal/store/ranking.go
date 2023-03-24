@@ -593,28 +593,36 @@ WITH
 locked_definitions AS (
 	SELECT
 		rd.id,
-		rd.upload_id,
-		EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip uvt WHERE uvt.upload_id = rd.upload_id AND uvt.is_default_branch) AS safe
+		u.repository_id,
+		rd.upload_id
 	FROM codeintel_ranking_definitions rd
+	JOIN lsif_uploads u ON u.id = rd.upload_id
 	WHERE
 		rd.graph_key = %s AND
 		(rd.last_scanned_at IS NULL OR NOW() - rd.last_scanned_at >= %s * '1 hour'::interval)
-	ORDER BY rd.last_scanned_at ASC NULLS FIRST
+	ORDER BY rd.last_scanned_at ASC NULLS FIRST, rd.id
 	FOR UPDATE SKIP LOCKED
 	LIMIT %s
+),
+candidates AS (
+	SELECT
+		ld.id,
+		uvt.is_default_branch IS TRUE AS safe
+	FROM locked_definitions ld
+	LEFT JOIN lsif_uploads_visible_at_tip uvt ON uvt.repository_id = ld.repository_id AND uvt.upload_id = ld.upload_id
 ),
 updated_definitions AS (
 	UPDATE codeintel_ranking_definitions
 	SET last_scanned_at = NOW()
-	WHERE id IN (SELECT ld.id FROM locked_definitions ld WHERE ld.safe)
+	WHERE id IN (SELECT c.id FROM candidates c WHERE c.safe)
 ),
 deleted_definitions AS (
 	DELETE FROM codeintel_ranking_definitions
-	WHERE id IN (SELECT ld.id FROM locked_definitions ld WHERE NOT ld.safe)
+	WHERE id IN (SELECT c.id FROM candidates c WHERE NOT c.safe)
 	RETURNING 1
 )
 SELECT
-	(SELECT COUNT(*) FROM locked_definitions),
+	(SELECT COUNT(*) FROM candidates),
 	(SELECT COUNT(*) FROM deleted_definitions)
 `
 
@@ -652,28 +660,36 @@ WITH
 locked_references AS (
 	SELECT
 		rr.id,
-		rr.upload_id,
-		EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip uvt WHERE uvt.upload_id = rr.upload_id AND uvt.is_default_branch) AS safe
+		u.repository_id,
+		rr.upload_id
 	FROM codeintel_ranking_references rr
+	JOIN lsif_uploads u ON u.id = rr.upload_id
 	WHERE
 		rr.graph_key = %s AND
 		(rr.last_scanned_at IS NULL OR NOW() - rr.last_scanned_at >= %s * '1 hour'::interval)
-	ORDER BY rr.last_scanned_at ASC NULLS FIRST
+	ORDER BY rr.last_scanned_at ASC NULLS FIRST, rr.id
 	FOR UPDATE SKIP LOCKED
 	LIMIT %s
+),
+candidates AS (
+	SELECT
+		lr.id,
+		uvt.is_default_branch IS TRUE AS safe
+	FROM locked_references lr
+	LEFT JOIN lsif_uploads_visible_at_tip uvt ON uvt.repository_id = lr.repository_id AND uvt.upload_id = lr.upload_id
 ),
 updated_references AS (
 	UPDATE codeintel_ranking_references
 	SET last_scanned_at = NOW()
-	WHERE id IN (SELECT lr.id FROM locked_references lr WHERE lr.safe)
+	WHERE id IN (SELECT c.id FROM candidates c WHERE c.safe)
 ),
 deleted_references AS (
 	DELETE FROM codeintel_ranking_references
-	WHERE id IN (SELECT lr.id FROM locked_references lr WHERE NOT lr.safe)
+	WHERE id IN (SELECT c.id FROM candidates c WHERE NOT c.safe)
 	RETURNING 1
 )
 SELECT
-	(SELECT COUNT(*) FROM locked_references),
+	(SELECT COUNT(*) FROM candidates),
 	(SELECT COUNT(*) FROM deleted_references)
 `
 
@@ -711,86 +727,141 @@ WITH
 locked_initial_path_ranks AS (
 	SELECT
 		ipr.id,
-		ipr.upload_id,
-		EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip uvt WHERE uvt.upload_id = ipr.upload_id AND uvt.is_default_branch) AS safe
+		u.repository_id,
+		ipr.upload_id
 	FROM codeintel_initial_path_ranks ipr
+	JOIN lsif_uploads u ON u.id = ipr.upload_id
 	WHERE
 		ipr.graph_key = %s AND
 		(ipr.last_scanned_at IS NULL OR NOW() - ipr.last_scanned_at >= %s * '1 hour'::interval)
-	ORDER BY ipr.last_scanned_at ASC NULLS FIRST
+	ORDER BY ipr.last_scanned_at ASC NULLS FIRST, ipr.id
 	FOR UPDATE SKIP LOCKED
 	LIMIT %s
+),
+candidates AS (
+	SELECT
+		lipr.id,
+		uvt.is_default_branch IS TRUE AS safe
+	FROM locked_initial_path_ranks lipr
+	LEFT JOIN lsif_uploads_visible_at_tip uvt ON uvt.repository_id = lipr.repository_id AND uvt.upload_id = lipr.upload_id
 ),
 updated_initial_path_ranks AS (
 	UPDATE codeintel_initial_path_ranks
 	SET last_scanned_at = NOW()
-	WHERE id IN (SELECT lr.id FROM locked_initial_path_ranks lr WHERE lr.safe)
+	WHERE id IN (SELECT c.id FROM candidates c WHERE c.safe)
 ),
 deleted_initial_path_ranks AS (
 	DELETE FROM codeintel_initial_path_ranks
-	WHERE id IN (SELECT lr.id FROM locked_initial_path_ranks lr WHERE NOT lr.safe)
+	WHERE id IN (SELECT c.id FROM candidates c WHERE NOT c.safe)
 	RETURNING 1
 )
 SELECT
-	(SELECT COUNT(*) FROM locked_initial_path_ranks),
+	(SELECT COUNT(*) FROM candidates),
 	(SELECT COUNT(*) FROM deleted_initial_path_ranks)
 `
 
-func (s *store) VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string) (
-	metadataRecordsDeleted int,
-	inputRecordsDeleted int,
-	err error,
-) {
+func (s *store) VacuumAbandonedDefinitions(ctx context.Context, graphKey string, batchSize int) (_ int, err error) {
+	ctx, _, endObservation := s.operations.vacuumAbandonedDefinitions.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumAbandonedDefinitionsQuery, graphKey, batchSize)))
+	return count, err
+}
+
+const vacuumAbandonedDefinitionsQuery = `
+WITH
+locked_definitions AS (
+	SELECT id
+	FROM codeintel_ranking_definitions
+	WHERE graph_key != %s
+	ORDER BY id
+	FOR UPDATE SKIP LOCKED
+	LIMIT %s
+),
+deleted_definitions AS (
+	DELETE FROM codeintel_ranking_definitions
+	WHERE id IN (SELECT id FROM locked_definitions)
+	RETURNING 1
+)
+SELECT COUNT(*) FROM deleted_definitions
+`
+
+func (s *store) VacuumAbandonedReferences(ctx context.Context, graphKey string, batchSize int) (_ int, err error) {
+	ctx, _, endObservation := s.operations.vacuumAbandonedReferences.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumAbandonedReferencesQuery, graphKey, batchSize)))
+	return count, err
+}
+
+const vacuumAbandonedReferencesQuery = `
+WITH
+locked_references AS (
+	SELECT id
+	FROM codeintel_ranking_references
+	WHERE graph_key != %s
+	ORDER BY id
+	FOR UPDATE SKIP LOCKED
+	LIMIT %s
+),
+deleted_references AS (
+	DELETE FROM codeintel_ranking_references
+	WHERE id IN (SELECT id FROM locked_references)
+	RETURNING 1
+)
+SELECT COUNT(*) FROM deleted_references
+`
+
+func (s *store) VacuumAbandonedInitialPathCounts(ctx context.Context, graphKey string, batchSize int) (_ int, err error) {
+	ctx, _, endObservation := s.operations.vacuumAbandonedInitialPathCounts.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumAbandonedInitialPathCountsQuery, graphKey, batchSize)))
+	return count, err
+}
+
+const vacuumAbandonedInitialPathCountsQuery = `
+WITH
+locked_initial_paths AS (
+	SELECT id
+	FROM codeintel_initial_path_ranks
+	WHERE graph_key != %s
+	ORDER BY id
+	FOR UPDATE SKIP LOCKED
+	LIMIT %s
+),
+deleted_initial_paths AS (
+	DELETE FROM codeintel_initial_path_ranks
+	WHERE id IN (SELECT id FROM locked_initial_paths)
+	RETURNING 1
+)
+SELECT COUNT(*) FROM deleted_initial_paths
+`
+
+func (s *store) VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string, batchSize int) (_ int, err error) {
 	ctx, _, endObservation := s.operations.vacuumStaleGraphs.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
 	defer endObservation(1, observation.Args{})
 
-	rows, err := s.db.Query(ctx, sqlf.Sprintf(vacuumStaleGraphsQuery, derivativeGraphKey, derivativeGraphKey))
-	if err != nil {
-		return 0, 0, err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	for rows.Next() {
-		if err := rows.Scan(
-			&metadataRecordsDeleted,
-			&inputRecordsDeleted,
-		); err != nil {
-			return 0, 0, err
-		}
-	}
-
-	return metadataRecordsDeleted, inputRecordsDeleted, nil
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumStaleGraphsQuery, derivativeGraphKey, batchSize)))
+	return count, err
 }
 
 const vacuumStaleGraphsQuery = `
 WITH
-locked_references_processed AS (
-	SELECT id
-	FROM codeintel_ranking_references_processed
-	WHERE graph_key != %s
-	ORDER BY id
-	FOR UPDATE
-),
 locked_path_counts_inputs AS (
 	SELECT id
 	FROM codeintel_ranking_path_counts_inputs
 	WHERE graph_key != %s
 	ORDER BY id
-	FOR UPDATE
-),
-deleted_references_processed AS (
-	DELETE FROM codeintel_ranking_references_processed
-	WHERE id IN (SELECT id FROM locked_references_processed)
-	RETURNING 1
+	FOR UPDATE SKIP LOCKED
+	LIMIT %s
 ),
 deleted_path_counts_inputs AS (
 	DELETE FROM codeintel_ranking_path_counts_inputs
 	WHERE id IN (SELECT id FROM locked_path_counts_inputs)
 	RETURNING 1
 )
-SELECT
-	(SELECT COUNT(*) FROM deleted_references_processed),
-	(SELECT COUNT(*) FROM deleted_path_counts_inputs)
+SELECT COUNT(*) FROM deleted_path_counts_inputs
 `
 
 func (s *store) VacuumStaleRanks(ctx context.Context, derivativeGraphKey string) (rankRecordsDeleted, rankRecordsScanned int, err error) {

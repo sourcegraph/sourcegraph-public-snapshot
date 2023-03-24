@@ -6835,11 +6835,10 @@ type Site implements SettingsSubject {
     """
     allowEditExternalServicesWithFile: Boolean!
     """
-    The number of repos synced across all external services. Includes counts distinguishing repositories based on whether
-    the external service connection is configured for local repositories instead of remote code host repositories.
+    The number of external services distinguished by local repositories and remote repositories.
     Local repository code host connections are only supported in Sourcegraph App.
     """
-    reposCounts: ReposCounts!
+    externalServicesCounts: ExternalServicesCounts!
     """
     Whether the site is over the limit for free user accounts, and a warning needs to be shown to all users.
     Only applies if the site does not have a valid license.
@@ -6956,18 +6955,18 @@ type Site implements SettingsSubject {
 }
 
 """
-Repository count information includes a count of repositories for remote code host connections and a count of repositories
+External services count information includes a count of services for remote code host connections and a count of services
 for local code host connections (local is only supported for Sourcegraph App).
 """
-type ReposCounts {
+type ExternalServicesCounts {
     """
-    The count of repositories synced from remote code host connections.
+    The count of external services configured for remote code host connections.
     """
-    remoteReposCount: Int!
+    remoteExternalServicesCount: Int!
     """
-    The count of repositories synced from local code host connections.
+    The count of external services configured for local code host connections.
     """
-    localReposCount: Int!
+    localExternalServicesCount: Int!
 }
 
 """
@@ -7034,7 +7033,9 @@ type SiteConfiguration {
 }
 
 """
-A list of site config diffs.
+A list of site config diffs. Diff generation may not be available from the very
+start depending on when the value of redacted_contents is available in the
+database.
 """
 type SiteConfigurationChangeConnection implements Connection {
     """
@@ -7067,17 +7068,9 @@ type SiteConfigurationChange implements Node {
     author: User
 
     """
-    A flag to indicate if the diff of changes to the previous site configuration
-    was reproduced or not. Sometimes it may not be possible to generate a diff
-    (for example the redacted contents are not available) in which case the
-    value of the flag will be false.
+    The diff string when diffed against the previous site config.
     """
-    reproducedDiff: Boolean!
-
-    """
-    The diff string when diffed against the previous site config. When this is null there was no diff to the previous change.
-    """
-    diff: String
+    diff: String!
     """
     The timestamp when this change in the site config was applied.
     """
@@ -9278,6 +9271,17 @@ extend type Query {
         Search can be used to do a text-search over the team names.
         """
         search: String
+        """
+        Do not include any teams that have this ancestor in parent-team relationship.
+        This includes the team with the ID mentioned (that is a team is considered
+        its own ancestor).
+        """
+        exceptAncestor: ID
+        """
+        If set to true, child teams (ones that have parent set) are also returned.
+        If not specified, the default behavior is to only include top-level teams.
+        """
+        includeChildTeams: Boolean
     ): TeamConnection!
 }
 

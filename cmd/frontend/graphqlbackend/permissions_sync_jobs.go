@@ -42,13 +42,13 @@ type PermissionsSyncJobResolver interface {
 
 type PermissionsSyncJobReasonResolver interface {
 	Group() string
-	Reason() string
+	Reason() *string
 }
 
 type CodeHostStateResolver interface {
 	ProviderID() string
 	ProviderType() string
-	Status() string
+	Status() database.CodeHostStatus
 	Message() string
 }
 

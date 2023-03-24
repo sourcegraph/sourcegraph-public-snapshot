@@ -173,6 +173,7 @@ func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *sc
 		case []interface{}: // this value has multiple items → append or replace
 			if op.Op == "add" {
 				userRes.Attributes[attrName] = append(old.([]interface{}), v...)
+				ensureSinglePrimaryItem(v, userRes.Attributes, attrName)
 			} else { // replace
 				userRes.Attributes[attrName] = v
 			}
@@ -186,6 +187,7 @@ func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *sc
 					newlyChanged = applyAttributeChange(userRes.Attributes, attrName, v, op.Op)
 				}
 				changed = changed || newlyChanged
+				return
 			}
 
 			// We have a valueExpression to apply which means this must be a slice
@@ -200,6 +202,7 @@ func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *sc
 			if subAttrName != "" {
 				attributeToSet = subAttrName
 			}
+			matchedItems := []interface{}{}
 			for i := 0; i < len(attributeItems); i++ {
 				item, ok := attributeItems[i].(map[string]interface{})
 				if !ok {
@@ -211,6 +214,7 @@ func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *sc
 					newlyChanged := applyAttributeChange(item, attributeToSet, v, op.Op)
 					if newlyChanged {
 						attributeItems[i] = item //attribute items are updated
+						matchedItems = append(matchedItems, item)
 					}
 					changed = changed || newlyChanged
 				}
@@ -222,11 +226,40 @@ func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *sc
 					return
 				}
 			}
+			if attributeToSet == "primary" && v == true {
+				ensureSinglePrimaryItem(matchedItems, userRes.Attributes, attrName)
+			}
 			userRes.Attributes[attrName] = attributeItems
 		}
 	}
 
 	return
+}
+
+// ensureSinglePrimaryItem ensures that only one item in a slice of items is marked as "primary".
+func ensureSinglePrimaryItem(changedItems []interface{}, attributes scim.ResourceAttributes, attrName string) {
+	var primaryItem map[string]interface{}
+	for _, item := range changedItems {
+		mapItem, ok := item.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if mapItem["primary"] == true {
+			primaryItem = mapItem
+			break
+		}
+	}
+	if primaryItem != nil {
+		for _, item := range attributes[attrName].([]interface{}) {
+			mapItem, ok := item.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			if mapItem["primary"] == true && mapItem["value"] != primaryItem["value"] {
+				mapItem["primary"] = false
+			}
+		}
+	}
 }
 
 // applyChangeToAttributes applies a change to a resource (for example, sets its userName).
@@ -293,7 +326,7 @@ func applyAttributeChange(attributes scim.ResourceAttributes, attrName string, v
 	return true
 }
 
-// applyMapChanges applies changes to an existing attribute which is a map (for example, name).
+// applyMapChanges applies changes to an existing attribute which is a map.
 func applyMapChanges(m map[string]interface{}, items map[string]interface{}) (changed bool) {
 	for attr, value := range items {
 		if value == nil {
@@ -348,6 +381,8 @@ type multiValueReplaceNotFoundStrategy func(
 	filterExpression filter.Expression,
 ) ([]interface{}, error)
 
+// standardMultiValueReplaceNotFoundStrategy is a multiValueReplaceNotFoundStrategy that is used when
+// the IdP is NOT Azure AD. See the comment on azureMultiValueReplaceNotFoundStrategy for more info.
 func standardMultiValueReplaceNotFoundStrategy(
 	_ []interface{},
 	_ string,
@@ -357,6 +392,12 @@ func standardMultiValueReplaceNotFoundStrategy(
 	return nil, scimerrors.ScimErrorNoTarget
 }
 
+// azureMultiValueReplaceNotFoundStrategy is a multiValueReplaceNotFoundStrategy that is used when the
+// IdP is Azure AD. It is used to handle the case where a filter is used to replace a value in a
+// multi-valued attribute that does not exist. According to the standard, this should return a 400
+// error. However, Azure AD does not follow the standard and instead returns a 200 with the
+// attribute value set to the value that was passed in. This function is used to replicate that
+// behavior.
 func azureMultiValueReplaceNotFoundStrategy(multiValueAttribute []interface{},
 	propertyToSet string,
 	value interface{},
@@ -377,6 +418,8 @@ func azureMultiValueReplaceNotFoundStrategy(multiValueAttribute []interface{},
 	}
 }
 
+// getMultiValueReplaceNotFoundStrategy returns the multiValueReplaceNotFoundStrategy that matches
+// the provided IdentityProvider.
 func getMultiValueReplaceNotFoundStrategy(provider IdentityProvider) multiValueReplaceNotFoundStrategy {
 	switch provider {
 	case IDPAzureAd:

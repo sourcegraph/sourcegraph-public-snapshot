@@ -49,6 +49,7 @@ import { calendarTime, ensureEvent, EventOptions, getClient } from './google-cal
 import { postMessage, slackURL } from './slack'
 import { bakeSrcCliSteps, batchChangesInAppChangelog, combyReplace, indexerUpdate } from './static-updates'
 import {
+    backportStatus,
     cacheFolder,
     changelogURL,
     ensureDocker,
@@ -66,6 +67,7 @@ import {
     retryInput,
     timezoneLink,
     updateUpgradeGuides,
+    validateNoOpenBackports,
     validateNoReleaseBlockers,
     verifyWithInput,
 } from './util'
@@ -82,6 +84,7 @@ export type StepID =
     | 'release:branch-cut'
     // release
     | 'release:status'
+    | 'release:backport-status'
     | 'release:create-candidate'
     | 'release:promote-candidate'
     | 'release:check-candidate'
@@ -383,6 +386,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         description: 'Create release branch',
         run: async config => {
             const release = await getActiveRelease(config)
+            const client = await getAuthenticatedGitHubClient()
             let message: string
             // notify cs team on patch release cut
             if (release.version.patch !== 0) {
@@ -398,6 +402,25 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 console.log(`To check the status of the branch, run:\nsg ci status -branch ${release.branch} --wait\n`)
             } catch (error) {
                 console.error('Failed to create release branch', error)
+            }
+
+            if (release.version.patch === 0) {
+                // create backport label for major / minor versions
+                const params = {
+                    owner: 'sourcegraph',
+                    repo: 'sourcegraph',
+                }
+                const labelName = `backport ${release.version.major}.${release.version.minor}`
+                const labelExists = await client.issues
+                    .getLabel({ name: labelName, ...params })
+                    .then(resp => resp.status === 200)
+                    .catch(() => false)
+                if (!labelExists) {
+                    console.log(await client.issues.createLabel({ name: labelName, color: 'e69138', ...params }))
+                    console.log(`Label ${labelName} created`)
+                } else {
+                    console.log(`label ${labelName} already exists`)
+                }
             }
         },
     },
@@ -441,6 +464,17 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         },
     },
     {
+        id: 'release:backport-status',
+        description: 'Check for backport issues on the currently active release',
+        run: async config => {
+            const release = await getActiveRelease(config)
+            getAuthenticatedGitHubClient()
+                .then(client => backportStatus(client, release.version))
+                .then(str => console.log(str))
+                .catch(error => error)
+        },
+    },
+    {
         id: 'release:create-candidate',
         description: 'Generate the Nth release candidate. Set <candidate> to "final" to generate a final release',
         run: async config => {
@@ -460,7 +494,11 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 const tags = getCandidateTags(workdir, release.version.version)
                 let nextCandidate = 1
                 for (const tag of tags) {
-                    const num = parseInt(tag.slice(-1), 10)
+                    const lastNum = tag.match('.*-rc\\.(\\d+)')
+                    if (!lastNum || lastNum.length === 0) {
+                        break
+                    }
+                    const num = parseInt(lastNum[1], 10)
                     if (num >= nextCandidate) {
                         nextCandidate = num + 1
                     }
@@ -491,11 +529,12 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             'Promote a release candidate to release build. Specify the full candidate tag to promote the tagged commit to release.',
         argNames: ['candidate'],
         run: async (config, candidate) => {
-            const client = await getAuthenticatedGitHubClient()
-            await validateNoReleaseBlockers(client)
-
             const release = await getActiveRelease(config)
             ensureReleaseBranchUpToDate(release.branch)
+
+            const client = await getAuthenticatedGitHubClient()
+            await validateNoReleaseBlockers(client)
+            await validateNoOpenBackports(client, release.version)
 
             const warnMsg =
                 'Verify the provided tag is correct to promote to release. Note: it is very unusual to require a non-standard tag to promote to release, proceed with caution.'
@@ -657,7 +696,7 @@ cc @${release.captainGitHubUsername}
                             // Update Sourcegraph versions in installation guides
                             `find ./doc/admin/deploy/ -type f -name '*.md' -exec ${sed} -i -E 's/SOURCEGRAPH_VERSION="v${versionRegex}"/SOURCEGRAPH_VERSION="v${release.version.version}"/g' {} +`,
                             `find ./doc/admin/deploy/ -type f -name '*.md' -exec ${sed} -i -E 's/--version ${versionRegex}/--version ${release.version.version}/g' {} +`,
-                            `${sed} -i -E 's/${versionRegex}/${release.version.version}/g' ./doc/admin/deploy_executors_kubernetes.md`,
+                            `${sed} -i -E 's/${versionRegex}/${release.version.version}/g' ./doc/admin/executors/deploy_executors_kubernetes.md`,
                             // Update fork variables in installation guides
                             `find ./doc/admin/deploy/ -type f -name '*.md' -exec ${sed} -i -E "s/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${versionRegex}'/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${release.version.version}'/g" {} +`,
 

@@ -34,7 +34,6 @@ interface NotebookSymbolBlockProps
         TelemetryProps,
         PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings'> {
     isSourcegraphDotCom: boolean
-    globbing: boolean
 }
 
 const LOADING = 'LOADING' as const

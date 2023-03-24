@@ -19,8 +19,8 @@ export const siteFlagFieldsFragment = gql`
             }
             noLicenseWarningUserCount
         }
-        reposCounts {
-            remoteReposCount
+        externalServicesCounts {
+            remoteExternalServicesCount
         }
     }
 

@@ -35,6 +35,8 @@ The outgoing webhook will now be created and active. To view or edit its details
 - **batch_change:close** - Triggered when a batch change is closed.
 - **batch_change:delete** - Triggered when a batch change is deleted.
 
+> NOTE: There is one notable limitation in the initial release of outgoing webhooks: the payloads of batch changes sent will appear to "lag behind" the events that trigger them slightly. For example, if you close a batch change, the `batch_change:close` event will be sent immediately, but the payload will contain the batch change in the state as it was _just before_ it was closed. This is because the webhook payload is constructed before the batch change is updated in the database. This will be fixed in a future release.
+
 #### Example payload
 
 The batch change webhook event payload mirrors the [GraphQL API](../../../api/graphql/index.md) `BatchChange` type and contains the following fields:
@@ -70,11 +72,13 @@ The batch change webhook event payload mirrors the [GraphQL API](../../../api/gr
 
 ### Changeset
 
-- **changeset:close** - Triggered when a changeset is closed by Sourcegraph.
+- **changeset:close** - Triggered when a changeset is closed or merged by Sourcegraph.
 - **changeset:publish** - Triggered when a changeset is successfully published to the code host.
 - **changeset:publish_error** - Triggered when an attempt to publish a changeset to the code host fails.
 - **changeset:update** - Triggered when a changeset is updated on the code host by Sourcegraph.
 - **changeset:update_error** - Triggered when an attempt to update a changeset on the code host fails.
+
+> NOTE: There is one notable limitation in the initial release of outgoing webhooks: the payloads of changesets sent will appear to "lag behind" the events that trigger them slightly. For example, if you publish a changeset, the `changeset:publish` event will be sent immediately, but the payload will contain the changeset in the state as it was _just before_ it was published. This is because the webhook payload is constructed before the changeset is updated in the database. This will be fixed in a future release.
 
 #### Example payload
 
@@ -98,8 +102,10 @@ The changeset webhook event payload mirrors the [GraphQL API](../../../api/graph
   "title": "Hello World",
   // The body of the changese (as Markdown).
   "body": "My first batch change!",
-  // The author of the changeset. Note that this is only available after the changeset has been published.
+  // The username of the author of the changeset. Note that this is only available after the changeset has been published and is not available on some code hosts.
   "author_name": "my-username",
+  // The email of the author of the changeset. Note that this is only available after the changeset has been published and is not available on most code hosts.
+  "author_email": "me@myorganization.com",
   // The state of the changeset on Sourcegraph.
   "state": "OPEN",
   // Any labels attached to the changeset on the code host.

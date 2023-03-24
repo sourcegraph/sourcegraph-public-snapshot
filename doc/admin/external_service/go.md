@@ -39,6 +39,7 @@ based on a default internal limit. ([source](https://github.com/sourcegraph/sour
   "requestsPerHour": 57600.0
 }
 ```
+
 where the `requestsPerHour` field is set based on your requirements.
 
 **Not recommended**: Rate-limiting can be turned off entirely as well.

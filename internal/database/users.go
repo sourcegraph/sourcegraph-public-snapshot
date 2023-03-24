@@ -748,13 +748,11 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 	events := make([]*SecurityEvent, len(ids))
 	for index, id := range ids {
 		events[index] = &SecurityEvent{
-			Name:            name,
-			URL:             "",
-			UserID:          uint32(id),
-			AnonymousUserID: "",
-			Argument:        arg,
-			Source:          "BACKEND",
-			Timestamp:       now,
+			Name:      name,
+			UserID:    uint32(id),
+			Argument:  arg,
+			Source:    "BACKEND",
+			Timestamp: now,
 		}
 	}
 	db.SecurityEventLogs().LogEventList(ctx, events)
@@ -770,7 +768,6 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 		})
 		logEvents[index] = &Event{
 			Name:            string(name),
-			URL:             "",
 			AnonymousUserID: "backend",
 			Argument:        eArg,
 			Source:          "BACKEND",
@@ -893,7 +890,6 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 			})
 			logEvent := &Event{
 				Name:            "RoleChangeGranted",
-				URL:             "",
 				AnonymousUserID: "backend",
 				Argument:        arg,
 				Source:          "BACKEND",
@@ -1542,8 +1538,10 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 	})
 
 	var path string
+	var host string
 	if r != nil {
 		path = r.URL.Path
+		host = r.URL.Host
 	}
 	event := &SecurityEvent{
 		Name:      name,
@@ -1566,8 +1564,8 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 	})
 	logEvent := &Event{
 		Name:            string(name),
-		URL:             r.URL.Host,
 		AnonymousUserID: "backend",
+		URL:             host,
 		Argument:        eArgs,
 		Source:          "BACKEND",
 		Timestamp:       time.Now(),

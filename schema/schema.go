@@ -1353,7 +1353,7 @@ type InsightSeries struct {
 // JVMPackagesConnection description: Configuration for a connection to a JVM packages repository.
 type JVMPackagesConnection struct {
 	// Maven description: Configuration for resolving from Maven repositories.
-	Maven *Maven `json:"maven,omitempty"`
+	Maven Maven `json:"maven"`
 }
 
 // Log description: Configuration for logging and alerting, including to external services.
@@ -1366,7 +1366,7 @@ type Log struct {
 
 // Maven description: Configuration for resolving from Maven repositories.
 type Maven struct {
-	// Credentials description: Contents of a coursier.credentials file needed for accessing the Maven repositories.
+	// Credentials description: Contents of a coursier.credentials file needed for accessing the Maven repositories. See the 'Inline' section at https://get-coursier.io/docs/other-credentials#inline for more details.
 	Credentials string `json:"credentials,omitempty"`
 	// Dependencies description: An array of artifact "groupID:artifactID:version" strings specifying which Maven artifacts to mirror on Sourcegraph.
 	Dependencies []string `json:"dependencies,omitempty"`
@@ -1865,7 +1865,7 @@ type RubyRateLimit struct {
 type RustPackagesConnection struct {
 	// Dependencies description: An array of strings specifying Rust packages to mirror in Sourcegraph.
 	Dependencies []string `json:"dependencies,omitempty"`
-	// IndexRepositoryName description: Name of the git repository containing the crates.io index. Empty by default, which means no syncing happens. Updating this setting does not trigger a sync immediately, you must wait until the next scheduled sync for the value to get picked up.
+	// IndexRepositoryName description: Name of the git repository containing the crates.io index. Only set if you intend to sync every crate from the index. Updating this setting does not trigger a sync immediately, you must wait until the next scheduled sync for the value to get picked up.
 	IndexRepositoryName string `json:"indexRepositoryName,omitempty"`
 	// IndexRepositorySyncInterval description: How frequently to sync with the index repository. String formatted as a Go time.Duration. The Sourcegraph server needs to be restarted to pick up a new value of this configuration option.
 	IndexRepositorySyncInterval string `json:"indexRepositorySyncInterval,omitempty"`
@@ -2408,6 +2408,8 @@ type SiteConfiguration struct {
 	// EmailAddress description: The "from" address for emails sent by this server.
 	// Please see https://docs.sourcegraph.com/admin/config/email
 	EmailAddress string `json:"email.address,omitempty"`
+	// EmailSenderName description: The name to use in the "from" address for emails sent by this server.
+	EmailSenderName string `json:"email.senderName,omitempty"`
 	// EmailSmtp description: The SMTP server used to send transactional emails.
 	// Please see https://docs.sourcegraph.com/admin/config/email
 	EmailSmtp *SMTPServerConfig `json:"email.smtp,omitempty"`
@@ -2633,6 +2635,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "disablePublicRepoRedirects")
 	delete(m, "dotcom")
 	delete(m, "email.address")
+	delete(m, "email.senderName")
 	delete(m, "email.smtp")
 	delete(m, "email.templates")
 	delete(m, "embeddings")

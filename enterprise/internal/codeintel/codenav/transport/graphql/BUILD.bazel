@@ -5,7 +5,6 @@ go_library(
     srcs = [
         "cursor.go",
         "diagnostic_resolver.go",
-        "diagnostic_resolver_connection.go",
         "gitblob_lsif_data_resolver.go",
         "hover_resolver.go",
         "iface.go",
@@ -15,7 +14,6 @@ go_library(
         "position_resolver.go",
         "range_resolver.go",
         "ranges_resolver.go",
-        "ranges_resolver_connection.go",
         "root_resolver.go",
         "types.go",
         "utils.go",

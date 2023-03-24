@@ -6,6 +6,7 @@ require (
 	github.com/ashanbrown/forbidigo v1.5.1
 	github.com/go-critic/go-critic v0.6.7
 	github.com/gordonklaus/ineffassign v0.0.0-20230107090616-13ace0543b28
+	github.com/kyoh86/exportloopref v0.1.11
 	github.com/timakin/bodyclose v0.0.0-20221125081123-e39cf3fc478e
 	golang.org/x/tools v0.6.0
 )

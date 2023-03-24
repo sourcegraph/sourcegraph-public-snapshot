@@ -74,7 +74,7 @@ type PreviewGitObjectFilterArgs struct {
 }
 
 type (
-	CodeIntelligenceConfigurationPolicyConnectionResolver = PagedConnectionResolverWithCount[CodeIntelligenceConfigurationPolicyResolver]
+	CodeIntelligenceConfigurationPolicyConnectionResolver = PagedConnectionWithTotalCountResolver[CodeIntelligenceConfigurationPolicyResolver]
 )
 
 type CodeIntelligenceConfigurationPolicyResolver interface {

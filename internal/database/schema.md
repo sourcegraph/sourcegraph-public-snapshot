@@ -536,6 +536,7 @@ Triggers:
 Indexes:
     "cm_action_jobs_pkey" PRIMARY KEY, btree (id)
     "cm_action_jobs_state_idx" btree (state)
+    "cm_action_jobs_trigger_event" btree (trigger_event)
 Check constraints:
     "cm_action_jobs_only_one_action_type" CHECK ((
 CASE
@@ -940,6 +941,7 @@ Foreign-key constraints:
  repository_id | integer |           | not null | 
 Indexes:
     "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_path_counts_inputs_graph_key_id" btree (graph_key, id)
     "codeintel_ranking_path_counts_inputs_graph_key_repository_id_id" btree (graph_key, repository_id, id) WHERE NOT processed
 
 ```
@@ -975,6 +977,7 @@ References for a given upload proceduced by background job consuming SCIP indexe
 Indexes:
     "codeintel_ranking_references_processed_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_references_processed_graph_key_codeintel_rank" UNIQUE, btree (graph_key, codeintel_ranking_reference_id)
+    "codeintel_ranking_references_processed_reference_id" btree (codeintel_ranking_reference_id)
 Foreign-key constraints:
     "fk_codeintel_ranking_reference" FOREIGN KEY (codeintel_ranking_reference_id) REFERENCES codeintel_ranking_references(id) ON DELETE CASCADE
 
@@ -1568,18 +1571,19 @@ Indexes:
 
 # Table "public.gitserver_repos"
 ```
-     Column      |           Type           | Collation | Nullable |      Default       
------------------+--------------------------+-----------+----------+--------------------
- repo_id         | integer                  |           | not null | 
- clone_status    | text                     |           | not null | 'not_cloned'::text
- shard_id        | text                     |           | not null | 
- last_error      | text                     |           |          | 
- updated_at      | timestamp with time zone |           | not null | now()
- last_fetched    | timestamp with time zone |           | not null | now()
- last_changed    | timestamp with time zone |           | not null | now()
- repo_size_bytes | bigint                   |           |          | 
- corrupted_at    | timestamp with time zone |           |          | 
- corruption_logs | jsonb                    |           | not null | '[]'::jsonb
+      Column      |           Type           | Collation | Nullable |      Default       
+------------------+--------------------------+-----------+----------+--------------------
+ repo_id          | integer                  |           | not null | 
+ clone_status     | text                     |           | not null | 'not_cloned'::text
+ shard_id         | text                     |           | not null | 
+ last_error       | text                     |           |          | 
+ updated_at       | timestamp with time zone |           | not null | now()
+ last_fetched     | timestamp with time zone |           | not null | now()
+ last_changed     | timestamp with time zone |           | not null | now()
+ repo_size_bytes  | bigint                   |           |          | 
+ corrupted_at     | timestamp with time zone |           |          | 
+ corruption_logs  | jsonb                    |           | not null | '[]'::jsonb
+ cloning_progress | text                     |           |          | ''::text
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
     "gitserver_repo_size_bytes" btree (repo_size_bytes)

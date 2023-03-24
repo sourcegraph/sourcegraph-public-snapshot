@@ -7,9 +7,12 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
+	autoindexingShared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsShared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -79,34 +82,7 @@ func (r *summaryResolver) RepositoriesWithErrors(ctx context.Context, args *reso
 		endCursor = strconv.Itoa(newOffset)
 	}
 
-	return &codeIntelRepositoryWithErrorConnectionResolver{
-		nodes:      resolvers,
-		totalCount: totalCount,
-		endCursor:  endCursor,
-	}, nil
-}
-
-type codeIntelRepositoryWithErrorConnectionResolver struct {
-	nodes      []resolverstubs.CodeIntelRepositoryWithErrorResolver
-	totalCount int
-	endCursor  string
-}
-
-func (r *codeIntelRepositoryWithErrorConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.CodeIntelRepositoryWithErrorResolver, error) {
-	return r.nodes, nil
-}
-
-func (r *codeIntelRepositoryWithErrorConnectionResolver) TotalCount() *int32 {
-	v := int32(r.totalCount)
-	return &v
-}
-
-func (r *codeIntelRepositoryWithErrorConnectionResolver) PageInfo() resolverstubs.PageInfo {
-	if r.endCursor != "" {
-		return &pageInfo{hasNextPage: true, endCursor: &r.endCursor}
-	}
-
-	return &pageInfo{hasNextPage: false}
+	return resolverstubs.NewCursorWithTotalCountConnectionResolver(resolvers, endCursor, int32(totalCount)), nil
 }
 
 func (r *summaryResolver) RepositoriesWithConfiguration(ctx context.Context, args *resolverstubs.RepositoriesWithConfigurationArgs) (resolverstubs.CodeIntelRepositoryWithConfigurationConnectionResolver, error) {
@@ -144,34 +120,7 @@ func (r *summaryResolver) RepositoriesWithConfiguration(ctx context.Context, arg
 		endCursor = strconv.Itoa(newOffset)
 	}
 
-	return &codeIntelRepositoryWithConfigurationConnectionResolver{
-		nodes:      resolvers,
-		totalCount: totalCount,
-		endCursor:  endCursor,
-	}, nil
-}
-
-type codeIntelRepositoryWithConfigurationConnectionResolver struct {
-	nodes      []resolverstubs.CodeIntelRepositoryWithConfigurationResolver
-	totalCount int
-	endCursor  string
-}
-
-func (r *codeIntelRepositoryWithConfigurationConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.CodeIntelRepositoryWithConfigurationResolver, error) {
-	return r.nodes, nil
-}
-
-func (r *codeIntelRepositoryWithConfigurationConnectionResolver) TotalCount() *int32 {
-	v := int32(r.totalCount)
-	return &v
-}
-
-func (r *codeIntelRepositoryWithConfigurationConnectionResolver) PageInfo() resolverstubs.PageInfo {
-	if r.endCursor != "" {
-		return &pageInfo{hasNextPage: true, endCursor: &r.endCursor}
-	}
-
-	return &pageInfo{hasNextPage: false}
+	return resolverstubs.NewCursorWithTotalCountConnectionResolver(resolvers, endCursor, int32(totalCount)), nil
 }
 
 type codeIntelRepositoryWithErrorResolver struct {
@@ -215,6 +164,13 @@ type indexerWithCountResolver struct {
 
 func (r *indexerWithCountResolver) Indexer() resolverstubs.CodeIntelIndexerResolver { return r.indexer }
 func (r *indexerWithCountResolver) Count() int32                                    { return r.count }
+
+type RepositorySummary struct {
+	RecentUploads           []uploadsShared.UploadsWithRepositoryNamespace
+	RecentIndexes           []autoindexingShared.IndexesWithRepositoryNamespace
+	LastUploadRetentionScan *time.Time
+	LastIndexScan           *time.Time
+}
 
 type repositorySummaryResolver struct {
 	uploadsSvc        UploadsService

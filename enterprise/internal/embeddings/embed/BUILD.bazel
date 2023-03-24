@@ -14,6 +14,7 @@ go_library(
         "//enterprise/internal/embeddings/split",
         "//internal/api",
         "//internal/binary",
+        "//internal/codeintel/types",
         "//internal/conf",
         "//internal/httpcli",
         "//lib/errors",
@@ -29,6 +30,7 @@ go_test(
     deps = [
         "//enterprise/internal/embeddings/split",
         "//internal/api",
+        "//internal/codeintel/types",
         "//lib/errors",
         "@com_github_stretchr_testify//require",
     ],

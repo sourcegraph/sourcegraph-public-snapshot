@@ -179,7 +179,7 @@ func validateExecutorToken(w http.ResponseWriter, r *http.Request, logger log.Lo
 	// code via timing attack. It is not important to avoid leaking the *length* of
 	// the code, because the length of verification codes is constant.
 	if subtle.ConstantTimeCompare([]byte(token), []byte(expectedAccessToken)) == 0 {
-		w.WriteHeader(http.StatusForbidden)
+		w.WriteHeader(http.StatusUnauthorized)
 		return false
 	}
 
