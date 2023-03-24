@@ -196,6 +196,127 @@ func TestGetVulnerabilityMatches(t *testing.T) {
 	})
 }
 
+func TestGetVulnerabilityMatchesSummaryCount(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+	handle := basestore.NewWithHandle(db.Handle())
+
+	/* Insert uploads for four (4) repositories */
+	insertUploads(t, db,
+		types.Upload{ID: 50, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
+		types.Upload{ID: 51, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
+		types.Upload{ID: 52, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
+		types.Upload{ID: 53, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
+		types.Upload{ID: 54, RepositoryID: 75, RepositoryName: "github.com/go-mockgen/xtools"},
+		types.Upload{ID: 55, RepositoryID: 75, RepositoryName: "github.com/go-mockgen/xtools"},
+		types.Upload{ID: 56, RepositoryID: 75, RepositoryName: "github.com/go-mockgen/xtools"},
+		types.Upload{ID: 57, RepositoryID: 90, RepositoryName: "github.com/testify/config"},
+		types.Upload{ID: 58, RepositoryID: 90, RepositoryName: "github.com/testify/config"},
+		types.Upload{ID: 59, RepositoryID: 90, RepositoryName: "github.com/testify/config"},
+		types.Upload{ID: 60, RepositoryID: 90, RepositoryName: "github.com/testify/config"},
+		types.Upload{ID: 61, RepositoryID: 90, RepositoryName: "github.com/testify/config"},
+		types.Upload{ID: 62, RepositoryID: 200, RepositoryName: "github.com/go-sentinel/config"},
+		types.Upload{ID: 63, RepositoryID: 200, RepositoryName: "github.com/go-sentinel/config"},
+	)
+
+	/*
+	 * Insert ten (10) total vulnerable package reference.
+	 *  - Three (3) are high severity
+	 *  - Two (2) are medium severity
+	 *  - Four (4) are critical severity
+	 *  - Low (1) is low severity
+	 */
+	if err := handle.Exec(context.Background(), sqlf.Sprintf(`
+		INSERT INTO lsif_references (scheme, name, version, dump_id)
+		VALUES
+			('gomod', 'github.com/go-nacelle/config', 'v1.2.3', 50), -- high vulnerability
+			('gomod', 'github.com/go-nacelle/config', 'v1.2.4', 51), -- high vulnerability
+			('gomod', 'github.com/go-nacelle/config', 'v1.2.5', 52), -- high vulnerability
+			('gomod', 'github.com/go-nacelle/config', 'v1.2.6', 53),
+			('gomod', 'github.com/go-mockgen/xtools', 'v1.3.2', 54), -- medium vulnerability
+			('gomod', 'github.com/go-mockgen/xtools', 'v1.3.3', 55), -- medium vulnerability
+			('gomod', 'github.com/go-mockgen/xtools', 'v1.3.6', 56),
+			('gomod', 'github.com/testify/config', 'v1.0.1', 57), -- critical vulnerability
+			('gomod', 'github.com/testify/config', 'v1.0.2', 58), -- critical vulnerability
+			('gomod', 'github.com/testify/config', 'v1.0.3', 59), -- critical vulnerability
+			('gomod', 'github.com/testify/config', 'v1.0.5', 60), -- critical vulnerability
+			('gomod', 'github.com/testify/config', 'v1.0.6', 61), 
+			('gomod', 'github.com/go-sentinel/config', 'v2.3.0', 62), -- low vulnerability
+			('gomod', 'github.com/go-sentinel/config', 'v2.3.6', 63)
+	`)); err != nil {
+		t.Fatalf("failed to insert references: %s", err)
+	}
+
+	var critical int32 = 4
+	var high int32 = 3
+	var medium int32 = 2
+	var low int32 = 1
+	var totalRepos int32 = 4
+
+	criticalAffectedPackage := shared.AffectedPackage{
+		Language:          "go",
+		PackageName:       "testify/config",
+		VersionConstraint: []string{"<= v1.0.5"},
+	}
+	highAffectedPackage := shared.AffectedPackage{
+		Language:          "go",
+		PackageName:       "go-nacelle/config",
+		VersionConstraint: []string{"<= v1.2.5"},
+	}
+	mediumAffectedPackage := shared.AffectedPackage{
+		Language:          "go",
+		PackageName:       "go-mockgen/xtools",
+		VersionConstraint: []string{"<= v1.3.5"},
+	}
+	lowAffectedPackage := shared.AffectedPackage{
+		Language:          "go",
+		PackageName:       "go-sentinel/config",
+		VersionConstraint: []string{"<= v2.3.5"},
+	}
+	mockVulnerabilities := []shared.Vulnerability{
+		{ID: 1, SourceID: "CVE-ABC", Severity: "HIGH", AffectedPackages: []shared.AffectedPackage{highAffectedPackage}},
+		{ID: 2, SourceID: "CVE-DEF", Severity: "HIGH"},
+		{ID: 3, SourceID: "CVE-GHI", Severity: "HIGH"},
+		{ID: 4, SourceID: "CVE-JKL", Severity: "MEDIUM", AffectedPackages: []shared.AffectedPackage{mediumAffectedPackage}},
+		{ID: 5, SourceID: "CVE-MNO", Severity: "MEDIUM"},
+		{ID: 6, SourceID: "CVE-PQR", Severity: "MEDIUM"},
+		{ID: 7, SourceID: "CVE-STU", Severity: "LOW", AffectedPackages: []shared.AffectedPackage{lowAffectedPackage}},
+		{ID: 8, SourceID: "CVE-VWX", Severity: "LOW"},
+		{ID: 9, SourceID: "CVE-Y&Z", Severity: "CRITICAL", AffectedPackages: []shared.AffectedPackage{criticalAffectedPackage}},
+	}
+
+	if _, err := store.InsertVulnerabilities(ctx, mockVulnerabilities); err != nil {
+		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+	}
+
+	if _, _, err := store.ScanMatches(ctx, 1000); err != nil {
+		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+	}
+
+	/*
+	 * Test
+	 */
+
+	summaryCount, err := store.GetVulnerabilityMatchesSummaryCount(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error getting vulnerability matches summary counts: %s", err)
+	}
+
+	expectedSummaryCount := shared.GetVulnerabilityMatchesSummaryCounts{
+		Critical:     critical,
+		High:         high,
+		Medium:       medium,
+		Low:          low,
+		Repositories: totalRepos,
+	}
+
+	if diff := cmp.Diff(expectedSummaryCount, summaryCount); diff != "" {
+		t.Errorf("unexpected vulnerability matches summary counts (-want +got):\n%s", diff)
+	}
+}
+
 func setupReferences(t *testing.T, db database.DB) {
 	store := basestore.NewWithHandle(db.Handle())
 
