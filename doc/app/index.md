@@ -67,7 +67,7 @@ Your browser should automatically open to http://localhost:3080 - this is the ad
 
 Batch changes and precise code intel require the following optional dependencies be installed and on your PATH:
 
-- The `src` CLI ([installation](https://github.com/sourcegraph/src-cli))
+- The `src` CLI ([installation](https://sourcegraph.com/github.com/sourcegraph/src-cli))
 - `docker`
 
 ### Troubleshooting
