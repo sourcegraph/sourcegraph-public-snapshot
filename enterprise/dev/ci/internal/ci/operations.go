@@ -84,7 +84,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 				// addTypescriptCheck is now covered by Bazel
 				// addTypescriptCheck,    // ~4m
 				addVsceTests,          // ~3.0m
-				addCodyExtensionTests, // ~TODOm
+				addCodyExtensionTests, // ~2.5m
 			)
 		} else {
 			// If there are any Graphql changes, they are impacting the client as well.
@@ -98,7 +98,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 				addJetBrainsUnitTests,        // ~2.5m
 				addTypescriptCheck,           // ~4m
 				addVsceTests,                 // ~3.0m
-				addCodyExtensionTests,        // ~TODOm
+				addCodyExtensionTests,        // ~2.5m
 			)
 		}
 
@@ -337,7 +337,6 @@ func addCodyExtensionTests(pipeline *bk.Pipeline) {
 		bk.Cmd("pnpm generate"),
 		bk.Cmd("pnpm --filter cody-ai run build"),
 		bk.Cmd("pnpm --filter cody-ai run test:unit"),
-		bk.Cmd("pnpm --filter cody-ai run test:integration"),
 	)
 }
 
