@@ -1,160 +1,65 @@
 package packagefilters
 
 import (
-	"fmt"
 	"strings"
 
+	"github.com/gobwas/glob/syntax"
+	"github.com/gobwas/glob/syntax/ast"
 	"github.com/grafana/regexp"
-
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-
-	"golang.org/x/exp/slices"
 )
 
-// this is a zero width string, if someone inputs this in the glob,
-// any issues are on them
-const zeroWidthMarker = "\u200b"
-
-var (
-	star    = &struct{}{}
-	setOpRe = lazyregexp.New("([&~|])")
-)
-
-func GlobToRegex(glob string) string {
-	var result []string
-	i, n := 0, len(glob)
-
-	for i < n {
-		c := glob[i]
-		i++
-
-		if c == '*' {
-			if len(result) == 0 || result[len(result)-1] != zeroWidthMarker {
-				result = append(result, zeroWidthMarker)
-			}
-		} else if c == '?' {
-			result = append(result, ".")
-		} else if c == '[' {
-			j := i
-			if j < n && glob[j] == '!' {
-				j++
-			}
-			if j < n && glob[j] == ']' {
-				j++
-			}
-			for j < n && glob[j] != ']' {
-				j++
-			}
-			if j >= n {
-				result = append(result, "\\[")
-			} else {
-				stuff := glob[i:j]
-				if !strings.Contains(stuff, "-") {
-					stuff = strings.ReplaceAll(stuff, `\`, `\\`)
-				} else {
-					var chunks []string
-					var k int
-					if glob[i] == '!' {
-						k = i + 2
-					} else {
-						k = i + 1
-					}
-					for {
-						fmt.Println("finding", k, j)
-						if k >= len(glob) {
-							break
-						}
-						k2 := strings.IndexRune(glob[k:j], '-')
-						if k2 < 0 {
-							break
-						}
-						k = k2 + k
-						fmt.Println("True", glob[k:j], glob[i:k], i, k)
-						chunks = append(chunks, glob[i:k])
-						i = k + 1
-						k = k + 3
-					}
-					chunk := glob[i:j]
-					fmt.Println("le chunk", chunk, i, j)
-					if chunk != "" {
-						chunks = append(chunks, chunk)
-					} else {
-						chunks[len(chunks)-1] = chunks[len(chunks)-1] + "-"
-					}
-
-					for k := len(chunks) - 1; k > 0; k-- {
-						fmt.Println(k, k-1, len(chunks))
-						el := &chunks[k]
-						if (*el)[len(*el)-1] > chunks[k][0] {
-							*el = (*el)[:len(*el)-1] + chunks[k][1:]
-							chunks = slices.Delete(chunks, k, k+1)
-						}
-					}
-					for k, str := range chunks {
-						chunks[k] = strings.ReplaceAll(strings.ReplaceAll(str, `\`, `\\`), "-", `\-`)
-					}
-					stuff = strings.Join(chunks, "-")
-				}
-				stuff = setOpRe.ReplaceAllLiteralString(stuff, `\\\1`)
-				i = j + 1
-				switch {
-				case stuff == "":
-					result = append(result, "(?!)")
-				case stuff == "!":
-					result = append(result, ".")
-				case stuff[0] == '!':
-					result = append(result, fmt.Sprintf("[^%s]", stuff[1:]))
-				case strings.ContainsAny(string(stuff[0]), "^["):
-					result = append(result, fmt.Sprintf(`[\%s]`, stuff))
-				default:
-					result = append(result, fmt.Sprintf("[%s]", stuff))
-				}
-			}
-		} else {
-			result = append(result, regexp.QuoteMeta(string(c)))
-		}
+func GlobToRegex(pattern string) (string, error) {
+	tree, err := syntax.Parse(pattern)
+	if err != nil {
+		return "", err
 	}
 
-	if i != n {
-		panic(fmt.Sprintf("i=%d != n=%d", i, n))
+	var out string
+
+	for _, child := range tree.Children {
+		out += handleNode(child)
 	}
 
-	inp := result
-	result = []string{}
-	i, n = 0, len(inp)
-	for i < n && inp[i] != zeroWidthMarker {
-		result = append(result, inp[i])
-		i++
-	}
+	return "^" + out + "$", nil
+}
 
-	for i < n {
-		if inp[i] != zeroWidthMarker {
-			panic(fmt.Sprintf("%d should be marker", i))
+func handleNode(node *ast.Node) string {
+	switch node.Kind {
+	// treat ** as nothing special here
+	case ast.KindAny, ast.KindSuper:
+		return ".*"
+	case ast.KindSingle:
+		return "."
+	case ast.KindText:
+		return regexp.QuoteMeta((node.Value.(ast.Text)).Text)
+	case ast.KindAnyOf:
+		subExpr := make([]string, 0, len(node.Children))
+		for _, child := range node.Children {
+			subExpr = append(subExpr, handleNode(child))
 		}
-		i++
-		if i == n {
-			result = append(result, ".*")
-			break
+		return "(?:" + strings.Join(subExpr, "|") + ")"
+	case ast.KindPattern:
+		// afaik this only ever has 1 child, but why not eh
+		subExpr := make([]string, 0, len(node.Children))
+		for _, child := range node.Children {
+			subExpr = append(subExpr, handleNode(child))
 		}
-		if inp[i] == zeroWidthMarker {
-			panic(fmt.Sprintf("%d should not be marker", i))
+		return strings.Join(subExpr, "")
+	case ast.KindList:
+		listmeta := node.Value.(ast.List)
+		var prefix string
+		if listmeta.Not {
+			prefix = "^"
 		}
-		var fixed []string
-		for i < n && inp[i] != zeroWidthMarker {
-			fixed = append(fixed, inp[i])
-			i++
+		return "[" + prefix + regexp.QuoteMeta(listmeta.Chars) + "]"
+	case ast.KindRange:
+		rangemeta := node.Value.(ast.Range)
+		var prefix string
+		if rangemeta.Not {
+			prefix = "^"
 		}
-		if i == n {
-			result = append(result, ".*")
-			result = append(result, fixed...)
-		} else {
-			result = append(result, fmt.Sprintf("(.*?%s)", strings.Join(fixed, "")))
-		}
+		return "[" + prefix + regexp.QuoteMeta(string(rangemeta.Lo)) + "-" + regexp.QuoteMeta(string(rangemeta.Hi)) + "]"
+	default:
+		panic("uh oh stinky")
 	}
-
-	if i != n {
-		panic(fmt.Sprintf("i=%d != n=%d", i, n))
-	}
-
-	return fmt.Sprintf("^%s$", strings.Join(result, ""))
 }

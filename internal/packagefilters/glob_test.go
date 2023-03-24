@@ -1,19 +1,28 @@
 package packagefilters
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/gobwas/glob"
+)
 
 func Test_GlobToRegex(t *testing.T) {
 	for _, test := range []struct{ glob, regex string }{
-		{
-			glob:  "com.sourcegraph.*",
-			regex: `^com\.sourcegraph\..*$`,
-		},
-		{
-			glob:  "xyz[a-w]",
-			regex: "^xyz[a-w]$",
-		},
+		{glob: "com.sourcegraph.*", regex: `^com\.sourcegraph\..*$`},
+		{glob: "xyz[a-w]", regex: "^xyz[a-w]$"},
+		{glob: "asd[!f]", regex: "^asd[^f]$"},
+		{glob: "b?n?n?", regex: "^b.n.n.$"},
+		{glob: "asdf[!!]", regex: "^asdf[^!]$"},
+		{glob: "*****", regex: "^.*.*.*$"},
+		{glob: "!fdsa]", regex: `^!fdsa\]$`},
+		{glob: `[\d]`, regex: `^[d]$`},
+		{glob: "{asd,abc}f", regex: "^(?:asd|abc)f$"},
+		{glob: "asdf", regex: "^asdf$"},
 	} {
-		if output := GlobToRegex(test.glob); output != test.regex {
+		if _, err := glob.Compile(test.glob); err != nil {
+			t.Fatalf("not a valid glob %s %v", test.glob, err)
+		}
+		if output, _ := GlobToRegex(test.glob); output != test.regex {
 			t.Errorf("unexpected regex output for %q (want=%q,got=%q)", test.glob, test.regex, output)
 		}
 	}
