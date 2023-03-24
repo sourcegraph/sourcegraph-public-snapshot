@@ -84,6 +84,10 @@ func TestSearch(t *testing.T) {
 		testListingSearchContexts(t, client)
 	})
 
+	// Run the tests with ownership enabled
+	if err := client.SetFeatureFlag("search-ownership", true); err != nil {
+		t.Fatal(err)
+	}
 	t.Run("graphql", func(t *testing.T) {
 		testSearchClient(t, client)
 	})
