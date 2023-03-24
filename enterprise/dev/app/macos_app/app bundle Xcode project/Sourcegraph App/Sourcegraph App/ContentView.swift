@@ -74,6 +74,9 @@ struct ContentView: View {
     @State private var runningOpacity = 0.0
     @State private var testOpacity: Double = 0.0
     
+    @State private var showResetConfirmationAlert = false
+    @State private var showNeedNewVersionAlert = false
+    
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
@@ -172,89 +175,6 @@ struct ContentView: View {
                 .padding()
             }
             
-            // the buttons used to all be here before moving them into the same location as the loading display
-//            GridRow {
-//                VStack(alignment: .leading) {
-//                    Text("Start Sourcegraph App")
-//                    Text("Start the stopped server.")
-//                        .font(.subheadline)
-//                            .foregroundColor(.secondary)
-//                }
-//                Button(action: {
-//                    do {
-//                        try StartApp()
-//                    } catch {
-//                    }
-//                }) {
-//                    Text("Start").frame(maxWidth: 60)
-//                }
-//                .disabled(self.startingOpacity == 1.0 || self.runningOpacity == 1.0)
-//                .gridColumnAlignment(.trailing)
-//            }
-//            Divider()
-            
-//            GridRow {
-//                VStack(alignment: .leading) {
-//                    Text("Open Sourcegraph App")
-//                    Text("Launch in default browser.")
-//                        .font(.subheadline)
-//                            .foregroundColor(.secondary)
-//                }
-//                Button(action: {
-//                    if let url = URL(string: "http://127.0.0.1:3080") {
-//                        NSWorkspace.shared.open(url)
-//                    }
-//                }) {
-//                    Text("Open").frame(maxWidth: 60)
-//                }
-//                .disabled(self.runningOpacity == 0.0)
-//                .gridColumnAlignment(.trailing)
-//            }
-//            Divider()
-            
-//            GridRow {
-//                VStack(alignment: .leading) {
-//                    Text("Stop Sourcegraph App")
-//                    Text("Stop the running server.")
-//                        .font(.subheadline)
-//                            .foregroundColor(.secondary)
-//                }
-//                Button(action: {
-//                    StopApp()
-//                    animateStopping()
-//                    self.startupProgress = 0.0
-//                }) {
-//                    Text("Stop").frame(maxWidth: 60)
-//                }
-//                .disabled(self.runningOpacity == 0.0)
-//                .gridColumnAlignment(.trailing)
-//            }
-//            Divider()
-            
-//            GridRow {
-//                VStack(alignment: .leading) {
-//                    Text("Restart Sourcegraph App")
-//                    Text("All settings will be preserved.")
-//                        .font(.subheadline)
-//                            .foregroundColor(.secondary)
-//                }
-//                Button(action: {
-//                    StopApp()
-//                    self.startupProgress = 0.0
-//                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-//                        do {
-//                            try StartApp()
-//                        } catch {
-//                        }
-//                    }
-//                }) {
-//                    Text("Restart").frame(maxWidth: 60)
-//                }
-//                .disabled(!appIsStarting())
-//                .gridColumnAlignment(.trailing)
-//            }
-//            Divider()
-            
             GridRow {
                 VStack(alignment: .leading) {
                     Text("Show the log file")
@@ -272,6 +192,85 @@ struct ContentView: View {
                 }
                 .gridColumnAlignment(.trailing)
             }
+            
+            // PoC check for version that uses a local "version.txt" file and the version.txt file in the "latest" bucket.
+            // probably needs to be somewhere other than in a button action
+//            Divider()
+//
+//            GridRow {
+//                VStack(alignment: .leading) {
+//                    Text("Check for a new version")
+//                    Text("Time to upgrade?!")
+//                        .font(.subheadline)
+//                            .foregroundColor(.secondary)
+//                }
+//                Button(action: {
+//                    if let versionFileURL = Bundle.main.url(forResource: "version", withExtension: "txt") {
+//                        do {
+//                            currentVersion = try String(contentsOf: versionFileURL).trimmingCharacters(in: .whitespacesAndNewlines)
+//                            if let versionLatestURL = URL(string: "https://storage.googleapis.com/sourcegraph-app-releases/latest/version.txt") {
+//                                do {
+//                                    latestVersion = try String(contentsOf: versionLatestURL).trimmingCharacters(in: .whitespacesAndNewlines)
+//                                    if latestVersion != currentVersion {
+//                                        showNeedNewVersionAlert = true
+//                                    }
+//                                } catch {
+//
+//                                }
+//                            }
+//                        } catch {
+//
+//                        }
+//                    }
+//                }) {
+//                    Text("Check Version").frame(maxWidth: 60)
+//                }
+//                .alert(isPresented: $showNeedNewVersionAlert) {
+//                    Alert(
+//                        title: Text("New Version Available"),
+//                        message: Text("There is a new version of Sourcegraph available! You have " + currentVersion + "; the latest version is " + latestVersion),
+//                        dismissButton: .default(Text("OK"))
+//                    )
+//                }
+//            }
+            
+            // this Reset button is fully functional
+            // do we want to include a Reset button?
+//            Divider()
+//            GridRow {
+//                VStack(alignment: .leading) {
+//                    Text("Clear User Data")
+//                    Text("Resets Sourcegraph to a clean slate by moving its data folder to the Trash.")
+//                        .font(.subheadline)
+//                            .foregroundColor(.secondary)
+//                }
+//                .gridColumnAlignment(.leading)
+//                Button(action: {
+//                    showResetConfirmationAlert = true
+//                }) {
+//                    Text("Reset").frame(maxWidth: 60)
+//                }
+//                .alert(isPresented: $showResetConfirmationAlert) {
+//                    Alert(
+//                        title: Text("Confirm Reset"),
+//                        message: Text("Are you sure you want to move Sourcegraph's data folder to the Trash? This will reset all of Sourcegraph's data, including its index of repositories."),
+//                        primaryButton: .destructive(Text("Reset")) {
+//                            StopApp()
+//                            let dataDir =  FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/sourcegraph-sp")
+//                            if FileManager.default.fileExists(atPath: dataDir.path) {
+//                                do {
+//                                    try FileManager.default.trashItem(at: dataDir, resultingItemURL: nil)
+//                                    //try FileManager.default.removeItem(atPath: dataDir.absoluteString)
+//                                } catch {
+//
+//                                }
+//                            }
+//                        },
+//                        secondaryButton: .cancel()
+//                    )
+//                }
+//            }
+            
             // we don't have an uninstaller yet
 //            Divider()
 //            GridRow {

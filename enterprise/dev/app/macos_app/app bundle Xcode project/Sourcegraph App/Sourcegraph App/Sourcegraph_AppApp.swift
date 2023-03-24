@@ -94,7 +94,10 @@ struct EOLBuffer {
 var appTask: Process = Process()
 var stdout = Pipe()
 
-
+// make all of these menu bar pieces global so that they can be accessed
+// by the watchdog defined in Sourcegraph_AppApp.swift.
+// The watchdog changes the icon and enables/disables, hides/shows the menu items
+// according to the state of the app
 var statusBarItem: NSStatusItem!
 
 let startItem = NSMenuItem()
@@ -104,12 +107,16 @@ let logItem = NSMenuItem()
 
 // the menubar icon is a Image Set in the Xcode assets
 // that contains two icons: one light and one dark
-// it needs to be rendered as a template to auto-adjust to the menu bar background color
-// that rendering can be set in the Image Set's attributes using the Xcode Attributes pane
+// it needs to be rendered as a template in order to auto-adjust to the menu bar background color
+// template rendering can be set in the Image Set's attributes using the Xcode Attributes pane
 // or it can be set programmatically when it is created
-let activeMenuBarIcon = NSImage(named: "ActiveMenubarIcon")
-let inactiveMenuBarIcon = NSImage(named: "InactiveMenubarIcon")
-let loadingMenuBarIcon = NSImage(named: "LoadingMenubarIcon")
+let activeMenuBarIcon = NSImage(named: "MenubarIcon-running")
+let inactiveMenuBarIcon = NSImage(named: "MenubarIcon-stopped")
+let loadingMenuBarIcon = NSImage(named: "MenubarIcon-starting")
+
+// used to check for a new version
+var currentVersion: String = ""
+var latestVersion: String = ""
 
 extension String: LocalizedError {
     public var errorDescription: String? { return self }
