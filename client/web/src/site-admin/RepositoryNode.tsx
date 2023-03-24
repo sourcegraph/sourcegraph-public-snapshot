@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-import { mdiCog, mdiClose, mdiFileDocumentOutline, mdiBrain } from '@mdi/js'
+import { mdiBrain, mdiClose, mdiCog, mdiFileDocumentOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
@@ -8,18 +8,18 @@ import {
     Alert,
     Badge,
     Button,
+    H4,
     Icon,
     Link,
-    H4,
-    LoadingSpinner,
-    Tooltip,
     LinkOrSpan,
-    PopoverTrigger,
+    LoadingSpinner,
+    MenuDivider,
+    Popover,
     PopoverContent,
     PopoverTail,
-    Popover,
+    PopoverTrigger,
     Position,
-    MenuDivider,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { SiteAdminRepositoryFields } from '../graphql-operations'
@@ -60,23 +60,23 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
             data-test-repository={node.name}
             data-test-cloned={node.mirrorInfo.cloned}
         >
-            <div className="d-flex align-items-center justify-content-between overflow-auto">
-                <div className={classNames('d-flex col-9 col-md-7 pl-0', styles.repoDescription)}>
-                    <div className={classNames('col-2 px-0 my-auto h-100', styles.badgeWrapper)}>
-                        <RepositoryStatusBadge status={parseRepositoryStatus(node)} />
-                        {node.mirrorInfo.cloneInProgress && <LoadingSpinner className="ml-2" />}
-                    </div>
-
-                    <div className="d-flex flex-column ml-2">
-                        <div>
-                            <ExternalRepositoryIcon externalRepo={node.externalRepository} />
-                            <RepoLink repoName={node.name} to={node.url} />
-                        </div>
-                        <RepoMirrorInfo mirrorInfo={node.mirrorInfo} />
-                    </div>
+            <div className="d-flex align-items-md-center justify-content-md-between flex-column flex-md-row">
+                <div
+                    className={classNames(
+                        'd-flex col-4 col-md-auto align-items-center pl-0 mt-2 mt-md-0',
+                        styles.repoDescription
+                    )}
+                >
+                    <ExternalRepositoryIcon externalRepo={node.externalRepository} />
+                    <RepoLink repoName={node.name} to={node.url} />
                 </div>
 
-                <div className="col-auto pr-0">
+                <div className="d-flex justify-content-start col-4 col-md-2 pl-0 ml-md-2 mt-2 mt-md-0">
+                    <RepositoryStatusBadge status={parseRepositoryStatus(node)} />
+                    {node.mirrorInfo.cloneInProgress && <LoadingSpinner className="ml-2" />}
+                </div>
+
+                <div className="col-md-4 pr-0 pl-0 mt-2 mt-md-0 d-flex align-items-start justify-content-start justify-content-md-end">
                     {/* TODO: Enable 'CLONE NOW' to enqueue the repo
                     {!node.mirrorInfo.cloned && !node.mirrorInfo.cloneInProgress && !node.mirrorInfo.lastError && (
                         <Button to={node.url} variant="secondary" size="sm" as={Link}>
@@ -141,6 +141,10 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                         </Popover>
                     )}
                 </div>
+            </div>
+
+            <div className="w-100">
+                <RepoMirrorInfo mirrorInfo={node.mirrorInfo} />
             </div>
 
             {node.mirrorInfo.isCorrupted && (
