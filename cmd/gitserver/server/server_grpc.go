@@ -83,7 +83,7 @@ func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 		})
 	}
 
-	limitHit, err := gs.Server.search(ss.Context(), args, onMatch)
+	limitHit, err := gs.Server.search(ss.Context(), nil, args, onMatch)
 	if err != nil {
 		if notExistError := new(gitdomain.RepoNotExistError); errors.As(err, &notExistError) {
 			st, _ := status.New(codes.NotFound, err.Error()).WithDetails(&proto.NotFoundPayload{

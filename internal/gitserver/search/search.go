@@ -11,6 +11,7 @@ import (
 
 	godiff "github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -18,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -100,7 +102,7 @@ type CommitSearcher struct {
 // that job should be sent down. We then read from the result channels in the same order that the jobs were sent.
 // This allows our worker pool to run the jobs in parallel, but we still emit matches in the same order that
 // git log outputs them.
-func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*protocol.CommitMatch)) error {
+func (cs *CommitSearcher) Search(ctx context.Context, tr *trace.Trace, onMatch func(*protocol.CommitMatch)) error {
 	g, ctx := errgroup.WithContext(ctx)
 
 	jobs := make(chan job, 128)
@@ -110,13 +112,13 @@ func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*protocol.Com
 	g.Go(func() error {
 		defer close(resultChans)
 		defer close(jobs)
-		return cs.feedBatches(ctx, jobs, resultChans)
+		return cs.feedBatches(ctx, tr, jobs, resultChans)
 	})
 
 	// Start workers
 	for i := 0; i < numWorkers; i++ {
 		g.Go(func() error {
-			return cs.runJobs(ctx, jobs)
+			return cs.runJobs(ctx, tr, jobs)
 		})
 	}
 
@@ -150,7 +152,10 @@ func (cs *CommitSearcher) gitArgs() []string {
 	return args
 }
 
-func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, resultChans chan chan *protocol.CommitMatch) (err error) {
+func (cs *CommitSearcher) feedBatches(ctx context.Context, tr *trace.Trace, jobs chan job, resultChans chan chan *protocol.CommitMatch) (err error) {
+	tr, ctx = trace.New(ctx, "CommitSearch.feedBatches", "")
+	defer tr.Finish()
+
 	cmd := exec.CommandContext(ctx, "git", cs.gitArgs()...)
 	fmt.Printf(">>>>>>>>>>>>>>>>>>>> git command: %#v\n", cmd)
 
@@ -226,7 +231,12 @@ func getSubRepoFilterFunc(ctx context.Context, checker authz.SubRepoPermissionCh
 	}
 }
 
-func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
+func (cs *CommitSearcher) runJobs(ctx context.Context, tr *trace.Trace, jobs chan job) error {
+	tr, ctx = trace.New(ctx, "CommitSearcher.runJobs", "")
+	defer tr.Finish()
+
+	tr.AddEvent("runJobs started", attribute.Bool("start", true))
+
 	// Create a new diff fetcher subprocess for each worker
 	diffFetcher, err := NewDiffFetcher(cs.RepoDir)
 	if err != nil {
@@ -237,6 +247,9 @@ func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 	startBuf := make([]byte, 1024)
 
 	runJob := func(j job) error {
+		tr, _ := trace.New(ctx, "job", "")
+		defer tr.Finish()
+
 		defer close(j.resultChan)
 
 		for _, cv := range j.batch {
@@ -266,7 +279,10 @@ func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 	}
 
 	var errs error
+	jobCount := 0
 	for j := range jobs {
+		jobCount += 1
+		tr.AddEvent("job started", attribute.Int("number", jobCount), attribute.Int("batchLength", len(j.batch)))
 		errs = errors.Append(errs, runJob(j))
 	}
 	return errs
