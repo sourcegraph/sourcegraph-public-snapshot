@@ -3,7 +3,7 @@
 # shellcheck disable=SC2064
 
 # INPUT ENVIRONMENT VARIABLES
-# - VERSION - required in order to find the binary on GCS; otherwsise optional
+# - VERSION - required in order to find the binary on GCS and is stored in the app for use when detecting new versions
 #   - defaults to 0.0.0
 # - artifact (optional) - path to binary file
 #   - if not supplied, downloads from GCS to ${PWD}/sourcegraph
@@ -13,7 +13,6 @@
 #   - defaults to "Sourcegraph App.app"
 
 # VERSION should come from the environment
-# not sure this will work within goreleaser, which uses {{.Version}} somehow
 VERSION=${VERSION:-0.0.0}
 
 # index off of the directory of this shell script to find other resources
@@ -87,6 +86,10 @@ chmod 555 "${app_name}/Contents/Resources/sourcegraph_launcher.sh" || exit 1
 # the destination name is specified by the launcher shell script
 cp "${binary_file_path}" "${app_name}/Contents/Resources/sourcegraph" || exit 1
 chmod 555 "${app_name}/Contents/Resources/sourcegraph" || exit 1
+
+# record the version where it can be used for checking for new versions
+# would probably be better to store it in Info.plist, but that might need `defaults`, requiring macOS
+printf '%s' "${VERSION}" >"${app_name}/Contents/Resources/version.txt"
 
 # put the app in a place where it can be picked up
 # preserve the ability to run as part of the goreleaser process
