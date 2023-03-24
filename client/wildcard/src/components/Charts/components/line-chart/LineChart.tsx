@@ -48,6 +48,8 @@ const getFormatDateTick = (scale: ScaleTime<number, number>): ((tick: Date, inde
 }
 
 const formatDateTick = (tick: Date, index: number, ticks: Date[]): string => {
+    return timeFormat('%b %Y')(tick)
+
     if (index === 0 ) {
         return timeFormat('%d %b')(tick)
     }
@@ -208,7 +210,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                 <SvgAxisLeft />
 
                 <SvgAxisBottom
-                    pixelsPerTick={80}
+                    pixelsPerTick={70}
                     minRotateAngle={20}
                     maxRotateAngle={60}
                     tickFormat={formatDateTick}

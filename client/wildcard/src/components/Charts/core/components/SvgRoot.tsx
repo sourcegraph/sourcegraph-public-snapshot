@@ -183,12 +183,19 @@ export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): R
         getScaleTicks = getXScaleTicks,
         hideTicks = false,
     } = props
-    const { content, xScale, setPadding } = useContext(SVGRootContext)
+    const { width, content, xScale, setPadding } = useContext(SVGRootContext)
 
     const axisGroupRef = useRef<SVGGElement>(null)
     const { ref } = useResizeObserver<SVGGElement>({
         // TODO: Fix corner cases with axis sizes see https://github.com/sourcegraph/sourcegraph/issues/39876
-        onResize: ({ height = 0 }) => setPadding(padding => ({ ...padding, bottom: height })),
+        onResize: ({ width: axisWidth, height = 0 }) => setPadding(padding => {
+            if (axisWidth) {
+                const rightPaddingIncrement = axisWidth + padding.left - width - 16
+                const rightPadding = rightPaddingIncrement > 0 ? rightPaddingIncrement : padding.right
+                return { ...padding, bottom: height, right: rightPadding }
+            }
+            return ({ ...padding, bottom: height })
+        }),
     })
 
     const [, upperRangeBound] = xScale.range() as [number, number]
