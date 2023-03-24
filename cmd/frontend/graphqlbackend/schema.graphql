@@ -7033,7 +7033,9 @@ type SiteConfiguration {
 }
 
 """
-A list of site config diffs.
+A list of site config diffs. Diff generation may not be available from the very
+start depending on when the value of redacted_contents is available in the
+database.
 """
 type SiteConfigurationChangeConnection implements Connection {
     """
@@ -7066,17 +7068,9 @@ type SiteConfigurationChange implements Node {
     author: User
 
     """
-    A flag to indicate if the diff of changes to the previous site configuration
-    was reproduced or not. Sometimes it may not be possible to generate a diff
-    (for example the redacted contents are not available) in which case the
-    value of the flag will be false.
+    The diff string when diffed against the previous site config.
     """
-    reproducedDiff: Boolean!
-
-    """
-    The diff string when diffed against the previous site config. When this is null there was no diff to the previous change.
-    """
-    diff: String
+    diff: String!
     """
     The timestamp when this change in the site config was applied.
     """

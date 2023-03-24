@@ -231,7 +231,6 @@ func TestSiteConfigConnection(t *testing.T) {
 								  username,
 								  displayName
 							  }
-							  reproducedDiff
 							  diff
 						  }
 						  pageInfo {
@@ -261,7 +260,6 @@ func TestSiteConfigConnection(t *testing.T) {
 										"username": "foo",
 										"displayName": "foo user"
 									},
-									"reproducedDiff": true,
 									"diff": %[3]q
 								},
 								{
@@ -271,7 +269,6 @@ func TestSiteConfigConnection(t *testing.T) {
 										"username": "foo",
 										"displayName": "foo user"
 									},
-									"reproducedDiff": true,
 									"diff": %[4]q
 								}
 							],
@@ -306,7 +303,6 @@ func TestSiteConfigConnection(t *testing.T) {
 											username,
 											displayName
 										}
-										reproducedDiff
 										diff
 									}
 									pageInfo {
@@ -336,19 +332,19 @@ func TestSiteConfigConnection(t *testing.T) {
 												"username": "bar",
 												"displayName": "bar user"
 											},
-											"reproducedDiff": true,
+
 											"diff": %[4]q
 										},
 										{
 											"id": %[2]q,
 											"author": null,
-											"reproducedDiff": true,
+
 											"diff": %[5]q
 										},
 										{
 											"id": %[3]q,
 											"author": null,
-											"reproducedDiff": true,
+
 											"diff": %[6]q
 										}
 									],
@@ -385,7 +381,6 @@ func TestSiteConfigConnection(t *testing.T) {
 									username,
 									displayName
 								}
-								reproducedDiff
 								diff
 							}
 							pageInfo {
@@ -415,7 +410,6 @@ func TestSiteConfigConnection(t *testing.T) {
 										"username": "foo",
 										"displayName": "foo user"
 									},
-									"reproducedDiff": true,
 									"diff": %[3]q
 								},
 								{
@@ -425,7 +419,6 @@ func TestSiteConfigConnection(t *testing.T) {
 										"username": "bar",
 										"displayName": "bar user"
 									},
-									"reproducedDiff": true,
 									"diff": %[4]q
 								}
 							],
@@ -460,7 +453,6 @@ func TestSiteConfigConnection(t *testing.T) {
 									username,
 									displayName
 								}
-								reproducedDiff
 								diff
 							}
 							pageInfo {
@@ -490,7 +482,6 @@ func TestSiteConfigConnection(t *testing.T) {
 										"username": "foo",
 										"displayName": "foo user"
 									},
-									"reproducedDiff": true,
 									"diff": %[3]q
 								},
 								{
@@ -500,7 +491,6 @@ func TestSiteConfigConnection(t *testing.T) {
 										"username": "foo",
 										"displayName": "foo user"
 									},
-									"reproducedDiff": true,
 									"diff": %[4]q
 								}
 							],
