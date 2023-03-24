@@ -49,6 +49,9 @@ Requests to the configured code host will be staggered as to not exceed `"reques
 
 > NOTE: Configuring a rate limit will impact Sourcegraph's ability to stay up to date with repository changes and user permissions. To ensure that Sourcegraph stays up to date, consider configuring [webhooks](../config/webhooks/incoming.md).
 
+- For Sourcegraph <=3.38, if rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
+- For Sourcegraph >=3.39, rate limiting should be enabled and configured for each individual code host connection.
+
 To see the status of configured internal rate limits, visit **Site admin > Instrumentation > repo-updater > Rate Limiter State**. This page will list internal rate limits by code host, for example:
 
 ```json

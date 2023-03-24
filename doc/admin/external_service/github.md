@@ -97,14 +97,7 @@ $ curl -s https://<github-enterprise-url>/api/v3/rate_limit -H "Authorization: B
 
 ### Internal rate limits
 
-Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to GitHub. 
-
-If enabled, the default rate is set at 5000 per hour which can be configured via the `requestsPerHour` field (see below):
-
-- For Sourcegraph <=3.38, if rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
-- For Sourcegraph >=3.39, rate limiting should be enabled and configured for each individual code host connection.
-
-**NOTE** Internal rate limiting is only currently applied when synchronising changesets in [batch changes](../../batch_changes/index.md), repository permissions and repository metadata from code hosts.
+See [Internal rate limits](./rate_limits.md#internal-rate-limits).
 
 ## Repository permissions
 

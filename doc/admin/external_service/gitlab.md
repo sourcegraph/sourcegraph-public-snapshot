@@ -154,14 +154,7 @@ If Sourcegraph hits a rate limit imposed by GitLab, Sourcegraph will wait the ap
 
 ### Internal rate limits
 
-Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to GitLab.
-
-If enabled, the default rate is set at 36,000 per hour (10 per second) which can be configured via the `requestsPerHour` field (see below):
-
-- For Sourcegraph <=3.38, if rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
-- For Sourcegraph >=3.39, rate limiting should be enabled and configured for each individual code host connection.
-
-> NOTE: Internal rate limiting is only currently applied when synchronising changesets in [batch changes](../../batch_changes/index.md), repository permissions and repository metadata from code hosts.
+See [Internal rate limits](./rate_limits.md#internal-rate-limits).
 
 ## Configuration
 
