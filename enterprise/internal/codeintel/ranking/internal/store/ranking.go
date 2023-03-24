@@ -295,7 +295,7 @@ unprocessed_path_counts AS (
 		ipr.upload_id,
 		unnest(
 			CASE
-				WHEN ipr.document_path != '' THEN ipr.document_path::text[]
+				WHEN ipr.document_path != '' THEN array_append('{}'::text[], ipr.document_path)
 				ELSE ipr.document_paths
 			END
 		) AS document_path,
