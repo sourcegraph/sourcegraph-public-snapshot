@@ -47,7 +47,7 @@ extend type Query {
     """
     Return known vulnerability matches grouped by repository.
     """
-    vulnerabilityMatchesGroupByRepository(
+    vulnerabilityMatchesCountByRepository(
         """
         The maximum number of results to return.
         """
@@ -62,7 +62,7 @@ extend type Query {
         The name of the repository to group by.
         """
         repositoryName: String
-    ): VulnerabilityMatchGroupByRepositoryConnection!
+    ): VulnerabilityMatchCountByRepositoryConnection!
 }
 
 """
@@ -278,11 +278,11 @@ type VulnerabilityMatch implements Node {
 """
 A page of vulnerability matches grouped by repository.
 """
-type VulnerabilityMatchGroupByRepositoryConnection {
+type VulnerabilityMatchCountByRepositoryConnection {
     """
     The vulnerability matches on the page.
     """
-    nodes: [VulnerabilityMatchGroupByRepository!]!
+    nodes: [VulnerabilityMatchCountByRepository!]!
 
     """
     The total number of vulnerability matches across all pages.
@@ -298,7 +298,7 @@ type VulnerabilityMatchGroupByRepositoryConnection {
 """
 Vulnerability matches count group by repository.
 """
-type VulnerabilityMatchGroupByRepository {
+type VulnerabilityMatchCountByRepository {
     """
     The id of the grouping.
     """

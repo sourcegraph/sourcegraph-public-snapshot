@@ -241,7 +241,7 @@ func TestGetVulberabilityMatchesCountByRepository(t *testing.T) {
 	}
 
 	// Test
-	args := shared.GetVulnerabilityMatchesGroupByRepositoryArgs{Limit: 10}
+	args := shared.GetVulnerabilityMatchesCountByRepositoryArgs{Limit: 10}
 	grouping, totalCount, err := store.GetVulnerabilityMatchesCountByRepository(ctx, args)
 	if err != nil {
 		t.Fatalf("unexpected error getting vulnerability matches: %s", err)

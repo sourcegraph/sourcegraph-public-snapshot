@@ -128,7 +128,7 @@ var flattenMatches = func(ms []shared.VulnerabilityMatch) []shared.Vulnerability
 }
 
 // GetVulnerabilityMatchesCountByRepository returns the number vulnerabilities matches count by repository
-func (s *store) GetVulnerabilityMatchesCountByRepository(ctx context.Context, args shared.GetVulnerabilityMatchesGroupByRepositoryArgs) (_ []shared.VulnerabilityMatchesByRepository, _ int, err error) {
+func (s *store) GetVulnerabilityMatchesCountByRepository(ctx context.Context, args shared.GetVulnerabilityMatchesCountByRepositoryArgs) (_ []shared.VulnerabilityMatchesByRepository, _ int, err error) {
 	ctx, _, endObservation := s.operations.getVulnerabilityMatchesCountByRepository.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
