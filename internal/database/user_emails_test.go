@@ -314,7 +314,7 @@ func TestUserEmails_Add_Remove(t *testing.T) {
 		t.Fatalf("got verified %v, want %v", verified, want)
 	}
 	err = db.UserEmails().Add(ctx, user.ID, emailB, nil)
-	require.EqualError(t, err, "email address already exists")
+	require.EqualError(t, err, "email address already registered for the user")
 
 	if emails, err := db.UserEmails().ListByUser(ctx, UserEmailsListOptions{
 		UserID: user.ID,
