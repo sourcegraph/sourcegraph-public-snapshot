@@ -713,20 +713,22 @@ func sanitizeToUTF8(s string) string {
 }
 
 func (s *gitserverRepoStore) SetCloningProgress(ctx context.Context, repoName api.RepoName, progressLine string) error {
-	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
+	res, err := s.ExecResult(ctx, sqlf.Sprintf(setCloningProgressQueryFmtstr, progressLine, repoName))
+	if err != nil {
+		return errors.Wrap(err, "failed to set cloning progress")
+	}
+	if nrows, err := res.RowsAffected(); err != nil {
+		return errors.Wrap(err, "failed to set cloning progress, cannot verify rows updated")
+	} else if nrows != 1 {
+		return errors.Newf("failed to set cloning progress, repo %q not found", repoName)
+	}
+	return nil
+}
+
+const setCloningProgressQueryFmtstr = `
 UPDATE gitserver_repos
 SET
 	cloning_progress = %s,
 	updated_at = NOW()
 WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
-`, progressLine, repoName))
-	if err != nil {
-		return errors.Wrap(err, "setting cloning progress")
-	}
-	if nrows, err := res.RowsAffected(); err != nil {
-		return errors.Wrap(err, "getting rows affected")
-	} else if nrows != 1 {
-		return errors.New("repo not found")
-	}
-	return nil
-}
+`

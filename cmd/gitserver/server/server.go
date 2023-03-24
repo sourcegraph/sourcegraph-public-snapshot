@@ -2452,12 +2452,9 @@ func readCloneProgress(ctx context.Context, db database.DB, logger log.Logger, r
 		if featureflag.FromContext(ctx).GetBoolOr("clone-progress-logging", false) &&
 			strings.Contains(redactedProgress, "%") &&
 			dbWritesLimiter.Allow() {
-			fmt.Println("feature flag")
 			if err := store.SetCloningProgress(ctx, repo, redactedProgress); err != nil {
 				logger.Error("error updating cloning progress in the db", log.Error(err))
 			}
-		} else {
-			fmt.Println("No feature flag!")
 		}
 	}
 	if err := scan.Err(); err != nil {

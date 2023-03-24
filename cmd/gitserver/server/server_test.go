@@ -544,8 +544,8 @@ func addCommitToRepo(cmd func(string, ...string) string) string {
 func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, db database.DB) *Server {
 	if db == nil {
 		mDB := database.NewMockDB()
-		gr := database.NewMockGitserverRepoStore()
-		mDB.GitserverReposFunc.SetDefaultReturn(gr)
+		mDB.GitserverReposFunc.SetDefaultReturn(database.NewMockGitserverRepoStore())
+		mDB.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
 		db = mDB
 	}
 	s := &Server{
