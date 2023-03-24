@@ -101,6 +101,65 @@ func NewSymbolInitialPathsJanitor(
 	})
 }
 
+const vacuumBatchSize = 100 // TODO - configure via envvar
+
+func NewAbandonedDefinitionsJanitor(
+	observationCtx *observation.Context,
+	store store.Store,
+	interval time.Duration,
+) goroutine.BackgroundRoutine {
+	name := "codeintel.ranking.abandoned-definitions-janitor"
+
+	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
+		Name:        name,
+		Description: "Removes definitions records for old graph keys.",
+		Interval:    interval,
+		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
+		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
+			numDeleted, err := vacuumStaleGraphs(ctx, store)
+			return numDeleted, numDeleted, err
+		},
+	})
+}
+
+func NewAbandonedReferencesJanitor(
+	observationCtx *observation.Context,
+	store store.Store,
+	interval time.Duration,
+) goroutine.BackgroundRoutine {
+	name := "codeintel.ranking.abandoned-references-janitor"
+
+	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
+		Name:        name,
+		Description: "Removes references records for old graph keys.",
+		Interval:    interval,
+		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
+		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
+			numDeleted, err := vacuumStaleGraphs(ctx, store)
+			return numDeleted, numDeleted, err
+		},
+	})
+}
+
+func NewAbandonedInitialCountsJanitor(
+	observationCtx *observation.Context,
+	store store.Store,
+	interval time.Duration,
+) goroutine.BackgroundRoutine {
+	name := "codeintel.ranking.abandoned-initial-counts-janitor"
+
+	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
+		Name:        name,
+		Description: "Removes initial count records for old graph keys.",
+		Interval:    interval,
+		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
+		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
+			numDeleted, err := vacuumStaleGraphs(ctx, store)
+			return numDeleted, numDeleted, err
+		},
+	})
+}
+
 func NewRankCountsJanitor(
 	observationCtx *observation.Context,
 	store store.Store,

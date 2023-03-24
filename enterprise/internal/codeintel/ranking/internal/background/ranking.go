@@ -167,12 +167,36 @@ func vacuumStaleInitialPaths(ctx context.Context, store store.Store) (int, int, 
 	return numPathRecordsScanned, numStalePathRecordsDeleted, err
 }
 
+func vacuumAbandonedDefinitions(ctx context.Context, store store.Store) (int, error) {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+		return 0, nil
+	}
+
+	return store.VacuumAbandonedDefinitions(ctx, rankingshared.GraphKey(), vacuumBatchSize)
+}
+
+func vacuumAbandonedReferences(ctx context.Context, store store.Store) (int, error) {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+		return 0, nil
+	}
+
+	return store.VacuumAbandonedReferences(ctx, rankingshared.GraphKey(), vacuumBatchSize)
+}
+
+func vacuumAbandonedInitialPathCounts(ctx context.Context, store store.Store) (int, error) {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+		return 0, nil
+	}
+
+	return store.VacuumAbandonedInitialPathCounts(ctx, rankingshared.GraphKey(), vacuumBatchSize)
+}
+
 func vacuumStaleGraphs(ctx context.Context, store store.Store) (int, error) {
 	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return 0, nil
 	}
 
-	return store.VacuumStaleGraphs(ctx, rankingshared.DerivativeGraphKeyFromTime(time.Now()))
+	return store.VacuumStaleGraphs(ctx, rankingshared.DerivativeGraphKeyFromTime(time.Now()), vacuumBatchSize)
 }
 
 func vacuumStaleRanks(ctx context.Context, store store.Store) (int, int, error) {
