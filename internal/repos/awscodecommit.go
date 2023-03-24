@@ -56,12 +56,12 @@ func newAWSCodeCommitSource(svc *types.ExternalService, c *schema.AWSCodeCommitC
 
 	cli, err := cf.Doer(httpcli.Opt{
 		Name: "AwsCodeCommitClientTransportOpt",
-		Apply: func(c *http.Client) error {
+		Apply: func(c *httpcli.Client) error {
 			tr := awshttp.NewBuildableClient().GetTransport()
 			if err := http2.ConfigureTransport(tr); err != nil {
 				return err
 			}
-			c.Transport = tr
+			c.SetTransport(tr)
 			wrapWithoutRedirect(c)
 
 			return nil
@@ -181,21 +181,16 @@ func (s *AWSCodeCommitSource) excludes(r *awscodecommit.Repository) bool {
 	return s.exclude(r.Name) || s.exclude(r.ID)
 }
 
-// The code below is copied from
-// github.com/aws/aws-sdk-go-v2@v0.11.0/aws/client.go so we use the same HTTP
-// client that AWS wants to use, but fits into our HTTP factory
+// The code below is copied & modified from
+// https://sourcegraph.com/github.com/aws/aws-sdk-go-v2@v0.11.0/-/blob/aws/client.go?L93
+// so we use the same HTTP client that AWS wants to use, but fits into our HTTP factory
 // pattern. Additionally we change wrapWithoutRedirect to mutate c instead of
 // returning a copy.
-func wrapWithoutRedirect(c *http.Client) {
-	tr := c.Transport
-	if tr == nil {
-		tr = http.DefaultTransport
-	}
-
-	c.CheckRedirect = limitedRedirect
-	c.Transport = stubBadHTTPRedirectTransport{
-		tr: tr,
-	}
+func wrapWithoutRedirect(c *httpcli.Client) {
+	c.Underlying.CheckRedirect = limitedRedirect
+	c.SetTransport(stubBadHTTPRedirectTransport{
+		tr: c.Transport(),
+	})
 }
 
 func limitedRedirect(r *http.Request, _ []*http.Request) error {

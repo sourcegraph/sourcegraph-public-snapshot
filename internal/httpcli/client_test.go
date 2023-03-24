@@ -174,22 +174,22 @@ func TestNewCertPool(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
 		certs  []string
-		cli    *http.Client
-		assert func(testing.TB, *http.Client)
+		cli    *Client
+		assert func(testing.TB, *Client)
 		err    string
 	}{
 		{
 			name:  "fails if transport isn't an http.Transport",
-			cli:   &http.Client{Transport: bogusTransport{}},
+			cli:   &Client{&http.Client{Transport: bogusTransport{}}},
 			certs: []string{cert},
 			err:   "httpcli.NewCertPoolOpt: http.Client.Transport cannot be cast as a *http.Transport: httpcli.bogusTransport",
 		},
 		{
 			name:  "pool is set to what is given",
-			cli:   &http.Client{Transport: &http.Transport{}},
+			cli:   &Client{&http.Client{Transport: &http.Transport{}}},
 			certs: []string{cert},
-			assert: func(t testing.TB, cli *http.Client) {
-				pool := cli.Transport.(*http.Transport).TLSClientConfig.RootCAs
+			assert: func(t testing.TB, cli *Client) {
+				pool := cli.Transport().(*http.Transport).TLSClientConfig.RootCAs
 				for _, have := range pool.Subjects() { //nolint:staticcheck // pool.Subjects, see https://github.com/golang/go/issues/46287
 					if bytes.Contains(have, []byte(subject)) {
 						return
@@ -227,31 +227,31 @@ func TestNewIdleConnTimeoutOpt(t *testing.T) {
 
 	for _, tc := range []struct {
 		name    string
-		cli     *http.Client
+		cli     *Client
 		timeout time.Duration
-		assert  func(testing.TB, *http.Client)
+		assert  func(testing.TB, *Client)
 		err     string
 	}{
 		{
 			name: "sets default transport if nil",
-			cli:  &http.Client{},
-			assert: func(t testing.TB, cli *http.Client) {
-				if cli.Transport == nil {
+			cli:  &Client{&http.Client{}},
+			assert: func(t testing.TB, cli *Client) {
+				if cli.Transport() == nil {
 					t.Fatal("transport wasn't set")
 				}
 			},
 		},
 		{
 			name: "fails if transport isn't an http.Transport",
-			cli:  &http.Client{Transport: bogusTransport{}},
+			cli:  &Client{&http.Client{Transport: bogusTransport{}}},
 			err:  "httpcli.NewIdleConnTimeoutOpt: http.Client.Transport cannot be cast as a *http.Transport: httpcli.bogusTransport",
 		},
 		{
 			name:    "IdleConnTimeout is set to what is given",
-			cli:     &http.Client{Transport: &http.Transport{}},
+			cli:     &Client{&http.Client{Transport: &http.Transport{}}},
 			timeout: timeout,
-			assert: func(t testing.TB, cli *http.Client) {
-				have := cli.Transport.(*http.Transport).IdleConnTimeout
+			assert: func(t testing.TB, cli *Client) {
+				have := cli.Transport().(*http.Transport).IdleConnTimeout
 				if want := timeout; !reflect.DeepEqual(have, want) {
 					t.Fatal(cmp.Diff(have, want))
 				}
@@ -259,15 +259,15 @@ func TestNewIdleConnTimeoutOpt(t *testing.T) {
 		},
 		{
 			name: "IdleConnTimeout is set to what is given on a wrapped transport",
-			cli: func() *http.Client {
-				return &http.Client{Transport: &wrappedTransport{
+			cli: func() *Client {
+				return &Client{&http.Client{Transport: &wrappedTransport{
 					RoundTripper: &actor.HTTPTransport{RoundTripper: originalRoundtripper},
 					Wrapped:      originalRoundtripper,
-				}}
+				}}}
 			}(),
 			timeout: timeout,
-			assert: func(t testing.TB, cli *http.Client) {
-				unwrapped := unwrapAll(cli.Transport.(WrappedTransport))
+			assert: func(t testing.TB, cli *Client) {
+				unwrapped := unwrapAll(cli.Transport().(WrappedTransport))
 				have := (*unwrapped).(*http.Transport).IdleConnTimeout
 
 				// Timeout is set on the underlying transport
@@ -300,15 +300,15 @@ func TestNewIdleConnTimeoutOpt(t *testing.T) {
 }
 
 func TestNewTimeoutOpt(t *testing.T) {
-	var cli http.Client
+	cli := &Client{&http.Client{}}
 
 	timeout := 42 * time.Second
-	err := NewTimeoutOpt(timeout).Apply(&cli)
+	err := NewTimeoutOpt(timeout).Apply(cli)
 	if err != nil {
 		t.Fatalf("unexpected error %v", err)
 	}
 
-	if have, want := cli.Timeout, timeout; have != want {
+	if have, want := cli.Underlying.Timeout, timeout; have != want {
 		t.Errorf("have Timeout %s, want %s", have, want)
 	}
 }
@@ -400,13 +400,13 @@ func TestErrorResilience(t *testing.T) {
 			NewMiddleware(
 				ContextErrorMiddleware,
 			),
-			Opt{Apply: func(cli *http.Client) error {
+			Opt{Apply: func(cli *Client) error {
 				// Some DNS servers do not respect RFC 6761 section 6.4, so we
 				// hardcode what go returns for DNS not found to avoid
 				// flakiness across machines. However, CI correctly respects
 				// this so we continue to run against a real DNS server on CI.
 				if os.Getenv("CI") == "" {
-					cli.Transport = notFoundTransport{}
+					cli.SetTransport(notFoundTransport{})
 				}
 				return nil
 			}},
@@ -466,8 +466,8 @@ func TestLoggingMiddleware(t *testing.T) {
 				ContextErrorMiddleware,
 				NewLoggingMiddleware(logger),
 			),
-			Opt{Apply: func(c *http.Client) error {
-				c.Transport = &notFoundTransport{} // returns an error
+			Opt{Apply: func(c *Client) error {
+				c.SetTransport(&notFoundTransport{}) // returns an error
 				return nil
 			}},
 		).Doer()

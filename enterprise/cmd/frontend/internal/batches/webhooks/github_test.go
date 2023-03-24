@@ -81,7 +81,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 
 		githubSrc, err := repos.NewGithubSource(ctx, logtest.Scoped(t), db.ExternalServices(), extSvc, cf)
 		if err != nil {
-			t.Fatal(t)
+			t.Fatal(err)
 		}
 
 		githubRepo, err := githubSrc.GetRepo(ctx, "sourcegraph/sourcegraph")

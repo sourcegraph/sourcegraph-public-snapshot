@@ -3,7 +3,6 @@ package awskms
 import (
 	"context"
 	"flag"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -40,8 +39,8 @@ func TestRoundtrip(t *testing.T) {
 
 	// Create http cli with aws defaults.
 	cli, err := cf.Doer(httpcli.Opt{
-		Apply: func(c *http.Client) error {
-			c.Transport = awshttp.NewBuildableClient().GetTransport()
+		Apply: func(c *httpcli.Client) error {
+			c.SetTransport(awshttp.NewBuildableClient().GetTransport())
 			return nil
 		},
 	})

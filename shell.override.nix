@@ -1,0 +1,3 @@
+{
+  SHELL = "/usr/bin/fish";
+}

@@ -42,14 +42,10 @@ func NewRecorder(file string, record bool, filters ...cassette.Filter) (*recorde
 func NewRecorderOpt(rec *recorder.Recorder) httpcli.Opt {
 	return httpcli.Opt{
 		Name: "RecorderOpt",
-		Apply: func(c *http.Client) error {
-			tr := c.Transport
-			if tr == nil {
-				tr = http.DefaultTransport
-			}
-
+		Apply: func(c *httpcli.Client) error {
+			tr := c.Transport()
 			rec.SetTransport(tr)
-			c.Transport = rec
+			c.SetTransport(rec)
 
 			return nil
 		},

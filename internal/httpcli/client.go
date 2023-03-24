@@ -34,6 +34,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// Client wraps an underlying http.Client with convenience methods for
+// our client factories. Underlying should only be used if necessary, always
+// use the methods for fetching and setting the transport.
+type Client struct {
+	Underlying *http.Client
+}
+
+// Transport returns the underlying transport. Prefer this over
+// the c.cli.Transport field
+func (c *Client) Transport() http.RoundTripper {
+	return c.Underlying.Transport
+}
+
+func (c *Client) SetTransport(t http.RoundTripper) {
+	c.Underlying.Transport = &wrappedTransport{
+		RoundTripper: t,
+		Wrapped:      c.Underlying.Transport,
+	}
+}
+
 // A Doer captures the Do method of an http.Client. It facilitates decorating
 // an http.Client with orthogonal concerns such as logging, metrics, retries,
 // etc.
@@ -70,7 +90,7 @@ func NewMiddleware(mws ...Middleware) Middleware {
 // returning an error in case of failure.
 type Opt struct {
 	Name  string
-	Apply func(*http.Client) error
+	Apply func(*Client) error
 }
 
 // A Factory constructs an http.Client with the given functional
@@ -244,11 +264,14 @@ func (f Factory) Client(extras ...Opt) (*http.Client, error) {
 		opts[opt.Name] = opt
 	}
 
-	var cli http.Client
+	cli := http.Client{
+		// this _must_ be set, opts may assume non-nil transport.
+		Transport: http.DefaultTransport,
+	}
 	var err error
 
 	for _, opt := range opts {
-		err = errors.Append(err, opt.Apply(&cli))
+		err = errors.Append(err, opt.Apply(&Client{&cli}))
 	}
 
 	return &cli, err
@@ -397,16 +420,13 @@ func NewLoggingMiddleware(logger log.Logger) Middleware {
 // TLS/SSL settings.
 var ExternalTransportOpt = Opt{
 	Name: "ExternalTransportOpt",
-	Apply: func(cli *http.Client) error {
+	Apply: func(cli *Client) error {
 		tr, err := getTransportForMutation(cli)
 		if err != nil {
 			return errors.Wrap(err, "httpcli.ExternalTransportOpt")
 		}
 
-		cli.Transport = &wrappedTransport{
-			RoundTripper: &externalTransport{base: tr},
-			Wrapped:      tr,
-		}
+		cli.SetTransport(&externalTransport{base: tr})
 		return nil
 	},
 }
@@ -416,7 +436,7 @@ var ExternalTransportOpt = Opt{
 func NewCertPoolOpt(certs ...string) Opt {
 	return Opt{
 		Name: "CertPoolOpt",
-		Apply: func(cli *http.Client) error {
+		Apply: func(cli *Client) error {
 			if len(certs) == 0 {
 				return nil
 			}
@@ -452,19 +472,12 @@ func NewCertPoolOpt(certs ...string) Opt {
 func NewCachedTransportOpt(c httpcache.Cache, markCachedResponses bool) Opt {
 	return Opt{
 		Name: "CachedTransportOpt",
-		Apply: func(cli *http.Client) error {
-			if cli.Transport == nil {
-				cli.Transport = http.DefaultTransport
-			}
-
-			cli.Transport = &wrappedTransport{
-				RoundTripper: &httpcache.Transport{
-					Transport:           cli.Transport,
-					Cache:               c,
-					MarkCachedResponses: markCachedResponses,
-				},
-				Wrapped: cli.Transport,
-			}
+		Apply: func(cli *Client) error {
+			cli.SetTransport(&httpcache.Transport{
+				Transport:           cli.Transport(),
+				Cache:               c,
+				MarkCachedResponses: markCachedResponses,
+			})
 
 			return nil
 		},
@@ -475,15 +488,8 @@ func NewCachedTransportOpt(c httpcache.Cache, markCachedResponses bool) Opt {
 // tracing functionality.
 var TracedTransportOpt = Opt{
 	Name: "TracedTransportOpt",
-	Apply: func(cli *http.Client) error {
-		if cli.Transport == nil {
-			cli.Transport = http.DefaultTransport
-		}
-
-		cli.Transport = &wrappedTransport{
-			RoundTripper: &policy.Transport{RoundTripper: cli.Transport},
-			Wrapped:      cli.Transport,
-		}
+	Apply: func(cli *Client) error {
+		cli.SetTransport(&policy.Transport{RoundTripper: cli.Transport()})
 		return nil
 	},
 }
@@ -503,20 +509,13 @@ func MeteredTransportOpt(subsystem string) Opt {
 
 	return Opt{
 		Name: "MeteredTransportOpt",
-		Apply: func(cli *http.Client) error {
-			if cli.Transport == nil {
-				cli.Transport = http.DefaultTransport
-			}
-
-			cli.Transport = &wrappedTransport{
-				RoundTripper: meter.Transport(cli.Transport, func(u *url.URL) string {
-					// We don't have a way to return a low cardinality label here (for
-					// the prometheus label "category"). Previously we returned u.Path
-					// but that blew up prometheus. So we just return unknown.
-					return "unknown"
-				}),
-				Wrapped: cli.Transport,
-			}
+		Apply: func(cli *Client) error {
+			cli.SetTransport(meter.Transport(cli.Transport(), func(u *url.URL) string {
+				// We don't have a way to return a low cardinality label here (for
+				// the prometheus label "category"). Previously we returned u.Path
+				// but that blew up prometheus. So we just return unknown.
+				return "unknown"
+			}))
 
 			return nil
 		},
@@ -680,15 +679,8 @@ func ExpJitterDelay(base, max time.Duration) rehttp.DelayFn {
 func NewErrorResilientTransportOpt(retry rehttp.RetryFn, delay rehttp.DelayFn) Opt {
 	return Opt{
 		Name: "ErrorResilientTransportOpt",
-		Apply: func(cli *http.Client) error {
-			if cli.Transport == nil {
-				cli.Transport = http.DefaultTransport
-			}
-
-			cli.Transport = &wrappedTransport{
-				RoundTripper: rehttp.NewTransport(cli.Transport, retry, delay),
-				Wrapped:      cli.Transport,
-			}
+		Apply: func(cli *Client) error {
+			cli.SetTransport(rehttp.NewTransport(cli.Transport(), retry, delay))
 			return nil
 		},
 	}
@@ -699,7 +691,7 @@ func NewErrorResilientTransportOpt(retry rehttp.RetryFn, delay rehttp.DelayFn) O
 func NewIdleConnTimeoutOpt(timeout time.Duration) Opt {
 	return Opt{
 		Name: "IdleConnTimeoutOpt",
-		Apply: func(cli *http.Client) error {
+		Apply: func(cli *Client) error {
 			tr, err := getTransportForMutation(cli)
 			if err != nil {
 				return errors.Wrap(err, "httpcli.NewIdleConnTimeoutOpt")
@@ -717,7 +709,7 @@ func NewIdleConnTimeoutOpt(timeout time.Duration) Opt {
 func NewMaxIdleConnsPerHostOpt(max int) Opt {
 	return Opt{
 		Name: "MaxIdleConnsPerHostOpt",
-		Apply: func(cli *http.Client) error {
+		Apply: func(cli *Client) error {
 			tr, err := getTransportForMutation(cli)
 			if err != nil {
 				return errors.Wrap(err, "httpcli.NewMaxIdleConnsOpt")
@@ -734,9 +726,9 @@ func NewMaxIdleConnsPerHostOpt(max int) Opt {
 func NewTimeoutOpt(timeout time.Duration) Opt {
 	return Opt{
 		Name: "TimeoutOpt",
-		Apply: func(cli *http.Client) error {
+		Apply: func(cli *Client) error {
 			if timeout > 0 {
-				cli.Timeout = timeout
+				cli.Underlying.Timeout = timeout
 			}
 			return nil
 		},
@@ -748,32 +740,32 @@ func NewTimeoutOpt(timeout time.Duration) Opt {
 // updated to a copy of the DefaultTransport.
 //
 // Use this function when you intend on mutating the transport.
-func getTransportForMutation(cli *http.Client) (*http.Transport, error) {
-	if cli.Transport == nil {
-		cli.Transport = http.DefaultTransport
+func getTransportForMutation(cli *Client) (*http.Transport, error) {
+	if cli.Underlying.Transport == nil {
+		cli.Underlying.Transport = http.DefaultTransport
 	}
 
 	// Try to get the underlying, concrete *http.Transport implementation, copy it, and
 	// replace it.
 	var transport *http.Transport
-	switch v := cli.Transport.(type) {
+	switch v := cli.Underlying.Transport.(type) {
 	case *http.Transport:
 		transport = v.Clone()
 		// Replace underlying implementation
-		cli.Transport = transport
+		cli.Underlying.Transport = transport
 
 	case WrappedTransport:
 		wrapped := unwrapAll(v)
 		t, ok := (*wrapped).(*http.Transport)
 		if !ok {
-			return nil, errors.Errorf("http.Client.Transport cannot be unwrapped as *http.Transport: %T", cli.Transport)
+			return nil, errors.Errorf("http.Client.Transport cannot be unwrapped as *http.Transport: %T", cli.Underlying.Transport)
 		}
 		transport = t.Clone()
 		// Replace underlying implementation
 		*wrapped = transport
 
 	default:
-		return nil, errors.Errorf("http.Client.Transport cannot be cast as a *http.Transport: %T", cli.Transport)
+		return nil, errors.Errorf("http.Client.Transport cannot be cast as a *http.Transport: %T", cli.Underlying.Transport)
 	}
 
 	return transport, nil
@@ -785,15 +777,8 @@ func getTransportForMutation(cli *http.Client) (*http.Transport, error) {
 // Servers can use actor.HTTPMiddleware to populate actor context from incoming requests.
 var ActorTransportOpt = Opt{
 	Name: "ActorTransportOpt",
-	Apply: func(cli *http.Client) error {
-		if cli.Transport == nil {
-			cli.Transport = http.DefaultTransport
-		}
-
-		cli.Transport = &wrappedTransport{
-			RoundTripper: &actor.HTTPTransport{RoundTripper: cli.Transport},
-			Wrapped:      cli.Transport,
-		}
+	Apply: func(cli *Client) error {
+		cli.SetTransport(&actor.HTTPTransport{RoundTripper: cli.Transport()})
 
 		return nil
 	},
@@ -805,15 +790,8 @@ var ActorTransportOpt = Opt{
 // Servers can use requestclient.HTTPMiddleware to populate client context from incoming requests.
 var RequestClientTransportOpt = Opt{
 	Name: "RequestClientTransportOpt",
-	Apply: func(cli *http.Client) error {
-		if cli.Transport == nil {
-			cli.Transport = http.DefaultTransport
-		}
-
-		cli.Transport = &wrappedTransport{
-			RoundTripper: &requestclient.HTTPTransport{RoundTripper: cli.Transport},
-			Wrapped:      cli.Transport,
-		}
+	Apply: func(cli *Client) error {
+		cli.SetTransport(&requestclient.HTTPTransport{RoundTripper: cli.Transport()})
 
 		return nil
 	},
