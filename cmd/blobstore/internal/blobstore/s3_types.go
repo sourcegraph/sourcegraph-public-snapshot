@@ -85,6 +85,18 @@ type s3ListBucketResult struct {
 	StartAfter            string
 }
 
+type s3ObjectIdentifier struct {
+	XMLName   xml.Name `xml:"Object"`
+	Key       string
+	VersionId string
+}
+
+type s3DeleteObjectsRequest struct {
+	XMLName xml.Name `xml:"Delete"`
+	Object  []s3ObjectIdentifier
+	Quiet   bool
+}
+
 func writeS3Error(w http.ResponseWriter, code, bucketName string, err error, statusCode int) error {
 	return writeXML(w, statusCode,
 		s3Error{Code: code},
