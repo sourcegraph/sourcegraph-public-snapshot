@@ -57,6 +57,17 @@ Now that Cody is turned on on your Sourcegraph instance, any user can configure 
 You're all set!
 
 
+### Step 3: Try Cody!
+
+A few things you can ask Cody:
+
+- "What are popular go libraries for building CLIs?"
+- Open your workspace, and ask "Do we have a React date picker component in this repository?"
+- Right click on a function, and ask Cody to explain it
+- Try any of the Cody recipes!
+
+<img width="510" alt="image" src="https://user-images.githubusercontent.com/25070988/227511383-aa60f074-817d-4875-af41-54558dfe1951.png">
+
 ## Embeddings
 
 Embeddings are a semantic representation of text. Embeddings are usually floating-point vectors with 256+ elements. The useful thing about embeddings is that they allow us to search over textual information using a semantic correlation between the query and the text, not just syntactic (matching keywords). We are using embeddings to create a search index over an entire codebase which allows us to perform natural language code search over the codebase. Indexing involves splitting the **entire codebase** into searchable chunks, and sending them to the external service specified in the site config for embedding. The final embedding index is stored in a managed object storage service. The available storage configurations are listed in the next section.
