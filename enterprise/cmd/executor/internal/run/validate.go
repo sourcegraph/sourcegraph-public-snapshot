@@ -85,14 +85,14 @@ func validateAuthorizationToken(ctx context.Context, options apiclient.BaseClien
 		return err
 	}
 
-	req, err := client.NewRequest(0, "", http.MethodGet, ".executors/test/auth", nil)
+	req, err := client.NewJSONRequest(http.MethodGet, ".executors/test/auth", nil)
 	if err != nil {
 		return err
 	}
 
 	if err = client.DoAndDrop(ctx, req); err != nil {
 		var unexpectedStatusCodeError *apiclient.UnexpectedStatusCodeErr
-		if errors.As(err, &unexpectedStatusCodeError) && (unexpectedStatusCodeError.StatusCode == http.StatusUnauthorized || unexpectedStatusCodeError.StatusCode == http.StatusForbidden) {
+		if errors.As(err, &unexpectedStatusCodeError) && (unexpectedStatusCodeError.StatusCode == http.StatusUnauthorized) {
 			return authorizationFailedErr
 		} else {
 			return errors.Wrap(err, "failed to validate authorization token")
