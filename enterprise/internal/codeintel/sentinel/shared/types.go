@@ -63,3 +63,11 @@ type VulnerabilityMatch struct {
 	VulnerabilityID int
 	AffectedPackage AffectedPackage
 }
+
+type GetVulnerabilityMatchesSummaryCounts struct {
+	Critical     int32
+	High         int32
+	Medium       int32
+	Low          int32
+	Repositories int32
+}

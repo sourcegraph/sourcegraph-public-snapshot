@@ -127,6 +127,48 @@ var flattenMatches = func(ms []shared.VulnerabilityMatch) []shared.Vulnerability
 	return flattened
 }
 
+func (s *store) GetVulnerabilityMatchesSummaryCount(ctx context.Context) (counts shared.GetVulnerabilityMatchesSummaryCounts, err error) {
+	ctx, _, endObservation := s.operations.getVulnerabilityMatchesSummaryCounts.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	row := s.db.QueryRow(ctx, sqlf.Sprintf(getVulnerabilityMatchesSummaryCounts))
+	err = row.Scan(
+		&counts.High,
+		&counts.Medium,
+		&counts.Low,
+		&counts.Critical,
+		&counts.Repositories,
+	)
+	if err != nil {
+		return shared.GetVulnerabilityMatchesSummaryCounts{}, err
+	}
+
+	return counts, nil
+}
+
+const getVulnerabilityMatchesSummaryCounts = `
+	WITH limited_matches AS (
+	SELECT
+		m.id,
+		m.upload_id,
+		m.vulnerability_affected_package_id
+	FROM vulnerability_matches m
+	ORDER BY id
+)
+SELECT
+  sum(case when vul.severity = 'HIGH' then 1 else 0 end) as high,
+  sum(case when vul.severity = 'MEDIUM' then 1 else 0 end) as medium,
+  sum(case when vul.severity = 'LOW' then 1 else 0 end) as low,
+  sum(case when vul.severity = 'CRITICAL' then 1 else 0 end) as critical,
+  count(distinct r.name) as repositories
+FROM limited_matches m
+LEFT JOIN vulnerability_affected_packages vap ON vap.id = m.vulnerability_affected_package_id
+LEFT JOIN vulnerability_affected_symbols vas ON vas.vulnerability_affected_package_id = vap.id
+LEFT JOIN vulnerabilities vul ON vap.vulnerability_id = vul.id
+LEFT JOIN lsif_uploads lu ON lu.id = m.upload_id
+LEFT JOIN repo r ON r.id = lu.repository_id
+`
+
 var scanVulnerabilityMatchesAndCount = func(rows basestore.Rows, queryErr error) ([]shared.VulnerabilityMatch, int, error) {
 	matches, totalCount, err := basestore.NewSliceWithCountScanner(func(s dbutil.Scanner) (match shared.VulnerabilityMatch, count int, _ error) {
 		var (
