@@ -337,7 +337,7 @@ unprocessed_path_counts AS (
 	SELECT
 		ipr.id,
 		ipr.upload_id,
-		ipr.document_path,
+		unnest(ipr.document_paths) AS document_path,
 		ipr.graph_key
 	FROM codeintel_initial_path_ranks ipr
 	WHERE
@@ -434,10 +434,10 @@ ON COMMIT DROP
 `
 
 const insertInitialPathRankCountsQuery = `
-INSERT INTO codeintel_initial_path_ranks (upload_id, document_path, graph_key)
+INSERT INTO codeintel_initial_path_ranks (upload_id, document_paths, graph_key)
 	SELECT
 		%s,
-		document_path,
+		array_agg(document_path),
 		%s
 	FROM t_codeintel_initial_path_ranks
 `

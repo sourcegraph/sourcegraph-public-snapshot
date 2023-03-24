@@ -522,12 +522,8 @@ func TestVacuumStaleInitialPaths(t *testing.T) {
 	insertVisibleAtTip(t, db, 50, 2)
 
 	// remove path counts for non-visible uploads
-	_, numRecordsDeleted, err := store.VacuumStaleInitialPaths(ctx, mockRankingGraphKey)
-	if err != nil {
+	if _, _, err := store.VacuumStaleInitialPaths(ctx, mockRankingGraphKey); err != nil {
 		t.Fatalf("unexpected error vacuuming stale initial counts: %s", err)
-	}
-	if expected := 6; numRecordsDeleted != expected {
-		t.Fatalf("unexpected number of initial count records deleted. want=%d have=%d", expected, numRecordsDeleted)
 	}
 
 	// only upload 2's entries remain
@@ -651,14 +647,14 @@ func TestVacuumAbandonedInitialPathCounts(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO codeintel_initial_path_ranks (upload_id, document_path, graph_key)
-		SELECT 50, '', $1 FROM generate_series(1, 30)
+		INSERT INTO codeintel_initial_path_ranks (upload_id, document_paths, graph_key)
+		SELECT 50, '{"test"}', $1 FROM generate_series(1, 30)
 	`, mockRankingGraphKey); err != nil {
 		t.Fatalf("failed to insert ranking path count inputs: %s", err)
 	}
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO codeintel_initial_path_ranks (upload_id, document_path, graph_key)
-		SELECT 50, '', $1 FROM generate_series(1, 60)
+		INSERT INTO codeintel_initial_path_ranks (upload_id, document_paths, graph_key)
+		SELECT 50, '{"test"}', $1 FROM generate_series(1, 60)
 	`, mockRankingGraphKey+"-abandoned"); err != nil {
 		t.Fatalf("failed to insert ranking path count inputs: %s", err)
 	}
@@ -929,9 +925,13 @@ func getInitialPathRanks(
 	graphKey string,
 ) (pathRanks []initialPathRanks, err error) {
 	query := sqlf.Sprintf(`
-		SELECT upload_id, document_path
-		FROM codeintel_initial_path_ranks
-		WHERE graph_key LIKE %s || '%%'
+		SELECT upload_id, document_path FROM (
+			SELECT
+				upload_id,
+				unnest(document_paths) AS document_path
+			FROM codeintel_initial_path_ranks
+			WHERE graph_key LIKE %s || '%%'
+		)s
 		GROUP BY upload_id, document_path
 		ORDER BY upload_id, document_path
 	`, graphKey)
