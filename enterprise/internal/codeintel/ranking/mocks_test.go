@@ -131,7 +131,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		InsertDefinitionsForRankingFunc: &StoreInsertDefinitionsForRankingFunc{
-			defaultHook: func(context.Context, string, int, []shared.RankingDefinitions) (r0 error) {
+			defaultHook: func(context.Context, string, chan shared.RankingDefinitions) (r0 error) {
 				return
 			},
 		},
@@ -156,7 +156,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		InsertReferencesForRankingFunc: &StoreInsertReferencesForRankingFunc{
-			defaultHook: func(context.Context, string, int, shared.RankingReferences) (r0 error) {
+			defaultHook: func(context.Context, string, int, int, chan string) (r0 error) {
 				return
 			},
 		},
@@ -253,7 +253,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		InsertDefinitionsForRankingFunc: &StoreInsertDefinitionsForRankingFunc{
-			defaultHook: func(context.Context, string, int, []shared.RankingDefinitions) error {
+			defaultHook: func(context.Context, string, chan shared.RankingDefinitions) error {
 				panic("unexpected invocation of MockStore.InsertDefinitionsForRanking")
 			},
 		},
@@ -278,7 +278,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		InsertReferencesForRankingFunc: &StoreInsertReferencesForRankingFunc{
-			defaultHook: func(context.Context, string, int, shared.RankingReferences) error {
+			defaultHook: func(context.Context, string, int, int, chan string) error {
 				panic("unexpected invocation of MockStore.InsertReferencesForRanking")
 			},
 		},
@@ -966,24 +966,24 @@ func (c StoreGetUploadsForRankingFuncCall) Results() []interface{} {
 // InsertDefinitionsForRanking method of the parent MockStore instance is
 // invoked.
 type StoreInsertDefinitionsForRankingFunc struct {
-	defaultHook func(context.Context, string, int, []shared.RankingDefinitions) error
-	hooks       []func(context.Context, string, int, []shared.RankingDefinitions) error
+	defaultHook func(context.Context, string, chan shared.RankingDefinitions) error
+	hooks       []func(context.Context, string, chan shared.RankingDefinitions) error
 	history     []StoreInsertDefinitionsForRankingFuncCall
 	mutex       sync.Mutex
 }
 
 // InsertDefinitionsForRanking delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockStore) InsertDefinitionsForRanking(v0 context.Context, v1 string, v2 int, v3 []shared.RankingDefinitions) error {
-	r0 := m.InsertDefinitionsForRankingFunc.nextHook()(v0, v1, v2, v3)
-	m.InsertDefinitionsForRankingFunc.appendCall(StoreInsertDefinitionsForRankingFuncCall{v0, v1, v2, v3, r0})
+func (m *MockStore) InsertDefinitionsForRanking(v0 context.Context, v1 string, v2 chan shared.RankingDefinitions) error {
+	r0 := m.InsertDefinitionsForRankingFunc.nextHook()(v0, v1, v2)
+	m.InsertDefinitionsForRankingFunc.appendCall(StoreInsertDefinitionsForRankingFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
 // InsertDefinitionsForRanking method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreInsertDefinitionsForRankingFunc) SetDefaultHook(hook func(context.Context, string, int, []shared.RankingDefinitions) error) {
+func (f *StoreInsertDefinitionsForRankingFunc) SetDefaultHook(hook func(context.Context, string, chan shared.RankingDefinitions) error) {
 	f.defaultHook = hook
 }
 
@@ -992,7 +992,7 @@ func (f *StoreInsertDefinitionsForRankingFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *StoreInsertDefinitionsForRankingFunc) PushHook(hook func(context.Context, string, int, []shared.RankingDefinitions) error) {
+func (f *StoreInsertDefinitionsForRankingFunc) PushHook(hook func(context.Context, string, chan shared.RankingDefinitions) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1001,19 +1001,19 @@ func (f *StoreInsertDefinitionsForRankingFunc) PushHook(hook func(context.Contex
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreInsertDefinitionsForRankingFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, int, []shared.RankingDefinitions) error {
+	f.SetDefaultHook(func(context.Context, string, chan shared.RankingDefinitions) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreInsertDefinitionsForRankingFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, int, []shared.RankingDefinitions) error {
+	f.PushHook(func(context.Context, string, chan shared.RankingDefinitions) error {
 		return r0
 	})
 }
 
-func (f *StoreInsertDefinitionsForRankingFunc) nextHook() func(context.Context, string, int, []shared.RankingDefinitions) error {
+func (f *StoreInsertDefinitionsForRankingFunc) nextHook() func(context.Context, string, chan shared.RankingDefinitions) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1055,10 +1055,7 @@ type StoreInsertDefinitionsForRankingFuncCall struct {
 	Arg1 string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 int
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 []shared.RankingDefinitions
+	Arg2 chan shared.RankingDefinitions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -1067,7 +1064,7 @@ type StoreInsertDefinitionsForRankingFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreInsertDefinitionsForRankingFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
@@ -1535,24 +1532,24 @@ func (c StoreInsertPathRanksFuncCall) Results() []interface{} {
 // InsertReferencesForRanking method of the parent MockStore instance is
 // invoked.
 type StoreInsertReferencesForRankingFunc struct {
-	defaultHook func(context.Context, string, int, shared.RankingReferences) error
-	hooks       []func(context.Context, string, int, shared.RankingReferences) error
+	defaultHook func(context.Context, string, int, int, chan string) error
+	hooks       []func(context.Context, string, int, int, chan string) error
 	history     []StoreInsertReferencesForRankingFuncCall
 	mutex       sync.Mutex
 }
 
 // InsertReferencesForRanking delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockStore) InsertReferencesForRanking(v0 context.Context, v1 string, v2 int, v3 shared.RankingReferences) error {
-	r0 := m.InsertReferencesForRankingFunc.nextHook()(v0, v1, v2, v3)
-	m.InsertReferencesForRankingFunc.appendCall(StoreInsertReferencesForRankingFuncCall{v0, v1, v2, v3, r0})
+func (m *MockStore) InsertReferencesForRanking(v0 context.Context, v1 string, v2 int, v3 int, v4 chan string) error {
+	r0 := m.InsertReferencesForRankingFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.InsertReferencesForRankingFunc.appendCall(StoreInsertReferencesForRankingFuncCall{v0, v1, v2, v3, v4, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
 // InsertReferencesForRanking method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreInsertReferencesForRankingFunc) SetDefaultHook(hook func(context.Context, string, int, shared.RankingReferences) error) {
+func (f *StoreInsertReferencesForRankingFunc) SetDefaultHook(hook func(context.Context, string, int, int, chan string) error) {
 	f.defaultHook = hook
 }
 
@@ -1561,7 +1558,7 @@ func (f *StoreInsertReferencesForRankingFunc) SetDefaultHook(hook func(context.C
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *StoreInsertReferencesForRankingFunc) PushHook(hook func(context.Context, string, int, shared.RankingReferences) error) {
+func (f *StoreInsertReferencesForRankingFunc) PushHook(hook func(context.Context, string, int, int, chan string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1570,19 +1567,19 @@ func (f *StoreInsertReferencesForRankingFunc) PushHook(hook func(context.Context
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreInsertReferencesForRankingFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, int, shared.RankingReferences) error {
+	f.SetDefaultHook(func(context.Context, string, int, int, chan string) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreInsertReferencesForRankingFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, int, shared.RankingReferences) error {
+	f.PushHook(func(context.Context, string, int, int, chan string) error {
 		return r0
 	})
 }
 
-func (f *StoreInsertReferencesForRankingFunc) nextHook() func(context.Context, string, int, shared.RankingReferences) error {
+func (f *StoreInsertReferencesForRankingFunc) nextHook() func(context.Context, string, int, int, chan string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1627,7 +1624,10 @@ type StoreInsertReferencesForRankingFuncCall struct {
 	Arg2 int
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 shared.RankingReferences
+	Arg3 int
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 chan string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -1636,7 +1636,7 @@ type StoreInsertReferencesForRankingFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreInsertReferencesForRankingFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this

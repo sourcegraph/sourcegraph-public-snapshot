@@ -19,8 +19,7 @@ import (
 func (s *store) InsertDefinitionsForRanking(
 	ctx context.Context,
 	rankingGraphKey string,
-	rankingBatchNumber int,
-	definitions []shared.RankingDefinitions,
+	definitions chan shared.RankingDefinitions,
 ) (err error) {
 	ctx, _, endObservation := s.operations.insertDefinitionsForRanking.With(
 		ctx,
@@ -36,20 +35,8 @@ func (s *store) InsertDefinitionsForRanking(
 	defer func() { err = tx.Done(err) }()
 
 	inserter := func(inserter *batch.Inserter) error {
-		batchDefinitions := make([]shared.RankingDefinitions, 0, rankingBatchNumber)
-		for _, def := range definitions {
-			batchDefinitions = append(batchDefinitions, def)
-
-			if len(batchDefinitions) == rankingBatchNumber {
-				if err := insertDefinitions(ctx, inserter, rankingGraphKey, batchDefinitions); err != nil {
-					return err
-				}
-				batchDefinitions = make([]shared.RankingDefinitions, 0, rankingBatchNumber)
-			}
-		}
-
-		if len(batchDefinitions) > 0 {
-			if err := insertDefinitions(ctx, inserter, rankingGraphKey, batchDefinitions); err != nil {
+		for definition := range definitions {
+			if err := inserter.Insert(ctx, definition.UploadID, definition.SymbolName, definition.DocumentPath, rankingGraphKey); err != nil {
 				return err
 			}
 		}
@@ -76,31 +63,12 @@ func (s *store) InsertDefinitionsForRanking(
 	return nil
 }
 
-func insertDefinitions(
-	ctx context.Context,
-	inserter *batch.Inserter,
-	rankingGraphKey string,
-	definitions []shared.RankingDefinitions,
-) error {
-	for _, def := range definitions {
-		if err := inserter.Insert(
-			ctx,
-			def.UploadID,
-			def.SymbolName,
-			def.DocumentPath,
-			rankingGraphKey,
-		); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (s *store) InsertReferencesForRanking(
 	ctx context.Context,
 	rankingGraphKey string,
-	rankingBatchNumber int,
-	references shared.RankingReferences,
+	batchSize int,
+	uploadID int,
+	references chan string,
 ) (err error) {
 	ctx, _, endObservation := s.operations.insertReferencesForRanking.With(
 		ctx,
@@ -116,20 +84,8 @@ func (s *store) InsertReferencesForRanking(
 	defer func() { err = tx.Done(err) }()
 
 	inserter := func(inserter *batch.Inserter) error {
-		batchSymbolNames := make([]string, 0, rankingBatchNumber)
-		for _, ref := range references.SymbolNames {
-			batchSymbolNames = append(batchSymbolNames, ref)
-
-			if len(batchSymbolNames) == rankingBatchNumber {
-				if err := inserter.Insert(ctx, references.UploadID, pq.Array(batchSymbolNames), rankingGraphKey); err != nil {
-					return err
-				}
-				batchSymbolNames = make([]string, 0, rankingBatchNumber)
-			}
-		}
-
-		if len(batchSymbolNames) > 0 {
-			if err := inserter.Insert(ctx, references.UploadID, pq.Array(batchSymbolNames), rankingGraphKey); err != nil {
+		for symbols := range batchChannel(references, batchSize) {
+			if err := inserter.Insert(ctx, uploadID, pq.Array(symbols), rankingGraphKey); err != nil {
 				return err
 			}
 		}
@@ -933,3 +889,26 @@ SELECT
 	(SELECT COUNT(*) FROM locked_records),
 	(SELECT COUNT(*) FROM del)
 `
+
+func batchChannel[T any](ch <-chan T, batchSize int) <-chan []T {
+	batches := make(chan []T)
+	go func() {
+		defer close(batches)
+
+		batch := make([]T, 0, batchSize)
+		for value := range ch {
+			batch = append(batch, value)
+
+			if len(batch) == batchSize {
+				batches <- batch
+				batch = make([]T, 0, batchSize)
+			}
+		}
+
+		if len(batch) > 0 {
+			batches <- batch
+		}
+	}()
+
+	return batches
+}
