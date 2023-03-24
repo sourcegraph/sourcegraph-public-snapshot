@@ -19,13 +19,29 @@ import { getSeriesData, getMinMaxBoundaries } from './utils'
 
 import styles from './LineChart.module.scss'
 
+/*
+ * Returns the number of days between two dates.
+ *
+ * @param date1 - The start date
+ * @param date2 - The end date
+ * @returns The number of days between the two dates
+ */
+const daysBetween = (date1: Date, date2: Date): number =>
+    Math.round(Math.abs((date2.getTime() - date1.getTime()) / (1000 * 60 * 60 * 24)))
+
 /**
  * Returns a formatted time text. It's used primary for X axis tick's text nodes.
  * Number of month day + short name of month.
  *
  * Example: 01 Jan, 12 Feb, ...
  */
-const formatDateTick = timeFormat('%d %b')
+
+const getFormatDateTick = (scale: ScaleTime<number, number>): ((date: Date) => string) => {
+    if (scale.domain.length < 2 || daysBetween(scale.domain()[1], scale.domain()[0]) < 365) {
+        return (date: Date) => timeFormat('%d %b')(date)
+    }
+    return (date: Date) => timeFormat('%b %y')(date)
+}
 
 interface GetScaleTicksInput {
     scale: AnyD3Scale
@@ -39,7 +55,6 @@ export function getXScaleTicks<T>(input: GetScaleTicksInput): T[] {
     const numberTicks = Math.max(2, Math.floor(space / pixelsPerTick))
     return getTicks(scale, numberTicks) as T[]
 }
-
 interface GetLineGroupStyleOptions {
     /** Whether this series contains the active point */
     id: string
@@ -173,7 +188,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                     pixelsPerTick={70}
                     minRotateAngle={20}
                     maxRotateAngle={60}
-                    tickFormat={formatDateTick}
+                    tickFormat={getFormatDateTick(xScale)}
                     getScaleTicks={getXScaleTicks}
                 />
 
