@@ -164,7 +164,7 @@ const defaultTruncatedTick = (tick: string): string => (tick.length >= 15 ? `${t
 export const reverseTruncatedTick = (tick: string): string => (tick.length >= 15 ? `...${tick.slice(-15)}` : tick)
 
 interface SvgAxisBottomProps<Tick> {
-    tickFormat?: (tick: Tick) => string
+    tickFormat?: (tick: Tick, index: number, ticks: Tick[]) => string
     pixelsPerTick?: number
     minRotateAngle?: number
     maxRotateAngle?: number
