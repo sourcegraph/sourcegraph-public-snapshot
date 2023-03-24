@@ -8,6 +8,7 @@
 
 exedir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
+# shellcheck disable=SC1090 disable=SC1091
 . "${exedir}/common_functions.sh"
 
 workdir="${PWD}"
@@ -57,20 +58,20 @@ build_from_source() {
 }
 
 build_from_release() {
-  curl -fsSLO https://github.com/sourcegraph/src-cli/releases/download/${src_version}/src-cli_${src_version}_checksums.txt
-  grep -E "src-cli_${src_version}_darwin_(amd|arm)64[.]tar[.]gz" src-cli_${src_version}_checksums.txt >darwin_checksums.txt
+  curl -fsSLO "https://github.com/sourcegraph/src-cli/releases/download/${src_version}/src-cli_${src_version}_checksums.txt"
+  grep -E "src-cli_${src_version}_darwin_(amd|arm)64[.]tar[.]gz" "src-cli_${src_version}_checksums.txt >darwin_checksums.txt"
   echo "downloading the Intel binary"
-  curl -fsSLO https://github.com/sourcegraph/src-cli/releases/download/${src_version}/src-cli_${src_version}_darwin_amd64.tar.gz
+  curl -fsSLO "https://github.com/sourcegraph/src-cli/releases/download/${src_version}/src-cli_${src_version}_darwin_amd64.tar.gz"
   echo "downloading the Arm binary"
-  curl -fsSLO https://github.com/sourcegraph/src-cli/releases/download/${src_version}/src-cli_${src_version}_darwin_arm64.tar.gz
+  curl -fsSLO "https://github.com/sourcegraph/src-cli/releases/download/${src_version}/src-cli_${src_version}_darwin_arm64.tar.gz"
   sha256sum -c darwin_checksums.txt >/dev/null || {
     echo "corrupt download!" 1>&2
     return 1
   }
-  mkdir amd64 && tar -xzf src-cli_${src_version}_darwin_amd64.tar.gz -C amd64
-  mkdir arm64 && tar -xzf src-cli_${src_version}_darwin_arm64.tar.gz -C arm64
-  mkdir src-universal-${src_version} 2>/dev/null
-  make_fat_binary src-universal-${src_version}/src amd64/src arm64/src || return 1
+  mkdir amd64 && tar -xzf "src-cli_${src_version}_darwin_amd64.tar.gz" -C amd64
+  mkdir arm64 && tar -xzf "src-cli_${src_version}_darwin_arm64.tar.gz" -C arm64
+  mkdir "src-universal-${src_version}" 2>/dev/null
+  make_fat_binary "src-universal-${src_version}/src amd64/src" arm64/src || return 1
   cd "src-universal-${src_version}" || return 1
   tar cvzf "../src-universal-${src_version}.tar.gz" "src"
   echo "${workdir}/src-universal-${src_version}.tar.gz"

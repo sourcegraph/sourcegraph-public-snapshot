@@ -34,6 +34,7 @@ api_key_path="${APPLE_APP_STORE_CONNECT_API_KEY_FILE:-/mnt/AuthKey_${APPLE_APP_S
 
 # allow for specifying the location of the artifact via the "artifact" env var
 # supports testing outside of CI, also
+# shellcheck disable=SC2154
 artifact_path="${artifact}"
 
 # app bundles can be stapled; standalone executables cannot
@@ -87,7 +88,7 @@ trap "rm -rf \"${workdir}/private_keys\"" EXIT
 
 docker run --rm \
   -v "${workdir}:/sign" \
-  -v "${api_key_path}":"/sign/private_keys/AuthKey_${APPLE_APP_STORE_CONNECT_API_KEY_ID}.p8" \
+  -v "${api_key_path}:/sign/private_keys/AuthKey_${APPLE_APP_STORE_CONNECT_API_KEY_ID}.p8" \
   -w "/sign" \
   sourcegraph/apple-codesign:0.22.0 \
   notary-submit \
@@ -108,6 +109,7 @@ docker run --rm \
 }
 
 # goreleaser support: if an output location is defined, copy the signed artifact there
+# shellcheck disable=SC2154
 [ -n "${signature}" ] && {
   cp -R "${artifact_path}" "${signature}" || exit 1
 }

@@ -63,7 +63,7 @@ cd "${workdir}" || exit 1
 [ -d "gettext-${gettext_version}" ] || {
   echo "downloading gettext ${gettext_version}"
   curl -fsSLO "https://ftp.gnu.org/pub/gnu/gettext/gettext-${gettext_version}.tar.gz"
-  tar -xzf gettext-${gettext_version}.tar.gz
+  tar -xzf "gettext-${gettext_version}.tar.gz"
 }
 pushd "gettext-${gettext_version}" || exit 1
 for ARCH in arm64e x86_64; do
@@ -83,7 +83,7 @@ find "${PWD}"/build_{arm64e,x86_64} -name '*.dylib' -exec rm {} +
 popd || exit 1
 
 [ -d "git-${git_version}" ] || {
-  echo "downloading git ${get_version}"
+  echo "downloading git ${git_version}"
   curl -fsSLO "https://github.com/git/git/archive/refs/tags/v${git_version}.tar.gz"
   tar -xzvf "v${git_version}.tar.gz"
 }

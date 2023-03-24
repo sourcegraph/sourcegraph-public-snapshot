@@ -27,6 +27,7 @@ application_cert_path=${APPLE_DEV_ID_APPLICATION_CERT:-/mnt/Apple-Developer-ID-A
 
 # allow for specifying the location of the artifact via the "artifact" env var
 # supports testing outside of CI, also
+#shellcheck disable=SC2154
 artifact_path="${artifact}"
 
 unset entitlements_path

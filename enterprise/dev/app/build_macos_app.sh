@@ -66,6 +66,7 @@ app_name="$(basename "${app_name:-Sourcegraph App}" .app).app"
 # - git
 # - icons
 # include the ability to use a template without downloading it all the time for testing
+# shellcheck disable=SC2154
 if [ -n "${app_template_path}" ]; then
   cp -R "${app_template_path}" "${app_name}" || exit 1
 else

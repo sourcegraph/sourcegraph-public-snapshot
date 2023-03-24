@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# shellcheck disable=SC2064
+
 # designed to be run as a post-action on an Archive action
 # checks to make sure the app is universal, downloads the dependencies,
 # creates the app template with those dependencies,

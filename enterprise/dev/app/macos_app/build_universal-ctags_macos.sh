@@ -4,6 +4,7 @@
 
 exedir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
+# shellcheck disable=SC1090 disable=SC1091
 . "${exedir}/common_functions.sh"
 
 workdir="${PWD}"
@@ -83,7 +84,7 @@ popd || exit 1
   curl -fsSL "https://github.com/akheron/jansson/archive/refs/tags/v2.14.tar.gz" -o "jansson-${jansson_version}.tar.gz"
   tar -xzf "jansson-${jansson_version}.tar.gz"
 }
-pushd jansson-${jansson_version} || exit 1
+pushd "jansson-${jansson_version}" || exit 1
 autoreconf -i
 autoupdate
 for ARCH in arm64e x86_64; do

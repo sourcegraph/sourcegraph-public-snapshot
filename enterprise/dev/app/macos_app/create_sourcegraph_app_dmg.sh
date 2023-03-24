@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# shellcheck disable=SC2064
+
 # index off of the directory of this shell script to find other resources
 exedir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 

@@ -28,6 +28,7 @@ application_cert_path=${APPLE_DEV_ID_APPLICATION_CERT:-/mnt/Apple-Developer-ID-A
 
 # allow for specifying the location of the artifact via the "artifact" env var
 # supports testing outside of CI, also
+# shellcheck disable=SC2154
 app_bundle_path="${artifact}"
 
 while [ ${#} -gt 0 ]; do
@@ -72,7 +73,6 @@ workdir=$(dirname "${app_bundle_path}")
 }
 
 # sign the app bundle
-# going to skip entitlements for now; I don't think we need them
 
 # need to sign the individual binaries individually
 # ran into a problem where it failed to sign in place when the permissions on the file were 555
@@ -87,6 +87,7 @@ for f in "${files_to_sign[@]}"; do
   # which is probably happening because the file permissions are out of sync. It always works the second try,
   # so give it a chance to try a few times
   rc=0
+  # shellcheck disable=SC2034
   for try in 1 2 3; do
     chmod 777 "${workdir}/${app_name}.app/${f}"
     docker run --rm \
@@ -112,6 +113,7 @@ done
 # which is probably happening because the file permissions are out of sync. It always works the second try,
 # so give it a chance to try a few times
 rc=0
+# shellcheck disable=SC2034
 for try in 1 2 3; do
   docker run --rm \
     -v "${exedir}/macos_app/macos.entitlements:/entitle/macos.entitlements" \
@@ -146,6 +148,7 @@ done
 }
 
 # goreleaser support: if an output location is defined, copy the signed app bundle there
+#shellcheck disable=SC2154
 [ -n "${signature}" ] && {
   [ -d "${signature}" ] && rm -rf "${signature}"
   cp -R "${app_bundle_path}" "${signature}" || exit 1
