@@ -1613,9 +1613,10 @@ COMMENT ON TABLE codeintel_inference_scripts IS 'Contains auto-index job inferen
 CREATE TABLE codeintel_initial_path_ranks (
     id bigint NOT NULL,
     upload_id integer NOT NULL,
-    document_path text NOT NULL,
+    document_path text DEFAULT ''::text NOT NULL,
     graph_key text NOT NULL,
-    last_scanned_at timestamp with time zone
+    last_scanned_at timestamp with time zone,
+    document_paths text[] DEFAULT '{}'::text[] NOT NULL
 );
 
 CREATE SEQUENCE codeintel_initial_path_ranks_id_seq
