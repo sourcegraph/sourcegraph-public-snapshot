@@ -570,3 +570,90 @@ index 373ae20..89ad131 100644
 		})
 	}
 }
+
+func BenchmarkApply(b *testing.B) {
+	file := `1
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12`
+	patch := `diff --git a/README.md b/README.md
+index 373ae20..89ad131 100644
+--- a/README.md
++++ b/README.md
+@@ -1,4 +1,5 @@
+ 1
++2
+ 3
+ 4
+ 5
+@@ -6,6 +7,7 @@
+ 7
+ 8
+ 9
++9.5
+ 10
+ 11
+ 12
+\ No newline at end of file
+`
+	fileDiff, err := godiff.ParseFileDiff([]byte(patch))
+	if err != nil {
+		b.Fatal(err)
+	}
+	for i := 0; i < b.N; i++ {
+		_, err := applyPatch(file, fileDiff)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+func BenchmarkApplyOld(b *testing.B) {
+	file := `1
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12`
+	patch := `diff --git a/README.md b/README.md
+index 373ae20..89ad131 100644
+--- a/README.md
++++ b/README.md
+@@ -1,4 +1,5 @@
+ 1
++2
+ 3
+ 4
+ 5
+@@ -6,6 +7,7 @@
+ 7
+ 8
+ 9
++9.5
+ 10
+ 11
+ 12
+\ No newline at end of file
+`
+	fileDiff, err := godiff.ParseFileDiff([]byte(patch))
+	if err != nil {
+		b.Fatal(err)
+	}
+	for i := 0; i < b.N; i++ {
+		_, err := applyPatchOld(file, fileDiff)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
