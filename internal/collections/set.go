@@ -1,6 +1,7 @@
 package collections
 
 import (
+	"fmt"
 	"sort"
 
 	"golang.org/x/exp/maps"
@@ -45,7 +46,7 @@ func (s Set[T]) Values() []T {
 	return maps.Keys(s)
 }
 
-// SortedValues returns the values of the set in sorted order using the given
+// Sorted returns the values of the set in sorted order using the given
 // comparator function.
 //
 // The comparator function should return true if the first argument is less than
@@ -53,8 +54,8 @@ func (s Set[T]) Values() []T {
 //
 // Example:
 //
-//	s.SortedValues(func(a, b int) bool { return a < b })
-func (s Set[T]) SortedValues(comparator func(a, b T) bool) []T {
+//	s.Sorted(func(a, b int) bool { return a < b })
+func (s Set[T]) Sorted(comparator func(a, b T) bool) []T {
 	vals := s.Values()
 	sort.Slice(vals, func(i, j int) bool {
 		return comparator(vals[i], vals[j])
@@ -83,6 +84,10 @@ func (s Set[T]) Intersect(b Set[T]) Set[T] {
 // Union returns a new set with all the elements from s and b
 func (s Set[T]) Union(b Set[T]) Set[T] {
 	return Union(s, b)
+}
+
+func (s Set[T]) String() string {
+	return fmt.Sprintf("Set{%v}", maps.Keys(s))
 }
 
 func getShortLong[T comparable](a, b Set[T]) (Set[T], Set[T]) {
