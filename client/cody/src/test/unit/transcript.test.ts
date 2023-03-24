@@ -192,14 +192,8 @@ describe('Transcript', () => {
         const editor = new MockEditor({
             getActiveTextEditorVisibleContent: () => ({ fileName: 'internal/lib.go', content: 'package lib' }),
         })
-        const embeddings = new MockEmbeddingsClient({
-            search: async () => ({
-                codeResults: [{ fileName: 'src/main.go', startLine: 0, endLine: 1, content: 'package main' }],
-                textResults: [{ fileName: 'docs/README.md', startLine: 0, endLine: 1, content: '# Main' }],
-            }),
-        })
         const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => false })
-        const codebaseContext = new CodebaseContext('embeddings', embeddings, defaultKeywordContextFetcher)
+        const codebaseContext = new CodebaseContext('embeddings', defaultEmbeddingsClient, defaultKeywordContextFetcher)
 
         const transcript = new Transcript()
         const interaction = await new ChatQuestion().getInteraction(
