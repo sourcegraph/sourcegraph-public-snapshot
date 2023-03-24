@@ -1,9 +1,9 @@
 package collections
 
 import (
-	"regexp"
 	"testing"
 
+	"github.com/grafana/regexp"
 	"github.com/stretchr/testify/require"
 )
 
