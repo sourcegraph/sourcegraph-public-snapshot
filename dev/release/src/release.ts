@@ -112,7 +112,7 @@ export type StepID =
     | 'release:deactivate-release'
     // src-cli and executors
     | 'release:create-tags'
-    | 'release:verify-src-cli'
+    | 'release:verify-releases'
     // util
     | 'util:clear-cache'
     | 'util:previous-version'
@@ -1217,11 +1217,14 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         },
     },
     {
-        id: 'release:verify-src-cli',
-        description: 'Verify src-cli version is available in brew and npm',
+        id: 'release:verify-releases',
+        description: 'Verify src-cli version is available in brew and npm and executors tags are available',
         run: async config => {
             let passed = true
             let expected = config.in_progress?.srcCliVersion
+            let expectedAWSExecutor = config.in_progress?.awsExecutorVersion
+            let expectedGoogleExecutor = config.in_progress?.googleExecutorVersion
+
             const formatVersion = function (val: string): string {
                 if (val === expected) {
                     return chalk.green(val)
@@ -1238,6 +1241,39 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
             } else {
                 console.log(`Expecting src-cli version ${expected} from release config`)
             }
+            if (!config.in_progress?.googleExecutorVersion) {
+                expectedGoogleExecutor = await retryInput(
+                    'Enter the expected version of the Google executor: ',
+                    val => !!semver.parse(val),
+                    'Expected semver format'
+                )
+            } else {
+                console.log(`Expecting Google executor version v${expectedGoogleExecutor} from release config`)
+            }
+
+            if (!config.in_progress?.awsExecutorVersion) {
+                expectedAWSExecutor = await retryInput(
+                    'Enter the expected version of the AWS executor: ',
+                    val => !!semver.parse(val),
+                    'Expected semver format'
+                )
+            } else {
+                console.log(`Expecting AWS executor version v${expectedAWSExecutor} from release config`)
+            }
+
+            const latestGoogleVersion = await getLatestTag('sourcegraph', 'terraform-google-executors')
+            const latestAWSVersion = await getLatestTag('sourcegraph', 'terraform-aws-executors')
+
+            if (latestGoogleVersion !== `v${expectedGoogleExecutor}`) {
+                passed = false
+            }
+            console.log(`terraform-google-executors:\t${formatVersion(latestGoogleVersion)}`)
+
+            if (latestAWSVersion !== `v${expectedAWSExecutor}`) {
+                passed = false
+            }
+
+            console.log(`terraform-aws-executors:\t${formatVersion(latestAWSVersion)}`)
 
             const githubRelease = await getLatestSrcCliGithubRelease()
             console.log(`github:\t${formatVersion(githubRelease)}`)
@@ -1251,10 +1287,10 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
             const npmVersion = execa.sync('bash', ['-c', 'npm show @sourcegraph/src version']).stdout
             console.log(`npm:\t${formatVersion(npmVersion)}`)
 
-            if (passed) {
+            if (passed === true) {
                 console.log(chalk.green('All versions matched expected version!'))
             } else {
-                console.log(chalk.red('Failed to verify src-cli versions'))
+                console.log(chalk.red('Failed to verify versions'))
                 exit(1)
             }
         },
