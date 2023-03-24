@@ -2345,7 +2345,8 @@ CREATE TABLE gitserver_repos (
     last_changed timestamp with time zone DEFAULT now() NOT NULL,
     repo_size_bytes bigint,
     corrupted_at timestamp with time zone,
-    corruption_logs jsonb DEFAULT '[]'::jsonb NOT NULL
+    corruption_logs jsonb DEFAULT '[]'::jsonb NOT NULL,
+    cloning_progress text DEFAULT ''::text
 );
 
 COMMENT ON COLUMN gitserver_repos.corrupted_at IS 'Timestamp of when repo corruption was detected';
