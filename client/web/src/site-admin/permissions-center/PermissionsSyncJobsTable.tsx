@@ -400,13 +400,7 @@ const TableColumns: IColumn<PermissionsSyncJob>[] = [
     {
         key: 'Status',
         header: 'Status',
-        render: ({ state, cancellationReason, failureMessage }: PermissionsSyncJob) => (
-            <PermissionsSyncJobStatusBadge
-                state={state}
-                cancellationReason={cancellationReason}
-                failureMessage={failureMessage}
-            />
-        ),
+        render: job => <PermissionsSyncJobStatusBadge job={job} />,
     },
     {
         key: 'Name',

@@ -83,3 +83,20 @@
     max-width: 1.5rem;
     max-height: 1.5rem;
 }
+
+.badge-dot {
+    position: relative;
+
+    &::before {
+        content: '';
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 50%;
+
+        position: absolute;
+        right: -0.25rem;
+        top: -0.25rem;
+        transform: translate(0%, 0%);
+        background-color: var(--warning);
+    }
+}
