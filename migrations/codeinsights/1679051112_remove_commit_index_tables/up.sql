@@ -1,2 +1,1 @@
-DROP TABLE IF EXISTS commit_index;
-DROP TABLE IF EXISTS commit_index_metadata;
+DROP TABLE IF EXISTS commit_index, commit_index_metadata CASCADE;
