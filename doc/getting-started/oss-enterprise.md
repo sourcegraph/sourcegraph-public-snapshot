@@ -172,7 +172,7 @@ In practice, Sourcegraph OSS involves:
    </td>
    <td>Unlimited
    </td>
-   <td>Unlimited local, 1 remote
+   <td>Unlimited
    </td>
    <td>Unlimited
    </td>
@@ -184,7 +184,7 @@ In practice, Sourcegraph OSS involves:
    </td>
    <td>Unlimited
    </td>
-   <td>Unlimited local, 1 remote
+   <td>Unlimited
    </td>
    <td>Unlimited
    </td>
