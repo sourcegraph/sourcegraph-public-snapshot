@@ -19,8 +19,7 @@ import (
 func (s *store) InsertDefinitionsForRanking(
 	ctx context.Context,
 	rankingGraphKey string,
-	rankingBatchNumber int,
-	definitions []shared.RankingDefinitions,
+	definitions chan shared.RankingDefinitions,
 ) (err error) {
 	ctx, _, endObservation := s.operations.insertDefinitionsForRanking.With(
 		ctx,
@@ -36,20 +35,8 @@ func (s *store) InsertDefinitionsForRanking(
 	defer func() { err = tx.Done(err) }()
 
 	inserter := func(inserter *batch.Inserter) error {
-		batchDefinitions := make([]shared.RankingDefinitions, 0, rankingBatchNumber)
-		for _, def := range definitions {
-			batchDefinitions = append(batchDefinitions, def)
-
-			if len(batchDefinitions) == rankingBatchNumber {
-				if err := insertDefinitions(ctx, inserter, rankingGraphKey, batchDefinitions); err != nil {
-					return err
-				}
-				batchDefinitions = make([]shared.RankingDefinitions, 0, rankingBatchNumber)
-			}
-		}
-
-		if len(batchDefinitions) > 0 {
-			if err := insertDefinitions(ctx, inserter, rankingGraphKey, batchDefinitions); err != nil {
+		for definition := range definitions {
+			if err := inserter.Insert(ctx, definition.UploadID, definition.SymbolName, definition.DocumentPath, rankingGraphKey); err != nil {
 				return err
 			}
 		}
@@ -76,31 +63,12 @@ func (s *store) InsertDefinitionsForRanking(
 	return nil
 }
 
-func insertDefinitions(
-	ctx context.Context,
-	inserter *batch.Inserter,
-	rankingGraphKey string,
-	definitions []shared.RankingDefinitions,
-) error {
-	for _, def := range definitions {
-		if err := inserter.Insert(
-			ctx,
-			def.UploadID,
-			def.SymbolName,
-			def.DocumentPath,
-			rankingGraphKey,
-		); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (s *store) InsertReferencesForRanking(
 	ctx context.Context,
 	rankingGraphKey string,
-	rankingBatchNumber int,
-	references shared.RankingReferences,
+	batchSize int,
+	uploadID int,
+	references chan string,
 ) (err error) {
 	ctx, _, endObservation := s.operations.insertReferencesForRanking.With(
 		ctx,
@@ -116,20 +84,8 @@ func (s *store) InsertReferencesForRanking(
 	defer func() { err = tx.Done(err) }()
 
 	inserter := func(inserter *batch.Inserter) error {
-		batchSymbolNames := make([]string, 0, rankingBatchNumber)
-		for _, ref := range references.SymbolNames {
-			batchSymbolNames = append(batchSymbolNames, ref)
-
-			if len(batchSymbolNames) == rankingBatchNumber {
-				if err := inserter.Insert(ctx, references.UploadID, pq.Array(batchSymbolNames), rankingGraphKey); err != nil {
-					return err
-				}
-				batchSymbolNames = make([]string, 0, rankingBatchNumber)
-			}
-		}
-
-		if len(batchSymbolNames) > 0 {
-			if err := inserter.Insert(ctx, references.UploadID, pq.Array(batchSymbolNames), rankingGraphKey); err != nil {
+		for symbols := range batchChannel(references, batchSize) {
+			if err := inserter.Insert(ctx, uploadID, pq.Array(symbols), rankingGraphKey); err != nil {
 				return err
 			}
 		}
@@ -383,7 +339,7 @@ SELECT
 	(SELECT COUNT(*) FROM ins)
 `
 
-func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, documentPath []string, graphKey string) (err error) {
+func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, documentPaths chan string, batchSize int, graphKey string) (err error) {
 	ctx, _, endObservation := s.operations.insertInitialPathRanks.With(
 		ctx,
 		&err,
@@ -400,8 +356,8 @@ func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, docume
 	defer func() { err = tx.Done(err) }()
 
 	inserter := func(inserter *batch.Inserter) error {
-		for _, path := range documentPath {
-			if err := inserter.Insert(ctx, path); err != nil {
+		for paths := range batchChannel(documentPaths, batchSize) {
+			if err := inserter.Insert(ctx, pq.Array(paths)); err != nil {
 				return err
 			}
 		}
@@ -418,7 +374,7 @@ func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, docume
 		tx.Handle(),
 		"t_codeintel_initial_path_ranks",
 		batch.MaxNumPostgresParameters,
-		[]string{"document_path"},
+		[]string{"document_paths"},
 		inserter,
 	); err != nil {
 		return err
@@ -433,18 +389,14 @@ func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, docume
 
 const createInitialPathTemporaryTableQuery = `
 CREATE TEMPORARY TABLE IF NOT EXISTS t_codeintel_initial_path_ranks (
-	document_path text NOT NULL
+	document_paths text[] NOT NULL
 )
 ON COMMIT DROP
 `
 
 const insertInitialPathRankCountsQuery = `
 INSERT INTO codeintel_initial_path_ranks (upload_id, document_paths, graph_key)
-	SELECT
-		%s,
-		array_agg(document_path),
-		%s
-	FROM t_codeintel_initial_path_ranks
+SELECT %s, document_paths, %s FROM t_codeintel_initial_path_ranks
 `
 
 func (s *store) InsertPathRanks(
@@ -938,3 +890,26 @@ SELECT
 	(SELECT COUNT(*) FROM locked_records),
 	(SELECT COUNT(*) FROM del)
 `
+
+func batchChannel[T any](ch <-chan T, batchSize int) <-chan []T {
+	batches := make(chan []T)
+	go func() {
+		defer close(batches)
+
+		batch := make([]T, 0, batchSize)
+		for value := range ch {
+			batch = append(batch, value)
+
+			if len(batch) == batchSize {
+				batches <- batch
+				batch = make([]T, 0, batchSize)
+			}
+		}
+
+		if len(batch) > 0 {
+			batches <- batch
+		}
+	}()
+
+	return batches
+}
