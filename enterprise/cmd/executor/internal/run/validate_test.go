@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -125,12 +126,13 @@ func TestValidateAuthorizationToken(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server, client := newTestServerAndClient(t, func(w http.ResponseWriter, r *http.Request) {
+			server, _ := newTestServerAndClient(t, func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(test.statusCode)
 			})
 			defer server.Close()
 
-			err := validateAuthorizationToken(context.Background(), client, apiclient.EndpointOptions{URL: server.URL})
+			baseClientOpts := baseClientOptions(&config.Config{FrontendURL: server.URL}, "")
+			err := validateAuthorizationToken(context.Background(), baseClientOpts)
 			if test.expectedErr != nil {
 				assert.NotNil(t, err)
 				assert.Equal(t, errors.Is(err, authorizationFailedErr), test.isUnauthorizedError)
