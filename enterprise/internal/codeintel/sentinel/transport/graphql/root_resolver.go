@@ -2,12 +2,10 @@ package graphql
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -165,7 +163,7 @@ func (r *rootResolver) VulnerabilityMatchesCountByRepository(ctx context.Context
 		repositoryName = *args.RepositoryName
 	}
 
-	groupedMatches, totalCount, err := r.sentinelSvc.GetVulnerabilityMatchesCountByRepository(ctx, shared.GetVulnerabilityMatchesCountByRepositoryArgs{
+	vulerabilityCounts, totalCount, err := r.sentinelSvc.GetVulnerabilityMatchesCountByRepository(ctx, shared.GetVulnerabilityMatchesCountByRepositoryArgs{
 		Limit:          int(limit),
 		Offset:         int(offset),
 		RepositoryName: repositoryName,
@@ -174,11 +172,12 @@ func (r *rootResolver) VulnerabilityMatchesCountByRepository(ctx context.Context
 		return nil, err
 	}
 
-	return &vulnerabilityMatchCountByRepositoryConnectionResolver{
-		groupedMatches: groupedMatches,
-		offset:         int(offset),
-		totalCount:     totalCount,
-	}, nil
+	var resolvers []resolverstubs.VulnerabilityMatchCountByRepositoryResolver
+	for _, v := range vulerabilityCounts {
+		resolvers = append(resolvers, &vulnerabilityMatchCountByRepositoryResolver{v: v})
+	}
+
+	return resolverstubs.NewTotalCountConnectionResolver(resolvers, offset, int32(totalCount)), nil
 }
 
 func (r *rootResolver) VulnerabilityByID(ctx context.Context, vulnerabilityID graphql.ID) (_ resolverstubs.VulnerabilityResolver, err error) {
@@ -408,35 +407,4 @@ func (v vulnerabilityMatchCountByRepositoryResolver) RepositoryName() string {
 
 func (v vulnerabilityMatchCountByRepositoryResolver) MatchCount() int32 {
 	return v.v.MatchCount
-}
-
-//
-//
-
-type vulnerabilityMatchCountByRepositoryConnectionResolver struct {
-	groupedMatches []shared.VulnerabilityMatchesByRepository
-	offset         int
-	totalCount     int
-}
-
-func (v *vulnerabilityMatchCountByRepositoryConnectionResolver) Nodes() []resolverstubs.VulnerabilityMatchCountByRepositoryResolver {
-	var resolvers []resolverstubs.VulnerabilityMatchCountByRepositoryResolver
-	for _, m := range v.groupedMatches {
-		resolvers = append(resolvers, &vulnerabilityMatchCountByRepositoryResolver{v: m})
-	}
-
-	return resolvers
-}
-
-func (v *vulnerabilityMatchCountByRepositoryConnectionResolver) TotalCount() *int32 {
-	c := int32(v.totalCount)
-	return &c
-}
-
-func (v *vulnerabilityMatchCountByRepositoryConnectionResolver) PageInfo() resolverstubs.PageInfo {
-	if v.offset+len(v.groupedMatches) < v.totalCount {
-		return graphqlutil.NextPageCursor(strconv.Itoa(v.offset + len(v.groupedMatches)))
-	}
-
-	return graphqlutil.HasNextPage(false)
 }

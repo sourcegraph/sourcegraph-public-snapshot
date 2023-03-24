@@ -59,7 +59,7 @@ extend type Query {
         after: String
 
         """
-        The name of the repository to group by.
+        A string pattern that could match the name of a repository.
         """
         repositoryName: String
     ): VulnerabilityMatchCountByRepositoryConnection!

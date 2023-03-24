@@ -167,8 +167,8 @@ select
 	count(*) as count,
 	COUNT(*) OVER() AS total_count
 from vulnerability_matches vm
-join lsif_uploads lu on vm.upload_id = lu.id
-join repo r on lu.repository_id = r.id
+join lsif_uploads lu on lu.id = vm.upload_id
+join repo r on r.id = lu.repository_id
 where %s
 group by r.name, r.id
 order by count DESC

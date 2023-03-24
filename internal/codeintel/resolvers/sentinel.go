@@ -20,9 +20,10 @@ type SentinelServiceResolver interface {
 }
 
 type (
-	GetVulnerabilitiesArgs               = PagedConnectionArgs
-	VulnerabilityConnectionResolver      = PagedConnectionWithTotalCountResolver[VulnerabilityResolver]
-	VulnerabilityMatchConnectionResolver = PagedConnectionWithTotalCountResolver[VulnerabilityMatchResolver]
+	GetVulnerabilitiesArgs                                = PagedConnectionArgs
+	VulnerabilityConnectionResolver                       = PagedConnectionWithTotalCountResolver[VulnerabilityResolver]
+	VulnerabilityMatchConnectionResolver                  = PagedConnectionWithTotalCountResolver[VulnerabilityMatchResolver]
+	VulnerabilityMatchCountByRepositoryConnectionResolver = PagedConnectionWithTotalCountResolver[VulnerabilityMatchCountByRepositoryResolver]
 )
 
 type GetVulnerabilityMatchesArgs struct {
@@ -83,10 +84,4 @@ type VulnerabilityMatchCountByRepositoryResolver interface {
 	ID() graphql.ID
 	RepositoryName() string
 	MatchCount() int32
-}
-
-type VulnerabilityMatchCountByRepositoryConnectionResolver interface {
-	Nodes() []VulnerabilityMatchCountByRepositoryResolver
-	TotalCount() *int32
-	PageInfo() PageInfo
 }
