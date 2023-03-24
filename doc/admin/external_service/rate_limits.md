@@ -5,19 +5,19 @@ Sourcegraph respects and enforces various rate limits to ensure optimal and reli
 - [External rate limits](#external-rate-limits)
 - [Internal rate limits](#internal-rate-limits)
 
-For other ways in which repo update frequency can be controlled, see [Repository update frequency](../repo/update_frequency.md).
+For other ways to control repo update frequency, see [Repository update frequency](../repo/update_frequency.md).
 
 ## External rate limits
 
-External rate limits refer to the rate limits set by external services that Sourcegraph integrates with, such as code hosts (GitHub, GitLab, Bitbucket, etc.). Sourcegraph always respects and never exceeds the external rate limits of integrated services.
+External rate limits refer to the rate limits set by external services integrated with Sourcegraph, such as code hosts (GitHub, GitLab, Bitbucket, etc.). Sourcegraph always adheres to and never exceeds the external rate limits of integrated services.
 
-Many codehosts provide continuous feedback on rate limiting. Sourcegraph monitors this feedback, if available, and will delay automatic background requests (permissions syncing, repo discovery, etc.) if rate limits are encountered.
+Many code hosts give continuous feedback on rate limiting. Sourcegraph tracks this feedback, if available, and delays automatic background requests (permissions syncing, repo discovery, etc.) if rate limits are encountered.
 
-No configuration is required to enable external rate limit monitoring.
+No configuration is necessary to enable external rate limit monitoring.
 
-> NOTE: When configuring code host connections on Sourcegraph, be sure to include a `token` even if you are only accessing public repositories, as code hosts have severe rate limits for unauthenticated requests (see [GitHub](https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limits-for-requests-from-personal-accounts) for example).
+> NOTE: When configuring code host connections on Sourcegraph, always include a `token` even if only accessing public repositories, as code hosts impose severe rate limits for unauthenticated requests (see [GitHub](https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limits-for-requests-from-personal-accounts) for example).
 
-If you are interfacing with a self-hosted code host, refer to your code host documentation to learn how to configure rate limits on your code host.
+If working with a self-hosted code host, consult the code host documentation to learn how to configure rate limits on your code host.
 
 Sourcegraph monitors external rate limits for the following code hosts:
 - [GitHub](../external_service/github.md#rate-limits)
@@ -27,9 +27,9 @@ Sourcegraph monitors external rate limits for the following code hosts:
 
 ## Internal rate limits
 
-Internal rate limits refer to self-imposed rate limits within Sourcegraph. While Sourcegraph respects external rate limits, sometimes more control is required, or perhaps a code host does not have rate limit monitoring available or configured. In these cases, internal rate limits can be configured.
+Internal rate limits refer to self-imposed rate limits within Sourcegraph. While Sourcegraph adheres to external rate limits, sometimes more control is necessary, or pa code host might not have rate limit monitoring available or configured. In these cases, internal rate limits can be configured.
 
-A [global default internal rate limit](../config/site_config.md#defaultRateLimit) can be configured in the [site configuration](../config/site_config.md). This limit will be applied to all code host connections that do not have a specific rate limit configured.
+A [global default internal rate limit](../config/site_config.md#defaultRateLimit) can be configured in the [site configuration](../config/site_config.md). This limit applies to all code host connections that don't have a specific rate limit configured.
 
 > NOTE: This is the default rate limit _per code host connection_. It is not the total rate limit of all the code host connections.
 
@@ -52,7 +52,7 @@ Requests to the configured code host will be staggered as to not exceed `"reques
 - For Sourcegraph <=3.38, if rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
 - For Sourcegraph >=3.39, rate limiting should be enabled and configured for each individual code host connection.
 
-To see the status of configured internal rate limits, visit **Site admin > Instrumentation > repo-updater > Rate Limiter State**. This page will list internal rate limits by code host, for example:
+To see the status of configured internal rate limits, visit **Site admin > Instrumentation > repo-updater > Rate Limiter State**. This page lists internal rate limits by code host, for example:
 
 ```json
 {

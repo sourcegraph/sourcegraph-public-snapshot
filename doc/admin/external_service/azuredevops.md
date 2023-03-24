@@ -71,4 +71,4 @@ Since permissions are already enforced by setting `enforcePermission` in the cod
 
 ## Rate limits
 
-If Sourcegraph hits a rate limit imposed by Azure DevOps, Sourcegraph will wait the appropriate amount of time specified by the code host before retrying the request. You can read more about how Azure DevOps imposes rate limits [here](https://learn.microsoft.com/en-us/azure/devops/integrate/concepts/rate-limits).
+When Sourcegraph hits a rate limit imposed by Azure DevOps, Sourcegraph waits the appropriate amount of time specified by the code host before retrying the request. You can read more about how Azure DevOps imposes rate limits [here](https://learn.microsoft.com/en-us/azure/devops/integrate/concepts/rate-limits).

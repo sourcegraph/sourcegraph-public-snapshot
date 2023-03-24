@@ -24,9 +24,9 @@ Sourcegraph clones repositories from your Bitbucket Cloud via HTTP(S), using the
 
 ## Rate limits
 
-You can read about how Bitbucket Cloud applies rate limits [here](https://support.atlassian.com/bitbucket-cloud/docs/api-request-limits/).
+Read about how Bitbucket Cloud applies rate limits [here](https://support.atlassian.com/bitbucket-cloud/docs/api-request-limits/).
 
-If Sourcegraph encounters rate limits on Bitbucket Cloud, it will retry the request with exponential back-off, until 5 minutes have passed. If the connection is still being rate limited after 5 minutes, the request will be dropped.
+When Sourcegraph encounters rate limits on Bitbucket Cloud, it will retry the request with exponential back-off, until 5 minutes have passed. If the connection is still being rate limited after 5 minutes, the request will be dropped.
 
 ### Internal rate limits
 

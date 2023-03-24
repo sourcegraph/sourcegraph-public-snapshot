@@ -148,9 +148,9 @@ To configure GitLab as an authentication provider (which will enable sign-in via
 
 ## Rate limits
 
-You should always include a token in a configuration for a GitLab.com URL to avoid being denied service by GitLab's [unauthenticated rate limits](https://docs.gitlab.com/ee/user/gitlab_com/index.html#gitlabcom-specific-rate-limits).
+Always include a token in a configuration for a GitLab.com URL to avoid being denied service by GitLab's [unauthenticated rate limits](https://docs.gitlab.com/ee/user/gitlab_com/index.html#gitlabcom-specific-rate-limits).
 
-If Sourcegraph hits a rate limit imposed by GitLab, Sourcegraph will wait the appropriate amount of time specified by GitLab before retrying the request. This can be several minutes in extreme cases.
+When Sourcegraph hits a rate limit imposed by GitLab, Sourcegraph waits the appropriate amount of time specified by GitLab before retrying the request. This can be several minutes in extreme cases.
 
 ### Internal rate limits
 
