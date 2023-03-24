@@ -184,11 +184,11 @@ func (s *confStore) ListSiteConfigs(ctx context.Context, paginationArgs *Paginat
 
 const getSiteConfigCount = `
 SELECT
-	count(*)
+	COUNT(*)
 FROM (
 	SELECT
 		*,
-		lag(redacted_contents) OVER (ORDER BY id) AS prev_redacted_contents
+		LAG(redacted_contents) OVER (ORDER BY id) AS prev_redacted_contents
 	FROM
 		critical_and_site_config) t
 WHERE (prev_redacted_contents IS NULL
