@@ -3,13 +3,10 @@ package authz
 import (
 	"context"
 	"fmt"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/azuredevops"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/bitbucketserver"
@@ -159,11 +156,9 @@ func ProvidersFromConfig(
 	}
 
 	enableGithubInternalRepoVisibility := false
-	unifiedPermissions := false
 	ef := cfg.SiteConfig().ExperimentalFeatures
 	if ef != nil {
 		enableGithubInternalRepoVisibility = ef.EnableGithubInternalRepoVisibility
-		unifiedPermissions = ef.UnifiedPermissions
 	}
 
 	initResult := github.NewAuthzProviders(db, gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility)
@@ -177,18 +172,15 @@ func ProvidersFromConfig(
 	// 🚨 SECURITY: Warn the admin when both code host authz provider and the permissions user mapping are configured.
 	// But only if the unified permissions is disabled
 	if cfg.SiteConfig().PermissionsUserMapping != nil &&
-		cfg.SiteConfig().PermissionsUserMapping.Enabled &&
-		!unifiedPermissions {
+		cfg.SiteConfig().PermissionsUserMapping.Enabled {
 		allowAccessByDefault = false
-		if len(initResult.Providers) > 0 {
-			serviceTypes := make([]string, len(initResult.Providers))
-			for i := range initResult.Providers {
-				serviceTypes[i] = strconv.Quote(initResult.Providers[i].ServiceType())
+		for _, p := range initResult.Providers {
+			if p.ServiceType() == extsvc.TypeBitbucketServer {
+				msg := fmt.Sprintf(
+					"The explicit permissions API (site configuration `permissions.userMapping`) cannot be enabled when %s authorization provider is in use. Blocking access to all repositories until the conflict is resolved.",
+					extsvc.TypeBitbucketServer)
+				initResult.Problems = append(initResult.Problems, msg)
 			}
-			msg := fmt.Sprintf(
-				"The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when %s authorization providers are in use. Blocking access to all repositories until the conflict is resolved.",
-				strings.Join(serviceTypes, ", "))
-			initResult.Problems = append(initResult.Problems, msg)
 		}
 	}
 
@@ -206,13 +198,11 @@ func RefreshInterval() time.Duration {
 // PermissionSyncingDisabled returns true if the background permissions syncing is not enabled.
 // It is not enabled if:
 //   - There are no code host connections with authorization or enforcePermissions enabled
-//   - Permissions user mapping (aka explicit permissions API) is enabled and unified permissions model is not enabled
 //   - Not purchased with the current license
 //   - `disableAutoCodeHostSyncs` site setting is set to true
 func PermissionSyncingDisabled() bool {
 	_, p := authz.GetProviders()
 	return len(p) == 0 ||
-		(globals.PermissionsUserMapping().Enabled && !conf.ExperimentalFeatures().UnifiedPermissions) ||
 		licensing.Check(licensing.FeatureACLs) != nil ||
 		conf.Get().DisableAutoCodeHostSyncs
 }

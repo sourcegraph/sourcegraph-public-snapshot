@@ -448,9 +448,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 							Url:          "https://gitlab.mine",
 						},
 					}},
-					ExperimentalFeatures: &schema.ExperimentalFeatures{
-						UnifiedPermissions: true,
-					},
 				},
 			},
 			gitlabConnections: []*schema.GitLabConnection{
@@ -847,15 +844,6 @@ func mockExplicitPermissions(enabled bool) func() {
 	}
 }
 
-func mockUnifiedPermsConfig(val bool) {
-	cfg := &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		ExperimentalFeatures: &schema.ExperimentalFeatures{
-			UnifiedPermissions: val,
-		},
-	}}
-	conf.Mock(cfg)
-}
-
 func TestPermissionSyncingDisabled(t *testing.T) {
 	authz.SetProviders(true, []authz.Provider{&mockProvider{}})
 	cleanupLicense := licensing.MockCheckFeatureError("")
@@ -874,20 +862,8 @@ func TestPermissionSyncingDisabled(t *testing.T) {
 		assert.True(t, PermissionSyncingDisabled())
 	})
 
-	t.Run("permissions user mapping enabled and unified permissions disabled", func(t *testing.T) {
+	t.Run("permissions user mapping enabled", func(t *testing.T) {
 		cleanup := mockExplicitPermissions(true)
-		mockUnifiedPermsConfig(false)
-		t.Cleanup(func() {
-			cleanup()
-			conf.Mock(nil)
-		})
-
-		assert.True(t, PermissionSyncingDisabled())
-	})
-
-	t.Run("permissions user mapping enabled and unified permissions enabled", func(t *testing.T) {
-		cleanup := mockExplicitPermissions(true)
-		mockUnifiedPermsConfig(true)
 		t.Cleanup(func() {
 			cleanup()
 			conf.Mock(nil)

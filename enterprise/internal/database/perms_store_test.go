@@ -94,143 +94,119 @@ func TestPermsStore_LoadUserPermissions(t *testing.T) {
 	db := database.NewDB(logger, testDb)
 	ctx := context.Background()
 
-	runTests := func(t *testing.T) {
-		t.Helper()
-
-		t.Run("no matching", func(t *testing.T) {
-			s := perms(logger, db, clock)
-			t.Cleanup(func() {
-				cleanupPermsTables(t, s)
-				cleanupUsersTable(t, s)
-				cleanupReposTable(t, s)
-			})
-
-			rp := &authz.RepoPermissions{
-				RepoID:  1,
-				Perm:    authz.Read,
-				UserIDs: toMapset(2),
-			}
-			setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 2, RepoID: 1}})
-
-			if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
-				t.Fatal(err)
-			} else if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
-				t.Fatal(err)
-			}
-
-			up, err := s.LoadUserPermissions(context.Background(), 1)
-			require.NoError(t, err)
-
-			equal(t, "IDs", 0, len(up))
-		})
-
-		t.Run("found matching", func(t *testing.T) {
-			s := perms(logger, db, clock)
-			t.Cleanup(func() {
-				cleanupPermsTables(t, s)
-				cleanupUsersTable(t, s)
-				cleanupReposTable(t, s)
-			})
-
-			rp := &authz.RepoPermissions{
-				RepoID:  1,
-				Perm:    authz.Read,
-				UserIDs: toMapset(2),
-			}
-			setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 2, RepoID: 1}})
-
-			if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
-				t.Fatal(err)
-			} else if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
-				t.Fatal(err)
-			}
-
-			up, err := s.LoadUserPermissions(context.Background(), 2)
-			require.NoError(t, err)
-
-			gotIDs := make([]int32, len(up))
-			for i, perm := range up {
-				gotIDs[i] = perm.RepoID
-			}
-
-			equal(t, "IDs", []int32{1}, gotIDs)
-		})
-
-		t.Run("add and change", func(t *testing.T) {
-			s := perms(logger, db, clock)
-			t.Cleanup(func() {
-				cleanupPermsTables(t, s)
-				cleanupUsersTable(t, s)
-				cleanupReposTable(t, s)
-			})
-
-			rp := &authz.RepoPermissions{
-				RepoID:  1,
-				Perm:    authz.Read,
-				UserIDs: toMapset(1, 2),
-			}
-			setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 1, RepoID: 1}, {UserID: 2, RepoID: 1}, {UserID: 3, RepoID: 1}})
-
-			if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 1}, {UserID: 2}}, authz.SourceRepoSync); err != nil {
-				t.Fatal(err)
-			} else if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
-				t.Fatal(err)
-			}
-
-			rp = &authz.RepoPermissions{
-				RepoID:  1,
-				Perm:    authz.Read,
-				UserIDs: toMapset(2, 3),
-			}
-			if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}, {UserID: 3}}, authz.SourceRepoSync); err != nil {
-				t.Fatal(err)
-			} else if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
-				t.Fatal(err)
-			}
-
-			up1, err := s.LoadUserPermissions(context.Background(), 1)
-			require.NoError(t, err)
-
-			equal(t, "No IDs", 0, len(up1))
-
-			up2, err := s.LoadUserPermissions(context.Background(), 2)
-			require.NoError(t, err)
-			gotIDs := make([]int32, len(up2))
-			for i, perm := range up2 {
-				gotIDs[i] = perm.RepoID
-			}
-
-			equal(t, "IDs", []int32{1}, gotIDs)
-
-			up3, err := s.LoadUserPermissions(context.Background(), 3)
-			require.NoError(t, err)
-			gotIDs = make([]int32, len(up3))
-			for i, perm := range up3 {
-				gotIDs[i] = perm.RepoID
-			}
-
-			equal(t, "IDs", []int32{1}, gotIDs)
-		})
-	}
-
-	t.Run("With legacy perms tables", func(t *testing.T) {
-		mockUnifiedPermsConfig(false)
-
+	t.Run("no matching", func(t *testing.T) {
+		s := perms(logger, db, clock)
 		t.Cleanup(func() {
-			conf.Mock(nil)
+			cleanupPermsTables(t, s)
+			cleanupUsersTable(t, s)
+			cleanupReposTable(t, s)
 		})
 
-		runTests(t)
+		rp := &authz.RepoPermissions{
+			RepoID:  1,
+			Perm:    authz.Read,
+			UserIDs: toMapset(2),
+		}
+		setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 2, RepoID: 1}})
+
+		if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
+			t.Fatal(err)
+		} else if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+			t.Fatal(err)
+		}
+
+		up, err := s.LoadUserPermissions(context.Background(), 1)
+		require.NoError(t, err)
+
+		equal(t, "IDs", 0, len(up))
 	})
 
-	t.Run("With unified perms table", func(t *testing.T) {
-		mockUnifiedPermsConfig(true)
-
+	t.Run("found matching", func(t *testing.T) {
+		s := perms(logger, db, clock)
 		t.Cleanup(func() {
-			conf.Mock(nil)
+			cleanupPermsTables(t, s)
+			cleanupUsersTable(t, s)
+			cleanupReposTable(t, s)
 		})
 
-		runTests(t)
+		rp := &authz.RepoPermissions{
+			RepoID:  1,
+			Perm:    authz.Read,
+			UserIDs: toMapset(2),
+		}
+		setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 2, RepoID: 1}})
+
+		if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
+			t.Fatal(err)
+		} else if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+			t.Fatal(err)
+		}
+
+		up, err := s.LoadUserPermissions(context.Background(), 2)
+		require.NoError(t, err)
+
+		gotIDs := make([]int32, len(up))
+		for i, perm := range up {
+			gotIDs[i] = perm.RepoID
+		}
+
+		equal(t, "IDs", []int32{1}, gotIDs)
+	})
+
+	t.Run("add and change", func(t *testing.T) {
+		s := perms(logger, db, clock)
+		t.Cleanup(func() {
+			cleanupPermsTables(t, s)
+			cleanupUsersTable(t, s)
+			cleanupReposTable(t, s)
+		})
+
+		rp := &authz.RepoPermissions{
+			RepoID:  1,
+			Perm:    authz.Read,
+			UserIDs: toMapset(1, 2),
+		}
+		setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 1, RepoID: 1}, {UserID: 2, RepoID: 1}, {UserID: 3, RepoID: 1}})
+
+		if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 1}, {UserID: 2}}, authz.SourceRepoSync); err != nil {
+			t.Fatal(err)
+		} else if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+			t.Fatal(err)
+		}
+
+		rp = &authz.RepoPermissions{
+			RepoID:  1,
+			Perm:    authz.Read,
+			UserIDs: toMapset(2, 3),
+		}
+		if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}, {UserID: 3}}, authz.SourceRepoSync); err != nil {
+			t.Fatal(err)
+		} else if _, err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+			t.Fatal(err)
+		}
+
+		up1, err := s.LoadUserPermissions(context.Background(), 1)
+		require.NoError(t, err)
+
+		equal(t, "No IDs", 0, len(up1))
+
+		up2, err := s.LoadUserPermissions(context.Background(), 2)
+		require.NoError(t, err)
+		gotIDs := make([]int32, len(up2))
+		for i, perm := range up2 {
+			gotIDs[i] = perm.RepoID
+		}
+
+		equal(t, "IDs", []int32{1}, gotIDs)
+
+		up3, err := s.LoadUserPermissions(context.Background(), 3)
+		require.NoError(t, err)
+		gotIDs = make([]int32, len(up3))
+		for i, perm := range up3 {
+			gotIDs[i] = perm.RepoID
+		}
+
+		equal(t, "IDs", []int32{1}, gotIDs)
 	})
 }
 
@@ -244,84 +220,63 @@ func TestPermsStore_LoadRepoPermissions(t *testing.T) {
 	db := database.NewDB(logger, testDb)
 	ctx := context.Background()
 
-	runTests := func(t *testing.T) {
-		t.Helper()
-		t.Run("no matching", func(t *testing.T) {
-			s := perms(logger, db, time.Now)
-			t.Cleanup(func() {
-				cleanupPermsTables(t, s)
-				cleanupUsersTable(t, s)
-				cleanupReposTable(t, s)
-			})
-
-			setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 2, RepoID: 1}})
-
-			up := &authz.UserPermissions{
-				UserID: 2,
-				Perm:   authz.Read,
-				Type:   authz.PermRepos,
-				IDs:    toMapset(1),
-			}
-			if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
-				t.Fatal(err)
-			} else if _, err := s.SetUserPermissions(context.Background(), up); err != nil {
-				t.Fatal(err)
-			}
-
-			rp, err := s.LoadRepoPermissions(context.Background(), 2)
-			require.NoError(t, err)
-			require.Equal(t, 0, len(rp))
-		})
-
-		t.Run("found matching", func(t *testing.T) {
-			s := perms(logger, db, time.Now)
-			t.Cleanup(func() {
-				cleanupPermsTables(t, s)
-				cleanupUsersTable(t, s)
-				cleanupReposTable(t, s)
-			})
-
-			setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 2, RepoID: 1}})
-
-			up := &authz.UserPermissions{
-				UserID: 2,
-				Perm:   authz.Read,
-				Type:   authz.PermRepos,
-				IDs:    toMapset(1),
-			}
-			if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
-				t.Fatal(err)
-			} else if _, err := s.SetUserPermissions(context.Background(), up); err != nil {
-				t.Fatal(err)
-			}
-
-			rp, err := s.LoadRepoPermissions(context.Background(), 1)
-			require.NoError(t, err)
-			gotIDs := make([]int32, len(rp))
-			for i, perm := range rp {
-				gotIDs[i] = perm.UserID
-			}
-
-			equal(t, "permissions UserIDs", []int32{2}, gotIDs)
-		})
-	}
-
-	t.Run("With legacy perms tables", func(t *testing.T) {
+	t.Run("no matching", func(t *testing.T) {
+		s := perms(logger, db, time.Now)
 		t.Cleanup(func() {
-			conf.Mock(nil)
+			cleanupPermsTables(t, s)
+			cleanupUsersTable(t, s)
+			cleanupReposTable(t, s)
 		})
-		mockUnifiedPermsConfig(false)
 
-		runTests(t)
+		setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 2, RepoID: 1}})
+
+		up := &authz.UserPermissions{
+			UserID: 2,
+			Perm:   authz.Read,
+			Type:   authz.PermRepos,
+			IDs:    toMapset(1),
+		}
+		if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
+			t.Fatal(err)
+		} else if _, err := s.SetUserPermissions(context.Background(), up); err != nil {
+			t.Fatal(err)
+		}
+
+		rp, err := s.LoadRepoPermissions(context.Background(), 2)
+		require.NoError(t, err)
+		require.Equal(t, 0, len(rp))
 	})
 
-	t.Run("With unified perms tables", func(t *testing.T) {
+	t.Run("found matching", func(t *testing.T) {
+		s := perms(logger, db, time.Now)
 		t.Cleanup(func() {
-			conf.Mock(nil)
+			cleanupPermsTables(t, s)
+			cleanupUsersTable(t, s)
+			cleanupReposTable(t, s)
 		})
-		mockUnifiedPermsConfig(true)
 
-		runTests(t)
+		setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 2, RepoID: 1}})
+
+		up := &authz.UserPermissions{
+			UserID: 2,
+			Perm:   authz.Read,
+			Type:   authz.PermRepos,
+			IDs:    toMapset(1),
+		}
+		if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
+			t.Fatal(err)
+		} else if _, err := s.SetUserPermissions(context.Background(), up); err != nil {
+			t.Fatal(err)
+		}
+
+		rp, err := s.LoadRepoPermissions(context.Background(), 1)
+		require.NoError(t, err)
+		gotIDs := make([]int32, len(rp))
+		for i, perm := range rp {
+			gotIDs[i] = perm.UserID
+		}
+
+		equal(t, "permissions UserIDs", []int32{2}, gotIDs)
 	})
 }
 
@@ -3433,15 +3388,6 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 	assert.Empty(t, userIDs)
 }
 
-func mockUnifiedPermsConfig(val bool) {
-	cfg := &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		ExperimentalFeatures: &schema.ExperimentalFeatures{
-			UnifiedPermissions: val,
-		},
-	}}
-	conf.Mock(cfg)
-}
-
 func execQuery(t *testing.T, ctx context.Context, s *permsStore, q *sqlf.Query) {
 	t.Helper()
 	if t.Failed() {
@@ -3499,45 +3445,22 @@ func TestPermsStore_UserIDsWithNoPerms(t *testing.T) {
 		t.Fatal(diff)
 	}
 
-	t.Run("legacy user_permissions table", func(t *testing.T) {
-		mockUnifiedPermsConfig(false)
+	// mark sync jobs as completed for "alice" and add permissions for "bob"
+	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, NOW(), %s)`, 1, database.ReasonUserNoPermissions)
+	execQuery(t, ctx, s, q)
 
-		s.SetUserPermissions(ctx, &authz.UserPermissions{UserID: 1, IDs: map[int32]struct{}{1: {}}})
-		s.SetUserPermissions(ctx, &authz.UserPermissions{UserID: 2, IDs: make(map[int32]struct{})})
+	s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: 2, ExternalAccountID: 1}, []int32{1}, authz.SourceUserSync)
 
-		// Only "david" has no permissions at this point
-		ids, err = s.UserIDsWithNoPerms(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
+	// Only "david" has no permissions at this point
+	ids, err = s.UserIDsWithNoPerms(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		expIDs = []int32{4}
-		if diff := cmp.Diff(expIDs, ids); diff != "" {
-			t.Fatal(diff)
-		}
-	})
-
-	t.Run("unified user_repo_permissions table", func(t *testing.T) {
-		mockUnifiedPermsConfig(true)
-
-		// mark sync jobs as completed for "alice" and add permissions for "bob"
-		q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, NOW(), %s)`, 1, database.ReasonUserNoPermissions)
-		execQuery(t, ctx, s, q)
-
-		s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: 2, ExternalAccountID: 1}, []int32{1}, authz.SourceUserSync)
-
-		// Only "david" has no permissions at this point
-		ids, err = s.UserIDsWithNoPerms(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		expIDs = []int32{4}
-		if diff := cmp.Diff(expIDs, ids); diff != "" {
-			t.Fatal(diff)
-		}
-	})
-
+	expIDs = []int32{4}
+	if diff := cmp.Diff(expIDs, ids); diff != "" {
+		t.Fatal(diff)
+	}
 }
 
 func TestPermsStore_CountUsersWithNoPerms(t *testing.T) {
@@ -3673,41 +3596,22 @@ func TestPermsStore_RepoIDsWithNoPerms(t *testing.T) {
 		t.Fatal(diff)
 	}
 
-	t.Run("legacy user_permissions table", func(t *testing.T) {
-		mockUnifiedPermsConfig(false)
+	// mark sync jobs as completed for "private_repo" and add permissions for "private_repo_2"
+	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, NOW(), %s)`, 1, database.ReasonRepoNoPermissions)
+	execQuery(t, ctx, s, q)
 
-		s.SetRepoPermissions(ctx, &authz.RepoPermissions{RepoID: 1, UserIDs: map[int32]struct{}{1: {}}})
-		s.SetRepoPermissions(ctx, &authz.RepoPermissions{RepoID: 3, UserIDs: make(map[int32]struct{})})
+	_, err = s.SetRepoPerms(ctx, 3, []authz.UserIDWithExternalAccountID{{UserID: 1, ExternalAccountID: 1}}, authz.SourceRepoSync)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		// No private repositories have any permissions at this point
-		ids, err = s.RepoIDsWithNoPerms(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
+	// No private repositories have any permissions at this point
+	ids, err = s.RepoIDsWithNoPerms(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		assert.Nil(t, ids)
-	})
-
-	t.Run("unified user_repo_permissions table", func(t *testing.T) {
-		mockUnifiedPermsConfig(true)
-
-		// mark sync jobs as completed for "private_repo" and add permissions for "private_repo_2"
-		q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, NOW(), %s)`, 1, database.ReasonRepoNoPermissions)
-		execQuery(t, ctx, s, q)
-
-		_, err := s.SetRepoPerms(ctx, 3, []authz.UserIDWithExternalAccountID{{UserID: 1, ExternalAccountID: 1}}, authz.SourceRepoSync)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// No private repositories have any permissions at this point
-		ids, err = s.RepoIDsWithNoPerms(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		assert.Nil(t, ids)
-	})
+	assert.Nil(t, ids)
 }
 
 func TestPermsStore_CountReposWithNoPerms(t *testing.T) {
@@ -4255,118 +4159,90 @@ func TestPermsStore_Metrics(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	tests := map[string]struct {
-		unifiedPermissionsEnabled bool
-	}{
-		"unified permissions disabled": {
-			unifiedPermissionsEnabled: false,
-		},
-		"unified permissions enabled": {
-			unifiedPermissionsEnabled: true,
-		},
+	testDb := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, testDb)
+	s := perms(logger, db, clock)
+
+	ctx := context.Background()
+	t.Cleanup(func() {
+		cleanupPermsTables(t, s)
+		cleanupUsersTable(t, s)
+		if t.Failed() {
+			return
+		}
+
+		if err := s.execute(ctx, sqlf.Sprintf(`DELETE FROM repo`)); err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	// Set up repositories in various states (public/private, deleted/not, etc.)
+	qs := []*sqlf.Query{
+		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(1, 'private_repo_1', TRUE)`),
+		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(2, 'private_repo_2', TRUE)`),
+		sqlf.Sprintf(`INSERT INTO repo(id, name, private, deleted_at) VALUES(3, 'private_repo_3', TRUE, NOW())`),
+		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(4, 'public_repo_4', FALSE)`),
+	}
+	for _, q := range qs {
+		if err := s.execute(ctx, q); err != nil {
+			t.Fatal(err)
+		}
 	}
 
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			mockUnifiedPermsConfig(tt.unifiedPermissionsEnabled)
-			testDb := dbtest.NewDB(logger, t)
-			db := database.NewDB(logger, testDb)
-			s := perms(logger, db, clock)
+	// Set up users in various states (deleted/not, etc.)
+	qs = []*sqlf.Query{
+		sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(1, 'user1')`),
+		sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(2, 'user2')`),
+		sqlf.Sprintf(`INSERT INTO users(id, username, deleted_at) VALUES(3, 'user3', NOW())`),
+	}
+	for _, q := range qs {
+		if err := s.execute(ctx, q); err != nil {
+			t.Fatal(err)
+		}
+	}
 
-			ctx := context.Background()
-			t.Cleanup(func() {
-				cleanupPermsTables(t, s)
-				cleanupUsersTable(t, s)
-				if t.Failed() {
-					return
-				}
-
-				if err := s.execute(ctx, sqlf.Sprintf(`DELETE FROM repo`)); err != nil {
-					t.Fatal(err)
-				}
-			})
-
-			// Set up repositories in various states (public/private, deleted/not, etc.)
-			qs := []*sqlf.Query{
-				sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(1, 'private_repo_1', TRUE)`),
-				sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(2, 'private_repo_2', TRUE)`),
-				sqlf.Sprintf(`INSERT INTO repo(id, name, private, deleted_at) VALUES(3, 'private_repo_3', TRUE, NOW())`),
-				sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(4, 'public_repo_4', FALSE)`),
-			}
-			for _, q := range qs {
-				if err := s.execute(ctx, q); err != nil {
-					t.Fatal(err)
-				}
-			}
-
-			// Set up users in various states (deleted/not, etc.)
-			qs = []*sqlf.Query{
-				sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(1, 'user1')`),
-				sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(2, 'user2')`),
-				sqlf.Sprintf(`INSERT INTO users(id, username, deleted_at) VALUES(3, 'user3', NOW())`),
-			}
-			for _, q := range qs {
-				if err := s.execute(ctx, q); err != nil {
-					t.Fatal(err)
-				}
-			}
-
-			// Set up permissions for the various repos.
-			for i := 0; i < 4; i++ {
-				_, err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
-					RepoID:  int32(i + 1),
-					Perm:    authz.Read,
-					UserIDs: toMapset(1, 2, 3, 4),
-				})
-				if err != nil {
-					t.Fatal(err)
-				}
-			}
-
-			// Mock rows for testing
-			if tt.unifiedPermissionsEnabled {
-				qs = []*sqlf.Query{
-					sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, user_id, reason) VALUES(%s, 1, 'TEST')`, clock()),
-					sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, user_id, reason) VALUES(%s, 2, 'TEST')`, clock().Add(-1*time.Minute)),
-					sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, user_id, reason) VALUES(%s, 3, 'TEST')`, clock().Add(-2*time.Minute)), // Meant to be excluded because it has been deleted
-					sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, repository_id, reason) VALUES(%s, 1, 'TEST')`, clock()),
-					sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, repository_id, reason) VALUES(%s, 2, 'TEST')`, clock().Add(-2*time.Minute)),
-					sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, repository_id, reason) VALUES(%s, 3, 'TEST')`, clock().Add(-3*time.Minute)), // Meant to be excluded because it has been deleted
-					sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, repository_id, reason) VALUES(%s, 4, 'TEST')`, clock().Add(-3*time.Minute)), // Meant to be excluded because it is public
-				}
-			} else {
-				qs = []*sqlf.Query{
-					sqlf.Sprintf(`UPDATE user_permissions SET updated_at = %s WHERE user_id = 1`, clock()),
-					sqlf.Sprintf(`UPDATE user_permissions SET updated_at = %s WHERE user_id = 2`, clock().Add(-1*time.Minute)),
-					sqlf.Sprintf(`UPDATE user_permissions SET updated_at = %s WHERE user_id = 3`, clock().Add(-2*time.Minute)), // Meant to be excluded because it has been deleted
-					sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 1`, clock()),
-					sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 2`, clock().Add(-2*time.Minute)),
-					sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 3`, clock().Add(-3*time.Minute)), // Meant to be excluded because it has been deleted
-					sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 4`, clock().Add(-3*time.Minute)), // Meant to be excluded because it is public
-				}
-			}
-			for _, q := range qs {
-				if err := s.execute(ctx, q); err != nil {
-					t.Fatal(err)
-				}
-			}
-
-			m, err := s.Metrics(ctx, time.Minute)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			expMetrics := &PermsMetrics{
-				UsersWithStalePerms:  1,
-				UsersPermsGapSeconds: 60,
-				ReposWithStalePerms:  1,
-				ReposPermsGapSeconds: 120,
-			}
-
-			if diff := cmp.Diff(expMetrics, m); diff != "" {
-				t.Fatalf("mismatch (-want +got):\n%s", diff)
-			}
+	// Set up permissions for the various repos.
+	for i := 0; i < 4; i++ {
+		_, err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
+			RepoID:  int32(i + 1),
+			Perm:    authz.Read,
+			UserIDs: toMapset(1, 2, 3, 4),
 		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Mock rows for testing
+	qs = []*sqlf.Query{
+		sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, user_id, reason) VALUES(%s, 1, 'TEST')`, clock()),
+		sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, user_id, reason) VALUES(%s, 2, 'TEST')`, clock().Add(-1*time.Minute)),
+		sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, user_id, reason) VALUES(%s, 3, 'TEST')`, clock().Add(-2*time.Minute)), // Meant to be excluded because it has been deleted
+		sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, repository_id, reason) VALUES(%s, 1, 'TEST')`, clock()),
+		sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, repository_id, reason) VALUES(%s, 2, 'TEST')`, clock().Add(-2*time.Minute)),
+		sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, repository_id, reason) VALUES(%s, 3, 'TEST')`, clock().Add(-3*time.Minute)), // Meant to be excluded because it has been deleted
+		sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, repository_id, reason) VALUES(%s, 4, 'TEST')`, clock().Add(-3*time.Minute)), // Meant to be excluded because it is public
+	}
+	for _, q := range qs {
+		if err := s.execute(ctx, q); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	m, err := s.Metrics(ctx, time.Minute)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expMetrics := &PermsMetrics{
+		UsersWithStalePerms:  1,
+		UsersPermsGapSeconds: 60,
+		ReposWithStalePerms:  1,
+		ReposPermsGapSeconds: 120,
+	}
+
+	if diff := cmp.Diff(expMetrics, m); diff != "" {
+		t.Fatalf("mismatch (-want +got):\n%s", diff)
 	}
 }
 
@@ -4386,183 +4262,143 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
+	testDb := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, testDb)
+	s := perms(logger, db, clock)
+	ctx := context.Background()
 
-	tests := map[string]struct {
-		unifiedPermissionsEnabled bool
-	}{
-		"unified permissions disabled": {
-			unifiedPermissionsEnabled: false,
-		},
-		"unified permissions enabled": {
-			unifiedPermissionsEnabled: true,
-		},
+	t.Cleanup(func() {
+		cleanupPermsTables(t, s)
+
+		if t.Failed() {
+			return
+		}
+		q := `TRUNCATE TABLE external_services, repo, users CASCADE`
+		if err := s.execute(ctx, sqlf.Sprintf(q)); err != nil {
+			t.Fatal(err)
+		}
+	})
+	// Set fake authz providers otherwise authz is bypassed
+	authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
+	defer authz.SetProviders(true, nil)
+	// Set up some repositories and permissions
+	qs := []*sqlf.Query{
+		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(555, 'user555', FALSE)`),
+		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(777, 'user777', TRUE)`),
+		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(1, 'private_repo_1', TRUE)`),
+		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(2, 'private_repo_2', TRUE)`),
+		sqlf.Sprintf(`INSERT INTO repo(id, name, private, deleted_at) VALUES(3, 'private_repo_3_deleted', TRUE, NOW())`),
+		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(4, 'public_repo_4', FALSE)`),
+		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(5, 'public_repo_5', TRUE)`),
+		sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config) VALUES(1, 'GitHub #1', 'GITHUB', '{}')`),
+		sqlf.Sprintf(`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url)
+                                 VALUES(1, 1, ''), (2, 1, ''), (3, 1, ''), (4, 1, '')`),
+		sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config, unrestricted) VALUES(2, 'GitHub #2 Unrestricted', 'GITHUB', '{}', TRUE)`),
+		sqlf.Sprintf(`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url)
+                                 VALUES(5, 2, '')`),
+	}
+	for _, q := range qs {
+		if err := s.execute(ctx, q); err != nil {
+			t.Fatal(err)
+		}
+	}
+	q := sqlf.Sprintf(`INSERT INTO user_repo_permissions(user_id, repo_id) VALUES(555, 1), (777, 2), (555, 3), (777, 3);`)
+	if err := s.execute(ctx, q); err != nil {
+		t.Fatal(err)
 	}
 
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			mockUnifiedPermsConfig(tt.unifiedPermissionsEnabled)
-			testDb := dbtest.NewDB(logger, t)
-			db := database.NewDB(logger, testDb)
-			s := perms(logger, db, clock)
-			ctx := context.Background()
-
-			t.Cleanup(func() {
-				cleanupPermsTables(t, s)
-
-				if t.Failed() {
-					return
-				}
-				q := `TRUNCATE TABLE external_services, repo, users CASCADE`
-				if err := s.execute(ctx, sqlf.Sprintf(q)); err != nil {
-					t.Fatal(err)
-				}
-			})
-			// Set fake authz providers otherwise authz is bypassed
-			authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
-			defer authz.SetProviders(true, nil)
-			// Set up some repositories and permissions
-			qs := []*sqlf.Query{
-				sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(555, 'user555', FALSE)`),
-				sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(777, 'user777', TRUE)`),
-				sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(1, 'private_repo_1', TRUE)`),
-				sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(2, 'private_repo_2', TRUE)`),
-				sqlf.Sprintf(`INSERT INTO repo(id, name, private, deleted_at) VALUES(3, 'private_repo_3_deleted', TRUE, NOW())`),
-				sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(4, 'public_repo_4', FALSE)`),
-				sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(5, 'public_repo_5', TRUE)`),
-				sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config) VALUES(1, 'GitHub #1', 'GITHUB', '{}')`),
-				sqlf.Sprintf(`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url)
-                                 VALUES(1, 1, ''), (2, 1, ''), (3, 1, ''), (4, 1, '')`),
-				sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config, unrestricted) VALUES(2, 'GitHub #2 Unrestricted', 'GITHUB', '{}', TRUE)`),
-				sqlf.Sprintf(`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url)
-                                 VALUES(5, 2, '')`),
-			}
-			for _, q := range qs {
-				if err := s.execute(ctx, q); err != nil {
-					t.Fatal(err)
-				}
-			}
-			if tt.unifiedPermissionsEnabled {
-				q := sqlf.Sprintf(`INSERT INTO user_repo_permissions(user_id, repo_id) VALUES(555, 1), (777, 2), (555, 3), (777, 3);`)
-				if err := s.execute(ctx, q); err != nil {
-					t.Fatal(err)
-				}
-			} else {
-				perms := []*authz.RepoPermissions{
-					{
-						RepoID:  1,
-						Perm:    authz.Read,
-						UserIDs: toMapset(555),
-					}, {
-						RepoID:  2,
-						Perm:    authz.Read,
-						UserIDs: toMapset(777),
-					}, {
-						RepoID:  3,
-						Perm:    authz.Read,
-						UserIDs: toMapset(555, 777),
-					},
-				}
-				for _, perm := range perms {
-					_, err := s.SetRepoPermissions(ctx, perm)
-					if err != nil {
-						t.Fatal(err)
-					}
-				}
-			}
-			tests := []listUserPermissionsTest{
+	tests := []listUserPermissionsTest{
+		{
+			Name:   "TestNonSiteAdminUser",
+			UserID: 555,
+			WantResults: []*listUserPermissionsResult{
 				{
-					Name:   "TestNonSiteAdminUser",
-					UserID: 555,
-					WantResults: []*listUserPermissionsResult{
-						{
-							// private repo but have access via user_permissions
-							RepoId: 1,
-							Reason: UserRepoPermissionReasonPermissionsSync,
-						},
-						{
-							// public repo
-							RepoId: 4,
-							Reason: UserRepoPermissionReasonUnrestricted,
-						},
-						{
-							// private repo but unrestricted
-							RepoId: 5,
-							Reason: UserRepoPermissionReasonUnrestricted,
-						},
-					},
+					// private repo but have access via user_permissions
+					RepoId: 1,
+					Reason: UserRepoPermissionReasonPermissionsSync,
 				},
 				{
-					Name:   "TestPagination",
-					UserID: 555,
-					Args: &ListUserPermissionsArgs{
-						PaginationArgs: &database.PaginationArgs{First: toIntPtr(2), After: toStringPtr("'public_repo_5'"), OrderBy: database.OrderBy{{Field: "repo.name"}}},
-					},
-					WantResults: []*listUserPermissionsResult{
-						{
-							RepoId: 4,
-							Reason: UserRepoPermissionReasonUnrestricted,
-						},
-						{
-							RepoId: 1,
-							Reason: UserRepoPermissionReasonPermissionsSync,
-						},
-					},
+					// public repo
+					RepoId: 4,
+					Reason: UserRepoPermissionReasonUnrestricted,
 				},
 				{
-					Name:   "TestSearchQuery",
-					UserID: 555,
-					Args: &ListUserPermissionsArgs{
-						Query: "repo_5",
-					},
-					WantResults: []*listUserPermissionsResult{
-						{
-							RepoId: 5,
-							Reason: UserRepoPermissionReasonUnrestricted,
-						},
-					},
+					// private repo but unrestricted
+					RepoId: 5,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
+			},
+		},
+		{
+			Name:   "TestPagination",
+			UserID: 555,
+			Args: &ListUserPermissionsArgs{
+				PaginationArgs: &database.PaginationArgs{First: toIntPtr(2), After: toStringPtr("'public_repo_5'"), OrderBy: database.OrderBy{{Field: "repo.name"}}},
+			},
+			WantResults: []*listUserPermissionsResult{
+				{
+					RepoId: 4,
+					Reason: UserRepoPermissionReasonUnrestricted,
 				},
 				{
-					Name:   "TestSiteAdminUser",
-					UserID: 777,
-					WantResults: []*listUserPermissionsResult{
-						{
-							// do not have direct access but user is site admin
-							RepoId: 1,
-							Reason: UserRepoPermissionReasonSiteAdmin,
-						},
-						{
-							// private repo but have access via user_permissions
-							RepoId: 2,
-							Reason: UserRepoPermissionReasonSiteAdmin,
-						},
-						{
-							// public repo
-							RepoId: 4,
-							Reason: UserRepoPermissionReasonSiteAdmin,
-						},
-						{
-							// private repo but unrestricted
-							RepoId: 5,
-							Reason: UserRepoPermissionReasonSiteAdmin,
-						},
-					},
+					RepoId: 1,
+					Reason: UserRepoPermissionReasonPermissionsSync,
 				},
+			},
+		},
+		{
+			Name:   "TestSearchQuery",
+			UserID: 555,
+			Args: &ListUserPermissionsArgs{
+				Query: "repo_5",
+			},
+			WantResults: []*listUserPermissionsResult{
+				{
+					RepoId: 5,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
+			},
+		},
+		{
+			Name:   "TestSiteAdminUser",
+			UserID: 777,
+			WantResults: []*listUserPermissionsResult{
+				{
+					// do not have direct access but user is site admin
+					RepoId: 1,
+					Reason: UserRepoPermissionReasonSiteAdmin,
+				},
+				{
+					// private repo but have access via user_permissions
+					RepoId: 2,
+					Reason: UserRepoPermissionReasonSiteAdmin,
+				},
+				{
+					// public repo
+					RepoId: 4,
+					Reason: UserRepoPermissionReasonSiteAdmin,
+				},
+				{
+					// private repo but unrestricted
+					RepoId: 5,
+					Reason: UserRepoPermissionReasonSiteAdmin,
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			results, err := s.ListUserPermissions(ctx, int32(test.UserID), test.Args)
+			if err != nil {
+				t.Fatal(err)
 			}
-			for _, test := range tests {
-				t.Run(test.Name, func(t *testing.T) {
-					results, err := s.ListUserPermissions(ctx, int32(test.UserID), test.Args)
-					if err != nil {
-						t.Fatal(err)
-					}
-					if len(test.WantResults) != len(results) {
-						t.Fatalf("Results mismatch. Want: %d Got: %d", len(test.WantResults), len(results))
-					}
-					for index, result := range results {
-						if diff := cmp.Diff(test.WantResults[index], &listUserPermissionsResult{RepoId: int32(result.Repo.ID), Reason: result.Reason}); diff != "" {
-							t.Fatalf("Results (%d) mismatch (-want +got):\n%s", index, diff)
-						}
-					}
-				})
+			if len(test.WantResults) != len(results) {
+				t.Fatalf("Results mismatch. Want: %d Got: %d", len(test.WantResults), len(results))
+			}
+			for index, result := range results {
+				if diff := cmp.Diff(test.WantResults[index], &listUserPermissionsResult{RepoId: int32(result.Repo.ID), Reason: result.Reason}); diff != "" {
+					t.Fatalf("Results (%d) mismatch (-want +got):\n%s", index, diff)
+				}
 			}
 		})
 	}
@@ -4587,309 +4423,261 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	tests := map[string]struct {
-		unifiedPermsEnabled bool
-	}{
-		"unified permissions disabled": {
-			unifiedPermsEnabled: false,
+	testDb := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, testDb)
+
+	s := perms(logtest.Scoped(t), db, clock)
+	ctx := context.Background()
+	t.Cleanup(func() {
+		cleanupPermsTables(t, s)
+
+		if t.Failed() {
+			return
+		}
+
+		q := `TRUNCATE TABLE external_services, repo, users CASCADE`
+		if err := s.execute(ctx, sqlf.Sprintf(q)); err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	// Set up some repositories and permissions
+	qs := []*sqlf.Query{
+		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(555, 'user555', FALSE)`),
+		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(666, 'user666', FALSE)`),
+		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(777, 'user777', TRUE)`),
+		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin, deleted_at) VALUES(888, 'user888', TRUE, NOW())`),
+		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(1, 'private_repo_1', TRUE)`),
+		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(2, 'public_repo_2', FALSE)`),
+		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(3, 'unrestricted_repo_3', TRUE)`),
+		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(4, 'unrestricted_repo_4', TRUE)`),
+		sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config) VALUES(1, 'GitHub #1', 'GITHUB', '{}')`),
+		sqlf.Sprintf(`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url)
+                                 VALUES(1, 1, ''), (2, 1, ''), (3, 1, '')`),
+		sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config, unrestricted) VALUES(2, 'GitHub #2 Unrestricted', 'GITHUB', '{}', TRUE)`),
+		sqlf.Sprintf(`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url)
+                                 VALUES(4, 2, '')`),
+	}
+
+	for _, q := range qs {
+		if err := s.execute(ctx, q); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	q := sqlf.Sprintf(`INSERT INTO user_repo_permissions(user_id, repo_id) VALUES(555, 1), (666, 1), (NULL, 3), (666, 4)`)
+	if err := s.execute(ctx, q); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []listRepoPermissionsTest{
+		{
+			Name:   "TestPrivateRepo",
+			RepoID: 1,
+			Args:   nil,
+			WantResults: []*listRepoPermissionsResult{
+				{
+					// do not have access but site-admin
+					UserID: 777,
+					Reason: UserRepoPermissionReasonSiteAdmin,
+				},
+				{
+					// have access
+					UserID: 666,
+					Reason: UserRepoPermissionReasonPermissionsSync,
+				},
+				{
+					// have access
+					UserID: 555,
+					Reason: UserRepoPermissionReasonPermissionsSync,
+				},
+			},
 		},
-		"unified permissions enabled": {
-			unifiedPermsEnabled: true,
+		{
+			Name:             "TestPrivateRepoWithNoAuthzProviders",
+			RepoID:           1,
+			Args:             nil,
+			NoAuthzProviders: true,
+			// all users have access
+			WantResults: []*listRepoPermissionsResult{
+				{
+					UserID: 777,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
+				{
+					UserID: 666,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
+				{
+					UserID: 555,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
+			},
+		},
+		{
+			Name:   "TestPaginationWithPrivateRepo",
+			RepoID: 1,
+			Args: &ListRepoPermissionsArgs{
+				PaginationArgs: &database.PaginationArgs{First: toIntPtr(1), After: toStringPtr("555"), OrderBy: database.OrderBy{{Field: "users.id"}}, Ascending: true},
+			},
+			WantResults: []*listRepoPermissionsResult{
+				{
+					UserID: 666,
+					Reason: UserRepoPermissionReasonPermissionsSync,
+				},
+			},
+		},
+		{
+			Name:   "TestSearchQueryWithPrivateRepo",
+			RepoID: 1,
+			Args: &ListRepoPermissionsArgs{
+				Query: "6",
+			},
+			WantResults: []*listRepoPermissionsResult{
+				{
+					UserID: 666,
+					Reason: UserRepoPermissionReasonPermissionsSync,
+				},
+			},
+		},
+		{
+			Name:   "TestPublicRepo",
+			RepoID: 2,
+			Args:   nil,
+			// all users have access
+			WantResults: []*listRepoPermissionsResult{
+				{
+					UserID: 777,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
+				{
+					UserID: 666,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
+				{
+					UserID: 555,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
+			},
+		},
+		{
+			Name:   "TestUnrestrictedViaPermsTableRepo",
+			RepoID: 3,
+			Args:   nil,
+			// all users have access
+			WantResults: []*listRepoPermissionsResult{
+				{
+					UserID: 777,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
+				{
+					UserID: 666,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
+				{
+					UserID: 555,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
+			},
+		},
+		{
+			Name:   "TestUnrestrictedViaExternalServiceRepo",
+			RepoID: 4,
+			Args:   nil,
+			// all users have access
+			WantResults: []*listRepoPermissionsResult{
+				{
+					UserID: 777,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
+				{
+					UserID: 666,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
+				{
+					UserID: 555,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
+			},
+		},
+		{
+			Name:                      "TestUnrestrictedViaExternalServiceRepoWithoutPermsMapping",
+			RepoID:                    4,
+			Args:                      nil,
+			NoAuthzProviders:          true,
+			UsePermissionsUserMapping: true,
+			// restricted access
+			WantResults: []*listRepoPermissionsResult{
+				{
+					// do not have access but site-admin
+					UserID: 777,
+					Reason: UserRepoPermissionReasonSiteAdmin,
+				},
+				{
+					// have access
+					UserID: 666,
+					Reason: UserRepoPermissionReasonPermissionsSync,
+				},
+			},
+		},
+		{
+			Name:                      "TestPrivateRepoWithAuthzEnforceForSiteAdminsEnabled",
+			RepoID:                    1,
+			Args:                      nil,
+			AuthzEnforceForSiteAdmins: true,
+			WantResults: []*listRepoPermissionsResult{
+				{
+					// have access
+					UserID: 666,
+					Reason: UserRepoPermissionReasonPermissionsSync,
+				},
+				{
+					// have access
+					UserID: 555,
+					Reason: UserRepoPermissionReasonPermissionsSync,
+				},
+			},
 		},
 	}
 
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			testDb := dbtest.NewDB(logger, t)
-			db := database.NewDB(logger, testDb)
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			if !test.NoAuthzProviders {
+				// Set fake authz providers otherwise authz is bypassed
+				authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
+				defer authz.SetProviders(true, nil)
+			}
 
-			s := perms(logtest.Scoped(t), db, clock)
-			ctx := context.Background()
+			before := globals.PermissionsUserMapping()
+			globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: test.UsePermissionsUserMapping})
+			conf.Mock(
+				&conf.Unified{
+					SiteConfiguration: schema.SiteConfiguration{
+						AuthzEnforceForSiteAdmins: test.AuthzEnforceForSiteAdmins,
+					},
+				},
+			)
 			t.Cleanup(func() {
-				cleanupPermsTables(t, s)
-
-				if t.Failed() {
-					return
-				}
-
-				q := `TRUNCATE TABLE external_services, repo, users CASCADE`
-				if err := s.execute(ctx, sqlf.Sprintf(q)); err != nil {
-					t.Fatal(err)
-				}
+				globals.SetPermissionsUserMapping(before)
+				conf.Mock(nil)
 			})
 
-			// Set up some repositories and permissions
-			qs := []*sqlf.Query{
-				sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(555, 'user555', FALSE)`),
-				sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(666, 'user666', FALSE)`),
-				sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(777, 'user777', TRUE)`),
-				sqlf.Sprintf(`INSERT INTO users(id, username, site_admin, deleted_at) VALUES(888, 'user888', TRUE, NOW())`),
-				sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(1, 'private_repo_1', TRUE)`),
-				sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(2, 'public_repo_2', FALSE)`),
-				sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(3, 'unrestricted_repo_3', TRUE)`),
-				sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(4, 'unrestricted_repo_4', TRUE)`),
-				sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config) VALUES(1, 'GitHub #1', 'GITHUB', '{}')`),
-				sqlf.Sprintf(`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url)
-                                 VALUES(1, 1, ''), (2, 1, ''), (3, 1, '')`),
-				sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config, unrestricted) VALUES(2, 'GitHub #2 Unrestricted', 'GITHUB', '{}', TRUE)`),
-				sqlf.Sprintf(`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url)
-                                 VALUES(4, 2, '')`),
+			results, err := s.ListRepoPermissions(ctx, api.RepoID(test.RepoID), test.Args)
+			if err != nil {
+				t.Fatal(err)
 			}
 
-			for _, q := range qs {
-				if err := s.execute(ctx, q); err != nil {
-					t.Fatal(err)
-				}
+			if len(test.WantResults) != len(results) {
+				t.Fatalf("Results mismatch. Want: %d Got: %d", len(test.WantResults), len(results))
 			}
 
-			if tt.unifiedPermsEnabled {
-				q := sqlf.Sprintf(`INSERT INTO user_repo_permissions(user_id, repo_id) VALUES(555, 1), (666, 1), (NULL, 3), (666, 4)`)
-				if err := s.execute(ctx, q); err != nil {
-					t.Fatal(err)
-				}
-			} else {
-				perms := []*authz.RepoPermissions{
-					{
-						// private repo
-						RepoID: 1,
-						Perm:   authz.Read,
-						// non site-admin users
-						UserIDs: toMapset(555, 666),
-					}, {
-						// private repo but unrestricted via perms_table
-						RepoID:       3,
-						Perm:         authz.Read,
-						UserIDs:      toMapset(),
-						Unrestricted: true,
-					}, {
-						// private repo but unrestricted via external service
-						RepoID:  4,
-						Perm:    authz.Read,
-						UserIDs: toMapset(666),
-					},
-				}
-
-				for _, perm := range perms {
-					_, err := s.SetRepoPermissions(ctx, perm)
-					if err != nil {
-						t.Fatal(err)
-					}
-				}
+			actualResults := make([]*listRepoPermissionsResult, 0, len(results))
+			for _, result := range results {
+				actualResults = append(actualResults, &listRepoPermissionsResult{UserID: result.User.ID, Reason: result.Reason})
 			}
 
-			tests := []listRepoPermissionsTest{
-				{
-					Name:   "TestPrivateRepo",
-					RepoID: 1,
-					Args:   nil,
-					WantResults: []*listRepoPermissionsResult{
-						{
-							// do not have access but site-admin
-							UserID: 777,
-							Reason: UserRepoPermissionReasonSiteAdmin,
-						},
-						{
-							// have access
-							UserID: 666,
-							Reason: UserRepoPermissionReasonPermissionsSync,
-						},
-						{
-							// have access
-							UserID: 555,
-							Reason: UserRepoPermissionReasonPermissionsSync,
-						},
-					},
-				},
-				{
-					Name:             "TestPrivateRepoWithNoAuthzProviders",
-					RepoID:           1,
-					Args:             nil,
-					NoAuthzProviders: true,
-					// all users have access
-					WantResults: []*listRepoPermissionsResult{
-						{
-							UserID: 777,
-							Reason: UserRepoPermissionReasonUnrestricted,
-						},
-						{
-							UserID: 666,
-							Reason: UserRepoPermissionReasonUnrestricted,
-						},
-						{
-							UserID: 555,
-							Reason: UserRepoPermissionReasonUnrestricted,
-						},
-					},
-				},
-				{
-					Name:   "TestPaginationWithPrivateRepo",
-					RepoID: 1,
-					Args: &ListRepoPermissionsArgs{
-						PaginationArgs: &database.PaginationArgs{First: toIntPtr(1), After: toStringPtr("555"), OrderBy: database.OrderBy{{Field: "users.id"}}, Ascending: true},
-					},
-					WantResults: []*listRepoPermissionsResult{
-						{
-							UserID: 666,
-							Reason: UserRepoPermissionReasonPermissionsSync,
-						},
-					},
-				},
-				{
-					Name:   "TestSearchQueryWithPrivateRepo",
-					RepoID: 1,
-					Args: &ListRepoPermissionsArgs{
-						Query: "6",
-					},
-					WantResults: []*listRepoPermissionsResult{
-						{
-							UserID: 666,
-							Reason: UserRepoPermissionReasonPermissionsSync,
-						},
-					},
-				},
-				{
-					Name:   "TestPublicRepo",
-					RepoID: 2,
-					Args:   nil,
-					// all users have access
-					WantResults: []*listRepoPermissionsResult{
-						{
-							UserID: 777,
-							Reason: UserRepoPermissionReasonUnrestricted,
-						},
-						{
-							UserID: 666,
-							Reason: UserRepoPermissionReasonUnrestricted,
-						},
-						{
-							UserID: 555,
-							Reason: UserRepoPermissionReasonUnrestricted,
-						},
-					},
-				},
-				{
-					Name:   "TestUnrestrictedViaPermsTableRepo",
-					RepoID: 3,
-					Args:   nil,
-					// all users have access
-					WantResults: []*listRepoPermissionsResult{
-						{
-							UserID: 777,
-							Reason: UserRepoPermissionReasonUnrestricted,
-						},
-						{
-							UserID: 666,
-							Reason: UserRepoPermissionReasonUnrestricted,
-						},
-						{
-							UserID: 555,
-							Reason: UserRepoPermissionReasonUnrestricted,
-						},
-					},
-				},
-				{
-					Name:   "TestUnrestrictedViaExternalServiceRepo",
-					RepoID: 4,
-					Args:   nil,
-					// all users have access
-					WantResults: []*listRepoPermissionsResult{
-						{
-							UserID: 777,
-							Reason: UserRepoPermissionReasonUnrestricted,
-						},
-						{
-							UserID: 666,
-							Reason: UserRepoPermissionReasonUnrestricted,
-						},
-						{
-							UserID: 555,
-							Reason: UserRepoPermissionReasonUnrestricted,
-						},
-					},
-				},
-				{
-					Name:                      "TestUnrestrictedViaExternalServiceRepoWithoutPermsMapping",
-					RepoID:                    4,
-					Args:                      nil,
-					NoAuthzProviders:          true,
-					UsePermissionsUserMapping: true,
-					// restricted access
-					WantResults: []*listRepoPermissionsResult{
-						{
-							// do not have access but site-admin
-							UserID: 777,
-							Reason: UserRepoPermissionReasonSiteAdmin,
-						},
-						{
-							// have access
-							UserID: 666,
-							Reason: UserRepoPermissionReasonPermissionsSync,
-						},
-					},
-				},
-				{
-					Name:                      "TestPrivateRepoWithAuthzEnforceForSiteAdminsEnabled",
-					RepoID:                    1,
-					Args:                      nil,
-					AuthzEnforceForSiteAdmins: true,
-					WantResults: []*listRepoPermissionsResult{
-						{
-							// have access
-							UserID: 666,
-							Reason: UserRepoPermissionReasonPermissionsSync,
-						},
-						{
-							// have access
-							UserID: 555,
-							Reason: UserRepoPermissionReasonPermissionsSync,
-						},
-					},
-				},
-			}
-
-			for _, test := range tests {
-				t.Run(test.Name, func(t *testing.T) {
-					if !test.NoAuthzProviders {
-						// Set fake authz providers otherwise authz is bypassed
-						authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
-						defer authz.SetProviders(true, nil)
-					}
-
-					before := globals.PermissionsUserMapping()
-					globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: test.UsePermissionsUserMapping})
-					conf.Mock(
-						&conf.Unified{
-							SiteConfiguration: schema.SiteConfiguration{
-								AuthzEnforceForSiteAdmins: test.AuthzEnforceForSiteAdmins,
-								ExperimentalFeatures: &schema.ExperimentalFeatures{
-									UnifiedPermissions: tt.unifiedPermsEnabled,
-								},
-							},
-						},
-					)
-					t.Cleanup(func() {
-						globals.SetPermissionsUserMapping(before)
-						conf.Mock(nil)
-					})
-
-					results, err := s.ListRepoPermissions(ctx, api.RepoID(test.RepoID), test.Args)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					if len(test.WantResults) != len(results) {
-						t.Fatalf("Results mismatch. Want: %d Got: %d", len(test.WantResults), len(results))
-					}
-
-					actualResults := make([]*listRepoPermissionsResult, 0, len(results))
-					for _, result := range results {
-						actualResults = append(actualResults, &listRepoPermissionsResult{UserID: result.User.ID, Reason: result.Reason})
-					}
-
-					if diff := cmp.Diff(test.WantResults, actualResults); diff != "" {
-						t.Fatalf("Results mismatch (-want +got):\n%s", diff)
-					}
-				})
+			if diff := cmp.Diff(test.WantResults, actualResults); diff != "" {
+				t.Fatalf("Results mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
