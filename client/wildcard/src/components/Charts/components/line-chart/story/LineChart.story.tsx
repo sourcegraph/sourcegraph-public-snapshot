@@ -41,13 +41,13 @@ export const LineChartsDemo: Story = () => (
         }}
     >
         <PlainChartExample />
-        <FlatChartExample />
-        <PlainStackedChartExample />
-        <ResponsiveChartExample />
-        <WithLegendExample />
-        <WithHugeDataExample />
-        <WithZeroOneDataExample />
-        <StackedWithDataMissingValues />
+        {/*<FlatChartExample />*/}
+        {/*<PlainStackedChartExample />*/}
+        {/*<ResponsiveChartExample />*/}
+        {/*<WithLegendExample />*/}
+        {/*<WithHugeDataExample />*/}
+        {/*<WithZeroOneDataExample />*/}
+        {/*<StackedWithDataMissingValues />*/}
     </main>
 )
 

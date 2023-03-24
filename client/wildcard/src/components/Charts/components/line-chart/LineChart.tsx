@@ -38,11 +38,32 @@ const daysBetween = (date1: Date, date2: Date): number =>
  * @param scale - The time scale to base the decision on
  * @returns A function that formats a date to a string
  */
-const getFormatDateTick = (scale: ScaleTime<number, number>): ((date: Date) => string) => {
+const getFormatDateTick = (scale: ScaleTime<number, number>): ((tick: Date, index: number, ticks: Date[]) => string) => {
     if (scale.domain().length < 2 || daysBetween(scale.domain()[1], scale.domain()[0]) < 365) {
         return (date: Date) => timeFormat('%d %b')(date)
     }
-    return (date: Date) => timeFormat('%b %y')(date)
+    return (tick: Date, index: number, ticks: Date[]) => {
+        return timeFormat('%b %y')(tick)
+    }
+}
+
+const formatDateTick = (tick: Date, index: number, ticks: Date[]): string => {
+    if (index === 0 ) {
+        return timeFormat('%d %b')(tick)
+    }
+
+    if (ticks.length === 1) {
+        return timeFormat('%b %Y')(tick)
+    }
+
+    const currentTickYear = new Date(tick).getFullYear()
+    const prevTickYear = new Date(ticks[index - 1].value).getFullYear()
+
+    if (currentTickYear !== prevTickYear) {
+        return timeFormat('%b %Y')(tick)
+    }
+
+    return timeFormat('%d %b')(tick)
 }
 
 interface GetScaleTicksInput {
@@ -187,10 +208,10 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                 <SvgAxisLeft />
 
                 <SvgAxisBottom
-                    pixelsPerTick={70}
+                    pixelsPerTick={80}
                     minRotateAngle={20}
                     maxRotateAngle={60}
-                    tickFormat={getFormatDateTick(xScale)}
+                    tickFormat={formatDateTick}
                     getScaleTicks={getXScaleTicks}
                 />
 
