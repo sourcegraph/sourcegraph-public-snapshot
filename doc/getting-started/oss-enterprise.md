@@ -46,7 +46,9 @@ In practice, Sourcegraph OSS involves:
    </td>
    <td><strong>Sourcegraph Open Source (Sourcegraph OSS)</strong>
    </td>
-   <td colspan="3" ><strong>Sourcegraph Enterprise</strong>
+   <td><strong>Sourcegraph App</strong>
+   </td>
+   <td colspan="2" ><strong>Sourcegraph Enterprise</strong>
    </td>
   </tr>
   <tr>
@@ -66,7 +68,7 @@ In practice, Sourcegraph OSS involves:
    </td>
    <td>Free
    </td>
-   <td>Free for up to 10 users
+   <td>Free for 1 user
    </td>
    <td>$99 per active user/month
    </td>
@@ -142,7 +144,7 @@ In practice, Sourcegraph OSS involves:
    </td>
    <td>✗
    </td>
-   <td>✓
+   <td>✗
    </td>
    <td>✓
    </td>
@@ -170,7 +172,7 @@ In practice, Sourcegraph OSS involves:
    </td>
    <td>Unlimited
    </td>
-   <td>1
+   <td>Unlimited local, 1 remote
    </td>
    <td>Unlimited
    </td>
@@ -182,7 +184,7 @@ In practice, Sourcegraph OSS involves:
    </td>
    <td>Unlimited
    </td>
-   <td>1
+   <td>Unlimited local, 1 remote
    </td>
    <td>Unlimited
    </td>
@@ -198,7 +200,7 @@ In practice, Sourcegraph OSS involves:
    </td>
    <td>✗
    </td>
-   <td>✓
+   <td>✗
    </td>
    <td>✓
    </td>
@@ -210,7 +212,7 @@ In practice, Sourcegraph OSS involves:
    </td>
    <td>✗
    </td>
-   <td>✓
+   <td>✗
    </td>
    <td>✓
    </td>
