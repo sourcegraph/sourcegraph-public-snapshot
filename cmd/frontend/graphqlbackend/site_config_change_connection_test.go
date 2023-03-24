@@ -251,7 +251,7 @@ func TestSiteConfigConnection(t *testing.T) {
 					"configuration": {
 						"id": 6,
 						"history": {
-							"totalCount": 6,
+							"totalCount": 5,
 							"nodes": [
 								{
 									"id": %[1]q,
@@ -323,7 +323,7 @@ func TestSiteConfigConnection(t *testing.T) {
 							"configuration": {
 								"id": 6,
 								"history": {
-									"totalCount": 6,
+									"totalCount": 5,
 									"nodes": [
 										{
 											"id": %[1]q,
@@ -401,7 +401,7 @@ func TestSiteConfigConnection(t *testing.T) {
 					"configuration": {
 						"id": 6,
 						"history": {
-							"totalCount": 6,
+							"totalCount": 5,
 							"nodes": [
 								{
 									"id": %[1]q,
@@ -473,7 +473,7 @@ func TestSiteConfigConnection(t *testing.T) {
 					"configuration": {
 						"id": 6,
 						"history": {
-							"totalCount": 6,
+							"totalCount": 5,
 							"nodes": [
 								{
 									"id": %[1]q,
