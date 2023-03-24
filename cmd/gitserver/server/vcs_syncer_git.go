@@ -85,7 +85,7 @@ func (s *GitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDi
 	cmd, configRemoteOpts := s.fetchCommand(ctx, remoteURL)
 	dir.Set(cmd)
 	if output, err := runWith(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), configRemoteOpts, nil); err != nil {
-		return errors.Wrapf(&GitCommandError{Err: err, Output: newURLRedactor(remoteURL).redact(string(output))}, "failed to update")
+		return &GitCommandError{Err: err, Output: newURLRedactor(remoteURL).redact(string(output))}
 	}
 	return nil
 }
