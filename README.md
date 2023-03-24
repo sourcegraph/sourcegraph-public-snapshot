@@ -36,48 +36,35 @@
 
 ---
 
-## 4.0 Features
+## 5.0 Features
 
-### 🧠 Code intelligence: uplevel your code search
+* Cody, your code-aware programmer's assistant
+* Sourcegraph Own preview
+* Improved code exploration experience
+* A completely re-imagined search input
+* Intelligent search ranking
+* Improved auto-indexing setup experience
+* Integrate Batch Changes with other tools with outgoing webhooks
+* Limit access to batch changes
+* Improved Code Insights support for instances with a large number of repositories
+* Impoved Gerrit support with repository permissions
+* Improved support for the Azure DevOps code host
+* Improved rate limiting for GitHub and GitLab
+* Permissions center
+* Request account for unauthenticated users
+* SCIM support
 
-- Understand usage and search structure with high-level aggregations of search results
-- A faster, simpler search experience
-- Configure precise code navigation for 9 languages (Ruby, Rust, Go, Java, Scala, Kotlin, Python, TypeScript, JavaScript) in a matter of minutes with auto-indexing
-- Your favorite extensions are now available by default
-- Quickly access answers within your codebase with a revamped reference panel
-
-<p align="center">
-<img src="https://storage.googleapis.com/sourcegraph-assets/blog/release-post/4.0/New-Search-UI.png" width="75%">
-</p>
-
-### 🏗️ High-leverage ways to improve your entire codebase
-
-- Make changes across all of your codebase at enterprise scale with server-side Batch Changes (beta)
-  - Run large-scale or resource-intensive batch changes without clogging your local machine
-  - Run large batch changes quickly by distributing them across an autoscaled pool of compute instances
-  - Get a better debugging experience with the streaming of logs directly into Sourcegraph.
-
-### ☁️ Dedicated Sourcegraph Cloud instances for enterprise
-
-- Sourcegraph Cloud now offers dedicated, single-tenant instances of Sourcegraph
-
-### 📈 Advanced admin capabilities
-
-- Save time upgrading to Sourcegraph 4.0 with multi-version upgrades
-- View usage and measure the value of our platform with new and enhanced in-product analytics
-- Uncover developer time saved using Browser and IDE extensions
-- Easily export traces using OpenTelemetry
-- Quickly see the status on your repository and permissions syncing
-- Measure precise code navigation coverage with an enhanced analytics dashboard
+[Read more](https://about.sourcegraph.com/blog/release/5.0)
 
 <p align="center">
-<img src="https://storage.googleapis.com/sourcegraph-assets/blog/release-post/4.0/Search.png" width="75%">
+<img src="https://storage.googleapis.com/sourcegraph-assets/blog/5.0/reimagined-search-input.png" width="75%">
 </p>
 
 ## Deploy Sourcegraph
 
 ### Recommended
 
+- [Sourcegraph App Beta](https://srcgr.ph/ufA1R): lightweight, single-binary version of Sourcegraph
 - [Sourcegraph Cloud](https://docs.sourcegraph.com/cloud): create a single-tenant instance managed by Sourcegraph
 
 ### Self-hosted
