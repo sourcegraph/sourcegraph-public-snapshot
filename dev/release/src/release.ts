@@ -494,7 +494,11 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 const tags = getCandidateTags(workdir, release.version.version)
                 let nextCandidate = 1
                 for (const tag of tags) {
-                    const num = parseInt(tag.slice(-1), 10)
+                    const lastNum = tag.match('.*-rc\\.(\\d+)')
+                    if (!lastNum || lastNum.length === 0) {
+                        break
+                    }
+                    const num = parseInt(lastNum[1], 10)
                     if (num >= nextCandidate) {
                         nextCandidate = num + 1
                     }
