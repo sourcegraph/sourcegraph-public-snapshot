@@ -47,11 +47,23 @@ func (c *Client) Transport() http.RoundTripper {
 	return c.Underlying.Transport
 }
 
-func (c *Client) SetTransport(t http.RoundTripper) {
-	c.Underlying.Transport = &wrappedTransport{
-		RoundTripper: t,
-		Wrapped:      c.Underlying.Transport,
+func (c *Client) SetTransport(t http.RoundTripper) error {
+	newBase, isBase := t.(*http.Transport)
+
+	if isBase {
+		// try to unwrap to the bottom
+		oldBase, err := getTransportForMutation(c)
+		if err != nil {
+			return err
+		}
+		*oldBase = *newBase
+	} else {
+		c.Underlying.Transport = &wrappedTransport{
+			RoundTripper: t,
+			Wrapped:      c.Underlying.Transport,
+		}
 	}
+	return nil
 }
 
 // A Doer captures the Do method of an http.Client. It facilitates decorating
@@ -426,8 +438,7 @@ var ExternalTransportOpt = Opt{
 			return errors.Wrap(err, "httpcli.ExternalTransportOpt")
 		}
 
-		cli.SetTransport(&externalTransport{base: tr})
-		return nil
+		return cli.SetTransport(&externalTransport{base: tr})
 	},
 }
 
@@ -473,13 +484,11 @@ func NewCachedTransportOpt(c httpcache.Cache, markCachedResponses bool) Opt {
 	return Opt{
 		Name: "CachedTransportOpt",
 		Apply: func(cli *Client) error {
-			cli.SetTransport(&httpcache.Transport{
+			return cli.SetTransport(&httpcache.Transport{
 				Transport:           cli.Transport(),
 				Cache:               c,
 				MarkCachedResponses: markCachedResponses,
 			})
-
-			return nil
 		},
 	}
 }
@@ -489,8 +498,7 @@ func NewCachedTransportOpt(c httpcache.Cache, markCachedResponses bool) Opt {
 var TracedTransportOpt = Opt{
 	Name: "TracedTransportOpt",
 	Apply: func(cli *Client) error {
-		cli.SetTransport(&policy.Transport{RoundTripper: cli.Transport()})
-		return nil
+		return cli.SetTransport(&policy.Transport{RoundTripper: cli.Transport()})
 	},
 }
 
@@ -510,14 +518,12 @@ func MeteredTransportOpt(subsystem string) Opt {
 	return Opt{
 		Name: "MeteredTransportOpt",
 		Apply: func(cli *Client) error {
-			cli.SetTransport(meter.Transport(cli.Transport(), func(u *url.URL) string {
+			return cli.SetTransport(meter.Transport(cli.Transport(), func(u *url.URL) string {
 				// We don't have a way to return a low cardinality label here (for
 				// the prometheus label "category"). Previously we returned u.Path
 				// but that blew up prometheus. So we just return unknown.
 				return "unknown"
 			}))
-
-			return nil
 		},
 	}
 }
@@ -680,8 +686,7 @@ func NewErrorResilientTransportOpt(retry rehttp.RetryFn, delay rehttp.DelayFn) O
 	return Opt{
 		Name: "ErrorResilientTransportOpt",
 		Apply: func(cli *Client) error {
-			cli.SetTransport(rehttp.NewTransport(cli.Transport(), retry, delay))
-			return nil
+			return cli.SetTransport(rehttp.NewTransport(cli.Transport(), retry, delay))
 		},
 	}
 }
@@ -778,9 +783,7 @@ func getTransportForMutation(cli *Client) (*http.Transport, error) {
 var ActorTransportOpt = Opt{
 	Name: "ActorTransportOpt",
 	Apply: func(cli *Client) error {
-		cli.SetTransport(&actor.HTTPTransport{RoundTripper: cli.Transport()})
-
-		return nil
+		return cli.SetTransport(&actor.HTTPTransport{RoundTripper: cli.Transport()})
 	},
 }
 
@@ -791,9 +794,7 @@ var ActorTransportOpt = Opt{
 var RequestClientTransportOpt = Opt{
 	Name: "RequestClientTransportOpt",
 	Apply: func(cli *Client) error {
-		cli.SetTransport(&requestclient.HTTPTransport{RoundTripper: cli.Transport()})
-
-		return nil
+		return cli.SetTransport(&requestclient.HTTPTransport{RoundTripper: cli.Transport()})
 	},
 }
 

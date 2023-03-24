@@ -61,10 +61,10 @@ func newAWSCodeCommitSource(svc *types.ExternalService, c *schema.AWSCodeCommitC
 			if err := http2.ConfigureTransport(tr); err != nil {
 				return err
 			}
-			c.SetTransport(tr)
-			wrapWithoutRedirect(c)
-
-			return nil
+			if err := c.SetTransport(tr); err != nil {
+				return err
+			}
+			return wrapWithoutRedirect(c)
 		},
 	})
 	if err != nil {
@@ -186,9 +186,9 @@ func (s *AWSCodeCommitSource) excludes(r *awscodecommit.Repository) bool {
 // so we use the same HTTP client that AWS wants to use, but fits into our HTTP factory
 // pattern. Additionally we change wrapWithoutRedirect to mutate c instead of
 // returning a copy.
-func wrapWithoutRedirect(c *httpcli.Client) {
+func wrapWithoutRedirect(c *httpcli.Client) error {
 	c.Underlying.CheckRedirect = limitedRedirect
-	c.SetTransport(stubBadHTTPRedirectTransport{
+	return c.SetTransport(stubBadHTTPRedirectTransport{
 		tr: c.Transport(),
 	})
 }

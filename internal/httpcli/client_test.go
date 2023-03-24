@@ -406,7 +406,7 @@ func TestErrorResilience(t *testing.T) {
 				// flakiness across machines. However, CI correctly respects
 				// this so we continue to run against a real DNS server on CI.
 				if os.Getenv("CI") == "" {
-					cli.SetTransport(notFoundTransport{})
+					return cli.SetTransport(notFoundTransport{})
 				}
 				return nil
 			}},
@@ -467,8 +467,7 @@ func TestLoggingMiddleware(t *testing.T) {
 				NewLoggingMiddleware(logger),
 			),
 			Opt{Apply: func(c *Client) error {
-				c.SetTransport(&notFoundTransport{}) // returns an error
-				return nil
+				return c.SetTransport(&notFoundTransport{}) // returns an error
 			}},
 		).Doer()
 

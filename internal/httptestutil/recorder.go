@@ -45,9 +45,7 @@ func NewRecorderOpt(rec *recorder.Recorder) httpcli.Opt {
 		Apply: func(c *httpcli.Client) error {
 			tr := c.Transport()
 			rec.SetTransport(tr)
-			c.SetTransport(rec)
-
-			return nil
+			return c.SetTransport(rec)
 		},
 	}
 }

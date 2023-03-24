@@ -39,9 +39,9 @@ func TestRoundtrip(t *testing.T) {
 
 	// Create http cli with aws defaults.
 	cli, err := cf.Doer(httpcli.Opt{
+		Name: "AwsKMSTest",
 		Apply: func(c *httpcli.Client) error {
-			c.SetTransport(awshttp.NewBuildableClient().GetTransport())
-			return nil
+			return c.SetTransport(awshttp.NewBuildableClient().GetTransport())
 		},
 	})
 	if err != nil {
@@ -81,12 +81,11 @@ func TestRoundtrip(t *testing.T) {
 
 var shouldUpdate = flag.Bool("update", false, "Update testdata")
 
-func newClientFactory(t testing.TB, name string, mws ...httpcli.Middleware) (*httpcli.Factory, func(testing.TB)) {
+func newClientFactory(t testing.TB, name string) (*httpcli.Factory, func(testing.TB)) {
 	t.Helper()
 	cassete := filepath.Join("testdata", strings.ReplaceAll(name, " ", "-"))
 	rec := newRecorder(t, cassete, *shouldUpdate)
-	mw := httpcli.NewMiddleware(mws...)
-	return httpcli.NewFactory(mw, httptestutil.NewRecorderOpt(rec)),
+	return httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec)),
 		func(t testing.TB) { save(t, rec) }
 }
 
