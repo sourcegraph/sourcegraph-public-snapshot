@@ -10,6 +10,7 @@ import { requestGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
 import {
     Scalars,
+    UserEmail as UserEmailType,
     UserEmailsResult,
     UserEmailsVariables,
     UserSettingsAreaUserFields,
@@ -29,7 +30,6 @@ interface Props {
     user: UserSettingsAreaUserFields
 }
 
-type UserEmail = (NonNullable<UserEmailsResult['node']> & { __typename: 'User' })['emails'][number]
 type Status = undefined | 'loading' | 'loaded' | ErrorLike
 type EmailActionError = undefined | ErrorLike
 
@@ -45,7 +45,7 @@ const FLAGS_QUERY = gql`
 `
 
 export const UserSettingsEmailsPage: FunctionComponent<React.PropsWithChildren<Props>> = ({ user }) => {
-    const [emails, setEmails] = useState<UserEmail[]>([])
+    const [emails, setEmails] = useState<UserEmailType[]>([])
     const [statusOrError, setStatusOrError] = useState<Status>()
     const [emailActionError, setEmailActionError] = useState<EmailActionError>()
 
@@ -128,7 +128,12 @@ export const UserSettingsEmailsPage: FunctionComponent<React.PropsWithChildren<P
                 </ul>
             </Container>
             {/* re-fetch emails on onDidAdd to guarantee correct state */}
-            <AddUserEmailForm className={styles.emailForm} user={user} onDidAdd={fetchEmails} />
+            <AddUserEmailForm
+                className={styles.emailForm}
+                user={user}
+                onDidAdd={fetchEmails}
+                emails={new Set(emails.map(e => e.email))}
+            />
             <hr className="my-4" aria-hidden="true" />
             <SetUserPrimaryEmailForm user={user} emails={emails} onDidSet={fetchEmails} />
         </div>
@@ -139,16 +144,19 @@ async function fetchUserEmails(userID: Scalars['ID']): Promise<UserEmailsResult>
     return dataOrThrowErrors(
         await requestGraphQL<UserEmailsResult, UserEmailsVariables>(
             gql`
+                fragment UserEmail on UserEmail {
+                    email
+                    isPrimary
+                    verified
+                    verificationPending
+                    viewerCanManuallyVerify
+                }
                 query UserEmails($user: ID!) {
                     node(id: $user) {
                         ... on User {
                             __typename
                             emails {
-                                email
-                                isPrimary
-                                verified
-                                verificationPending
-                                viewerCanManuallyVerify
+                                ...UserEmail
                             }
                         }
                     }
