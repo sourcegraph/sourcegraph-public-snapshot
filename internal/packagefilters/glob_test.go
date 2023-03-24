@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/gobwas/glob"
+	"github.com/grafana/regexp"
 )
 
 func Test_GlobToRegex(t *testing.T) {
@@ -22,8 +23,13 @@ func Test_GlobToRegex(t *testing.T) {
 		if _, err := glob.Compile(test.glob); err != nil {
 			t.Fatalf("not a valid glob %s %v", test.glob, err)
 		}
-		if output, _ := GlobToRegex(test.glob); output != test.regex {
+		output, _ := GlobToRegex(test.glob)
+		if output != test.regex {
 			t.Errorf("unexpected regex output for %q (want=%q,got=%q)", test.glob, test.regex, output)
+		}
+
+		if _, err := regexp.Compile(output); err != nil {
+			t.Errorf("output is not valid regex. %q -> %v", output, err)
 		}
 	}
 }
