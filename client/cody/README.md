@@ -12,17 +12,13 @@
     </a>
 </div>
 
-## Cody Enterprise
+## Cody (experimental)
 
-Cody is in private alpha (experimental) at this stage. Please contact your techical advisor or [signup here](https://sourcegraph.typeform.com/to/pIXTgwrd?typeform-source=t.co) to get access.
+Cody is a coding assistant that answers code questions and writes code for you by reading your entire codebase and the code graph.
 
-We have limited capacity to onboard customers at first, but we're working hard to open Cody up to the world fast!
+**Status:** experimental ([request access](https://about.sourcegraph.com/cody))
 
-## What is Cody?
-
-Cody is your hyper-intelligent programming sidekick - an AI assistant developed by Sourcegraph to supercharge your productivity as a developer.
-
-## Highlighted features
+## Main features
 
 - Answer questions about your codebase instantly
 - Generate documentation and unit tests on demand
