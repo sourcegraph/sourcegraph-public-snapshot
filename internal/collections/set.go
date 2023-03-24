@@ -21,26 +21,28 @@ type Set[T comparable] map[T]struct{}
 //	s := NewSet[int](1, 2, 3)
 func NewSet[T comparable](values ...T) Set[T] {
 	s := Set[T]{}
-	for _, v := range values {
-		s.Add(v)
-	}
+	s.Add(values...)
 	return s
 }
 
-func (s Set[T]) Add(value T) {
-	s[value] = struct{}{}
+func (s Set[T]) Add(values ...T) {
+	for _, v := range values {
+		s[v] = struct{}{}
+	}
 }
 
-func (s Set[T]) Remove(value T) {
-	delete(s, value)
+func (s Set[T]) Remove(values ...T) {
+	for _, v := range values {
+		delete(s, v)
+	}
 }
 
-func (s Set[T]) Contains(value T) bool {
+func (s Set[T]) Has(value T) bool {
 	_, found := s[value]
 	return found
 }
 
-// Values returns a slice containing all the values in the set.
+// Values returns a slice with all the values in the set.
 // The values are returned in an unspecified order.
 func (s Set[T]) Values() []T {
 	return maps.Keys(s)
@@ -63,12 +65,12 @@ func (s Set[T]) Sorted(comparator func(a, b T) bool) []T {
 	return vals
 }
 
-// Difference returns a set containing the elements in s that are not in b.
+// Difference returns a set with elements in s that are not in b.
 func (s Set[T]) Difference(b Set[T]) Set[T] {
 	diff := NewSet[T]()
 
 	for v := range s {
-		if !b.Contains(v) {
+		if !b.Has(v) {
 			diff.Add(v)
 		}
 	}
@@ -76,9 +78,24 @@ func (s Set[T]) Difference(b Set[T]) Set[T] {
 	return diff
 }
 
-// Intersect returns a new set containing the elements that are in both s and b.
+// Intersect returns a new set with elements that are in both s and b.
 func (s Set[T]) Intersect(b Set[T]) Set[T] {
 	return Intersection(s, b)
+}
+
+// Contains returns true if a has all the elements in b.
+func (s Set[T]) Contains(b Set[T]) bool {
+	// do not waste time on loop if b is bigger than s
+	if len(b) > len(s) {
+		return false
+	}
+
+	for v := range b {
+		if !s.Has(v) {
+			return false
+		}
+	}
+	return true
 }
 
 // Union returns a new set with all the elements from s and b
@@ -86,8 +103,9 @@ func (s Set[T]) Union(b Set[T]) Set[T] {
 	return Union(s, b)
 }
 
+// String returns a string representation of the set.
 func (s Set[T]) String() string {
-	return fmt.Sprintf("Set{%v}", maps.Keys(s))
+	return fmt.Sprintf("Set%v", maps.Keys(s))
 }
 
 func getShortLong[T comparable](a, b Set[T]) (Set[T], Set[T]) {
@@ -102,19 +120,17 @@ func Union[T comparable](a, b Set[T]) Set[T] {
 	short, long := getShortLong(a, b)
 	union := NewSet(long.Values()...)
 
-	for v := range short {
-		union.Add(v)
-	}
+	union.Add(short.Values()...)
 	return union
 }
 
-// Intersection returns a new set containing the elements that are in both a and b.
+// Intersection returns a new set with all the elements that are in both a and b.
 func Intersection[T comparable](a, b Set[T]) Set[T] {
 	itrsc := NewSet[T]()
 	short, long := getShortLong(a, b)
 
 	for v := range short {
-		if long.Contains(v) {
+		if long.Has(v) {
 			itrsc.Add(v)
 		}
 	}
