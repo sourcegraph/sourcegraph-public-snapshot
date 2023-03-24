@@ -1307,7 +1307,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:   `predicate logic does not conflict with unrecognized patterns`,
 				query:  `repo:sg(test)`,
-				counts: counts{Repo: 6},
+				counts: counts{Repo: 7},
 			},
 			{
 				name:   `repo has commit after`,
