@@ -52,6 +52,7 @@ interface GetHTMLPageOptions {
  */
 export function getIndexHTML(options: GetHTMLPageOptions): string {
     const { manifestFile, jsContext, jsContextScript } = options
+    console.log({ manifestFile })
 
     const {
         'app.js': appBundle,

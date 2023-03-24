@@ -23,7 +23,31 @@ export const ROOT_PATH = IS_BAZEL ? process.cwd() : resolveWithSymlink(__dirname
 export const WORKSPACES_PATH = resolveWithSymlink(ROOT_PATH, 'client')
 export const NODE_MODULES_PATH = resolveWithSymlink(ROOT_PATH, 'node_modules')
 export const MONACO_EDITOR_PATH = resolveWithSymlink(NODE_MODULES_PATH, 'monaco-editor')
-export const STATIC_ASSETS_PATH = resolveWithSymlink(ROOT_PATH, 'ui/assets')
+export const STATIC_ASSETS_PATH = resolveWithSymlink(
+    ROOT_PATH,
+    IS_BAZEL && process.env.WEB_BUNDLE_PATH ? process.env.WEB_BUNDLE_PATH : 'ui/assets'
+)
+
+console.log({
+    ROOT_PATH,
+    STATIC_ASSETS_PATH: process.env.STATIC_ASSETS_PATH,
+    WEB_BUNDLE_PATH: process.env.WEB_BUNDLE_PATH,
+
+    RUNFILES_DIR: process.env.RUNFILES_DIR,
+    RUNFILES: process.env.RUNFILES,
+    RUNFILES_MANIFEST_FILE: process.env.RUNFILES_MANIFEST_FILE,
+
+    BAZEL_WORKSPACE: process.env.BAZEL_WORKSPACE,
+    JS_BINARY__WORKSPACE: process.env.JS_BINARY__WORKSPACE,
+
+    BAZEL_OUTPUT_PATH: process.env.BAZEL_OUTPUT_PATH,
+
+    BAZEL_TARGET: process.env.BAZEL_TARGET,
+    JS_BINARY__TARGET: process.env.JS_BINARY__TARGET,
+
+    BAZEL_BINDIR: process.env.BAZEL_BINDIR,
+    BAZEL_TEST: process.env.BAZEL_TEST,
+})
 
 function getWorkspaceNodeModulesPaths(): string[] {
     const workspaces = fs.readdirSync(WORKSPACES_PATH)

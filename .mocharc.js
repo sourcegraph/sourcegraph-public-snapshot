@@ -3,7 +3,7 @@ const rootDir = IS_BAZEL ? process.cwd() : __dirname
 
 module.exports = {
   require: [
-    ...(IS_BAZEL ? [] : ['ts-node/register/transpile-only']),
+    'ts-node/register/transpile-only',
     'abort-controller/polyfill',
     rootDir + '/client/shared/dev/fetch',
     rootDir + '/client/shared/dev/suppressPollyErrors',

@@ -87,7 +87,7 @@ const config = {
   stats: {
     // Minimize logging in case if Webpack is used along with multiple other services.
     // Use `normal` output preset in case of running standalone web server.
-    preset: WEBPACK_SERVE_INDEX || IS_PRODUCTION ? 'normal' : 'errors-warnings',
+    preset: WEBPACK_SERVE_INDEX || IS_PRODUCTION ? 'normal' : 'errors',
     errorDetails: true,
     timings: true,
   },

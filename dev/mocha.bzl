@@ -24,6 +24,7 @@ NON_BUNDLED = [
 NON_BUNDLED_DEPS = [
     "//:node_modules/jsonc-parser",
     "//:node_modules/puppeteer",
+    "//:node_modules/axe-core",
 ]
 
 def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs):
@@ -35,7 +36,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs)
         testonly = True,
         entry_points = tests,
         platform = "node",
-        target = "node12",
+        target = "esnext",
         output_dir = True,
         external = NON_BUNDLED,
         sourcemap = "linked",
@@ -55,7 +56,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs)
             "$(location //:mocha_config)",
             "$(location :%s)/**/*.test.js" % bundle_name,
         ] + args,
-        data = data + deps + [
+        data = data + [
             ":%s" % bundle_name,
             "//:mocha_config",
         ] + NON_BUNDLED_DEPS,
@@ -74,6 +75,8 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs)
             "KEEP_BROWSER": "true",
             "DEVTOOLS": "true",
             "BROWSER": "chrome",
+            "WINDOW_WIDTH": "1920",
+            "WINDOW_HEIGHT": "1080",
 
             # Puppeteer config
             "DISPLAY": "1",
