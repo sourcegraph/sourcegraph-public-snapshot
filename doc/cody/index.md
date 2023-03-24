@@ -40,7 +40,7 @@ Note that this requires site-admin privileges.
 Now that Cody is turned on on your Sourcegraph instance, any user can configure and use the Cody VS Code extension. This does not require admin privilege.
 
 1. If you currently have a previous version of Cody installed, uninstall it and reload VS Code before proceeding to the next steps.
-1. Search for “Cody Enterprise” in your VS Code extension marketplace, and install it.
+1. Search for “Sourcegraph Cody” in your VS Code extension marketplace, and install it.
 
 <img width="500" alt="image" src="https://user-images.githubusercontent.com/25070988/227508342-cc6f29c0-ed91-4381-b651-16870c7c676b.png">
 
