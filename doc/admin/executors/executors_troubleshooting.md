@@ -99,7 +99,11 @@ curl http://localhost:5000/v2/_catalog
 ### Registry is mounted in the file system
 Verify that the registry is mounted under the expected path in the file system by running:
 ```shell
-ls /mnt/registry/docker/registry/v2/repositories/sourcegraph 
+# This directory should always be mounted
+ls /mnt/registry
+   
+# If jobs have been processed, the following path should exist
+ls /mnt/registry/docker/registry/v2/repositories/sourcegraph
 ```
 
 ## Connecting to cloud provider executor instances
@@ -118,6 +122,8 @@ Then, using the name of an instance, run
 # use an identity-aware proxy tunnel with --tunnel-through-iap
 gcloud compute ssh ${INSTANCE_NAME}
 ```
+    
+Alternatively, you may navigate to the compute instance in the GCP web console, where you will be able to connect with SSH in-browser.
 
 ### AWS
 In order to connect to an EC2 instance using SSH, you must have [specified a key pair](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html) when the instance was launched. If you have not done so, you can connect to your instance through the web console instead.  
