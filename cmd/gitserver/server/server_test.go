@@ -752,6 +752,16 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 	}
 }
 
+var ignoreVolatileGitserverRepoFields = cmpopts.IgnoreFields(
+	types.GitserverRepo{},
+	"LastFetched",
+	"LastChanged",
+	"RepoSizeBytes",
+	"UpdatedAt",
+	"CorruptionLogs",
+	"CloningProgress",
+)
+
 func TestHandleRepoDelete(t *testing.T) {
 	testHandleRepoDelete(t, false)
 }
@@ -823,10 +833,8 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 		t.Fatal(err)
 	}
 
-	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt", "CorruptionLogs")
-
 	// We don't expect an error
-	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
+	if diff := cmp.Diff(want, fromDB, ignoreVolatileGitserverRepoFields); diff != "" {
 		t.Fatal(diff)
 	}
 
@@ -872,10 +880,8 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 		t.Fatal(err)
 	}
 
-	cmpIgnored = cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt", "CorruptionLogs")
-
 	// We don't expect an error
-	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
+	if diff := cmp.Diff(want, fromDB, ignoreVolatileGitserverRepoFields); diff != "" {
 		t.Fatal(diff)
 	}
 }
@@ -975,10 +981,8 @@ func TestHandleRepoUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmpIgnored = cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt", "CorruptionLogs")
-
 	// We don't expect an error
-	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
+	if diff := cmp.Diff(want, fromDB, ignoreVolatileGitserverRepoFields); diff != "" {
 		t.Fatal(diff)
 	}
 
@@ -1005,7 +1009,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	}
 
 	// We expect an error
-	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
+	if diff := cmp.Diff(want, fromDB, ignoreVolatileGitserverRepoFields); diff != "" {
 		t.Fatal(diff)
 	}
 
@@ -1028,7 +1032,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	}
 
 	// We expect an update
-	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
+	if diff := cmp.Diff(want, fromDB, ignoreVolatileGitserverRepoFields); diff != "" {
 		t.Fatal(diff)
 	}
 }
@@ -1117,10 +1121,8 @@ func TestHandleRepoUpdateFromShard(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt", "CorruptionLogs")
-
 	// We don't expect an error
-	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
+	if diff := cmp.Diff(want, fromDB, ignoreVolatileGitserverRepoFields); diff != "" {
 		t.Fatal(diff)
 	}
 
