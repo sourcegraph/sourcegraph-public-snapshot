@@ -1,10 +1,7 @@
 import assert from 'assert'
 
-import { ChatQuestion } from '../../chat/recipes/chat-question'
-import { Transcript } from '../../chat/transcript'
 import { CodebaseContext } from '../../codebase-context'
 import { MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
-
 import {
     defaultEditor,
     defaultEmbeddingsClient,
@@ -13,7 +10,10 @@ import {
     MockEditor,
     MockEmbeddingsClient,
     MockIntentDetector,
-} from './mocks'
+} from '../../test/mocks'
+import { ChatQuestion } from '../recipes/chat-question'
+
+import { Transcript } from '.'
 
 describe('Transcript', () => {
     it('generates an empty prompt with no interactions', async () => {
@@ -195,7 +195,7 @@ describe('Transcript', () => {
         const editor = new MockEditor({
             getActiveTextEditorVisibleContent: () => ({ fileName: 'internal/lib.go', content: 'package lib' }),
         })
-        const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => false })
+        const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(false) })
         const codebaseContext = new CodebaseContext('embeddings', defaultEmbeddingsClient, defaultKeywordContextFetcher)
 
         const transcript = new Transcript()

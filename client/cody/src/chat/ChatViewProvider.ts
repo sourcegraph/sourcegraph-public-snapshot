@@ -1,23 +1,23 @@
 import * as vscode from 'vscode'
 
-import { CodebaseContext } from '../codebase-context'
+import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
+import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes'
+import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
+import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { Editor } from '@sourcegraph/cody-shared/src/editor'
+import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
+import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { isError } from '@sourcegraph/cody-shared/src/utils'
+
 import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../command/secret-storage'
 import { updateConfiguration } from '../configuration'
-import { Editor } from '../editor'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { configureExternalServices } from '../external-services'
-import { IntentDetector } from '../intent-detector'
 import { getRgPath } from '../rg'
-import { Message } from '../sourcegraph-api'
-import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { TestSupport } from '../test-support'
-import { isError } from '../utils'
-
-import { ChatClient } from './chat'
-import { renderMarkdown } from './markdown'
-import { getRecipe } from './recipes'
-import { Transcript } from './transcript'
-import { ChatMessage } from './transcript/messages'
 
 // If the bot message ends with some prefix of the `Human:` stop
 // sequence, trim if from the end.

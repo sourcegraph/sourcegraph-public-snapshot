@@ -1,6 +1,11 @@
 import * as vscode from 'vscode'
 
-import { ActiveTextEditor, ActiveTextEditorSelection, ActiveTextEditorVisibleContent, Editor } from '.'
+import {
+    ActiveTextEditor,
+    ActiveTextEditorSelection,
+    ActiveTextEditorVisibleContent,
+    Editor,
+} from '@sourcegraph/cody-shared/src/editor'
 
 const SURROUNDING_LINES = 50
 

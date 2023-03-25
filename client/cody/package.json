@@ -33,16 +33,15 @@
     "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
-    "test:integration": "pnpm compile:test && node ./dist/test/src/test/runTest.js",
-    "test:unit": "pnpm compile:test && mocha './dist/test/src/test/unit/*.test.js'",
+    "test:integration": "tsc -b && pnpm run --silent build:dev && node ./out/src/integration-test/runTest.js",
+    "test:unit": "jest",
     "vscode:prepublish": "scripts/check-rg.sh",
     "vsce:package": "pnpm --silent build && vsce package --no-dependencies -o dist/cody.vsix",
     "vsce:prerelease": "pnpm --silent build && vsce package patch --pre-release --no-dependencies -o dist/cody.vsix",
     "vsce:publish": "vsce publish --packagePath dist/cody.vsix",
     "watch": "concurrently \"pnpm watch:esbuild\" \"pnpm watch:webview\"",
     "watch:esbuild": "pnpm esbuild --sourcemap --watch",
-    "watch:webview": "vite build --mode development --watch",
-    "compile:test": "tsc -p tsconfig.test.json"
+    "watch:webview": "vite build --mode development --watch"
   },
   "main": "./dist/extension.js",
   "activationEvents": [
@@ -236,6 +235,7 @@
     }
   },
   "dependencies": {
-    "openai": "^3.2.1"
+    "openai": "^3.2.1",
+    "@sourcegraph/cody-shared": "workspace:*"
   }
 }

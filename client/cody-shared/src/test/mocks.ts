@@ -1,8 +1,8 @@
-import { ActiveTextEditor, ActiveTextEditorSelection, ActiveTextEditorVisibleContent, Editor } from '../../editor'
-import { EmbeddingsSearch } from '../../embeddings'
-import { IntentDetector } from '../../intent-detector'
-import { KeywordContextFetcher, KeywordContextFetcherResult } from '../../keyword-context'
-import { EmbeddingsSearchResults } from '../../sourcegraph-api/graphql'
+import { ActiveTextEditor, ActiveTextEditorSelection, ActiveTextEditorVisibleContent, Editor } from '../editor'
+import { EmbeddingsSearch } from '../embeddings'
+import { IntentDetector } from '../intent-detector'
+import { KeywordContextFetcher, KeywordContextFetcherResult } from '../keyword-context'
+import { EmbeddingsSearchResults } from '../sourcegraph-api/graphql'
 
 export class MockEmbeddingsClient implements EmbeddingsSearch {
     constructor(private mocks: Partial<EmbeddingsSearch> = {}) {}

@@ -9,17 +9,13 @@ module.exports = {
   },
   overrides: baseConfig.overrides,
   rules: {
-    'react/react-in-jsx-scope': 'off',
-    'react/jsx-filename-extension': [1, { extensions: ['.ts', '.tsx'] }],
-    'id-length': 'off',
     'no-console': 'off',
+    'id-length': 'off',
     'no-restricted-imports': [
       'error',
       {
-        patterns: ['!@sourcegraph/cody-shared/*'], // allow any imports from the @sourcegraph/cody-shared package
+        paths: ['!highlight.js'],
       },
     ],
-    'react/forbid-elements': 'off',
-    'unicorn/filename-case': 'off',
   },
 }

@@ -12,6 +12,6 @@ export function populateCodeContextTemplate(code: string, filePath: string): str
 
 const MARKDOWN_CONTEXT_TEMPLATE = 'Use the following text from file `{filePath}`:\n{text}'
 
-export function populateMarkdownContextTemplate(md: string, filePath: string): string {
-    return MARKDOWN_CONTEXT_TEMPLATE.replace('{filePath}', filePath).replace('{text}', md)
+export function populateMarkdownContextTemplate(markdown: string, filePath: string): string {
+    return MARKDOWN_CONTEXT_TEMPLATE.replace('{filePath}', filePath).replace('{text}', markdown)
 }

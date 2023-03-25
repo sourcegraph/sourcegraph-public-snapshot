@@ -13,4 +13,4 @@ tsconfig.json
 .eslintrc.js
 scripts/
 webviews/**
-dist/test
+
