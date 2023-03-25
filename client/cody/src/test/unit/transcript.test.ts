@@ -1,9 +1,10 @@
 import assert from 'assert'
 
+import { MAX_AVAILABLE_PROMPT_LENGTH } from '@sourcegraph/cody-shared/src/prompt/constants'
+
 import { ChatQuestion } from '../../chat/recipes/chat-question'
 import { Transcript } from '../../chat/transcript'
 import { CodebaseContext } from '../../codebase-context'
-import { MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
 
 import {
     defaultEditor,

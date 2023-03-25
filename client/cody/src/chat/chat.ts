@@ -1,4 +1,5 @@
-import { SOLUTION_TOKEN_LENGTH } from '../prompt/constants'
+import { SOLUTION_TOKEN_LENGTH } from '@sourcegraph/cody-shared/src/prompt/constants'
+
 import { Message } from '../sourcegraph-api'
 import { SourcegraphCompletionsClient, CompletionParameters } from '../sourcegraph-api/completions'
 import { CompletionCallbacks } from '../sourcegraph-api/completions/types'

@@ -1,12 +1,12 @@
 import { spawnSync } from 'child_process'
 import * as path from 'path'
 
+import { MAX_RECIPE_INPUT_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { getShortTimestamp } from '@sourcegraph/cody-shared/src/timestamp'
 
 import { CodebaseContext } from '../../codebase-context'
 import { Editor } from '../../editor'
 import { IntentDetector } from '../../intent-detector'
-import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { renderMarkdown } from '../markdown'
 import { Interaction } from '../transcript/interaction'

@@ -1,4 +1,4 @@
-import { CHARS_PER_TOKEN } from './constants'
+import { CHARS_PER_TOKEN } from '@sourcegraph/cody-shared/src/prompt/constants'
 
 export function truncateText(text: string, maxTokens: number): string {
     const maxLength = maxTokens * CHARS_PER_TOKEN
