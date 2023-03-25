@@ -1,8 +1,9 @@
 import path from 'path'
 
+import { populateCodeContextTemplate } from '@sourcegraph/cody-shared/src/prompt/templates'
+
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
-import { populateCodeContextTemplate } from '../../prompt/templates'
 
 export const MARKDOWN_FORMAT_PROMPT = 'Enclose code snippets with three backticks like so: ```.'
 
