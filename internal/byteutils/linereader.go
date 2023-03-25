@@ -31,7 +31,6 @@ func NewLineReader(data []byte) lineReader {
 
 // lineReader is a struct that can be used to iterate over lines in a byte slice.
 type lineReader struct {
-	i       int
 	data    []byte
 	current []byte
 }
@@ -41,23 +40,21 @@ type lineReader struct {
 // Scan must be called before calling Line.
 func (r *lineReader) Scan() bool {
 	// If we are at the end of the data, stop
-	if r.i >= len(r.data) {
+	if len(r.data) == 0 {
 		return false
 	}
-	// Mark the start of the line
-	start := r.i
 	// Find the next newline
-	i := bytes.IndexByte(r.data[start:], '\n')
+	i := bytes.IndexByte(r.data, '\n')
 	if i >= 0 {
 		// Exclude the newline from the line
-		r.current = r.data[start : start+i]
+		r.current = r.data[:i]
 		// Advance past the newline
-		r.i += i + 1
+		r.data = r.data[i+1:]
 		return true
 	}
 	// Otherwise include the last byte
-	r.current = r.data[start:]
-	r.i = len(r.data)
+	r.current = r.data
+	r.data = nil
 	return true
 }
 
