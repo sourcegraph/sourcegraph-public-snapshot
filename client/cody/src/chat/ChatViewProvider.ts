@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { isError } from '@sourcegraph/cody-shared/src/utils'
+
 import { CodebaseContext } from '../codebase-context'
 import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../command/secret-storage'
 import { updateConfiguration } from '../configuration'
@@ -11,7 +13,6 @@ import { getRgPath } from '../rg'
 import { Message } from '../sourcegraph-api'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { TestSupport } from '../test-support'
-import { isError } from '../utils'
 
 import { ChatClient } from './chat'
 import { renderMarkdown } from './markdown'

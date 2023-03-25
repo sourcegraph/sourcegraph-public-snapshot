@@ -1,4 +1,4 @@
-import { isError } from '../../utils'
+import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { Event } from './types'
 

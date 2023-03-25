@@ -1,3 +1,5 @@
+import { isError } from '@sourcegraph/cody-shared/src/utils'
+
 import { ChatClient } from './chat/chat'
 import { CodebaseContext } from './codebase-context'
 import { getAccessToken, SecretStorage } from './command/secret-storage'
@@ -8,7 +10,6 @@ import { SourcegraphIntentDetectorClient } from './intent-detector/client'
 import { LocalKeywordContextFetcher } from './keyword-context/local-keyword-context-fetcher'
 import { SourcegraphCompletionsClient } from './sourcegraph-api/completions'
 import { SourcegraphGraphQLAPIClient } from './sourcegraph-api/graphql'
-import { isError } from './utils'
 
 interface ExternalServices {
     intentDetector: IntentDetector

@@ -4,12 +4,12 @@ import {
     populateCodeContextTemplate,
     populateMarkdownContextTemplate,
 } from '@sourcegraph/cody-shared/src/prompt/templates'
+import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { EmbeddingsSearch } from '../embeddings'
 import { KeywordContextFetcher } from '../keyword-context'
 import { Message } from '../sourcegraph-api'
 import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
-import { isError } from '../utils'
 
 import { ContextMessage, getContextMessageWithResponse } from './messages'
 
