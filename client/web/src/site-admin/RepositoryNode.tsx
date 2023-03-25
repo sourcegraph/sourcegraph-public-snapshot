@@ -60,21 +60,26 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
             data-test-repository={node.name}
             data-test-cloned={node.mirrorInfo.cloned}
         >
-            <div className="d-flex flex-column flex-sm-row">
-                <div
-                    className={classNames('d-flex col-sm-auto mr-auto align-items-center px-0', styles.repoDescription)}
-                >
-                    <ExternalRepositoryIcon externalRepo={node.externalRepository} />
-                    <RepoLink repoName={node.name} to={node.url} />
+            <div className="d-flex flex-column flex-md-row">
+                <div className="d-flex flex-row col-md-8 mr-auto px-0">
+                    <div
+                        className={classNames(
+                            'd-flex col-auto mr-auto align-items-center px-0',
+                            styles.repoDescription
+                        )}
+                    >
+                        <ExternalRepositoryIcon externalRepo={node.externalRepository} />
+                        <RepoLink repoName={node.name} to={node.url} />
+                    </div>
+
+                    <div className="d-flex col-auto align-items-center justify-content-start px-0 px-md-2 mt-2 mt-md-0">
+                        {' '}
+                        <RepositoryStatusBadge status={parseRepositoryStatus(node)} />
+                        {node.mirrorInfo.cloneInProgress && <LoadingSpinner className="ml-2" />}
+                    </div>
                 </div>
 
-                <div className="d-flex col-sm-auto align-items-center justify-content-start px-0 px-sm-2 mt-2 mt-sm-0">
-                    {' '}
-                    <RepositoryStatusBadge status={parseRepositoryStatus(node)} />
-                    {node.mirrorInfo.cloneInProgress && <LoadingSpinner className="ml-2" />}
-                </div>
-
-                <div className="d-flex col-sm-auto align-items-start justify-content-start px-0 mt-2 mt-sm-0">
+                <div className="d-flex col-md-auto align-items-start justify-content-start px-0 mt-2 mt-md-0">
                     {/* TODO: Enable 'CLONE NOW' to enqueue the repo
                     {!node.mirrorInfo.cloned && !node.mirrorInfo.cloneInProgress && !node.mirrorInfo.lastError && (
                         <Button to={node.url} variant="secondary" size="sm" as={Link}>
