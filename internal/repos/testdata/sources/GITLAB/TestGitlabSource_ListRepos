@@ -1,0 +1,74 @@
+[
+  {
+   "ID": 0,
+   "Name": "gitlab.sgdev.org/main-group/wiki-repo",
+   "URI": "gitlab.sgdev.org/main-group/wiki-repo",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": true,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "371308",
+    "ServiceType": "gitlab",
+    "ServiceID": "https://gitlab.sgdev.org/"
+   },
+   "Sources": {
+    "extsvc:gitlab:0": {
+     "ID": "extsvc:gitlab:0",
+     "CloneURL": "https://gitlab.sgdev.org/main-group/wiki-repo.git"
+    }
+   },
+   "Metadata": {
+    "id": 371308,
+    "path_with_namespace": "main-group/wiki-repo",
+    "description": "",
+    "web_url": "https://gitlab.sgdev.org/main-group/wiki-repo",
+    "http_url_to_repo": "https://gitlab.sgdev.org/main-group/wiki-repo.git",
+    "ssh_url_to_repo": "git@gitlab.sgdev.org:main-group/wiki-repo.git",
+    "visibility": "private",
+    "archived": false,
+    "star_count": 0,
+    "forks_count": 0,
+    "empty_repo": false
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gitlab.sgdev.org/main-group/repo000154897",
+   "URI": "gitlab.sgdev.org/main-group/repo000154897",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": true,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "323291",
+    "ServiceType": "gitlab",
+    "ServiceID": "https://gitlab.sgdev.org/"
+   },
+   "Sources": {
+    "extsvc:gitlab:0": {
+     "ID": "extsvc:gitlab:0",
+     "CloneURL": "https://gitlab.sgdev.org/main-group/repo000154897.git"
+    }
+   },
+   "Metadata": {
+    "id": 323291,
+    "path_with_namespace": "main-group/repo000154897",
+    "description": "",
+    "web_url": "https://gitlab.sgdev.org/main-group/repo000154897",
+    "http_url_to_repo": "https://gitlab.sgdev.org/main-group/repo000154897.git",
+    "ssh_url_to_repo": "git@gitlab.sgdev.org:main-group/repo000154897.git",
+    "visibility": "private",
+    "archived": false,
+    "star_count": 0,
+    "forks_count": 0,
+    "empty_repo": false
+   }
+  }
+ ]

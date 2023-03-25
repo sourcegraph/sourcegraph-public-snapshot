@@ -269,3 +269,46 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 		}
 	})
 }
+
+func TestGitlabSource_ListRepos(t *testing.T) {
+	conf := &schema.GitLabConnection{
+		Url:   "https://gitlab.sgdev.org",
+		Token: os.Getenv("GITLAB_TOKEN"),
+		Projects: []*schema.GitLabProject{
+			{
+				Name: "main-group/empty-repo",
+			},
+			{
+				Name: "main-group/repo000154897",
+			},
+			{
+				Name: "main-group/wiki-repo",
+			},
+		},
+		Exclude: []*schema.ExcludedGitLabProject{
+			{
+				EmptyRepos: true,
+			},
+		},
+	}
+	cf, save := newClientFactory(t, t.Name())
+	defer save(t)
+
+	svc := &types.ExternalService{
+		Kind:   extsvc.KindGitLab,
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, conf)),
+	}
+
+	ctx := context.Background()
+	src, err := NewGitLabSource(ctx, nil, svc, cf)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repos, err := listAll(context.Background(), src)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testutil.AssertGolden(t, "testdata/sources/GITLAB/"+t.Name(), update(t.Name()), repos)
+}

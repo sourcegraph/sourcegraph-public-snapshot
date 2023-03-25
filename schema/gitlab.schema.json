@@ -106,7 +106,7 @@
         "type": "object",
         "title": "ExcludedGitLabProject",
         "additionalProperties": false,
-        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }, {"required": ["emptyRepos"]}],
+        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }, { "required": ["emptyRepos"] }],
         "properties": {
           "name": {
             "description": "The name of a GitLab project (\"group/name\") to exclude from mirroring.",
@@ -124,7 +124,7 @@
         }
       },
       "examples": [
-        [{ "name": "group/name" }, { "id": 42 }, {"emptyRepos":true}],
+        [{ "name": "group/name" }, { "id": 42 }, { "emptyRepos": true }],
         [{ "name": "gitlab-org/gitlab-ee" }, { "name": "gitlab-com/www-gitlab-com" }]
       ]
     },
