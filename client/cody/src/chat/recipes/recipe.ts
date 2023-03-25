@@ -1,6 +1,7 @@
+import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
+
 import { CodebaseContext } from '../../codebase-context'
 import { Editor } from '../../editor'
-import { IntentDetector } from '../../intent-detector'
 import { Interaction } from '../transcript/interaction'
 
 export interface Recipe {

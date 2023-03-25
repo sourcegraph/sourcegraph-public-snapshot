@@ -1,4 +1,6 @@
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
+import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
+import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/intent-detector/client'
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
@@ -7,8 +9,6 @@ import { ChatClient } from './chat/chat'
 import { CodebaseContext } from './codebase-context'
 import { getAccessToken, SecretStorage } from './command/secret-storage'
 import { Editor } from './editor'
-import { IntentDetector } from './intent-detector'
-import { SourcegraphIntentDetectorClient } from './intent-detector/client'
 import { LocalKeywordContextFetcher } from './keyword-context/local-keyword-context-fetcher'
 
 interface ExternalServices {

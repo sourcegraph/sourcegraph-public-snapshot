@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
@@ -10,7 +11,6 @@ import { updateConfiguration } from '../configuration'
 import { Editor } from '../editor'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { configureExternalServices } from '../external-services'
-import { IntentDetector } from '../intent-detector'
 import { getRgPath } from '../rg'
 import { TestSupport } from '../test-support'
 

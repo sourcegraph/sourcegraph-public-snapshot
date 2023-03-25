@@ -1,10 +1,10 @@
+import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { MAX_RECIPE_INPUT_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { getShortTimestamp } from '@sourcegraph/cody-shared/src/timestamp'
 
 import { CodebaseContext } from '../../codebase-context'
 import { Editor } from '../../editor'
-import { IntentDetector } from '../../intent-detector'
 import { renderMarkdown } from '../markdown'
 import { Interaction } from '../transcript/interaction'
 

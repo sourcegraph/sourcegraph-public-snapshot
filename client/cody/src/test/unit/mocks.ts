@@ -1,8 +1,8 @@
 import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
+import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { EmbeddingsSearchResults } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
 import { ActiveTextEditor, ActiveTextEditorSelection, ActiveTextEditorVisibleContent, Editor } from '../../editor'
-import { IntentDetector } from '../../intent-detector'
 import { KeywordContextFetcher, KeywordContextFetcherResult } from '../../keyword-context'
 
 export class MockEmbeddingsClient implements EmbeddingsSearch {
