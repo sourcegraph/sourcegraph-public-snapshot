@@ -62,14 +62,14 @@ func tabsToSpaces(s string) string {
 	return strings.ReplaceAll(s, "\t", "    ")
 }
 
-const TAB_SIZE = 4
+const tabSize = 4
 
-// lengthInSpaces returns the length of the string in spaces (using TAB_SIZE).
+// lengthInSpaces returns the length of the string in spaces (using tabSize).
 func lengthInSpaces(s string) int {
 	total := 0
 	for i := 0; i < len(s); i++ {
 		if s[i] == '\t' {
-			total += TAB_SIZE
+			total += tabSize
 		} else {
 			total++
 		}
@@ -86,7 +86,7 @@ func spacesToColumn(s string, column int) int {
 		}
 
 		if s[i] == '\t' {
-			total += TAB_SIZE
+			total += tabSize
 		} else {
 			total++
 		}
