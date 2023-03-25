@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -59,14 +60,14 @@ type AccessTokenStore interface {
 	// returned. The caller is responsible for presenting this value to the end user; Sourcegraph does
 	// not retain it (only a hash of it).
 	//
-	// The secret token value is a long random string; it is what API clients must provide to
-	// authenticate their requests. We store the SHA-256 hash of the secret token value in the
-	// database. This lets us verify a token's validity (in the (*accessTokens).Lookup method) quickly,
-	// while still ensuring that an attacker who obtains the access_tokens DB table would not be able to
-	// impersonate a token holder. We don't use bcrypt because the original secret is a randomly
-	// generated string (not a password), so it's implausible for an attacker to brute-force the input
-	// space; also bcrypt is slow and would add noticeable latency to each request that supplied a
-	// token.
+	// The secret token value consists of the prefix "sgp_" and then a long random string. It is
+	// what API clients must provide to authenticate their requests. We store the SHA-256 hash of
+	// the secret token value in the database. This lets us verify a token's validity (in the
+	// (*accessTokens).Lookup method) quickly, while still ensuring that an attacker who obtains the
+	// access_tokens DB table would not be able to impersonate a token holder. We don't use bcrypt
+	// because the original secret is a randomly generated string (not a password), so it's
+	// implausible for an attacker to brute-force the input space; also bcrypt is slow and would add
+	// noticeable latency to each request that supplied a token.
 	//
 	// 🚨 SECURITY: The caller must ensure that the actor is permitted to create tokens for the
 	// specified user (i.e., that the actor is either the user or a site admin).
@@ -88,18 +89,18 @@ type AccessTokenStore interface {
 	DeleteByID(context.Context, int64) error
 
 	// DeleteByToken deletes an access token given the secret token value itself (i.e., the same value
-	// that an API client would use to authenticate).
-	DeleteByToken(ctx context.Context, tokenHexEncoded string) error
+	// that an API client would use to authenticate). The token prefix "sgp_", if present, is stripped.
+	DeleteByToken(ctx context.Context, token string) error
 
 	// GetByID retrieves the access token (if any) given its ID.
 	//
 	// 🚨 SECURITY: The caller must ensure that the actor is permitted to view this access token.
 	GetByID(context.Context, int64) (*AccessToken, error)
 
-	// GetByToken retrieves the access token (if any) given its hex encoded string.
+	// GetByToken retrieves the access token (if any). The token prefix "sgp_", if present, is stripped.
 	//
 	// 🚨 SECURITY: The caller must ensure that the actor is permitted to view this access token.
-	GetByToken(ctx context.Context, tokenHexEncoded string) (*AccessToken, error)
+	GetByToken(ctx context.Context, token string) (*AccessToken, error)
 
 	// HardDeleteByID hard-deletes an access token given its ID.
 	//
@@ -115,11 +116,13 @@ type AccessTokenStore interface {
 	// Lookup looks up the access token. If it's valid and contains the required scope, it returns the
 	// subject's user ID. Otherwise ErrAccessTokenNotFound is returned.
 	//
+	// The token prefix "sgp_", if present, is stripped.
+	//
 	// Calling Lookup also updates the access token's last-used-at date.
 	//
-	// 🚨 SECURITY: This returns a user ID if and only if the tokenHexEncoded corresponds to a valid,
+	// 🚨 SECURITY: This returns a user ID if and only if the token corresponds to a valid,
 	// non-deleted access token.
-	Lookup(ctx context.Context, tokenHexEncoded, requiredScope string) (subjectUserID int32, err error)
+	Lookup(ctx context.Context, token, requiredScope string) (subjectUserID int32, err error)
 
 	WithTransact(context.Context, func(AccessTokenStore) error) error
 	With(basestore.ShareableStore) AccessTokenStore
@@ -156,12 +159,17 @@ func (s *accessTokenStore) CreateInternal(ctx context.Context, subjectUserID int
 	return s.createToken(ctx, subjectUserID, scopes, note, creatorUserID, true)
 }
 
+// personalAccessTokenPrefix is the token prefix for Sourcegraph personal access tokens. Its purpose
+// is to make it easier to identify that a given string (in a file, document, etc.) is a secret
+// Sourcegraph personal access token (vs. some arbitrary high-entropy hex-encoded value).
+const personalAccessTokenPrefix = "sgp_"
+
 func (s *accessTokenStore) createToken(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32, internal bool) (id int64, token string, err error) {
 	var b [20]byte
 	if _, err := rand.Read(b[:]); err != nil {
 		return 0, "", err
 	}
-	token = hex.EncodeToString(b[:])
+	token = personalAccessTokenPrefix + hex.EncodeToString(b[:])
 
 	if len(scopes) == 0 {
 		// Prevent mistakes. There is no point in creating an access token with no scopes, and the
@@ -220,12 +228,12 @@ INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_u
 	return id, token, nil
 }
 
-func (s *accessTokenStore) Lookup(ctx context.Context, tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
+func (s *accessTokenStore) Lookup(ctx context.Context, token, requiredScope string) (subjectUserID int32, err error) {
 	if requiredScope == "" {
 		return 0, errors.New("no scope provided in access token lookup")
 	}
 
-	token, err := decodeToken(tokenHexEncoded)
+	tokenHash, err := tokenSHA256Hash(token)
 	if err != nil {
 		return 0, errors.Wrap(err, "AccessTokens.Lookup")
 	}
@@ -243,7 +251,7 @@ WHERE t.id IN (
 )
 RETURNING t.subject_user_id
 `,
-		hashutil.ToSHA256Bytes(token), requiredScope,
+		tokenHash, requiredScope,
 	).Scan(&subjectUserID); err != nil {
 		if err == sql.ErrNoRows {
 			return 0, ErrAccessTokenNotFound
@@ -257,13 +265,13 @@ func (s *accessTokenStore) GetByID(ctx context.Context, id int64) (*AccessToken,
 	return s.get(ctx, []*sqlf.Query{sqlf.Sprintf("id=%d", id)})
 }
 
-func (s *accessTokenStore) GetByToken(ctx context.Context, tokenHexEncoded string) (*AccessToken, error) {
-	token, err := decodeToken(tokenHexEncoded)
+func (s *accessTokenStore) GetByToken(ctx context.Context, token string) (*AccessToken, error) {
+	tokenHash, err := tokenSHA256Hash(token)
 	if err != nil {
 		return nil, errors.Wrap(err, "AccessTokens.GetByToken")
 	}
 
-	return s.get(ctx, []*sqlf.Query{sqlf.Sprintf("value_sha256=%s", hashutil.ToSHA256Bytes(token))})
+	return s.get(ctx, []*sqlf.Query{sqlf.Sprintf("value_sha256=%s", tokenHash)})
 }
 
 func (s *accessTokenStore) get(ctx context.Context, conds []*sqlf.Query) (*AccessToken, error) {
@@ -392,13 +400,13 @@ func (s *accessTokenStore) HardDeleteByID(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (s *accessTokenStore) DeleteByToken(ctx context.Context, tokenHexEncoded string) error {
-	token, err := decodeToken(tokenHexEncoded)
+func (s *accessTokenStore) DeleteByToken(ctx context.Context, token string) error {
+	tokenHash, err := tokenSHA256Hash(token)
 	if err != nil {
 		return errors.Wrap(err, "AccessTokens.DeleteByToken")
 	}
 
-	err = s.delete(ctx, sqlf.Sprintf("value_sha256=%s", hashutil.ToSHA256Bytes(token)))
+	err = s.delete(ctx, sqlf.Sprintf("value_sha256=%s", tokenHash))
 	if err != nil {
 		return err
 	}
@@ -406,7 +414,7 @@ func (s *accessTokenStore) DeleteByToken(ctx context.Context, tokenHexEncoded st
 	arg, err := json.Marshal(struct {
 		AccessTokenSHA256 []byte `json:"access_token_sha256"`
 	}{
-		AccessTokenSHA256: hashutil.ToSHA256Bytes(token),
+		AccessTokenSHA256: tokenHash,
 	})
 	if err != nil {
 		s.logger.Error("failed to marshall the access token log argument")
@@ -435,12 +443,15 @@ func (s *accessTokenStore) delete(ctx context.Context, cond *sqlf.Query) error {
 	return nil
 }
 
-func decodeToken(tokenHexEncoded string) ([]byte, error) {
-	token, err := hex.DecodeString(tokenHexEncoded)
+// tokenSHA256Hash returns the SHA-256 hash of its hex-encoded value (after stripping the "sgp_"
+// token prefix, if present).
+func tokenSHA256Hash(token string) ([]byte, error) {
+	token = strings.TrimPrefix(token, personalAccessTokenPrefix)
+	value, err := hex.DecodeString(token)
 	if err != nil {
 		return nil, InvalidTokenError{err}
 	}
-	return token, nil
+	return hashutil.ToSHA256Bytes(value), nil
 }
 
 func (s *accessTokenStore) logAccessTokenDeleted(ctx context.Context, deletionType SecurityEventName, arg []byte) {
