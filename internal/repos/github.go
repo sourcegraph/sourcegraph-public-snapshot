@@ -866,28 +866,26 @@ func (q *repositoryQuery) DoSingleRequest(ctx context.Context, results chan *git
 		q.First = 100
 	}
 
-	for {
-		if err := ctx.Err(); err != nil {
-			results <- &githubResult{err: err}
+	if err := ctx.Err(); err != nil {
+		results <- &githubResult{err: err}
+	}
+	res, err := q.Searcher.SearchRepos(ctx, github.SearchReposParams{
+		Query: q.String(),
+		First: q.First,
+		After: q.Cursor,
+	})
+	if err != nil {
+		select {
+		case <-ctx.Done():
+		case results <- &githubResult{err: errors.Wrapf(err, "failed to search GitHub repositories with %q", q)}:
 		}
-		res, err := q.Searcher.SearchRepos(ctx, github.SearchReposParams{
-			Query: q.String(),
-			First: q.First,
-			After: q.Cursor,
-		})
-		if err != nil {
-			select {
-			case <-ctx.Done():
-			case results <- &githubResult{err: errors.Wrapf(err, "failed to search GitHub repositories with %q", q)}:
-			}
-		}
+	}
 
-		for i := range res.Repos {
-			select {
-			case <-ctx.Done():
-				break
-			case results <- &githubResult{repo: &res.Repos[i]}:
-			}
+	for i := range res.Repos {
+		select {
+		case <-ctx.Done():
+			break
+		case results <- &githubResult{repo: &res.Repos[i]}:
 		}
 	}
 }
