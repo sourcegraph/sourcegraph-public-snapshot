@@ -11,7 +11,7 @@ import { languageMarkdownID, languageNames } from './langs'
 import { Recipe } from './recipe'
 
 export class TranslateToLanguage implements Recipe {
-    getID(): string {
+    public getID(): string {
         return 'translate-to-language'
     }
 

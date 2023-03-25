@@ -14,7 +14,7 @@ import { Settings } from './Settings'
 import { ChatMessage, View } from './utils/types'
 import { vscodeAPI } from './utils/VSCodeApi'
 
-function App(): React.ReactElement {
+export function App(): React.ReactElement {
     const [devMode, setDevMode] = useState(false)
     const [debugLog, setDebugLog] = useState(['No data yet'])
     const [view, setView] = useState<View | undefined>()
@@ -27,7 +27,7 @@ function App(): React.ReactElement {
             switch (message.data.type) {
                 case 'transcript': {
                     if (message.data.isMessageInProgress) {
-                        setTranscript(message.data.messages.slice(0, message.data.messages.length - 1))
+                        setTranscript(message.data.messages.slice(0, -1))
                         setMessageInProgress(message.data.messages[message.data.messages.length - 1])
                     } else {
                         setTranscript(message.data.messages)
@@ -36,10 +36,12 @@ function App(): React.ReactElement {
                     break
                 }
                 case 'token':
-                    // Get the token from the extension.
-                    const hasToken = !!message.data.value
-                    setView(hasToken ? 'chat' : 'login')
-                    setDevMode(message.data.mode === 'development')
+                    {
+                        // Get the token from the extension.
+                        const hasToken = !!message.data.value
+                        setView(hasToken ? 'chat' : 'login')
+                        setDevMode(message.data.mode === 'development')
+                    }
                     break
                 case 'login':
                     setIsValidLogin(message.data.isValid)
@@ -58,18 +60,15 @@ function App(): React.ReactElement {
 
         vscodeAPI.postMessage({ command: 'initialized' })
         // The dependencies array is empty to execute the callback only on component mount.
-    }, [])
+    }, [debugLog])
 
-    const onLogin = useCallback(
-        (token: string, endpoint: string) => {
-            if (!token || !endpoint) {
-                return
-            }
-            setIsValidLogin(undefined)
-            vscodeAPI.postMessage({ command: 'settings', serverEndpoint: endpoint, accessToken: token })
-        },
-        [setView]
-    )
+    const onLogin = useCallback((token: string, endpoint: string) => {
+        if (!token || !endpoint) {
+            return
+        }
+        setIsValidLogin(undefined)
+        vscodeAPI.postMessage({ command: 'settings', serverEndpoint: endpoint, accessToken: token })
+    }, [])
 
     const onLogout = useCallback(() => {
         vscodeAPI.postMessage({ command: 'removeToken' })
@@ -101,5 +100,3 @@ function App(): React.ReactElement {
         </div>
     )
 }
-
-export default App

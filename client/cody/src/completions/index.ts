@@ -21,15 +21,16 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         this.maxSuffixTokens = Math.floor(promptTokens * this.suffixPercentage)
     }
 
-    async provideInlineCompletionItems(
+    public async provideInlineCompletionItems(
         document: vscode.TextDocument,
         position: vscode.Position,
         context: vscode.InlineCompletionContext,
         token: vscode.CancellationToken
     ): Promise<vscode.InlineCompletionItem[]> {
         try {
-            return this.provideInlineCompletionItemsInner(document, position, context, token)
+            return await this.provideInlineCompletionItemsInner(document, position, context, token)
         } catch (error) {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             vscode.window.showErrorMessage(error)
             return []
         }
@@ -126,7 +127,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         return inlineCompletions
     }
 
-    async fetchAndShowCompletions(): Promise<void> {
+    public async fetchAndShowCompletions(): Promise<void> {
         const currentEditor = vscode.window.activeTextEditor
         if (!currentEditor || currentEditor?.document.uri.scheme === 'cody') {
             return
@@ -136,12 +137,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         const completionsUri = vscode.Uri.parse('cody:Completions.md')
         this.documentProvider.clearCompletions(completionsUri)
 
-        const doc = vscode.workspace.openTextDocument(completionsUri)
-        doc.then(doc => {
-            vscode.window.showTextDocument(doc, {
-                preview: false,
-                viewColumn: 2,
-            })
+        const doc = await vscode.workspace.openTextDocument(completionsUri)
+        await vscode.window.showTextDocument(doc, {
+            preview: false,
+            viewColumn: 2,
         })
 
         const docContext = getCurrentDocContext(
@@ -295,7 +294,7 @@ function trimToIndent(text: string, indent: string): string {
             continue
         }
         const lineIndent = getIndent(lines[i])
-        if (indent.indexOf(lineIndent) === 0 && lineIndent.length < indent.length) {
+        if (indent.startsWith(lineIndent) && lineIndent.length < indent.length) {
             return lines.slice(0, i).join('\n')
         }
     }

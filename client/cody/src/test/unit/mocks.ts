@@ -7,7 +7,7 @@ import { EmbeddingsSearchResults } from '../../sourcegraph-api/graphql'
 export class MockEmbeddingsClient implements EmbeddingsSearch {
     constructor(private mocks: Partial<EmbeddingsSearch> = {}) {}
 
-    search(
+    public search(
         query: string,
         codeResultsCount: number,
         textResultsCount: number
@@ -22,7 +22,7 @@ export class MockEmbeddingsClient implements EmbeddingsSearch {
 export class MockIntentDetector implements IntentDetector {
     constructor(private mocks: Partial<IntentDetector> = {}) {}
 
-    isCodebaseContextRequired(input: string): Promise<boolean | Error> {
+    public isCodebaseContextRequired(input: string): Promise<boolean | Error> {
         return this.mocks.isCodebaseContextRequired?.(input) ?? Promise.resolve(false)
     }
 }
@@ -30,7 +30,7 @@ export class MockIntentDetector implements IntentDetector {
 export class MockKeywordContextFetcher implements KeywordContextFetcher {
     constructor(private mocks: Partial<KeywordContextFetcher> = {}) {}
 
-    getContext(query: string, numResults: number): Promise<KeywordContextFetcherResult[]> {
+    public getContext(query: string, numResults: number): Promise<KeywordContextFetcherResult[]> {
         return this.mocks.getContext?.(query, numResults) ?? Promise.resolve([])
     }
 }
@@ -38,23 +38,23 @@ export class MockKeywordContextFetcher implements KeywordContextFetcher {
 export class MockEditor implements Editor {
     constructor(private mocks: Partial<Editor> = {}) {}
 
-    getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
+    public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
         return this.mocks.getActiveTextEditorSelection?.() ?? null
     }
 
-    getActiveTextEditor(): ActiveTextEditor | null {
+    public getActiveTextEditor(): ActiveTextEditor | null {
         return this.mocks.getActiveTextEditor?.() ?? null
     }
 
-    getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
+    public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
         return this.mocks.getActiveTextEditorVisibleContent?.() ?? null
     }
 
-    showQuickPick(labels: string[]): Promise<string | undefined> {
+    public showQuickPick(labels: string[]): Promise<string | undefined> {
         return this.mocks.showQuickPick?.(labels) ?? Promise.resolve(undefined)
     }
 
-    showWarningMessage(message: string): Promise<void> {
+    public showWarningMessage(message: string): Promise<void> {
         return this.mocks.showWarningMessage?.(message) ?? Promise.resolve()
     }
 }

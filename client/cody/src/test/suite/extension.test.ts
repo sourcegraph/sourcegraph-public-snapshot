@@ -48,6 +48,7 @@ async function getTranscript(api: vscode.Extension<ExtensionApi>, index: number)
 }
 
 suite('End-to-end', () => {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     vscode.window.showInformationMessage('Starting end-to-end tests.')
 
     test('Cody registers some commands', async () => {
@@ -75,7 +76,7 @@ suite('End-to-end', () => {
         assert.ok(api.exports)
 
         // Check the chat transcript contains markdown
-        let message = await getTranscript(api, 0)
+        const message = await getTranscript(api, 0)
         assert.ok(message.displayText.startsWith('<p>Explain the following code'))
         assert.ok(message.displayText.includes('<span class="hljs-keyword">public</span>'))
 

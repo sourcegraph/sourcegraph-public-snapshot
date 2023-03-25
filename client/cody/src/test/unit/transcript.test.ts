@@ -43,16 +43,17 @@ describe('Transcript', () => {
 
     it('generates a prompt with context for a chat question', async () => {
         const embeddings = new MockEmbeddingsClient({
-            search: async () => ({
-                codeResults: [{ fileName: 'src/main.go', startLine: 0, endLine: 1, content: 'package main' }],
-                textResults: [{ fileName: 'docs/README.md', startLine: 0, endLine: 1, content: '# Main' }],
-            }),
+            search: async () =>
+                Promise.resolve({
+                    codeResults: [{ fileName: 'src/main.go', startLine: 0, endLine: 1, content: 'package main' }],
+                    textResults: [{ fileName: 'docs/README.md', startLine: 0, endLine: 1, content: '# Main' }],
+                }),
         })
 
         const interaction = await new ChatQuestion().getInteraction(
             'how do access tokens work in sourcegraph',
             defaultEditor,
-            new MockIntentDetector({ isCodebaseContextRequired: async () => true }),
+            new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) }),
             new CodebaseContext('embeddings', embeddings, defaultKeywordContextFetcher)
         )
 
@@ -73,12 +74,13 @@ describe('Transcript', () => {
 
     it('generates a prompt for multiple chat questions, includes context for last question only', async () => {
         const embeddings = new MockEmbeddingsClient({
-            search: async () => ({
-                codeResults: [{ fileName: 'src/main.go', startLine: 0, endLine: 1, content: 'package main' }],
-                textResults: [{ fileName: 'docs/README.md', startLine: 0, endLine: 1, content: '# Main' }],
-            }),
+            search: async () =>
+                Promise.resolve({
+                    codeResults: [{ fileName: 'src/main.go', startLine: 0, endLine: 1, content: 'package main' }],
+                    textResults: [{ fileName: 'docs/README.md', startLine: 0, endLine: 1, content: '# Main' }],
+                }),
         })
-        const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => true })
+        const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) })
         const codebaseContext = new CodebaseContext('embeddings', embeddings, defaultKeywordContextFetcher)
 
         const chatQuestionRecipe = new ChatQuestion()
@@ -149,12 +151,13 @@ describe('Transcript', () => {
             getActiveTextEditorVisibleContent: () => ({ fileName: 'internal/lib.go', content: 'package lib' }),
         })
         const embeddings = new MockEmbeddingsClient({
-            search: async () => ({
-                codeResults: [{ fileName: 'src/main.go', startLine: 0, endLine: 1, content: 'package main' }],
-                textResults: [{ fileName: 'docs/README.md', startLine: 0, endLine: 1, content: '# Main' }],
-            }),
+            search: async () =>
+                Promise.resolve({
+                    codeResults: [{ fileName: 'src/main.go', startLine: 0, endLine: 1, content: 'package main' }],
+                    textResults: [{ fileName: 'docs/README.md', startLine: 0, endLine: 1, content: '# Main' }],
+                }),
         })
-        const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => true })
+        const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) })
         const codebaseContext = new CodebaseContext('embeddings', embeddings, defaultKeywordContextFetcher)
 
         const chatQuestionRecipe = new ChatQuestion()

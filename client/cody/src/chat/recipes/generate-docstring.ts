@@ -16,7 +16,7 @@ import {
 import { Recipe } from './recipe'
 
 export class GenerateDocstring implements Recipe {
-    getID(): string {
+    public getID(): string {
         return 'generate-docstring'
     }
 
@@ -28,7 +28,7 @@ export class GenerateDocstring implements Recipe {
     ): Promise<Interaction | null> {
         const selection = editor.getActiveTextEditorSelection()
         if (!selection) {
-            return null
+            return Promise.resolve(null)
         }
 
         const timestamp = getShortTimestamp()

@@ -17,19 +17,19 @@ export interface SecretStorage {
 export class VSCodeSecretStorage implements SecretStorage {
     constructor(private secretStorage: vscode.SecretStorage) {}
 
-    get(key: string): Thenable<string | undefined> {
+    public get(key: string): Thenable<string | undefined> {
         return this.secretStorage.get(key)
     }
 
-    store(key: string, value: string): Thenable<void> {
+    public store(key: string, value: string): Thenable<void> {
         return this.secretStorage.store(key, value)
     }
 
-    delete(key: string): Thenable<void> {
+    public delete(key: string): Thenable<void> {
         return this.secretStorage.delete(key)
     }
 
-    onDidChange(callback: (key: string) => void): vscode.Disposable {
+    public onDidChange(callback: (key: string) => void): vscode.Disposable {
         return this.secretStorage.onDidChange(event => callback(event.key))
     }
 }
@@ -43,31 +43,33 @@ export class InMemorySecretStorage implements SecretStorage {
         this.callbacks = []
     }
 
-    get(key: string): Thenable<string | undefined> {
+    public get(key: string): Thenable<string | undefined> {
         return Promise.resolve(this.storage.get(key))
     }
 
-    store(key: string, value: string): Thenable<void> {
+    public store(key: string, value: string): Thenable<void> {
         this.storage.set(key, value)
 
         for (const cb of this.callbacks) {
+            // eslint-disable-next-line callback-return
             cb(key)
         }
 
         return Promise.resolve()
     }
 
-    delete(key: string): Thenable<void> {
+    public delete(key: string): Thenable<void> {
         this.storage.delete(key)
 
         for (const cb of this.callbacks) {
+            // eslint-disable-next-line callback-return
             cb(key)
         }
 
         return Promise.resolve()
     }
 
-    onDidChange(callback: (key: string) => void): vscode.Disposable {
+    public onDidChange(callback: (key: string) => void): vscode.Disposable {
         this.callbacks.push(callback)
 
         return new vscode.Disposable(() => {

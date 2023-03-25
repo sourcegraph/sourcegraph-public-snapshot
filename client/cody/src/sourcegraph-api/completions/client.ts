@@ -45,7 +45,7 @@ export class SourcegraphCompletionsClient {
 
                 res.on('data', chunk => {
                     if (!(chunk instanceof Buffer)) {
-                        throw new Error('expected chunk to be a Buffer')
+                        throw new TypeError('expected chunk to be a Buffer')
                     }
                     buffer += chunk.toString()
 

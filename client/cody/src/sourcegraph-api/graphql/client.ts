@@ -61,7 +61,7 @@ export class SourcegraphGraphQLAPIClient {
     public async getCurrentUserId(): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdResponse>>(CURRENT_USER_ID_QUERY, {}).then(response =>
             extractDataOrError(response, data =>
-                data.currentUser ? data.currentUser.id : new Error(`current user not found`)
+                data.currentUser ? data.currentUser.id : new Error('current user not found')
             )
         )
     }
@@ -110,7 +110,7 @@ export class SourcegraphGraphQLAPIClient {
 
 function verifyResponseCode(response: Response): Response {
     if (!response.ok) {
-        throw new Error('HTTP status code: ' + response.status)
+        throw new Error(`HTTP status code: ${response.status}`)
     }
     return response
 }

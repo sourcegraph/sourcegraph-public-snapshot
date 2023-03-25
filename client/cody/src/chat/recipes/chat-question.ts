@@ -26,10 +26,12 @@ export class ChatQuestion implements Recipe {
         const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)
         const displayText = renderMarkdown(humanChatInput)
 
-        return new Interaction(
-            { speaker: 'human', text: truncatedText, displayText, timestamp },
-            { speaker: 'assistant', text: '', displayText: '', timestamp },
-            this.getContextMessages(truncatedText, editor, intentDetector, codebaseContext)
+        return Promise.resolve(
+            new Interaction(
+                { speaker: 'human', text: truncatedText, displayText, timestamp },
+                { speaker: 'assistant', text: '', displayText: '', timestamp },
+                this.getContextMessages(truncatedText, editor, intentDetector, codebaseContext)
+            )
         )
     }
 

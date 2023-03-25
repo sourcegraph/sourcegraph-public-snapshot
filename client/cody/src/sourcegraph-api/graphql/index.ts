@@ -1,1 +1,2 @@
-export { SourcegraphGraphQLAPIClient, EmbeddingsSearchResults } from './client'
+export type { EmbeddingsSearchResults } from './client'
+export { SourcegraphGraphQLAPIClient } from './client'

@@ -16,7 +16,7 @@ export class Interaction {
         return this.assistantMessage
     }
 
-    public setAssistantMessage(assistantMessage: InteractionMessage) {
+    public setAssistantMessage(assistantMessage: InteractionMessage): void {
         this.assistantMessage = assistantMessage
     }
 

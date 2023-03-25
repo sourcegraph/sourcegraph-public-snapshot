@@ -1,2 +1,2 @@
 export { SourcegraphCompletionsClient } from './client'
-export { CompletionParameters } from './types'
+export type { CompletionParameters } from './types'
