@@ -1,4 +1,4 @@
-import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
 import { IntentDetector } from '.'
 

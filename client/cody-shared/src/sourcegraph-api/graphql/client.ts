@@ -1,6 +1,6 @@
 import fetch, { Response } from 'node-fetch'
 
-import { isError } from '@sourcegraph/cody-shared/src/utils'
+import { isError } from '../../utils'
 
 import {
     CURRENT_USER_ID_QUERY,

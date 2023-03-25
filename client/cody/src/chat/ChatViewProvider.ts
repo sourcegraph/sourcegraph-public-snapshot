@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { CodebaseContext } from '../codebase-context'
@@ -11,7 +12,6 @@ import { configureExternalServices } from '../external-services'
 import { IntentDetector } from '../intent-detector'
 import { getRgPath } from '../rg'
 import { Message } from '../sourcegraph-api'
-import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { TestSupport } from '../test-support'
 
 import { ChatClient } from './chat'
