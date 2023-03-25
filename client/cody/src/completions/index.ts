@@ -72,7 +72,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         } else {
             // End of line: long debounce, next line
             completionPrefix = '\n'
-sto            waitMs = 2000
+            waitMs = 2000
 
             // TODO(beyang): handle this as a special case, try 2 completions, one with newline inserted, one without
         }
