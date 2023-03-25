@@ -31,7 +31,7 @@ type SquirrelService struct {
 	depth               int
 }
 
-// Creates a new SquirrelService.
+// New creates a new SquirrelService.
 func New(readFile readFileFunc, symbolSearch symbolsTypes.SearchFunc) *SquirrelService {
 	return &SquirrelService{
 		readFile:            readFile,
@@ -43,7 +43,7 @@ func New(readFile readFileFunc, symbolSearch symbolsTypes.SearchFunc) *SquirrelS
 	}
 }
 
-// Remember to free memory allocated by tree-sitter.
+// Close frees memory allocated by tree-sitter.
 func (squirrel *SquirrelService) Close() {
 	for _, close := range squirrel.closables {
 		close()

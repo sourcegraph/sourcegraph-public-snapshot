@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Responds to /localCodeIntel
+// LocalCodeIntelHandler responds to /localCodeIntel
 func LocalCodeIntelHandler(readFile readFileFunc) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Read the args from the request body.
@@ -75,7 +75,7 @@ func LocalCodeIntelHandler(readFile readFileFunc) func(w http.ResponseWriter, r 
 	}
 }
 
-// Responds to /symbolInfo
+// NewSymbolInfoHandler responds to /symbolInfo
 func NewSymbolInfoHandler(symbolSearch symbolsTypes.SearchFunc, readFile readFileFunc) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Read the args from the request body.

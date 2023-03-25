@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Nominal type for the ID of a tree-sitter node.
+// NodeId is a nominal type for the ID of a tree-sitter node.
 type NodeId string
 
 // walk walks every node in the tree-sitter tree, calling f(node) on each node.
@@ -227,7 +227,7 @@ func contains(slice []string, str string) bool {
 	return false
 }
 
-// A sitter.Node plus convenient info.
+// Node is a sitter.Node plus convenient info.
 type Node struct {
 	RepoCommitPath types.RepoCommitPath
 	*sitter.Node

@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// Nominal type for symbol names.
+// SymbolName is a nominal type for symbol names.
 type SymbolName string
 
 // Scope is a mapping from symbol name to symbol.
