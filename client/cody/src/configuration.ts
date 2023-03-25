@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import type { ConfigurationUseContext, Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
-export function getConfiguration(config: vscode.WorkspaceConfiguration): Configuration {
+export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'get'>): Configuration {
     return {
         enabled: config.get('cody.enabled', true),
         serverEndpoint: config.get('cody.serverEndpoint', ''),

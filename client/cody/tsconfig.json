@@ -2,10 +2,20 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "sourceMap": true,
-    "outDir": "dist",
+    "rootDir": ".",
+    "sourceRoot": "src",
+    "outDir": "out",
     "jsx": "react-jsx",
   },
-  "include": ["src", "webviews", "vite.config.ts", "webpack.config.js", "package.json", ".eslintrc.js"],
+  "include": [
+    "src",
+    "webviews",
+    "vite.config.ts",
+    "webpack.config.js",
+    "package.json",
+    ".eslintrc.js",
+    "jest.config.js",
+  ],
   "exclude": ["scripts", "out", "dist"],
   "references": [{ "path": "../cody-shared" }],
 }
