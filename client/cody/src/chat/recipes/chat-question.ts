@@ -1,3 +1,4 @@
+import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { ContextMessage, getContextMessageWithResponse } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
@@ -8,7 +9,6 @@ import { getShortTimestamp } from '@sourcegraph/cody-shared/src/timestamp'
 
 import { CodebaseContext } from '../../codebase-context'
 import { Editor } from '../../editor'
-import { renderMarkdown } from '../markdown'
 
 import { Recipe } from './recipe'
 

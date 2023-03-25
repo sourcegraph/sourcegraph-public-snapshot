@@ -16,7 +16,6 @@ module.exports = {
     'no-restricted-imports': [
       'error',
       {
-        paths: ['!highlight.js'],
         patterns: ['!@sourcegraph/cody-shared/*'], // allow any imports from the @sourcegraph/cody-shared package
       },
     ],

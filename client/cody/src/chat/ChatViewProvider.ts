@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
@@ -17,7 +18,6 @@ import { configureExternalServices } from '../external-services'
 import { getRgPath } from '../rg'
 import { TestSupport } from '../test-support'
 
-import { renderMarkdown } from './markdown'
 import { getRecipe } from './recipes'
 
 // If the bot message ends with some prefix of the `Human:` stop

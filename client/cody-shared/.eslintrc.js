@@ -11,5 +11,11 @@ module.exports = {
   rules: {
     'no-console': 'off',
     'id-length': 'off',
+    'no-restricted-imports': [
+      'error',
+      {
+        paths: ['!highlight.js'],
+      },
+    ],
   },
 }

@@ -1,6 +1,7 @@
 import { spawnSync } from 'child_process'
 import * as path from 'path'
 
+import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { MAX_RECIPE_INPUT_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
@@ -9,7 +10,6 @@ import { getShortTimestamp } from '@sourcegraph/cody-shared/src/timestamp'
 
 import { CodebaseContext } from '../../codebase-context'
 import { Editor } from '../../editor'
-import { renderMarkdown } from '../markdown'
 
 import { Recipe } from './recipe'
 
