@@ -167,7 +167,7 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 	}
 }
 
-func (requestTracer) TraceField(ctx context.Context, _, typeName, fieldName string, _ bool, _ map[string]any) (context.Context, func(*gqlerrors.QueryError)) {
+func (*requestTracer) TraceField(ctx context.Context, _, typeName, fieldName string, _ bool, _ map[string]any) (context.Context, func(*gqlerrors.QueryError)) {
 	// We don't call into t.OpenTracingTracer.TraceField since it generates too many spans which is really hard to read.
 	start := time.Now()
 	return ctx, func(err *gqlerrors.QueryError) {
@@ -182,7 +182,7 @@ func (requestTracer) TraceField(ctx context.Context, _, typeName, fieldName stri
 	}
 }
 
-func (t requestTracer) TraceValidation(ctx context.Context) func([]*gqlerrors.QueryError) {
+func (t *requestTracer) TraceValidation(ctx context.Context) func([]*gqlerrors.QueryError) {
 	var finish func([]*gqlerrors.QueryError)
 	if policy.ShouldTrace(ctx) {
 		finish = t.tracer.TraceValidation(ctx)

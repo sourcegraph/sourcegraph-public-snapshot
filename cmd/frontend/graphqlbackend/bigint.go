@@ -10,12 +10,12 @@ import (
 // BigInt implements the BigInt GraphQL scalar type.
 type BigInt int64
 
-func (BigInt) ImplementsGraphQLType(name string) bool {
+func (*BigInt) ImplementsGraphQLType(name string) bool {
 	return name == "BigInt"
 }
 
-func (v BigInt) MarshalJSON() ([]byte, error) {
-	return json.Marshal(strconv.FormatInt(int64(v), 10))
+func (v *BigInt) MarshalJSON() ([]byte, error) {
+	return json.Marshal(strconv.FormatInt(int64(*v), 10))
 }
 
 func (v *BigInt) UnmarshalGraphQL(input any) error {

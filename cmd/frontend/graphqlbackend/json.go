@@ -10,7 +10,7 @@ import (
 // representation of its Go value.
 type JSONValue struct{ Value any }
 
-func (JSONValue) ImplementsGraphQLType(name string) bool {
+func (*JSONValue) ImplementsGraphQLType(name string) bool {
 	return name == "JSONValue"
 }
 
@@ -19,7 +19,7 @@ func (v *JSONValue) UnmarshalGraphQL(input any) error {
 	return nil
 }
 
-func (v JSONValue) MarshalJSON() ([]byte, error) {
+func (v *JSONValue) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.Value)
 }
 
