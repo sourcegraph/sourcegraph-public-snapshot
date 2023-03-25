@@ -1,12 +1,12 @@
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { populateCodeContextTemplate } from '@sourcegraph/cody-shared/src/prompt/templates'
+import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { getShortTimestamp } from '@sourcegraph/cody-shared/src/timestamp'
 
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
 import { Editor } from '../../editor'
 import { IntentDetector } from '../../intent-detector'
-import { truncateText } from '../../prompt/truncation'
 import { renderMarkdown } from '../markdown'
 import { Interaction } from '../transcript/interaction'
 
