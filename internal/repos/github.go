@@ -817,14 +817,20 @@ func (r dateRange) String() string {
 
 func (r dateRange) Size() time.Duration { return r.To.Sub(r.From) }
 
+type searchReposCount struct {
+	known bool
+	count int
+}
+
 type repositoryQuery struct {
-	Query    string
-	Created  *dateRange
-	Cursor   github.Cursor
-	First    int
-	Limit    int
-	Searcher *github.V4Client
-	Logger   log.Logger
+	Query     string
+	Created   *dateRange
+	Cursor    github.Cursor
+	First     int
+	Limit     int
+	Searcher  *github.V4Client
+	Logger    log.Logger
+	RepoCount searchReposCount
 }
 
 // DoWithRefinedWindow attempts to retrieve all matching repositories by refining the window of acceptable Created dates
@@ -862,74 +868,103 @@ func (q *repositoryQuery) DoSingleRequest(ctx context.Context, results chan *git
 }
 
 func (q *repositoryQuery) Do(ctx context.Context, doRefine func(*repositoryQuery, github.SearchReposResults) bool, canExit func(*repositoryQuery, github.SearchReposResults) bool, results chan *githubResult) {
-	q.doRecursively(ctx, minCreated, time.Now(), results)
-}
-
-func (q *repositoryQuery) doRecursively(ctx context.Context, from time.Time, to time.Time, results chan *githubResult) {
 	if q.First == 0 {
 		q.First = 100
 	}
-
 	if q.Limit == 0 {
-		// Default GitHub API search results limit per search.
 		q.Limit = 1000
 	}
+	if q.Created == nil {
+		q.Created = &dateRange{
+			From:       minCreated,
+			To:         time.Now(),
+			OriginalTo: time.Now(),
+		}
+	}
 
-	q.Created = &dateRange{From: from, To: to, OriginalTo: to}
-	q.Cursor = ""
-
-	res, err := q.Searcher.SearchRepos(ctx, github.SearchReposParams{
-		Query: q.String(),
-		First: q.First,
-		After: q.Cursor,
-	})
-	if err != nil {
+	if err := q.doRecursively(ctx, results); err != nil {
 		select {
 		case <-ctx.Done():
 		case results <- &githubResult{err: errors.Wrapf(err, "failed to search GitHub repositories with %q", q)}:
 		}
-		return
+	}
+}
+
+func (q *repositoryQuery) split(ctx context.Context, results chan *githubResult) error {
+	middle := q.Created.From.Add(q.Created.To.Sub(q.Created.From) / 2)
+	q1, q2 := *q, *q
+	q1.RepoCount.known = false
+	q1.Created = &dateRange{
+		From: q.Created.From,
+		To:   middle.Add(-1 * time.Second),
+	}
+	q2.Created = &dateRange{
+		From: middle,
+		To:   q.Created.To,
+	}
+	if err := q1.doRecursively(ctx, results); err != nil {
+		return err
+	}
+	// We now know the repoCount of q2 by subtracting the repoCount of q1 from the original q
+	q2.RepoCount = searchReposCount{
+		known: true,
+		count: q.RepoCount.count - q1.RepoCount.count,
+	}
+	return q2.doRecursively(ctx, results)
+}
+
+func (q *repositoryQuery) doRecursively(ctx context.Context, results chan *githubResult) error {
+	// If we know that the number of repos in this query is greater than the limit, we can immediately split the query
+	if q.RepoCount.known && q.RepoCount.count > q.Limit {
+		return q.split(ctx, results)
 	}
 
-	if res.TotalCount > q.Limit {
-		middle := from.Add(to.Sub(from) / 2)
-		q.doRecursively(ctx, from, middle.Add(-1*time.Second), results)
-		q.doRecursively(ctx, middle, to, results)
-		return
+	// Otherwise we need to confirm the number of repositories first
+	count, err := q.Searcher.GetSearchReposCount(ctx, q.String())
+	if err != nil {
+		return err
 	}
 
+	q.RepoCount = searchReposCount{
+		known: true,
+		count: count,
+	}
+
+	// Now that we know the repo count, we can perform a check again and split if necessary
+	if q.RepoCount.count > q.Limit {
+		return q.split(ctx, results)
+	}
+
+	// If the number of repos is lower than the limit, we perform the actual search
+	// and iterate over the results
 	for {
 		if err := ctx.Err(); err != nil {
-			results <- &githubResult{err: ctx.Err()}
-			return
+			return err
 		}
-
-		for i := range res.Repos {
-			select {
-			case <-ctx.Done():
-				return
-			case results <- &githubResult{repo: &res.Repos[i]}:
-			}
-		}
-
-		if res.EndCursor == "" {
-			return
-		}
-
-		q.Cursor = res.EndCursor
-		res, err = q.Searcher.SearchRepos(ctx, github.SearchReposParams{
+		res, err := q.Searcher.SearchRepos(ctx, github.SearchReposParams{
 			Query: q.String(),
 			First: q.First,
 			After: q.Cursor,
 		})
 		if err != nil {
+			return err
+		}
+
+		for i := range res.Repos {
 			select {
 			case <-ctx.Done():
-			case results <- &githubResult{err: errors.Wrapf(err, "failed to search GitHub repositories with %q", q)}:
+				break
+			case results <- &githubResult{repo: &res.Repos[i]}:
 			}
-			return
 		}
+
+		if res.EndCursor == "" {
+			break
+		}
+		q.Cursor = res.EndCursor
 	}
+
+	return nil
 }
 
 func (s *repositoryQuery) Next() bool {

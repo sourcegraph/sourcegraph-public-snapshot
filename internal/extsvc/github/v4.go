@@ -491,6 +491,34 @@ query($query: String!, $type: SearchType!, $after: String, $first: Int!) {
 	return b.String()
 }
 
+// GetSearchReposCount returns the number of search result in the given query.
+func (c *V4Client) GetSearchReposCount(ctx context.Context, query string) (int, error) {
+	vars := map[string]any{
+		"query": query,
+		"type":  "REPOSITORY",
+	}
+
+	query = `
+query($query: String!, $type: SearchType!) {
+	search(query: $query, type: $type) {
+		repositoryCount
+	}	
+}`
+
+	var resp struct {
+		Search struct {
+			RepositoryCount int
+		}
+	}
+
+	err := c.requestGraphQL(ctx, query, vars, &resp)
+	if err != nil {
+		return 0, err
+	}
+
+	return resp.Search.RepositoryCount, nil
+}
+
 // GetReposByNameWithOwner fetches the specified repositories (namesWithOwners)
 // from the GitHub GraphQL API and returns a slice of repositories.
 // If a repository is not found, it will return an error.
