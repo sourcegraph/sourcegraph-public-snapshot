@@ -2,6 +2,7 @@ import path from 'path'
 
 import { ContextMessage, getContextMessageWithResponse } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
+import { KeywordContextFetcher } from '@sourcegraph/cody-shared/src/keyword-context'
 import {
     populateCodeContextTemplate,
     populateMarkdownContextTemplate,
@@ -9,8 +10,6 @@ import {
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { EmbeddingsSearchResult } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
-
-import { KeywordContextFetcher } from '../keyword-context'
 
 export interface ContextSearchOptions {
     numCodeResults: number
