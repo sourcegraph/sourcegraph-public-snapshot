@@ -253,7 +253,7 @@ var unrecognizedFileExtensionError = errors.New("unrecognized file extension")
 var UnsupportedLanguageError = errors.New("unsupported language")
 
 // Parses a file and returns info about it.
-func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCommitPath) (*Node, error) {
+func (squirrel *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCommitPath) (*Node, error) {
 	ext := filepath.Base(repoCommitPath.Path)
 	if strings.Index(ext, ".") >= 0 {
 		ext = strings.TrimPrefix(filepath.Ext(repoCommitPath.Path), ".")
@@ -269,32 +269,32 @@ func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCo
 		return nil, UnsupportedLanguageError
 	}
 
-	s.parser.SetLanguage(langSpec.language)
+	squirrel.parser.SetLanguage(langSpec.language)
 
-	contents, err := s.readFile(ctx, repoCommitPath)
+	contents, err := squirrel.readFile(ctx, repoCommitPath)
 	if err != nil {
 		return nil, err
 	}
 
-	tree, err := s.parser.ParseCtx(ctx, nil, contents)
+	tree, err := squirrel.parser.ParseCtx(ctx, nil, contents)
 	if err != nil {
 		return nil, errors.Newf("failed to parse file contents: %s", err)
 	}
-	s.closables = append(s.closables, tree.Close)
+	squirrel.closables = append(squirrel.closables, tree.Close)
 
 	root := tree.RootNode()
 	if root == nil {
 		return nil, errors.New("root is nil")
 	}
-	if s.errorOnParseFailure && root.HasError() {
+	if squirrel.errorOnParseFailure && root.HasError() {
 		return nil, errors.Newf("parse error in %+v, try pasting it in https://tree-sitter.github.io/tree-sitter/playground to find the ERROR node", repoCommitPath)
 	}
 
 	return &Node{RepoCommitPath: repoCommitPath, Node: root, Contents: contents, LangSpec: langSpec}, nil
 }
 
-func (s *SquirrelService) getSymbols(ctx context.Context, repoCommitPath types.RepoCommitPath) (result.Symbols, error) {
-	root, err := s.parse(context.Background(), repoCommitPath)
+func (squirrel *SquirrelService) getSymbols(ctx context.Context, repoCommitPath types.RepoCommitPath) (result.Symbols, error) {
+	root, err := squirrel.parse(context.Background(), repoCommitPath)
 	if err != nil {
 		return nil, err
 	}
@@ -402,8 +402,8 @@ func lazyNodeStringer(node **Node) func() fmt.Stringer {
 	}
 }
 
-func (s *SquirrelService) symbolSearchOne(ctx context.Context, repo string, commit string, include []string, ident string) (*Node, error) {
-	symbols, err := s.symbolSearch(ctx, search.SymbolsParameters{
+func (squirrel *SquirrelService) symbolSearchOne(ctx context.Context, repo string, commit string, include []string, ident string) (*Node, error) {
+	symbols, err := squirrel.symbolSearch(ctx, search.SymbolsParameters{
 		Repo:            api.RepoName(repo),
 		CommitID:        api.CommitID(commit),
 		Query:           fmt.Sprintf("^%s$", ident),
@@ -420,7 +420,7 @@ func (s *SquirrelService) symbolSearchOne(ctx context.Context, repo string, comm
 		return nil, nil
 	}
 	symbol := symbols[0]
-	file, err := s.parse(ctx, types.RepoCommitPath{
+	file, err := squirrel.parse(ctx, types.RepoCommitPath{
 		Repo:   repo,
 		Commit: commit,
 		Path:   symbol.Path,
