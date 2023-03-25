@@ -1,4 +1,5 @@
 import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
+import { languageMarkdownID, languageNames } from '@sourcegraph/cody-shared/src/chat/recipes/langs'
 import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
@@ -8,7 +9,6 @@ import { getShortTimestamp } from '@sourcegraph/cody-shared/src/timestamp'
 
 import { Editor } from '../../editor'
 
-import { languageMarkdownID, languageNames } from './langs'
 import { Recipe } from './recipe'
 
 export class TranslateToLanguage implements Recipe {
