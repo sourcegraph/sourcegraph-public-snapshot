@@ -119,11 +119,6 @@
         "key": "ctrl+alt+c",
         "mac": "ctrl+alt+c",
         "when": "cody.activated"
-      },
-      {
-        "command": "cody.experimental.suggest",
-        "key": "alt+\\",
-        "when": "sourcegraph.cody.activated"
       }
     ],
     "submenus": [
@@ -228,7 +223,11 @@
           ],
           "default": "embeddings"
         },
-        "cody.keys.openai": {
+        "cody.experimental.suggestions": {
+          "type": "boolean",
+          "default": false
+        },
+        "cody.experimental.keys.openai": {
           "type": "string"
         }
       }

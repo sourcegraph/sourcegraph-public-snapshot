@@ -19,8 +19,8 @@ export function getConfiguration(config: vscode.WorkspaceConfiguration): Configu
         codebase: config.get('cody.codebase'),
         debug: config.get('cody.debug', false),
         useContext: config.get<ConfigurationUseContext>('cody.useContext') || 'embeddings',
-        experimentalSuggest: config.get('cody.experimental.suggest', false),
-        openaiKey: config.get('cody.keys.openai', null),
+        experimentalSuggest: config.get('cody.experimental.suggestions', false),
+        openaiKey: config.get('cody.experimental.keys.openai', null),
     }
 }
 
