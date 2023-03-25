@@ -1,3 +1,4 @@
+import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
@@ -5,7 +6,6 @@ import { ChatClient } from './chat/chat'
 import { CodebaseContext } from './codebase-context'
 import { getAccessToken, SecretStorage } from './command/secret-storage'
 import { Editor } from './editor'
-import { SourcegraphEmbeddingsSearchClient } from './embeddings/client'
 import { IntentDetector } from './intent-detector'
 import { SourcegraphIntentDetectorClient } from './intent-detector/client'
 import { LocalKeywordContextFetcher } from './keyword-context/local-keyword-context-fetcher'

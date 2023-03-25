@@ -1,7 +1,7 @@
+import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
 import { EmbeddingsSearchResults } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
 import { ActiveTextEditor, ActiveTextEditorSelection, ActiveTextEditorVisibleContent, Editor } from '../../editor'
-import { EmbeddingsSearch } from '../../embeddings'
 import { IntentDetector } from '../../intent-detector'
 import { KeywordContextFetcher, KeywordContextFetcherResult } from '../../keyword-context'
 

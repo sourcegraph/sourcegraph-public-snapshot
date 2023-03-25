@@ -1,5 +1,6 @@
 import path from 'path'
 
+import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
 import {
     populateCodeContextTemplate,
     populateMarkdownContextTemplate,
@@ -7,7 +8,6 @@ import {
 import { EmbeddingsSearchResult } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
-import { EmbeddingsSearch } from '../embeddings'
 import { KeywordContextFetcher } from '../keyword-context'
 import { Message } from '../sourcegraph-api'
 
