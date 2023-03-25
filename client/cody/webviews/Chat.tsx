@@ -1,3 +1,6 @@
+/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
+/* eslint-disable jsx-a11y/no-static-element-interactions */
+/* eslint-disable jsx-a11y/click-events-have-key-events */
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
@@ -35,15 +38,15 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         [setFormInput]
     )
 
-    const onChatKeyDown = async (event: React.KeyboardEvent<HTMLDivElement>): Promise<void> => {
+    const onChatKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault()
             event.stopPropagation()
-            await onChatSubmit()
+            onChatSubmit()
         }
     }
 
-    const onChatSubmit = useCallback(async () => {
+    const onChatSubmit = useCallback(() => {
         vscodeAPI.postMessage({ command: 'submit', text: formInput })
         setInputRows(5)
         setFormInput('')
@@ -51,7 +54,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const bubbleClassName = (speaker: string): string => (speaker === 'human' ? 'human' : 'bot')
 
-    const scrollToBottom = () => {
+    const scrollToBottom = (): void => {
         chatboxRef.current?.scrollIntoView?.({ behavior: 'smooth' })
     }
 

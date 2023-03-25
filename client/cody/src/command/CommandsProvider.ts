@@ -70,6 +70,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         // TOS
         vscode.commands.registerCommand('cody.accept-tos', async version => {
             if (typeof version !== 'number') {
+                // eslint-disable-next-line @typescript-eslint/no-floating-promises
                 vscode.window.showErrorMessage(`TOS version was not a number: ${version}`)
                 return
             }

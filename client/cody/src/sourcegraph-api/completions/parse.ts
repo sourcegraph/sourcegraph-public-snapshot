@@ -76,8 +76,8 @@ interface EventsParseResult {
 }
 
 export function parseEvents(eventsBuffer: string): EventsParseResult | Error {
-    let eventStartIndex = 0,
-        eventEndIndex = eventsBuffer.indexOf(EVENTS_SEPARATOR)
+    let eventStartIndex = 0
+    let eventEndIndex = eventsBuffer.indexOf(EVENTS_SEPARATOR)
 
     const events: Event[] = []
     while (eventEndIndex >= 0) {

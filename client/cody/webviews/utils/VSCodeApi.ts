@@ -1,4 +1,4 @@
-declare const acquireVsCodeApi: Function
+declare const acquireVsCodeApi: () => VSCodeApi
 
 interface VSCodeApi {
     getState: () => any

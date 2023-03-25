@@ -31,6 +31,8 @@
     "build:dev": "pnpm esbuild --sourcemap && vite build --mode development",
     "download-rg": "scripts/download-rg.sh",
     "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "lint": "pnpm run lint:js",
+    "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "test:integration": "pnpm compile:test && node ./dist/test/src/test/runTest.js",
     "test:unit": "pnpm compile:test && mocha './dist/test/src/test/unit/*.test.js'",
     "vscode:prepublish": "scripts/check-rg.sh",

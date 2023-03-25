@@ -22,7 +22,7 @@ export const NavBar: React.FunctionComponent<React.PropsWithChildren<NavBarProps
     <div className="tab-menu-container">
         <div className="tab-menu-group">
             {navBarItems.map(({ title, tab }) => (
-                <button onClick={() => setView(tab)} className="tab-btn" type="button">
+                <button key={title} onClick={() => setView(tab)} className="tab-btn" type="button">
                     <p className={view === tab ? 'tab-btn-selected' : ''}>{title}</p>
                 </button>
             ))}

@@ -33,7 +33,7 @@ export async function configureExternalServices(
     if (isError(repoId)) {
         const errorMessage =
             `Cody could not find the '${codebase}' repository on your Sourcegraph instance.\n` +
-            `Please check that the repository exists and is entered correctly in the cody.codebase setting.`
+            'Please check that the repository exists and is entered correctly in the cody.codebase setting.'
         console.error(errorMessage)
     }
     const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null

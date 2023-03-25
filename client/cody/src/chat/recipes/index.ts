@@ -10,7 +10,7 @@ import { TranslateToLanguage } from './translate'
 
 const registeredRecipes: { [id: string]: Recipe } = {}
 
-export function registerRecipe(id: string, recipe: Recipe) {
+export function registerRecipe(id: string, recipe: Recipe): void {
     registeredRecipes[id] = recipe
 }
 
@@ -18,7 +18,7 @@ export function getRecipe(id: string): Recipe | null {
     return registeredRecipes[id]
 }
 
-function init() {
+function init(): void {
     if (Object.keys(registeredRecipes).length > 0) {
         return
     }

@@ -23,6 +23,8 @@ export function registerHighlightContributions(): void {
     }
     registered = true
 
+    /* eslint-disable @typescript-eslint/no-require-imports */
+    /* eslint-disable @typescript-eslint/no-var-requires */
     highlight.registerLanguage('go', require('highlight.js/lib/languages/go'))
     highlight.registerLanguage('javascript', require('highlight.js/lib/languages/javascript'))
     highlight.registerLanguage('typescript', require('highlight.js/lib/languages/typescript'))

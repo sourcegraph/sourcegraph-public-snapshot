@@ -28,7 +28,7 @@ export class ImproveVariableNames implements Recipe {
     ): Promise<Interaction | null> {
         const selection = editor.getActiveTextEditorSelection()
         if (!selection) {
-            return null
+            return Promise.resolve(null)
         }
 
         const timestamp = getShortTimestamp()

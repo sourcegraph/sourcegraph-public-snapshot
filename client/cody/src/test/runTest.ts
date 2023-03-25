@@ -31,4 +31,5 @@ async function main(): Promise<void> {
     }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-floating-promises
 main()
