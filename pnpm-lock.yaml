@@ -181,7 +181,7 @@ importers:
       '@types/svgo': 2.6.0
       '@types/testing-library__jest-dom': 5.9.5
       '@types/uuid': 8.0.1
-      '@types/vscode': ^1.63.1
+      '@types/vscode': ^1.76.0
       '@types/webpack-bundle-analyzer': ^4.6.0
       '@types/webpack-stats-plugin': ^0.3.2
       '@types/yauzl': ^2.9.2
@@ -687,7 +687,7 @@ importers:
       '@types/svgo': 2.6.0
       '@types/testing-library__jest-dom': 5.9.5
       '@types/uuid': 8.0.1
-      '@types/vscode': 1.63.1
+      '@types/vscode': 1.76.0
       '@types/webpack-bundle-analyzer': 4.6.0_cf7cgeqdkm72g3fdehkr7aaod4
       '@types/webpack-stats-plugin': 0.3.2_cf7cgeqdkm72g3fdehkr7aaod4
       '@types/yauzl': 2.10.0
@@ -918,7 +918,10 @@ importers:
       '@sourcegraph/extension-api-types': link:../extension-api-types
 
   client/cody:
-    specifiers: {}
+    specifiers:
+      openai: ^3.2.1
+    dependencies:
+      openai: 3.2.1
 
   client/common:
     specifiers:
@@ -9160,8 +9163,8 @@ packages:
       '@types/node': 13.13.5
     dev: true
 
-  /@types/vscode/1.63.1:
-    resolution: {integrity: sha512-Z+ZqjRcnGfHP86dvx/BtSwWyZPKQ/LBdmAVImY82TphyjOw2KgTKcp7Nx92oNwCTsHzlshwexAG/WiY2JuUm3g==}
+  /@types/vscode/1.76.0:
+    resolution: {integrity: sha512-CQcY3+Fe5hNewHnOEAVYj4dd1do/QHliXaknAEYSXx2KEHUzFibDZSKptCon+HPgK55xx20pR+PBJjf0MomnBA==}
     dev: true
 
   /@types/webpack-bundle-analyzer/4.6.0_cf7cgeqdkm72g3fdehkr7aaod4:
@@ -10605,6 +10608,14 @@ packages:
     transitivePeerDependencies:
       - debug
     dev: true
+
+  /axios/0.26.1:
+    resolution: {integrity: sha512-fPwcX4EvnSHuInCMItEhAGnaSEXRBjtzh9fOtsE6E1G6p7vl7edEeZe11QHf18+6+9gR5PbKV/sGKNaD8YaMeA==}
+    dependencies:
+      follow-redirects: 1.15.1
+    transitivePeerDependencies:
+      - debug
+    dev: false
 
   /axobject-query/2.2.0:
     resolution: {integrity: sha512-Td525n+iPOOyUQIeBfcASuG6uJsDOITl7Mds5gFyerkWiX7qhUTdYUBlSgNMyVqtSJqwpt1kXGLdUt6SykLMRA==}
@@ -21286,6 +21297,15 @@ packages:
       define-lazy-prop: 2.0.0
       is-docker: 2.2.1
       is-wsl: 2.2.0
+
+  /openai/3.2.1:
+    resolution: {integrity: sha512-762C9BNlJPbjjlWZi4WYK9iM2tAVAv0uUp1UmI34vb0CN5T2mjB/qM6RYBmNKMh/dN9fC+bxqPwWJZUTWW052A==}
+    dependencies:
+      axios: 0.26.1
+      form-data: 4.0.0
+    transitivePeerDependencies:
+      - debug
+    dev: false
 
   /opener/1.5.2:
     resolution: {integrity: sha512-ur5UIdyw5Y7yEj9wLzhqXiy6GZ3Mwx0yGI+5sMn2r0N0v3cKJvUmFH5yPP+WXh9e0xfyzyJX95D8l088DNFj7A==}

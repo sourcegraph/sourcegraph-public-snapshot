@@ -107,6 +107,10 @@
       {
         "command": "cody.delete-access-token",
         "title": "Cody: Delete Access Token"
+      },
+      {
+        "command": "cody.experimental.suggest",
+        "title": "Ask Cody: View Suggestions"
       }
     ],
     "keybindings": [
@@ -218,8 +222,18 @@
             "blended"
           ],
           "default": "embeddings"
+        },
+        "cody.experimental.suggestions": {
+          "type": "boolean",
+          "default": false
+        },
+        "cody.experimental.keys.openai": {
+          "type": "string"
         }
       }
     }
+  },
+  "dependencies": {
+    "openai": "^3.2.1"
   }
 }
