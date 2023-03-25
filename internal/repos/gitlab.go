@@ -242,7 +242,7 @@ func (s *GitLabSource) remoteURL(proj *gitlab.Project) string {
 }
 
 func (s *GitLabSource) excludes(p *gitlab.Project) bool {
-	return s.exclude(p.PathWithNamespace) || s.exclude(strconv.Itoa(p.ID)) || (p.EmptyRepo && s.excludeEmptyRepos)
+	return s.exclude(p.PathWithNamespace) || s.exclude(strconv.Itoa(p.ID)) || (s.excludeEmptyRepos && p.EmptyRepo)
 }
 
 func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceResult) {
