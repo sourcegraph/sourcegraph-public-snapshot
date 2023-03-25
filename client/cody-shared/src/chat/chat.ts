@@ -1,10 +1,7 @@
-import { SOLUTION_TOKEN_LENGTH } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
-import {
-    SourcegraphCompletionsClient,
-    CompletionParameters,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions'
-import { CompletionCallbacks } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { SOLUTION_TOKEN_LENGTH } from '../prompt/constants'
+import { Message } from '../sourcegraph-api'
+import { SourcegraphCompletionsClient, CompletionParameters } from '../sourcegraph-api/completions'
+import { CompletionCallbacks } from '../sourcegraph-api/completions/types'
 
 const DEFAULT_CHAT_COMPLETION_PARAMETERS: Omit<CompletionParameters, 'messages'> = {
     temperature: 0.2,

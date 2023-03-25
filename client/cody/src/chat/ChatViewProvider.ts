@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
@@ -16,7 +17,6 @@ import { configureExternalServices } from '../external-services'
 import { getRgPath } from '../rg'
 import { TestSupport } from '../test-support'
 
-import { ChatClient } from './chat'
 import { renderMarkdown } from './markdown'
 import { getRecipe } from './recipes'
 
