@@ -920,14 +920,18 @@ func (q *repositoryQuery) doRecursively(ctx context.Context, results chan *githu
 	}
 
 	// Otherwise we need to confirm the number of repositories first
-	count, err := q.Searcher.GetSearchReposCount(ctx, q.String())
+	res, err := q.Searcher.SearchRepos(ctx, github.SearchReposParams{
+		Query: q.String(),
+		First: q.First,
+		After: q.Cursor,
+	})
 	if err != nil {
-		return err
+		return nil
 	}
 
 	q.RepoCount = searchReposCount{
 		known: true,
-		count: count,
+		count: res.TotalCount,
 	}
 
 	// Now that we know the repo count, we can perform a check again and split if necessary
@@ -941,15 +945,6 @@ func (q *repositoryQuery) doRecursively(ctx context.Context, results chan *githu
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		res, err := q.Searcher.SearchRepos(ctx, github.SearchReposParams{
-			Query: q.String(),
-			First: q.First,
-			After: q.Cursor,
-		})
-		if err != nil {
-			return err
-		}
-
 		for i := range res.Repos {
 			select {
 			case <-ctx.Done():
@@ -961,7 +956,14 @@ func (q *repositoryQuery) doRecursively(ctx context.Context, results chan *githu
 		if res.EndCursor == "" {
 			break
 		}
-		q.Cursor = res.EndCursor
+		res, err = q.Searcher.SearchRepos(ctx, github.SearchReposParams{
+			Query: q.String(),
+			First: q.First,
+			After: res.EndCursor,
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
