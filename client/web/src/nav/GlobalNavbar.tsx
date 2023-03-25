@@ -16,7 +16,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, ButtonLink, useWindowSize } from '@sourcegraph/wildcard'
+import { Button, Link, ButtonLink, useWindowSize, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -312,13 +312,15 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {isSourcegraphDotCom && (
                         <NavAction>
-                            <Link
-                                to="https://about.sourcegraph.com"
-                                className={styles.link}
-                                onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'NavBar' })}
-                            >
-                                {props.authenticatedUser && 'Get '} Enterprise
-                            </Link>
+                            <Tooltip content="The Sourcegraph desktop app runs locally and works on your own private code.">
+                                <Link
+                                    to="https://about.sourcegraph.com/app"
+                                    className={classNames(styles.link, 'small')}
+                                    onClick={() => eventLogger.log('ClickedOnAppCTA', { location: 'NavBar' })}
+                                >
+                                    Download app
+                                </Link>
+                            </Tooltip>
                         </NavAction>
                     )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
