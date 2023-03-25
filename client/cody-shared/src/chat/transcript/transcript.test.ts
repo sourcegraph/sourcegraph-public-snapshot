@@ -195,7 +195,7 @@ describe('Transcript', () => {
         const editor = new MockEditor({
             getActiveTextEditorVisibleContent: () => ({ fileName: 'internal/lib.go', content: 'package lib' }),
         })
-        const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => false })
+        const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(false) })
         const codebaseContext = new CodebaseContext('embeddings', defaultEmbeddingsClient, defaultKeywordContextFetcher)
 
         const transcript = new Transcript()
