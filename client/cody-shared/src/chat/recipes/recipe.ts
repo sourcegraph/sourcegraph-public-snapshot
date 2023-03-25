@@ -1,8 +1,7 @@
-import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
-
+import { CodebaseContext } from '../../codebase-context'
 import { Editor } from '../../editor'
+import { IntentDetector } from '../../intent-detector'
+import { Interaction } from '../transcript/interaction'
 
 export interface Recipe {
     getID(): string

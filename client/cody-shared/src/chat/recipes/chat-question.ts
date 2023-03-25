@@ -1,14 +1,13 @@
-import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
-import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { ContextMessage, getContextMessageWithResponse } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
-import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { populateCodeContextTemplate } from '@sourcegraph/cody-shared/src/prompt/templates'
-import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
-import { getShortTimestamp } from '@sourcegraph/cody-shared/src/timestamp'
-
+import { CodebaseContext } from '../../codebase-context'
+import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
 import { Editor } from '../../editor'
+import { IntentDetector } from '../../intent-detector'
+import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
+import { populateCodeContextTemplate } from '../../prompt/templates'
+import { truncateText } from '../../prompt/truncation'
+import { getShortTimestamp } from '../../timestamp'
+import { renderMarkdown } from '../markdown'
+import { Interaction } from '../transcript/interaction'
 
 import { Recipe } from './recipe'
 

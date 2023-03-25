@@ -1,9 +1,13 @@
+import {
+    ActiveTextEditor,
+    ActiveTextEditorSelection,
+    ActiveTextEditorVisibleContent,
+    Editor,
+} from '@sourcegraph/cody-shared/src/editor'
 import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { KeywordContextFetcher, KeywordContextFetcherResult } from '@sourcegraph/cody-shared/src/keyword-context'
 import { EmbeddingsSearchResults } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-
-import { ActiveTextEditor, ActiveTextEditorSelection, ActiveTextEditorVisibleContent, Editor } from '../../editor'
 
 export class MockEmbeddingsClient implements EmbeddingsSearch {
     constructor(private mocks: Partial<EmbeddingsSearch> = {}) {}
