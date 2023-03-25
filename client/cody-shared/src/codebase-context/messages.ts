@@ -1,4 +1,4 @@
-import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { Message } from '../sourcegraph-api'
 
 export interface ContextMessage extends Message {
     fileName?: string

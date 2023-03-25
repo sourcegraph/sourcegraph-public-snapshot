@@ -1,6 +1,6 @@
-import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
-import { getShortTimestamp } from '@sourcegraph/cody-shared/src/timestamp'
+import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
+import { Message } from '../../sourcegraph-api'
+import { getShortTimestamp } from '../../timestamp'
 
 import { Interaction } from './interaction'
 import { ChatMessage } from './messages'

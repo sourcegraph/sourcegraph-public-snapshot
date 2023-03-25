@@ -1,9 +1,9 @@
 import assert from 'assert'
 
+import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { MAX_AVAILABLE_PROMPT_LENGTH } from '@sourcegraph/cody-shared/src/prompt/constants'
 
 import { ChatQuestion } from '../../chat/recipes/chat-question'
-import { Transcript } from '../../chat/transcript'
 import { CodebaseContext } from '../../codebase-context'
 
 import {

@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
+import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
@@ -17,8 +19,6 @@ import { TestSupport } from '../test-support'
 import { ChatClient } from './chat'
 import { renderMarkdown } from './markdown'
 import { getRecipe } from './recipes'
-import { Transcript } from './transcript'
-import { ChatMessage } from './transcript/messages'
 
 // If the bot message ends with some prefix of the `Human:` stop
 // sequence, trim if from the end.

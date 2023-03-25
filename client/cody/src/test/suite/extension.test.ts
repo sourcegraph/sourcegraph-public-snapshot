@@ -2,7 +2,8 @@ import * as assert from 'assert'
 
 import * as vscode from 'vscode'
 
-import { ChatMessage } from '../../chat/transcript/messages'
+import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+
 import { ExtensionApi } from '../../extension-api'
 import * as mockServer from '../mock-server'
 

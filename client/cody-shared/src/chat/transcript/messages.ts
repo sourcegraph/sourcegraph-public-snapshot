@@ -1,4 +1,4 @@
-import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { Message } from '../../sourcegraph-api'
 
 export interface ChatMessage extends Message {
     displayText: string

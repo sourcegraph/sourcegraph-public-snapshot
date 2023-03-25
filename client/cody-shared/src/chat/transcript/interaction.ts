@@ -1,6 +1,5 @@
-import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
-
 import { ContextMessage } from '../../codebase-context/messages'
+import { Message } from '../../sourcegraph-api'
 
 import { ChatMessage, InteractionMessage } from './messages'
 

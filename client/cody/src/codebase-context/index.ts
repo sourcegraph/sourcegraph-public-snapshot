@@ -1,5 +1,6 @@
 import path from 'path'
 
+import { ContextMessage, getContextMessageWithResponse } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { EmbeddingsSearch } from '@sourcegraph/cody-shared/src/embeddings'
 import {
     populateCodeContextTemplate,
@@ -10,8 +11,6 @@ import { EmbeddingsSearchResult } from '@sourcegraph/cody-shared/src/sourcegraph
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { KeywordContextFetcher } from '../keyword-context'
-
-import { ContextMessage, getContextMessageWithResponse } from './messages'
 
 export interface ContextSearchOptions {
     numCodeResults: number
