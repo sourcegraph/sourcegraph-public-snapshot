@@ -62,7 +62,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const { prefix, prevLine: precedingLine } = docContext
         let waitMs: number
-        let stop = null
         let completionPrefix = '' // text to require as the first part of the completion
         if (precedingLine.trim() === '') {
             // Start of line: medium debounce, allow multiple lines
@@ -70,12 +69,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         } else if (context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke || precedingLine.endsWith('.')) {
             // Middle of line: long debounce, next line
             waitMs = 100
-            stop = ['\n']
         } else {
             // End of line: long debounce, next line
             completionPrefix = '\n'
-            stop = ['\n']
-            waitMs = 2000
+sto            waitMs = 2000
 
             // TODO(beyang): handle this as a special case, try 2 completions, one with newline inserted, one without
         }
