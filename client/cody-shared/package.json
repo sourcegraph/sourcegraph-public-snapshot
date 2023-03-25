@@ -12,7 +12,9 @@
   "main": "src/index.ts",
   "sideEffects": false,
   "scripts": {
+    "build": "tsc -b",
     "lint": "pnpm run lint:js",
-    "lint:js": "eslint --cache '**/*.[tj]s?(x)'"
+    "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
+    "test": "jest"
   }
 }
