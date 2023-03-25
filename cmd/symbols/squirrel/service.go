@@ -45,8 +45,8 @@ func New(readFile readFileFunc, symbolSearch symbolsTypes.SearchFunc) *SquirrelS
 
 // Close frees memory allocated by tree-sitter.
 func (squirrel *SquirrelService) Close() {
-	for _, close := range squirrel.closables {
-		close()
+	for _, c := range squirrel.closables {
+		c()
 	}
 	squirrel.parser.Close()
 }
