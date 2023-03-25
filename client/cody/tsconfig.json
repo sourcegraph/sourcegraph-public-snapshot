@@ -7,5 +7,5 @@
   },
   "include": ["src", "webviews", "vite.config.ts", "webpack.config.js", "package.json", ".eslintrc.js"],
   "exclude": ["scripts", "out", "dist"],
-  "references": [],
+  "references": [{ "path": "../cody-shared" }],
 }

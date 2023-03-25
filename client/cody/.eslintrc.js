@@ -13,7 +13,13 @@ module.exports = {
     'react/jsx-filename-extension': [1, { extensions: ['.ts', '.tsx'] }],
     'id-length': 'off',
     'no-console': 'off',
-    'no-restricted-imports': ['error', { paths: ['!highlight.js'] }],
+    'no-restricted-imports': [
+      'error',
+      {
+        paths: ['!highlight.js'],
+        patterns: ['!@sourcegraph/cody-shared/*'], // allow any imports from the @sourcegraph/cody-shared package
+      },
+    ],
     'react/forbid-elements': 'off',
     'unicorn/filename-case': 'off',
   },
