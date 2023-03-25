@@ -1,4 +1,5 @@
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
+import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
@@ -9,7 +10,6 @@ import { Editor } from './editor'
 import { IntentDetector } from './intent-detector'
 import { SourcegraphIntentDetectorClient } from './intent-detector/client'
 import { LocalKeywordContextFetcher } from './keyword-context/local-keyword-context-fetcher'
-import { SourcegraphCompletionsClient } from './sourcegraph-api/completions'
 
 interface ExternalServices {
     intentDetector: IntentDetector

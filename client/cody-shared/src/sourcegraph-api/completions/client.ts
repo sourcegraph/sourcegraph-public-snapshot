@@ -1,7 +1,7 @@
 import http from 'http'
 import https from 'https'
 
-import { isError } from '@sourcegraph/cody-shared/src/utils'
+import { isError } from '../../utils'
 
 import { parseEvents } from './parse'
 import { Event, CompletionParameters, CompletionCallbacks } from './types'

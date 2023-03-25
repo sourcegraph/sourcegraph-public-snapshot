@@ -8,4 +8,8 @@ module.exports = {
     project: [__dirname + '/tsconfig.json'],
   },
   overrides: baseConfig.overrides,
+  rules: {
+    'no-console': 'off',
+    'id-length': 'off',
+  },
 }
