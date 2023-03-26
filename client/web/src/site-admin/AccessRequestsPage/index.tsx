@@ -3,7 +3,7 @@ import React, { Fragment, useEffect, useCallback, useState } from 'react'
 import { mdiAccount } from '@mdi/js'
 import { formatDistanceToNowStrict } from 'date-fns'
 
-import { useLazyQuery, useMutation } from '@sourcegraph/http-client'
+import { useLazyQuery, useMutation, useQuery } from '@sourcegraph/http-client'
 import { Card, Text, Button, Grid, Alert, PageSwitcher, Link } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
@@ -18,6 +18,8 @@ import {
     DoesUsernameExistVariables,
     AccessRequestCreateUserResult,
     AccessRequestCreateUserVariables,
+    HasLicenseSeatsResult,
+    HasLicenseSeatsVariables,
 } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { AccountCreatedAlert } from '../components/AccountCreatedAlert'
@@ -29,6 +31,7 @@ import {
     DOES_USERNAME_EXIST,
     PENDING_ACCESS_REQUESTS_LIST,
     REJECT_ACCESS_REQUEST,
+    HAS_LICENSE_SEATS,
 } from './queries'
 
 /**
@@ -73,6 +76,14 @@ function useGenerateUsername(): (name: string) => Promise<string> {
         },
         [doesUsernameExist]
     )
+}
+
+function useHasRemainingSeats(): boolean {
+    const { data } = useQuery<HasLicenseSeatsResult, HasLicenseSeatsVariables>(HAS_LICENSE_SEATS, {})
+
+    const licenseSeatsCount = data?.site?.productSubscription?.license?.userCount
+    const usersCount = data?.site?.users?.totalCount
+    return !licenseSeatsCount || !usersCount || licenseSeatsCount > usersCount
 }
 
 const FIRST_COUNT = 25
@@ -187,12 +198,20 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
         [generateUsername, createUser, approveAccessRequest, refetch]
     )
 
+    const hasRemainingSeats = useHasRemainingSeats()
+
     return (
         <>
             <SiteAdminPageTitle icon={mdiAccount}>
                 <span>Users</span>
                 <span>Account requests</span>
             </SiteAdminPageTitle>
+            {!hasRemainingSeats && (
+                <Alert variant="danger">
+                    No licenses remaining. To approve requests, <Link to="TODO">purchase additional licenses</Link> or{' '}
+                    <Link to="TODO">remove inactive users</Link>.
+                </Alert>
+            )}
             <Card className="p-3">
                 {[queryError, error].filter(Boolean).map((err, index) => (
                     <Alert variant="danger" key={index}>
@@ -213,7 +232,11 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                         {...paginationArgs}
                     />
                 </div>
-                <AccessRequestsList onApprove={handleApprove} onReject={handleReject} items={connection?.nodes || []} />
+                <AccessRequestsList
+                    onApprove={hasRemainingSeats ? handleApprove : undefined}
+                    onReject={handleReject}
+                    items={connection?.nodes || []}
+                />
                 {!loading && connection?.nodes.length === 0 && (
                     <div>
                         <Alert variant="info">No pending requests</Alert>
@@ -230,7 +253,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
 }
 
 interface AccessRequestsListProps {
-    onApprove: (id: string, name: string, email: string) => void
+    onApprove?: (id: string, name: string, email: string) => void
     onReject: (id: string) => void
     items: PendingAccessRequestsListResult['accessRequests']['nodes']
 }
@@ -261,7 +284,12 @@ const AccessRequestsList: React.FunctionComponent<AccessRequestsListProps> = ({ 
                         <Button variant="link" onClick={() => onReject(id)}>
                             Reject
                         </Button>
-                        <Button variant="success" className="ml-2" onClick={() => onApprove(id, name, email)}>
+                        <Button
+                            variant="success"
+                            disabled={!onApprove}
+                            className="ml-2"
+                            onClick={() => onApprove?.(id, name, email)}
+                        >
                             Approve
                         </Button>
                     </div>
