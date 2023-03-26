@@ -5,6 +5,7 @@ import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
@@ -18,10 +19,6 @@ import { VSCodeEditor } from '../editor/vscode-editor'
 import { configureExternalServices } from '../external-services'
 import { getRgPath } from '../rg'
 import { TestSupport } from '../test-support'
-
-// If the bot message ends with some prefix of the `Human:` stop
-// sequence, trim if from the end.
-const STOP_SEQUENCE_REGEXP = /(H|Hu|Hum|Huma|Human|Human:)$/
 
 async function isValidLogin(serverEndpoint: string, accessToken: string): Promise<boolean> {
     const client = new SourcegraphGraphQLAPIClient(serverEndpoint, accessToken)
@@ -136,7 +133,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         this.cancelCompletion()
 
         this.cancelCompletionCallback = this.chat.chat(promptMessages, {
-            onChange: text => this.onBotMessageChange(this.reformatBotMessage(text, responsePrefix)),
+            onChange: text => this.onBotMessageChange(reformatBotMessage(text, responsePrefix)),
             onComplete: () => {
                 // eslint-disable-next-line @typescript-eslint/no-floating-promises
                 this.onBotMessageComplete()
@@ -192,17 +189,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
         const prompt = await this.transcript.toPrompt()
         this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
-    }
-
-    private reformatBotMessage(text: string, prefix: string): string {
-        let reformattedMessage = prefix + text.trimEnd()
-
-        const stopSequenceMatch = reformattedMessage.match(STOP_SEQUENCE_REGEXP)
-        if (stopSequenceMatch) {
-            reformattedMessage = reformattedMessage.slice(0, stopSequenceMatch.index)
-        }
-        // TODO: Detect if bot sent unformatted code without a markdown block.
-        return fixOpenMarkdownCodeBlock(reformattedMessage)
     }
 
     private async onBotMessageChange(text: string): Promise<void> {
@@ -307,14 +293,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             }
         }
     }
-}
-
-function fixOpenMarkdownCodeBlock(text: string): string {
-    const occurances = text.split('```').length - 1
-    if (occurances % 2 === 1) {
-        return text + '\n```'
-    }
-    return text
 }
 
 function getNonce(): string {
