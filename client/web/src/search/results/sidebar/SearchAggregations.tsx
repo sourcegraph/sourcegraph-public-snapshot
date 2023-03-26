@@ -20,7 +20,7 @@ import {
 
 import styles from './SearchAggregations.module.scss'
 
-interface SearchAggregationsProps extends TelemetryProps {
+export interface SearchAggregationsProps extends TelemetryProps {
     /**
      * Current submitted query, note that this query isn't a live query
      * that is synced with typed query in the search box, this query is submitted

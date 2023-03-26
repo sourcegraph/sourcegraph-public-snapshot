@@ -180,7 +180,7 @@ const watchGenerators = gulp.parallel(watchSchema, watchGraphQlOperations, watch
 /**
  * Builds everything.
  */
-const build = gulp.series(generate, webBuild)
+const build = gulp.series(/* generate, */ webBuild)
 
 /**
  * Starts a development server without initial code generation, watches everything and rebuilds on file changes.

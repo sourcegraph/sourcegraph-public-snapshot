@@ -51,7 +51,7 @@ interface GetScaleTicksInput {
     pixelsPerTick?: number
 }
 
-export function getXScaleTicks<T>(input: GetScaleTicksInput): T[] {
+function getXScaleTicks<T>(input: GetScaleTicksInput): T[] {
     const { scale, space, pixelsPerTick = 80 } = input
     // Calculate desirable number of ticks
     const numberTicks = Math.max(2, Math.floor(space / pixelsPerTick))

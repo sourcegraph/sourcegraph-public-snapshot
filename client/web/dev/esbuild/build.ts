@@ -64,6 +64,23 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
 
                       // Misc.
                       recharts: '/dev/null',
+                      '@visx/annotation': '/dev/null',
+                      '@visx/axis': '/dev/null',
+                      '@visx/event': '/dev/null',
+                      '@visx/glyph': '/dev/null',
+                      '@visx/grid': '/dev/null',
+                      '@visx/group': '/dev/null',
+                      '@visx/responsive': '/dev/null',
+                      '@visx/scale': '/dev/null',
+                      '@visx/shape': '/dev/null',
+                      '@visx/text': '/dev/null',
+                      '@visx/voronoi': '/dev/null',
+                      'd3-format': '/dev/null',
+                      'd3-scale': '/dev/null',
+                      'd3-shape': '/dev/null',
+                      'd3-time-format': '/dev/null',
+                      'd3-voronoi': '/dev/null',
+                      'sanitize-html': '/dev/null',
                   }
                 : null),
         }),
@@ -73,10 +90,16 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
     ].filter(isDefined),
     define: {
         ...Object.fromEntries(
-            Object.entries({ ...ENVIRONMENT_CONFIG, SOURCEGRAPH_API_URL: undefined }).map(([key, value]) => [
-                `process.env.${key}`,
-                JSON.stringify(value === undefined ? null : value),
-            ])
+            Object.entries({
+                ...ENVIRONMENT_CONFIG,
+                SOURCEGRAPH_API_URL: undefined,
+                DISABLE_NOTEBOOKS: true,
+                DISABLE_BATCH_CHANGES: true,
+                DISABLE_CODE_MONITORING: true,
+                DISABLE_CODE_INSIGHTS: true,
+                DISABLE_ADMIN_ANALYTICS: true,
+                DISABLE_SEARCH_AGGREGATIONS: true,
+            }).map(([key, value]) => [`process.env.${key}`, JSON.stringify(value === undefined ? null : value)])
         ),
         global: 'window',
     },
@@ -86,7 +109,7 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
         '.png': 'file',
     },
     target: 'esnext',
-    sourcemap: true,
+    sourcemap: false,
 }
 
 export const build = async (): Promise<void> => {

@@ -51,8 +51,8 @@ interface SVGRootLayout {
 export const SVGRootContext = createContext<SVGRootLayout>({
     width: 0,
     height: 0,
-    xScale: scaleLinear(),
-    yScale: scaleLinear(),
+    xScale: scaleLinear?.(),
+    yScale: scaleLinear?.(),
     content: EMPTY_RECTANGLE,
     svgElement: null,
     setPadding: noop,

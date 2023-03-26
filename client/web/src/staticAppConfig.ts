@@ -87,5 +87,5 @@ export const windowContextConfig = {
     isSourcegraphApp: window.context.sourcegraphAppMode,
     needsRepositoryConfiguration: window.context.needsRepositoryConfiguration,
     batchChangesWebhookLogsEnabled: window.context.batchChangesWebhookLogsEnabled,
-    batchChangesEnabled: window.context.batchChangesEnabled,
+    batchChangesEnabled: window.context.batchChangesEnabled && !process.env.DISABLE_BATCH_CHANGES,
 } satisfies StaticWindowContextComputedAppConfig

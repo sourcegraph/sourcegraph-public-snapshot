@@ -140,102 +140,6 @@ export interface PanelView extends Unsubscribable {
     selector: DocumentSelector | null
 }
 
-export type ChartContent = LineChartContent<any, string> | BarChartContent<any, string> | PieChartContent<any>
-
-export interface ChartAxis<K extends keyof D, D extends object> {
-    /** The key in the data object. */
-    dataKey: K
-
-    /** The scale of the axis. */
-    scale?: 'time' | 'linear'
-
-    /** The type of the data key. */
-    type: 'number' | 'category'
-}
-
-export interface LineChartContent<D extends object, XK extends keyof D> {
-    chart: 'line'
-
-    /** An array of data objects, with one element for each step on the X axis. */
-    data: D[]
-
-    /** The series (lines) of the chart. */
-    series: LineChartSeries<D>[]
-
-    xAxis: ChartAxis<XK, D>
-}
-
-export interface LineChartSeries<D> {
-    /** The key in each data object for the values this line should be calculated from. */
-    dataKey: keyof D
-
-    /** The name of the line shown in the legend and tooltip. */
-    name?: string
-
-    /**
-     * The link URLs for each data point.
-     * A link URL should take the user to more details about the specific data point.
-     */
-    linkURLs?: Record<string | number, string> | string[]
-
-    /** The CSS color of the line. */
-    stroke?: string
-}
-
-export interface BarChartContent<D extends object, XK extends keyof D> {
-    chart: 'bar'
-
-    /** An array of data objects, with one element for each step on the X axis. */
-    data: D[]
-
-    /** The series of the chart. */
-    series: {
-        /** The key in each data object for the values this bar should be calculated from. */
-        dataKey: keyof D
-
-        /**
-         * An optional stack id of each bar.
-         * When two bars have the same same `stackId`, the two bars are stacked in order.
-         */
-        stackId?: string
-
-        /** The name of the series, shown in the legend. */
-        name?: string
-
-        /**
-         * The link URLs for each bar.
-         * A link URL should take the user to more details about the specific data point.
-         */
-        linkURLs?: string[]
-
-        /** The CSS fill color of the line. */
-        fill?: string
-    }[]
-
-    xAxis: ChartAxis<XK, D>
-}
-
-export interface PieChartContent<D extends object> {
-    chart: 'pie'
-
-    pies: {
-        /** The key of each sector's va lue. */
-        dataKey: keyof D
-
-        /** The key of each sector's name. */
-        nameKey: keyof D
-
-        /** The key of each sector's fill color. */
-        fillKey?: keyof D
-
-        /** An array of data objects, with one element for each pie sector. */
-        data: D[]
-
-        /** T he key of each sector's link URL. */
-        linkURLKey?: keyof D
-    }[]
-}
-
 /**
  * A view is a page or partial page.
  */
@@ -254,61 +158,8 @@ export interface View {
      */
     content: (
         | MarkupContent
-        | ChartContent
         | { component: string; props: { [name: string]: string | number | boolean | null | undefined } }
     )[]
-}
-
-/**
- * A view provider registered with {@link sourcegraph.app.registerViewProvider}.
- */
-export type ViewProvider =
-    | InsightsPageViewProvider
-    | HomepageViewProvider
-    | GlobalPageViewProvider
-    | DirectoryViewProvider
-
-/**
- * Experimental view provider shown on the dashboard on the insights page.
- * This API is experimental and is subject to change or removal without notice.
- */
-export interface InsightsPageViewProvider {
-    readonly where: 'insightsPage'
-
-    /**
-     * Provide content for the view.
-     */
-    provideView(context: {}): ProviderResult<View>
-}
-
-/**
- * Experimental view provider shown on the homepage (below the search box in the Sourcegraph web app).
- * This API is experimental and is subject to change or removal without notice.
- */
-export interface HomepageViewProvider {
-    readonly where: 'homepage'
-
-    /**
-     * Provide content for the view.
-     */
-    provideView(context: {}): ProviderResult<View>
-}
-
-/**
- * Experimental global view provider. Global view providers are shown on a dedicated page in the app.
- * This API is experimental and is subject to change or removal without notice.
- */
-export interface GlobalPageViewProvider {
-    readonly where: 'global/page'
-
-    /**
-     * Provide content for the view.
-     *
-     * @param params Parameters from the page (such as URL query parameters). The schema of these parameters is
-     * experimental and subject to change without notice.
-     * @returns The view content.
-     */
-    provideView(context: { [param: string]: string }): ProviderResult<View>
 }
 
 /**
@@ -322,23 +173,6 @@ export interface DirectoryViewContext {
 
     /** The workspace of the directory. */
     workspace: WorkspaceRoot
-}
-
-/**
- * Experimental view provider for directory pages.
- * This API is experimental and is subject to change or removal without notice.
- */
-export interface DirectoryViewProvider {
-    readonly where: 'directory'
-
-    /**
-     * Provide content for a view.
-     *
-     * @param context The context of the directory. The schema of these parameters is experimental and subject to
-     * change without notice.
-     * @returns The view content.
-     */
-    provideView(context: DirectoryViewContext): ProviderResult<View>
 }
 
 /**

@@ -17,7 +17,7 @@ const NULL_LINK = (): undefined => undefined
  *
  * Example: 2021 January 21 Thursday
  */
-const formatXLabel = timeFormat('%d %B %A')
+const formatXLabel = timeFormat?.('%d %B %A')
 
 interface LineDataSeriesProps<D> extends SVGProps<SVGGElement> {
     id: string

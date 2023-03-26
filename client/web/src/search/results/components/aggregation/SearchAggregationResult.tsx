@@ -20,7 +20,7 @@ import { AggregationUIMode } from './types'
 
 import styles from './SearchAggregationResult.module.scss'
 
-interface SearchAggregationResultProps extends TelemetryProps, HTMLAttributes<HTMLElement> {
+export interface SearchAggregationResultProps extends TelemetryProps, HTMLAttributes<HTMLElement> {
     /**
      * Current submitted query, note that this query isn't a live query
      * that is synced with typed query in the search box, this query is submitted

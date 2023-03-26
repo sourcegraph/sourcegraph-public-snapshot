@@ -414,7 +414,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 />
             </SearchFiltersSidebar>
 
-            {aggregationUIMode === AggregationUIMode.SearchPage && (
+            {aggregationUIMode === AggregationUIMode.SearchPage && SearchAggregationResult ? (
                 <SearchAggregationResult
                     query={submittedURLQuery}
                     patternType={patternType}
@@ -424,6 +424,8 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                     onQuerySubmit={handleSearchAggregationBarClick}
                     telemetryService={props.telemetryService}
                 />
+            ) : (
+                <span>Error: DISABLE_SEARCH_AGGREGATIONS</span>
             )}
 
             {aggregationUIMode !== AggregationUIMode.SearchPage && (

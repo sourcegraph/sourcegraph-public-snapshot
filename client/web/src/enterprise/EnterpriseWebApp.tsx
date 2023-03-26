@@ -64,10 +64,10 @@ const injectedValuesConfig = {
 
 const hardcodedConfig = {
     codeIntelligenceEnabled: true,
-    codeInsightsEnabled: true,
+    codeInsightsEnabled: !process.env.DISABLE_CODE_INSIGHTS,
     searchContextsEnabled: true,
-    notebooksEnabled: true,
-    codeMonitoringEnabled: true,
+    notebooksEnabled: !process.env.DISABLE_NOTEBOOKS,
+    codeMonitoringEnabled: !process.env.DISABLE_CODE_MONITORING,
     searchAggregationEnabled: true,
     ownEnabled: true,
 } satisfies StaticHardcodedAppConfig

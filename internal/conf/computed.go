@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"log"
+	"os"
 	"strings"
 	"time"
 
@@ -176,6 +177,9 @@ func UpdateChannel() string {
 }
 
 func BatchChangesEnabled() bool {
+	if os.Getenv("DISABLE_BATCH_CHANGES") != "" {
+		return false
+	}
 	if enabled := Get().BatchChangesEnabled; enabled != nil {
 		return *enabled
 	}

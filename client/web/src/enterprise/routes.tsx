@@ -1,5 +1,6 @@
 import { Navigate, RouteObject } from 'react-router-dom'
 
+import { isDefined } from '@sourcegraph/common'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
@@ -7,16 +8,18 @@ import { LegacyRoute } from '../LegacyRouteContext'
 import { routes } from '../routes'
 import { EnterprisePageRoutes } from '../routes.constants'
 
-const GlobalNotebooksArea = lazyComponent(() => import('../notebooks/GlobalNotebooksArea'), 'GlobalNotebooksArea')
-const GlobalBatchChangesArea = lazyComponent(
-    () => import('./batches/global/GlobalBatchChangesArea'),
-    'GlobalBatchChangesArea'
-)
-const GlobalCodeMonitoringArea = lazyComponent(
-    () => import('./code-monitoring/global/GlobalCodeMonitoringArea'),
-    'GlobalCodeMonitoringArea'
-)
-const CodeInsightsRouter = lazyComponent(() => import('./insights/CodeInsightsRouter'), 'CodeInsightsRouter')
+const GlobalNotebooksArea = !process.env.DISABLE_NOTEBOOKS
+    ? lazyComponent(() => import('../notebooks/GlobalNotebooksArea'), 'GlobalNotebooksArea')
+    : null
+const GlobalBatchChangesArea = !process.env.DISABLE_BATCH_CHANGES
+    ? lazyComponent(() => import('./batches/global/GlobalBatchChangesArea'), 'GlobalBatchChangesArea')
+    : null
+const GlobalCodeMonitoringArea = !process.env.DISABLE_CODE_MONITORING
+    ? lazyComponent(() => import('./code-monitoring/global/GlobalCodeMonitoringArea'), 'GlobalCodeMonitoringArea')
+    : null
+const CodeInsightsRouter = !process.env.DISABLE_CODE_INSIGHTS
+    ? lazyComponent(() => import('./insights/CodeInsightsRouter'), 'CodeInsightsRouter')
+    : null
 const SearchContextsListPage = lazyComponent(
     () => import('./searchContexts/SearchContextsListPage'),
     'SearchContextsListPage'
@@ -36,7 +39,7 @@ const AppComingSoonPage = lazyComponent(() => import('./app/AppComingSoonPage'),
 const AppAuthCallbackPage = lazyComponent(() => import('./app/AppAuthCallbackPage'), 'AppAuthCallbackPage')
 
 export const enterpriseRoutes: RouteObject[] = [
-    {
+    GlobalBatchChangesArea && {
         path: EnterprisePageRoutes.BatchChanges,
         element: (
             <LegacyRoute
@@ -48,11 +51,11 @@ export const enterpriseRoutes: RouteObject[] = [
             />
         ),
     },
-    {
+    GlobalCodeMonitoringArea && {
         path: EnterprisePageRoutes.CodeMonitoring,
         element: <LegacyRoute render={props => <GlobalCodeMonitoringArea {...props} />} />,
     },
-    {
+    CodeInsightsRouter && {
         path: EnterprisePageRoutes.Insights,
         element: (
             <LegacyRoute
@@ -81,7 +84,7 @@ export const enterpriseRoutes: RouteObject[] = [
         path: EnterprisePageRoutes.SearchNotebook,
         element: <Navigate to={EnterprisePageRoutes.Notebooks} replace={true} />,
     },
-    {
+    GlobalNotebooksArea && {
         path: EnterprisePageRoutes.Notebooks + '/*',
         element: <LegacyRoute render={props => <GlobalNotebooksArea {...props} />} />,
     },
@@ -109,4 +112,4 @@ export const enterpriseRoutes: RouteObject[] = [
         ),
     },
     ...routes,
-]
+].filter(isDefined)

@@ -26,5 +26,5 @@
     "@sourcegraph/template-parser": "workspace:*",
     "@sourcegraph/codeintellify": "workspace:*"
   },
-  "sideEffects": true
+  "sideEffects": false
 }

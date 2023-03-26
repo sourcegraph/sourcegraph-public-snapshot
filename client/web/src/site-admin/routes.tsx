@@ -1,3 +1,4 @@
+import { isDefined } from '@sourcegraph/common'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
@@ -6,29 +7,30 @@ import { isPackagesEnabled } from './flags'
 import { PermissionsSyncJobsPage } from './permissions-center/PermissionsSyncJobsPage'
 import { SiteAdminAreaRoute } from './SiteAdminArea'
 
-const AnalyticsOverviewPage = lazyComponent(() => import('./analytics/AnalyticsOverviewPage'), 'AnalyticsOverviewPage')
-const AnalyticsSearchPage = lazyComponent(() => import('./analytics/AnalyticsSearchPage'), 'AnalyticsSearchPage')
-const AnalyticsCodeIntelPage = lazyComponent(
-    () => import('./analytics/AnalyticsCodeIntelPage'),
-    'AnalyticsCodeIntelPage'
-)
-const AnalyticsExtensionsPage = lazyComponent(
-    () => import('./analytics/AnalyticsExtensionsPage'),
-    'AnalyticsExtensionsPage'
-)
-const AnalyticsUsersPage = lazyComponent(() => import('./analytics/AnalyticsUsersPage'), 'AnalyticsUsersPage')
-const AnalyticsCodeInsightsPage = lazyComponent(
-    () => import('./analytics/AnalyticsCodeInsightsPage'),
-    'AnalyticsCodeInsightsPage'
-)
-const AnalyticsBatchChangesPage = lazyComponent(
-    () => import('./analytics/AnalyticsBatchChangesPage'),
-    'AnalyticsBatchChangesPage'
-)
-const AnalyticsNotebooksPage = lazyComponent(
-    () => import('./analytics/AnalyticsNotebooksPage'),
-    'AnalyticsNotebooksPage'
-)
+const AnalyticsOverviewPage = !process.env.DISABLE_ADMIN_ANALYTICS
+    ? lazyComponent(() => import('./analytics/AnalyticsOverviewPage'), 'AnalyticsOverviewPage')
+    : null
+const AnalyticsSearchPage = !process.env.DISABLE_ADMIN_ANALYTICS
+    ? lazyComponent(() => import('./analytics/AnalyticsSearchPage'), 'AnalyticsSearchPage')
+    : null
+const AnalyticsCodeIntelPage = !process.env.DISABLE_ADMIN_ANALYTICS
+    ? lazyComponent(() => import('./analytics/AnalyticsCodeIntelPage'), 'AnalyticsCodeIntelPage')
+    : null
+const AnalyticsExtensionsPage = !process.env.DISABLE_ADMIN_ANALYTICS
+    ? lazyComponent(() => import('./analytics/AnalyticsExtensionsPage'), 'AnalyticsExtensionsPage')
+    : null
+const AnalyticsUsersPage = !process.env.DISABLE_ADMIN_ANALYTICS
+    ? lazyComponent(() => import('./analytics/AnalyticsUsersPage'), 'AnalyticsUsersPage')
+    : null
+const AnalyticsCodeInsightsPage = !process.env.DISABLE_ADMIN_ANALYTICS
+    ? lazyComponent(() => import('./analytics/AnalyticsCodeInsightsPage'), 'AnalyticsCodeInsightsPage')
+    : null
+const AnalyticsBatchChangesPage = !process.env.DISABLE_ADMIN_ANALYTICS
+    ? lazyComponent(() => import('./analytics/AnalyticsBatchChangesPage'), 'AnalyticsBatchChangesPage')
+    : null
+const AnalyticsNotebooksPage = !process.env.DISABLE_ADMIN_ANALYTICS
+    ? lazyComponent(() => import('./analytics/AnalyticsNotebooksPage'), 'AnalyticsNotebooksPage')
+    : null
 const SiteAdminConfigurationPage = lazyComponent(
     () => import('./SiteAdminConfigurationPage'),
     'SiteAdminConfigurationPage'
@@ -94,155 +96,157 @@ const SiteAdminWebhookUpdatePage = lazyComponent(
 )
 const SiteAdminPackagesPage = lazyComponent(() => import('./SiteAdminPackagesPage'), 'SiteAdminPackagesPage')
 
-export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
-    {
-        path: '/',
-        render: () => <AnalyticsOverviewPage />,
-    },
-    {
-        path: '/analytics/search',
-        render: () => <AnalyticsSearchPage />,
-    },
-    {
-        path: '/analytics/code-intel',
-        render: () => <AnalyticsCodeIntelPage />,
-    },
-    {
-        path: '/analytics/extensions',
-        render: () => <AnalyticsExtensionsPage />,
-    },
-    {
-        path: '/analytics/users',
-        render: () => <AnalyticsUsersPage />,
-    },
-    {
-        path: '/analytics/code-insights',
-        render: () => <AnalyticsCodeInsightsPage />,
-    },
-    {
-        path: '/analytics/batch-changes',
-        render: () => <AnalyticsBatchChangesPage />,
-    },
-    {
-        path: '/analytics/notebooks',
-        render: () => <AnalyticsNotebooksPage />,
-    },
-    {
-        path: '/configuration',
-        render: props => <SiteAdminConfigurationPage {...props} />,
-    },
-    {
-        path: '/global-settings',
-        render: props => <SiteAdminSettingsPage {...props} />,
-    },
-    {
-        path: '/external-services/*',
-        render: props => <SiteAdminExternalServicesArea {...props} />,
-    },
-    {
-        path: '/repositories',
-        render: props => <SiteAdminRepositoriesPage {...props} />,
-    },
-    {
-        path: '/organizations',
-        render: props => <SiteAdminOrgsPage {...props} />,
-    },
-    {
-        path: '/account-requests',
-        render: () => <AccessRequestsPage />,
-        condition: context =>
-            checkRequestAccessAllowed(
-                context.isSourcegraphDotCom,
-                window.context.allowSignup,
-                window.context.experimentalFeatures
-            ),
-    },
-    {
-        path: '/users/new',
-        render: () => <SiteAdminCreateUserPage />,
-    },
-    {
-        path: '/tokens',
-        render: props => <SiteAdminTokensPage {...props} />,
-    },
-    {
-        path: '/updates',
-        render: props => <SiteAdminUpdatesPage {...props} />,
-    },
-    {
-        path: '/pings',
-        render: props => <SiteAdminPingsPage {...props} />,
-    },
-    {
-        path: '/report-bug',
-        render: props => <SiteAdminReportBugPage {...props} />,
-    },
-    {
-        path: '/surveys',
-        render: props => <SiteAdminSurveyResponsesPage {...props} />,
-    },
-    {
-        path: '/migrations',
-        render: props => <SiteAdminMigrationsPage {...props} />,
-    },
-    {
-        path: '/outbound-requests',
-        render: props => <SiteAdminOutboundRequestsPage {...props} />,
-    },
-    {
-        path: '/background-jobs',
-        render: props => <SiteAdminBackgroundJobsPage {...props} />,
-    },
-    {
-        path: '/feature-flags',
-        render: props => <SiteAdminFeatureFlagsPage {...props} />,
-    },
-    {
-        path: '/feature-flags/configuration/:name',
-        render: props => <SiteAdminFeatureFlagConfigurationPage {...props} />,
-    },
-    {
-        path: '/webhooks/outgoing',
-        render: props => <OutboundWebhooksPage {...props} />,
-    },
-    {
-        path: '/webhooks/outgoing/create',
-        render: props => <OutgoingWebhookCreatePage {...props} />,
-    },
-    {
-        path: '/webhooks/outgoing/:id',
-        render: props => <OutgoingWebhookEditPage {...props} />,
-    },
-    {
-        path: '/webhooks/incoming',
-        render: props => <SiteAdminWebhooksPage {...props} />,
-    },
-    {
-        path: '/webhooks/incoming/create',
-        render: props => <SiteAdminWebhookCreatePage {...props} />,
-    },
-    {
-        path: '/webhooks/incoming/:id',
-        render: props => <SiteAdminWebhookPage {...props} />,
-    },
-    {
-        path: '/webhooks/incoming/:id/edit',
-        render: props => <SiteAdminWebhookUpdatePage {...props} />,
-    },
-    {
-        path: '/slow-requests',
-        render: props => <SiteAdminSlowRequestsPage {...props} />,
-    },
-    {
-        path: '/packages',
-        render: props => <SiteAdminPackagesPage {...props} />,
-        condition: isPackagesEnabled,
-    },
-    {
-        path: '/permissions-syncs',
-        render: props => <PermissionsSyncJobsPage {...props} />,
-    },
-]
+export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = (
+    [
+        AnalyticsOverviewPage && {
+            path: '/',
+            render: () => <AnalyticsOverviewPage />,
+        },
+        AnalyticsSearchPage && {
+            path: '/analytics/search',
+            render: () => <AnalyticsSearchPage />,
+        },
+        AnalyticsCodeIntelPage && {
+            path: '/analytics/code-intel',
+            render: () => <AnalyticsCodeIntelPage />,
+        },
+        AnalyticsExtensionsPage && {
+            path: '/analytics/extensions',
+            render: () => <AnalyticsExtensionsPage />,
+        },
+        AnalyticsUsersPage && {
+            path: '/analytics/users',
+            render: () => <AnalyticsUsersPage />,
+        },
+        AnalyticsCodeInsightsPage && {
+            path: '/analytics/code-insights',
+            render: () => <AnalyticsCodeInsightsPage />,
+        },
+        AnalyticsBatchChangesPage && {
+            path: '/analytics/batch-changes',
+            render: () => <AnalyticsBatchChangesPage />,
+        },
+        AnalyticsNotebooksPage && {
+            path: '/analytics/notebooks',
+            render: () => <AnalyticsNotebooksPage />,
+        },
+        {
+            path: '/configuration',
+            render: props => <SiteAdminConfigurationPage {...props} />,
+        },
+        {
+            path: '/global-settings',
+            render: props => <SiteAdminSettingsPage {...props} />,
+        },
+        {
+            path: '/external-services/*',
+            render: props => <SiteAdminExternalServicesArea {...props} />,
+        },
+        {
+            path: '/repositories',
+            render: props => <SiteAdminRepositoriesPage {...props} />,
+        },
+        {
+            path: '/organizations',
+            render: props => <SiteAdminOrgsPage {...props} />,
+        },
+        {
+            path: '/account-requests',
+            render: () => <AccessRequestsPage />,
+            condition: context =>
+                checkRequestAccessAllowed(
+                    context.isSourcegraphDotCom,
+                    window.context.allowSignup,
+                    window.context.experimentalFeatures
+                ),
+        },
+        {
+            path: '/users/new',
+            render: () => <SiteAdminCreateUserPage />,
+        },
+        {
+            path: '/tokens',
+            render: props => <SiteAdminTokensPage {...props} />,
+        },
+        {
+            path: '/updates',
+            render: props => <SiteAdminUpdatesPage {...props} />,
+        },
+        {
+            path: '/pings',
+            render: props => <SiteAdminPingsPage {...props} />,
+        },
+        {
+            path: '/report-bug',
+            render: props => <SiteAdminReportBugPage {...props} />,
+        },
+        {
+            path: '/surveys',
+            render: props => <SiteAdminSurveyResponsesPage {...props} />,
+        },
+        {
+            path: '/migrations',
+            render: props => <SiteAdminMigrationsPage {...props} />,
+        },
+        {
+            path: '/outbound-requests',
+            render: props => <SiteAdminOutboundRequestsPage {...props} />,
+        },
+        {
+            path: '/background-jobs',
+            render: props => <SiteAdminBackgroundJobsPage {...props} />,
+        },
+        {
+            path: '/feature-flags',
+            render: props => <SiteAdminFeatureFlagsPage {...props} />,
+        },
+        {
+            path: '/feature-flags/configuration/:name',
+            render: props => <SiteAdminFeatureFlagConfigurationPage {...props} />,
+        },
+        {
+            path: '/webhooks/outgoing',
+            render: props => <OutboundWebhooksPage {...props} />,
+        },
+        {
+            path: '/webhooks/outgoing/create',
+            render: props => <OutgoingWebhookCreatePage {...props} />,
+        },
+        {
+            path: '/webhooks/outgoing/:id',
+            render: props => <OutgoingWebhookEditPage {...props} />,
+        },
+        {
+            path: '/webhooks/incoming',
+            render: props => <SiteAdminWebhooksPage {...props} />,
+        },
+        {
+            path: '/webhooks/incoming/create',
+            render: props => <SiteAdminWebhookCreatePage {...props} />,
+        },
+        {
+            path: '/webhooks/incoming/:id',
+            render: props => <SiteAdminWebhookPage {...props} />,
+        },
+        {
+            path: '/webhooks/incoming/:id/edit',
+            render: props => <SiteAdminWebhookUpdatePage {...props} />,
+        },
+        {
+            path: '/slow-requests',
+            render: props => <SiteAdminSlowRequestsPage {...props} />,
+        },
+        {
+            path: '/packages',
+            render: props => <SiteAdminPackagesPage {...props} />,
+            condition: isPackagesEnabled,
+        },
+        {
+            path: '/permissions-syncs',
+            render: props => <PermissionsSyncJobsPage {...props} />,
+        },
+    ] satisfies (SiteAdminAreaRoute | null)[]
+).filter(isDefined)
 
 const siteAdminUserManagementRoute: SiteAdminAreaRoute = {
     path: '/users',

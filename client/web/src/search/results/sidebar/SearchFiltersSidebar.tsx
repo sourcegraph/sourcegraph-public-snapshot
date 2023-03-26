@@ -19,6 +19,7 @@ import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Code, Tooltip, Icon } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
@@ -26,7 +27,14 @@ import { buildSearchURLQueryFromQueryState } from '../../../stores'
 import { AggregationUIMode, GroupResultsPing } from '../components/aggregation'
 
 import { getRevisions } from './Revisions'
-import { SearchAggregations } from './SearchAggregations'
+import type { SearchAggregationsProps } from './SearchAggregations'
+
+const SearchAggregations = !process.env.DISABLE_SEARCH_AGGREGATIONS
+    ? lazyComponent<SearchAggregationsProps, 'SearchAggregations'>(
+          () => import('./SearchAggregations'),
+          'SearchAggregations'
+      )
+    : null
 
 export interface SearchFiltersSidebarProps extends TelemetryProps, SettingsCascadeProps, HTMLAttributes<HTMLElement> {
     liveQuery: string
@@ -105,27 +113,30 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
         <SearchSidebar {...attributes} onClose={() => setSidebarCollapsed(true)}>
             {children}
 
-            {showAggregationPanel && enableSearchAggregations && aggregationUIMode === AggregationUIMode.Sidebar && (
-                <SearchSidebarSection
-                    sectionId={SectionID.GROUPED_BY}
-                    header="Group results by"
-                    postHeader={<CustomAggregationHeading telemetryService={props.telemetryService} />}
-                    // SearchAggregations content contains component that makes a few API network requests
-                    // in order to prevent these calls if this section is collapsed we turn off force render
-                    // for collapse section component
-                    forcedRender={false}
-                    onToggle={handleGroupedByToggle}
-                >
-                    <SearchAggregations
-                        query={submittedURLQuery}
-                        patternType={patternType}
-                        proactive={proactiveSearchAggregations}
-                        caseSensitive={caseSensitive}
-                        telemetryService={telemetryService}
-                        onQuerySubmit={handleAggregationBarLinkClick}
-                    />
-                </SearchSidebarSection>
-            )}
+            {showAggregationPanel &&
+                enableSearchAggregations &&
+                aggregationUIMode === AggregationUIMode.Sidebar &&
+                SearchAggregations && (
+                    <SearchSidebarSection
+                        sectionId={SectionID.GROUPED_BY}
+                        header="Group results by"
+                        postHeader={<CustomAggregationHeading telemetryService={props.telemetryService} />}
+                        // SearchAggregations content contains component that makes a few API network requests
+                        // in order to prevent these calls if this section is collapsed we turn off force render
+                        // for collapse section component
+                        forcedRender={false}
+                        onToggle={handleGroupedByToggle}
+                    >
+                        <SearchAggregations
+                            query={submittedURLQuery}
+                            patternType={patternType}
+                            proactive={proactiveSearchAggregations}
+                            caseSensitive={caseSensitive}
+                            telemetryService={telemetryService}
+                            onQuerySubmit={handleAggregationBarLinkClick}
+                        />
+                    </SearchSidebarSection>
+                )}
 
             <SearchSidebarSection sectionId={SectionID.SEARCH_TYPES} header="Search Types">
                 {getSearchTypeLinks({

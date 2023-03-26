@@ -2,7 +2,7 @@ import { getTicks } from '@visx/scale'
 import { AnyD3Scale } from '@visx/scale/lib/types/Scale'
 import { format } from 'd3-format'
 
-const SI_PREFIX_FORMATTER = format('~s')
+const SI_PREFIX_FORMATTER = format?.('~s')
 
 export function formatYTick(number: number): string {
     // D3 formatter doesn't support float numbers properly
