@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
+import DOMPurify from 'dompurify'
 import { range } from 'lodash'
 import { of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
-import sanitizeHtml from 'sanitize-html'
 
 import { highlightNode, logger } from '@sourcegraph/common'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -47,7 +47,7 @@ export const CommitSearchResultMatch: React.FunctionComponent<CommitSearchResult
                 // Return the rendered markdown if highlighting fails.
                 catchError(error => {
                     logger.log(error)
-                    return of('<pre>' + sanitizeHtml(item.content) + '</pre>')
+                    return of('<pre>' + DOMPurify.sanitize(item.content) + '</pre>')
                 })
             )
             .subscribe(highlightedCommitContent => {

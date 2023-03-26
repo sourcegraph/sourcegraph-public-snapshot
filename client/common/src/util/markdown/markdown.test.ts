@@ -69,40 +69,35 @@ describe('renderMarkdown', () => {
             <td>B</td>
             </tr>
             </tbody></table>
-            <p><img src=\\"./src.jpg\\" alt=\\"image alt text\\" /></p>
-            "
+            <p><img alt=\\"image alt text\\" src=\\"./src.jpg\\"></p>"
         `)
     })
     it('renders to plain text with plainText: true', () => {
-        expect(renderMarkdown('A **b**', { plainText: true })).toBe('A b\n')
+        expect(renderMarkdown('A **b**', { plainText: true })).toBe('A b')
     })
     it('sanitizes script tags', () => {
         expect(renderMarkdown('<script>evil();</script>')).toBe('')
     })
     it('sanitizes event handlers', () => {
-        expect(renderMarkdown('<svg><rect onclick="evil()"></rect></svg>')).toBe('<p><svg><rect></rect></svg></p>\n')
+        expect(renderMarkdown('<svg><rect onclick="evil()"></rect></svg>')).toBe('<p></p>')
     })
     it('does not allow arbitrary <object> tags', () => {
-        expect(renderMarkdown('<object data="something"></object>')).toBe('<p></p>\n')
+        expect(renderMarkdown('<object data="something"></object>')).toBe('<p></p>')
     })
     it('drops SVG <object> tags', () => {
-        expect(renderMarkdown('<object data="something" type="image/svg+xml"></object>')).toBe('<p></p>\n')
+        expect(renderMarkdown('<object data="something" type="image/svg+xml"></object>')).toBe('<p></p>')
     })
-    it('allows <svg> tags', () => {
+    it('forbids <svg> tags', () => {
         const input =
             '<svg viewbox="10 10 10 10" width="100"><rect x="37.5" y="7.5" width="675.0" height="16.875" fill="#e05d44" stroke="white" stroke-width="1"><title>/</title></rect></svg>'
-        expect(renderMarkdown(input)).toBe(`<p>${input}</p>\n`)
+        expect(renderMarkdown(input)).toBe('<p></p>')
     })
-
-    describe('allowDataUriLinksAndDownloads option', () => {
-        const MARKDOWN_WITH_DOWNLOAD = '<a href="data:text/plain,foobar" download>D</a>\n[D2](data:text/plain,foobar)'
-        test('default disabled', () => {
-            expect(renderMarkdown(MARKDOWN_WITH_DOWNLOAD)).toBe('<p><a>D</a>\n<a>D2</a></p>\n')
-        })
-        test('enabled', () => {
-            expect(renderMarkdown(MARKDOWN_WITH_DOWNLOAD, { allowDataUriLinksAndDownloads: true })).toBe(
-                '<p><a href="data:text/plain,foobar" download>D</a>\n<a href="data:text/plain,foobar">D2</a></p>\n'
-            )
-        })
+    it('forbids rel and style attributes', () => {
+        const input = '<a href="/" rel="evil" style="foo:bar">Link</a><script>alert("x")</script>'
+        expect(renderMarkdown(input)).toBe('<p><a href="/">Link</a></p>')
+    })
+    test('forbids data URI links', () => {
+        const input = '<a href="data:text/plain,foobar" download>D</a>\n[D2](data:text/plain,foobar)'
+        expect(renderMarkdown(input)).toBe('<p><a download="">D</a>\n<a>D2</a></p>')
     })
 })
