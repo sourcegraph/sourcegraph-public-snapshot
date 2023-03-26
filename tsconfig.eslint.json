@@ -4,5 +4,6 @@
     "noEmit": true,
     "allowJs": true
   },
-  "include": ["./*", "./.*", "client/*/*", "client/*/.*"]
+  "exclude": ["node_modules"],
+  "include": ["client/wildcard", "client/branded", "client/cody", "client/cody-shared", "client/shared"]
 }

@@ -18,7 +18,7 @@ const build = gulp.series(generate, webWebpack)
 /**
  * Watches everything and rebuilds on file changes.
  */
-const development = gulp.series(generate, gulp.parallel(watchGenerators, developmentServer))
+const development = gulp.series(/*generate,*/ gulp.parallel(watchGenerators, developmentServer))
 
 module.exports = {
   generate,
