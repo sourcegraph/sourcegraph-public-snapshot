@@ -173,15 +173,15 @@ func TestScore(t *testing.T) {
 	}
 	// embeddings[0] = 0.5061, 0.6595, 0.5558
 	// queries[0:3] = 0.4227, 0.4874, 0.7641
-	result := index.score(queries[0:columnDimension], 0, true)
+	score, debugInfo := index.score(queries[0:columnDimension], 0, true)
 
 	// Check that the score is correct
 	expectedScore := scoreSimilarityWeight*((0.5061*0.4227)+(0.6595*0.4874)+(0.5558*0.7641)) + scoreFileRankWeight*(1.0/32.0)
-	if math.Abs(float64(result.score-expectedScore)) > 0.0001 {
-		t.Fatalf("Expected score %.4f, but got %.4f", expectedScore, result.score)
+	if math.Abs(float64(score-expectedScore)) > 0.0001 {
+		t.Fatalf("Expected score %.4f, but got %.4f", expectedScore, score)
 	}
 
-	if result.debug == "" {
+	if debugInfo == "" {
 		t.Fatal("Expected a non-empty debug string")
 	}
 }

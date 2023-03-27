@@ -173,8 +173,8 @@ type score struct {
 }
 
 const (
-	scoreFileRankWeight   float32 = 0.5
-	scoreSimilarityWeight float32 = 0.5
+	scoreFileRankWeight   float32 = 1.0 / 3.0
+	scoreSimilarityWeight float32 = 2.0 / 3.0
 )
 
 func (index *EmbeddingIndex[T]) score(query []float32, i int, debug bool) score {
