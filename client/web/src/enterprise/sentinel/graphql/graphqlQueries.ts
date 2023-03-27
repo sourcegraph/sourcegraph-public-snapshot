@@ -50,7 +50,7 @@ export const RESOLVE_SECURITY_VULNERABILITIES_QUERY = gql`
     ${vulnerabilitiesFields}
 `
 
-const vulnerabilityMatchesGroupedByRepositoryFields = gql`
+const vulnerabilityMatchesCountByRepositoryFields = gql`
     fragment VulnerabilityMatchesCountByRepositoryFields on VulnerabilityMatchCountByRepository {
         __typename
         repositoryName
@@ -58,8 +58,8 @@ const vulnerabilityMatchesGroupedByRepositoryFields = gql`
     }
 `
 
-export const VULNERABILITY_MATCHES_GROUPED_BY_REPOSITORY = gql`
-    query VulnerabilityMatchesGroupedByRepository($first: Int, $after: String, $repositoryName: String) {
+export const VULNERABILITY_MATCHES_COUNT_BY_REPOSITORY = gql`
+    query VulnerabilityMatchesCountByRepository($first: Int, $after: String, $repositoryName: String) {
         vulnerabilityMatchesCountByRepository(first: $first, after: $after, repositoryName: $repositoryName) {
             nodes {
                 id
@@ -72,5 +72,5 @@ export const VULNERABILITY_MATCHES_GROUPED_BY_REPOSITORY = gql`
             }
         }
     }
-    ${vulnerabilityMatchesGroupedByRepositoryFields}
+    ${vulnerabilityMatchesCountByRepositoryFields}
 `

@@ -6,10 +6,10 @@ interface IsSentinelEnabledProps {
 }
 
 export const isSentinelEnabled = (props: IsSentinelEnabledProps): boolean => {
-    const { isSourcegraphDotCom, authenticatedUser } = props
+    const { authenticatedUser } = props
 
     if (authenticatedUser) {
-        return isSourcegraphDotCom && authenticatedUser.siteAdmin
+        return authenticatedUser.siteAdmin
     }
 
     return false
