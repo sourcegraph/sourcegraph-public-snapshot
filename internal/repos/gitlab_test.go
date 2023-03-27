@@ -274,16 +274,8 @@ func TestGitlabSource_ListRepos(t *testing.T) {
 	conf := &schema.GitLabConnection{
 		Url:   "https://gitlab.sgdev.org",
 		Token: os.Getenv("GITLAB_TOKEN"),
-		Projects: []*schema.GitLabProject{
-			{
-				Name: "main-group/empty-repo",
-			},
-			{
-				Name: "main-group/repo000154897",
-			},
-			{
-				Name: "main-group/wiki-repo",
-			},
+		ProjectQuery: []string{
+			"groups/small-test-group/projects",
 		},
 		Exclude: []*schema.ExcludedGitLabProject{
 			{
