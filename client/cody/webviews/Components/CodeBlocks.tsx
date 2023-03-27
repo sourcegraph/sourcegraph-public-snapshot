@@ -8,7 +8,6 @@ interface CodeBlocksProps {
 }
 
 export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({ displayText }) => {
-    console.log(displayText)
     const [copiedText, setCopiedText] = useState('')
 
     const preBlocks = displayText.match(/<(\w+)[^>]*>(.*?)<\/\1>|<pre[^>]*>[\s\S]*?<\/pre>/g) || []
@@ -38,11 +37,11 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({ displayTe
     )
 
     return (
-        <span>
+        <p>
             {preBlocks.map((block, index) => {
                 if (block.match(/^<pre/)) {
                     return (
-                        <span className="chat-code-block-container" key={index}>
+                        <p className="chat-code-block-container" key={index}>
                             {parse(block)}
                             <VSCodeButton
                                 title="Copy code"
@@ -56,11 +55,11 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({ displayTe
                                     <i className="codicon codicon-copy" />
                                 )}
                             </VSCodeButton>
-                        </span>
+                        </p>
                     )
                 }
-                return <span key={index}>{parse(block)}</span>
+                return <p key={index}>{parse(block)}</p>
             })}
-        </span>
+        </p>
     )
 }

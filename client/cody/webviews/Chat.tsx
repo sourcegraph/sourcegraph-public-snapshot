@@ -96,7 +96,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                                 <div className="bubble bot-bubble">
                                     <div className="bubble-content bot-bubble-content">
                                         {messageInProgress.displayText ? (
-                                            <span dangerouslySetInnerHTML={{ __html: messageInProgress.displayText }} />
+                                            <p dangerouslySetInnerHTML={{ __html: messageInProgress.displayText }} />
                                         ) : (
                                             <div className="bubble-loader">
                                                 <div className="bubble-loader-dot" />
