@@ -802,14 +802,6 @@ func (s *GitHubSource) listSearch(ctx context.Context, q string, results chan *g
 	// First we need to parse the query to see if it is querying within a date range,
 	// and if so, strip that date range from the query.
 	dr := stripDateRange(&q)
-	if dr != nil {
-		if dr.From.IsZero() {
-			dr.From = minCreated
-		}
-		if dr.To.IsZero() {
-			dr.To = time.Now()
-		}
-	}
 
 	newRepositoryQuery(q, s.v4Client, s.logger, dr).DoWithRefinedWindow(ctx, results)
 }
@@ -926,6 +918,15 @@ type repositoryQuery struct {
 }
 
 func newRepositoryQuery(query string, searcher *github.V4Client, logger log.Logger, created *dateRange) *repositoryQuery {
+	if created == nil {
+		created = &dateRange{}
+	}
+	if created.From.IsZero() {
+		created.From = minCreated
+	}
+	if created.To.IsZero() {
+		created.To = time.Now()
+	}
 	return &repositoryQuery{
 		Query:    query,
 		Searcher: searcher,
