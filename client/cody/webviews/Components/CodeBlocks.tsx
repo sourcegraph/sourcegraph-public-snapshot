@@ -1,3 +1,4 @@
+/* eslint-disable react/no-array-index-key */
 import React, { useCallback, useState } from 'react'
 
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
@@ -10,7 +11,7 @@ interface CodeBlocksProps {
 export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({ displayText }) => {
     const [copiedText, setCopiedText] = useState('')
 
-    const preBlocks = displayText.match(/<(\w+)[^>]*>(.*?)<\/\1>|<pre[^>]*>[\s\S]*?<\/pre>/g) || []
+    const preBlocks = displayText.match(/<(\w+)[^>]*>(.*?)<\/\1>|<pre[^>]*>[\S\s]*?<\/pre>/g) || []
 
     const createDivForCopy = useCallback((text: string) => {
         const element = document.createElement('div')
@@ -29,8 +30,8 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({ displayTe
                         setCopiedText('')
                     }, 3000)
                 })
-                .catch(err => {
-                    console.error(`Failed to copy text to clipboard: ${err}`)
+                .catch(error => {
+                    console.error(`Failed to copy text to clipboard: ${error}`)
                 })
         },
         [createDivForCopy]
