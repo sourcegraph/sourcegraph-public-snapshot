@@ -259,7 +259,12 @@ const LockedRoleNode: React.FunctionComponent<Pick<RoleNodeProps, 'node' | 'allP
                 </div>
 
                 <CollapsePanel className={styles.roleNodePermissions} forcedRender={false}>
-                    <PermissionsList allPermissions={allPermissions} isChecked={isChecked} disabled={true} roleName={node.name} />
+                    <PermissionsList
+                        allPermissions={allPermissions}
+                        isChecked={isChecked}
+                        disabled={true}
+                        roleName={node.name}
+                    />
                 </CollapsePanel>
             </Collapse>
         </li>
