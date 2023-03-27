@@ -79,7 +79,7 @@ describe('renderMarkdown', () => {
         expect(renderMarkdown('<script>evil();</script>')).toBe('')
     })
     it('sanitizes event handlers', () => {
-        expect(renderMarkdown('<svg><rect onclick="evil()"></rect></svg>')).toBe('<p></p>')
+        expect(renderMarkdown('<b onclick="evil()">test</b></svg>')).toBe('<p><b>test</b></p>')
     })
     it('does not allow arbitrary <object> tags', () => {
         expect(renderMarkdown('<object data="something"></object>')).toBe('<p></p>')
