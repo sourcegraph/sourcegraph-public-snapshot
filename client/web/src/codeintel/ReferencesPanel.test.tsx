@@ -72,7 +72,7 @@ describe('ReferencesPanel', () => {
         const referenceButton = within(referencesList).getByTestId('reference-item-diff/diff.go-0')
         const fullReferenceURL =
             '/github.com/sourcegraph/go-diff@9d1f353a285b3094bc33bdae277a19aedabe8b71/-/blob/diff/diff.go?L16:2-16:10'
-        expect(referenceButton).toHaveAttribute('data-href', fullReferenceURL)
+        expect(referenceButton).toHaveAttribute('href', fullReferenceURL)
         expect(referenceButton).not.toHaveClass('locationActive')
 
         // Click on reference

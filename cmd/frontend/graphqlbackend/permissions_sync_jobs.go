@@ -48,7 +48,7 @@ type PermissionsSyncJobReasonResolver interface {
 type CodeHostStateResolver interface {
 	ProviderID() string
 	ProviderType() string
-	Status() string
+	Status() database.CodeHostStatus
 	Message() string
 }
 

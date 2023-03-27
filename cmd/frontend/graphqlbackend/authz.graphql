@@ -613,6 +613,14 @@ enum PermissionsSyncJobPriority {
 }
 
 """
+Describes the status of a permissions sync for a given provider (code host).
+"""
+enum CodeHostStatus {
+    SUCCESS
+    ERROR
+}
+
+"""
 Describes the state of a provider (code host) during a permission sync job.
 """
 type CodeHostState {
@@ -627,7 +635,7 @@ type CodeHostState {
     """
     Status of permission sync of a given provider.
     """
-    status: String!
+    status: CodeHostStatus!
     """
     Status message.
     """
@@ -734,37 +742,6 @@ type PermissionsSyncJob implements Node {
     State of providers (code hosts) during permission sync job.
     """
     codeHostStates: [CodeHostState!]!
-}
-
-"""
-Status types of permissions providers.
-"""
-enum PermissionsProviderStatus {
-    ERROR
-    SUCCESS
-}
-
-"""
-State of a permissions provider during a sync job.
-"""
-type PermissionsProviderState {
-    """
-    Type of the provider.
-    """
-    type: String!
-    """
-    ID representing the provider.
-    """
-    id: String!
-    """
-    Type of the sync job.
-    """
-    status: PermissionsProviderStatus!
-    """
-    Message describing the status of the provider during a sync job - for example, the
-    contents of any errors and during which operation they occured.
-    """
-    message: String!
 }
 
 """

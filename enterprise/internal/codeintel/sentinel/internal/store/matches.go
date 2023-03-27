@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+// VulnerabilityMatchByID returns the vulnerability match with the given identifier.
 func (s *store) VulnerabilityMatchByID(ctx context.Context, id int) (_ shared.VulnerabilityMatch, _ bool, err error) {
 	ctx, _, endObservation := s.operations.vulnerabilityMatchByID.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -33,20 +34,43 @@ SELECT
 	m.id,
 	m.upload_id,
 	vap.vulnerability_id,
-	` + vulnerabilityAffectedPackageFields + `,
-	` + vulnerabilityAffectedSymbolFields + `,
+	vap.package_name,
+	vap.language,
+	vap.namespace,
+	vap.version_constraint,
+	vap.fixed,
+	vap.fixed_in,
+	vas.path,
+	vas.symbols,
+	vul.severity,
 	0 AS count
 FROM vulnerability_matches m
 LEFT JOIN vulnerability_affected_packages vap ON vap.id = m.vulnerability_affected_package_id
 LEFT JOIN vulnerability_affected_symbols vas ON vas.vulnerability_affected_package_id = vap.id
+LEFT JOIN vulnerabilities vul ON vap.vulnerability_id = vul.id
 WHERE m.id = %s
 `
 
+// GetVulnerabilityMatches returns a list of vulnerability matches for the given language, severity, and/or repository name.
 func (s *store) GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) (_ []shared.VulnerabilityMatch, _ int, err error) {
 	ctx, _, endObservation := s.operations.getVulnerabilityMatches.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return scanVulnerabilityMatchesAndCount(s.db.Query(ctx, sqlf.Sprintf(getVulnerabilityMatchesQuery, args.Limit, args.Offset)))
+	var conds []*sqlf.Query
+	if args.Language != "" {
+		conds = append(conds, sqlf.Sprintf("vap.language = %s", args.Language))
+	}
+	if args.Severity != "" {
+		conds = append(conds, sqlf.Sprintf("vul.severity = %s", args.Severity))
+	}
+	if args.RepositoryName != "" {
+		conds = append(conds, sqlf.Sprintf("r.name = %s", args.RepositoryName))
+	}
+	if len(conds) == 0 {
+		conds = append(conds, sqlf.Sprintf("TRUE"))
+	}
+
+	return scanVulnerabilityMatchesAndCount(s.db.Query(ctx, sqlf.Sprintf(getVulnerabilityMatchesQuery, sqlf.Join(conds, " AND "), args.Limit, args.Offset)))
 }
 
 const getVulnerabilityMatchesQuery = `
@@ -54,23 +78,33 @@ WITH limited_matches AS (
 	SELECT
 		m.id,
 		m.upload_id,
-		m.vulnerability_affected_package_id,
-		COUNT(*) OVER() AS count
+		m.vulnerability_affected_package_id
 	FROM vulnerability_matches m
 	ORDER BY id
-	LIMIT %s OFFSET %s
 )
 SELECT
 	m.id,
 	m.upload_id,
 	vap.vulnerability_id,
-	` + vulnerabilityAffectedPackageFields + `,
-	` + vulnerabilityAffectedSymbolFields + `,
-	m.count
+	vap.package_name,
+	vap.language,
+	vap.namespace,
+	vap.version_constraint,
+	vap.fixed,
+	vap.fixed_in,
+	vas.path,
+	vas.symbols,
+	vul.severity,
+	COUNT(*) OVER() AS count
 FROM limited_matches m
 LEFT JOIN vulnerability_affected_packages vap ON vap.id = m.vulnerability_affected_package_id
 LEFT JOIN vulnerability_affected_symbols vas ON vas.vulnerability_affected_package_id = vap.id
+LEFT JOIN vulnerabilities vul ON vap.vulnerability_id = vul.id
+LEFT JOIN lsif_uploads lu ON m.upload_id = lu.id
+LEFT JOIN repo r ON r.id = lu.repository_id
+WHERE %s
 ORDER BY m.id, vap.id, vas.id
+LIMIT %s OFFSET %s
 `
 
 var flattenMatches = func(ms []shared.VulnerabilityMatch) []shared.VulnerabilityMatch {
@@ -93,11 +127,60 @@ var flattenMatches = func(ms []shared.VulnerabilityMatch) []shared.Vulnerability
 	return flattened
 }
 
+// GetVulnerabilityMatchesCountByRepository returns the number vulnerabilities matches count by repository
+func (s *store) GetVulnerabilityMatchesCountByRepository(ctx context.Context, args shared.GetVulnerabilityMatchesCountByRepositoryArgs) (_ []shared.VulnerabilityMatchesByRepository, _ int, err error) {
+	ctx, _, endObservation := s.operations.getVulnerabilityMatchesCountByRepository.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	var conds []*sqlf.Query
+	if args.RepositoryName != "" {
+		conds = append(conds, sqlf.Sprintf("r.name ILIKE %s", "%"+args.RepositoryName+"%"))
+	}
+	if len(conds) == 0 {
+		conds = append(conds, sqlf.Sprintf("TRUE"))
+	}
+
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(getVulnerabilityMatchesGroupedByRepos, sqlf.Join(conds, " AND "), args.Limit, args.Offset))
+	if err != nil {
+		return nil, 0, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	var matches []shared.VulnerabilityMatchesByRepository
+	var totalCount int
+	for rows.Next() {
+		var match shared.VulnerabilityMatchesByRepository
+		if err := rows.Scan(&match.ID, &match.RepositoryName, &match.MatchCount, &totalCount); err != nil {
+			return nil, 0, err
+		}
+
+		matches = append(matches, match)
+	}
+
+	return matches, totalCount, nil
+}
+
+const getVulnerabilityMatchesGroupedByRepos = `
+select
+	r.id,
+	r.name,
+	count(*) as count,
+	COUNT(*) OVER() AS total_count
+from vulnerability_matches vm
+join lsif_uploads lu on lu.id = vm.upload_id
+join repo r on r.id = lu.repository_id
+where %s
+group by r.name, r.id
+order by count DESC
+limit %s offset %s
+`
+
 var scanVulnerabilityMatchesAndCount = func(rows basestore.Rows, queryErr error) ([]shared.VulnerabilityMatch, int, error) {
 	matches, totalCount, err := basestore.NewSliceWithCountScanner(func(s dbutil.Scanner) (match shared.VulnerabilityMatch, count int, _ error) {
 		var (
 			vap     shared.AffectedPackage
 			vas     shared.AffectedSymbol
+			vul     shared.Vulnerability
 			fixedIn string
 		)
 
@@ -114,6 +197,7 @@ var scanVulnerabilityMatchesAndCount = func(rows basestore.Rows, queryErr error)
 			&dbutil.NullString{S: &fixedIn},
 			&dbutil.NullString{S: &vas.Path},
 			pq.Array(vas.Symbols),
+			&dbutil.NullString{S: &vul.Severity},
 			&count,
 		); err != nil {
 			return shared.VulnerabilityMatch{}, 0, err

@@ -437,6 +437,12 @@ type SetPermissionsResult struct {
 }
 
 func (s *permissionSyncJobStore) SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, statuses CodeHostStatusesSet) error {
+	var added, removed, found int
+	if result != nil {
+		added = result.Added
+		removed = result.Removed
+		found = result.Found
+	}
 	q := sqlf.Sprintf(`
 		UPDATE permission_sync_jobs
 		SET
@@ -445,7 +451,7 @@ func (s *permissionSyncJobStore) SaveSyncResult(ctx context.Context, id int, res
 			permissions_found = %d,
 			code_host_states = %s
 		WHERE id = %d
-		`, result.Added, result.Removed, result.Found, pq.Array(statuses), id)
+		`, added, removed, found, pq.Array(statuses), id)
 
 	_, err := s.ExecResult(ctx, q)
 	return err
@@ -659,15 +665,15 @@ func (s *permissionSyncJobStore) Count(ctx context.Context, opts ListPermissionS
 }
 
 const countUsersWithFailingSyncJobsQuery = `
-SELECT COUNT(*) 
+SELECT COUNT(*)
 FROM (
-  SELECT DISTINCT ON (user_id) id, state 
-  FROM permission_sync_jobs 
-  WHERE 
-	user_id is NOT NULL 
+  SELECT DISTINCT ON (user_id) id, state
+  FROM permission_sync_jobs
+  WHERE
+	user_id is NOT NULL
 	AND state IN ('completed', 'failed')
   ORDER BY user_id, finished_at DESC
-) AS tmp 
+) AS tmp
 WHERE state = 'failed';
 `
 
@@ -681,15 +687,15 @@ func (s *permissionSyncJobStore) CountUsersWithFailingSyncJob(ctx context.Contex
 }
 
 const countReposWithFailingSyncJobsQuery = `
-SELECT COUNT(*) 
+SELECT COUNT(*)
 FROM (
-  SELECT DISTINCT ON (repository_id) id, state 
-  FROM permission_sync_jobs 
-  WHERE 
-	repository_id is NOT NULL 
+  SELECT DISTINCT ON (repository_id) id, state
+  FROM permission_sync_jobs
+  WHERE
+	repository_id is NOT NULL
 	AND state IN ('completed', 'failed')
   ORDER BY repository_id, finished_at DESC
-) AS tmp 
+) AS tmp
 WHERE state = 'failed';
 `
 

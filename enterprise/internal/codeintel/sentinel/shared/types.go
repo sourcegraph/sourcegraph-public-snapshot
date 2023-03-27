@@ -50,8 +50,11 @@ type AffectedSymbol struct {
 }
 
 type GetVulnerabilityMatchesArgs struct {
-	Limit  int
-	Offset int
+	Limit          int
+	Offset         int
+	Severity       string
+	Language       string
+	RepositoryName string
 }
 
 type VulnerabilityMatch struct {
@@ -59,4 +62,16 @@ type VulnerabilityMatch struct {
 	UploadID        int
 	VulnerabilityID int
 	AffectedPackage AffectedPackage
+}
+
+type GetVulnerabilityMatchesCountByRepositoryArgs struct {
+	RepositoryName string
+	Limit          int
+	Offset         int
+}
+
+type VulnerabilityMatchesByRepository struct {
+	ID             int
+	RepositoryName string
+	MatchCount     int32
 }

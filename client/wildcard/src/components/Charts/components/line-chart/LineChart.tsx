@@ -20,12 +20,30 @@ import { getSeriesData, getMinMaxBoundaries } from './utils'
 import styles from './LineChart.module.scss'
 
 /**
- * Returns a formatted time text. It's used primary for X axis tick's text nodes.
- * Number of month day + short name of month.
+ * Returns the number of days between two dates.
  *
- * Example: 01 Jan, 12 Feb, ...
+ * @param date1 - The start date
+ * @param date2 - The end date
+ * @returns The number of days between the two dates
  */
-const formatDateTick = timeFormat('%d %b')
+const daysBetween = (date1: Date, date2: Date): number =>
+    Math.round(Math.abs((date2.getTime() - date1.getTime()) / (1000 * 60 * 60 * 24)))
+
+/**
+ * Returns a date tick formatter function based on the scale's domain.
+ *
+ * If the domain spans less than a year, it returns a formatter that shows the day of month and month name (e.g. "01 Jan").
+ * Otherwise, it returns a formatter that shows just the month and year (e.g. "Jan 20").
+ *
+ * @param scale - The time scale to base the decision on
+ * @returns A function that formats a date to a string
+ */
+const getFormatDateTick = (scale: ScaleTime<number, number>): ((date: Date) => string) => {
+    if (scale.domain().length < 2 || daysBetween(scale.domain()[1], scale.domain()[0]) < 365) {
+        return (date: Date) => timeFormat('%d %b')(date)
+    }
+    return (date: Date) => timeFormat('%b %y')(date)
+}
 
 interface GetScaleTicksInput {
     scale: AnyD3Scale
@@ -39,7 +57,6 @@ export function getXScaleTicks<T>(input: GetScaleTicksInput): T[] {
     const numberTicks = Math.max(2, Math.floor(space / pixelsPerTick))
     return getTicks(scale, numberTicks) as T[]
 }
-
 interface GetLineGroupStyleOptions {
     /** Whether this series contains the active point */
     id: string
@@ -173,7 +190,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                     pixelsPerTick={70}
                     minRotateAngle={20}
                     maxRotateAngle={60}
-                    tickFormat={formatDateTick}
+                    tickFormat={getFormatDateTick(xScale)}
                     getScaleTicks={getXScaleTicks}
                 />
 

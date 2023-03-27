@@ -5,7 +5,8 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -106,14 +107,17 @@ func (r *schemaResolver) AddUserEmail(ctx context.Context, args *addUserEmailArg
 		return nil, err
 	}
 
-	userEmails := backend.NewUserEmailsService(r.db, r.logger)
+	logger := r.logger.Scoped("AddUserEmail", "adding email to user").
+		With(log.Int32("userID", userID))
+
+	userEmails := backend.NewUserEmailsService(r.db, logger)
 	if err := userEmails.Add(ctx, userID, args.Email); err != nil {
 		return nil, err
 	}
 
 	if conf.CanSendEmail() {
 		if err := userEmails.SendUserEmailOnFieldUpdate(ctx, userID, "added an email"); err != nil {
-			log15.Warn("Failed to send email to inform user of email addition", "error", err)
+			logger.Warn("Failed to send email to inform user of email addition", log.Error(err))
 		}
 	}
 
