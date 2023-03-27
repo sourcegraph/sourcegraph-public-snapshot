@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -486,12 +487,18 @@ func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar
 	})
 
 	if err := cmd.Start(); err != nil {
+		// Help cleanup pool resources.
+		_ = stdin.Close()
+		_ = stdout.Close()
+
 		return errors.Wrap(err, "start comby")
 	}
 
 	// Wait for readers and writers to complete before calling Wait
 	// because Wait closes the pipes.
 	if err := p.Wait(); err != nil {
+		// Cleanup process since we called Start.
+		go killAndWait(cmd)
 		return err
 	}
 
@@ -546,12 +553,18 @@ func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipP
 	})
 
 	if err := cmd.Start(); err != nil {
+		// Help cleanup pool resources.
+		_ = stdin.Close()
+		_ = stdout.Close()
+
 		return errors.Wrap(err, "start comby")
 	}
 
 	// Wait for readers and writers to complete before calling Wait
 	// because Wait closes the pipes.
 	if err := p.Wait(); err != nil {
+		// Cleanup process since we called Start.
+		go killAndWait(cmd)
 		return err
 	}
 
@@ -560,6 +573,18 @@ func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipP
 	}
 
 	return nil
+}
+
+// killAndWait is a helper to kill a started cmd and release its resources.
+// This is used when returning from a function after calling Start but before
+// calling Wait. This can be called in a goroutine.
+func killAndWait(cmd *exec.Command) {
+	proc := cmd.Process
+	if proc == nil {
+		return
+	}
+	_ = proc.Kill()
+	_ = cmd.Wait()
 }
 
 var metricRequestTotalStructuralSearch = promauto.NewCounterVec(prometheus.CounterOpts{
