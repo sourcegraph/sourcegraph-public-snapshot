@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/grafana/regexp"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -826,7 +827,7 @@ func stripDateRange(s *string) (*dateRange, error) {
 	re := regexp.MustCompile(`created:([^\s]+)`)
 	matches := re.FindStringSubmatch(*s)
 	if len(matches) < 2 {
-		return nil, fmt.Errorf("no date range found in string")
+		return nil, errors.New("no date range found in string")
 	}
 	dateStr := matches[1]
 
@@ -879,7 +880,7 @@ func stripDateRange(s *string) (*dateRange, error) {
 	default:
 		rangeParts := strings.Split(dateStr, "..")
 		if len(rangeParts) != 2 {
-			return nil, fmt.Errorf("invalid date range format")
+			return nil, errors.New("invalid date range format")
 		}
 		var fromDate time.Time
 		var toDate time.Time
