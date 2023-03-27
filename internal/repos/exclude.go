@@ -49,11 +49,9 @@ func (e *excludeBuilder) Generic(excludeFunc func(repo interface{}) bool) {
 	if excludeFunc == nil {
 		return
 	}
-
 	if e.generic == nil {
 		e.generic = []func(interface{}) bool{}
 	}
-
 	e.generic = append(e.generic, excludeFunc)
 }
 
