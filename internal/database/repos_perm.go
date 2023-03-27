@@ -125,6 +125,18 @@ var ExternalServiceUnrestrictedCondition = sqlf.Sprintf(`
 )
 `)
 
+func getRestrictedReposCond(userID int32) *sqlf.Query {
+	return sqlf.Sprintf(`
+	-- Restricted repositories require checking permissions
+	EXISTS (
+		SELECT repo_id FROM user_repo_permissions
+		WHERE
+			repo_id = repo.id
+		AND user_id = %s
+	)
+	`, userID)
+}
+
 func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID int32) *sqlf.Query {
 	if bypassAuthz {
 		// if bypassAuthz is true, we don't care about any of the checks
@@ -135,29 +147,7 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 )
 `)
 	}
-
-	unrestrictedReposQuery := GetUnrestrictedReposCond()
-	conditions := []*sqlf.Query{unrestrictedReposQuery}
-
-	// If unified permissions are enabled or explicit permissions API is disabled
-	// add a condition to check if repo is public or external service is unrestricted.
-	// Otherwise all repositories are considered as restricted, even public ones.
-	if !usePermissionsUserMapping {
-		conditions = append(conditions, ExternalServiceUnrestrictedCondition)
-	}
-
-	restrictedRepositoriesSQL := `
-	-- Restricted repositories require checking permissions
-	EXISTS (
-		SELECT repo_id FROM user_repo_permissions
-		WHERE
-			repo_id = repo.id
-		AND user_id = %s
-	)
-	`
-	restrictedRepositoriesQuery := sqlf.Sprintf(restrictedRepositoriesSQL, authenticatedUserID)
-
-	conditions = append(conditions, restrictedRepositoriesQuery)
+	conditions := []*sqlf.Query{GetUnrestrictedReposCond(), ExternalServiceUnrestrictedCondition, getRestrictedReposCond(authenticatedUserID)}
 
 	// Have to manually wrap the result in parenthesis so that they're evaluated together
 	return sqlf.Sprintf("(%s)", sqlf.Join(conditions, "\nOR\n"))

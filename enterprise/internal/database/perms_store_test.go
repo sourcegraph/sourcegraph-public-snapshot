@@ -347,7 +347,7 @@ func TestPermsStore_FetchReposByUserAndExternalService(t *testing.T) {
 	})
 }
 
-func checkRegularPermsTable(s *permsStore, sql string, expects map[int32][]uint32) error {
+func checkLegacyPermsTable(s *permsStore, sql string, expects map[int32][]uint32) error {
 	rows, err := s.Handle().QueryContext(context.Background(), sql)
 	if err != nil {
 		return err
@@ -656,12 +656,8 @@ func TestPermsStore_SetUserPermissions(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		p, err := s.LoadUserPermissions(context.Background(), up.UserID)
+		gotIDs, _, err := s.legacyLoadUserPermissions(context.Background(), up.UserID, "")
 		require.NoError(t, err)
-		gotIDs := make([]int32, len(p))
-		for i, perm := range p {
-			gotIDs[i] = perm.RepoID
-		}
 
 		equal(t, "up.IDs", []int32{1}, gotIDs)
 		equal(t, "stats", expectedResult, stats)
@@ -699,12 +695,12 @@ func TestPermsStore_SetUserPermissions(t *testing.T) {
 				equal(t, "result", test.expectedResult[index], result)
 			}
 
-			err := checkRegularPermsTable(s, `SELECT user_id, object_ids_ints FROM user_permissions`, test.expectUserPerms)
+			err := checkLegacyPermsTable(s, `SELECT user_id, object_ids_ints FROM user_permissions`, test.expectUserPerms)
 			if err != nil {
 				t.Fatal("user_permissions:", err)
 			}
 
-			err = checkRegularPermsTable(s, `SELECT repo_id, user_ids_ints FROM repo_permissions`, test.expectRepoPerms)
+			err = checkLegacyPermsTable(s, `SELECT repo_id, user_ids_ints FROM repo_permissions`, test.expectRepoPerms)
 			if err != nil {
 				t.Fatal("repo_permissions:", err)
 			}
@@ -1545,13 +1541,8 @@ func TestPermsStore_SetRepoPermissions(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		perms, err := s.LoadRepoPermissions(context.Background(), 1)
+		gotIDs, _, _, err := s.legacyLoadRepoPermissions(context.Background(), 1, "")
 		require.NoError(t, err)
-		gotIDs := make([]int32, len(perms))
-		for i, perm := range perms {
-			gotIDs[i] = perm.UserID
-		}
-
 		equal(t, "rp.UserIDs", []int32{2}, gotIDs)
 	})
 
@@ -1569,12 +1560,10 @@ func TestPermsStore_SetRepoPermissions(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		perms, err := s.LoadRepoPermissions(context.Background(), 1)
+		_, _, unrestricted, err := s.legacyLoadRepoPermissions(context.Background(), 1, "")
 		require.NoError(t, err)
 
-		if len(perms) != 1 || perms[0].UserID != 0 {
-			t.Fatalf("Want unrestricted, got %v", perms)
-		}
+		require.Truef(t, unrestricted, "Want unrestricted, got %v", unrestricted)
 	})
 
 	for _, test := range tests {
@@ -1603,12 +1592,12 @@ func TestPermsStore_SetRepoPermissions(t *testing.T) {
 				}
 			}
 
-			err := checkRegularPermsTable(s, `SELECT user_id, object_ids_ints FROM user_permissions`, test.expectUserPerms)
+			err := checkLegacyPermsTable(s, `SELECT user_id, object_ids_ints FROM user_permissions`, test.expectUserPerms)
 			if err != nil {
 				t.Fatal("user_permissions:", err)
 			}
 
-			err = checkRegularPermsTable(s, `SELECT repo_id, user_ids_ints FROM repo_permissions`, test.expectRepoPerms)
+			err = checkLegacyPermsTable(s, `SELECT repo_id, user_ids_ints FROM repo_permissions`, test.expectRepoPerms)
 			if err != nil {
 				t.Fatal("repo_permissions:", err)
 			}
@@ -2942,12 +2931,12 @@ func TestPermsStore_GrantPendingPermissions(t *testing.T) {
 
 			checkUserRepoPermissions(t, s, sqlf.Sprintf("TRUE"), test.expectUserRepoPerms)
 
-			err := checkRegularPermsTable(s, `SELECT user_id, object_ids_ints FROM user_permissions`, test.expectUserPerms)
+			err := checkLegacyPermsTable(s, `SELECT user_id, object_ids_ints FROM user_permissions`, test.expectUserPerms)
 			if err != nil {
 				t.Fatal("user_permissions:", err)
 			}
 
-			err = checkRegularPermsTable(s, `SELECT repo_id, user_ids_ints FROM repo_permissions`, test.expectRepoPerms)
+			err = checkLegacyPermsTable(s, `SELECT repo_id, user_ids_ints FROM repo_permissions`, test.expectRepoPerms)
 			if err != nil {
 				t.Fatal("repo_permissions:", err)
 			}

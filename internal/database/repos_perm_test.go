@@ -739,13 +739,13 @@ VALUES (%s, %s, '')
 
 	// Set up permissions: alice and bob have access to their own private repositories
 	q := sqlf.Sprintf(`
-INSERT INTO user_permissions (user_id, permission, object_type, object_ids_ints, updated_at)
+INSERT INTO user_repo_permissions (user_id, repo_id, created_at, updated_at)
 VALUES
-	(%s, 'read', 'repos', %s, NOW()),
-	(%s, 'read', 'repos', %s, NOW())
+	(%s, %s, NOW(), NOW()),
+	(%s, %s, NOW(), NOW())
 `,
-		alice.ID, pq.Array([]int32{int32(alicePrivateRepo.ID)}),
-		bob.ID, pq.Array([]int32{int32(bobPrivateRepo.ID)}),
+		alice.ID, alicePrivateRepo.ID,
+		bob.ID, bobPrivateRepo.ID,
 	)
 	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
@@ -756,24 +756,24 @@ VALUES
 	globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
 	defer globals.SetPermissionsUserMapping(before)
 
-	// Alice should see "alice_private_repo" but not "alice_public_repo", "bob_public_repo", "bob_private_repo"
+	// Alice should see "alice_private_repo" and public repos, but not "bob_private_repo"
 	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
 	repos, err := db.Repos().List(aliceCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantRepos := []*types.Repo{alicePrivateRepo}
+	wantRepos := []*types.Repo{alicePublicRepo, alicePrivateRepo, bobPublicRepo}
 	if diff := cmp.Diff(wantRepos, repos); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 
-	// Bob should see "bob_private_repo" but not "alice_public_repo" or "bob_public_repo"
+	// Bob should see "bob_private_repo" and public repos, but not "alice_public_repo"
 	bobCtx := actor.WithActor(ctx, &actor.Actor{UID: bob.ID})
 	repos, err = db.Repos().List(bobCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantRepos = []*types.Repo{bobPrivateRepo}
+	wantRepos = []*types.Repo{alicePublicRepo, bobPublicRepo, bobPrivateRepo}
 	if diff := cmp.Diff(wantRepos, repos); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
@@ -789,7 +789,7 @@ VALUES
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 
-	// Admin should not see anything as they have not been granted permissions and
+	// Admin can only see public repos as they have not been granted permissions and
 	// AuthzEnforceForSiteAdmins is set
 	conf.Get().AuthzEnforceForSiteAdmins = true
 	t.Cleanup(func() {
@@ -800,17 +800,17 @@ VALUES
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantRepos = ([]*types.Repo)(nil)
+	wantRepos = []*types.Repo{alicePublicRepo, bobPublicRepo}
 	if diff := cmp.Diff(wantRepos, repos); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 
-	// A random user sees nothing
+	// A random user sees only public repos
 	repos, err = db.Repos().List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantRepos = ([]*types.Repo)(nil)
+	wantRepos = []*types.Repo{alicePublicRepo, bobPublicRepo}
 	if diff := cmp.Diff(wantRepos, repos); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
