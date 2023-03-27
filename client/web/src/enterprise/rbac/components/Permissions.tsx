@@ -36,14 +36,14 @@ export const PermissionsList: React.FunctionComponent<React.PropsWithChildren<Pe
                             // The checkbox component keeps its own state and because we reuse this component when rendering
                             // multiple roles on a pege, we have to ensure the `id` and `key` are unique across all instances
                             // rendered on a page.
-                            const key = `${permission.id}-${roleName}`
+                            const checkboxId = `${permission.id}-${roleName}`
 
                             // This is a hack to disable the BatchChangesReadPermission
                             // from the UI for now until it's fully implemented.
                             if (permission.displayName === BatchChangesReadPermission) {
                                 return (
                                     <Checkbox
-                                        key={key}
+                                        key={permission.id}
                                         label={
                                             <>
                                                 {prettifyAction(permission.action)}
@@ -56,7 +56,7 @@ export const PermissionsList: React.FunctionComponent<React.PropsWithChildren<Pe
                                                 </Tooltip>
                                             </>
                                         }
-                                        id={key}
+                                        id={checkboxId}
                                         checked={isChecked(permission.id)}
                                         value={permission.id}
                                         disabled={true}
@@ -65,9 +65,9 @@ export const PermissionsList: React.FunctionComponent<React.PropsWithChildren<Pe
                             }
                             return (
                                 <Checkbox
-                                    key={key}
+                                    key={permission.id}
                                     label={prettifyAction(permission.action)}
-                                    id={key}
+                                    id={checkboxId}
                                     checked={isChecked(permission.id)}
                                     value={permission.id}
                                     onChange={onChange}
