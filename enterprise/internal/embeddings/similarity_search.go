@@ -11,7 +11,8 @@ import (
 
 type nearestNeighbor struct {
 	index int
-	score score
+	score float32
+	debug string
 }
 
 type nearestNeighborsHeap struct {
@@ -21,7 +22,7 @@ type nearestNeighborsHeap struct {
 func (nn *nearestNeighborsHeap) Len() int { return len(nn.neighbors) }
 
 func (nn *nearestNeighborsHeap) Less(i, j int) bool {
-	return nn.neighbors[i].score.score < nn.neighbors[j].score.score
+	return nn.neighbors[i].score < nn.neighbors[j].score
 }
 
 func (nn *nearestNeighborsHeap) Swap(i, j int) {
@@ -122,7 +123,7 @@ func (index *EmbeddingIndex[T]) SimilaritySearch(query []float32, numResults int
 		}
 	}
 	// And re-sort it according to the score (descending).
-	sort.Slice(neighbors, func(i, j int) bool { return neighbors[i].score.score > neighbors[j].score.score })
+	sort.Slice(neighbors, func(i, j int) bool { return neighbors[i].score > neighbors[j].score })
 
 	// Take top neighbors and return them as results.
 	results := SimilaritySearchResult[T]{
@@ -135,7 +136,7 @@ func (index *EmbeddingIndex[T]) SimilaritySearch(query []float32, numResults int
 			if results.Debug == nil {
 				results.Debug = make([]string, numResults)
 			}
-			results.Debug[idx] = neighbors[idx].score.debug
+			results.Debug[idx] = neighbors[idx].debug
 		}
 	}
 
@@ -151,25 +152,21 @@ func (index *EmbeddingIndex[T]) partialSimilaritySearch(query []float32, numResu
 
 	nnHeap := newNearestNeighborsHeap()
 	for i := partialRows.start; i < partialRows.start+numResults; i++ {
-		heap.Push(nnHeap, nearestNeighbor{i, index.score(query, i, debug)})
+		score, debugInfo := index.score(query, i, debug)
+		heap.Push(nnHeap, nearestNeighbor{index: i, score: score, debug: debugInfo})
 	}
 
 	for i := partialRows.start + numResults; i < partialRows.end; i++ {
-		score := index.score(query, i, debug)
+		score, debugInfo := index.score(query, i, debug)
 		// Add row if it has greater similarity than the smallest similarity in the heap.
-		// This way we ensure keep a set of highest similarities in the heap.
-		if score.score > nnHeap.Peek().score.score {
+		// This way we ensure keep a set of the highest similarities in the heap.
+		if score > nnHeap.Peek().score {
 			heap.Pop(nnHeap)
-			heap.Push(nnHeap, nearestNeighbor{i, score})
+			heap.Push(nnHeap, nearestNeighbor{index: i, score: score, debug: debugInfo})
 		}
 	}
 
 	return nnHeap
-}
-
-type score struct {
-	score float32
-	debug string
 }
 
 const (
@@ -177,12 +174,11 @@ const (
 	scoreSimilarityWeight float32 = 2.0 / 3.0
 )
 
-func (index *EmbeddingIndex[T]) score(query []float32, i int, debug bool) score {
-	score := score{}
+func (index *EmbeddingIndex[T]) score(query []float32, i int, debug bool) (score float32, debugInfo string) {
 	addScore := func(what string, s float32) {
-		score.score += s
+		score += s
 		if debug {
-			score.debug += fmt.Sprintf("%s:%.2f, ", what, s)
+			debugInfo += fmt.Sprintf("%s:%.2f, ", what, s)
 		}
 	}
 
@@ -207,10 +203,10 @@ func (index *EmbeddingIndex[T]) score(query []float32, i int, debug bool) score 
 	}
 
 	if debug {
-		score.debug = fmt.Sprintf("score: %.2f, %s", score.score, score.debug)
+		debugInfo = fmt.Sprintf("score: %.2f, %s", score, debugInfo)
 	}
 
-	return score
+	return score, debugInfo
 }
 
 func CosineSimilarity(row []float32, query []float32) float32 {
