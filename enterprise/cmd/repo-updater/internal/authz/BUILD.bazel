@@ -7,13 +7,11 @@ go_library(
         "metrics.go",
         "perms_syncer.go",
         "perms_syncer_worker.go",
-        "request_queue.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/internal/authz",
     visibility = ["//enterprise/cmd/repo-updater:__subpackages__"],
     deps = [
         "//cmd/frontend/envvar",
-        "//enterprise/internal/authz",
         "//enterprise/internal/database",
         "//internal/api",
         "//internal/authz",

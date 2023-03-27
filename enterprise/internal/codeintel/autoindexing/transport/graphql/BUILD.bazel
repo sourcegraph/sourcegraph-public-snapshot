@@ -11,7 +11,6 @@ go_library(
         "index_configuration_resolver.go",
         "observability.go",
         "precise_based_support_resolver.go",
-        "precise_indexes.go",
         "root_resolver.go",
         "search_based_support_resolver.go",
     ],
