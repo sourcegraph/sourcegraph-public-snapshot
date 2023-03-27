@@ -125,13 +125,13 @@ func newGithubSource(
 		eb           excludeBuilder
 		excludeForks bool
 	)
-	excludeArchived := func(repo interface{}) bool {
+	excludeArchived := func(repo any) bool {
 		if githubRepo, ok := repo.(github.Repository); ok {
 			return githubRepo.IsArchived
 		}
 		return false
 	}
-	excludeFork := func(repo interface{}) bool {
+	excludeFork := func(repo any) bool {
 		if githubRepo, ok := repo.(github.Repository); ok {
 			return githubRepo.IsFork
 		}

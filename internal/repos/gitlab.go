@@ -91,7 +91,7 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 	for _, r := range c.Exclude {
 		eb.Exact(r.Name)
 		eb.Exact(strconv.Itoa(r.Id))
-		excludeFunc := func(repo interface{}) bool {
+		excludeFunc := func(repo any) bool {
 			if project, ok := repo.(gitlab.Project); ok {
 				return project.EmptyRepo
 			}
