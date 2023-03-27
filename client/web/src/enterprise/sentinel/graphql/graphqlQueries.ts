@@ -51,7 +51,7 @@ export const RESOLVE_SECURITY_VULNERABILITIES_QUERY = gql`
 `
 
 const vulnerabilityMatchesGroupedByRepositoryFields = gql`
-    fragment VulnerabilityMatchesGroupedByRepositoryFields on VulnerabilityMatchGroupByRepository {
+    fragment VulnerabilityMatchesCountByRepositoryFields on VulnerabilityMatchCountByRepository {
         __typename
         repositoryName
         matchCount
@@ -60,10 +60,10 @@ const vulnerabilityMatchesGroupedByRepositoryFields = gql`
 
 export const VULNERABILITY_MATCHES_GROUPED_BY_REPOSITORY = gql`
     query VulnerabilityMatchesGroupedByRepository($first: Int, $after: String, $repositoryName: String) {
-        vulnerabilityMatchesGroupByRepository(first: $first, after: $after, repositoryName: $repositoryName) {
+        vulnerabilityMatchesCountByRepository(first: $first, after: $after, repositoryName: $repositoryName) {
             nodes {
                 id
-                ...VulnerabilityMatchesGroupedByRepositoryFields
+                ...VulnerabilityMatchesCountByRepositoryFields
             }
             totalCount
             pageInfo {

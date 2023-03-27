@@ -15,5 +15,4 @@ type SentinelService interface {
 	VulnerabilityMatchByID(ctx context.Context, id int) (shared.VulnerabilityMatch, bool, error)
 	GetVulnerabilityMatchesSummaryCounts(ctx context.Context) (shared.GetVulnerabilityMatchesSummaryCounts, error)
 	GetVulnerabilityMatchesCountByRepository(ctx context.Context, args shared.GetVulnerabilityMatchesCountByRepositoryArgs) (_ []shared.VulnerabilityMatchesByRepository, _ int, err error)
-	GetVulnerabilityMatchesSummaryCounts(ctx context.Context) (shared.GetVulnerabilityMatchesSummaryCounts, error)
 }

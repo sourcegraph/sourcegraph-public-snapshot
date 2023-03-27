@@ -14,7 +14,6 @@ type operations struct {
 	getVulnerabilityMatchesByRepo            *observation.Operation
 	getVulnerabilityMatchesSummaryCounts     *observation.Operation
 	getVulnerabilityMatchesCountByRepository *observation.Operation
-	getVulnerabilityMatchesSummaryCounts     *observation.Operation
 	insertVulnerabilities                    *observation.Operation
 	vulnerabilityMatchByID                   *observation.Operation
 	getVulnerabilityMatches                  *observation.Operation
@@ -45,7 +44,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		vulnerabilityByID:                        op("VulnerabilityByID"),
 		getVulnerabilitiesByIDs:                  op("GetVulnerabilitiesByIDs"),
 		getVulnerabilities:                       op("GetVulnerabilities"),
-		getVulnerabilityMatchesSummaryCounts:     op("GetVulnerabilityMatchesSummaryCounts"),
 		getVulnerabilityMatchesCountByRepository: op("GetVulnerabilityMatchesCountByRepository"),
 		getVulnerabilityMatchesByRepo:            op("GetVulnerabilityMatchesByRepo"),
 		getVulnerabilityMatchesSummaryCounts:     op("GetVulnerabilityMatchesSummaryCounts"),
