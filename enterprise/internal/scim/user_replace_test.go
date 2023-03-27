@@ -15,16 +15,18 @@ import (
 
 func Test_UserResourceHandler_Replace(t *testing.T) {
 	db := getMockDB([]*types.UserForSCIM{
-		{User: types.User{ID: 1, Username: "user1", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id1"},
-		{User: types.User{ID: 2, Username: "user2", DisplayName: "First Last"}, Emails: []string{"b@example.com"}, SCIMExternalID: "id2"},
-		{User: types.User{ID: 3, Username: "user3", DisplayName: "First Last"}, Emails: []string{"c@example.com"}, SCIMExternalID: "id3"},
-		{User: types.User{ID: 4, Username: "user4", DisplayName: "First Last"}, Emails: []string{"d@example.com"}, SCIMExternalID: "id4"},
+		{User: types.User{ID: 1, Username: "user1", DisplayName: "First Last"}, SCIMAccountData: "{\"active\": true}", Emails: []string{"a@example.com"}, SCIMExternalID: "id1"},
+		{User: types.User{ID: 2, Username: "user2", DisplayName: "First Last"}, SCIMAccountData: "{\"active\": true}", Emails: []string{"b@example.com"}, SCIMExternalID: "id2"},
+		{User: types.User{ID: 3, Username: "user3", DisplayName: "First Last"}, SCIMAccountData: "{\"active\": true}", Emails: []string{"c@example.com"}, SCIMExternalID: "id3"},
+		{User: types.User{ID: 4, Username: "user4", DisplayName: "First Last"}, SCIMAccountData: "{\"active\": true}", Emails: []string{"d@example.com"}, SCIMExternalID: "id4"},
+		{User: types.User{ID: 5, Username: "user5", DisplayName: "First Last"}, SCIMAccountData: "{\"active\": true}", Emails: []string{"e@example.com"}, SCIMExternalID: "id5"},
 	},
 		map[int32][]*database.UserEmail{
 			1: {makeEmail(1, "a@example.com", true, true)},
 			2: {makeEmail(2, "b@example.com", true, true)},
 			3: {makeEmail(3, "c@example.com", true, true)},
 			4: {makeEmail(4, "d@example.com", true, true)},
+			5: {makeEmail(5, "e@example.com", true, true)},
 		})
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 
@@ -130,14 +132,20 @@ func Test_UserResourceHandler_Replace(t *testing.T) {
 		},
 		{
 			name:   "Trigger hard delete with soft delete",
-			userId: "4",
+			userId: "5",
 			attrs: scim.ResourceAttributes{
 				AttrDisplayName: "It will be deleted anyway",
 				AttrActive:      false,
+				AttrEmails: []interface{}{
+					map[string]interface{}{
+						"value":   "e@example.com",
+						"primary": true,
+					},
+				},
 			},
 			testFunc: func(userRes scim.Resource) {
-				assert.Equal(t, userRes.Attributes[AttrDisplayName], "It will be deleted anyway")
-				assert.Equal(t, userRes.Attributes[AttrActive], false)
+				assert.Equal(t, "It will be deleted anyway", userRes.Attributes[AttrDisplayName])
+				assert.Equal(t, false, userRes.Attributes[AttrActive])
 
 				// Check user in DB
 				userID, _ := strconv.Atoi(userRes.ID)
