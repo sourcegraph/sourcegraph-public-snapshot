@@ -334,13 +334,15 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {isSourcegraphDotCom && (
                         <NavAction>
-                            <Link
-                                to="https://about.sourcegraph.com"
-                                className={styles.link}
-                                onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'NavBar' })}
-                            >
-                                {props.authenticatedUser && 'Get '} Enterprise
-                            </Link>
+                            <Tooltip content="The Sourcegraph desktop app runs locally and works on your own private code.">
+                                <Link
+                                    to="https://about.sourcegraph.com/app"
+                                    className={classNames(styles.link, 'small')}
+                                    onClick={() => eventLogger.log('ClickedOnAppCTA', { location: 'NavBar' })}
+                                >
+                                    Download app
+                                </Link>
+                            </Tooltip>
                         </NavAction>
                     )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
