@@ -21,30 +21,9 @@ svg.fileIcon {
     color: var(--text-muted);
 }
 
-.container {
-    display: grid;
-    grid-template-columns: 0.5fr 1.5fr;
-    grid-template-rows: 1fr 1fr;;
-    grid-template-areas:
-      "diffIcon changeDescription"
-      "diffIcon changeTime";
-}
-
 .diffIcon {
     grid-area: diffIcon;
     grid-column-start: 1;
     grid-row-end: -1;
     vertical-align: top;
-}
-
-.changeDescription {
-    grid-area: changeDescription;
-    vertical-align: top;
-}
-
-.changeTime {
-    grid-area: changeTime;
-    text-align: left;
-    font-size: 0.7rem;
-    font-weight: 400;
 }

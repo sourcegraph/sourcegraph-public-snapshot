@@ -1,6 +1,6 @@
 import { FC, useState } from 'react'
 
-import { mdiChevronUp, mdiChevronDown, mdiInformationOutline, mdiFileDocumentOutline } from '@mdi/js'
+import { mdiChevronUp, mdiChevronDown, mdiFileDocumentOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
@@ -16,7 +16,6 @@ import {
     H3,
     Icon,
     PageSwitcher,
-    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../components/diff/DiffStat'
@@ -27,7 +26,6 @@ import {
     SiteConfigurationHistoryResult,
     SiteConfigurationHistoryVariables,
 } from '../graphql-operations'
-import { PersonLink } from '../person/PersonLink'
 
 import { SITE_CONFIGURATION_CHANGE_CONNECTION_QUERY } from './backend'
 
