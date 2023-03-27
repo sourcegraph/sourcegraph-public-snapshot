@@ -56,7 +56,7 @@ func (e *excludeBuilder) FieldTrue(filedName string) {
 	e.fieldsTrue = append(e.fieldsTrue, filedName)
 }
 
-// Build will return an excludeFunc based on the previous calls to Exact, Field, and
+// Build will return an excludeFunc based on the previous calls to Exact, FieldTrue, and
 // Pattern.
 func (e *excludeBuilder) Build() (excludeFunc, error) {
 	return func(input interface{}) bool {
