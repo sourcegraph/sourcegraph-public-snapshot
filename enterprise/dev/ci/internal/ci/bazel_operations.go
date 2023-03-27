@@ -27,7 +27,7 @@ func BazelIncrementalMainOperations() *operations.Set {
 	ops.Append(bazelAnalysisPhase(optional))
 	ops.Append(bazelTestWithDepends(optional, "bazel-analysis",
 		"//lib/...",
-		"/internal/...",
+		"//internal/...",
 		"//cmd/...",
 		"//enterprise/...",
 	))
