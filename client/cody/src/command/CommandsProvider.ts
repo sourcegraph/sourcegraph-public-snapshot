@@ -7,6 +7,7 @@ import { CompletionsDocumentProvider } from '../completions/docprovider'
 import { getConfiguration } from '../configuration'
 import { ExtensionApi } from '../extension-api'
 
+import { LocalStorage } from './LocalStorageProvider'
 import { CODY_ACCESS_TOKEN_SECRET, InMemorySecretStorage, SecretStorage, VSCodeSecretStorage } from './secret-storage'
 
 function getSecretStorage(context: vscode.ExtensionContext): SecretStorage {
@@ -32,6 +33,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
     const extensionApi = new ExtensionApi()
 
     const secretStorage = getSecretStorage(context)
+    const localStorage = new LocalStorage(context.globalState)
     const config = getConfiguration(vscode.workspace.getConfiguration())
 
     // Create chat webview
@@ -41,10 +43,13 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         sanitizeServerEndpoint(config.serverEndpoint),
         config.useContext,
         config.debug,
-        secretStorage
+        secretStorage,
+        localStorage
     )
 
-    vscode.window.registerWebviewViewProvider('cody.chat', chatProvider)
+    vscode.window.registerWebviewViewProvider('cody.chat', chatProvider, {
+        webviewOptions: { retainContextWhenHidden: true },
+    })
 
     await vscode.commands.executeCommand('setContext', 'cody.activated', true)
 
@@ -68,18 +73,14 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
             secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
         ),
         // TOS
-        vscode.commands.registerCommand('cody.accept-tos', async version => {
-            if (typeof version !== 'number') {
-                // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                vscode.window.showErrorMessage(`TOS version was not a number: ${version}`)
-                return
-            }
-            await context.globalState.update('cody.tos-version-accepted', version)
-        }),
-        vscode.commands.registerCommand('cody.get-accepted-tos-version', async () => {
-            const version = await context.globalState.get('cody.tos-version-accepted')
-            return version
-        }),
+        vscode.commands.registerCommand(
+            'cody.accept-tos',
+            async version => await localStorage.set('cody.tos-version-accepted', version)
+        ),
+        vscode.commands.registerCommand(
+            'cody.get-accepted-tos-version',
+            async () => await localStorage.get('cody.tos-version-accepted')
+        ),
         // Commands
         vscode.commands.registerCommand('cody.recipe.explain-code', async () => executeRecipe('explain-code-detailed')),
         vscode.commands.registerCommand('cody.recipe.explain-code-high-level', async () =>
