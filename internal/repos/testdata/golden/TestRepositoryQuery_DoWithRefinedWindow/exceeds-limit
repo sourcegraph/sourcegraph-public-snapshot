@@ -1237,53 +1237,6 @@
   },
   {
    "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkxNTk1NDA0NDA=",
-    "DatabaseID": 159540440,
-    "NameWithOwner": "google/wire",
-    "Description": "Compile-time Dependency Injection for Go",
-    "URL": "https://github.com/google/wire",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": [
-      {
-       "Topic": {
-        "Name": "go"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "golang"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "dependency-injection"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "codegen"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "initialization"
-       }
-      }
-     ]
-    },
-    "StargazerCount": 10008,
-    "ForkCount": 550
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
     "ID": "MDEwOlJlcG9zaXRvcnkzNjk2MDMyMQ==",
     "DatabaseID": 36960321,
     "NameWithOwner": "opencontainers/runc",
