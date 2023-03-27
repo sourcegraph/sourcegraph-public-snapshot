@@ -17,7 +17,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, ButtonLink, useWindowSize } from '@sourcegraph/wildcard'
+import { Button, Link, ButtonLink, useWindowSize, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
