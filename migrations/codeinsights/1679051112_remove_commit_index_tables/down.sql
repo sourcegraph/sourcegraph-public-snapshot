@@ -12,9 +12,11 @@ CREATE TABLE IF NOT EXISTS commit_index_metadata (
    last_indexed_at timestamp with time zone DEFAULT '1900-01-01 00:00:00+00'::timestamp with time zone NOT NULL
 );
 
+ALTER TABLE IF EXISTS commit_index_metadata DROP CONSTRAINT IF EXISTS commit_index_metadata_pkey;
 ALTER TABLE IF EXISTS ONLY commit_index_metadata
     ADD CONSTRAINT commit_index_metadata_pkey PRIMARY KEY (repo_id);
 
+ALTER TABLE IF EXISTS commit_index DROP CONSTRAINT IF EXISTS commit_index_pkey;
 ALTER TABLE IF EXISTS ONLY commit_index
     ADD CONSTRAINT commit_index_pkey PRIMARY KEY (committed_at, repo_id, commit_bytea);
 
