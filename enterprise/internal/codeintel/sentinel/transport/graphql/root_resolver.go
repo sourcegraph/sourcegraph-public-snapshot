@@ -6,7 +6,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -17,7 +16,7 @@ import (
 )
 
 type rootResolver struct {
-	sentinelSvc             *sentinel.Service
+	sentinelSvc             SentinelService
 	uploadSvc               sharedresolvers.UploadsService
 	policySvc               sharedresolvers.PolicyService
 	gitserverClient         gitserver.Client
@@ -31,7 +30,7 @@ type rootResolver struct {
 
 func NewRootResolver(
 	observationCtx *observation.Context,
-	sentinelSvc *sentinel.Service,
+	sentinelSvc SentinelService,
 	uploadSvc sharedresolvers.UploadsService,
 	policySvc sharedresolvers.PolicyService,
 	gitserverClient gitserver.Client,
