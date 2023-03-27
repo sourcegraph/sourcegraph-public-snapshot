@@ -184,20 +184,11 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                 <MenuItem
                                     as={Button}
                                     disabled={!repoClonedAndHealthy(node)}
-                                    onSelect={() => navigate(`/${node.name}/-/code-graph`)}
-                                    className="p-2"
-                                >
-                                    <Icon aria-hidden={true} svgPath={mdiBrain} className="mr-1" />
-                                    Code graph data
-                                </MenuItem>
-                                <MenuItem
-                                    as={Button}
-                                    disabled={!repoClonedAndHealthy(node)}
                                     onSelect={() => updateRepo()}
                                     className="p-2"
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiRefresh} className="mr-1" />
-                                    Refetch
+                                    Sync
                                 </MenuItem>
                                 <MenuItem
                                     as={Button}
@@ -207,6 +198,15 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiDatabaseRefresh} className="mr-1" />
                                     Reclone
+                                </MenuItem>
+                                <MenuItem
+                                    as={Button}
+                                    disabled={!repoClonedAndHealthy(node)}
+                                    onSelect={() => navigate(`/${node.name}/-/code-graph`)}
+                                    className="p-2"
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiBrain} className="mr-1" />
+                                    Code graph data
                                 </MenuItem>
                                 <MenuItem
                                     as={Button}
