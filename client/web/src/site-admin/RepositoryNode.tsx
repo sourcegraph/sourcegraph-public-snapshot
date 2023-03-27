@@ -61,6 +61,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
             data-test-cloned={node.mirrorInfo.cloned}
         >
             <div className="d-flex flex-column flex-md-row">
+                {/* that col-md-8 is a little too large for the two buttons in a row */}
                 <div className="d-flex flex-row col-md-8 mr-auto px-0">
                     <div
                         className={classNames(
@@ -95,7 +96,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                 className="mr-1"
                                 as={Link}
                             >
-                                <Icon aria-hidden={true} svgPath={mdiBrain} /> Code graph data
+                                <Icon aria-hidden={true} svgPath={mdiBrain} /> Code graph
                             </Button>
                         </Tooltip>
                     )}
