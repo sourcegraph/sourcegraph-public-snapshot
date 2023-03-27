@@ -76,6 +76,14 @@ type VulnerabilityMatchResolver interface {
 	PreciseIndex(ctx context.Context) (PreciseIndexResolver, error)
 }
 
+type VulnerabilityMatchesSummaryCountResolver interface {
+	Critical() int32
+	High() int32
+	Medium() int32
+	Low() int32
+	Repository() int32
+}
+
 type GetVulnerabilityMatchCountByRepositoryArgs struct {
 	PagedConnectionArgs
 	RepositoryName *string

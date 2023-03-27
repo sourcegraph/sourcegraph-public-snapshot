@@ -231,7 +231,7 @@ func (r *rootResolver) VulnerabilityMatchByID(ctx context.Context, vulnerability
 }
 
 func (r *rootResolver) VulnerabilityMatchesSummaryCounts(ctx context.Context) (_ resolverstubs.VulnerabilityMatchesSummaryCountResolver, err error) {
-	ctx, _, endObservation := r.operations.vulnerabilityMatchByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, _, endObservation := r.operations.vulnerabilityMatchesSummaryCounts.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	counts, err := r.sentinelSvc.GetVulnerabilityMatchesSummaryCounts(ctx)

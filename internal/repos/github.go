@@ -1047,6 +1047,9 @@ func (q *repositoryQuery) doRecursively(ctx context.Context, results chan *githu
 		return q.split(ctx, results)
 	}
 
+	const maxTries = 3
+	numTries := 0
+	seen := make(map[int64]struct{}, res.TotalCount)
 	// If the number of repos is lower than the limit, we perform the actual search
 	// and iterate over the results
 	for {
@@ -1056,14 +1059,32 @@ func (q *repositoryQuery) doRecursively(ctx context.Context, results chan *githu
 		for i := range res.Repos {
 			select {
 			case <-ctx.Done():
-				break
-			case results <- &githubResult{repo: &res.Repos[i]}:
+				return nil
+			default:
+				if _, ok := seen[res.Repos[i].DatabaseID]; !ok {
+					results <- &githubResult{repo: &res.Repos[i]}
+					seen[res.Repos[i].DatabaseID] = struct{}{}
+					if len(seen) >= res.TotalCount {
+						break
+					}
+				}
 			}
 		}
 
-		if res.EndCursor == "" {
+		// Only break if we've seen a number of repositories equal to the expected count
+		// res.EndCursor will loop by itself
+		if len(seen) >= res.TotalCount || len(seen) >= q.Limit {
 			break
 		}
+
+		// Set a hard cap on the number of retries
+		if res.EndCursor == "" {
+			numTries += 1
+			if numTries >= maxTries {
+				break
+			}
+		}
+
 		res, err = q.Searcher.SearchRepos(ctx, github.SearchReposParams{
 			Query: q.String(),
 			First: q.First,

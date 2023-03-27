@@ -65,7 +65,7 @@ extend type Query {
     ): VulnerabilityMatchCountByRepositoryConnection!
 
     """
-    Return a count of the vulnerability matches grouped by severity.
+    Returns a count of the vulnerability matches grouped by severity.
     """
     VulnerabilityMatchesSummaryCounts: VulnerabilityMatchesSummaryCount!
 }
