@@ -913,6 +913,10 @@ func (q *repositoryQuery) split(ctx context.Context, results chan *githubResult)
 	return q2.doRecursively(ctx, results)
 }
 
+// doRecursively performs a query with the following procedure:
+// 1. Perform the query.
+// 2. If the number of search results returned is greater than the query limit, split the query in half by filtering by repo creation date, and perform those two queries. Do so recursively.
+// 3. If the number of search results returned is less than or equal to the query limit, iterate over the results and return them to the channel.
 func (q *repositoryQuery) doRecursively(ctx context.Context, results chan *githubResult) error {
 	// If we know that the number of repos in this query is greater than the limit, we can immediately split the query
 	if q.RepoCount.known && q.RepoCount.count > q.Limit && q.Created.To.Sub(q.Created.From) >= 2*time.Second {
