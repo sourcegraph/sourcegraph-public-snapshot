@@ -426,6 +426,7 @@
     "highlight.js": "^10.5.0",
     "highlightjs-graphql": "^1.0.2",
     "history": "4.5.1",
+    "html-react-parser": "^3.0.15",
     "http-proxy-agent": "^5.0.0",
     "http-status-codes": "^2.1.4",
     "https-browserify": "^1.0.0",

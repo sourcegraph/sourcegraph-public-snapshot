@@ -9,6 +9,8 @@ import { vscodeAPI } from './utils/VSCodeApi'
 
 import './Chat.css'
 
+import { CodeBlocks } from './Components/CodeBlocks'
+
 interface ChatboxProps {
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
@@ -44,7 +46,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     }
 
     const onChatSubmit = useCallback(async () => {
-        vscodeAPI.postMessage({ command: 'submit', text: formInput })
+        vscodeAPI.postMessage({ command: 'submit', text: formInput.replaceAll('>', '\\>') })
         setInputRows(5)
         setFormInput('')
     }, [formInput, setFormInput])
@@ -94,7 +96,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                                 <div className="bubble bot-bubble">
                                     <div className="bubble-content bot-bubble-content">
                                         {messageInProgress.displayText ? (
-                                            <p dangerouslySetInnerHTML={{ __html: messageInProgress.displayText }} />
+                                            <span dangerouslySetInnerHTML={{ __html: messageInProgress.displayText }} />
                                         ) : (
                                             <div className="bubble-loader">
                                                 <div className="bubble-loader-dot" />
@@ -182,46 +184,5 @@ const ContextFiles: React.FunctionComponent<{ contextFiles: string[] }> = ({ con
                 </span>
             </div>
         </p>
-    )
-}
-
-const CodeBlocks: React.FunctionComponent<{ displayText: string }> = ({ displayText }) => {
-    const [copiedText, setCopiedText] = useState('')
-    const preBlocks = displayText.match(/<(\w+)[^>]*>(.*?)<\/\1>|<pre[^>]*>[\s\S]*?<\/pre>/g) || []
-    const copyText = (text: string) => {
-        const element = document.createElement('div')
-        element.innerHTML = text
-        navigator.clipboard.writeText(text.replace(/<[^>]*>?/gm, ''))
-        setCopiedText(text)
-        setTimeout(() => {
-            setCopiedText('')
-        }, 3000)
-    }
-
-    return (
-        <>
-            {preBlocks.map((block, index) => {
-                if (block.match(/^<pre/)) {
-                    return (
-                        <div className="chat-code-block-container" key={index}>
-                            <pre dangerouslySetInnerHTML={{ __html: block }} />
-                            <VSCodeButton
-                                title="Copy code"
-                                className="chat-code-block-copy-btn"
-                                appearance="icon"
-                                onClick={() => copyText(block)}
-                            >
-                                {copiedText == block ? (
-                                    <i className="codicon codicon-check" />
-                                ) : (
-                                    <i className="codicon codicon-copy" />
-                                )}
-                            </VSCodeButton>
-                        </div>
-                    )
-                }
-                return <p key={index} dangerouslySetInnerHTML={{ __html: block }} />
-            })}
-        </>
     )
 }
