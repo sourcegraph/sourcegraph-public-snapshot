@@ -1,9 +1,10 @@
-package sharedresolvers
+package graphql
 
 import (
 	"fmt"
 	"strings"
 
+	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
@@ -18,11 +19,11 @@ import (
 //
 // The setup and teardown steps match the executor setup and teardown.
 type indexStepsResolver struct {
-	siteAdminChecker SiteAdminChecker
+	siteAdminChecker sharedresolvers.SiteAdminChecker
 	index            types.Index
 }
 
-func NewIndexStepsResolver(siteAdminChecker SiteAdminChecker, index types.Index) resolverstubs.IndexStepsResolver {
+func NewIndexStepsResolver(siteAdminChecker sharedresolvers.SiteAdminChecker, index types.Index) resolverstubs.IndexStepsResolver {
 	return &indexStepsResolver{siteAdminChecker: siteAdminChecker, index: index}
 }
 

@@ -1,4 +1,4 @@
-package sharedresolvers
+package graphql
 
 import (
 	"strings"

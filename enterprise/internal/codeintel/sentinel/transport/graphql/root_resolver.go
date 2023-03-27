@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	uploadsgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -17,7 +18,7 @@ import (
 
 type rootResolver struct {
 	sentinelSvc             SentinelService
-	uploadSvc               sharedresolvers.UploadsService
+	uploadSvc               uploadsgraphql.UploadsService
 	policySvc               sharedresolvers.PolicyService
 	gitserverClient         gitserver.Client
 	siteAdminChecker        sharedresolvers.SiteAdminChecker
@@ -31,7 +32,7 @@ type rootResolver struct {
 func NewRootResolver(
 	observationCtx *observation.Context,
 	sentinelSvc SentinelService,
-	uploadSvc sharedresolvers.UploadsService,
+	uploadSvc uploadsgraphql.UploadsService,
 	policySvc sharedresolvers.PolicyService,
 	gitserverClient gitserver.Client,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
@@ -358,7 +359,7 @@ func (l *bulkLoader) GetVulnerabilityByID(ctx context.Context, id int) (shared.V
 
 type vulnerabilityMatchResolver struct {
 	sentinelSvc      SentinelService
-	uploadsSvc       sharedresolvers.UploadsService
+	uploadsSvc       uploadsgraphql.UploadsService
 	policySvc        sharedresolvers.PolicyService
 	gitserverClient  gitserver.Client
 	siteAdminChecker sharedresolvers.SiteAdminChecker
@@ -393,7 +394,7 @@ func (r *vulnerabilityMatchResolver) PreciseIndex(ctx context.Context) (resolver
 		return nil, err
 	}
 
-	return sharedresolvers.NewPreciseIndexResolver(
+	return uploadsgraphql.NewPreciseIndexResolver(
 		ctx,
 		r.uploadsSvc,
 		r.policySvc,

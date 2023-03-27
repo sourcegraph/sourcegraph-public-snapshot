@@ -1,18 +1,19 @@
-package sharedresolvers
+package graphql
 
 import (
+	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 )
 
 type preIndexStepResolver struct {
-	siteAdminChecker SiteAdminChecker
+	siteAdminChecker sharedresolvers.SiteAdminChecker
 	step             types.DockerStep
 	entry            *executor.ExecutionLogEntry
 }
 
-func NewPreIndexStepResolver(siteAdminChecker SiteAdminChecker, step types.DockerStep, entry *executor.ExecutionLogEntry) resolverstubs.PreIndexStepResolver {
+func NewPreIndexStepResolver(siteAdminChecker sharedresolvers.SiteAdminChecker, step types.DockerStep, entry *executor.ExecutionLogEntry) resolverstubs.PreIndexStepResolver {
 	return &preIndexStepResolver{
 		siteAdminChecker: siteAdminChecker,
 		step:             step,

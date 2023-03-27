@@ -1,4 +1,4 @@
-package sharedresolvers
+package graphql
 
 import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
