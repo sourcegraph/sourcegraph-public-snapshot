@@ -1056,11 +1056,12 @@ func (q *repositoryQuery) doRecursively(ctx context.Context, results chan *githu
 			return err
 		}
 		for i := range res.Repos {
-			if _, ok := seen[res.Repos[i].DatabaseID]; !ok {
-				select {
-				case <-ctx.Done():
-					break
-				case results <- &githubResult{repo: &res.Repos[i]}:
+			select {
+			case <-ctx.Done():
+				return nil
+			default:
+				if _, ok := seen[res.Repos[i].DatabaseID]; !ok {
+					results <- &githubResult{repo: &res.Repos[i]}
 					seen[res.Repos[i].DatabaseID] = struct{}{}
 					if len(seen) >= res.TotalCount {
 						break
