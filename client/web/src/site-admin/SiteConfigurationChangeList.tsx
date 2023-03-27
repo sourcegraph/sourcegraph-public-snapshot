@@ -113,14 +113,14 @@ const SiteConfigurationHistoryItem: FC<SiteConfigurationHistoryItemProps> = ({ n
                     className="d-flex p-0 justify-content-start w-100"
                 >
                     <Icon aria-hidden={true} svgPath={icon} />
-                    <span className={styles.diffMeta}>
+                    <span className={styles.diffmeta}>
                         {node.author ? (
                             <UserAvatar className="ml-2 mr-2" user={node.author} size={32} />
                         ) : (
                             <Icon
                                 aria-hidden={true}
                                 svgPath={mdiFileDocumentOutline}
-                                className={classNames('ml-2 mr-2', styles.fileIcon)}
+                                className={classNames('ml-2 mr-2', styles.fileicon)}
                                 color="text-muted"
                             />
                         )}

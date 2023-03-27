@@ -2,28 +2,20 @@
     display: block;
     background-color: var(--color-bg-2);
     border-radius: var(--border-radius);
-    border: 1px solid var(--border-color);
-    font-size: 12px; // the default font size for monaco editor, so let's mimic pixels here as well
+    border: solid var(--border-color);
+    font-size: 0.7rem;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
 }
 
-.diffMeta {
+.diffmeta {
     display: flex;
     align-items: center;
 }
 
-svg.fileIcon {
-    // user avatar is also sized to 32px
-    width: 32px;
-    height: 32px;
+svg.fileicon {
+    width: 2rem;
+    height: 2rem;
     vertical-align: top;
     color: var(--text-muted);
-}
-
-.diffIcon {
-    grid-area: diffIcon;
-    grid-column-start: 1;
-    grid-row-end: -1;
-    vertical-align: top;
 }
