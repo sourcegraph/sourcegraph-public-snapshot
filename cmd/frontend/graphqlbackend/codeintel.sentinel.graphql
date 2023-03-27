@@ -63,6 +63,11 @@ extend type Query {
         """
         repositoryName: String
     ): VulnerabilityMatchCountByRepositoryConnection!
+
+    """
+    Returns a count of the vulnerability matches grouped by severity.
+    """
+    VulnerabilityMatchesSummaryCounts: VulnerabilityMatchesSummaryCount!
 }
 
 """
@@ -273,6 +278,36 @@ type VulnerabilityMatch implements Node {
     The index record that contains a direct use of the affected package.
     """
     preciseIndex: PreciseIndex!
+}
+
+"""
+A count of the severities of vulnerability matches.
+"""
+type VulnerabilityMatchesSummaryCount {
+    """
+    The number of matches with a severity of "CRITICAL".
+    """
+    critical: Int!
+
+    """
+    The number of matches with a severity of "HIGH".
+    """
+    high: Int!
+
+    """
+    The number of matches with a severity of "MEDIUM".
+    """
+    medium: Int!
+
+    """
+    The number of matches with a severity of "LOW".
+    """
+    low: Int!
+
+    """
+    The number of repos with a severity
+    """
+    repository: Int!
 }
 
 """
