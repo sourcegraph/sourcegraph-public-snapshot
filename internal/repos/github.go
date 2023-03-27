@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -797,7 +798,14 @@ func (s *GitHubSource) listAffiliatedPage(ctx context.Context, first int, result
 // It returns the repositories matching a GitHub's advanced repository search query
 // via the GraphQL API.
 func (s *GitHubSource) listSearch(ctx context.Context, q string, results chan *githubResult) {
-	(&repositoryQuery{Query: q, Searcher: s.v4Client, Logger: s.logger}).DoWithRefinedWindow(ctx, results)
+	// First we need to parse the query to see if it is querying within a date range,
+	// and if so, strip that date range from the query.
+	dr, err := stripDateRange(&q)
+	if err == nil {
+		(&repositoryQuery{Query: q, Searcher: s.v4Client, Logger: s.logger, Created: dr}).DoWithRefinedWindow(ctx, results)
+	} else {
+		(&repositoryQuery{Query: q, Searcher: s.v4Client, Logger: s.logger}).DoWithRefinedWindow(ctx, results)
+	}
 }
 
 // GitHub was founded on February 2008, so this minimum date covers all repos
@@ -805,6 +813,81 @@ func (s *GitHubSource) listSearch(ctx context.Context, q string, results chan *g
 var minCreated = time.Date(2007, time.June, 1, 0, 0, 0, 0, time.UTC)
 
 type dateRange struct{ From, To time.Time }
+
+// stripDateRange strips the `created:` filter from the given string (modifying it in place)
+// and returns a pointer to the resulting dateRange object.
+func stripDateRange(s *string) (*dateRange, error) {
+	re := regexp.MustCompile(`created:([^\s]+)`)
+	matches := re.FindStringSubmatch(*s)
+	if len(matches) < 2 {
+		return nil, fmt.Errorf("no date range found in string")
+	}
+	dateStr := matches[1]
+
+	dr := &dateRange{}
+
+	parseDate := func(dateStr string) (time.Time, error) {
+		if strings.Contains(dateStr, "T") {
+			if strings.Contains(dateStr, "+") || strings.Contains(dateStr, "Z") {
+				return time.Parse(time.RFC3339, dateStr)
+			}
+			return time.Parse("2006-01-02T03:04:05", dateStr)
+		}
+		return time.Parse("2006-01-02", dateStr)
+	}
+
+	switch {
+	case strings.HasPrefix(dateStr, ">="):
+		date, err := parseDate(dateStr[2:])
+		if err != nil {
+			return nil, err
+		}
+		dr.From = date
+	case strings.HasPrefix(dateStr, ">"):
+		date, err := parseDate(dateStr[1:])
+		if err != nil {
+			return nil, err
+		}
+		dr.From = date.Add(1 * time.Second)
+	case strings.HasPrefix(dateStr, "<="):
+		date, err := parseDate(dateStr[2:])
+		if err != nil {
+			return nil, err
+		}
+		dr.To = date
+	case strings.HasPrefix(dateStr, "<"):
+		date, err := parseDate(dateStr[1:])
+		if err != nil {
+			return nil, err
+		}
+		dr.To = date.Add(-1 * time.Second)
+	default:
+		rangeParts := strings.Split(dateStr, "..")
+		if len(rangeParts) != 2 {
+			return nil, fmt.Errorf("invalid date range format")
+		}
+		var fromDate time.Time
+		var toDate time.Time
+		var err error
+		if rangeParts[0] != "*" {
+			fromDate, err = parseDate(rangeParts[0])
+			if err != nil {
+				return nil, err
+			}
+		}
+		if rangeParts[1] != "*" {
+			toDate, err = parseDate(rangeParts[1])
+			if err != nil {
+				return nil, err
+			}
+		}
+		dr.From = fromDate
+		dr.To = toDate
+	}
+
+	*s = strings.ReplaceAll(*s, matches[0], "")
+	return dr, nil
+}
 
 func (r dateRange) String() string {
 	const dateFormat = "2006-01-02T15:04:05-07:00"
