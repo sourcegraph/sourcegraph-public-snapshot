@@ -47,7 +47,7 @@ var ranks = [][]int{
 
 func TestSimilaritySearch(t *testing.T) {
 	numRows, numQueries, columnDimension := 16, 3, 3
-	index := EmbeddingIndex[RepoEmbeddingRowMetadata]{
+	index := EmbeddingIndex{
 		Embeddings:      embeddings,
 		ColumnDimension: columnDimension,
 		RowMetadata:     []RepoEmbeddingRowMetadata{},
@@ -57,10 +57,10 @@ func TestSimilaritySearch(t *testing.T) {
 		index.RowMetadata = append(index.RowMetadata, RepoEmbeddingRowMetadata{FileName: fmt.Sprintf("%d", i)})
 	}
 
-	getExpectedResults := func(queryRanks []int) []*RepoEmbeddingRowMetadata {
-		results := make([]*RepoEmbeddingRowMetadata, len(queryRanks))
+	getExpectedResults := func(queryRanks []int) []EmbeddingSearchResult {
+		results := make([]EmbeddingSearchResult, len(queryRanks))
 		for idx, rank := range queryRanks {
-			results[rank] = &index.RowMetadata[idx]
+			results[rank].RepoEmbeddingRowMetadata = index.RowMetadata[idx]
 		}
 		return results
 	}
@@ -70,7 +70,7 @@ func TestSimilaritySearch(t *testing.T) {
 			for q := 0; q < numQueries; q++ {
 				t.Run(fmt.Sprintf("find nearest neighbors query=%d numResults=%d numWorkers=%d", q, numResults, numWorkers), func(t *testing.T) {
 					query := queries[q*columnDimension : (q+1)*columnDimension]
-					results := index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: 0}, false).RowMetadata
+					results := index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: 0}, false)
 					expectedResults := getExpectedResults(ranks[q])
 					require.Equal(t, expectedResults[:min(numResults, len(expectedResults))], results)
 				})
@@ -141,7 +141,7 @@ func BenchmarkSimilaritySearch(b *testing.B) {
 	numRows := 1_000_000
 	numResults := 100
 	columnDimension := 1536
-	index := &EmbeddingIndex[RepoEmbeddingRowMetadata]{
+	index := &EmbeddingIndex{
 		Embeddings:      getRandomEmbeddings(prng, numRows*columnDimension),
 		ColumnDimension: columnDimension,
 		RowMetadata:     make([]RepoEmbeddingRowMetadata, numRows),
@@ -166,7 +166,7 @@ func TestScore(t *testing.T) {
 	}
 
 	columnDimension := 3
-	index := &EmbeddingIndex[RepoEmbeddingRowMetadata]{
+	index := &EmbeddingIndex{
 		Embeddings:      embeddings,
 		ColumnDimension: columnDimension,
 		Ranks:           ranks,

@@ -83,11 +83,9 @@ type WorkerOptions struct {
 
 // SimilaritySearch finds the `nResults` most similar rows to a query vector. It uses the cosine similarity metric.
 // IMPORTANT: The vectors in the embedding index have to be normalized for similarity search to work correctly.
-func (index *EmbeddingIndex[T]) SimilaritySearch(query []float32, numResults int, workerOptions WorkerOptions, debug bool) SimilaritySearchResult[T] {
+func (index *EmbeddingIndex) SimilaritySearch(query []float32, numResults int, workerOptions WorkerOptions, debug bool) []EmbeddingSearchResult {
 	if numResults == 0 {
-		return SimilaritySearchResult[T]{
-			RowMetadata: []*T{},
-		}
+		return []EmbeddingSearchResult{}
 	}
 
 	numRows := len(index.RowMetadata)
@@ -126,24 +124,19 @@ func (index *EmbeddingIndex[T]) SimilaritySearch(query []float32, numResults int
 	sort.Slice(neighbors, func(i, j int) bool { return neighbors[i].score > neighbors[j].score })
 
 	// Take top neighbors and return them as results.
-	results := SimilaritySearchResult[T]{
-		RowMetadata: make([]*T, numResults),
-	}
+	results := make([]EmbeddingSearchResult, numResults)
 
 	for idx := 0; idx < min(numResults, len(neighbors)); idx++ {
-		results.RowMetadata[idx] = &index.RowMetadata[neighbors[idx].index]
-		if debug {
-			if results.Debug == nil {
-				results.Debug = make([]string, numResults)
-			}
-			results.Debug[idx] = neighbors[idx].debug
+		results[idx] = EmbeddingSearchResult{
+			RepoEmbeddingRowMetadata: index.RowMetadata[neighbors[idx].index],
+			Debug:                    neighbors[idx].debug,
 		}
 	}
 
 	return results
 }
 
-func (index *EmbeddingIndex[T]) partialSimilaritySearch(query []float32, numResults int, partialRows partialRows, debug bool) *nearestNeighborsHeap {
+func (index *EmbeddingIndex) partialSimilaritySearch(query []float32, numResults int, partialRows partialRows, debug bool) *nearestNeighborsHeap {
 	nRows := partialRows.end - partialRows.start
 	if nRows <= 0 {
 		return nil
@@ -174,7 +167,7 @@ const (
 	scoreSimilarityWeight float32 = 2.0 / 3.0
 )
 
-func (index *EmbeddingIndex[T]) score(query []float32, i int, debug bool) (score float32, debugInfo string) {
+func (index *EmbeddingIndex) score(query []float32, i int, debug bool) (score float32, debugInfo string) {
 	addScore := func(what string, s float32) {
 		score += s
 		if debug {
@@ -194,7 +187,7 @@ func (index *EmbeddingIndex[T]) score(query []float32, i int, debug bool) (score
 		// The file rank represents a log (base 2) count. The log ranks should be
 		// bounded at 32, but we cap it just in case to ensure it falls in the range [0,
 		// 1]. I am not using math.Min here to avoid the back and forth conversion
-		// between float64 adn float32.
+		// between float64 and float32.
 		normalizedRank := index.Ranks[i] / 32.0
 		if normalizedRank > 1.0 {
 			normalizedRank = 1.0
