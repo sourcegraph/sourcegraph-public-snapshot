@@ -65,6 +65,8 @@ func (m gitlabAuthzProviderParams) FetchRepoPerms(context.Context, *extsvc.Repos
 	panic("should never be called")
 }
 
+var errPermissionsUserMappingConflict = errors.New("The explicit permissions API (site configuration `permissions.userMapping`) cannot be enabled when bitbucketServer authorization provider is in use. Blocking access to all repositories until the conflict is resolved.")
+
 func TestAuthzProvidersFromConfig(t *testing.T) {
 	t.Cleanup(licensing.TestingSkipFeatureChecks())
 	gitlab.NewOAuthProvider = func(op gitlab.OAuthProviderOp) authz.Provider {
@@ -401,38 +403,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 
 		// For Sourcegraph authz provider
 		{
-			description: "Conflicted configuration between Sourcegraph and GitLab authz provider",
-			cfg: conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					PermissionsUserMapping: &schema.PermissionsUserMapping{
-						Enabled: true,
-						BindID:  "email",
-					},
-					AuthProviders: []schema.AuthProviders{{
-						Gitlab: &schema.GitLabAuthProvider{
-							ClientID:     "clientID",
-							ClientSecret: "clientSecret",
-							DisplayName:  "GitLab",
-							Type:         extsvc.TypeGitLab,
-							Url:          "https://gitlab.mine",
-						},
-					}},
-				},
-			},
-			gitlabConnections: []*schema.GitLabConnection{
-				{
-					Authorization: &schema.GitLabAuthorization{
-						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
-					},
-					Url:   "https://gitlab.mine",
-					Token: "asdf",
-				},
-			},
-			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when \"gitlab\" authorization providers are in use. Blocking access to all repositories until the conflict is resolved."},
-		},
-		{
-			description: "No conflict if unified perms is ON",
+			description: "Explicit permissions can be enabled alongside synced permissions",
 			cfg: conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
 					PermissionsUserMapping: &schema.PermissionsUserMapping{
@@ -471,7 +442,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			),
 		},
 		{
-			description: "Conflicted configuration between Sourcegraph and Bitbucket Server authz provider",
+			description: "Cannot enable explicit permissions with Bitbucket Server authz provider",
 			cfg: conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
 					PermissionsUserMapping: &schema.PermissionsUserMapping{
@@ -499,7 +470,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 				},
 			},
 			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when \"bitbucketServer\" authorization providers are in use. Blocking access to all repositories until the conflict is resolved."},
+			expSeriousProblems:           []string{errPermissionsUserMappingConflict.Error()},
 		},
 	}
 

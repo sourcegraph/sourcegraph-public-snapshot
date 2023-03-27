@@ -173,9 +173,9 @@ func ProvidersFromConfig(
 	// But only if the unified permissions is disabled
 	if cfg.SiteConfig().PermissionsUserMapping != nil &&
 		cfg.SiteConfig().PermissionsUserMapping.Enabled {
-		allowAccessByDefault = false
 		for _, p := range initResult.Providers {
 			if p.ServiceType() == extsvc.TypeBitbucketServer {
+				allowAccessByDefault = false
 				msg := fmt.Sprintf(
 					"The explicit permissions API (site configuration `permissions.userMapping`) cannot be enabled when %s authorization provider is in use. Blocking access to all repositories until the conflict is resolved.",
 					extsvc.TypeBitbucketServer)
