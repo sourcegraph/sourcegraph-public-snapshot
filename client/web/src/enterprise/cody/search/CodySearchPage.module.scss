@@ -1,0 +1,17 @@
+.input-container {
+    max-width: 720px;
+}
+
+.input {
+    font-size: 1.15rem;
+}
+
+:global(.theme-light) .input {
+    background-color: var(--violet-01);
+    border-color: var(--violet-03);
+}
+
+:global(.theme-dark) .input {
+    background-color: var(--violet-08);
+    border-color: var(--violet-06);
+}

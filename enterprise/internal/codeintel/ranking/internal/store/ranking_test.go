@@ -23,8 +23,8 @@ import (
 )
 
 const (
-	mockRankingGraphKey    = "mockDev" // NOTE: ensure we don't have hyphens so we can validate derivative keys easily
-	mockRankingBatchNumber = 10
+	mockRankingGraphKey  = "mockDev" // NOTE: ensure we don't have hyphens so we can validate derivative keys easily
+	mockRankingBatchSize = 10
 )
 
 func TestInsertDefinition(t *testing.T) {
@@ -33,8 +33,7 @@ func TestInsertDefinition(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	// Insert definitions
-	mockDefinitions := []shared.RankingDefinitions{
+	expectedDefinitions := []shared.RankingDefinitions{
 		{
 			UploadID:     1,
 			SymbolName:   "foo",
@@ -52,8 +51,13 @@ func TestInsertDefinition(t *testing.T) {
 		},
 	}
 
-	// Test InsertDefinitionsForRanking
-	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockDefinitions); err != nil {
+	// Insert definitions
+	mockDefinitions := make(chan shared.RankingDefinitions, len(expectedDefinitions))
+	for _, def := range expectedDefinitions {
+		mockDefinitions <- def
+	}
+	close(mockDefinitions)
+	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey, mockDefinitions); err != nil {
 		t.Fatalf("unexpected error inserting definitions: %s", err)
 	}
 
@@ -63,7 +67,7 @@ func TestInsertDefinition(t *testing.T) {
 		t.Fatalf("unexpected error getting definitions: %s", err)
 	}
 
-	if diff := cmp.Diff(mockDefinitions, definitions); diff != "" {
+	if diff := cmp.Diff(expectedDefinitions, definitions); diff != "" {
 		t.Errorf("unexpected definitions (-want +got):\n%s", diff)
 	}
 }
@@ -75,15 +79,13 @@ func TestInsertReferences(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	// Insert references
-	mockReferences := []shared.RankingReferences{
-		{UploadID: 1, SymbolNames: []string{"foo", "bar", "baz"}},
-	}
-
-	for _, reference := range mockReferences {
-		// Test InsertReferencesForRanking
-		if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, reference); err != nil {
-			t.Fatalf("unexpected error inserting references: %s", err)
-		}
+	mockReferences := make(chan string, 3)
+	mockReferences <- "foo"
+	mockReferences <- "bar"
+	mockReferences <- "baz"
+	close(mockReferences)
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 1, mockReferences); err != nil {
+		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
 	// Test references were inserted
@@ -92,7 +94,13 @@ func TestInsertReferences(t *testing.T) {
 		t.Fatalf("unexpected error getting references: %s", err)
 	}
 
-	if diff := cmp.Diff(mockReferences, references); diff != "" {
+	expectedReferences := []shared.RankingReferences{
+		{
+			UploadID:    1,
+			SymbolNames: []string{"foo", "bar", "baz"},
+		},
+	}
+	if diff := cmp.Diff(expectedReferences, references); diff != "" {
 		t.Errorf("unexpected references (-want +got):\n%s", diff)
 	}
 }
@@ -110,37 +118,34 @@ func TestInsertPathRanks(t *testing.T) {
 	insertUploads(t, db, types.Upload{ID: 1})
 
 	// Insert definitions
-	mockDefinitions := []shared.RankingDefinitions{
-		{
-			UploadID:     1,
-			SymbolName:   "foo",
-			DocumentPath: "foo.go",
-		},
-		{
-			UploadID:     1,
-			SymbolName:   "bar",
-			DocumentPath: "bar.go",
-		},
-		{
-			UploadID:     1,
-			SymbolName:   "foo",
-			DocumentPath: "foo.go",
-		},
+	mockDefinitions := make(chan shared.RankingDefinitions, 3)
+	mockDefinitions <- shared.RankingDefinitions{
+		UploadID:     1,
+		SymbolName:   "foo",
+		DocumentPath: "foo.go",
 	}
-	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockDefinitions); err != nil {
+	mockDefinitions <- shared.RankingDefinitions{
+		UploadID:     1,
+		SymbolName:   "bar",
+		DocumentPath: "bar.go",
+	}
+	mockDefinitions <- shared.RankingDefinitions{
+		UploadID:     1,
+		SymbolName:   "foo",
+		DocumentPath: "foo.go",
+	}
+	close(mockDefinitions)
+	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey, mockDefinitions); err != nil {
 		t.Fatalf("unexpected error inserting definitions: %s", err)
 	}
 
 	// Insert references
-	mockReferences := shared.RankingReferences{
-		UploadID: 1,
-		SymbolNames: []string{
-			mockDefinitions[0].SymbolName,
-			mockDefinitions[1].SymbolName,
-			mockDefinitions[2].SymbolName,
-		},
-	}
-	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+	mockReferences := make(chan string, 3)
+	mockReferences <- "foo"
+	mockReferences <- "bar"
+	mockReferences <- "baz"
+	close(mockReferences)
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 1, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
@@ -161,11 +166,11 @@ func TestInsertPathRanks(t *testing.T) {
 	}
 
 	if numPathRanksInserted != 2 {
-		t.Fatalf("unexpected number of path ranks inserted. want=%d have=%d", 2, numPathRanksInserted)
+		t.Errorf("unexpected number of path ranks inserted. want=%d have=%d", 2, numPathRanksInserted)
 	}
 
 	if numInputsProcessed != 1 {
-		t.Fatalf("unexpected number of inputs processed. want=%d have=%d", 1, numInputsProcessed)
+		t.Errorf("unexpected number of inputs processed. want=%d have=%d", 1, numInputsProcessed)
 	}
 }
 
@@ -264,43 +269,40 @@ func TestInsertPathCountInputs(t *testing.T) {
 	)
 
 	// Insert definitions
-	mockDefinitions := []shared.RankingDefinitions{
-		{
-			UploadID:     42,
-			SymbolName:   "foo",
-			DocumentPath: "foo.go",
-		},
-		{
-			UploadID:     42,
-			SymbolName:   "bar",
-			DocumentPath: "bar.go",
-		},
-		{
-			UploadID:     43,
-			SymbolName:   "baz",
-			DocumentPath: "baz.go",
-		},
-		{
-			UploadID:     43,
-			SymbolName:   "bonk",
-			DocumentPath: "bonk.go",
-		},
+	mockDefinitions := make(chan shared.RankingDefinitions, 4)
+	mockDefinitions <- shared.RankingDefinitions{
+		UploadID:     42,
+		SymbolName:   "foo",
+		DocumentPath: "foo.go",
 	}
-	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockDefinitions); err != nil {
+	mockDefinitions <- shared.RankingDefinitions{
+		UploadID:     42,
+		SymbolName:   "bar",
+		DocumentPath: "bar.go",
+	}
+	mockDefinitions <- shared.RankingDefinitions{
+		UploadID:     43,
+		SymbolName:   "baz",
+		DocumentPath: "baz.go",
+	}
+	mockDefinitions <- shared.RankingDefinitions{
+		UploadID:     43,
+		SymbolName:   "bonk",
+		DocumentPath: "bonk.go",
+	}
+	close(mockDefinitions)
+	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey, mockDefinitions); err != nil {
 		t.Fatalf("unexpected error inserting definitions: %s", err)
 	}
 
 	//
 	// Basic test case
 
-	mockReferences := shared.RankingReferences{
-		UploadID: 90,
-		SymbolNames: []string{
-			mockDefinitions[0].SymbolName,
-			mockDefinitions[1].SymbolName,
-		},
-	}
-	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+	mockReferences := make(chan string, 2)
+	mockReferences <- "foo"
+	mockReferences <- "bar"
+	close(mockReferences)
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 90, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
@@ -309,36 +311,28 @@ func TestInsertPathCountInputs(t *testing.T) {
 	}
 
 	// Same ID split over two batches
-	mockReferences = shared.RankingReferences{
-		UploadID: 90,
-		SymbolNames: []string{
-			mockDefinitions[2].SymbolName,
-		},
-	}
-	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+	mockReferences = make(chan string, 1)
+	mockReferences <- "baz"
+	close(mockReferences)
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 90, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
-	mockReferences = shared.RankingReferences{
-		UploadID: 91,
-		SymbolNames: []string{
-			mockDefinitions[3].SymbolName,
-		},
-	}
-	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+
+	mockReferences = make(chan string, 1)
+	mockReferences <- "bonk"
+	close(mockReferences)
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 91, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
 	// duplicate of 91 (should not be processed as it's older)
-	mockReferences = shared.RankingReferences{
-		UploadID: 92,
-		SymbolNames: []string{
-			mockDefinitions[0].SymbolName,
-			mockDefinitions[1].SymbolName,
-			mockDefinitions[2].SymbolName,
-			mockDefinitions[3].SymbolName,
-		},
-	}
-	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+	mockReferences = make(chan string, 4)
+	mockReferences <- "foo"
+	mockReferences <- "bar"
+	mockReferences <- "baz"
+	mockReferences <- "bonk"
+	close(mockReferences)
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 92, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
@@ -350,14 +344,11 @@ func TestInsertPathCountInputs(t *testing.T) {
 	//
 	// Incremental insertion test case
 
-	mockReferences = shared.RankingReferences{
-		UploadID: 93,
-		SymbolNames: []string{
-			mockDefinitions[0].SymbolName,
-			mockDefinitions[1].SymbolName,
-		},
-	}
-	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+	mockReferences = make(chan string, 2)
+	mockReferences <- "foo"
+	mockReferences <- "bar"
+	close(mockReferences)
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 93, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
@@ -369,16 +360,13 @@ func TestInsertPathCountInputs(t *testing.T) {
 	//
 	// No-op test case
 
-	mockReferences = shared.RankingReferences{
-		UploadID: 94,
-		SymbolNames: []string{
-			mockDefinitions[0].SymbolName,
-			mockDefinitions[1].SymbolName,
-			mockDefinitions[2].SymbolName,
-			mockDefinitions[3].SymbolName,
-		},
-	}
-	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+	mockReferences = make(chan string, 4)
+	mockReferences <- "foo"
+	mockReferences <- "bar"
+	mockReferences <- "baz"
+	mockReferences <- "bonk"
+	close(mockReferences)
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 94, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
@@ -419,47 +407,61 @@ func TestVacuumStaleDefinitionsAndReferences(t *testing.T) {
 		types.Upload{ID: 3},
 	)
 
-	mockDefinitions := []shared.RankingDefinitions{
-		{UploadID: 1, SymbolName: "foo", DocumentPath: "foo.go"},
-		{UploadID: 1, SymbolName: "bar", DocumentPath: "bar.go"},
-		{UploadID: 2, SymbolName: "foo", DocumentPath: "foo.go"},
-		{UploadID: 2, SymbolName: "bar", DocumentPath: "bar.go"},
-		{UploadID: 3, SymbolName: "baz", DocumentPath: "baz.go"},
-	}
-	mockReferences := []shared.RankingReferences{
-		{UploadID: 1, SymbolNames: []string{"foo"}},
-		{UploadID: 1, SymbolNames: []string{"bar"}},
-		{UploadID: 2, SymbolNames: []string{"foo"}},
-		{UploadID: 2, SymbolNames: []string{"bar"}},
-		{UploadID: 2, SymbolNames: []string{"baz"}},
-		{UploadID: 3, SymbolNames: []string{"bar"}},
-		{UploadID: 3, SymbolNames: []string{"baz"}},
-	}
-
-	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockDefinitions); err != nil {
+	mockDefinitions := make(chan shared.RankingDefinitions, 5)
+	mockDefinitions <- shared.RankingDefinitions{UploadID: 1, SymbolName: "foo", DocumentPath: "foo.go"}
+	mockDefinitions <- shared.RankingDefinitions{UploadID: 1, SymbolName: "bar", DocumentPath: "bar.go"}
+	mockDefinitions <- shared.RankingDefinitions{UploadID: 2, SymbolName: "foo", DocumentPath: "foo.go"}
+	mockDefinitions <- shared.RankingDefinitions{UploadID: 2, SymbolName: "bar", DocumentPath: "bar.go"}
+	mockDefinitions <- shared.RankingDefinitions{UploadID: 3, SymbolName: "baz", DocumentPath: "baz.go"}
+	close(mockDefinitions)
+	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey, mockDefinitions); err != nil {
 		t.Fatalf("unexpected error inserting definitions: %s", err)
 	}
-	for _, reference := range mockReferences {
-		if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, reference); err != nil {
-			t.Fatalf("unexpected error inserting references: %s", err)
-		}
+
+	mockReferences := make(chan string, 2)
+	mockReferences <- "foo"
+	mockReferences <- "bar"
+	close(mockReferences)
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 1, mockReferences); err != nil {
+		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
-	assertCounts := func(expectedNumDefinitions, expectedNumReferences int) {
+	mockReferences = make(chan string, 3)
+	mockReferences <- "foo"
+	mockReferences <- "bar"
+	mockReferences <- "baz"
+	close(mockReferences)
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 2, mockReferences); err != nil {
+		t.Fatalf("unexpected error inserting references: %s", err)
+	}
+
+	mockReferences = make(chan string, 2)
+	mockReferences <- "bar"
+	mockReferences <- "baz"
+	close(mockReferences)
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 3, mockReferences); err != nil {
+		t.Fatalf("unexpected error inserting references: %s", err)
+	}
+
+	assertCounts := func(expectedNumDefinitions, expectedNumSymbolReferences int) {
 		definitions, err := getRankingDefinitions(ctx, t, db, mockRankingGraphKey)
 		if err != nil {
 			t.Fatalf("failed to get ranking definitions: %s", err)
 		}
 		if len(definitions) != expectedNumDefinitions {
-			t.Fatalf("unexpected number of definitions. want=%d have=%d", expectedNumDefinitions, len(definitions))
+			t.Errorf("unexpected number of definitions. want=%d have=%d", expectedNumDefinitions, len(definitions))
 		}
 
 		references, err := getRankingReferences(ctx, t, db, mockRankingGraphKey)
 		if err != nil {
 			t.Fatalf("failed to get ranking references: %s", err)
 		}
-		if len(references) != expectedNumReferences {
-			t.Fatalf("unexpected number of references. want=%d have=%d", expectedNumReferences, len(references))
+		numSymbolReferences := 0
+		for _, ref := range references {
+			numSymbolReferences += len(ref.SymbolNames)
+		}
+		if numSymbolReferences != expectedNumSymbolReferences {
+			t.Errorf("unexpected number of symbol references. want=%d have=%d", expectedNumSymbolReferences, len(references))
 		}
 	}
 
@@ -475,16 +477,12 @@ func TestVacuumStaleDefinitionsAndReferences(t *testing.T) {
 		t.Fatalf("unexpected error vacuuming stale definitions: %s", err)
 	}
 	if expected := 3; numStaleDefinitionRecordsDeleted != expected {
-		t.Fatalf("unexpected number of definition records deleted. want=%d have=%d", expected, numStaleDefinitionRecordsDeleted)
+		t.Errorf("unexpected number of definition records deleted. want=%d have=%d", expected, numStaleDefinitionRecordsDeleted)
 	}
 
 	// remove references for non-visible uploads
-	_, numStaleReferenceRecordsDeleted, err := store.VacuumStaleReferences(ctx, mockRankingGraphKey)
-	if err != nil {
+	if _, _, err := store.VacuumStaleReferences(ctx, mockRankingGraphKey); err != nil {
 		t.Fatalf("unexpected error vacuuming stale references: %s", err)
-	}
-	if expected := 4; numStaleReferenceRecordsDeleted != expected {
-		t.Fatalf("unexpected number of reference records deleted. want=%d have=%d", expected, numStaleReferenceRecordsDeleted)
 	}
 
 	// only upload 2's entries remain
@@ -511,7 +509,7 @@ func TestVacuumStaleInitialPaths(t *testing.T) {
 			t.Fatalf("failed to get initial ranks: %s", err)
 		}
 		if len(initialRanks) != expectedNumRecords {
-			t.Fatalf("unexpected number of initial ranks. want=%d have=%d", expectedNumRecords, len(initialRanks))
+			t.Errorf("unexpected number of initial ranks. want=%d have=%d", expectedNumRecords, len(initialRanks))
 		}
 	}
 
@@ -527,11 +525,170 @@ func TestVacuumStaleInitialPaths(t *testing.T) {
 		t.Fatalf("unexpected error vacuuming stale initial counts: %s", err)
 	}
 	if expected := 6; numRecordsDeleted != expected {
-		t.Fatalf("unexpected number of initial count records deleted. want=%d have=%d", expected, numRecordsDeleted)
+		t.Errorf("unexpected number of initial count records deleted. want=%d have=%d", expected, numRecordsDeleted)
 	}
 
 	// only upload 2's entries remain
 	assertCounts(3)
+}
+
+func TestVacuumAbandonedDefinitions(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	symbols := []string{}
+	for j := 0; j < 30; j++ {
+		symbols = append(symbols, fmt.Sprintf("s%d", j+1))
+	}
+
+	mockDefinitions1 := make(chan shared.RankingDefinitions, len(symbols))
+	mockDefinitions2 := make(chan shared.RankingDefinitions, len(symbols))
+	mockDefinitions3 := make(chan shared.RankingDefinitions, len(symbols))
+	for _, symbol := range symbols {
+		mockDefinitions1 <- shared.RankingDefinitions{UploadID: 1, SymbolName: symbol, DocumentPath: "foo.go"}
+		mockDefinitions2 <- shared.RankingDefinitions{UploadID: 1, SymbolName: symbol, DocumentPath: "foo.go"}
+		mockDefinitions3 <- shared.RankingDefinitions{UploadID: 1, SymbolName: symbol, DocumentPath: "foo.go"}
+	}
+	close(mockDefinitions1)
+	close(mockDefinitions2)
+	close(mockDefinitions3)
+
+	// Insert definitions
+	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey+"-abandoned", mockDefinitions1); err != nil {
+		t.Fatalf("unexpected error inserting definitions: %s", err)
+	}
+	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey, mockDefinitions2); err != nil {
+		t.Fatalf("unexpected error inserting definitions: %s", err)
+	}
+	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey+"-abandoned", mockDefinitions3); err != nil {
+		t.Fatalf("unexpected error inserting definitions: %s", err)
+	}
+
+	assertCounts := func(expectedDefinitionRecords int) {
+		store := basestore.NewWithHandle(db.Handle())
+
+		numDefinitionRecords, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM codeintel_ranking_definitions`)))
+		if err != nil {
+			t.Fatalf("failed to definition records: %s", err)
+		}
+		if expectedDefinitionRecords != numDefinitionRecords {
+			t.Fatalf("unexpected number of definition records. want=%d have=%d", expectedDefinitionRecords, numDefinitionRecords)
+		}
+	}
+
+	// assert initial count
+	assertCounts(3 * 30)
+
+	// remove records associated with other ranking keys
+	if _, err := store.VacuumAbandonedDefinitions(ctx, mockRankingGraphKey, 50); err != nil {
+		t.Fatalf("unexpected error vacuuming abandoned definitions: %s", err)
+	}
+
+	// only 10 records of stale derivative graph key remain (batch size of 50, but 2*30 could be deleted)
+	assertCounts(1*30 + 10)
+}
+
+func TestVacuumAbandonedReferences(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	mockReferences1 := make(chan string, 30)
+	mockReferences2 := make(chan string, 30)
+	mockReferences3 := make(chan string, 30)
+	for j := 0; j < 30; j++ {
+		mockReferences1 <- fmt.Sprintf("s%d", j+1)
+		mockReferences2 <- fmt.Sprintf("s%d", j+1)
+		mockReferences3 <- fmt.Sprintf("s%d", j+1)
+	}
+	close(mockReferences1)
+	close(mockReferences2)
+	close(mockReferences3)
+
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey+"-abandoned", 1, 1, mockReferences1); err != nil {
+		t.Fatalf("unexpected error inserting references: %s", err)
+	}
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, 1, 1, mockReferences2); err != nil {
+		t.Fatalf("unexpected error inserting references: %s", err)
+	}
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey+"-abandoned", 1, 1, mockReferences3); err != nil {
+		t.Fatalf("unexpected error inserting references: %s", err)
+	}
+
+	assertCounts := func(expectedReferenceRecords int) {
+		store := basestore.NewWithHandle(db.Handle())
+
+		numReferenceRecords, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf(`
+			WITH symbols AS (
+				SELECT unnest(symbol_names) AS symbol_name
+				FROM codeintel_ranking_references
+			)
+			SELECT COUNT(*) FROM symbols
+		`)))
+		if err != nil {
+			t.Fatalf("failed to definition records: %s", err)
+		}
+		if expectedReferenceRecords != numReferenceRecords {
+			t.Fatalf("unexpected number of references records. want=%d have=%d", expectedReferenceRecords, numReferenceRecords)
+		}
+	}
+
+	// assert initial count
+	assertCounts(3 * 30)
+
+	// remove records associated with other ranking keys
+	if _, err := store.VacuumAbandonedReferences(ctx, mockRankingGraphKey, 50); err != nil {
+		t.Fatalf("unexpected error vacuuming abandoned references: %s", err)
+	}
+
+	// only 10 records of stale graph key remain (batch size of 50, but 2*30 could be deleted)
+	assertCounts(1*30 + 10)
+}
+
+func TestVacuumAbandonedInitialPathCounts(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	if _, err := db.ExecContext(ctx, `
+		INSERT INTO codeintel_initial_path_ranks (upload_id, document_path, graph_key)
+		SELECT 50, '', $1 FROM generate_series(1, 30)
+	`, mockRankingGraphKey); err != nil {
+		t.Fatalf("failed to insert ranking path count inputs: %s", err)
+	}
+	if _, err := db.ExecContext(ctx, `
+		INSERT INTO codeintel_initial_path_ranks (upload_id, document_path, graph_key)
+		SELECT 50, '', $1 FROM generate_series(1, 60)
+	`, mockRankingGraphKey+"-abandoned"); err != nil {
+		t.Fatalf("failed to insert ranking path count inputs: %s", err)
+	}
+
+	assertCounts := func(expectedInitialPathCountRecords int) {
+		store := basestore.NewWithHandle(db.Handle())
+
+		numInitialPathCountRecords, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM codeintel_initial_path_ranks`)))
+		if err != nil {
+			t.Fatalf("failed to definition records: %s", err)
+		}
+		if expectedInitialPathCountRecords != numInitialPathCountRecords {
+			t.Fatalf("unexpected number of initial path counts records. want=%d have=%d", expectedInitialPathCountRecords, numInitialPathCountRecords)
+		}
+	}
+
+	// assert initial count
+	assertCounts(3 * 30)
+
+	// remove records associated with other ranking keys
+	if _, err := store.VacuumAbandonedInitialPathCounts(ctx, mockRankingGraphKey, 50); err != nil {
+		t.Fatalf("unexpected error vacuuming initial path counts: %s", err)
+	}
+
+	// only 10 records of stale derivative graph key remain (batch size of 50, but 2*30 could be deleted)
+	assertCounts(1*30 + 10)
 }
 
 func TestVacuumStaleGraphs(t *testing.T) {
@@ -540,19 +697,29 @@ func TestVacuumStaleGraphs(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	mockReferences := []shared.RankingReferences{
-		{UploadID: 1, SymbolNames: []string{"foo"}},
-		{UploadID: 1, SymbolNames: []string{"bar"}},
-		{UploadID: 2, SymbolNames: []string{"foo"}},
-		{UploadID: 2, SymbolNames: []string{"bar"}},
-		{UploadID: 2, SymbolNames: []string{"baz"}},
-		{UploadID: 3, SymbolNames: []string{"bar"}},
-		{UploadID: 3, SymbolNames: []string{"baz"}},
+	mockReferences := make(chan string, 2)
+	mockReferences <- "foo"
+	mockReferences <- "bar"
+	close(mockReferences)
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 1, mockReferences); err != nil {
+		t.Fatalf("unexpected error inserting references: %s", err)
 	}
-	for _, reference := range mockReferences {
-		if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, reference); err != nil {
-			t.Fatalf("unexpected error inserting references: %s", err)
-		}
+
+	mockReferences = make(chan string, 3)
+	mockReferences <- "foo"
+	mockReferences <- "bar"
+	mockReferences <- "baz"
+	close(mockReferences)
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 2, mockReferences); err != nil {
+		t.Fatalf("unexpected error inserting references: %s", err)
+	}
+
+	mockReferences = make(chan string, 2)
+	mockReferences <- "bar"
+	mockReferences <- "baz"
+	close(mockReferences)
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 3, mockReferences); err != nil {
+		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
 	for _, graphKey := range []string{
@@ -563,13 +730,13 @@ func TestVacuumStaleGraphs(t *testing.T) {
 		if _, err := db.ExecContext(ctx, `
 			INSERT INTO codeintel_ranking_references_processed (graph_key, codeintel_ranking_reference_id)
 			SELECT $1, id FROM codeintel_ranking_references
-	`, graphKey); err != nil {
+		`, graphKey); err != nil {
 			t.Fatalf("failed to insert ranking references processed: %s", err)
 		}
 		if _, err := db.ExecContext(ctx, `
 			INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
 			SELECT 50, '', 100, $1 FROM generate_series(1, 30)
-	`, graphKey); err != nil {
+		`, graphKey); err != nil {
 			t.Fatalf("failed to insert ranking path count inputs: %s", err)
 		}
 	}
@@ -582,7 +749,7 @@ func TestVacuumStaleGraphs(t *testing.T) {
 			t.Fatalf("failed to count input records: %s", err)
 		}
 		if expectedInputRecords != numInputRecords {
-			t.Fatalf("unexpected number of input records. want=%d have=%d", expectedInputRecords, numInputRecords)
+			t.Errorf("unexpected number of input records. want=%d have=%d", expectedInputRecords, numInputRecords)
 		}
 	}
 
@@ -590,12 +757,12 @@ func TestVacuumStaleGraphs(t *testing.T) {
 	assertCounts(3 * 30)
 
 	// remove records associated with other ranking keys
-	if _, err := store.VacuumStaleGraphs(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 456)); err != nil {
+	if _, err := store.VacuumStaleGraphs(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 456), 50); err != nil {
 		t.Fatalf("unexpected error vacuuming stale graphs: %s", err)
 	}
 
-	// only the non-stale derivative graph key remains
-	assertCounts(1 * 30)
+	// only 10 records of stale derivative graph key remain (batch size of 50, but 2*30 could be deleted)
+	assertCounts(1*30 + 10)
 }
 
 func TestVacuumStaleRanks(t *testing.T) {
@@ -651,7 +818,7 @@ func TestVacuumStaleRanks(t *testing.T) {
 		t.Fatalf("unexpected error vacuuming stale ranks: %s", err)
 	}
 	if expected := 6; rankRecordsDeleted != expected {
-		t.Fatalf("unexpected number of rank records deleted. want=%d have=%d", expected, rankRecordsDeleted)
+		t.Errorf("unexpected number of rank records deleted. want=%d have=%d", expected, rankRecordsDeleted)
 	}
 
 	// stale graph keys have been removed
@@ -923,5 +1090,22 @@ func insertRepo(t testing.TB, db database.DB, id int, name string) {
 	)
 	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error while upserting repository: %s", err)
+	}
+}
+
+func TestBatchChannel(t *testing.T) {
+	ch := make(chan int, 10)
+	for i := 0; i < 10; i++ {
+		ch <- i
+	}
+	close(ch)
+
+	batches := [][]int{}
+	for batch := range batchChannel(ch, 3) {
+		batches = append(batches, batch)
+	}
+
+	if diff := cmp.Diff([][]int{{0, 1, 2}, {3, 4, 5}, {6, 7, 8}, {9}}, batches); diff != "" {
+		t.Errorf("unexpected batches (-want +got):\n%s", diff)
 	}
 }

@@ -38,7 +38,7 @@ export async function recommendSourcegraph(localStorageService: LocalStorageServ
     await vscode.window
         .showInformationMessage('Add Sourcegraph to your workspace recommendations', '👍 Yes', "Don't show again")
         .then(async answer => {
-            if (answer === 'Yes') {
+            if (answer === '👍 Yes') {
                 await vscode.commands.executeCommand(
                     'workbench.extensions.action.addExtensionToWorkspaceRecommendations',
                     'sourcegraph.sourcegraph'

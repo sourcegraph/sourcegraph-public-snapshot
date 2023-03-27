@@ -196,6 +196,80 @@ func TestGetVulnerabilityMatches(t *testing.T) {
 	})
 }
 
+func TestGetVulberabilityMatchesCountByRepository(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	/*
+	 * Setup references is inserting seven (7) total references.
+	 * Five (5) of them are vulnerable versions
+	 * (three (3) for go-nacelle/config and two (2) for go-mockgen/xtools)
+	 * the remaining two (2) of the references is of the fixed version.
+	 */
+	setupReferences(t, db)
+	var highVulnerabilityCount int32 = 3
+	var mediumVulnerabilityCount int32 = 2
+
+	highAffectedPackage := shared.AffectedPackage{
+		Language:          "go",
+		PackageName:       "go-nacelle/config",
+		VersionConstraint: []string{"<= v1.2.5"},
+	}
+	mediumAffectedPackage := shared.AffectedPackage{
+		Language:          "go",
+		PackageName:       "go-mockgen/xtools",
+		VersionConstraint: []string{"<= v1.3.5"},
+	}
+
+	mockVulnerabilities := []shared.Vulnerability{
+		{ID: 1, SourceID: "CVE-ABC", Severity: "HIGH", AffectedPackages: []shared.AffectedPackage{highAffectedPackage}},
+		{ID: 2, SourceID: "CVE-DEF", Severity: "HIGH"},
+		{ID: 3, SourceID: "CVE-GHI", Severity: "HIGH"},
+		{ID: 4, SourceID: "CVE-JKL", Severity: "MEDIUM", AffectedPackages: []shared.AffectedPackage{mediumAffectedPackage}},
+		{ID: 5, SourceID: "CVE-MNO", Severity: "MEDIUM"},
+		{ID: 6, SourceID: "CVE-PQR", Severity: "MEDIUM"},
+	}
+
+	if _, err := store.InsertVulnerabilities(ctx, mockVulnerabilities); err != nil {
+		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+	}
+
+	if _, _, err := store.ScanMatches(ctx, 1000); err != nil {
+		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+	}
+
+	// Test
+	args := shared.GetVulnerabilityMatchesCountByRepositoryArgs{Limit: 10}
+	grouping, totalCount, err := store.GetVulnerabilityMatchesCountByRepository(ctx, args)
+	if err != nil {
+		t.Fatalf("unexpected error getting vulnerability matches: %s", err)
+	}
+
+	expectedMatches := []shared.VulnerabilityMatchesByRepository{
+		{
+			ID:             2,
+			RepositoryName: "github.com/go-nacelle/config",
+			MatchCount:     highVulnerabilityCount,
+		},
+		{
+			ID:             75,
+			RepositoryName: "github.com/go-mockgen/xtools",
+			MatchCount:     mediumVulnerabilityCount,
+		},
+	}
+
+	if diff := cmp.Diff(expectedMatches, grouping); diff != "" {
+		t.Errorf("unexpected vulnerability matches (-want +got):\n%s", diff)
+	}
+
+	if totalCount != len(expectedMatches) {
+		t.Errorf("unexpected total count. want=%d have=%d", len(expectedMatches), totalCount)
+	}
+
+}
+
 func setupReferences(t *testing.T, db database.DB) {
 	store := basestore.NewWithHandle(db.Handle())
 

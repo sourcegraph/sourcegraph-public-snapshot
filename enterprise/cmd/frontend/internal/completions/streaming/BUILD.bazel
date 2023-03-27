@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//cmd/frontend/envvar",
         "//enterprise/cmd/frontend/internal/completions/streaming/anthropic",
+        "//enterprise/cmd/frontend/internal/completions/streaming/openai",
         "//enterprise/cmd/frontend/internal/completions/types",
         "//enterprise/internal/cody",
         "//internal/conf",

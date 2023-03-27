@@ -1,3 +1,6 @@
+/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
+/* eslint-disable jsx-a11y/no-static-element-interactions */
+/* eslint-disable jsx-a11y/click-events-have-key-events */
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
@@ -8,6 +11,8 @@ import { ChatMessage } from './utils/types'
 import { vscodeAPI } from './utils/VSCodeApi'
 
 import './Chat.css'
+
+const SCROLL_THRESHOLD = 15
 
 interface ChatboxProps {
     messageInProgress: ChatMessage | null
@@ -20,7 +25,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [formInput, setFormInput] = useState('')
-    const chatboxRef = useRef<HTMLInputElement>(null)
+    const transcriptContainerRef = useRef<HTMLDivElement>(null)
 
     const inputHandler = useCallback(
         (inputValue: string) => {
@@ -35,15 +40,15 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         [setFormInput]
     )
 
-    const onChatKeyDown = async (event: React.KeyboardEvent<HTMLDivElement>): Promise<void> => {
+    const onChatKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault()
             event.stopPropagation()
-            await onChatSubmit()
+            onChatSubmit()
         }
     }
 
-    const onChatSubmit = useCallback(async () => {
+    const onChatSubmit = useCallback(() => {
         vscodeAPI.postMessage({ command: 'submit', text: formInput })
         setInputRows(5)
         setFormInput('')
@@ -51,17 +56,25 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const bubbleClassName = (speaker: string): string => (speaker === 'human' ? 'human' : 'bot')
 
-    const scrollToBottom = () => {
-        chatboxRef.current?.scrollIntoView?.({ behavior: 'smooth' })
-    }
-
     useEffect(() => {
-        scrollToBottom()
-    }, [transcript, chatboxRef])
+        if (transcriptContainerRef.current) {
+            // Only scroll if the user didn't scroll up manually more than the scrolling threshold.
+            // That is so that you can freely copy content or read up on older content while new
+            // content is being produced.
+            // We allow some small threshold for "what is considered not scrolled up" so that minimal
+            // scroll doesn't affect it (ie. if I'm not all the way scrolled down by like a pixel or two,
+            // I probably still want it to scroll).
+            // Sice this container uses flex-direction: column-reverse, the scrollTop starts in the negatives
+            // and ends at 0.
+            if (transcriptContainerRef.current.scrollTop >= -SCROLL_THRESHOLD) {
+                transcriptContainerRef.current.scrollTo({ behavior: 'smooth', top: 0 })
+            }
+        }
+    }, [transcript, transcriptContainerRef])
 
     return (
         <div className="inner-container">
-            <div className={`${transcript.length >= 1 ? '' : 'non-'}transcript-container`}>
+            <div ref={transcriptContainerRef} className={`${transcript.length >= 1 ? '' : 'non-'}transcript-container`}>
                 {/* Show Tips view if no conversation has happened */}
                 {transcript.length === 0 && !messageInProgress && <Tips />}
                 {transcript.length > 0 && (
@@ -111,7 +124,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                                 </div>
                             </div>
                         )}
-                        <div ref={chatboxRef} />
                     </div>
                 )}
             </div>
