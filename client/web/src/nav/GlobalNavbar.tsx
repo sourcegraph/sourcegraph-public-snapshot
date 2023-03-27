@@ -24,7 +24,6 @@ import { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { CodeMonitoringProps } from '../codeMonitoring'
-import { CodyIcon } from '../cody/CodyIcon'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
@@ -250,13 +249,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <NavItem icon={ShieldHalfFullIcon}>
                             <NavLink variant={navLinkVariant} to="/sentinel">
                                 Sentinel
-                            </NavLink>
-                        </NavItem>
-                    )}
-                    {codyEnabled && (
-                        <NavItem icon={CodyIcon}>
-                            <NavLink variant={navLinkVariant} to="/cody">
-                                Cody
                             </NavLink>
                         </NavItem>
                     )}
