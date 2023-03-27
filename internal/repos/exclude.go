@@ -43,7 +43,7 @@ func (e *excludeBuilder) Pattern(pattern string) {
 	e.patterns = append(e.patterns, re)
 }
 
-// Generic registers the passed in generic exclude function that will be used to determine whether a repo
+// Generic registers the passed in exclude function that will be used to determine whether a repo
 // should be excluded.
 func (e *excludeBuilder) Generic(excludeFunc func(repo interface{}) bool) {
 	if excludeFunc == nil {
