@@ -10,9 +10,8 @@ import (
 )
 
 func TestPrefetcherUploads(t *testing.T) {
-	mockAutoIndexingResolver := NewMockAutoIndexingService()
 	mockUploadResolver := NewMockUploadsService()
-	prefetcher := NewPrefetcher(mockAutoIndexingResolver, mockUploadResolver)
+	prefetcher := NewPrefetcher(mockUploadResolver)
 
 	uploads := map[int]types.Upload{
 		1: {ID: 1},
@@ -91,7 +90,6 @@ func TestPrefetcherIndexes(t *testing.T) {
 	}
 
 	mockUploadResolver := NewMockUploadsService()
-	mockAutoIndexingResolver := NewMockAutoIndexingService()
 	mockUploadResolver.GetIndexesByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...int) ([]types.Index, error) {
 		matching := make([]types.Index, 0, len(ids))
 		for _, id := range ids {
@@ -100,7 +98,7 @@ func TestPrefetcherIndexes(t *testing.T) {
 
 		return matching, nil
 	})
-	prefetcher := NewPrefetcher(mockAutoIndexingResolver, mockUploadResolver)
+	prefetcher := NewPrefetcher(mockUploadResolver)
 
 	// We do a conversion inside the function that I cannot reproduct inside the mock.
 	expectedIndex := types.Index{ID: 1}
