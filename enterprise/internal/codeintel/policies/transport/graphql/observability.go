@@ -8,18 +8,13 @@ import (
 )
 
 type operations struct {
-	// Configurations
-	createConfigurationPolicy *observation.Operation
 	configurationPolicies     *observation.Operation
 	configurationPolicyByID   *observation.Operation
+	createConfigurationPolicy *observation.Operation
 	updateConfigurationPolicy *observation.Operation
 	deleteConfigurationPolicy *observation.Operation
-
-	// Retention
-	previewGitObjectFilter *observation.Operation
-
-	// Repository
-	previewRepoFilter *observation.Operation
+	previewRepoFilter         *observation.Operation
+	previewGitObjectFilter    *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -39,17 +34,12 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		// Configurations
-		createConfigurationPolicy: op("CreateConfigurationPolicy"),
 		configurationPolicies:     op("ConfigurationPolicies"),
 		configurationPolicyByID:   op("ConfigurationPolicyByID"),
+		createConfigurationPolicy: op("CreateConfigurationPolicy"),
 		updateConfigurationPolicy: op("UpdateConfigurationPolicy"),
 		deleteConfigurationPolicy: op("DeleteConfigurationPolicy"),
-
-		// Retention
-		previewGitObjectFilter: op("PreviewGitObjectFilter"),
-
-		// Repository
-		previewRepoFilter: op("PreviewRepoFilter"),
+		previewRepoFilter:         op("PreviewRepoFilter"),
+		previewGitObjectFilter:    op("PreviewGitObjectFilter"),
 	}
 }

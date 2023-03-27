@@ -52,6 +52,21 @@ func NewSymbolJanitor(observationCtx *observation.Context, rankingService *Servi
 			rankingService.store,
 			ConfigInst.SymbolExporterInterval,
 		),
+		background.NewAbandonedDefinitionsJanitor(
+			observationCtx,
+			rankingService.store,
+			ConfigInst.SymbolExporterInterval,
+		),
+		background.NewAbandonedReferencesJanitor(
+			observationCtx,
+			rankingService.store,
+			ConfigInst.SymbolExporterInterval,
+		),
+		background.NewAbandonedInitialCountsJanitor(
+			observationCtx,
+			rankingService.store,
+			ConfigInst.SymbolExporterInterval,
+		),
 		background.NewRankCountsJanitor(
 			observationCtx,
 			rankingService.store,

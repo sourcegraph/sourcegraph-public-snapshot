@@ -41,9 +41,6 @@ export interface JetBrainsSearchBoxProps
     className?: string
     containerClassName?: string
 
-    /** Whether globbing is enabled for filters. */
-    globbing: boolean
-
     /** Whether comments are parsed and highlighted */
     interpretComments?: boolean
 
@@ -120,7 +117,6 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                         autoFocus={props.autoFocus}
                         caseSensitive={props.caseSensitive}
                         fetchStreamSuggestions={props.fetchStreamSuggestions}
-                        globbing={props.globbing}
                         isSourcegraphDotCom={props.isSourcegraphDotCom}
                         onChange={props.onChange}
                         onSubmit={props.onSubmit}

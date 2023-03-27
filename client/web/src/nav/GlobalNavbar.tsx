@@ -15,15 +15,14 @@ import { SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { addSourcegraphAppOutboundUrlParameters, buildEnterpriseTrialURL } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, ButtonLink, useWindowSize } from '@sourcegraph/wildcard'
+import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
+import { Button, Link, ButtonLink, useWindowSize, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { CodeMonitoringProps } from '../codeMonitoring'
-import { CodyIcon } from '../cody/CodyIcon'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
@@ -61,8 +60,6 @@ export interface GlobalNavbarProps
     showSearchBox: boolean
     routes: RouteObject[]
 
-    // Whether globbing is enabled for filters.
-    globbing: boolean
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
     branding?: typeof window.context.branding
@@ -165,17 +162,19 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     // isCodeInsightsEnabled selector controls appearance based on user settings flags
     const codeInsights = codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)
 
+    const [codyEnabled] = useFeatureFlag('cody')
+
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
             !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
             ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Own' },
+            codyEnabled && { path: EnterprisePageRoutes.CodySearch, content: 'Cody' },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [ownEnabled, showSearchContext])
+    }, [codyEnabled, ownEnabled, showSearchContext])
 
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 
-    const [codyEnabled] = useFeatureFlag('cody')
     const isLightTheme = useIsLightTheme()
 
     return (
@@ -239,13 +238,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             </NavLink>
                         </NavItem>
                     )}
-                    {codyEnabled && (
-                        <NavItem icon={CodyIcon}>
-                            <NavLink variant={navLinkVariant} to="/cody">
-                                Cody
-                            </NavLink>
-                        </NavItem>
-                    )}
                     {isSourcegraphApp && (
                         <NavDropdown
                             routeMatch="something-that-never-matches"
@@ -301,7 +293,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             variant="secondary"
                             outline={true}
                             to={addSourcegraphAppOutboundUrlParameters(
-                                buildEnterpriseTrialURL(props.authenticatedUser)
+                                'https://about.sourcegraph.com/get-started?t=enterprise',
+                                'navbar'
                             )}
                             size="sm"
                             onClick={() =>
@@ -319,13 +312,15 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {isSourcegraphDotCom && (
                         <NavAction>
-                            <Link
-                                to="https://about.sourcegraph.com"
-                                className={styles.link}
-                                onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'NavBar' })}
-                            >
-                                {props.authenticatedUser && 'Get '} Enterprise
-                            </Link>
+                            <Tooltip content="The Sourcegraph desktop app runs locally and works on your own private code.">
+                                <Link
+                                    to="https://about.sourcegraph.com/app"
+                                    className={classNames(styles.link, 'small')}
+                                    onClick={() => eventLogger.log('ClickedOnAppCTA', { location: 'NavBar' })}
+                                >
+                                    Download app
+                                </Link>
+                            </Tooltip>
                         </NavAction>
                     )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}

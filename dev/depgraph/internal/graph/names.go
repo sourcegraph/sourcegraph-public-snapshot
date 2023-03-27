@@ -1,12 +1,13 @@
 package graph
 
 import (
-	"bytes"
 	"os"
 	"path/filepath"
 	"sort"
 
 	"github.com/grafana/regexp"
+
+	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 )
 
 // parseNames returns a map from package paths to the name declared by that package.
@@ -57,7 +58,11 @@ func extractPackageName(path string) (string, error) {
 		return "", err
 	}
 
-	for _, line := range bytes.Split(contents, []byte{'\n'}) {
+	lr := byteutils.NewLineReader(contents)
+
+	for lr.Scan() {
+		line := lr.Line()
+
 		if matches := packagePattern.FindSubmatch(line); len(matches) > 0 {
 			return string(matches[1]), nil
 		}

@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
@@ -46,6 +47,10 @@ func TestAccessTokens_Create(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertSecurityEventCount(t, db, SecurityEventAccessTokenCreated, 1)
+
+	if !strings.HasPrefix(tv0, "sgp_") {
+		t.Errorf("got %q, want prefix 'sgp_'", tv0)
+	}
 
 	got, err := db.AccessTokens().GetByID(ctx, tid0)
 	if err != nil {

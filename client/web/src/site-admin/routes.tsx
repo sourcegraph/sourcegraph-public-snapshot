@@ -148,7 +148,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
         render: props => <SiteAdminOrgsPage {...props} />,
     },
     {
-        path: '/access-requests',
+        path: '/account-requests',
         render: () => <AccessRequestsPage />,
         condition: context =>
             checkRequestAccessAllowed(

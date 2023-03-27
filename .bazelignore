@@ -9,6 +9,7 @@ client/codeintellify/node_modules
 client/cody/node_modules
 client/cody/common/node_modules
 client/cody/server/node_modules
+client/cody-shared/node_modules
 client/cody/vscode-codegen/node_modules
 client/common/node_modules
 client/eslint-plugin-wildcard/node_modules
@@ -43,3 +44,4 @@ cmd/sitemap
 
 internal/cmd/progress-bot
 client/cody
+client/cody-shared

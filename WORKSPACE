@@ -36,9 +36,9 @@ http_archive(
 
 http_archive(
     name = "aspect_rules_jest",
-    sha256 = "fa103b278137738ef08fd23d3c8c9157897a7159af2aa22714bc71680da58583",
-    strip_prefix = "rules_jest-0.16.1",
-    url = "https://github.com/aspect-build/rules_jest/archive/refs/tags/v0.16.1.tar.gz",
+    sha256 = "bf8f4a4d2a833e4f96f866c686c38bcee69d3bdae8a827b1c9d2fdf92212bc0b",
+    strip_prefix = "rules_jest-95d8f1961a9c6f3aee2929881b1b74461652e775",
+    url = "https://github.com/aspect-build/rules_jest/archive/95d8f1961a9c6f3aee2929881b1b74461652e775.tar.gz"
 )
 
 http_archive(
@@ -70,10 +70,8 @@ http_archive(
 
 http_archive(
     name = "rules_rust",
-    sha256 = "d125fb75432dc3b20e9b5a19347b45ec607fabe75f98c6c4ba9badaab9c193ce",
-    # As of Mar 8 2023, the latest release is 0.18.0, but that release
-    # has a bug which triggers a compilation error in futures-util-0.3.21
-    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.17.0/rules_rust-v0.17.0.tar.gz"],
+    sha256 = "dc8d79fe9a5beb79d93e482eb807266a0e066e97a7b8c48d43ecf91f32a3a8f3",
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.19.0/rules_rust-v0.19.0.tar.gz"],
 )
 
 # rules_js setup ================================

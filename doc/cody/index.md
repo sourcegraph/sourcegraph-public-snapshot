@@ -6,14 +6,39 @@
 </p>
 </aside>
 
-Cody is an AI coding assistant that lives in your editor that can find, explain, and write code. Cody uses a combination of AI (specifically Large Language Models or LLMs), Sourcegraph search, and Sourcegraph code intelligence to provide answers that eliminate toil and keep human programmers in flow. You can think of Cody as your programmer buddy who has read through all the code on GitHub, all the questions on StackOverflow, and all your organization's private code, and is always there to answer questions you might have or suggest ways of doing something based on prior knowledge.
+Cody is an AI coding assistant that lives in your editor that can find, explain, and write code. Cody uses a combination of Large Language Models (LLMs), Sourcegraph search, and Sourcegraph code intelligence to provide answers that eliminate toil and keep human programmers in flow. You can think of Cody as your programmer buddy who has read through all the code in open source, all the questions on StackOverflow, and all your organization's private code, and is always there to answer questions you might have or suggest ways of doing something based on prior knowledge.
 
-Cody is in private alpha (tagged as an [experimental](../doc/admin/beta_and_experimental_features.md) feature) at this stage. Contact your techical advisor or [signup here](https://t.co/4TMTW1b3lR) to get access. We have limited capacity to onboard customers at first, but we're working hard to open Cody up to the world fast! In this initial release, Cody is only available as a VS Code extension.
+Cody is in private alpha (tagged as an [experimental](../doc/admin/beta_and_experimental_features.md) feature) at this stage. If you are an existing Sourcegraph customer, contact your techical advisor or [sign up here](https://t.co/4TMTW1b3lR) to get access. New users should install the extension and connect to sourcegraph.com.
 
-To enable the Cody extension to work with your Sourcegraph instance (requires site-admin permissions), follow the steps below. Note that this assumes you've reached out to us to get required `accessToken`(s).
+Currently, Cody is available for VS Code. More editors are on the way—[join the Discord](https://discord.gg/8wJF5EdAyA) to inquire about your editor of choice.
 
-* Go to Site admin > Site configuration (`/site-admin/configuration`) on your instance.
-* (Required) Add the `completions` config:
+## Install Cody
+
+Cody uses Sourcegraph to fetch relevant context to generate answers and code. These instructions walk through installing Cody and connecting it to sourcegraph.com. For private instances of Sourcegraph, see the section below about enabling Cody for Enterprise.
+
+1. Sign into [sourcegraph.com](https://sourcegraph.com)
+1. Join the [Cody Discord](https://discord.gg/8wJF5EdAyA) and request Cody be enabled for your username. At this time, we are approving all requests.
+1. [Create a Sourcegraph access token](https://sourcegraph.com/user/settings/tokens)
+1. Install [the Cody VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
+  1. Set the Sourcegraph URL to be `"https://sourcegraph.com"`
+  1. Set the access token to be the token you just created
+
+After installing, we recommend the following:
+
+* Request embeddings for your repositories. Embeddings significantly improve the accuracy and quality of Cody's responses. To request embeddings, join the Cody Discord and ping a Sourcegraph team member.
+* Spread the word online and send us your feedback in Discord. Cody is open source and we'd love to hear from you if you have bug reports or feature requests.
+
+## Enable Cody for Enterprise
+
+There are two steps required to enable Cody for Enterprise: enable your Sourcegraph instance and configure the VS Code extension.
+
+### Step 1: Enable Cody on your Sourcegraph instance
+
+Note that this requires site-admin privileges.
+
+1. Cody uses one or more third-party LLM (Large Language Model) providers. Make sure you review the [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice). In particular, code snippets will be sent to a third-party language model provider when you use the Cody extension.
+2. To turn Cody on, you will need to set an access token for Sourcegraph to authentify with the third-party large language model provider (currently Anthropic but we may use different or several models over time). Reach out to your Sourcegraph Technical Advisor to get a key.
+3. Once you have the key, go to Site admin > Site configuration (`/site-admin/configuration`) on your instance and set:
 
 ```json
 "completions": {
@@ -23,18 +48,47 @@ To enable the Cody extension to work with your Sourcegraph instance (requires si
   "provider": "anthropic"
 }
 ```
+4. You're done! 
+5. (Optional). Cody can be configured to use embeddings to improve the quality of its responses. This involves sending your entire codebase to a third-party service to generate a low-dimensional semantic representation, that is used for improved context fetching. See the [embeddings](#embeddings) section for more.
 
-* (Optional) Add the `embeddings` config:
+### Step 2: Configure the VS Code extension
 
-```json
-"embeddings": {
-  "enabled": true,
-  "url": "",
-  "accessToken": "<token>",
-  "model": "",
-  "dimensions": 128
-}
-```
+Now that Cody is turned on on your Sourcegraph instance, any user can configure and use the Cody VS Code extension. This does not require admin privilege.
+
+1. If you currently have a previous version of Cody installed, uninstall it and reload VS Code before proceeding to the next steps.
+1. Search for “Sourcegraph Cody” in your VS Code extension marketplace, and install it.
+
+<img width="500" alt="image" src="https://user-images.githubusercontent.com/25070988/227508342-cc6f29c0-ed91-4381-b651-16870c7c676b.png">
+
+3. Reload VS Code, and open the Cody extension. Review and accept the terms.
+
+4. Now you'll need to point the Cody extension to your Sourcegraph instance. On your instance, go to `settings` / `access token` (`https://<your-instance>.sourcegraph.com/users/<your-instance>/settings/tokens`). Generate an access token, copy it, and set it in the Cody extension.
+
+<img width="1369" alt="image" src="https://user-images.githubusercontent.com/25070988/227510686-4afcb1f9-a3a5-495f-b1bf-6d661ba53cce.png">
+
+5. In the Cody VS Code extension, set your instance URL and the access token
+    
+<img width="553" alt="image" src="https://user-images.githubusercontent.com/25070988/227510233-5ce37649-6ae3-4470-91d0-71ed6c68b7ef.png">
+
+You're all set!
+
+
+### Step 3: Try Cody!
+
+A few things you can ask Cody:
+
+- "What are popular go libraries for building CLIs?"
+- Open your workspace, and ask "Do we have a React date picker component in this repository?"
+- Right click on a function, and ask Cody to explain it
+- Try any of the Cody recipes!
+
+<img width="510" alt="image" src="https://user-images.githubusercontent.com/25070988/227511383-aa60f074-817d-4875-af41-54558dfe1951.png">
+
+## Embeddings
+
+Embeddings are a semantic representation of text. Embeddings are usually floating-point vectors with 256+ elements. The useful thing about embeddings is that they allow us to search over textual information using a semantic correlation between the query and the text, not just syntactic (matching keywords). We are using embeddings to create a search index over an entire codebase which allows us to perform natural language code search over the codebase. Indexing involves splitting the **entire codebase** into searchable chunks, and sending them to the external service specified in the site config for embedding. The final embedding index is stored in a managed object storage service. The available storage configurations are listed in the next section.
+
+### Configuring embeddings
 
 Here is the config for the OpenAI Embeddings API:
 
@@ -50,13 +104,9 @@ Here is the config for the OpenAI Embeddings API:
 
 * Navigate to Site admin > Cody (`/site-admin/cody`) and schedule repositories for embedding.
 
-> NOTE: By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice). In particular, some code snippets will be sent to a third-party language model provider when you use the Cody extension.
+> NOTE: By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice). 
 
-## Embeddings
-
-Embeddings are a semantic representation of text. Embeddings are usually floating-point vectors with 256+ elements. The useful thing about embeddings is that they allow us to search over textual information using a semantic correlation between the query and the text, not just syntactic (matching keywords). We are using embeddings to create a search index over an entire codebase which allows us to perform natural language code search over the codebase. Indexing involves splitting the **entire codebase** into searchable chunks, and sending them to the external service specified in the site config for embedding. The final embedding index is stored in a managed object storage service. The available storage configurations are listed in the next section.
-
-## Storing embedding indexes
+### Storing embedding indexes
 
 To target a managed object storage service, you will need to set a handful of environment variables for configuration and authentication to the target service. **If you are running a sourcegraph/server deployment, set the environment variables on the server container. Otherwise, if running via Docker-compose or Kubernetes, set the environment variables on the `frontend`, `embeddings`, and `worker` containers.**
 

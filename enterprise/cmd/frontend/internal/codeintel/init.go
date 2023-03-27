@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	autoindexinggraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/transport/graphql"
 	codenavgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/transport/graphql"
@@ -18,6 +19,7 @@ import (
 	uploadshttp "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/http"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -96,6 +98,7 @@ func Init(
 	uploadRootResolver := uploadgraphql.NewRootResolver(
 		scopedContext("upload"),
 		codeIntelServices.UploadsService,
+		codeIntelServices.AutoIndexingService,
 		codeIntelServices.PoliciesService,
 		codeIntelServices.GitserverClient,
 		siteAdminChecker,
@@ -116,13 +119,13 @@ func Init(
 		locationResolverFactory,
 	)
 
-	enterpriseServices.CodeIntelResolver = newResolver(
+	enterpriseServices.CodeIntelResolver = graphqlbackend.NewCodeIntelResolver(resolvers.NewCodeIntelResolver(
 		autoindexingRootResolver,
 		codenavRootResolver,
 		policyRootResolver,
 		uploadRootResolver,
 		sentinelRootResolver,
-	)
+	))
 	enterpriseServices.NewCodeIntelUploadHandler = newUploadHandler
 	enterpriseServices.RankingService = codeIntelServices.RankingService
 	return nil

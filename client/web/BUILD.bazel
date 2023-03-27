@@ -265,8 +265,6 @@ ts_project(
         "src/components/externalServices/AddExternalServicesPage.tsx",
         "src/components/externalServices/ExternalServiceCard.tsx",
         "src/components/externalServices/ExternalServiceEditPage.tsx",
-        "src/components/externalServices/ExternalServiceEditingAppLimitInPlaceAlert.tsx",
-        "src/components/externalServices/ExternalServiceEditingAppLimitReachedAlert.tsx",
         "src/components/externalServices/ExternalServiceEditingDisabledAlert.tsx",
         "src/components/externalServices/ExternalServiceEditingTemporaryAlert.tsx",
         "src/components/externalServices/ExternalServiceForm.tsx",
@@ -281,7 +279,6 @@ ts_project(
         "src/components/externalServices/backend.ts",
         "src/components/externalServices/externalServices.tsx",
         "src/components/externalServices/index.ts",
-        "src/components/externalServices/isAppLocalFileService.ts",
         "src/components/fuzzyFinder/FuzzyActions.tsx",
         "src/components/fuzzyFinder/FuzzyFiles.tsx",
         "src/components/fuzzyFinder/FuzzyFinder.mocks.tsx",
@@ -599,8 +596,9 @@ ts_project(
         "src/enterprise/codeintel/sort.ts",
         "src/enterprise/codeintel/useCodeIntel.ts",
         "src/enterprise/codeintel/useSearchBasedCodeIntel.ts",
-        "src/enterprise/cody/CodyPage.tsx",
-        "src/enterprise/cody/GlobalCodyArea.tsx",
+        "src/enterprise/cody/api.ts",
+        "src/enterprise/cody/icon.ts",
+        "src/enterprise/cody/search/CodySearchPage.tsx",
         "src/enterprise/dotcom/productSubscriptions/AccountEmailAddresses.tsx",
         "src/enterprise/dotcom/productSubscriptions/AccountName.tsx",
         "src/enterprise/dotcom/productSubscriptions/ProductLicenseValidity.tsx",
@@ -1171,6 +1169,7 @@ ts_project(
         "src/repo/blob/codemirror/hovercard.tsx",
         "src/repo/blob/codemirror/index.ts",
         "src/repo/blob/codemirror/linenumbers.ts",
+        "src/repo/blob/codemirror/links.ts",
         "src/repo/blob/codemirror/lock-line.ts",
         "src/repo/blob/codemirror/navigate-to-any-line-on-click.ts",
         "src/repo/blob/codemirror/occurrence-utils.ts",
@@ -1219,6 +1218,8 @@ ts_project(
         "src/repo/components/RepoHeaderActions/index.ts",
         "src/repo/components/RepoRevision/RepoRevision.tsx",
         "src/repo/components/RepoRevision/index.ts",
+        "src/repo/linkifiy/Linkified.tsx",
+        "src/repo/linkifiy/get-links.ts",
         "src/repo/packages/isPackageServiceType.ts",
         "src/repo/releases/RepositoryReleasesArea.tsx",
         "src/repo/releases/RepositoryReleasesTagsPage.tsx",
@@ -1361,6 +1362,7 @@ ts_project(
         "src/site-admin/SiteAdminWebhookPage.tsx",
         "src/site-admin/SiteAdminWebhookUpdatePage.tsx",
         "src/site-admin/SiteAdminWebhooksPage.tsx",
+        "src/site-admin/SiteConfigurationChangeListPage.tsx",
         "src/site-admin/UserManagement/components/Calendar/Calendar.tsx",
         "src/site-admin/UserManagement/components/Calendar/index.ts",
         "src/site-admin/UserManagement/components/DateRangeSelect.tsx",
@@ -1435,6 +1437,8 @@ ts_project(
         "src/site-admin/permissions-center/backend.ts",
         "src/site-admin/routes.tsx",
         "src/site-admin/sidebaritems.ts",
+        "src/site-admin/user-select/UserSelect.tsx",
+        "src/site-admin/user-select/backend.ts",
         "src/site-admin/webhooks/MessagePanel.tsx",
         "src/site-admin/webhooks/PerformanceGauge.tsx",
         "src/site-admin/webhooks/StatusCode.tsx",
@@ -1649,6 +1653,7 @@ ts_project(
         "//:node_modules/js-yaml",
         "//:node_modules/jsonc-parser",
         "//:node_modules/linguist-languages",
+        "//:node_modules/linkifyjs",
         "//:node_modules/lodash",
         "//:node_modules/lru-cache",
         "//:node_modules/marked",
@@ -1665,7 +1670,6 @@ ts_project(
         "//:node_modules/react-router-dom",
         "//:node_modules/react-spring",
         "//:node_modules/react-sticky-box",
-        "//:node_modules/react-use-websocket",
         "//:node_modules/recharts",
         "//:node_modules/rxjs",
         "//:node_modules/semver",
@@ -1770,7 +1774,9 @@ ts_project(
         "src/repo/blob/codemirror/utils.test.ts",
         "src/repo/commit/CommitMessageWithLinks.test.tsx",
         "src/repo/commits/GitCommitNodeByline.test.tsx",
+        "src/repo/linkifiy/get-links.test.ts",
         "src/repo/releases/RepositoryReleasesTagsPage.test.tsx",
+        "src/repo/tree/TreePage.test.tsx",
         "src/search/Notepad.test.tsx",
         "src/search/helpers.test.tsx",
         "src/search/index.test.ts",
@@ -1850,11 +1856,16 @@ npm_package(
 
 jest_test(
     name = "test",
+    size = "enormous",  # make sure bazel reserves enough RAM for this.
+    timeout = "moderate",
     data = [
         ":web_tests",
     ],
-    # TODO(bazel): enable when snapshots updated to support pre-compiled .js files
-    tags = ["manual"],
+    patch_node_fs = False,
+    shard_count = 6,  # this is has a large impact on the duration. We came to this number empirically.
+    tags = [
+        "no-sandbox",  # we are disabling the patch_node_fs, so the sandbox isn't really useful anymore.
+    ],
 )
 
 # webpack dev environment -------------------

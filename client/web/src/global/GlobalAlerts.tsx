@@ -63,7 +63,7 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
         <div className={classNames('test-global-alert', styles.globalAlerts)}>
             {siteFlagsValue && (
                 <>
-                    {siteFlagsValue?.reposCounts.remoteReposCount === 0 && (
+                    {siteFlagsValue?.externalServicesCounts.remoteExternalServicesCount === 0 && (
                         <NeedsRepositoryConfigurationAlert className={styles.alert} />
                     )}
                     {siteFlagsValue.freeUsersExceeded && (

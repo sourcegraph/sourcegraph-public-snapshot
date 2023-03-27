@@ -95,7 +95,9 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	db := database.NewDB(logger, sqlDB)
 
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
-		logger.Warn("Skipping out-of-band migrations check")
+		if !deploy.IsApp() {
+			logger.Warn("Skipping out-of-band migrations check")
+		}
 	} else {
 		outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(observationCtx, db, oobmigration.RefreshInterval)
 

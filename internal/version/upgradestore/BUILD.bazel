@@ -10,6 +10,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/version/upgradestore",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/conf/deploy",
         "//internal/database",
         "//internal/database/basestore",
         "//lib/errors",

@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "repo",
     srcs = [
+        "document_ranks.go",
         "handler.go",
         "janitor.go",
         "worker.go",
@@ -18,10 +19,13 @@ go_library(
         "//enterprise/internal/embeddings/embed",
         "//enterprise/internal/embeddings/split",
         "//internal/actor",
+        "//internal/api/internalapi",
+        "//internal/codeintel/types",
         "//internal/conf",
         "//internal/env",
         "//internal/gitserver",
         "//internal/goroutine",
+        "//internal/httpcli",
         "//internal/observation",
         "//internal/uploadstore",
         "//internal/workerutil",

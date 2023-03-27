@@ -22,6 +22,14 @@ type Store interface {
 	Transact(ctx context.Context) (Store, error)
 	Done(err error) error
 
+	GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []types.Index, _ int, err error)
+	GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error)
+	GetIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Index, err error)
+	DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
+	DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) (err error)
+	ReindexIndexByID(ctx context.Context, id int) (err error)
+	ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) (err error)
+
 	// Commits
 	GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error)
 	GetOldestCommitDate(ctx context.Context, repositoryID int) (time.Time, bool, error)

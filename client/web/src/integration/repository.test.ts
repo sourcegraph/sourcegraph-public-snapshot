@@ -476,6 +476,7 @@ describe('Repository', () => {
 
             const TreeEntries = {
                 repository: {
+                    id: 'test-repo-id',
                     commit: {
                         tree: {
                             isRoot: false,

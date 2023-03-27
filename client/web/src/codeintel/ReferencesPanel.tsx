@@ -1,4 +1,4 @@
-import React, { KeyboardEvent, MouseEvent, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import React, { MouseEvent, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 
 import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronUp, mdiFilterOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
@@ -8,7 +8,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { CodeExcerpt, onClickCodeExcerptHref } from '@sourcegraph/branded'
+import { CodeExcerpt } from '@sourcegraph/branded'
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import { ErrorLike, logger, pluralize } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-classes'
@@ -349,27 +349,7 @@ const ReferencesList: React.FunctionComponent<
                 setActiveURL(undefined)
                 return
             }
-            // Reconstruct the URL instead of using `location.url` to ensure that
-            // the commitID is included even when `location.url` doesn't include the
-            // commitID (because it's the default revision '').
-            const absoluteURL = toPrettyBlobURL({
-                filePath: location.file,
-                revision: location.commitID,
-                repoName: location.repo,
-                commitID: location.commitID,
-                range: location.range
-                    ? {
-                          start: {
-                              line: location.range.start.line + 1,
-                              character: location.range.start.character + 1,
-                          },
-                          end: {
-                              line: location.range.end.line + 1,
-                              character: location.range.end.character + 1,
-                          },
-                      }
-                    : undefined,
-            })
+            const absoluteURL = locationToUrl(location)
             setActiveURL(absoluteURL)
         },
         [setActiveURL]
@@ -896,7 +876,6 @@ const CollapsibleLocationGroup: React.FunctionComponent<
     handleOpenChange,
     fetchHighlightedFileLineRanges,
     navigateToUrl,
-    activeURL,
 }) => {
     // On the first load, update the scroll position towards the active
     // location.  Without this behavior, the scroll position points at the top
@@ -1009,16 +988,30 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                 const isFirstInActive =
                                     isActive && !(index > 0 && isActiveLocation(group.locations[index - 1]))
                                 const locationActive = isActive ? styles.locationActive : ''
-                                const selectReference = (
-                                    event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>
-                                ): void => {
-                                    onClickCodeExcerptHref(event, () => {
-                                        if (isActive && activeURL) {
-                                            navigateToUrl(activeURL)
-                                        } else {
-                                            setActiveLocation(reference)
-                                        }
-                                    })
+                                const clickReference = (event: MouseEvent<HTMLElement>): void => {
+                                    // If anything other than a normal primary click is detected,
+                                    // treat this as a normal link click and let the browser handle
+                                    // it.
+                                    if (
+                                        event.button !== 0 ||
+                                        event.altKey ||
+                                        event.ctrlKey ||
+                                        event.metaKey ||
+                                        event.shiftKey
+                                    ) {
+                                        return
+                                    }
+
+                                    event.preventDefault()
+                                    if (isActive) {
+                                        navigateToUrl(locationToUrl(reference))
+                                    } else {
+                                        setActiveLocation(reference)
+                                    }
+                                }
+                                const doubleClickReference = (event: MouseEvent<HTMLElement>): void => {
+                                    event.preventDefault()
+                                    navigateToUrl(locationToUrl(reference))
                                 }
 
                                 return (
@@ -1026,13 +1019,13 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                         key={reference.url}
                                         className={classNames('border-0 rounded-0 mb-0', styles.location)}
                                     >
-                                        <div
-                                            role="link"
+                                        {/* eslint-disable-next-line react/forbid-elements */}
+                                        <a
                                             data-testid={`reference-item-${group.path}-${index}`}
                                             tabIndex={0}
-                                            onClick={selectReference}
-                                            onKeyDown={selectReference}
-                                            data-href={reference.url}
+                                            onClick={clickReference}
+                                            onDoubleClick={doubleClickReference}
+                                            href={reference.url}
                                             className={classNames(styles.locationLink, locationActive)}
                                         >
                                             <CodeExcerpt
@@ -1070,7 +1063,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                                     </Tooltip>
                                                 </span>
                                             ) : null}
-                                        </div>
+                                        </a>
                                     </li>
                                 )
                             })}
@@ -1102,4 +1095,28 @@ const LoadingCodeIntelFailed: React.FunctionComponent<React.PropsWithChildren<{ 
 
 function sessionStorageKeyFromToken(token: Token): string {
     return `${token.repoName}@${token.commitID}/${token.filePath}?L${token.line}:${token.character}`
+}
+
+function locationToUrl(location: Location): string {
+    // Reconstruct the URL instead of using `location.url` to ensure that
+    // the commitID is included even when `location.url` doesn't include the
+    // commitID (because it's the default revision '').
+    return toPrettyBlobURL({
+        filePath: location.file,
+        revision: location.commitID,
+        repoName: location.repo,
+        commitID: location.commitID,
+        range: location.range
+            ? {
+                  start: {
+                      line: location.range.start.line + 1,
+                      character: location.range.start.character + 1,
+                  },
+                  end: {
+                      line: location.range.end.line + 1,
+                      character: location.range.end.character + 1,
+                  },
+              }
+            : undefined,
+    })
 }

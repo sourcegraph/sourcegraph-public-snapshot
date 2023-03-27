@@ -257,7 +257,11 @@ npm_package(
 
 jest_test(
     name = "test",
+    timeout = "moderate",
     data = [
         ":branded_tests",
     ],
+    patch_node_fs = False,
+    shard_count = 6,
+    tags = ["no-sandbox"],
 )

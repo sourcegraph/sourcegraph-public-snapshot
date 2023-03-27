@@ -21,6 +21,14 @@ rustyline = "9.1.2"
 sg-syntax = { path = "./crates/sg-syntax" }
 scip-treesitter = { path = "./crates/scip-treesitter" }
 
+# March 20, 2023 - Pinned explicitly with features that match the features
+# required by rocket. Once bazel rules correctly roll up all the features,
+# we can remove this, but until then, this works just fine for building
+# with bazel (and we rarely update rocket, so this is fine).
+futures = { version = "^0.3.27", features = ["std"], default-features = false }
+futures-util = { version = "^0.3.27", features = ["std"], default-features = false }
+futures-task = { version = "^0.3.27", features = ["std"], default-features = false }
+
 [workspace]
 members = [
     "crates/sg-syntax",
@@ -39,12 +47,15 @@ clap = { version = "4.1.11", features = [ "derive" ] }
 rocket = { version = "0.5.0-rc.1", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-syntect = { git = "https://github.com/sourcegraph/syntect", branch = "main" }
+# Since there is no version tag, we pin the dependency to a specific revision
+syntect = { git = "https://github.com/sourcegraph/syntect", rev = "7e02c5b4085e6d935b960b8106cdd85da04532d2" }
 tree-sitter = "0.20.9"
 tree-sitter-highlight = "0.20"
 
-scip = { git = "https://github.com/sourcegraph/scip", branch = "main" }
+# Since there is no version tag, we pin the dependency to a specific revision
+scip = { git = "https://github.com/sourcegraph/scip", rev="3856df76147ca4b86df7821a881594358d4ba870" }
 protobuf = "3"
+
 
 [profile.release]
 # Enabled debug symbols in release build, so if we have a crash
