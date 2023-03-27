@@ -209,7 +209,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
             {!hasRemainingSeats && (
                 <Alert variant="danger">
                     No licenses remaining. To approve requests, <Link to="TODO">purchase additional licenses</Link> or{' '}
-                    <Link to="TODO">remove inactive users</Link>.
+                    <Link to="/site-admin/users">remove inactive users</Link>.
                 </Alert>
             )}
             <Card className="p-3">
