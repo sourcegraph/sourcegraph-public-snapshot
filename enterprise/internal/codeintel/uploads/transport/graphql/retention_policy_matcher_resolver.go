@@ -1,7 +1,6 @@
 package graphql
 
 import (
-	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -22,7 +21,7 @@ func (r *retentionPolicyMatcherResolver) ConfigurationPolicy() resolverstubs.Cod
 	if r.policy.ConfigurationPolicy == nil {
 		return nil
 	}
-	return sharedresolvers.NewConfigurationPolicyResolver(r.repoStore, *r.policy.ConfigurationPolicy, r.errCollector)
+	return NewConfigurationPolicyResolver(r.repoStore, *r.policy.ConfigurationPolicy, r.errCollector)
 }
 
 func (r *retentionPolicyMatcherResolver) Matches() bool {
