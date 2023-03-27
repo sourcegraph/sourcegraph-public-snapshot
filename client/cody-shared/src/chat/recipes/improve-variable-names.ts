@@ -4,7 +4,6 @@ import { IntentDetector } from '../../intent-detector'
 import { MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { getShortTimestamp } from '../../timestamp'
-import { renderMarkdown } from '../markdown'
 import { Interaction } from '../transcript/interaction'
 
 import {
@@ -37,9 +36,7 @@ export class ImproveVariableNames implements Recipe {
         const truncatedFollowingText = truncateText(selection.followingText, MAX_RECIPE_SURROUNDING_TOKENS)
         const extension = getFileExtension(selection.fileName)
 
-        const displayText = renderMarkdown(
-            `Improve the variable names in the following code:\n\`\`\`\n${selection.selectedText}\n\`\`\``
-        )
+        const displayText = `Improve the variable names in the following code:\n\`\`\`\n${selection.selectedText}\n\`\`\``
 
         const languageName = getNormalizedLanguageName(selection.fileName)
         const promptMessage = `Improve the variable names in this ${languageName} code by replacing the variable names with new identifiers which succinctly capture the purpose of the variable. We want the new code to be a drop-in replacement, so do not change names bound outside the scope of this code, like function names or members defined elsewhere. Only change the names of local variables and parameters:\n\n\`\`\`${extension}\n${truncatedSelectedText}\n\`\`\`\n${MARKDOWN_FORMAT_PROMPT}`

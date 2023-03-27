@@ -19,11 +19,11 @@ export class Transcript {
         return this.interactions.length > 0 ? this.interactions[this.interactions.length - 1] : null
     }
 
-    public addAssistantResponse(text: string, displayText: string): void {
+    public addAssistantResponse(text: string): void {
         this.getLastInteraction()?.setAssistantMessage({
             speaker: 'assistant',
             text,
-            displayText,
+            displayText: text,
             timestamp: getShortTimestamp(),
         })
     }

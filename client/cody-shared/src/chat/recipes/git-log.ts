@@ -7,7 +7,6 @@ import { IntentDetector } from '../../intent-detector'
 import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { getShortTimestamp } from '../../timestamp'
-import { renderMarkdown } from '../markdown'
 import { Interaction } from '../transcript/interaction'
 
 import { Recipe } from './recipe'
@@ -76,7 +75,7 @@ export class GitHistory implements Recipe {
         const promptMessage = `Summarize these commits:\n${truncatedGitLogOutput}\n\nProvide your response in the form of a bulleted list. Do not mention the commit hashes.`
         const assistantResponsePrefix = 'Here is a summary of recent changes:\n- '
         return new Interaction(
-            { speaker: 'human', text: promptMessage, displayText: renderMarkdown(rawDisplayText), timestamp },
+            { speaker: 'human', text: promptMessage, displayText: rawDisplayText, timestamp },
             {
                 speaker: 'assistant',
                 prefix: assistantResponsePrefix,
