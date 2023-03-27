@@ -874,7 +874,6 @@ go_library(
         "frontend/1679603787_keep_cloning_progress_in_gitserver_repos/down.sql",
         "frontend/1679603787_keep_cloning_progress_in_gitserver_repos/metadata.yaml",
         "frontend/1679603787_keep_cloning_progress_in_gitserver_repos/up.sql",
-        "codeinsights/.DS_Store",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/migrations",
     visibility = ["//visibility:public"],
