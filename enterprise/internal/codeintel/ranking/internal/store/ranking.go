@@ -809,7 +809,7 @@ locked_path_counts_inputs AS (
 	SELECT id
 	FROM codeintel_ranking_path_counts_inputs
 	WHERE graph_key != %s
-	ORDER BY id
+	ORDER BY graph_key, id
 	FOR UPDATE SKIP LOCKED
 	LIMIT %s
 ),
