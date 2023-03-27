@@ -39,9 +39,12 @@ import (
 func mustParse(t *testing.T, dateStr string) time.Time {
 	date, err := time.Parse(time.RFC3339, dateStr)
 	if err != nil {
-		date, err = time.Parse("2006-01-02", dateStr)
+		date, err = time.Parse("2006-01-02T15:04:05", dateStr)
 		if err != nil {
-			t.Fatal("Failed to parse date from", dateStr)
+			date, err = time.Parse("2006-01-02", dateStr)
+			if err != nil {
+				t.Fatal("Failed to parse date from", dateStr)
+			}
 		}
 	}
 	return date
@@ -88,14 +91,14 @@ func TestGitHub_stripDateRange(t *testing.T) {
 		"to with <=": {
 			query: "created:<=2015-12-12",
 			wantDateRange: &dateRange{
-				To: mustParse(t, "2015-12-12T00:00:00+00:00"),
+				To: mustParse(t, "2015-12-12T23:59:59+00:00"),
 			},
 		},
 		"to with *..": {
-			query:     "created:*..2015-12-12T00:01:30",
+			query:     "created:*..2015-12-12",
 			wantQuery: "",
 			wantDateRange: &dateRange{
-				To: mustParse(t, "2015-12-12T00:01:30+00:00"),
+				To: mustParse(t, "2015-12-12T23:59:59"),
 			},
 		},
 	}

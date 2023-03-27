@@ -832,37 +832,46 @@ func stripDateRange(s *string) (*dateRange, error) {
 
 	dr := &dateRange{}
 
-	parseDate := func(dateStr string) (time.Time, error) {
+	parseDate := func(dateStr string, untilEndOfDay bool) (time.Time, error) {
 		if strings.Contains(dateStr, "T") {
 			if strings.Contains(dateStr, "+") || strings.Contains(dateStr, "Z") {
 				return time.Parse(time.RFC3339, dateStr)
 			}
-			return time.Parse("2006-01-02T03:04:05", dateStr)
+			return time.Parse("2006-01-02T15:04:05", dateStr)
 		}
-		return time.Parse("2006-01-02", dateStr)
+		t, err := time.Parse("2006-01-02", dateStr)
+		if err != nil {
+			return t, err
+		}
+		// If we need to match until the end of the day, the time should be 23:59:59
+		// This only applies if no time was specified
+		if untilEndOfDay {
+			t = t.Add(24 * time.Hour).Add(-1 * time.Second)
+		}
+		return t, err
 	}
 
 	switch {
 	case strings.HasPrefix(dateStr, ">="):
-		date, err := parseDate(dateStr[2:])
+		date, err := parseDate(dateStr[2:], false)
 		if err != nil {
 			return nil, err
 		}
 		dr.From = date
 	case strings.HasPrefix(dateStr, ">"):
-		date, err := parseDate(dateStr[1:])
+		date, err := parseDate(dateStr[1:], false)
 		if err != nil {
 			return nil, err
 		}
 		dr.From = date.Add(1 * time.Second)
 	case strings.HasPrefix(dateStr, "<="):
-		date, err := parseDate(dateStr[2:])
+		date, err := parseDate(dateStr[2:], true)
 		if err != nil {
 			return nil, err
 		}
 		dr.To = date
 	case strings.HasPrefix(dateStr, "<"):
-		date, err := parseDate(dateStr[1:])
+		date, err := parseDate(dateStr[1:], false)
 		if err != nil {
 			return nil, err
 		}
@@ -876,13 +885,13 @@ func stripDateRange(s *string) (*dateRange, error) {
 		var toDate time.Time
 		var err error
 		if rangeParts[0] != "*" {
-			fromDate, err = parseDate(rangeParts[0])
+			fromDate, err = parseDate(rangeParts[0], false)
 			if err != nil {
 				return nil, err
 			}
 		}
 		if rangeParts[1] != "*" {
-			toDate, err = parseDate(rangeParts[1])
+			toDate, err = parseDate(rangeParts[1], true)
 			if err != nil {
 				return nil, err
 			}
