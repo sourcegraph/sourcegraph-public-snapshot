@@ -1,0 +1,50 @@
+.diffblock {
+    display: block;
+    background-color: var(--color-bg-2);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    font-size: 12px; // the default font size for monaco editor, so let's mimic pixels here as well
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.diffMeta {
+    display: flex;
+    align-items: center;
+}
+
+svg.fileIcon {
+    // user avatar is also sized to 32px
+    width: 32px;
+    height: 32px;
+    vertical-align: top;
+    color: var(--text-muted);
+}
+
+.container {
+    display: grid;
+    grid-template-columns: 0.5fr 1.5fr;
+    grid-template-rows: 1fr 1fr;;
+    grid-template-areas:
+      "diffIcon changeDescription"
+      "diffIcon changeTime";
+}
+
+.diffIcon {
+    grid-area: diffIcon;
+    grid-column-start: 1;
+    grid-row-end: -1;
+    vertical-align: top;
+}
+
+.changeDescription {
+    grid-area: changeDescription;
+    vertical-align: top;
+}
+
+.changeTime {
+    grid-area: changeTime;
+    text-align: left;
+    font-size: 0.7rem;
+    font-weight: 400;
+}
