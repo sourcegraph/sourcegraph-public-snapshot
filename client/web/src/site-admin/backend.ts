@@ -311,11 +311,11 @@ export const CHECK_MIRROR_REPOSITORY_CONNECTION = gql`
 export function checkMirrorRepositoryConnection(
     args:
         | {
-            repository: Scalars['ID']
-        }
+              repository: Scalars['ID']
+          }
         | {
-            name: string
-        }
+              name: string
+          }
 ): Observable<CheckMirrorRepositoryConnectionResult['checkMirrorRepositoryConnection']> {
     return mutateGraphQL<CheckMirrorRepositoryConnectionResult>(CHECK_MIRROR_REPOSITORY_CONNECTION, args).pipe(
         map(dataOrThrowErrors),
