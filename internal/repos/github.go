@@ -802,6 +802,12 @@ func (s *GitHubSource) listSearch(ctx context.Context, q string, results chan *g
 	// and if so, strip that date range from the query.
 	dr, err := stripDateRange(&q)
 	if err == nil {
+		if dr.From.IsZero() {
+			dr.From = minCreated
+		}
+		if dr.To.IsZero() {
+			dr.To = time.Now()
+		}
 		(&repositoryQuery{Query: q, Searcher: s.v4Client, Logger: s.logger, Created: dr}).DoWithRefinedWindow(ctx, results)
 	} else {
 		(&repositoryQuery{Query: q, Searcher: s.v4Client, Logger: s.logger}).DoWithRefinedWindow(ctx, results)
