@@ -721,7 +721,7 @@ func (s *store) VacuumAbandonedDefinitions(ctx context.Context, graphKey string,
 	ctx, _, endObservation := s.operations.vacuumAbandonedDefinitions.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
 	defer endObservation(1, observation.Args{})
 
-	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumAbandonedDefinitionsQuery, graphKey, batchSize)))
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumAbandonedDefinitionsQuery, graphKey, graphKey, batchSize)))
 	return count, err
 }
 
@@ -730,8 +730,8 @@ WITH
 locked_definitions AS (
 	SELECT id
 	FROM codeintel_ranking_definitions
-	WHERE graph_key != %s
-	ORDER BY id
+	WHERE (graph_key < %s OR graph_key > %s)
+	ORDER BY graph_key, id
 	FOR UPDATE SKIP LOCKED
 	LIMIT %s
 ),
@@ -747,7 +747,7 @@ func (s *store) VacuumAbandonedReferences(ctx context.Context, graphKey string, 
 	ctx, _, endObservation := s.operations.vacuumAbandonedReferences.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
 	defer endObservation(1, observation.Args{})
 
-	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumAbandonedReferencesQuery, graphKey, batchSize)))
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumAbandonedReferencesQuery, graphKey, graphKey, batchSize)))
 	return count, err
 }
 
@@ -756,8 +756,8 @@ WITH
 locked_references AS (
 	SELECT id
 	FROM codeintel_ranking_references
-	WHERE graph_key != %s
-	ORDER BY id
+	WHERE (graph_key < %s OR graph_key > %s)
+	ORDER BY graph_key, id
 	FOR UPDATE SKIP LOCKED
 	LIMIT %s
 ),
@@ -773,7 +773,7 @@ func (s *store) VacuumAbandonedInitialPathCounts(ctx context.Context, graphKey s
 	ctx, _, endObservation := s.operations.vacuumAbandonedInitialPathCounts.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
 	defer endObservation(1, observation.Args{})
 
-	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumAbandonedInitialPathCountsQuery, graphKey, batchSize)))
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumAbandonedInitialPathCountsQuery, graphKey, graphKey, batchSize)))
 	return count, err
 }
 
@@ -782,8 +782,8 @@ WITH
 locked_initial_paths AS (
 	SELECT id
 	FROM codeintel_initial_path_ranks
-	WHERE graph_key != %s
-	ORDER BY id
+	WHERE (graph_key < %s OR graph_key > %s)
+	ORDER BY graph_key, id
 	FOR UPDATE SKIP LOCKED
 	LIMIT %s
 ),
@@ -799,7 +799,7 @@ func (s *store) VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string
 	ctx, _, endObservation := s.operations.vacuumStaleGraphs.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
 	defer endObservation(1, observation.Args{})
 
-	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumStaleGraphsQuery, derivativeGraphKey, batchSize)))
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumStaleGraphsQuery, derivativeGraphKey, derivativeGraphKey, batchSize)))
 	return count, err
 }
 
@@ -808,8 +808,8 @@ WITH
 locked_path_counts_inputs AS (
 	SELECT id
 	FROM codeintel_ranking_path_counts_inputs
-	WHERE graph_key != %s
-	ORDER BY id
+	WHERE (graph_key < %s OR graph_key > %s)
+	ORDER BY graph_key, id
 	FOR UPDATE SKIP LOCKED
 	LIMIT %s
 ),
