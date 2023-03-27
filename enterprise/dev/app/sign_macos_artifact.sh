@@ -76,7 +76,7 @@ workdir=$(dirname "${artifact_path}")
   # In Buildkite, we're running in a Docker container, so `docker run -v` needs to refer to a
   # directory on our Docker host, not in our container. Use the /mnt/tmp directory, which is shared
   # between `dind` (the Docker-in-Docker host) and our container.
-  [[ ${app_bundle_path} = /mnt/* ]] || {
+  [[ ${workdir} = /mnt/* ]] || {
     workdir=$(mktemp -d --tmpdir=/mnt/tmp -t sourcegraph.XXXXXXXX)
     cp -R "${artifact_path}" "${workdir}"
     trap "popd 1>/dev/null && rm -rf \"${workdir}\"" EXIT
@@ -105,7 +105,7 @@ docker run --rm "${entitlements_volume[@]}" \
   # In Buildkite, we're running in a Docker container, so `docker run -v` needs to refer to a
   # directory on our Docker host, not in our container. Use the /mnt/tmp directory, which is shared
   # between `dind` (the Docker-in-Docker host) and our container.
-  [[ ${app_bundle_path} = /mnt/* ]] || {
+  [[ ${workdir} = /mnt/* ]] || {
     cp -R "${workdir}/${artifact_file}" "${artifact_path}"
   }
 }
