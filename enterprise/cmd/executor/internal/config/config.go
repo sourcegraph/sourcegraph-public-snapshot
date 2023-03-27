@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"net/url"
 	"runtime"
 	"strconv"
 	"time"
@@ -95,6 +96,14 @@ func (c *Config) Load() {
 func (c *Config) Validate() error {
 	if c.QueueName != "" && c.QueueName != "batches" && c.QueueName != "codeintel" {
 		c.AddError(errors.New("EXECUTOR_QUEUE_NAME must be set to 'batches' or 'codeintel'"))
+	}
+
+	u, err := url.Parse(c.FrontendURL)
+	if err != nil {
+		c.AddError(errors.Wrap(err, "failed to parse EXECUTOR_FRONTEND_URL"))
+	}
+	if u.Scheme == "" || u.Host == "" {
+		c.AddError(errors.New("EXECUTOR_FRONTEND_URL must be in the format scheme://host (and optionally :port)"))
 	}
 
 	if c.dockerAuthConfigUnmarshalError != nil {

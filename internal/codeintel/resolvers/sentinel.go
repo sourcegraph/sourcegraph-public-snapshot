@@ -16,14 +16,15 @@ type SentinelServiceResolver interface {
 	// Fetch matches
 	VulnerabilityMatches(ctx context.Context, args GetVulnerabilityMatchesArgs) (VulnerabilityMatchConnectionResolver, error)
 	VulnerabilityMatchByID(ctx context.Context, id graphql.ID) (_ VulnerabilityMatchResolver, err error)
-	VulnerabilityMatchesGroupByRepository(ctx context.Context, args GetVulnerabilityMatchGroupByRepositoryArgs) (VulnerabilityMatchGroupByRepositoryConnectionResolver, error)
 	VulnerabilityMatchesSummaryCounts(ctx context.Context) (VulnerabilityMatchesSummaryCountResolver, error)
+	VulnerabilityMatchesCountByRepository(ctx context.Context, args GetVulnerabilityMatchCountByRepositoryArgs) (VulnerabilityMatchCountByRepositoryConnectionResolver, error)
 }
 
 type (
-	GetVulnerabilitiesArgs               = PagedConnectionArgs
-	VulnerabilityConnectionResolver      = PagedConnectionWithTotalCountResolver[VulnerabilityResolver]
-	VulnerabilityMatchConnectionResolver = PagedConnectionWithTotalCountResolver[VulnerabilityMatchResolver]
+	GetVulnerabilitiesArgs                                = PagedConnectionArgs
+	VulnerabilityConnectionResolver                       = PagedConnectionWithTotalCountResolver[VulnerabilityResolver]
+	VulnerabilityMatchConnectionResolver                  = PagedConnectionWithTotalCountResolver[VulnerabilityMatchResolver]
+	VulnerabilityMatchCountByRepositoryConnectionResolver = PagedConnectionWithTotalCountResolver[VulnerabilityMatchCountByRepositoryResolver]
 )
 
 type GetVulnerabilityMatchesArgs struct {
@@ -75,21 +76,15 @@ type VulnerabilityMatchResolver interface {
 	PreciseIndex(ctx context.Context) (PreciseIndexResolver, error)
 }
 
-type GetVulnerabilityMatchGroupByRepositoryArgs struct {
+type GetVulnerabilityMatchCountByRepositoryArgs struct {
 	PagedConnectionArgs
 	RepositoryName *string
 }
 
-type VulnerabilityMatchGroupByRepositoryResolver interface {
+type VulnerabilityMatchCountByRepositoryResolver interface {
 	ID() graphql.ID
 	RepositoryName() string
 	MatchCount() int32
-}
-
-type VulnerabilityMatchGroupByRepositoryConnectionResolver interface {
-	Nodes() []VulnerabilityMatchGroupByRepositoryResolver
-	TotalCount() *int32
-	PageInfo() PageInfo
 }
 
 type VulnerabilityMatchesSummaryCountResolver interface {

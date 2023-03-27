@@ -10,7 +10,7 @@ import {
     ComboboxOptionText,
 } from '@sourcegraph/wildcard'
 
-import { Scalars, UserSelectSearchFields } from '../../../graphql-operations'
+import { Scalars, TeamMemberUserSelectSearchFields } from '../../../graphql-operations'
 
 import { useUserSelectSearch } from './backend'
 
@@ -30,7 +30,7 @@ export const UserSelect: React.FunctionComponent<UserSelectProps> = ({
     setSelectedMembers,
 }) => {
     const [search, setSearch] = useState<string>('')
-    const [selectedItems, setSelectedItems] = useState<UserSelectSearchFields[]>([])
+    const [selectedItems, setSelectedItems] = useState<TeamMemberUserSelectSearchFields[]>([])
 
     useEffect(() => {
         setSelectedMembers(selectedItems.map(item => item.id))
@@ -45,7 +45,7 @@ export const UserSelect: React.FunctionComponent<UserSelectProps> = ({
         }
     }, [error])
 
-    const suggestions: UserSelectSearchFields[] = data?.users.nodes || []
+    const suggestions: TeamMemberUserSelectSearchFields[] = data?.users.nodes || []
 
     const suggestionsWithExcludes = suggestions.filter(
         item => !selectedItems.find(selectedItem => selectedItem.id === item.id)
@@ -78,7 +78,7 @@ export const UserSelect: React.FunctionComponent<UserSelectProps> = ({
 }
 
 interface UserOptionProps {
-    item: UserSelectSearchFields
+    item: TeamMemberUserSelectSearchFields
     index: number
 }
 

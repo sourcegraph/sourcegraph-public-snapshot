@@ -83,7 +83,8 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 				addJetBrainsUnitTests, // ~2.5m
 				// addTypescriptCheck is now covered by Bazel
 				// addTypescriptCheck,    // ~4m
-				addVsceTests, // ~3.0m
+				addVsceTests,          // ~3.0m
+				addCodyExtensionTests, // ~2.5m
 			)
 		} else {
 			// If there are any Graphql changes, they are impacting the client as well.
@@ -97,6 +98,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 				addJetBrainsUnitTests,        // ~2.5m
 				addTypescriptCheck,           // ~4m
 				addVsceTests,                 // ~3.0m
+				addCodyExtensionTests,        // ~2.5m
 			)
 		}
 
@@ -324,6 +326,16 @@ func addVsceTests(pipeline *bk.Pipeline) {
 		// TODO: fix integrations tests and re-enable: https://github.com/sourcegraph/sourcegraph/issues/40891
 		// bk.Cmd("pnpm --filter @sourcegraph/vscode run test-integration --verbose"),
 		// bk.AutomaticRetry(1),
+	)
+}
+
+func addCodyExtensionTests(pipeline *bk.Pipeline) {
+	pipeline.AddStep(
+		":vscode::robot_face: Integration tests for the Cody VS Code extension",
+		withPnpmCache(),
+		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
+		bk.Cmd("pnpm --filter cody-ai run test:integration"),
+		bk.AutomaticRetry(1),
 	)
 }
 

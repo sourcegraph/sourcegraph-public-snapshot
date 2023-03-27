@@ -8,15 +8,16 @@ import (
 )
 
 type operations struct {
-	vulnerabilityByID                    *observation.Operation
-	getVulnerabilitiesByIDs              *observation.Operation
-	getVulnerabilities                   *observation.Operation
-	getVulnerabilityMatchesByRepo        *observation.Operation
-	getVulnerabilityMatchesSummaryCounts *observation.Operation
-	insertVulnerabilities                *observation.Operation
-	vulnerabilityMatchByID               *observation.Operation
-	getVulnerabilityMatches              *observation.Operation
-	scanMatches                          *observation.Operation
+	vulnerabilityByID                        *observation.Operation
+	getVulnerabilitiesByIDs                  *observation.Operation
+	getVulnerabilities                       *observation.Operation
+	getVulnerabilityMatchesByRepo            *observation.Operation
+	getVulnerabilityMatchesSummaryCounts     *observation.Operation
+	getVulnerabilityMatchesCountByRepository *observation.Operation
+	insertVulnerabilities                    *observation.Operation
+	vulnerabilityMatchByID                   *observation.Operation
+	getVulnerabilityMatches                  *observation.Operation
+	scanMatches                              *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -40,14 +41,15 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		vulnerabilityByID:                    op("VulnerabilityByID"),
-		getVulnerabilitiesByIDs:              op("GetVulnerabilitiesByIDs"),
-		getVulnerabilities:                   op("GetVulnerabilities"),
-		getVulnerabilityMatchesByRepo:        op("GetVulnerabilityMatchesByRepo"),
-		getVulnerabilityMatchesSummaryCounts: op("GetVulnerabilityMatchesSummaryCounts"),
-		insertVulnerabilities:                op("InsertVulnerabilities"),
-		vulnerabilityMatchByID:               op("VulnerabilityMatchByID"),
-		getVulnerabilityMatches:              op("GetVulnerabilityMatches"),
-		scanMatches:                          op("ScanMatches"),
+		vulnerabilityByID:                        op("VulnerabilityByID"),
+		getVulnerabilitiesByIDs:                  op("GetVulnerabilitiesByIDs"),
+		getVulnerabilities:                       op("GetVulnerabilities"),
+		getVulnerabilityMatchesCountByRepository: op("GetVulnerabilityMatchesCountByRepository"),
+		getVulnerabilityMatchesByRepo:            op("GetVulnerabilityMatchesByRepo"),
+		getVulnerabilityMatchesSummaryCounts:     op("GetVulnerabilityMatchesSummaryCounts"),
+		insertVulnerabilities:                    op("InsertVulnerabilities"),
+		vulnerabilityMatchByID:                   op("VulnerabilityMatchByID"),
+		getVulnerabilityMatches:                  op("GetVulnerabilityMatches"),
+		scanMatches:                              op("ScanMatches"),
 	}
 }

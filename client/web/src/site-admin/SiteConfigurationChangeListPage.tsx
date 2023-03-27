@@ -72,11 +72,7 @@ export const SiteConfigurationChangeListPage: FC = () => {
 interface SiteConfigurationHistoryItemProps {
     node: SiteConfigurationChangeNode
 }
-function linesChanged(diffString: string | null): [number, number] {
-    if (diffString === null) {
-        return [0, 0]
-    }
-
+function linesChanged(diffString: string): [number, number] {
     return diffString
         .split('\n')
         .slice(3)
@@ -93,63 +89,52 @@ function linesChanged(diffString: string | null): [number, number] {
             [0, 0]
         )
 }
+
 const SiteConfigurationHistoryItem: FC<SiteConfigurationHistoryItemProps> = ({ node }) => {
     const [open, setOpen] = useState<boolean>(false)
     const icon = open ? mdiChevronUp : mdiChevronDown
+    const [removedLines, addedLines] = linesChanged(node.diff)
 
-    if (node.reproducedDiff) {
-        const [removedLines, addedLines] = linesChanged(node.diff)
-
-        return (
-            <>
-                <Collapse key={node.id} isOpen={open} onOpenChange={setOpen}>
-                    <CollapseHeader
-                        as={Button}
-                        aria-expanded={open}
-                        type="button"
-                        className="d-flex p-0 justify-content-start w-100"
-                    >
-                        <Icon aria-hidden={true} svgPath={icon} />
-                        <span>
-                            Changed <Timestamp date={node.createdAt} />
-                            {node.author ? (
-                                <>
-                                    <span className="ml-1">
-                                        by{' '}
-                                        <Link to={`/users/${node.author.username}`} className="text-truncate">
-                                            {node.author.displayName}
-                                        </Link>
-                                    </span>
-                                </>
-                            ) : (
-                                <Tooltip content="Author information is not available because this change was made directly by editing the SITE_CONFIG_FILE">
-                                    <Icon
-                                        className="ml-1"
-                                        svgPath={mdiInformationOutline}
-                                        aria-label="Author information is not available because this change was made directly by editing the SITE_CONFIG_FILE"
-                                    />
-                                </Tooltip>
-                            )}
-                        </span>
-                        {node.diff && (
-                            <span className="ml-auto">
-                                <DiffStatStack className="mr-1" added={addedLines} deleted={removedLines} />
-                            </span>
-                        )}
-                    </CollapseHeader>
-                    <CollapsePanel>
-                        <Code className={classNames('p-2', 'mt-2', styles.diffblock)}>{node.diff}</Code>
-                    </CollapsePanel>
-                </Collapse>
-                <hr className="mb-3 mt-3" />
-            </>
-        )
-    }
     return (
-        <CollapseHeader className="d-block mb-3">
-            <>
-                {node.author} {node.createdAt}
-            </>
-        </CollapseHeader>
+        <>
+            <Collapse key={node.id} isOpen={open} onOpenChange={setOpen}>
+                <CollapseHeader
+                    as={Button}
+                    aria-expanded={open}
+                    type="button"
+                    className="d-flex p-0 justify-content-start w-100"
+                >
+                    <Icon aria-hidden={true} svgPath={icon} />
+                    <span>
+                        Changed <Timestamp date={node.createdAt} />
+                        {node.author ? (
+                            <>
+                                <span className="ml-1">
+                                    by{' '}
+                                    <Link to={`/users/${node.author.username}`} className="text-truncate">
+                                        {node.author.displayName}
+                                    </Link>
+                                </span>
+                            </>
+                        ) : (
+                            <Tooltip content="Author information is not available because this change was made directly by editing the SITE_CONFIG_FILE">
+                                <Icon
+                                    className="ml-1"
+                                    svgPath={mdiInformationOutline}
+                                    aria-label="Author information is not available because this change was made directly by editing the SITE_CONFIG_FILE"
+                                />
+                            </Tooltip>
+                        )}
+                    </span>
+                    <span className="ml-auto">
+                        <DiffStatStack className="mr-1" added={addedLines} deleted={removedLines} />
+                    </span>
+                </CollapseHeader>
+                <CollapsePanel>
+                    <Code className={classNames('p-2', 'mt-2', styles.diffblock)}>{node.diff}</Code>
+                </CollapsePanel>
+            </Collapse>
+            <hr className="mb-3 mt-3" />
+        </>
     )
 }

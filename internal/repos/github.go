@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/grafana/regexp"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -797,14 +799,96 @@ func (s *GitHubSource) listAffiliatedPage(ctx context.Context, first int, result
 // It returns the repositories matching a GitHub's advanced repository search query
 // via the GraphQL API.
 func (s *GitHubSource) listSearch(ctx context.Context, q string, results chan *githubResult) {
-	(&repositoryQuery{Query: q, Searcher: s.v4Client, Logger: s.logger}).DoWithRefinedWindow(ctx, results)
+	// First we need to parse the query to see if it is querying within a date range,
+	// and if so, strip that date range from the query.
+	dr := stripDateRange(&q)
+
+	newRepositoryQuery(q, s.v4Client, s.logger, dr).DoWithRefinedWindow(ctx, results)
 }
 
 // GitHub was founded on February 2008, so this minimum date covers all repos
 // created on it.
 var minCreated = time.Date(2007, time.June, 1, 0, 0, 0, 0, time.UTC)
 
-type dateRange struct{ From, To, OriginalTo time.Time }
+type dateRange struct{ From, To time.Time }
+
+// stripDateRange strips the `created:` filter from the given string (modifying it in place)
+// and returns a pointer to the resulting dateRange object.
+// If no dateRange could be parsed from the string, nil is returned and the string is left unchanged.
+func stripDateRange(s *string) *dateRange {
+	re := regexp.MustCompile(`created:([^\s]+)`)
+	matches := re.FindStringSubmatch(*s)
+	if len(matches) < 2 {
+		return nil
+	}
+	dateStr := matches[1]
+
+	parseDate := func(dateStr string, untilEndOfDay bool) (time.Time, error) {
+		if strings.Contains(dateStr, "T") {
+			if strings.Contains(dateStr, "+") || strings.Contains(dateStr, "Z") {
+				return time.Parse(time.RFC3339, dateStr)
+			}
+			return time.Parse("2006-01-02T15:04:05", dateStr)
+		}
+		t, err := time.Parse("2006-01-02", dateStr)
+		if err != nil {
+			return t, err
+		}
+		// If we need to match until the end of the day, the time should be 23:59:59
+		// This only applies if no time was specified
+		if untilEndOfDay {
+			t = t.Add(24 * time.Hour).Add(-1 * time.Second)
+		}
+		return t, err
+	}
+
+	var fromDateStr, toDateStr string
+	var fromTimeAdd, toTimeAdd time.Duration // Time to add to the respective dates in case of exclusive bounds
+	var toEndOfDay bool                      // Whether or not the "To" date should include the entire day (for inclusive bounds checks)
+	switch {
+	case strings.HasPrefix(dateStr, ">="):
+		fromDateStr = dateStr[2:]
+	case strings.HasPrefix(dateStr, ">"):
+		fromDateStr = dateStr[1:]
+		fromTimeAdd = 1 * time.Second
+	case strings.HasPrefix(dateStr, "<="):
+		toDateStr = dateStr[2:]
+		toEndOfDay = true
+	case strings.HasPrefix(dateStr, "<"):
+		toDateStr = dateStr[1:]
+		toTimeAdd = -1 * time.Second
+	default:
+		rangeParts := strings.Split(dateStr, "..")
+		if len(rangeParts) != 2 {
+			return nil
+		}
+		fromDateStr = rangeParts[0]
+		toDateStr = rangeParts[1]
+		if toDateStr != "*" {
+			toEndOfDay = true
+		}
+	}
+
+	var err error
+	dr := &dateRange{}
+	if fromDateStr != "" && fromDateStr != "*" {
+		dr.From, err = parseDate(fromDateStr, false)
+		if err != nil {
+			return nil
+		}
+		dr.From = dr.From.Add(fromTimeAdd)
+	}
+	if toDateStr != "" && toDateStr != "*" {
+		dr.To, err = parseDate(toDateStr, toEndOfDay)
+		if err != nil {
+			return nil
+		}
+		dr.To = dr.To.Add(toTimeAdd)
+	}
+
+	*s = strings.ReplaceAll(*s, matches[0], "")
+	return dr
+}
 
 func (r dateRange) String() string {
 	const dateFormat = "2006-01-02T15:04:05-07:00"
@@ -817,143 +901,180 @@ func (r dateRange) String() string {
 
 func (r dateRange) Size() time.Duration { return r.To.Sub(r.From) }
 
+type searchReposCount struct {
+	known bool
+	count int
+}
+
 type repositoryQuery struct {
-	Query    string
-	Created  *dateRange
-	Cursor   github.Cursor
-	First    int
-	Limit    int
-	Searcher *github.V4Client
-	Logger   log.Logger
+	Query     string
+	Created   *dateRange
+	Cursor    github.Cursor
+	First     int
+	Limit     int
+	Searcher  *github.V4Client
+	Logger    log.Logger
+	RepoCount searchReposCount
+}
+
+func newRepositoryQuery(query string, searcher *github.V4Client, logger log.Logger, created *dateRange) *repositoryQuery {
+	if created == nil {
+		created = &dateRange{}
+	}
+	if created.From.IsZero() {
+		created.From = minCreated
+	}
+	if created.To.IsZero() {
+		created.To = time.Now()
+	}
+	return &repositoryQuery{
+		Query:    query,
+		Searcher: searcher,
+		Logger:   logger,
+		Created:  created,
+	}
 }
 
 // DoWithRefinedWindow attempts to retrieve all matching repositories by refining the window of acceptable Created dates
 // to smaller windows and re-running the search (down to a minimum window size)
 // and exiting once all repositories are returned.
 func (q *repositoryQuery) DoWithRefinedWindow(ctx context.Context, results chan *githubResult) {
-	doRefine := func(q *repositoryQuery, res github.SearchReposResults) bool {
-		return res.TotalCount > q.Limit
+	if q.First == 0 {
+		q.First = 100
 	}
-
-	canExit := func(q *repositoryQuery, res github.SearchReposResults) bool {
-		if res.EndCursor != "" {
-			q.Cursor = res.EndCursor
-			return false
+	if q.Limit == 0 {
+		// GitHub's search API returns a maximum of 1000 results
+		q.Limit = 1000
+	}
+	if q.Created == nil {
+		q.Created = &dateRange{
+			From: minCreated,
+			To:   time.Now(),
 		}
-
-		return !q.Next()
 	}
 
-	q.Do(ctx, doRefine, canExit, results)
+	if err := q.doRecursively(ctx, results); err != nil {
+		select {
+		case <-ctx.Done():
+		case results <- &githubResult{err: errors.Wrapf(err, "failed to search GitHub repositories with %q", q)}:
+		}
+	}
 }
 
 // DoSingleRequest accepts the first n results and does not refine the search window on Created date.
 // Missing some repositories which match the criteria is acceptable.
 func (q *repositoryQuery) DoSingleRequest(ctx context.Context, results chan *githubResult) {
-	doRefine := func(q *repositoryQuery, res github.SearchReposResults) bool {
-		return false
-	}
-
-	canExit := func(q *repositoryQuery, res github.SearchReposResults) bool {
-		return true
-	}
-
-	q.Do(ctx, doRefine, canExit, results)
-}
-
-func (q *repositoryQuery) Do(ctx context.Context, doRefine func(*repositoryQuery, github.SearchReposResults) bool, canExit func(*repositoryQuery, github.SearchReposResults) bool, results chan *githubResult) {
 	if q.First == 0 {
 		q.First = 100
 	}
 
-	if q.Limit == 0 {
-		// Default GitHub API search results limit per search.
-		q.Limit = 1000
+	if err := ctx.Err(); err != nil {
+		results <- &githubResult{err: err}
+	}
+	res, err := q.Searcher.SearchRepos(ctx, github.SearchReposParams{
+		Query: q.String(),
+		First: q.First,
+		After: q.Cursor,
+	})
+	if err != nil {
+		select {
+		case <-ctx.Done():
+		case results <- &githubResult{err: errors.Wrapf(err, "failed to search GitHub repositories with %q", q)}:
+		}
 	}
 
-	// This is kind of like a modified binary search algorithm
-	// 1) We search for all repos matching the query, if we get <1000 repos we return them
-	// 2) If we get >1000 repos we slap a created filter to the query, searching for all repos that match the query between From (2007) and To (Now())
-	// 3) If the repos are still >1000 move the To pointer back half of the distance towards From
-	// 4) Repeat step 3 until results are <1000
-	// 5) At this point we have scanned all results between 2007 -> To, move the From and To pointers to the remaining unscanned timeslice (To+1 -> Now()), repeat from step 3
-	// 6) Once all the repos created from 2007 to Now() are found, return
-	for {
-		if err := ctx.Err(); err != nil {
-			results <- &githubResult{err: ctx.Err()}
-			return
-		}
-
-		res, err := q.Searcher.SearchRepos(ctx, github.SearchReposParams{
-			Query: q.String(),
-			First: q.First,
-			After: q.Cursor,
-		})
-		if err != nil {
-			select {
-			case <-ctx.Done():
-			case results <- &githubResult{err: errors.Wrapf(err, "failed to search GitHub repositories with %q", q)}:
-			}
-			return
-		}
-
-		if doRefine(q, res) {
-			q.Logger.Info(
-				"repositoryQuery matched more than limit, refining",
-				log.Int("limit", q.Limit),
-				log.Int("resultCount", res.TotalCount),
-				log.String("query", q.String()),
-			)
-
-			if q.Created == nil {
-				timeNow := time.Now().UTC()
-				q.Created = &dateRange{From: minCreated, To: timeNow, OriginalTo: timeNow}
-			}
-
-			if q.Refine() {
-				q.Logger.Info("repositoryQuery refined", log.String("query", q.String()))
-				continue
-			}
-
-			select {
-			case <-ctx.Done():
-			case results <- &githubResult{err: errors.Errorf("repositoryQuery %q couldn't be refined further, results would be missed", q)}:
-			}
-			return
-		}
-		q.Logger.Info("repositoryQuery matched", log.String("query", q.String()), log.Int("total", res.TotalCount), log.Int("page", len(res.Repos)))
-		for i := range res.Repos {
-			select {
-			case <-ctx.Done():
-				return
-			case results <- &githubResult{repo: &res.Repos[i]}:
-			}
-		}
-
-		if canExit(q, res) {
-			return
+	for i := range res.Repos {
+		select {
+		case <-ctx.Done():
+			break
+		case results <- &githubResult{repo: &res.Repos[i]}:
 		}
 	}
 }
 
-func (s *repositoryQuery) Next() bool {
-	// We are good to exit under the following conditions:
-	// 1) s.Created == nil: If s.Created is nil, this means that we never refined i.e. we found all the repos matching the query.
-	// 2) !s.Created.To.Before(s.Created.OriginalTo): In our search we move the To and keep From the same, To should always be sometime before it was originally,
-	//    unless we finished searching, in which case we can return.
-	// 3) !s.Created.To.After(s.Created.From): Sanity, we should never hit this, but in case To is somehow before From, we should exit else we will be stuck here forever.
-	if s.Created == nil || !s.Created.To.Before(s.Created.OriginalTo) || !s.Created.To.After(s.Created.From) {
-		return false
+func (q *repositoryQuery) split(ctx context.Context, results chan *githubResult) error {
+	middle := q.Created.From.Add(q.Created.To.Sub(q.Created.From) / 2)
+	q1, q2 := *q, *q
+	q1.RepoCount.known = false
+	q1.Created = &dateRange{
+		From: q.Created.From,
+		To:   middle.Add(-1 * time.Second),
+	}
+	q2.Created = &dateRange{
+		From: middle,
+		To:   q.Created.To,
+	}
+	if err := q1.doRecursively(ctx, results); err != nil {
+		return err
+	}
+	// We now know the repoCount of q2 by subtracting the repoCount of q1 from the original q
+	q2.RepoCount = searchReposCount{
+		known: true,
+		count: q.RepoCount.count - q1.RepoCount.count,
+	}
+	return q2.doRecursively(ctx, results)
+}
+
+// doRecursively performs a query with the following procedure:
+// 1. Perform the query.
+// 2. If the number of search results returned is greater than the query limit, split the query in half by filtering by repo creation date, and perform those two queries. Do so recursively.
+// 3. If the number of search results returned is less than or equal to the query limit, iterate over the results and return them to the channel.
+func (q *repositoryQuery) doRecursively(ctx context.Context, results chan *githubResult) error {
+	// If we know that the number of repos in this query is greater than the limit, we can immediately split the query
+	// Also, GitHub createdAt time stamps are only accurate to 1 second. So if the time difference is no longer
+	// greater than 2 seconds, we should stop refining as it cannot get more precise.
+	if q.RepoCount.known && q.RepoCount.count > q.Limit && q.Created.To.Sub(q.Created.From) >= 2*time.Second {
+		return q.split(ctx, results)
 	}
 
-	s.Cursor = ""
+	// Otherwise we need to confirm the number of repositories first
+	res, err := q.Searcher.SearchRepos(ctx, github.SearchReposParams{
+		Query: q.String(),
+		First: q.First,
+		After: q.Cursor,
+	})
+	if err != nil {
+		return nil
+	}
 
-	// We just finished the timeslice of From -> To, at this point we have scanned everything in the range og:
-	// minCreated -> To, now we want to find the next time slice between To+1 and Now{}
-	s.Created.From = s.Created.To.Add(time.Second)
-	s.Created.To = s.Created.OriginalTo
+	q.RepoCount = searchReposCount{
+		known: true,
+		count: res.TotalCount,
+	}
 
-	return true
+	// Now that we know the repo count, we can perform a check again and split if necessary
+	if q.RepoCount.count > q.Limit && q.Created.To.Sub(q.Created.From) >= 2*time.Second {
+		return q.split(ctx, results)
+	}
+
+	// If the number of repos is lower than the limit, we perform the actual search
+	// and iterate over the results
+	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		for i := range res.Repos {
+			select {
+			case <-ctx.Done():
+				break
+			case results <- &githubResult{repo: &res.Repos[i]}:
+			}
+		}
+
+		if res.EndCursor == "" {
+			break
+		}
+		res, err = q.Searcher.SearchRepos(ctx, github.SearchReposParams{
+			Query: q.String(),
+			First: q.First,
+			After: res.EndCursor,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Refine does one pass at refining the query to match <= 1000 repos in order
