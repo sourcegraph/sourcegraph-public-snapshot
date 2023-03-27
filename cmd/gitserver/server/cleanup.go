@@ -172,7 +172,7 @@ const reposStatsName = "repos-stats.json"
 // 9. Remove repos based on disk pressure.
 // 10. Perform sg-maintenance
 // 11. Git prune
-// 12. Only during first run: Set sizes of repos which don't have it in a database.
+// 12. Set sizes of repos
 func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitserverAddresses) {
 	janitorRunning.Set(1)
 	janitorStart := time.Now()
