@@ -801,18 +801,17 @@ func (s *GitHubSource) listAffiliatedPage(ctx context.Context, first int, result
 func (s *GitHubSource) listSearch(ctx context.Context, q string, results chan *githubResult) {
 	// First we need to parse the query to see if it is querying within a date range,
 	// and if so, strip that date range from the query.
-	dr, err := stripDateRange(&q)
-	if err == nil {
+	dr := stripDateRange(&q)
+	if dr != nil {
 		if dr.From.IsZero() {
 			dr.From = minCreated
 		}
 		if dr.To.IsZero() {
 			dr.To = time.Now()
 		}
-		(&repositoryQuery{Query: q, Searcher: s.v4Client, Logger: s.logger, Created: dr}).DoWithRefinedWindow(ctx, results)
-	} else {
-		(&repositoryQuery{Query: q, Searcher: s.v4Client, Logger: s.logger}).DoWithRefinedWindow(ctx, results)
 	}
+
+	newRepositoryQuery(q, s.v4Client, s.logger, dr).DoWithRefinedWindow(ctx, results)
 }
 
 // GitHub was founded on February 2008, so this minimum date covers all repos
@@ -823,15 +822,14 @@ type dateRange struct{ From, To time.Time }
 
 // stripDateRange strips the `created:` filter from the given string (modifying it in place)
 // and returns a pointer to the resulting dateRange object.
-func stripDateRange(s *string) (*dateRange, error) {
+// If no dateRange could be parsed from the string, nil is returned and the string is left unchanged.
+func stripDateRange(s *string) *dateRange {
 	re := regexp.MustCompile(`created:([^\s]+)`)
 	matches := re.FindStringSubmatch(*s)
 	if len(matches) < 2 {
-		return nil, errors.New("no date range found in string")
+		return nil
 	}
 	dateStr := matches[1]
-
-	dr := &dateRange{}
 
 	parseDate := func(dateStr string, untilEndOfDay bool) (time.Time, error) {
 		if strings.Contains(dateStr, "T") {
@@ -852,57 +850,52 @@ func stripDateRange(s *string) (*dateRange, error) {
 		return t, err
 	}
 
+	var fromDateStr, toDateStr string
+	var fromTimeAdd, toTimeAdd time.Duration // Time to add to the respective dates in case of exclusive bounds
+	var toEndOfDay bool                      // Whether or not the "To" date should include the entire day (for inclusive bounds checks)
 	switch {
 	case strings.HasPrefix(dateStr, ">="):
-		date, err := parseDate(dateStr[2:], false)
-		if err != nil {
-			return nil, err
-		}
-		dr.From = date
+		fromDateStr = dateStr[2:]
 	case strings.HasPrefix(dateStr, ">"):
-		date, err := parseDate(dateStr[1:], false)
-		if err != nil {
-			return nil, err
-		}
-		dr.From = date.Add(1 * time.Second)
+		fromDateStr = dateStr[1:]
+		fromTimeAdd = 1 * time.Second
 	case strings.HasPrefix(dateStr, "<="):
-		date, err := parseDate(dateStr[2:], true)
-		if err != nil {
-			return nil, err
-		}
-		dr.To = date
+		toDateStr = dateStr[2:]
+		toEndOfDay = true
 	case strings.HasPrefix(dateStr, "<"):
-		date, err := parseDate(dateStr[1:], false)
-		if err != nil {
-			return nil, err
-		}
-		dr.To = date.Add(-1 * time.Second)
+		toDateStr = dateStr[1:]
+		toTimeAdd = -1 * time.Second
 	default:
 		rangeParts := strings.Split(dateStr, "..")
 		if len(rangeParts) != 2 {
-			return nil, errors.New("invalid date range format")
+			return nil
 		}
-		var fromDate time.Time
-		var toDate time.Time
-		var err error
-		if rangeParts[0] != "*" {
-			fromDate, err = parseDate(rangeParts[0], false)
-			if err != nil {
-				return nil, err
-			}
+		fromDateStr = rangeParts[0]
+		toDateStr = rangeParts[1]
+		if toDateStr != "*" {
+			toEndOfDay = true
 		}
-		if rangeParts[1] != "*" {
-			toDate, err = parseDate(rangeParts[1], true)
-			if err != nil {
-				return nil, err
-			}
+	}
+
+	var err error
+	dr := &dateRange{}
+	if fromDateStr != "" && fromDateStr != "*" {
+		dr.From, err = parseDate(fromDateStr, false)
+		if err != nil {
+			return nil
 		}
-		dr.From = fromDate
-		dr.To = toDate
+		dr.From = dr.From.Add(fromTimeAdd)
+	}
+	if toDateStr != "" && toDateStr != "*" {
+		dr.To, err = parseDate(toDateStr, toEndOfDay)
+		if err != nil {
+			return nil
+		}
+		dr.To = dr.To.Add(toTimeAdd)
 	}
 
 	*s = strings.ReplaceAll(*s, matches[0], "")
-	return dr, nil
+	return dr
 }
 
 func (r dateRange) String() string {
@@ -930,6 +923,15 @@ type repositoryQuery struct {
 	Searcher  *github.V4Client
 	Logger    log.Logger
 	RepoCount searchReposCount
+}
+
+func newRepositoryQuery(query string, searcher *github.V4Client, logger log.Logger, created *dateRange) *repositoryQuery {
+	return &repositoryQuery{
+		Query:    query,
+		Searcher: searcher,
+		Logger:   logger,
+		Created:  created,
+	}
 }
 
 // DoWithRefinedWindow attempts to retrieve all matching repositories by refining the window of acceptable Created dates

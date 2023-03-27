@@ -101,14 +101,22 @@ func TestGitHub_stripDateRange(t *testing.T) {
 				To: mustParse(t, "2015-12-12T23:59:59"),
 			},
 		},
+		"no date query": {
+			query:         "just some random things",
+			wantQuery:     "just some random things",
+			wantDateRange: nil,
+		},
 	}
 
 	for tname, tcase := range testCases {
 		t.Run(tname, func(t *testing.T) {
-			date, err := stripDateRange(&tcase.query)
-			require.NoError(t, err)
-			assert.True(t, date.From.Equal(tcase.wantDateRange.From), "got %q want %q", date.From, tcase.wantDateRange.From)
-			assert.True(t, date.To.Equal(tcase.wantDateRange.To), "got %q want %q", date.To, tcase.wantDateRange.To)
+			date := stripDateRange(&tcase.query)
+			if tcase.wantDateRange == nil {
+				assert.Nil(t, date)
+			} else {
+				assert.True(t, date.From.Equal(tcase.wantDateRange.From), "got %q want %q", date.From, tcase.wantDateRange.From)
+				assert.True(t, date.To.Equal(tcase.wantDateRange.To), "got %q want %q", date.To, tcase.wantDateRange.To)
+			}
 			if tcase.wantQuery != "" {
 				assert.Equal(t, tcase.wantQuery, tcase.query)
 			}
