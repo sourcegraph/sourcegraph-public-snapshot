@@ -1002,6 +1002,8 @@ func (q *repositoryQuery) split(ctx context.Context, results chan *githubResult)
 // 3. If the number of search results returned is less than or equal to the query limit, iterate over the results and return them to the channel.
 func (q *repositoryQuery) doRecursively(ctx context.Context, results chan *githubResult) error {
 	// If we know that the number of repos in this query is greater than the limit, we can immediately split the query
+	// Also, GitHub createdAt time stamps are only accurate to 1 second. So if the time difference is no longer
+	// greater than 2 seconds, we should stop refining as it cannot get more precise.
 	if q.RepoCount.known && q.RepoCount.count > q.Limit && q.Created.To.Sub(q.Created.From) >= 2*time.Second {
 		return q.split(ctx, results)
 	}
