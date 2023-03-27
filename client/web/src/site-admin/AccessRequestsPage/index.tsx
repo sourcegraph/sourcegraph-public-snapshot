@@ -1,10 +1,11 @@
-import React, { Fragment, useEffect, useCallback, useState } from 'react'
+import React, { useEffect, useCallback, useState } from 'react'
 
-import { mdiAccount } from '@mdi/js'
+import { mdiAccount, mdiCancel, mdiCheck } from '@mdi/js'
 import { formatDistanceToNowStrict } from 'date-fns'
+import { capitalize } from 'lodash'
 
 import { useLazyQuery, useMutation, useQuery } from '@sourcegraph/http-client'
-import { Card, Text, Button, Grid, Alert, PageSwitcher, Link } from '@sourcegraph/wildcard'
+import { Card, Text, Alert, PageSwitcher, Link, Select } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import {
@@ -20,10 +21,13 @@ import {
     AccessRequestCreateUserVariables,
     HasLicenseSeatsResult,
     HasLicenseSeatsVariables,
+    AccessRequestStatus,
 } from '../../graphql-operations'
+import { useURLSyncedString } from '../../hooks/useURLSyncedString'
 import { eventLogger } from '../../tracking/eventLogger'
 import { AccountCreatedAlert } from '../components/AccountCreatedAlert'
 import { SiteAdminPageTitle } from '../components/SiteAdminPageTitle'
+import { IColumn, Table } from '../UserManagement/components/Table'
 
 import {
     APPROVE_ACCESS_REQUEST,
@@ -93,6 +97,8 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
     }, [])
     const [error, setError] = useState<Error | null>(null)
 
+    const [status, setStatus] = useURLSyncedString('status', AccessRequestStatus.PENDING)
+
     const {
         connection,
         error: queryError,
@@ -106,6 +112,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
     >({
         query: PENDING_ACCESS_REQUESTS_LIST,
         variables: {
+            status: status as AccessRequestStatus,
             first: FIRST_COUNT,
         },
         getConnection: result => result.data?.accessRequests,
@@ -225,21 +232,48 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                         resetPasswordURL={lastApprovedUser.resetPasswordURL}
                     />
                 )}
-                <div className="d-flex justify-content-end">
-                    <PageSwitcher
-                        totalCount={connection?.totalCount ?? null}
-                        totalLabel={connection?.totalCount === 1 ? 'account request' : 'account requests'}
-                        {...paginationArgs}
-                    />
+                <div className="d-flex align-items-start justify-content-between">
+                    <AccessRequestStatusPicker status={status as AccessRequestStatus} onChange={setStatus} />
+                    <div className="d-flex justify-content-end mt-4">
+                        <PageSwitcher
+                            totalCount={connection?.totalCount ?? null}
+                            totalLabel={connection?.totalCount === 1 ? 'account request' : 'account requests'}
+                            {...paginationArgs}
+                        />
+                    </div>
                 </div>
-                <AccessRequestsList
-                    onApprove={hasRemainingSeats ? handleApprove : undefined}
-                    onReject={handleReject}
-                    items={connection?.nodes || []}
-                />
+                {!!connection?.nodes.length && (
+                    <>
+                        <Table<AccessRequestItem>
+                            columns={TableColumns}
+                            getRowId={node => node.id}
+                            data={connection.nodes}
+                            actions={[
+                                {
+                                    key: 'Reject',
+                                    label: 'Reject',
+                                    icon: mdiCancel,
+                                    bulk: true,
+                                    onClick: ([item]) => handleReject(item.id),
+                                    // Can reject only if pending
+                                    condition: () => status === AccessRequestStatus.PENDING,
+                                },
+                                {
+                                    key: 'Approve',
+                                    label: 'Approve',
+                                    icon: mdiCheck,
+                                    onClick: ([item]) => handleApprove(item.id, item.name, item.email),
+                                    // Can approve if there are remaining seats and not already approved
+                                    // We allow to approve previously rejected requests too
+                                    condition: () => hasRemainingSeats && status !== AccessRequestStatus.APPROVED,
+                                },
+                            ]}
+                        />
+                    </>
+                )}
                 {!loading && connection?.nodes.length === 0 && (
                     <div>
-                        <Alert variant="info">No pending requests</Alert>
+                        <Alert variant="info">No {capitalize(status)} requests</Alert>
                         <Text>
                             Users can request access to Sourcegraph via the login page. View the documentation to learn
                             more about{' '}
@@ -252,49 +286,69 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
     )
 }
 
-interface AccessRequestsListProps {
-    onApprove?: (id: string, name: string, email: string) => void
-    onReject: (id: string) => void
-    items: PendingAccessRequestsListResult['accessRequests']['nodes']
-}
+type AccessRequestItem = PendingAccessRequestsListResult['accessRequests']['nodes'][0]
 
-const AccessRequestsList: React.FunctionComponent<AccessRequestsListProps> = ({ onApprove, onReject, items }) => {
-    if (items.length === 0) {
-        return null
-    }
+const TableColumns: IColumn<AccessRequestItem>[] = [
+    {
+        key: 'Email',
+        header: 'Email',
+        render: (node: AccessRequestItem) => <Text className="mb-0 mr-2 d-flex align-items-center">{node.email}</Text>,
+    },
+    {
+        key: 'Name',
+        header: 'Name',
+        render: (node: AccessRequestItem) => (
+            <Text className="mb-0 mr-2 d-flex align-items-center text-nowrap">{node.name}</Text>
+        ),
+    },
+    {
+        key: 'Status',
+        header: 'Status',
+        align: 'right',
+        render: (node: AccessRequestItem) => (
+            <Text className="mb-0 mr-2 d-flex align-items-center">{capitalize(node.status)}</Text>
+        ),
+    },
+    {
+        key: 'Created at',
+        header: 'Created at',
+        align: 'right',
+        render: (node: AccessRequestItem) => (
+            <Text className="mb-0 mr-2 d-flex align-items-center text-nowrap">
+                {formatDistanceToNowStrict(new Date(node.createdAt), { addSuffix: true })}
+            </Text>
+        ),
+    },
+    {
+        key: 'Notes',
+        header: 'Notes',
+        align: 'right',
+        render: (node: AccessRequestItem) => (
+            <Text className="text-muted my-2" size="small">
+                {node.additionalInfo}
+            </Text>
+        ),
+    },
+]
+
+const AccessRequestStatusPicker: React.FunctionComponent<{
+    status: AccessRequestStatus
+    onChange: (value: AccessRequestStatus) => void
+}> = ({ status, onChange }) => {
+    const handleStatusChange = useCallback(
+        (event: React.ChangeEvent<HTMLSelectElement>) => {
+            onChange(event.target.value as AccessRequestStatus)
+        },
+        [onChange]
+    )
+
     return (
-        <Grid columnCount={5}>
-            {['Email', 'Name', 'Created at', 'Notes', ''].map((value, index) => (
-                // eslint-disable-next-line react/no-array-index-key
-                <Text weight="medium" key={index} className="mb-1">
-                    {value}
-                </Text>
+        <Select id="access-request-status-filter" value={status} label="Status" onChange={handleStatusChange}>
+            {Object.entries(AccessRequestStatus).map(([key, value]) => (
+                <option key={key} value={value}>
+                    {capitalize(value)}
+                </option>
             ))}
-            {items.map(({ id, email, name, createdAt, additionalInfo }) => (
-                <Fragment key={email}>
-                    <Text className="mb-0 d-flex align-items-center">{email}</Text>
-                    <Text className="mb-0 d-flex align-items-center">{name}</Text>
-                    <Text className="mb-0 d-flex align-items-center">
-                        {formatDistanceToNowStrict(new Date(createdAt), { addSuffix: true })}
-                    </Text>
-                    <Text className="text-muted mb-0 d-flex align-items-center" size="small">
-                        {additionalInfo}
-                    </Text>
-                    <div className="d-flex justify-content-end align-items-start">
-                        <Button variant="link" onClick={() => onReject(id)}>
-                            Reject
-                        </Button>
-                        <Button
-                            variant="success"
-                            disabled={!onApprove}
-                            className="ml-2"
-                            onClick={() => onApprove?.(id, name, email)}
-                        >
-                            Approve
-                        </Button>
-                    </div>
-                </Fragment>
-            ))}
-        </Grid>
+        </Select>
     )
 }

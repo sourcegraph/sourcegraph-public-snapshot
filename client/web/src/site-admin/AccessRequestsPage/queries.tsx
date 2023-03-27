@@ -4,8 +4,8 @@ import { gql } from '@sourcegraph/http-client'
  * GraphQL query for the list of pending access requests.
  */
 export const PENDING_ACCESS_REQUESTS_LIST = gql`
-    query PendingAccessRequestsList($first: Int, $last: Int, $after: String, $before: String) {
-        accessRequests(status: PENDING, first: $first, last: $last, after: $after, before: $before) {
+    query PendingAccessRequestsList($status: AccessRequestStatus, $first: Int, $last: Int, $after: String, $before: String) {
+        accessRequests(status: $status, first: $first, last: $last, after: $after, before: $before) {
             totalCount
             pageInfo {
                 hasNextPage
