@@ -13,11 +13,13 @@ import { vscodeAPI } from './utils/VSCodeApi'
 interface HistoryProps {
     userHistory: ChatHistory | null
     setUserHistory: (history: ChatHistory | null) => void
+    setInputHistory: (inputHistory: string[] | []) => void
 }
 
 export const UserHistory: React.FunctionComponent<React.PropsWithChildren<HistoryProps>> = ({
     userHistory,
     setUserHistory,
+    setInputHistory,
 }) => {
     const [chatHistory, setChatHistory] = useState('')
 
@@ -26,8 +28,9 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
             vscodeAPI.postMessage({ command: 'removeHistory' })
             setChatHistory('removed')
             setUserHistory(null)
+            setInputHistory([])
         }
-    }, [setUserHistory, userHistory])
+    }, [setInputHistory, setUserHistory, userHistory])
 
     return (
         <div className="inner-container">

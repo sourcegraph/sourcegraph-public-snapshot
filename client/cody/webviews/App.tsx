@@ -104,7 +104,13 @@ export function App(): React.ReactElement {
             {view && view !== 'login' && <NavBar view={view} setView={setView} devMode={devMode} />}
             {view === 'about' && <About />}
             {view === 'debug' && devMode && <Debug debugLog={debugLog} />}
-            {view === 'history' && <UserHistory userHistory={userHistory} setUserHistory={setUserHistory} />}
+            {view === 'history' && (
+                <UserHistory
+                    userHistory={userHistory}
+                    setUserHistory={setUserHistory}
+                    setInputHistory={setInputHistory}
+                />
+            )}
             {view === 'recipes' && <Recipes />}
             {view === 'settings' && <Settings setView={setView} onLogout={onLogout} />}
             {view === 'chat' && (

@@ -73,13 +73,11 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
             secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
         ),
         // TOS
-        vscode.commands.registerCommand(
-            'cody.accept-tos',
-            async version => await localStorage.set('cody.tos-version-accepted', version)
+        vscode.commands.registerCommand('cody.accept-tos', version =>
+            localStorage.set('cody.tos-version-accepted', version)
         ),
-        vscode.commands.registerCommand(
-            'cody.get-accepted-tos-version',
-            async () => await localStorage.get('cody.tos-version-accepted')
+        vscode.commands.registerCommand('cody.get-accepted-tos-version', () =>
+            localStorage.get('cody.tos-version-accepted')
         ),
         // Commands
         vscode.commands.registerCommand('cody.recipe.explain-code', async () => executeRecipe('explain-code-detailed')),
@@ -135,14 +133,16 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
     )
 
     context.subscriptions.push(
-        secretStorage.onDidChange(async key => {
+        secretStorage.onDidChange(key => {
             if (key === CODY_ACCESS_TOKEN_SECRET) {
                 const config = getConfiguration(vscode.workspace.getConfiguration())
-                await chatProvider.onConfigChange(
-                    'token',
-                    sanitizeCodebase(config.codebase),
-                    sanitizeServerEndpoint(config.serverEndpoint)
-                )
+                chatProvider
+                    .onConfigChange(
+                        'token',
+                        sanitizeCodebase(config.codebase),
+                        sanitizeServerEndpoint(config.serverEndpoint)
+                    )
+                    .catch(error => console.error(error))
             }
         })
     )
