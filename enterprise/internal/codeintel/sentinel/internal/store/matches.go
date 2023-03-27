@@ -164,7 +164,7 @@ SELECT
 FROM limited_matches m
 LEFT JOIN vulnerability_affected_packages vap ON vap.id = m.vulnerability_affected_package_id
 LEFT JOIN vulnerability_affected_symbols vas ON vas.vulnerability_affected_package_id = vap.id
-LEFT JOIN vulnerabilities vul ON vul.id = vap.vulnerability_id
+LEFT JOIN vulnerabilities vul ON vap.vulnerability_id = vul.id
 LEFT JOIN lsif_uploads lu ON lu.id = m.upload_id
 LEFT JOIN repo r ON r.id = lu.repository_id
 `

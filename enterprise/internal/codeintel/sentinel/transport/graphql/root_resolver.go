@@ -411,25 +411,6 @@ func (r *vulnerabilityMatchResolver) PreciseIndex(ctx context.Context) (resolver
 //
 //
 
-type vulnerabilityMatchCountByRepositoryResolver struct {
-	v shared.VulnerabilityMatchesByRepository
-}
-
-func (v vulnerabilityMatchCountByRepositoryResolver) ID() graphql.ID {
-	return resolverstubs.MarshalID("VulnerabilityMatchCountByRepository", v.v.ID)
-}
-
-func (v vulnerabilityMatchCountByRepositoryResolver) RepositoryName() string {
-	return v.v.RepositoryName
-}
-
-func (v vulnerabilityMatchCountByRepositoryResolver) MatchCount() int32 {
-	return v.v.MatchCount
-}
-
-//
-//
-
 type vulnerabilityMatchesSummaryCountResolver struct {
 	critical   int32
 	high       int32
@@ -444,4 +425,20 @@ func (v *vulnerabilityMatchesSummaryCountResolver) Medium() int32   { return v.m
 func (v *vulnerabilityMatchesSummaryCountResolver) Low() int32      { return v.low }
 func (v *vulnerabilityMatchesSummaryCountResolver) Repository() int32 {
 	return v.repository
+}
+
+type vulnerabilityMatchCountByRepositoryResolver struct {
+	v shared.VulnerabilityMatchesByRepository
+}
+
+func (v vulnerabilityMatchCountByRepositoryResolver) ID() graphql.ID {
+	return resolverstubs.MarshalID("VulnerabilityMatchCountByRepository", v.v.ID)
+}
+
+func (v vulnerabilityMatchCountByRepositoryResolver) RepositoryName() string {
+	return v.v.RepositoryName
+}
+
+func (v vulnerabilityMatchCountByRepositoryResolver) MatchCount() int32 {
+	return v.v.MatchCount
 }

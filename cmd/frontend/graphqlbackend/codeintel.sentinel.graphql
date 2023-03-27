@@ -280,6 +280,37 @@ type VulnerabilityMatch implements Node {
     preciseIndex: PreciseIndex!
 }
 
+
+"""
+A count of the severities of vulnerability matches.
+"""
+type VulnerabilityMatchesSummaryCount {
+    """
+    The number of matches with a severity of "CRITICAL".
+    """
+    critical: Int!
+
+    """
+    The number of matches with a severity of "HIGH".
+    """
+    high: Int!
+
+    """
+    The number of matches with a severity of "MEDIUM".
+    """
+    medium: Int!
+
+    """
+    The number of matches with a severity of "LOW".
+    """
+    low: Int!
+
+    """
+    The number of repos with a severity
+    """
+    repository: Int!
+}
+
 """
 A page of vulnerability matches grouped by repository.
 """
@@ -317,34 +348,4 @@ type VulnerabilityMatchCountByRepository {
     The vulnerability matches count.
     """
     matchCount: Int!
-}
-
-"""
-A count of the severities of vulnerability matches.
-"""
-type VulnerabilityMatchesSummaryCount {
-    """
-    The number of matches with a severity of "CRITICAL".
-    """
-    critical: Int!
-
-    """
-    The number of matches with a severity of "HIGH".
-    """
-    high: Int!
-
-    """
-    The number of matches with a severity of "MEDIUM".
-    """
-    medium: Int!
-
-    """
-    The number of matches with a severity of "LOW".
-    """
-    low: Int!
-
-    """
-    The number of repos with a severity
-    """
-    repository: Int!
 }
