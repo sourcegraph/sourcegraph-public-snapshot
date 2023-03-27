@@ -115,7 +115,7 @@ const SiteConfigurationHistoryItem: FC<SiteConfigurationHistoryItemProps> = ({ n
                     <Icon aria-hidden={true} svgPath={icon} />
                     <span className={styles.diffMeta}>
                         {node.author ? (
-                            <UserAvatar className="ml-2 mr-2" user={node.author} size={34} />
+                            <UserAvatar className="ml-2 mr-2" user={node.author} size={32} />
                         ) : (
                             <Icon
                                 aria-hidden={true}
