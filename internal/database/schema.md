@@ -832,9 +832,10 @@ Contains auto-index job inference Lua scripts as an alternative to setting via e
 -----------------+--------------------------+-----------+----------+----------------------------------------------------------
  id              | bigint                   |           | not null | nextval('codeintel_initial_path_ranks_id_seq'::regclass)
  upload_id       | integer                  |           | not null | 
- document_path   | text                     |           | not null | 
+ document_path   | text                     |           | not null | ''::text
  graph_key       | text                     |           | not null | 
  last_scanned_at | timestamp with time zone |           |          | 
+ document_paths  | text[]                   |           | not null | '{}'::text[]
 Indexes:
     "codeintel_initial_path_ranks_pkey" PRIMARY KEY, btree (id)
     "codeintel_initial_path_ranks_graph_key_id" btree (graph_key, id)

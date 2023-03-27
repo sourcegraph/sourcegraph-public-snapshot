@@ -293,7 +293,12 @@ unprocessed_path_counts AS (
 	SELECT
 		ipr.id,
 		ipr.upload_id,
-		ipr.document_path,
+		unnest(
+			CASE
+				WHEN ipr.document_path != '' THEN array_append('{}'::text[], ipr.document_path)
+				ELSE ipr.document_paths
+			END
+		) AS document_path,
 		ipr.graph_key
 	FROM codeintel_initial_path_ranks ipr
 	WHERE
@@ -334,7 +339,7 @@ SELECT
 	(SELECT COUNT(*) FROM ins)
 `
 
-func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, documentPath []string, graphKey string) (err error) {
+func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, documentPaths chan string, batchSize int, graphKey string) (err error) {
 	ctx, _, endObservation := s.operations.insertInitialPathRanks.With(
 		ctx,
 		&err,
@@ -351,8 +356,8 @@ func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, docume
 	defer func() { err = tx.Done(err) }()
 
 	inserter := func(inserter *batch.Inserter) error {
-		for _, path := range documentPath {
-			if err := inserter.Insert(ctx, path); err != nil {
+		for paths := range batchChannel(documentPaths, batchSize) {
+			if err := inserter.Insert(ctx, pq.Array(paths)); err != nil {
 				return err
 			}
 		}
@@ -369,7 +374,7 @@ func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, docume
 		tx.Handle(),
 		"t_codeintel_initial_path_ranks",
 		batch.MaxNumPostgresParameters,
-		[]string{"document_path"},
+		[]string{"document_paths"},
 		inserter,
 	); err != nil {
 		return err
@@ -384,18 +389,14 @@ func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, docume
 
 const createInitialPathTemporaryTableQuery = `
 CREATE TEMPORARY TABLE IF NOT EXISTS t_codeintel_initial_path_ranks (
-	document_path text NOT NULL
+	document_paths text[] NOT NULL
 )
 ON COMMIT DROP
 `
 
 const insertInitialPathRankCountsQuery = `
-INSERT INTO codeintel_initial_path_ranks (upload_id, document_path, graph_key)
-	SELECT
-		%s,
-		document_path,
-		%s
-	FROM t_codeintel_initial_path_ranks
+INSERT INTO codeintel_initial_path_ranks (upload_id, document_paths, graph_key)
+SELECT %s, document_paths, %s FROM t_codeintel_initial_path_ranks
 `
 
 func (s *store) InsertPathRanks(

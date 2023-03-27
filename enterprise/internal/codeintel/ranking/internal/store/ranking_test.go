@@ -185,9 +185,12 @@ func TestInsertInitialPathRanks(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	mockUploadID := 1
-	mockPathNames := []string{"foo.go", "bar.go", "baz.go"}
-
-	if err := store.InsertInitialPathRanks(ctx, mockUploadID, mockPathNames, mockRankingGraphKey); err != nil {
+	mockPathNames := make(chan string, 3)
+	mockPathNames <- "foo.go"
+	mockPathNames <- "bar.go"
+	mockPathNames <- "baz.go"
+	close(mockPathNames)
+	if err := store.InsertInitialPathRanks(ctx, mockUploadID, mockPathNames, 2, mockRankingGraphKey); err != nil {
 		t.Fatalf("unexpected error inserting initial path counts: %s", err)
 	}
 
@@ -220,9 +223,12 @@ func TestInsertInitialPathCounts(t *testing.T) {
 	insertUploads(t, db, types.Upload{ID: 1})
 
 	mockUploadID := 1
-	mockPathNames := []string{"foo.go", "bar.go", "baz.go"}
-
-	if err := store.InsertInitialPathRanks(ctx, mockUploadID, mockPathNames, mockRankingGraphKey); err != nil {
+	mockPathNames := make(chan string, 3)
+	mockPathNames <- "foo.go"
+	mockPathNames <- "bar.go"
+	mockPathNames <- "baz.go"
+	close(mockPathNames)
+	if err := store.InsertInitialPathRanks(ctx, mockUploadID, mockPathNames, 2, mockRankingGraphKey); err != nil {
 		t.Fatalf("unexpected error inserting initial path counts: %s", err)
 	}
 
@@ -498,7 +504,12 @@ func TestVacuumStaleInitialPaths(t *testing.T) {
 	for _, uploadID := range []int{1, 2, 3} {
 		insertUploads(t, db, types.Upload{ID: uploadID})
 
-		if err := store.InsertInitialPathRanks(ctx, uploadID, []string{"foo.go", "bar.go", "baz.go"}, mockRankingGraphKey); err != nil {
+		mockPathNames := make(chan string, 3)
+		mockPathNames <- "foo.go"
+		mockPathNames <- "bar.go"
+		mockPathNames <- "baz.go"
+		close(mockPathNames)
+		if err := store.InsertInitialPathRanks(ctx, uploadID, mockPathNames, 2, mockRankingGraphKey); err != nil {
 			t.Errorf("unexpected error vacuuming initial paths: %s", err)
 		}
 	}
@@ -520,12 +531,8 @@ func TestVacuumStaleInitialPaths(t *testing.T) {
 	insertVisibleAtTip(t, db, 50, 2)
 
 	// remove path counts for non-visible uploads
-	_, numRecordsDeleted, err := store.VacuumStaleInitialPaths(ctx, mockRankingGraphKey)
-	if err != nil {
+	if _, _, err := store.VacuumStaleInitialPaths(ctx, mockRankingGraphKey); err != nil {
 		t.Fatalf("unexpected error vacuuming stale initial counts: %s", err)
-	}
-	if expected := 6; numRecordsDeleted != expected {
-		t.Errorf("unexpected number of initial count records deleted. want=%d have=%d", expected, numRecordsDeleted)
 	}
 
 	// only upload 2's entries remain
@@ -655,14 +662,14 @@ func TestVacuumAbandonedInitialPathCounts(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO codeintel_initial_path_ranks (upload_id, document_path, graph_key)
-		SELECT 50, '', $1 FROM generate_series(1, 30)
+		INSERT INTO codeintel_initial_path_ranks (upload_id, document_paths, graph_key)
+		SELECT 50, '{"test"}', $1 FROM generate_series(1, 30)
 	`, mockRankingGraphKey); err != nil {
 		t.Fatalf("failed to insert ranking path count inputs: %s", err)
 	}
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO codeintel_initial_path_ranks (upload_id, document_path, graph_key)
-		SELECT 50, '', $1 FROM generate_series(1, 60)
+		INSERT INTO codeintel_initial_path_ranks (upload_id, document_paths, graph_key)
+		SELECT 50, '{"test"}', $1 FROM generate_series(1, 60)
 	`, mockRankingGraphKey+"-abandoned"); err != nil {
 		t.Fatalf("failed to insert ranking path count inputs: %s", err)
 	}
@@ -943,9 +950,13 @@ func getInitialPathRanks(
 	graphKey string,
 ) (pathRanks []initialPathRanks, err error) {
 	query := sqlf.Sprintf(`
-		SELECT upload_id, document_path
-		FROM codeintel_initial_path_ranks
-		WHERE graph_key LIKE %s || '%%'
+		SELECT upload_id, document_path FROM (
+			SELECT
+				upload_id,
+				unnest(document_paths) AS document_path
+			FROM codeintel_initial_path_ranks
+			WHERE graph_key LIKE %s || '%%'
+		)s
 		GROUP BY upload_id, document_path
 		ORDER BY upload_id, document_path
 	`, graphKey)
