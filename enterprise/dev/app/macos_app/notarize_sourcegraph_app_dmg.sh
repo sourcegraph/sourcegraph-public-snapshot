@@ -23,7 +23,7 @@
 altool_credentials_keychain_item=ALTOOL_CREDENTIALS
 
 # notarytool replaces altool
-notarytool_credentials_keychain_item=NOTARYTOOL_CREDENTIALS
+# notarytool_credentials_keychain_item=NOTARYTOOL_CREDENTIALS
 
 dmgpath="${1:-${HOME}/Downloads/Sourcegraph App.dmg}"
 
@@ -64,7 +64,7 @@ altool_requestuuid="${2}"
 notarized=false
 while true; do
   ninfo_response=$(xcrun altool --notarization-info "${altool_requestuuid}" -p "@keychain:${altool_credentials_keychain_item}")
-  [ $(echo "${ninfo_response}" | grep -c "No errors getting notarization info.") -gt 0 ] || {
+  [[ $(echo "${ninfo_response}" | grep -c "No errors getting notarization info.") -gt 0 ]] || {
     echo "${ninfo_response}"
     break
   }

@@ -31,6 +31,7 @@ VERSION=${VERSION:-0.0.0}
 
 # preserve the ability to run as part of the goreleaser process
 # goreleaser puts the path to the file in the "artifact" env var
+# shellcheck disable=SC2154
 binary_file_path=${artifact}
 
 # but allow grabbing the binary file from GCS
