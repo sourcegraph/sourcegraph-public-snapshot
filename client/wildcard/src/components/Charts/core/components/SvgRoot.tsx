@@ -7,7 +7,7 @@ import {
     ReactNode,
     SetStateAction,
     SVGProps,
-    useContext,
+    useContext, useLayoutEffect,
     useMemo,
     useRef,
     useState,
@@ -29,7 +29,7 @@ import { AxisBottom, AxisLeft } from './axis/Axis'
 import { getMaxTickWidth, Tick, TickProps } from './axis/Tick'
 import { GetScaleTicksOptions, getXScaleTicks } from './axis/tick-formatters'
 
-const DEFAULT_PADDING = { top: 16, right: 36, bottom: 0, left: 0 }
+const DEFAULT_PADDING = { top: 16, right: 16, bottom: 0, left: 0 }
 
 interface Padding {
     top: number
@@ -175,7 +175,7 @@ interface SvgAxisBottomProps<Tick> {
 
 export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): ReactElement {
     const {
-        pixelsPerTick = 0,
+        pixelsPerTick = 50,
         minRotateAngle = 0,
         maxRotateAngle = 45,
         tickFormat = defaultToString,
@@ -183,16 +183,28 @@ export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): R
         getScaleTicks = getXScaleTicks,
         hideTicks = false,
     } = props
-    const { width, content, xScale, setPadding } = useContext(SVGRootContext)
+    const { content, xScale, svgElement, setPadding } = useContext(SVGRootContext)
 
     const axisGroupRef = useRef<SVGGElement>(null)
     const { ref } = useResizeObserver<SVGGElement>({
         // TODO: Fix corner cases with axis sizes see https://github.com/sourcegraph/sourcegraph/issues/39876
         onResize: ({ width: axisWidth, height = 0 }) => setPadding(padding => {
             if (axisWidth) {
-                const rightPaddingIncrement = axisWidth + padding.left - width - 16
-                const rightPadding = rightPaddingIncrement > 0 ? rightPaddingIncrement : padding.right
-                return { ...padding, bottom: height, right: rightPadding }
+                const svgRect = svgElement?.getBoundingClientRect()
+                const axisRect = axisGroupRef.current!.getBoundingClientRect()
+
+                const svgLeftPadding = (svgRect?.left ?? 0)
+                const svgRightPadding = (svgRect?.right ?? 0)
+
+                const axisLeftPadding = axisRect.left - svgLeftPadding
+                const leftPadding = (svgRect && axisLeftPadding < 0)
+                    ? padding.left + Math.abs(axisLeftPadding)
+                    : padding.left
+
+                const rightPaddingIncrement = Math.floor( axisRect.right - svgRightPadding)
+                const rightPadding = rightPaddingIncrement >= 0 ? rightPaddingIncrement : padding.right
+
+                return { ...padding, bottom: height, right: rightPadding, left: leftPadding }
             }
             return ({ ...padding, bottom: height })
         }),

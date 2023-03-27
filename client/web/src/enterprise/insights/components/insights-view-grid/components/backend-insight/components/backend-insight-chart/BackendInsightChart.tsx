@@ -66,7 +66,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                 [styles.rootWithLegend]: isSeriesLikeInsight,
             })}
         >
-            {width > 0 && (
+            { (
                 <>
                     <ParentSize
                         debounceTime={0}
@@ -77,7 +77,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                             // Render chart element only when we have real non-empty parent sizes
                             // otherwise, the first chart render happens on a not fully rendered
                             // element that causes the element's flickering
-                            parent.height * parent.width !== 0 && (
+                            (
                                 <>
                                     <BackendAlertOverlay
                                         hasNoData={isEmptyDataset}

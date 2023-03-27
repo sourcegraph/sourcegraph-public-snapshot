@@ -40,10 +40,10 @@ export const LineChartsDemo: Story = () => (
             paddingBottom: 40,
         }}
     >
-        <PlainChartExample />
+        {/*<PlainChartExample />*/}
         {/*<FlatChartExample />*/}
         {/*<PlainStackedChartExample />*/}
-        {/*<ResponsiveChartExample />*/}
+        <ResponsiveChartExample />
         {/*<WithLegendExample />*/}
         {/*<WithHugeDataExample />*/}
         {/*<WithZeroOneDataExample />*/}
@@ -67,7 +67,7 @@ const PlainChartExample = () => {
                 Start Y axis at zero
             </Button>
 
-            <LineChart width={400} height={400} zeroYAxisMin={active} series={FLAT_SERIES} />
+            <LineChart width={500} height={400} zeroYAxisMin={active} series={FLAT_SERIES} />
         </section>
     )
 }
@@ -118,9 +118,9 @@ const ResponsiveChartExample = () => (
             Note: Resize logic comes from react-resize package and not from this chart package.
         </Text>
 
-        <ResizableBox width={400} height={400} axis="both" minConstraints={[200, 200]} className="p-3">
+        <ResizableBox width={600} height={400} axis="both" minConstraints={[200, 200]} className="p-3">
             <ParentSize debounceTime={0}>
-                {parent => <LineChart width={parent.width} height={parent.height} series={STANDARD_SERIES} />}
+                {parent => <LineChart style={{ border: '1px solid '}} width={parent.width} height={parent.height} series={STANDARD_SERIES} />}
             </ParentSize>
         </ResizableBox>
     </section>
