@@ -2,6 +2,8 @@
 
 exedir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
+mkdir -p "${HOME}/Library/Application Support/sourcegraph-sp"
+
 log="${HOME}/Library/Application Support/sourcegraph-sp/sourcegraph.log"
 for x in $(seq 1 20); do
   sleep 0.1
