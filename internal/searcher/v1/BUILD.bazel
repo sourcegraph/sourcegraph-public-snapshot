@@ -29,11 +29,12 @@ go_library(
     visibility = ["//:__subpackages__"],
 )
 
-write_proto_stubs_to_source(
-    name = "v1_go_proto_stubs",
-    output_files = ["searcher.pb.go"],
-    target = ":v1_go_proto",
-)
+# See https://github.com/sourcegraph/sourcegraph/issues/50032
+# write_proto_stubs_to_source(
+#     name = "v1_go_proto_stubs",
+#     output_files = ["searcher.pb.go"],
+#     target = ":v1_go_proto",
+# )
 
 buf_lint_test(
     name = "v1_proto_lint",

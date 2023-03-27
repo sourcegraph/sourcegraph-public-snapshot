@@ -40,11 +40,12 @@ go_library(
     ],
 )
 
-write_proto_stubs_to_source(
-    name = "v1_go_proto_stubs",
-    output_files = ["symbols.pb.go"],
-    target = ":v1_go_proto",
-)
+# See https://github.com/sourcegraph/sourcegraph/issues/50032
+# write_proto_stubs_to_source(
+#     name = "v1_go_proto_stubs",
+#     output_files = ["symbols.pb.go"],
+#     target = ":v1_go_proto",
+# )
 
 go_test(
     name = "symbols_test",
