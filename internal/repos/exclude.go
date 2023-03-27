@@ -1,6 +1,7 @@
 package repos
 
 import (
+	"reflect"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -8,12 +9,13 @@ import (
 
 // excludeFunc takes a string and returns true if it should be excluded. In
 // the case of repo sourcing it will take a repository name or ID as input.
-type excludeFunc func(string) bool
+type excludeFunc func(interface{}) bool
 
 // excludeBuilder builds an excludeFunc.
 type excludeBuilder struct {
-	exact    map[string]struct{}
-	patterns []*regexp.Regexp
+	exact      map[string]struct{}
+	patterns   []*regexp.Regexp
+	fieldsTrue []string
 
 	err error
 }
@@ -43,17 +45,40 @@ func (e *excludeBuilder) Pattern(pattern string) {
 	e.patterns = append(e.patterns, re)
 }
 
-// Build will return an excludeFunc based on the previous calls to Exact and
+// FieldTrue will exclude the object if the specified field name is set to true.
+func (e *excludeBuilder) FieldTrue(filedName string) {
+	if e.fieldsTrue == nil {
+		e.fieldsTrue = []string{}
+	}
+	if filedName == "" {
+		return
+	}
+	e.fieldsTrue = append(e.fieldsTrue, filedName)
+}
+
+// Build will return an excludeFunc based on the previous calls to Exact, Field, and
 // Pattern.
 func (e *excludeBuilder) Build() (excludeFunc, error) {
-	return func(name string) bool {
-		if _, ok := e.exact[strings.ToLower(name)]; ok {
-			return true
-		}
-
-		for _, re := range e.patterns {
-			if re.MatchString(name) {
+	return func(input interface{}) bool {
+		if name, ok := input.(string); ok {
+			if _, ok := e.exact[strings.ToLower(name)]; ok {
 				return true
+			}
+
+			for _, re := range e.patterns {
+				if re.MatchString(name) {
+					return true
+				}
+			}
+		} else {
+			v := reflect.ValueOf(input)
+			if v.Kind() == reflect.Struct {
+				for _, fieldName := range e.fieldsTrue {
+					fieldValue := v.FieldByName(fieldName)
+					if fieldValue.Kind() == reflect.Bool && fieldValue.Bool() {
+						return true
+					}
+				}
 			}
 		}
 
