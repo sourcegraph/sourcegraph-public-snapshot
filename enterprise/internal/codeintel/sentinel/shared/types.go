@@ -71,3 +71,15 @@ type GetVulnerabilityMatchesSummaryCounts struct {
 	Low          int32
 	Repositories int32
 }
+
+type GetVulnerabilityMatchesCountByRepositoryArgs struct {
+	RepositoryName string
+	Limit          int
+	Offset         int
+}
+
+type VulnerabilityMatchesByRepository struct {
+	ID             int
+	RepositoryName string
+	MatchCount     int32
+}

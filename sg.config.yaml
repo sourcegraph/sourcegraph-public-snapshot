@@ -372,7 +372,9 @@ commands:
       - enterprise/internal/rockskip
 
   embeddings:
-    cmd: .bin/embeddings
+    cmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/embeddings
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'

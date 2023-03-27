@@ -45,6 +45,26 @@ extend type Query {
     ): VulnerabilityMatchConnection!
 
     """
+    Return known vulnerability matches grouped by repository.
+    """
+    vulnerabilityMatchesCountByRepository(
+        """
+        The maximum number of results to return.
+        """
+        first: Int
+
+        """
+        If supplied, indicates which results to skip over during pagination.
+        """
+        after: String
+
+        """
+        A string pattern that could match the name of a repository.
+        """
+        repositoryName: String
+    ): VulnerabilityMatchCountByRepositoryConnection!
+
+    """
     Returns a count of the vulnerability matches grouped by severity.
     """
     VulnerabilityMatchesSummaryCounts: VulnerabilityMatchesSummaryCount!
@@ -288,4 +308,43 @@ type VulnerabilityMatchesSummaryCount {
     The number of repos with a severity
     """
     repository: Int!
+}
+
+"""
+A page of vulnerability matches grouped by repository.
+"""
+type VulnerabilityMatchCountByRepositoryConnection {
+    """
+    The vulnerability matches on the page.
+    """
+    nodes: [VulnerabilityMatchCountByRepository!]!
+
+    """
+    The total number of vulnerability matches across all pages.
+    """
+    totalCount: Int
+
+    """
+    Information on how to fetch the next page.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+Vulnerability matches count group by repository.
+"""
+type VulnerabilityMatchCountByRepository {
+    """
+    The id of the grouping.
+    """
+    id: ID!
+    """
+    The repository name.
+    """
+    repositoryName: String!
+
+    """
+    The vulnerability matches count.
+    """
+    matchCount: Int!
 }

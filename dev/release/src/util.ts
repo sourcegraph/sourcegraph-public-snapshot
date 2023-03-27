@@ -309,8 +309,43 @@ export async function getReleaseBlockers(
     return listIssues(octokit, blockingQuery)
 }
 
+export function backportIssueQuery(version: SemVer): string {
+    return `is:open is:pr repo:sourcegraph org:sourcegraph label:"backported-to-${version.major}.${version.minor}"`
+}
+
+export async function getBackportsForVersion(
+    octokit: Octokit,
+    version: SemVer
+): Promise<Octokit.SearchIssuesAndPullRequestsResponseItemsItem[]> {
+    return listIssues(octokit, backportIssueQuery(version))
+}
+
 export function releaseBlockerUri(): string {
-    return `https://github.com/issues?q=${encodeURIComponent(blockingQuery)}`
+    return issuesQueryUri(blockingQuery)
+}
+
+function issuesQueryUri(query: string): string {
+    return `https://github.com/issues?q=${encodeURIComponent(query)}`
+}
+
+export async function validateNoOpenBackports(octokit: Octokit, version: SemVer): Promise<void> {
+    const backports = await getBackportsForVersion(octokit, version)
+    if (backports.length > 0) {
+        await verifyWithInput(`${backportWarning(backports.length, version)})\nConfirm to proceed`)
+    } else {
+        console.log('No backports found!')
+    }
+}
+
+export async function backportStatus(octokit: Octokit, version: SemVer): Promise<string> {
+    const backports = await getBackportsForVersion(octokit, version)
+    return backportWarning(backports.length, version)
+}
+
+export function backportWarning(numBackports: number, version: SemVer): string {
+    return `Warning! There are ${chalk.red(numBackports)} backport pull requests open!\n${issuesQueryUri(
+        backportIssueQuery(version)
+    )}`
 }
 
 export async function validateNoReleaseBlockers(octokit: Octokit): Promise<void> {

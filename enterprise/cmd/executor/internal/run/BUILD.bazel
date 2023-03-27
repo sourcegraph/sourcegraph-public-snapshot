@@ -44,6 +44,7 @@ go_test(
     embed = [":run"],
     deps = [
         "//enterprise/cmd/executor/internal/apiclient",
+        "//enterprise/cmd/executor/internal/config",
         "//lib/errors",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",

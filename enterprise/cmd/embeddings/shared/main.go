@@ -88,7 +88,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	getContextDetectionEmbeddingIndex := getCachedContextDetectionEmbeddingIndex(uploadStore)
 
 	// Create HTTP server
-	handler := NewHandler(ctx, readFile, getRepoEmbeddingIndex, getQueryEmbedding, getContextDetectionEmbeddingIndex)
+	handler := NewHandler(readFile, getRepoEmbeddingIndex, getQueryEmbedding, getContextDetectionEmbeddingIndex)
 	handler = handlePanic(logger, handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
@@ -108,7 +108,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 }
 
 func NewHandler(
-	ctx context.Context,
 	readFile readFileFn,
 	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
 	getQueryEmbedding getQueryEmbeddingFn,
@@ -129,7 +128,7 @@ func NewHandler(
 			return
 		}
 
-		res, err := searchRepoEmbeddingIndex(ctx, args, readFile, getRepoEmbeddingIndex, getQueryEmbedding)
+		res, err := searchRepoEmbeddingIndex(r.Context(), args, readFile, getRepoEmbeddingIndex, getQueryEmbedding)
 		if err != nil {
 			http.Error(w, "error searching embedding index", http.StatusInternalServerError)
 			return
@@ -152,7 +151,7 @@ func NewHandler(
 			return
 		}
 
-		isRequired, err := isContextRequiredForChatQuery(ctx, getQueryEmbedding, getContextDetectionEmbeddingIndex, args.Query)
+		isRequired, err := isContextRequiredForChatQuery(r.Context(), getQueryEmbedding, getContextDetectionEmbeddingIndex, args.Query)
 		if err != nil {
 			http.Error(w, "error detecting if context is required for query", http.StatusInternalServerError)
 			return
