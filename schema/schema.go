@@ -813,8 +813,8 @@ type ExperimentalFeatures struct {
 	StructuralSearch   string              `json:"structuralSearch,omitempty"`
 	SubRepoPermissions *SubRepoPermissions `json:"subRepoPermissions,omitempty"`
 	// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
-	TlsExternal *TlsExternal `json:"tls.external,omitempty"`
-	Additional         map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
+	TlsExternal *TlsExternal   `json:"tls.external,omitempty"`
+	Additional  map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
 }
 
 func (v ExperimentalFeatures) MarshalJSON() ([]byte, error) {
