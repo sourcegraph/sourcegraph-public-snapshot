@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 )
 
-type Service interface {
+type SentinelService interface {
 	GetVulnerabilities(ctx context.Context, args shared.GetVulnerabilitiesArgs) ([]shared.Vulnerability, int, error)
 	GetVulnerabilitiesByIDs(ctx context.Context, ids ...int) ([]shared.Vulnerability, error)
 	VulnerabilityByID(ctx context.Context, id int) (shared.Vulnerability, bool, error)

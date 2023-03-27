@@ -330,7 +330,7 @@ func (r *vulnerabilityAffectedSymbolResolver) Symbols() []string { return r.s.Sy
 //
 
 type bulkLoaderFactory struct {
-	sentinelSvc *sentinel.Service
+	sentinelSvc SentinelService
 }
 
 func (f *bulkLoaderFactory) Create() *bulkLoader {
@@ -341,7 +341,7 @@ type bulkLoader struct {
 	loader *sharedresolvers.DataLoader[int, shared.Vulnerability]
 }
 
-func NewBulkLoader(sentinelSvc *sentinel.Service) *bulkLoader {
+func NewBulkLoader(sentinelSvc SentinelService) *bulkLoader {
 	return &bulkLoader{
 		loader: sharedresolvers.NewDataLoader[int, shared.Vulnerability](sharedresolvers.DataLoaderBackingServiceFunc[int, shared.Vulnerability](func(ctx context.Context, ids ...int) ([]shared.Vulnerability, error) {
 			return sentinelSvc.GetVulnerabilitiesByIDs(ctx, ids...)
@@ -358,7 +358,7 @@ func (l *bulkLoader) GetVulnerabilityByID(ctx context.Context, id int) (shared.V
 }
 
 type vulnerabilityMatchResolver struct {
-	sentinelSvc      *sentinel.Service
+	sentinelSvc      SentinelService
 	uploadsSvc       sharedresolvers.UploadsService
 	policySvc        sharedresolvers.PolicyService
 	gitserverClient  gitserver.Client

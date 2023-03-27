@@ -107,54 +107,6 @@ ORDER BY m.id, vap.id, vas.id
 LIMIT %s OFFSET %s
 `
 
-// vulnerabities to uploads to repos
-func (s *store) GetVulnerabilityMatchesCountByRepository(ctx context.Context, args shared.GetVulnerabilityMatchesGroupByRepositoryArgs) (_ []shared.VulnerabilityMatchesByRepository, _ int, err error) {
-	ctx, _, endObservation := s.operations.getVulnerabilityMatchesByRepo.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	var conds []*sqlf.Query
-	if args.RepositoryName != "" {
-		conds = append(conds, sqlf.Sprintf("r.name ILIKE %s", "%"+args.RepositoryName+"%"))
-	}
-	if len(conds) == 0 {
-		conds = append(conds, sqlf.Sprintf("TRUE"))
-	}
-
-	rows, err := s.db.Query(ctx, sqlf.Sprintf(getVulnerabilityMatchesGroupedByRepos, sqlf.Join(conds, " AND "), args.Limit, args.Offset))
-	if err != nil {
-		return nil, 0, err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	var matches []shared.VulnerabilityMatchesByRepository
-	var totalCount int
-	for rows.Next() {
-		var match shared.VulnerabilityMatchesByRepository
-		if err := rows.Scan(&match.ID, &match.RepositoryName, &match.MatchCount, &totalCount); err != nil {
-			return nil, 0, err
-		}
-
-		matches = append(matches, match)
-	}
-
-	return matches, totalCount, nil
-}
-
-const getVulnerabilityMatchesGroupedByRepos = `
-select
-	r.id,
-	r.name,
-	count(*) as count,
-	COUNT(*) OVER() AS total_count
-from vulnerability_matches vm
-join lsif_uploads lu on vm.upload_id = lu.id
-join repo r on lu.repository_id = r.id
-where %s
-group by r.name, r.id
-order by count DESC
-limit %s offset %s
-`
-
 func (s *store) GetVulnerabilityMatchesSummaryCount(ctx context.Context) (counts shared.GetVulnerabilityMatchesSummaryCounts, err error) {
 	ctx, _, endObservation := s.operations.getVulnerabilityMatchesSummaryCounts.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
