@@ -1047,6 +1047,7 @@ func (q *repositoryQuery) doRecursively(ctx context.Context, results chan *githu
 		return q.split(ctx, results)
 	}
 
+	const maxTries = 3
 	numTries := 0
 	seen := make(map[int64]struct{}, res.TotalCount)
 	// If the number of repos is lower than the limit, we perform the actual search
@@ -1072,14 +1073,14 @@ func (q *repositoryQuery) doRecursively(ctx context.Context, results chan *githu
 
 		// Only break if we've seen a number of repositories equal to the expected count
 		// res.EndCursor will loop by itself
-		if len(seen) >= res.TotalCount {
+		if len(seen) >= res.TotalCount || len(seen) >= q.Limit {
 			break
 		}
 
 		// Set a hard cap on the number of retries
 		if res.EndCursor == "" {
 			numTries += 1
-			if numTries >= 3 {
+			if numTries >= maxTries {
 				break
 			}
 		}
