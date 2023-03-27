@@ -33,6 +33,7 @@ type Project struct {
 	Archived          bool           `json:"archived"`
 	StarCount         int            `json:"star_count"`
 	ForksCount        int            `json:"forks_count"`
+	EmptyRepo         bool           `json:"empty_repo"`
 }
 
 type ProjectCommon struct {

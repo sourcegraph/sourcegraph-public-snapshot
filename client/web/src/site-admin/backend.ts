@@ -1020,7 +1020,6 @@ export const SITE_CONFIGURATION_CHANGE_CONNECTION_QUERY = gql`
             username
             displayName
         }
-        reproducedDiff
         diff
         createdAt
     }

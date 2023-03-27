@@ -149,6 +149,37 @@ func (r *rootResolver) VulnerabilityMatches(ctx context.Context, args resolverst
 	return resolverstubs.NewTotalCountConnectionResolver(resolvers, offset, int32(totalCount)), nil
 }
 
+func (r *rootResolver) VulnerabilityMatchesCountByRepository(ctx context.Context, args resolverstubs.GetVulnerabilityMatchCountByRepositoryArgs) (_ resolverstubs.VulnerabilityMatchCountByRepositoryConnectionResolver, err error) {
+	ctx, _, endObservation := r.operations.vulnerabilityMatchesCountByRepository.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	limit, offset, err := args.ParseLimitOffset(50)
+	if err != nil {
+		return nil, err
+	}
+
+	repositoryName := ""
+	if args.RepositoryName != nil {
+		repositoryName = *args.RepositoryName
+	}
+
+	vulerabilityCounts, totalCount, err := r.sentinelSvc.GetVulnerabilityMatchesCountByRepository(ctx, shared.GetVulnerabilityMatchesCountByRepositoryArgs{
+		Limit:          int(limit),
+		Offset:         int(offset),
+		RepositoryName: repositoryName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var resolvers []resolverstubs.VulnerabilityMatchCountByRepositoryResolver
+	for _, v := range vulerabilityCounts {
+		resolvers = append(resolvers, &vulnerabilityMatchCountByRepositoryResolver{v: v})
+	}
+
+	return resolverstubs.NewTotalCountConnectionResolver(resolvers, offset, int32(totalCount)), nil
+}
+
 func (r *rootResolver) VulnerabilityByID(ctx context.Context, vulnerabilityID graphql.ID) (_ resolverstubs.VulnerabilityResolver, err error) {
 	ctx, _, endObservation := r.operations.vulnerabilityByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("vulnerabilityID", string(vulnerabilityID)),
@@ -196,6 +227,24 @@ func (r *rootResolver) VulnerabilityMatchByID(ctx context.Context, vulnerability
 		errTracer:        errTracer,
 		bulkLoader:       r.bulkLoaderFactory.Create(),
 		m:                match,
+	}, nil
+}
+
+func (r *rootResolver) VulnerabilityMatchesSummaryCounts(ctx context.Context) (_ resolverstubs.VulnerabilityMatchesSummaryCountResolver, err error) {
+	ctx, _, endObservation := r.operations.vulnerabilityMatchesSummaryCounts.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	counts, err := r.sentinelSvc.GetVulnerabilityMatchesSummaryCounts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &vulnerabilityMatchesSummaryCountResolver{
+		critical:   counts.Critical,
+		high:       counts.High,
+		medium:     counts.Medium,
+		low:        counts.Low,
+		repository: counts.Repositories,
 	}, nil
 }
 
@@ -357,4 +406,39 @@ func (r *vulnerabilityMatchResolver) PreciseIndex(ctx context.Context) (resolver
 		&upload,
 		nil,
 	)
+}
+
+//
+//
+
+type vulnerabilityMatchesSummaryCountResolver struct {
+	critical   int32
+	high       int32
+	medium     int32
+	low        int32
+	repository int32
+}
+
+func (v *vulnerabilityMatchesSummaryCountResolver) Critical() int32 { return v.critical }
+func (v *vulnerabilityMatchesSummaryCountResolver) High() int32     { return v.high }
+func (v *vulnerabilityMatchesSummaryCountResolver) Medium() int32   { return v.medium }
+func (v *vulnerabilityMatchesSummaryCountResolver) Low() int32      { return v.low }
+func (v *vulnerabilityMatchesSummaryCountResolver) Repository() int32 {
+	return v.repository
+}
+
+type vulnerabilityMatchCountByRepositoryResolver struct {
+	v shared.VulnerabilityMatchesByRepository
+}
+
+func (v vulnerabilityMatchCountByRepositoryResolver) ID() graphql.ID {
+	return resolverstubs.MarshalID("VulnerabilityMatchCountByRepository", v.v.ID)
+}
+
+func (v vulnerabilityMatchCountByRepositoryResolver) RepositoryName() string {
+	return v.v.RepositoryName
+}
+
+func (v vulnerabilityMatchCountByRepositoryResolver) MatchCount() int32 {
+	return v.v.MatchCount
 }

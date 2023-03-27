@@ -715,6 +715,8 @@ type ExcludedGitHubRepo struct {
 	Pattern string `json:"pattern,omitempty"`
 }
 type ExcludedGitLabProject struct {
+	// EmptyRepos description: Whether to exclude empty repositories.
+	EmptyRepos bool `json:"emptyRepos,omitempty"`
 	// Id description: The ID of a GitLab project (as returned by the GitLab instance's API) to exclude from mirroring.
 	Id int `json:"id,omitempty"`
 	// Name description: The name of a GitLab project ("group/name") to exclude from mirroring.

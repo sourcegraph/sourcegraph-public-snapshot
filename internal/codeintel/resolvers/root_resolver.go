@@ -101,6 +101,14 @@ func (r *Resolver) VulnerabilityMatchByID(ctx context.Context, id graphql.ID) (_
 	return r.sentinelRootResolver.VulnerabilityMatchByID(ctx, id)
 }
 
+func (r *Resolver) VulnerabilityMatchesSummaryCounts(ctx context.Context) (_ VulnerabilityMatchesSummaryCountResolver, err error) {
+	return r.sentinelRootResolver.VulnerabilityMatchesSummaryCounts(ctx)
+}
+
+func (r *Resolver) VulnerabilityMatchesCountByRepository(ctx context.Context, args GetVulnerabilityMatchCountByRepositoryArgs) (_ VulnerabilityMatchCountByRepositoryConnectionResolver, err error) {
+	return r.sentinelRootResolver.VulnerabilityMatchesCountByRepository(ctx, args)
+}
+
 func (r *Resolver) IndexerKeys(ctx context.Context, opts *IndexerKeyQueryArgs) (_ []string, err error) {
 	return r.uploadsRootResolver.IndexerKeys(ctx, opts)
 }

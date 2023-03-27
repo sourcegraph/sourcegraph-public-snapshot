@@ -1,6 +1,11 @@
 import * as vscode from 'vscode'
 
-import { ActiveTextEditor, ActiveTextEditorSelection, ActiveTextEditorVisibleContent, Editor } from '.'
+import {
+    ActiveTextEditor,
+    ActiveTextEditorSelection,
+    ActiveTextEditorVisibleContent,
+    Editor,
+} from '@sourcegraph/cody-shared/src/editor'
 
 const SURROUNDING_LINES = 50
 
@@ -22,6 +27,7 @@ export class VSCodeEditor implements Editor {
         }
         const selection = activeEditor.selection
         if (!selection || selection?.start.isEqual(selection.end)) {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             vscode.window.showErrorMessage('No code selected. Please select some code and try again.')
             return null
         }

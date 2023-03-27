@@ -43,6 +43,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/adapters"
@@ -2318,9 +2319,10 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 	if !repoCloned(dir) {
 		s.setCloneStatusNonFatal(ctx, repo, types.CloneStatusCloning)
 	}
+	bgCtx := featureflag.WithFlags(context.Background(), s.DB.FeatureFlags())
 	defer func() {
 		// Use a background context to ensure we still update the DB even if we time out
-		s.setCloneStatusNonFatal(context.Background(), repo, cloneStatus(repoCloned(dir), false))
+		s.setCloneStatusNonFatal(bgCtx, repo, cloneStatus(repoCloned(dir), false))
 	}()
 
 	cmd, err := syncer.CloneCommand(ctx, remoteURL, tmpPath)
@@ -2338,7 +2340,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 	pr, pw := io.Pipe()
 	defer pw.Close()
 
-	go readCloneProgress(logger, newURLRedactor(remoteURL), lock, pr, repo)
+	go readCloneProgress(bgCtx, s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
 
 	if output, err := runWith(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw); err != nil {
 		return errors.Wrapf(err, "clone failed. Output: %s", string(output))
@@ -2408,7 +2410,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 
 // readCloneProgress scans the reader and saves the most recent line of output
 // as the lock status.
-func readCloneProgress(logger log.Logger, redactor *urlRedactor, lock *RepositoryLock, pr io.Reader, repo api.RepoName) {
+func readCloneProgress(ctx context.Context, db database.DB, logger log.Logger, redactor *urlRedactor, lock *RepositoryLock, pr io.Reader, repo api.RepoName) {
 	var logFile *os.File
 	var err error
 
@@ -2422,11 +2424,12 @@ func readCloneProgress(logger log.Logger, redactor *urlRedactor, lock *Repositor
 		}
 	}
 
+	dbWritesLimiter := rate.NewLimiter(rate.Limit(1.0), 1)
 	scan := bufio.NewScanner(pr)
 	scan.Split(scanCRLF)
+	store := db.GitserverRepos()
 	for scan.Scan() {
 		progress := scan.Text()
-
 		// 🚨 SECURITY: The output could include the clone url with may contain a sensitive token.
 		// Redact the full url and any found HTTP credentials to be safe.
 		//
@@ -2442,6 +2445,16 @@ func readCloneProgress(logger log.Logger, redactor *urlRedactor, lock *Repositor
 			// Failing to write here is non-fatal and we don't want to spam our logs if there
 			// are issues
 			_, _ = fmt.Fprintln(logFile, progress)
+		}
+		// Only write to the database persisted status if line indicates progress
+		// which is recognized by presence of a '%'. We filter these writes not to waste
+		// rate-limit tokens on log lines that would not be relevant to the user.
+		if featureflag.FromContext(ctx).GetBoolOr("clone-progress-logging", false) &&
+			strings.Contains(redactedProgress, "%") &&
+			dbWritesLimiter.Allow() {
+			if err := store.SetCloningProgress(ctx, repo, redactedProgress); err != nil {
+				logger.Error("error updating cloning progress in the db", log.Error(err))
+			}
 		}
 	}
 	if err := scan.Err(); err != nil {

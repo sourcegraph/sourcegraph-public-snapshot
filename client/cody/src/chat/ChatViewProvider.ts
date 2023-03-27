@@ -1,27 +1,24 @@
 import * as vscode from 'vscode'
 
-import { CodebaseContext } from '../codebase-context'
+import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
+import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes'
+import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
+import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
+import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { Editor } from '@sourcegraph/cody-shared/src/editor'
+import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
+import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { isError } from '@sourcegraph/cody-shared/src/utils'
+
 import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../command/secret-storage'
 import { updateConfiguration } from '../configuration'
-import { Editor } from '../editor'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { configureExternalServices } from '../external-services'
-import { IntentDetector } from '../intent-detector'
 import { getRgPath } from '../rg'
-import { Message } from '../sourcegraph-api'
-import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { TestSupport } from '../test-support'
-import { isError } from '../utils'
-
-import { ChatClient } from './chat'
-import { renderMarkdown } from './markdown'
-import { getRecipe } from './recipes'
-import { Transcript } from './transcript'
-import { ChatMessage } from './transcript/messages'
-
-// If the bot message ends with some prefix of the `Human:` stop
-// sequence, trim if from the end.
-const STOP_SEQUENCE_REGEXP = /(H|Hu|Hum|Huma|Human|Human:)$/
 
 async function isValidLogin(serverEndpoint: string, accessToken: string): Promise<boolean> {
     const client = new SourcegraphGraphQLAPIClient(serverEndpoint, accessToken)
@@ -53,7 +50,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         }
     }
 
-    static async create(
+    public static async create(
         extensionPath: string,
         codebase: string,
         serverEndpoint: string,
@@ -92,11 +89,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     private async onDidReceiveMessage(message: any, webview: vscode.Webview): Promise<void> {
         switch (message.command) {
             case 'initialized':
-                this.sendToken()
-                this.sendTranscript()
+                await this.sendToken()
+                await this.sendTranscript()
                 break
             case 'reset':
-                this.onResetChat()
+                await this.onResetChat()
                 break
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text)
@@ -113,7 +110,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     await updateConfiguration('serverEndpoint', message.serverEndpoint)
                     await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
                 }
-                this.sendLogin(isValid)
+                await this.sendLogin(isValid)
                 break
             }
             case 'removeToken':
@@ -132,13 +129,17 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         await vscode.commands.executeCommand('cody.accept-tos', version)
     }
 
-    private async sendPrompt(promptMessages: Message[], responsePrefix = ''): Promise<void> {
+    private sendPrompt(promptMessages: Message[], responsePrefix = ''): void {
         this.cancelCompletion()
 
         this.cancelCompletionCallback = this.chat.chat(promptMessages, {
-            onChange: text => this.onBotMessageChange(this.reformatBotMessage(text, responsePrefix)),
-            onComplete: () => this.onBotMessageComplete(),
+            onChange: text => this.onBotMessageChange(reformatBotMessage(text, responsePrefix)),
+            onComplete: () => {
+                // eslint-disable-next-line @typescript-eslint/no-floating-promises
+                this.onBotMessageComplete()
+            },
             onError: err => {
+                // eslint-disable-next-line @typescript-eslint/no-floating-promises
                 vscode.window.showErrorMessage(err)
             },
         })
@@ -149,15 +150,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         this.cancelCompletionCallback = null
     }
 
-    private onResetChat(): void {
+    private async onResetChat(): Promise<void> {
         this.cancelCompletion()
         this.isMessageInProgress = false
         this.transcript.reset()
-        this.sendTranscript()
+        await this.sendTranscript()
     }
 
     private async onHumanMessageSubmitted(text: string): Promise<void> {
-        this.executeRecipe('chat-question', text)
+        await this.executeRecipe('chat-question', text)
     }
 
     public async executeRecipe(recipeId: string, humanChatInput: string = ''): Promise<void> {
@@ -183,33 +184,22 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         this.isMessageInProgress = true
         this.transcript.addInteraction(interaction)
 
-        this.showTab('chat')
-        this.sendTranscript()
+        await this.showTab('chat')
+        await this.sendTranscript()
 
         const prompt = await this.transcript.toPrompt()
         this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
     }
 
-    private reformatBotMessage(text: string, prefix: string): string {
-        let reformattedMessage = prefix + text.trimEnd()
-
-        const stopSequenceMatch = reformattedMessage.match(STOP_SEQUENCE_REGEXP)
-        if (stopSequenceMatch) {
-            reformattedMessage = reformattedMessage.slice(0, stopSequenceMatch.index)
-        }
-        // TODO: Detect if bot sent unformatted code without a markdown block.
-        return fixOpenMarkdownCodeBlock(reformattedMessage)
-    }
-
-    private onBotMessageChange(text: string): void {
+    private async onBotMessageChange(text: string): Promise<void> {
         this.transcript.addAssistantResponse(text, renderMarkdown(text))
-        this.sendTranscript()
+        await this.sendTranscript()
     }
 
     private async onBotMessageComplete(): Promise<void> {
         this.isMessageInProgress = false
         this.cancelCompletionCallback = null
-        this.sendTranscript()
+        await this.sendTranscript()
     }
 
     private async showTab(tab: string): Promise<void> {
@@ -217,20 +207,20 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         await this.webview?.postMessage({ type: 'showTab', tab })
     }
 
-    private sendTranscript(): void {
-        this.webview?.postMessage({
+    private async sendTranscript(): Promise<void> {
+        await this.webview?.postMessage({
             type: 'transcript',
             messages: this.transcript.toChat(),
             isMessageInProgress: this.isMessageInProgress,
         })
     }
 
-    private sendLogin(isValid: boolean): void {
-        this.webview?.postMessage({ type: 'login', isValid })
+    private async sendLogin(isValid: boolean): Promise<void> {
+        await this.webview?.postMessage({ type: 'login', isValid })
     }
 
     private async sendToken(): Promise<void> {
-        this.webview?.postMessage({
+        await this.webview?.postMessage({
             type: 'token',
             value: await getAccessToken(this.secretStorage),
             mode: this.mode,
@@ -271,7 +261,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message, webviewView.webview))
     }
 
-    public async transcriptForTesting(testing: TestSupport): Promise<ChatMessage[]> {
+    public transcriptForTesting(testing: TestSupport): ChatMessage[] {
         if (!testing) {
             console.error('used ForTesting method without test support object')
             return []
@@ -297,19 +287,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 this.codebaseContext = codebaseContext
                 this.chat = chatClient
 
+                // eslint-disable-next-line @typescript-eslint/no-floating-promises
                 vscode.window.showInformationMessage('Cody configuration has been updated.')
                 break
             }
         }
     }
-}
-
-function fixOpenMarkdownCodeBlock(text: string): string {
-    const occurances = text.split('```').length - 1
-    if (occurances % 2 === 1) {
-        return text + '\n```'
-    }
-    return text
 }
 
 function getNonce(): string {

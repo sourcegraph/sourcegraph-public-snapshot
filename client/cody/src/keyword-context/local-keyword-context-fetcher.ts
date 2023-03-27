@@ -5,7 +5,7 @@ import { removeStopwords } from 'stopword'
 import StreamValues from 'stream-json/streamers/StreamValues'
 import * as vscode from 'vscode'
 
-import { KeywordContextFetcher, KeywordContextFetcherResult } from '.'
+import { KeywordContextFetcher, KeywordContextFetcherResult } from '@sourcegraph/cody-shared/src/keyword-context'
 
 const fileExtRipgrepParams = ['-Tmarkdown', '-Tyaml', '-Tjson', '-g', '!*.lock']
 
@@ -94,7 +94,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                             },
                             (error, stdout, stderr) => {
                                 if (error?.code === 2) {
-                                    reject(`${error}: ${stderr}`)
+                                    reject(new Error(`${error.message}: ${stderr}`))
                                 } else {
                                     resolve(stdout)
                                 }
@@ -110,7 +110,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                             const matches = /^(\d+) files searched$/.exec(line)
                             if (matches && matches.length === 2) {
                                 try {
-                                    filesSearched = parseInt(matches[1])
+                                    filesSearched = parseInt(matches[1], 10)
                                 } catch {
                                     console.error(`failed to parse number of files matched from string: ${matches[1]}`)
                                 }
@@ -118,7 +118,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                             continue
                         }
                         try {
-                            const count = parseInt(terms[1])
+                            const count = parseInt(terms[1], 10)
                             fileCounts[terms[0]] = count
                         } catch {
                             console.error(`could not parse count from ${terms[1]}`)
@@ -289,7 +289,7 @@ async function fetchFileMatches(
                         },
                         (error, stdout, stderr) => {
                             if (error?.code === 2) {
-                                reject(new Error(`${error}: ${stderr}`))
+                                reject(new Error(`${error.message}: ${stderr}`))
                             } else {
                                 resolve(stdout)
                             }
@@ -305,7 +305,7 @@ async function fetchFileMatches(
                         const matches = /^(\d+) files searched$/.exec(line)
                         if (matches && matches.length === 2) {
                             try {
-                                filesSearched = parseInt(matches[1])
+                                filesSearched = parseInt(matches[1], 10)
                             } catch {
                                 console.error(`failed to parse number of files matched from string: ${matches[1]}`)
                             }
@@ -313,7 +313,7 @@ async function fetchFileMatches(
                         continue
                     }
                     try {
-                        const count = parseInt(terms[1])
+                        const count = parseInt(terms[1], 10)
                         fileCounts[terms[0]] = count
                     } catch {
                         console.error(`could not parse count from ${terms[1]}`)
@@ -465,6 +465,6 @@ function idf(termTotalFiles: { [term: string]: number }, totalFiles: number): { 
     return Object.fromEntries(e)
 }
 
-function escapeRegex(s: string) {
-    return s.replace(/[$()*+./?[\\\]^{|}\-]/g, '\\$&')
+function escapeRegex(s: string): string {
+    return s.replace(/[$()*+./?[\\\]^{|}-]/g, '\\$&')
 }

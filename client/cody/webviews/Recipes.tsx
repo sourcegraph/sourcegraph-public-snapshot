@@ -15,7 +15,7 @@ export const recipesList = {
 }
 
 export function Recipes(): React.ReactElement {
-    const onRecipeClick = (recipeID: string) => {
+    const onRecipeClick = (recipeID: string): void => {
         vscodeAPI.postMessage({ command: 'executeRecipe', recipe: recipeID })
     }
 
