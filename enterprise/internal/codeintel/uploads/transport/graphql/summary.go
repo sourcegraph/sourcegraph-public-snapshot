@@ -1,4 +1,4 @@
-package sharedresolvers
+package graphql
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	autoindexingShared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
+	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	uploadsShared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -28,10 +29,10 @@ type InferredAvailableIndexers struct {
 
 type summaryResolver struct {
 	autoindexSvc     AutoIndexingService
-	locationResolver *CachedLocationResolver
+	locationResolver *sharedresolvers.CachedLocationResolver
 }
 
-func NewSummaryResolver(autoindexSvc AutoIndexingService, locationResolver *CachedLocationResolver) resolverstubs.CodeIntelSummaryResolver {
+func NewSummaryResolver(autoindexSvc AutoIndexingService, locationResolver *sharedresolvers.CachedLocationResolver) resolverstubs.CodeIntelSummaryResolver {
 	return &summaryResolver{
 		autoindexSvc:     autoindexSvc,
 		locationResolver: locationResolver,
@@ -176,13 +177,13 @@ type repositorySummaryResolver struct {
 	uploadsSvc        UploadsService
 	policySvc         PolicyService
 	gitserverClient   gitserver.Client
-	siteAdminChecker  SiteAdminChecker
+	siteAdminChecker  sharedresolvers.SiteAdminChecker
 	repoStore         database.RepoStore
 	summary           RepositorySummary
 	availableIndexers []InferredAvailableIndexers
 	limitErr          error
-	prefetcher        *Prefetcher
-	locationResolver  *CachedLocationResolver
+	prefetcher        *sharedresolvers.Prefetcher
+	locationResolver  *sharedresolvers.CachedLocationResolver
 	errTracer         *observation.ErrCollector
 }
 
@@ -190,13 +191,13 @@ func NewRepositorySummaryResolver(
 	uploadsSvc UploadsService,
 	policySvc PolicyService,
 	gitserverClient gitserver.Client,
-	siteAdminChecker SiteAdminChecker,
+	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
-	locationResolver *CachedLocationResolver,
+	locationResolver *sharedresolvers.CachedLocationResolver,
 	summary RepositorySummary,
 	availableIndexers []InferredAvailableIndexers,
 	limitErr error,
-	prefetcher *Prefetcher,
+	prefetcher *sharedresolvers.Prefetcher,
 	errTracer *observation.ErrCollector,
 ) resolverstubs.CodeIntelRepositorySummaryResolver {
 	return &repositorySummaryResolver{

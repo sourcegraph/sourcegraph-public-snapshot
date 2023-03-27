@@ -7,6 +7,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type GitCommitResolver struct {
@@ -81,4 +83,14 @@ func (r *GitCommitResolver) repoRevURL() *url.URL {
 		repoURL.Path += "@" + rev
 	}
 	return repoURL
+}
+
+type GitObjectID string
+
+func (id *GitObjectID) UnmarshalGraphQL(input any) error {
+	if input, ok := input.(string); ok && gitserver.IsAbsoluteRevision(input) {
+		*id = GitObjectID(input)
+		return nil
+	}
+	return errors.New("GitObjectID: expected 40-character string (SHA-1 hash)")
 }
