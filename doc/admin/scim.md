@@ -20,7 +20,12 @@ To use SCIM, you must have an existing IdP configured as an auth provider on you
 
 To configure:
 
-1. Generate a random alphanumeric bearer token of maximum 255 characters
+1. Generate a random alphanumeric bearer token of maximum 255 characters.
+   To do this in a terminal, run:
+   
+   ```
+   openssl rand -base64 342 | tr -dc 'a-zA-Z0-9' | cut -c -255
+   ```
 2. Add the following line to your [site configuration](config/site_config.md):
 
    ```
@@ -37,12 +42,6 @@ To configure:
    https://sourcegraph.company.com/.api/scim/v2
    ```
 
-   so the "Users" endpoint is at
-
-   ```
-   https://sourcegraph.company.com/.api/scim/v2/Users
-   ```
-
 ## Configuring SCIM for Okta
 
 To set up user provisioning in [Okta](https://help.okta.com/en-us/Content/Topics/Apps/Apps_App_Integration_Wizard_SCIM.htm), you must first set up a new app integration of the "SAML 2.0" type, then configure it to use SCIM. Here are the steps to do this:
@@ -57,7 +56,8 @@ To set up user provisioning in [Okta](https://help.okta.com/en-us/Content/Topics
 1. Check the first three items in `Supported provisioning actions`: "Import New Users and Profile Updates", "Push New Users", and "Push Profile Updates".
 1. Set "Authentication mode" to "HTTP Header"
 1. Under "HTTP Header", paste the same alphanumeric bearer token you used in your site config.
-1. Click "Save".
+1. Click "Test Connection Configuration" (first four items should be green—the user-related ones), then "Save".
+1. Switch to "Provisioning" → "To App" and click "Edit". Enable "Create Users" and "Update User Attributes". Only enable "Deactivate Users" if you acknowledge that we don't currently support soft deletion, and users will be deleted in Sourcegraph when they are deactivated in Okta.
 
 > NOTE: You can also use our [SAML](auth/saml/okta) and [OpenID Connect](auth#openid-connect) integrations with Okta.
 
