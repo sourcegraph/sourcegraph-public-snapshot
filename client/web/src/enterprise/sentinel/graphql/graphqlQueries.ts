@@ -74,3 +74,23 @@ export const VULNERABILITY_MATCHES_COUNT_BY_REPOSITORY = gql`
     }
     ${vulnerabilityMatchesCountByRepositoryFields}
 `
+
+const vulnerabilityMatchesSummaryCountFields = gql`
+    fragment VulnerabilityMatchesSummaryCountFields on VulnerabilityMatchesSummaryCount {
+        high
+        medium
+        low
+        critical
+        repository
+    }
+`
+
+export const VULNERABILITY_MATCHES_SUMMARY_COUNT = gql`
+    query VulnerabilityMatchesSummaryCount {
+        vulnerabilityMatchesSummaryCounts {
+            ...VulnerabilityMatchesSummaryCountFields
+        }
+    }
+
+    ${vulnerabilityMatchesSummaryCountFields}
+`

@@ -1,8 +1,14 @@
+import { useQuery } from '@sourcegraph/http-client'
+import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
+
+import {
+    VulnerabilityMatchesSummaryCountResult,
+    VulnerabilityMatchesSummaryCountVariables,
+} from '../../../../graphql-operations'
+import { VULNERABILITY_MATCHES_SUMMARY_COUNT } from '../../graphql/graphqlQueries'
+
 import styles from './SummaryTable.module.scss'
 
-interface SummaryTableProps<T> {
-    vulnerabilityMatches: T[]
-}
 export interface VulnerabilitiesProps {
     sourceID: string
     details: string
@@ -12,38 +18,49 @@ export interface VulnerabilitiesProps {
     cvssScore: string
     severity: string
 }
-export function SummaryTable<T>(props: SummaryTableProps<T>) {
-    const { vulnerabilityMatches } = props
-    const totalVulnerabilities = vulnerabilityMatches.length
-    const severity = getVulnerabilitySeverity(vulnerabilityMatches as VulnerabilitiesProps[])
+export function SummaryTable(): JSX.Element {
+    const { data, error, loading } = useQuery<
+        VulnerabilityMatchesSummaryCountResult,
+        VulnerabilityMatchesSummaryCountVariables
+    >(VULNERABILITY_MATCHES_SUMMARY_COUNT, { fetchPolicy: 'cache-and-network' })
+
+    if (!data || loading) {
+        return <LoadingSpinner />
+    }
+
+    if (error) {
+        return <ErrorAlert error={new Error('Sentinel summary is not available')} />
+    }
+
+    const summary = getSummary(data)
     const tableData = [
         {
             title: 'Total Vulnerabilities',
-            amount: totalVulnerabilities,
+            amount: summary.total,
         },
         {
             title: 'Critical Severity',
-            amount: severity.critical ? `${severity.critical}/${totalVulnerabilities}` : '0',
+            amount: summary.critical ? `${summary.critical}/${summary.total}` : '0',
         },
         {
             title: 'High Severity',
-            amount: severity.high ? `${severity.high}/${totalVulnerabilities}` : '0',
+            amount: summary.high ? `${summary.high}/${summary.total}` : '0',
         },
         {
             title: 'Medium Severity',
-            amount: severity.medium ? `${severity.medium}/${totalVulnerabilities}` : '0',
+            amount: summary.medium ? `${summary.medium}/${summary.total}` : '0',
         },
         {
             title: 'Repos with Vulnerabilities',
-            amount: totalVulnerabilities,
+            amount: summary.repository,
         },
     ]
 
     return (
         <div className={styles.bar}>
             <div className={styles.container}>
-                {tableData.map((data, idx) => (
-                    <div key={idx} className={styles.item}>
+                {tableData.map(data => (
+                    <div key={data.title} className={styles.item}>
                         <div className={styles.amount}>{data.amount}</div>
                         <div className={styles.subtitle}>{data.title}</div>
                     </div>
@@ -53,20 +70,41 @@ export function SummaryTable<T>(props: SummaryTableProps<T>) {
     )
 }
 
-function getVulnerabilitySeverity(vulnerabilities: VulnerabilitiesProps[]) {
-    return vulnerabilities.reduce(
-        (acc, curr) => {
-            if (curr.severity === 'CRITICAL') {
-                acc.critical += 1
-            }
-            if (curr.severity === 'HIGH') {
-                acc.high += 1
-            }
-            if (curr.severity === 'MEDIUM') {
-                acc.medium += 1
-            }
-            return acc
-        },
-        { critical: 0, high: 0, medium: 0 }
-    )
+interface VulnerabilityMatchesSummaryCount {
+    critical: number
+    high: number
+    medium: number
+    low: number
+    total: number
+    repository: number
+}
+
+declare const vulnerabilityMatchesSummaryCounts: {
+    vulnerabilityMatchesSummaryCounts: {
+        critical: number
+        high: number
+        medium: number
+        low: number
+        repository: number
+    }
+}
+
+function getSummary(summary: typeof vulnerabilityMatchesSummaryCounts): VulnerabilityMatchesSummaryCount {
+    const {
+        critical = 0,
+        high = 0,
+        medium = 0,
+        low = 0,
+        repository = 0,
+    } = summary?.vulnerabilityMatchesSummaryCounts || {}
+
+    const total = high + medium + low + critical
+    return {
+        critical,
+        high,
+        medium,
+        low,
+        total,
+        repository,
+    }
 }

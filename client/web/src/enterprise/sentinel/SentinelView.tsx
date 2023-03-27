@@ -37,7 +37,7 @@ export const SentinelView: FC = () => {
                         {loading && !connection && <ConnectionLoading />}
                         {connection && (
                             <>
-                                <SummaryTable vulnerabilityMatches={connection?.nodes ?? []} />
+                                <SummaryTable />
                                 <VulnerabilityList vulnerabilityMatches={connection?.nodes ?? []} />
                                 {hasNextPage && (
                                     <Button size="sm" variant="secondary" outline={true} onClick={fetchMore}>
@@ -76,7 +76,7 @@ const FilterButton: FC<FilterButtonProps> = ({ showMobileFilters, onShowMobileFi
         } else {
             setIsDesktopView(false)
         }
-    }, [width])
+    }, [width, onShowMobileFiltersClicked])
     const toggleMobileFiltersClicked = (): void => {
         const newShowFilters = !showMobileFilters
         onShowMobileFiltersClicked(newShowFilters)
