@@ -840,7 +840,7 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 		expectedPermissions []authz.Permission
 		entity              authz.PermissionEntity
 		expectedResult      *database.SetPermissionsResult
-		keepOldPerms        bool
+		keepPerms           bool
 	}{
 		{
 			name:                "empty",
@@ -929,7 +929,7 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 			},
 			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
 			expectedResult: &database.SetPermissionsResult{Added: 2, Removed: 0, Found: 2},
-			keepOldPerms:   true,
+			keepPerms:      true,
 		},
 	}
 
@@ -944,7 +944,7 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 				cleanupReposTable(t, s)
 			})
 
-			deleteOldPerms := !test.keepOldPerms
+			replacePerms := !test.keepPerms
 
 			if len(test.origPermissions) > 0 {
 				setupPermsRelatedEntities(t, s, test.origPermissions)
@@ -958,9 +958,9 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 					}
 				}
 
-				_, err := s.setUserRepoPermissions(ctx, syncedPermissions, test.entity, source, deleteOldPerms)
+				_, err := s.setUserRepoPermissions(ctx, syncedPermissions, test.entity, source, replacePerms)
 				require.NoError(t, err)
-				_, err = s.setUserRepoPermissions(ctx, explicitPermissions, test.entity, authz.SourceAPI, deleteOldPerms)
+				_, err = s.setUserRepoPermissions(ctx, explicitPermissions, test.entity, authz.SourceAPI, replacePerms)
 				require.NoError(t, err)
 			}
 
@@ -969,7 +969,7 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 			}
 			var stats *database.SetPermissionsResult
 			var err error
-			if stats, err = s.setUserRepoPermissions(ctx, test.permissions, test.entity, source, deleteOldPerms); err != nil {
+			if stats, err = s.setUserRepoPermissions(ctx, test.permissions, test.entity, source, replacePerms); err != nil {
 				t.Fatal("testing user repo permissions", err)
 			}
 
