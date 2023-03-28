@@ -26,6 +26,9 @@ To configure:
    ```
    openssl rand -base64 342 | tr -dc 'a-zA-Z0-9' | cut -c -255
    ```
+
+   (This command generates a random base64 string with more characters than required (342 characters) and then filters out non-alphanumeric characters. Finally, it trims the output to 255 characters. The reason we generate a longer string is to account for the fact that the base64 encoding has non-alphanumeric characters, which are removed by the tr command.)
+
 2. Add the following line to your [site configuration](config/site_config.md):
 
    ```
