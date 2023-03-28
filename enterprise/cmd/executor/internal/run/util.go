@@ -175,7 +175,7 @@ func endpointOptions(c *config.Config, pathPrefix string) apiclient.EndpointOpti
 
 func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 	var nodeSelector map[string]string
-	if len(c.KubernetesNodeSelector) == 0 {
+	if len(c.KubernetesNodeSelector) > 0 {
 		nodeSelectorValues := strings.Split(c.KubernetesNodeSelector, ",")
 		nodeSelector = make(map[string]string, len(nodeSelectorValues))
 		for _, value := range nodeSelectorValues {
