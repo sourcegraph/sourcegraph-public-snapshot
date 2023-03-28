@@ -26,6 +26,7 @@ func main() {
 func doMain() error {
 	inputPath := flag.String("input", "input.json", "The input JSON file for the workspace execution. Defaults to \"input.json\".")
 	previousPath := flag.String("previousStepPath", "", "The path to the previous step's result file. Defaults to current working directory.")
+	workspaceFilesPath := flag.String("workspaceFiles", "/data/workspace-files", "The path to the workspace files. Defaults to \"/data/workspace-files\".")
 	flag.Usage = usage
 	flag.Parse()
 
@@ -47,7 +48,7 @@ func doMain() error {
 	ctx := context.Background()
 	switch arguments.mode {
 	case "pre":
-		return run.Pre(ctx, arguments.step, executionInput, previousResult)
+		return run.Pre(ctx, arguments.step, executionInput, previousResult, *workspaceFilesPath)
 	case "post":
 		return run.Post(ctx, arguments.step, executionInput, previousResult)
 	default:

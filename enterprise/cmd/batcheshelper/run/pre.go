@@ -19,7 +19,13 @@ import (
 )
 
 // Pre TODO
-func Pre(ctx context.Context, stepIdx int, executionInput batcheslib.WorkspacesExecutionInput, previousResult execution.AfterStepResult) error {
+func Pre(
+	ctx context.Context,
+	stepIdx int,
+	executionInput batcheslib.WorkspacesExecutionInput,
+	previousResult execution.AfterStepResult,
+	workspaceFilesPath string,
+) error {
 	wd, err := os.Getwd()
 	if err != nil {
 		return errors.Wrap(err, "getting working directory")
@@ -105,7 +111,8 @@ func Pre(ctx context.Context, stepIdx int, executionInput batcheslib.WorkspacesE
 
 		// Mount any paths on the local system to the docker container. The paths have already been validated during parsing.
 		for _, mount := range step.Mount {
-			workspaceFilePath, err := getAbsoluteMountPath(wd, mount.Path)
+			fmt.Println("mount", mount.Path, mount.Mountpoint)
+			workspaceFilePath, err := getAbsoluteMountPath(workspaceFilesPath, mount.Path)
 			if err != nil {
 				return errors.Wrap(err, "getAbsoluteMountPath")
 			}
