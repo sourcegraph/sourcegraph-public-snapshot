@@ -578,7 +578,7 @@ func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipP
 // killAndWait is a helper to kill a started cmd and release its resources.
 // This is used when returning from a function after calling Start but before
 // calling Wait. This can be called in a goroutine.
-func killAndWait(cmd *exec.Command) {
+func killAndWait(cmd *exec.Cmd) {
 	proc := cmd.Process
 	if proc == nil {
 		return
