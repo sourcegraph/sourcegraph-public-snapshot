@@ -177,6 +177,21 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 			},
 		}
 	}
+
+	resourceLimit := corev1.ResourceList{
+		corev1.ResourceMemory: options.ResourceLimit.Memory,
+	}
+	if !options.ResourceLimit.CPU.IsZero() {
+		resourceLimit[corev1.ResourceCPU] = options.ResourceLimit.CPU
+	}
+
+	resourceRequest := corev1.ResourceList{
+		corev1.ResourceMemory: options.ResourceRequest.Memory,
+	}
+	if !options.ResourceRequest.CPU.IsZero() {
+		resourceRequest[corev1.ResourceCPU] = options.ResourceRequest.CPU
+	}
+
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
@@ -196,14 +211,8 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 							WorkingDir: filepath.Join(KubernetesMountPath, spec.Dir),
 							Env:        jobEnvs,
 							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									corev1.ResourceCPU:    options.ResourceLimit.CPU,
-									corev1.ResourceMemory: options.ResourceLimit.Memory,
-								},
-								Requests: corev1.ResourceList{
-									corev1.ResourceCPU:    options.ResourceRequest.CPU,
-									corev1.ResourceMemory: options.ResourceRequest.Memory,
-								},
+								Limits:   resourceLimit,
+								Requests: resourceRequest,
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
