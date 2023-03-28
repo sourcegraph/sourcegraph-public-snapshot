@@ -232,11 +232,11 @@ ComplexDiagram(
 
 Search a repository at a given revision, for example, a branch name, commit hash, or Git tag.
 
-**Example:** [`repo:^github\.com/gorilla/mux$@948bec34 testroute` ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/gorilla/mux%24%40948bec34+testroute&patternType=literal) or [`repo:^github\.com/gorilla/mux$ rev:v1.8.0 testroute` ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/gorilla/mux+rev:v1.8.0+testroute&patternType=literal)
+**Example:** [`repo:^github\.com/sourcegraph/sourcegraph$@75ba004 get_embeddings` ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%4075ba004+get_embeddings+&patternType=literal) or [`repo:^github\.com/sourcegraph/sourcegraph$ rev:v5.0.0 get_embeddings` ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+rev:v5.0.0+get_embeddings&patternType=literal)
 
 You can search multiple revisions by separating the revisions with `:`. Specify `HEAD` for the default branch.
 
-**Example:** [`repo:^github\.com/gorilla/mux$@v1.7.4:v1.4.0 testing.T` ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/gorilla/mux%24%40v1.7.4:v1.4.0+testing.T&patternType=literal) or [`repo:^github\.com/gorilla/mux$ rev:v1.7.4:v1.4.0 testing.T` ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/gorilla/mux%24+rev:v1.7.4:v1.4.0+testing.T&patternType=literal)
+**Example:** [`repo:^github\.com/sourcegraph/sourcegraph$ rev:v4.5.0:v5.0.0 disableNonCriticalTelemetry` ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+rev:v4.5.0:v5.0.0+disableNonCriticalTelemetry&patternType=literal) or [`repo:^github\.com/sourcegraph/sourcegraph$@v4.5.0:v5.0.0 disableNonCriticalTelemetry` ↗](https://sourcegraph.com/search?q=context%3Aglobal+repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%40v4.5.0%3Av5.0.0+disableNonCriticalTelemetry&patternType=literal)
 
 ### File
 
@@ -640,7 +640,7 @@ ComplexDiagram(
 
 Search only inside repositories that contain file content matching the regular expression.
 
-**Example:** [`repo:has.content(TODO)` ↗](https://sourcegraph.com/search?q=context:global+repo:github%5C.com/sourcegraph/.*+repo:has.content%28TODO%29&patternType=standard)
+**Example:** [`repo:github\.com/sourcegraph/.*$ repo:has.content(TODO)` ↗](https://sourcegraph.com/search?q=repo:github%5C.com/sourcegraph/.*%24+repo:has.content%28TODO%29&patternType=standard)
 
 _Note:_ `repo:contains.content(...)` is an alias for `repo:has.content(...)` and behaves identically.
 
@@ -849,7 +849,7 @@ Include results having a commit date after the specified time frame. Times are i
 - `1632782809`
 - `1632782809 -0600`
 
-**Example:** [`after:"6 weeks ago"` ↗](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph$+type:diff+author:nick+after:%226+weeks+ago%22) [`after:"november 1 2019"` ↗](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph$+type:diff+author:nick+after:%22november+1+2019%22)
+**Example:** [`after:"6 weeks ago"` ↗](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph%24+type:diff+after:%226+weeks+ago%22&patternType=standard) [`after:"november 1 2019"` ↗](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph$+type:diff+author:nick+after:%22november+1+2019%22)
 
 ### Message
 
