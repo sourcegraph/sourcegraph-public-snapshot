@@ -169,21 +169,6 @@ func ProvidersFromConfig(
 	initResult.Append(gerrit.NewAuthzProviders(gerritConns, cfg.SiteConfig().AuthProviders))
 	initResult.Append(azuredevops.NewAuthzProviders(db, azuredevopsConns))
 
-	// 🚨 SECURITY: Warn the admin when both code host authz provider and the permissions user mapping are configured.
-	// But only if the unified permissions is disabled
-	if cfg.SiteConfig().PermissionsUserMapping != nil &&
-		cfg.SiteConfig().PermissionsUserMapping.Enabled {
-		for _, p := range initResult.Providers {
-			if p.ServiceType() == extsvc.TypeBitbucketServer {
-				allowAccessByDefault = false
-				msg := fmt.Sprintf(
-					"The explicit permissions API (site configuration `permissions.userMapping`) cannot be enabled when %s authorization provider is in use. Blocking access to all repositories until the conflict is resolved.",
-					extsvc.TypeBitbucketServer)
-				initResult.Problems = append(initResult.Problems, msg)
-			}
-		}
-	}
-
 	return allowAccessByDefault, initResult.Providers, initResult.Problems, initResult.Warnings, initResult.InvalidConnections
 }
 

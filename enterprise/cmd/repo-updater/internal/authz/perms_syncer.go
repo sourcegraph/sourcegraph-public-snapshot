@@ -225,6 +225,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	if result, err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs), authz.SourceRepoSync); err != nil {
 		return result, providerStates, errors.Wrapf(err, "set user repo permissions for repository %q (id: %d)", repo.Name, repo.ID)
 	}
+	// TODO @milan remove in the following PRs, keep writing to both tables for now
 	legacyResult, err := txs.SetRepoPermissions(ctx, p)
 	if err != nil {
 		return legacyResult, providerStates, errors.Wrapf(err, "set repository permissions for repository %q (id: %d)", repo.Name, repo.ID)
@@ -342,6 +343,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	s.permsUpdateLock.Lock()
 	defer s.permsUpdateLock.Unlock()
 
+	// TODO @milan remove in the following PRs, keep writing to both tables for now
 	legacyResult, err := s.permsStore.SetUserPermissions(ctx, p)
 	if err != nil {
 		return legacyResult, providerStates, errors.Wrapf(err, "set user permissions for user %q (id: %d)", user.Username, user.ID)

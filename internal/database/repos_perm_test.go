@@ -85,7 +85,7 @@ func TestAuthzQueryConds(t *testing.T) {
 		got, err := AuthzQueryConds(context.Background(), db)
 		require.Nil(t, err, "unexpected error, should have passed without conflict")
 
-		want := authzQuery(false, true, int32(0))
+		want := authzQuery(false, int32(0))
 		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
@@ -101,7 +101,7 @@ func TestAuthzQueryConds(t *testing.T) {
 
 		got, err := AuthzQueryConds(context.Background(), db)
 		require.NoError(t, err)
-		want := authzQuery(false, true, int32(0))
+		want := authzQuery(false, int32(0))
 		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
@@ -119,14 +119,14 @@ func TestAuthzQueryConds(t *testing.T) {
 			setup: func(t *testing.T) (context.Context, DB) {
 				return actor.WithInternalActor(context.Background()), db
 			},
-			wantQuery: authzQuery(true, false, int32(0)),
+			wantQuery: authzQuery(true, int32(0)),
 		},
 		{
 			name: "no authz provider and not allow by default",
 			setup: func(t *testing.T) (context.Context, DB) {
 				return context.Background(), db
 			},
-			wantQuery: authzQuery(false, false, int32(0)),
+			wantQuery: authzQuery(false, int32(0)),
 		},
 		{
 			name: "no authz provider but allow by default",
@@ -134,7 +134,7 @@ func TestAuthzQueryConds(t *testing.T) {
 				return context.Background(), db
 			},
 			authzAllowByDefault: true,
-			wantQuery:           authzQuery(true, false, int32(0)),
+			wantQuery:           authzQuery(true, int32(0)),
 		},
 		{
 			name: "authenticated user is a site admin",
@@ -145,7 +145,7 @@ func TestAuthzQueryConds(t *testing.T) {
 				mockDB.UsersFunc.SetDefaultReturn(users)
 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1}), mockDB
 			},
-			wantQuery: authzQuery(true, false, int32(1)),
+			wantQuery: authzQuery(true, int32(1)),
 		},
 		{
 			name: "authenticated user is a site admin and AuthzEnforceForSiteAdmins is set",
@@ -160,7 +160,7 @@ func TestAuthzQueryConds(t *testing.T) {
 				})
 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1}), mockDB
 			},
-			wantQuery: authzQuery(false, false, int32(1)),
+			wantQuery: authzQuery(false, int32(1)),
 		},
 		{
 			name: "authenticated user is not a site admin",
@@ -171,7 +171,7 @@ func TestAuthzQueryConds(t *testing.T) {
 				mockDB.UsersFunc.SetDefaultReturn(users)
 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1}), mockDB
 			},
-			wantQuery: authzQuery(false, false, int32(1)),
+			wantQuery: authzQuery(false, int32(1)),
 		},
 	}
 

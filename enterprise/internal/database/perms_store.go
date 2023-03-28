@@ -599,7 +599,7 @@ func (s *permsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 
 	// Retrieve currently stored object IDs of this user.
 	oldIDs := map[int32]struct{}{}
-	ids, _, err := txs.legacyLoadUserPermissions(ctx, p.UserID, "FOR UPDATE")
+	ids, err := txs.legacyLoadUserPermissions(ctx, p.UserID, "FOR UPDATE")
 	if err != nil {
 		if err != authz.ErrPermsNotFound {
 			return nil, errors.Wrap(err, "load user permissions")
@@ -715,7 +715,7 @@ func (s *permsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermis
 
 	// Retrieve currently stored user IDs of this repository.
 	oldIDs := map[int32]struct{}{}
-	ids, _, _, err := txs.legacyLoadRepoPermissions(ctx, p.RepoID, "FOR UPDATE")
+	ids, _, err := txs.legacyLoadRepoPermissions(ctx, p.RepoID, "FOR UPDATE")
 	if err != nil {
 		if err != authz.ErrPermsNotFound {
 			return nil, errors.Wrap(err, "load repo permissions")
@@ -1631,9 +1631,9 @@ WHERE %s
 
 // legacyLoadUserPermissions is a method that scans three values from one user_permissions table row:
 // []int32 (ids), time.Time (updatedAt) and nullable time.Time (syncedAt).
-func (s *permsStore) legacyLoadUserPermissions(ctx context.Context, userID int32, lock string) (ids []int32, syncedAt time.Time, err error) {
+func (s *permsStore) legacyLoadUserPermissions(ctx context.Context, userID int32, lock string) (ids []int32, err error) {
 	const format = `
-SELECT object_ids_ints, synced_at
+SELECT object_ids_ints
 FROM user_permissions
 WHERE user_id = %s
 AND permission = 'read'
@@ -1647,37 +1647,26 @@ AND object_type = 'repos'
 			otlog.Object("Query.Args", q.Args()),
 		)
 	}()
-	var rows *sql.Rows
-	rows, err = s.Query(ctx, q)
+
+	ids, err = basestore.ScanInt32s(s.Query(ctx, q))
 	if err != nil {
-		return nil, time.Time{}, err
+		return nil, err
 	}
 
-	if !rows.Next() {
-		// One row is expected, return ErrPermsNotFound if no other errors occurred.
-		err = rows.Err()
-		if err == nil {
-			err = authz.ErrPermsNotFound
-		}
-		return nil, time.Time{}, err
+	if len(ids) == 0 {
+		// One item is expected, return ErrPermsNotFound if no other errors occurred.
+		err = authz.ErrPermsNotFound
+		return nil, err
 	}
 
-	if err = rows.Scan(pq.Array(&ids), &dbutil.NullTime{Time: &syncedAt}); err != nil {
-		return nil, time.Time{}, err
-	}
-
-	if err = rows.Close(); err != nil {
-		return nil, time.Time{}, err
-	}
-
-	return ids, syncedAt, nil
+	return ids, nil
 }
 
 // legacyLoadRepoPermissions is a method that scans three values from one repo_permissions table row:
 // []int32 (ids), time.Time (updatedAt) and nullable time.Time (syncedAt).
-func (s *permsStore) legacyLoadRepoPermissions(ctx context.Context, repoID int32, lock string) (ids []int32, syncedAt time.Time, unrestricted bool, err error) {
+func (s *permsStore) legacyLoadRepoPermissions(ctx context.Context, repoID int32, lock string) (ids []int32, unrestricted bool, err error) {
 	const format = `
-SELECT user_ids_ints, synced_at, unrestricted
+SELECT user_ids_ints, unrestricted
 FROM repo_permissions
 WHERE repo_id = %s
 AND permission = 'read'
@@ -1692,29 +1681,19 @@ AND permission = 'read'
 			otlog.Object("Query.Args", q.Args()),
 		)
 	}()
-	var rows *sql.Rows
-	rows, err = s.Query(ctx, q)
+
+	ids, err = basestore.ScanInt32s(s.Query(ctx, q))
 	if err != nil {
-		return nil, time.Time{}, false, err
+		return nil, false, err
 	}
 
-	if !rows.Next() {
-		// One row is expected, return ErrPermsNotFound if no other errors occurred.
-		err = rows.Err()
-		if err == nil {
-			err = authz.ErrPermsNotFound
-		}
-		return nil, time.Time{}, false, err
+	if len(ids) == 0 {
+		// One item is expected, return ErrPermsNotFound if no other errors occurred.
+		err = authz.ErrPermsNotFound
+		return nil, false, err
 	}
 
-	if err = rows.Scan(pq.Array(&ids), &dbutil.NullTime{Time: &syncedAt}, &unrestricted); err != nil {
-		return nil, time.Time{}, false, err
-	}
-
-	if err = rows.Close(); err != nil {
-		return nil, time.Time{}, false, err
-	}
-	return ids, syncedAt, unrestricted, nil
+	return ids, unrestricted, nil
 }
 
 // loadUserPendingPermissions is a method that scans three values from one user_pending_permissions table row:

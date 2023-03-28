@@ -656,7 +656,7 @@ func TestPermsStore_SetUserPermissions(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		gotIDs, _, err := s.legacyLoadUserPermissions(context.Background(), up.UserID, "")
+		gotIDs, err := s.legacyLoadUserPermissions(context.Background(), up.UserID, "")
 		require.NoError(t, err)
 
 		equal(t, "up.IDs", []int32{1}, gotIDs)
@@ -1541,7 +1541,7 @@ func TestPermsStore_SetRepoPermissions(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		gotIDs, _, _, err := s.legacyLoadRepoPermissions(context.Background(), 1, "")
+		gotIDs, _, err := s.legacyLoadRepoPermissions(context.Background(), 1, "")
 		require.NoError(t, err)
 		equal(t, "rp.UserIDs", []int32{2}, gotIDs)
 	})
@@ -1560,7 +1560,7 @@ func TestPermsStore_SetRepoPermissions(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		_, _, unrestricted, err := s.legacyLoadRepoPermissions(context.Background(), 1, "")
+		_, unrestricted, err := s.legacyLoadRepoPermissions(context.Background(), 1, "")
 		require.NoError(t, err)
 
 		require.Truef(t, unrestricted, "Want unrestricted, got %v", unrestricted)

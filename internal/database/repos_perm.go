@@ -26,11 +26,7 @@ type AuthzQueryParameters struct {
 }
 
 func (p *AuthzQueryParameters) ToAuthzQuery() *sqlf.Query {
-	return authzQuery(
-		p.BypassAuthz,
-		p.UsePermissionsUserMapping,
-		p.AuthenticatedUserID,
-	)
+	return authzQuery(p.BypassAuthz, p.AuthenticatedUserID)
 }
 
 func GetAuthzQueryParameters(ctx context.Context, db DB) (params *AuthzQueryParameters, err error) {
@@ -38,13 +34,6 @@ func GetAuthzQueryParameters(ctx context.Context, db DB) (params *AuthzQueryPara
 	authzAllowByDefault, authzProviders := authz.GetProviders()
 	params.UsePermissionsUserMapping = globals.PermissionsUserMapping().Enabled
 	params.AuthzEnforceForSiteAdmins = conf.Get().AuthzEnforceForSiteAdmins
-
-	// 🚨 SECURITY: Blocking access to all repositories if both code host authz
-	// provider(s) and permissions user mapping are configured.
-	// But only if legacy permissions are used.
-	if params.UsePermissionsUserMapping {
-		authzAllowByDefault = false
-	}
 
 	a := actor.FromContext(ctx)
 
@@ -60,7 +49,10 @@ func GetAuthzQueryParameters(ctx context.Context, db DB) (params *AuthzQueryPara
 		params.BypassAuthzReasons.IsInternal = true
 	}
 
-	if authzAllowByDefault && len(authzProviders) == 0 {
+	// 🚨 SECURITY: If explicit permissions API is ON, we want to enforce authz
+	// even if there are no authz providers configured.
+	// Otherwise bypass authorization with no authz providers.
+	if !params.UsePermissionsUserMapping && authzAllowByDefault && len(authzProviders) == 0 {
 		params.BypassAuthz = true
 		params.BypassAuthzReasons.NoAuthzProvider = true
 	}
@@ -137,7 +129,7 @@ func getRestrictedReposCond(userID int32) *sqlf.Query {
 	`, userID)
 }
 
-func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID int32) *sqlf.Query {
+func authzQuery(bypassAuthz bool, authenticatedUserID int32) *sqlf.Query {
 	if bypassAuthz {
 		// if bypassAuthz is true, we don't care about any of the checks
 		return sqlf.Sprintf(`
