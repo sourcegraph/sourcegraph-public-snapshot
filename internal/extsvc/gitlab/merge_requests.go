@@ -136,7 +136,7 @@ func (c *Client) CreateMergeRequest(ctx context.Context, project *Project, opts 
 		if code == http.StatusConflict {
 			return nil, ErrMergeRequestAlreadyExists
 		}
-		if code <= 400 && code < 200 {
+		if code >= 400 && code < 200 {
 			return nil, errcode.MakeNonRetryable(err)
 		}
 		if aerr := c.convertToArchivedError(ctx, err, project); aerr != nil {
