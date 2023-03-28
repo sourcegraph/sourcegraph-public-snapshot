@@ -729,7 +729,9 @@ var EnterpriseResolvers = struct {
 	ownResolver                 OwnResolver
 }{}
 
-// Root is DEPRECATED
+// Root returns a new schemaResolver.
+//
+// DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
 	return newSchemaResolver(r.db, r.gitserverClient, r.enterpriseSearchJobs)
 }
