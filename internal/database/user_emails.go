@@ -233,12 +233,15 @@ func (s *userEmailsStore) SetVerified(ctx context.Context, userID int32, email s
 	if verified {
 		// Mark as verified.
 		res, err = s.Handle().ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=now() WHERE user_id=$1 AND email=$2", userID, email)
+		if err != nil {
+			return errors.New("could not mark email as verified")
+		}
 	} else {
 		// Mark as unverified.
 		res, err = s.Handle().ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=null WHERE user_id=$1 AND email=$2", userID, email)
-	}
-	if err != nil {
-		return err
+		if err != nil {
+			return errors.New("could not mark error as unverified")
+		}
 	}
 	nrows, err := res.RowsAffected()
 	if err != nil {
@@ -246,6 +249,12 @@ func (s *userEmailsStore) SetVerified(ctx context.Context, userID int32, email s
 	}
 	if nrows == 0 {
 		return errors.New("user email not found")
+	}
+
+	// If successfully marked as verified, delete all matching unverified emails.
+	if verified {
+		// At this point the email is already verified and the operation successful, so if deletion returns any errors we ignore it.
+		_, _ = s.Handle().ExecContext(ctx, "DELETE FROM user_emails WHERE verified_at IS NULL AND email=$1", email)
 	}
 	return nil
 }
