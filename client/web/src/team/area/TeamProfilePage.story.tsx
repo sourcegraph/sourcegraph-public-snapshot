@@ -2,10 +2,11 @@ import { Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../components/WebStory'
 
-import { NewTeamPage } from './NewTeamPage'
+import { TeamProfilePage } from './TeamProfilePage'
+import { testContext } from './test-utils'
 
 const config: Meta = {
-    title: 'web/teams/NewTeamPage',
+    title: 'web/teams/TeamProfilePage',
     parameters: {
         chromatic: { disableSnapshot: false },
     },
@@ -13,5 +14,5 @@ const config: Meta = {
 export default config
 
 export const Default: Story = function Default() {
-    return <WebStory>{() => <NewTeamPage />}</WebStory>
+    return <WebStory initialEntries={['/teams/team-1']}>{() => <TeamProfilePage {...testContext} />}</WebStory>
 }
