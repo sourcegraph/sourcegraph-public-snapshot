@@ -1540,26 +1540,8 @@ func TestCleanup_setRepoSizes(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	root := t.TempDir()
 
-	for _, name := range []string{
-		"ghe.sgdev.org/sourcegraph/gorilla-websocket",
-		"ghe.sgdev.org/sourcegraph/gorilla-mux",
-		"ghe.sgdev.org/sourcegraph/gorilla-sessions",
-	} {
-		p := path.Join(root, name, ".git")
-		if err := os.MkdirAll(p, 0o755); err != nil {
-			t.Fatal(err)
-		}
-		cmd := exec.Command("git", "--bare", "init", p)
-		if err := cmd.Run(); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	// We run cleanupRepos because we want to test as a side-effect it creates
-	// the correct file in the correct place.
-	s := &Server{ReposDir: root, Logger: logtest.Scoped(t), ObservationCtx: observation.TestContextTB(t), DB: database.NewMockDB()}
+	s := &Server{Logger: logtest.Scoped(t), ObservationCtx: observation.TestContextTB(t), DB: database.NewMockDB()}
 	s.Handler() // Handler as a side-effect sets up Server
 	db := dbtest.NewDB(logger, t)
 	s.DB = database.NewDB(logger, db)
@@ -1576,18 +1558,21 @@ update gitserver_repos set repo_size_bytes = 228 where repo_id = 1;
 		t.Fatalf("unexpected error while inserting test data: %s", err)
 	}
 
-	s.cleanupRepos(context.Background(), gitserver.GitserverAddresses{Addresses: []string{"gitserver-0"}})
+	sizes := map[api.RepoName]int64{
+		"ghe.sgdev.org/sourcegraph/gorilla-websocket": 512,
+		"ghe.sgdev.org/sourcegraph/gorilla-mux":       1024,
+		"ghe.sgdev.org/sourcegraph/gorilla-sessions":  2048,
+	}
 
-	for i := 1; i <= 3; i++ {
-		repo, err := s.DB.GitserverRepos().GetByID(context.Background(), 1)
+	s.setRepoSizes(context.Background(), sizes)
+
+	for repoName, wantSize := range sizes {
+		repo, err := s.DB.GitserverRepos().GetByName(context.Background(), repoName)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if repo.RepoSizeBytes == 0 {
-			t.Fatal("repo_size_bytes is not updated")
-		}
-		if i == 1 && repo.RepoSizeBytes == 228 {
-			t.Fatal("existing repo_size_bytes has not been updated")
+		if repo.RepoSizeBytes != wantSize {
+			t.Fatalf("repo %s has size %d, want %d", repoName, repo.RepoSizeBytes, wantSize)
 		}
 		if repo.ShardID != "1" {
 			t.Fatal("shard_id has been corrupted")
