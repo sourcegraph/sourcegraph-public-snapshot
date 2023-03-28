@@ -31,4 +31,28 @@ describe('useURLSyncedString', () => {
         act(() => setValue('baz'))
         expect(result.current[0]).toEqual('baz')
     })
+
+    // it should not override other useURLSyncedString states
+    it('should not override other useURLSyncedString states', () => {
+        const { result } = renderHook(
+            () => ({
+                foo: useURLSyncedString('foo', 'default-foo'),
+                bar: useURLSyncedString('bar', 'default-bar'),
+            }),
+            {
+                wrapper: ({ children }) => (
+                    <MemoryRouter initialEntries={['?foo=foo1&bar=bar1']}>{children}</MemoryRouter>
+                ),
+            }
+        )
+
+        // initial state
+        expect(result.current.foo[0]).toEqual('foo1')
+        expect(result.current.bar[0]).toEqual('bar1')
+
+        // on local state change
+        act(() => result.current.foo[1]('foo2'))
+        expect(result.current.foo[0]).toEqual('foo2')
+        expect(result.current.bar[0]).toEqual('bar1')
+    })
 })
