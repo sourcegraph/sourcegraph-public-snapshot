@@ -19,7 +19,7 @@ Currently, Cody is available for VS Code. More editors are on the way—[join th
 Cody uses Sourcegraph to fetch relevant context to generate answers and code. These instructions walk through installing Cody and connecting it to sourcegraph.com. For private instances of Sourcegraph, see the section below about enabling Cody for Enterprise.
 
 1. Sign into [sourcegraph.com](https://sourcegraph.com)
-1. Join the [Cody Discord](https://discord.gg/8wJF5EdAyA) and request Cody be enabled for your username. At this time, we are approving all requests.
+1. Request access [here](https://forms.gle/cffMa8mrr8YuHv8o8) and we'll send you an e-mail you as soon as your account is added. At this time, we are approving all requests.
 1. [Create a Sourcegraph access token](https://sourcegraph.com/user/settings/tokens)
 1. Install [the Cody VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
   1. Set the Sourcegraph URL to be `"https://sourcegraph.com"`
