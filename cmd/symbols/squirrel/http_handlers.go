@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math/rand"
 	"net/http"
 	"os"
 	"strings"
@@ -125,8 +124,4 @@ func NewSymbolInfoHandler(symbolSearch symbolsTypes.SearchFunc, readFile readFil
 			return
 		}
 	}
-}
-
-func sample[T any](xs []T) T {
-	return xs[rand.Intn(len(xs))]
 }

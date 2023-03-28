@@ -176,17 +176,6 @@ func allCaptures(query string, node Node) ([]Node, error) {
 	return captures, nil
 }
 
-func firstCapture(query string, node Node) (*Node, error) {
-	captures, err := allCaptures(query, node)
-	if err != nil {
-		return nil, err
-	}
-	if len(captures) == 0 {
-		return nil, nil
-	}
-	return &captures[0], nil
-}
-
 // nodeToRange returns the range of the node.
 func nodeToRange(node *sitter.Node) types.Range {
 	length := 1
