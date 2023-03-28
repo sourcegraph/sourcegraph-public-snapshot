@@ -81,8 +81,14 @@ func formatCodeBlock(s string) string {
 	return fmt.Sprintf("```%s```", strings.ReplaceAll(s, "```", "\\`\\`\\`"))
 }
 
-// truncateMatchContent truncates the input to 10 lines.
+// truncateMatchContent truncates the result content's 2500 bytes and 10 lines,
+// whichever is more restrictive.
+//
+// We limit the bytes to ensure we don't hit Slack's max block size of 3000
+// characters. To be conservative, we truncate to 2500 bytes. We also limit the
+// number of lines to ensure the content is easy to read.
 func truncateMatchContent(result *searchresult.CommitMatch) string {
+	const maxBytes = 2500
 	const maxLines = 10
 
 	var matchedString *searchresult.MatchedString
@@ -96,8 +102,21 @@ func truncateMatchContent(result *searchresult.CommitMatch) string {
 	}
 
 	splitLines := strings.SplitAfter(matchedString.Content, "\n")
-	if len(splitLines) > maxLines {
-		splitLines = splitLines[:maxLines]
+	limit := len(splitLines)
+	if limit > maxLines {
+		limit = maxLines
+	}
+
+	chars, index := 0, 0
+	for ; index < limit; index++ {
+		chars += len(splitLines[index])
+		if chars > maxBytes {
+			break
+		}
+	}
+
+	if len(splitLines) > index {
+		splitLines = splitLines[:index]
 		splitLines = append(splitLines, "...\n")
 	}
 	return strings.Join(splitLines, "")
