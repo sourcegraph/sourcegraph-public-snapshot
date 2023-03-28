@@ -111,7 +111,6 @@ func Pre(
 
 		// Mount any paths on the local system to the docker container. The paths have already been validated during parsing.
 		for _, mount := range step.Mount {
-			fmt.Println("mount", mount.Path, mount.Mountpoint)
 			workspaceFilePath, err := getAbsoluteMountPath(workspaceFilesPath, mount.Path)
 			if err != nil {
 				return errors.Wrap(err, "getAbsoluteMountPath")
