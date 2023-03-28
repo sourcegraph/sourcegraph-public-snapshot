@@ -147,9 +147,10 @@ func repoCloneTimeout(ctx context.Context, client api.Client, repo string, srv E
 func listClonedRepos(ctx context.Context, client api.Client, names []string) ([]string, error) {
 	q := clientQuery{
 		opName: "ListRepos",
-		query: `query ListRepos($names: [String!]) {
+		query: `query ListRepos($names: [String!], $first: Int) {
 			  repositories(
 				names: $names
+				first: $first
 			  ) {
 				nodes {
 				  name
@@ -161,6 +162,7 @@ func listClonedRepos(ctx context.Context, client api.Client, names []string) ([]
 			}`,
 		variables: jsonVars{
 			"names": names,
+			"first": 5,
 		},
 	}
 
