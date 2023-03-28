@@ -20,10 +20,10 @@ Status: experimental ([request access](https://about.sourcegraph.com/cody))
 
 ## Setup
 
-1. Clone this repository.
-2. Run `pnpm install` to install dependencies
-3. Run `pnpm watch` to run developer service
-4. Load Extension on Chrome
+1. Clone this repository
+2. Run `pnpm install` from the root of this repository to install dependencies
+3. Run `pnpm watch-cody-browser` from the root of this repository to run developer server
+4. Load Extension on Chrome:
    1. Open - Chrome browser
    2. Access - `chrome://extensions`
    3. Check - Developer mode
@@ -32,14 +32,14 @@ Status: experimental ([request access](https://about.sourcegraph.com/cody))
 
 ## Build
 
-To build in production, run `pnpm run build`.
+To build in production, run `pnpm build-cody-browser` from the root of this repository.
 
 The extension is built using [manifest v3](https://developer.chrome.com/docs/extensions/mv3/intro/), which is currently supported by Chrome and Edge but not by Firefox and Safari.
 
 ## Release
 
 1. Update version nubmer
-2. `pnpm run build`
+2. `pnpm run build` in this directory
 3. Compress `dist` folder
 4. Upload compressed `dist` folder to the Chrome Web Store [Developer Dashboard](https://chrome.google.com/webstore/devconsole)
 

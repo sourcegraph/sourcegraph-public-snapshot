@@ -59,6 +59,8 @@
     "watch-vsce": "pnpm --filter @sourcegraph/vscode run watch",
     "build-cody": "pnpm --filter cody-ai run build",
     "watch-cody": "pnpm --filter cody-ai run watch",
+    "build-cody-browser": "pnpm --filter cody-browser run build",
+    "watch-cody-browser": "pnpm --filter cody-browser run watch",
     "postinstall": "set-project-references --save && pnpm run format:tsconfig",
     "postuninstall": "set-project-references --save && pnpm run format:tsconfig"
   },
