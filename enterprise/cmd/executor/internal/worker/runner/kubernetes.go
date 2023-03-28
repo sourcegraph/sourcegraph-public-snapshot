@@ -81,7 +81,7 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 	}
 	r.jobNames = append(r.jobNames, job.Name)
 
-	if err := r.cmd.WaitForJobToComplete(ctx, r.options.Namespace, job.Name); err != nil {
+	if err := r.cmd.WaitForJobToComplete(ctx, r.options.Namespace, job.Name, r.options.Retry); err != nil {
 		return errors.Wrap(err, "waiting for job to complete")
 	}
 

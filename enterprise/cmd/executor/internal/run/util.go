@@ -204,6 +204,10 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 				CPU:    resource.MustParse(c.KubernetesResourceRequestCPU),
 				Memory: resource.MustParse(c.KubernetesResourceRequestMemory),
 			},
+			Retry: command.KubernetesRetry{
+				Attempts: c.KubernetesJobRetryBackoffLimit,
+				Backoff:  c.KubernetesJobRetryBackoffDuration,
+			},
 		},
 	}
 }

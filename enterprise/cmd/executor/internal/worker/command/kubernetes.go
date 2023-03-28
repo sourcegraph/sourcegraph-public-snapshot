@@ -35,6 +35,7 @@ type KubernetesContainerOptions struct {
 	PersistenceVolumeName string
 	ResourceLimit         KubernetesResource
 	ResourceRequest       KubernetesResource
+	Retry                 KubernetesRetry
 }
 
 // KubernetesNodeAffinity contains the Kubernetes node affinity for a Job.
@@ -120,11 +121,11 @@ func (c *KubernetesCommand) getPod(ctx context.Context, namespace string, name s
 }
 
 // WaitForJobToComplete waits for the job with the given name to complete.
-func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, namespace string, name string) error {
+func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, namespace string, name string, retry KubernetesRetry) error {
 	attempts := 0
 	for {
 		// After 60 seconds, give up
-		if attempts > 600 {
+		if attempts > retry.Attempts {
 			return errors.Newf("job %s did not complete", name)
 		}
 		job, err := c.getJob(ctx, namespace, name)
@@ -136,10 +137,15 @@ func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, namespace 
 		} else if job.Status.Failed > 0 {
 			return errors.Newf("job %s failed", name)
 		} else {
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(retry.Backoff)
 			attempts++
 		}
 	}
+}
+
+type KubernetesRetry struct {
+	Attempts int
+	Backoff  time.Duration
 }
 
 func (c *KubernetesCommand) getJob(ctx context.Context, namespace string, name string) (*batchv1.Job, error) {
