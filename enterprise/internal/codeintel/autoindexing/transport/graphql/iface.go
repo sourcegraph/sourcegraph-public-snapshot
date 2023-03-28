@@ -8,6 +8,7 @@ import (
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	uploadshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	uploadsgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
@@ -33,6 +34,7 @@ type AutoIndexingService interface {
 
 type UploadsService interface {
 	sharedresolvers.UploadsService
+	uploadsgraphql.UploadsService
 
 	GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error)
 	DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)

@@ -1,9 +1,10 @@
 import { FC, useState } from 'react'
 
-import { mdiChevronUp, mdiChevronDown, mdiInformationOutline } from '@mdi/js'
+import { mdiChevronUp, mdiChevronDown, mdiFileDocumentOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import {
     Button,
     Link,
@@ -15,7 +16,6 @@ import {
     H3,
     Icon,
     PageSwitcher,
-    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../components/diff/DiffStat'
@@ -29,9 +29,9 @@ import {
 
 import { SITE_CONFIGURATION_CHANGE_CONNECTION_QUERY } from './backend'
 
-import styles from './SiteAdminConfigurationPage.module.scss'
+import styles from './SiteConfigurationChangeList.module.scss'
 
-export const SiteConfigurationChangeListPage: FC = () => {
+export const SiteConfigurationChangeList: FC = () => {
     const { connection, loading, error, ...paginationProps } = usePageSwitcherPagination<
         SiteConfigurationHistoryResult,
         SiteConfigurationHistoryVariables,
@@ -47,7 +47,7 @@ export const SiteConfigurationChangeListPage: FC = () => {
             {!!connection?.nodes?.length && (
                 <div>
                     <Container className="mb-3">
-                        <H3>History</H3>
+                        <H3>Change history</H3>
                         {loading && <ConnectionLoading />}
                         {error && <ConnectionError errors={[error.message]} />}
                         <div className="mt-4">
@@ -95,6 +95,14 @@ const SiteConfigurationHistoryItem: FC<SiteConfigurationHistoryItemProps> = ({ n
     const icon = open ? mdiChevronUp : mdiChevronDown
     const [removedLines, addedLines] = linesChanged(node.diff)
 
+    const editedBy = node.author ? (
+        <Link to={`/users/${node.author.username}`} className="text-truncate">
+            {node.author.displayName}
+        </Link>
+    ) : (
+        'Site configuration file set in SITE_CONFIG_FILE environment variable updated'
+    )
+
     return (
         <>
             <Collapse key={node.id} isOpen={open} onOpenChange={setOpen}>
@@ -105,26 +113,23 @@ const SiteConfigurationHistoryItem: FC<SiteConfigurationHistoryItemProps> = ({ n
                     className="d-flex p-0 justify-content-start w-100"
                 >
                     <Icon aria-hidden={true} svgPath={icon} />
-                    <span>
-                        Changed <Timestamp date={node.createdAt} />
+                    <span className={styles.diffmeta}>
                         {node.author ? (
-                            <>
-                                <span className="ml-1">
-                                    by{' '}
-                                    <Link to={`/users/${node.author.username}`} className="text-truncate">
-                                        {node.author.displayName}
-                                    </Link>
-                                </span>
-                            </>
+                            <UserAvatar className="ml-2 mr-2" user={node.author} size={32} />
                         ) : (
-                            <Tooltip content="Author information is not available because this change was made directly by editing the SITE_CONFIG_FILE">
-                                <Icon
-                                    className="ml-1"
-                                    svgPath={mdiInformationOutline}
-                                    aria-label="Author information is not available because this change was made directly by editing the SITE_CONFIG_FILE"
-                                />
-                            </Tooltip>
+                            <Icon
+                                aria-hidden={true}
+                                svgPath={mdiFileDocumentOutline}
+                                className={classNames('ml-2 mr-2', styles.fileicon)}
+                                color="text-muted"
+                            />
                         )}
+                        <div className="d-flex flex-column align-items-start">
+                            {editedBy}
+                            <small className="text-muted">
+                                Changed <Timestamp date={node.createdAt} />
+                            </small>
+                        </div>
                     </span>
                     <span className="ml-auto">
                         <DiffStatStack className="mr-1" added={addedLines} deleted={removedLines} />

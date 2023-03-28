@@ -1019,6 +1019,7 @@ export const SITE_CONFIGURATION_CHANGE_CONNECTION_QUERY = gql`
             id
             username
             displayName
+            avatarURL
         }
         diff
         createdAt

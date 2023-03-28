@@ -175,9 +175,6 @@ func TestDelete(t *testing.T) {
 
 // Initialize uploadstore, upload objects, expire them
 func TestExpireObjects(t *testing.T) {
-	// TODO(blobstore): Disabled because listing objects is not yet implemented.
-	t.SkipNow()
-
 	ctx := context.Background()
 	store, server, svc := initTestStore(ctx, t, t.TempDir())
 	defer server.Close()

@@ -1,8 +1,9 @@
-package sharedresolvers
+package graphql
 
 import (
 	"context"
 
+	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
@@ -11,10 +12,10 @@ import (
 
 type executionLogEntryResolver struct {
 	entry            executor.ExecutionLogEntry
-	siteAdminChecker SiteAdminChecker
+	siteAdminChecker sharedresolvers.SiteAdminChecker
 }
 
-func NewExecutionLogEntryResolver(siteAdminChecker SiteAdminChecker, entry executor.ExecutionLogEntry) resolverstubs.ExecutionLogEntryResolver {
+func NewExecutionLogEntryResolver(siteAdminChecker sharedresolvers.SiteAdminChecker, entry executor.ExecutionLogEntry) resolverstubs.ExecutionLogEntryResolver {
 	return &executionLogEntryResolver{
 		entry:            entry,
 		siteAdminChecker: siteAdminChecker,

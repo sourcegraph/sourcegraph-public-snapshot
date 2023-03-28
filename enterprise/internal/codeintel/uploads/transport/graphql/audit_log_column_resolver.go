@@ -1,4 +1,4 @@
-package sharedresolvers
+package graphql
 
 import resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 

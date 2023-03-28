@@ -27,6 +27,8 @@ const isChecked = (role: typeof roleWithAllPermissions): ((value: string) => boo
     return (value: string): boolean => rolePermissions[value]
 }
 
+const roleName = 'TEST-ROLE'
+
 export const NoPermissions: Story = () => (
     <WebStory>
         {() => (
@@ -36,6 +38,7 @@ export const NoPermissions: Story = () => (
                     onChange={noop}
                     onBlur={noop}
                     isChecked={isChecked(roleWithNoPermission)}
+                    roleName={roleName}
                 />
             </MockedTestProvider>
         )}
@@ -53,6 +56,7 @@ export const OnePermissionAssigned: Story = () => (
                     onChange={noop}
                     onBlur={noop}
                     isChecked={isChecked(roleWithOnePermission)}
+                    roleName={roleName}
                 />
             </MockedTestProvider>
         )}
@@ -70,6 +74,7 @@ export const AllPermissionsAssigned: Story = () => (
                     onChange={noop}
                     onBlur={noop}
                     isChecked={isChecked(roleWithAllPermissions)}
+                    roleName={roleName}
                 />
             </MockedTestProvider>
         )}

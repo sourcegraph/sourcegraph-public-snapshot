@@ -1,3 +1,4 @@
+/* eslint-disable react/no-array-index-key */
 /* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
@@ -19,14 +20,22 @@ const SCROLL_THRESHOLD = 15
 interface ChatboxProps {
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
+    formInput: string
+    setFormInput: (input: string) => void
+    inputHistory: string[]
+    setInputHistory: (history: string[]) => void
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
     transcript,
+    formInput,
+    setFormInput,
+    inputHistory,
+    setInputHistory,
 }) => {
     const [inputRows, setInputRows] = useState(5)
-    const [formInput, setFormInput] = useState('')
+    const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
 
     const inputHandler = useCallback(
@@ -38,17 +47,12 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 setInputRows(5)
             }
             setFormInput(inputValue)
+            if (inputValue !== inputHistory[historyIndex]) {
+                setHistoryIndex(inputHistory.length)
+            }
         },
-        [setFormInput]
+        [historyIndex, inputHistory, setFormInput]
     )
-
-    const onChatKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
-        if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault()
-            event.stopPropagation()
-            onChatSubmit()
-        }
-    }
 
     const escapeHTML = (html: string): string => {
         const span = document.createElement('span')
@@ -57,10 +61,36 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     }
 
     const onChatSubmit = useCallback(() => {
-        vscodeAPI.postMessage({ command: 'submit', text: escapeHTML(formInput) })
-        setInputRows(5)
-        setFormInput('')
-    }, [formInput, setFormInput])
+        // Submit chat only when input is not empty
+        if (formInput !== undefined) {
+            vscodeAPI.postMessage({ command: 'submit', text: escapeHTML(formInput) })
+            setHistoryIndex(inputHistory.length + 1)
+            setInputHistory([...inputHistory, formInput])
+            setInputRows(5)
+            setFormInput('')
+        }
+    }, [formInput, inputHistory, setFormInput, setInputHistory])
+
+    const onChatKeyDown = useCallback(
+        (event: React.KeyboardEvent<HTMLDivElement>): void => {
+            // Submit input on Enter press (without shift)
+            // trim the formInput to make sure input value is not empty
+            if (event.key === 'Enter' && !event.shiftKey && formInput.trim()) {
+                event.preventDefault()
+                event.stopPropagation()
+                onChatSubmit()
+            }
+            // Loop through input history on up arrow press
+            if (event.key === 'ArrowUp' && inputHistory.length) {
+                if (formInput === inputHistory[historyIndex] || !formInput) {
+                    const newIndex = historyIndex - 1 < 0 ? inputHistory.length - 1 : historyIndex - 1
+                    setHistoryIndex(newIndex)
+                    setFormInput(inputHistory[newIndex])
+                }
+            }
+        },
+        [inputHistory, onChatSubmit, formInput, historyIndex, setFormInput]
+    )
 
     const bubbleClassName = (speaker: string): string => (speaker === 'human' ? 'human' : 'bot')
 
@@ -140,7 +170,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     name="user-query"
                     value={formInput}
                     autofocus={true}
-                    disabled={!!messageInProgress}
                     required={true}
                     onInput={({ target }) => {
                         const { value } = target as HTMLInputElement
@@ -148,7 +177,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     }}
                     onKeyDown={onChatKeyDown}
                 />
-                <VSCodeButton className="submit-button" appearance="icon" type="button" onClick={onChatSubmit}>
+                <VSCodeButton
+                    className="submit-button"
+                    appearance="icon"
+                    type="button"
+                    onClick={onChatSubmit}
+                    disabled={!!messageInProgress}
+                >
                     <SubmitSvg />
                 </VSCodeButton>
             </form>
@@ -156,7 +191,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     )
 }
 
-const ContextFiles: React.FunctionComponent<{ contextFiles: string[] }> = ({ contextFiles }) => {
+export const ContextFiles: React.FunctionComponent<{ contextFiles: string[] }> = ({ contextFiles }) => {
     const [isExpanded, setIsExpanded] = useState(false)
 
     if (contextFiles.length === 1) {
