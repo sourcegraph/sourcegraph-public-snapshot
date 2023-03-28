@@ -602,21 +602,8 @@ func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]i
 		reposNumber = 10000
 	}
 
-	// getting repo IDs for given repo names
-	foundRepos, err := s.fetchRepos(ctx, repoToSize, reposNumber)
-	if err != nil {
-		return err
-	}
-
-	reposToUpdate := make(map[api.RepoID]int64)
-	for _, repo := range foundRepos {
-		if size, exists := repoToSize[repo.Name]; exists {
-			reposToUpdate[repo.ID] = size
-		}
-	}
-
 	// updating repos
-	updatedRepos, err := s.DB.GitserverRepos().UpdateRepoSizes(ctx, s.Hostname, reposToUpdate)
+	updatedRepos, err := s.DB.GitserverRepos().UpdateRepoSizes(ctx, s.Hostname, repoToSize)
 	if err != nil {
 		return err
 	}
