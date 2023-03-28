@@ -389,9 +389,11 @@ const AnimatedAlert: React.FunctionComponent<React.PropsWithChildren<{ className
     return (
         <animated.div style={style}>
             {/* Keep this in sync with calculation above: mb-3 = 1rem */}
-            <Alert ref={ref} variant="success" className={classNames(className, 'mb-3')}>
-                {children}
-            </Alert>
+            {visible && (
+                <Alert ref={ref} variant="success" className={classNames(className, 'mb-3')}>
+                    {children}
+                </Alert>
+            )}
         </animated.div>
     )
 }
