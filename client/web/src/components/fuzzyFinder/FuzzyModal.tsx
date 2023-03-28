@@ -626,6 +626,7 @@ interface ProgressBarProps {
     value: number
     max: number
 }
+
 const ProgressBar: React.FunctionComponent<ProgressBarProps> = ({ value, max }) => {
     if (max === 0) {
         return <></>
