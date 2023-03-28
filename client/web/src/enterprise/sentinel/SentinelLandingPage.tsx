@@ -19,7 +19,7 @@ export const SentinelLandingPage: FC = () => {
             <div className={styles.headerContainer}>
                 <PageHeader path={[{ icon: ShieldHalfFullIcon, text: 'Sentinel' }]} className={styles.header} />
                 <div className={styles.badge}>
-                    <Badge variant="info">{'Coming Soon'}</Badge>
+                    <Badge variant="info">Coming Soon</Badge>
                 </div>
                 <div className={styles.ctaBtn}>
                     <Button variant="primary" onClick={() => navigate('/sentinel/demo')}>

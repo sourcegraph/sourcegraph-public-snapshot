@@ -22,8 +22,7 @@ export const useSentinelQuery = ({
     severity,
     language,
     repositoryName,
-}: UseSentinelProps): UseShowMorePaginationResult<VulnerabilityMatchesResult, VulnerabilitiesFields> => {
-    return useShowMorePagination<VulnerabilityMatchesResult, VulnerabilityMatchesVariables, VulnerabilitiesFields>({
+}: UseSentinelProps): UseShowMorePaginationResult<VulnerabilityMatchesResult, VulnerabilitiesFields> => useShowMorePagination<VulnerabilityMatchesResult, VulnerabilityMatchesVariables, VulnerabilitiesFields>({
         query: RESOLVE_SECURITY_VULNERABILITIES_QUERY,
         variables: { after: null, first: 50, severity, language, repositoryName },
         options: { fetchPolicy: 'network-only' },
@@ -32,4 +31,3 @@ export const useSentinelQuery = ({
             return vulnerabilityMatches
         },
     })
-}
