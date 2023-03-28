@@ -372,7 +372,9 @@ commands:
       - enterprise/internal/rockskip
 
   embeddings:
-    cmd: .bin/embeddings
+    cmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/embeddings
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
@@ -459,7 +461,7 @@ commands:
     cmd: .bin/docsite_${DOCSITE_VERSION} -config doc/docsite.json serve -http=localhost:5080
     install_func: 'installDocsite'
     env:
-      DOCSITE_VERSION: v1.9.1 # Update in all places (including outside this repo)
+      DOCSITE_VERSION: v1.9.2 # Update in all places (including outside this repo)
 
   syntax-highlighter:
     ignoreStdout: true
@@ -1420,7 +1422,7 @@ tests:
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
     env:
-      DOCSITE_VERSION: v1.9.1 # Update DOCSITE_VERSION everywhere in all places (including outside this repo)
+      DOCSITE_VERSION: v1.9.2 # Update DOCSITE_VERSION everywhere in all places (including outside this repo)
 
   web-e2e:
     preamble: |

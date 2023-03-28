@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -155,7 +156,7 @@ func comparisonKey(root, indexer string) string {
 }
 
 func (r *autoIndexJobDescriptionResolver) Steps() resolverstubs.IndexStepsResolver {
-	return sharedresolvers.NewIndexStepsResolver(r.siteAdminChecker, types.Index{
+	return uploadsgraphql.NewIndexStepsResolver(r.siteAdminChecker, types.Index{
 		DockerSteps:      r.steps,
 		LocalSteps:       r.indexJob.LocalSteps,
 		Root:             r.indexJob.Root,
@@ -211,7 +212,7 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 	resolvers := make([]resolverstubs.PreciseIndexResolver, 0, len(indexes))
 	for _, index := range indexes {
 		index := index
-		resolver, err := sharedresolvers.NewPreciseIndexResolver(ctx, r.uploadSvc, r.policySvc, r.gitserverClient, prefetcher, r.siteAdminChecker, r.repoStore, r.locationResolverFactory.Create(), traceErrs, nil, &index)
+		resolver, err := uploadsgraphql.NewPreciseIndexResolver(ctx, r.uploadSvc, r.policySvc, r.gitserverClient, prefetcher, r.siteAdminChecker, r.repoStore, r.locationResolverFactory.Create(), traceErrs, nil, &index)
 		if err != nil {
 			return nil, err
 		}
@@ -323,7 +324,7 @@ func (r *rootResolver) CodeIntelSummary(ctx context.Context) (_ resolverstubs.Co
 	ctx, _, endObservation := r.operations.summary.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	return sharedresolvers.NewSummaryResolver(r.autoindexSvc, r.locationResolverFactory.Create()), nil
+	return uploadsgraphql.NewSummaryResolver(r.autoindexSvc, r.locationResolverFactory.Create()), nil
 }
 
 func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID) (_ resolverstubs.CodeIntelRepositorySummaryResolver, err error) {
@@ -392,24 +393,24 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 	inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobs, blocklist, inferredAvailableIndexers)
 	// inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
 
-	inferredAvailableIndexersResolver := make([]sharedresolvers.InferredAvailableIndexers, 0, len(inferredAvailableIndexers))
+	inferredAvailableIndexersResolver := make([]uploadsgraphql.InferredAvailableIndexers, 0, len(inferredAvailableIndexers))
 	for _, indexer := range inferredAvailableIndexers {
 		inferredAvailableIndexersResolver = append(inferredAvailableIndexersResolver,
-			sharedresolvers.InferredAvailableIndexers{
+			uploadsgraphql.InferredAvailableIndexers{
 				Indexer: indexer.Indexer,
 				Roots:   indexer.Roots,
 			},
 		)
 	}
 
-	summary := sharedresolvers.RepositorySummary{
+	summary := uploadsgraphql.RepositorySummary{
 		RecentUploads:           recentUploads,
 		RecentIndexes:           recentIndexes,
 		LastUploadRetentionScan: lastUploadRetentionScan,
 		LastIndexScan:           lastIndexScan,
 	}
 
-	return sharedresolvers.NewRepositorySummaryResolver(
+	return uploadsgraphql.NewRepositorySummaryResolver(
 		r.uploadSvc,
 		r.policySvc,
 		r.gitserverClient,

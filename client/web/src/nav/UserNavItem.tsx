@@ -253,7 +253,9 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     Sign out
                                 </MenuLink>
                             )}
-                            <MenuDivider className={styles.dropdownDivider} />
+                            {(isSourcegraphDotCom || codeHostIntegrationMessaging === 'browser-extension') && (
+                                <MenuDivider className={styles.dropdownDivider} />
+                            )}
                             {isSourcegraphDotCom && (
                                 <MenuLink
                                     as={AnchorLink}

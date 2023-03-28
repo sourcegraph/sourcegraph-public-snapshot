@@ -777,7 +777,7 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 	db.EventLogs().BulkInsert(ctx, logEvents)
 }
 
-// RecoverList recovers a list of users by their IDs.
+// RecoverUsersList recovers a list of users by their IDs.
 func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) (_ []int32, err error) {
 	tx, err := u.transact(ctx)
 	if err != nil {

@@ -431,6 +431,10 @@ func (s *permsStore) LoadRepoPermissions(ctx context.Context, repoID int32) (p [
 
 // SetUserExternalAccountPerms sets the users permissions for repos in the database. Uses setUserRepoPermissions internally.
 func (s *permsStore) SetUserExternalAccountPerms(ctx context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
+	return s.setUserExternalAccountPerms(ctx, user, repoIDs, source, true)
+}
+
+func (s *permsStore) setUserExternalAccountPerms(ctx context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource, replacePerms bool) (*database.SetPermissionsResult, error) {
 	p := make([]authz.Permission, 0, len(repoIDs))
 
 	for _, repoID := range repoIDs {
@@ -446,7 +450,7 @@ func (s *permsStore) SetUserExternalAccountPerms(ctx context.Context, user authz
 		ExternalAccountID: user.ExternalAccountID,
 	}
 
-	return s.setUserRepoPermissions(ctx, p, entity, source)
+	return s.setUserRepoPermissions(ctx, p, entity, source, replacePerms)
 }
 
 // SetRepoPerms sets the users that can access a repo. Uses setUserRepoPermissions internally.
@@ -465,7 +469,7 @@ func (s *permsStore) SetRepoPerms(ctx context.Context, repoID int32, userIDs []a
 		RepoID: repoID,
 	}
 
-	return s.setUserRepoPermissions(ctx, p, entity, source)
+	return s.setUserRepoPermissions(ctx, p, entity, source, true)
 }
 
 // setUserRepoPermissions performs a full update for p, new rows for pairs of user_id, repo_id
@@ -502,7 +506,7 @@ func (s *permsStore) SetRepoPerms(ctx context.Context, repoID int32, userIDs []a
 //	       1 |     233 |             42 | 2023-01-28T14:24:15Z | 2023-01-28T14:24:12Z | 'sync'
 //
 // So one repo {id:2} was removed and one was added {id:233} to the user
-func (s *permsStore) setUserRepoPermissions(ctx context.Context, p []authz.Permission, entity authz.PermissionEntity, source authz.PermsSource) (_ *database.SetPermissionsResult, err error) {
+func (s *permsStore) setUserRepoPermissions(ctx context.Context, p []authz.Permission, entity authz.PermissionEntity, source authz.PermsSource, replacePerms bool) (_ *database.SetPermissionsResult, err error) {
 	ctx, save := s.observe(ctx, "setUserRepoPermissions", "")
 	defer func() {
 		f := []otlog.Field{}
@@ -529,11 +533,14 @@ func (s *permsStore) setUserRepoPermissions(ctx context.Context, p []authz.Permi
 		}
 	}
 
-	// Now delete rows that were updated before. This will delete all rows, that were not updated on the last update
-	// which was tried above.
-	deleted, err := txs.deleteOldUserRepoPermissions(ctx, entity, currentTime, source)
-	if err != nil {
-		return nil, errors.Wrap(err, "removing old user repo permissions")
+	deleted := []int{}
+	if replacePerms {
+		// Now delete rows that were updated before. This will delete all rows, that were not updated on the last update
+		// which was tried above.
+		deleted, err = txs.deleteOldUserRepoPermissions(ctx, entity, currentTime, source)
+		if err != nil {
+			return nil, errors.Wrap(err, "removing old user repo permissions")
+		}
 	}
 
 	// count the number of added permissions
@@ -1351,7 +1358,7 @@ func (s *permsStore) GrantPendingPermissions(ctx context.Context, p *authz.UserG
 	allRepoIDs := maps.Keys(uniqueRepoIDs)
 
 	// Write to the unified user_repo_permissions table.
-	_, err = txs.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: p.UserID, ExternalAccountID: p.UserExternalAccountID}, allRepoIDs, authz.SourceUserSync)
+	_, err = txs.setUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: p.UserID, ExternalAccountID: p.UserExternalAccountID}, allRepoIDs, authz.SourceUserSync, false)
 	if err != nil {
 		return err
 	}

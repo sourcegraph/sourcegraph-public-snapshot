@@ -11,5 +11,8 @@ go_library(
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph",
     visibility = ["//dev/depgraph:__subpackages__"],
-    deps = ["@com_github_grafana_regexp//:regexp"],
+    deps = [
+        "//internal/byteutils",
+        "@com_github_grafana_regexp//:regexp",
+    ],
 )

@@ -39,6 +39,7 @@ import {
     CancelPermissionsSyncJobResultMessage,
     CancelPermissionsSyncJobVariables,
     CodeHostState,
+    CodeHostStatus,
     PermissionsSyncJob,
     PermissionsSyncJobReasonGroup,
     PermissionsSyncJobsResult,
@@ -388,9 +389,11 @@ const AnimatedAlert: React.FunctionComponent<React.PropsWithChildren<{ className
     return (
         <animated.div style={style}>
             {/* Keep this in sync with calculation above: mb-3 = 1rem */}
-            <Alert ref={ref} variant="success" className={classNames(className, 'mb-3')}>
-                {children}
-            </Alert>
+            {visible && (
+                <Alert ref={ref} variant="success" className={classNames(className, 'mb-3')}>
+                    {children}
+                </Alert>
+            )}
         </animated.div>
     )
 }
@@ -399,13 +402,7 @@ const TableColumns: IColumn<PermissionsSyncJob>[] = [
     {
         key: 'Status',
         header: 'Status',
-        render: ({ state, cancellationReason, failureMessage }: PermissionsSyncJob) => (
-            <PermissionsSyncJobStatusBadge
-                state={state}
-                cancellationReason={cancellationReason}
-                failureMessage={failureMessage}
-            />
-        ),
+        render: job => <PermissionsSyncJobStatusBadge job={job} />,
     },
     {
         key: 'Name',
@@ -596,8 +593,8 @@ const CodeHostStatesTableColumns: IColumn<CodeHostState>[] = [
         header: 'Status',
         render: (state: CodeHostState) => (
             <Badge
-                tooltip={state.status.toLowerCase() === 'error' ? state.message : undefined}
-                variant={CodeHostStateStatusVariants[state.status.toLowerCase()] || 'secondary'}
+                tooltip={state.status === CodeHostStatus.ERROR ? state.message : undefined}
+                variant={CodeHostStateStatusVariants[state.status]}
             >
                 {state.status}
             </Badge>
@@ -605,9 +602,9 @@ const CodeHostStatesTableColumns: IColumn<CodeHostState>[] = [
     },
 ]
 
-const CodeHostStateStatusVariants: Record<string, BadgeVariantType> = {
-    success: 'success',
-    error: 'danger',
+const CodeHostStateStatusVariants: Record<CodeHostStatus, BadgeVariantType> = {
+    SUCCESS: 'success',
+    ERROR: 'danger',
 }
 
 const JobPriorityBadgeVariants: Record<PermissionsSyncJobPriority, BadgeVariantType> = {

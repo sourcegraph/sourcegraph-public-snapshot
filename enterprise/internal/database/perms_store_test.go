@@ -840,6 +840,7 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 		expectedPermissions []authz.Permission
 		entity              authz.PermissionEntity
 		expectedResult      *database.SetPermissionsResult
+		keepPerms           bool
 	}{
 		{
 			name:                "empty",
@@ -910,6 +911,26 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
 			expectedResult: &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 1},
 		},
+		{
+			name: "does not delete old permissions when bool is false",
+			origPermissions: []authz.Permission{
+				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 3},
+			},
+			permissions: []authz.Permission{
+				{UserID: 1, ExternalAccountID: 1, RepoID: 2},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 4},
+			},
+			expectedPermissions: []authz.Permission{
+				{UserID: 1, ExternalAccountID: 1, RepoID: 1, Source: source},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 2, Source: source},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 3, Source: source},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 4, Source: source},
+			},
+			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+			expectedResult: &database.SetPermissionsResult{Added: 2, Removed: 0, Found: 2},
+			keepPerms:      true,
+		},
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
@@ -923,6 +944,8 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 				cleanupReposTable(t, s)
 			})
 
+			replacePerms := !test.keepPerms
+
 			if len(test.origPermissions) > 0 {
 				setupPermsRelatedEntities(t, s, test.origPermissions)
 				syncedPermissions := []authz.Permission{}
@@ -935,9 +958,9 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 					}
 				}
 
-				_, err := s.setUserRepoPermissions(ctx, syncedPermissions, test.entity, source)
+				_, err := s.setUserRepoPermissions(ctx, syncedPermissions, test.entity, source, replacePerms)
 				require.NoError(t, err)
-				_, err = s.setUserRepoPermissions(ctx, explicitPermissions, test.entity, authz.SourceAPI)
+				_, err = s.setUserRepoPermissions(ctx, explicitPermissions, test.entity, authz.SourceAPI, replacePerms)
 				require.NoError(t, err)
 			}
 
@@ -946,7 +969,7 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 			}
 			var stats *database.SetPermissionsResult
 			var err error
-			if stats, err = s.setUserRepoPermissions(ctx, test.permissions, test.entity, source); err != nil {
+			if stats, err = s.setUserRepoPermissions(ctx, test.permissions, test.entity, source, replacePerms); err != nil {
 				t.Fatal("testing user repo permissions", err)
 			}
 
@@ -1072,12 +1095,12 @@ func TestPermsStore_UnionExplicitAndSyncedPermissions(t *testing.T) {
 
 			if len(test.origExplicitPermissions) > 0 {
 				setupPermsRelatedEntities(t, s, test.origExplicitPermissions)
-				_, err := s.setUserRepoPermissions(ctx, test.origExplicitPermissions, test.entity, authz.SourceAPI)
+				_, err := s.setUserRepoPermissions(ctx, test.origExplicitPermissions, test.entity, authz.SourceAPI, true)
 				require.NoError(t, err)
 			}
 			if len(test.origSyncedPermissions) > 0 {
 				setupPermsRelatedEntities(t, s, test.origSyncedPermissions)
-				_, err := s.setUserRepoPermissions(ctx, test.origSyncedPermissions, test.entity, authz.SourceUserSync)
+				_, err := s.setUserRepoPermissions(ctx, test.origSyncedPermissions, test.entity, authz.SourceUserSync, true)
 				require.NoError(t, err)
 			}
 
@@ -1087,7 +1110,7 @@ func TestPermsStore_UnionExplicitAndSyncedPermissions(t *testing.T) {
 
 			var stats *database.SetPermissionsResult
 			var err error
-			if stats, err = s.setUserRepoPermissions(ctx, test.permissions, test.entity, test.source); err != nil {
+			if stats, err = s.setUserRepoPermissions(ctx, test.permissions, test.entity, test.source, true); err != nil {
 				t.Fatal("testing user repo permissions", err)
 			}
 
@@ -1181,7 +1204,7 @@ func TestPermsStore_FetchReposByExternalAccount(t *testing.T) {
 
 			if test.origPermissions != nil && len(test.origPermissions) > 0 {
 				setupPermsRelatedEntities(t, s, test.origPermissions)
-				_, err := s.setUserRepoPermissions(ctx, test.origPermissions, authz.PermissionEntity{UserID: 42}, source)
+				_, err := s.setUserRepoPermissions(ctx, test.origPermissions, authz.PermissionEntity{UserID: 42}, source, true)
 				if err != nil {
 					t.Fatal("setup test permissions before actual test", err)
 				}
@@ -2528,6 +2551,53 @@ func TestPermsStore_GrantPendingPermissions(t *testing.T) {
 			expectUserPendingPerms: map[extsvc.AccountSpec][]uint32{},
 			expectRepoPendingPerms: map[int32][]extsvc.AccountSpec{
 				1: {},
+			},
+		},
+		{
+			name: "grant pending permission with existing permissions",
+			updates: []update{
+				{
+					regulars: []*authz.RepoPermissions{
+						{
+							RepoID:  1,
+							Perm:    authz.Read,
+							UserIDs: toMapset(1),
+						},
+					},
+					pendings: []pending{{
+						accounts: &extsvc.Accounts{
+							ServiceType: authz.SourcegraphServiceType,
+							ServiceID:   authz.SourcegraphServiceID,
+							AccountIDs:  []string{"alice"},
+						},
+						perm: &authz.RepoPermissions{
+							RepoID: 2,
+							Perm:   authz.Read,
+						},
+					}},
+				},
+			},
+			grants: []*authz.UserGrantPermissions{{
+				UserID:                1,
+				UserExternalAccountID: 1,
+				ServiceType:           authz.SourcegraphServiceType,
+				ServiceID:             authz.SourcegraphServiceID,
+				AccountID:             "alice",
+			}},
+			expectUserRepoPerms: []authz.Permission{
+				{UserID: 1, ExternalAccountID: 1, RepoID: 1, Source: authz.SourceRepoSync},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 2, Source: authz.SourceUserSync},
+			},
+			expectUserPerms: map[int32][]uint32{
+				1: {1, 2},
+			},
+			expectRepoPerms: map[int32][]uint32{
+				1: {1},
+				2: {1},
+			},
+			expectUserPendingPerms: map[extsvc.AccountSpec][]uint32{},
+			expectRepoPendingPerms: map[int32][]extsvc.AccountSpec{
+				2: {},
 			},
 		},
 		{

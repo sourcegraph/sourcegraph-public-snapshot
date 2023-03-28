@@ -56,7 +56,7 @@ func Init(
 	repoStore := db.Repos()
 	siteAdminChecker := sharedresolvers.NewSiteAdminChecker(db)
 	locationResolverFactory := sharedresolvers.NewCachedLocationResolverFactory(cloneURLToRepoName, repoStore, codeIntelServices.GitserverClient)
-	prefetcherFactory := sharedresolvers.NewPrefetcherFactory(codeIntelServices.AutoIndexingService, codeIntelServices.UploadsService)
+	prefetcherFactory := sharedresolvers.NewPrefetcherFactory(codeIntelServices.UploadsService)
 
 	autoindexingRootResolver := autoindexinggraphql.NewRootResolver(
 		scopedContext("autoindexing"),
@@ -98,6 +98,13 @@ func Init(
 	uploadRootResolver := uploadgraphql.NewRootResolver(
 		scopedContext("upload"),
 		codeIntelServices.UploadsService,
+		codeIntelServices.AutoIndexingService,
+		codeIntelServices.PoliciesService,
+		codeIntelServices.GitserverClient,
+		siteAdminChecker,
+		repoStore,
+		prefetcherFactory,
+		locationResolverFactory,
 	)
 
 	sentinelRootResolver := sentinelgraphql.NewRootResolver(

@@ -16,6 +16,19 @@ let
     #!${pkgs.stdenv.shell}
     exec ${pkgs.universal-ctags}/bin/ctags "$@"
   '';
+
+  # We let bazelisk manage the bazel version since we actually need to run two
+  # different versions thanks to aspect. Additionally bazelisk allows us to do
+  # things like "bazel configure". So we just install a script called bazel
+  # which calls bazelisk.
+  #
+  # Additionally bazel seems to break when CC and CXX is set to a nix managed
+  # compiler on darwin. So the script unsets those.
+  bazelisk = pkgs.writeScriptBin "bazel" ''
+    #!${pkgs.stdenv.shell}
+    unset CC CXX
+    exec ${pkgs.bazelisk}/bin/bazelisk "$@"
+  '';
 in
 pkgs.mkShell {
   name = "sourcegraph-dev";
@@ -68,8 +81,7 @@ pkgs.mkShell {
     libiconv
     clippy
 
-    # The future?
-    bazel_6
+    bazelisk
   ];
 
   # Startup postgres

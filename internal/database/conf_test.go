@@ -376,8 +376,9 @@ func TestGetSiteConfigCount(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if count != 5 {
-		t.Fatalf("Expected 5 site config entries, but got %d", count)
+	// We have 5 entries in the DB, but we skip redundant ones so this returns 4.
+	if count != 4 {
+		t.Fatalf("Expected 4 site config entries, but got %d", count)
 	}
 }
 

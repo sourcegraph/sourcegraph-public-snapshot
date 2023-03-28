@@ -1,7 +1,6 @@
 package graph
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/grafana/regexp"
+
+	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 )
 
 const rootPackage = "github.com/sourcegraph/sourcegraph"
@@ -86,9 +87,12 @@ func extractImports(path string) (map[string]struct{}, error) {
 
 	inImportGroup := false
 	importMap := map[string]struct{}{}
-	lines := bytes.Split(contents, []byte{'\n'})
 
-	for _, line := range lines {
+	lr := byteutils.NewLineReader(contents)
+
+	for lr.Scan() {
+		line := lr.Line()
+
 		// See if we need to flip parse states
 		if extractionControlMap[inImportGroup].stateChangePattern.Match(line) {
 			inImportGroup = !inImportGroup
