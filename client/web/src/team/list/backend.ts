@@ -40,7 +40,7 @@ const LIST_TEAM_FIELDS = gql`
     }
 `
 
-const LIST_TEAMS = gql`
+export const LIST_TEAMS = gql`
     query ListTeams($first: Int, $after: String, $search: String) {
         teams(first: $first, after: $after, search: $search) {
             totalCount
