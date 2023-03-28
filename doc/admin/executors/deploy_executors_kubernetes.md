@@ -40,10 +40,10 @@ set on the Executor `Deployment` and will configure the `Job`s that it spawns.
 | EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_FIELDS      | N/A            | The JSON encoded required affinity match fields for Kubernetes Jobs. e.g. `[{"key": "foo", "operator": "In", "values": ["bar"]}]`      |
 | EXECUTOR_KUBERNETES_NAMESPACE                                | `default`      | The namespace to create the Jobs in.                                                                                                   |
 | EXECUTOR_KUBERNETES_PERSISTENCE_VOLUME_NAME                  | `executor-pvc` | The name of the Executor Persistence Volume. Must match the `PersistentVolumeClaim` configured for the instance.                       |
-| EXECUTOR_KUBERNETES_RESOURCE_LIMIT_CPU                       | `1`            | The maximum CPU resource for Kubernetes Jobs.                                                                                          |
-| EXECUTOR_KUBERNETES_RESOURCE_LIMIT_MEMORY                    | `1Gi`          | The maximum memory resource for Kubernetes Jobs.                                                                                       |
-| EXECUTOR_KUBERNETES_RESOURCE_REQUEST_CPU                     | `1`            | The minimum CPU resource for Kubernetes Jobs.                                                                                          |
-| EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY                  | `1Gi`          | The minimum memory resource for Kubernetes Jobs.                                                                                       |
+| EXECUTOR_KUBERNETES_RESOURCE_LIMIT_CPU                       | N/A            | The maximum CPU resource for Kubernetes Jobs.                                                                                          |
+| EXECUTOR_KUBERNETES_RESOURCE_LIMIT_MEMORY                    | `12Gi`         | The maximum memory resource for Kubernetes Jobs.                                                                                       |
+| EXECUTOR_KUBERNETES_RESOURCE_REQUEST_CPU                     | N/A            | The minimum CPU resource for Kubernetes Jobs.                                                                                          |
+| EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY                  | `12Gi`         | The minimum memory resource for Kubernetes Jobs.                                                                                       |
 
 See other possible Environment Variables [here](./deploy_executors_binary.md#step-2-setup-environment-variables).
 

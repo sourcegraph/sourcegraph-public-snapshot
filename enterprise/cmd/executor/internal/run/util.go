@@ -185,6 +185,17 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 			}
 		}
 	}
+
+	resourceLimit := command.KubernetesResource{Memory: resource.MustParse(c.KubernetesResourceLimitMemory)}
+	if c.KubernetesResourceLimitCPU != "" {
+		resourceLimit.CPU = resource.MustParse(c.KubernetesResourceLimitCPU)
+	}
+
+	resourceRequest := command.KubernetesResource{Memory: resource.MustParse(c.KubernetesResourceRequestMemory)}
+	if c.KubernetesResourceRequestCPU != "" {
+		resourceRequest.CPU = resource.MustParse(c.KubernetesResourceRequestCPU)
+	}
+
 	return runner.KubernetesOptions{
 		ConfigPath: c.KubernetesConfigPath,
 		ContainerOptions: command.KubernetesContainerOptions{
@@ -196,14 +207,8 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 			},
 			Namespace:             c.KubernetesNamespace,
 			PersistenceVolumeName: c.KubernetesPersistenceVolumeName,
-			ResourceLimit: command.KubernetesResource{
-				CPU:    resource.MustParse(c.KubernetesResourceLimitCPU),
-				Memory: resource.MustParse(c.KubernetesResourceLimitMemory),
-			},
-			ResourceRequest: command.KubernetesResource{
-				CPU:    resource.MustParse(c.KubernetesResourceRequestCPU),
-				Memory: resource.MustParse(c.KubernetesResourceRequestMemory),
-			},
+			ResourceLimit:         resourceLimit,
+			ResourceRequest:       resourceRequest,
 			Retry: command.KubernetesRetry{
 				Attempts: c.KubernetesJobRetryBackoffLimit,
 				Backoff:  c.KubernetesJobRetryBackoffDuration,
