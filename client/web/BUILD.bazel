@@ -304,6 +304,7 @@ ts_project(
         "src/components/useUserHistory.ts",
         "src/contributions.ts",
         "src/enterprise/EnterpriseWebApp.tsx",
+        "src/enterprise/app/AppComingSoonPage.tsx",
         "src/enterprise/batches/BatchChangeTabs.tsx",
         "src/enterprise/batches/BatchSpec.tsx",
         "src/enterprise/batches/BatchSpecNode.tsx",
