@@ -5,16 +5,70 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is already authenticated
+func (r *rootResolver) IndexConfiguration(ctx context.Context, repoID graphql.ID) (_ resolverstubs.IndexConfigurationResolver, err error) {
+	_, traceErrs, endObservation := r.operations.indexConfiguration.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repoID", string(repoID)),
+	}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	if !autoIndexingEnabled() {
+		return nil, errAutoIndexingNotEnabled
+	}
+
+	repositoryID, err := resolverstubs.UnmarshalID[int](repoID)
+	if err != nil {
+		return nil, err
+	}
+
+	return newIndexConfigurationResolver(r.autoindexSvc, r.siteAdminChecker, repositoryID, traceErrs), nil
+}
+
+// 🚨 SECURITY: Only site admins may modify code intelligence indexing configuration
+func (r *rootResolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args *resolverstubs.UpdateRepositoryIndexConfigurationArgs) (_ *resolverstubs.EmptyResponse, err error) {
+	ctx, _, endObservation := r.operations.updateRepositoryIndexConfiguration.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repository", string(args.Repository)),
+		log.String("configuration", args.Configuration),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+	if !autoIndexingEnabled() {
+		return nil, errAutoIndexingNotEnabled
+	}
+
+	// Validate input as JSON
+	if _, err := config.UnmarshalJSON([]byte(args.Configuration)); err != nil {
+		return nil, err
+	}
+
+	repositoryID, err := resolverstubs.UnmarshalID[int](args.Repository)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.autoindexSvc.UpdateIndexConfigurationByRepositoryID(ctx, repositoryID, []byte(args.Configuration)); err != nil {
+		return nil, err
+	}
+
+	return resolverstubs.Empty, nil
+}
+
+//
+//
 
 type indexConfigurationResolver struct {
 	autoindexSvc     AutoIndexingService
@@ -23,7 +77,7 @@ type indexConfigurationResolver struct {
 	errTracer        *observation.ErrCollector
 }
 
-func NewIndexConfigurationResolver(autoindexSvc AutoIndexingService, siteAdminChecker sharedresolvers.SiteAdminChecker, repositoryID int, errTracer *observation.ErrCollector) resolverstubs.IndexConfigurationResolver {
+func newIndexConfigurationResolver(autoindexSvc AutoIndexingService, siteAdminChecker sharedresolvers.SiteAdminChecker, repositoryID int, errTracer *observation.ErrCollector) resolverstubs.IndexConfigurationResolver {
 	return &indexConfigurationResolver{
 		autoindexSvc:     autoindexSvc,
 		siteAdminChecker: siteAdminChecker,
@@ -34,6 +88,7 @@ func NewIndexConfigurationResolver(autoindexSvc AutoIndexingService, siteAdminCh
 
 func (r *indexConfigurationResolver) Configuration(ctx context.Context) (_ *string, err error) {
 	defer r.errTracer.Collect(&err, log.String("indexConfigResolver.field", "configuration"))
+
 	configuration, exists, err := r.autoindexSvc.GetIndexConfigurationByRepositoryID(ctx, r.repositoryID)
 	if err != nil {
 		return nil, err
@@ -54,7 +109,6 @@ func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) 
 		if errors.As(err, &inference.LimitError{}) {
 			limitErr = err
 		} else {
-
 			return nil, err
 		}
 	}
@@ -94,6 +148,9 @@ func (r *indexConfigurationResolver) ParsedConfiguration(ctx context.Context) (*
 	return &descriptions, nil
 }
 
+//
+//
+
 type inferredConfigurationResolver struct {
 	siteAdminChecker sharedresolvers.SiteAdminChecker
 	configuration    string
@@ -122,27 +179,8 @@ func (r *inferredConfigurationResolver) LimitError() *string {
 	return nil
 }
 
-func newDescriptionResolvers(siteAdminChecker sharedresolvers.SiteAdminChecker, indexConfiguration *config.IndexConfiguration) ([]resolverstubs.AutoIndexJobDescriptionResolver, error) {
-	var resolvers []resolverstubs.AutoIndexJobDescriptionResolver
-	for _, indexJob := range indexConfiguration.IndexJobs {
-		var steps []types.DockerStep
-		for _, step := range indexJob.Steps {
-			steps = append(steps, types.DockerStep{
-				Root:     step.Root,
-				Image:    step.Image,
-				Commands: step.Commands,
-			})
-		}
-
-		resolvers = append(resolvers, &autoIndexJobDescriptionResolver{
-			siteAdminChecker: siteAdminChecker,
-			indexJob:         indexJob,
-			steps:            steps,
-		})
-	}
-
-	return resolvers, nil
-}
+//
+//
 
 func newDescriptionResolversFromJSON(siteAdminChecker sharedresolvers.SiteAdminChecker, configuration string) ([]resolverstubs.AutoIndexJobDescriptionResolver, error) {
 	indexConfiguration, err := config.UnmarshalJSON([]byte(configuration))

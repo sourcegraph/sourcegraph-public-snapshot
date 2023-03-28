@@ -9,6 +9,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	policiesgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/transport/graphql"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -348,6 +349,9 @@ func (r *preciseIndexResolver) Tags(ctx context.Context) ([]string, error) {
 	return tagNames, nil
 }
 
+//
+//
+
 var DefaultRetentionPolicyMatchesPageSize = 50
 
 func (r *preciseIndexResolver) RetentionPolicyOverview(ctx context.Context, args *resolverstubs.LSIFUploadRetentionPolicyMatchesArgs) (resolverstubs.CodeIntelligenceRetentionPolicyMatchesConnectionResolver, error) {
@@ -381,7 +385,7 @@ func (r *preciseIndexResolver) RetentionPolicyOverview(ctx context.Context, args
 
 	resolvers := make([]resolverstubs.CodeIntelligenceRetentionPolicyMatchResolver, 0, len(matches))
 	for _, policy := range matches {
-		resolvers = append(resolvers, NewRetentionPolicyMatcherResolver(r.repoStore, policy))
+		resolvers = append(resolvers, newRetentionPolicyMatcherResolver(r.repoStore, policy))
 	}
 
 	return resolverstubs.NewTotalCountConnectionResolver(resolvers, 0, int32(totalCount)), nil
@@ -399,8 +403,101 @@ func (r *preciseIndexResolver) AuditLogs(ctx context.Context) (*[]resolverstubs.
 
 	resolvers := make([]resolverstubs.LSIFUploadsAuditLogsResolver, 0, len(logs))
 	for _, uploadLog := range logs {
-		resolvers = append(resolvers, NewLSIFUploadsAuditLogsResolver(uploadLog))
+		resolvers = append(resolvers, newLSIFUploadsAuditLogsResolver(uploadLog))
 	}
 
 	return &resolvers, nil
+}
+
+//
+//
+
+type retentionPolicyMatcherResolver struct {
+	repoStore    database.RepoStore
+	policy       types.RetentionPolicyMatchCandidate
+	errCollector *observation.ErrCollector
+}
+
+func newRetentionPolicyMatcherResolver(repoStore database.RepoStore, policy types.RetentionPolicyMatchCandidate) resolverstubs.CodeIntelligenceRetentionPolicyMatchResolver {
+	return &retentionPolicyMatcherResolver{repoStore: repoStore, policy: policy}
+}
+
+func (r *retentionPolicyMatcherResolver) ConfigurationPolicy() resolverstubs.CodeIntelligenceConfigurationPolicyResolver {
+	if r.policy.ConfigurationPolicy == nil {
+		return nil
+	}
+
+	return policiesgraphql.NewConfigurationPolicyResolver(r.repoStore, *r.policy.ConfigurationPolicy, r.errCollector)
+}
+
+func (r *retentionPolicyMatcherResolver) Matches() bool {
+	return r.policy.Matched
+}
+
+func (r *retentionPolicyMatcherResolver) ProtectingCommits() *[]string {
+	return &r.policy.ProtectingCommits
+}
+
+//
+//
+
+type lsifUploadsAuditLogResolver struct {
+	log types.UploadLog
+}
+
+func newLSIFUploadsAuditLogsResolver(log types.UploadLog) resolverstubs.LSIFUploadsAuditLogsResolver {
+	return &lsifUploadsAuditLogResolver{log: log}
+}
+
+func (r *lsifUploadsAuditLogResolver) Reason() *string { return r.log.Reason }
+func (r *lsifUploadsAuditLogResolver) ChangedColumns() (values []resolverstubs.AuditLogColumnChange) {
+	for _, transition := range r.log.TransitionColumns {
+		values = append(values, &auditLogColumnChangeResolver{transition})
+	}
+	return values
+}
+
+func (r *lsifUploadsAuditLogResolver) LogTimestamp() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.log.LogTimestamp}
+}
+
+func (r *lsifUploadsAuditLogResolver) UploadDeletedAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.log.RecordDeletedAt)
+}
+
+func (r *lsifUploadsAuditLogResolver) UploadID() graphql.ID {
+	return resolverstubs.MarshalID("LSIFUpload", r.log.UploadID)
+}
+func (r *lsifUploadsAuditLogResolver) InputCommit() string  { return r.log.Commit }
+func (r *lsifUploadsAuditLogResolver) InputRoot() string    { return r.log.Root }
+func (r *lsifUploadsAuditLogResolver) InputIndexer() string { return r.log.Indexer }
+func (r *lsifUploadsAuditLogResolver) UploadedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.log.UploadedAt}
+}
+
+func (r *lsifUploadsAuditLogResolver) Operation() string {
+	return strings.ToUpper(r.log.Operation)
+}
+
+//
+//
+
+type auditLogColumnChangeResolver struct {
+	columnTransition map[string]*string
+}
+
+func newAuditLogColumnChangeResolver(columnTransition map[string]*string) resolverstubs.AuditLogColumnChange {
+	return &auditLogColumnChangeResolver{columnTransition}
+}
+
+func (r *auditLogColumnChangeResolver) Column() string {
+	return *r.columnTransition["column"]
+}
+
+func (r *auditLogColumnChangeResolver) Old() *string {
+	return r.columnTransition["old"]
+}
+
+func (r *auditLogColumnChangeResolver) New() *string {
+	return r.columnTransition["new"]
 }

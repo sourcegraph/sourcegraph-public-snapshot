@@ -8,7 +8,7 @@ type gitSubmoduleResolver struct {
 	submodule gitdomain.Submodule
 }
 
-func NewGitSubmoduleResolver(submodule gitdomain.Submodule) *gitSubmoduleResolver {
+func newGitSubmoduleResolver(submodule gitdomain.Submodule) *gitSubmoduleResolver {
 	return &gitSubmoduleResolver{submodule: submodule}
 }
 

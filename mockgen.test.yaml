@@ -254,14 +254,12 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers
   interfaces:
     - UploadsService
-    - AutoIndexingService
   package: sharedresolvers
 - filename: enterprise/internal/codeintel/codenav/transport/graphql/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/transport/graphql
   interfaces:
     - AutoIndexingService
     - UploadsService
-    - PolicyService
     - CodeNavService
 - filename: enterprise/internal/insights/background/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background
