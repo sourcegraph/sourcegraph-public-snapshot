@@ -57,7 +57,7 @@ export const LIST_TEAMS = gql`
     ${LIST_TEAM_FIELDS}
 `
 
-const LIST_TEAMS_OF_PARENT = gql`
+export const LIST_TEAMS_OF_PARENT = gql`
     query ListTeamsOfParent($first: Int, $after: String, $search: String, $teamName: String!) {
         team(name: $teamName) {
             childTeams(first: $first, after: $after, search: $search) {
