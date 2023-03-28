@@ -100,7 +100,7 @@ const SiteConfigurationHistoryItem: FC<SiteConfigurationHistoryItemProps> = ({ n
             {node.author.displayName}
         </Link>
     ) : (
-        'SITE_CONFIG_FILE edited by a site admin'
+        'Site configuration file set in SITE_CONFIG_FILE environment variable updated'
     )
 
     return (
