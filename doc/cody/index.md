@@ -27,7 +27,7 @@ Cody uses Sourcegraph to fetch relevant context to generate answers and code. Th
 
 After installing, we recommend the following:
 
-* Request embeddings for your repositories. Embeddings significantly improve the accuracy and quality of Cody's responses. To request embeddings, join the Cody Discord and ping a Sourcegraph team member.
+* Request embeddings for your repositories. Embeddings significantly improve the accuracy and quality of Cody's responses. To request embeddings, join the Cody Discord and ping a Sourcegraph team member. Note that embeddings are only available for public repositories on sourcegraph.com. If you want to use Cody with embeddings on private code, consider moving to a Sourcegraph Enterprise instance.
 * Spread the word online and send us your feedback in Discord. Cody is open source and we'd love to hear from you if you have bug reports or feature requests.
 
 ## Cody on your Sourcegraph Enterprise instance
