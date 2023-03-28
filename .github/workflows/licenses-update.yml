@@ -51,7 +51,7 @@ jobs:
         # token must have `repo` scope
         # currently @sourcegraph-bot cross-repo-github-actions in 1password
         # configure in https://github.com/sourcegraph/sourcegraph/settings/secrets/GH_REPO_TOKEN
-        token: ${{ secrets.DAVEJRT_PAT }}
+        token: ${{ secrets.DEVX_TOKEN }}
 
     - name: Enable pull request automerge
       if: steps.cpr.outputs.pull-request-operation == 'created'
