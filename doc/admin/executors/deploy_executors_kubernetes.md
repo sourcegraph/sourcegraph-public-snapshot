@@ -60,7 +60,6 @@ See [RBAC Roles](#rbac-roles) for more information.
 
 Ensure you have the following tools installed.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
-- [Helm](https://helm.sh/) if you're installing Sourcegraph with helm.
 
 #### Deployment via kubectl (Kubernetes manifests)
 
@@ -70,21 +69,9 @@ Ensure you have the following tools installed.
 4. Run  `kubectl apply -f . --recursive` to deploy all components.
 5. Confirm executors are working by checking the _Executors_ page under _Site Admin_ > _Executors_ > _Instances_ .
 
-#### Deployment via Helm
-
-1. Clone the [deploy-sourcegraph-helm](https://github.com/sourcegraph/deploy-sourcegraph-helm) repository to your local machine.
-2. Run `cd deploy-sourcegraph-helm/charts/sourcegraph-executor`.
-3. Edit the `values.yaml` with any other customizations you may require.
-4. Run the following command:
-   1. `helm upgrade --install -f values.yaml --version 5.1.0 sg-executor sourcegraph/sourcegraph-executor`
-5. Confirm executors are working by checking the _Executors_ page under _Site Admin_ > _Executors_ > _Instances_ .
-
-
-For more information on the components being deployed see the [Executors readme](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/executors/README.md).
-
 ## Note
 
-Executors deployed in kubernetes do not use [Firecracker](executors.md#how-it-works).
+Executors deployed on Kubernetes do not use [Firecracker](executors.md#how-it-works).
 
 If you have security concerns, consider deploying via [terraform](deploy_executors_terraform.md) or [installing the binary](deploy_executors_binary.md) directly.
 
