@@ -1,11 +1,13 @@
 import React, { useEffect, useCallback, useState } from 'react'
 
-import { mdiAccount, mdiCancel, mdiCheck } from '@mdi/js'
+import { mdiAccount } from '@mdi/js'
+import classNames from 'classnames'
 import { formatDistanceToNowStrict } from 'date-fns'
 import { capitalize } from 'lodash'
 
+import { pluralize } from '@sourcegraph/common'
 import { useLazyQuery, useMutation, useQuery } from '@sourcegraph/http-client'
-import { Card, Text, Alert, PageSwitcher, Link, Select } from '@sourcegraph/wildcard'
+import { Card, Text, Alert, PageSwitcher, Link, Select, Button, Badge, Tooltip } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import {
@@ -37,7 +39,8 @@ import {
     REJECT_ACCESS_REQUEST,
     HAS_LICENSE_SEATS,
 } from './queries'
-import { pluralize } from '@sourcegraph/common'
+
+import styles from './index.module.scss'
 
 /**
  * Converts a name to a username by removing all non-alphanumeric characters and converting to lowercase.
@@ -91,7 +94,89 @@ function useHasRemainingSeats(): boolean {
     return typeof licenseSeatsCount !== 'number' || typeof usersCount !== 'number' || licenseSeatsCount > usersCount
 }
 
+type AccessRequestItem = PendingAccessRequestsListResult['accessRequests']['nodes'][0]
+
+const TableColumns: IColumn<AccessRequestItem>[] = [
+    {
+        key: 'Status',
+        header: 'Status',
+        align: 'right',
+        render: (node: AccessRequestItem) => (
+            <Badge
+                className="mb-0 d-flex align-items-center text-nowrap"
+                variant={
+                    node.status === AccessRequestStatus.APPROVED
+                        ? 'success'
+                        : node.status === AccessRequestStatus.REJECTED
+                        ? 'danger'
+                        : 'primary'
+                }
+            >
+                {node.status}
+            </Badge>
+        ),
+    },
+    {
+        key: 'Name & email',
+        header: 'Name & Email',
+        render: (node: AccessRequestItem) => (
+            <Tooltip content={node.email}>
+                <Text className={classNames('mb-0', styles.tableCellName)}>
+                    {node.name}
+                    <Text className={classNames('mb-0 text-muted', styles.email)} size="small">
+                        {node.email}
+                    </Text>
+                </Text>
+            </Tooltip>
+        ),
+    },
+
+    {
+        key: 'Created at',
+        header: 'Created at',
+        align: 'right',
+        render: (node: AccessRequestItem) => (
+            <Text className="mb-0 d-flex align-items-center text-nowrap">
+                {formatDistanceToNowStrict(new Date(node.createdAt), { addSuffix: true })}
+            </Text>
+        ),
+    },
+    {
+        key: 'Notes',
+        header: 'Notes',
+        align: 'right',
+        render: (node: AccessRequestItem) => (
+            <Text className="text-muted my-2 font-italic" size="small">
+                {node.additionalInfo}
+            </Text>
+        ),
+    },
+]
+
+const AccessRequestStatusPicker: React.FunctionComponent<{
+    status: AccessRequestStatus
+    onChange: (value: AccessRequestStatus) => void
+}> = ({ status, onChange }) => {
+    const handleStatusChange = useCallback(
+        (event: React.ChangeEvent<HTMLSelectElement>) => {
+            onChange(event.target.value as AccessRequestStatus)
+        },
+        [onChange]
+    )
+
+    return (
+        <Select id="access-request-status-filter" value={status} label="Status" onChange={handleStatusChange}>
+            {Object.entries(AccessRequestStatus).map(([key, value]) => (
+                <option key={key} value={value}>
+                    {capitalize(value)}
+                </option>
+            ))}
+        </Select>
+    )
+}
+
 const FIRST_COUNT = 25
+
 export const AccessRequestsPage: React.FunctionComponent = () => {
     useEffect(() => {
         eventLogger.logPageView('AccessRequestsPage')
@@ -249,29 +334,39 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                 {!!connection?.nodes.length && (
                     <>
                         <Table<AccessRequestItem>
-                            columns={TableColumns}
-                            getRowId={node => node.id}
-                            data={connection.nodes}
-                            actions={[
+                            rowClassName={styles.tableRow}
+                            columns={[
+                                ...TableColumns,
                                 {
-                                    key: 'Reject',
-                                    label: 'Reject',
-                                    icon: mdiCancel,
-                                    bulk: true,
-                                    onClick: ([item]) => handleReject(item.id),
-                                    // Can reject only if pending
-                                    condition: () => status === AccessRequestStatus.PENDING,
-                                },
-                                {
-                                    key: 'Approve',
-                                    label: 'Approve',
-                                    icon: mdiCheck,
-                                    onClick: ([item]) => handleApprove(item.id, item.name, item.email),
-                                    // Can approve if there are remaining seats and not already approved
-                                    // We allow to approve previously rejected requests too
-                                    condition: () => hasRemainingSeats && status !== AccessRequestStatus.APPROVED,
+                                    key: 'Status',
+                                    header: 'Status',
+                                    align: 'right',
+                                    render: (node: AccessRequestItem) => (
+                                        <div className="d-flex align-items-start">
+                                            <Button
+                                                variant="link"
+                                                onClick={() => handleReject(node.id)}
+                                                className="pl-0"
+                                                size="sm"
+                                                disabled={status !== AccessRequestStatus.PENDING}
+                                            >
+                                                Reject
+                                            </Button>
+                                            <Button
+                                                variant="success"
+                                                disabled={!hasRemainingSeats || status === AccessRequestStatus.APPROVED}
+                                                className="ml-2"
+                                                size="sm"
+                                                onClick={() => handleApprove?.(node.id, node.name, node.email)}
+                                            >
+                                                Approve
+                                            </Button>
+                                        </div>
+                                    ),
                                 },
                             ]}
+                            getRowId={node => node.id}
+                            data={connection.nodes}
                         />
                     </>
                 )}
@@ -287,72 +382,5 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                 )}
             </Card>
         </>
-    )
-}
-
-type AccessRequestItem = PendingAccessRequestsListResult['accessRequests']['nodes'][0]
-
-const TableColumns: IColumn<AccessRequestItem>[] = [
-    {
-        key: 'Email',
-        header: 'Email',
-        render: (node: AccessRequestItem) => <Text className="mb-0 mr-2 d-flex align-items-center">{node.email}</Text>,
-    },
-    {
-        key: 'Name',
-        header: 'Name',
-        render: (node: AccessRequestItem) => (
-            <Text className="mb-0 mr-2 d-flex align-items-center text-nowrap">{node.name}</Text>
-        ),
-    },
-    {
-        key: 'Status',
-        header: 'Status',
-        align: 'right',
-        render: (node: AccessRequestItem) => (
-            <Text className="mb-0 mr-2 d-flex align-items-center">{capitalize(node.status)}</Text>
-        ),
-    },
-    {
-        key: 'Created at',
-        header: 'Created at',
-        align: 'right',
-        render: (node: AccessRequestItem) => (
-            <Text className="mb-0 mr-2 d-flex align-items-center text-nowrap">
-                {formatDistanceToNowStrict(new Date(node.createdAt), { addSuffix: true })}
-            </Text>
-        ),
-    },
-    {
-        key: 'Notes',
-        header: 'Notes',
-        align: 'right',
-        render: (node: AccessRequestItem) => (
-            <Text className="text-muted my-2" size="small">
-                {node.additionalInfo}
-            </Text>
-        ),
-    },
-]
-
-const AccessRequestStatusPicker: React.FunctionComponent<{
-    status: AccessRequestStatus
-    onChange: (value: AccessRequestStatus) => void
-}> = ({ status, onChange }) => {
-    const handleStatusChange = useCallback(
-        (event: React.ChangeEvent<HTMLSelectElement>) => {
-            onChange(event.target.value as AccessRequestStatus)
-        },
-        [onChange]
-    )
-
-    return (
-        <Select id="access-request-status-filter" value={status} label="Status" onChange={handleStatusChange}>
-            {Object.entries(AccessRequestStatus).map(([key, value]) => (
-                <option key={key} value={value}>
-                    {capitalize(value)}
-                </option>
-            ))}
-        </Select>
     )
 }
