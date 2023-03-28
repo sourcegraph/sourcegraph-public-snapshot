@@ -210,7 +210,8 @@
 }
 
 .chat-code-block-copy-btn {
-    position: absolute;
-    top: 0;
-    right: 0;
+    color: var(--vscode-button-foreground);
+    background-color: var(--vscode-button-background);
+    width: 100%;
+    border: none;
 }

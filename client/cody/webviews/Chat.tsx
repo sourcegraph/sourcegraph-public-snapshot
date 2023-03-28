@@ -50,8 +50,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         }
     }
 
+    const escapeHTML = (html: string): string => {
+        const span = document.createElement('span')
+        span.textContent = html
+        return span.innerHTML
+    }
+
     const onChatSubmit = useCallback(() => {
-        vscodeAPI.postMessage({ command: 'submit', text: formInput.replaceAll('>', '\\>') })
+        vscodeAPI.postMessage({ command: 'submit', text: escapeHTML(formInput) })
         setInputRows(5)
         setFormInput('')
     }, [formInput, setFormInput])
