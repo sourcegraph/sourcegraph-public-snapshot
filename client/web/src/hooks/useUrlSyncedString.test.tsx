@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
-import { useURLSyncedString } from './useURLSyncedString'
+import { useURLSyncedString } from './useUrlSyncedString'
 
 describe('useURLSyncedString', () => {
     it('should return default value if no URL search param is set', () => {

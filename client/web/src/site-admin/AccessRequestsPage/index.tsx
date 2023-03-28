@@ -26,7 +26,7 @@ import {
     GetAccessRequestsVariables,
     GetAccessRequestsResult,
 } from '../../graphql-operations'
-import { useURLSyncedString } from '../../hooks/useURLSyncedString'
+import { useURLSyncedString } from '../../hooks/useUrlSyncedString'
 import { eventLogger } from '../../tracking/eventLogger'
 import { AccountCreatedAlert } from '../components/AccountCreatedAlert'
 import { SiteAdminPageTitle } from '../components/SiteAdminPageTitle'
