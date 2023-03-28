@@ -95,14 +95,12 @@ function useHasRemainingSeats(): boolean {
     return typeof licenseSeatsCount !== 'number' || typeof usersCount !== 'number' || licenseSeatsCount > usersCount
 }
 
-type AccessRequestItem = PendingAccessRequestsListResult['accessRequests']['nodes'][0]
-
-const TableColumns: IColumn<AccessRequestItem>[] = [
+const TableColumns: IColumn<AccessRequestNode>[] = [
     {
         key: 'Status',
         header: 'Status',
         align: 'right',
-        render: (node: AccessRequestItem) => (
+        render: (node: AccessRequestNode) => (
             <Badge
                 className="mb-0 d-flex align-items-center text-nowrap"
                 variant={
@@ -120,7 +118,7 @@ const TableColumns: IColumn<AccessRequestItem>[] = [
     {
         key: 'Name & email',
         header: 'Name & Email',
-        render: (node: AccessRequestItem) => (
+        render: (node: AccessRequestNode) => (
             <Tooltip content={node.email}>
                 <Text className={classNames('mb-0', styles.tableCellName)}>
                     {node.name}
@@ -136,7 +134,7 @@ const TableColumns: IColumn<AccessRequestItem>[] = [
         key: 'Created at',
         header: 'Created at',
         align: 'right',
-        render: (node: AccessRequestItem) => (
+        render: (node: AccessRequestNode) => (
             <Text className="mb-0 d-flex align-items-center text-nowrap">
                 {formatDistanceToNowStrict(new Date(node.createdAt), { addSuffix: true })}
             </Text>
@@ -146,7 +144,7 @@ const TableColumns: IColumn<AccessRequestItem>[] = [
         key: 'Notes',
         header: 'Notes',
         align: 'right',
-        render: (node: AccessRequestItem) => (
+        render: (node: AccessRequestNode) => (
             <Text className="text-muted my-2 font-italic" size="small">
                 {node.additionalInfo}
             </Text>
@@ -329,15 +327,15 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                 </div>
                 {!!connection?.nodes.length && (
                     <>
-                        <Table<AccessRequestItem>
+                        <Table<AccessRequestNode>
                             rowClassName={styles.tableRow}
                             columns={[
                                 ...TableColumns,
                                 {
-                                    key: 'Status',
-                                    header: 'Status',
+                                    key: 'Actions',
+                                    header: 'Actions',
                                     align: 'right',
-                                    render: (node: AccessRequestItem) => (
+                                    render: (node: AccessRequestNode) => (
                                         <div className="d-flex align-items-start">
                                             <Button
                                                 variant="link"
