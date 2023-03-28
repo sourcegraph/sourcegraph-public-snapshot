@@ -4,12 +4,6 @@ import { ResetIcon } from './utils/icons'
 
 export const Tips: React.FunctionComponent<{}> = () => (
     <div className="tips-container">
-        <h3>Example questions</h3>
-        <ul>
-            <li>What are the most popular Go CLI libraries?</li>
-            <li>Write a function that parses JSON in Python.</li>
-            <li>Which files handle SAML authentication?</li>
-        </ul>
         <h3>Recommendations</h3>
         <ul>
             <li>
@@ -18,7 +12,7 @@ export const Tips: React.FunctionComponent<{}> = () => (
                 name as listed on your Sourcegraph instance.
             </li>
             <li>
-                Visit the Recipes tab for special actions like Generate a unit test or Summarize recent code changes.
+                Visit the `Recipes` tab for special actions like Generate a unit test or Summarize recent code changes.
             </li>
             <li>
                 Use the <ResetIcon /> button in the upper right to reset the chat when you want to start a new line of
@@ -39,5 +33,11 @@ export const Tips: React.FunctionComponent<{}> = () => (
                 <span>Explain the code above (or your question).</span>
             </code>
         </div>
+        <h3>Example questions</h3>
+        <ul>
+            <li>What are the most popular Go CLI libraries?</li>
+            <li>Write a function that parses JSON in Python.</li>
+            <li>Which files handle SAML authentication?</li>
+        </ul>
     </div>
 )

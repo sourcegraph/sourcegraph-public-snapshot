@@ -16,10 +16,9 @@ const DEFAULT_CHAT_COMPLETION_PARAMETERS: Omit<CompletionRequest, 'messages'> = 
 }
 
 export function getCodyCompletionOneShot(messages: CompletionRequest['messages']): Promise<string> {
-    const params = new URLSearchParams()
     return new Promise<string>((resolve, reject) => {
         let lastCompletion: string | undefined
-        fetchEventSource(`/.api/completions/stream?${params.toString()}`, {
+        fetchEventSource('/.api/completions/stream', {
             method: 'POST',
             headers: { 'X-Requested-With': 'Sourcegraph', 'Content-Type': 'application/json; charset=utf-8' },
             body: JSON.stringify({

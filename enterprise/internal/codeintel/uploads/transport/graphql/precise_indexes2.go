@@ -1,4 +1,4 @@
-package sharedresolvers
+package graphql
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -24,9 +25,9 @@ type preciseIndexResolver struct {
 	uploadsSvc       UploadsService
 	policySvc        PolicyService
 	gitserverClient  gitserver.Client
-	siteAdminChecker SiteAdminChecker
+	siteAdminChecker sharedresolvers.SiteAdminChecker
 	repoStore        database.RepoStore
-	locationResolver *CachedLocationResolver
+	locationResolver *sharedresolvers.CachedLocationResolver
 	traceErrs        *observation.ErrCollector
 	upload           *types.Upload
 	index            *types.Index
@@ -37,10 +38,10 @@ func NewPreciseIndexResolver(
 	uploadsSvc UploadsService,
 	policySvc PolicyService,
 	gitserverClient gitserver.Client,
-	prefetcher *Prefetcher,
-	siteAdminChecker SiteAdminChecker,
+	prefetcher *sharedresolvers.Prefetcher,
+	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
-	locationResolver *CachedLocationResolver,
+	locationResolver *sharedresolvers.CachedLocationResolver,
 	traceErrs *observation.ErrCollector,
 	upload *types.Upload,
 	index *types.Index,
@@ -208,9 +209,11 @@ func (r *preciseIndexResolver) Failure() *string {
 
 func (r *preciseIndexResolver) PlaceInQueue() *int32 {
 	if r.index != nil && r.index.Rank != nil {
-		return toInt32(r.index.Rank)
+		v := int32(*r.index.Rank)
+		return &v
 	} else if r.upload != nil && r.upload.Rank != nil {
-		return toInt32(r.upload.Rank)
+		v := int32(*r.upload.Rank)
+		return &v
 	}
 
 	return nil

@@ -1026,15 +1026,21 @@ func (c *clientImplementor) LsFiles(ctx context.Context, checker authz.SubRepoPe
 // ListFiles returns a list of root-relative file paths matching the given
 // pattern in a particular commit of a repository.
 func (c *clientImplementor) ListFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp) (_ []string, err error) {
-	cmd := c.gitCommand(repo, "ls-tree", "--name-only", "-r", string(commit), "--")
+	cmd := c.gitCommand(repo, "ls-tree", "-z", "--name-only", "-r", string(commit), "--")
 
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	files := strings.Split(string(out), "\x00")
+	// Drop trailing empty string
+	if len(files) > 0 && files[len(files)-1] == "" {
+		files = files[:len(files)-1]
+	}
+
 	var matching []string
-	for _, path := range strings.Split(string(out), "\n") {
+	for _, path := range files {
 		if pattern.MatchString(path) {
 			matching = append(matching, path)
 		}

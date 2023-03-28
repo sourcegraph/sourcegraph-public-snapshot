@@ -1,4 +1,4 @@
-package sharedresolvers
+package graphql
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	sglog "github.com/sourcegraph/log"
 
+	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -51,7 +52,7 @@ func (r *configurationPolicyResolver) Repository(ctx context.Context) (_ resolve
 		log.Int("repoID", *r.configurationPolicy.RepositoryID),
 	)
 
-	return NewRepositoryFromID(ctx, r.repoStore, *r.configurationPolicy.RepositoryID)
+	return sharedresolvers.NewRepositoryFromID(ctx, r.repoStore, *r.configurationPolicy.RepositoryID)
 }
 
 func (r *configurationPolicyResolver) RepositoryPatterns() *[]string {

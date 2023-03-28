@@ -87,7 +87,7 @@ function useHasRemainingSeats(): boolean {
 
     const licenseSeatsCount = data?.site?.productSubscription?.license?.userCount
     const usersCount = data?.site?.users?.totalCount
-    return !licenseSeatsCount || !usersCount || licenseSeatsCount > usersCount
+    return typeof licenseSeatsCount !== 'number' || typeof usersCount !== 'number' || licenseSeatsCount > usersCount
 }
 
 const FIRST_COUNT = 25
@@ -215,8 +215,11 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
             </SiteAdminPageTitle>
             {!hasRemainingSeats && (
                 <Alert variant="danger">
-                    No licenses remaining. To approve requests, <Link to="TODO">purchase additional licenses</Link> or{' '}
-                    <Link to="/site-admin/users">remove inactive users</Link>.
+                    No licenses remaining. To approve requests,{' '}
+                    <Link to="https://about.sourcegraph.com/pricing" target="_blank" rel="noopener">
+                        purchase additional licenses
+                    </Link>{' '}
+                    or <Link to="/site-admin/users">remove inactive users</Link>.
                 </Alert>
             )}
             <Card className="p-3">

@@ -293,7 +293,12 @@ unprocessed_path_counts AS (
 	SELECT
 		ipr.id,
 		ipr.upload_id,
-		ipr.document_path,
+		unnest(
+			CASE
+				WHEN ipr.document_path != '' THEN array_append('{}'::text[], ipr.document_path)
+				ELSE ipr.document_paths
+			END
+		) AS document_path,
 		ipr.graph_key
 	FROM codeintel_initial_path_ranks ipr
 	WHERE
@@ -334,7 +339,7 @@ SELECT
 	(SELECT COUNT(*) FROM ins)
 `
 
-func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, documentPath []string, graphKey string) (err error) {
+func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, documentPaths chan string, batchSize int, graphKey string) (err error) {
 	ctx, _, endObservation := s.operations.insertInitialPathRanks.With(
 		ctx,
 		&err,
@@ -351,8 +356,8 @@ func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, docume
 	defer func() { err = tx.Done(err) }()
 
 	inserter := func(inserter *batch.Inserter) error {
-		for _, path := range documentPath {
-			if err := inserter.Insert(ctx, path); err != nil {
+		for paths := range batchChannel(documentPaths, batchSize) {
+			if err := inserter.Insert(ctx, pq.Array(paths)); err != nil {
 				return err
 			}
 		}
@@ -369,7 +374,7 @@ func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, docume
 		tx.Handle(),
 		"t_codeintel_initial_path_ranks",
 		batch.MaxNumPostgresParameters,
-		[]string{"document_path"},
+		[]string{"document_paths"},
 		inserter,
 	); err != nil {
 		return err
@@ -384,18 +389,14 @@ func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, docume
 
 const createInitialPathTemporaryTableQuery = `
 CREATE TEMPORARY TABLE IF NOT EXISTS t_codeintel_initial_path_ranks (
-	document_path text NOT NULL
+	document_paths text[] NOT NULL
 )
 ON COMMIT DROP
 `
 
 const insertInitialPathRankCountsQuery = `
-INSERT INTO codeintel_initial_path_ranks (upload_id, document_path, graph_key)
-	SELECT
-		%s,
-		document_path,
-		%s
-	FROM t_codeintel_initial_path_ranks
+INSERT INTO codeintel_initial_path_ranks (upload_id, document_paths, graph_key)
+SELECT %s, document_paths, %s FROM t_codeintel_initial_path_ranks
 `
 
 func (s *store) InsertPathRanks(
@@ -720,7 +721,7 @@ func (s *store) VacuumAbandonedDefinitions(ctx context.Context, graphKey string,
 	ctx, _, endObservation := s.operations.vacuumAbandonedDefinitions.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
 	defer endObservation(1, observation.Args{})
 
-	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumAbandonedDefinitionsQuery, graphKey, batchSize)))
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumAbandonedDefinitionsQuery, graphKey, graphKey, batchSize)))
 	return count, err
 }
 
@@ -729,8 +730,8 @@ WITH
 locked_definitions AS (
 	SELECT id
 	FROM codeintel_ranking_definitions
-	WHERE graph_key != %s
-	ORDER BY id
+	WHERE (graph_key < %s OR graph_key > %s)
+	ORDER BY graph_key, id
 	FOR UPDATE SKIP LOCKED
 	LIMIT %s
 ),
@@ -746,7 +747,7 @@ func (s *store) VacuumAbandonedReferences(ctx context.Context, graphKey string, 
 	ctx, _, endObservation := s.operations.vacuumAbandonedReferences.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
 	defer endObservation(1, observation.Args{})
 
-	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumAbandonedReferencesQuery, graphKey, batchSize)))
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumAbandonedReferencesQuery, graphKey, graphKey, batchSize)))
 	return count, err
 }
 
@@ -755,8 +756,8 @@ WITH
 locked_references AS (
 	SELECT id
 	FROM codeintel_ranking_references
-	WHERE graph_key != %s
-	ORDER BY id
+	WHERE (graph_key < %s OR graph_key > %s)
+	ORDER BY graph_key, id
 	FOR UPDATE SKIP LOCKED
 	LIMIT %s
 ),
@@ -772,7 +773,7 @@ func (s *store) VacuumAbandonedInitialPathCounts(ctx context.Context, graphKey s
 	ctx, _, endObservation := s.operations.vacuumAbandonedInitialPathCounts.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
 	defer endObservation(1, observation.Args{})
 
-	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumAbandonedInitialPathCountsQuery, graphKey, batchSize)))
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumAbandonedInitialPathCountsQuery, graphKey, graphKey, batchSize)))
 	return count, err
 }
 
@@ -781,8 +782,8 @@ WITH
 locked_initial_paths AS (
 	SELECT id
 	FROM codeintel_initial_path_ranks
-	WHERE graph_key != %s
-	ORDER BY id
+	WHERE (graph_key < %s OR graph_key > %s)
+	ORDER BY graph_key, id
 	FOR UPDATE SKIP LOCKED
 	LIMIT %s
 ),
@@ -798,7 +799,7 @@ func (s *store) VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string
 	ctx, _, endObservation := s.operations.vacuumStaleGraphs.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
 	defer endObservation(1, observation.Args{})
 
-	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumStaleGraphsQuery, derivativeGraphKey, batchSize)))
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumStaleGraphsQuery, derivativeGraphKey, derivativeGraphKey, batchSize)))
 	return count, err
 }
 
@@ -807,8 +808,8 @@ WITH
 locked_path_counts_inputs AS (
 	SELECT id
 	FROM codeintel_ranking_path_counts_inputs
-	WHERE graph_key != %s
-	ORDER BY id
+	WHERE (graph_key < %s OR graph_key > %s)
+	ORDER BY graph_key, id
 	FOR UPDATE SKIP LOCKED
 	LIMIT %s
 ),
