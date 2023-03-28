@@ -32,29 +32,7 @@ export function SummaryTable(): JSX.Element {
         return <ErrorAlert error={new Error('Sentinel summary is not available')} />
     }
 
-    const summary = getSummary(data)
-    const tableData = [
-        {
-            title: 'Total Vulnerabilities',
-            amount: summary.total,
-        },
-        {
-            title: 'Critical Severity',
-            amount: summary.critical ? `${summary.critical}/${summary.total}` : '0',
-        },
-        {
-            title: 'High Severity',
-            amount: summary.high ? `${summary.high}/${summary.total}` : '0',
-        },
-        {
-            title: 'Medium Severity',
-            amount: summary.medium ? `${summary.medium}/${summary.total}` : '0',
-        },
-        {
-            title: 'Repos with Vulnerabilities',
-            amount: summary.repository,
-        },
-    ]
+    const tableData = getSummary(data)
 
     return (
         <div className={styles.bar}>
@@ -70,15 +48,6 @@ export function SummaryTable(): JSX.Element {
     )
 }
 
-interface VulnerabilityMatchesSummaryCount {
-    critical: number
-    high: number
-    medium: number
-    low: number
-    total: number
-    repository: number
-}
-
 declare const vulnerabilityMatchesSummaryCounts: {
     vulnerabilityMatchesSummaryCounts: {
         critical: number
@@ -89,7 +58,12 @@ declare const vulnerabilityMatchesSummaryCounts: {
     }
 }
 
-function getSummary(summary: typeof vulnerabilityMatchesSummaryCounts): VulnerabilityMatchesSummaryCount {
+interface SummaryData {
+    title: string
+    amount: string | number
+}
+
+function getSummary(summary: typeof vulnerabilityMatchesSummaryCounts): SummaryData[] {
     const {
         critical = 0,
         high = 0,
@@ -99,12 +73,26 @@ function getSummary(summary: typeof vulnerabilityMatchesSummaryCounts): Vulnerab
     } = summary?.vulnerabilityMatchesSummaryCounts || {}
 
     const total = high + medium + low + critical
-    return {
-        critical,
-        high,
-        medium,
-        low,
-        total,
-        repository,
-    }
+    return [
+        {
+            title: 'Total Vulnerabilities',
+            amount: total,
+        },
+        {
+            title: 'Critical Severity',
+            amount: critical ? `${critical}/${total}` : '0',
+        },
+        {
+            title: 'High Severity',
+            amount: high ? `${high}/${total}` : '0',
+        },
+        {
+            title: 'Medium Severity',
+            amount: medium ? `${medium}/${total}` : '0',
+        },
+        {
+            title: 'Repos with Vulnerabilities',
+            amount: repository,
+        },
+    ]
 }
