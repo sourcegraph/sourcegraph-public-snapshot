@@ -37,6 +37,8 @@ spec:
               value: condensed
             - name: SRC_TRACE_LOG
               value: "false"
+            - name: EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY
+              value: 1Gi
           volumeMounts:
             - mountPath: /data
               name: sg-executor-volume
