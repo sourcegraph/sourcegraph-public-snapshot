@@ -23,7 +23,7 @@ export function fetchRepositoriesByNames(
         `,
         {
             names,
-            first
+            first,
         }
     ).pipe(
         map(dataOrThrowErrors),
