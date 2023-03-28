@@ -8,11 +8,13 @@
 
 Cody is an AI coding assistant that lives in your editor that can find, explain, and write code. Cody uses a combination of Large Language Models (LLMs), Sourcegraph search, and Sourcegraph code intelligence to provide answers that eliminate toil and keep human programmers in flow. You can think of Cody as your programmer buddy who has read through all the code in open source, all the questions on StackOverflow, and all your organization's private code, and is always there to answer questions you might have or suggest ways of doing something based on prior knowledge.
 
-Cody is in private alpha (tagged as an [experimental](../doc/admin/beta_and_experimental_features.md) feature) at this stage. If you are an existing Sourcegraph customer, contact your techical advisor or [sign up here](https://t.co/4TMTW1b3lR) to get access. New users should install the extension and connect to sourcegraph.com.
+Cody is in private alpha (tagged as an [experimental](../doc/admin/beta_and_experimental_features.md) feature) at this stage. 
+- If you are an existing Sourcegraph Enterprise customer or want to use Cody for your team, contact your techical advisor or [sign up here](https://t.co/4TMTW1b3lR) to get access
+- If you want to try Cody on open source code, sign up here and we'll send out instructions to connect Cody to sourcegraph.com.
 
 Currently, Cody is available for VS Code. More editors are on the way—[join the Discord](https://discord.gg/8wJF5EdAyA) to inquire about your editor of choice.
 
-## Install Cody
+## If you want to search open source code
 
 Cody uses Sourcegraph to fetch relevant context to generate answers and code. These instructions walk through installing Cody and connecting it to sourcegraph.com. For private instances of Sourcegraph, see the section below about enabling Cody for Enterprise.
 
@@ -28,7 +30,7 @@ After installing, we recommend the following:
 * Request embeddings for your repositories. Embeddings significantly improve the accuracy and quality of Cody's responses. To request embeddings, join the Cody Discord and ping a Sourcegraph team member.
 * Spread the word online and send us your feedback in Discord. Cody is open source and we'd love to hear from you if you have bug reports or feature requests.
 
-## Enable Cody for Enterprise
+## If you want to install Cody for Sourcegraph Enterprise
 
 There are two steps required to enable Cody for Enterprise: enable your Sourcegraph instance and configure the VS Code extension.
 
