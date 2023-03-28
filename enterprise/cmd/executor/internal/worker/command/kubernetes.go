@@ -19,8 +19,8 @@ import (
 )
 
 const (
-	kubernetesContainerName = "job-container"
-	kubernetesVolumeName    = "job-volume"
+	kubernetesContainerName = "sg-executor-job-container"
+	kubernetesVolumeName    = "sg-executor-job-volume"
 )
 
 // KubernetesMountPath is the path where the Kubernetes volume is mounted in the container.
