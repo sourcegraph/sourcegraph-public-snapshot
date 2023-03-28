@@ -26,6 +26,24 @@ export const PENDING_ACCESS_REQUESTS_LIST = gql`
 `
 
 /**
+ * Graphql query to list the total number of registered users and the number license seats.
+ */
+export const HAS_LICENSE_SEATS = gql`
+    query HasLicenseSeats {
+        site {
+            productSubscription {
+                license {
+                    userCount
+                }
+            }
+            users(deletedAt: { empty: true }) {
+                totalCount
+            }
+        }
+    }
+`
+
+/**
  * GraphQL mutation for rejecting an access request.
  */
 export const REJECT_ACCESS_REQUEST = gql`
