@@ -8,7 +8,12 @@ This image is used to prepare a Job for running a batch change.
 batcheshelper <pre|post> <step index> [OPTIONS]
 OPTIONS:
   -input string
-        The path to the input file. Defaults to "input.json". (default "input.json")
+        The input JSON file for the workspace execution. Defaults to "input.json". (default "input.json")
+  -previousStepPath string
+        The path to the previous steps result file. Defaults to current working directory.
+  -workspaceFiles string
+        The path to the workspace files. Defaults to "/data/workspace-files". (default "/data/workspace-files")
+
 ```
 
 ### Arguments
@@ -20,9 +25,11 @@ OPTIONS:
 
 ### Options
 
-| Flag     | Default Value | Description                                                                  |
-|----------|---------------|------------------------------------------------------------------------------|
-| `-input` | `input.json`  | The path to the input file. Defaults to "input.json". (default "input.json") |
+| Flag                | Default Value           | Description                                                                  |
+|---------------------|-------------------------|------------------------------------------------------------------------------|
+| `-input`            | `input.json`            | The path to the input file. Defaults to "input.json". (default "input.json") |
+| `-previousStepPath` | N/A                     | The path to the previous step's result file.                                 |
+| `-workspaceFiles`   | `/data/workspace-files` | The path to the workspace files.                                             |
 
 ## Modes
 
@@ -40,6 +47,12 @@ batcheshelper pre 0
 batcheshelper pre 0
 ```
 
-## Building
+## Build
+
+To build the image for local development, run:
+
+```shell
+IMAGE=sourcegraph/batcheshelper:insiders ./build.sh
+```
 
 ## Usage in Executors
