@@ -76,7 +76,7 @@ func Pre(
 
 	// Render the step.Run template.
 	var runScript bytes.Buffer
-	if err := template.RenderStepTemplate("step-run", step.Run, &runScript, &stepContext); err != nil {
+	if err = template.RenderStepTemplate("step-run", step.Run, &runScript, &stepContext); err != nil {
 		return errors.Wrap(err, "failed to render step.run")
 	}
 
@@ -95,7 +95,7 @@ func Pre(
 		runScript = *bytes.NewBufferString("exit 0")
 	} else {
 		tmpFileDir := filepath.Join(wd, fmt.Sprintf("step%dfiles", stepIdx))
-		if err := os.Mkdir(tmpFileDir, os.ModePerm); err != nil {
+		if err = os.Mkdir(tmpFileDir, os.ModePerm); err != nil {
 			return errors.Wrap(err, "failed to create directory for file mounts")
 		}
 
@@ -121,10 +121,10 @@ func Pre(
 
 	stepScriptPath := fmt.Sprintf("step%d.sh", stepIdx)
 	fullScript := []byte(envPreamble + fileMountsPreamble + runScript.String())
-	if err := os.WriteFile(stepScriptPath, fullScript, os.ModePerm); err != nil {
+	if err = os.WriteFile(stepScriptPath, fullScript, os.ModePerm); err != nil {
 		return errors.Wrap(err, "failed to write step script file")
 	}
-	if _, err := exec.CommandContext(ctx, "chmod", "+x", stepScriptPath).CombinedOutput(); err != nil {
+	if _, err = exec.CommandContext(ctx, "chmod", "+x", stepScriptPath).CombinedOutput(); err != nil {
 		return errors.Wrap(err, "failed to chmod step script file")
 	}
 
@@ -150,11 +150,11 @@ func createFilesToMount(tempDir string, step batcheslib.Step, stepContext *templ
 			return nil, errors.Wrap(err, "creating temporary file")
 		}
 
-		if _, err := fp.WriteString(content); err != nil {
+		if _, err = fp.WriteString(content); err != nil {
 			return nil, errors.Wrap(err, "writing to temporary file")
 		}
 
-		if err := fp.Close(); err != nil {
+		if err = fp.Close(); err != nil {
 			return nil, errors.Wrap(err, "closing temporary file")
 		}
 

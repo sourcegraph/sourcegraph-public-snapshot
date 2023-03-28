@@ -77,7 +77,7 @@ func Post(ctx context.Context, stepIdx int, executionInput batcheslib.Workspaces
 	}
 
 	// Render and evaluate outputs.
-	if err := batcheslib.SetOutputs(step.Outputs, outputs, &stepContext); err != nil {
+	if err = batcheslib.SetOutputs(step.Outputs, outputs, &stepContext); err != nil {
 		return errors.Wrap(err, "setting outputs")
 	}
 	for k, v := range outputs {
@@ -89,7 +89,7 @@ func Post(ctx context.Context, stepIdx int, executionInput batcheslib.Workspaces
 	if err != nil {
 		return errors.Wrap(err, "marshalling step result")
 	}
-	if err := os.WriteFile(fmt.Sprintf("step%d.json", stepIdx), cntnt, os.ModePerm); err != nil {
+	if err = os.WriteFile(fmt.Sprintf("step%d.json", stepIdx), cntnt, os.ModePerm); err != nil {
 		return errors.Wrap(err, "failed to write step result file")
 	}
 
