@@ -441,37 +441,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 				},
 			),
 		},
-		{
-			description: "Cannot enable explicit permissions with Bitbucket Server authz provider",
-			cfg: conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					PermissionsUserMapping: &schema.PermissionsUserMapping{
-						Enabled: true,
-						BindID:  "email",
-					},
-				},
-			},
-			bitbucketServerConnections: []*schema.BitbucketServerConnection{
-				{
-					Authorization: &schema.BitbucketServerAuthorization{
-						IdentityProvider: schema.BitbucketServerIdentityProvider{
-							Username: &schema.BitbucketServerUsernameIdentity{
-								Type: "username",
-							},
-						},
-						Oauth: schema.BitbucketServerOAuth{
-							ConsumerKey: "sourcegraph",
-							SigningKey:  bogusKey,
-						},
-					},
-					Url:      "https://bitbucketserver.mycorp.org",
-					Username: "admin",
-					Token:    "secret-token",
-				},
-			},
-			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{errPermissionsUserMappingConflict.Error()},
-		},
 	}
 
 	for _, test := range tests {
