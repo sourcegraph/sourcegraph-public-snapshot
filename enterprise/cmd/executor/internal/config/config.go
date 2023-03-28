@@ -114,7 +114,7 @@ func (c *Config) Load() {
 	c.KubernetesResourceRequestMemory = c.Get("EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY", "12Gi", "The minimum memory resource for Kubernetes Jobs.")
 	c.dockerAuthConfigStr = c.GetOptional("EXECUTOR_DOCKER_AUTH_CONFIG", "The content of the docker config file including auth for services. If using firecracker, only static credentials are supported, not credential stores nor credential helpers.")
 	c.KubernetesJobRetryBackoffLimit = c.GetInt("KUBERNETES_JOB_RETRY_BACKOFF_LIMIT", "600", "The number of retries before giving up on a Kubernetes job.")
-	c.KubernetesJobRetryBackoffDuration = c.GetInterval("KUBERNETES_JOB_RETRY_BACKOFF_DURATION", "1m", "The duration to wait before retrying a Kubernetes job.")
+	c.KubernetesJobRetryBackoffDuration = c.GetInterval("KUBERNETES_JOB_RETRY_BACKOFF_DURATION", "100ms", "The duration to wait before retrying a Kubernetes job.")
 
 	if c.dockerAuthConfigStr != "" {
 		c.dockerAuthConfigUnmarshalError = json.Unmarshal([]byte(c.dockerAuthConfigStr), &c.DockerAuthConfig)
