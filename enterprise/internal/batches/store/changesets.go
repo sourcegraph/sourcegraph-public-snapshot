@@ -686,8 +686,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 		if opts.OnlyArchived {
 			preds = append(preds, archivedInBatchChange(batchChangeID))
 		} else if !opts.IncludeArchived {
-			// we want to include changesets merged on the codehost that have been archived as part of the main
-			preds = append(preds, sqlf.Sprintf("(NOT (%s) OR changesets.computed_state = 'MERGED')", archivedInBatchChange(batchChangeID)))
+			preds = append(preds, sqlf.Sprintf("NOT (%s)", archivedInBatchChange(batchChangeID)))
 		}
 	}
 
@@ -1683,7 +1682,7 @@ WHERE
 
 func archivedInBatchChange(batchChangeID string) *sqlf.Query {
 	return sqlf.Sprintf(
-		"(COALESCE((batch_change_ids->%s->>'isArchived')::bool, false) OR COALESCE((batch_change_ids->%s->>'archive')::bool, false))",
+		"((COALESCE((batch_change_ids->%s->>'isArchived')::bool, false) OR COALESCE((batch_change_ids->%s->>'archive')::bool, false)) AND changesets.computed_state <> 'MERGED')",
 		batchChangeID,
 		batchChangeID,
 	)
