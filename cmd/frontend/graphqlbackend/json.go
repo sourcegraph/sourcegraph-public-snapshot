@@ -8,6 +8,7 @@ import (
 
 // JSONValue implements the JSONValue scalar type. In GraphQL queries, it is represented the JSON
 // representation of its Go value.
+// Note: we have both pointer and value receivers on this type, and we are fine with that.
 type JSONValue struct{ Value any }
 
 func (JSONValue) ImplementsGraphQLType(name string) bool {
