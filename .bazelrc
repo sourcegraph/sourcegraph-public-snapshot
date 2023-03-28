@@ -18,5 +18,6 @@ try-import %workspace%/.aspect/bazelrc/user.bazelrc
 # Enable bazel hack for autogold; apply to both build & test to avoid busting analysis cache
 build --test_env=ENABLE_BAZEL_PACKAGES_LOAD_HACK=true
 # Except in CI run E2E tests in headless mode
+try-import %workspace%/user.bazelrc
 build --test_env=E2E_HEADLESS=true
-build --test_env=E2E_SOURCEGRAPH_BASE_URL="https://sourcegraph.test:3443"
+build --test_env=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080"

@@ -26,7 +26,6 @@ NON_BUNDLED_DEPS = [
     "//:node_modules/puppeteer",
 ]
 
-
 def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, use_xvfb = False, **kwargs):
     bundle_name = "%s_bundle" % name
 
@@ -60,7 +59,6 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, use_xvfb 
         ":%s" % bundle_name,
     ]
 
-
     env = dict(env, **{
         "HEADLESS": "$$E2E_HEADLESS",
         # Add environment variable so that mocha writes its test xml
@@ -71,7 +69,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, use_xvfb 
         "TEST_USER_EMAIL": "test@sourcegraph.com",
         "TEST_USER_PASSWORD": "supersecurepassword",
         "SOURCEGRAPH_BASE_URL": "$$E2E_SOURCEGRAPH_BASE_URL",
-        "GH_TOKEN": "fake-gh-token",
+        "GH_TOKEN": "$$GH_TOKEN",
         "SOURCEGRAPH_SUDO_TOKEN": "fake-sg-token",
         "NO_CLEANUP": "true",
         "KEEP_BROWSER": "true",
