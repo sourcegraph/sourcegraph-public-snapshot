@@ -11,7 +11,8 @@ import { Login } from './Login'
 import { NavBar } from './NavBar'
 import { Recipes } from './Recipes'
 import { Settings } from './Settings'
-import { ChatMessage, View } from './utils/types'
+import { UserHistory } from './UserHistory'
+import { ChatHistory, ChatMessage, View } from './utils/types'
 import { vscodeAPI } from './utils/VSCodeApi'
 
 export function App(): React.ReactElement {
@@ -21,14 +22,18 @@ export function App(): React.ReactElement {
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [isValidLogin, setIsValidLogin] = useState<boolean>()
+    const [formInput, setFormInput] = useState('')
+    const [inputHistory, setInputHistory] = useState<string[] | []>([])
+    const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
 
     useEffect(() => {
         vscodeAPI.onMessage(message => {
             switch (message.data.type) {
                 case 'transcript': {
                     if (message.data.isMessageInProgress) {
-                        setTranscript(message.data.messages.slice(0, -1))
-                        setMessageInProgress(message.data.messages[message.data.messages.length - 1])
+                        const msgLength = message.data.messages.length - 1
+                        setTranscript(message.data.messages.slice(0, msgLength))
+                        setMessageInProgress(message.data.messages[msgLength])
                     } else {
                         setTranscript(message.data.messages)
                         setMessageInProgress(null)
@@ -55,6 +60,10 @@ export function App(): React.ReactElement {
                 case 'debug':
                     setDebugLog([...debugLog, message.data.message])
                     break
+                case 'history':
+                    setInputHistory(message.data.messages.input)
+                    setUserHistory(message.data.messages.chat)
+                    break
             }
         })
 
@@ -78,6 +87,7 @@ export function App(): React.ReactElement {
     const onResetClick = useCallback(() => {
         setView('chat')
         setDebugLog([])
+        setFormInput('')
         setMessageInProgress(null)
         setTranscript([])
         vscodeAPI.postMessage({ command: 'reset' })
@@ -94,9 +104,25 @@ export function App(): React.ReactElement {
             {view && view !== 'login' && <NavBar view={view} setView={setView} devMode={devMode} />}
             {view === 'about' && <About />}
             {view === 'debug' && devMode && <Debug debugLog={debugLog} />}
+            {view === 'history' && (
+                <UserHistory
+                    userHistory={userHistory}
+                    setUserHistory={setUserHistory}
+                    setInputHistory={setInputHistory}
+                />
+            )}
             {view === 'recipes' && <Recipes />}
             {view === 'settings' && <Settings setView={setView} onLogout={onLogout} />}
-            {view === 'chat' && <Chat messageInProgress={messageInProgress} transcript={transcript} />}
+            {view === 'chat' && (
+                <Chat
+                    messageInProgress={messageInProgress}
+                    transcript={transcript}
+                    formInput={formInput}
+                    setFormInput={setFormInput}
+                    inputHistory={inputHistory}
+                    setInputHistory={setInputHistory}
+                />
+            )}
         </div>
     )
 }
