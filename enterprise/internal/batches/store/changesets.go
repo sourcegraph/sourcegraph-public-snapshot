@@ -686,7 +686,8 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 		if opts.OnlyArchived {
 			preds = append(preds, archivedInBatchChange(batchChangeID))
 		} else if !opts.IncludeArchived {
-			preds = append(preds, sqlf.Sprintf("NOT (%s)", archivedInBatchChange(batchChangeID)))
+			// we want to include changesets merged on the codehost that have been archived as part of the main
+			preds = append(preds, sqlf.Sprintf("(NOT (%s) OR changesets.computed_state = 'MERGED')", archivedInBatchChange(batchChangeID)))
 		}
 	}
 
@@ -1526,10 +1527,16 @@ SELECT
 	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'UNPUBLISHED') AS unpublished,
 	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'CLOSED') AS closed,
 	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'DRAFT') AS draft,
-	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'MERGED') AS merged,
+
+	-- we count all changesets that are merged regardless of if they belong to an archived
+	-- batch change or not.
+	COUNT(*) FILTER (WHERE changesets.computed_state = 'MERGED') AS merged,
+
 	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'OPEN') AS open,
 	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'DELETED') AS deleted,
-	COUNT(*) FILTER (WHERE %s) AS archived
+
+	-- merged changesets are excluded from the archived list.
+	COUNT(*) FILTER (WHERE %s AND changesets.computed_state <> 'MERGED') AS archived
 FROM changesets
 INNER JOIN repo on repo.id = changesets.repo_id
 WHERE
@@ -1699,7 +1706,6 @@ func getChangesetsStatsQuery(batchChangeID int64) *sqlf.Query {
 		archived, archived,
 		archived, archived,
 		archived, archived,
-		archived,
 		sqlf.Join(preds, " AND "),
 	)
 }
