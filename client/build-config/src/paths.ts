@@ -28,27 +28,6 @@ export const STATIC_ASSETS_PATH = resolveWithSymlink(
     IS_BAZEL && process.env.WEB_BUNDLE_PATH ? process.env.WEB_BUNDLE_PATH : 'ui/assets'
 )
 
-console.log({
-    ROOT_PATH,
-    STATIC_ASSETS_PATH: process.env.STATIC_ASSETS_PATH,
-    WEB_BUNDLE_PATH: process.env.WEB_BUNDLE_PATH,
-
-    RUNFILES_DIR: process.env.RUNFILES_DIR,
-    RUNFILES: process.env.RUNFILES,
-    RUNFILES_MANIFEST_FILE: process.env.RUNFILES_MANIFEST_FILE,
-
-    BAZEL_WORKSPACE: process.env.BAZEL_WORKSPACE,
-    JS_BINARY__WORKSPACE: process.env.JS_BINARY__WORKSPACE,
-
-    BAZEL_OUTPUT_PATH: process.env.BAZEL_OUTPUT_PATH,
-
-    BAZEL_TARGET: process.env.BAZEL_TARGET,
-    JS_BINARY__TARGET: process.env.JS_BINARY__TARGET,
-
-    BAZEL_BINDIR: process.env.BAZEL_BINDIR,
-    BAZEL_TEST: process.env.BAZEL_TEST,
-})
-
 function getWorkspaceNodeModulesPaths(): string[] {
     const workspaces = fs.readdirSync(WORKSPACES_PATH)
     const nodeModulesPaths = workspaces.map(workspace => resolveWithSymlink(WORKSPACES_PATH, workspace, 'node_modules'))
