@@ -10,7 +10,7 @@ Cody is an AI coding assistant that lives in your editor that can find, explain,
 
 Cody is in private alpha (tagged as an [experimental](../doc/admin/beta_and_experimental_features.md) feature) at this stage. 
 - If you are an existing Sourcegraph Enterprise customer or want to use Cody for your team, contact your techical advisor or [sign up here](https://sourcegraph.typeform.com/to/pIXTgwrd) to get access
-- If you want to try Cody on open source code, sign up here and we'll send out instructions to connect Cody to sourcegraph.com.
+- If you want to try Cody on open source code, sign up [here](https://forms.gle/cffMa8mrr8YuHv8o8) and we'll e-mail you instructions to connect Cody to sourcegraph.com as soon as your account is added.
 
 Currently, Cody is available for VS Code. More editors are on the way—[join the Discord](https://discord.gg/8wJF5EdAyA) to inquire about your editor of choice.
 
