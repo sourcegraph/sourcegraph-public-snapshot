@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/run"
@@ -23,7 +24,8 @@ func main() {
 }
 
 func doMain() error {
-	inputPath := flag.String("input", "input.json", "The path to the input file. Defaults to \"input.json\".")
+	inputPath := flag.String("input", "input.json", "The input JSON file for the workspace execution. Defaults to \"input.json\".")
+	previousPath := flag.String("previousStepPath", "", "The path to the previous step's result file. Defaults to current working directory.")
 	flag.Usage = usage
 	flag.Parse()
 
@@ -37,7 +39,7 @@ func doMain() error {
 		return err
 	}
 
-	previousResult, err := parsePreviousStepResult(arguments.step)
+	previousResult, err := parsePreviousStepResult(*previousPath, arguments.step)
 	if err != nil {
 		return err
 	}
@@ -60,8 +62,10 @@ func usage() {
 }
 
 func parseArgs(arguments []string) (args, error) {
-	if len(arguments) != 2 {
+	if len(arguments) < 2 {
 		return args{}, errors.New("missing arguments")
+	} else if len(arguments) > 2 {
+		return args{}, errors.New("too many arguments")
 	}
 
 	mode := arguments[0]
@@ -96,10 +100,10 @@ func parseInput(inputPath string) (batcheslib.WorkspacesExecutionInput, error) {
 	return executionInput, nil
 }
 
-func parsePreviousStepResult(step int) (execution.AfterStepResult, error) {
+func parsePreviousStepResult(path string, step int) (execution.AfterStepResult, error) {
 	var previousResult execution.AfterStepResult
 	if step > 0 {
-		stepResultPath := fmt.Sprintf("step%d.json", step-1)
+		stepResultPath := filepath.Join(path, fmt.Sprintf("step%d.json", step-1))
 		stepJSON, err := os.ReadFile(stepResultPath)
 		if err != nil {
 			return previousResult, errors.Wrap(err, "failed to read step result file")
