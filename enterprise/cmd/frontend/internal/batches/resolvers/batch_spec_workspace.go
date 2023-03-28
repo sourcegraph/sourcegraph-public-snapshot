@@ -583,7 +583,7 @@ var logKeyPrefixTeardown = regexp.MustCompile("^teardown\\.")
 func (r *batchSpecWorkspaceStagesResolver) executionLogEntryResolversWithPrefix(prefix *regexp.Regexp) []graphqlbackend.ExecutionLogEntryResolver {
 	var resolvers []graphqlbackend.ExecutionLogEntryResolver
 	for _, entry := range r.execution.ExecutionLogs {
-		if prefix.MatchString(entry.Key) {
+		if !prefix.MatchString(entry.Key) {
 			continue
 		}
 		r := graphqlbackend.NewExecutionLogEntryResolver(r.store.DatabaseDB(), entry)

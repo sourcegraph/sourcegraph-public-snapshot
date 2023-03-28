@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/log"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
@@ -87,9 +88,13 @@ func New(
 	}
 
 	if config.IsKubernetes() {
-		kubeConfig, err := clientcmd.BuildConfigFromFlags("", runnerOpts.KubernetesOptions.ConfigPath)
+		configPath := runnerOpts.KubernetesOptions.ConfigPath
+		kubeConfig, err := clientcmd.BuildConfigFromFlags("", configPath)
 		if err != nil {
-			return nil, err
+			kubeConfig, err = rest.InClusterConfig()
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to create kubernetes client config")
+			}
 		}
 		clientset, err := kubernetes.NewForConfig(kubeConfig)
 		if err != nil {

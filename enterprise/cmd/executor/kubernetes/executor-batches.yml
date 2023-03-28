@@ -2,12 +2,14 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: sg-executor
+  namespace: default
 spec:
   selector:
     matchLabels:
       app: sg-executor
   template:
     metadata:
+      namespace: default
       labels:
         app: sg-executor
     spec:
@@ -37,6 +39,8 @@ spec:
               value: condensed
             - name: SRC_TRACE_LOG
               value: "false"
+            - name: EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY
+              value: 1Gi
           volumeMounts:
             - mountPath: /data
               name: sg-executor-volume
@@ -49,6 +53,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: sg-executor-pvc
+  namespace: default
 spec:
   accessModes:
     - ReadWriteOnce
@@ -60,6 +65,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: sg-executor
+  namespace: default
   labels:
     app: sg-executor
 spec:
@@ -80,8 +86,8 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  namespace: default
   name: sg-executor-job-role
+  namespace: default
 rules:
   - apiGroups: ["batch"]
     resources: ["jobs"]
@@ -91,6 +97,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: sg-executor-log-role
+  namespace: default
 rules:
   - apiGroups: [""]
     resources: ["pods", "pods/log"]
@@ -116,7 +123,7 @@ metadata:
   name: sg-executor-log-role-binding
 subjects:
   - kind: ServiceAccount
-    name: executor-service-account
+    name: sg-executor-service-account
 roleRef:
   kind: Role
   name: sg-executor-log-role
