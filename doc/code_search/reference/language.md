@@ -232,11 +232,11 @@ ComplexDiagram(
 
 Search a repository at a given revision, for example, a branch name, commit hash, or Git tag.
 
-**Example:** [`repo:^github\.com/gorilla/mux$@948bec34 testroute` ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/gorilla/mux%24%40948bec34+testroute&patternType=literal) or [`repo:^github\.com/gorilla/mux$ rev:v1.8.0 testroute` ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/gorilla/mux+rev:v1.8.0+testroute&patternType=literal)
+**Example:** [`repo:^github\.com/sourcegraph/sourcegraph$@75ba004 get_embeddings` ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%4075ba004+get_embeddings+&patternType=literal) or [`repo:^github\.com/sourcegraph/sourcegraph$ rev:v5.0.0 get_embeddings` ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+rev:v5.0.0+get_embeddings&patternType=literal)
 
 You can search multiple revisions by separating the revisions with `:`. Specify `HEAD` for the default branch.
 
-**Example:** [`repo:^github\.com/gorilla/mux$@v1.7.4:v1.4.0 testing.T` ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/gorilla/mux%24%40v1.7.4:v1.4.0+testing.T&patternType=literal) or [`repo:^github\.com/gorilla/mux$ rev:v1.7.4:v1.4.0 testing.T` ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/gorilla/mux%24+rev:v1.7.4:v1.4.0+testing.T&patternType=literal)
+**Example:** [`repo:^github\.com/sourcegraph/sourcegraph$ rev:v4.5.0:v5.0.0 disableNonCriticalTelemetry` ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+rev:v4.5.0:v5.0.0+disableNonCriticalTelemetry&patternType=literal) or [`repo:^github\.com/sourcegraph/sourcegraph$@v4.5.0:v5.0.0 disableNonCriticalTelemetry` ↗](https://sourcegraph.com/search?q=context%3Aglobal+repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%40v4.5.0%3Av5.0.0+disableNonCriticalTelemetry&patternType=literal)
 
 ### File
 
