@@ -808,12 +808,13 @@ var minCreated = time.Date(2007, time.June, 1, 0, 0, 0, 0, time.UTC)
 
 type dateRange struct{ From, To time.Time }
 
+var createdRegexp = regexp.MustCompile(`created:([^\s]+)`) // Matches the term "created:" followed by all non-white-space text
+
 // stripDateRange strips the `created:` filter from the given string (modifying it in place)
 // and returns a pointer to the resulting dateRange object.
 // If no dateRange could be parsed from the string, nil is returned and the string is left unchanged.
 func stripDateRange(s *string) *dateRange {
-	re := regexp.MustCompile(`created:([^\s]+)`)
-	matches := re.FindStringSubmatch(*s)
+	matches := createdRegexp.FindStringSubmatch(*s)
 	if len(matches) < 2 {
 		return nil
 	}
