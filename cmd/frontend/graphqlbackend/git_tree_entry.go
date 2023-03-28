@@ -312,31 +312,6 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 	})
 }
 
-func (r *GitTreeEntryResolver) CodeIntelSupport(ctx context.Context) (resolverstubs.GitBlobCodeIntelSupportResolver, error) {
-	repo, err := r.commit.repoResolver.repo(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return EnterpriseResolvers.codeIntelResolver.GitBlobCodeIntelInfo(ctx, &resolverstubs.GitTreeEntryCodeIntelInfoArgs{
-		Repo: repo,
-		Path: r.Path(),
-	})
-}
-
-func (r *GitTreeEntryResolver) CodeIntelInfo(ctx context.Context) (resolverstubs.GitTreeCodeIntelSupportResolver, error) {
-	repo, err := r.commit.repoResolver.repo(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return EnterpriseResolvers.codeIntelResolver.GitTreeCodeIntelInfo(ctx, &resolverstubs.GitTreeEntryCodeIntelInfoArgs{
-		Repo:   repo,
-		Commit: string(r.Commit().OID()),
-		Path:   r.Path(),
-	})
-}
-
 func (r *GitTreeEntryResolver) LocalCodeIntel(ctx context.Context) (*JSONValue, error) {
 	repo, err := r.commit.repoResolver.repo(ctx)
 	if err != nil {

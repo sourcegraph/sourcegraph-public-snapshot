@@ -9,6 +9,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
+	"github.com/opentracing/opentracing-go/log"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	autoindexingShared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
@@ -20,19 +24,123 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type InferredAvailableIndexers struct {
-	Indexer types.CodeIntelIndexer
-	Roots   []string
+func (r *rootResolver) CodeIntelSummary(ctx context.Context) (_ resolverstubs.CodeIntelSummaryResolver, err error) {
+	ctx, _, endObservation := r.operations.codeIntelSummary.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	return newSummaryResolver(r.autoindexSvc, r.locationResolverFactory.Create()), nil
 }
+
+func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID) (_ resolverstubs.CodeIntelRepositorySummaryResolver, err error) {
+	ctx, errTracer, endObservation := r.operations.repositorySummary.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repoID", string(repoID)),
+	}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	id, err := resolverstubs.UnmarshalID[int](repoID)
+	if err != nil {
+		return nil, err
+	}
+
+	lastUploadRetentionScan, err := r.uploadSvc.GetLastUploadRetentionScanForRepository(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	lastIndexScan, err := r.autoindexSvc.GetLastIndexScanForRepository(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	recentUploads, err := r.uploadSvc.GetRecentUploadsSummary(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	recentIndexes, err := r.autoindexSvc.GetRecentIndexesSummary(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create blocklist for indexes that have already been uploaded.
+	blocklist := map[string]struct{}{}
+	for _, u := range recentUploads {
+		key := shared.GetKeyForLookup(u.Indexer, u.Root)
+		blocklist[key] = struct{}{}
+	}
+	for _, u := range recentIndexes {
+		key := shared.GetKeyForLookup(u.Indexer, u.Root)
+		blocklist[key] = struct{}{}
+	}
+
+	commit := "HEAD"
+	var limitErr error
+
+	indexJobs, err := r.autoindexSvc.InferIndexJobsFromRepositoryStructure(ctx, id, commit, "", false)
+	if err != nil {
+		if !autoindexing.IsLimitError(err) {
+			return nil, err
+		}
+
+		limitErr = errors.Append(limitErr, err)
+	}
+	// indexJobHints, err := r.autoindexSvc.InferIndexJobHintsFromRepositoryStructure(ctx, repoID, commit)
+	// if err != nil {
+	// 	if !errors.As(err, &inference.LimitError{}) {
+	// 		return nil, err
+	// 	}
+
+	// 	limitErr = errors.Append(limitErr, err)
+	// }
+
+	inferredAvailableIndexers := map[string]shared.AvailableIndexer{}
+	inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobs, blocklist, inferredAvailableIndexers)
+	// inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
+
+	inferredAvailableIndexersResolver := make([]inferredAvailableIndexers2, 0, len(inferredAvailableIndexers))
+	for _, indexer := range inferredAvailableIndexers {
+		inferredAvailableIndexersResolver = append(inferredAvailableIndexersResolver,
+			inferredAvailableIndexers2{
+				Indexer: indexer.Indexer,
+				Roots:   indexer.Roots,
+			},
+		)
+	}
+
+	summary := RepositorySummary{
+		RecentUploads:           recentUploads,
+		RecentIndexes:           recentIndexes,
+		LastUploadRetentionScan: lastUploadRetentionScan,
+		LastIndexScan:           lastIndexScan,
+	}
+
+	return newRepositorySummaryResolver(
+		r.uploadSvc,
+		r.policySvc,
+		r.gitserverClient,
+		r.siteAdminChecker,
+		r.repoStore,
+		r.locationResolverFactory.Create(),
+		summary,
+		inferredAvailableIndexersResolver,
+		limitErr,
+		r.prefetcherFactory.Create(),
+		errTracer,
+	), nil
+}
+
+//
+//
 
 type summaryResolver struct {
 	autoindexSvc     AutoIndexingService
 	locationResolver *sharedresolvers.CachedLocationResolver
 }
 
-func NewSummaryResolver(autoindexSvc AutoIndexingService, locationResolver *sharedresolvers.CachedLocationResolver) resolverstubs.CodeIntelSummaryResolver {
+func newSummaryResolver(autoindexSvc AutoIndexingService, locationResolver *sharedresolvers.CachedLocationResolver) resolverstubs.CodeIntelSummaryResolver {
 	return &summaryResolver{
 		autoindexSvc:     autoindexSvc,
 		locationResolver: locationResolver,
@@ -124,18 +232,8 @@ func (r *summaryResolver) RepositoriesWithConfiguration(ctx context.Context, arg
 	return resolverstubs.NewCursorWithTotalCountConnectionResolver(resolvers, endCursor, int32(totalCount)), nil
 }
 
-type codeIntelRepositoryWithErrorResolver struct {
-	repositoryResolver resolverstubs.RepositoryResolver
-	count              int
-}
-
-func (r *codeIntelRepositoryWithErrorResolver) Repository() resolverstubs.RepositoryResolver {
-	return r.repositoryResolver
-}
-
-func (r *codeIntelRepositoryWithErrorResolver) Count() int32 {
-	return int32(r.count)
-}
+//
+//
 
 type codeIntelRepositoryWithConfigurationResolver struct {
 	repositoryResolver resolverstubs.RepositoryResolver
@@ -173,6 +271,25 @@ type RepositorySummary struct {
 	LastIndexScan           *time.Time
 }
 
+//
+//
+
+type codeIntelRepositoryWithErrorResolver struct {
+	repositoryResolver resolverstubs.RepositoryResolver
+	count              int
+}
+
+func (r *codeIntelRepositoryWithErrorResolver) Repository() resolverstubs.RepositoryResolver {
+	return r.repositoryResolver
+}
+
+func (r *codeIntelRepositoryWithErrorResolver) Count() int32 {
+	return int32(r.count)
+}
+
+//
+//
+
 type repositorySummaryResolver struct {
 	uploadsSvc        UploadsService
 	policySvc         PolicyService
@@ -180,14 +297,19 @@ type repositorySummaryResolver struct {
 	siteAdminChecker  sharedresolvers.SiteAdminChecker
 	repoStore         database.RepoStore
 	summary           RepositorySummary
-	availableIndexers []InferredAvailableIndexers
+	availableIndexers []inferredAvailableIndexers2
 	limitErr          error
 	prefetcher        *sharedresolvers.Prefetcher
 	locationResolver  *sharedresolvers.CachedLocationResolver
 	errTracer         *observation.ErrCollector
 }
 
-func NewRepositorySummaryResolver(
+type inferredAvailableIndexers2 struct {
+	Indexer types.CodeIntelIndexer
+	Roots   []string
+}
+
+func newRepositorySummaryResolver(
 	uploadsSvc UploadsService,
 	policySvc PolicyService,
 	gitserverClient gitserver.Client,
@@ -195,7 +317,7 @@ func NewRepositorySummaryResolver(
 	repoStore database.RepoStore,
 	locationResolver *sharedresolvers.CachedLocationResolver,
 	summary RepositorySummary,
-	availableIndexers []InferredAvailableIndexers,
+	availableIndexers []inferredAvailableIndexers2,
 	limitErr error,
 	prefetcher *sharedresolvers.Prefetcher,
 	errTracer *observation.ErrCollector,
@@ -279,6 +401,9 @@ func (r *repositorySummaryResolver) LimitError() *string {
 	return nil
 }
 
+//
+//
+
 type inferredAvailableIndexersResolver struct {
 	indexer resolverstubs.CodeIntelIndexerResolver
 	roots   []string
@@ -311,12 +436,6 @@ func (r *inferredAvailableIndexersResolver) RootsWithKeys() []resolverstubs.Root
 	return resolvers
 }
 
-func comparisonKey(root, indexer string) string {
-	hash := sha256.New()
-	_, _ = hash.Write([]byte(strings.Join([]string{root, indexer}, "\x00")))
-	return base64.URLEncoding.EncodeToString(hash.Sum(nil))
-}
-
 type rootWithKeyResolver struct {
 	root string
 	key  string
@@ -328,4 +447,13 @@ func (r *rootWithKeyResolver) Root() string {
 
 func (r *rootWithKeyResolver) ComparisonKey() string {
 	return r.key
+}
+
+//
+//
+
+func comparisonKey(root, indexer string) string {
+	hash := sha256.New()
+	_, _ = hash.Write([]byte(strings.Join([]string{root, indexer}, "\x00")))
+	return base64.URLEncoding.EncodeToString(hash.Sum(nil))
 }

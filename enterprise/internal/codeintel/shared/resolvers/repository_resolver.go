@@ -23,10 +23,10 @@ func NewRepositoryFromID(ctx context.Context, repoStore database.RepoStore, id i
 		return nil, err
 	}
 
-	return NewRepositoryResolver(repo), nil
+	return newRepositoryResolver(repo), nil
 }
 
-func NewRepositoryResolver(repo *types.Repo) *RepositoryResolver {
+func newRepositoryResolver(repo *types.Repo) *RepositoryResolver {
 	return &RepositoryResolver{repo: repo}
 }
 
@@ -43,7 +43,7 @@ func (r *RepositoryResolver) Type(ctx context.Context) (*types.Repo, error) {
 }
 
 func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *resolverstubs.RepositoryCommitArgs, commitID api.CommitID) (resolverstubs.GitCommitResolver, error) {
-	resolver := NewGitCommitResolver(r, commitID)
+	resolver := newGitCommitResolver(r, commitID)
 	if args.InputRevspec != nil {
 		resolver.inputRev = args.InputRevspec
 	} else {
@@ -70,20 +70,20 @@ func (r *RepositoryResolver) RepoName() api.RepoName {
 }
 
 func (r *RepositoryResolver) ExternalRepository() resolverstubs.ExternalRepositoryResolver {
-	return NewExternalRepositoryResolver(r.repo.ExternalRepo.ServiceID, r.repo.ExternalRepo.ServiceType)
+	return newExternalRepositoryResolver(r.repo.ExternalRepo.ServiceID, r.repo.ExternalRepo.ServiceType)
 }
 
-type ExternalRepositoryResolver struct {
+type externalRepositoryResolver struct {
 	serviceID   string
 	serviceType string
 }
 
-func NewExternalRepositoryResolver(serviceID, serviceType string) *ExternalRepositoryResolver {
-	return &ExternalRepositoryResolver{
+func newExternalRepositoryResolver(serviceID, serviceType string) *externalRepositoryResolver {
+	return &externalRepositoryResolver{
 		serviceID:   serviceID,
 		serviceType: serviceType,
 	}
 }
 
-func (r *ExternalRepositoryResolver) ServiceID() string   { return r.serviceID }
-func (r *ExternalRepositoryResolver) ServiceType() string { return r.serviceType }
+func (r *externalRepositoryResolver) ServiceID() string   { return r.serviceID }
+func (r *externalRepositoryResolver) ServiceType() string { return r.serviceType }
