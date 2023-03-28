@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -443,6 +444,69 @@ func TestMatchOrg(t *testing.T) {
 			t.Errorf("error:\nhave: %s\nwant: %s", got, want)
 		}
 	}
+}
+
+func TestGitHubSource_doRecursively(t *testing.T) {
+	rcache.SetupForTest(t)
+	ctx := context.Background()
+
+	t.Run("re-paginates through a search", func(t *testing.T) {
+		requestCounter := 0
+		// We create a server that returns a repository count of 5, but only returns 4 repositories.
+		// After the server has been hit two times, a fifth repository is added to the result set.
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			defer func() {
+				requestCounter += 1
+			}()
+
+			resp := struct {
+				Data struct {
+					Search struct {
+						RepositoryCount int
+						PageInfo        struct {
+							HasNextPage bool
+							EndCursor   github.Cursor
+						}
+						Nodes []github.Repository
+					}
+				}
+			}{}
+
+			resp.Data.Search.RepositoryCount = 5
+			resp.Data.Search.Nodes = []github.Repository{
+				{DatabaseID: 1}, {DatabaseID: 2}, {DatabaseID: 3}, {DatabaseID: 4},
+			}
+
+			if requestCounter == 2 {
+				resp.Data.Search.Nodes = append(resp.Data.Search.Nodes, github.Repository{DatabaseID: 5})
+			}
+
+			encoder := json.NewEncoder(w)
+			require.NoError(t, encoder.Encode(resp))
+		}))
+		defer srv.Close()
+
+		apiURL, err := url.Parse(srv.URL)
+		require.NoError(t, err)
+		ghCli := github.NewV4Client("", apiURL, nil, nil)
+		q := newRepositoryQuery("stars:>=5", ghCli, logtest.NoOp(t))
+		q.Limit = 5
+
+		// Fetch the repositories
+		results := make(chan *githubResult)
+		go func() {
+			q.doRecursively(ctx, results)
+			close(results)
+		}()
+
+		repos := []github.Repository{}
+		for res := range results {
+			repos = append(repos, *res.repo)
+		}
+
+		// Confirm that we received 5 repositories, confirming that we retried the request.
+		assert.Len(t, repos, 5)
+	})
 }
 
 func TestGithubSource_ListRepos(t *testing.T) {

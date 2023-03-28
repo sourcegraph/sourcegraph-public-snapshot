@@ -799,11 +799,7 @@ func (s *GitHubSource) listAffiliatedPage(ctx context.Context, first int, result
 // It returns the repositories matching a GitHub's advanced repository search query
 // via the GraphQL API.
 func (s *GitHubSource) listSearch(ctx context.Context, q string, results chan *githubResult) {
-	// First we need to parse the query to see if it is querying within a date range,
-	// and if so, strip that date range from the query.
-	dr := stripDateRange(&q)
-
-	newRepositoryQuery(q, s.v4Client, s.logger, dr).DoWithRefinedWindow(ctx, results)
+	newRepositoryQuery(q, s.v4Client, s.logger).DoWithRefinedWindow(ctx, results)
 }
 
 // GitHub was founded on February 2008, so this minimum date covers all repos
@@ -917,21 +913,24 @@ type repositoryQuery struct {
 	RepoCount searchReposCount
 }
 
-func newRepositoryQuery(query string, searcher *github.V4Client, logger log.Logger, created *dateRange) *repositoryQuery {
-	if created == nil {
-		created = &dateRange{}
+func newRepositoryQuery(query string, searcher *github.V4Client, logger log.Logger) *repositoryQuery {
+	// First we need to parse the query to see if it is querying within a date range,
+	// and if so, strip that date range from the query.
+	dr := stripDateRange(&query)
+	if dr == nil {
+		dr = &dateRange{}
 	}
-	if created.From.IsZero() {
-		created.From = minCreated
+	if dr.From.IsZero() {
+		dr.From = minCreated
 	}
-	if created.To.IsZero() {
-		created.To = time.Now()
+	if dr.To.IsZero() {
+		dr.To = time.Now()
 	}
 	return &repositoryQuery{
 		Query:    query,
 		Searcher: searcher,
 		Logger:   logger,
-		Created:  created,
+		Created:  dr,
 	}
 }
 
