@@ -11,8 +11,6 @@ import { Card, Text, Alert, PageSwitcher, Link, Select, Button, Badge, Tooltip }
 
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import {
-    PendingAccessRequestsListResult,
-    PendingAccessRequestsListVariables,
     RejectAccessRequestResult,
     RejectAccessRequestVariables,
     ApproveAccessRequestResult,
@@ -24,6 +22,9 @@ import {
     HasLicenseSeatsResult,
     HasLicenseSeatsVariables,
     AccessRequestStatus,
+    AccessRequestNode,
+    GetAccessRequestsVariables,
+    GetAccessRequestsResult,
 } from '../../graphql-operations'
 import { useURLSyncedString } from '../../hooks/useURLSyncedString'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -35,7 +36,7 @@ import {
     APPROVE_ACCESS_REQUEST,
     ACCESS_REQUEST_CREATE_USER,
     DOES_USERNAME_EXIST,
-    PENDING_ACCESS_REQUESTS_LIST,
+    GET_ACCESS_REQUESTS_LIST,
     REJECT_ACCESS_REQUEST,
     HAS_LICENSE_SEATS,
 } from './queries'
@@ -191,15 +192,10 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
         loading,
         refetch,
         ...paginationArgs
-    } = usePageSwitcherPagination<
-        PendingAccessRequestsListResult,
-        PendingAccessRequestsListVariables,
-        PendingAccessRequestsListResult['accessRequests']['nodes'][0]
-    >({
-        query: PENDING_ACCESS_REQUESTS_LIST,
+    } = usePageSwitcherPagination<GetAccessRequestsResult, GetAccessRequestsVariables, AccessRequestNode>({
+        query: GET_ACCESS_REQUESTS_LIST,
         variables: {
             status: status as AccessRequestStatus,
-            first: FIRST_COUNT,
         },
         getConnection: result => result.data?.accessRequests,
         options: {
