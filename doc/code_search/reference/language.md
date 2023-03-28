@@ -849,7 +849,7 @@ Include results having a commit date after the specified time frame. Times are i
 - `1632782809`
 - `1632782809 -0600`
 
-**Example:** [`after:"6 weeks ago"` ↗](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph$+type:diff+author:nick+after:%226+weeks+ago%22) [`after:"november 1 2019"` ↗](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph$+type:diff+author:nick+after:%22november+1+2019%22)
+**Example:** [`after:"6 weeks ago"` ↗](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph%24+type:diff+after:%226+weeks+ago%22&patternType=standard) [`after:"november 1 2019"` ↗](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph$+type:diff+author:nick+after:%22november+1+2019%22)
 
 ### Message
 
