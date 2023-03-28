@@ -289,7 +289,7 @@ func (s *Service) serveDeleteObject(w http.ResponseWriter, r *http.Request, buck
 
 // POST /<bucket>?delete
 // https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html
-func (s *Service) serveDeleteObjects(w http.ResponseWriter, r *http.Request, bucketName string) error {
+func (s *Service) serveDeleteObjects(_ http.ResponseWriter, r *http.Request, bucketName string) error {
 	var req s3DeleteObjectsRequest
 	defer r.Body.Close()
 	if err := xml.NewDecoder(r.Body).Decode(&req); err != nil {
