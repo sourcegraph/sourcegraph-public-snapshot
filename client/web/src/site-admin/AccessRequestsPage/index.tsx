@@ -37,6 +37,7 @@ import {
     REJECT_ACCESS_REQUEST,
     HAS_LICENSE_SEATS,
 } from './queries'
+import { pluralize } from '@sourcegraph/common'
 
 /**
  * Converts a name to a username by removing all non-alphanumeric characters and converting to lowercase.
