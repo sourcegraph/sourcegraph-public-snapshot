@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/c2h5oh/datasize"
@@ -154,6 +155,16 @@ func (c *Config) Validate() error {
 		_, err := datasize.ParseString(c.FirecrackerDiskSpace)
 		if err != nil {
 			c.AddError(errors.Wrapf(err, "invalid disk size provided for EXECUTOR_FIRECRACKER_DISK_SPACE: %q", c.FirecrackerDiskSpace))
+		}
+	}
+
+	if len(c.KubernetesNodeSelector) > 0 {
+		nodeSelectorValues := strings.Split(c.KubernetesNodeSelector, ",")
+		for _, value := range nodeSelectorValues {
+			parts := strings.Split(value, "=")
+			if len(parts) != 2 {
+				c.AddError(errors.New("EXECUTOR_KUBERNETES_NODE_SELECTOR must be a comma separated list of key=value pairs"))
+			}
 		}
 	}
 
