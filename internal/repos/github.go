@@ -33,15 +33,13 @@ import (
 // A GitHubSource yields repositories from a single GitHub connection configured
 // in Sourcegraph via the external services configuration.
 type GitHubSource struct {
-	svc             *types.ExternalService
-	config          *schema.GitHubConnection
-	exclude         excludeFunc
-	excludeArchived bool
-	excludeForks    bool
-	githubDotCom    bool
-	baseURL         *url.URL
-	v3Client        *github.V3Client
-	v4Client        *github.V4Client
+	svc          *types.ExternalService
+	config       *schema.GitHubConnection
+	exclude      excludeFunc
+	githubDotCom bool
+	baseURL      *url.URL
+	v3Client     *github.V3Client
+	v4Client     *github.V4Client
 	// searchClient is for using the GitHub search API, which has an independent
 	// rate limit much lower than non-search API requests.
 	searchClient *github.V3Client
@@ -124,23 +122,32 @@ func newGithubSource(
 	}
 
 	var (
-		eb              excludeBuilder
-		excludeArchived bool
-		excludeForks    bool
+		eb           excludeBuilder
+		excludeForks bool
 	)
-
+	excludeArchived := func(repo any) bool {
+		if githubRepo, ok := repo.(github.Repository); ok {
+			return githubRepo.IsArchived
+		}
+		return false
+	}
+	excludeFork := func(repo any) bool {
+		if githubRepo, ok := repo.(github.Repository); ok {
+			return githubRepo.IsFork
+		}
+		return false
+	}
 	for _, r := range c.Exclude {
+		if r.Archived {
+			eb.Generic(excludeArchived)
+		}
+		if r.Forks {
+			excludeForks = true
+			eb.Generic(excludeFork)
+		}
 		eb.Exact(r.Name)
 		eb.Exact(r.Id)
 		eb.Pattern(r.Pattern)
-
-		if r.Archived {
-			excludeArchived = true
-		}
-
-		if r.Forks {
-			excludeForks = true
-		}
 	}
 
 	exclude, err := eb.Build()
@@ -204,8 +211,6 @@ func newGithubSource(
 		svc:              svc,
 		config:           c,
 		exclude:          exclude,
-		excludeArchived:  excludeArchived,
-		excludeForks:     excludeForks,
 		baseURL:          baseURL,
 		githubDotCom:     githubDotCom,
 		v3Client:         v3Client,
@@ -469,15 +474,7 @@ func (s *GitHubSource) excludes(r *github.Repository) bool {
 		return true
 	}
 
-	if s.exclude(r.NameWithOwner) || s.exclude(r.ID) {
-		return true
-	}
-
-	if s.excludeArchived && r.IsArchived {
-		return true
-	}
-
-	if s.excludeForks && r.IsFork {
+	if s.exclude(r.NameWithOwner) || s.exclude(r.ID) || s.exclude(*r) {
 		return true
 	}
 
