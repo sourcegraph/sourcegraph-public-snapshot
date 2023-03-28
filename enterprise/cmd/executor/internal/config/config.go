@@ -107,7 +107,7 @@ func (c *Config) Load() {
 	c.kubernetesNodeRequiredAffinityMatchExpressions = c.GetOptional("EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_EXPRESSIONS", "The JSON encoded required affinity match expressions for Kubernetes Jobs. e.g. [{\"key\": \"foo\", \"operator\": \"In\", \"values\": [\"bar\"]}]")
 	c.kubernetesNodeRequiredAffinityMatchFields = c.GetOptional("EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_FIELDS", "The JSON encoded required affinity match fields for Kubernetes Jobs. e.g. [{\"key\": \"foo\", \"operator\": \"In\", \"values\": [\"bar\"]}]")
 	c.KubernetesNamespace = c.Get("EXECUTOR_KUBERNETES_NAMESPACE", "default", "The namespace to run executor jobs in.")
-	c.KubernetesPersistenceVolumeName = c.Get("EXECUTOR_KUBERNETES_PERSISTENCE_VOLUME_NAME", "executor-pvc", "The name of the Kubernetes persistence volume to use for executor jobs.")
+	c.KubernetesPersistenceVolumeName = c.Get("EXECUTOR_KUBERNETES_PERSISTENCE_VOLUME_NAME", "sg-executor-pvc", "The name of the Kubernetes persistence volume to use for executor jobs.")
 	c.KubernetesResourceLimitCPU = c.GetOptional("EXECUTOR_KUBERNETES_RESOURCE_LIMIT_CPU", "The maximum CPU resource for Kubernetes Jobs.")
 	c.KubernetesResourceLimitMemory = c.Get("EXECUTOR_KUBERNETES_RESOURCE_LIMIT_MEMORY", "12Gi", "The maximum memory resource for Kubernetes Jobs.")
 	c.KubernetesResourceRequestCPU = c.GetOptional("EXECUTOR_KUBERNETES_RESOURCE_REQUEST_CPU", "The minimum CPU resource for Kubernetes Jobs.")

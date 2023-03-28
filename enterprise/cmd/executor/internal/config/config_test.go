@@ -130,7 +130,7 @@ func TestConfig_Load_Defaults(t *testing.T) {
 	assert.Nil(t, cfg.KubernetesNodeRequiredAffinityMatchExpressions)
 	assert.Nil(t, cfg.KubernetesNodeRequiredAffinityMatchFields)
 	assert.Equal(t, "default", cfg.KubernetesNamespace)
-	assert.Equal(t, "executor-pvc", cfg.KubernetesPersistenceVolumeName)
+	assert.Equal(t, "sg-executor-pvc", cfg.KubernetesPersistenceVolumeName)
 	assert.Empty(t, cfg.KubernetesResourceLimitCPU)
 	assert.Equal(t, "12Gi", cfg.KubernetesResourceLimitMemory)
 	assert.Empty(t, cfg.KubernetesResourceRequestCPU)
