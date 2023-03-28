@@ -1541,10 +1541,10 @@ func TestCleanup_setRepoSizes(t *testing.T) {
 		t.Skip()
 	}
 
-	s := &Server{Logger: logtest.Scoped(t), ObservationCtx: observation.TestContextTB(t), DB: database.NewMockDB()}
-	s.Handler() // Handler as a side-effect sets up Server
 	db := dbtest.NewDB(logger, t)
-	s.DB = database.NewDB(logger, db)
+
+	s := &Server{Logger: logger, ObservationCtx: observation.TestContextTB(t), DB: database.NewDB(logger, db)}
+	s.Handler() // Handler as a side-effect sets up Server
 
 	// inserting info about repos to DB. Repo with ID = 1 already has its size
 	if _, err := db.Exec(`
