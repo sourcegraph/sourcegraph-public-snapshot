@@ -584,10 +584,9 @@ func (r *batchSpecWorkspaceStagesResolver) executionLogEntryResolversWithPrefix(
 	var resolvers []graphqlbackend.ExecutionLogEntryResolver
 	for _, entry := range r.execution.ExecutionLogs {
 		if !prefix.MatchString(entry.Key) {
-			continue
+			r := graphqlbackend.NewExecutionLogEntryResolver(r.store.DatabaseDB(), entry)
+			resolvers = append(resolvers, r)
 		}
-		r := graphqlbackend.NewExecutionLogEntryResolver(r.store.DatabaseDB(), entry)
-		resolvers = append(resolvers, r)
 	}
 
 	return resolvers
