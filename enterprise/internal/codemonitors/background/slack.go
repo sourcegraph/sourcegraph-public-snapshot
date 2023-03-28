@@ -49,12 +49,8 @@ func slackPayload(args actionArgs) *slack.WebhookMessage {
 				result.Repo.Name,
 				result.Commit.ID.Short(),
 			)))
-			var contentRaw string
-			if result.DiffPreview != nil {
-				contentRaw = truncateString(result.DiffPreview.Content)
-			} else {
-				contentRaw = truncateString(result.MessagePreview.Content)
-			}
+
+			contentRaw := truncateMatchContent(result)
 			blocks = append(blocks, newMarkdownSection(formatCodeBlock(contentRaw)))
 		}
 		if truncatedCount > 0 {
@@ -85,13 +81,23 @@ func formatCodeBlock(s string) string {
 	return fmt.Sprintf("```%s```", strings.ReplaceAll(s, "```", "\\`\\`\\`"))
 }
 
-// truncateString truncates the input to 10 lines.
-func truncateString(input string) string {
-	const lines = 10
+// truncateMatchContent truncates the input to 10 lines.
+func truncateMatchContent(result *searchresult.CommitMatch) string {
+	const maxLines = 10
 
-	splitLines := strings.SplitAfter(input, "\n")
-	if len(splitLines) > lines {
-		splitLines = splitLines[:lines]
+	var matchedString *searchresult.MatchedString
+	switch {
+	case result.DiffPreview != nil:
+		matchedString = result.DiffPreview
+	case result.MessagePreview != nil:
+		matchedString = result.MessagePreview
+	default:
+		panic("exactly one of DiffPreview or MessagePreview must be set")
+	}
+
+	splitLines := strings.SplitAfter(matchedString.Content, "\n")
+	if len(splitLines) > maxLines {
+		splitLines = splitLines[:maxLines]
 		splitLines = append(splitLines, "...\n")
 	}
 	return strings.Join(splitLines, "")
