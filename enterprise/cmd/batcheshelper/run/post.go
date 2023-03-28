@@ -1,4 +1,4 @@
-package main
+package run
 
 import (
 	"context"
@@ -16,7 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func execPost(ctx context.Context, stepIdx int, executionInput batcheslib.WorkspacesExecutionInput, previousResult execution.AfterStepResult) error {
+// Post TODO
+func Post(ctx context.Context, stepIdx int, executionInput batcheslib.WorkspacesExecutionInput, previousResult execution.AfterStepResult) error {
 	step := executionInput.Steps[stepIdx]
 
 	// Generate the diff.

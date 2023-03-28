@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/run"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -44,9 +45,9 @@ func doMain() error {
 	ctx := context.Background()
 	switch arguments.mode {
 	case "pre":
-		return execPre(ctx, arguments.step, executionInput, previousResult)
+		return run.Pre(ctx, arguments.step, executionInput, previousResult)
 	case "post":
-		return execPost(ctx, arguments.step, executionInput, previousResult)
+		return run.Post(ctx, arguments.step, executionInput, previousResult)
 	default:
 		return errors.Newf("invalid mode %q", arguments.mode)
 	}

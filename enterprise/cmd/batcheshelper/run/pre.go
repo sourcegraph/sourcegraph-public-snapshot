@@ -1,4 +1,4 @@
-package main
+package run
 
 import (
 	"bytes"
@@ -18,7 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func execPre(ctx context.Context, stepIdx int, executionInput batcheslib.WorkspacesExecutionInput, previousResult execution.AfterStepResult) error {
+// Pre TODO
+func Pre(ctx context.Context, stepIdx int, executionInput batcheslib.WorkspacesExecutionInput, previousResult execution.AfterStepResult) error {
 	wd, err := os.Getwd()
 	if err != nil {
 		return errors.Wrap(err, "getting working directory")
