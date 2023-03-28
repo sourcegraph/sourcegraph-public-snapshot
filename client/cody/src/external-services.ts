@@ -1,14 +1,15 @@
-import { ChatClient } from './chat/chat'
-import { CodebaseContext } from './codebase-context'
+import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { Editor } from '@sourcegraph/cody-shared/src/editor'
+import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
+import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
+import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/intent-detector/client'
+import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions'
+import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { isError } from '@sourcegraph/cody-shared/src/utils'
+
 import { getAccessToken, SecretStorage } from './command/secret-storage'
-import { Editor } from './editor'
-import { SourcegraphEmbeddingsSearchClient } from './embeddings/client'
-import { IntentDetector } from './intent-detector'
-import { SourcegraphIntentDetectorClient } from './intent-detector/client'
 import { LocalKeywordContextFetcher } from './keyword-context/local-keyword-context-fetcher'
-import { SourcegraphCompletionsClient } from './sourcegraph-api/completions'
-import { SourcegraphGraphQLAPIClient } from './sourcegraph-api/graphql'
-import { isError } from './utils'
 
 interface ExternalServices {
     intentDetector: IntentDetector
@@ -33,7 +34,7 @@ export async function configureExternalServices(
     if (isError(repoId)) {
         const errorMessage =
             `Cody could not find the '${codebase}' repository on your Sourcegraph instance.\n` +
-            `Please check that the repository exists and is entered correctly in the cody.codebase setting.`
+            'Please check that the repository exists and is entered correctly in the cody.codebase setting.'
         console.error(errorMessage)
     }
     const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null

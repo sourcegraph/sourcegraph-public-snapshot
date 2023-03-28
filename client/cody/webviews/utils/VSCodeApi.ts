@@ -1,4 +1,4 @@
-declare const acquireVsCodeApi: Function
+declare const acquireVsCodeApi: () => VSCodeApi
 
 interface VSCodeApi {
     getState: () => any
@@ -49,6 +49,10 @@ interface ExecuteRecipeWebviewMessage {
     recipe: string
 }
 
+interface RemoveChatHistoryWebviewMessage {
+    command: 'removeHistory'
+}
+
 type WebviewMessage =
     | IntializedWebviewMessage
     | ResetWebviewMessage
@@ -56,3 +60,4 @@ type WebviewMessage =
     | SettingsWebviewMessage
     | SubmitWebviewMessage
     | ExecuteRecipeWebviewMessage
+    | RemoveChatHistoryWebviewMessage

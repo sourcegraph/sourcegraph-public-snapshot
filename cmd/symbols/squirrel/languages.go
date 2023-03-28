@@ -44,7 +44,7 @@ var extToLang = func() map[string]string {
 	return m
 }()
 
-// Info about a language.
+// LangSpec contains info about a language.
 type LangSpec struct {
 	name         string
 	language     *sitter.Language
@@ -54,7 +54,7 @@ type LangSpec struct {
 	topLevelSymbolsQuery string
 }
 
-// Info about comments in a language.
+// CommentStyle contains info about comments in a language.
 type CommentStyle struct {
 	ignoreRegex   *regexp.Regexp
 	stripRegex    *regexp.Regexp

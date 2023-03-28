@@ -2,6 +2,9 @@ package sharedresolvers
 
 import (
 	"context"
+	"io/fs"
+	"os"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -152,3 +155,25 @@ func (r *CachedLocationResolver) Path(ctx context.Context, id api.RepoID, commit
 	resolver, _, err := cache.GetOrLoad(ctx, path)
 	return resolver, err
 }
+
+type fileInfo struct {
+	path  string
+	size  int64
+	isDir bool
+}
+
+func CreateFileInfo(path string, isDir bool) fs.FileInfo {
+	return fileInfo{path: path, isDir: isDir}
+}
+
+func (f fileInfo) Name() string { return f.path }
+func (f fileInfo) Size() int64  { return f.size }
+func (f fileInfo) IsDir() bool  { return f.isDir }
+func (f fileInfo) Mode() os.FileMode {
+	if f.IsDir() {
+		return os.ModeDir
+	}
+	return 0
+}
+func (f fileInfo) ModTime() time.Time { return time.Now() }
+func (f fileInfo) Sys() any           { return any(nil) }

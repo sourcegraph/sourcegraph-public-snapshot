@@ -2,30 +2,30 @@
 
 Sourcegraph is currently migrating to Bazel as its build system and this page is targeted for early adopters which are helping the [#job-fair-bazel](https://sourcegraph.slack.com/archives/C03LUEB7TJS) team to test their work.
 
-## Early adopters 
+## Early adopters
 
-If you are an early adopter, you can already get some benefits from Bazel, while we gradually roll it out.  
+If you are an early adopter, you can already get some benefits from Bazel, while we gradually roll it out.
 
-:bulb: Please note that this is only applicable in PRs. For the `main` branch we need to ensure we use the same build steps for everyone until Bazel is fully rolled out. 
+:bulb: Please note that this is only applicable in PRs. For the `main` branch we need to ensure we use the same build steps for everyone until Bazel is fully rolled out.
 
 - Before pushing, ensure your changes are refected in the build files (those `BUILD.bazel` files):
-  - If you changed anything to the `go.mod` file, you need to run: 
-    - `bazel run :update-gazelle-repos` 
+  - If you changed anything to the `go.mod` file, you need to run:
+    - `bazel run :update-gazelle-repos`
   - Run `bazel configure` to ensure the build files are also properly updated.
-- Run your tests locally, with `bazel test //[PATH]/...` where `PATH` refers to the package containing your changes. 
-  - If you changed things in too many places, you can always run `bazel test //...` which will test everything (or reused cached results if applicable). 
-- Include the updated build files in your commit! They are relevant to that commit after all. 
+- Run your tests locally, with `bazel test //[PATH]/...` where `PATH` refers to the package containing your changes.
+  - If you changed things in too many places, you can always run `bazel test //...` which will test everything (or reused cached results if applicable).
+- Include the updated build files in your commit! They are relevant to that commit after all.
 - When commiting, add the `[force-bazel]` message flag in the description of your commit (not in the commit title, but in the description - it's nicer this way).
-  - If you commit again, remember to add that message flag again. Only the last commit is checked to determine if we want Bazel on that PR. 
-- Push your changes as usual. 
-- When browsing the CI (you can use `sg ci status --web` you'll see a `Bazel` set of jobs running both your tests and build. 
+  - If you commit again, remember to add that message flag again. Only the last commit is checked to determine if we want Bazel on that PR.
+- Push your changes as usual.
+- When browsing the CI (you can use `sg ci status --web` you'll see a `Bazel` set of jobs running both your tests and build.
 
-You may find the build and tests to be slow, either locally or in CI. This is because to be efficient, Bazel cache needs to be warm. So inevitably, as early adopters, that will be less the case 
-than when more teammates will be using Bazel. 
+You may find the build and tests to be slow, either locally or in CI. This is because to be efficient, Bazel cache needs to be warm. So inevitably, as early adopters, that will be less the case
+than when more teammates will be using Bazel.
 
-:warning: It's highly probable that the build files you updated will include changes that you were not responsible for. This is because not everyone is updating buildfiles. Just commit them anyway and move on. This will be get better over time. 
+:warning: It's highly probable that the build files you updated will include changes that you were not responsible for. This is because not everyone is updating buildfiles. Just commit them anyway and move on. This will be get better over time.
 
-:warning: If you find your tests to be passing normally with `go test` and on a normal CI build, but not when Bazel is enabled, please check the [FAQ](#faq) below. If you can't solve the problem, just reach us out on [#job-fair-bazel](https://sourcegraph.slack.com/archives/C03LUEB7TJS). 
+:warning: If you find your tests to be passing normally with `go test` and on a normal CI build, but not when Bazel is enabled, please check the [FAQ](#faq) below. If you can't solve the problem, just reach us out on [#job-fair-bazel](https://sourcegraph.slack.com/archives/C03LUEB7TJS).
 
 ## Why do we need a build system?
 
@@ -210,7 +210,7 @@ So when a change is detected, `iBazel` will build the affected target and it wil
 
 ### General
 
-#### The analysis cache is being busted because of `--action_env` 
+#### The analysis cache is being busted because of `--action_env`
 
 Typically you'll see this (in CI or locally):
 
@@ -218,9 +218,9 @@ Typically you'll see this (in CI or locally):
 INFO: Build option --action_env has changed, discarding analysis cache.
 ```
 
-- If you added a `build --action_env=VAR` to one of the `bazelrc`s, and `$VAR` is not stable across builds, it will break the analysis cache. You should never pass a variable that is not stable, otherwise, the cache being busted is totally expected and there is no way around it. 
+- If you added a `build --action_env=VAR` to one of the `bazelrc`s, and `$VAR` is not stable across builds, it will break the analysis cache. You should never pass a variable that is not stable, otherwise, the cache being busted is totally expected and there is no way around it.
   - Use `build --action_env=VAR=123` instead to pin it down if it's not stable in your environment.
-- If you added a `test --action_env=VAR`, running `bazel build [...]` will have a different `--action_env` and because the analysis cache is the same for `build` and `test` that will automatically bust the cache. 
+- If you added a `test --action_env=VAR`, running `bazel build [...]` will have a different `--action_env` and because the analysis cache is the same for `build` and `test` that will automatically bust the cache.
   - Use `build --test_env=VAR` instead, so that env is used only in tests, and doesn't affect builds, while avoiding to bust the cache.
 
 ### Go
@@ -333,6 +333,28 @@ ERROR: Error computing the main repository mapping: no such package '@crate_inde
 The current `lockfile` is out of date for 'crate_index'. Please re-run bazel using `CARGO_BAZEL_REPIN=true` if this is expected and the lockfile should be updated.
 ```
 Bazel uses a separate lock file to keep track of the dependencies and needs to be updated. To update the `lockfile` run `CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index`. This command takes a while to execute as it fetches all the dependencies specified in `Cargo.lock` and populates `Cargo.Bazel.lock`.
+
+### When using nix, when protobuf gets compiled I get a C/C++ compiler issue `fatal error: 'algorithm' file not found` or some core header files are not found
+Nix sets the CC environment variable to a clang version use by nix which is independent of the host system. You can verify this by running the following commands in your nix shell.
+```
+$ echo $CC
+clang
+
+$ which $CC
+/nix/store/agjhf1m0xsvmdjkk8kc7bp3pic9lsfrb-clang-wrapper-11.1.0/bin/clang
+
+$ cat bazel-sourcegraph/external/local_config_cc/cc_wrapper.sh | grep "# Call the C++ compiler" -A 2
+# Call the C++ compiler
+/nix/store/agjhf1m0xsvmdjkk8kc7bp3pic9lsfrb-clang-wrapper-11.1.0/bin/clang "$@"
+```
+Bazel runs a target called `locate_cc_config` which adheres to the CC environment variable. The variable defines the compiler to be used to perform C/C++ compilation. At time of writing, the compiler is incorrectly configured and the stdlib doesn't get referenced properly. Therefore, we currently recommend to unset the `CC` variable in your nix shell. The `locate_cc_config` will then find the system C/C++ compiler (which on my system resolved to `/usr/bin/gcc`) and compile protobuf.
+
+You can also verify that the correct compiler is used by running the following command:
+```
+cat bazel-sourcegraph/external/local_config_cc/cc_wrapper.sh | grep "# Call the C++ compiler" -A 2
+# Call the C++ compiler
+/usr/bin/gcc "$@"
+```
 
 ## Resources
 

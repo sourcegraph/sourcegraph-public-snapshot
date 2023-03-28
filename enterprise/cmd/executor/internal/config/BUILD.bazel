@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "config",
@@ -20,4 +20,11 @@ go_library(
         "@com_github_google_uuid//:uuid",
         "@com_github_masterminds_semver//:semver",
     ],
+)
+
+go_test(
+    name = "config_test",
+    srcs = ["config_test.go"],
+    embed = [":config"],
+    deps = ["//lib/errors"],
 )

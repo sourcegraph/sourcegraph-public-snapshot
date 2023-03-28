@@ -24,6 +24,8 @@ export const Header: React.FunctionComponent<React.PropsWithChildren<HeaderProps
             </div>
         </div>
         <div className="header-container-right">
+            {/* eslint-disable jsx-a11y/click-events-have-key-events */}
+            {/* eslint-disable jsx-a11y/no-static-element-interactions */}
             <div
                 className="reset-conversation"
                 title="Start a new conversation with Cody"

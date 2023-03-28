@@ -1,7 +1,10 @@
-import { exec } from 'child_process'
+import { exec as exec_ } from 'child_process'
 import * as fs from 'fs'
 import * as os from 'os'
 import path from 'path'
+import { promisify } from 'util'
+
+const exec = promisify(exec_)
 
 export async function getRgPath(extensionPath: string): Promise<string> {
     try {
@@ -38,7 +41,7 @@ async function isMusl(): Promise<boolean> {
     try {
         stderr = (await exec('ldd --version')).stderr
     } catch (error) {
-        stderr = (error as any).stderr
+        stderr = error.stderr
     }
     if (stderr.indexOf('musl') > -1) {
         return true

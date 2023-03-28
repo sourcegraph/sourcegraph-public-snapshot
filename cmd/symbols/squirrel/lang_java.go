@@ -12,8 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret *Node, err error) {
-	defer squirrel.onCall(node, String(node.Type()), lazyNodeStringer(&ret))()
+func (s *SquirrelService) getDefJava(ctx context.Context, node Node) (ret *Node, err error) {
+	defer s.onCall(node, String(node.Type()), lazyNodeStringer(&ret))()
 
 	switch node.Type() {
 	case "identifier":
@@ -26,23 +26,23 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 			prev := cur
 			cur = cur.Parent()
 			if cur == nil {
-				squirrel.breadcrumb(node, "getDefJava: ran out of parents")
+				s.breadcrumb(node, "getDefJava: ran out of parents")
 				return nil, nil
 			}
 
 			switch cur.Type() {
 
 			case "program":
-				return squirrel.getDefInImportsOrCurrentPackageJava(ctx, swapNode(node, cur), ident)
+				return s.getDefInImportsOrCurrentPackageJava(ctx, swapNode(node, cur), ident)
 
 			case "import_declaration":
 				program := cur.Parent()
 				if program == nil {
-					squirrel.breadcrumb(node, "getDefJava: expected parent for import_declaration")
+					s.breadcrumb(node, "getDefJava: expected parent for import_declaration")
 					return nil, nil
 				}
 				if program.Type() != "program" {
-					squirrel.breadcrumb(node, "getDefJava: expected parent of import_declaration to be program")
+					s.breadcrumb(node, "getDefJava: expected parent of import_declaration to be program")
 				}
 				root, err := getProjectRoot(swapNode(node, program))
 				if err != nil {
@@ -57,7 +57,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 					return nil, err
 				}
 				if len(components) == len(allComponents) {
-					return squirrel.symbolSearchOne(
+					return s.symbolSearchOne(
 						ctx,
 						node.RepoCommitPath.Repo,
 						node.RepoCommitPath.Commit,
@@ -85,7 +85,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 				}
 				field := cur.ChildByFieldName("field")
 				if field != nil {
-					found, err := squirrel.getFieldJava(ctx, swapNode(node, object), field.Content(node.Contents))
+					found, err := s.getFieldJava(ctx, swapNode(node, object), field.Content(node.Contents))
 					if err != nil {
 						return nil, err
 					}
@@ -112,7 +112,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 				}
 				name := cur.ChildByFieldName("name")
 				if name != nil {
-					found, err := squirrel.getFieldJava(ctx, swapNode(node, object), name.Content(node.Contents))
+					found, err := s.getFieldJava(ctx, swapNode(node, object), name.Content(node.Contents))
 					if err != nil {
 						return nil, err
 					}
@@ -184,7 +184,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 						return swapNodePtr(node, name), nil
 					}
 				}
-				found, err := squirrel.lookupFieldJava(ctx, ClassTypeJava{def: swapNode(node, cur)}, ident)
+				found, err := s.lookupFieldJava(ctx, ClassTypeJava{def: swapNode(node, cur)}, ident)
 				if err != nil {
 					return nil, err
 				}
@@ -193,7 +193,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 				}
 				super := getSuperclassJava(swapNode(node, cur))
 				if super != nil {
-					found, err := squirrel.getFieldJava(ctx, *super, ident)
+					found, err := s.getFieldJava(ctx, *super, ident)
 					if err != nil {
 						return nil, err
 					}
@@ -269,9 +269,9 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 					continue
 				}
 				if ident == "new" {
-					return squirrel.getDefJava(ctx, swapNode(node, object))
+					return s.getDefJava(ctx, swapNode(node, object))
 				}
-				return squirrel.getFieldJava(ctx, swapNode(node, object), ident)
+				return s.getFieldJava(ctx, swapNode(node, object), ident)
 
 			// Skip all other nodes
 			default:
@@ -288,7 +288,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 			prev := cur
 			cur = cur.Parent()
 			if cur == nil {
-				squirrel.breadcrumb(node, "getDefJava: ran out of parents")
+				s.breadcrumb(node, "getDefJava: ran out of parents")
 				return nil, nil
 			}
 
@@ -308,7 +308,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 						return swapNodePtr(node, capture.Node), nil
 					}
 				}
-				return squirrel.getDefInImportsOrCurrentPackageJava(ctx, swapNode(node, cur), ident)
+				return s.getDefInImportsOrCurrentPackageJava(ctx, swapNode(node, cur), ident)
 			case "class_declaration":
 				query := `[
 					(class_declaration name: (identifier) @ident)
@@ -333,7 +333,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 				}
 				field := cur.NamedChild(int(cur.NamedChildCount()) - 1)
 				if field != nil {
-					found, err := squirrel.getFieldJava(ctx, swapNode(node, object), field.Content(node.Contents))
+					found, err := s.getFieldJava(ctx, swapNode(node, object), field.Content(node.Contents))
 					if err != nil {
 						return nil, err
 					}
@@ -375,7 +375,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 				if super == nil {
 					return nil, nil
 				}
-				return squirrel.getDefJava(ctx, *super)
+				return s.getDefJava(ctx, *super)
 			}
 			cur = cur.Parent()
 		}
@@ -387,21 +387,21 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 	}
 }
 
-func (squirrel *SquirrelService) getFieldJava(ctx context.Context, object Node, field string) (ret *Node, err error) {
-	defer squirrel.onCall(object, &Tuple{String(object.Type()), String(field)}, lazyNodeStringer(&ret))()
+func (s *SquirrelService) getFieldJava(ctx context.Context, object Node, field string) (ret *Node, err error) {
+	defer s.onCall(object, &Tuple{String(object.Type()), String(field)}, lazyNodeStringer(&ret))()
 
-	ty, err := squirrel.getTypeDefJava(ctx, object)
+	ty, err := s.getTypeDefJava(ctx, object)
 	if err != nil {
 		return nil, err
 	}
 	if ty == nil {
 		return nil, nil
 	}
-	return squirrel.lookupFieldJava(ctx, ty, field)
+	return s.lookupFieldJava(ctx, ty, field)
 }
 
-func (squirrel *SquirrelService) lookupFieldJava(ctx context.Context, ty TypeJava, field string) (ret *Node, err error) {
-	defer squirrel.onCall(ty.node(), &Tuple{String(ty.variant()), String(field)}, lazyNodeStringer(&ret))()
+func (s *SquirrelService) lookupFieldJava(ctx context.Context, ty TypeJava, field string) (ret *Node, err error) {
+	defer s.onCall(ty.node(), &Tuple{String(ty.variant()), String(field)}, lazyNodeStringer(&ret))()
 
 	switch ty2 := ty.(type) {
 	case ClassTypeJava:
@@ -442,7 +442,7 @@ func (squirrel *SquirrelService) lookupFieldJava(ctx context.Context, ty TypeJav
 		}
 		super := getSuperclassJava(ty2.def)
 		if super != nil {
-			found, err := squirrel.getFieldJava(ctx, *super, field)
+			found, err := s.getFieldJava(ctx, *super, field)
 			if err != nil {
 				return nil, err
 			}
@@ -452,29 +452,29 @@ func (squirrel *SquirrelService) lookupFieldJava(ctx context.Context, ty TypeJav
 		}
 		return nil, nil
 	case FnTypeJava:
-		squirrel.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldJava: unexpected object type %s", ty.variant()))
+		s.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldJava: unexpected object type %s", ty.variant()))
 		return nil, nil
 	case PrimTypeJava:
-		squirrel.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldJava: unexpected object type %s", ty.variant()))
+		s.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldJava: unexpected object type %s", ty.variant()))
 		return nil, nil
 	default:
-		squirrel.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldJava: unrecognized type variant %q", ty.variant()))
+		s.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldJava: unrecognized type variant %q", ty.variant()))
 		return nil, nil
 	}
 }
 
-func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) (ret TypeJava, err error) {
-	defer squirrel.onCall(node, String(node.Type()), lazyTypeJavaStringer(&ret))()
+func (s *SquirrelService) getTypeDefJava(ctx context.Context, node Node) (ret TypeJava, err error) {
+	defer s.onCall(node, String(node.Type()), lazyTypeJavaStringer(&ret))()
 
 	onIdent := func() (TypeJava, error) {
-		found, err := squirrel.getDefJava(ctx, node)
+		found, err := s.getDefJava(ctx, node)
 		if err != nil {
 			return nil, err
 		}
 		if found == nil {
 			return nil, nil
 		}
-		return squirrel.defToTypeJava(ctx, *found)
+		return s.defToTypeJava(ctx, *found)
 	}
 
 	switch node.Type() {
@@ -489,7 +489,7 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 				return nil, err
 			}
 			for _, capture := range captures {
-				return squirrel.getTypeDefJava(ctx, capture)
+				return s.getTypeDefJava(ctx, capture)
 			}
 			return nil, nil
 		} else {
@@ -510,27 +510,27 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 		if field == nil {
 			return nil, nil
 		}
-		objectType, err := squirrel.getTypeDefJava(ctx, swapNode(node, object))
+		objectType, err := s.getTypeDefJava(ctx, swapNode(node, object))
 		if err != nil {
 			return nil, err
 		}
 		if objectType == nil {
 			return nil, nil
 		}
-		found, err := squirrel.lookupFieldJava(ctx, objectType, field.Content(node.Contents))
+		found, err := s.lookupFieldJava(ctx, objectType, field.Content(node.Contents))
 		if err != nil {
 			return nil, err
 		}
 		if found == nil {
 			return nil, nil
 		}
-		return squirrel.defToTypeJava(ctx, *found)
+		return s.defToTypeJava(ctx, *found)
 	case "method_invocation":
 		name := node.ChildByFieldName("name")
 		if name == nil {
 			return nil, nil
 		}
-		ty, err := squirrel.getTypeDefJava(ctx, swapNode(node, name))
+		ty, err := s.getTypeDefJava(ctx, swapNode(node, name))
 		if err != nil {
 			return nil, err
 		}
@@ -541,22 +541,22 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 		case FnTypeJava:
 			return ty2.ret, nil
 		default:
-			squirrel.breadcrumb(ty.node(), fmt.Sprintf("getTypeDefJava: expected method, got %q", ty.variant()))
+			s.breadcrumb(ty.node(), fmt.Sprintf("getTypeDefJava: expected method, got %q", ty.variant()))
 			return nil, nil
 		}
 	case "generic_type":
 		for _, child := range children(node.Node) {
 			if child.Type() == "type_identifier" || child.Type() == "scoped_type_identifier" {
-				return squirrel.getTypeDefJava(ctx, swapNode(node, child))
+				return s.getTypeDefJava(ctx, swapNode(node, child))
 			}
 		}
-		squirrel.breadcrumb(node, "getTypeDefJava: expected an identifier")
+		s.breadcrumb(node, "getTypeDefJava: expected an identifier")
 		return nil, nil
 	case "scoped_type_identifier":
 		for i := int(node.NamedChildCount()) - 1; i >= 0; i-- {
 			child := node.NamedChild(i)
 			if child.Type() == "type_identifier" {
-				return squirrel.getTypeDefJava(ctx, swapNode(node, child))
+				return s.getTypeDefJava(ctx, swapNode(node, child))
 			}
 		}
 		return nil, nil
@@ -565,7 +565,7 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 		if ty == nil {
 			return nil, nil
 		}
-		return squirrel.getTypeDefJava(ctx, swapNode(node, ty))
+		return s.getTypeDefJava(ctx, swapNode(node, ty))
 	case "void_type":
 		return PrimTypeJava{noad: node, varient: "void"}, nil
 	case "integral_type":
@@ -575,13 +575,13 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 	case "boolean_type":
 		return PrimTypeJava{noad: node, varient: "boolean"}, nil
 	default:
-		squirrel.breadcrumb(node, fmt.Sprintf("getTypeDefJava: unrecognized node type %q", node.Type()))
+		s.breadcrumb(node, fmt.Sprintf("getTypeDefJava: unrecognized node type %q", node.Type()))
 		return nil, nil
 	}
 }
 
-func (squirrel *SquirrelService) getDefInImportsOrCurrentPackageJava(ctx context.Context, program Node, ident string) (ret *Node, err error) {
-	defer squirrel.onCall(program, &Tuple{String(program.Type()), String(ident)}, lazyNodeStringer(&ret))()
+func (s *SquirrelService) getDefInImportsOrCurrentPackageJava(ctx context.Context, program Node, ident string) (ret *Node, err error) {
+	defer s.onCall(program, &Tuple{String(program.Type()), String(ident)}, lazyNodeStringer(&ret))()
 
 	// Determine project root
 	root, err := getProjectRoot(program)
@@ -618,7 +618,7 @@ func (squirrel *SquirrelService) getDefInImportsOrCurrentPackageJava(ctx context
 			continue
 		}
 		if last == ident {
-			return squirrel.symbolSearchOne(
+			return s.symbolSearchOne(
 				ctx,
 				program.RepoCommitPath.Repo,
 				program.RepoCommitPath.Commit,
@@ -629,7 +629,7 @@ func (squirrel *SquirrelService) getDefInImportsOrCurrentPackageJava(ctx context
 	}
 
 	// Search in current package
-	found, err := squirrel.symbolSearchOne(
+	found, err := s.symbolSearchOne(
 		ctx,
 		program.RepoCommitPath.Repo,
 		program.RepoCommitPath.Commit,
@@ -649,7 +649,7 @@ func (squirrel *SquirrelService) getDefInImportsOrCurrentPackageJava(ctx context
 			continue
 		}
 
-		found, err := squirrel.symbolSearchOne(
+		found, err := s.symbolSearchOne(
 			ctx,
 			program.RepoCommitPath.Repo,
 			program.RepoCommitPath.Commit,
@@ -775,7 +775,7 @@ func (t PrimTypeJava) node() Node {
 	return t.noad
 }
 
-func (squirrel *SquirrelService) defToTypeJava(ctx context.Context, def Node) (TypeJava, error) {
+func (s *SquirrelService) defToTypeJava(ctx context.Context, def Node) (TypeJava, error) {
 	parent := def.Node.Parent()
 	if parent == nil {
 		return nil, nil
@@ -786,13 +786,13 @@ func (squirrel *SquirrelService) defToTypeJava(ctx context.Context, def Node) (T
 	case "method_declaration":
 		retTyNode := parent.ChildByFieldName("type")
 		if retTyNode == nil {
-			squirrel.breadcrumb(swapNode(def, parent), "defToType: could not find return type")
+			s.breadcrumb(swapNode(def, parent), "defToType: could not find return type")
 			return (TypeJava)(FnTypeJava{
 				ret:  nil,
 				noad: swapNode(def, parent),
 			}), nil
 		}
-		retTy, err := squirrel.getTypeDefJava(ctx, swapNode(def, retTyNode))
+		retTy, err := s.getTypeDefJava(ctx, swapNode(def, retTyNode))
 		if err != nil {
 			return nil, err
 		}
@@ -805,10 +805,10 @@ func (squirrel *SquirrelService) defToTypeJava(ctx context.Context, def Node) (T
 	case "enhanced_for_statement":
 		tyNode := parent.ChildByFieldName("type")
 		if tyNode == nil {
-			squirrel.breadcrumb(swapNode(def, parent), "defToType: could not find type")
+			s.breadcrumb(swapNode(def, parent), "defToType: could not find type")
 			return nil, nil
 		}
-		return squirrel.getTypeDefJava(ctx, swapNode(def, tyNode))
+		return s.getTypeDefJava(ctx, swapNode(def, tyNode))
 	case "variable_declarator":
 		grandparent := parent.Parent()
 		if grandparent == nil {
@@ -816,12 +816,12 @@ func (squirrel *SquirrelService) defToTypeJava(ctx context.Context, def Node) (T
 		}
 		tyNode := grandparent.ChildByFieldName("type")
 		if tyNode == nil {
-			squirrel.breadcrumb(swapNode(def, parent), "defToType: could not find type")
+			s.breadcrumb(swapNode(def, parent), "defToType: could not find type")
 			return nil, nil
 		}
-		return squirrel.getTypeDefJava(ctx, swapNode(def, tyNode))
+		return s.getTypeDefJava(ctx, swapNode(def, tyNode))
 	default:
-		squirrel.breadcrumb(swapNode(def, parent), fmt.Sprintf("unrecognized def parent %q", parent.Type()))
+		s.breadcrumb(swapNode(def, parent), fmt.Sprintf("unrecognized def parent %q", parent.Type()))
 		return nil, nil
 	}
 }

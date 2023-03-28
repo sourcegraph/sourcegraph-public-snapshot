@@ -2100,7 +2100,7 @@
           "type": "string",
           "description": "The external completions provider.",
           "default": "anthropic",
-          "enum": ["anthropic"]
+          "enum": ["anthropic", "openai"]
         }
       }
     }

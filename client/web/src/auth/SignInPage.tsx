@@ -140,9 +140,16 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                         New to Sourcegraph? <Link to="/sign-up">Sign up.</Link>{' '}
                         {isSourcegraphDotCom && (
                             <>
-                                To use Sourcegraph on private repositories,
+                                To use Sourcegraph on private repositories,{' '}
                                 <Link
-                                    to="https://signup.sourcegraph.com"
+                                    to="https://about.sourcegraph.com/app"
+                                    onClick={() => eventLogger.log('ClickedOnAppCTA', { location: 'SignInPage' })}
+                                >
+                                    download Sourcegraph app
+                                </Link>{' '}
+                                or{' '}
+                                <Link
+                                    to="https://sourcegraph.com/get-started?t=enterprise"
                                     onClick={() =>
                                         eventLogger.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' })
                                     }

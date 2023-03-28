@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
@@ -34,6 +35,94 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func mustParse(t *testing.T, dateStr string) time.Time {
+	date, err := time.Parse(time.RFC3339, dateStr)
+	if err != nil {
+		date, err = time.Parse("2006-01-02T15:04:05", dateStr)
+		if err != nil {
+			date, err = time.Parse("2006-01-02", dateStr)
+			if err != nil {
+				t.Fatal("Failed to parse date from", dateStr)
+			}
+		}
+	}
+	return date
+}
+
+func TestGitHub_stripDateRange(t *testing.T) {
+	testCases := map[string]struct {
+		query         string
+		wantQuery     string
+		wantDateRange *dateRange
+	}{
+		"from and to with ..": {
+			query:     "some part of query created:2008-11-10T01:23:45+00:00..2010-01-30T23:45:59+02:00 and others",
+			wantQuery: "some part of query  and others",
+			wantDateRange: &dateRange{
+				From: mustParse(t, "2008-11-10T01:23:45+00:00"),
+				To:   mustParse(t, "2010-01-30T23:45:59+02:00"),
+			},
+		},
+		"from with >": {
+			query: "created:>2011-01-01T00:00:00+00:00 and other stuff",
+			wantDateRange: &dateRange{
+				From: mustParse(t, "2011-01-01T00:00:01+00:00"),
+			},
+		},
+		"from with >=": {
+			query: "created:>=2011-01-01T00:00:00+00:00 and other stuff",
+			wantDateRange: &dateRange{
+				From: mustParse(t, "2011-01-01T00:00:00+00:00"),
+			},
+		},
+		"from with ..*": {
+			query: "created:2010-01-01..*",
+			wantDateRange: &dateRange{
+				From: mustParse(t, "2010-01-01T00:00:00+00:00"),
+			},
+		},
+		"to with <": {
+			query: "created:<2015-12-12",
+			wantDateRange: &dateRange{
+				To: mustParse(t, "2015-12-11T23:59:59+00:00"),
+			},
+		},
+		"to with <=": {
+			query: "created:<=2015-12-12",
+			wantDateRange: &dateRange{
+				To: mustParse(t, "2015-12-12T23:59:59+00:00"),
+			},
+		},
+		"to with *..": {
+			query:     "created:*..2015-12-12",
+			wantQuery: "",
+			wantDateRange: &dateRange{
+				To: mustParse(t, "2015-12-12T23:59:59"),
+			},
+		},
+		"no date query": {
+			query:         "just some random things",
+			wantQuery:     "just some random things",
+			wantDateRange: nil,
+		},
+	}
+
+	for tname, tcase := range testCases {
+		t.Run(tname, func(t *testing.T) {
+			date := stripDateRange(&tcase.query)
+			if tcase.wantDateRange == nil {
+				assert.Nil(t, date)
+			} else {
+				assert.True(t, date.From.Equal(tcase.wantDateRange.From), "got %q want %q", date.From, tcase.wantDateRange.From)
+				assert.True(t, date.To.Equal(tcase.wantDateRange.To), "got %q want %q", date.To, tcase.wantDateRange.To)
+			}
+			if tcase.wantQuery != "" {
+				assert.Equal(t, tcase.wantQuery, tcase.query)
+			}
+		})
+	}
+}
 
 func TestGithubSource_GetRepo(t *testing.T) {
 	testCases := []struct {

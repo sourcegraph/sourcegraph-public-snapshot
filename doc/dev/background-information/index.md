@@ -85,3 +85,4 @@
 - [Deploy Sourcegraph with Helm chart (BETA)](../../admin/deploy/kubernetes/helm.md)
 - [Event level data usage pipeline](data-usage-pipeline.md)
 - [Adding, changing and debugging user event data](adding_event_level_data.md)
+- [GitHub API Oddities](github-api-oddities.md)

@@ -31,7 +31,8 @@
     "visibility": "public",
     "archived": false,
     "star_count": 0,
-    "forks_count": 0
+    "forks_count": 0,
+    "empty_repo": false
    }
   },
   {
@@ -66,7 +67,8 @@
     "visibility": "internal",
     "archived": false,
     "star_count": 0,
-    "forks_count": 0
+    "forks_count": 0,
+    "empty_repo": false
    }
   },
   {
@@ -101,7 +103,8 @@
     "visibility": "private",
     "archived": false,
     "star_count": 0,
-    "forks_count": 0
+    "forks_count": 0,
+    "empty_repo": false
    }
   }
  ]

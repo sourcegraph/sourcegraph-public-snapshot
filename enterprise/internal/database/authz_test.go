@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -222,16 +223,31 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			p, err := s.store.LoadUserPermissions(ctx, user.ID)
-			require.NoError(t, err)
+			verify := func(t *testing.T) {
+				t.Helper()
 
-			gotIDs := make([]int32, len(p))
-			for i, perm := range p {
-				gotIDs[i] = perm.RepoID
+				p, err := s.store.LoadUserPermissions(ctx, user.ID)
+				require.NoError(t, err)
+
+				gotIDs := make([]int32, len(p))
+				for i, perm := range p {
+					gotIDs[i] = perm.RepoID
+				}
+				slices.Sort(gotIDs)
+
+				equal(t, "p.IDs", test.expectRepoIDs, gotIDs)
 			}
-			slices.Sort(gotIDs)
 
-			equal(t, "p.IDs", test.expectRepoIDs, gotIDs)
+			t.Run("works with legacy perms tables", func(t *testing.T) {
+				verify(t)
+			})
+
+			t.Run("works with unified perms tables", func(t *testing.T) {
+				// verify that it also works with unified permissions
+				mockUnifiedPermsConfig(true)
+				t.Cleanup(func() { conf.Mock(nil) })
+				verify(t)
+			})
 		})
 	}
 }
