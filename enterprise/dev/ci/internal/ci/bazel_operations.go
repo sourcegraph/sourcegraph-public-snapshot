@@ -114,15 +114,15 @@ func bazelBuildAndTest(optional bool, targets ...string) func(*bk.Pipeline) {
 	}
 
 	for _, target := range targets {
-		bazelBuildCmd := []string{
-			"bazel",
-			"--bazelrc=.bazelrc",
-			"--bazelrc=.aspect/bazelrc/ci.bazelrc",
-			"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
-			fmt.Sprintf("build %s", target),
-			"--remote_cache=$$CI_BAZEL_REMOTE_CACHE",
-			"--google_credentials=/mnt/gcloud-service-account/gcloud-service-account.json",
-		}
+		// bazelBuildCmd := []string{
+		// 	"bazel",
+		// 	"--bazelrc=.bazelrc",
+		// 	"--bazelrc=.aspect/bazelrc/ci.bazelrc",
+		// 	"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
+		// 	fmt.Sprintf("build %s", target),
+		// 	"--remote_cache=$$CI_BAZEL_REMOTE_CACHE",
+		// 	"--google_credentials=/mnt/gcloud-service-account/gcloud-service-account.json",
+		// }
 
 		target = "//client/web/src/end-to-end:e2e"
 		bazelTestCmd := []string{
@@ -136,7 +136,7 @@ func bazelBuildAndTest(optional bool, targets ...string) func(*bk.Pipeline) {
 		}
 		cmds = append(
 			cmds,
-			bk.RawCmd(strings.Join(bazelBuildCmd, " ")),
+			// bk.RawCmd(strings.Join(bazelBuildCmd, " ")),
 			bk.RawCmd(strings.Join(bazelTestCmd, " ")),
 		)
 	}
