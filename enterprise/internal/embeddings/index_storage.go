@@ -92,7 +92,7 @@ func encodeRepoEmbeddingIndex(enc *gob.Encoder, rei *RepoEmbeddingIndex, chunkSi
 		return err
 	}
 
-	for _, ei := range []EmbeddingIndex[RepoEmbeddingRowMetadata]{rei.CodeIndex, rei.TextIndex} {
+	for _, ei := range []EmbeddingIndex{rei.CodeIndex, rei.TextIndex} {
 		if err := enc.Encode(ei.ColumnDimension); err != nil {
 			return err
 		}
@@ -138,7 +138,7 @@ func decodeRepoEmbeddingIndex(dec *gob.Decoder) (*RepoEmbeddingIndex, error) {
 		return nil, err
 	}
 
-	for _, ei := range []*EmbeddingIndex[RepoEmbeddingRowMetadata]{&rei.CodeIndex, &rei.TextIndex} {
+	for _, ei := range []*EmbeddingIndex{&rei.CodeIndex, &rei.TextIndex} {
 		if err := dec.Decode(&ei.ColumnDimension); err != nil {
 			return nil, err
 		}
