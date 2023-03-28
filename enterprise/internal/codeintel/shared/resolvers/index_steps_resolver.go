@@ -107,7 +107,7 @@ func (r *indexStepsResolver) findExecutionLogEntry(key *regexp.Regexp) (executor
 func (r *indexStepsResolver) executionLogEntryResolversWithPrefix(prefix *regexp.Regexp) []resolverstubs.ExecutionLogEntryResolver {
 	var resolvers []resolverstubs.ExecutionLogEntryResolver
 	for _, entry := range r.index.ExecutionLogs {
-		if prefix.MatchString(entry.Key) {
+		if !prefix.MatchString(entry.Key) {
 			continue
 		}
 		r := NewExecutionLogEntryResolver(r.siteAdminChecker, entry)
