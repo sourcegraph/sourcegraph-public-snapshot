@@ -1631,7 +1631,8 @@ WHERE %s
 
 // legacyLoadUserPermissions is a method that scans three values from one user_permissions table row:
 // []int32 (ids), time.Time (updatedAt) and nullable time.Time (syncedAt).
-func (s *permsStore) legacyLoadUserPermissions(ctx context.Context, userID int32, lock string) (ids []int32, err error) {
+func (s *permsStore) legacyLoadUserPermissions(ctx context.Context, userID int32, lock string) ([]int32, error) {
+	var err error
 	const format = `
 SELECT object_ids_ints
 FROM user_permissions
@@ -1648,12 +1649,12 @@ AND object_type = 'repos'
 		)
 	}()
 
-	ids, err = basestore.ScanInt32s(s.Query(ctx, q))
+	ids, ok, err := basestore.ScanFirstInt32Array(s.Query(ctx, q))
 	if err != nil {
 		return nil, err
 	}
 
-	if len(ids) == 0 {
+	if !ok {
 		// One item is expected, return ErrPermsNotFound if no other errors occurred.
 		err = authz.ErrPermsNotFound
 		return nil, err
@@ -1662,9 +1663,24 @@ AND object_type = 'repos'
 	return ids, nil
 }
 
+type legacyRepoPermissionsResult struct {
+	ids          []int32
+	unrestricted bool
+}
+
+var scanLegacyRepoPermissions = basestore.NewFirstScanner(func(s dbutil.Scanner) (legacyRepoPermissionsResult, error) {
+	var r legacyRepoPermissionsResult
+	err := s.Scan(
+		pq.Array(&r.ids),
+		&r.unrestricted,
+	)
+	return r, err
+})
+
 // legacyLoadRepoPermissions is a method that scans three values from one repo_permissions table row:
 // []int32 (ids), time.Time (updatedAt) and nullable time.Time (syncedAt).
-func (s *permsStore) legacyLoadRepoPermissions(ctx context.Context, repoID int32, lock string) (ids []int32, unrestricted bool, err error) {
+func (s *permsStore) legacyLoadRepoPermissions(ctx context.Context, repoID int32, lock string) ([]int32, bool, error) {
+	var err error
 	const format = `
 SELECT user_ids_ints, unrestricted
 FROM repo_permissions
@@ -1682,18 +1698,18 @@ AND permission = 'read'
 		)
 	}()
 
-	ids, err = basestore.ScanInt32s(s.Query(ctx, q))
+	r, ok, err := scanLegacyRepoPermissions(s.Query(ctx, q))
 	if err != nil {
 		return nil, false, err
 	}
 
-	if len(ids) == 0 {
+	if !ok {
 		// One item is expected, return ErrPermsNotFound if no other errors occurred.
 		err = authz.ErrPermsNotFound
 		return nil, false, err
 	}
 
-	return ids, unrestricted, nil
+	return r.ids, r.unrestricted, nil
 }
 
 // loadUserPendingPermissions is a method that scans three values from one user_pending_permissions table row:
