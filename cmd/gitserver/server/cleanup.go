@@ -25,7 +25,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -602,6 +601,17 @@ func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]i
 		reposNumber = 10000
 	}
 
+	reposToUpdate := make(map[api.RepoName]int64, reposNumber)
+	i := 0
+	for repoName, size := range repoToSize {
+		reposToUpdate[repoName] = size
+
+		i += 1
+		if i == reposNumber {
+			break
+		}
+	}
+
 	// updating repos
 	updatedRepos, err := s.DB.GitserverRepos().UpdateRepoSizes(ctx, s.Hostname, repoToSize)
 	if err != nil {
@@ -612,30 +622,6 @@ func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]i
 	}
 
 	return nil
-}
-
-// fetchRepos returns up to count random repos found by names (i.e. keys) in repoToSize map
-func (s *Server) fetchRepos(ctx context.Context, repoToSize map[api.RepoName]int64, count int) ([]types.MinimalRepo, error) {
-	reposToUpdateNames := make([]string, count)
-	idx := 0
-	// random nature of map traversal yields a different subset of repos every time this function is called
-	for repoName := range repoToSize {
-		if idx >= count {
-			break
-		}
-		reposToUpdateNames[idx] = string(repoName)
-		idx++
-	}
-
-	foundRepos, err := s.DB.Repos().ListMinimalRepos(ctx, database.ReposListOptions{
-		Names:          reposToUpdateNames,
-		LimitOffset:    &database.LimitOffset{Limit: count},
-		IncludeBlocked: true,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return foundRepos, nil
 }
 
 // DiskSizer gets information about disk size and free space.
