@@ -268,7 +268,7 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) (err err
 		return err, code
 	}
 
-	if code < 200 || code >= 400 {
+	if code < http.StatusOK || code >= http.StatusBadRequest {
 		return errors.WithStack(&httpError{
 			URL:        req.URL,
 			StatusCode: code,
