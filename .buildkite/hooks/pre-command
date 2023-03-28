@@ -42,6 +42,7 @@ if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" != "bazel" ]]; then
   fi
 else
   echo "build --test_env=GH_TOKEN=${GH_TOKEN}" >user.bazelrc
+  echo Y | ./dev/run-server-image.sh -d --name sourcegraph
   # Only enable when you're debugging, this produces about 300 log files
   # export BUILDKITE_ARTIFACT_PATHS="$(bazel info bazel-testlogs)/**/*.log"
 fi

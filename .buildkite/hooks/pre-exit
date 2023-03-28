@@ -12,8 +12,9 @@ fi
 
 # The bazel queue is running stateful agents, so we need to ensure we're cleaning after us.
 if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" == "bazel" ]]; then
-    # Ensure all test databases are wiped, in case a test process was interrupted.
-    for db in $(psql -c '\l' | grep "sourcegraph-" | cut -d '|' -f 1); do psql -c "drop database \"$db\""; done
+  # Ensure all test databases are wiped, in case a test process was interrupted.
+  for db in $(psql -c '\l' | grep "sourcegraph-" | cut -d '|' -f 1); do psql -c "drop database \"$db\""; done
+  docker rm -f sourcegraph
 fi
 
 if [ "$BUILDKITE_BRANCH" == "main" ]; then
@@ -42,6 +43,5 @@ fi
 
 # upload raw annotations as artifacts if they are available for easier access
 if [ -d "./annotations" ]; then
-    buildkite-agent artifact upload --job "$BUILDKITE_JOB_ID" --content-type "text/plain" "./annotations/*-annotation.md"
+  buildkite-agent artifact upload --job "$BUILDKITE_JOB_ID" --content-type "text/plain" "./annotations/*-annotation.md"
 fi
-
