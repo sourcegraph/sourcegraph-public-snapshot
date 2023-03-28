@@ -131,10 +131,10 @@ func TestConfig_Load_Defaults(t *testing.T) {
 	assert.Nil(t, cfg.KubernetesNodeRequiredAffinityMatchFields)
 	assert.Equal(t, "default", cfg.KubernetesNamespace)
 	assert.Equal(t, "executor-pvc", cfg.KubernetesPersistenceVolumeName)
-	assert.Equal(t, "1", cfg.KubernetesResourceLimitCPU)
-	assert.Equal(t, "1Gi", cfg.KubernetesResourceLimitMemory)
-	assert.Equal(t, "1", cfg.KubernetesResourceRequestCPU)
-	assert.Equal(t, "1Gi", cfg.KubernetesResourceRequestMemory)
+	assert.Empty(t, cfg.KubernetesResourceLimitCPU)
+	assert.Equal(t, "12Gi", cfg.KubernetesResourceLimitMemory)
+	assert.Empty(t, cfg.KubernetesResourceRequestCPU)
+	assert.Equal(t, "12Gi", cfg.KubernetesResourceRequestMemory)
 }
 
 func TestConfig_Validate(t *testing.T) {

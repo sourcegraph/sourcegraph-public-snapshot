@@ -87,11 +87,11 @@ func New(
 	}
 
 	if config.IsKubernetes() {
-		kubConfig, err := clientcmd.BuildConfigFromFlags("", runnerOpts.KubernetesOptions.ConfigPath)
+		kubeConfig, err := clientcmd.BuildConfigFromFlags("", runnerOpts.KubernetesOptions.ConfigPath)
 		if err != nil {
 			return nil, err
 		}
-		clientset, err := kubernetes.NewForConfig(kubConfig)
+		clientset, err := kubernetes.NewForConfig(kubeConfig)
 		if err != nil {
 			return nil, err
 		}

@@ -4,10 +4,19 @@ The following is a guide to setting up a local development environment for the e
 
 ## Prerequisites
 
+- Install [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+
+### Docker Desktop
+
 - Install Docker Desktop
 - Enable Kubernetes in Docker Desktop
   - Settings > Kubernetes > Enable Kubernetes
-- Install [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+
+### MiniKube
+
+- Install [MiniKube](https://kubernetes.io/docs/tasks/tools/install-minikube/)
+- Start MiniKube
+  - `minikube start`
 
 ## Build Image
 

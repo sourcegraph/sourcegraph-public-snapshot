@@ -13,16 +13,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/util/retry"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (
-	kubernetesContainerName = "job-container"
-	kubernetesVolumeName    = "job-volume"
+	kubernetesContainerName = "sg-executor-job-container"
+	kubernetesVolumeName    = "sg-executor-job-volume"
 )
 
 // KubernetesMountPath is the path where the Kubernetes volume is mounted in the container.
@@ -37,6 +35,7 @@ type KubernetesContainerOptions struct {
 	PersistenceVolumeName string
 	ResourceLimit         KubernetesResource
 	ResourceRequest       KubernetesResource
+	Retry                 KubernetesRetry
 }
 
 // KubernetesNodeAffinity contains the Kubernetes node affinity for a Job.
@@ -99,59 +98,10 @@ func readProcessPipe(w io.WriteCloser, stdout io.Reader) *errgroup.Group {
 	eg := &errgroup.Group{}
 
 	eg.Go(func() error {
-		//_, err := io.Copy(w, stdout)
-		//return err
 		return readIntoBuffer("stdout", w, stdout)
 	})
 
 	return eg
-}
-
-// WaitForPodToStart waits for the pod with the given name to start.
-func (c *KubernetesCommand) WaitForPodToStart(ctx context.Context, namespace string, name string) (string, error) {
-	var podName string
-	return podName, retry.OnError(backoff, func(error) bool {
-		return true
-	}, func() error {
-		var pod *corev1.Pod
-		var err error
-		if len(podName) == 0 {
-			pod, err = c.FindPod(ctx, namespace, name)
-		} else {
-			pod, err = c.getPod(ctx, namespace, podName)
-		}
-		if err != nil {
-			return err
-		}
-		podName = pod.Name
-		if pod.Status.Phase == corev1.PodRunning || pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed {
-			return nil
-		}
-		if pod.Status.Phase == corev1.PodPending && pod.Status.ContainerStatuses != nil {
-			// Pod is starting, check container status
-			for _, containerStatus := range pod.Status.ContainerStatuses {
-				if containerStatus.State.Running != nil {
-					// Container has started
-					return nil
-				} else if containerStatus.State.Waiting != nil {
-					// Container is waiting, retry
-					return errors.Newf("pod '%s' is waiting to start", name)
-				} else {
-					// Container is in an unknown state
-					return errors.Newf("pod '%s' is in an unknown state '%s'", name, containerStatus.State)
-				}
-			}
-		}
-		return errors.Newf("pod '%s' is in an unknown phase '%s'", name, pod.Status.Phase)
-	})
-}
-
-// backoff is a slight modification to retry.DefaultBackoff.
-var backoff = wait.Backoff{
-	Steps:    50,
-	Duration: 10 * time.Millisecond,
-	Factor:   5.0,
-	Jitter:   0.1,
 }
 
 // FindPod finds the pod for the given job name.
@@ -171,11 +121,11 @@ func (c *KubernetesCommand) getPod(ctx context.Context, namespace string, name s
 }
 
 // WaitForJobToComplete waits for the job with the given name to complete.
-func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, namespace string, name string) error {
+func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, namespace string, name string, retry KubernetesRetry) error {
 	attempts := 0
 	for {
 		// After 60 seconds, give up
-		if attempts > 600 {
+		if attempts > retry.Attempts {
 			return errors.Newf("job %s did not complete", name)
 		}
 		job, err := c.getJob(ctx, namespace, name)
@@ -187,10 +137,15 @@ func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, namespace 
 		} else if job.Status.Failed > 0 {
 			return errors.Newf("job %s failed", name)
 		} else {
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(retry.Backoff)
 			attempts++
 		}
 	}
+}
+
+type KubernetesRetry struct {
+	Attempts int
+	Backoff  time.Duration
 }
 
 func (c *KubernetesCommand) getJob(ctx context.Context, namespace string, name string) (*batchv1.Job, error) {

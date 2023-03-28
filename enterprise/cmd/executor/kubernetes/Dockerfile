@@ -14,7 +14,7 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
-# Install git and docker. We use the same version here as we use in gitserver.
+# Install git. We use the same version here as we use in gitserver.
 RUN apk add --no-cache \
     # Minimal version requirement to address vulnerabilities
     # https://github.blog/2023-02-14-git-security-vulnerabilities-announced-3/

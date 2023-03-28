@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: executor
+  name: sg-executor
 spec:
   selector:
     matchLabels:
-      app: executor
+      app: sg-executor
   template:
     metadata:
       labels:
-        app: executor
+        app: sg-executor
     spec:
       hostNetwork: true
-      serviceAccountName: executor-service-account
+      serviceAccountName: sg-executor-service-account
       containers:
-        - name: executor
+        - name: sg-executor
           image: executor-kubernetes:latest
           imagePullPolicy: IfNotPresent
           ports:
@@ -39,16 +39,16 @@ spec:
               value: "false"
           volumeMounts:
             - mountPath: /data
-              name: executor-volume
+              name: sg-executor-volume
       volumes:
-        - name: executor-volume
+        - name: sg-executor-volume
           persistentVolumeClaim:
-            claimName: executor-pvc
+            claimName: sg-executor-pvc
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: executor-pvc
+  name: sg-executor-pvc
 spec:
   accessModes:
     - ReadWriteOnce
@@ -59,12 +59,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: executor
+  name: sg-executor
   labels:
-    app: executor
+    app: sg-executor
 spec:
   selector:
-    app: executor
+    app: sg-executor
   ports:
     - name: http
       port: 8080
@@ -74,14 +74,14 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: executor-service-account
+  name: sg-executor-service-account
   namespace: default
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   namespace: default
-  name: executor-job-role
+  name: sg-executor-job-role
 rules:
   - apiGroups: ["batch"]
     resources: ["jobs"]
@@ -90,7 +90,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: executor-log-role
+  name: sg-executor-log-role
 rules:
   - apiGroups: [""]
     resources: ["pods", "pods/log"]
@@ -99,25 +99,25 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: executor-job-role-binding
+  name: sg-executor-job-role-binding
   namespace: default
 subjects:
   - kind: ServiceAccount
-    name: executor-service-account
+    name: sg-executor-service-account
     namespace: default
 roleRef:
   kind: Role
-  name: executor-job-role
+  name: sg-executor-job-role
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: executor-log-role-binding
+  name: sg-executor-log-role-binding
 subjects:
   - kind: ServiceAccount
     name: executor-service-account
 roleRef:
   kind: Role
-  name: executor-log-role
+  name: sg-executor-log-role
   apiGroup: rbac.authorization.k8s.io

@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
@@ -143,185 +144,6 @@ func fakeRequest(status int, body string) *rest.Request {
 		NegotiatedSerializer: scheme.Codecs.WithoutConversion(),
 	}
 	return fakeClient.Request()
-}
-
-func TestKubernetesCommand_WaitForPodToStart(t *testing.T) {
-	tests := []struct {
-		name            string
-		mockFunc        func(clientset *fake.Clientset)
-		mockAssertFunc  func(t *testing.T, actions []k8stesting.Action)
-		expectedPodName string
-		expectedErr     error
-	}{
-		{
-			name: "Pod running",
-			mockFunc: func(clientset *fake.Clientset) {
-				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, &corev1.PodList{Items: []corev1.Pod{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:   "my-pod",
-								Labels: map[string]string{"job-name": "my-pod"},
-							},
-							Status: corev1.PodStatus{
-								Phase: corev1.PodRunning,
-							},
-						},
-					},
-					}, nil
-				})
-			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
-				require.Len(t, actions, 1)
-				assert.Equal(t, "list", actions[0].GetVerb())
-				assert.Equal(t, "pods", actions[0].GetResource().Resource)
-				assert.Equal(t, "job-name=my-pod", actions[0].(k8stesting.ListAction).GetListRestrictions().Labels.String())
-			},
-			expectedPodName: "my-pod",
-		},
-		{
-			name: "Pod succeeded",
-			mockFunc: func(clientset *fake.Clientset) {
-				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, &corev1.PodList{Items: []corev1.Pod{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:   "my-pod",
-								Labels: map[string]string{"job-name": "my-pod"},
-							},
-							Status: corev1.PodStatus{
-								Phase: corev1.PodSucceeded,
-							},
-						},
-					},
-					}, nil
-				})
-			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
-				require.Len(t, actions, 1)
-			},
-			expectedPodName: "my-pod",
-		},
-		{
-			name: "Pod Failed",
-			mockFunc: func(clientset *fake.Clientset) {
-				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, &corev1.PodList{Items: []corev1.Pod{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:   "my-pod",
-								Labels: map[string]string{"job-name": "my-pod"},
-							},
-							Status: corev1.PodStatus{
-								Phase: corev1.PodFailed,
-							},
-						},
-					},
-					}, nil
-				})
-			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
-				require.Len(t, actions, 1)
-			},
-			expectedPodName: "my-pod",
-		},
-		{
-			name: "Pod container running",
-			mockFunc: func(clientset *fake.Clientset) {
-				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, &corev1.PodList{Items: []corev1.Pod{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:   "my-pod",
-								Labels: map[string]string{"job-name": "my-pod"},
-							},
-							Status: corev1.PodStatus{
-								Phase: corev1.PodPending,
-								ContainerStatuses: []corev1.ContainerStatus{{
-									State: corev1.ContainerState{Running: &corev1.ContainerStateRunning{}},
-								}},
-							},
-						},
-					},
-					}, nil
-				})
-			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
-				require.Len(t, actions, 1)
-			},
-			expectedPodName: "my-pod",
-		},
-		{
-			name: "Pod container waiting then running",
-			mockFunc: func(clientset *fake.Clientset) {
-				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, &corev1.PodList{Items: []corev1.Pod{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:   "my-pod",
-								Labels: map[string]string{"job-name": "my-pod"},
-							},
-							Status: corev1.PodStatus{
-								Phase: corev1.PodPending,
-								ContainerStatuses: []corev1.ContainerStatus{{
-									State: corev1.ContainerState{Waiting: &corev1.ContainerStateWaiting{}},
-								}},
-							},
-						},
-					},
-					}, nil
-				})
-				clientset.PrependReactor("get", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, &corev1.Pod{
-						ObjectMeta: metav1.ObjectMeta{Name: "my-pod"},
-						Status: corev1.PodStatus{
-							Phase: corev1.PodPending,
-							ContainerStatuses: []corev1.ContainerStatus{{
-								State: corev1.ContainerState{Running: &corev1.ContainerStateRunning{}},
-							}},
-						},
-					}, nil
-				})
-			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
-				require.Len(t, actions, 2)
-				assert.Equal(t, "list", actions[0].GetVerb())
-				assert.Equal(t, "pods", actions[0].GetResource().Resource)
-
-				assert.Equal(t, "get", actions[1].GetVerb())
-				assert.Equal(t, "pods", actions[1].GetResource().Resource)
-				assert.Equal(t, "my-pod", actions[1].(k8stesting.GetAction).GetName())
-			},
-			expectedPodName: "my-pod",
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			clientset := fake.NewSimpleClientset()
-
-			if test.mockFunc != nil {
-				test.mockFunc(clientset)
-			}
-
-			cmd := &command.KubernetesCommand{
-				Logger:    logtest.Scoped(t),
-				Clientset: clientset,
-			}
-
-			name, err := cmd.WaitForPodToStart(context.Background(), "my-namespace", "my-pod")
-			if test.expectedErr != nil {
-				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedErr.Error())
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, test.expectedPodName, name)
-			}
-
-			if test.mockAssertFunc != nil {
-				test.mockAssertFunc(t, clientset.Actions())
-			}
-		})
-	}
 }
 
 func TestKubernetesCommand_FindPod(t *testing.T) {
@@ -469,7 +291,12 @@ func TestKubernetesCommand_WaitForJobToComplete(t *testing.T) {
 				Clientset: clientset,
 			}
 
-			err := cmd.WaitForJobToComplete(context.Background(), "my-namespace", "my-job")
+			err := cmd.WaitForJobToComplete(
+				context.Background(),
+				"my-namespace",
+				"my-job",
+				command.KubernetesRetry{Attempts: 10, Backoff: 1 * time.Millisecond},
+			)
 			if test.expectedErr != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, test.expectedErr.Error())

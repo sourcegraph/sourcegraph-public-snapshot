@@ -70,7 +70,7 @@ func (r *kubernetesRunner) Teardown(ctx context.Context) error {
 
 func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 	job := command.NewKubernetesJob(
-		fmt.Sprintf("job-%s-%d-%s", spec.Queue, spec.JobID, spec.CommandSpec.Key),
+		fmt.Sprintf("sg-executor-job-%s-%d-%s", spec.Queue, spec.JobID, spec.CommandSpec.Key),
 		spec.Image,
 		spec.CommandSpec,
 		r.dir,
@@ -81,7 +81,7 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 	}
 	r.jobNames = append(r.jobNames, job.Name)
 
-	if err := r.cmd.WaitForJobToComplete(ctx, r.options.Namespace, job.Name); err != nil {
+	if err := r.cmd.WaitForJobToComplete(ctx, r.options.Namespace, job.Name, r.options.Retry); err != nil {
 		return errors.Wrap(err, "waiting for job to complete")
 	}
 

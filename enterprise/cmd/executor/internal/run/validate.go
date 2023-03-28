@@ -18,19 +18,17 @@ func Validate(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, con
 		return err
 	}
 
-	if !config.IsKubernetes() {
-		// Then, validate all tools that are required are installed.
-		if err := util.ValidateRequiredTools(runner, conf.UseFirecracker); err != nil {
-			return err
-		}
-	}
-
 	// Validate git is of the right version.
 	if err := util.ValidateGitVersion(cliCtx.Context, runner); err != nil {
 		return err
 	}
 
 	if !config.IsKubernetes() {
+		// Then, validate all tools that are required are installed.
+		if err := util.ValidateRequiredTools(runner, conf.UseFirecracker); err != nil {
+			return err
+		}
+
 		telemetryOptions := newQueueTelemetryOptions(cliCtx.Context, runner, conf.UseFirecracker, logger)
 		copts := queueOptions(conf, telemetryOptions)
 		client, err := apiclient.NewBaseClient(logger, copts.BaseClientOptions)

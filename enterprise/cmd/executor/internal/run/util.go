@@ -175,7 +175,7 @@ func endpointOptions(c *config.Config, pathPrefix string) apiclient.EndpointOpti
 
 func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 	var nodeSelector map[string]string
-	if len(c.KubernetesNodeSelector) == 0 {
+	if len(c.KubernetesNodeSelector) > 0 {
 		nodeSelectorValues := strings.Split(c.KubernetesNodeSelector, ",")
 		nodeSelector = make(map[string]string, len(nodeSelectorValues))
 		for _, value := range nodeSelectorValues {
@@ -185,6 +185,17 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 			}
 		}
 	}
+
+	resourceLimit := command.KubernetesResource{Memory: resource.MustParse(c.KubernetesResourceLimitMemory)}
+	if c.KubernetesResourceLimitCPU != "" {
+		resourceLimit.CPU = resource.MustParse(c.KubernetesResourceLimitCPU)
+	}
+
+	resourceRequest := command.KubernetesResource{Memory: resource.MustParse(c.KubernetesResourceRequestMemory)}
+	if c.KubernetesResourceRequestCPU != "" {
+		resourceRequest.CPU = resource.MustParse(c.KubernetesResourceRequestCPU)
+	}
+
 	return runner.KubernetesOptions{
 		ConfigPath: c.KubernetesConfigPath,
 		ContainerOptions: command.KubernetesContainerOptions{
@@ -196,13 +207,11 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 			},
 			Namespace:             c.KubernetesNamespace,
 			PersistenceVolumeName: c.KubernetesPersistenceVolumeName,
-			ResourceLimit: command.KubernetesResource{
-				CPU:    resource.MustParse(c.KubernetesResourceLimitCPU),
-				Memory: resource.MustParse(c.KubernetesResourceLimitMemory),
-			},
-			ResourceRequest: command.KubernetesResource{
-				CPU:    resource.MustParse(c.KubernetesResourceRequestCPU),
-				Memory: resource.MustParse(c.KubernetesResourceRequestMemory),
+			ResourceLimit:         resourceLimit,
+			ResourceRequest:       resourceRequest,
+			Retry: command.KubernetesRetry{
+				Attempts: c.KubernetesJobRetryBackoffLimit,
+				Backoff:  c.KubernetesJobRetryBackoffDuration,
 			},
 		},
 	}

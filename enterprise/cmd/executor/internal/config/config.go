@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/c2h5oh/datasize"
@@ -59,6 +60,8 @@ type Config struct {
 	KubernetesResourceLimitMemory                  string
 	KubernetesResourceRequestCPU                   string
 	KubernetesResourceRequestMemory                string
+	KubernetesJobRetryBackoffLimit                 int
+	KubernetesJobRetryBackoffDuration              time.Duration
 
 	dockerAuthConfigStr                                          string
 	dockerAuthConfigUnmarshalError                               error
@@ -78,7 +81,7 @@ func (c *Config) Load() {
 	c.QueueName = c.Get("EXECUTOR_QUEUE_NAME", "", "The name of the queue to listen to.")
 	c.QueuePollInterval = c.GetInterval("EXECUTOR_QUEUE_POLL_INTERVAL", "1s", "Interval between dequeue requests.")
 	c.MaximumNumJobs = c.GetInt("EXECUTOR_MAXIMUM_NUM_JOBS", "1", "Number of virtual machines or containers that can be running at once.")
-	c.UseFirecracker = c.GetBool("EXECUTOR_USE_FIRECRACKER", strconv.FormatBool(runtime.GOOS == "linux" && !IsKubernetes()), "Whether to isolate commands in virtual machines. Requires ignite and firecracker. Linux hosts only.")
+	c.UseFirecracker = c.GetBool("EXECUTOR_USE_FIRECRACKER", strconv.FormatBool(runtime.GOOS == "linux" && !IsKubernetes()), "Whether to isolate commands in virtual machines. Requires ignite and firecracker. Linux hosts only. Kubernetes is not supported.")
 	c.FirecrackerImage = c.Get("EXECUTOR_FIRECRACKER_IMAGE", DefaultFirecrackerImage, "The base image to use for virtual machines.")
 	c.FirecrackerKernelImage = c.Get("EXECUTOR_FIRECRACKER_KERNEL_IMAGE", DefaultFirecrackerKernelImage, "The base image containing the kernel binary to use for virtual machines.")
 	c.FirecrackerSandboxImage = c.Get("EXECUTOR_FIRECRACKER_SANDBOX_IMAGE", DefaultFirecrackerSandboxImage, "The OCI image for the ignite VM sandbox.")
@@ -105,11 +108,13 @@ func (c *Config) Load() {
 	c.kubernetesNodeRequiredAffinityMatchFields = c.GetOptional("EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_FIELDS", "The JSON encoded required affinity match fields for Kubernetes Jobs. e.g. [{\"key\": \"foo\", \"operator\": \"In\", \"values\": [\"bar\"]}]")
 	c.KubernetesNamespace = c.Get("EXECUTOR_KUBERNETES_NAMESPACE", "default", "The namespace to run executor jobs in.")
 	c.KubernetesPersistenceVolumeName = c.Get("EXECUTOR_KUBERNETES_PERSISTENCE_VOLUME_NAME", "executor-pvc", "The name of the Kubernetes persistence volume to use for executor jobs.")
-	c.KubernetesResourceLimitCPU = c.Get("EXECUTOR_KUBERNETES_RESOURCE_LIMIT_CPU", "1", "The maximum CPU resource for Kubernetes Jobs.")
-	c.KubernetesResourceLimitMemory = c.Get("EXECUTOR_KUBERNETES_RESOURCE_LIMIT_MEMORY", "1Gi", "The maximum memory resource for Kubernetes Jobs.")
-	c.KubernetesResourceRequestCPU = c.Get("EXECUTOR_KUBERNETES_RESOURCE_REQUEST_CPU", "1", "The minimum CPU resource for Kubernetes Jobs.")
-	c.KubernetesResourceRequestMemory = c.Get("EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY", "1Gi", "The minimum memory resource for Kubernetes Jobs.")
+	c.KubernetesResourceLimitCPU = c.GetOptional("EXECUTOR_KUBERNETES_RESOURCE_LIMIT_CPU", "The maximum CPU resource for Kubernetes Jobs.")
+	c.KubernetesResourceLimitMemory = c.Get("EXECUTOR_KUBERNETES_RESOURCE_LIMIT_MEMORY", "12Gi", "The maximum memory resource for Kubernetes Jobs.")
+	c.KubernetesResourceRequestCPU = c.GetOptional("EXECUTOR_KUBERNETES_RESOURCE_REQUEST_CPU", "The minimum CPU resource for Kubernetes Jobs.")
+	c.KubernetesResourceRequestMemory = c.Get("EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY", "12Gi", "The minimum memory resource for Kubernetes Jobs.")
 	c.dockerAuthConfigStr = c.GetOptional("EXECUTOR_DOCKER_AUTH_CONFIG", "The content of the docker config file including auth for services. If using firecracker, only static credentials are supported, not credential stores nor credential helpers.")
+	c.KubernetesJobRetryBackoffLimit = c.GetInt("KUBERNETES_JOB_RETRY_BACKOFF_LIMIT", "600", "The number of retries before giving up on a Kubernetes job.")
+	c.KubernetesJobRetryBackoffDuration = c.GetInterval("KUBERNETES_JOB_RETRY_BACKOFF_DURATION", "1m", "The duration to wait before retrying a Kubernetes job.")
 
 	if c.dockerAuthConfigStr != "" {
 		c.dockerAuthConfigUnmarshalError = json.Unmarshal([]byte(c.dockerAuthConfigStr), &c.DockerAuthConfig)
@@ -154,6 +159,16 @@ func (c *Config) Validate() error {
 		_, err := datasize.ParseString(c.FirecrackerDiskSpace)
 		if err != nil {
 			c.AddError(errors.Wrapf(err, "invalid disk size provided for EXECUTOR_FIRECRACKER_DISK_SPACE: %q", c.FirecrackerDiskSpace))
+		}
+	}
+
+	if len(c.KubernetesNodeSelector) > 0 {
+		nodeSelectorValues := strings.Split(c.KubernetesNodeSelector, ",")
+		for _, value := range nodeSelectorValues {
+			parts := strings.Split(value, "=")
+			if len(parts) != 2 {
+				c.AddError(errors.New("EXECUTOR_KUBERNETES_NODE_SELECTOR must be a comma separated list of key=value pairs"))
+			}
 		}
 	}
 

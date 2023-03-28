@@ -11,8 +11,10 @@ import (
 
 func TestIsKubernetes(t *testing.T) {
 	os.Setenv("KUBERNETES_SERVICE_HOST", "localhost")
+	os.Setenv("KUBERNETES_SERVICE_PORT", "8000")
 	t.Cleanup(func() {
 		os.Unsetenv("KUBERNETES_SERVICE_HOST")
+		os.Unsetenv("KUBERNETES_SERVICE_PORT")
 	})
 
 	assert.True(t, config.IsKubernetes())
