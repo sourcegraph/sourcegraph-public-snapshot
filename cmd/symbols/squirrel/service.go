@@ -44,20 +44,20 @@ func New(readFile readFileFunc, symbolSearch symbolsTypes.SearchFunc) *SquirrelS
 }
 
 // Close frees memory allocated by tree-sitter.
-func (squirrel *SquirrelService) Close() {
-	for _, c := range squirrel.closables {
+func (s *SquirrelService) Close() {
+	for _, c := range s.closables {
 		c()
 	}
-	squirrel.parser.Close()
+	s.parser.Close()
 }
 
 // SymbolInfo finds the symbol at the given point in a file, or nil the definition can't be determined.
-func (squirrel *SquirrelService) SymbolInfo(ctx context.Context, point types.RepoCommitPathPoint) (*types.SymbolInfo, error) {
+func (s *SquirrelService) SymbolInfo(ctx context.Context, point types.RepoCommitPathPoint) (*types.SymbolInfo, error) {
 	// First, find the definition.
 	var def *types.RepoCommitPathMaybeRange
 	{
 		// Parse the file and find the starting node.
-		root, err := squirrel.parse(ctx, point.RepoCommitPath)
+		root, err := s.parse(ctx, point.RepoCommitPath)
 		if err != nil {
 			return nil, err
 		}
@@ -70,7 +70,7 @@ func (squirrel *SquirrelService) SymbolInfo(ctx context.Context, point types.Rep
 		}
 
 		// Now find the definition.
-		found, err := squirrel.getDef(ctx, swapNode(*root, startNode))
+		found, err := s.getDef(ctx, swapNode(*root, startNode))
 		if err != nil {
 			return nil, err
 		}
@@ -101,7 +101,7 @@ func (squirrel *SquirrelService) SymbolInfo(ctx context.Context, point types.Rep
 	// Then get the hover if it exists.
 
 	// Parse the END file and find the end node.
-	root, err := squirrel.parse(ctx, def.RepoCommitPath)
+	root, err := s.parse(ctx, def.RepoCommitPath)
 	if err != nil {
 		return nil, err
 	}
@@ -140,14 +140,14 @@ func (dirOrNode *DirOrNode) String() string {
 	return fmt.Sprintf("%s", dirOrNode.Node)
 }
 
-func (squirrel *SquirrelService) getDef(ctx context.Context, node Node) (*Node, error) {
+func (s *SquirrelService) getDef(ctx context.Context, node Node) (*Node, error) {
 	switch node.LangSpec.name {
 	case "java":
-		return squirrel.getDefJava(ctx, node)
+		return s.getDefJava(ctx, node)
 	case "starlark":
-		return squirrel.getDefStarlark(ctx, node)
+		return s.getDefStarlark(ctx, node)
 	case "python":
-		return squirrel.getDefPython(ctx, node)
+		return s.getDefPython(ctx, node)
 	// case "go":
 	// case "csharp":
 	// case "python":
@@ -177,7 +177,7 @@ var maxSquirrelDepth = func() int {
 	return v
 }()
 
-func (squirrel *SquirrelService) onCall(node Node, arg fmt.Stringer, ret func() fmt.Stringer) func() {
+func (s *SquirrelService) onCall(node Node, arg fmt.Stringer, ret func() fmt.Stringer) func() {
 	caller := ""
 	pc, _, _, ok := runtime.Caller(1)
 	details := runtime.FuncForPC(pc)
@@ -187,26 +187,26 @@ func (squirrel *SquirrelService) onCall(node Node, arg fmt.Stringer, ret func() 
 	}
 
 	msg := fmt.Sprintf("%s(%v) => %s", caller, color.New(color.FgCyan).Sprint(arg), color.New(color.Faint).Sprint("..."))
-	squirrel.breadcrumbWithOpts(node, func() string { return msg }, 3)
+	s.breadcrumbWithOpts(node, func() string { return msg }, 3)
 
-	squirrel.depth += 1
-	if squirrel.depth > maxSquirrelDepth {
+	s.depth += 1
+	if s.depth > maxSquirrelDepth {
 		panic(errors.New("max squirrel stack depth exceeded"))
 	}
 
 	return func() {
-		squirrel.depth -= 1
+		s.depth -= 1
 
 		msg = fmt.Sprintf("%s(%v) => %v", caller, color.New(color.FgCyan).Sprint(arg), color.New(color.FgYellow).Sprint(ret()))
 	}
 }
 
 // breadcrumb adds a breadcrumb.
-func (squirrel *SquirrelService) breadcrumb(node Node, message string) {
-	squirrel.breadcrumbWithOpts(node, func() string { return message }, 2)
+func (s *SquirrelService) breadcrumb(node Node, message string) {
+	s.breadcrumbWithOpts(node, func() string { return message }, 2)
 }
 
-func (squirrel *SquirrelService) breadcrumbWithOpts(node Node, message func() string, callerN int) {
+func (s *SquirrelService) breadcrumbWithOpts(node Node, message func() string, callerN int) {
 	caller := ""
 	pc, _, _, ok := runtime.Caller(callerN)
 	details := runtime.FuncForPC(pc)
@@ -223,11 +223,11 @@ func (squirrel *SquirrelService) breadcrumbWithOpts(node Node, message func() st
 		},
 		length:  nodeLength(node.Node),
 		message: message,
-		number:  len(squirrel.breadcrumbs) + 1,
-		depth:   squirrel.depth,
+		number:  len(s.breadcrumbs) + 1,
+		depth:   s.depth,
 		file:    file,
 		line:    line,
 	}
 
-	squirrel.breadcrumbs = append(squirrel.breadcrumbs, breadcrumb)
+	s.breadcrumbs = append(s.breadcrumbs, breadcrumb)
 }
