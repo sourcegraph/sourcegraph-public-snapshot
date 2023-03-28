@@ -237,7 +237,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                     <div className="d-flex justify-content-end mt-4">
                         <PageSwitcher
                             totalCount={connection?.totalCount ?? null}
-                            totalLabel={connection?.totalCount === 1 ? 'account request' : 'account requests'}
+                            totalLabel={pluralize('account request', connection?.totalCount || 0)}
                             {...paginationArgs}
                         />
                     </div>
