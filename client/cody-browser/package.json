@@ -1,0 +1,29 @@
+{
+  "name": "cody-chrome",
+  "displayName": "Ask Cody - Beta",
+  "private": true,
+  "version": "0.0.1",
+  "publisher": "sourcegraph",
+  "description": "Your programming sidekick powered by AI and Sourcegraph's code search and intelligence, now in browser.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/sourcegraph.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sourcegraph/sourcegraph/issues"
+  },
+  "homepage": "https://github.com/sourcegraph/sourcegraph#readme",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --mode development",
+    "watch": "vite build --watch"
+  },
+  "type": "module",
+  "dependencies": {
+    "@sourcegraph/cody-shared": "workspace:*"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.2.7"
+  }
+}

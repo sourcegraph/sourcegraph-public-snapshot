@@ -1,0 +1,17 @@
+.cody-root {
+    overflow: 'hidden';
+    height: 90vh;
+}
+
+pre {
+    background-color: #111827;
+    padding: 1rem;
+    margin: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+}
+
+.bubble p {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}

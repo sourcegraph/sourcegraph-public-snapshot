@@ -1,0 +1,30 @@
+.cody-overlay {
+    display: none;
+}
+
+.cody-overlay-close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background-color: transparent;
+    color: #fff;
+    z-index: 99999;
+    border: none;
+    fontsize: 16px;
+    cursor: pointer;
+}
+
+.cody-overlay-shows {
+    position: fixed;
+    top: 1%;
+    right: 1%;
+    padding: 1.5rem;
+    width: 500px;
+    color: #fff;
+    background-color: #565eb9;
+    border-radius: 1em;
+    border: 1px solid black;
+    z-index: 99999;
+    opacity: 0.9;
+    display: block;
+}
