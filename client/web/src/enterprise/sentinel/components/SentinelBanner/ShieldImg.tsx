@@ -1,6 +1,7 @@
 import React, { FC } from 'react'
 
-export const ShieldLogo: FC<React.PropsWithChildren<React.SVGAttributes<SVGSVGElement>>> = props => (
+/* eslint-disable react/forbid-dom-props */
+export const ShieldLogo: FC<React.PropsWithChildren<React.SVGAttributes<SVGSVGElement>>> = () => (
     <svg width="50" height="61" viewBox="0 0 50 61" fill="none" xmlns="http://www.w3.org/2000/svg">
         <g filter="url(#filter0_d_1930_3366)">
             <path

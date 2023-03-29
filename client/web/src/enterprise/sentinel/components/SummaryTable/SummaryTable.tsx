@@ -18,6 +18,7 @@ export interface VulnerabilitiesProps {
     cvssScore: string
     severity: string
 }
+
 export function SummaryTable(): JSX.Element {
     const { data, error, loading } = useQuery<
         VulnerabilityMatchesSummaryCountResult,
