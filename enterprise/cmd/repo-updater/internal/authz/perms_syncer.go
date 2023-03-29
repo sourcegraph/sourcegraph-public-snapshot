@@ -264,13 +264,13 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 
 // syncUserPerms processes permissions syncing request in user-centric way. When `noPerms` is true,
 // the method will use partial results to update permissions tables even when error occurs.
-func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms bool, fetchOpts authz.FetchPermsOptions) (result *database.SetPermissionsResult, providerStates database.CodeHostStatusesSet, err error) {
+func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms bool, fetchOpts authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
 	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms", "")
 	defer save(requestTypeUser, userID, &err)
 
 	user, err := s.db.Users().GetByID(ctx, userID)
 	if err != nil {
-		return nil, providerStates, errors.Wrap(err, "get user")
+		return nil, nil, errors.Wrap(err, "get user")
 	}
 
 	logger := s.logger.Scoped("syncUserPerms", "processes permissions sync request in user-centric way").With(
@@ -280,7 +280,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	)
 
 	results, err := s.fetchUserPermsViaExternalAccounts(ctx, user, noPerms, fetchOpts)
-	providerStates = results.providerStates
+	providerStates := results.providerStates
 	if err != nil {
 		return nil, providerStates, errors.Wrapf(err, "fetch permissions via external accounts for user %q (id: %d)", user.Username, user.ID)
 	}
@@ -297,7 +297,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 	// Save new permissions to database.
 	repoIDs := collections.Set[int32]{}
-	result = &database.SetPermissionsResult{}
+	result := &database.SetPermissionsResult{}
 	for acctID, rp := range results.repoPerms {
 		stats, err := s.saveUserPermsForAccount(ctx, userID, acctID, rp)
 		if err != nil {
