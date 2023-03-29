@@ -67,6 +67,7 @@ func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.Emb
 		Query:            args.Query,
 		CodeResultsCount: int(args.CodeResultsCount),
 		TextResultsCount: int(args.TextResultsCount),
+		Debug:            args.Debug != nil && *args.Debug,
 	})
 	if err != nil {
 		return nil, err
@@ -204,4 +205,8 @@ func (r *embeddingsSearchResultResolver) EndLine(ctx context.Context) int32 {
 
 func (r *embeddingsSearchResultResolver) Content(ctx context.Context) string {
 	return r.result.Content
+}
+
+func (r *embeddingsSearchResultResolver) Debug(ctx context.Context) string {
+	return r.result.Debug
 }

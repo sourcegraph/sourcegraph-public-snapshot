@@ -31,6 +31,7 @@ type EmbeddingsSearchInputArgs struct {
 	Query            string
 	CodeResultsCount int32
 	TextResultsCount int32
+	Debug            *bool
 }
 
 type EmbeddingsSearchResultsResolver interface {
@@ -43,6 +44,7 @@ type EmbeddingsSearchResultResolver interface {
 	StartLine(ctx context.Context) int32
 	EndLine(ctx context.Context) int32
 	Content(ctx context.Context) string
+	Debug(ctx context.Context) string
 }
 
 type ListRepoEmbeddingJobsArgs struct {
