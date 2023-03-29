@@ -22,7 +22,7 @@ Cody uses Sourcegraph to fetch relevant context to generate answers and code. Th
 1. Request access [here](https://forms.gle/cffMa8mrr8YuHv8o8) and we'll send you an e-mail you as soon as your account is added. At this time, we are approving all requests.
 1. [Create a Sourcegraph access token](https://sourcegraph.com/user/settings/tokens)
 1. Install [the Cody VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
-  1. Set the Sourcegraph URL to be `"https://sourcegraph.com"`
+  1. Set the Sourcegraph URL to be `https://sourcegraph.com`
   1. Set the access token to be the token you just created
 
 After installing, we recommend the following:
