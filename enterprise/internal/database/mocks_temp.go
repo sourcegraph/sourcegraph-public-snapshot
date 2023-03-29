@@ -14264,9 +14264,6 @@ type MockPermsStore struct {
 	// object controlling the behavior of the method
 	// SetRepoPendingPermissions.
 	SetRepoPendingPermissionsFunc *PermsStoreSetRepoPendingPermissionsFunc
-	// SetRepoPermissionsFunc is an instance of a mock function object
-	// controlling the behavior of the method SetRepoPermissions.
-	SetRepoPermissionsFunc *PermsStoreSetRepoPermissionsFunc
 	// SetRepoPermissionsUnrestrictedFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// SetRepoPermissionsUnrestricted.
@@ -14413,11 +14410,6 @@ func NewMockPermsStore() *MockPermsStore {
 		},
 		SetRepoPendingPermissionsFunc: &PermsStoreSetRepoPendingPermissionsFunc{
 			defaultHook: func(context.Context, *extsvc.Accounts, *authz.RepoPermissions) (r0 error) {
-				return
-			},
-		},
-		SetRepoPermissionsFunc: &PermsStoreSetRepoPermissionsFunc{
-			defaultHook: func(context.Context, *authz.RepoPermissions) (r0 *database.SetPermissionsResult, r1 error) {
 				return
 			},
 		},
@@ -14583,11 +14575,6 @@ func NewStrictMockPermsStore() *MockPermsStore {
 				panic("unexpected invocation of MockPermsStore.SetRepoPendingPermissions")
 			},
 		},
-		SetRepoPermissionsFunc: &PermsStoreSetRepoPermissionsFunc{
-			defaultHook: func(context.Context, *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
-				panic("unexpected invocation of MockPermsStore.SetRepoPermissions")
-			},
-		},
 		SetRepoPermissionsUnrestrictedFunc: &PermsStoreSetRepoPermissionsUnrestrictedFunc{
 			defaultHook: func(context.Context, []int32, bool) error {
 				panic("unexpected invocation of MockPermsStore.SetRepoPermissionsUnrestricted")
@@ -14701,9 +14688,6 @@ func NewMockPermsStoreFrom(i PermsStore) *MockPermsStore {
 		},
 		SetRepoPendingPermissionsFunc: &PermsStoreSetRepoPendingPermissionsFunc{
 			defaultHook: i.SetRepoPendingPermissions,
-		},
-		SetRepoPermissionsFunc: &PermsStoreSetRepoPermissionsFunc{
-			defaultHook: i.SetRepoPermissions,
 		},
 		SetRepoPermissionsUnrestrictedFunc: &PermsStoreSetRepoPermissionsUnrestrictedFunc{
 			defaultHook: i.SetRepoPermissionsUnrestricted,
@@ -17356,115 +17340,6 @@ func (c PermsStoreSetRepoPendingPermissionsFuncCall) Args() []interface{} {
 // invocation.
 func (c PermsStoreSetRepoPendingPermissionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// PermsStoreSetRepoPermissionsFunc describes the behavior when the
-// SetRepoPermissions method of the parent MockPermsStore instance is
-// invoked.
-type PermsStoreSetRepoPermissionsFunc struct {
-	defaultHook func(context.Context, *authz.RepoPermissions) (*database.SetPermissionsResult, error)
-	hooks       []func(context.Context, *authz.RepoPermissions) (*database.SetPermissionsResult, error)
-	history     []PermsStoreSetRepoPermissionsFuncCall
-	mutex       sync.Mutex
-}
-
-// SetRepoPermissions delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockPermsStore) SetRepoPermissions(v0 context.Context, v1 *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
-	r0, r1 := m.SetRepoPermissionsFunc.nextHook()(v0, v1)
-	m.SetRepoPermissionsFunc.appendCall(PermsStoreSetRepoPermissionsFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the SetRepoPermissions
-// method of the parent MockPermsStore instance is invoked and the hook
-// queue is empty.
-func (f *PermsStoreSetRepoPermissionsFunc) SetDefaultHook(hook func(context.Context, *authz.RepoPermissions) (*database.SetPermissionsResult, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// SetRepoPermissions method of the parent MockPermsStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *PermsStoreSetRepoPermissionsFunc) PushHook(hook func(context.Context, *authz.RepoPermissions) (*database.SetPermissionsResult, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *PermsStoreSetRepoPermissionsFunc) SetDefaultReturn(r0 *database.SetPermissionsResult, r1 error) {
-	f.SetDefaultHook(func(context.Context, *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *PermsStoreSetRepoPermissionsFunc) PushReturn(r0 *database.SetPermissionsResult, r1 error) {
-	f.PushHook(func(context.Context, *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
-		return r0, r1
-	})
-}
-
-func (f *PermsStoreSetRepoPermissionsFunc) nextHook() func(context.Context, *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *PermsStoreSetRepoPermissionsFunc) appendCall(r0 PermsStoreSetRepoPermissionsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of PermsStoreSetRepoPermissionsFuncCall
-// objects describing the invocations of this function.
-func (f *PermsStoreSetRepoPermissionsFunc) History() []PermsStoreSetRepoPermissionsFuncCall {
-	f.mutex.Lock()
-	history := make([]PermsStoreSetRepoPermissionsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// PermsStoreSetRepoPermissionsFuncCall is an object that describes an
-// invocation of method SetRepoPermissions on an instance of MockPermsStore.
-type PermsStoreSetRepoPermissionsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *authz.RepoPermissions
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *database.SetPermissionsResult
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c PermsStoreSetRepoPermissionsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c PermsStoreSetRepoPermissionsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // PermsStoreSetRepoPermissionsUnrestrictedFunc describes the behavior when

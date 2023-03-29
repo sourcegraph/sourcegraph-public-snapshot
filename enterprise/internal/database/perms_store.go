@@ -10,7 +10,6 @@ import (
 	"github.com/lib/pq"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/log"
 
@@ -58,32 +57,6 @@ type PermsStore interface {
 	SetUserExternalAccountPerms(ctx context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error)
 	// SetRepoPerms sets the users that can access a repo. Uses setUserRepoPermissions internally.
 	SetRepoPerms(ctx context.Context, repoID int32, userIDs []authz.UserIDWithExternalAccountID, source authz.PermsSource) (*database.SetPermissionsResult, error)
-	// LEGACY:
-	// SetRepoPermissions performs a full update for p, new user IDs found in p will
-	// be upserted and user IDs no longer in p will be removed. This method updates
-	// both `user_permissions` and `repo_permissions` tables.
-	//
-	// This method starts its own transaction for update consistency if the caller hasn't started one already.
-	//
-	// Example input:
-	//  &RepoPermissions{
-	//      RepoID: 1,
-	//      Perm: authz.Read,
-	//      UserIDs: {1, 2},
-	//  }
-	//
-	// Table states for input:
-	// 	"user_permissions":
-	//   user_id | permission | object_type | object_ids_ints | updated_at |  synced_at
-	//  ---------+------------+-------------+-----------------+------------+-------------
-	//         1 |       read |       repos |             {1} |      NOW() | <Unchanged>
-	//         2 |       read |       repos |             {1} |      NOW() | <Unchanged>
-	//
-	//  "repo_permissions":
-	//   repo_id | permission | user_ids_ints | updated_at | synced_at
-	//  ---------+------------+---------------+------------+-----------
-	//         1 |       read |        {1, 2} |      NOW() |     NOW()
-	SetRepoPermissions(ctx context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error)
 	// SetRepoPermissionsUnrestricted sets the unrestricted on the
 	// repo_permissions table for all the provided repos. Either all or non
 	// are updated. If the repository ID is not in repo_permissions yet, a row
@@ -597,71 +570,6 @@ DO UPDATE SET
 		p.UpdatedAt.UTC(),
 		p.SyncedAt.UTC(),
 	), nil
-}
-
-func (s *permsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermissions) (_ *database.SetPermissionsResult, err error) {
-	ctx, save := s.observe(ctx, "SetRepoPermissions", "")
-	defer func() { save(&err, p.TracingFields()...) }()
-
-	var txs *permsStore
-	if s.InTransaction() {
-		txs = s
-	} else {
-		txs, err = s.transact(ctx)
-		if err != nil {
-			return nil, err
-		}
-		defer func() { err = txs.Done(err) }()
-	}
-
-	// Retrieve currently stored user IDs of this repository.
-	oldIDs := map[int32]struct{}{}
-	ids, _, err := txs.legacyLoadRepoPermissions(ctx, p.RepoID, "FOR UPDATE")
-	if err != nil {
-		if err != authz.ErrPermsNotFound {
-			return nil, errors.Wrap(err, "load repo permissions")
-		}
-	} else {
-		oldIDs = sliceToSet(ids)
-	}
-
-	if p.UserIDs == nil {
-		p.UserIDs = map[int32]struct{}{}
-	}
-
-	added, removed := computeDiff(oldIDs, p.UserIDs)
-	addedIDs := len(added)
-	removedIDs := len(removed)
-
-	// Iterating over maps doesn't guarantee order, so we sort the slices to avoid doing unnecessary DB updates.
-	slices.Sort(added)
-	slices.Sort(removed)
-
-	updatedAt := txs.clock()
-	if len(added) != 0 || len(removed) != 0 {
-		if q, err := upsertUserPermissionsBatchQuery(added, removed, []int32{p.RepoID}, p.Perm, authz.PermRepos, updatedAt); err != nil {
-			return nil, err
-		} else if err = txs.execute(ctx, q); err != nil {
-			return nil, errors.Wrap(err, "execute upsert user permissions batch query")
-		}
-	}
-
-	// NOTE: The permissions background syncing heuristics relies on SyncedAt column
-	// to do rolling update, if we don't always update the value of the column regardless,
-	// we will end up checking the same set of oldest but up-to-date rows in the table.
-	p.UpdatedAt = updatedAt
-	p.SyncedAt = updatedAt
-	if q, err := upsertRepoPermissionsQuery(p); err != nil {
-		return nil, err
-	} else if err = txs.execute(ctx, q); err != nil {
-		return nil, errors.Wrap(err, "execute upsert repo permissions query")
-	}
-
-	return &database.SetPermissionsResult{
-		Added:   addedIDs,
-		Removed: removedIDs,
-		Found:   len(p.UserIDs),
-	}, nil
 }
 
 // upsertUserPermissionsBatchQuery composes a SQL query that does both addition (for `addedUserIDs`) and deletion (
