@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
@@ -41,6 +42,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
     constructor(
         private extensionPath: string,
+        private codebase: string,
         private transcript: Transcript,
         private chat: ChatClient,
         private intentDetector: IntentDetector,
@@ -83,6 +85,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         )
         return new ChatViewProvider(
             extensionPath,
+            codebase,
             new Transcript(),
             chatClient,
             intentDetector,
@@ -208,7 +211,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         await this.showTab('chat')
         await this.sendTranscript()
 
-        const prompt = await this.transcript.toPrompt()
+        const prompt = await this.transcript.toPrompt(getPreamble(this.codebase))
         this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
     }
 
@@ -333,6 +336,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     this.mode
                 )
 
+                this.codebase = codebase
                 this.intentDetector = intentDetector
                 this.codebaseContext = codebaseContext
                 this.chat = chatClient
