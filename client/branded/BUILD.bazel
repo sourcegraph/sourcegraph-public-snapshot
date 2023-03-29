@@ -164,6 +164,7 @@ ts_project(
         "//:node_modules/@mdi/js",
         "//:node_modules/@reach/visually-hidden",
         "//:node_modules/@types/classnames",
+        "//:node_modules/@types/dompurify",
         "//:node_modules/@types/history",  #keep
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/node",
@@ -173,6 +174,7 @@ ts_project(
         "//:node_modules/comlink",  #keep
         "//:node_modules/copy-to-clipboard",
         "//:node_modules/date-fns",
+        "//:node_modules/dompurify",
         "//:node_modules/fzf",
         "//:node_modules/history",  #keep
         "//:node_modules/lodash",
