@@ -3490,7 +3490,7 @@ func TestPermsStore_CountUsersWithNoPerms(t *testing.T) {
 	require.Equal(t, 3, count)
 
 	// Mark sync jobs as completed for "alice".
-	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, status, finished_at, reason) VALUES(%d, NOW(), %s)`, 1, database.PermissionsSyncJobStateCompleted, database.ReasonUserNoPermissions)
+	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, state, finished_at, reason) VALUES(%d, %s, NOW(), %s)`, 1, database.PermissionsSyncJobStateCompleted, database.ReasonUserNoPermissions)
 	execQuery(t, ctx, s, q)
 
 	// Add permissions for "bob".
