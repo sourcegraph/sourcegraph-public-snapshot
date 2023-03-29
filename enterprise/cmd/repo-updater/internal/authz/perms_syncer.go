@@ -15,6 +15,7 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -225,11 +226,6 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	if result, err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs), authz.SourceRepoSync); err != nil {
 		return result, providerStates, errors.Wrapf(err, "set user repo permissions for repository %q (id: %d)", repo.Name, repo.ID)
 	}
-	// TODO @milan remove in the following PRs, keep writing to both tables for now
-	legacyResult, err := txs.SetRepoPermissions(ctx, p)
-	if err != nil {
-		return legacyResult, providerStates, errors.Wrapf(err, "set repository permissions for repository %q (id: %d)", repo.Name, repo.ID)
-	}
 	regularCount := len(p.UserIDs)
 
 	accounts := &extsvc.Accounts{
@@ -274,7 +270,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 	user, err := s.db.Users().GetByID(ctx, userID)
 	if err != nil {
-		return result, providerStates, errors.Wrap(err, "get user")
+		return nil, providerStates, errors.Wrap(err, "get user")
 	}
 
 	logger := s.logger.Scoped("syncUserPerms", "processes permissions sync request in user-centric way").With(
@@ -286,7 +282,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	results, err := s.fetchUserPermsViaExternalAccounts(ctx, user, noPerms, fetchOpts)
 	providerStates = results.providerStates
 	if err != nil {
-		return result, providerStates, errors.Wrapf(err, "fetch permissions via external accounts for user %q (id: %d)", user.Username, user.ID)
+		return nil, providerStates, errors.Wrapf(err, "fetch permissions via external accounts for user %q (id: %d)", user.Username, user.ID)
 	}
 
 	// Get last sync time from the database, we don't care about errors here
@@ -300,29 +296,18 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	}
 
 	// Save new permissions to database.
-	p := &authz.UserPermissions{
-		UserID: userID,
-		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
-		Type:   authz.PermRepos,
-		IDs:    map[int32]struct{}{},
-	}
-
-	for acctID, repoIDs := range results.repoPerms {
-		// Write to new user_repo_permissions table by default.
-		stats, err := s.saveUserPermsForAccount(ctx, userID, acctID, repoIDs)
+	repoIDs := collections.Set[int32]{}
+	result = &database.SetPermissionsResult{}
+	for acctID, rp := range results.repoPerms {
+		stats, err := s.saveUserPermsForAccount(ctx, userID, acctID, rp)
 		if err != nil {
 			return result, providerStates, errors.Wrapf(err, "set user repo permissions for user %q (id: %d, external_account_id: %d)", user.Username, user.ID, acctID)
-		}
-		if result == nil {
-			result = &database.SetPermissionsResult{}
 		}
 		result.Added += stats.Added
 		result.Found += stats.Found
 		result.Removed += stats.Removed
 
-		for _, repoID := range repoIDs {
-			p.IDs[repoID] = struct{}{}
-		}
+		repoIDs.Add(rp...)
 	}
 
 	// Set sub-repository permissions.
@@ -343,14 +328,8 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	s.permsUpdateLock.Lock()
 	defer s.permsUpdateLock.Unlock()
 
-	// TODO @milan remove in the following PRs, keep writing to both tables for now
-	legacyResult, err := s.permsStore.SetUserPermissions(ctx, p)
-	if err != nil {
-		return legacyResult, providerStates, errors.Wrapf(err, "set user permissions for user %q (id: %d)", user.Username, user.ID)
-	}
-
 	logger.Debug("synced",
-		log.Int("count", len(p.IDs)),
+		log.Int("count", len(repoIDs)),
 		log.Object("fetchOpts", log.Bool("InvalidateCache", fetchOpts.InvalidateCaches)),
 	)
 

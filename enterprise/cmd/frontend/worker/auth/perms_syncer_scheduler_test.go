@@ -29,13 +29,6 @@ func addPerms(t *testing.T, s edb.PermsStore, userID, repoID int32) {
 
 	_, err := s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: userID, ExternalAccountID: userID - 1}, []int32{repoID}, authz.SourceUserSync)
 	require.NoError(t, err)
-	_, err = s.SetUserPermissions(ctx, &authz.UserPermissions{
-		UserID: userID,
-		IDs:    map[int32]struct{}{repoID: {}},
-		Perm:   authz.Read,
-		Type:   authz.PermRepos,
-	})
-	require.NoError(t, err)
 }
 
 func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {

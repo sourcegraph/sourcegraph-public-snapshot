@@ -230,15 +230,7 @@ func TestPermsStore_LoadRepoPermissions(t *testing.T) {
 
 		setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 2, RepoID: 1}})
 
-		up := &authz.UserPermissions{
-			UserID: 2,
-			Perm:   authz.Read,
-			Type:   authz.PermRepos,
-			IDs:    toMapset(1),
-		}
 		if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
-			t.Fatal(err)
-		} else if _, err := s.SetUserPermissions(context.Background(), up); err != nil {
 			t.Fatal(err)
 		}
 
@@ -257,15 +249,7 @@ func TestPermsStore_LoadRepoPermissions(t *testing.T) {
 
 		setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 2, RepoID: 1}})
 
-		up := &authz.UserPermissions{
-			UserID: 2,
-			Perm:   authz.Read,
-			Type:   authz.PermRepos,
-			IDs:    toMapset(1),
-		}
 		if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
-			t.Fatal(err)
-		} else if _, err := s.SetUserPermissions(context.Background(), up); err != nil {
 			t.Fatal(err)
 		}
 
@@ -391,7 +375,7 @@ func checkLegacyPermsTable(s *permsStore, sql string, expects map[int32][]uint32
 	return nil
 }
 
-func TestPermsStore_SetUserPermissions(t *testing.T) {
+func TestPermsStore_SetUserPerms(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -403,28 +387,28 @@ func TestPermsStore_SetUserPermissions(t *testing.T) {
 
 	const countToExceedParameterLimit = 17000 // ~ 65535 / 4 parameters per row
 
-	tests := []struct {
-		name            string
-		slowTest        bool
-		updates         []*authz.UserPermissions
-		expectUserPerms map[int32][]uint32 // user_id -> object_ids
-		expectRepoPerms map[int32][]uint32 // repo_id -> user_ids
-		expectedResult  []*database.SetPermissionsResult
+	type testUpdate struct {
+		userID            int32
+		externalAccountID int32
+		repoIDs           []int32
+	}
 
-		upsertRepoPermissionsPageSize int
+	tests := []struct {
+		name          string
+		slowTest      bool
+		updates       []testUpdate
+		expectedPerms []authz.Permission
+		expectedStats []*database.SetPermissionsResult
 	}{
 		{
 			name: "empty",
-			updates: []*authz.UserPermissions{
-				{
-					UserID: 1,
-					Perm:   authz.Read,
-				},
-			},
-			expectUserPerms: map[int32][]uint32{
-				1: {},
-			},
-			expectedResult: []*database.SetPermissionsResult{{
+			updates: []testUpdate{{
+				userID:            1,
+				externalAccountID: 1,
+				repoIDs:           []int32{},
+			}},
+			expectedPerms: []authz.Permission{},
+			expectedStats: []*database.SetPermissionsResult{{
 				Added:   0,
 				Removed: 0,
 				Found:   0,
@@ -432,192 +416,166 @@ func TestPermsStore_SetUserPermissions(t *testing.T) {
 		},
 		{
 			name: "add",
-			updates: []*authz.UserPermissions{
-				{
-					UserID: 1,
-					Perm:   authz.Read,
-					IDs:    toMapset(1),
-				}, {
-					UserID: 2,
-					Perm:   authz.Read,
-					IDs:    toMapset(1, 2),
-				}, {
-					UserID: 3,
-					Perm:   authz.Read,
-					IDs:    toMapset(3, 4),
-				},
-			},
-			expectUserPerms: map[int32][]uint32{
-				1: {1},
-				2: {1, 2},
-				3: {3, 4},
-			},
-			expectRepoPerms: map[int32][]uint32{
-				1: {1, 2},
-				2: {2},
-				3: {3},
-				4: {3},
-			},
-			expectedResult: []*database.SetPermissionsResult{
-				{
-					Added:   1,
-					Removed: 0,
-					Found:   1,
-				},
-				{
-					Added:   2,
-					Removed: 0,
-					Found:   2,
-				},
-				{
-					Added:   2,
-					Removed: 0,
-					Found:   2,
-				},
-			},
+			updates: []testUpdate{{
+				userID:            1,
+				externalAccountID: 1,
+				repoIDs:           []int32{1},
+			}, {
+				userID:            2,
+				externalAccountID: 2,
+				repoIDs:           []int32{1, 2},
+			}, {
+				userID:            3,
+				externalAccountID: 3,
+				repoIDs:           []int32{3, 4},
+			}},
+			expectedPerms: []authz.Permission{{
+				UserID:            1,
+				ExternalAccountID: 1,
+				RepoID:            1,
+				Source:            authz.SourceUserSync,
+			}, {
+				UserID:            2,
+				ExternalAccountID: 2,
+				RepoID:            1,
+				Source:            authz.SourceUserSync,
+			}, {
+				UserID:            2,
+				ExternalAccountID: 2,
+				RepoID:            2,
+				Source:            authz.SourceUserSync,
+			}, {
+				UserID:            3,
+				ExternalAccountID: 3,
+				RepoID:            3,
+				Source:            authz.SourceUserSync,
+			}, {
+				UserID:            3,
+				ExternalAccountID: 3,
+				RepoID:            4,
+				Source:            authz.SourceUserSync,
+			}},
+			expectedStats: []*database.SetPermissionsResult{{
+				Added:   1,
+				Removed: 0,
+				Found:   1,
+			}, {
+				Added:   2,
+				Removed: 0,
+				Found:   2,
+			}, {
+				Added:   2,
+				Removed: 0,
+				Found:   2,
+			}},
 		},
 		{
 			name: "add and update",
-			updates: []*authz.UserPermissions{
-				{
-					UserID: 1,
-					Perm:   authz.Read,
-					IDs:    toMapset(1),
-				}, {
-					UserID: 1,
-					Perm:   authz.Read,
-					IDs:    toMapset(2, 3),
-				}, {
-					UserID: 2,
-					Perm:   authz.Read,
-					IDs:    toMapset(1, 2),
-				}, {
-					UserID: 2,
-					Perm:   authz.Read,
-					IDs:    toMapset(1, 3),
-				},
-			},
-			expectUserPerms: map[int32][]uint32{
-				1: {2, 3},
-				2: {1, 3},
-			},
-			expectRepoPerms: map[int32][]uint32{
-				1: {2},
-				2: {1},
-				3: {1, 2},
-			},
-			expectedResult: []*database.SetPermissionsResult{
-				{
-					Added:   1,
-					Removed: 0,
-					Found:   1,
-				},
-				{
-					Added:   2,
-					Removed: 1,
-					Found:   2,
-				},
-				{
-					Added:   2,
-					Removed: 0,
-					Found:   2,
-				},
-				{
-					Added:   1,
-					Removed: 1,
-					Found:   2,
-				},
-			},
+			updates: []testUpdate{{
+				userID:            1,
+				externalAccountID: 1,
+				repoIDs:           []int32{1},
+			}, {
+				userID:            1,
+				externalAccountID: 1,
+				repoIDs:           []int32{2, 3},
+			}, {
+				userID:            2,
+				externalAccountID: 2,
+				repoIDs:           []int32{1, 2},
+			}, {
+				userID:            2,
+				externalAccountID: 2,
+				repoIDs:           []int32{1, 3},
+			}},
+			expectedPerms: []authz.Permission{{
+				UserID:            1,
+				ExternalAccountID: 1,
+				RepoID:            2,
+				Source:            authz.SourceUserSync,
+			}, {
+				UserID:            1,
+				ExternalAccountID: 1,
+				RepoID:            3,
+				Source:            authz.SourceUserSync,
+			}, {
+				UserID:            2,
+				ExternalAccountID: 2,
+				RepoID:            1,
+				Source:            authz.SourceUserSync,
+			}, {
+				UserID:            2,
+				ExternalAccountID: 2,
+				RepoID:            3,
+				Source:            authz.SourceUserSync,
+			}},
+			expectedStats: []*database.SetPermissionsResult{{
+				Added:   1,
+				Removed: 0,
+				Found:   1,
+			}, {
+				Added:   2,
+				Removed: 1,
+				Found:   2,
+			}, {
+				Added:   2,
+				Removed: 0,
+				Found:   2,
+			}, {
+				Added:   1,
+				Removed: 1,
+				Found:   2,
+			}},
 		},
 		{
 			name: "add and clear",
-			updates: []*authz.UserPermissions{
-				{
-					UserID: 1,
-					Perm:   authz.Read,
-					IDs:    toMapset(1, 2, 3),
-				}, {
-					UserID: 1,
-					Perm:   authz.Read,
-					IDs:    toMapset(),
-				},
-			},
-			expectUserPerms: map[int32][]uint32{
-				1: {},
-			},
-			expectRepoPerms: map[int32][]uint32{
-				1: {},
-				2: {},
-				3: {},
-			},
-			expectedResult: []*database.SetPermissionsResult{
-				{
-					Added:   3,
-					Removed: 0,
-					Found:   3,
-				},
-				{
-					Added:   0,
-					Removed: 3,
-					Found:   0,
-				},
-			},
-		},
-		{
-			name:                          "add and page",
-			upsertRepoPermissionsPageSize: 2,
-			updates: []*authz.UserPermissions{
-				{
-					UserID: 1,
-					Perm:   authz.Read,
-					IDs:    toMapset(1, 2, 3),
-				},
-			},
-			expectUserPerms: map[int32][]uint32{
-				1: {1, 2, 3},
-			},
-			expectRepoPerms: map[int32][]uint32{
-				1: {1},
-				2: {1},
-				3: {1},
-			},
-			expectedResult: []*database.SetPermissionsResult{
-				{
-					Added:   3,
-					Removed: 0,
-					Found:   3,
-				},
-			},
+			updates: []testUpdate{{
+				userID:            1,
+				externalAccountID: 1,
+				repoIDs:           []int32{1, 2, 3},
+			}, {
+				userID:            1,
+				externalAccountID: 1,
+				repoIDs:           []int32{},
+			}},
+			expectedPerms: []authz.Permission{},
+			expectedStats: []*database.SetPermissionsResult{{
+				Added:   3,
+				Removed: 0,
+				Found:   3,
+			}, {
+				Added:   0,
+				Removed: 3,
+				Found:   0,
+			}},
 		},
 		{
 			name:     postgresParameterLimitTest,
 			slowTest: true,
-			updates: func() []*authz.UserPermissions {
-				user := &authz.UserPermissions{
-					UserID: 1,
-					Perm:   authz.Read,
-					IDs:    toMapset(),
+			updates: func() []testUpdate {
+				u := testUpdate{
+					userID:            1,
+					externalAccountID: 1,
+					repoIDs:           make([]int32, countToExceedParameterLimit),
 				}
 				for i := 1; i <= countToExceedParameterLimit; i += 1 {
-					user.IDs[int32(i)] = struct{}{}
+					u.repoIDs[i-1] = int32(i)
 				}
-				return []*authz.UserPermissions{user}
+				return []testUpdate{u}
 			}(),
-			expectUserPerms: func() map[int32][]uint32 {
-				repos := make([]uint32, countToExceedParameterLimit)
+			expectedPerms: func() []authz.Permission {
+				p := make([]authz.Permission, countToExceedParameterLimit)
 				for i := 1; i <= countToExceedParameterLimit; i += 1 {
-					repos[i-1] = uint32(i)
+					p[i-1] = authz.Permission{
+						UserID:            1,
+						ExternalAccountID: 1,
+						RepoID:            int32(i),
+						Source:            authz.SourceUserSync,
+					}
 				}
-				return map[int32][]uint32{1: repos}
+				return p
 			}(),
-			expectRepoPerms: func() map[int32][]uint32 {
-				repos := make(map[int32][]uint32, countToExceedParameterLimit)
-				for i := 1; i <= countToExceedParameterLimit; i += 1 {
-					repos[int32(i)] = []uint32{1}
-				}
-				return repos
-			}(),
-			expectedResult: func() []*database.SetPermissionsResult {
+			expectedStats: func() []*database.SetPermissionsResult {
 				result := make([]*database.SetPermissionsResult, countToExceedParameterLimit)
 				for i := 0; i < countToExceedParameterLimit; i++ {
 					result[i] = &database.SetPermissionsResult{
@@ -635,32 +593,34 @@ func TestPermsStore_SetUserPermissions(t *testing.T) {
 		logger := logtest.Scoped(t)
 		s := perms(logger, db, clock)
 		t.Cleanup(func() {
+			cleanupUsersTable(t, s)
+			cleanupReposTable(t, s)
 			cleanupPermsTables(t, s)
 		})
 
-		up := &authz.UserPermissions{
-			UserID: 2,
-			Perm:   authz.Read,
-			Type:   authz.PermRepos,
-			IDs:    toMapset(1),
-		}
-		expectedResult := &database.SetPermissionsResult{
+		expectedStats := &database.SetPermissionsResult{
 			Added:   1,
 			Removed: 0,
 			Found:   1,
 		}
+		expectedPerms := []authz.Permission{
+			{UserID: 2, ExternalAccountID: 1, RepoID: 1, Source: authz.SourceUserSync},
+		}
+		setupPermsRelatedEntities(t, s, expectedPerms)
 
+		u := authz.UserIDWithExternalAccountID{
+			UserID:            2,
+			ExternalAccountID: 1,
+		}
+		repoIDs := []int32{1}
 		var stats *database.SetPermissionsResult
 		var err error
-		if stats, err = s.SetUserPermissions(context.Background(), up); err != nil {
+		if stats, err = s.SetUserExternalAccountPerms(context.Background(), u, repoIDs, authz.SourceUserSync); err != nil {
 			t.Fatal(err)
 		}
 
-		gotIDs, err := s.legacyLoadUserPermissions(context.Background(), up.UserID, "")
-		require.NoError(t, err)
-
-		equal(t, "up.IDs", []int32{1}, gotIDs)
-		equal(t, "stats", expectedResult, stats)
+		checkUserRepoPermissions(t, s, sqlf.Sprintf("user_id = %d", u.UserID), expectedPerms)
+		equal(t, "stats", expectedStats, stats)
 	})
 
 	for _, test := range tests {
@@ -669,47 +629,48 @@ func TestPermsStore_SetUserPermissions(t *testing.T) {
 				t.Skip("slow-tests not enabled")
 			}
 
-			if test.upsertRepoPermissionsPageSize > 0 {
-				upsertRepoPermissionsPageSize = test.upsertRepoPermissionsPageSize
-			}
-
 			s := perms(logger, db, clock)
 			t.Cleanup(func() {
+				cleanupUsersTable(t, s)
+				cleanupReposTable(t, s)
 				cleanupPermsTables(t, s)
-				if test.upsertRepoPermissionsPageSize > 0 {
-					upsertRepoPermissionsPageSize = defaultUpsertRepoPermissionsPageSize
-				}
 			})
 
-			for index, p := range test.updates {
-				tmp := &authz.UserPermissions{
-					UserID:    p.UserID,
-					Perm:      p.Perm,
-					UpdatedAt: p.UpdatedAt,
+			updates := []authz.Permission{}
+			for _, u := range test.updates {
+				for _, r := range u.repoIDs {
+					updates = append(updates, authz.Permission{
+						UserID:            u.userID,
+						ExternalAccountID: u.externalAccountID,
+						RepoID:            r,
+					})
 				}
-				if p.IDs != nil {
-					tmp.IDs = p.IDs
+			}
+			if len(updates) > 0 {
+				setupPermsRelatedEntities(t, s, updates)
+			}
+
+			for i, p := range test.updates {
+				u := authz.UserIDWithExternalAccountID{
+					UserID:            p.userID,
+					ExternalAccountID: p.externalAccountID,
 				}
-				result, err := s.SetUserPermissions(context.Background(), tmp)
+				result, err := s.SetUserExternalAccountPerms(context.Background(), u, p.repoIDs, authz.SourceUserSync)
 				require.NoError(t, err)
-				equal(t, "result", test.expectedResult[index], result)
+				equal(t, "result", test.expectedStats[i], result)
 			}
 
-			err := checkLegacyPermsTable(s, `SELECT user_id, object_ids_ints FROM user_permissions`, test.expectUserPerms)
-			if err != nil {
-				t.Fatal("user_permissions:", err)
-			}
-
-			err = checkLegacyPermsTable(s, `SELECT repo_id, user_ids_ints FROM repo_permissions`, test.expectRepoPerms)
-			if err != nil {
-				t.Fatal("repo_permissions:", err)
-			}
+			checkUserRepoPermissions(t, s, nil, test.expectedPerms)
 		})
 	}
 }
 
 func checkUserRepoPermissions(t *testing.T, s *permsStore, where *sqlf.Query, expectedPermissions []authz.Permission) {
 	t.Helper()
+
+	if where == nil {
+		where = sqlf.Sprintf("TRUE")
+	}
 	format := "SELECT user_id, user_external_account_id, repo_id, created_at, updated_at, source FROM user_repo_permissions WHERE %s;"
 	permissions, err := ScanPermissions(s.Query(context.Background(), sqlf.Sprintf(format, where)))
 	if err != nil {
@@ -2929,7 +2890,7 @@ func TestPermsStore_GrantPendingPermissions(t *testing.T) {
 				}
 			}
 
-			checkUserRepoPermissions(t, s, sqlf.Sprintf("TRUE"), test.expectUserRepoPerms)
+			checkUserRepoPermissions(t, s, nil, test.expectUserRepoPerms)
 
 			err := checkLegacyPermsTable(s, `SELECT user_id, object_ids_ints FROM user_permissions`, test.expectUserPerms)
 			if err != nil {
@@ -3212,15 +3173,6 @@ func TestPermsStore_DatabaseDeadlocks(t *testing.T) {
 		},
 	})
 
-	setUserPermissions := func(ctx context.Context, t *testing.T) {
-		if _, err := s.SetUserPermissions(ctx, &authz.UserPermissions{
-			UserID: 1,
-			Perm:   authz.Read,
-			IDs:    toMapset(1),
-		}); err != nil {
-			t.Fatal(err)
-		}
-	}
 	setRepoPermissions := func(ctx context.Context, t *testing.T) {
 		if _, err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
 			RepoID:  1,
@@ -3257,7 +3209,7 @@ func TestPermsStore_DatabaseDeadlocks(t *testing.T) {
 	// Ensure we've run all permutations of ordering of the 4 calls to avoid nondeterminism in
 	// test coverage stats.
 	funcs := []func(context.Context, *testing.T){
-		setRepoPendingPermissions, grantPendingPermissions, setRepoPermissions, setUserPermissions,
+		setRepoPendingPermissions, grantPendingPermissions, setRepoPermissions,
 	}
 	permutated := permutation.New(permutation.MustAnySlice(funcs))
 	for permutated.Next() {
@@ -3268,13 +3220,7 @@ func TestPermsStore_DatabaseDeadlocks(t *testing.T) {
 
 	const numOps = 50
 	var wg sync.WaitGroup
-	wg.Add(4)
-	go func() {
-		defer wg.Done()
-		for i := 0; i < numOps; i++ {
-			setUserPermissions(ctx, t)
-		}
-	}()
+	wg.Add(3)
 	go func() {
 		defer wg.Done()
 		for i := 0; i < numOps; i++ {
