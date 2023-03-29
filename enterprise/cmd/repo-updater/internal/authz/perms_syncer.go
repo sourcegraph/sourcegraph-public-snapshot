@@ -265,6 +265,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 // syncUserPerms processes permissions syncing request in user-centric way. When `noPerms` is true,
 // the method will use partial results to update permissions tables even when error occurs.
 func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms bool, fetchOpts authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
+	var err error
 	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms", "")
 	defer save(requestTypeUser, userID, &err)
 
@@ -336,10 +337,10 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	metricsSuccessPermsSyncs.WithLabelValues("user").Inc()
 
 	if latestSyncJob != nil {
-		metricsPermsConsecutiveSyncDelay.WithLabelValues("user").Set(p.SyncedAt.Sub(latestSyncJob.FinishedAt).Seconds())
+		metricsPermsConsecutiveSyncDelay.WithLabelValues("user").Set(s.clock().Sub(latestSyncJob.FinishedAt).Seconds())
 	} else {
 		metricsFirstPermsSyncs.WithLabelValues("user").Inc()
-		metricsPermsFirstSyncDelay.WithLabelValues("user").Set(p.SyncedAt.Sub(user.CreatedAt).Seconds())
+		metricsPermsFirstSyncDelay.WithLabelValues("user").Set(s.clock().Sub(user.CreatedAt).Seconds())
 	}
 
 	return result, providerStates, nil
