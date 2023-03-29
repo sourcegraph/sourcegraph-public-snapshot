@@ -11,6 +11,9 @@ import { EventLogger } from './eventLogger'
 import { LocalStorage } from './LocalStorageProvider'
 import { CODY_ACCESS_TOKEN_SECRET, InMemorySecretStorage, SecretStorage, VSCodeSecretStorage } from './secret-storage'
 
+// eventLogger const
+const eventLogger = new EventLogger.getInstance()
+
 function getSecretStorage(context: vscode.ExtensionContext): SecretStorage {
     return process.env.CODY_TESTING === 'true' ? new InMemorySecretStorage() : new VSCodeSecretStorage(context.secrets)
 }
@@ -63,7 +66,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
             await config.update('cody.enabled', !config.get('cody.enabled'), vscode.ConfigurationTarget.Global)
             // log event
             try {
-                EventLogger.log('CodyVSCodeExtension:codyToggleEnabled:clicked')
+                eventLogger.log('CodyVSCodeExtension:codyToggleEnabled:clicked')
             } catch (error) {
                 console.log(error)
             }
@@ -77,11 +80,11 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
             await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, tokenInput)
             // log event
             try {
-                EventLogger.log('CodyVSCodeExtension:codySetAccessToken:clicked')
+                eventLogger.log('CodyVSCodeExtension:codySetAccessToken:clicked')
                 if (tokenInput) {
-                    EventLogger.log('CodyVSCodeExtension:codySetAccessToken:clicked:tokenSet')
+                    eventLogger.log('CodyVSCodeExtension:codySetAccessToken:clicked:tokenSet')
                 } else {
-                    EventLogger.log('CodyVSCodeExtension:codySetAccessToken:clicked:noTokenSet')
+                    eventLogger.log('CodyVSCodeExtension:codySetAccessToken:clicked:noTokenSet')
                 }
             } catch (error) {
                 console.log(error)
@@ -90,11 +93,11 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         vscode.commands.registerCommand('cody.delete-access-token', async () => {
             // log event
             try {
-                EventLogger.log('CodyVSCodeExtension:codyDeleteAccessToken:clicked')
+                eventLogger.log('CodyVSCodeExtension:codyDeleteAccessToken:clicked')
                 if (!secretStorage.get(CODY_ACCESS_TOKEN_SECRET)) {
-                    EventLogger.log('CodyVSCodeExtension:codyDeleteAccessToken:clicked:noToken')
+                    eventLogger.log('CodyVSCodeExtension:codyDeleteAccessToken:clicked:noToken')
                 } else {
-                    EventLogger.log('CodyVSCodeExtension:codyDeleteAccessToken:clicked:tokenExists')
+                    eventLogger.log('CodyVSCodeExtension:codyDeleteAccessToken:clicked:tokenExists')
                 }
             } catch (error) {
                 console.log(error)
@@ -113,7 +116,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
             executeRecipe('explain-code-detailed')
             // log event
             try {
-                EventLogger.log('CodyVSCodeExtension:codyExplainCode:clicked')
+                eventLogger.log('CodyVSCodeExtension:codyExplainCode:clicked')
             } catch (error) {
                 console.log(error)
             }
@@ -122,7 +125,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
             executeRecipe('explain-code-high-level')
             // log event
             try {
-                EventLogger.log('CodyVSCodeExtension:codyExplainCodeHighLevel:clicked')
+                eventLogger.log('CodyVSCodeExtension:codyExplainCodeHighLevel:clicked')
             } catch (error) {
                 console.log(error)
             }
@@ -131,7 +134,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
             executeRecipe('generate-unit-test')
             // log event
             try {
-                EventLogger.log('CodyVSCodeExtension:codyGenerateUnitTest:clicked')
+                eventLogger.log('CodyVSCodeExtension:codyGenerateUnitTest:clicked')
             } catch (error) {
                 console.log(error)
             }
@@ -140,7 +143,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
             executeRecipe('generate-docstring')
             // log event
             try {
-                EventLogger.log('CodyVSCodeExtension:codyGenerateDocstring:clicked')
+                eventLogger.log('CodyVSCodeExtension:codyGenerateDocstring:clicked')
             } catch (error) {
                 console.log(error)
             }
@@ -149,7 +152,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
             executeRecipe('translate-to-language')
             // log event
             try {
-                EventLogger.log('CodyVSCodeExtension:codyTranslateToLanguage:clicked')
+                eventLogger.log('CodyVSCodeExtension:codyTranslateToLanguage:clicked')
             } catch (error) {
                 console.log(error)
             }
@@ -158,7 +161,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
             executeRecipe('git-history')
             // log event
             try {
-                EventLogger.log('CodyVSCodeExtension:codyGitHistory:clicked')
+                eventLogger.log('CodyVSCodeExtension:codyGitHistory:clicked')
             } catch (error) {
                 console.log(error)
             }
@@ -167,7 +170,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
             executeRecipe('improve-variable-names')
             // log event
             try {
-                EventLogger.log('CodyVSCodeExtension:codyImproveVariableNames:clicked')
+                eventLogger.log('CodyVSCodeExtension:codyImproveVariableNames:clicked')
             } catch (error) {
                 console.log(error)
             }

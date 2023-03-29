@@ -7,7 +7,7 @@ import './Recipes.css'
 import { EventLogger } from './eventLogger'
 
 // eventLogger is used to log events
-const eventLogger = new EventLogger('https://sourcegraph.com/')
+const eventLogger = new EventLogger.getInstance()
 
 export const recipesList = {
     'explain-code-detailed': 'Explain selected code (detailed)',
