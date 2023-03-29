@@ -1190,7 +1190,7 @@ func TestPermsStore_SetRepoPermissionsUnrestricted(t *testing.T) {
 		p, err := s.LoadRepoPermissions(ctx, id)
 		require.NoErrorf(t, err, "loading permissions for %d", id)
 
-		unrestricted := (len(p) == 1 && p[0].UserID == 0)
+		unrestricted := len(p) == 1 && p[0].UserID == 0
 
 		fmt.Printf("P: %v %v\n", p, unrestricted)
 
@@ -3438,13 +3438,12 @@ func TestPermsStore_UserIDsWithNoPerms(t *testing.T) {
 	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, NOW(), %s)`, 1, database.ReasonUserNoPermissions)
 	execQuery(t, ctx, s, q)
 
-	s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: 2, ExternalAccountID: 1}, []int32{1}, authz.SourceUserSync)
+	_, err = s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: 2, ExternalAccountID: 1}, []int32{1}, authz.SourceUserSync)
+	require.NoError(t, err)
 
 	// Only "david" has no permissions at this point
 	ids, err = s.UserIDsWithNoPerms(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	expIDs = []int32{4}
 	if diff := cmp.Diff(expIDs, ids); diff != "" {
@@ -3471,7 +3470,7 @@ func TestPermsStore_CountUsersWithNoPerms(t *testing.T) {
 
 	ctx := context.Background()
 
-	// Create test users "alice" and "bob", test repo and test external account
+	// Create test users "alice", "bob", "cindy" and "david", test repo and test external account.
 	qs := []*sqlf.Query{
 		sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`),                    // ID=1
 		sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),                      // ID=2
@@ -3485,30 +3484,23 @@ func TestPermsStore_CountUsersWithNoPerms(t *testing.T) {
 		execQuery(t, ctx, s, q)
 	}
 
-	// "alice", "bob" and "david" have no permissions
+	// "alice", "bob" and "david" have no permissions.
 	count, err := s.CountUsersWithNoPerms(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if diff := cmp.Diff(3, count); diff != "" {
-		t.Fatal(diff)
-	}
+	require.NoError(t, err)
+	require.Equal(t, 3, count)
 
-	// mark sync jobs as completed for "alice" and add permissions for "bob"
-	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, NOW(), %s)`, 1, database.ReasonUserNoPermissions)
+	// Mark sync jobs as completed for "alice".
+	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, status, finished_at, reason) VALUES(%d, NOW(), %s)`, 1, database.PermissionsSyncJobStateCompleted, database.ReasonUserNoPermissions)
 	execQuery(t, ctx, s, q)
 
-	s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: 2, ExternalAccountID: 1}, []int32{1}, authz.SourceUserSync)
+	// Add permissions for "bob".
+	_, err = s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: 2, ExternalAccountID: 1}, []int32{1}, authz.SourceUserSync)
+	require.NoError(t, err)
 
-	// Only "david" has no permissions at this point
+	// Only "david" has no permissions at this point.
 	count, err = s.CountUsersWithNoPerms(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if diff := cmp.Diff(1, count); diff != "" {
-		t.Fatal(diff)
-	}
+	require.NoError(t, err)
+	require.Equal(t, 1, count)
 }
 
 func cleanupReposTable(t *testing.T, s *permsStore) {
@@ -3568,15 +3560,11 @@ func TestPermsStore_RepoIDsWithNoPerms(t *testing.T) {
 	execQuery(t, ctx, s, q)
 
 	_, err = s.SetRepoPerms(ctx, 3, []authz.UserIDWithExternalAccountID{{UserID: 1, ExternalAccountID: 1}}, authz.SourceRepoSync)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	// No private repositories have any permissions at this point
 	ids, err = s.RepoIDsWithNoPerms(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	assert.Nil(t, ids)
 }
@@ -3600,7 +3588,7 @@ func TestPermsStore_CountReposWithNoPerms(t *testing.T) {
 
 	ctx := context.Background()
 
-	// Create three test repositories
+	// Create four test repositories, test user and test external account.
 	qs := []*sqlf.Query{
 		sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo', TRUE)`),                      // ID=1
 		sqlf.Sprintf(`INSERT INTO repo(name) VALUES('public_repo')`),                                      // ID=2
@@ -3614,34 +3602,22 @@ func TestPermsStore_CountReposWithNoPerms(t *testing.T) {
 		execQuery(t, ctx, s, q)
 	}
 
-	// Should get back two private repos that are not deleted
+	// Should get back two private repos that are not deleted.
 	count, err := s.CountReposWithNoPerms(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if diff := cmp.Diff(2, count); diff != "" {
-		t.Fatal(diff)
-	}
+	require.NoError(t, err)
+	require.Equal(t, 2, count)
 
 	// mark sync jobs as completed for "private_repo" and add permissions for "private_repo_2"
 	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, NOW(), %s)`, 1, database.ReasonRepoNoPermissions)
 	execQuery(t, ctx, s, q)
 
 	_, err = s.SetRepoPerms(ctx, 3, []authz.UserIDWithExternalAccountID{{UserID: 1, ExternalAccountID: 1}}, authz.SourceRepoSync)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	// No private repositories have any permissions at this point
+	// All private repositories have permissions at this point.
 	count, err = s.CountReposWithNoPerms(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if diff := cmp.Diff(0, count); diff != "" {
-		t.Fatal(diff)
-	}
+	require.NoError(t, err)
+	require.Equal(t, 0, count)
 }
 
 func TestPermsStore_UserIDsWithOldestPerms(t *testing.T) {
@@ -3767,7 +3743,7 @@ func TestPermsStore_CountUsersWithOldestPerms(t *testing.T) {
 		cleanupUsersTable(t, s)
 	})
 
-	// Set up some users and permissions
+	// Set up some users and permissions.
 	qs := []*sqlf.Query{
 		sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(1, 'alice')`),
 		sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(2, 'bob')`),
@@ -3777,63 +3753,43 @@ func TestPermsStore_CountUsersWithOldestPerms(t *testing.T) {
 		execQuery(t, ctx, s, q)
 	}
 
-	// mark sync jobs as completed for users 1, 2 and 3
-	user1UpdatedAt := clock().Add(-15 * time.Minute)
-	user2UpdatedAt := clock().Add(-5 * time.Minute)
-	user3UpdatedAt := clock().Add(-11 * time.Minute)
-	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 1, user1UpdatedAt, database.ReasonUserOutdatedPermissions)
+	// Mark sync jobs as completed for users 1, 2 and 3.
+	user1FinishedAt := clock().Add(-15 * time.Minute)
+	user2FinishedAt := clock().Add(-5 * time.Minute)
+	user3FinishedAt := clock().Add(-11 * time.Minute)
+	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 1, user1FinishedAt, database.ReasonUserOutdatedPermissions)
 	execQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 2, user2UpdatedAt, database.ReasonUserOutdatedPermissions)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 2, user2FinishedAt, database.ReasonUserOutdatedPermissions)
 	execQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 3, user3UpdatedAt, database.ReasonUserOutdatedPermissions)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 3, user3FinishedAt, database.ReasonUserOutdatedPermissions)
 	execQuery(t, ctx, s, q)
 
 	t.Run("One result when age is 10 minutes", func(t *testing.T) {
-		// Should only get user 1 back, because age is 10 minutes
+		// Should only get user 1 back, because age is 10 minutes.
 		count, err := s.CountUsersWithOldestPerms(ctx, 10*time.Minute)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if diff := cmp.Diff(1, count); diff != "" {
-			t.Fatal(diff)
-		}
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
 	})
 
 	t.Run("Both users are returned when age is 1 minute, and deleted user is ignored", func(t *testing.T) {
-		// Should get both users, since the age is 1 minute only
+		// Should get both users, since the age is 1 minute only.
 		count, err := s.CountUsersWithOldestPerms(ctx, 1*time.Minute)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if diff := cmp.Diff(2, count); diff != "" {
-			t.Fatal(diff)
-		}
+		require.NoError(t, err)
+		require.Equal(t, 2, count)
 	})
 
 	t.Run("Both users are returned when age is 0. Deleted users are ignored", func(t *testing.T) {
-		// Should get both users, since the and age is 0
+		// Should get both users, since the and age is 0 and cutoff clause if skipped.
 		count, err := s.CountUsersWithOldestPerms(ctx, 0)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if diff := cmp.Diff(2, count); diff != "" {
-			t.Fatal(diff)
-		}
+		require.NoError(t, err)
+		require.Equal(t, 2, count)
 	})
 
 	t.Run("Ignore users that have synced recently", func(t *testing.T) {
-		// Should get no results, since the and age is 1 hour
+		// Should get no results, since the and age is 1 hour.
 		count, err := s.CountUsersWithOldestPerms(ctx, 1*time.Hour)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if diff := cmp.Diff(0, count); diff != "" {
-			t.Fatal(diff)
-		}
+		require.NoError(t, err)
+		require.Equal(t, 0, count)
 	})
 }
 
@@ -3956,7 +3912,7 @@ func TestPermsStore_CountReposWithOldestPerms(t *testing.T) {
 		cleanupReposTable(t, s)
 	})
 
-	// Set up some repositories and permissions
+	// Set up some repositories and permissions.
 	qs := []*sqlf.Query{
 		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(1, 'private_repo_1', TRUE)`),                    // id=1
 		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(2, 'private_repo_2', TRUE)`),                    // id=2
@@ -3966,63 +3922,43 @@ func TestPermsStore_CountReposWithOldestPerms(t *testing.T) {
 		execQuery(t, ctx, s, q)
 	}
 
-	// mark sync jobs as completed for private_repo_1 and private_repo_2
-	repo1UpdatedAt := clock().Add(-15 * time.Minute)
-	repo2UpdatedAt := clock().Add(-5 * time.Minute)
-	repo3UpdatedAt := clock().Add(-10 * time.Minute)
-	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 1, repo1UpdatedAt, database.ReasonRepoOutdatedPermissions)
+	// Mark sync jobs as completed for all repos.
+	repo1FinishedAt := clock().Add(-15 * time.Minute)
+	repo2FinishedAt := clock().Add(-5 * time.Minute)
+	repo3FinishedAt := clock().Add(-10 * time.Minute)
+	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 1, repo1FinishedAt, database.ReasonRepoOutdatedPermissions)
 	execQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 2, repo2UpdatedAt, database.ReasonRepoOutdatedPermissions)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 2, repo2FinishedAt, database.ReasonRepoOutdatedPermissions)
 	execQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 3, repo3UpdatedAt, database.ReasonRepoOutdatedPermissions)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 3, repo3FinishedAt, database.ReasonRepoOutdatedPermissions)
 	execQuery(t, ctx, s, q)
 
 	t.Run("One result when age is 10 minutes", func(t *testing.T) {
-		// Should only get private_repo_1 back, because age is 10 minutes
+		// Should only get private_repo_1 back, because age is 10 minutes.
 		count, err := s.CountReposWithOldestPerms(ctx, 10*time.Minute)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if diff := cmp.Diff(1, count); diff != "" {
-			t.Fatal(diff)
-		}
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
 	})
 
 	t.Run("Both repos are returned when age is 1 minute", func(t *testing.T) {
-		// Should get both private_repo_1 and private_repo_2, since the age is 1 minute only
+		// Should get both private_repo_1 and private_repo_2, since the age is 1 minute only.
 		count, err := s.CountReposWithOldestPerms(ctx, 1*time.Minute)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if diff := cmp.Diff(2, count); diff != "" {
-			t.Fatal(diff)
-		}
+		require.NoError(t, err)
+		require.Equal(t, 2, count)
 	})
 
 	t.Run("Both repos are returned when age is 0 and deleted repos are ignored", func(t *testing.T) {
-		// Should get both private_repo_1 and private_repo_2, since the age is 0
+		// Should get both private_repo_1 and private_repo_2, since the age is 0 and cutoff clause if skipped.
 		count, err := s.CountReposWithOldestPerms(ctx, 0)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if diff := cmp.Diff(2, count); diff != "" {
-			t.Fatal(diff)
-		}
+		require.NoError(t, err)
+		require.Equal(t, 2, count)
 	})
 
 	t.Run("Ignore repos that have synced recently", func(t *testing.T) {
 		// Should get no results, since the age is 1 hour
 		count, err := s.CountReposWithOldestPerms(ctx, 1*time.Hour)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if diff := cmp.Diff(0, count); diff != "" {
-			t.Fatal(diff)
-		}
+		require.NoError(t, err)
+		require.Equal(t, 0, count)
 	})
 }
 
@@ -4668,10 +4604,6 @@ func (p *fakeProvider) URN() string         { return extsvc.URN(p.codeHost.Servi
 func (p *fakeProvider) ValidateConnection(context.Context) error { return nil }
 
 func (p *fakeProvider) FetchUserPerms(context.Context, *extsvc.Account, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	return nil, nil
-}
-
-func (p *fakeProvider) FetchUserPermsByToken(context.Context, string, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	return nil, nil
 }
 
