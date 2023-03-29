@@ -81,7 +81,8 @@
             color: var(--light-text);
         }
 
-        .delete-button {
+        .delete-button,
+        .error-button {
             color: var(--light-text);
 
             &:hover,
@@ -115,4 +116,31 @@
     &-status {
         color: var(--text-muted);
     }
+}
+
+.error-button {
+    font-size: var(--small-size-font);
+    padding: 0.15rem 0.25rem;
+    margin: -0.15rem -0.25rem;
+    color: var(--danger);
+    border: none;
+    font-weight: normal;
+
+    &:hover,
+    &:focus {
+        color: var(--danger);
+        background-color: var(--danger-4);
+    }
+
+    :global(.theme-dark) & {
+        &:hover,
+        &:focus {
+            color: var(--light-text);
+            background-color: var(--danger-2);
+        }
+    }
+}
+
+.error-popover {
+    max-width: 26rem;
 }
