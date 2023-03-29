@@ -124,7 +124,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                 {/* that col-md-8 is a little too large for the two buttons in a row */}
                 <div className="d-flex flex-column justify-content-between flex-md-row col px-0">
                     <div className="d-flex col align-items-center px-0">
-                        <ExternalRepositoryIcon externalRepo={node.externalRepository} className={styles.repoIcon} />
+                        <ExternalRepositoryIcon externalRepo={node.externalRepository} />
                         <RepoLink repoName={node.name} to={node.url} />
                     </div>
 
