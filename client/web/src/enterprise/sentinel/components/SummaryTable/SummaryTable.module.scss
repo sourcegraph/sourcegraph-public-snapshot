@@ -4,14 +4,14 @@
     border: 1px solid var(--border-color-2);
     background-color: var(--color-bg-1);
     border-radius: var(--border-radius);
-    margin-bottom: 12px;
+    margin-bottom: 0.75rem;
 }
 
 .container {
     padding: 1rem;
     column-gap: 20px;
     button {
-        font-size: 12px;
+        font-size: 0.75rem;
     }
 }
 
@@ -36,7 +36,7 @@
     font-family: var(--font-family-base);
     font-style: normal;
     font-weight: 600;
-    font-size: 12px;
+    font-size: 0.75rem;
     line-height: 15px;
     color: #0e1e3f;
     display: grid;

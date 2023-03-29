@@ -14,9 +14,9 @@
     display: flex;
     align-items: flex-start;
     margin-bottom: 1rem;
-    padding: 34px 0 14px 0;
+    padding: 2.125rem 0 0.875rem 0;
     border-bottom: 1px solid var(--gray-03);
-    font-size: 32px;
+    font-size: 2rem;
     border: none;
     grid-area: header;
 }
@@ -60,7 +60,7 @@
     }
 }
 
-.buttonContainer {
+.button-container {
     grid-area: buttons;
 }
 
