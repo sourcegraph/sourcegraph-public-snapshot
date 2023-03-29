@@ -146,8 +146,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     try {
                         const doc = await vscode.workspace.openTextDocument(uri)
                         await vscode.window.showTextDocument(doc)
-                    } catch (err) {
-                        console.error(`Could not open file: ${err}`)
+                    } catch (error) {
+                        console.error(`Could not open file: ${error}`)
                     }
                 } else {
                     console.error('Could not open file because rootPath is null')
