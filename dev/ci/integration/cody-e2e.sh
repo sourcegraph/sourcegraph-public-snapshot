@@ -5,6 +5,8 @@ source /root/.profile
 set -ex
 
 # ==========================
+echo "--- starting system dbus"
+dbus-daemon --system --fork
 echo "--- starting dbus session"
 export DBUS_SESSION_BUS_ADDRESS=$(dbus-daemon --session --print-address --fork)
 export DISPLAY=":99"
