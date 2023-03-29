@@ -322,6 +322,7 @@ func addCodyExtensionTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(
 		":vscode::robot_face: Integration tests for the Cody VS Code extension",
 		withPnpmCache(),
+		bk.Env("DBUS_SESSION_BUS_ADDRESS", "autolaunch:"),
 		bk.Env("DISPLAY", ":99"),
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm --filter cody-ai run test:integration"),
