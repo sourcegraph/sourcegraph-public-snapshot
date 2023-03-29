@@ -16,6 +16,7 @@ async function main(): Promise<void> {
     // it in the src/ dir.
     const testWorkspacePath = path.resolve(codyRoot, 'src', 'integration-test', 'workspace')
 
+    // This comment is here to trigger this test in CI
     try {
         // The directory containing the extension's package.json, passed to
         // --extensionDevelopmentPath.
