@@ -166,6 +166,8 @@ type JSContext struct {
 
 	AuthProviders []authProviderInfo `json:"authProviders"`
 
+	AuthAccessRequest *schema.AuthAccessRequest `json:"authAccessRequest"`
+
 	Branding *schema.Branding `json:"branding"`
 
 	BatchChangesEnabled                bool `json:"batchChangesEnabled"`
@@ -341,6 +343,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		AuthPasswordPolicy:    authPasswordPolicy,
 
 		AuthProviders: authProviders,
+
+		AuthAccessRequest: conf.Get().AuthAccessRequest,
 
 		Branding: globals.Branding(),
 

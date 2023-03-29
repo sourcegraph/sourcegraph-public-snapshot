@@ -304,12 +304,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             Try Sourcegraph Enterprise
                         </ButtonLink>
                     )}
-                    {props.authenticatedUser?.siteAdmin && (
-                        <AccessRequestsGlobalNavItem
-                            isSourcegraphDotCom={isSourcegraphDotCom}
-                            context={window.context}
-                        />
-                    )}
+                    {props.authenticatedUser?.siteAdmin && <AccessRequestsGlobalNavItem />}
                     {isSourcegraphDotCom && (
                         <NavAction>
                             <Tooltip content="The Sourcegraph desktop app runs locally and works on your own private code.">

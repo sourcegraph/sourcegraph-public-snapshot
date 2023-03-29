@@ -42,11 +42,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     const location = useLocation()
     const [error, setError] = useState<Error | null>(null)
     const [searchParams] = useSearchParams()
-    const isRequestAccessAllowed = checkRequestAccessAllowed(
-        isSourcegraphDotCom,
-        context.allowSignup,
-        context.experimentalFeatures
-    )
+    const isRequestAccessAllowed = checkRequestAccessAllowed(window.context)
 
     if (authenticatedUser) {
         const returnTo = getReturnTo(location)

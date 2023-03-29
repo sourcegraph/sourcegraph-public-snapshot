@@ -51,11 +51,7 @@ export const AnalyticsOverviewPage: React.FunctionComponent<Props> = () => {
             },
         ]
 
-        const isRequestAccessAllowed = checkRequestAccessAllowed(
-            window.context.sourcegraphDotComMode,
-            window.context.allowSignup,
-            window.context.experimentalFeatures
-        )
+        const isRequestAccessAllowed = checkRequestAccessAllowed(window.context)
 
         if (isRequestAccessAllowed) {
             items.push({ label: 'Pending requests', value: data.pendingAccessRequests.totalCount || 0 })

@@ -29,12 +29,12 @@ func TestRequestAccess(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	handler := HandleRequestAccess(logger, db)
 
-	t.Run("experimental feature disabled", func(t *testing.T) {
-		falseVal := false
+	t.Run("accessRequest feature is disabled", func(t *testing.T) {
+		trueVal := true
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
-				ExperimentalFeatures: &schema.ExperimentalFeatures{
-					AccessRequestEnabled: &falseVal,
+				AuthAccessRequest: &schema.AuthAccessRequest{
+					Disabled: &trueVal,
 				},
 			},
 		})

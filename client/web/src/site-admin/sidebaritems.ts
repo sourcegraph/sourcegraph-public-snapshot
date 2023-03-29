@@ -117,12 +117,7 @@ export const usersGroup: SiteAdminSideBarGroup = {
         {
             label: 'Account requests',
             to: '/site-admin/account-requests',
-            condition: context =>
-                checkRequestAccessAllowed(
-                    context.isSourcegraphDotCom,
-                    window.context.allowSignup,
-                    window.context.experimentalFeatures
-                ),
+            condition: () => checkRequestAccessAllowed(window.context),
         },
         {
             label: 'Organizations',

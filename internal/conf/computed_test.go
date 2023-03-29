@@ -286,28 +286,26 @@ func TestIsAccessRequestEnabled(t *testing.T) {
 			name: "parent object set should return default true",
 			sc: &Unified{
 				SiteConfiguration: schema.SiteConfiguration{
-					ExperimentalFeatures: &schema.ExperimentalFeatures{},
+					AuthAccessRequest: &schema.AuthAccessRequest{},
 				},
 			},
 			want: true,
 		},
 		{
-			name: "explicitly set true should return true",
+			name: "explicitly set disabled=false should return true",
 			sc: &Unified{
 				SiteConfiguration: schema.SiteConfiguration{
-					ExperimentalFeatures: &schema.ExperimentalFeatures{
-						AccessRequestEnabled: &trueVal,
-					},
+					AuthAccessRequest: &schema.AuthAccessRequest{Disabled: &falseVal},
 				},
 			},
 			want: true,
 		},
 		{
-			name: "explicitly set false should return false",
+			name: "explicitly set disabled=true should return false",
 			sc: &Unified{
 				SiteConfiguration: schema.SiteConfiguration{
-					ExperimentalFeatures: &schema.ExperimentalFeatures{
-						AccessRequestEnabled: &falseVal,
+					AuthAccessRequest: &schema.AuthAccessRequest{
+						Disabled: &trueVal,
 					},
 				},
 			},
