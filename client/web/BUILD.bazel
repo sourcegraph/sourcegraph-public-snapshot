@@ -4,7 +4,7 @@ load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
-load("//dev:webpack.bzl", "webpack_bundle", "webpack_web_app", "webpack_devserver")
+load("//dev:webpack.bzl", "webpack_bundle", "webpack_devserver", "webpack_web_app")
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
@@ -984,6 +984,7 @@ ts_project(
         "src/hooks/useScrollManager/mutationObserverWithTimeout.ts",
         "src/hooks/useScrollManager/useScrollManager.ts",
         "src/hooks/useUrlSyncedState.ts",
+        "src/hooks/useUrlSyncedString.ts",
         "src/initBuildInfo.ts",
         "src/insights/Icons.tsx",
         "src/insights/types.ts",
@@ -1754,6 +1755,7 @@ ts_project(
         "src/global/Notices.test.tsx",
         "src/hooks/useScrollManager/useScrollManager.test.tsx",
         "src/hooks/useUrlSyncedState.test.ts",
+        "src/hooks/useUrlSyncedString.test.tsx",
         "src/insights/utils/use-series-toggle.test.tsx",
         "src/marketing/page/SurveyPage.test.tsx",
         "src/marketing/toast/SurveyToast.test.tsx",

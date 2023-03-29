@@ -44,7 +44,10 @@ ts_project(
     ],
 )
 
-INTEGRATION_TESTS = [
+ts_project(
+    name = "integration_tests",
+    testonly = True,
+    srcs = [
         "batches.test.ts",
         "blob-viewer.test.ts",
         "code-monitoring.test.ts",
@@ -79,12 +82,7 @@ INTEGRATION_TESTS = [
         "search-contexts.test.ts",
         "settings.test.ts",
         "sign-in.test.ts",
-    ]
-
-ts_project(
-    name = "integration_tests",
-    testonly = True,
-    srcs = INTEGRATION_TESTS,
+    ],
     tsconfig = ":tsconfig",
     deps = [
         ":integration",
@@ -105,10 +103,10 @@ ts_project(
 
 mocha_test(
     name = "integration-tests",
-    tests = INTEGRATION_TESTS,
-    deps = [":integration_tests"],
     data = ["//client/web:app-enterprise"],
     env = {
         "WEB_BUNDLE_PATH": "$(rootpath //client/web:app-enterprise)",
     },
+    tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
+    deps = [":integration_tests"],
 )
