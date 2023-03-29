@@ -30,7 +30,6 @@ const USER: UserSettingsAreaUserFields = {
     createdAt: subDays(now, 732).toISOString(),
     emails: [{ email: 'test@example.com', verified: true, isPrimary: true }],
     organizations: { nodes: [] },
-    tags: [],
     scimControlled: false,
     roles: {
         __typename: 'RoleConnection',
@@ -153,7 +152,6 @@ describe('User Different Settings Page', () => {
                     avatarURL: null,
                     viewerCanAdminister: true,
                     builtinAuth: true,
-                    tags: [],
                     createdAt: '2020-03-02T11:52:15Z',
                     roles: {
                         __typename: 'RoleConnection',
@@ -178,7 +176,6 @@ describe('User Different Settings Page', () => {
                     emails: [{ email: 'test@sourcegraph.test', verified: true, isPrimary: true }],
                     organizations: { nodes: [] },
                     permissionsInfo: null,
-                    tags: [],
                     scimControlled: false,
                     roles: {
                         __typename: 'RoleConnection',

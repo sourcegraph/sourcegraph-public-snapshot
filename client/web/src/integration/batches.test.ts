@@ -324,7 +324,6 @@ function mockCommonGraphQLResponses(
                 avatarURL: '',
                 viewerCanAdminister: true,
                 builtinAuth: true,
-                tags: [],
                 createdAt: '2020-04-10T21:11:42Z',
                 roles: {
                     __typename: 'RoleConnection',
@@ -349,7 +348,6 @@ function mockCommonGraphQLResponses(
                 emails: [{ email: 'alice@example.com', verified: true, isPrimary: true }],
                 organizations: { nodes: [] },
                 permissionsInfo: null,
-                tags: [],
                 scimControlled: false,
                 roles: {
                     __typename: 'RoleConnection',
