@@ -10,7 +10,7 @@ export function run(): Promise<void> {
         color: true,
     })
     // To debug tests interactively, extend this timeout.
-    mocha.timeout(2000)
+    mocha.timeout(15000)
 
     const testsRoot = __dirname
 

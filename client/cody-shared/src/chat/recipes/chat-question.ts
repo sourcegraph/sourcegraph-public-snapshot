@@ -6,7 +6,6 @@ import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/co
 import { populateCodeContextTemplate } from '../../prompt/templates'
 import { truncateText } from '../../prompt/truncation'
 import { getShortTimestamp } from '../../timestamp'
-import { renderMarkdown } from '../markdown'
 import { Interaction } from '../transcript/interaction'
 
 import { Recipe } from './recipe'
@@ -24,11 +23,10 @@ export class ChatQuestion implements Recipe {
     ): Promise<Interaction | null> {
         const timestamp = getShortTimestamp()
         const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)
-        const displayText = renderMarkdown(humanChatInput)
 
         return Promise.resolve(
             new Interaction(
-                { speaker: 'human', text: truncatedText, displayText, timestamp },
+                { speaker: 'human', text: truncatedText, displayText: humanChatInput, timestamp },
                 { speaker: 'assistant', text: '', displayText: '', timestamp },
                 this.getContextMessages(truncatedText, editor, intentDetector, codebaseContext)
             )
