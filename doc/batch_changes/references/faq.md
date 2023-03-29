@@ -130,3 +130,7 @@ So, if you have a search query that returns 10 results in a single repo, the bat
 ### Why do I get fewer changes in my changeset diff when I run a batch spec than there are results when I run the same search query?
 
 Sourcegraph search shows you results on any repositories that you have read access to. However, Sourcegraph and Batch Changes do not know which repositories you have _write_ access to. This disparity most often stems from not having write access to one or more of the repositories where your search query returns results. Consider asking an admin to set up a [global service account token](../how-tos/configuring_credentials.md#global-service-account-tokens) if it's important that your batch change updates all matching repositories.
+
+### Why is my batch change preview hanging?
+
+When working with `src`, there are occurences where applying your batch spec might get stuck on a particular step. More so in the `Determining workspace type` step. The `Determining workspace type` is a simple step that decides if bind or volume modes should be used based on the command line flags, and the OS and architecture. If volume mode is used (which is default on Mac OS), then `src` will attempt to pull the `sourcegraph/src-batch-change-colume-workspace` Docker image from docker hub since that's required for the batch spec to be executed. The "hanging" is typically is caused by the local machine's CLI state. Restarting your computer and applying the batch spec again should fix this. 
