@@ -136,7 +136,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                 <PopoverTrigger
                                     as={Button}
                                     className="p-0 ml-2"
-                                    variant="secondary"
+                                    variant="icon"
                                     size="sm"
                                     aria-label="See errors"
                                 >
