@@ -11,7 +11,6 @@ go_library(
     deps = [
         "//enterprise/internal/executor/types",
         "//internal/conf/confdefaults",
-        "//internal/conf/deploy",
         "//internal/env",
         "//internal/hostname",
         "//internal/version",
