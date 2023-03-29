@@ -119,12 +119,13 @@
 }
 
 .error-button {
-    font-size: var(--small-size-font);
     padding: 0.15rem 0.25rem;
     margin: -0.15rem -0.25rem;
-    color: var(--danger);
     border: none;
+    font-size: var(--small-size-font);
     font-weight: normal;
+    color: var(--danger);
+    border-radius: var(--border-radius);
 
     &:hover,
     &:focus {
