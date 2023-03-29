@@ -11,11 +11,17 @@ import * as semver from 'semver'
 import { SemVer } from 'semver'
 
 import { ReleaseConfig } from './config'
-import { getPreviousVersionSrcCli } from './git'
+import { getPreviousVersionExecutor, getPreviousVersionSrcCli } from './git'
 import { cloneRepo, EditFunc, getAuthenticatedGitHubClient, listIssues } from './github'
 import * as update from './update'
 
 const SOURCEGRAPH_RELEASE_INSTANCE_URL = 'https://k8s.sgdev.org'
+
+export interface ReleaseTag {
+    repo: string
+    nextTag: string
+    workDir: string
+}
 
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
 export function formatDate(date: Date): string {
@@ -222,7 +228,7 @@ const upgradeContentGenerators: { [s: string]: ContentFunc } = {
     pure_docker: (previousVersion?: string, nextVersion?: string) => {
         const compare = `compare/v${previousVersion}...v${nextVersion}`
         return `As a template, perform the same actions as the following diff in your own deployment: [\`Upgrade to v${nextVersion}\`](https://github.com/sourcegraph/deploy-sourcegraph-docker/${compare})
-\nFor non-standard replica builds: 
+\nFor non-standard replica builds:
 - [\`Customer Replica 1: ➔ v${nextVersion}\`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/${compare})`
     },
 }
@@ -309,8 +315,43 @@ export async function getReleaseBlockers(
     return listIssues(octokit, blockingQuery)
 }
 
+export function backportIssueQuery(version: SemVer): string {
+    return `is:open is:pr repo:sourcegraph org:sourcegraph label:"backported-to-${version.major}.${version.minor}"`
+}
+
+export async function getBackportsForVersion(
+    octokit: Octokit,
+    version: SemVer
+): Promise<Octokit.SearchIssuesAndPullRequestsResponseItemsItem[]> {
+    return listIssues(octokit, backportIssueQuery(version))
+}
+
 export function releaseBlockerUri(): string {
-    return `https://github.com/issues?q=${encodeURIComponent(blockingQuery)}`
+    return issuesQueryUri(blockingQuery)
+}
+
+function issuesQueryUri(query: string): string {
+    return `https://github.com/issues?q=${encodeURIComponent(query)}`
+}
+
+export async function validateNoOpenBackports(octokit: Octokit, version: SemVer): Promise<void> {
+    const backports = await getBackportsForVersion(octokit, version)
+    if (backports.length > 0) {
+        await verifyWithInput(`${backportWarning(backports.length, version)})\nConfirm to proceed`)
+    } else {
+        console.log('No backports found!')
+    }
+}
+
+export async function backportStatus(octokit: Octokit, version: SemVer): Promise<string> {
+    const backports = await getBackportsForVersion(octokit, version)
+    return backportWarning(backports.length, version)
+}
+
+export function backportWarning(numBackports: number, version: SemVer): string {
+    return `Warning! There are ${chalk.red(numBackports)} backport pull requests open!\n${issuesQueryUri(
+        backportIssueQuery(version)
+    )}`
 }
 
 export async function validateNoReleaseBlockers(octokit: Octokit): Promise<void> {
@@ -347,6 +388,78 @@ export async function nextSrcCliVersionInputWithAutodetect(config: ReleaseConfig
         return new SemVer(
             await retryInput(
                 'Enter the next version of src-cli: ',
+                val => !!semver.parse(val),
+                'Expected semver format'
+            )
+        )
+    }
+    return next
+}
+
+export async function nextGoogleExecutorVersionInputWithAutodetect(
+    config: ReleaseConfig,
+    repoPath?: string
+): Promise<SemVer> {
+    let next: SemVer
+    if (!config.in_progress?.googleExecutorVersion) {
+        if (!repoPath) {
+            const client = await getAuthenticatedGitHubClient()
+            const { workdir } = await cloneRepo(client, 'sourcegraph', 'terraform-google-executors', {
+                revision: 'main',
+                revisionMustExist: true,
+            })
+            repoPath = workdir
+        }
+        console.log('Attempting to detect previous executor version...')
+        const previous = getPreviousVersionExecutor(repoPath)
+        console.log(chalk.blue(`Detected previous executor version: ${previous.version}`))
+        next = previous.inc('minor')
+    } else {
+        next = new SemVer(config.in_progress.googleExecutorVersion)
+    }
+
+    if (
+        !(await softVerifyWithInput(
+            `Confirm next version of sourcegraph/terraform-google-executors should be: ${next.version}`
+        ))
+    ) {
+        return new SemVer(
+            await retryInput(
+                'Enter the next version of executor: ',
+                val => !!semver.parse(val),
+                'Expected semver format'
+            )
+        )
+    }
+    return next
+}
+
+export async function nextAWSExecutorVersionInputWithAutodetect(
+    config: ReleaseConfig,
+    repoPath?: string
+): Promise<SemVer> {
+    let next: SemVer
+    if (!config.in_progress?.awsExecutorVersion) {
+        if (!repoPath) {
+            const client = await getAuthenticatedGitHubClient()
+            const { workdir } = await cloneRepo(client, 'sourcegraph', 'terraform-aws-executors', {
+                revision: 'main',
+                revisionMustExist: true,
+            })
+            repoPath = workdir
+        }
+        console.log('Attempting to detect previous executor version...')
+        const previous = getPreviousVersionExecutor(repoPath)
+        console.log(chalk.blue(`Detected previous sourcegraph/terraform-aws-executors version: ${previous.version}`))
+        next = previous.inc('minor')
+    } else {
+        next = new SemVer(config.in_progress.awsExecutorVersion)
+    }
+
+    if (!(await softVerifyWithInput(`Confirm next version of executor should be: ${next.version}`))) {
+        return new SemVer(
+            await retryInput(
+                'Enter the next version of executor: ',
                 val => !!semver.parse(val),
                 'Expected semver format'
             )

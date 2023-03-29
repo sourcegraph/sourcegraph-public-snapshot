@@ -1,5 +1,4 @@
 packages:
   - 'client/*'
-  - 'client/cody/*'
   - 'schema'
   - 'dev/release'

@@ -96,6 +96,7 @@ func TestRateLimitRetry(t *testing.T) {
 	}
 
 	for name, tt := range tests {
+		tt := tt
 		t.Run(name, func(t *testing.T) {
 			numRequests := 0
 			succeeded := false

@@ -31,6 +31,7 @@ import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
+import { SiteConfigurationChangeList } from './SiteConfigurationChangeList'
 
 import styles from './SiteAdminConfigurationPage.module.scss'
 
@@ -446,6 +447,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
                         </div>
                     )}
                 </Container>
+                <SiteConfigurationChangeList />
             </div>
         )
     }

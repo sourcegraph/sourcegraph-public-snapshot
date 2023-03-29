@@ -8,8 +8,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
-func (w *store) CreateMetaTable(ctx context.Context) error {
-	return w.Exec(ctx, sqlf.Sprintf(`
+func (s *store) CreateMetaTable(ctx context.Context) error {
+	return s.Exec(ctx, sqlf.Sprintf(`
 		CREATE TABLE IF NOT EXISTS meta (
 			id INTEGER PRIMARY KEY CHECK (id = 0),
 			revision TEXT NOT NULL

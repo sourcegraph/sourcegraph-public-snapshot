@@ -25,10 +25,10 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	now := timeutil.Now()
-	insertRepo(t, db, 50, "r0")
-	insertRepo(t, db, 51, "r1")
-	insertRepo(t, db, 52, "r2")
-	insertRepo(t, db, 53, "r3")
+	insertRepo(t, db, 50, "r0", false)
+	insertRepo(t, db, 51, "r1", false)
+	insertRepo(t, db, 52, "r2", false)
+	insertRepo(t, db, 53, "r3", false)
 	updateGitserverUpdatedAt(t, db, now)
 
 	query := `
@@ -85,7 +85,7 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 	}
 
 	// Make new invisible repository
-	insertRepo(t, db, 54, "r4")
+	insertRepo(t, db, 54, "r4", false)
 
 	// 95 minutes later, new repository is not yet visible
 	if repositoryIDs, err := store.GetRepositoriesForIndexScan(context.Background(), "lsif_last_index_scan", "last_index_scan_at", time.Hour, true, nil, 100, now.Add(time.Minute*95)); err != nil {
@@ -133,10 +133,10 @@ func TestSelectRepositoriesForIndexScanWithGlobalPolicy(t *testing.T) {
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	now := timeutil.Now()
-	insertRepo(t, db, 50, "r0")
-	insertRepo(t, db, 51, "r1")
-	insertRepo(t, db, 52, "r2")
-	insertRepo(t, db, 53, "r3")
+	insertRepo(t, db, 50, "r0", false)
+	insertRepo(t, db, 51, "r1", false)
+	insertRepo(t, db, 52, "r2", false)
+	insertRepo(t, db, 53, "r3", false)
 	updateGitserverUpdatedAt(t, db, now)
 
 	query := `
@@ -205,10 +205,10 @@ func TestSelectRepositoriesForIndexScanInDifferentTable(t *testing.T) {
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	now := timeutil.Now()
-	insertRepo(t, db, 50, "r0")
-	insertRepo(t, db, 51, "r1")
-	insertRepo(t, db, 52, "r2")
-	insertRepo(t, db, 53, "r3")
+	insertRepo(t, db, 50, "r0", false)
+	insertRepo(t, db, 51, "r1", false)
+	insertRepo(t, db, 52, "r2", false)
+	insertRepo(t, db, 53, "r3", false)
 	updateGitserverUpdatedAt(t, db, now)
 
 	query := `
@@ -284,7 +284,7 @@ func TestSetRepositoryAsDirty(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	for _, id := range []int{50, 51, 52} {
-		insertRepo(t, db, id, "")
+		insertRepo(t, db, id, "", false)
 	}
 
 	for _, repositoryID := range []int{50, 51, 52, 51, 52} {
@@ -315,7 +315,7 @@ func TestGetRepositoriesMaxStaleAge(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	for _, id := range []int{50, 51, 52} {
-		insertRepo(t, db, id, "")
+		insertRepo(t, db, id, "", false)
 	}
 
 	if _, err := db.ExecContext(context.Background(), `
@@ -449,10 +449,10 @@ func TestSkipsDeletedRepositories(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertRepo(t, db, 50, "should not be dirty")
+	insertRepo(t, db, 50, "should not be dirty", false)
 	deleteRepo(t, db, 50, time.Now())
 
-	insertRepo(t, db, 51, "should be dirty")
+	insertRepo(t, db, 51, "should be dirty", false)
 
 	// NOTE: We did not insert 52, so it should not show up as dirty, even though we mark it below.
 

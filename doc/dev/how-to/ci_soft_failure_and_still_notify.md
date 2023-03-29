@@ -8,7 +8,7 @@ Therefore a good solution for that is to also enable custom step notifications, 
 
 ## Editing your step to make it soft failing
 
-In the [CI pipeline generator](../background-information/ci/development.md), you'll find the code that declare all steps, usually located in [ci/operations.go](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/internal/ci/operations.go)
+In the [CI pipeline generator](../background-information/ci/development.md), you'll find the code that declare all steps, usually located in [ci/operations.go](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/internal/ci/operations.go)
 
 A good way to find all of them is the following search query:
 

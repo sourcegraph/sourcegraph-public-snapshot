@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// webhookLogArgs are the arguments common to the two queries that provide
+// WebhookLogsArgs are the arguments common to the two queries that provide
 // access to webhook logs: the webhookLogs method on the top level query, and on
 // the ExternalService type.
 type WebhookLogsArgs struct {

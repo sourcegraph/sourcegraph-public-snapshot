@@ -169,7 +169,6 @@ ts_project(
         "//:node_modules/@types/node",
         "//:node_modules/@types/react",
         "//:node_modules/@types/react-dom",
-        "//:node_modules/@types/sanitize-html",
         "//:node_modules/classnames",
         "//:node_modules/comlink",  #keep
         "//:node_modules/copy-to-clipboard",
@@ -184,7 +183,6 @@ ts_project(
         "//:node_modules/react-sticky-box",
         "//:node_modules/react-visibility-sensor",
         "//:node_modules/rxjs",
-        "//:node_modules/sanitize-html",
         "//:node_modules/ts-key-enum",
         "//:node_modules/use-resize-observer",
         "//client/shared:shared_lib",  #keep
@@ -261,4 +259,7 @@ jest_test(
     data = [
         ":branded_tests",
     ],
+    patch_node_fs = False,
+    shard_count = 6,
+    tags = ["no-sandbox"],
 )

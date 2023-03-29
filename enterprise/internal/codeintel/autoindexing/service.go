@@ -9,6 +9,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/enqueuer"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/jobselector"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
@@ -83,40 +84,12 @@ func newService(
 	}
 }
 
-func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) ([]types.Index, int, error) {
-	return s.store.GetIndexes(ctx, opts)
-}
-
-func (s *Service) GetIndexByID(ctx context.Context, id int) (types.Index, bool, error) {
-	return s.store.GetIndexByID(ctx, id)
-}
-
-func (s *Service) GetIndexesByIDs(ctx context.Context, ids ...int) ([]types.Index, error) {
-	return s.store.GetIndexesByIDs(ctx, ids...)
-}
-
 func (s *Service) GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]shared.IndexesWithRepositoryNamespace, error) {
 	return s.store.GetRecentIndexesSummary(ctx, repositoryID)
 }
 
 func (s *Service) GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error) {
 	return s.store.GetLastIndexScanForRepository(ctx, repositoryID)
-}
-
-func (s *Service) DeleteIndexByID(ctx context.Context, id int) (bool, error) {
-	return s.store.DeleteIndexByID(ctx, id)
-}
-
-func (s *Service) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) error {
-	return s.store.DeleteIndexes(ctx, opts)
-}
-
-func (s *Service) ReindexIndexByID(ctx context.Context, id int) error {
-	return s.store.ReindexIndexByID(ctx, id)
-}
-
-func (s *Service) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) error {
-	return s.store.ReindexIndexes(ctx, opts)
 }
 
 func (s *Service) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (shared.IndexConfiguration, bool, error) {
@@ -242,4 +215,8 @@ func (s *Service) RepositoryIDsWithErrors(ctx context.Context, offset, limit int
 
 func (s *Service) RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) ([]shared.RepositoryWithAvailableIndexers, int, error) {
 	return s.store.RepositoryIDsWithConfiguration(ctx, offset, limit)
+}
+
+func IsLimitError(err error) bool {
+	return errors.As(err, &inference.LimitError{})
 }

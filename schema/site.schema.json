@@ -510,14 +510,6 @@
           },
           "group": "AccessRequest",
           "default": true
-        },
-        "unifiedPermissions": {
-          "description": "Enables the new unified permissions model, which stores repository permissions in a single table and a row for each permission instead of postgres arrays.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": false
-          }
         }
       },
       "examples": [
@@ -1200,7 +1192,13 @@
       "type": "string",
       "format": "email",
       "group": "Email",
-      "default": "noreply@sourcegraph.com"
+      "examples": ["noreply@sourcegraph.example.com"]
+    },
+    "email.senderName": {
+      "description": "The name to use in the \"from\" address for emails sent by this server.",
+      "type": "string",
+      "group": "Email",
+      "examples": ["Sourcegraph"]
     },
     "email.templates": {
       "description": "Configurable templates for some email types sent by Sourcegraph.",
@@ -2094,7 +2092,7 @@
           "type": "string",
           "description": "The external completions provider.",
           "default": "anthropic",
-          "enum": ["anthropic"]
+          "enum": ["anthropic", "openai"]
         }
       }
     }

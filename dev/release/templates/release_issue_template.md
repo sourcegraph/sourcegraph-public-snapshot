@@ -26,11 +26,11 @@ pnpm run release release:activate-release
 
 - [ ] Ensure you have the latest version of the release tooling and configuration by checking out and updating `sourcegraph@main`.
 
-## Security review (one week before release - $SECURITY_REVIEW_DATE)
+## Security review ($SECURITY_REVIEW_DATE)
 
 - [ ] Create a [new issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose) using the **Security release approval** template and post a message in the [#security](https://sourcegraph.slack.com/archives/C1JH2BEHZ) channel tagging `@security-support`.
 
-## Cut release (three days before release - $CODE_FREEZE_DATE)
+## Cut release ($CODE_FREEZE_DATE)
 
 Perform these steps three days before the release date to generate a stable release candidate.
 
@@ -51,6 +51,9 @@ Do the [branch cut](./index.md#release-branches) for the release:
   ```
 
 - [ ] Manually review the pull requests created in the previous step and merge.
+
+- [ ] Enable the `release-protector` github action in the sourcegraph/sourcegraph repo. This may require you to request admin permissions using Entitle.
+
 - [ ] Create the `$MAJOR.$MINOR` branch off the CHANGELOG commit in the previous step:
 
   ```sh
@@ -103,6 +106,16 @@ Revert or disable features that may cause delays. As necessary, `git cherry-pick
   Hey team, I'm the release captain for the $MAJOR.$MINOR release, posting here for asking for a release candidate (v$MAJOR.$MINOR.$PATCH-rc.N) to be deployed to a test managed instance. Could someone help here? :ty:
   ```
 
+## Code Freeze
+
+Create candidates as necessary
+
+```shell
+pnpm run release release:create-candidate
+```
+
+Monitor the release branch, and backports. Ensure the branch remains healthy.
+
 ## Release day ($RELEASE_DATE)
 
 ### Stage release
@@ -138,7 +151,7 @@ On the day of the release, confirm there are no more release-blocking issues (as
 
 - [ ] From the [release batch change](https://k8s.sgdev.org/organizations/sourcegraph/batch-changes), merge the release-publishing PRs created previously.
   - For [sourcegraph](https://github.com/sourcegraph/sourcegraph)
-    - [ ] Cherry pick the release-publishing PR from `sourcegraph/sourcegraph@main` into the release branch.
+    - [ ] Backport the release-publishing PR from `sourcegraph/sourcegraph@main` into the release branch
   - For [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph)
     - [ ] Ensure the [release tag `v$MAJOR.$MINOR.$PATCH`](https://github.com/sourcegraph/deploy-sourcegraph/tags) has been created
   - For [deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker)
@@ -150,11 +163,13 @@ On the day of the release, confirm there are no more release-blocking issues (as
   ```sh
   pnpm run release release:announce
   ```
+- [] Disable the `release-protector` github action in sourcegraph/sourcegraph. This may require you to request admin permissions using Entitle.
 
 ### Post-release
 
 - [ ] Create release calendar events, tracking issue, and announcement for next release (note: these commands will prompt for user input to generate the definition for the next release):
   ```sh
+  pnpm run release release:prepare
   pnpm run release tracking:issues
   pnpm run release tracking:timeline
   ```

@@ -307,7 +307,7 @@ func insertUploads(t testing.TB, db database.DB, uploads ...types.Upload) {
 		}
 
 		// Ensure we have a repo for the inner join in select queries
-		insertRepo(t, db, upload.RepositoryID, upload.RepositoryName)
+		insertRepo(t, db, upload.RepositoryID, upload.RepositoryName, true)
 
 		query := sqlf.Sprintf(`
 			INSERT INTO lsif_uploads (
@@ -426,7 +426,7 @@ func deleteUploads(t testing.TB, db database.DB, uploads ...int) {
 
 // insertRepo creates a repository record with the given id and name. If there is already a repository
 // with the given identifier, nothing happens
-func insertRepo(t testing.TB, db database.DB, id int, name string) {
+func insertRepo(t testing.TB, db database.DB, id int, name string, private bool) {
 	if name == "" {
 		name = fmt.Sprintf("n-%d", id)
 	}
@@ -436,10 +436,11 @@ func insertRepo(t testing.TB, db database.DB, id int, name string) {
 		deletedAt = sqlf.Sprintf("%s", time.Unix(1587396557, 0).UTC())
 	}
 	insertRepoQuery := sqlf.Sprintf(
-		`INSERT INTO repo (id, name, deleted_at) VALUES (%s, %s, %s) ON CONFLICT (id) DO NOTHING`,
+		`INSERT INTO repo (id, name, deleted_at, private) VALUES (%s, %s, %s, %s) ON CONFLICT (id) DO NOTHING`,
 		id,
 		name,
 		deletedAt,
+		private,
 	)
 	if _, err := db.ExecContext(context.Background(), insertRepoQuery.Query(sqlf.PostgresBindVar), insertRepoQuery.Args()...); err != nil {
 		t.Fatalf("unexpected error while upserting repository: %s", err)

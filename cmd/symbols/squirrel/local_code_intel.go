@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// Nominal type for symbol names.
+// SymbolName is a nominal type for symbol names.
 type SymbolName string
 
 // Scope is a mapping from symbol name to symbol.
@@ -29,9 +29,9 @@ type PartialSymbol struct {
 }
 
 // LocalCodeIntel computes the local code intel payload, which is a list of symbols.
-func (squirrel *SquirrelService) LocalCodeIntel(ctx context.Context, repoCommitPath types.RepoCommitPath) (*types.LocalCodeIntelPayload, error) {
+func (s *SquirrelService) LocalCodeIntel(ctx context.Context, repoCommitPath types.RepoCommitPath) (*types.LocalCodeIntelPayload, error) {
 	// Parse the file.
-	root, err := squirrel.parse(ctx, repoCommitPath)
+	root, err := s.parse(ctx, repoCommitPath)
 	if err != nil {
 		return nil, err
 	}

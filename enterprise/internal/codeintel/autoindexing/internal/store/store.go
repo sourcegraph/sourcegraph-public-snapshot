@@ -30,15 +30,8 @@ type Store interface {
 
 	// Indexes
 	InsertIndexes(ctx context.Context, indexes []types.Index) (_ []types.Index, err error)
-	GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []types.Index, _ int, err error)
-	GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error)
-	GetIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Index, err error)
 	GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []shared.IndexesWithRepositoryNamespace, err error)
 	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
-	DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
-	DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) (err error)
-	ReindexIndexByID(ctx context.Context, id int) (err error)
-	ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) (err error)
 	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_, _ int, err error)
 	IsQueued(ctx context.Context, repositoryID int, commit string) (_ bool, err error)
 	IsQueuedRootIndexer(ctx context.Context, repositoryID int, commit string, root string, indexer string) (_ bool, err error)
