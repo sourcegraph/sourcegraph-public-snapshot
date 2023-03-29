@@ -276,12 +276,12 @@ func TestUserEmailsAddRemove(t *testing.T) {
 	// Can't remove primary e-mail
 	assert.Error(t, svc.Remove(ctx, createdUser.ID, email))
 
-  // Set email as verified, add a second user, and try to add the verified email
-  svc.SetVerified(ctx, createdUser.ID, email, true)
-  user2, err := db.Users().Create(ctx, database.NewUser{Username: "test-user-2"})
-  require.NoError(t, err)
+	// Set email as verified, add a second user, and try to add the verified email
+	svc.SetVerified(ctx, createdUser.ID, email, true)
+	user2, err := db.Users().Create(ctx, database.NewUser{Username: "test-user-2"})
+	require.NoError(t, err)
 
-  require.Error(t, svc.Add(ctx, user2.ID, email))
+	require.Error(t, svc.Add(ctx, user2.ID, email))
 }
 
 func TestUserEmailsSetPrimary(t *testing.T) {
