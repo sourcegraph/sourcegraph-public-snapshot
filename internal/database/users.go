@@ -72,7 +72,6 @@ type UserStore interface {
 	GetByVerifiedEmail(context.Context, string) (*types.User, error)
 	HardDelete(context.Context, int32) error
 	HardDeleteList(context.Context, []int32) error
-	HasTag(ctx context.Context, userID int32, tag string) (bool, error)
 	InvalidateSessionsByID(context.Context, int32) (err error)
 	InvalidateSessionsByIDs(context.Context, []int32) (err error)
 	IsPassword(ctx context.Context, id int32, password string) (bool, error)
@@ -85,8 +84,6 @@ type UserStore interface {
 	RenewPasswordResetCode(context.Context, int32) (string, error)
 	SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error
 	SetPassword(ctx context.Context, id int32, resetCode, newPassword string) (bool, error)
-	SetTag(ctx context.Context, userID int32, tag string, present bool) error
-	Tags(context.Context, int32) (map[string]bool, error)
 	Transact(context.Context) (UserStore, error)
 	Update(context.Context, int32, UserUpdate) error
 	UpdatePassword(ctx context.Context, id int32, oldPassword, newPassword string) error
@@ -474,7 +471,7 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 		Source:          "BACKEND",
 		Timestamp:       time.Now(),
 	}
-	db.EventLogs().Insert(ctx, logEvent)
+	_ = db.EventLogs().Insert(ctx, logEvent)
 }
 
 func logAccountModifiedEvent(ctx context.Context, db DB, userID int32, serviceType string) {
@@ -774,7 +771,7 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 			Timestamp:       now,
 		}
 	}
-	db.EventLogs().BulkInsert(ctx, logEvents)
+	_ = db.EventLogs().BulkInsert(ctx, logEvents)
 }
 
 // RecoverUsersList recovers a list of users by their IDs.
@@ -895,7 +892,7 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 				Source:          "BACKEND",
 				Timestamp:       time.Now(),
 			}
-			db.EventLogs().Insert(ctx, logEvent)
+			_ = db.EventLogs().Insert(ctx, logEvent)
 			return err
 		}
 
@@ -1030,8 +1027,6 @@ type UsersListOptions struct {
 	Usernames []string
 	// Only show users inside this org
 	OrgID int32
-
-	Tag string // only include users with this tag
 
 	// InactiveSince filters out users that have had an eventlog entry with a
 	// `timestamp` greater-than-or-equal to the given timestamp.
@@ -1202,9 +1197,6 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	if opt.OrgID != 0 {
 		conds = append(conds, sqlf.Sprintf(orgMembershipCond, opt.OrgID))
 	}
-	if opt.Tag != "" {
-		conds = append(conds, sqlf.Sprintf("%s::text = ANY(u.tags)", opt.Tag))
-	}
 
 	if !opt.InactiveSince.IsZero() {
 		conds = append(conds, sqlf.Sprintf(listUsersInactiveCond, opt.InactiveSince))
@@ -1279,7 +1271,6 @@ SELECT u.id,
        u.updated_at,
        u.site_admin,
        u.passwd IS NOT NULL,
-       u.tags,
        u.invalidated_sessions_at,
        u.tos_accepted,
        u.searchable,
@@ -1295,7 +1286,7 @@ FROM users u %s`, query)
 	for rows.Next() {
 		var u types.User
 		var displayName, avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, &u.SCIMControlled)
+		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, &u.SCIMControlled)
 		if err != nil {
 			return nil, err
 		}
@@ -1328,7 +1319,6 @@ SELECT u.id,
        u.updated_at,
        u.site_admin,
        u.passwd IS NOT NULL,
-       u.tags,
        u.invalidated_sessions_at,
        u.tos_accepted,
        u.searchable,
@@ -1351,7 +1341,7 @@ func (u *userStore) getBySQLForSCIM(ctx context.Context, query *sqlf.Query) ([]*
 func scanUserForSCIM(s dbutil.Scanner) (*types.UserForSCIM, error) {
 	var u types.UserForSCIM
 	var displayName, avatarURL, scimExternalID, scimAccountData sql.NullString
-	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, pq.Array(&u.Emails), &scimExternalID, &scimAccountData)
+	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, pq.Array(&u.Emails), &scimExternalID, &scimAccountData)
 	if err != nil {
 		return nil, err
 	}
@@ -1571,7 +1561,7 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 		Timestamp:       time.Now(),
 	}
 
-	db.EventLogs().Insert(ctx, logEvent)
+	_ = db.EventLogs().Insert(ctx, logEvent)
 }
 
 func hashPassword(password string) (sql.NullString, error) {
@@ -1590,71 +1580,6 @@ func validPassword(hash, password string) bool {
 		return MockValidPassword(hash, password)
 	}
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
-}
-
-// SetTag adds (present=true) or removes (present=false) a tag from the given user's set of tags. An
-// error occurs if the user does not exist. Adding a duplicate tag or removing a nonexistent tag is
-// not an error.
-func (u *userStore) SetTag(ctx context.Context, userID int32, tag string, present bool) error {
-	var q *sqlf.Query
-	if present {
-		// Add tag.
-		q = sqlf.Sprintf(`UPDATE users SET tags=CASE WHEN NOT %s::text = ANY(tags) THEN (tags || %s::text) ELSE tags END WHERE id=%s`, tag, tag, userID)
-	} else {
-		// Remove tag.
-		q = sqlf.Sprintf(`UPDATE users SET tags=array_remove(tags, %s::text) WHERE id=%s`, tag, userID)
-	}
-
-	res, err := u.ExecResult(ctx, q)
-	if err != nil {
-		return err
-	}
-	nrows, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if nrows == 0 {
-		return userNotFoundErr{args: []any{userID}}
-	}
-	return nil
-}
-
-// HasTag reports whether the context actor has the given tag.
-// If not, it returns false and a nil error.
-func (u *userStore) HasTag(ctx context.Context, userID int32, tag string) (bool, error) {
-	var tags []string
-	err := u.QueryRow(ctx, sqlf.Sprintf("SELECT tags FROM users WHERE id = %s", userID)).Scan(pq.Array(&tags))
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return false, userNotFoundErr{[]any{userID}}
-		}
-		return false, err
-	}
-
-	for _, t := range tags {
-		if t == tag {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-// Tags returns a map with all the tags currently belonging to the user.
-func (u *userStore) Tags(ctx context.Context, userID int32) (map[string]bool, error) {
-	var tags []string
-	err := u.QueryRow(ctx, sqlf.Sprintf("SELECT tags FROM users WHERE id = %s", userID)).Scan(pq.Array(&tags))
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, userNotFoundErr{[]any{userID}}
-		}
-		return nil, err
-	}
-
-	tagMap := make(map[string]bool, len(tags))
-	for _, t := range tags {
-		tagMap[t] = true
-	}
-	return tagMap, nil
 }
 
 // MockHashPassword if non-nil is used instead of database.hashPassword. This is useful

@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func addPerms(t *testing.T, s edb.PermsStore, userID, repoID int32) {
@@ -28,27 +27,15 @@ func addPerms(t *testing.T, s edb.PermsStore, userID, repoID int32) {
 
 	ctx := context.Background()
 
-	if conf.ExperimentalFeatures().UnifiedPermissions {
-		_, err := s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: userID, ExternalAccountID: userID - 1}, []int32{repoID}, authz.SourceUserSync)
-		require.NoError(t, err)
-	} else {
-		_, err := s.SetUserPermissions(ctx, &authz.UserPermissions{
-			UserID: userID,
-			IDs:    map[int32]struct{}{repoID: {}},
-			Perm:   authz.Read,
-			Type:   authz.PermRepos,
-		})
-		require.NoError(t, err)
-	}
-}
-
-func mockUnifiedPermsConfig(val bool) {
-	cfg := &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		ExperimentalFeatures: &schema.ExperimentalFeatures{
-			UnifiedPermissions: val,
-		},
-	}}
-	conf.Mock(cfg)
+	_, err := s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: userID, ExternalAccountID: userID - 1}, []int32{repoID}, authz.SourceUserSync)
+	require.NoError(t, err)
+	_, err = s.SetUserPermissions(ctx, &authz.UserPermissions{
+		UserID: userID,
+		IDs:    map[int32]struct{}{repoID: {}},
+		Perm:   authz.Read,
+		Type:   authz.PermRepos,
+	})
+	require.NoError(t, err)
 }
 
 func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
@@ -65,7 +52,7 @@ func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 
-	runTest := func(t *testing.T) {
+	t.Run("schedule jobs", func(t *testing.T) {
 		t.Helper()
 
 		db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -213,18 +200,6 @@ func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
 			},
 		}
 		runJobsTest(t, ctx, logger, db, store, wantJobs)
-	}
-
-	t.Run("with legacy permissions table", func(t *testing.T) {
-		mockUnifiedPermsConfig(false)
-
-		runTest(t)
-	})
-
-	t.Run("with unified permissions table", func(t *testing.T) {
-		mockUnifiedPermsConfig(true)
-
-		runTest(t)
 	})
 }
 

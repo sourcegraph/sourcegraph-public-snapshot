@@ -29,3 +29,9 @@ None of these options are consistent, and all of them can change while paginatin
 What this effectively means is that, when syncing a large number of repositories (the more pages, the worse it gets), successive syncs will find repositories it previously missed, and miss repositories it previously found, even though those repositories should all still be part of the search.
 
 As of yet, there does not seem to be a way around this that is not extremely inefficient.
+
+## Rate limits
+
+Unlike GitLab, Azure DevOps, or Bitbucket Cloud, when GitHub tells us a request was rejected because of rate limits, they respond with a 403 Forbidden, instead of a 429 Too Many Requests. So we need to depend on the response headers to determine whether or not we need to retry the request.
+
+However, there are extremely unlikely scenarios where we can receive rate limited response headers, but not check them until they're outdated, and if they're outdated we can't trust them (can be leftover from an old request and just was not updated). So then we don't retry the request, even though a retry would have worked.
