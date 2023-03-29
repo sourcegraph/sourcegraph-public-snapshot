@@ -175,6 +175,19 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 	for c.waitForRateLimit && err != nil && numRetries < c.maxRateLimitRetries &&
 		errors.As(err, &apiError) && apiError.Code == http.StatusForbidden {
 		req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
+		// Because GitHub responds with http.StatusForbidden when a rate limit is hit, we cannot
+		// say with absolute certainty that a rate limit was hit. It might have been an honest
+		// http.StatusForbidden. So we use the externalRateLimiter's WaitForRateLimit function
+		// to calculate the amount of time we need to wait before retrying the request.
+		// If that calculated time is zero or in the past, we have to assume that the
+		// rate limiting information we have is old and no longer relevant.
+		//
+		// There is an extremely unlikely edge case where we will falsely not retry a request.
+		// If a request is rejected because we have no more rate limit tokens, but the token reset
+		// time is just around the corner (like 1 second from now), and for some reason the time
+		// between reading the headers and doing this "should we retry" check is greater than
+		// that time, the rate limit information we will have will look like old information and
+		// we won't retry the request.
 		if c.externalRateLimiter.WaitForRateLimit(ctx, cost) {
 			_, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, &respBody)
 			numRetries++
