@@ -1,0 +1,7 @@
+.comment {
+    background: var(--subtle-bg);
+
+    &::selection {
+        background: var(--subtle-bg);
+    }
+}

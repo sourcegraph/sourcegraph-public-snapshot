@@ -34,6 +34,7 @@ import { HoverThresholdProps } from '../RepoContainer'
 import { blobPropsFacet } from './codemirror'
 import { createBlameDecorationsExtension } from './codemirror/blame-decorations'
 import { codeFoldingExtension } from './codemirror/code-folding'
+import { annotateWithComments, setComments } from './codemirror/comment-annotations'
 import { syntaxHighlight } from './codemirror/highlight'
 import { selectableLineNumbers, SelectedLineRange, selectLines } from './codemirror/linenumbers'
 import { buildLinks } from './codemirror/links'
@@ -42,7 +43,7 @@ import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-
 import { occurrenceAtPosition, positionAtCmPosition } from './codemirror/occurrence-utils'
 import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
-import { pin, updatePin, selectOccurrence } from './codemirror/token-selection/code-intel-tooltips'
+import { pin, selectOccurrence, updatePin } from './codemirror/token-selection/code-intel-tooltips'
 import { tokenSelectionExtension } from './codemirror/token-selection/extension'
 import { languageSupport } from './codemirror/token-selection/languageSupport'
 import { selectionFromLocation } from './codemirror/token-selection/selections'
@@ -82,6 +83,7 @@ export interface BlobProps
 
     isBlameVisible?: boolean
     blameHunks?: BlameHunkData
+    annotatedComments?: Record<number, string>
 
     activeURL?: string
 }
@@ -175,6 +177,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         extensionsController,
         isBlameVisible,
         blameHunks,
+        annotatedComments,
 
         // Reference panel specific props
         navigateToLineOnAnyClick,
@@ -287,6 +290,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             syntaxHighlight.of(blobInfo),
             languageSupport.of(blobInfo),
             buildLinks.of(blobInfo),
+            annotateWithComments(),
             pin.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
                 ? sourcegraphExtensions({
@@ -405,6 +409,14 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             updatePin(editor, hasPin ? position : null)
         }
     }, [position, hasPin])
+
+    useEffect(() => {
+        const editor = editorRef.current
+        // TODO: Only if visible
+        if (editor && annotatedComments) {
+            setComments(editor, annotatedComments)
+        }
+    }, [position, annotatedComments])
 
     useCodeMirror(
         editorRef,

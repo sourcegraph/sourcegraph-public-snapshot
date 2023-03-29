@@ -26,8 +26,10 @@ export function getCodyCompletionOneShot(messages: CompletionRequest['messages']
                 messages,
             } satisfies CompletionRequest),
             onmessage(message) {
+                console.log(message)
                 if (message.event === 'completion') {
                     const data = JSON.parse(message.data) as { completion: string }
+                    console.log(data)
                     lastCompletion = data.completion
                 }
             },

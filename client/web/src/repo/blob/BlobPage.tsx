@@ -67,15 +67,17 @@ import { HoverThresholdProps } from '../RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 
+import { AnnotateWithComments } from './actions/AnnotateWithComments'
 import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
 import { fetchBlob } from './backend'
 import { BlobLoadingSpinner } from './BlobLoadingSpinner'
+import { Comments } from './codemirror/comment-annotations'
+import { translateToQuery } from './codemirror/comment-annotations-query'
 import { CodeMirrorBlob, type BlobInfo } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
-import { LegacyBlob } from './LegacyBlob'
 import { HistoryAndOwnBar } from './own/HistoryAndOwnBar'
 import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
@@ -112,6 +114,138 @@ interface BlobPageProps
     className?: string
 }
 
+// Mock file: client/web/src/enterprise/insights/components/creation-ui/insight-repo-section/use-repo-fields\.ts
+const mockComments: Record<number, string> = {
+    41: 'Declare a custom hook called useRepoFields, which takes a generic parameter FormFields and an object argument with formApi property.',
+    44: 'Get the apolloClient using the useApolloClient hook.',
+    45: "Check if the 'codeInsightsRepoUI' feature is enabled, and store the result in repoFieldVariation.",
+    47: "Determine if the UI variation is 'single-search-query' and store the result in isSingleSearchQueryRepo.",
+    48: "Determine if the UI variation is 'search-query-or-strict-list' and store the result in isSearchQueryORUrlsList.",
+    50: 'Initialize the repoMode field with formApi and a name property.',
+    55: "Check if the repoMode is 'search-query' and store the result in isSearchQueryMode.",
+    56: "Check if the repoMode is 'urls-list' and store the result in isURLsListMode.",
+    70: 'Initialize the repoQuery field with formApi, name, disabled state, and validators based on isRepoQueryRequired.',
+    80: 'Initialize the repositories field with formApi, name, disabled state, and validators based on isRepoURLsListRequired.',
+    90: 'Return an object containing repoMode, repoQuery, and repositories fields.',
+}
+
+const mockFile = `
+import { useMemo } from 'react'
+
+import { ApolloClient, gql, useApolloClient } from '@apollo/client'
+
+import { QueryState } from '@sourcegraph/shared/src/search'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { FormAPI, AsyncValidator, useField, useFieldAPI, ValidationResult } from '@sourcegraph/wildcard'
+
+import { ValidateInsightRepoQueryResult, ValidateInsightRepoQueryVariables } from '../../../../../graphql-operations'
+import { RepoMode } from '../../../pages/insights/creation/search-insight/types'
+import { insightRepositoriesValidator } from '../validators/validators'
+
+interface RepositoriesFields {
+    /**
+     * [Experimental] Repositories UI can work in different modes when we have
+     * two repo UI fields version of the creation UI. This field controls the
+     * current mode
+     */
+    repoMode: RepoMode
+
+    /**
+     * Search-powered query, this is used to gather different repositories though
+     * search API instead of having strict list of repo URLs.
+     */
+    repoQuery: QueryState
+
+    /** Repositories which to be used to get the info for code insights */
+    repositories: string[]
+}
+
+interface Input<Fields> {
+    formApi: FormAPI<Fields>
+}
+
+interface Fields {
+    repoMode: useFieldAPI<RepoMode>
+    repoQuery: useFieldAPI<QueryState>
+    repositories: useFieldAPI<string[]>
+}
+
+export function useRepoFields<FormFields extends RepositoriesFields>(props: Input<FormFields>): Fields {
+    const { formApi } = props
+
+    const apolloClient = useApolloClient()
+    const repoFieldVariation = useExperimentalFeatures(features => features.codeInsightsRepoUI)
+
+    const isSingleSearchQueryRepo = repoFieldVariation === 'single-search-query'
+    const isSearchQueryORUrlsList = repoFieldVariation === 'search-query-or-strict-list'
+
+    const repoMode = useField({
+        formApi,
+        name: 'repoMode',
+    })
+
+    const isSearchQueryMode = repoMode.meta.value === 'search-query'
+    const isURLsListMode = repoMode.meta.value === 'urls-list'
+
+    // Search query field is required only if it's only one option for the filling in
+    // repositories info (in case of "single-search-query" UI variation) or when
+    // we are in the "search-query" repo mode (in case of "search-query-or-strict-list" UI variation)
+    const isRepoQueryRequired = isSingleSearchQueryRepo || isSearchQueryMode
+
+    // Repo urls list field is required only if we are in the "search-query-or-strict-list" UI variation,
+    // and we picked urls-list repo mode in the UI. In all other cases this field nighter rendered nor
+    // required
+    const isRepoURLsListRequired = isSearchQueryORUrlsList && isURLsListMode
+
+    const validateRepoQuerySyntax = useMemo(() => createValidateRepoQuerySyntax(apolloClient), [apolloClient])
+
+    const repoQuery = useField({
+        formApi,
+        name: 'repoQuery',
+        disabled: !isSearchQueryMode,
+        validators: {
+            sync: isRepoQueryRequired ? validateRepoQuery : undefined,
+            async: isRepoQueryRequired ? validateRepoQuerySyntax : undefined,
+        },
+    })
+
+    const repositories = useField({
+        formApi,
+        name: 'repositories',
+        disabled: !isURLsListMode,
+        validators: {
+            // Turn off any validations for the repositories' field in we are in all repos mode
+            sync: isRepoURLsListRequired ? insightRepositoriesValidator : undefined,
+        },
+    })
+
+    return { repoMode, repoQuery, repositories }
+}
+
+function validateRepoQuery(value?: QueryState): ValidationResult {
+    if (value && value.query.trim() === '') {
+        return 'Search repositories query is a required field, please fill in the field.'
+    }
+}
+
+function createValidateRepoQuerySyntax(apolloClient: ApolloClient<unknown>): AsyncValidator<QueryState> {
+    return async (value?: QueryState): Promise<ValidationResult<unknown>> => {
+        if (!value) {
+            return
+        }
+
+        const { data } = await apolloClient.query<ValidateInsightRepoQueryResult, ValidateInsightRepoQueryVariables>({
+            query: VALIDATE_REPO_QUERY_GQL,
+            variables: { query: value.query },
+        })
+
+        if (data.validateScopedInsightQuery.invalidReason) {
+            return data.validateScopedInsightQuery.invalidReason
+        }
+    }
+}
+`
+
 /**
  * Blob data including specific properties used in `BlobPage` but not `Blob`
  */
@@ -126,6 +260,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
 
     const { span } = useCurrentSpan()
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
+    const [annotatedComments, setAnnotatedComments] = useState<Comments | undefined>()
     let renderMode = getModeFromURL(location)
     const { repoID, repoName, repoServiceType, revision, commitID, filePath, useBreadcrumb, mode } = props
     const { enableCodeMirror, enableLazyBlobSyntaxHighlighting } = useExperimentalFeatures(features => ({
@@ -141,6 +276,12 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
         () => parseQueryAndHash(location.search, location.hash),
         [location.search, location.hash]
     )
+
+    const onAnnotateComments = useCallback(async () => {
+        const result = await translateToQuery(mockFile)
+        // // Fetch comments from Cody
+        // setAnnotatedComments(mockComments)
+    }, [])
 
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
     useEffect(() => {
@@ -409,6 +550,18 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                     {context => <ToggleLineWrap {...context} key="toggle-line-wrap" onDidUpdate={setWrapCode} />}
                 </RepoHeaderContributionPortal>
             )}
+            {renderMode === 'code' && (
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={113}
+                    id="annotate-with-comments"
+                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                >
+                    {context => (
+                        <AnnotateWithComments {...context} key="toggle-line-wrap" onDidUpdate={onAnnotateComments} />
+                    )}
+                </RepoHeaderContributionPortal>
+            )}
 
             <RepoHeaderContributionPortal
                 position="right"
@@ -506,8 +659,6 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
         )
     }
 
-    const BlobComponent = enableCodeMirror ? CodeMirrorBlob : LegacyBlob
-
     return (
         <div className={className}>
             {alwaysRender}
@@ -563,7 +714,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                         enableLazyBlobSyntaxHighlighting,
                     }}
                 >
-                    <BlobComponent
+                    <CodeMirrorBlob
                         data-testid="repo-blob"
                         className={classNames(styles.blob, styles.border)}
                         blobInfo={{ ...blobInfoOrError, commitID }}
@@ -578,6 +729,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                         isBlameVisible={isBlameVisible}
                         blameHunks={blameHunks}
                         overrideBrowserSearchKeybinding={true}
+                        annotatedComments={annotatedComments}
                     />
                 </TraceSpanProvider>
             )}
