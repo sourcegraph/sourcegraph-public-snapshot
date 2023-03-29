@@ -110,6 +110,7 @@ export const useCodeIntel = ({
         error: searchBasedError,
         fetch: fetchSearchBasedCodeIntel,
         fetchReferences: fetchSearchBasedReferences,
+        fetchDefinitions: fetchSearchBasedDefinitions,
     } = useSearchBasedCodeIntel({
         repo: variables.repository,
         commit: variables.commit,
@@ -145,6 +146,11 @@ export const useCodeIntel = ({
                     // If we've exhausted LSIF data and the flag is enabled, we add search-based data.
                     if (lsifData.references.endCursor === null && shouldMixPreciseAndSearchBasedReferences()) {
                         fetchSearchBasedReferences(deduplicateAndAddReferences)
+                    }
+
+                    // TODO: explain wth is going on here?
+                    if (lsifData.definitions.nodes.length === 0) {
+                        fetchSearchBasedDefinitions(setDefinitions)
                     }
                 } else {
                     fellBackToSearchBased.current = true
