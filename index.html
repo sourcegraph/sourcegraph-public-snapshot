@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>List of Boxes</title>
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                font-family: Arial, sans-serif;
+                background-color: #f5f5f5;
+            }
+
+            .container {
+                display: flex;
+                flex-direction: column; /* Changed from row */
+                flex-wrap: wrap;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+            }
+
+            .box {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                background-color: #ffffff;
+                border-radius: 10px;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+                margin: 20px;
+                width: 200px;
+                height: 200px;
+                cursor: pointer;
+            }
+
+            .box:hover {
+                transform: scale(1.05);
+                transition: all 0.3s ease-in-out;
+            }
+
+            .icon {
+                font-size: 60px;
+                margin-bottom: 20px;
+                color: #007bff;
+            }
+
+            .text {
+                text-align: center;
+                font-size: 16px;
+                color: #333333;
+                font-weight: bold;
+            }
+
+            .side-page {
+                position: fixed;
+                top: 0;
+                right: 0;
+                width: 300px;
+                height: 100%;
+                background-color: #ffffff;
+                box-shadow: -2px 0 5px rgba(0, 0, 0, 0.3);
+                overflow-y: auto;
+                padding: 20px;
+                z-index: 1;
+                transform: translateX(100%);
+                transition: all 0.3s ease-in-out;
+            }
+
+            .side-page.show {
+                transform: translateX(0%);
+            }
+
+            .side-page .close-btn {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                cursor: pointer;
+                color: #333333;
+                font-size: 20px;
+                font-weight: bold;
+                opacity: 0.7;
+            }
+
+            .side-page .close-btn:hover {
+                opacity: 1;
+                transition: opacity 0.3s ease-in-out;
+            }
+
+            .side-page h2 {
+                margin-top: 0;
+                margin-bottom: 10px;
+                color: #007bff;
+                font-size: 24px;
+                font-weight: bold;
+            }
+
+            .side-page p {
+                margin: 0;
+                margin-bottom: 10px;
+                font-size: 16px;
+                color: #333333;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="container">
+            <div class="box" onclick="showSidePage('page1')">
+                <div class="icon"><i class="fab fa-github"></i></div>
+                <div class="text">Github issue: implement a new UI selector - due in 5 days</div>
+            </div>
+            <div class="box" onclick="showSidePage('page2')">
+                <div class="icon"><i class="fas fa-code-branch"></i></div>
+                <div class="text">Github pull request: a teammate is making a change in code I own</div>
+            </div>
+            <div class="box" onclick="showSidePage('page3')">
+                <div class="icon"><i class="fas fa-code-branch"></i></div>
+                <div class="text">Github pull request: a junior teammate is making a change I don't own</div>
+            </div>
+            <div class="box" onclick="showSidePage('page4')">
+                <div class="icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="text">
+                    A customer has raised an issue of unknown priority and unknown cause with medium impact
+                </div>
+            </div>
+            <div class="box" onclick="showSidePage('page5')">
+                <div class="icon"><i class="fab fa-slack"></i></div>
+                <div class="text">
+                    A slack message from the customer support team has tagged my team about the customer issue in number
+                    in number 4
+                </div>
+            </div>
+            <div class="box" onclick="showSidePage('page6')">
+                <div class="icon"><i class="far fa-comment-alt"></i></div>
+                <div class="text">A slack message from a friend at work</div>
+            </div>
+            <div class="box" onclick="showSidePage('page7')">
+                <div class="icon"><i class="fab fa-google"></i></div>
+                <div class="text">
+                    Google cloud has tagged my team that a critical alert is firing, however all of our alerts are are
+                    marked critical.
+                </div>
+            </div>
+        </div>
+        <div class="side-page" id="page1">
+            <div class="close-btn" onclick="hideSidePage('page1')">X</div>
+            <h2>Github issue: implement a new UI selector - due in 5 days</h2>
+            <p>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eu lectus id arcu consectetur eleifend.
+                Sed Sed vitae ex et turpis maximus mollis. Fusce maximus quam eget mauris hendrerit porttitor.
+            </p>
+        </div>
+        <div class="side-page" id="page2">
+            <div class="close-btn" onclick="hideSidePage('page2')">X</div>
+            <h2>Github pull request: a teammate is making a change in code I own</h2>
+            <p>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eu lectus id arcu consectetur eleifend.
+                Sed Sed vitae ex et turpis maximus mollis. Fusce maximus quam eget mauris hendrerit porttitor.
+            </p>
+        </div>
+        <div class="side-page" id="page3">
+            <div class="close-btn" onclick="hideSidePage('page3')">X</div>
+            <h2>Github pull request: a junior teammate is making a change I don't own</h2>
+            <p>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eu lectus id arcu consectetur eleifend.
+                Sed Sed vitae ex et turpis maximus mollis. Fusce maximus quam eget mauris hendrerit porttitor.
+            </p>
+        </div>
+        <div class="side-page" id="page4">
+            <div class="close-btn" onclick="hideSidePage('page4')">X</div>
+            <h2>A customer has raised an issue of unknown priority and unknown cause with medium impact</h2>
+            <p>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eu lectus id arcu consectetur eleifend.
+                Sed Sed vitae ex et turpis maximus mollis. Fusce maximus quam eget mauris hendrerit porttitor.
+            </p>
+        </div>
+        <div class="side-page" id="page5">
+            <div class="close-btn" onclick="hideSidePage('page5')">X</div>
+            <h2>
+                A slack message from the customer support team has tagged my team about the customer issue in number 4
+            </h2>
+            <p>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eu lectus id arcu consectetur eleifend.
+                SedSed vitae ex et turpis maximus mollis. Fusce maximus quam eget mauris hendrerit porttitor.
+            </p>
+        </div>
+        <div class="side-page" id="page6">
+            <div class="close-btn" onclick="hideSidePage('page6')">X</div>
+            <h2>A slack message from a friend at work</h2>
+            <p>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eu lectus id arcu consectetur eleifend.
+                SedSed vitae ex et turpis maximus mollis. Fusce maximus quam eget mauris hendrerit porttitor.
+            </p>
+        </div>
+        <div class="side-page" id="page7">
+            <div class="close-btn" onclick="hideSidePage('page7')">X</div>
+            <h2>
+                Google cloud has tagged my team that a critical alert is firing, however all of our alerts are marked
+                critical.
+            </h2>
+            <p>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eu lectus id arcu consectetur eleifend.
+                SedSed vitae ex et turpis maximus mollis. Fusce maximus quam eget mauris hendrerit porttitor.
+            </p>
+        </div>
+        <script>
+            function showSidePage(pageId) {
+                document.getElementById(pageId).classList.add('show')
+            }
+            function hideSidePage(pageId) {
+                document.getElementById(pageId).classList.remove('show')
+            }
+        </script>
+    </body>
+</html>
