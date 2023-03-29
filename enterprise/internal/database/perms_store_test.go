@@ -236,68 +236,6 @@ func TestPermsStore_LoadRepoPermissions(t *testing.T) {
 	})
 }
 
-func TestPermsStore_FetchReposByUserAndExternalService(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	logger := logtest.Scoped(t)
-
-	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
-
-	t.Run("found matching", func(t *testing.T) {
-		logger := logtest.Scoped(t)
-		ctx := context.Background()
-		s := perms(logger, db, clock)
-		if _, err := db.ExecContext(ctx, `INSERT into repo (name, external_service_type, external_service_id) values ('github.com/test/test', 'github', 'https://github.com/')`); err != nil {
-			t.Fatal(err)
-		}
-		t.Cleanup(func() {
-			cleanupPermsTables(t, s)
-			cleanupUsersTable(t, s)
-			cleanupReposTable(t, s)
-		})
-
-		setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 2, RepoID: 1, ExternalAccountID: 2}})
-
-		u := []authz.UserIDWithExternalAccountID{{UserID: 2}}
-		if _, err := s.SetRepoPerms(context.Background(), 1, u, authz.SourceRepoSync); err != nil {
-			t.Fatal(err)
-		}
-
-		repos, err := s.FetchReposByUserAndExternalService(ctx, 2, "github", "https://github.com/")
-		if err != nil {
-			t.Fatal(err)
-		}
-		equal(t, "repos", []api.RepoID{1}, repos)
-	})
-	t.Run("skips non matching", func(t *testing.T) {
-		ctx := context.Background()
-		s := perms(logger, db, clock)
-		if _, err := db.ExecContext(ctx, `INSERT into repo (name, external_service_type, external_service_id) values ('github.com/test/test', 'github', 'https://github.com/')`); err != nil {
-			t.Fatal(err)
-		}
-		t.Cleanup(func() {
-			cleanupReposTable(t, s)
-			cleanupPermsTables(t, s)
-		})
-
-		setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 2, RepoID: 1, ExternalAccountID: 2}})
-
-		u := []authz.UserIDWithExternalAccountID{{UserID: 2}}
-		if _, err := s.SetRepoPerms(context.Background(), 1, u, authz.SourceRepoSync); err != nil {
-			t.Fatal(err)
-		}
-
-		repos, err := s.FetchReposByUserAndExternalService(ctx, 2, "gitlab", "https://gitlab.com/")
-		if err != nil {
-			t.Fatal(err)
-		}
-		equal(t, "repos", 0, len(repos))
-	})
-}
-
 func checkLegacyPermsTable(s *permsStore, sql string, expects map[int32][]uint32) error {
 	rows, err := s.Handle().QueryContext(context.Background(), sql)
 	if err != nil {

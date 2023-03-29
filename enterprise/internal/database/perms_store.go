@@ -46,9 +46,6 @@ type PermsStore interface {
 	LoadUserPermissions(ctx context.Context, userID int32) (p []authz.Permission, err error)
 	// FetchReposByExternalAccount fetches repo ids that the originate from the given external account.
 	FetchReposByExternalAccount(ctx context.Context, accountID int32) ([]api.RepoID, error)
-	// FetchReposByUserAndExternalService fetches repo ids that the given user can
-	// read and that originate from the given external service.
-	FetchReposByUserAndExternalService(ctx context.Context, userID int32, serviceType, serviceID string) ([]api.RepoID, error)
 	// LoadRepoPermissions returns stored repository permissions.
 	// Empty slice is returned when there are no valid permissions available.
 	// Slice with length 1 and userID == 0 is returned for unrestricted repo.
@@ -261,34 +258,6 @@ WHERE user_external_account_id = %s;
 	q := sqlf.Sprintf(format, accountID)
 
 	ctx, save := s.observe(ctx, "FetchReposByExternalAccount", "")
-	defer func() {
-		save(&err)
-	}()
-
-	return scanRepoIDs(s.Query(ctx, q))
-}
-
-func (s *permsStore) FetchReposByUserAndExternalService(ctx context.Context, userID int32, serviceType, serviceID string) (ids []api.RepoID, err error) {
-	const format = `
-SELECT id
-FROM repo
-WHERE external_service_id = %s
-  AND external_service_type = %s
-  AND id = ANY (ARRAY(SELECT object_ids_ints
-                      FROM user_permissions
-                      WHERE user_id = %s
-                        AND permission = 'read'
-                        AND object_type = 'repos'))
-`
-
-	q := sqlf.Sprintf(
-		format,
-		serviceID,
-		serviceType,
-		userID,
-	)
-
-	ctx, save := s.observe(ctx, "FetchReposByUserAndExternalService", "")
 	defer func() {
 		save(&err)
 	}()
