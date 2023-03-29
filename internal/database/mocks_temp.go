@@ -61980,9 +61980,6 @@ type MockUserStore struct {
 	// HardDeleteListFunc is an instance of a mock function object
 	// controlling the behavior of the method HardDeleteList.
 	HardDeleteListFunc *UserStoreHardDeleteListFunc
-	// HasTagFunc is an instance of a mock function object controlling the
-	// behavior of the method HasTag.
-	HasTagFunc *UserStoreHasTagFunc
 	// InvalidateSessionsByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method InvalidateSessionsByID.
 	InvalidateSessionsByIDFunc *UserStoreInvalidateSessionsByIDFunc
@@ -62020,12 +62017,6 @@ type MockUserStore struct {
 	// SetPasswordFunc is an instance of a mock function object controlling
 	// the behavior of the method SetPassword.
 	SetPasswordFunc *UserStoreSetPasswordFunc
-	// SetTagFunc is an instance of a mock function object controlling the
-	// behavior of the method SetTag.
-	SetTagFunc *UserStoreSetTagFunc
-	// TagsFunc is an instance of a mock function object controlling the
-	// behavior of the method Tags.
-	TagsFunc *UserStoreTagsFunc
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *UserStoreTransactFunc
@@ -62139,11 +62130,6 @@ func NewMockUserStore() *MockUserStore {
 				return
 			},
 		},
-		HasTagFunc: &UserStoreHasTagFunc{
-			defaultHook: func(context.Context, int32, string) (r0 bool, r1 error) {
-				return
-			},
-		},
 		InvalidateSessionsByIDFunc: &UserStoreInvalidateSessionsByIDFunc{
 			defaultHook: func(context.Context, int32) (r0 error) {
 				return
@@ -62201,16 +62187,6 @@ func NewMockUserStore() *MockUserStore {
 		},
 		SetPasswordFunc: &UserStoreSetPasswordFunc{
 			defaultHook: func(context.Context, int32, string, string) (r0 bool, r1 error) {
-				return
-			},
-		},
-		SetTagFunc: &UserStoreSetTagFunc{
-			defaultHook: func(context.Context, int32, string, bool) (r0 error) {
-				return
-			},
-		},
-		TagsFunc: &UserStoreTagsFunc{
-			defaultHook: func(context.Context, int32) (r0 map[string]bool, r1 error) {
 				return
 			},
 		},
@@ -62336,11 +62312,6 @@ func NewStrictMockUserStore() *MockUserStore {
 				panic("unexpected invocation of MockUserStore.HardDeleteList")
 			},
 		},
-		HasTagFunc: &UserStoreHasTagFunc{
-			defaultHook: func(context.Context, int32, string) (bool, error) {
-				panic("unexpected invocation of MockUserStore.HasTag")
-			},
-		},
 		InvalidateSessionsByIDFunc: &UserStoreInvalidateSessionsByIDFunc{
 			defaultHook: func(context.Context, int32) error {
 				panic("unexpected invocation of MockUserStore.InvalidateSessionsByID")
@@ -62399,16 +62370,6 @@ func NewStrictMockUserStore() *MockUserStore {
 		SetPasswordFunc: &UserStoreSetPasswordFunc{
 			defaultHook: func(context.Context, int32, string, string) (bool, error) {
 				panic("unexpected invocation of MockUserStore.SetPassword")
-			},
-		},
-		SetTagFunc: &UserStoreSetTagFunc{
-			defaultHook: func(context.Context, int32, string, bool) error {
-				panic("unexpected invocation of MockUserStore.SetTag")
-			},
-		},
-		TagsFunc: &UserStoreTagsFunc{
-			defaultHook: func(context.Context, int32) (map[string]bool, error) {
-				panic("unexpected invocation of MockUserStore.Tags")
 			},
 		},
 		TransactFunc: &UserStoreTransactFunc{
@@ -62495,9 +62456,6 @@ func NewMockUserStoreFrom(i UserStore) *MockUserStore {
 		HardDeleteListFunc: &UserStoreHardDeleteListFunc{
 			defaultHook: i.HardDeleteList,
 		},
-		HasTagFunc: &UserStoreHasTagFunc{
-			defaultHook: i.HasTag,
-		},
 		InvalidateSessionsByIDFunc: &UserStoreInvalidateSessionsByIDFunc{
 			defaultHook: i.InvalidateSessionsByID,
 		},
@@ -62533,12 +62491,6 @@ func NewMockUserStoreFrom(i UserStore) *MockUserStore {
 		},
 		SetPasswordFunc: &UserStoreSetPasswordFunc{
 			defaultHook: i.SetPassword,
-		},
-		SetTagFunc: &UserStoreSetTagFunc{
-			defaultHook: i.SetTag,
-		},
-		TagsFunc: &UserStoreTagsFunc{
-			defaultHook: i.Tags,
 		},
 		TransactFunc: &UserStoreTransactFunc{
 			defaultHook: i.Transact,
@@ -64582,116 +64534,6 @@ func (c UserStoreHardDeleteListFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// UserStoreHasTagFunc describes the behavior when the HasTag method of the
-// parent MockUserStore instance is invoked.
-type UserStoreHasTagFunc struct {
-	defaultHook func(context.Context, int32, string) (bool, error)
-	hooks       []func(context.Context, int32, string) (bool, error)
-	history     []UserStoreHasTagFuncCall
-	mutex       sync.Mutex
-}
-
-// HasTag delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockUserStore) HasTag(v0 context.Context, v1 int32, v2 string) (bool, error) {
-	r0, r1 := m.HasTagFunc.nextHook()(v0, v1, v2)
-	m.HasTagFunc.appendCall(UserStoreHasTagFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the HasTag method of the
-// parent MockUserStore instance is invoked and the hook queue is empty.
-func (f *UserStoreHasTagFunc) SetDefaultHook(hook func(context.Context, int32, string) (bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// HasTag method of the parent MockUserStore instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *UserStoreHasTagFunc) PushHook(hook func(context.Context, int32, string) (bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UserStoreHasTagFunc) SetDefaultReturn(r0 bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, int32, string) (bool, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UserStoreHasTagFunc) PushReturn(r0 bool, r1 error) {
-	f.PushHook(func(context.Context, int32, string) (bool, error) {
-		return r0, r1
-	})
-}
-
-func (f *UserStoreHasTagFunc) nextHook() func(context.Context, int32, string) (bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UserStoreHasTagFunc) appendCall(r0 UserStoreHasTagFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of UserStoreHasTagFuncCall objects describing
-// the invocations of this function.
-func (f *UserStoreHasTagFunc) History() []UserStoreHasTagFuncCall {
-	f.mutex.Lock()
-	history := make([]UserStoreHasTagFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UserStoreHasTagFuncCall is an object that describes an invocation of
-// method HasTag on an instance of MockUserStore.
-type UserStoreHasTagFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int32
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 bool
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c UserStoreHasTagFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UserStoreHasTagFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // UserStoreInvalidateSessionsByIDFunc describes the behavior when the
 // InvalidateSessionsByID method of the parent MockUserStore instance is
 // invoked.
@@ -65999,223 +65841,6 @@ func (c UserStoreSetPasswordFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UserStoreSetPasswordFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// UserStoreSetTagFunc describes the behavior when the SetTag method of the
-// parent MockUserStore instance is invoked.
-type UserStoreSetTagFunc struct {
-	defaultHook func(context.Context, int32, string, bool) error
-	hooks       []func(context.Context, int32, string, bool) error
-	history     []UserStoreSetTagFuncCall
-	mutex       sync.Mutex
-}
-
-// SetTag delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockUserStore) SetTag(v0 context.Context, v1 int32, v2 string, v3 bool) error {
-	r0 := m.SetTagFunc.nextHook()(v0, v1, v2, v3)
-	m.SetTagFunc.appendCall(UserStoreSetTagFuncCall{v0, v1, v2, v3, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the SetTag method of the
-// parent MockUserStore instance is invoked and the hook queue is empty.
-func (f *UserStoreSetTagFunc) SetDefaultHook(hook func(context.Context, int32, string, bool) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// SetTag method of the parent MockUserStore instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *UserStoreSetTagFunc) PushHook(hook func(context.Context, int32, string, bool) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UserStoreSetTagFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int32, string, bool) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UserStoreSetTagFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int32, string, bool) error {
-		return r0
-	})
-}
-
-func (f *UserStoreSetTagFunc) nextHook() func(context.Context, int32, string, bool) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UserStoreSetTagFunc) appendCall(r0 UserStoreSetTagFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of UserStoreSetTagFuncCall objects describing
-// the invocations of this function.
-func (f *UserStoreSetTagFunc) History() []UserStoreSetTagFuncCall {
-	f.mutex.Lock()
-	history := make([]UserStoreSetTagFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UserStoreSetTagFuncCall is an object that describes an invocation of
-// method SetTag on an instance of MockUserStore.
-type UserStoreSetTagFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int32
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 bool
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c UserStoreSetTagFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UserStoreSetTagFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// UserStoreTagsFunc describes the behavior when the Tags method of the
-// parent MockUserStore instance is invoked.
-type UserStoreTagsFunc struct {
-	defaultHook func(context.Context, int32) (map[string]bool, error)
-	hooks       []func(context.Context, int32) (map[string]bool, error)
-	history     []UserStoreTagsFuncCall
-	mutex       sync.Mutex
-}
-
-// Tags delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockUserStore) Tags(v0 context.Context, v1 int32) (map[string]bool, error) {
-	r0, r1 := m.TagsFunc.nextHook()(v0, v1)
-	m.TagsFunc.appendCall(UserStoreTagsFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Tags method of the
-// parent MockUserStore instance is invoked and the hook queue is empty.
-func (f *UserStoreTagsFunc) SetDefaultHook(hook func(context.Context, int32) (map[string]bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Tags method of the parent MockUserStore instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *UserStoreTagsFunc) PushHook(hook func(context.Context, int32) (map[string]bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UserStoreTagsFunc) SetDefaultReturn(r0 map[string]bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, int32) (map[string]bool, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UserStoreTagsFunc) PushReturn(r0 map[string]bool, r1 error) {
-	f.PushHook(func(context.Context, int32) (map[string]bool, error) {
-		return r0, r1
-	})
-}
-
-func (f *UserStoreTagsFunc) nextHook() func(context.Context, int32) (map[string]bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UserStoreTagsFunc) appendCall(r0 UserStoreTagsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of UserStoreTagsFuncCall objects describing
-// the invocations of this function.
-func (f *UserStoreTagsFunc) History() []UserStoreTagsFuncCall {
-	f.mutex.Lock()
-	history := make([]UserStoreTagsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UserStoreTagsFuncCall is an object that describes an invocation of method
-// Tags on an instance of MockUserStore.
-type UserStoreTagsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int32
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 map[string]bool
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c UserStoreTagsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UserStoreTagsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

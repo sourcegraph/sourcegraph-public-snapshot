@@ -510,14 +510,6 @@
           },
           "group": "AccessRequest",
           "default": true
-        },
-        "unifiedPermissions": {
-          "description": "Enables the new unified permissions model, which stores repository permissions in a single table and a row for each permission instead of postgres arrays.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": false
-          }
         }
       },
       "examples": [

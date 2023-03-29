@@ -23,7 +23,6 @@ export const siteVersionAndUserQuery = gql`
             email
             displayName
             siteAdmin
-            tags
             url
             settingsURL
             organizations {
@@ -39,7 +38,6 @@ export const siteVersionAndUserQuery = gql`
                 canSignOut
             }
             viewerCanAdminister
-            tags
         }
     }
 `

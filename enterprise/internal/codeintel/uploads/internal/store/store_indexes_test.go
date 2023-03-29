@@ -539,7 +539,7 @@ func insertIndexes(t testing.TB, db database.DB, indexes ...types.Index) {
 		}
 
 		// Ensure we have a repo for the inner join in select queries
-		insertRepo(t, db, index.RepositoryID, index.RepositoryName)
+		insertRepo(t, db, index.RepositoryID, index.RepositoryName, true)
 
 		query := sqlf.Sprintf(`
 			INSERT INTO lsif_indexes (

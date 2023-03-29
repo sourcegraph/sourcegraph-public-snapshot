@@ -101,7 +101,6 @@ const commonSearchGraphQLResultsWithUser: Partial<WebGraphQlOperations & SharedG
             avatarURL: '',
             viewerCanAdminister: true,
             builtinAuth: true,
-            tags: [],
             createdAt: '2020-03-02T11:52:15Z',
             roles: {
                 __typename: 'RoleConnection',

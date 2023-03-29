@@ -7,7 +7,6 @@ import (
 	gh "github.com/google/go-github/v43/github"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -25,9 +24,6 @@ import (
 func handleGitHubRepoAuthzEvent(logger log.Logger, opts authz.FetchPermsOptions) webhooks.Handler {
 	return func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
 		if !conf.ExperimentalFeatures().EnablePermissionsWebhooks {
-			return nil
-		}
-		if globals.PermissionsUserMapping().Enabled && !conf.ExperimentalFeatures().UnifiedPermissions {
 			return nil
 		}
 
