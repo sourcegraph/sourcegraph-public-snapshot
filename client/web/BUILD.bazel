@@ -1935,6 +1935,8 @@ webpack_web_app(
     },
     env = {
         "NODE_ENV": "production",
+        "ENTERPRISE": "true",
+        "INTEGRATION_TESTS": "true",
     },
     output_dir = True,
     visibility = ["//client/web:__subpackages__"],

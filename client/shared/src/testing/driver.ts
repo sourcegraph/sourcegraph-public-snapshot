@@ -47,10 +47,10 @@ export const oncePageEvent = <E extends keyof PageEventObject>(page: Page, event
 
 export const extractStyles = (page: puppeteer.Page): Promise<string> =>
     page.evaluate(() =>
-        [...document.styleSheets].reduce(
+        Array.from(document.styleSheets).reduce(
             (styleSheetRules, styleSheet) =>
                 styleSheetRules.concat(
-                    [...styleSheet.cssRules].reduce((rules, rule) => rules.concat(rule.cssText), '')
+                    Array.from(styleSheet.cssRules).reduce((rules, rule) => rules.concat(rule.cssText), '')
                 ),
             ''
         )
@@ -518,8 +518,8 @@ export class Driver {
     }
 
     public async paste(value: string): Promise<void> {
-        await this.page.evaluate(async (value: string) => {
-            await navigator.clipboard.writeText(value)
+        await this.page.evaluate((value: string) => {
+            return navigator.clipboard.writeText(value)
         }, value)
         const modifier = os.platform() === 'darwin' ? Key.Meta : Key.Control
         await this.page.keyboard.down(modifier)
