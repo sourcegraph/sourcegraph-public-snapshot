@@ -6,6 +6,7 @@ set -ex
 
 # ==========================
 echo "--- starting system dbus"
+mkdir -p /var/run/dbus
 dbus-daemon --system --fork
 echo "--- starting dbus session"
 export DBUS_SESSION_BUS_ADDRESS=$(dbus-daemon --session --print-address --fork)
