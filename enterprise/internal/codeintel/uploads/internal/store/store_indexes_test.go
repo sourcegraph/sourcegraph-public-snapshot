@@ -24,6 +24,45 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+func TestDeleteIndexesWithoutRepository(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	var indexes []types.Index
+	for i := 0; i < 25; i++ {
+		for j := 0; j < 10+i; j++ {
+			indexes = append(indexes, types.Index{ID: len(indexes) + 1, RepositoryID: 50 + i})
+		}
+	}
+	insertIndexes(t, db, indexes...)
+
+	t1 := time.Unix(1587396557, 0).UTC()
+	t2 := t1.Add(-DeletedRepositoryGracePeriod + time.Minute)
+	t3 := t1.Add(-DeletedRepositoryGracePeriod - time.Minute)
+
+	deletions := map[int]time.Time{
+		52: t2, 54: t2, 56: t2, // deleted too recently
+		61: t3, 63: t3, 65: t3, // deleted
+	}
+
+	for repositoryID, deletedAt := range deletions {
+		query := sqlf.Sprintf(`UPDATE repo SET deleted_at=%s WHERE id=%s`, deletedAt, repositoryID)
+
+		if _, err := db.QueryContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+			t.Fatalf("Failed to update repository: %s", err)
+		}
+	}
+
+	_, count, err := store.DeleteIndexesWithoutRepository(context.Background(), t1)
+	if err != nil {
+		t.Fatalf("unexpected error deleting indexes: %s", err)
+	}
+	if expected := 21 + 23 + 25; count != expected {
+		t.Fatalf("unexpected count. want=%d have=%d", expected, count)
+	}
+}
+
 func TestGetIndexes(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)

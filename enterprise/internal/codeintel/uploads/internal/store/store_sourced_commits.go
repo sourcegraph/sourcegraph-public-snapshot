@@ -70,7 +70,7 @@ func (s *store) processStaleSourcedCommits(
 		defer unset(ctx)
 
 		indexesDeleted, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
-			updateSourcedCommitsQuery,
+			updateSourcedCommitsQuery2,
 			sc.RepositoryID,
 			pq.Array(keep),
 			pq.Array(remove),
@@ -116,7 +116,7 @@ ORDER BY MIN(c.max_last_checked_at) OVER (PARTITION BY c.repository_id), c.commi
 LIMIT %s
 `
 
-const updateSourcedCommitsQuery = `
+const updateSourcedCommitsQuery2 = `
 WITH
 candidate_indexes AS (
 	SELECT u.id

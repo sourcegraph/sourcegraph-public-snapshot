@@ -114,6 +114,19 @@ type Store interface {
 
 	ReindexUploads(ctx context.Context, opts shared.ReindexUploadsOptions) error
 	ReindexUploadByID(ctx context.Context, id int) error
+
+	// Commits
+	ProcessStaleSourcedCommits(
+		ctx context.Context,
+		minimumTimeSinceLastCheck time.Duration,
+		commitResolverBatchSize int,
+		commitResolverMaximumCommitLag time.Duration,
+		shouldDelete func(ctx context.Context, repositoryID int, repositoryName, commit string) (bool, error),
+	) (indexesScanned, indexesDeleted int, _ error)
+
+	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_, _ int, err error)
+
+	ExpireFailedRecords(ctx context.Context, batchSize int, failedIndexMaxAge time.Duration, now time.Time) (int, int, error)
 }
 
 // store manages the database operations for uploads.
