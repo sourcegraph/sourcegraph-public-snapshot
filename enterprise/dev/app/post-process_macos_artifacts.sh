@@ -173,7 +173,7 @@ while IFS= read -r gcs_file; do
 done < <(gsutil ls "gs://sourcegraph-app-releases/${VERSION}/")
 # change the checksum names and upload that
 sed "s/${VERSION}/latest/g" checksums.txt >checksums-latest.txt
-gsutil cp checksums-latest.txt gs://sourcegraph-app-releases/latest/
+gsutil cp checksums-latest.txt gs://sourcegraph-app-releases/latest/checksums.txt
 # include a file with the version number so we can track it for updates and such
 printf '%s' "${VERSION}" >version.txt
 gsutil cp version.txt gs://sourcegraph-app-releases/latest/
