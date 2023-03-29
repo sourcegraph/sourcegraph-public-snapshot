@@ -15,7 +15,6 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -222,17 +221,14 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 	defer func() { err = txs.Done(err) }()
 
-	// Write to new user_repo_permissions table by default.
-	var unifiedResult *database.SetPermissionsResult
-	if unifiedResult, err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs), authz.SourceRepoSync); err != nil {
+	// Write to both user_repo_permissions and repo_permissions tables by default.
+	if result, err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs), authz.SourceRepoSync); err != nil {
 		return result, providerStates, errors.Wrapf(err, "set user repo permissions for repository %q (id: %d)", repo.Name, repo.ID)
 	}
-	result, err = txs.SetRepoPermissions(ctx, p)
+	// TODO @milan remove in the following PRs, keep writing to both tables for now
+	legacyResult, err := txs.SetRepoPermissions(ctx, p)
 	if err != nil {
-		return result, providerStates, errors.Wrapf(err, "set repository permissions for repository %q (id: %d)", repo.Name, repo.ID)
-	}
-	if edb.UnifiedPermsEnabled() {
-		result = unifiedResult
+		return legacyResult, providerStates, errors.Wrapf(err, "set repository permissions for repository %q (id: %d)", repo.Name, repo.ID)
 	}
 	regularCount := len(p.UserIDs)
 
@@ -311,16 +307,18 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		IDs:    map[int32]struct{}{},
 	}
 
-	unifiedResult := &database.SetPermissionsResult{}
 	for acctID, repoIDs := range results.repoPerms {
 		// Write to new user_repo_permissions table by default.
 		stats, err := s.saveUserPermsForAccount(ctx, userID, acctID, repoIDs)
 		if err != nil {
 			return result, providerStates, errors.Wrapf(err, "set user repo permissions for user %q (id: %d, external_account_id: %d)", user.Username, user.ID, acctID)
 		}
-		unifiedResult.Added += stats.Added
-		unifiedResult.Found += stats.Found
-		unifiedResult.Removed += stats.Removed
+		if result == nil {
+			result = &database.SetPermissionsResult{}
+		}
+		result.Added += stats.Added
+		result.Found += stats.Found
+		result.Removed += stats.Removed
 
 		for _, repoID := range repoIDs {
 			p.IDs[repoID] = struct{}{}
@@ -345,14 +343,10 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	s.permsUpdateLock.Lock()
 	defer s.permsUpdateLock.Unlock()
 
-	result, err = s.permsStore.SetUserPermissions(ctx, p)
+	// TODO @milan remove in the following PRs, keep writing to both tables for now
+	legacyResult, err := s.permsStore.SetUserPermissions(ctx, p)
 	if err != nil {
-		return result, providerStates, errors.Wrapf(err, "set user permissions for user %q (id: %d)", user.Username, user.ID)
-	}
-
-	// Return result from unified table if flag enabled.
-	if edb.UnifiedPermsEnabled() {
-		result = unifiedResult
+		return legacyResult, providerStates, errors.Wrapf(err, "set user permissions for user %q (id: %d)", user.Username, user.ID)
 	}
 
 	logger.Debug("synced",
@@ -504,8 +498,6 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	results.subRepoPerms = make(map[api.ExternalRepoSpec]*authz.SubRepoPermissions)
 	results.repoPerms = make(map[int32][]int32, len(accts))
 
-	unifiedPermsEnabled := conf.ExperimentalFeatures().UnifiedPermissions
-
 	for _, acct := range accts {
 		var repoSpecs, includeContainsSpecs, excludeContainsSpecs []api.ExternalRepoSpec
 
@@ -580,18 +572,9 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 				}
 
 				// Load last synced repos for this user and account from user_repo_permissions table.
-				var currentRepos []api.RepoID
-				if unifiedPermsEnabled {
-					currentRepos, err = s.permsStore.FetchReposByExternalAccount(ctx, acct.ID)
-					if err != nil {
-						return results, errors.Wrap(err, "fetching existing repo permissions")
-					}
-				} else {
-					// Use the old user_permissions table if feature flag is off.
-					currentRepos, err = s.permsStore.FetchReposByUserAndExternalService(ctx, user.ID, provider.ServiceType(), provider.ServiceID())
-					if err != nil {
-						return results, errors.Wrap(err, "fetching existing repo permissions")
-					}
+				currentRepos, err := s.permsStore.FetchReposByExternalAccount(ctx, acct.ID)
+				if err != nil {
+					return results, errors.Wrap(err, "fetching existing repo permissions")
 				}
 				// Put all the repo IDs into the results.
 				for _, repoID := range currentRepos {
