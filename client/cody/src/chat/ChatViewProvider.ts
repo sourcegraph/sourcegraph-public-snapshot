@@ -101,6 +101,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     }
 
     private async onDidReceiveMessage(message: any): Promise<void> {
+        const rootPath = getRootPath()
         switch (message.command) {
             case 'initialized':
                 await this.sendToken()
@@ -139,13 +140,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 await vscode.env.openExternal(vscode.Uri.parse(message.value))
                 break
             case 'openFile':
-                const rootPath = getRootPath()
                 if (rootPath !== null) {
                     const uri = vscode.Uri.file(path.join(rootPath, message.filePath))
                     // This opens the file in the active column.
-                    vscode.workspace.openTextDocument(uri).then(doc => {
-                        vscode.window.showTextDocument(doc)
-                    })
+                    try {
+                        const doc = await vscode.workspace.openTextDocument(uri)
+                        await vscode.window.showTextDocument(doc)
+                    } catch (err) {
+                        console.error(`Could not open file: ${err}`)
+                    }
                 } else {
                     console.error('Could not open file because rootPath is null')
                 }
