@@ -120,20 +120,15 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
             data-test-repository={node.name}
             data-test-cloned={node.mirrorInfo.cloned}
         >
-            <div className="d-flex flex-row overflow-auto">
+            <div className="d-flex flex-row">
                 {/* that col-md-8 is a little too large for the two buttons in a row */}
-                <div className="d-flex flex-column flex-md-row col-md-8 mr-auto px-0">
-                    <div
-                        className={classNames(
-                            'd-flex col-auto mr-auto align-items-center px-0',
-                            styles.repoDescription
-                        )}
-                    >
+                <div className="d-flex flex-column justify-content-between flex-md-row col px-0">
+                    <div className={classNames('d-flex col align-items-md-center px-0', styles.repoDescription)}>
                         <ExternalRepositoryIcon externalRepo={node.externalRepository} />
                         <RepoLink repoName={node.name} to={node.url} />
                     </div>
 
-                    <div className="d-flex col-auto align-items-center justify-content-start px-0 px-md-2 mt-2 mt-md-0">
+                    <div className="d-flex align-items-center col justify-content-start px-0 px-md-2 mt-2 mt-md-0">
                         <RepositoryStatusBadge status={parseRepositoryStatus(node)} />
                         {node.mirrorInfo.cloneInProgress && <LoadingSpinner className="ml-2" />}
                         {node.mirrorInfo.lastError && (
@@ -182,7 +177,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                     </div>
                 </div>
 
-                <div className="d-flex col-auto align-items-start justify-content-start px-0 mt-0">
+                <div className="d-flex align-items-start justify-content-start col-1 px-0 mt-0">
                     {!window.location.pathname.includes('/setup') && (
                         <Menu>
                             <MenuButton outline={true} aria-label="Repository action">
