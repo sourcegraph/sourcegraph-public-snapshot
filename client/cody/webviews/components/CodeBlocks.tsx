@@ -14,7 +14,7 @@ function wrapElement(element: HTMLElement, wrapperElement: HTMLElement): void {
         return
     }
     element.parentNode.insertBefore(wrapperElement, element)
-    wrapperElement.appendChild(element)
+    wrapperElement.append(element)
 }
 
 function createCopyButtonWithContainer(text: string): HTMLElement {
@@ -31,7 +31,7 @@ function createCopyButtonWithContainer(text: string): HTMLElement {
     // This allows us to position the copy button independent of the code.
     const container = document.createElement('div')
     container.className = copyButtonContainerClass
-    container.appendChild(copyButton)
+    container.append(copyButton)
     return container
 }
 

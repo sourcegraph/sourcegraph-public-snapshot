@@ -13,6 +13,8 @@ module.exports = {
     'react/jsx-filename-extension': [1, { extensions: ['.ts', '.tsx'] }],
     'id-length': 'off',
     'no-console': 'off',
+    'no-void': ['error', { allowAsStatement: true }],
+    '@typescript-eslint/no-floating-promises': ['error', { ignoreVoid: true }],
     'no-restricted-imports': [
       'error',
       {
