@@ -132,9 +132,14 @@ export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> =
                                 </tr>
                                 <tr>
                                     <th>Last incremental sync</th>
-                                    <td>
-                                        <Timestamp date={permissionsInfo.updatedAt} />
-                                    </td>
+                                    {permissionsInfo.updatedAt === null ?
+                                        (<td>
+                                            No previous sync
+                                        </td>):
+                                        (<td>
+                                            <Timestamp date={permissionsInfo.updatedAt} />
+                                        </td>)
+                                    }
                                     <td className="text-muted">Updated by user permissions syncing</td>
                                 </tr>
                             </tbody>

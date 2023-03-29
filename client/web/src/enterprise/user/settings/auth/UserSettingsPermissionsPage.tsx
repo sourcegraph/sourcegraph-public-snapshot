@@ -109,9 +109,14 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
                             </tr>
                             <tr>
                                 <th>Last incremental sync</th>
-                                <td>
-                                    <Timestamp date={permissionsInfo.updatedAt} />
-                                </td>
+                                {permissionsInfo.updatedAt === null ?
+                                    (<td>
+                                        No previous sync
+                                    </td>):
+                                    (<td>
+                                        <Timestamp date={permissionsInfo.updatedAt} />
+                                    </td>)
+                                }
                                 <td className="text-muted">Updated by repository permissions syncing</td>
                             </tr>
                         </tbody>
