@@ -75,7 +75,6 @@ func Init(
 		codeIntelServices.CodenavService,
 		codeIntelServices.AutoIndexingService,
 		codeIntelServices.UploadsService,
-		codeIntelServices.PoliciesService,
 		codeIntelServices.GitserverClient,
 		siteAdminChecker,
 		repoStore,

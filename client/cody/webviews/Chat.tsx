@@ -6,6 +6,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
 
+import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
+
 import { Tips } from './Tips'
 import { SubmitSvg } from './utils/icons'
 import { ChatMessage } from './utils/types'
@@ -145,7 +147,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                                 <div className="bubble bot-bubble">
                                     <div className="bubble-content bot-bubble-content">
                                         {messageInProgress.displayText ? (
-                                            <p dangerouslySetInnerHTML={{ __html: messageInProgress.displayText }} />
+                                            <p
+                                                dangerouslySetInnerHTML={{
+                                                    __html: renderMarkdown(messageInProgress.displayText),
+                                                }}
+                                            />
                                         ) : (
                                             <div className="bubble-loader">
                                                 <div className="bubble-loader-dot" />

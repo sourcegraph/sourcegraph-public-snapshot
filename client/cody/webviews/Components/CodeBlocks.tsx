@@ -1,6 +1,8 @@
 /* eslint-disable react/no-array-index-key */
 import React, { useEffect } from 'react'
 
+import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
+
 interface CodeBlocksProps {
     displayText: string
 }
@@ -29,5 +31,5 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({ displayTe
         }
     }, [displayText])
 
-    return <p className="chat-code-block-container" dangerouslySetInnerHTML={{ __html: displayText }} />
+    return <p className="chat-code-block-container" dangerouslySetInnerHTML={{ __html: renderMarkdown(displayText) }} />
 }

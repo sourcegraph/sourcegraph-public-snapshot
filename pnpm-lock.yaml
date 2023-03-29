@@ -131,6 +131,7 @@ importers:
       '@types/d3-shape': ^1.3.1
       '@types/d3-time-format': 3.0.0
       '@types/d3-voronoi': ^1.1.9
+      '@types/dompurify': ^3.0.0
       '@types/escape-html': ^1.0.1
       '@types/express': 4.17.11
       '@types/glob': 7.1.3
@@ -168,7 +169,6 @@ importers:
       '@types/recharts': 1.8.23
       '@types/resize-observer-browser': 0.1.4
       '@types/rimraf': ^3.0.2
-      '@types/sanitize-html': 2.3.0
       '@types/semver': 7.3.1
       '@types/shelljs': 0.8.8
       '@types/signale': 1.4.1
@@ -241,6 +241,7 @@ importers:
       d3-voronoi: ^1.1.2
       date-fns: ^2.16.1
       delay: ^4.4.1
+      dompurify: ^3.0.1
       downshift: ^3.4.8
       envalid: ^7.3.1
       esbuild: ^0.17.14
@@ -351,7 +352,6 @@ importers:
       resize-observer-polyfill: ^1.5.1
       rimraf: ^3.0.2
       rxjs: ^6.6.3
-      sanitize-html: ^2.0.0
       sass: ^1.32.4
       sass-loader: ^13.2.0
       semver: ^7.3.2
@@ -480,6 +480,7 @@ importers:
       d3-voronoi: 1.1.4
       date-fns: 2.29.3
       delay: 4.4.1
+      dompurify: 3.0.1
       downshift: 3.4.8_react@18.1.0
       escape-html: 1.0.3
       eventsource: 1.1.1
@@ -536,7 +537,6 @@ importers:
       regexpp: 3.2.0
       resize-observer-polyfill: 1.5.1
       rxjs: 6.6.7
-      sanitize-html: 2.3.3
       semver: 7.3.8
       stopword: 2.0.7
       stream-http: 3.2.0
@@ -636,6 +636,7 @@ importers:
       '@types/d3-shape': 1.3.2
       '@types/d3-time-format': 3.0.0
       '@types/d3-voronoi': 1.1.9
+      '@types/dompurify': 3.0.0
       '@types/escape-html': 1.0.1
       '@types/express': 4.17.11
       '@types/glob': 7.1.3
@@ -673,7 +674,6 @@ importers:
       '@types/recharts': 1.8.23
       '@types/resize-observer-browser': 0.1.4
       '@types/rimraf': 3.0.2
-      '@types/sanitize-html': 2.3.0
       '@types/semver': 7.3.1
       '@types/shelljs': 0.8.8
       '@types/signale': 1.4.1
@@ -924,7 +924,10 @@ importers:
       openai: 3.2.1
 
   client/cody-shared:
-    specifiers: {}
+    specifiers:
+      '@sourcegraph/common': workspace:*
+    dependencies:
+      '@sourcegraph/common': link:../common
 
   client/common:
     specifiers:
@@ -8832,6 +8835,12 @@ packages:
   /@types/d3-voronoi/1.1.9:
     resolution: {integrity: sha512-DExNQkaHd1F3dFPvGA/Aw2NGyjMln6E9QzsiqOcBgnE+VInYnFBHBBySbZQts6z6xD+5jTfKCP7M4OqMyVjdwQ==}
 
+  /@types/dompurify/3.0.0:
+    resolution: {integrity: sha512-EcSqmgm/xJwH8CcJPy9AHNypp/j58CYga3nWdl93/wLxX6OH+rSD3aAj75NQazcZd1YKHJ/pjNZ9qmgVajggwQ==}
+    dependencies:
+      '@types/trusted-types': 2.0.3
+    dev: true
+
   /@types/escape-html/1.0.1:
     resolution: {integrity: sha512-4mI1FuUUZiuT95fSVqvZxp/ssQK9zsa86S43h9x3zPOSU9BBJ+BfDkXwuaU7BfsD+e7U0/cUUfJFk3iW2M4okA==}
     dev: true
@@ -9316,12 +9325,6 @@ packages:
       '@types/node': 13.13.5
     dev: true
 
-  /@types/sanitize-html/2.3.0:
-    resolution: {integrity: sha512-q+Xg5t8Yn0KeomXMyVMoxtKyvh2u1ywkPqFlMy/5luF8D+DN+HhFN9pesJ6BsuoLuDCukR8p922KkCZnkTHOpg==}
-    dependencies:
-      htmlparser2: 6.1.0
-    dev: true
-
   /@types/sass/1.16.1:
     resolution: {integrity: sha512-iZUcRrGuz/Tbg3loODpW7vrQJkUtpY2fFSf4ELqqkApcS2TkZ1msk7ie8iZPB86lDOP8QOTTmuvWjc5S0R9OjQ==}
     dependencies:
@@ -9452,6 +9455,10 @@ packages:
 
   /@types/tough-cookie/2.3.5:
     resolution: {integrity: sha512-SCcK7mvGi3+ZNz833RRjFIxrn4gI1PPR3NtuIS+6vMkvmsGjosqTJwRt5bAEFLRz+wtJMWv8+uOnZf2hi2QXTg==}
+
+  /@types/trusted-types/2.0.3:
+    resolution: {integrity: sha512-NfQ4gyz38SL8sDNrSixxU2Os1a5xcdFxipAFxYEuLUlvU2uDwS4NUpsImcf1//SlWItCVMMLiylsxbmNMToV/g==}
+    dev: true
 
   /@types/undertaker-registry/1.0.1:
     resolution: {integrity: sha512-Z4TYuEKn9+RbNVk1Ll2SS4x1JeLHecolIbM/a8gveaHsW0Hr+RQMraZACwTO2VD7JvepgA6UO1A1VrbktQrIbQ==}
@@ -14229,6 +14236,7 @@ packages:
       domelementtype: 2.3.0
       domhandler: 4.2.0
       entities: 2.1.0
+    dev: true
 
   /dom-serializer/2.0.0:
     resolution: {integrity: sha512-wIkAryiqt/nV5EQKqQpo3SToSOV9J0DnbJqwK7Wv/Trc92zIAYZ4FlMu+JPFW1DfGFt81ZTCGgDEabffXeLyJg==}
@@ -14247,6 +14255,7 @@ packages:
 
   /domelementtype/2.3.0:
     resolution: {integrity: sha512-OLETBj6w0OsagBwdXnPdN0cnMfF9opN69co+7ZrbfPGrdpPVNBUj02spi6B1N7wChLQiPn4CSH/zJvXw56gmHw==}
+    dev: true
 
   /domexception/2.0.1:
     resolution: {integrity: sha512-yxJ2mFy/sibVQlu5qHjOkf9J3K6zgmCxgJ94u2EdvDOV09H+32LtRswEcUsmUWN72pVLOEnTSRaIVVzVQgS0dg==}
@@ -14267,6 +14276,7 @@ packages:
     engines: {node: '>= 4'}
     dependencies:
       domelementtype: 2.3.0
+    dev: true
 
   /domhandler/5.0.3:
     resolution: {integrity: sha512-cgwlv/1iFQiFnU96XXgROh8xTeetsnJiDsTc7TYCLFd9+/WNkIqPTxiM/8pSd8VIrhXGTf1Ny1q1hquVqDJB5w==}
@@ -14278,6 +14288,10 @@ packages:
   /dompurify/2.3.3:
     resolution: {integrity: sha512-dqnqRkPMAjOZE0FogZ+ceJNM2dZ3V/yNOuFB7+39qpO93hHhfRpHw3heYQC7DPK9FqbQTfBKUJhiSfz4MvXYwg==}
     dev: true
+
+  /dompurify/3.0.1:
+    resolution: {integrity: sha512-60tsgvPKwItxZZdfLmamp0MTcecCta3avOhsLgPZ0qcWt96OasFfhkeIRbJ6br5i0fQawT1/RBGB5L58/Jpwuw==}
+    dev: false
 
   /domutils/1.7.0:
     resolution: {integrity: sha512-Lgd2XcJ/NjEw+7tFvfKxOzCYKZsdct5lczQ2ZaQY8Djz7pfAD3Gbp8ySJWtreII/vDlMVmxwa6pHmdxIYgttDg==}
@@ -14292,6 +14306,7 @@ packages:
       dom-serializer: 1.3.2
       domelementtype: 2.3.0
       domhandler: 4.2.0
+    dev: true
 
   /domutils/3.0.1:
     resolution: {integrity: sha512-z08c1l761iKhDFtfXO04C7kTdPBLi41zwOZl00WS8b5eiaebNpY00HKbztwBq+e3vyqWNwWF3mP9YLUeqIrF+Q==}
@@ -16056,7 +16071,7 @@ packages:
   /fs-extra/0.30.0:
     resolution: {integrity: sha512-UvSPKyhMn6LEd/WpUaV9C9t3zATuqoqfWc3QdPhPLb58prN9tqYPlPWi8Krxi44loBoUzlobqZ3+8tGpxxSzwA==}
     dependencies:
-      graceful-fs: 4.2.10
+      graceful-fs: 4.2.11
       jsonfile: 2.4.0
       klaw: 1.3.1
       path-is-absolute: 1.0.1
@@ -17321,6 +17336,7 @@ packages:
       domhandler: 4.2.0
       domutils: 2.8.0
       entities: 2.1.0
+    dev: true
 
   /htmlparser2/8.0.2:
     resolution: {integrity: sha512-GYdjWKDkbRLkZ5geuHs5NY1puJ+PXwP7+fHPRz06Eirsb9ugf6d8kkXav6ADhcODhFFPMIXyxkxSuMf3D6NCFA==}
@@ -18115,6 +18131,7 @@ packages:
   /is-plain-object/5.0.0:
     resolution: {integrity: sha512-VRSzKkbMm5jMDoKLbltAkFQ5Qr7VDiTFGXxYFXXowVj387GeGNOCsOH6Msy00SGZ3Fp84b1Naa1psqgcCIEP5Q==}
     engines: {node: '>=0.10.0'}
+    dev: true
 
   /is-potential-custom-element-name/1.0.1:
     resolution: {integrity: sha512-bCYeRA2rVibKZd+s2625gGnGF/t7DSqDs4dP7CrLA1m7jKWz6pps0LpYLJN8Q64HtmPKJ1hrN3nzPNKFEKOUiQ==}
@@ -22239,10 +22256,6 @@ packages:
       semver: 5.7.1
     dev: true
 
-  /parse-srcset/1.0.2:
-    resolution: {integrity: sha512-/2qh0lav6CmI15FzA3i/2Bzk2zCgQhGMkvhOhKNcBVQ1ldgpbfiNTVslmooUmWJcADi1f1kIeynbDRVzNlfR6Q==}
-    dev: false
-
   /parse5-htmlparser2-tree-adapter/7.0.0:
     resolution: {integrity: sha512-B77tOZrqqfUfnVcOrUvfdLbz4pu4RopLD/4vmu3HUPswwTA8OH0EMW9BlWR2B0RCoiZRAHEUu7IxeP1Pd1UU+g==}
     dependencies:
@@ -24902,18 +24915,6 @@ packages:
     transitivePeerDependencies:
       - supports-color
     dev: true
-
-  /sanitize-html/2.3.3:
-    resolution: {integrity: sha512-DCFXPt7Di0c6JUnlT90eIgrjs6TsJl/8HYU3KLdmrVclFN4O0heTcVbJiMa23OKVr6aR051XYtsgd8EWwEBwUA==}
-    dependencies:
-      deepmerge: 4.2.2
-      escape-string-regexp: 4.0.0
-      htmlparser2: 6.1.0
-      is-plain-object: 5.0.0
-      klona: 2.0.5
-      parse-srcset: 1.0.2
-      postcss: 8.4.21
-    dev: false
 
   /sass-loader/13.2.0_sass@1.32.4+webpack@5.75.0:
     resolution: {integrity: sha512-JWEp48djQA4nbZxmgC02/Wh0eroSUutulROUusYJO9P9zltRbNN80JCBHqRGzjd4cmZCa/r88xgfkjGD0TXsHg==}

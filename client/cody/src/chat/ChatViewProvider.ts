@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
@@ -214,7 +213,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     }
 
     private async onBotMessageChange(text: string): Promise<void> {
-        this.transcript.addAssistantResponse(text, renderMarkdown(text))
+        this.transcript.addAssistantResponse(text)
         await this.sendTranscript()
     }
 
