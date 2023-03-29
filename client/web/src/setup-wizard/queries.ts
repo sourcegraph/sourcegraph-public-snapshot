@@ -9,6 +9,7 @@ export const CODE_HOST_FRAGMENT = gql`
         displayName
         lastSyncAt
         nextSyncAt
+        lastSyncError
         config
     }
 `
