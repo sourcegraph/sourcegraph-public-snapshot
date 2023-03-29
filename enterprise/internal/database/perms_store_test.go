@@ -3494,43 +3494,21 @@ func TestPermsStore_CountUsersWithNoPerms(t *testing.T) {
 		t.Fatal(diff)
 	}
 
-	t.Run("legacy user_permissions table", func(t *testing.T) {
-		mockUnifiedPermsConfig(false)
+	// mark sync jobs as completed for "alice" and add permissions for "bob"
+	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, NOW(), %s)`, 1, database.ReasonUserNoPermissions)
+	execQuery(t, ctx, s, q)
 
-		s.SetUserPermissions(ctx, &authz.UserPermissions{UserID: 1, IDs: map[int32]struct{}{1: {}}})
-		s.SetUserPermissions(ctx, &authz.UserPermissions{UserID: 2, IDs: make(map[int32]struct{})})
+	s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: 2, ExternalAccountID: 1}, []int32{1}, authz.SourceUserSync)
 
-		// Only "david" has no permissions at this point
-		count, err = s.CountUsersWithNoPerms(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
+	// Only "david" has no permissions at this point
+	count, err = s.CountUsersWithNoPerms(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		if diff := cmp.Diff(1, count); diff != "" {
-			t.Fatal(diff)
-		}
-	})
-
-	t.Run("unified user_repo_permissions table", func(t *testing.T) {
-		mockUnifiedPermsConfig(true)
-
-		// mark sync jobs as completed for "alice" and add permissions for "bob"
-		q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, NOW(), %s)`, 1, database.ReasonUserNoPermissions)
-		execQuery(t, ctx, s, q)
-
-		s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: 2, ExternalAccountID: 1}, []int32{1}, authz.SourceUserSync)
-
-		// Only "david" has no permissions at this point
-		count, err = s.CountUsersWithNoPerms(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if diff := cmp.Diff(1, count); diff != "" {
-			t.Fatal(diff)
-		}
-	})
-
+	if diff := cmp.Diff(1, count); diff != "" {
+		t.Fatal(diff)
+	}
 }
 
 func cleanupReposTable(t *testing.T, s *permsStore) {
@@ -3646,45 +3624,24 @@ func TestPermsStore_CountReposWithNoPerms(t *testing.T) {
 		t.Fatal(diff)
 	}
 
-	t.Run("legacy user_permissions table", func(t *testing.T) {
-		mockUnifiedPermsConfig(false)
+	// mark sync jobs as completed for "private_repo" and add permissions for "private_repo_2"
+	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, NOW(), %s)`, 1, database.ReasonRepoNoPermissions)
+	execQuery(t, ctx, s, q)
 
-		s.SetRepoPermissions(ctx, &authz.RepoPermissions{RepoID: 1, UserIDs: map[int32]struct{}{1: {}}})
-		s.SetRepoPermissions(ctx, &authz.RepoPermissions{RepoID: 3, UserIDs: make(map[int32]struct{})})
+	_, err = s.SetRepoPerms(ctx, 3, []authz.UserIDWithExternalAccountID{{UserID: 1, ExternalAccountID: 1}}, authz.SourceRepoSync)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		// No private repositories have any permissions at this point
-		count, err = s.CountReposWithNoPerms(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
+	// No private repositories have any permissions at this point
+	count, err = s.CountReposWithNoPerms(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		if diff := cmp.Diff(0, count); diff != "" {
-			t.Fatal(diff)
-		}
-	})
-
-	t.Run("unified user_repo_permissions table", func(t *testing.T) {
-		mockUnifiedPermsConfig(true)
-
-		// mark sync jobs as completed for "private_repo" and add permissions for "private_repo_2"
-		q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, NOW(), %s)`, 1, database.ReasonRepoNoPermissions)
-		execQuery(t, ctx, s, q)
-
-		_, err := s.SetRepoPerms(ctx, 3, []authz.UserIDWithExternalAccountID{{UserID: 1, ExternalAccountID: 1}}, authz.SourceRepoSync)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// No private repositories have any permissions at this point
-		count, err = s.CountReposWithNoPerms(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if diff := cmp.Diff(0, count); diff != "" {
-			t.Fatal(diff)
-		}
-	})
+	if diff := cmp.Diff(0, count); diff != "" {
+		t.Fatal(diff)
+	}
 }
 
 func TestPermsStore_UserIDsWithOldestPerms(t *testing.T) {
