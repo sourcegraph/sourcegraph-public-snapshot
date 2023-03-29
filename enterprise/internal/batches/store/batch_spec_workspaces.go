@@ -104,23 +104,21 @@ func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.Batc
 
 			if err := inserter.Insert(
 				ctx,
-				[]any{
-					wj.BatchSpecID,
-					marshaledIDs,
-					wj.RepoID,
-					wj.Branch,
-					wj.Commit,
-					wj.Path,
-					pq.Array(wj.FileMatches),
-					wj.OnlyFetchWorkspace,
-					wj.Unsupported,
-					wj.Ignored,
-					wj.Skipped,
-					wj.CachedResultFound,
-					marshaledStepCacheResults,
-					wj.CreatedAt,
-					wj.UpdatedAt,
-				},
+				wj.BatchSpecID,
+				marshaledIDs,
+				wj.RepoID,
+				wj.Branch,
+				wj.Commit,
+				wj.Path,
+				pq.Array(wj.FileMatches),
+				wj.OnlyFetchWorkspace,
+				wj.Unsupported,
+				wj.Ignored,
+				wj.Skipped,
+				wj.CachedResultFound,
+				marshaledStepCacheResults,
+				wj.CreatedAt,
+				wj.UpdatedAt,
 			); err != nil {
 				return err
 			}

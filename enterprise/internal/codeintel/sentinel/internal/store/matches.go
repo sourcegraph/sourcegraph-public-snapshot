@@ -318,10 +318,8 @@ func (s *store) ScanMatches(ctx context.Context, batchSize int) (numReferencesSc
 			for _, match := range matches {
 				if err := inserter.Insert(
 					ctx,
-					[]any{
-						match.UploadID,
-						match.VulnerabilityAffectedPackageID,
-					},
+					match.UploadID,
+					match.VulnerabilityAffectedPackageID,
 				); err != nil {
 					return err
 				}
