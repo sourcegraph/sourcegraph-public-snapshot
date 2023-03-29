@@ -199,7 +199,7 @@ func NewInserterWithReturn(
 }
 
 // Insert submits a single row of values to be inserted on the next flush.
-func (i *Inserter) Insert(ctx context.Context, values ...any) error {
+func (i *Inserter) Insert(ctx context.Context, values []any) error {
 	i.checkInvariants()
 	defer i.checkInvariants()
 

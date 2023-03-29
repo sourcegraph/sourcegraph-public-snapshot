@@ -256,21 +256,23 @@ func (s *store) InsertVulnerabilities(ctx context.Context, vulnerabilities []sha
 			for _, v := range vulnerabilities {
 				if err := inserter.Insert(
 					ctx,
-					v.SourceID,
-					v.Summary,
-					v.Details,
-					v.CPEs,
-					v.CWEs,
-					v.Aliases,
-					v.Related,
-					v.DataSource,
-					v.URLs,
-					v.Severity,
-					v.CVSSVector,
-					v.CVSSScore,
-					v.PublishedAt,
-					dbutil.NullTime{Time: v.ModifiedAt},
-					dbutil.NullTime{Time: v.WithdrawnAt},
+					[]any{
+						v.SourceID,
+						v.Summary,
+						v.Details,
+						v.CPEs,
+						v.CWEs,
+						v.Aliases,
+						v.Related,
+						v.DataSource,
+						v.URLs,
+						v.Severity,
+						v.CVSSVector,
+						v.CVSSScore,
+						v.PublishedAt,
+						dbutil.NullTime{Time: v.ModifiedAt},
+						dbutil.NullTime{Time: v.WithdrawnAt},
+					},
 				); err != nil {
 					return err
 				}
@@ -306,14 +308,16 @@ func (s *store) InsertVulnerabilities(ctx context.Context, vulnerabilities []sha
 
 					if err := inserter.Insert(
 						ctx,
-						v.SourceID,
-						ap.PackageName,
-						ap.Language,
-						ap.Namespace,
-						ap.VersionConstraint,
-						ap.Fixed,
-						ap.FixedIn,
-						serialized,
+						[]any{
+							v.SourceID,
+							ap.PackageName,
+							ap.Language,
+							ap.Namespace,
+							ap.VersionConstraint,
+							ap.Fixed,
+							ap.FixedIn,
+							serialized,
+						},
 					); err != nil {
 						return err
 					}

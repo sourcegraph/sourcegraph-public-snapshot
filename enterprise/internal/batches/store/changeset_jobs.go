@@ -79,21 +79,23 @@ func (s *Store) CreateChangesetJob(ctx context.Context, cs ...*btypes.ChangesetJ
 
 			if err := inserter.Insert(
 				ctx,
-				c.BulkGroup,
-				c.UserID,
-				c.BatchChangeID,
-				c.ChangesetID,
-				c.JobType,
-				payload,
-				c.State.ToDB(),
-				c.FailureMessage,
-				dbutil.NullTimeColumn(c.StartedAt),
-				dbutil.NullTimeColumn(c.FinishedAt),
-				dbutil.NullTimeColumn(c.ProcessAfter),
-				c.NumResets,
-				c.NumFailures,
-				c.CreatedAt,
-				c.UpdatedAt,
+				[]any{
+					c.BulkGroup,
+					c.UserID,
+					c.BatchChangeID,
+					c.ChangesetID,
+					c.JobType,
+					payload,
+					c.State.ToDB(),
+					c.FailureMessage,
+					dbutil.NullTimeColumn(c.StartedAt),
+					dbutil.NullTimeColumn(c.FinishedAt),
+					dbutil.NullTimeColumn(c.ProcessAfter),
+					c.NumResets,
+					c.NumFailures,
+					c.CreatedAt,
+					c.UpdatedAt,
+				},
 			); err != nil {
 				return err
 			}

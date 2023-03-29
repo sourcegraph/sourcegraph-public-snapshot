@@ -68,10 +68,12 @@ func CreateBatchSpecWorkspaceExecutionJob(ctx context.Context, s createBatchSpec
 
 			if err := inserter.Insert(
 				ctx,
-				job.BatchSpecWorkspaceID,
-				job.UserID,
-				job.CreatedAt,
-				job.UpdatedAt,
+				[]any{
+					job.BatchSpecWorkspaceID,
+					job.UserID,
+					job.CreatedAt,
+					job.UpdatedAt,
+				},
 			); err != nil {
 				return err
 			}
