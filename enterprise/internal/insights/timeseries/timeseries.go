@@ -24,10 +24,10 @@ func BuildSampleTimes(numPoints int, interval TimeInterval, now time.Time) []tim
 	return times
 }
 
-func MakeRecordingsFromFrames(frames []time.Time, snapshot bool) []types.RecordingTime {
-	recordings := make([]types.RecordingTime, 0, len(frames))
-	for _, frame := range frames {
-		recordings = append(recordings, types.RecordingTime{Snapshot: snapshot, Timestamp: frame})
+func MakeRecordingsFromTimes(times []time.Time, snapshot bool) []types.RecordingTime {
+	recordings := make([]types.RecordingTime, 0, len(times))
+	for _, t := range times {
+		recordings = append(recordings, types.RecordingTime{Snapshot: snapshot, Timestamp: t})
 	}
 	return recordings
 }
