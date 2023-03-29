@@ -209,7 +209,6 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
 exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
 <DocumentFragment>
   <button
-    aria-describedby="tooltip-15"
     aria-label="d"
     class="test-action-item"
     type="button"
