@@ -209,7 +209,16 @@ export const ContextFiles: React.FunctionComponent<{ contextFiles: string[] }> =
                     <ul className="context-files-list-container">
                         {contextFiles.map(file => (
                             <li key={file}>
-                                <code className="context-file">{file}</code>
+                                <code className="context-file">
+                                    <a
+                                        href="#"
+                                        onClick={() => {
+                                            vscodeAPI.postMessage({ command: 'openFile', filePath: file })
+                                        }}
+                                    >
+                                        {file}
+                                    </a>
+                                </code>
                             </li>
                         ))}
                     </ul>

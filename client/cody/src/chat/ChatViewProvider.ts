@@ -1,3 +1,5 @@
+import path from 'path'
+
 import * as vscode from 'vscode'
 
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
@@ -20,6 +22,7 @@ import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../comm
 import { updateConfiguration } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { configureExternalServices } from '../external-services'
+import { getRootPath } from '../keyword-context/local-keyword-context-fetcher'
 import { getRgPath } from '../rg'
 import { TestSupport } from '../test-support'
 
@@ -134,6 +137,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 break
             case 'links':
                 await vscode.env.openExternal(vscode.Uri.parse(message.value))
+                break
+            case 'openFile':
+                const rootPath = getRootPath()
+                if (rootPath !== null) {
+                    const uri = vscode.Uri.file(path.join(rootPath, message.filePath))
+                    // This opens the file in the active column.
+                    vscode.workspace.openTextDocument(uri).then(doc => {
+                        vscode.window.showTextDocument(doc)
+                    })
+                } else {
+                    console.error('Could not open file because rootPath is null')
+                }
                 break
             default:
                 console.error('Invalid request type from Webview')
