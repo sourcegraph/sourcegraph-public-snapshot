@@ -34,13 +34,12 @@
     max-width: 600px;
 }
 
-.repo-description {
-    @media (--xs-breakpoint-down) {
-        overflow: hidden;
-    }
-}
-
 .alert-overflow {
     max-height: 300px;
     overflow-y: auto;
+}
+
+.repo-icon {
+    min-height: 24px;
+    min-width: 24px;
 }
