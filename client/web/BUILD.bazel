@@ -1987,6 +1987,6 @@ build_test(
     name = "webpack_test",
     targets = [
         ":bundle",
-        ":bundle-enterprise",
+        ":app-enterprise",
     ],
 )
