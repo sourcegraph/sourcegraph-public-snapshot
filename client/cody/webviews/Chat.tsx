@@ -1,4 +1,3 @@
-/* eslint-disable react/no-array-index-key */
 /* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
@@ -15,7 +14,7 @@ import { vscodeAPI } from './utils/VSCodeApi'
 
 import './Chat.css'
 
-import { CodeBlocks } from './Components/CodeBlocks'
+import { CodeBlocks } from './components/CodeBlocks'
 
 const SCROLL_THRESHOLD = 15
 
@@ -26,6 +25,12 @@ interface ChatboxProps {
     setFormInput: (input: string) => void
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
+}
+
+const escapeHTML = (html: string): string => {
+    const span = document.createElement('span')
+    span.textContent = html
+    return span.innerHTML
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -55,12 +60,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         },
         [historyIndex, inputHistory, setFormInput]
     )
-
-    const escapeHTML = (html: string): string => {
-        const span = document.createElement('span')
-        span.textContent = html
-        return span.innerHTML
-    }
 
     const onChatSubmit = useCallback(() => {
         // Submit chat only when input is not empty

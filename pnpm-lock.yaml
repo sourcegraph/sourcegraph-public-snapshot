@@ -11981,7 +11981,7 @@ packages:
       dom-serializer: 2.0.0
       domhandler: 5.0.3
       domutils: 3.0.1
-      htmlparser2: 8.0.2
+      htmlparser2: 8.0.1
       parse5: 7.1.2
       parse5-htmlparser2-tree-adapter: 7.0.0
     dev: true
@@ -17338,8 +17338,8 @@ packages:
       entities: 2.1.0
     dev: true
 
-  /htmlparser2/8.0.2:
-    resolution: {integrity: sha512-GYdjWKDkbRLkZ5geuHs5NY1puJ+PXwP7+fHPRz06Eirsb9ugf6d8kkXav6ADhcODhFFPMIXyxkxSuMf3D6NCFA==}
+  /htmlparser2/8.0.1:
+    resolution: {integrity: sha512-4lVbmc1diZC7GUJQtRQ5yBAeUCL1exyMwmForWkRLnwyzWBFxN633SALPMGYaWZvKe9j1pRZJpauvmxENSp/EA==}
     dependencies:
       domelementtype: 2.3.0
       domhandler: 5.0.3

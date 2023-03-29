@@ -56,8 +56,8 @@
 }
 
 .bubble-content pre,
-.bubble-content span > code,
-.bubble-content p > code {
+.bubble-content span>code,
+.bubble-content p>code {
     /* Our syntax highlighter emits colors intended for dark backgrounds only. */
     background-color: var(--code-background);
 }
@@ -70,7 +70,6 @@
 .human-bubble-content {
     background-color: var(--human-bubble-color);
     color: var(--human-text-color);
-    /* background-color: var(--human-bubble-color); */
     border-bottom-right-radius: 0;
     border-bottom-left-radius: 16px;
 }
@@ -176,7 +175,7 @@
     margin-right: 0.5em;
 }
 
-.context-files-toggle-icon > i {
+.context-files-toggle-icon>i {
     font-size: cal(var(--vscode-editor-font-size) * 0.5) !important;
 }
 
@@ -205,13 +204,23 @@
     padding: 0.1rem;
 }
 
-.chat-code-block-container {
+.chat-code-block-copy-button-container {
     position: relative;
 }
 
-.chat-code-block-copy-btn {
-    color: var(--vscode-button-foreground);
-    background-color: var(--vscode-button-background);
-    width: 100%;
+.chat-code-block-copy-button-container:hover .chat-code-block-copy-button {
+    display: block;
+}
+
+.chat-code-block-copy-button {
+    display: none;
+    position: absolute;
+    cursor: pointer;
+    color: var(--vscode-button-secondaryForeground);
+    background-color: var(--vscode-button-secondaryBackground);
+    top: 4px;
+    right: 4px;
+    border-radius: 8px;
+    padding: 4px 8px;
     border: none;
 }
