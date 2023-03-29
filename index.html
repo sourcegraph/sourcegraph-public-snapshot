@@ -16,20 +16,19 @@
                 flex-wrap: wrap;
                 justify-content: center;
                 align-items: center;
-                height: 100vh;
+                width: 400px;
             }
 
             .box {
                 display: flex;
-                flex-direction: column;
+                flex-direction: row;
                 justify-content: center;
                 align-items: center;
                 background-color: #ffffff;
                 border-radius: 10px;
                 box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
                 margin: 20px;
-                width: 200px;
-                height: 200px;
+                width: 100%;
                 cursor: pointer;
             }
 
@@ -42,20 +41,32 @@
                 font-size: 60px;
                 margin-bottom: 20px;
                 color: #007bff;
+                display: inline;
+                padding-left: 20px;
+                padding-top: 20px;
+            }
+
+            h2 {
+                text-align: left;
+                font-size: 16px;
+                color: #000000;
+                font-weight: bold;
+
             }
 
             .text {
-                text-align: center;
+                text-align: left;
                 font-size: 16px;
-                color: #333333;
-                font-weight: bold;
+                color: #000000;
+                font-weight: normal;
+                padding: 20px;
             }
 
             .side-page {
                 position: fixed;
                 top: 0;
                 right: 0;
-                width: 300px;
+                width: 60vw;
                 height: 100%;
                 background-color: #ffffff;
                 box-shadow: -2px 0 5px rgba(0, 0, 0, 0.3);
@@ -100,115 +111,294 @@
                 font-size: 16px;
                 color: #333333;
             }
+            /* Style the tab */
+            .tab {
+                overflow: hidden;
+                border: 1px solid #ccc;
+                background-color: #f1f1f1;
+            }
+
+            /* Style the buttons that are used to open the tab content */
+            .tab button {
+                background-color: inherit;
+                float: left;
+                border: none;
+                outline: none;
+                cursor: pointer;
+                padding: 14px 16px;
+                transition: 0.3s;
+            }
+
+            /* Change background color of buttons on hover */
+            .tab button:hover {
+                background-color: #ddd;
+            }
+
+            /* Create an active/current tablink class */
+            .tab button.active {
+                background-color: #ccc;
+            }
+
+            /* Style the tab content */
+            .tabcontent {
+                display: none;
+                padding: 6px 12px;
+                border: 1px solid #ccc;
+                border-top: none;
+            }
+
+            .side-page p pre {
+            white-space: pre-wrap;
+            font-family: monospace;
+            background-color: #f5f5f5;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            overflow-x: auto;
+        }
+
+        .badge {
+            display: block;
+            text-transform: uppercase;
+            padding: 2px;
+            color: #ffffff;
+            float: left;
+            margin-right: 5px
+        }
+
+        .slack-button {
+  background-color: #4A154B;
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.slack-button:hover {
+  transform: scale(1.05);
+}
+
+        .break-float {
+            clear:both;
+            padding-top: 20px;
+        }
+        .code {
+font-family: monospace;
+font-size: 0.9em;
+color: #333;
+background-color: #f5f5f5;
+border-radius: 3px;
+padding: 0 2px;
+}
+
         </style>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     </head>
 
     <body>
-        <div class="container">
-            <div class="box" onclick="showSidePage('page1')">
-                <div class="icon"><i class="fab fa-github"></i></div>
-                <div class="text">Github issue: implement a new UI selector - due in 5 days</div>
-            </div>
-            <div class="box" onclick="showSidePage('page2')">
-                <div class="icon"><i class="fas fa-code-branch"></i></div>
-                <div class="text">Github pull request: a teammate is making a change in code I own</div>
-            </div>
-            <div class="box" onclick="showSidePage('page3')">
-                <div class="icon"><i class="fas fa-code-branch"></i></div>
-                <div class="text">Github pull request: a junior teammate is making a change I don't own</div>
-            </div>
-            <div class="box" onclick="showSidePage('page4')">
-                <div class="icon"><i class="fas fa-exclamation-triangle"></i></div>
-                <div class="text">
-                    A customer has raised an issue of unknown priority and unknown cause with medium impact
+        <div>
+        <h1 style="color: #333333; margin-left: 20px">Sourcegraph Assistant</h1>
+        </div>
+        <div class="tab">
+            <button class="tablinks active" onclick="openEvent(event, 'All')">All</button>
+            <button class="tablinks" onclick="openEvent(event, 'Github')">GitHub</button>
+            <button class="tablinks" onclick="openEvent(event, 'Slack')">Slack</button>
+            <button class="tablinks" onclick="openEvent(event, 'Alerts')">Alerts</button>
+        </div>
+        <div id="">
+            <div class="container">
+                <div class="side-page" id="page9">
+                    <div class="close-btn" onclick="hideSidePage('page9')">X</div>
+                    <h2>Github pull request: a teammate referenced code I wrote in their PR description for issue #123</h2>
+                    <blockquote style="color: #333333">
+                        In this PR, I refactored the logic for calculating averages as suggested by @[YourUsername] in issue #123. @[YourUsername]'s original code was a great starting point, and I was able to simplify it further by removing the intermediate arrays.
+                    </blockquote>
                 </div>
+                <div class="box" onclick="showSidePage('page8')">
+                    <div class="icon"><i class="far fa-comment-alt"></i></div>
+                    <div class="text">
+                        <h2>Unanswered question in Slack</h2>
+                        A teammate is asking you a question about code your team owns
+                        <div class="break-float"></div>
+                        <small class="badge" style="background-color: orange">Stale</small>
+                    </div>
+                </div>
+                <div class="box" onclick="showSidePage('page7')">
+                    <div class="icon"><i class="fab fa-google"></i></div>
+                    <div class="text">
+                        <h2>Critical alert on GCP</h2>
+                        Google cloud has tagged my team that a critical alert is firing, however all of our alerts are
+                        are marked critical.
+                        <div class="break-float"></div>
+                        <small class="badge" style="background-color: orange">Urgent</small>
+                    </div>
+                </div>
+                <div class="box" onclick="showSidePage('page4')">
+                    <div class="icon"><i class="fa-solid fa-lock-open"></i></div>
+                    <div class="text">
+                        <h2>Security vulnerability</h2>
+                        Vulnerability found in <span class="code">AbstractFactoryTest</span> owned by <span class="code">team/search</span>
+                        <div class="break-float"></div>
+                        <small class="badge" style="background-color: red">Urgent</small>
+                        <small class="badge" style="background-color: purple">Own</small>
+                    </div>
+                </div>
+                <div class="box" onclick="showSidePage('page5')">
+                    <div class="icon"><i class="fab fa-slack"></i></div>
+                    <div class="text">
+                        A slack message from the customer support team has tagged my team about the customer issue in
+                        number in number 4
+                    </div>
+                </div>
+                <div class="box" onclick="showSidePage('page2')">
+                    <div class="icon"><i class="fas fa-code-branch"></i></div>
+                    <div class="text">Github pull request: a teammate is making a change in code I own</div>
+                </div>
+                <div class="box" onclick="showSidePage('page1')">
+                    <div class="icon"><i class="fab fa-github"></i></div>
+                    <div class="text">Github issue: implement a new UI selector - due in 5 days</div>
+                </div>
+
+                <div class="box" onclick="showSidePage('page3')">
+                    <div class="icon"><i class="fas fa-code-branch"></i></div>
+                    <div class="text">Github pull request: a junior teammate is making a change I don't own</div>
+                </div>
+
+                <div class="box" onclick="showSidePage('page6')">
+                    <div class="icon"><i class="far fa-comment-alt"></i></div>
+                    <div class="text">A slack message from a friend at work</div>
+                </div>
+                <div class="box" onclick="showSidePage('page9')">
+                    <div class="icon"><i class="fab fa-github"></i></div>
+                    <div class="text">
+                        Github pull request: a teammate referenced code I wrote
+                    </div>
+                </div>
+
             </div>
-            <div class="box" onclick="showSidePage('page5')">
-                <div class="icon"><i class="fab fa-slack"></i></div>
-                <div class="text">
+
+            <div class="side-page" id="page1">
+                <div class="close-btn" onclick="hideSidePage('page1')">X</div>
+                <h2>Github issue: implement a new UI selector - due in 5 days</h2>
+                <p>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eu lectus id arcu consectetur
+                    eleifend. Sed Sed vitae ex et turpis maximus mollis. Fusce maximus quam eget mauris hendrerit
+                    porttitor.
+                </p>
+            </div>
+            <div class="side-page" id="page2">
+                <div class="close-btn" onclick="hideSidePage('page2')">X</div>
+                <h2>Github pull request: a teammate is making a change in code I own</h2>
+                <p>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eu lectus id arcu consectetur
+                    eleifend. Sed Sed vitae ex et turpis maximus mollis. Fusce maximus quam eget mauris hendrerit
+                    porttitor.
+                </p>
+            </div>
+            <div class="side-page" id="page3">
+                <div class="close-btn" onclick="hideSidePage('page3')">X</div>
+                <h2>Github pull request: a junior teammate is making a change I don't own</h2>
+                <p>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eu lectus id arcu consectetur
+                    eleifend. Sed Sed vitae
+                    ex et turpis maximus mollis. Fusce maximus quam eget mauris hendrerit
+                    porttitor.
+                </p>
+            </div>
+            <div class="side-page" id="page4">
+                <div class="close-btn" onclick="hideSidePage('page4')">X</div>
+                <h2>Sentinel found a security vulnerability</h2>
+                <p>
+                    A test owned by <span class="code">team/search</span> brings up a server that allows executing
+                    arbitrary code. This can lead to an attacker taking over the CI server:
+                </p>
+                <pre>
+                    func main() {
+                        http.HandleFunc("/", handleRequest)
+
+                        fmt.Println("Starting server on :8080")
+                        log.Fatal(http.ListenAndServe(":8080", nil))
+                    }
+                </pre>
+            </div>
+            <div class="side-page" id="page5">
+                <div class="close-btn" onclick="hideSidePage('page5')">X</div>
+                <h2>
                     A slack message from the customer support team has tagged my team about the customer issue in number
-                    in number 4
+                    7
+                </h2>
+                <p>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eu lectus id arcu consectetur
+                    eleifend. SedSed vitae ex et turpis maximus mollis. Fusce maximus quam eget mauris hendrerit
+                    porttitor.
+                </p>
+            </div>
+            <div class="side-page" id="page6">
+                <div class="close-btn" onclick="hideSidePage('page6')">X</div>
+                <h2>A slack message from a friend at work</h2>
+                <p>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eu lectus id arcu consectetur
+                    eleifend. SedSed vitae ex et turpis maximus mollis. Fusce maximus quam eget mauris hendrerit
+                    porttitor.
+                </p>
+            </div>
+            <div class="side-page" id="page8">
+                <div class="close-btn" onclick="hideSidePage('page8')">X</div>
+                <h2>Unanswered question in Slack</h2>
+                <p>
+                <div>
+                    <h3>Message:</h3>
+                    <p>Hey Coury, why did you create a new Store for the backfiller?
+                    </p>
+                    <button class="slack-button" onclick="window.location.href='https://sourcegraph.slack.com/archives/C050V4QQDBM/p1680111233454429'">Go to Slack channel</button>
+
                 </div>
-            </div>
-            <div class="box" onclick="showSidePage('page6')">
-                <div class="icon"><i class="far fa-comment-alt"></i></div>
-                <div class="text">A slack message from a friend at work</div>
-            </div>
-            <div class="box" onclick="showSidePage('page7')">
-                <div class="icon"><i class="fab fa-google"></i></div>
-                <div class="text">
-                    Google cloud has tagged my team that a critical alert is firing, however all of our alerts are are
-                    marked critical.
+                <div>
+                    <h3>Why:</h3>
+                    <p>You were wrote the code and received a direct question. You are the best person to answer your teammates question which has been stale for 2 days.</p>
+                    <small class="badge" style="background-color: orange">Sourcegraph Own</small>
                 </div>
+                <div>
+                    <h3>Assistant:</h3>
+                    <p> <a
+                            href="https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/scheduler/backfill.go?L28-34">Here</a>
+                        is a Sourcegraph search that may help.
+                    </p>
+                </div>
+                </p>
             </div>
-        </div>
-        <div class="side-page" id="page1">
-            <div class="close-btn" onclick="hideSidePage('page1')">X</div>
-            <h2>Github issue: implement a new UI selector - due in 5 days</h2>
-            <p>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eu lectus id arcu consectetur eleifend.
-                Sed Sed vitae ex et turpis maximus mollis. Fusce maximus quam eget mauris hendrerit porttitor.
-            </p>
-        </div>
-        <div class="side-page" id="page2">
-            <div class="close-btn" onclick="hideSidePage('page2')">X</div>
-            <h2>Github pull request: a teammate is making a change in code I own</h2>
-            <p>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eu lectus id arcu consectetur eleifend.
-                Sed Sed vitae ex et turpis maximus mollis. Fusce maximus quam eget mauris hendrerit porttitor.
-            </p>
-        </div>
-        <div class="side-page" id="page3">
-            <div class="close-btn" onclick="hideSidePage('page3')">X</div>
-            <h2>Github pull request: a junior teammate is making a change I don't own</h2>
-            <p>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eu lectus id arcu consectetur eleifend.
-                Sed Sed vitae ex et turpis maximus mollis. Fusce maximus quam eget mauris hendrerit porttitor.
-            </p>
-        </div>
-        <div class="side-page" id="page4">
-            <div class="close-btn" onclick="hideSidePage('page4')">X</div>
-            <h2>A customer has raised an issue of unknown priority and unknown cause with medium impact</h2>
-            <p>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eu lectus id arcu consectetur eleifend.
-                Sed Sed vitae ex et turpis maximus mollis. Fusce maximus quam eget mauris hendrerit porttitor.
-            </p>
-        </div>
-        <div class="side-page" id="page5">
-            <div class="close-btn" onclick="hideSidePage('page5')">X</div>
-            <h2>
-                A slack message from the customer support team has tagged my team about the customer issue in number 4
-            </h2>
-            <p>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eu lectus id arcu consectetur eleifend.
-                SedSed vitae ex et turpis maximus mollis. Fusce maximus quam eget mauris hendrerit porttitor.
-            </p>
-        </div>
-        <div class="side-page" id="page6">
-            <div class="close-btn" onclick="hideSidePage('page6')">X</div>
-            <h2>A slack message from a friend at work</h2>
-            <p>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eu lectus id arcu consectetur eleifend.
-                SedSed vitae ex et turpis maximus mollis. Fusce maximus quam eget mauris hendrerit porttitor.
-            </p>
-        </div>
-        <div class="side-page" id="page7">
-            <div class="close-btn" onclick="hideSidePage('page7')">X</div>
-            <h2>
-                Google cloud has tagged my team that a critical alert is firing, however all of our alerts are marked
-                critical.
-            </h2>
-            <p>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eu lectus id arcu consectetur eleifend.
-                SedSed vitae ex et turpis maximus mollis. Fusce maximus quam eget mauris hendrerit porttitor.
-            </p>
+            <div class="side-page" id="page7">
+                <div class="close-btn" onclick="hideSidePage('page7')">X</div>
+                <h2>Critical Alert: Gitserver CPU utilization at 95%</h2>
+                <p>The Gitserver service which hosts our Git repositories is experiencing extremely high CPU utilization (95%+). This is likely due to a runaway process and may impact repository access performance or availability if left unaddressed.
+                    <a href="https://logs.example.com/gitserver-alerts">View Gitserver alert logs</a>
+                    <pre>
+                    [Alert] Gitserver CPU utilization at 95% (CRITICAL)
+                    [Log excerpt] ...java.lang.OutOfMemoryError: GC overhead limit exceeded...
+                    ...git gc --aggressive process using excessive CPU...
+                    ...10+ git gc processes running...
+                    </pre>
+                </p>
+            </div>
         </div>
         <script>
-            function showSidePage(pageId) {
-                document.getElementById(pageId).classList.add('show')
-            }
             function hideSidePage(pageId) {
+                console.log(pageId)
                 document.getElementById(pageId).classList.remove('show')
+            }
+            function showSidePage(pageId) {
+                var sidePages = document.querySelectorAll('.side-page.show');
+                for (var i = 0; i < sidePages.length; i++) {
+                    sidePages[i].classList.remove('show');
+                }
+                document.getElementById(pageId).classList.add('show')
             }
         </script>
     </body>
