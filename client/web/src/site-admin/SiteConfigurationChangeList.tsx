@@ -97,7 +97,7 @@ const SiteConfigurationHistoryItem: FC<SiteConfigurationHistoryItemProps> = ({ n
 
     const editedBy = node.author ? (
         <Link to={`/users/${node.author.username}`} className="text-truncate">
-            {node.author.displayName}
+            {node.author.displayName ?? node.author.username}
         </Link>
     ) : (
         'Site configuration file set in SITE_CONFIG_FILE environment variable updated'
