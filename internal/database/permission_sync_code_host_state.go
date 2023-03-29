@@ -83,3 +83,17 @@ func (ps CodeHostStatusesSet) SummaryField() log.Field {
 		log.Object("state.error", errored...),
 		log.Object("state.success", succeeded...))
 }
+
+// CountStatuses returns 3 integers: numbers of total, successful and failed
+// statuses consisted in given CodeHostStatusesSet.
+func (ps CodeHostStatusesSet) CountStatuses() (total, success, failed int) {
+	total = len(ps)
+	for _, state := range ps {
+		if state.Status == CodeHostStatusSuccess {
+			success++
+		} else {
+			failed++
+		}
+	}
+	return
+}

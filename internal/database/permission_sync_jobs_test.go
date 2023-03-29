@@ -603,6 +603,7 @@ func TestPermissionSyncJobs_SaveSyncResult(t *testing.T) {
 	require.Equal(t, 2, theJob.PermissionsRemoved)
 	require.Equal(t, 5, theJob.PermissionsFound)
 	require.Equal(t, codeHostStates, theJob.CodeHostStates)
+	require.True(t, theJob.IsPartialSuccess)
 
 	// Saving nil result (in case of errors from code host) should be also successful.
 	err = store.SaveSyncResult(ctx, 1, nil, codeHostStates[1:])
@@ -617,6 +618,7 @@ func TestPermissionSyncJobs_SaveSyncResult(t *testing.T) {
 	require.Equal(t, 0, theJob.PermissionsRemoved)
 	require.Equal(t, 0, theJob.PermissionsFound)
 	require.Equal(t, codeHostStates[1:], theJob.CodeHostStates)
+	require.False(t, theJob.IsPartialSuccess)
 }
 
 func TestPermissionSyncJobs_CascadeOnRepoDelete(t *testing.T) {

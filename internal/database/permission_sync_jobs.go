@@ -443,15 +443,21 @@ func (s *permissionSyncJobStore) SaveSyncResult(ctx context.Context, id int, res
 		removed = result.Removed
 		found = result.Found
 	}
+	partialSuccess := false
+	_, success, failed := statuses.CountStatuses()
+	if success > 0 && failed > 0 {
+		partialSuccess = true
+	}
 	q := sqlf.Sprintf(`
 		UPDATE permission_sync_jobs
 		SET
 			permissions_added = %d,
 			permissions_removed = %d,
 			permissions_found = %d,
-			code_host_states = %s
+			code_host_states = %s,
+			is_partial_success = %s
 		WHERE id = %d
-		`, added, removed, found, pq.Array(statuses), id)
+		`, added, removed, found, pq.Array(statuses), partialSuccess, id)
 
 	_, err := s.ExecResult(ctx, q)
 	return err
@@ -467,6 +473,7 @@ type ListPermissionSyncJobOpts struct {
 	NullProcessAfter    bool
 	NotNullProcessAfter bool
 	NotCanceled         bool
+	PartialSuccess      bool
 
 	// SearchType and Query are related to text search for sync jobs.
 	SearchType PermissionsSyncSearchType
@@ -498,7 +505,12 @@ func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
 	if opts.Reason != "" {
 		conds = append(conds, sqlf.Sprintf("reason = %s", opts.Reason))
 	}
-	if opts.State != "" {
+	// If partial success parameter is set, we skip the `state` parameter because it
+	// should be `completed`, otherwise it won't make any sense.
+	if opts.PartialSuccess {
+		conds = append(conds, sqlf.Sprintf("is_partial_success = TRUE"))
+		conds = append(conds, sqlf.Sprintf("state = lower(%s)", PermissionsSyncJobStateCompleted))
+	} else if opts.State != "" {
 		conds = append(conds, sqlf.Sprintf("state = lower(%s)", opts.State))
 	}
 	if opts.NullProcessAfter {
@@ -737,6 +749,7 @@ type PermissionSyncJob struct {
 	PermissionsRemoved int
 	PermissionsFound   int
 	CodeHostStates     []PermissionSyncCodeHostState
+	IsPartialSuccess   bool
 }
 
 func (j *PermissionSyncJob) RecordID() int { return j.ID }
@@ -770,6 +783,7 @@ var PermissionSyncJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("permission_sync_jobs.permissions_removed"),
 	sqlf.Sprintf("permission_sync_jobs.permissions_found"),
 	sqlf.Sprintf("permission_sync_jobs.code_host_states"),
+	sqlf.Sprintf("permission_sync_jobs.is_partial_success"),
 }
 
 func ScanPermissionSyncJob(s dbutil.Scanner) (*PermissionSyncJob, error) {
@@ -813,6 +827,7 @@ func scanPermissionSyncJob(job *PermissionSyncJob, s dbutil.Scanner) error {
 		&job.PermissionsRemoved,
 		&job.PermissionsFound,
 		pq.Array(&codeHostStates),
+		&job.IsPartialSuccess,
 	); err != nil {
 		return err
 	}
