@@ -4,6 +4,11 @@ import { vscodeAPI } from './utils/VSCodeApi'
 
 import './Recipes.css'
 
+import { EventLogger } from './eventLogger'
+
+// eventLogger is used to log events
+const eventLogger = new EventLogger('https://sourcegraph.com/')
+
 export const recipesList = {
     'explain-code-detailed': 'Explain selected code (detailed)',
     'explain-code-high-level': 'Explain selected code (high level)',
@@ -16,6 +21,14 @@ export const recipesList = {
 
 export function Recipes(): React.ReactElement {
     const onRecipeClick = (recipeID: string): void => {
+        // log event
+        try {
+            eventLogger.logEvent({
+                event: 'CodyVSCodeExtenstion:recipe:" + recipeID + ":clicked',
+            })
+        } catch (error) {
+            console.log(error)
+        }
         vscodeAPI.postMessage({ command: 'executeRecipe', recipe: recipeID })
     }
 

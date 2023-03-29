@@ -7,6 +7,7 @@ import { CompletionsDocumentProvider } from '../completions/docprovider'
 import { getConfiguration } from '../configuration'
 import { ExtensionApi } from '../extension-api'
 
+import { EventLogger } from './eventLogger'
 import { LocalStorage } from './LocalStorageProvider'
 import { CODY_ACCESS_TOKEN_SECRET, InMemorySecretStorage, SecretStorage, VSCodeSecretStorage } from './secret-storage'
 
@@ -60,6 +61,12 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         vscode.commands.registerCommand('cody.toggle-enabled', async () => {
             const config = vscode.workspace.getConfiguration()
             await config.update('cody.enabled', !config.get('cody.enabled'), vscode.ConfigurationTarget.Global)
+            // log event
+            try {
+                EventLogger.log('CodyVSCodeExtension:codyToggleEnabled:clicked')
+            } catch (error) {
+                console.log(error)
+            }
         }),
         // Access token
         vscode.commands.registerCommand('cody.set-access-token', async (args: any[]) => {
@@ -68,10 +75,32 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
                 return
             }
             await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, tokenInput)
+            // log event
+            try {
+                EventLogger.log('CodyVSCodeExtension:codySetAccessToken:clicked')
+                if (tokenInput) {
+                    EventLogger.log('CodyVSCodeExtension:codySetAccessToken:clicked:tokenSet')
+                } else {
+                    EventLogger.log('CodyVSCodeExtension:codySetAccessToken:clicked:noTokenSet')
+                }
+            } catch (error) {
+                console.log(error)
+            }
         }),
-        vscode.commands.registerCommand('cody.delete-access-token', async () =>
+        vscode.commands.registerCommand('cody.delete-access-token', async () => {
+            // log event
+            try {
+                EventLogger.log('CodyVSCodeExtension:codyDeleteAccessToken:clicked')
+                if (!secretStorage.get(CODY_ACCESS_TOKEN_SECRET)) {
+                    EventLogger.log('CodyVSCodeExtension:codyDeleteAccessToken:clicked:noToken')
+                } else {
+                    EventLogger.log('CodyVSCodeExtension:codyDeleteAccessToken:clicked:tokenExists')
+                }
+            } catch (error) {
+                console.log(error)
+            }
             secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-        ),
+        }),
         // TOS
         vscode.commands.registerCommand('cody.accept-tos', version =>
             localStorage.set('cody.tos-version-accepted', version)
@@ -80,23 +109,69 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
             localStorage.get('cody.tos-version-accepted')
         ),
         // Commands
-        vscode.commands.registerCommand('cody.recipe.explain-code', async () => executeRecipe('explain-code-detailed')),
-        vscode.commands.registerCommand('cody.recipe.explain-code-high-level', async () =>
+        vscode.commands.registerCommand('cody.recipe.explain-code', async () => {
+            executeRecipe('explain-code-detailed')
+            // log event
+            try {
+                EventLogger.log('CodyVSCodeExtension:codyExplainCode:clicked')
+            } catch (error) {
+                console.log(error)
+            }
+        }),
+        vscode.commands.registerCommand('cody.recipe.explain-code-high-level', async () => {
             executeRecipe('explain-code-high-level')
-        ),
-        vscode.commands.registerCommand('cody.recipe.generate-unit-test', async () =>
+            // log event
+            try {
+                EventLogger.log('CodyVSCodeExtension:codyExplainCodeHighLevel:clicked')
+            } catch (error) {
+                console.log(error)
+            }
+        }),
+        vscode.commands.registerCommand('cody.recipe.generate-unit-test', async () => {
             executeRecipe('generate-unit-test')
-        ),
-        vscode.commands.registerCommand('cody.recipe.generate-docstring', async () =>
+            // log event
+            try {
+                EventLogger.log('CodyVSCodeExtension:codyGenerateUnitTest:clicked')
+            } catch (error) {
+                console.log(error)
+            }
+        }),
+        vscode.commands.registerCommand('cody.recipe.generate-docstring', async () => {
             executeRecipe('generate-docstring')
-        ),
-        vscode.commands.registerCommand('cody.recipe.translate-to-language', async () =>
+            // log event
+            try {
+                EventLogger.log('CodyVSCodeExtension:codyGenerateDocstring:clicked')
+            } catch (error) {
+                console.log(error)
+            }
+        }),
+        vscode.commands.registerCommand('cody.recipe.translate-to-language', async () => {
             executeRecipe('translate-to-language')
-        ),
-        vscode.commands.registerCommand('cody.recipe.git-history', async () => executeRecipe('git-history')),
-        vscode.commands.registerCommand('cody.recipe.improve-variable-names', async () =>
+            // log event
+            try {
+                EventLogger.log('CodyVSCodeExtension:codyTranslateToLanguage:clicked')
+            } catch (error) {
+                console.log(error)
+            }
+        }),
+        vscode.commands.registerCommand('cody.recipe.git-history', async () => {
+            executeRecipe('git-history')
+            // log event
+            try {
+                EventLogger.log('CodyVSCodeExtension:codyGitHistory:clicked')
+            } catch (error) {
+                console.log(error)
+            }
+        }),
+        vscode.commands.registerCommand('cody.recipe.improve-variable-names', async () => {
             executeRecipe('improve-variable-names')
-        )
+            // log event
+            try {
+                EventLogger.log('CodyVSCodeExtension:codyImproveVariableNames:clicked')
+            } catch (error) {
+                console.log(error)
+            }
+        })
     )
 
     if (config.experimentalSuggest && config.openaiKey) {
