@@ -95,7 +95,7 @@ describe('Transcript', () => {
         transcript.addInteraction(firstInteraction)
 
         const assistantResponse = 'By setting the Authorization header.'
-        transcript.addAssistantResponse(assistantResponse, assistantResponse)
+        transcript.addAssistantResponse(assistantResponse)
 
         const secondInteraction = await chatQuestionRecipe.getInteraction(
             'how to create a batch change',
@@ -135,7 +135,7 @@ describe('Transcript', () => {
             transcript.addInteraction(interaction)
 
             const assistantResponse = 'EFGH'.repeat(256) // 256 tokens
-            transcript.addAssistantResponse(assistantResponse, assistantResponse)
+            transcript.addAssistantResponse(assistantResponse)
         }
 
         const tokensPerInteraction = 512 // 256 for question + 256 for response.

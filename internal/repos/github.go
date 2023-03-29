@@ -33,15 +33,13 @@ import (
 // A GitHubSource yields repositories from a single GitHub connection configured
 // in Sourcegraph via the external services configuration.
 type GitHubSource struct {
-	svc             *types.ExternalService
-	config          *schema.GitHubConnection
-	exclude         excludeFunc
-	excludeArchived bool
-	excludeForks    bool
-	githubDotCom    bool
-	baseURL         *url.URL
-	v3Client        *github.V3Client
-	v4Client        *github.V4Client
+	svc          *types.ExternalService
+	config       *schema.GitHubConnection
+	exclude      excludeFunc
+	githubDotCom bool
+	baseURL      *url.URL
+	v3Client     *github.V3Client
+	v4Client     *github.V4Client
 	// searchClient is for using the GitHub search API, which has an independent
 	// rate limit much lower than non-search API requests.
 	searchClient *github.V3Client
@@ -124,23 +122,32 @@ func newGithubSource(
 	}
 
 	var (
-		eb              excludeBuilder
-		excludeArchived bool
-		excludeForks    bool
+		eb           excludeBuilder
+		excludeForks bool
 	)
-
+	excludeArchived := func(repo any) bool {
+		if githubRepo, ok := repo.(github.Repository); ok {
+			return githubRepo.IsArchived
+		}
+		return false
+	}
+	excludeFork := func(repo any) bool {
+		if githubRepo, ok := repo.(github.Repository); ok {
+			return githubRepo.IsFork
+		}
+		return false
+	}
 	for _, r := range c.Exclude {
+		if r.Archived {
+			eb.Generic(excludeArchived)
+		}
+		if r.Forks {
+			excludeForks = true
+			eb.Generic(excludeFork)
+		}
 		eb.Exact(r.Name)
 		eb.Exact(r.Id)
 		eb.Pattern(r.Pattern)
-
-		if r.Archived {
-			excludeArchived = true
-		}
-
-		if r.Forks {
-			excludeForks = true
-		}
 	}
 
 	exclude, err := eb.Build()
@@ -204,8 +211,6 @@ func newGithubSource(
 		svc:              svc,
 		config:           c,
 		exclude:          exclude,
-		excludeArchived:  excludeArchived,
-		excludeForks:     excludeForks,
 		baseURL:          baseURL,
 		githubDotCom:     githubDotCom,
 		v3Client:         v3Client,
@@ -469,15 +474,7 @@ func (s *GitHubSource) excludes(r *github.Repository) bool {
 		return true
 	}
 
-	if s.exclude(r.NameWithOwner) || s.exclude(r.ID) {
-		return true
-	}
-
-	if s.excludeArchived && r.IsArchived {
-		return true
-	}
-
-	if s.excludeForks && r.IsFork {
+	if s.exclude(r.NameWithOwner) || s.exclude(r.ID) || s.exclude(*r) {
 		return true
 	}
 
@@ -799,11 +796,7 @@ func (s *GitHubSource) listAffiliatedPage(ctx context.Context, first int, result
 // It returns the repositories matching a GitHub's advanced repository search query
 // via the GraphQL API.
 func (s *GitHubSource) listSearch(ctx context.Context, q string, results chan *githubResult) {
-	// First we need to parse the query to see if it is querying within a date range,
-	// and if so, strip that date range from the query.
-	dr := stripDateRange(&q)
-
-	newRepositoryQuery(q, s.v4Client, s.logger, dr).DoWithRefinedWindow(ctx, results)
+	newRepositoryQuery(q, s.v4Client, s.logger).DoWithRefinedWindow(ctx, results)
 }
 
 // GitHub was founded on February 2008, so this minimum date covers all repos
@@ -812,12 +805,13 @@ var minCreated = time.Date(2007, time.June, 1, 0, 0, 0, 0, time.UTC)
 
 type dateRange struct{ From, To time.Time }
 
+var createdRegexp = regexp.MustCompile(`created:([^\s]+)`) // Matches the term "created:" followed by all non-white-space text
+
 // stripDateRange strips the `created:` filter from the given string (modifying it in place)
 // and returns a pointer to the resulting dateRange object.
 // If no dateRange could be parsed from the string, nil is returned and the string is left unchanged.
 func stripDateRange(s *string) *dateRange {
-	re := regexp.MustCompile(`created:([^\s]+)`)
-	matches := re.FindStringSubmatch(*s)
+	matches := createdRegexp.FindStringSubmatch(*s)
 	if len(matches) < 2 {
 		return nil
 	}
@@ -917,21 +911,24 @@ type repositoryQuery struct {
 	RepoCount searchReposCount
 }
 
-func newRepositoryQuery(query string, searcher *github.V4Client, logger log.Logger, created *dateRange) *repositoryQuery {
-	if created == nil {
-		created = &dateRange{}
+func newRepositoryQuery(query string, searcher *github.V4Client, logger log.Logger) *repositoryQuery {
+	// First we need to parse the query to see if it is querying within a date range,
+	// and if so, strip that date range from the query.
+	dr := stripDateRange(&query)
+	if dr == nil {
+		dr = &dateRange{}
 	}
-	if created.From.IsZero() {
-		created.From = minCreated
+	if dr.From.IsZero() {
+		dr.From = minCreated
 	}
-	if created.To.IsZero() {
-		created.To = time.Now()
+	if dr.To.IsZero() {
+		dr.To = time.Now()
 	}
 	return &repositoryQuery{
 		Query:    query,
 		Searcher: searcher,
 		Logger:   logger,
-		Created:  created,
+		Created:  dr,
 	}
 }
 

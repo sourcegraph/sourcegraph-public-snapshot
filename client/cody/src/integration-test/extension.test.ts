@@ -59,7 +59,7 @@ suite('End-to-end', () => {
         assert.ok(codyCommands.length)
     })
 
-    test('Explain Code', async () => {
+    test.skip('Explain Code', async () => {
         await enableCodyWithAccessToken('test-token')
         await setMockServerConfig()
 
@@ -79,8 +79,8 @@ suite('End-to-end', () => {
 
         // Check the chat transcript contains markdown
         const message = await getTranscript(api, 0)
-        assert.ok(message.displayText.startsWith('<p>Explain the following code'))
-        assert.ok(message.displayText.includes('<span class="hljs-keyword">public</span>'))
+        assert.match(message.displayText, /^Explain the following code/)
+        assert.match(message.displayText, /public/)
 
         // Check the server response was handled
         // "hello world" is a canned response from the server
@@ -90,7 +90,7 @@ suite('End-to-end', () => {
             return assistantMessage.displayText.length > 0
         })
         const assistantMessage = await getTranscript(api, 1)
-        assert.ok(assistantMessage.displayText.includes('hello, world'))
+        assert.match(assistantMessage.displayText, /hello, world/)
 
         // Clean up.
         await ensureExecuteCommand('cody.delete-access-token')

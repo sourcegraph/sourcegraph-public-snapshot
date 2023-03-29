@@ -9,6 +9,9 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -20,8 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 type mockProvider struct {
@@ -124,11 +125,6 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
 	perms := edb.NewMockPermsStore()
-	perms.SetUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) (*database.SetPermissionsResult, error) {
-		wantIDs := []int32{1, 2, 3, 4}
-		assert.Equal(t, wantIDs, p.GenerateSortedIDsSlice())
-		return nil, nil
-	})
 	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, _ authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
 		wantIDs := []int32{1, 2, 3, 4}
 		assert.Equal(t, wantIDs, repoIDs)
@@ -206,11 +202,6 @@ func TestPermsSyncer_syncUserPerms_listExternalAccountsError(t *testing.T) {
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
 	perms := edb.NewMockPermsStore()
-	perms.SetUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) (*database.SetPermissionsResult, error) {
-		wantIDs := []int32{1, 2, 3, 4, 5}
-		assert.Equal(t, wantIDs, p.GenerateSortedIDsSlice())
-		return nil, nil
-	})
 	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
 		assert.Equal(t, []int32{1, 2, 3, 4, 5}, repoIDs)
 		return &database.SetPermissionsResult{}, nil
@@ -294,14 +285,6 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
 	perms := edb.NewMockPermsStore()
-	perms.SetUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) (*database.SetPermissionsResult, error) {
-		gotIDs := p.GenerateSortedIDsSlice()
-		return &database.SetPermissionsResult{
-			Added:   len(gotIDs),
-			Removed: 0,
-			Found:   len(gotIDs),
-		}, nil
-	})
 	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
 		return &database.SetPermissionsResult{
 			Added:   len(repoIDs),
@@ -474,11 +457,6 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
 	perms := edb.NewMockPermsStore()
-	perms.SetUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) (*database.SetPermissionsResult, error) {
-		wantIDs := []int32{}
-		assert.Equal(t, wantIDs, p.GenerateSortedIDsSlice())
-		return nil, nil
-	})
 	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
 		assert.Equal(t, []int32{}, repoIDs)
 		return &database.SetPermissionsResult{}, nil
@@ -561,11 +539,6 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
 	perms := edb.NewMockPermsStore()
-	perms.SetUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) (*database.SetPermissionsResult, error) {
-		assert.Equal(t, int32(1), p.UserID)
-		assert.Equal(t, []int32{1}, p.GenerateSortedIDsSlice())
-		return nil, nil
-	})
 	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
 		assert.Equal(t, int32(1), user.UserID)
 		assert.Equal(t, []int32{1}, repoIDs)

@@ -4,7 +4,6 @@ import { IntentDetector } from '../../intent-detector'
 import { MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { getShortTimestamp } from '../../timestamp'
-import { renderMarkdown } from '../markdown'
 import { Interaction } from '../transcript/interaction'
 
 import {
@@ -41,9 +40,7 @@ export class GenerateTest implements Recipe {
         const promptMessage = `Generate a unit test in ${languageName} for the following code:\n\`\`\`${extension}\n${truncatedSelectedText}\n\`\`\`\n${MARKDOWN_FORMAT_PROMPT}`
         const assistantResponsePrefix = `Here is the generated unit test:\n\`\`\`${extension}\n`
 
-        const displayText = renderMarkdown(
-            `Generate a unit test for the following code:\n\`\`\`${extension}\n${selection.selectedText}\n\`\`\``
-        )
+        const displayText = `Generate a unit test for the following code:\n\`\`\`${extension}\n${selection.selectedText}\n\`\`\``
 
         return new Interaction(
             { speaker: 'human', text: promptMessage, displayText, timestamp },
