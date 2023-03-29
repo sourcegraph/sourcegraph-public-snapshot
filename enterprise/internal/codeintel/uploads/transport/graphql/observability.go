@@ -8,24 +8,15 @@ import (
 )
 
 type operations struct {
-	preciseIndexes                        *observation.Operation
-	preciseIndexByID                      *observation.Operation
-	deletePreciseIndex                    *observation.Operation
-	deletePreciseIndexes                  *observation.Operation
-	reindexPreciseIndex                   *observation.Operation
-	reindexPreciseIndexes                 *observation.Operation
-	indexConfiguration                    *observation.Operation
-	updateIndexConfiguration              *observation.Operation
-	codeIntelligenceInferenceScript       *observation.Operation
-	updateCodeIntelligenceInferenceScript *observation.Operation
-	summary                               *observation.Operation
-	repositorySummary                     *observation.Operation
-	getRecentIndexesSummary               *observation.Operation
-	getLastIndexScanForRepository         *observation.Operation
-	gitBlobCodeIntelInfo                  *observation.Operation
-	inferAutoIndexJobsForRepo             *observation.Operation
-	queueAutoIndexJobsForRepo             *observation.Operation
-	commitGraph                           *observation.Operation
+	codeIntelSummary      *observation.Operation
+	commitGraph           *observation.Operation
+	deletePreciseIndex    *observation.Operation
+	deletePreciseIndexes  *observation.Operation
+	preciseIndexByID      *observation.Operation
+	preciseIndexes        *observation.Operation
+	reindexPreciseIndex   *observation.Operation
+	reindexPreciseIndexes *observation.Operation
+	repositorySummary     *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -45,23 +36,14 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		preciseIndexes:                        op("PreciseIndexes"),
-		preciseIndexByID:                      op("PreciseIndexByID"),
-		deletePreciseIndex:                    op("DeletePreciseIndex"),
-		deletePreciseIndexes:                  op("DeletePreciseIndexes"),
-		reindexPreciseIndex:                   op("ReindexPreciseIndex"),
-		reindexPreciseIndexes:                 op("ReindexPreciseIndexes"),
-		indexConfiguration:                    op("IndexConfiguration"),
-		updateIndexConfiguration:              op("UpdateIndexConfiguration"),
-		codeIntelligenceInferenceScript:       op("CodeIntelligenceInferenceScript"),
-		updateCodeIntelligenceInferenceScript: op("UpdateCodeIntelligenceInferenceScript"),
-		summary:                               op("Summary"),
-		repositorySummary:                     op("RepositorySummary"),
-		getRecentIndexesSummary:               op("GetRecentIndexesSummary"),
-		getLastIndexScanForRepository:         op("GetLastIndexScanForRepository"),
-		gitBlobCodeIntelInfo:                  op("GitBlobCodeIntelInfo"),
-		inferAutoIndexJobsForRepo:             op("InferAutoIndexJobsForRepo"),
-		queueAutoIndexJobsForRepo:             op("QueueAutoIndexJobsForRepo"),
-		commitGraph:                           op("CommitGraph"),
+		codeIntelSummary:      op("CodeIntelSummary"),
+		commitGraph:           op("CommitGraph"),
+		deletePreciseIndex:    op("DeletePreciseIndex"),
+		deletePreciseIndexes:  op("DeletePreciseIndexes"),
+		preciseIndexByID:      op("PreciseIndexByID"),
+		preciseIndexes:        op("PreciseIndexes"),
+		reindexPreciseIndex:   op("ReindexPreciseIndex"),
+		reindexPreciseIndexes: op("ReindexPreciseIndexes"),
+		repositorySummary:     op("RepositorySummary"),
 	}
 }

@@ -33,7 +33,7 @@ type Store interface {
 	InsertReferencesForRanking(ctx context.Context, rankingGraphKey string, batchSize int, uploadID int, references chan string) error
 	InsertInitialPathCounts(ctx context.Context, derivativeGraphKey string, batchSize int) (numInitialPathsProcessed int, numInitialPathRanksInserted int, err error)
 	InsertPathCountInputs(ctx context.Context, rankingGraphKey string, batchSize int) (numReferenceRecordsProcessed int, numInputsInserted int, err error)
-	InsertInitialPathRanks(ctx context.Context, uploadID int, documentPath []string, graphKey string) (err error)
+	InsertInitialPathRanks(ctx context.Context, uploadID int, documentPaths chan string, batchSize int, graphKey string) (err error)
 	InsertPathRanks(ctx context.Context, graphKey string, batchSize int) (numPathRanksInserted int, numInputsProcessed int, err error)
 
 	VacuumAbandonedDefinitions(ctx context.Context, graphKey string, batchSize int) (_ int, err error)

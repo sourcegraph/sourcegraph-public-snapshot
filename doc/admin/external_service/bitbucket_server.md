@@ -105,7 +105,7 @@ By installing the [Bitbucket Server plugin](../../../integration/bitbucket_serve
 
 ### Fast permission syncing
 
-With the [Sourcegraph Bitbucket Server](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) you can enable fast permission syncing:
+With the [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) you can enable fast permission syncing:
 
 1. Connect Bitbucket Server / Bitbucket Data Center to Sourcegraph (_see instructions above_).
 1. Follow the [instructions to set up repository permissions](#repository-permissions) with Bitbucket Server / Bitbucket Data Center.

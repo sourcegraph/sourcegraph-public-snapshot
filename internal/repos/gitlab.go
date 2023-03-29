@@ -91,6 +91,15 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 	for _, r := range c.Exclude {
 		eb.Exact(r.Name)
 		eb.Exact(strconv.Itoa(r.Id))
+		excludeFunc := func(repo any) bool {
+			if project, ok := repo.(gitlab.Project); ok {
+				return project.EmptyRepo
+			}
+			return false
+		}
+		if r.EmptyRepos {
+			eb.Generic(excludeFunc)
+		}
 	}
 	exclude, err := eb.Build()
 	if err != nil {
@@ -236,7 +245,7 @@ func (s *GitLabSource) remoteURL(proj *gitlab.Project) string {
 }
 
 func (s *GitLabSource) excludes(p *gitlab.Project) bool {
-	return s.exclude(p.PathWithNamespace) || s.exclude(strconv.Itoa(p.ID))
+	return s.exclude(p.PathWithNamespace) || s.exclude(strconv.Itoa(p.ID)) || s.exclude(*p)
 }
 
 func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceResult) {

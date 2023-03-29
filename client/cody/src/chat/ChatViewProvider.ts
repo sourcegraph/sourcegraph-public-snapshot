@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
@@ -13,6 +12,9 @@ import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
+import { version as packageVersion } from '../../package.json'
+import { ChatHistory } from '../../webviews/utils/types'
+import { LocalStorage } from '../command/LocalStorageProvider'
 import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../command/secret-storage'
 import { updateConfiguration } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
@@ -31,7 +33,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     private cancelCompletionCallback: (() => void) | null = null
     private webview?: vscode.Webview
 
-    private tosVersion = 0
+    private tosVersion = packageVersion
+
+    private currentChatID = ''
+    private inputHistory: string[] = []
+    private chatHistory: ChatHistory = {}
 
     constructor(
         private extensionPath: string,
@@ -43,11 +49,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         private secretStorage: SecretStorage,
         private contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
         private rgPath: string,
-        private mode: 'development' | 'production'
+        private mode: 'development' | 'production',
+        private localStorage: LocalStorage
     ) {
         if (TestSupport.instance) {
             TestSupport.instance.chatViewProvider.set(this)
         }
+        // chat id is used to identify chat session
+        this.createNewChatID()
     }
 
     public static async create(
@@ -56,7 +65,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         serverEndpoint: string,
         contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
         debug: boolean,
-        secretStorage: SecretStorage
+        secretStorage: SecretStorage,
+        localStorage: LocalStorage
     ): Promise<ChatViewProvider> {
         const mode = debug ? 'development' : 'production'
         const rgPath = await getRgPath(extensionPath)
@@ -71,7 +81,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             contextType,
             mode
         )
-
         return new ChatViewProvider(
             extensionPath,
             new Transcript(),
@@ -82,18 +91,21 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             secretStorage,
             contextType,
             rgPath,
-            mode
+            mode,
+            localStorage
         )
     }
 
-    private async onDidReceiveMessage(message: any, webview: vscode.Webview): Promise<void> {
+    private async onDidReceiveMessage(message: any): Promise<void> {
         switch (message.command) {
             case 'initialized':
                 await this.sendToken()
                 await this.sendTranscript()
+                await this.sendChatHistory()
                 break
             case 'reset':
                 await this.onResetChat()
+                await this.sendChatHistory()
                 break
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text)
@@ -116,6 +128,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             case 'removeToken':
                 await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
                 break
+            case 'removeHistory':
+                await this.localStorage.removeChatHistory()
+                break
             case 'links':
                 await vscode.env.openExternal(vscode.Uri.parse(message.value))
                 break
@@ -124,9 +139,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         }
     }
 
-    private async acceptTOS(version: number): Promise<void> {
+    private async acceptTOS(version: string): Promise<void> {
         this.tosVersion = version
         await vscode.commands.executeCommand('cody.accept-tos', version)
+    }
+
+    private createNewChatID(): void {
+        this.currentChatID = new Date(Date.now()).toUTCString()
     }
 
     private sendPrompt(promptMessages: Message[], responsePrefix = ''): void {
@@ -151,6 +170,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     }
 
     private async onResetChat(): Promise<void> {
+        this.createNewChatID()
         this.cancelCompletion()
         this.isMessageInProgress = false
         this.transcript.reset()
@@ -158,6 +178,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     }
 
     private async onHumanMessageSubmitted(text: string): Promise<void> {
+        this.inputHistory.push(text)
         await this.executeRecipe('chat-question', text)
     }
 
@@ -192,7 +213,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     }
 
     private async onBotMessageChange(text: string): Promise<void> {
-        this.transcript.addAssistantResponse(text, renderMarkdown(text))
+        this.transcript.addAssistantResponse(text)
         await this.sendTranscript()
     }
 
@@ -200,6 +221,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         this.isMessageInProgress = false
         this.cancelCompletionCallback = null
         await this.sendTranscript()
+        await this.saveChatHistory()
     }
 
     private async showTab(tab: string): Promise<void> {
@@ -218,7 +240,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     private async sendLogin(isValid: boolean): Promise<void> {
         await this.webview?.postMessage({ type: 'login', isValid })
     }
-
+    /**
+     * Sends access token to webview
+     */
     private async sendToken(): Promise<void> {
         await this.webview?.postMessage({
             type: 'token',
@@ -226,7 +250,36 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             mode: this.mode,
         })
     }
-
+    /**
+     * Save chat history
+     */
+    private async saveChatHistory(): Promise<void> {
+        if (this.transcript) {
+            this.chatHistory[this.currentChatID] = this.transcript.toChat()
+            const userHistory = {
+                chat: this.chatHistory,
+                input: this.inputHistory,
+            }
+            await this.localStorage.setChatHistory(userHistory)
+        }
+    }
+    /**
+     * Sends chat history to webview
+     */
+    private async sendChatHistory(): Promise<void> {
+        const localHistory = this.localStorage.getChatHistory()
+        if (localHistory) {
+            this.chatHistory = localHistory.chat
+            this.inputHistory = localHistory.input
+        }
+        await this.webview?.postMessage({
+            type: 'history',
+            messages: localHistory,
+        })
+    }
+    /**
+     * create webview resources
+     */
     public async resolveWebviewView(
         webviewView: vscode.WebviewView,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -235,6 +288,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         _token: vscode.CancellationToken
     ): Promise<void> {
         this.webview = webviewView.webview
+
         const extensionPath = vscode.Uri.parse(this.extensionPath)
         const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist')
 
@@ -243,22 +297,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             localResourceRoots: [webviewPath],
         }
 
-        // await vscode.commands.executeCommand('cody.get-accepted-tos-version')
-
         //   Create Webview
         const root = vscode.Uri.joinPath(webviewPath, 'index.html')
         const bytes = await vscode.workspace.fs.readFile(root)
         const decoded = new TextDecoder('utf-8').decode(bytes)
         const resources = webviewView.webview.asWebviewUri(webviewPath)
-
-        const nonce = getNonce()
+        const nonce = this.getNonce()
 
         webviewView.webview.html = decoded
             .replaceAll('./', `${resources.toString()}/`)
             .replace('/nonce/', nonce)
             .replace('/tos-version/', this.tosVersion.toString())
-
-        webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message, webviewView.webview))
+        webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message))
     }
 
     public transcriptForTesting(testing: TestSupport): ChatMessage[] {
@@ -287,19 +337,24 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 this.codebaseContext = codebaseContext
                 this.chat = chatClient
 
-                // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                vscode.window.showInformationMessage('Cody configuration has been updated.')
+                const action = await vscode.window.showInformationMessage(
+                    'Cody configuration has been updated.',
+                    'Reload Window'
+                )
+                if (action === 'Reload Window') {
+                    await vscode.commands.executeCommand('workbench.action.reloadWindow')
+                }
                 break
             }
         }
     }
-}
 
-function getNonce(): string {
-    let text = ''
-    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    for (let i = 0; i < 32; i++) {
-        text += possible.charAt(Math.floor(Math.random() * possible.length))
+    private getNonce(): string {
+        let text = ''
+        const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+        for (let i = 0; i < 32; i++) {
+            text += possible.charAt(Math.floor(Math.random() * possible.length))
+        }
+        return text
     }
-    return text
 }

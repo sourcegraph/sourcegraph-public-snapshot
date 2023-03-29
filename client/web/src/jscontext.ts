@@ -44,7 +44,6 @@ export type SourcegraphContextCurrentUser = Pick<
     | 'avatarURL'
     | 'displayName'
     | 'siteAdmin'
-    | 'tags'
     | 'url'
     | 'settingsURL'
     | 'viewerCanAdminister'

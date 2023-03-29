@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import { mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
@@ -21,6 +21,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import {
+    CodeHostStatus,
     PermissionsSyncJob,
     PermissionsSyncJobReason,
     PermissionsSyncJobReasonGroup,
@@ -102,24 +103,29 @@ export const JOB_STATE_METADATA_MAPPING: Record<PermissionsSyncJobState, JobStat
 }
 
 interface PermissionsSyncJobStatusBadgeProps {
-    state: PermissionsSyncJobState
-    cancellationReason: string | null
-    failureMessage: string | null
+    job: PermissionsSyncJob
 }
 
-export const PermissionsSyncJobStatusBadge: React.FunctionComponent<PermissionsSyncJobStatusBadgeProps> = ({
-    state,
-    cancellationReason,
-    failureMessage,
-}) => (
-    <Badge
-        className={classNames(styles.statusContainer, 'mr-1')}
-        tooltip={cancellationReason ?? failureMessage ?? undefined}
-        variant={JOB_STATE_METADATA_MAPPING[state].badgeVariant}
-    >
-        {state}
-    </Badge>
-)
+export const PermissionsSyncJobStatusBadge: React.FunctionComponent<PermissionsSyncJobStatusBadgeProps> = ({ job }) => {
+    const { state, cancellationReason, failureMessage, codeHostStates } = job
+    const failingCodeHostSyncsNumber = useMemo(
+        () => codeHostStates.filter(({ status }) => status === CodeHostStatus.ERROR).length,
+        [codeHostStates]
+    )
+    const needsWarning = state === PermissionsSyncJobState.COMPLETED && failingCodeHostSyncsNumber > 0
+    const warningMessage = needsWarning
+        ? `${failingCodeHostSyncsNumber}/${codeHostStates.length} provider syncs were not successful`
+        : undefined
+    return (
+        <Badge
+            className={classNames(styles.statusContainer, 'mr-1')}
+            tooltip={cancellationReason ?? failureMessage ?? warningMessage ?? undefined}
+            variant={needsWarning ? 'warning' : JOB_STATE_METADATA_MAPPING[state].badgeVariant}
+        >
+            {state}
+        </Badge>
+    )
+}
 
 export const PermissionsSyncJobSubject: React.FunctionComponent<{ job: PermissionsSyncJob }> = ({ job }) => {
     const [isOpen, setIsOpen] = useState<boolean>(false)

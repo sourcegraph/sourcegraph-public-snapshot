@@ -715,6 +715,8 @@ type ExcludedGitHubRepo struct {
 	Pattern string `json:"pattern,omitempty"`
 }
 type ExcludedGitLabProject struct {
+	// EmptyRepos description: Whether to exclude empty repositories.
+	EmptyRepos bool `json:"emptyRepos,omitempty"`
 	// Id description: The ID of a GitLab project (as returned by the GitLab instance's API) to exclude from mirroring.
 	Id int `json:"id,omitempty"`
 	// Name description: The name of a GitLab project ("group/name") to exclude from mirroring.
@@ -811,10 +813,8 @@ type ExperimentalFeatures struct {
 	StructuralSearch   string              `json:"structuralSearch,omitempty"`
 	SubRepoPermissions *SubRepoPermissions `json:"subRepoPermissions,omitempty"`
 	// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
-	TlsExternal *TlsExternal `json:"tls.external,omitempty"`
-	// UnifiedPermissions description: Enables the new unified permissions model, which stores repository permissions in a single table and a row for each permission instead of postgres arrays.
-	UnifiedPermissions bool           `json:"unifiedPermissions,omitempty"`
-	Additional         map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
+	TlsExternal *TlsExternal   `json:"tls.external,omitempty"`
+	Additional  map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
 }
 
 func (v ExperimentalFeatures) MarshalJSON() ([]byte, error) {
@@ -878,7 +878,6 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "structuralSearch")
 	delete(m, "subRepoPermissions")
 	delete(m, "tls.external")
-	delete(m, "unifiedPermissions")
 	if len(m) > 0 {
 		v.Additional = make(map[string]any, len(m))
 	}

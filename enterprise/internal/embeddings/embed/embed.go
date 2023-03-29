@@ -62,8 +62,8 @@ func EmbedRepo(
 	return &embeddings.RepoEmbeddingIndex{RepoName: repoName, Revision: revision, CodeIndex: codeIndex, TextIndex: textIndex}, nil
 }
 
-func createEmptyEmbeddingIndex(columnDimension int) embeddings.EmbeddingIndex[embeddings.RepoEmbeddingRowMetadata] {
-	return embeddings.EmbeddingIndex[embeddings.RepoEmbeddingRowMetadata]{
+func createEmptyEmbeddingIndex(columnDimension int) embeddings.EmbeddingIndex {
+	return embeddings.EmbeddingIndex{
 		Embeddings:      []float32{},
 		RowMetadata:     []embeddings.RepoEmbeddingRowMetadata{},
 		ColumnDimension: columnDimension,
@@ -80,7 +80,7 @@ func embedFiles(
 	readFile readFile,
 	maxEmbeddingVectors int,
 	repoPathRanks types.RepoPathRanks,
-) (embeddings.EmbeddingIndex[embeddings.RepoEmbeddingRowMetadata], error) {
+) (embeddings.EmbeddingIndex, error) {
 	dimensions, err := client.GetDimensions()
 	if err != nil {
 		return createEmptyEmbeddingIndex(dimensions), err
@@ -90,7 +90,7 @@ func embedFiles(
 		return createEmptyEmbeddingIndex(dimensions), nil
 	}
 
-	index := embeddings.EmbeddingIndex[embeddings.RepoEmbeddingRowMetadata]{
+	index := embeddings.EmbeddingIndex{
 		Embeddings:      make([]float32, 0, len(fileNames)*dimensions),
 		RowMetadata:     make([]embeddings.RepoEmbeddingRowMetadata, 0, len(fileNames)),
 		ColumnDimension: dimensions,

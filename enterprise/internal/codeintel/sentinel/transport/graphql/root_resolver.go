@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	uploadsgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -17,8 +18,8 @@ import (
 
 type rootResolver struct {
 	sentinelSvc             SentinelService
-	uploadSvc               sharedresolvers.UploadsService
-	policySvc               sharedresolvers.PolicyService
+	uploadSvc               uploadsgraphql.UploadsService
+	policySvc               uploadsgraphql.PolicyService
 	gitserverClient         gitserver.Client
 	siteAdminChecker        sharedresolvers.SiteAdminChecker
 	repoStore               database.RepoStore
@@ -31,8 +32,8 @@ type rootResolver struct {
 func NewRootResolver(
 	observationCtx *observation.Context,
 	sentinelSvc SentinelService,
-	uploadSvc sharedresolvers.UploadsService,
-	policySvc sharedresolvers.PolicyService,
+	uploadSvc uploadsgraphql.UploadsService,
+	policySvc uploadsgraphql.PolicyService,
 	gitserverClient gitserver.Client,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
@@ -230,6 +231,24 @@ func (r *rootResolver) VulnerabilityMatchByID(ctx context.Context, vulnerability
 	}, nil
 }
 
+func (r *rootResolver) VulnerabilityMatchesSummaryCounts(ctx context.Context) (_ resolverstubs.VulnerabilityMatchesSummaryCountResolver, err error) {
+	ctx, _, endObservation := r.operations.vulnerabilityMatchesSummaryCounts.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	counts, err := r.sentinelSvc.GetVulnerabilityMatchesSummaryCounts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &vulnerabilityMatchesSummaryCountResolver{
+		critical:   counts.Critical,
+		high:       counts.High,
+		medium:     counts.Medium,
+		low:        counts.Low,
+		repository: counts.Repositories,
+	}, nil
+}
+
 //
 //
 
@@ -340,8 +359,8 @@ func (l *bulkLoader) GetVulnerabilityByID(ctx context.Context, id int) (shared.V
 
 type vulnerabilityMatchResolver struct {
 	sentinelSvc      SentinelService
-	uploadsSvc       sharedresolvers.UploadsService
-	policySvc        sharedresolvers.PolicyService
+	uploadsSvc       uploadsgraphql.UploadsService
+	policySvc        uploadsgraphql.PolicyService
 	gitserverClient  gitserver.Client
 	siteAdminChecker sharedresolvers.SiteAdminChecker
 	repoStore        database.RepoStore
@@ -375,7 +394,7 @@ func (r *vulnerabilityMatchResolver) PreciseIndex(ctx context.Context) (resolver
 		return nil, err
 	}
 
-	return sharedresolvers.NewPreciseIndexResolver(
+	return uploadsgraphql.NewPreciseIndexResolver(
 		ctx,
 		r.uploadsSvc,
 		r.policySvc,
@@ -392,6 +411,22 @@ func (r *vulnerabilityMatchResolver) PreciseIndex(ctx context.Context) (resolver
 
 //
 //
+
+type vulnerabilityMatchesSummaryCountResolver struct {
+	critical   int32
+	high       int32
+	medium     int32
+	low        int32
+	repository int32
+}
+
+func (v *vulnerabilityMatchesSummaryCountResolver) Critical() int32 { return v.critical }
+func (v *vulnerabilityMatchesSummaryCountResolver) High() int32     { return v.high }
+func (v *vulnerabilityMatchesSummaryCountResolver) Medium() int32   { return v.medium }
+func (v *vulnerabilityMatchesSummaryCountResolver) Low() int32      { return v.low }
+func (v *vulnerabilityMatchesSummaryCountResolver) Repository() int32 {
+	return v.repository
+}
 
 type vulnerabilityMatchCountByRepositoryResolver struct {
 	v shared.VulnerabilityMatchesByRepository

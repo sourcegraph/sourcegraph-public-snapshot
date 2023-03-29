@@ -6,16 +6,16 @@ import (
 	"github.com/grafana/regexp"
 )
 
-// excludeFunc takes a string and returns true if it should be excluded. In
-// the case of repo sourcing it will take a repository name or ID as input.
-type excludeFunc func(string) bool
+// excludeFunc takes either a generic object and returns true if the repo should be excluded. In
+// the case of repo sourcing it will take a repository name, ID, or the repo itself as input.
+type excludeFunc func(input any) bool
 
 // excludeBuilder builds an excludeFunc.
 type excludeBuilder struct {
 	exact    map[string]struct{}
 	patterns []*regexp.Regexp
-
-	err error
+	generic  []excludeFunc
+	err      error
 }
 
 // Exact will case-insensitively exclude the string name.
@@ -43,17 +43,34 @@ func (e *excludeBuilder) Pattern(pattern string) {
 	e.patterns = append(e.patterns, re)
 }
 
-// Build will return an excludeFunc based on the previous calls to Exact and
-// Pattern.
-func (e *excludeBuilder) Build() (excludeFunc, error) {
-	return func(name string) bool {
-		if _, ok := e.exact[strings.ToLower(name)]; ok {
-			return true
-		}
+// Generic registers the passed in exclude function that will be used to determine whether a repo
+// should be excluded.
+func (e *excludeBuilder) Generic(ef excludeFunc) {
+	if ef == nil {
+		return
+	}
+	e.generic = append(e.generic, ef)
+}
 
-		for _, re := range e.patterns {
-			if re.MatchString(name) {
+// Build will return an excludeFunc based on the previous calls to Exact, Pattern, and
+// Generic.
+func (e *excludeBuilder) Build() (excludeFunc, error) {
+	return func(input any) bool {
+		if inputString, ok := input.(string); ok {
+			if _, ok := e.exact[strings.ToLower(inputString)]; ok {
 				return true
+			}
+
+			for _, re := range e.patterns {
+				if re.MatchString(inputString) {
+					return true
+				}
+			}
+		} else {
+			for _, ef := range e.generic {
+				if ef(input) {
+					return true
+				}
 			}
 		}
 

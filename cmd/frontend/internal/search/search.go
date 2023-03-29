@@ -1,4 +1,4 @@
-// package search is search specific logic for the frontend. Also see
+// Package search is search specific logic for the frontend. Also see
 // github.com/sourcegraph/sourcegraph/internal/search for more generic search
 // code.
 package search

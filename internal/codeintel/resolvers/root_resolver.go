@@ -101,6 +101,10 @@ func (r *Resolver) VulnerabilityMatchByID(ctx context.Context, id graphql.ID) (_
 	return r.sentinelRootResolver.VulnerabilityMatchByID(ctx, id)
 }
 
+func (r *Resolver) VulnerabilityMatchesSummaryCounts(ctx context.Context) (_ VulnerabilityMatchesSummaryCountResolver, err error) {
+	return r.sentinelRootResolver.VulnerabilityMatchesSummaryCounts(ctx)
+}
+
 func (r *Resolver) VulnerabilityMatchesCountByRepository(ctx context.Context, args GetVulnerabilityMatchCountByRepositoryArgs) (_ VulnerabilityMatchCountByRepositoryConnectionResolver, err error) {
 	return r.sentinelRootResolver.VulnerabilityMatchesCountByRepository(ctx, args)
 }
@@ -149,14 +153,6 @@ func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArg
 	return r.codenavResolver.GitBlobLSIFData(ctx, args)
 }
 
-func (r *Resolver) GitBlobCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (_ GitBlobCodeIntelSupportResolver, err error) {
-	return r.autoIndexingRootResolver.GitBlobCodeIntelInfo(ctx, args)
-}
-
-func (r *Resolver) GitTreeCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (resolver GitTreeCodeIntelSupportResolver, err error) {
-	return r.autoIndexingRootResolver.GitTreeCodeIntelInfo(ctx, args)
-}
-
 func (r *Resolver) ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (_ CodeIntelligenceConfigurationPolicyResolver, err error) {
 	return r.policiesRootResolver.ConfigurationPolicyByID(ctx, id)
 }
@@ -178,11 +174,11 @@ func (r *Resolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context
 }
 
 func (r *Resolver) CodeIntelSummary(ctx context.Context) (_ CodeIntelSummaryResolver, err error) {
-	return r.autoIndexingRootResolver.CodeIntelSummary(ctx)
+	return r.uploadsRootResolver.CodeIntelSummary(ctx)
 }
 
 func (r *Resolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ CodeIntelRepositorySummaryResolver, err error) {
-	return r.autoIndexingRootResolver.RepositorySummary(ctx, id)
+	return r.uploadsRootResolver.RepositorySummary(ctx, id)
 }
 
 func (r *Resolver) IndexConfiguration(ctx context.Context, id graphql.ID) (_ IndexConfigurationResolver, err error) {

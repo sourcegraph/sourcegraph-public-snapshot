@@ -82,7 +82,7 @@ You can enable this feature when [configuring the connection to your Bitbucket S
 
 The speed improvements are most important on larger Bitbucket Server / Bitbucket Data Center instances with thousands of repositories. When connected to these instances, Sourcegraph would have to make many wasteful requests to fetch permission data if the plugin is not installed.
 
-To learn how and why this works, read the [through technical details of fast permission syncing](#fast-permissions-syncing) below.
+To learn how and why this works, read the [through technical details of fast permission syncing](#technical-details) below.
 
 ### Technical Details
 

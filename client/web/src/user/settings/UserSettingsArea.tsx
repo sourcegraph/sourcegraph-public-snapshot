@@ -72,7 +72,6 @@ const UserSettingsAreaGQLFragment = gql`
                 system
             }
         }
-        tags @include(if: $siteAdmin)
         ...EditUserProfilePage
     }
     ${EditUserProfilePageGQLFragment}

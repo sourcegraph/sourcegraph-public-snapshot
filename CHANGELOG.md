@@ -25,9 +25,11 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- GitHub `repositoryQuery` searches now respect date ranges and use API requests more efficiently. #[49969](https://github.com/sourcegraph/sourcegraph/pull/49969)
 
 ### Removed
+
+- User tags are removed in favor of the newer feature flags functionality. [#49318](https://github.com/sourcegraph/sourcegraph/pull/49318)
 
 -
 

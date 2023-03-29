@@ -275,6 +275,13 @@ func TestUserEmailsAddRemove(t *testing.T) {
 
 	// Can't remove primary e-mail
 	assert.Error(t, svc.Remove(ctx, createdUser.ID, email))
+
+	// Set email as verified, add a second user, and try to add the verified email
+	svc.SetVerified(ctx, createdUser.ID, email, true)
+	user2, err := db.Users().Create(ctx, database.NewUser{Username: "test-user-2"})
+	require.NoError(t, err)
+
+	require.Error(t, svc.Add(ctx, user2.ID, email))
 }
 
 func TestUserEmailsSetPrimary(t *testing.T) {
@@ -348,6 +355,18 @@ func TestUserEmailsSetVerified(t *testing.T) {
 	ctx = actor.WithInternalActor(ctx)
 	// Need to set e-mail as verified
 	assert.NoError(t, svc.SetVerified(ctx, createdUser.ID, email, true))
+
+	// Confirm that unverified emails get deleted when an email is marked as verified
+	assert.NoError(t, svc.SetVerified(ctx, createdUser.ID, email, false)) // first mark as unverified again
+
+	user2, err := db.Users().Create(ctx, database.NewUser{Username: "test-user-2"})
+	require.NoError(t, err)
+
+	assert.NoError(t, svc.Add(ctx, user2.ID, email)) // Adding an unverified email is fine if all emails are unverified
+
+	assert.NoError(t, svc.SetVerified(ctx, createdUser.ID, email, true)) // mark as verified again
+	_, _, err = db.UserEmails().Get(ctx, user2.ID, email)                // This should produce an error as the email should no longer exist
+	assert.Error(t, err)
 
 	emails, err := db.UserEmails().GetVerifiedEmails(ctx, email, email2)
 	assert.NoError(t, err)
