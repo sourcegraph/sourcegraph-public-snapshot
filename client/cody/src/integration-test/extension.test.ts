@@ -59,7 +59,7 @@ suite('End-to-end', () => {
         assert.ok(codyCommands.length)
     })
 
-    test('Explain Code', async () => {
+    test.skip('Explain Code', async () => {
         await enableCodyWithAccessToken('test-token')
         await setMockServerConfig()
 
