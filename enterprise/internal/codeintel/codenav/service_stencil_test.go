@@ -15,7 +15,6 @@ import (
 
 func TestStencil(t *testing.T) {
 	// Set up mocks
-	mockStore := NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
@@ -23,7 +22,7 @@ func TestStencil(t *testing.T) {
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockStore, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}
@@ -72,7 +71,6 @@ func TestStencil(t *testing.T) {
 
 func TestStencilWithDuplicateRanges(t *testing.T) {
 	// Set up mocks
-	mockStore := NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
@@ -80,7 +78,7 @@ func TestStencilWithDuplicateRanges(t *testing.T) {
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockStore, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}

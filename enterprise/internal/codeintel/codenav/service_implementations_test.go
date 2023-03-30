@@ -19,7 +19,6 @@ import (
 
 func TestImplementations(t *testing.T) {
 	// Set up mocks
-	mockStore := NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
@@ -27,7 +26,7 @@ func TestImplementations(t *testing.T) {
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockStore, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}
@@ -83,7 +82,6 @@ func TestImplementations(t *testing.T) {
 
 func TestImplementationsWithSubRepoPermissions(t *testing.T) {
 	// Set up mocks
-	mockStore := NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
@@ -91,7 +89,7 @@ func TestImplementationsWithSubRepoPermissions(t *testing.T) {
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockStore, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}
@@ -159,7 +157,6 @@ func TestImplementationsWithSubRepoPermissions(t *testing.T) {
 
 func TestImplementationsRemote(t *testing.T) {
 	// Set up mocks
-	mockStore := NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
@@ -167,7 +164,7 @@ func TestImplementationsRemote(t *testing.T) {
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockStore, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}
@@ -334,7 +331,6 @@ func TestImplementationsRemote(t *testing.T) {
 
 func TestImplementationsRemoteWithSubRepoPermissions(t *testing.T) {
 	// Set up mocks
-	mockStore := NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
@@ -342,7 +338,7 @@ func TestImplementationsRemoteWithSubRepoPermissions(t *testing.T) {
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockStore, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}
