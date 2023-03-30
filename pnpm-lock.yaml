@@ -220,7 +220,7 @@ importers:
       case-sensitive-paths-webpack-plugin: ^2.3.0
       chalk: ^4.1.0
       chokidar-cli: ^2.1.0
-      chromatic: ^6.11.4
+      chromatic: ^6.17.2
       chrome-webstore-upload-cli: ^1.2.0
       classnames: ^2.2.6
       comlink: ^4.3.0
