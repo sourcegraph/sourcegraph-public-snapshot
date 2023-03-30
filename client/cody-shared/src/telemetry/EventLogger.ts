@@ -157,6 +157,25 @@ export class EventLogger implements TelemetryService {
     public async log(eventName: string, eventProperties?: any, publicArgument?: any): Promise<void> {
         await this.logEvent(eventName, eventProperties, publicArgument)
     }
+    /**
+     * Implements {@link TelemetryService}.
+     *
+     * @deprecated Use logPageView instead
+     *
+     * @param pageTitle The title of the page being viewed.
+     */
+    public async logViewEvent(pageTitle: string, eventProperties?: any): Promise<void> {
+        await this.logEvent(`View${pageTitle}`, eventProperties)
+    }
+
+    /**
+     * Implements {@link TelemetryService}.
+     *
+     * @param eventName The name of the entity being viewed.
+     */
+    public async logPageView(eventName: string, eventProperties?: any, publicArgument?: any): Promise<void> {
+        await this.logEvent(`${eventName}Viewed`, eventProperties, publicArgument)
+    }
 }
 
 /**
@@ -207,23 +226,4 @@ export const logEvent = (
                 // that an upgrade is available via site-admin messaging.
             },
         })
-    /**
-     * Implements {@link TelemetryService}.
-     *
-     * @deprecated Use logPageView instead
-     *
-     * @param pageTitle The title of the page being viewed.
-     */
-    public async logViewEvent(pageTitle: string, eventProperties?: any): Promise<void> {
-        await this.logEvent(`View${pageTitle}`, eventProperties)
-    }
-
-    /**
-     * Implements {@link TelemetryService}.
-     *
-     * @param eventName The name of the entity being viewed.
-     */
-    public async logPageView(eventName: string, eventProperties?: any, publicArgument?: any): Promise<void> {
-        await this.logEvent(`${eventName}Viewed`, eventProperties, publicArgument)
-    }
 }
