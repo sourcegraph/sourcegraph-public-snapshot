@@ -182,6 +182,22 @@ func TestConfig_Validate(t *testing.T) {
 			},
 			expectedErr: errors.New("invalid EXECUTOR_DOCKER_AUTH_CONFIG, failed to parse: unexpected end of JSON input"),
 		},
+		{
+			name: "Invalid frontend URL",
+			getterFunc: func(name string, defaultValue, description string) string {
+				switch name {
+				case "EXECUTOR_QUEUE_NAME":
+					return "batches"
+				case "EXECUTOR_FRONTEND_URL":
+					return "sourcegraph.example.com"
+				case "EXECUTOR_FRONTEND_PASSWORD":
+					return "some-password"
+				default:
+					return defaultValue
+				}
+			},
+			expectedErr: errors.New("EXECUTOR_FRONTEND_URL must be in the format scheme://host (and optionally :port)"),
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -198,45 +214,4 @@ func TestConfig_Validate(t *testing.T) {
 			}
 		})
 	}
-package config
-
-import (
-	"testing"
-
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-)
-
-func TestValidateConfig(t *testing.T) {
-	t.Run("Frontend URL", func(t *testing.T) {
-		tests := []struct {
-			name        string
-			frontendURL string
-			expectedErr error
-		}{
-			{
-				name:        "Valid URL",
-				frontendURL: "https://sourcegraph.example.com",
-				expectedErr: nil,
-			},
-			{
-				name:        "Missing scheme",
-				frontendURL: "sourcegraph.example.com",
-				expectedErr: errors.New("EXECUTOR_FRONTEND_URL must be in the format scheme://host (and optionally :port)"),
-			},
-		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				conf := Config{
-					FrontendURL:    test.frontendURL,
-					QueueName:      "batches",
-					UseFirecracker: false,
-				}
-
-				err := conf.Validate()
-				if !errors.Is(err, test.expectedErr) {
-					t.Errorf("Unexpected error returned: expected '%v', got '%v'", test.expectedErr, err)
-				}
-			})
-		}
-	})
 }

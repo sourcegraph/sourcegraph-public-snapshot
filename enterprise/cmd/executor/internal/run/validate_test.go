@@ -6,11 +6,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -40,13 +40,12 @@ func TestValidateAuthorizationToken(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server, _ := newTestServerAndClient(t, func(w http.ResponseWriter, r *http.Request) {
+			server, client := newTestServerAndClient(t, func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(test.statusCode)
 			})
 			defer server.Close()
 
-			baseClientOpts := baseClientOptions(&config.Config{FrontendURL: server.URL}, "")
-			err := validateAuthorizationToken(context.Background(), baseClientOpts)
+			err := validateAuthorizationToken(context.Background(), client)
 			if test.expectedErr != nil {
 				assert.NotNil(t, err)
 				assert.Equal(t, errors.Is(err, authorizationFailedErr), test.isUnauthorizedError)
@@ -60,7 +59,7 @@ func TestValidateAuthorizationToken(t *testing.T) {
 
 func newTestServerAndClient(t *testing.T, handlerFunc func(w http.ResponseWriter, r *http.Request)) (*httptest.Server, *apiclient.BaseClient) {
 	server := httptest.NewServer(http.HandlerFunc(handlerFunc))
-	client, err := apiclient.NewBaseClient(apiclient.BaseClientOptions{
+	client, err := apiclient.NewBaseClient(logtest.Scoped(t), apiclient.BaseClientOptions{
 		EndpointOptions: apiclient.EndpointOptions{
 			URL: server.URL,
 		},
