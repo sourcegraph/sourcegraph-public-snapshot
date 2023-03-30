@@ -85,8 +85,8 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
             await eventLogger.log('CodyVSCodeExtension:codySetAccessToken:clicked')
         }),
         vscode.commands.registerCommand('cody.delete-access-token', async () => {
-            secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-            eventLogger.log('CodyVSCodeExtension:codyDeleteAccessToken:clicked')
+            await secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
+            await eventLogger.log('CodyVSCodeExtension:codyDeleteAccessToken:clicked')
         }),
         // TOS
         vscode.commands.registerCommand('cody.accept-tos', version =>
