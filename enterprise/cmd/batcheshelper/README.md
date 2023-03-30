@@ -1,6 +1,9 @@
 # batcheshelper
 
-This image is used to prepare a Job for running a batch change.
+`batcheshelper` is a helper script for Sourcegraph Batch Changes that is run in a workspace container before and after a
+step is executed.
+
+It is designed to replace Sourcegraph's `src` CLI for use in Executors.
 
 ## Usage
 
@@ -13,7 +16,6 @@ OPTIONS:
         The path to the previous steps result file. Defaults to current working directory.
   -workspaceFiles string
         The path to the workspace files. Defaults to "/data/workspace-files". (default "/data/workspace-files")
-
 ```
 
 ### Arguments
@@ -37,11 +39,15 @@ There are two modes that this script can run in: `pre` and `post`.
 
 ### pre
 
+The `pre` mode ...
+
 ```shell
 batcheshelper pre 0
 ```
 
 ### post
+
+The `post` mode ...
 
 ```shell
 batcheshelper pre 0
@@ -54,5 +60,3 @@ To build the image for local development, run:
 ```shell
 IMAGE=sourcegraph/batcheshelper:insiders ./build.sh
 ```
-
-## Usage in Executors
