@@ -611,7 +611,7 @@ type Embeddings struct {
 	Dimensions int `json:"dimensions"`
 	// Enabled description: Toggles whether embedding service is enabled.
 	Enabled bool `json:"enabled"`
-	// ExcludedFilePathPatterns description: A list of regular expressions that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.). The regular expressions should use the Go regular expression syntax (https://golang.org/pkg/regexp/).
+	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
 	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
 	// Model description: The model used for embedding.
 	Model string `json:"model"`

@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/split"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/binary"
 )
@@ -30,6 +31,7 @@ func EmbedRepo(
 	repoName api.RepoName,
 	revision api.CommitID,
 	fileNames []string,
+	excludedFilePathPatterns []*paths.GlobPattern,
 	client EmbeddingsClient,
 	splitOptions split.SplitOptions,
 	readFile readFile,
@@ -37,7 +39,7 @@ func EmbedRepo(
 ) (*embeddings.RepoEmbeddingIndex, error) {
 	codeFileNames, textFileNames := []string{}, []string{}
 	for _, fileName := range fileNames {
-		if isExcludedFilePath(fileName) {
+		if isExcludedFilePath(fileName, excludedFilePathPatterns) {
 			continue
 		}
 

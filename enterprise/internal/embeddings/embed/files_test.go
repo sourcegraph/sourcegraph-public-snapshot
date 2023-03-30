@@ -10,7 +10,7 @@ func TestExcludingFilePaths(t *testing.T) {
 	files := []string{
 		"file.sql",
 		"root/file.yaml",
-		"client/web/struct.JSON",
+		"client/web/struct.json",
 		"vendor/vendor.txt",
 		"cool.go",
 		"node_modules/a.go",
@@ -24,8 +24,9 @@ func TestExcludingFilePaths(t *testing.T) {
 	expectedFiles := []string{"cool.go", "Dockerfile", "README.md", "LICENSE.txt"}
 	gotFiles := []string{}
 
+	excludedGlobPatterns := GetDefaultExcludedFilePathPatterns()
 	for _, file := range files {
-		if !isExcludedFilePath(file) {
+		if !isExcludedFilePath(file, excludedGlobPatterns) {
 			gotFiles = append(gotFiles, file)
 		}
 	}

@@ -1,15 +1,11 @@
 package embed
 
 import (
-	"fmt"
 	"path/filepath"
 
 	"strings"
 
-	"github.com/grafana/regexp"
-
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 )
 
 const MIN_EMBEDDABLE_FILE_SIZE = 32
@@ -24,50 +20,38 @@ var textFileExtensions = map[string]struct{}{
 	"txt":      {},
 }
 
-var defaultExcludedFilePathRegexps = []*regexp.Regexp{
-	regexp.MustCompile(`(?i)\.(sql|svg|json|yml|yaml)$`),
-	regexp.MustCompile(`(?i)/?(__fixtures__|testdata|mocks|vendor|node_modules)/`),
+var defaultExcludedFilePathPatterns = []string{
+	"*.sql",
+	"*.svg",
+	"*.json",
+	"*.yml",
+	"*.yaml",
+	"__fixtures__/",
+	"node_modules/",
+	"testdata/",
+	"mocks/",
+	"vendor/",
 }
 
-var excludedFilePathRegexps = defaultExcludedFilePathRegexps
-
-func init() {
-	conf.ContributeValidator(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		embeddingsConf := c.SiteConfig().Embeddings
-		if embeddingsConf == nil {
-			return
-		}
-
-		for _, pattern := range embeddingsConf.ExcludedFilePathPatterns {
-			if _, err := regexp.Compile(pattern); err != nil {
-				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid regexp: `%s`. See the valid syntax: https://golang.org/pkg/regexp/", pattern)))
-			}
-		}
-
-		return
-	})
-
-	go func() {
-		conf.Watch(func() {
-			excludedFilePathRegexps = defaultExcludedFilePathRegexps
-
-			config := conf.Get()
-			if config == nil || config.Embeddings == nil {
-				return
-			}
-
-			for _, pattern := range config.Embeddings.ExcludedFilePathPatterns {
-				if re, err := regexp.Compile(pattern); err == nil {
-					excludedFilePathRegexps = append(excludedFilePathRegexps, re)
-				}
-			}
-		})
-	}()
+func GetDefaultExcludedFilePathPatterns() []*paths.GlobPattern {
+	return CompileGlobPatterns(defaultExcludedFilePathPatterns)
 }
 
-func isExcludedFilePath(filePath string) bool {
-	for _, excludedFilePathRegexp := range excludedFilePathRegexps {
-		if excludedFilePathRegexp.MatchString(filePath) {
+func CompileGlobPatterns(patterns []string) []*paths.GlobPattern {
+	globPatterns := make([]*paths.GlobPattern, 0, len(patterns))
+	for _, pattern := range patterns {
+		globPattern, err := paths.Compile(pattern)
+		if err != nil {
+			continue
+		}
+		globPatterns = append(globPatterns, globPattern)
+	}
+	return globPatterns
+}
+
+func isExcludedFilePath(filePath string, excludedFilePathPatterns []*paths.GlobPattern) bool {
+	for _, excludedFilePathPattern := range excludedFilePathPatterns {
+		if excludedFilePathPattern.Match(filePath) {
 			return true
 		}
 	}
