@@ -5,11 +5,9 @@ source /root/.profile
 set -ex
 
 mkdir -p /var/run/dbus
-echo "--- starting system dbus"
-dbus-daemon --system --fork
 echo "--- starting dbus session"
-DBUS_SESSION_BUS_ADDRESS=$(dbus-daemon --session --print-address --fork)
 export DISPLAY=":99"
+export DBUS_SESSION_BUS_ADDRESS=$(dbus-daemon --system --address /var/run/dbus/system --print-address --fork)
 
 echo "--- start cody e2e"
 pnpm install --frozen-lockfile --fetch-timeout 60000
