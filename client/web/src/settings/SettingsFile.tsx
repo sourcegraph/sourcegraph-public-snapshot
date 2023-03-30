@@ -1,13 +1,11 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-// eslint-disable-next-line no-restricted-syntax
-import { useHistory } from 'react-router'
+import { unstable_useBlocker as useBlocker } from 'react-router-dom'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { BeforeUnloadPrompt, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
@@ -53,9 +51,6 @@ export const SettingsFile = ({
     // The lastID that we started editing from. If null, then no previous versions of the settings exist, and we're creating them from scratch.
     const [editingLastID, setEditingLastID] = React.useState<number | null | undefined>(undefined)
 
-    // eslint-disable-next-line no-restricted-syntax
-    const history = useHistory()
-
     const enableVisualSettingsEditor = useFeatureFlag('visual-settings-editor')
 
     // Reset state upon navigation to a different subject.
@@ -83,19 +78,15 @@ export const SettingsFile = ({
         }
     }, [settings, commitError, editingLastID])
 
-    // Prevent navigation when dirty.
-    React.useEffect(() => {
-        const blocker = history.block((location, action) => {
-            if (action === 'REPLACE') {
-                return undefined
-            }
-            if (saving || isFormDirty) {
-                return 'Discard settings changes?'
-            }
-            return undefined // allow navigation
-        })
-        return () => blocker()
-    }, [saving, isFormDirty, history])
+    useBlocker(({historyAction}) => {
+        if (historyAction === 'REPLACE') {
+            return false
+        }
+        if (saving || isFormDirty) {
+            return confirm('Discard settings changes?')
+        }
+        return false
+    })
 
     const jsonEditor = (
         <>
