@@ -8,5 +8,15 @@
   },
   "include": ["**/*", ".*"],
   "exclude": ["out"],
-  "references": [{ "path": "../common" }],
+  "references": [
+    {
+      "path": "../common",
+    },
+    {
+      "path": "../http-client",
+    },
+    {
+      "path": "../shared",
+    },
+  ],
 }
