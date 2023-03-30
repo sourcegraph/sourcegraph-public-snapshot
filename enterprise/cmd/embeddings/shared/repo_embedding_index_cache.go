@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
-var cacheSize = env.MustGetInt("EMBEDDINGS_REPOSITORY_INDEX_CACHE_SIZE", 5, "Number of repository embedding indexes to cache in memory.")
+var cacheSize = env.MustGetInt("EMBEDDINGS_REPO_INDEX_CACHE_SIZE", 5, "Number of repository embedding indexes to cache in memory.")
 
 type downloadRepoEmbeddingIndexFn func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error)
 
