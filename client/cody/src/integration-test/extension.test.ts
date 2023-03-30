@@ -64,20 +64,25 @@ suite('End-to-end', () => {
         await enableCodyWithAccessToken('test-token')
         await setMockServerConfig()
 
+        console.log('Open Main.java')
+
         // Open Main.java
         assert.ok(vscode.workspace.workspaceFolders)
         const mainJavaUri = vscode.Uri.parse(`${vscode.workspace.workspaceFolders[0].uri.toString()}/Main.java`)
         const textEditor = await vscode.window.showTextDocument(mainJavaUri)
 
+        console.log('Select the main method')
         // Select the "main" method
         textEditor.selection = new vscode.Selection(5, 0, 7, 0)
 
+        console.log('Run the explain command')
         // Run the "explain" command
         await ensureExecuteCommand('cody.recipe.explain-code-high-level')
         const api = vscode.extensions.getExtension<ExtensionApi>('sourcegraph.cody-ai')
         assert.ok(api)
         assert.ok(api.exports)
 
+        console.log('Check that transscript contains markdown')
         // Check the chat transcript contains markdown
         const message = await getTranscript(api, 0)
         assert.match(message.displayText || '', /^Explain the following code/)
@@ -86,6 +91,7 @@ suite('End-to-end', () => {
         // Check the server response was handled
         // "hello world" is a canned response from the server
         // in runTest.js responds to all messages with
+        console.log('waitUntil')
         await waitUntil(async () => {
             const assistantMessage = await getTranscript(api, 1)
             return (assistantMessage.displayText || '').length > 0
