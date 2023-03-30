@@ -34,3 +34,17 @@ export const IS_CONTEXT_REQUIRED_QUERY = `
 query IsContextRequiredForChatQuery($query: String!) {
 	isContextRequiredForChatQuery(query: $query)
 }`
+
+export const LOG_EVENT_MUTATION = `
+mutation {
+    logEvent(
+    event: "name of event"
+    userCookieID: "user cookie ID"
+    url: "url of event"
+    source: CODY
+    argument: "JSON string of argument (if present)"
+    publicArgument: "JSON string of public argument (if present)"
+    ) {
+    alwaysNil
+    }
+}`

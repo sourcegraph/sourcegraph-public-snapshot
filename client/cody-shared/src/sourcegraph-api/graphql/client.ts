@@ -7,6 +7,7 @@ import {
     IS_CONTEXT_REQUIRED_QUERY,
     REPOSITORY_ID_QUERY,
     SEARCH_EMBEDDINGS_QUERY,
+    LOG_EVENT_MUTATION,
 } from './queries'
 
 interface APIResponse<T> {
@@ -94,6 +95,10 @@ export class SourcegraphGraphQLAPIClient {
         return this.fetchSourcegraphAPI<APIResponse<IsContextRequiredForChatQueryResponse>>(IS_CONTEXT_REQUIRED_QUERY, {
             query,
         }).then(response => extractDataOrError(response, data => data.isContextRequiredForChatQuery))
+    }
+
+    public async fetch(variables: Record<string, any>): Promise<any> {
+        return this.fetchSourcegraphAPI(LOG_EVENT_MUTATION, variables)
     }
 
     private async fetchSourcegraphAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
