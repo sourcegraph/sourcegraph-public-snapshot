@@ -1,9 +1,9 @@
-import React, { useMemo, ReactNode } from 'react'
+import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
-import { Link, Text, Tooltip } from '@sourcegraph/wildcard'
+import { Link, LoadingSpinner, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { formatNumber } from '../utils'
 
@@ -12,8 +12,7 @@ import styles from './index.module.scss'
 interface ValueLegendItemProps {
     color?: string
     description: string
-    // Value is a number or LoadingSpinner
-    value: number | string | ReactNode
+    value: number | string
     tooltip?: string
     className?: string
     filter?: { name: string; value: string }
@@ -29,6 +28,10 @@ export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
     filter,
     onClick,
 }) => {
+    if (value === 'loading') {
+        return <LoadingSpinner className={classNames(styles.count, 'my-auto')} />
+    }
+
     const formattedNumber = useMemo(() => (typeof value === 'number' ? formatNumber(value) : value), [value])
     const unformattedNumber = `${value}`
     const location = useLocation()
@@ -42,11 +45,12 @@ export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
     }, [filter, location.search])
 
     const tooltipOnNumber =
-        formattedNumber !== unformattedNumber && typeof value !== 'object'
+        formattedNumber !== unformattedNumber
             ? isNaN(parseFloat(unformattedNumber))
                 ? unformattedNumber
                 : Intl.NumberFormat('en').format(parseFloat(unformattedNumber))
             : undefined
+
     return (
         <div className={classNames(styles.legendItem, className)}>
             <Tooltip content={tooltipOnNumber}>

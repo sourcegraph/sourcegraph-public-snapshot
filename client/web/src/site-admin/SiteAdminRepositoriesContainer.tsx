@@ -4,7 +4,7 @@ import { isEqual } from 'lodash'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Container, Input, LoadingSpinner, ErrorAlert, PageSwitcher } from '@sourcegraph/wildcard'
+import { Container, Input, ErrorAlert, PageSwitcher } from '@sourcegraph/wildcard'
 
 import { EXTERNAL_SERVICE_IDS_AND_NAMES } from '../components/externalServices/backend'
 import {
@@ -366,7 +366,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
         }
         if (loading && !error) {
             items.splice(0, 1, {
-                value: <LoadingSpinner />,
+                value: 'loading',
                 description: 'Repositories',
             })
         }
