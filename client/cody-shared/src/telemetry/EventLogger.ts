@@ -181,11 +181,11 @@ export class EventLogger implements TelemetryService {
 /**
  * Log a raw user action on the associated Sourcegraph instance
  */
-export const logEvent = (
+export const logEvent = async (
     event: { name: string; userCookieID: string; url: string; argument?: string | {}; publicArgument?: string | {} },
     client: SourcegraphGraphQLAPIClient
-): void => {
-    client.fetch({
+): Promise<void> => {
+    await client.fetch({
         request: gql`
             mutation logEvent(
                 $name: String!
