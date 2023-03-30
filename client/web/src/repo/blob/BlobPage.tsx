@@ -19,6 +19,7 @@ import {
     TraceSpanProvider,
     useCurrentSpan,
 } from '@sourcegraph/observability-client'
+import { updateSettings } from '@sourcegraph/shared/src/api/client/services/settings'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
@@ -43,6 +44,7 @@ import {
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeIntelligenceProps } from '../../codeintel'
+import { newSettingsGetter } from '../../codeintel/settings'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
@@ -188,6 +190,18 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
         }, [filePath, revision, repoName, props.telemetryService])
     )
 
+    const displaySCIPSnapshotData: boolean = newSettingsGetter(props.settingsCascade)<boolean>(
+        'codeIntel.displaySCIPSnapshotData',
+        false
+    )
+
+    const onClick = useCallback(async () => {
+        await updateSettings(props.platformContext, {
+            path: ['codeIntel.displaySCIPSnapshotData'],
+            value: !displaySCIPSnapshotData,
+        })
+    }, [displaySCIPSnapshotData, props.platformContext])
+
     /**
      * Fetches formatted, but un-highlighted, blob content.
      * Intention is to use this whilst we wait for syntax highlighting,
@@ -203,6 +217,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                         revision,
                         filePath,
                         format: HighlightResponseFormat.HTML_PLAINTEXT,
+                        scipSnapshot: displaySCIPSnapshotData,
                     }).pipe(
                         map(blob => {
                             if (blob === null) {
@@ -229,7 +244,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                         })
                     )
                 ),
-            [filePath, mode, repoName, revision, span]
+            [filePath, mode, repoName, revision, span, displaySCIPSnapshotData]
         )
     )
 
@@ -255,6 +270,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                             format: enableCodeMirror
                                 ? HighlightResponseFormat.JSON_SCIP
                                 : HighlightResponseFormat.HTML_HIGHLIGHT,
+                            scipSnapshot: displaySCIPSnapshotData,
                         })
                     ),
                     map(blob => {
@@ -289,7 +305,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                     }),
                     catchError((error): [ErrorLike] => [asError(error)])
                 ),
-            [repoName, revision, filePath, enableCodeMirror, mode]
+            [repoName, revision, filePath, enableCodeMirror, mode, displaySCIPSnapshotData]
         )
     )
 
@@ -351,6 +367,9 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     // Always render these to avoid UI jitter during loading when switching to a new file.
     const alwaysRender = (
         <>
+            <Button variant="danger" onClick={onClick}>
+                Toggle SCIP snapshot view
+            </Button>
             <PageTitle title={getPageTitle()} />
             {window.context.isAuthenticatedUser && (
                 <RepoHeaderContributionPortal

@@ -27,9 +27,9 @@ const applyDefaultValuesToFetchBlobOptions = ({
 })
 
 function fetchBlobCacheKey(options: FetchBlobOptions): string {
-    const { disableTimeout, format } = applyDefaultValuesToFetchBlobOptions(options)
+    const { disableTimeout, format, scipSnapshot } = applyDefaultValuesToFetchBlobOptions(options)
 
-    return `${makeRepoURI(options)}?disableTimeout=${disableTimeout}&=${format}`
+    return `${makeRepoURI(options)}?disableTimeout=${disableTimeout}&=${format}&snap=${scipSnapshot}`
 }
 
 interface FetchBlobOptions {
@@ -40,13 +40,14 @@ interface FetchBlobOptions {
     format?: HighlightResponseFormat
     startLine?: number | null
     endLine?: number | null
+    scipSnapshot: boolean
 }
 
 export const fetchBlob = memoizeObservable(
     (
         options: FetchBlobOptions
     ): Observable<(BlobFileFields & { snapshot?: { offset: number; data: string }[] }) | null> => {
-        const { repoName, revision, filePath, disableTimeout, format, startLine, endLine } =
+        const { repoName, revision, filePath, disableTimeout, format, startLine, endLine, scipSnapshot } =
             applyDefaultValuesToFetchBlobOptions(options)
 
         // We only want to include HTML data if explicitly requested. We always
@@ -65,13 +66,14 @@ export const fetchBlob = memoizeObservable(
                     $html: Boolean!
                     $startLine: Int
                     $endLine: Int
+                    $snapshot: Boolean!
                 ) {
                     repository(name: $repoName) {
                         commit(rev: $revision) {
                             file(path: $filePath) {
                                 ...BlobFileFields
                             }
-                            blob(path: $filePath) {
+                            blob(path: $filePath) @include(if: $snapshot) {
                                 lsif {
                                     snapshot {
                                         offset
@@ -109,7 +111,7 @@ export const fetchBlob = memoizeObservable(
                     }
                 }
             `,
-            { repoName, revision, filePath, disableTimeout, format, html, startLine, endLine }
+            { repoName, revision, filePath, disableTimeout, format, html, startLine, endLine, snapshot: scipSnapshot }
         ).pipe(
             map(dataOrThrowErrors),
             map(data => {
