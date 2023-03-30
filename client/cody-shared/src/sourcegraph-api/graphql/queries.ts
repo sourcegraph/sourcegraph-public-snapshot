@@ -38,12 +38,12 @@ query IsContextRequiredForChatQuery($query: String!) {
 export const LOG_EVENT_MUTATION = `
 mutation {
     logEvent(
-    event: "name of event"
-    userCookieID: "user cookie ID"
-    url: "url of event"
-    source: CODY
-    argument: "JSON string of argument (if present)"
-    publicArgument: "JSON string of public argument (if present)"
+    event: String!
+    userCookieID: String!
+    url: String!
+    source: EventSource!
+    argument: String
+    publicArgument: String
     ) {
     alwaysNil
     }
