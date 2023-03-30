@@ -98,6 +98,9 @@ env:
   PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT: http://localhost:9000
   PRECISE_CODE_INTEL_UPLOAD_BACKEND: blobstore
 
+  # Required for embeddings job upload
+  EMBEDDINGS_UPLOAD_AWS_ENDPOINT: http://localhost:9000
+
   # Disable auto-indexing the CNCF repo group (this only works in Cloud)
   # This setting will be going away soon
   DISABLE_CNCF: notonmybox
