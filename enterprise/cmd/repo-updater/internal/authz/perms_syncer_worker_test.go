@@ -179,6 +179,7 @@ loop:
 			require.Equal(t, 1, job.PermissionsAdded)
 			require.Equal(t, 2, job.PermissionsRemoved)
 			require.Equal(t, 5, job.PermissionsFound)
+			require.False(t, job.IsPartialSuccess)
 		}
 
 		// Check that repo sync job has the failure message.
@@ -320,6 +321,7 @@ loop:
 			require.Equal(t, 1, job.PermissionsAdded)
 			require.Equal(t, 2, job.PermissionsRemoved)
 			require.Equal(t, 5, job.PermissionsFound)
+			require.True(t, job.IsPartialSuccess)
 		}
 
 		// Check that failed job has the failure message.

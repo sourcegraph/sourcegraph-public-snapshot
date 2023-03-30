@@ -6,14 +6,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 )
 
-func MockEmailExistsErr() error {
-	return ErrCannotCreateUser{ErrorCodeEmailExists}
-}
-
-func MockUsernameExistsErr() error {
-	return ErrCannotCreateUser{ErrorCodeEmailExists}
-}
-
 func strptr(s string) *string {
 	return &s
 }
