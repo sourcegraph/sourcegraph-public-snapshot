@@ -64,7 +64,7 @@ Last updated: 03-30-2023 · 11:30 AM PST
 - `https://github.com/python/cpython`
 - `https://github.com/microsoft/TypeScript/`
 - `https://github.com/grpc/grpc`
-- - `https://github.com/ziglang/zig`
+- `https://github.com/ziglang/zig`
 - `https://github.com/not-fl3/macroquad`
 - `https://github.com/pygame/pygame`
 - `https://github.com/michaelmarth/bot-server`
