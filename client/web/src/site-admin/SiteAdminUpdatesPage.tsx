@@ -5,13 +5,16 @@ import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
 import {
+    SetAutoUpgradeResult,
+    SetAutoUpgradeVariables,
     SiteUpdateCheckResult,
     SiteUpdateCheckVariables,
     SiteUpgradeReadinessResult,
     SiteUpgradeReadinessVariables,
 } from 'src/graphql-operations'
 
-import { useQuery } from '@sourcegraph/http-client'
+import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import { useQuery, useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     LoadingSpinner,
@@ -28,13 +31,13 @@ import {
     CollapseHeader,
     CollapsePanel,
     H3,
-    H4,
+    Label,
 } from '@sourcegraph/wildcard'
 
 import { LogOutput } from '../components/LogOutput'
 import { PageTitle } from '../components/PageTitle'
 
-import { SITE_UPDATE_CHECK, SITE_UPGRADE_READINESS } from './backend'
+import { SITE_UPDATE_CHECK, SITE_UPGRADE_READINESS, SET_AUTO_UPGRADE } from './backend'
 
 import styles from './SiteAdminUpdatesPage.module.scss'
 
@@ -127,6 +130,20 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
         SITE_UPGRADE_READINESS,
         {}
     )
+
+    const [setAutoUpgrade] = useMutation<SetAutoUpgradeResult, SetAutoUpgradeVariables>(SET_AUTO_UPGRADE)
+    const [autoUpgradeEnabled, setAutoUpgradeEnabled] = useState(data?.site.autoUpgradeEnabled)
+    const handleToggle = () => {
+        setAutoUpgradeEnabled(!autoUpgradeEnabled)
+        setAutoUpgrade({
+            variables: { enable: !autoUpgradeEnabled },
+        })
+    }
+    useEffect(() => {
+        if (data) {
+            setAutoUpgradeEnabled(data.site.autoUpgradeEnabled)
+        }
+    }, [data])
     const [isExpanded, setIsExpanded] = useState(true)
     return (
         <>
@@ -204,6 +221,70 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                             </Alert>
                         </Text>
                     )}
+                    <hr className="my-3" />
+                    <div className="d-flex flex-row justify-content-between">
+                        <H3>Automatic Upgrade State</H3>
+                        <div>
+                            <Label>
+                                <Toggle
+                                    title="Enable Auto Upgrade"
+                                    value={autoUpgradeEnabled}
+                                    onToggle={handleToggle}
+                                    className="mr-2"
+                                    aria-describedby="auto-upgrade-toggle-description"
+                                />
+                                {autoUpgradeEnabled &&
+                                (data.site.upgradeReadiness.requiredOutOfBandMigrations.length > 0 ||
+                                    data.site.upgradeReadiness.schemaDrift.length > 0) ? (
+                                    <Icon aria-hidden={true} svgPath={mdiAlertOctagram} className="text-danger" />
+                                ) : null}
+                                {autoUpgradeEnabled ? 'Enabled' : 'Disabled'}
+                            </Label>
+                        </div>
+                    </div>
+                    <div>
+                        {data?.site.upgradeReadiness.schemaDrift.length > 0 ? (
+                            <span>
+                                <Icon aria-hidden={true} svgPath={mdiAlertOctagram} className="text-danger" /> Upgrades
+                                will fail if schema drift is detected. Please resolve schema drift before attempting an
+                                upgrade.
+                                <br />
+                                <br /> Learn more about the migrator{' '}
+                                <Link to="https://docs.sourcegraph.com/admin/how-to/manual_database_migrations#upgrade">
+                                    upgrade command
+                                </Link>
+                                .
+                            </span>
+                        ) : data?.site.upgradeReadiness.requiredOutOfBandMigrations.length > 0 ? (
+                            <span>
+                                Some oob migrations must complete before a multi version upgrade can finish. Learn more
+                                at the <Link to="/site-admin/migrations?filters=pending">migrations</Link> page, and
+                                reach out to{' '}
+                                <Link to="mailto:support@sourcegraph.com" target="_blank" rel="noopener noreferrer">
+                                    Sourcegraph support
+                                </Link>{' '}
+                                for clarifications.
+                                <br />
+                                <br /> Learn more about the migrator{' '}
+                                <Link to="https://docs.sourcegraph.com/admin/how-to/manual_database_migrations#upgrade">
+                                    upgrade command
+                                </Link>
+                                .
+                            </span>
+                        ) : (
+                            <span>
+                                This instance is prepared for a multiversion upgrade. If automatic upgrades are enabled
+                                the migrator upgrade command will now infer to and from versions.
+                                <br />
+                                <br />
+                                Learn more about the migrator{' '}
+                                <Link to="https://docs.sourcegraph.com/admin/how-to/manual_database_migrations#upgrade">
+                                    upgrade command
+                                </Link>
+                                .
+                            </span>
+                        )}
+                    </div>
                 </>
             )}
         </>

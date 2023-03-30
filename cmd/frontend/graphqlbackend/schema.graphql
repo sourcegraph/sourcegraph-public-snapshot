@@ -77,6 +77,13 @@ A mutation.
 """
 type Mutation {
     """
+    INTERNAL ONLY: Sets the value of versions.auto_upgrade in the frontend db.
+    Determines behavior of multiversion upgrades.
+
+    Only site admins may perform this mutation.
+    """
+    setAutoUpgrade(enable: Boolean!): EmptyResponse!
+    """
     Updates the user profile information for the user with the given ID.
 
     Only the user and site admins may perform this mutation.
@@ -6914,6 +6921,10 @@ type Site implements SettingsSubject {
     FOR INTERNAL USE ONLY: Returns information about instance upgrade readiness.
     """
     upgradeReadiness: UpgradeReadiness!
+    """
+    FOR INTERNAL USE ONLY: The state of readiness to auto upgrade the Sourcegraph instance via migrator commands.
+    """
+    autoUpgradeEnabled: Boolean!
 
     """
     Wether the current App installation has a connected Sourcegraph.com account.
@@ -6935,6 +6946,19 @@ type ExternalServicesCounts {
     """
     localExternalServicesCount: Int!
 }
+# """
+# Auto upgrade readiness state, contains version and auto_upgrade from the fontend databse versions table.
+# """
+# type AutoUpgrade {
+#     """
+#     The frontend database version
+#     """
+#     version: String!
+#     """
+#     State of auto_upgrade in the frontend database
+#     """
+#     enabled: Boolean!
+# }
 
 """
 Instance upgrade readiness information includes schema drifts and deprecated-but-unfinished out-of-band migrations.
