@@ -147,7 +147,7 @@ func (c *RealCommand) prepCommand(ctx context.Context, options Spec) (cmd *exec.
 		env = append(env, fmt.Sprintf("%s=%s", k, os.Getenv(k)))
 	}
 
-	cmd.Env = append(cmd.Env, env...)
+	cmd.Env = env
 
 	stdout, err = cmd.StdoutPipe()
 	if err != nil {
