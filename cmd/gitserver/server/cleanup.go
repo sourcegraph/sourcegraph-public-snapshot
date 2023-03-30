@@ -594,24 +594,6 @@ func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]i
 	logger.Debug("directory sizes calculated during file system walk",
 		log.Int("repoToSize", reposNumber))
 
-	// repos number is limited in order not to overwhelm the database with massive batch updates
-	// of every single row of `gitserver_repos` table. This will lead to eventual consistency of
-	// repo sizes in the database, but this is totally acceptable.
-	if reposNumber > 10000 {
-		reposNumber = 10000
-	}
-
-	reposToUpdate := make(map[api.RepoName]int64, reposNumber)
-	i := 0
-	for repoName, size := range repoToSize {
-		reposToUpdate[repoName] = size
-
-		i += 1
-		if i == reposNumber {
-			break
-		}
-	}
-
 	// updating repos
 	updatedRepos, err := s.DB.GitserverRepos().UpdateRepoSizes(ctx, s.Hostname, repoToSize)
 	if err != nil {
