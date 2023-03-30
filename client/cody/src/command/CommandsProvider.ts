@@ -1,6 +1,9 @@
 import * as openai from 'openai'
 import * as vscode from 'vscode'
 
+import { EventLogger } from '@sourcegraph/cody-shared/src/telemetry'
+import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+
 import { ChatViewProvider } from '../chat/ChatViewProvider'
 import { CodyCompletionItemProvider } from '../completions'
 import { CompletionsDocumentProvider } from '../completions/docprovider'
@@ -8,7 +11,7 @@ import { getConfiguration } from '../configuration'
 import { ExtensionApi } from '../extension-api'
 
 import { LocalStorage } from './LocalStorageProvider'
-import { CODY_ACCESS_TOKEN_SECRET, InMemorySecretStorage, SecretStorage, VSCodeSecretStorage } from './secret-storage'
+import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, InMemorySecretStorage, SecretStorage, VSCodeSecretStorage } from './secret-storage'
 
 function getSecretStorage(context: vscode.ExtensionContext): SecretStorage {
     return process.env.CODY_TESTING === 'true' ? new InMemorySecretStorage() : new VSCodeSecretStorage(context.secrets)
@@ -36,6 +39,10 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
     const localStorage = new LocalStorage(context.globalState)
     const config = getConfiguration(vscode.workspace.getConfiguration())
 
+    const accessToken = await getAccessToken(secretStorage)
+    const gqlAPIClient = new SourcegraphGraphQLAPIClient(sanitizeServerEndpoint(config.serverEndpoint), accessToken)
+    const eventLogger = new EventLogger(localStorage, gqlAPIClient)
+
     // Create chat webview
     const chatProvider = await ChatViewProvider.create(
         context.extensionPath,
@@ -60,6 +67,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         vscode.commands.registerCommand('cody.toggle-enabled', async () => {
             const config = vscode.workspace.getConfiguration()
             await config.update('cody.enabled', !config.get('cody.enabled'), vscode.ConfigurationTarget.Global)
+            eventLogger.log('CodyVSCodeExtension:codyToggleEnabled:clicked')
         }),
         // Access token
         vscode.commands.registerCommand('cody.set-access-token', async (args: any[]) => {
