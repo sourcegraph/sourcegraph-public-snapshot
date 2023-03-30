@@ -5,8 +5,11 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
+	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -21,12 +24,12 @@ func Upgrade(
 	fromFlag := &cli.StringFlag{
 		Name:     "from",
 		Usage:    "The source (current) instance version. Must be of the form `{Major}.{Minor}` or `v{Major}.{Minor}`.",
-		Required: true,
+		Required: false,
 	}
 	toFlag := &cli.StringFlag{
 		Name:     "to",
 		Usage:    "The target instance version. Must be of the form `{Major}.{Minor}` or `v{Major}.{Minor}`.",
-		Required: true,
+		Required: false,
 	}
 	unprivilegedOnlyFlag := &cli.BoolFlag{
 		Name:  "unprivileged-only",
@@ -65,13 +68,45 @@ func Upgrade(
 	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
-		from, ok := oobmigration.NewVersionFromString(fromFlag.Get(cmd))
-		if !ok {
-			return errors.New("bad format for -from")
+		runner, err := runnerFactory(schemas.SchemaNames, schemas.Schemas)
+		if err != nil {
+			return errors.Wrap(err, "new runner")
 		}
-		to, ok := oobmigration.NewVersionFromString(toFlag.Get(cmd))
+
+		// connect to db and get upgrade readiness state
+		db, err := extractDatabase(ctx, runner)
+		if err != nil {
+			return errors.Wrap(err, "new db handle")
+		}
+		store := upgradestore.New(db)
+		currentVersion, autoUpgrade, err := store.GetAutoUpgrade(ctx)
+		if err != nil {
+			return errors.Wrap(err, "checking auto upgrade")
+		}
+
+		// determine versioning logic for upgrade based on auto_upgrade readiness and existence of to and from flags
+		var fromStr, toStr string
+		if fromFlag.Get(cmd) != "" || toFlag.Get(cmd) != "" {
+			fromStr = fromFlag.Get(cmd)
+			toStr = toFlag.Get(cmd)
+		} else {
+			if autoUpgrade {
+				fromStr = currentVersion
+				toStr = version.Version()
+			}
+		}
+		// check for null case
+		if fromStr == "" || toStr == "" {
+			return errors.New("the -from and -to flags are required when auto upgrade is not enabled")
+		}
+
+		from, ok := oobmigration.NewVersionFromString(fromStr)
 		if !ok {
-			return errors.New("bad format for -to")
+			return errors.Newf("bad format for -from = %s", fromStr)
+		}
+		to, ok := oobmigration.NewVersionFromString(toStr)
+		if !ok {
+			return errors.Newf("bad format for -to = %s", toStr)
 		}
 		if oobmigration.CompareVersions(from, to) != oobmigration.VersionOrderBefore {
 			return errors.Newf("invalid range (from=%s >= to=%s)", from, to)

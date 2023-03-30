@@ -141,3 +141,27 @@ func isMissingRelation(err error) bool {
 
 	return pgErr.Code == "42P01"
 }
+
+// GetAutoUpgrade gets the current value of versions.version and versions.auto_upgrade in the frontend database.
+func (s *store) GetAutoUpgrade(ctx context.Context) (version string, enabled bool, err error) {
+	if err = s.db.QueryRow(ctx, sqlf.Sprintf(getAutoUpgradeQuery)).Scan(&version, &enabled); err != nil {
+		return "", false, errors.Wrap(err, "failed to get frontend version and auto_upgrade state")
+	}
+	return version, enabled, nil
+}
+
+const getAutoUpgradeQuery = `
+SELECT version, auto_upgrade FROM versions WHERE service = 'frontend'
+`
+
+// SetAutoUpgrade sets the value of versions.auto_upgrade in the frontend database.
+func (s *store) SetAutoUpgrade(ctx context.Context, enable bool) error {
+	if err := s.db.Exec(ctx, sqlf.Sprintf(setAutoUpgradeQuery, enable)); err != nil {
+		return errors.Wrap(err, "failed to set auto_upgrade")
+	}
+	return nil
+}
+
+const setAutoUpgradeQuery = `
+UPDATE versions SET auto_upgrade = %v
+`

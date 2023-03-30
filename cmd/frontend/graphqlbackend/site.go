@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 
@@ -459,4 +460,28 @@ func (r *upgradeReadinessResolver) RequiredOutOfBandMigrations(ctx context.Conte
 		}
 	}
 	return requiredMigrations, nil
+}
+
+// Return the enablement of auto upgrades
+func (r *siteResolver) AutoUpgradeEnabled(ctx context.Context) (bool, error) {
+	// 🚨 SECURITY: Only site admins can set auto_upgrade readiness
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return false, err
+	}
+	_, enabled, err := upgradestore.NewWith(r.db.Handle()).GetAutoUpgrade(ctx)
+	if err != nil {
+		return false, err
+	}
+	return enabled, nil
+}
+
+func (r *schemaResolver) SetAutoUpgrade(ctx context.Context, args *struct {
+	Enable bool
+}) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins can set auto_upgrade readiness
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return &EmptyResponse{}, err
+	}
+	upgradestore.NewWith(r.db.Handle()).SetAutoUpgrade(ctx, args.Enable)
+	return &EmptyResponse{}, nil
 }
