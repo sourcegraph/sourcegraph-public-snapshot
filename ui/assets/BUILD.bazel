@@ -12,9 +12,3 @@ go_library(
     visibility = ["//visibility:public"],
     deps = ["//lib/errors"],
 )
-
-filegroup(
-    name = "img",
-    srcs = glob(["img/**/*"]),
-    visibility = ["//visibility:public"],
-)

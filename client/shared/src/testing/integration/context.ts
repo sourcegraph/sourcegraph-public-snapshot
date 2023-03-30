@@ -9,6 +9,7 @@ import * as mime from 'mime-types'
 import { Test } from 'mocha'
 import { readFile, mkdir } from 'mz/fs'
 import pTimeout from 'p-timeout'
+import * as prettier from 'prettier'
 import { Subject, Subscription, throwError } from 'rxjs'
 import { first, timeoutWith } from 'rxjs/operators'
 
@@ -227,14 +228,18 @@ export const createSharedIntegrationTestContext = async <
         response.setHeader('Access-Control-Allow-Origin', '*')
 
         const operationName = new URL(request.absoluteUrl).search.slice(1) as TGraphQlOperationNames
-        const { variables } = request.jsonBody() as {
+        const { variables, query } = request.jsonBody() as {
             query: string
             variables: Parameters<TGraphQlOperations[TGraphQlOperationNames]>[0]
         }
         graphQlRequests.next({ operationName, variables })
 
         const missingOverrideError = (): Error => {
-            const error = new Error(`GraphQL query "${operationName}" has no configured mock response.`)
+            const formattedQuery = prettier.format(query, { parser: 'graphql' }).trim()
+            const formattedVariables = util.inspect(variables)
+            const error = new Error(
+                `GraphQL query "${operationName}" has no configured mock response. Make sure the call to overrideGraphQL() includes a result for the "${operationName}" query:\n${formattedVariables} ⤵️\n${formattedQuery}`
+            )
             return error
         }
         if (!graphQlOverrides || !keyExistsIn(operationName, graphQlOverrides)) {
