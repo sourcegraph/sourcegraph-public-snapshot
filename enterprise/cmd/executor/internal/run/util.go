@@ -3,8 +3,6 @@ package run
 import (
 	"context"
 	"fmt"
-	"net/url"
-	"os/exec"
 	"runtime"
 	"strings"
 	"time"

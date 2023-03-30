@@ -8,8 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/run"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
-	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -38,7 +36,7 @@ func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready
 		otherConfig.QueueName = "batches"
 	}
 	go func() {
-		if err := run.StandaloneRunRun(ctx, observationCtx.Logger, &otherConfig, false); err != nil {
+		if err := run.StandaloneRun(ctx, runner, observationCtx.Logger, &otherConfig, false); err != nil {
 			observationCtx.Logger.Fatal("executor for other queue failed", log.Error(err))
 		}
 	}()
