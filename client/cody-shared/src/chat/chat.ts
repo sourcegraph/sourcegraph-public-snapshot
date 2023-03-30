@@ -4,7 +4,7 @@ import { SourcegraphCompletionsClient, CompletionParameters } from '../sourcegra
 import { CompletionCallbacks } from '../sourcegraph-api/completions/types'
 
 const DEFAULT_CHAT_COMPLETION_PARAMETERS: Omit<CompletionParameters, 'messages'> = {
-    temperature: 0.4,
+    temperature: 0.2,
     maxTokensToSample: SOLUTION_TOKEN_LENGTH,
     topK: -1,
     topP: -1,
