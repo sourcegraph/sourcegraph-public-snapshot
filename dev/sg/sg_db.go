@@ -60,7 +60,7 @@ sg db reset-pg -db=all
 sg db reset-redis
 
 # Create a site-admin user whose email and password are foo@sourcegraph.com and sourcegraph.
-sg db add-user -name=foo
+sg db add-user -username=foo
 `,
 		Category: CategoryDev,
 		Subcommands: []*cli.Command{
