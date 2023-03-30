@@ -133,10 +133,10 @@ ins AS (
 -- Mark the user_permissions rows as migrated
 UPDATE user_permissions
 SET migrated = TRUE
-FROM s
-WHERE user_permissions.user_id = s.user_id
-	AND user_permissions.permission = s.permission
-	AND user_permissions.object_type = s.object_type
+FROM candidates AS c
+WHERE user_permissions.user_id = c.user_id
+	AND user_permissions.permission = c.permission
+	AND user_permissions.object_type = c.object_type
 `
 
 func (m *unifiedPermissionsMigrator) Down(_ context.Context) error {
