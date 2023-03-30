@@ -11,18 +11,14 @@ const SURROUNDING_LINES = 50
 
 export class VSCodeEditor implements Editor {
     public getWorkspaceRootPath(): string | null {
-        const uri = vscode.window.activeTextEditor?.document.uri
+        const uri = vscode.window.activeTextEditor?.document?.uri
         if (uri) {
             const wsFolder = vscode.workspace.getWorkspaceFolder(uri)
             if (wsFolder) {
                 return wsFolder.uri.fsPath
             }
         }
-
-        if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length >= 1) {
-            return vscode.workspace.workspaceFolders[0].uri.fsPath
-        }
-        return null
+        return vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath ?? null
     }
 
     public getActiveTextEditor(): ActiveTextEditor | null {
