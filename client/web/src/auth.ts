@@ -53,3 +53,5 @@ export function refreshAuthenticatedUser(): Observable<never> {
 export const authRequired = authenticatedUser.pipe(
     map(user => user === null && typeof window !== 'undefined' && !window.context?.sourcegraphDotComMode)
 )
+
+// Trigger Chromatic tests
