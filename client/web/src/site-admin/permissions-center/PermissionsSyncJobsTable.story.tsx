@@ -251,5 +251,6 @@ function createSyncJobMock(
         noPerms: false,
         invalidateCaches: false,
         codeHostStates: [],
+        partialSuccess: false,
     }
 }
