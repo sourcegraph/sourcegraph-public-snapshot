@@ -27,6 +27,10 @@ interface EmbeddingsSearchResponse {
     embeddingsSearch: EmbeddingsSearchResults
 }
 
+interface LogEventResponse {
+    logEvent: boolean
+}
+
 export interface EmbeddingsSearchResult {
     fileName: string
     startLine: number
@@ -98,7 +102,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async fetch(variables: Record<string, any>): Promise<any> {
-        return this.fetchSourcegraphAPI(LOG_EVENT_MUTATION, variables)
+        return this.fetchSourcegraphAPI<APIResponse<LogEventMutation>>(LOG_EVENT_MUTATION, variables)
     }
 
     private async fetchSourcegraphAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
