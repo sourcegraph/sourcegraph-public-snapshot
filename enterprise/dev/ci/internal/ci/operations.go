@@ -451,6 +451,7 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		stepOpts := []bk.StepOpt{
 			withPnpmCache(),
+			bk.Skip("disabled, ongoing issue on their side"),
 			bk.AutomaticRetry(3),
 			bk.Cmd("./dev/ci/pnpm-install-with-retry.sh"),
 			bk.Cmd("pnpm gulp generate"),
