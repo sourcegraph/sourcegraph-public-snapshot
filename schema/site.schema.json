@@ -2067,6 +2067,13 @@
           "description": "The url to the external embedding API service.",
           "type": "string",
           "format": "uri"
+        },
+        "excludedFilePathPatterns": {
+          "description": "A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
