@@ -35,3 +35,7 @@ versions=(
 for version in "${versions[@]}"; do
   ./generate.sh "${version}" "${outdir}"
 done
+
+# TODO
+
+# Alter this file to build all versions up to current migrator image version. And preference for drift check
