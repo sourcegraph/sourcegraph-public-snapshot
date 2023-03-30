@@ -214,3 +214,12 @@
     top: 0;
     right: 0;
 }
+
+.link-button {
+    background: none;
+    border: none;
+    color: var(--vscode-textLink-foreground);
+    cursor: pointer;
+    font-size: inherit;
+    text-decoration: underline;
+}

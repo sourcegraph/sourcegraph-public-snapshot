@@ -12,9 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
-const REPO_EMBEDDING_INDEX_CACHE_MAX_ENTRIES = 5
+var cacheSize = env.MustGetInt("EMBEDDINGS_REPO_INDEX_CACHE_SIZE", 5, "Number of repository embedding indexes to cache in memory.")
 
 type downloadRepoEmbeddingIndexFn func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error)
 
@@ -28,7 +29,7 @@ func getCachedRepoEmbeddingIndex(
 	repoEmbeddingJobsStore repo.RepoEmbeddingJobsStore,
 	downloadRepoEmbeddingIndex downloadRepoEmbeddingIndexFn,
 ) (getRepoEmbeddingIndexFn, error) {
-	cache, err := lru.New[embeddings.RepoEmbeddingIndexName, repoEmbeddingIndexCacheEntry](REPO_EMBEDDING_INDEX_CACHE_MAX_ENTRIES)
+	cache, err := lru.New[embeddings.RepoEmbeddingIndexName, repoEmbeddingIndexCacheEntry](cacheSize)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating repo embedding index cache")
 	}

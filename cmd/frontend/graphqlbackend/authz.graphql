@@ -352,7 +352,7 @@ type PermissionsInfo {
     The last updated time of permissions, the value is updated whenever there is a
     change to the database row (i.e. incremental update).
     """
-    updatedAt: DateTime!
+    updatedAt: DateTime
     """
     If true for a repo, it indicates access to the repo is allowed for all users.
     It will always be false for users.
