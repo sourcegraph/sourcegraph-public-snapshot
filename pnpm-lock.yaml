@@ -926,12 +926,8 @@ importers:
   client/cody-shared:
     specifiers:
       '@sourcegraph/common': workspace:*
-      '@sourcegraph/http-client': workspace:*
-      '@sourcegraph/shared': workspace:*
     dependencies:
       '@sourcegraph/common': link:../common
-      '@sourcegraph/http-client': link:../http-client
-      '@sourcegraph/shared': link:../shared
 
   client/common:
     specifiers:

@@ -27,9 +27,7 @@ interface EmbeddingsSearchResponse {
     embeddingsSearch: EmbeddingsSearchResults
 }
 
-interface LogEventResponse {
-    logEvent: boolean
-}
+interface LogEventResponse { }
 
 export interface EmbeddingsSearchResult {
     fileName: string
@@ -46,6 +44,8 @@ export interface EmbeddingsSearchResults {
 interface IsContextRequiredForChatQueryResponse {
     isContextRequiredForChatQuery: boolean
 }
+
+
 
 function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (data: T) => R): R | Error {
     if (isError(response)) {
@@ -81,6 +81,12 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
+    public async logEvent(event: { name: string; userCookieID: string; url: string; argument?: string | {}; publicArgument?: string | {} }): Promise<void | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(response =>
+            extractDataOrError(response, data => { })
+        )
+    }
+
     public async searchEmbeddings(
         repo: string,
         query: string,
@@ -99,10 +105,6 @@ export class SourcegraphGraphQLAPIClient {
         return this.fetchSourcegraphAPI<APIResponse<IsContextRequiredForChatQueryResponse>>(IS_CONTEXT_REQUIRED_QUERY, {
             query,
         }).then(response => extractDataOrError(response, data => data.isContextRequiredForChatQuery))
-    }
-
-    public async fetch(variables: Record<string, any>): Promise<any> {
-        return this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, variables)
     }
 
     private async fetchSourcegraphAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
