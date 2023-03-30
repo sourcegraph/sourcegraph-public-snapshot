@@ -235,7 +235,7 @@ type PermissionSyncJobStore interface {
 	CountUsersWithFailingSyncJob(ctx context.Context) (int32, error)
 	CountReposWithFailingSyncJob(ctx context.Context) (int32, error)
 	CancelQueuedJob(ctx context.Context, reason string, id int) error
-	SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, codeHostStatuses CodeHostStatusesSet) error
+	SaveSyncResult(ctx context.Context, id int, finishedSuccessfully bool, result *SetPermissionsResult, codeHostStatuses CodeHostStatusesSet) error
 }
 
 type permissionSyncJobStore struct {
@@ -436,17 +436,20 @@ type SetPermissionsResult struct {
 	Found   int
 }
 
-func (s *permissionSyncJobStore) SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, statuses CodeHostStatusesSet) error {
+func (s *permissionSyncJobStore) SaveSyncResult(ctx context.Context, id int, finishedSuccessfully bool, result *SetPermissionsResult, statuses CodeHostStatusesSet) error {
 	var added, removed, found int
+	partialSuccess := false
 	if result != nil {
 		added = result.Added
 		removed = result.Removed
 		found = result.Found
 	}
-	partialSuccess := false
-	_, success, failed := statuses.CountStatuses()
-	if success > 0 && failed > 0 {
-		partialSuccess = true
+	// If the job is successful, then we need to check for partial success.
+	if finishedSuccessfully {
+		_, success, failed := statuses.CountStatuses()
+		if success > 0 && failed > 0 {
+			partialSuccess = true
+		}
 	}
 	q := sqlf.Sprintf(`
 		UPDATE permission_sync_jobs
@@ -512,6 +515,7 @@ func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
 		conds = append(conds, sqlf.Sprintf("state = lower(%s)", PermissionsSyncJobStateCompleted))
 	} else if opts.State != "" {
 		conds = append(conds, sqlf.Sprintf("state = lower(%s)", opts.State))
+		conds = append(conds, sqlf.Sprintf("is_partial_success = FALSE"))
 	}
 	if opts.NullProcessAfter {
 		conds = append(conds, sqlf.Sprintf("process_after IS NULL"))
