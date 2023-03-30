@@ -55,7 +55,7 @@ jobs:
       - name: Move cody issues
         uses: actions/add-to-project@main
         with:
-          project-url: https://github.com/orgs/sourcegraph/projects/291
+          project-url: https://github.com/orgs/sourcegraph/projects/331
           github-token: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
           labeled: cody
           label-operator: OR
