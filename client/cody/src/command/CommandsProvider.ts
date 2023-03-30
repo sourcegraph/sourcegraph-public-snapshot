@@ -98,30 +98,30 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         // Commands
         vscode.commands.registerCommand('cody.recipe.explain-code', async () => {
             await eventLogger.log('CodyVSCodeExtension:askCodyExplainCode:clicked')
-            executeRecipe('explain-code-detailed')
+            await executeRecipe('explain-code-detailed')
         }),
         vscode.commands.registerCommand('cody.recipe.explain-code-high-level', async () => {
-            executeRecipe('explain-code-high-level')
+            await executeRecipe('explain-code-high-level')
             await eventLogger.log('CodyVSCodeExtension:codyExplainCodeHighLevel:clicked')
         }),
         vscode.commands.registerCommand('cody.recipe.generate-unit-test', async () => {
-            executeRecipe('generate-unit-test')
+            await executeRecipe('generate-unit-test')
             await eventLogger.log('CodyVSCodeExtension:codyGenerateUnitTest:clicked')
         }),
         vscode.commands.registerCommand('cody.recipe.generate-docstring', async () => {
-            executeRecipe('generate-docstring')
+            await executeRecipe('generate-docstring')
             await eventLogger.log('CodyVSCodeExtension:codyGenerateDocstring:clicked')
         }),
         vscode.commands.registerCommand('cody.recipe.translate-to-language', async () => {
-            executeRecipe('translate-to-language')
+            await executeRecipe('translate-to-language')
             await eventLogger.log('CodyVSCodeExtension:codyTranslateToLanguage:clicked')
         }),
         vscode.commands.registerCommand('cody.recipe.git-history', async () => {
-            executeRecipe('git-history')
+            await executeRecipe('git-history')
             await eventLogger.log('CodyVSCodeExtension:codyGitHistory:clicked')
         }),
         vscode.commands.registerCommand('cody.recipe.improve-variable-names', async () => {
-            executeRecipe('improve-variable-names')
+            await executeRecipe('improve-variable-names')
             await eventLogger.log('CodyVSCodeExtension:codyImproveVariableNames:clicked')
         })
     )
