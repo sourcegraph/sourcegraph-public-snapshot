@@ -31,6 +31,7 @@ interface SignInPageProps {
         | 'xhrHeaders'
         | 'resetPasswordEnabled'
         | 'experimentalFeatures'
+        | 'authAccessRequest'
     >
     isSourcegraphDotCom: boolean
 }
@@ -42,7 +43,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     const location = useLocation()
     const [error, setError] = useState<Error | null>(null)
     const [searchParams] = useSearchParams()
-    const isRequestAccessAllowed = checkRequestAccessAllowed(window.context)
+    const isRequestAccessAllowed = checkRequestAccessAllowed(props.context)
 
     if (authenticatedUser) {
         const returnTo = getReturnTo(location)
