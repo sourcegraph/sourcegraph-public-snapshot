@@ -518,9 +518,7 @@ export class Driver {
     }
 
     public async paste(value: string): Promise<void> {
-        await this.page.evaluate((value: string) => {
-            return navigator.clipboard.writeText(value)
-        }, value)
+        await this.page.evaluate((value: string) => navigator.clipboard.writeText(value), value)
         const modifier = os.platform() === 'darwin' ? Key.Meta : Key.Control
         await this.page.keyboard.down(modifier)
         await this.page.keyboard.press('v')
