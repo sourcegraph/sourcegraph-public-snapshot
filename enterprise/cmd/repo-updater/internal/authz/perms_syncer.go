@@ -768,9 +768,3 @@ func (t requestType) String() string {
 	}
 	return strconv.Itoa(int(t))
 }
-
-// higherPriorityThan returns true if the current request type has higher
-// priority than the other one.
-func (t requestType) higherPriorityThan(t2 requestType) bool {
-	return t > t2
-}
