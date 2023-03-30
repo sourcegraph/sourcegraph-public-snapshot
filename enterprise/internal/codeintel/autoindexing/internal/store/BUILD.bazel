@@ -8,11 +8,10 @@ go_library(
         "store.go",
         "store_configurations.go",
         "store_dependency_indexing_job.go",
-        "store_expiration.go",
         "store_indexes.go",
         "store_language_support.go",
         "store_repositories.go",
-        "store_sourced_commits.go",
+        "store_repositories2.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store",
     visibility = ["//enterprise:__subpackages__"],
@@ -32,7 +31,6 @@ go_library(
         "@com_github_opentracing_opentracing_go//log",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_sourcegraph_log//:log",
-        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
@@ -42,11 +40,10 @@ go_test(
     srcs = [
         "store_configurations_test.go",
         "store_dependency_indexing_job_test.go",
-        "store_expiration_test.go",
         "store_indexes_test.go",
         "store_language_support_test.go",
+        "store_repositories2_test.go",
         "store_repositories_test.go",
-        "store_sourced_commits_test.go",
     ],
     embed = [":store"],
     tags = [
@@ -61,10 +58,10 @@ go_test(
         "//internal/database/dbtest",
         "//internal/executor",
         "//internal/observation",
+        "//internal/timeutil",
         "@com_github_google_go_cmp//cmp",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_lib_pq//:pq",
-        "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_log//logtest",
     ],
 )
