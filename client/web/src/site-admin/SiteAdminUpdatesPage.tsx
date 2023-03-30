@@ -127,7 +127,7 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
         SITE_UPGRADE_READINESS,
         {}
     )
-    const [isExpanded, setIsExpanded] = useState(false)
+    const [isExpanded, setIsExpanded] = useState(true)
     return (
         <>
             {error && !loading && <ErrorAlert error={error} />}
