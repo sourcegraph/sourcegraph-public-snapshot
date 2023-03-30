@@ -22,13 +22,16 @@ type Client struct {
 	limiter *ratelimit.InstrumentedLimiter
 }
 
-func NewClient(urn string, registryURL string, httpfactory *httpcli.Factory) *Client {
-	uncached, _ := httpfactory.Doer(httpcli.NewCachedTransportOpt(httpcli.NoopCache{}, false))
+func NewClient(urn string, registryURL string, httpfactory *httpcli.Factory) (*Client, error) {
+	uncached, err := httpfactory.Doer(httpcli.NewCachedTransportOpt(httpcli.NoopCache{}, false))
+	if err != nil {
+		return nil, err
+	}
 	return &Client{
 		registryURL:    registryURL,
 		uncachedClient: uncached,
 		limiter:        ratelimit.DefaultRegistry.Get(urn),
-	}
+	}, nil
 }
 
 func (c *Client) GetPackageContents(ctx context.Context, dep reposource.VersionedPackage) (body io.ReadCloser, err error) {

@@ -77,13 +77,13 @@ No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps
 
 GitHub's fine-grained personal access tokens are not yet supported.
 
-## GitHub.com rate limits
+## Rate limits
 
-You should always include a token in a configuration for a GitHub.com URL to avoid being denied service by GitHub's [unauthenticated rate limits](https://developer.github.com/v3/#rate-limiting). If you don't want to automatically synchronize repositories from the account associated with your personal access token, you can create a token without a [`repo` scope](https://developer.github.com/apps/building-oauth-apps/scopes-for-oauth-apps/#available-scopes) for the purposes of bypassing rate limit restrictions only.
+Always include a token in a configuration for a GitHub.com URL to avoid being denied service by GitHub's [unauthenticated rate limits](https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limiting). If you don't want to automatically synchronize repositories from the account associated with your personal access token, you can create a token without a [`repo` scope](https://developer.github.com/apps/building-oauth-apps/scopes-for-oauth-apps/#available-scopes) for the purposes of bypassing rate limit restrictions only.
 
-If Sourcegraph hits a rate limit imposed by GitHub.com, Sourcegraph will wait the appropriate amount of time specified by GitHub.com before retrying the request. This can be several minutes in extreme cases.
+When Sourcegraph hits a rate limit imposed by GitHub, Sourcegraph waits the appropriate amount of time specified by GitHub before retrying the request. This can be several minutes in extreme cases.
 
-## GitHub Enterprise Server rate limits
+### GitHub Enterprise Server rate limits
 
 Rate limiting may not be enabled by default. To check and verify the current rate limit settings, you may make a request to the `/rate_limit` endpoint like this:
 
@@ -97,14 +97,7 @@ $ curl -s https://<github-enterprise-url>/api/v3/rate_limit -H "Authorization: B
 
 ### Internal rate limits
 
-Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to GitHub. 
-
-If enabled, the default rate is set at 5000 per hour which can be configured via the `requestsPerHour` field (see below):
-
-- For Sourcegraph <=3.38, if rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
-- For Sourcegraph >=3.39, rate limiting should be enabled and configured for each individual code host connection.
-
-**NOTE** Internal rate limiting is only currently applied when synchronising changesets in [batch changes](../../batch_changes/index.md), repository permissions and repository metadata from code hosts.
+See [Internal rate limits](./rate_limits.md#internal-rate-limits).
 
 ## Repository permissions
 

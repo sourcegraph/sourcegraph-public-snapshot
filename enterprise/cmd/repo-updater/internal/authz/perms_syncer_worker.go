@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -36,11 +37,6 @@ func MakePermsSyncerWorker(observationCtx *observation.Context, syncer permsSync
 		syncType:  syncType,
 		jobsStore: jobsStore,
 	}
-}
-
-type permsSyncer interface {
-	syncRepoPerms(context.Context, api.RepoID, bool, authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error)
-	syncUserPerms(context.Context, int32, bool, authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error)
 }
 
 type permsSyncerWorker struct {
@@ -99,19 +95,9 @@ func (h *permsSyncerWorker) handlePermsSync(ctx context.Context, reqType request
 
 	// Adding an extra check in case of all providers errored out, but sync has been
 	// completed successfully. This can happen e.g. if we only got HTTP401 responses.
-	//
-	// Initializing `allProvidersFailedToSync` to `false` in case of receiving 0
-	// states and `true` otherwise. We will clear this flag as soon as we come across
-	// one non-errored state.
 	if err == nil {
-		allProvidersFailedToSync := len(providerStates) > 0
-		for _, state := range providerStates {
-			if state.Status != database.CodeHostStatusError {
-				allProvidersFailedToSync = false
-				break
-			}
-		}
-		if allProvidersFailedToSync {
+		total, _, failed := providerStates.CountStatuses()
+		if failed == total {
 			err = errors.New("All providers failed to sync permissions.")
 		}
 	}
@@ -120,15 +106,13 @@ func (h *permsSyncerWorker) handlePermsSync(ctx context.Context, reqType request
 		h.logger.Error("failed to sync permissions", providerStates.SummaryField(), log.Error(err))
 	} else {
 		h.logger.Debug("succeeded in syncing permissions", providerStates.SummaryField())
+	}
 
-		// NOTE(naman): here we are saving permissions added, removed and found results
-		// as well as the code host sync status to the job record.
-		if result != nil {
-			err = h.jobsStore.SaveSyncResult(ctx, recordID, result, providerStates)
-			if err != nil {
-				h.logger.Error(fmt.Sprintf("failed to save permissions sync job(%d) results", recordID), log.Error(err))
-			}
-		}
+	// NOTE(naman): here we are saving permissions added, removed and found results
+	// as well as the code host sync status to the job record.
+	if saveErr := h.jobsStore.SaveSyncResult(ctx, recordID, err == nil, result, providerStates); saveErr != nil {
+		err = errors.Append(err, saveErr)
+		h.logger.Error(fmt.Sprintf("failed to save permissions sync job(%d) results", recordID), log.Error(saveErr))
 	}
 
 	return err
@@ -180,4 +164,12 @@ func MakeResetter(observationCtx *observation.Context, workerStore dbworkerstore
 		Interval: time.Second * 30, // Check for orphaned jobs every 30 seconds
 		Metrics:  dbworker.NewResetterMetrics(observationCtx, "permissions_sync_job_worker"),
 	})
+}
+
+func syncUsersMaxConcurrency() int {
+	n := conf.Get().PermissionsSyncUsersMaxConcurrency
+	if n <= 0 {
+		return 1
+	}
+	return n
 }

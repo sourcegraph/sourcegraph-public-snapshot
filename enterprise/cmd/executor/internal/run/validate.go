@@ -1,7 +1,9 @@
 package run
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/sourcegraph/log"
 	"github.com/urfave/cli/v2"
@@ -47,6 +49,11 @@ func Validate(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, con
 		}
 	}
 
+	// Validate frontend access token returns status 200.
+	if err := validateAuthorizationToken(cliCtx.Context, copts.BaseClientOptions); err != nil {
+		return err
+	}
+
 	if conf.UseFirecracker {
 		// Validate ignite is installed.
 		if err := util.ValidateIgniteInstalled(cliCtx.Context, runner); err != nil {
@@ -62,6 +69,32 @@ func Validate(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, con
 	}
 
 	fmt.Print("All checks passed!\n")
+
+	return nil
+}
+
+var authorizationFailedErr = errors.New("failed to authorize with frontend, is executors.accessToken set correctly in the site-config?")
+
+func validateAuthorizationToken(ctx context.Context, options apiclient.BaseClientOptions) error {
+	options.EndpointOptions.PathPrefix = ""
+	client, err := apiclient.NewBaseClient(options)
+	if err != nil {
+		return err
+	}
+
+	req, err := client.NewJSONRequest(http.MethodGet, ".executors/test/auth", nil)
+	if err != nil {
+		return err
+	}
+
+	if err = client.DoAndDrop(ctx, req); err != nil {
+		var unexpectedStatusCodeError *apiclient.UnexpectedStatusCodeErr
+		if errors.As(err, &unexpectedStatusCodeError) && (unexpectedStatusCodeError.StatusCode == http.StatusUnauthorized) {
+			return authorizationFailedErr
+		} else {
+			return errors.Wrap(err, "failed to validate authorization token")
+		}
+	}
 
 	return nil
 }

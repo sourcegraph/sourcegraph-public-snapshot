@@ -22,19 +22,13 @@
 
 Sourcegraph App is a lightweight single-binary version of Sourcegraph for your local machine.
 
-It runs alongside your IDE, to provide a better way to understand, browse, and search both the local you're working on as well as remote code on GitHub, GitLab, etc. - bringing Sourcegraph's powerful code search and IDE navigation straight to your laptop.
+It runs alongside your IDE, to provide a better way to understand, browse, and search both the local you're working on as well as remote code on GitHub, GitLab, etc. - bringing Sourcegraph's powerful code search and IDE navigation straight to your laptop. [Learn more](https://about.sourcegraph.com/app)
 
 <div class="socials">
   <a href="https://discord.com/invite/s2qDtYGnAE"><img alt="Discord" src="discord.svg"></img></a>
   <a href="https://twitter.com/sourcegraph"><img alt="Twitter" src="twitter.svg"></img></a>
   <a href="https://github.com/sourcegraph/app"><img alt="GitHub" src="github.svg"></img></a>
 </div>
-
-## Pre-release
-
-This is a pre-release / early access version of what will be presented at our Starship event on Mar 23rd. We're still improving things, so [let us know if you encounter any issues](https://github.com/sourcegraph/app/issues/new).
-
-For news and updates, be sure to [follow us on Twitter](https://twitter.com/sourcegraph) and [join our Discord](https://discord.com/invite/s2qDtYGnAE).
 
 ## Installation
 
@@ -46,7 +40,7 @@ Ensure you have `git` installed / on your path, then install.
 brew install sourcegraph/app/sourcegraph
 ```
 
-**Linux:** via <a data-download-name="app-download-linux-deb" href="https://storage.googleapis.com/sourcegraph-app-releases/2023.03.23+205301.ca3646/sourcegraph_2023.03.23+205301.ca3646_linux_amd64.deb">deb pkg</a> installer:
+**Linux:** via <a data-download-name="app-download-linux-deb" href="https://storage.googleapis.com/sourcegraph-app-releases/2023.03.23+209542.7216ba/sourcegraph_2023.03.23+209542.7216ba_linux_amd64.deb">deb pkg</a> installer:
 
 ```sh
 dpkg -i <file>.deb
@@ -54,8 +48,8 @@ dpkg -i <file>.deb
 
 **Single-binary zip download:**
 
-- <a data-download-name="app-download-mac-zip" href="https://storage.googleapis.com/sourcegraph-app-releases/2023.03.23+205301.ca3646/sourcegraph_2023.03.23+205301.ca3646_darwin_all.zip">macOS (universal)</a>
-- <a data-download-name="app-download-linux-zip" href="https://storage.googleapis.com/sourcegraph-app-releases/2023.03.23+205301.ca3646/sourcegraph_2023.03.23+205301.ca3646_linux_amd64.zip" >linux (x64)</a>
+- <a data-download-name="app-download-mac-zip" href="https://storage.googleapis.com/sourcegraph-app-releases/2023.03.23+209542.7216ba/sourcegraph_2023.03.23+209542.7216ba_darwin_all.zip">macOS (universal)</a>
+- <a data-download-name="app-download-linux-zip" href="https://storage.googleapis.com/sourcegraph-app-releases/2023.03.23+209542.7216ba/sourcegraph_2023.03.23+209542.7216ba_linux_amd64.zip" >linux (x64)</a>
 
 ## Usage
 
@@ -69,35 +63,74 @@ sourcegraph
 
 Your browser should automatically open to http://localhost:3080 - this is the address of the Sourcegraph app.
 
-## Optional - batch changes & precise code intel
+### (Optional) batch changes & precise code intel
 
 Batch changes and precise code intel require the following optional dependencies be installed and on your PATH:
 
-- The `src` CLI ([installation](https://github.com/sourcegraph/src-cli))
+- The `src` CLI ([installation](https://sourcegraph.com/github.com/sourcegraph/src-cli))
 - `docker`
 
-### Troubleshooting
+## Tips
 
-Since the Sourcegraph app is early-stages, you may run into issues. If you do, please [let us know](https://github.com/sourcegraph/app/issues/new)!
+### Get help & give feedback
 
-### Known issues
+Sourcegraph app is early-stages, if you run into any trouble or have ideas/feedback, we'd love to hear from you!
 
-#### macOS .zip download issues
-
-macOS binaries are not yet code-signed, so you may need to right click on it -> open. If you use Homebrew, this is not an issue.
+* [Join our community Discord](https://discord.com/invite/s2qDtYGnAE) for live help/discussion
+* [Create a GitHub issue](https://github.com/sourcegraph/app/issues/new)
 
 ### Upgrading
 
-**On macOS:** upgrade using Homebrew:
+#### macOS (app .dmg installer)
+
+Navigate to your Applications directory using Finder, and delete the old version of Sourcegraph. Then [download and run the latest version](about.sourcegraph.com/app).
+
+#### macOS (homebrew)
 
 ```
-brew update && brew upgrade sourcegraph/app/sourcegraph
+brew uninstall sourcegraph && brew update && brew install sourcegraph/app/sourcegraph
 ```
 
-**On Linux:** we do not have a PPA yet, so you will need to rerun the installation steps above to get the latest .deb version.
+#### Linux (deb)
 
-## Feedback
+We do not have a PPA yet; so you will need to rerun the installation steps above to get the latest .deb version.
 
-Please let us know what you think in our [Discord](https://discord.com/invite/s2qDtYGnAE) or tweet [@sourcegraph](https://twitter.com/sourcegraph)!
+### Uninstallation
 
-_Sourcegraph employees:_ join `#dogfood-app` in Slack!
+#### macOS (app .dmg installer)
+
+Navigate to your Applications directory using Finder, and delete the old version of Sourcegraph.
+
+#### macOS (homebrew)
+
+```sh
+brew uninstall sourcegraph
+```
+
+#### Linux
+
+You can simply delete the `sourcegraph` binary from your system.
+
+### Delete all Sourcegraph data
+
+**Warning:** This will delete _all_ your Sourcegraph data and you will not be able to recover it!
+
+### macOS
+
+```sh
+rm -rf $HOME/.sourcegraph-psql
+rm -rf $HOME/Library/Application\ Support/sourcegraph-sp
+rm -rf $HOME/Library/Caches/sourcegraph-sp
+```
+
+### Linux
+
+We respect `$XDG_CACHE_HOME` and `$XDG_CONFIG_HOME`. If not set, we fall back to `$HOME/.cache` and `$HOME/.config`. Thus, you can delete all Sourcegraph data using:
+
+```sh
+rm -rf $HOME/.sourcegraph-psql
+rm -rf $XDG_CACHE_HOME/sourcegraph-sp
+rm -rf $XDG_CONFIG_HOME/sourcegraph-sp
+rm -rf $HOME/.cache/sourcegraph-sp
+rm -rf $HOME/.config/sourcegraph-sp
+```

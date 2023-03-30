@@ -52,8 +52,8 @@ func InitGitserver() {
 	}
 
 	db := database.NewMockDB()
-	gr := database.NewMockGitserverRepoStore()
-	db.GitserverReposFunc.SetDefaultReturn(gr)
+	db.GitserverReposFunc.SetDefaultReturn(database.NewMockGitserverRepoStore())
+	db.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
 
 	s := server.Server{
 		Logger:         sglog.Scoped("server", "the gitserver service"),

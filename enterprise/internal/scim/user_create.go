@@ -143,7 +143,7 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 
 	// Attempt to send emails in the background.
 	goroutine.Go(func() {
-		_ = sendPasswordResetEmail(r.Context(), h.getLogger(), h.db, user, primaryEmail)
+		_ = sendPasswordResetEmail(h.getLogger(), h.db, user, primaryEmail)
 		_ = sendWelcomeEmail(primaryEmail, globals.ExternalURL().String(), h.getLogger())
 	})
 
@@ -230,7 +230,7 @@ func containsErrCannotCreateUserError(err error) (database.ErrCannotCreateUser, 
 }
 
 // sendPasswordResetEmail sends a password reset email to the given user.
-func sendPasswordResetEmail(ctx context.Context, logger log.Logger, db database.DB, user *types.User, primaryEmail string) bool {
+func sendPasswordResetEmail(logger log.Logger, db database.DB, user *types.User, primaryEmail string) bool {
 	// Email user to ask to set up a password
 	// This internally checks whether username/password login is enabled, whether we have an SMTP in place, etc.
 	if disableEmailInvites {
@@ -242,7 +242,7 @@ func sendPasswordResetEmail(ctx context.Context, logger log.Logger, db database.
 		}
 		return true
 	}
-	_, err := auth.ResetPasswordURL(ctx, db, logger, user, primaryEmail, true)
+	_, err := auth.ResetPasswordURL(context.Background(), db, logger, user, primaryEmail, true)
 	if err != nil {
 		logger.Error("error sending password reset email", log.Error(err))
 	}

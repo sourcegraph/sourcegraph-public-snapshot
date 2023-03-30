@@ -56,15 +56,21 @@ type Client struct {
 	limiter *ratelimit.InstrumentedLimiter
 }
 
-func NewClient(urn string, urls []string, httpfactory *httpcli.Factory) *Client {
-	uncached, _ := httpfactory.Doer(httpcli.NewCachedTransportOpt(httpcli.NoopCache{}, false))
-	cached, _ := httpfactory.Doer()
+func NewClient(urn string, urls []string, httpfactory *httpcli.Factory) (*Client, error) {
+	uncached, err := httpfactory.Doer(httpcli.NewCachedTransportOpt(httpcli.NoopCache{}, false))
+	if err != nil {
+		return nil, err
+	}
+	cached, err := httpfactory.Doer()
+	if err != nil {
+		return nil, err
+	}
 	return &Client{
 		urls:           urls,
 		uncachedClient: uncached,
 		cachedClient:   cached,
 		limiter:        ratelimit.DefaultRegistry.Get(urn),
-	}
+	}, nil
 }
 
 // Project returns the Files of the simple-API /<project>/ endpoint.

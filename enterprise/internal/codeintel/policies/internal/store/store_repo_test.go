@@ -25,12 +25,12 @@ func TestRepoIDsByGlobPatterns(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertRepo(t, db, 50, "Darth Vader")
-	insertRepo(t, db, 51, "Darth Venamis")
-	insertRepo(t, db, 52, "Darth Maul")
-	insertRepo(t, db, 53, "Anakin Skywalker")
-	insertRepo(t, db, 54, "Luke Skywalker")
-	insertRepo(t, db, 55, "7th Sky Corps")
+	insertRepo(t, db, 50, "Darth Vader", true)
+	insertRepo(t, db, 51, "Darth Venamis", true)
+	insertRepo(t, db, 52, "Darth Maul", true)
+	insertRepo(t, db, 53, "Anakin Skywalker", true)
+	insertRepo(t, db, 54, "Luke Skywalker", true)
+	insertRepo(t, db, 55, "7th Sky Corps", true)
 
 	testCases := []struct {
 		patterns              []string
@@ -74,9 +74,9 @@ func TestRepoIDsByGlobPatterns(t *testing.T) {
 	}
 
 	t.Run("enforce repository permissions", func(t *testing.T) {
-		// Enable permissions user mapping forces checking repository permissions
+		// Turning on explicit permissions forces checking repository permissions
 		// against permissions tables in the database, which should effectively block
-		// all access because permissions tables are empty.
+		// all access because permissions tables are empty and repos are private.
 		before := globals.PermissionsUserMapping()
 		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
 		defer globals.SetPermissionsUserMapping(before)
@@ -97,11 +97,11 @@ func TestUpdateReposMatchingPatterns(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertRepo(t, db, 50, "r1")
-	insertRepo(t, db, 51, "r2")
-	insertRepo(t, db, 52, "r3")
-	insertRepo(t, db, 53, "r4")
-	insertRepo(t, db, 54, "r5")
+	insertRepo(t, db, 50, "r1", false)
+	insertRepo(t, db, 51, "r2", false)
+	insertRepo(t, db, 52, "r3", false)
+	insertRepo(t, db, 53, "r4", false)
+	insertRepo(t, db, 54, "r5", false)
 
 	updates := []struct {
 		policyID int
@@ -171,7 +171,7 @@ func TestUpdateReposMatchingPatternsOverLimit(t *testing.T) {
 	}
 
 	for _, id := range ids {
-		insertRepo(t, db, id, fmt.Sprintf("r%03d", id))
+		insertRepo(t, db, id, fmt.Sprintf("r%03d", id), false)
 	}
 
 	if err := store.UpdateReposMatchingPatterns(ctx, []string{"r*"}, 100, &limit); err != nil {

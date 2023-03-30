@@ -17,17 +17,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// Refer to SearchQueryOutputPhase in GQL definitions.
 const (
-	// cf. SearchQueryOutputPhase in GQL definitions.
 	ParseTree = "PARSE_TREE"
 	JobTree   = "JOB_TREE"
+)
 
-	// cf. SearchQueryOutputFormat in GQL definitions.
+// Refer to SearchQueryOutputFormat in GQL definitions.
+const (
 	Json    = "JSON"
 	Sexp    = "SEXP"
 	Mermaid = "MERMAID"
+)
 
-	// cf. SearchQueryOutputVerbosity in GQL definitions.
+// Refer to SearchQueryOutputVerbosity in GQL definitions.
+const (
 	Minimal = "MINIMAL"
 	Basic   = "BASIC"
 	Maximal = "MAXIMAL"

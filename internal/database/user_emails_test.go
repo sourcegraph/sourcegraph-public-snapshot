@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -312,6 +313,8 @@ func TestUserEmails_Add_Remove(t *testing.T) {
 	} else if want := false; verified != want {
 		t.Fatalf("got verified %v, want %v", verified, want)
 	}
+	err = db.UserEmails().Add(ctx, user.ID, emailB, nil)
+	require.EqualError(t, err, "email address already registered for the user")
 
 	if emails, err := db.UserEmails().ListByUser(ctx, UserEmailsListOptions{
 		UserID: user.ID,
@@ -339,7 +342,7 @@ func TestUserEmails_Add_Remove(t *testing.T) {
 	if err := db.UserEmails().Remove(ctx, user.ID, emailA); err == nil {
 		t.Fatal("expected error, can't delete primary email")
 	}
-	// Remove non primary
+	// Remove non-primary
 	if err := db.UserEmails().Remove(ctx, user.ID, emailB); err != nil {
 		t.Fatal(err)
 	}

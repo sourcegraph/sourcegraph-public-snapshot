@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"path/filepath"
+	"net/url"
 	"runtime"
 	"strconv"
 	"strings"
@@ -15,7 +16,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -50,6 +50,7 @@ type Config struct {
 	DockerRegistryNodeExporterURL                  string
 	WorkerHostname                                 string
 	DockerRegistryMirrorURL                        string
+	DockerAddHostGateway           bool
 	DockerAuthConfig                               types.DockerAuthConfig
 	KubernetesConfigPath                           string
 	KubernetesNodeName                             string
@@ -71,15 +72,19 @@ type Config struct {
 	kubernetesNodeRequiredAffinityMatchExpressionsUnmarshalError error
 	kubernetesNodeRequiredAffinityMatchFields                    string
 	kubernetesNodeRequiredAffinityMatchFieldsUnmarshalError      error
+
+	defaultFrontendPassword string
+}
+
+func NewAppConfig() *Config {
+	return &Config{
+		defaultFrontendPassword: confdefaults.AppInMemoryExecutorPassword,
+	}
 }
 
 func (c *Config) Load() {
 	c.FrontendURL = c.Get("EXECUTOR_FRONTEND_URL", "", "The external URL of the sourcegraph instance.")
-	c.FrontendAuthorizationToken = c.Get("EXECUTOR_FRONTEND_PASSWORD", "", "The authorization token supplied to the frontend.")
-	if deploy.IsApp() {
-		// In App deployments, we respect the in-memory executor password only.
-		c.FrontendAuthorizationToken = confdefaults.AppInMemoryExecutorPassword
-	}
+	c.FrontendAuthorizationToken = c.Get("EXECUTOR_FRONTEND_PASSWORD", c.defaultFrontendPassword, "The authorization token supplied to the frontend.")
 	c.QueueName = c.Get("EXECUTOR_QUEUE_NAME", "", "The name of the queue to listen to.")
 	c.QueuePollInterval = c.GetInterval("EXECUTOR_QUEUE_POLL_INTERVAL", "1s", "Interval between dequeue requests.")
 	c.MaximumNumJobs = c.GetInt("EXECUTOR_MAXIMUM_NUM_JOBS", "1", "Number of virtual machines or containers that can be running at once.")
@@ -114,6 +119,7 @@ func (c *Config) Load() {
 	c.KubernetesResourceLimitMemory = c.Get("EXECUTOR_KUBERNETES_RESOURCE_LIMIT_MEMORY", "12Gi", "The maximum memory resource for Kubernetes Jobs.")
 	c.KubernetesResourceRequestCPU = c.GetOptional("EXECUTOR_KUBERNETES_RESOURCE_REQUEST_CPU", "The minimum CPU resource for Kubernetes Jobs.")
 	c.KubernetesResourceRequestMemory = c.Get("EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY", "12Gi", "The minimum memory resource for Kubernetes Jobs.")
+	c.DockerAddHostGateway = c.GetBool("EXECUTOR_DOCKER_ADD_HOST_GATEWAY", "false", "If true, host.docker.internal will be exposed to the docker commands run by the runtime. Warn: Can be insecure. Only use this if you understand what you're doing. This is mostly used for running against a Sourcegraph on the same host.")
 	c.dockerAuthConfigStr = c.GetOptional("EXECUTOR_DOCKER_AUTH_CONFIG", "The content of the docker config file including auth for services. If using firecracker, only static credentials are supported, not credential stores nor credential helpers.")
 	c.KubernetesJobRetryBackoffLimit = c.GetInt("KUBERNETES_JOB_RETRY_BACKOFF_LIMIT", "600", "The number of retries before giving up on a Kubernetes job.")
 	c.KubernetesJobRetryBackoffDuration = c.GetInterval("KUBERNETES_JOB_RETRY_BACKOFF_DURATION", "100ms", "The duration to wait before retrying a Kubernetes job.")
@@ -144,6 +150,17 @@ func getKubeConfigPath() string {
 func (c *Config) Validate() error {
 	if c.QueueName != "" && c.QueueName != "batches" && c.QueueName != "codeintel" {
 		c.AddError(errors.New("EXECUTOR_QUEUE_NAME must be set to 'batches' or 'codeintel'"))
+	}
+
+	u, err := url.Parse(c.FrontendURL)
+	if err != nil {
+		c.AddError(errors.Wrap(err, "failed to parse EXECUTOR_FRONTEND_URL"))
+	}
+	if u.Scheme == "" || u.Host == "" {
+		c.AddError(errors.New("EXECUTOR_FRONTEND_URL must be in the format scheme://host (and optionally :port)"))
+	}
+	if u.Hostname() == "host.docker.internal" && !c.DockerAddHostGateway {
+		c.AddError(errors.New("Making the executor talk to host.docker.internal but not allowing host gateway access using EXECUTOR_DOCKER_ADD_HOST_GATEWAY can cause connectivity problems"))
 	}
 
 	if c.dockerAuthConfigUnmarshalError != nil {

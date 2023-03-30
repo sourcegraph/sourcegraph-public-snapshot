@@ -73,9 +73,24 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 
 	embeddingsClient := embed.NewEmbeddingsClient()
 
-	repoEmbeddingIndex, err := embed.EmbedRepo(ctx, repo.Name, record.Revision, validFiles, embeddingsClient, splitOptions, func(fileName string) ([]byte, error) {
-		return h.gitserverClient.ReadFile(ctx, nil, repo.Name, record.Revision, fileName)
-	})
+	config := conf.Get().Embeddings
+	excludedGlobPatterns := embed.GetDefaultExcludedFilePathPatterns()
+	excludedGlobPatterns = append(excludedGlobPatterns, embed.CompileGlobPatterns(config.ExcludedFilePathPatterns)...)
+
+	repoEmbeddingIndex, err := embed.EmbedRepo(
+		ctx,
+		repo.Name,
+		record.Revision,
+		validFiles,
+		excludedGlobPatterns,
+		embeddingsClient,
+		splitOptions,
+		func(fileName string) ([]byte, error) {
+			return h.gitserverClient.ReadFile(ctx, nil, repo.Name, record.Revision, fileName)
+		},
+		getDocumentRanks,
+	)
+
 	if err != nil {
 		return err
 	}

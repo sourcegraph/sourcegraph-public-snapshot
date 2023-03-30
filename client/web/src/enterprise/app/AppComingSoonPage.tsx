@@ -4,6 +4,7 @@ import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
+import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
 import { Container, H1, H2, Icon, Link, PageHeader, ProductStatusBadge, Text } from '@sourcegraph/wildcard'
 
 import { Page } from '../../components/Page'
@@ -31,7 +32,7 @@ export const AppComingSoonPage: React.FC = () => {
             <Container className={classNames('mb-3', styles.container)}>
                 <section className={classNames('row', styles.section)}>
                     <div className={classNames('col-12 col-md-5', styles.text)}>
-                        <ProductStatusBadge status="private-beta" className="mb-4 text-uppercase" />
+                        <ProductStatusBadge status="experimental" className="mb-4 text-uppercase" />
                         <H2 as="h3" className="mb-4">
                             Cody
                         </H2>
@@ -47,7 +48,12 @@ export const AppComingSoonPage: React.FC = () => {
                             inside your editor. Cody knows about your local code and can learn from all the code and
                             documentation inside your organization.
                         </Text>
-                        <Link className={styles.link} to="/help/cody" target="_blank" rel="noopener">
+                        <Link
+                            className={styles.link}
+                            to={addSourcegraphAppOutboundUrlParameters('https://about.sourcegraph.com/cody', 'cody')}
+                            target="_blank"
+                            rel="noopener"
+                        >
                             Learn more <Icon role="img" aria-label="Open in a new tab" svgPath={mdiChevronRight} />
                         </Link>
                     </div>
@@ -81,7 +87,12 @@ export const AppComingSoonPage: React.FC = () => {
                             Escalate in one click. Don’t waste time emailing around to find who can help. Fast
                             collaboration, fast remediation.
                         </Text>
-                        <Link className={styles.link} to="/help/own" target="_blank" rel="noopener">
+                        <Link
+                            className={styles.link}
+                            to={addSourcegraphAppOutboundUrlParameters('https://about.sourcegraph.com/own', 'own')}
+                            target="_blank"
+                            rel="noopener"
+                        >
                             Learn more <Icon role="img" aria-label="Open in a new tab" svgPath={mdiChevronRight} />
                         </Link>
                     </div>

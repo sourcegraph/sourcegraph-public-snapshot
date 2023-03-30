@@ -43,6 +43,7 @@ const QUERY = gql`
         $first: Int
     ) {
         repository(name: $repoName) {
+            id
             commit(rev: $commitID, inputRevspec: $revision) {
                 tree(path: $filePath) {
                     isRoot

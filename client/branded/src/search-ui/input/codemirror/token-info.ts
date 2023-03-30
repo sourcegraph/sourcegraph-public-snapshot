@@ -24,29 +24,29 @@ const hoverStyle = [
             borderRadius: 'var(--border-radius)',
             boxShadow: 'var(--box-shadow)',
             maxWidth: '50vw',
-        },
 
-        '.cm-tooltip p:last-child': {
-            marginBottom: 0,
-        },
+            '& p:last-child': {
+                marginBottom: 0,
+            },
 
-        '.cm-tooltip code': {
-            backgroundColor: 'rgba(220, 220, 220, 0.4)',
-            borderRadius: 'var(--border-radius)',
-            padding: '0 0.4em',
+            '& code': {
+                backgroundColor: 'rgba(220, 220, 220, 0.4)',
+                borderRadius: 'var(--border-radius)',
+                padding: '0 0.4em',
+            },
         },
 
         '.cm-tooltip-section': {
             paddingBottom: '0.25rem',
             borderTopColor: 'var(--border-color)',
-        },
 
-        '.cm-tooltip-section:last-child': {
-            paddingTop: '0.25rem',
-            paddingBottom: 0,
-        },
-        '.cm-tooltip-section:last-child:first-child': {
-            padding: 0,
+            '&:last-child': {
+                paddingTop: '0.25rem',
+                paddingBottom: 0,
+            },
+            '&:last-child:first-child': {
+                padding: 0,
+            },
         },
     }),
     // Base style for custom classes

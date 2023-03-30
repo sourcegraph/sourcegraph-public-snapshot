@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -316,7 +317,11 @@ func parseCrateInformation(contents []byte) ([]shared.MinimalPackageRepoRef, err
 
 	instant := time.Now()
 
-	for _, line := range bytes.Split(contents, []byte("\n")) {
+	lr := byteutils.NewLineReader(contents)
+
+	for lr.Scan() {
+		line := lr.Line()
+
 		if len(line) == 0 {
 			continue
 		}

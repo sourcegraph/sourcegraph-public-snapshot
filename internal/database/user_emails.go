@@ -161,8 +161,17 @@ func (s *userEmailsStore) Get(ctx context.Context, userID int32, email string) (
 
 // Add adds new user email. When added, it is always unverified.
 func (s *userEmailsStore) Add(ctx context.Context, userID int32, email string, verificationCode *string) error {
-	_, err := s.Handle().ExecContext(ctx, "INSERT INTO user_emails(user_id, email, verification_code) VALUES($1, $2, $3)", userID, email, verificationCode)
-	return err
+	query := sqlf.Sprintf("INSERT INTO user_emails(user_id, email, verification_code) VALUES(%s, %s, %s) ON CONFLICT ON CONSTRAINT user_emails_no_duplicates_per_user DO NOTHING", userID, email, verificationCode)
+	result, err := s.ExecResult(ctx, query)
+	if err != nil {
+		return err
+	}
+	if rowsAffected, err := result.RowsAffected(); err != nil {
+		return errors.Wrap(err, "getting rows affected")
+	} else if rowsAffected == 0 {
+		return errors.New("email address already registered for the user")
+	}
+	return nil
 }
 
 // Remove removes a user email. It returns an error if there is no such email
@@ -224,12 +233,15 @@ func (s *userEmailsStore) SetVerified(ctx context.Context, userID int32, email s
 	if verified {
 		// Mark as verified.
 		res, err = s.Handle().ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=now() WHERE user_id=$1 AND email=$2", userID, email)
+		if err != nil {
+			return errors.New("could not mark email as verified")
+		}
 	} else {
 		// Mark as unverified.
 		res, err = s.Handle().ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=null WHERE user_id=$1 AND email=$2", userID, email)
-	}
-	if err != nil {
-		return err
+		if err != nil {
+			return errors.New("could not mark email as unverified")
+		}
 	}
 	nrows, err := res.RowsAffected()
 	if err != nil {
@@ -237,6 +249,12 @@ func (s *userEmailsStore) SetVerified(ctx context.Context, userID int32, email s
 	}
 	if nrows == 0 {
 		return errors.New("user email not found")
+	}
+
+	// If successfully marked as verified, delete all matching unverified emails.
+	if verified {
+		// At this point the email is already verified and the operation successful, so if deletion returns any errors we ignore it.
+		_, _ = s.ExecResult(ctx, sqlf.Sprintf("DELETE FROM user_emails WHERE verified_at IS NULL AND email=%s", email))
 	}
 	return nil
 }
