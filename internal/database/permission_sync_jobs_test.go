@@ -63,10 +63,12 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 	// Adding 1 failed and 1 partially successful job for repoID = 2.
 	require.NoError(t, store.CreateRepoSyncJob(ctx, repo2.ID, PermissionSyncJobOpts{Priority: LowPriorityPermissionsSync, Reason: ReasonGitHubRepoEvent}))
 	codeHostStates := getSampleCodeHostStates()
-	finishedTime := time.Now()
+	clock := timeutil.NewFakeClock(time.Now(), 0)
+	finishedTime := clock.Now()
 	finishSyncJobWithState(t, db, ctx, 4, finishedTime, PermissionsSyncJobStateFailed, codeHostStates[1:])
 	// Adding a reason and a message.
 	_, err = db.ExecContext(ctx, "UPDATE permission_sync_jobs SET cancellation_reason='i tried to cancel but it already failed', failure_message='imma failure' WHERE id=4")
+	require.NoError(t, err)
 
 	// Partial success (one of `codeHostStates` failed).
 	require.NoError(t, store.CreateRepoSyncJob(ctx, repo2.ID, PermissionSyncJobOpts{Priority: LowPriorityPermissionsSync, Reason: ReasonGitHubRepoEvent}))
