@@ -1,22 +1,5 @@
 import { ScanResult, scanSearchQuery } from './scanner'
-import { PatternKind, Token, KeywordKind, CharacterRange } from './token'
-
-export interface Pattern {
-    type: 'pattern'
-    kind: PatternKind
-    value: string
-    quoted: boolean
-    negated: boolean
-    range: CharacterRange
-}
-
-export interface Parameter {
-    type: 'parameter'
-    field: string
-    value: string
-    negated: boolean
-    range: CharacterRange
-}
+import { Token, KeywordKind, CharacterRange, Filter, Pattern } from './token'
 
 /**
  * A Sequence represent a sequence of nodes, i.e. 'a b c'. While such as
@@ -40,8 +23,9 @@ export enum OperatorKind {
  */
 export interface Operator {
     type: 'operator'
-    operands: Node[]
     kind: OperatorKind
+    left: Node | null
+    right: Node | null
     range: CharacterRange
     /**
      * Position in the query string including parenthesis if used
@@ -49,7 +33,7 @@ export interface Operator {
     groupRange?: CharacterRange
 }
 
-export type Node = Sequence | Operator | Parameter | Pattern
+export type Node = Sequence | Operator | Filter | Pattern
 
 interface ParseError {
     type: 'error'
@@ -58,7 +42,7 @@ interface ParseError {
 
 export interface ParseSuccess {
     type: 'success'
-    nodes: Node[]
+    node: Node
 }
 
 export type ParseResult = ParseError | ParseSuccess
@@ -86,44 +70,43 @@ const rangeFromNodes = (nodes: Node[]): CharacterRange =>
         { start: Infinity, end: -Infinity }
     )
 
-const createNodes = (nodes: Node[]): ParseSuccess => ({ type: 'success', nodes })
-
-const createPattern = (
-    value: string,
-    kind: PatternKind,
-    quoted: boolean,
-    negated: boolean,
-    range: CharacterRange
-): ParseSuccess => createNodes([{ type: 'pattern', kind, value, quoted, negated, range }])
+const createNode = (node: Node): ParseSuccess => ({ type: 'success', node })
 
 const createSequence = (nodes: Node[]): ParseSuccess => {
     switch (nodes.length) {
         case 0:
         case 1:
-            return createNodes(nodes)
+            return createNode(nodes[0])
         default:
-            return createNodes([{ type: 'sequence', nodes, range: rangeFromNodes(nodes) }])
+            return createNode({ type: 'sequence', nodes, range: rangeFromNodes(nodes) })
     }
 }
 
-const createParameter = (field: string, value: string, negated: boolean, range: CharacterRange): ParseSuccess =>
-    createNodes([{ type: 'parameter', field, value, negated, range }])
-
-const createOperator = (nodes: Node[], kind: OperatorKind, rangeStart?: number): ParseSuccess => {
+const createOperator = (
+    left: Node | null,
+    right: Node | null,
+    kind: OperatorKind,
+    rangeStart?: number
+): ParseSuccess => {
+    const nodes: Node[] = []
+    if (left) {
+        nodes.push(left)
+    }
+    if (right) {
+        nodes.push(right)
+    }
     const range = rangeFromNodes(nodes)
     if (rangeStart !== undefined) {
         range.start = rangeStart
     }
-    return createNodes([{ type: 'operator', operands: nodes, kind, range }])
+    return createNode({ type: 'operator', left, right, kind, range })
 }
 
 const tokenToLeafNode = (token: Token): ParseResult => {
-    if (token.type === 'pattern') {
-        return createPattern(token.value, token.kind, false, false, token.range)
-    }
-    if (token.type === 'filter') {
-        const filterValue = token.value ? token.value.value : ''
-        return createParameter(token.field.value, filterValue, token.negated, token.range)
+    switch (token.type) {
+        case 'pattern':
+        case 'filter':
+            return createNode(token)
     }
     return { type: 'error', expected: 'a convertable token to tree node' }
 }
@@ -143,8 +126,8 @@ export const parseParenthesis = (tokens: Token[]): State => {
     const closingParen = groupNodes.tokens[0]
     tokens = groupNodes.tokens.slice(1) // Consume )
 
-    if (groupNodes.result.nodes[0].type === 'operator') {
-        groupNodes.result.nodes[0].groupRange = {
+    if (groupNodes.result.node.type === 'operator') {
+        groupNodes.result.node.groupRange = {
             start: openingParen.range.start,
             end: closingParen.range.end,
         }
@@ -161,34 +144,34 @@ const parseNot = (tokens: Token[]): State => {
 
     tokens = tokens.slice(1) // consume NOT
 
-    let nodes: Node[] = []
-    const operand = tokens[0]
+    let operand: Node | null = null
+    const token = tokens[0]
 
-    if (!operand) {
-        return { result: createOperator(nodes, OperatorKind.Not), tokens }
+    if (!token) {
+        return { result: createOperator(null, operand, OperatorKind.Not), tokens }
     }
 
-    switch (operand.type) {
+    switch (token.type) {
         case 'openingParen': {
             const state = parseParenthesis(tokens)
             if (state.result.type === 'error') {
                 return { result: state.result, tokens }
             }
-            nodes = state.result.nodes
+            operand = state.result.node
             tokens = state.tokens
             break
         }
         default: {
-            const node = tokenToLeafNode(operand)
-            if (node.type === 'error') {
-                return { result: node, tokens }
+            const result = tokenToLeafNode(token)
+            if (result.type === 'error') {
+                return { result, tokens }
             }
-            nodes = node.nodes
+            operand = result.node
             tokens = tokens.slice(1)
         }
     }
 
-    return { result: createOperator(nodes, OperatorKind.Not, keyword.range.start), tokens }
+    return { result: createOperator(null, operand, OperatorKind.Not, keyword.range.start), tokens }
 }
 
 /**
@@ -209,7 +192,7 @@ const parseSequence = (tokens: Token[]): State => {
             if (state.result.type === 'error') {
                 return { result: state.result, tokens: state.tokens }
             }
-            nodes.push(...state.result.nodes)
+            nodes.push(state.result.node)
             tokens = state.tokens
             continue
         }
@@ -225,7 +208,7 @@ const parseSequence = (tokens: Token[]): State => {
                 if (state.result.type === 'error') {
                     return { result: state.result, tokens: state.tokens }
                 }
-                nodes.push(...state.result.nodes)
+                nodes.push(state.result.node)
                 tokens = state.tokens
                 continue
             }
@@ -235,7 +218,7 @@ const parseSequence = (tokens: Token[]): State => {
         if (node.type === 'error') {
             return { result: node, tokens }
         }
-        nodes.push(...node.nodes)
+        nodes.push(node.node)
         tokens = tokens.slice(1)
     }
     return { result: createSequence(nodes), tokens }
@@ -262,7 +245,7 @@ export const parseAnd = (tokens: Token[]): State => {
         return { result: right.result, tokens }
     }
     return {
-        result: createOperator(left.result.nodes.concat(...right.result.nodes), OperatorKind.And),
+        result: createOperator(left.result.node, right.result.node, OperatorKind.And),
         tokens: right.tokens,
     }
 }
@@ -288,7 +271,7 @@ export const parseOr = (tokens: Token[]): State => {
         return { result: right.result, tokens }
     }
     return {
-        result: createOperator(left.result.nodes.concat(...right.result.nodes), OperatorKind.Or),
+        result: createOperator(left.result.node, right.result.node, OperatorKind.Or),
         tokens: right.tokens,
     }
 }
