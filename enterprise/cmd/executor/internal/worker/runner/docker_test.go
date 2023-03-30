@@ -18,6 +18,7 @@ import (
 func TestDockerRunner_Setup(t *testing.T) {
 	tests := []struct {
 		name               string
+		options            command.DockerOptions
 		dockerAuthConfig   types.DockerAuthConfig
 		expectedDockerAuth string
 		expectedErr        error
@@ -26,21 +27,42 @@ func TestDockerRunner_Setup(t *testing.T) {
 			name: "Setup default",
 		},
 		{
-			name: "Setup docker auth",
-			dockerAuthConfig: types.DockerAuthConfig{
-				Auths: map[string]types.DockerAuthConfigAuth{
-					"index.docker.io": {
-						Auth: []byte("foobar"),
+			name: "Default docker auth",
+			options: command.DockerOptions{
+				DockerAuthConfig: types.DockerAuthConfig{
+					Auths: map[string]types.DockerAuthConfigAuth{
+						"index.docker.io": {
+							Auth: []byte("foobar"),
+						},
 					},
 				},
 			},
 			expectedDockerAuth: `{"auths":{"index.docker.io":{"auth":"Zm9vYmFy"}}}`,
 		},
+		{
+			name: "Specific docker auth",
+			options: command.DockerOptions{
+				DockerAuthConfig: types.DockerAuthConfig{
+					Auths: map[string]types.DockerAuthConfigAuth{
+						"index.docker.io": {
+							Auth: []byte("foobar"),
+						},
+					},
+				},
+			},
+			dockerAuthConfig: types.DockerAuthConfig{
+				Auths: map[string]types.DockerAuthConfigAuth{
+					"index.docker.io": {
+						Auth: []byte("fazbaz"),
+					},
+				},
+			},
+			expectedDockerAuth: `{"auths":{"index.docker.io":{"auth":"ZmF6YmF6"}}}`,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			options := command.DockerOptions{}
-			dockerRunner := runner.NewDockerRunner(nil, nil, "", options, test.dockerAuthConfig)
+			dockerRunner := runner.NewDockerRunner(nil, nil, "", test.options, test.dockerAuthConfig)
 
 			ctx := context.Background()
 			err := dockerRunner.Setup(ctx)
