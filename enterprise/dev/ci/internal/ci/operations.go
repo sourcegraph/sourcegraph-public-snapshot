@@ -455,6 +455,7 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 			bk.Cmd("./dev/ci/pnpm-install-with-retry.sh"),
 			bk.Cmd("pnpm gulp generate"),
 			bk.Env("MINIFY", "1"),
+			bk.Env("STORYBOOK_VERIFY_TIMEOUT", "180000"), // 3 * 60 * 1000
 		}
 
 		// Upload storybook to Chromatic
