@@ -68,7 +68,7 @@ func (s *store) InsertIndexes(ctx context.Context, indexes []types.Index) (_ []t
 
 	s.operations.indexesInserted.Add(float64(len(ids)))
 
-	return tx.GetIndexesByIDs(ctx, ids...)
+	return tx.getIndexesByIDs(ctx, ids...)
 }
 
 const insertIndexQuery = `
@@ -88,9 +88,9 @@ INSERT INTO lsif_indexes (
 RETURNING id
 `
 
-// GetIndexesByIDs returns an index for each of the given identifiers. Not all given ids will necessarily
+// getIndexesByIDs returns an index for each of the given identifiers. Not all given ids will necessarily
 // have a corresponding element in the returned list.
-func (s *store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Index, err error) {
+func (s *store) getIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Index, err error) {
 	ctx, _, endObservation := s.operations.getIndexesByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("ids", intsToString(ids)),
 	}})
