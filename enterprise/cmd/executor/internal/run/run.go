@@ -110,7 +110,7 @@ func StandaloneRun(ctx context.Context, runner util.CmdRunner, logger log.Logger
 			runner,
 		))
 
-		mustRegisterVMCountMetric(runner, logger, observationCtx, cfg.VMPrefix)
+		mustRegisterVMCountMetric(observationCtx, runner, logger, cfg.VMPrefix)
 	}
 
 	go func() {
@@ -130,7 +130,7 @@ func StandaloneRun(ctx context.Context, runner util.CmdRunner, logger log.Logger
 	return nil
 }
 
-func mustRegisterVMCountMetric(runner util.CmdRunner, logger log.Logger, observationCtx *observation.Context, prefix string) {
+func mustRegisterVMCountMetric(observationCtx *observation.Context, runner util.CmdRunner, logger log.Logger, prefix string) {
 	observationCtx.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "src_executor_vms_total",
 		Help: "Total number of running VMs.",
