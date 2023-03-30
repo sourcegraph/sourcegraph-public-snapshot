@@ -28,10 +28,6 @@ export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
     filter,
     onClick,
 }) => {
-    if (value === 'loading') {
-        return <LoadingSpinner className={classNames(styles.count, 'my-auto')} />
-    }
-
     const formattedNumber = useMemo(() => (typeof value === 'number' ? formatNumber(value) : value), [value])
     const unformattedNumber = `${value}`
     const location = useLocation()
@@ -105,9 +101,17 @@ export const ValueLegendList: React.FunctionComponent<ValueLegendListProps> = ({
         <div className={styles.legendLeftPanel}>
             {items
                 .filter(item => item.position !== 'right')
-                .map(item => (
-                    <ValueLegendItem key={item.description} {...item} />
-                ))}
+                .map((item, index) => {
+                    if (item.value === 'loading') {
+                        return (
+                            <div key={`loading-${index}`} className={classNames(styles.count, 'my-auto')}>
+                                <LoadingSpinner />
+                            </div>
+                        )
+                    } else {
+                        return <ValueLegendItem key={item.description} {...item} />
+                    }
+                })}
         </div>
         <div className={styles.legendRightPanel}>
             {items
