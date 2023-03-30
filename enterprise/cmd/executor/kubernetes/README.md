@@ -39,7 +39,7 @@ kubectl create secret generic executor-frontend-password --from-literal=EXECUTOR
 Run the following command to deploy the executor.
 
 ```bash
-kubectl apply -f executor-batches.yml
+kubectl apply -f .
 ```
 
 ## Verify
@@ -59,5 +59,5 @@ You can also check the **Site admin** Page to see the registered executor.
 Run the following command to delete the executor.
 
 ```bash
-kubectl delete -f executor-batches.yml
+kubectl delete -f .
 ```
