@@ -25,7 +25,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -595,28 +594,8 @@ func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]i
 	logger.Debug("directory sizes calculated during file system walk",
 		log.Int("repoToSize", reposNumber))
 
-	// repos number is limited in order not to overwhelm the database with massive batch updates
-	// of every single row of `gitserver_repos` table. This will lead to eventual consistency of
-	// repo sizes in the database, but this is totally acceptable.
-	if reposNumber > 10000 {
-		reposNumber = 10000
-	}
-
-	// getting repo IDs for given repo names
-	foundRepos, err := s.fetchRepos(ctx, repoToSize, reposNumber)
-	if err != nil {
-		return err
-	}
-
-	reposToUpdate := make(map[api.RepoID]int64)
-	for _, repo := range foundRepos {
-		if size, exists := repoToSize[repo.Name]; exists {
-			reposToUpdate[repo.ID] = size
-		}
-	}
-
 	// updating repos
-	updatedRepos, err := s.DB.GitserverRepos().UpdateRepoSizes(ctx, s.Hostname, reposToUpdate)
+	updatedRepos, err := s.DB.GitserverRepos().UpdateRepoSizes(ctx, s.Hostname, repoToSize)
 	if err != nil {
 		return err
 	}
@@ -625,30 +604,6 @@ func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]i
 	}
 
 	return nil
-}
-
-// fetchRepos returns up to count random repos found by names (i.e. keys) in repoToSize map
-func (s *Server) fetchRepos(ctx context.Context, repoToSize map[api.RepoName]int64, count int) ([]types.MinimalRepo, error) {
-	reposToUpdateNames := make([]string, count)
-	idx := 0
-	// random nature of map traversal yields a different subset of repos every time this function is called
-	for repoName := range repoToSize {
-		if idx >= count {
-			break
-		}
-		reposToUpdateNames[idx] = string(repoName)
-		idx++
-	}
-
-	foundRepos, err := s.DB.Repos().ListMinimalRepos(ctx, database.ReposListOptions{
-		Names:          reposToUpdateNames,
-		LimitOffset:    &database.LimitOffset{Limit: count},
-		IncludeBlocked: true,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return foundRepos, nil
 }
 
 // DiskSizer gets information about disk size and free space.
