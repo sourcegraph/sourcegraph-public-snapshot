@@ -16,7 +16,7 @@ export class EventLogger {
     private uid: string | null = null
     private version = packageVersion
     private localStorageService: StorageProvider
-    private newInstall: boolean = false
+    private newInstall = false
 
     constructor(storage: StorageProvider, gqlAPIClient: SourcegraphGraphQLAPIClient) {
         this.localStorageService = storage
@@ -35,7 +35,7 @@ export class EventLogger {
         }
         this.uid = anonymousUserID
         if (this.newInstall) {
-            this.log('CodyInstalled')
+            await this.log('CodyInstalled')
             this.newInstall = false
         }
     }
@@ -49,7 +49,7 @@ export class EventLogger {
      */
     public async log(eventName: string, eventProperties?: any, publicProperties?: any): Promise<void> {
         // Don't log events if the UID has not yet been generated.
-        if (this.uid == null) {
+        if (this.uid === null) {
             return
         }
         const argument = { ...eventProperties, version: this.version }
