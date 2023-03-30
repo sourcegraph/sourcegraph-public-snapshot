@@ -211,7 +211,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
     }
 }
 
-function getRootPath(): string | null {
+export function getRootPath(): string | null {
     const uri = vscode.window.activeTextEditor?.document.uri
     if (uri) {
         const wsFolder = vscode.workspace.getWorkspaceFolder(uri)

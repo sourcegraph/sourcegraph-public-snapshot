@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
 
 import {
-    mdiCog,
-    mdiClose,
-    mdiFileDocumentOutline,
     mdiBrain,
-    mdiDotsVertical,
+    mdiClose,
+    mdiCog,
     mdiDatabaseRefresh,
+    mdiDotsVertical,
+    mdiInformation,
     mdiRefresh,
     mdiSecurity,
 } from '@mdi/js'
@@ -19,20 +19,20 @@ import {
     Alert,
     Badge,
     Button,
-    Icon,
     H4,
-    LoadingSpinner,
+    Icon,
     LinkOrSpan,
-    PopoverTrigger,
+    LoadingSpinner,
+    Menu,
+    MenuButton,
+    MenuDivider,
+    MenuItem,
+    MenuList,
+    Popover,
     PopoverContent,
     PopoverTail,
-    Popover,
+    PopoverTrigger,
     Position,
-    MenuDivider,
-    MenuButton,
-    MenuList,
-    MenuItem,
-    Menu,
 } from '@sourcegraph/wildcard'
 
 import {
@@ -120,26 +120,27 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
             data-test-repository={node.name}
             data-test-cloned={node.mirrorInfo.cloned}
         >
-            <div className="d-flex align-items-center justify-content-between overflow-auto">
-                <div className={classNames('d-flex col-11 pl-0', styles.repoDescription)}>
-                    <div className="d-flex col-10 pl-0">
-                        <div className={classNames('col-1 px-0 my-auto h-100', styles.badgeWrapper)}>
-                            <RepositoryStatusBadge status={parseRepositoryStatus(node)} />
-                            {node.mirrorInfo.cloneInProgress && <LoadingSpinner className="ml-2" />}
-                        </div>
-                        <div className="d-flex flex-column ml-2">
-                            <div>
-                                <ExternalRepositoryIcon externalRepo={node.externalRepository} />
-                                <RepoLink repoName={node.name} to={node.url} />
-                            </div>
-                            <RepoMirrorInfo mirrorInfo={node.mirrorInfo} />
-                        </div>
+            <div className="d-flex flex-row">
+                {/* that col-md-8 is a little too large for the two buttons in a row */}
+                <div className="d-flex flex-column justify-content-between flex-md-row col px-0">
+                    <div className="d-flex col align-items-center px-0">
+                        <ExternalRepositoryIcon externalRepo={node.externalRepository} />
+                        <RepoLink repoName={node.name} to={node.url} />
                     </div>
-                    <div className="d-flex col-2 pr-0 justify-content-end">
+
+                    <div className="d-flex align-items-center col justify-content-start px-0 px-md-2 mt-2 mt-md-0">
+                        <RepositoryStatusBadge status={parseRepositoryStatus(node)} />
+                        {node.mirrorInfo.cloneInProgress && <LoadingSpinner className="ml-2" />}
                         {node.mirrorInfo.lastError && (
                             <Popover isOpen={isPopoverOpen} onOpenChange={event => setIsPopoverOpen(event.isOpen)}>
-                                <PopoverTrigger as={Button} variant="secondary" size="sm" aria-label="See errors">
-                                    <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} /> See errors
+                                <PopoverTrigger
+                                    as={Button}
+                                    className="p-0 ml-2"
+                                    variant="icon"
+                                    size="sm"
+                                    aria-label="See errors"
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiInformation} />
                                 </PopoverTrigger>
 
                                 <PopoverContent position={Position.left} className={styles.errorContent}>
@@ -175,7 +176,8 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                         )}
                     </div>
                 </div>
-                <div className="col-auto pr-0">
+
+                <div className="d-flex align-items-start justify-content-start col-1 px-0 mt-0">
                     {!window.location.pathname.includes('/setup') && (
                         <Menu>
                             <MenuButton outline={true} aria-label="Repository action">
@@ -231,6 +233,10 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                         </Menu>
                     )}
                 </div>
+            </div>
+
+            <div className="w-100">
+                <RepoMirrorInfo mirrorInfo={node.mirrorInfo} />
             </div>
 
             {node.mirrorInfo.isCorrupted && (

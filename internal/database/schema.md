@@ -2814,6 +2814,7 @@ Foreign-key constraints:
  permissions_removed  | integer                  |           | not null | 0
  permissions_found    | integer                  |           | not null | 0
  code_host_states     | json[]                   |           |          | 
+ is_partial_success   | boolean                  |           |          | false
 Indexes:
     "permission_sync_jobs_pkey" PRIMARY KEY, btree (id)
     "permission_sync_jobs_unique" UNIQUE, btree (priority, user_id, repository_id, cancel, process_after) WHERE state = 'queued'::text

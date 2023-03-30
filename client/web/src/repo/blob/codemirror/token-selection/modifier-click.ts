@@ -58,16 +58,14 @@ export function isModifierKey(event: KeyboardEvent | MouseEvent): boolean {
     return event.ctrlKey
 }
 
+const theme = EditorView.theme({
+    '.cm-token-selection-clickable:hover': {
+        cursor: 'pointer',
+    },
+})
+
 export function modifierClickExtension(): Extension {
-    return [
-        isModifierKeyHeld,
-        cmdPointerCursor,
-        EditorView.theme({
-            '.cm-token-selection-clickable:hover': {
-                cursor: 'pointer',
-            },
-        }),
-    ]
+    return [isModifierKeyHeld, cmdPointerCursor, theme]
 }
 
 export const modifierClickDescription = isMacPlatform() ? 'cmd+click' : 'ctrl+click'

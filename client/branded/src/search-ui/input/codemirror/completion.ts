@@ -125,6 +125,31 @@ type SuggestionSource<R, C extends SuggestionContext> = (
 
 export type StandardSuggestionSource = SuggestionSource<CompletionResult | null, SuggestionContext>
 
+const theme = EditorView.theme({
+    '.completion-type-queryfilter > .cm-completionLabel': {
+        fontWeight: 'bold',
+    },
+    '.cm-tooltip-autocomplete svg': {
+        width: '1rem',
+        height: '1rem',
+        display: 'inline-block',
+        boxSizing: 'content-box',
+        textAlign: 'center',
+        paddingRight: '0.5rem',
+
+        '& path': {
+            fillOpacity: 0.6,
+        },
+    },
+    '.completion-type-searchhistory > .cm-completionLabel': {
+        display: 'none',
+    },
+    'li.completion-type-searchhistory': {
+        height: 'initial !important',
+        minHeight: '1.3rem',
+    },
+})
+
 /**
  * searchQueryAutocompletion registers extensions for automcompletion, using the
  * provided suggestion sources.
@@ -266,29 +291,7 @@ export function searchQueryAutocompletion(
                       )
             )
         ),
-        EditorView.theme({
-            '.completion-type-queryfilter > .cm-completionLabel': {
-                fontWeight: 'bold',
-            },
-            '.cm-tooltip-autocomplete svg': {
-                width: '1rem',
-                height: '1rem',
-                display: 'inline-block',
-                boxSizing: 'content-box',
-                textAlign: 'center',
-                paddingRight: '0.5rem',
-            },
-            '.cm-tooltip-autocomplete svg path': {
-                fillOpacity: 0.6,
-            },
-            '.completion-type-searchhistory > .cm-completionLabel': {
-                display: 'none',
-            },
-            'li.completion-type-searchhistory': {
-                height: 'initial !important',
-                minHeight: '1.3rem',
-            },
-        }),
+        theme,
         EditorView.updateListener.of(update => {
             // If a filter was completed, show the completion list again for
             // filter values.

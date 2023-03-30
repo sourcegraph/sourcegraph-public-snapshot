@@ -23,7 +23,10 @@ export const ROOT_PATH = IS_BAZEL ? process.cwd() : resolveWithSymlink(__dirname
 export const WORKSPACES_PATH = resolveWithSymlink(ROOT_PATH, 'client')
 export const NODE_MODULES_PATH = resolveWithSymlink(ROOT_PATH, 'node_modules')
 export const MONACO_EDITOR_PATH = resolveWithSymlink(NODE_MODULES_PATH, 'monaco-editor')
-export const STATIC_ASSETS_PATH = resolveWithSymlink(ROOT_PATH, 'ui/assets')
+export const STATIC_ASSETS_PATH = resolveWithSymlink(
+    ROOT_PATH,
+    IS_BAZEL && process.env.WEB_BUNDLE_PATH ? process.env.WEB_BUNDLE_PATH : 'ui/assets'
+)
 
 function getWorkspaceNodeModulesPaths(): string[] {
     const workspaces = fs.readdirSync(WORKSPACES_PATH)

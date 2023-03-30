@@ -25,9 +25,11 @@ Cody uses Sourcegraph to fetch relevant context to generate answers and code. Th
   1. Set the Sourcegraph URL to be `https://sourcegraph.com`
   1. Set the access token to be the token you just created
 
+<img width="553" alt="Cody login screen" src="https://user-images.githubusercontent.com/25070988/227510233-5ce37649-6ae3-4470-91d0-71ed6c68b7ef.png">
+
 After installing, we recommend the following:
 
-* Request embeddings for your repositories. Embeddings significantly improve the accuracy and quality of Cody's responses. To request embeddings, join the Cody Discord and ping a Sourcegraph team member. Note that embeddings are only available for public repositories on sourcegraph.com. If you want to use Cody with embeddings on private code, consider moving to a Sourcegraph Enterprise instance.
+* [See the list](embedded-repos.md) of embedded repositories and request any that you'd like to add by pinging a Sourcegraph team member in [Discord](https://discord.gg/8wJF5EdAyA). Embeddings significantly improve the accuracy and quality of Cody's responses. Note that embeddings are only available for public repositories on sourcegraph.com. If you want to use Cody with embeddings on private code, consider moving to a Sourcegraph Enterprise instance.
 * Spread the word online and send us your feedback in Discord. Cody is open source and we'd love to hear from you if you have bug reports or feature requests.
 
 ## Cody on your Sourcegraph Enterprise instance
@@ -112,7 +114,7 @@ Here is the config for the OpenAI Embeddings API:
 
 To target a managed object storage service, you will need to set a handful of environment variables for configuration and authentication to the target service. **If you are running a sourcegraph/server deployment, set the environment variables on the server container. Otherwise, if running via Docker-compose or Kubernetes, set the environment variables on the `frontend`, `embeddings`, and `worker` containers.**
 
-### Using S3
+#### Using S3
 
 To target an S3 bucket you've already provisioned, set the following environment variables. Authentication can be done through [an access and secret key pair](https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html#access-keys-and-secret-access-keys) (and optional session token), or via the EC2 metadata API.
 
@@ -132,7 +134,7 @@ To target an S3 bucket you've already provisioned, set the following environment
 > NOTE: You don't need to set the `EMBEDDINGS_UPLOAD_AWS_ACCESS_KEY_ID` environment variable when using `EMBEDDINGS_UPLOAD_AWS_USE_EC2_ROLE_CREDENTIALS=true` because role credentials will be automatically resolved. 
 
 
-### Using GCS
+#### Using GCS
 
 To target a GCS bucket you've already provisioned, set the following environment variables. Authentication is done through a service account key, supplied as either a path to a volume-mounted file, or the contents read in as an environment variable payload.
 
@@ -142,8 +144,12 @@ To target a GCS bucket you've already provisioned, set the following environment
 - `EMBEDDINGS_UPLOAD_GOOGLE_APPLICATION_CREDENTIALS_FILE=</path/to/file>`
 - `EMBEDDINGS_UPLOAD_GOOGLE_APPLICATION_CREDENTIALS_FILE_CONTENT=<{"my": "content"}>`
 
-### Provisioning buckets
+#### Provisioning buckets
 
 If you would like to allow your Sourcegraph instance to control the creation and lifecycle configuration management of the target buckets, set the following environment variables:
 
 - `EMBEDDINGS_UPLOAD_MANAGE_BUCKET=true`
+
+### Environment variables for the `embeddings` service
+
+- `EMBEDDINGS_REPO_INDEX_CACHE_SIZE`: Number of repository embedding indexes to cache in memory (the default cache size is 5). Increasing the cache size will improve the search performance but require more memory resources.
