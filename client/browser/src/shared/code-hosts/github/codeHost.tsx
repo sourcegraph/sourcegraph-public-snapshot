@@ -427,7 +427,9 @@ const isSearchResultsPage = (): boolean =>
     Boolean(new URLSearchParams(window.location.search).get('q')) && !isAdvancedSearchPage()
 const isSearchPage = (): boolean =>
     isSimpleSearchPage() || isAdvancedSearchPage() || isRepoSearchPage() || isSearchResultsPage()
-const isPullRequestPage = (): boolean => /\/pull\/\d+$/.test(window.location.pathname)
+const isPullRequestPage = (): boolean =>
+    /\/pull\/\d+$/.test(window.location.pathname) ||
+    (window.location.pathname.includes('/compare/') && window.location.search.endsWith('expand=1'))
 
 type GithubResultType =
     | 'repositories'
@@ -669,21 +671,70 @@ function enhancePullRequestPage(url: string): void {
 
     console.log('Enhancing GitHub pull request page')
 
-    const assignees = document.querySelector('.sidebar-assignee')
-
-    const contents = document.createElement('div')
-    contents.className = 'discussion-sidebar-item'
-
-    const header = document.createElement('div')
-    header.textContent = 'Suggested by Sourcegraph Own'
-    header.className = 'text-bold discussion-sidebar-heading'
-    contents.append(header)
-
-    contents.append(document.createTextNode('hello world'))
-
-    if (assignees) {
-        assignees.after(contents)
+    const assignees = document.querySelector('.sidebar-assignee form.js-issue-sidebar-form')
+    if (!assignees) {
+        return
     }
+
+    const container = document.createElement('div')
+    container.className = 'discussion-sidebar-item'
+
+    const root = createRoot(container)
+    root.render(
+        <>
+            <span className="css-truncate">
+                <p className="color-fg-muted">Suggested by Sourcegraph Own</p>
+                <p>
+                    <span className="float-right position-relative">
+                        <button
+                            id="suggested-reviewier-9516420"
+                            name="suggested_reviewer_id"
+                            value="9516420"
+                            type="submit"
+                            data-view-component="true"
+                            className="js-suggested-reviewer Button--link Button--medium Button"
+                        >
+                            <span className="Button-content">
+                                <span className="Button-label">Request</span>
+                            </span>
+                        </button>
+                    </span>
+
+                    <span
+                        className="d-flex min-width-0 flex-1 js-hovercard-left"
+                        data-hovercard-type="user"
+                        data-hovercard-url="/users/umpox/hovercard"
+                        data-assignee-name="umpox"
+                    >
+                        <a
+                            className="no-underline"
+                            data-octo-click="hovercard-link-click"
+                            data-octo-dimensions="link_type:self"
+                            href="/umpox"
+                        >
+                            <img
+                                className="avatar mr-1 avatar-user"
+                                src="https://avatars.githubusercontent.com/u/9516420?s=40&amp;v=4"
+                                width="20"
+                                height="20"
+                                alt="@umpox"
+                            />
+                        </a>{' '}
+                        <a
+                            className="assignee Link--primary css-truncate-target width-fit"
+                            data-octo-click="hovercard-link-click"
+                            data-octo-dimensions="link_type:self"
+                            href="/umpox"
+                        >
+                            <span className="css-truncate-target width-fit v-align-middle">umpox</span>
+                        </a>
+                    </span>
+                </p>
+            </span>
+        </>
+    )
+
+    assignees.appendChild(container)
 }
 
 export const githubCodeHost: GithubCodeHost = {
