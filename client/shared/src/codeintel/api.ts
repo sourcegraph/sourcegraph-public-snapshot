@@ -105,7 +105,7 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
     ): Promise<clientType.Location[]> {
         const locals = scipParameters ? localReferences(scipParameters) : []
         if (locals.length > 0) {
-            return Promise.resolve(locals.map(local => ({ uri: textParameters.textDocument.uri, range: local.range })))
+            return locals.map(local => ({ uri: textParameters.textDocument.uri, range: local.range }))
         }
         const request = requestFor(textParameters)
         return this.locationResult(
@@ -118,9 +118,7 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
     ): Promise<clientType.Location[]> {
         const definitions = scipParameters ? localDefinition(scipParameters) : []
         if (definitions.length > 0) {
-            return Promise.resolve(
-                definitions.map(definition => ({ uri: textParameters.textDocument.uri, range: definition.range }))
-            )
+            return definitions.map(definition => ({ uri: textParameters.textDocument.uri, range: definition.range }))
         }
         const request = requestFor(textParameters)
         return this.locationResult(request.providers.definition.provideDefinition(request.document, request.position))
@@ -131,7 +129,7 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
             request.providers.implementations.provideLocations(request.document, request.position)
         )
     }
-    public async getHover(textParameters: TextDocumentPositionParameters): Promise<HoverMerged | null | undefined> {
+    public getHover(textParameters: TextDocumentPositionParameters): Promise<HoverMerged | null | undefined> {
         const request = requestFor(textParameters)
         return (
             request.providers.hover
@@ -142,7 +140,7 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
                 .toPromise()
         )
     }
-    public async getDocumentHighlights(textParameters: TextDocumentPositionParameters): Promise<DocumentHighlight[]> {
+    public getDocumentHighlights(textParameters: TextDocumentPositionParameters): Promise<DocumentHighlight[]> {
         const request = requestFor(textParameters)
         return request.providers.documentHighlights
             .provideDocumentHighlights(request.document, request.position)
