@@ -3,10 +3,12 @@ import { MouseEvent, useCallback } from 'react'
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 
 import { smartSearchIconSvgPath } from '@sourcegraph/branded'
-import { SmartSearchListItem } from '@sourcegraph/branded/src/search-ui/components/SmartSearchListItem'
 import { pluralize } from '@sourcegraph/common'
 import { AggregateStreamingSearchResults, AlertKind, SmartSearchAlertKind } from '@sourcegraph/shared/src/search/stream'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Icon, Collapse, CollapseHeader, CollapsePanel, H2, Text, Button } from '@sourcegraph/wildcard'
+
+import { SmartSearchListItem } from './SmartSearchListItem'
 
 import styles from './QuerySuggestion.module.scss'
 

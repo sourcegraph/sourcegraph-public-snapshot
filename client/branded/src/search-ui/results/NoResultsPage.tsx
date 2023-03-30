@@ -9,6 +9,7 @@ import { NoResultsSectionID as SectionID } from '@sourcegraph/shared/src/setting
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { SmartSearchPreview } from '@sourcegraph/web/src/search/suggestion/SmartSearchPreview'
 import { Button, Link, Icon, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { QueryExamples } from '../components/QueryExamples'
