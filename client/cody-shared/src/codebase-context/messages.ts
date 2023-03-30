@@ -4,9 +4,13 @@ export interface ContextMessage extends Message {
     fileName?: string
 }
 
-export function getContextMessageWithResponse(text: string, fileName: string): ContextMessage[] {
+export function getContextMessageWithResponse(
+    text: string,
+    fileName: string,
+    response: string = 'Ok.'
+): ContextMessage[] {
     return [
         { speaker: 'human', text, fileName },
-        { speaker: 'assistant', text: 'Ok.' },
+        { speaker: 'assistant', text: response },
     ]
 }

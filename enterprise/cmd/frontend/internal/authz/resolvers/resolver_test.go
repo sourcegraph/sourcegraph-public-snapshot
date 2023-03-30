@@ -203,13 +203,6 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 
 				return nil, nil
 			})
-			perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
-				ids := p.UserIDs
-				if diff := cmp.Diff(test.expUserIDs, ids); diff != "" {
-					return nil, errors.Errorf("p.UserIDs: %v", diff)
-				}
-				return nil, nil
-			})
 			perms.SetRepoPendingPermissionsFunc.SetDefaultHook(func(_ context.Context, accounts *extsvc.Accounts, _ *authz.RepoPermissions) error {
 				if diff := cmp.Diff(test.expAccounts, accounts); diff != "" {
 					return errors.Errorf("accounts: %v", diff)

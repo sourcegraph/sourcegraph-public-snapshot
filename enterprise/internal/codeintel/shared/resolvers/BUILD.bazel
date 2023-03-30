@@ -17,9 +17,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/codeintel/autoindexing/shared",
         "//enterprise/internal/codeintel/shared/types",
-        "//enterprise/internal/codeintel/uploads/shared",
         "//internal/api",
         "//internal/auth",
         "//internal/authz",
@@ -46,9 +44,7 @@ go_test(
     ],
     embed = [":resolvers"],
     deps = [
-        "//enterprise/internal/codeintel/autoindexing/shared",
         "//enterprise/internal/codeintel/shared/types",
-        "//enterprise/internal/codeintel/uploads/shared",
         "//internal/api",
         "//internal/codeintel/resolvers",
         "//internal/database",
