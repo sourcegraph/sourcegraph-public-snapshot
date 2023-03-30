@@ -45,8 +45,6 @@ interface IsContextRequiredForChatQueryResponse {
     isContextRequiredForChatQuery: boolean
 }
 
-
-
 function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (data: T) => R): R | Error {
     if (isError(response)) {
         return response
