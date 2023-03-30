@@ -80,15 +80,16 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async logEvent(event: {
-        name: string
+        event: string
         userCookieID: string
         url: string
+        source: string
         argument?: string | {}
         publicArgument?: string | {}
     }): Promise<void | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(response =>
+        return this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(response => {
             extractDataOrError(response, data => {})
-        )
+        })
     }
 
     public async searchEmbeddings(

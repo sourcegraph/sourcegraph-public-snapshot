@@ -10,7 +10,6 @@ interface StorageProvider {
     get(key: string): string | null
     set(key: string, value: string): Promise<void>
 }
-
 export class EventLogger {
     private gqlAPIClient: SourcegraphGraphQLAPIClient
     private uid: string | null = null
@@ -56,7 +55,14 @@ export class EventLogger {
         const publicArgument = { ...publicProperties, version: this.version }
 
         try {
-            await this.gqlAPIClient.logEvent({ name: eventName, userCookieID: this.uid, url: '', argument, publicArgument })
+            await this.gqlAPIClient.logEvent({
+                event: eventName,
+                userCookieID: this.uid,
+                source: 'CODY',
+                url: '',
+                argument: JSON.stringify(argument),
+                publicArgument: JSON.stringify(publicArgument),
+            })
         } catch (error) {
             console.log(error)
         }

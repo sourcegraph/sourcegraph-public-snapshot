@@ -1,8 +1,8 @@
 import * as openai from 'openai'
 import * as vscode from 'vscode'
 
-import { EventLogger } from '@sourcegraph/cody-shared/src/telemetry'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { EventLogger } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
 import { ChatViewProvider } from '../chat/ChatViewProvider'
 import { CodyCompletionItemProvider } from '../completions'
@@ -11,7 +11,13 @@ import { getConfiguration } from '../configuration'
 import { ExtensionApi } from '../extension-api'
 
 import { LocalStorage } from './LocalStorageProvider'
-import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, InMemorySecretStorage, SecretStorage, VSCodeSecretStorage } from './secret-storage'
+import {
+    CODY_ACCESS_TOKEN_SECRET,
+    getAccessToken,
+    InMemorySecretStorage,
+    SecretStorage,
+    VSCodeSecretStorage,
+} from './secret-storage'
 
 function getSecretStorage(context: vscode.ExtensionContext): SecretStorage {
     return process.env.CODY_TESTING === 'true' ? new InMemorySecretStorage() : new VSCodeSecretStorage(context.secrets)
@@ -67,7 +73,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         vscode.commands.registerCommand('cody.toggle-enabled', async () => {
             const config = vscode.workspace.getConfiguration()
             await config.update('cody.enabled', !config.get('cody.enabled'), vscode.ConfigurationTarget.Global)
-            eventLogger.log('CodyVSCodeExtension:codyToggleEnabled:clicked')
+            await eventLogger.log('CodyVSCodeExtension:codyToggleEnabled:clicked')
         }),
         // Access token
         vscode.commands.registerCommand('cody.set-access-token', async (args: any[]) => {
@@ -76,10 +82,12 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
                 return
             }
             await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, tokenInput)
+            await eventLogger.log('CodyVSCodeExtension:codySetAccessToken:clicked')
         }),
-        vscode.commands.registerCommand('cody.delete-access-token', async () =>
+        vscode.commands.registerCommand('cody.delete-access-token', async () => {
             secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-        ),
+            eventLogger.log('CodyVSCodeExtension:codyDeleteAccessToken:clicked')
+        }),
         // TOS
         vscode.commands.registerCommand('cody.accept-tos', version =>
             localStorage.set('cody.tos-version-accepted', version)
@@ -88,23 +96,34 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
             localStorage.get('cody.tos-version-accepted')
         ),
         // Commands
-        vscode.commands.registerCommand('cody.recipe.explain-code', async () => executeRecipe('explain-code-detailed')),
-        vscode.commands.registerCommand('cody.recipe.explain-code-high-level', async () =>
+        vscode.commands.registerCommand('cody.recipe.explain-code', async () => {
+            await eventLogger.log('CodyVSCodeExtension:askCodyExplainCode:clicked')
+            executeRecipe('explain-code-detailed')
+        }),
+        vscode.commands.registerCommand('cody.recipe.explain-code-high-level', async () => {
             executeRecipe('explain-code-high-level')
-        ),
-        vscode.commands.registerCommand('cody.recipe.generate-unit-test', async () =>
+            await eventLogger.log('CodyVSCodeExtension:codyExplainCodeHighLevel:clicked')
+        }),
+        vscode.commands.registerCommand('cody.recipe.generate-unit-test', async () => {
             executeRecipe('generate-unit-test')
-        ),
-        vscode.commands.registerCommand('cody.recipe.generate-docstring', async () =>
+            await eventLogger.log('CodyVSCodeExtension:codyGenerateUnitTest:clicked')
+        }),
+        vscode.commands.registerCommand('cody.recipe.generate-docstring', async () => {
             executeRecipe('generate-docstring')
-        ),
-        vscode.commands.registerCommand('cody.recipe.translate-to-language', async () =>
+            await eventLogger.log('CodyVSCodeExtension:codyGenerateDocstring:clicked')
+        }),
+        vscode.commands.registerCommand('cody.recipe.translate-to-language', async () => {
             executeRecipe('translate-to-language')
-        ),
-        vscode.commands.registerCommand('cody.recipe.git-history', async () => executeRecipe('git-history')),
-        vscode.commands.registerCommand('cody.recipe.improve-variable-names', async () =>
+            await eventLogger.log('CodyVSCodeExtension:codyTranslateToLanguage:clicked')
+        }),
+        vscode.commands.registerCommand('cody.recipe.git-history', async () => {
+            executeRecipe('git-history')
+            await eventLogger.log('CodyVSCodeExtension:codyGitHistory:clicked')
+        }),
+        vscode.commands.registerCommand('cody.recipe.improve-variable-names', async () => {
             executeRecipe('improve-variable-names')
-        )
+            await eventLogger.log('CodyVSCodeExtension:codyImproveVariableNames:clicked')
+        })
     )
 
     if (config.experimentalSuggest && config.openaiKey) {
