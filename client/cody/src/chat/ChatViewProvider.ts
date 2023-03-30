@@ -11,6 +11,7 @@ import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelper
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
+import { Logger } from '@sourcegraph/cody-shared/src/logger'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
@@ -212,6 +213,20 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         const recipe = getRecipe(recipeId)
         if (!recipe) {
             return
+        }
+
+        const logger = Logger.getInstance()
+        if (this.mode === 'development') {
+            logger.setLogFunc((msg: string): void => {
+                if (this.mode === 'development') {
+                    const timestamp = new Date().toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                    })
+                    this.webview?.postMessage({ type: 'debug', message: `(${timestamp}) ${msg}` })
+                }
+            })
         }
 
         const interaction = await recipe.getInteraction(

@@ -2,6 +2,7 @@ import path from 'path'
 
 import { EmbeddingsSearch } from '../embeddings'
 import { KeywordContextFetcher } from '../keyword-context'
+import { Logger } from '../logger'
 import { populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
 import { Message } from '../sourcegraph-api'
 import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
@@ -22,6 +23,7 @@ export class CodebaseContext {
     ) {}
 
     public async getContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
+        Logger.getInstance().log('context type: ' + this.contextType)
         switch (this.contextType) {
             case 'blended':
                 return this.embeddings
@@ -52,6 +54,13 @@ export class CodebaseContext {
             options.numCodeResults,
             options.numTextResults
         )
+
+        Logger.getInstance().logJSON(
+            embeddingsSearchResults,
+            (key, value) => (key === 'content' ? undefined : value),
+            2
+        )
+
         if (isError(embeddingsSearchResults)) {
             console.error('Error retrieving embeddings:', embeddingsSearchResults)
             return []

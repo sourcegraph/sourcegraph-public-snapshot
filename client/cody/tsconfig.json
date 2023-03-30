@@ -15,6 +15,7 @@
     "package.json",
     ".eslintrc.js",
     "jest.config.js",
+    "../cody-shared/src/logger.ts",
   ],
   "exclude": ["scripts", "out", "dist"],
   "references": [{ "path": "../cody-shared" }],

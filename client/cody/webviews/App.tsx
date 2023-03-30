@@ -15,9 +15,11 @@ import { UserHistory } from './UserHistory'
 import { ChatHistory, ChatMessage, View } from './utils/types'
 import { vscodeAPI } from './utils/VSCodeApi'
 
+const debugPlaceholder = 'No data yet'
+
 export function App(): React.ReactElement {
     const [devMode, setDevMode] = useState(false)
-    const [debugLog, setDebugLog] = useState(['No data yet'])
+    const [debugLog, setDebugLog] = useState([debugPlaceholder])
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
@@ -58,7 +60,13 @@ export function App(): React.ReactElement {
                     }
                     break
                 case 'debug':
-                    setDebugLog([...debugLog, message.data.message])
+                    if (debugLog.length === 1 && debugLog[0] === debugPlaceholder) {
+                        // Replace the placeholder message.
+                        setDebugLog([message.data.message])
+                    } else {
+                        // Add the new message to the top of the list.
+                        setDebugLog([message.data.message, ...debugLog])
+                    }
                     break
                 case 'history':
                     setInputHistory(message.data.messages.input)
