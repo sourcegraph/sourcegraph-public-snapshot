@@ -104,10 +104,10 @@ ts_project(
 mocha_test(
     name = "integration-tests",
     data = ["//client/web:app-enterprise"],
-    tags = ["manual"]
     env = {
         "WEB_BUNDLE_PATH": "$(rootpath //client/web:app-enterprise)",
     },
+    tags = ["manual"],
     tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
     deps = [":integration_tests"],
 )
