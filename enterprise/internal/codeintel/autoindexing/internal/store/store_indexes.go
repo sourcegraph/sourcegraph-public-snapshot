@@ -7,7 +7,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
-	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -179,63 +178,6 @@ func (s *store) GetLastIndexScanForRepository(ctx context.Context, repositoryID 
 
 const lastIndexScanForRepositoryQuery = `
 SELECT last_index_scan_at FROM lsif_last_index_scan WHERE repository_id = %s
-`
-
-// DeletedRepositoryGracePeriod is the minimum allowable duration between
-// a repo deletion and index records for that repository being deleted.
-const DeletedRepositoryGracePeriod = time.Minute * 30
-
-// DeleteIndexesWithoutRepository deletes indexes associated with repositories that were deleted at least
-// DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of indexes
-// that were removed for that repository.
-func (s *store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (totalCount int, deletedCount int, err error) {
-	ctx, trace, endObservation := s.operations.deleteIndexesWithoutRepository.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	tx, err := s.db.Transact(ctx)
-	if err != nil {
-		return 0, 0, err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
-	// a similar one on this index, but only for uploads that are completed or visible at tip.
-	totalCount, repositories, err := scanCountsAndTotalCount(tx.Query(ctx, sqlf.Sprintf(deleteIndexesWithoutRepositoryQuery, now.UTC(), DeletedRepositoryGracePeriod/time.Second)))
-	if err != nil {
-		return 0, 0, err
-	}
-
-	count := 0
-	for _, numDeleted := range repositories {
-		count += numDeleted
-	}
-	trace.AddEvent("scanCounts",
-		attribute.Int("count", count),
-		attribute.Int("numRepositories", len(repositories)))
-
-	return totalCount, count, nil
-}
-
-const deleteIndexesWithoutRepositoryQuery = `
-WITH
-candidates AS (
-	SELECT u.id
-	FROM repo r
-	JOIN lsif_indexes u ON u.repository_id = r.id
-	WHERE
-		%s - r.deleted_at >= %s * interval '1 second' OR
-		r.blocked IS NOT NULL
-
-	-- Lock these rows in a deterministic order so that we don't
-	-- deadlock with other processes updating the lsif_indexes table.
-	ORDER BY u.id FOR UPDATE
-),
-deleted AS (
-	DELETE FROM lsif_indexes u
-	WHERE id IN (SELECT id FROM candidates)
-	RETURNING u.id, u.repository_id
-)
-SELECT (SELECT COUNT(*) FROM candidates), d.repository_id, COUNT(*) FROM deleted d GROUP BY d.repository_id
 `
 
 // IsQueued returns true if there is an index or an upload for the repository and commit.

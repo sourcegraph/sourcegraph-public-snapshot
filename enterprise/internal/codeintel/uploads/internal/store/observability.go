@@ -81,16 +81,19 @@ type operations struct {
 	// Dependencies
 	insertDependencySyncingJob *observation.Operation
 
-	reindexUploads    *observation.Operation
-	reindexUploadByID *observation.Operation
+	reindexUploads                 *observation.Operation
+	reindexUploadByID              *observation.Operation
+	deleteIndexesWithoutRepository *observation.Operation
 
-	getIndexes       *observation.Operation
-	getIndexByID     *observation.Operation
-	getIndexesByIDs  *observation.Operation
-	deleteIndexByID  *observation.Operation
-	deleteIndexes    *observation.Operation
-	reindexIndexByID *observation.Operation
-	reindexIndexes   *observation.Operation
+	getIndexes                 *observation.Operation
+	getIndexByID               *observation.Operation
+	getIndexesByIDs            *observation.Operation
+	deleteIndexByID            *observation.Operation
+	deleteIndexes              *observation.Operation
+	reindexIndexByID           *observation.Operation
+	reindexIndexes             *observation.Operation
+	processStaleSourcedCommits *observation.Operation
+	expireFailedRecords        *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -185,8 +188,9 @@ func newOperations(observationCtx *observation.Context) *operations {
 		// Dependencies
 		insertDependencySyncingJob: op("InsertDependencySyncingJob"),
 
-		reindexUploads:    op("ReindexUploads"),
-		reindexUploadByID: op("ReindexUploadByID"),
+		reindexUploads:                 op("ReindexUploads"),
+		reindexUploadByID:              op("ReindexUploadByID"),
+		deleteIndexesWithoutRepository: op("DeleteIndexesWithoutRepository"),
 
 		getIndexes:                          op("GetIndexes"),
 		getIndexByID:                        op("GetIndexByID"),
@@ -195,6 +199,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 		deleteIndexes:                       op("DeleteIndexes"),
 		reindexIndexByID:                    op("ReindexIndexByID"),
 		reindexIndexes:                      op("ReindexIndexes"),
+		processStaleSourcedCommits:          op("ProcessStaleSourcedCommits"),
+		expireFailedRecords:                 op("ExpireFailedRecords"),
 		repositoryIDsWithErrors:             op("RepositoryIDsWithErrors"),
 		numRepositoriesWithCodeIntelligence: op("NumRepositoriesWithCodeIntelligence"),
 		getRecentIndexesSummary:             op("GetRecentIndexesSummary"),

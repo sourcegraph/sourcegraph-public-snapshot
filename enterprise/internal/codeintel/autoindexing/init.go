@@ -50,34 +50,6 @@ func NewResetters(observationCtx *observation.Context, db database.DB) []gorouti
 	}
 }
 
-func NewJanitorJobs(observationCtx *observation.Context, autoindexingSvc *Service, gitserverClient gitserver.Client) []goroutine.BackgroundRoutine {
-	return []goroutine.BackgroundRoutine{
-		background.NewUnknownRepositoryJanitor(
-			autoindexingSvc.store,
-			ConfigCleanupInst.Interval,
-			observationCtx,
-		),
-
-		background.NewUnknownCommitJanitor(
-			autoindexingSvc.store,
-			gitserverClient,
-			ConfigCleanupInst.Interval,
-			ConfigCleanupInst.CommitResolverBatchSize,
-			ConfigCleanupInst.MinimumTimeSinceLastCheck,
-			ConfigCleanupInst.CommitResolverMaximumCommitLag,
-			observationCtx,
-		),
-
-		background.NewExpiredRecordJanitor(
-			autoindexingSvc.store,
-			ConfigCleanupInst.Interval,
-			ConfigCleanupInst.FailedIndexBatchSize,
-			ConfigCleanupInst.FailedIndexMaxAge,
-			observationCtx,
-		),
-	}
-}
-
 func NewIndexSchedulers(
 	observationCtx *observation.Context,
 	uploadSvc UploadService,

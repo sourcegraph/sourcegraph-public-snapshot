@@ -180,45 +180,6 @@ func TestGetLastIndexScanForRepository(t *testing.T) {
 	}
 }
 
-func TestDeleteIndexesWithoutRepository(t *testing.T) {
-	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
-
-	var indexes []types.Index
-	for i := 0; i < 25; i++ {
-		for j := 0; j < 10+i; j++ {
-			indexes = append(indexes, types.Index{ID: len(indexes) + 1, RepositoryID: 50 + i})
-		}
-	}
-	insertIndexes(t, db, indexes...)
-
-	t1 := time.Unix(1587396557, 0).UTC()
-	t2 := t1.Add(-DeletedRepositoryGracePeriod + time.Minute)
-	t3 := t1.Add(-DeletedRepositoryGracePeriod - time.Minute)
-
-	deletions := map[int]time.Time{
-		52: t2, 54: t2, 56: t2, // deleted too recently
-		61: t3, 63: t3, 65: t3, // deleted
-	}
-
-	for repositoryID, deletedAt := range deletions {
-		query := sqlf.Sprintf(`UPDATE repo SET deleted_at=%s WHERE id=%s`, deletedAt, repositoryID)
-
-		if _, err := db.QueryContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-			t.Fatalf("Failed to update repository: %s", err)
-		}
-	}
-
-	_, count, err := store.DeleteIndexesWithoutRepository(context.Background(), t1)
-	if err != nil {
-		t.Fatalf("unexpected error deleting indexes: %s", err)
-	}
-	if expected := 21 + 23 + 25; count != expected {
-		t.Fatalf("unexpected count. want=%d have=%d", expected, count)
-	}
-}
-
 func TestIsQueued(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -501,4 +462,79 @@ func (r printableRank) String() string {
 		return "nil"
 	}
 	return strconv.Itoa(*r.value)
+}
+
+// insertIndexes populates the lsif_indexes table with the given index models.
+func insertIndexes(t testing.TB, db database.DB, indexes ...types.Index) {
+	for _, index := range indexes {
+		if index.Commit == "" {
+			index.Commit = makeCommit(index.ID)
+		}
+		if index.State == "" {
+			index.State = "completed"
+		}
+		if index.RepositoryID == 0 {
+			index.RepositoryID = 50
+		}
+		if index.DockerSteps == nil {
+			index.DockerSteps = []types.DockerStep{}
+		}
+		if index.IndexerArgs == nil {
+			index.IndexerArgs = []string{}
+		}
+		if index.LocalSteps == nil {
+			index.LocalSteps = []string{}
+		}
+
+		// Ensure we have a repo for the inner join in select queries
+		insertRepo(t, db, index.RepositoryID, index.RepositoryName)
+
+		query := sqlf.Sprintf(`
+			INSERT INTO lsif_indexes (
+				id,
+				commit,
+				queued_at,
+				state,
+				failure_message,
+				started_at,
+				finished_at,
+				process_after,
+				num_resets,
+				num_failures,
+				repository_id,
+				docker_steps,
+				root,
+				indexer,
+				indexer_args,
+				outfile,
+				execution_logs,
+				local_steps,
+				should_reindex
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+		`,
+			index.ID,
+			index.Commit,
+			index.QueuedAt,
+			index.State,
+			index.FailureMessage,
+			index.StartedAt,
+			index.FinishedAt,
+			index.ProcessAfter,
+			index.NumResets,
+			index.NumFailures,
+			index.RepositoryID,
+			pq.Array(index.DockerSteps),
+			index.Root,
+			index.Indexer,
+			pq.Array(index.IndexerArgs),
+			index.Outfile,
+			pq.Array(index.ExecutionLogs),
+			pq.Array(index.LocalSteps),
+			index.ShouldReindex,
+		)
+
+		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+			t.Fatalf("unexpected error while inserting index: %s", err)
+		}
+	}
 }

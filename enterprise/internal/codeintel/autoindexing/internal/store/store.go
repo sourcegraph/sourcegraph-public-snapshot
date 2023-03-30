@@ -19,20 +19,10 @@ type Store interface {
 	Transact(ctx context.Context) (Store, error)
 	Done(err error) error
 
-	// Commits
-	ProcessStaleSourcedCommits(
-		ctx context.Context,
-		minimumTimeSinceLastCheck time.Duration,
-		commitResolverBatchSize int,
-		commitResolverMaximumCommitLag time.Duration,
-		shouldDelete func(ctx context.Context, repositoryID int, repositoryName, commit string) (bool, error),
-	) (indexesScanned, indexesDeleted int, _ error)
-
 	// Indexes
 	InsertIndexes(ctx context.Context, indexes []types.Index) (_ []types.Index, err error)
 
 	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
-	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_, _ int, err error)
 	IsQueued(ctx context.Context, repositoryID int, commit string) (_ bool, err error)
 	IsQueuedRootIndexer(ctx context.Context, repositoryID int, commit string, root string, indexer string) (_ bool, err error)
 	QueueRepoRev(ctx context.Context, repositoryID int, commit string) error
@@ -58,7 +48,6 @@ type Store interface {
 
 	GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error)
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error)
-	ExpireFailedRecords(ctx context.Context, batchSize int, failedIndexMaxAge time.Duration, now time.Time) (int, int, error)
 }
 
 // store manages the autoindexing store.
