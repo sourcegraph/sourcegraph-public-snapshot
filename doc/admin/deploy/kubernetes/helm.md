@@ -54,7 +54,7 @@ helm repo add sourcegraph https://helm.sourcegraph.com/release
 Install the Sourcegraph chart using default values:
 
 ```sh
-helm install --version 4.5.1-rev.1 sourcegraph sourcegraph/sourcegraph
+helm install --version 5.0.0-rev.1 sourcegraph sourcegraph/sourcegraph
 ```
 
 Sourcegraph should now be available via the address set. Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account.
@@ -81,7 +81,7 @@ Example overrides can be found in the [examples](https://github.com/sourcegraph/
 
 Providing the override file to Helm is done with the inclusion of the values flag and the name of the file:
 ```sh
-helm upgrade --install --values ./override.yaml --version 4.5.1-rev.1 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 5.0.0-rev.1 sourcegraph sourcegraph/sourcegraph
 ```
 When making configuration changes, it's recommended to review the changes that will be applied—see [Reviewing Changes](#reviewing-changes).
 
@@ -459,9 +459,9 @@ This section is aimed at providing high-level guidance on deploying Sourcegraph 
 #### Prerequisites {#gke-prerequisites}
 
 1. You need to have a GKE cluster (>=1.19) with the `HTTP Load Balancing` addon enabled. Alternatively, you can use your own choice of Ingress Controller and disable the `HTTP Load Balancing` add-on, [learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/custom-ingress-controller).
-1. Your account should have sufficient access rights, equivalent to the `cluster-admin` ClusterRole.
-1. Connect to your cluster (via either the console or the command line using `gcloud`) and ensure the cluster is up and running by running: `kubectl get nodes` (several `ready` nodes should be listed)
-1. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
+2. Your account should have sufficient access rights, equivalent to the `cluster-admin` ClusterRole.
+3. Connect to your cluster (via either the console or the command line using `gcloud`) and ensure the cluster is up and running by running: `kubectl get nodes` (several `ready` nodes should be listed)
+4. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
 
 ```sh
 helm repo add sourcegraph https://helm.sourcegraph.com/release
@@ -518,7 +518,7 @@ The override file includes a [BackendConfig] CRD. This is necessary to instruct 
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 4.5.1-rev.1 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 5.0.0-rev.1 sourcegraph sourcegraph/sourcegraph
 ```
 
 It will take around 10 minutes for the load balancer to be fully ready, you may check on the status and obtain the load balancer IP using the following command:
@@ -593,9 +593,9 @@ Now the deployment is complete, more information on configuring the Sourcegraph 
    - [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html)
    - [AWS EBS CSI driver](https://docs.aws.amazon.com/eks/latest/userguide/managing-ebs-csi.html)
 > You may consider deploying your own Ingress Controller instead of the ALB Ingress Controller, [learn more](https://kubernetes.github.io/ingress-nginx/)
-1. Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
-1. Connect to your cluster (via either the console or the command line using `eksctl`) and ensure the cluster is up and running using: `kubectl get nodes` (several `ready` nodes should be listed)
-1. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
+2. Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
+3. Connect to your cluster (via either the console or the command line using `eksctl`) and ensure the cluster is up and running using: `kubectl get nodes` (several `ready` nodes should be listed)
+4. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
 
 ```sh
 helm repo add sourcegraph https://helm.sourcegraph.com/release
@@ -637,7 +637,7 @@ storageClass:
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 4.5.1-rev.1 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 5.0.0-rev.1 sourcegraph sourcegraph/sourcegraph
 ```
 
 It will take some time for the load balancer to be fully ready, use the following to check on the status and obtain the load balancer address (once available):
@@ -681,9 +681,9 @@ Now the deployment is complete, more information on configuring the Sourcegraph 
    - [Azure Application Gateway Ingress Controller](https://docs.microsoft.com/en-us/azure/application-gateway/ingress-controller-install-new)
    - [Azure Disk CSI driver](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers)
 > You may consider using your custom Ingress Controller instead of Application Gateway, [learn more](https://docs.microsoft.com/en-us/azure/aks/ingress-basic)
-1. Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
-1. Connect to your cluster (via either the console or the command line using the Azure CLI) and ensure the cluster is up and running using: `kubectl get nodes` (several `ready` nodes should be listed)
-1. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
+2. Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
+3. Connect to your cluster (via either the console or the command line using the Azure CLI) and ensure the cluster is up and running using: `kubectl get nodes` (several `ready` nodes should be listed)
+4. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
 
 ```sh
 helm repo add sourcegraph https://helm.sourcegraph.com/release
@@ -722,7 +722,7 @@ storageClass:
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 4.5.1-rev.1 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 5.0.0-rev.1 sourcegraph sourcegraph/sourcegraph
 ```
 
 It will take some time for the load balancer to be fully ready, you can check on the status and obtain the load balancer address (when ready) using:
@@ -767,9 +767,9 @@ Now the deployment is complete, more information on configuring the Sourcegraph 
 1. You need to have a Kubernetes cluster (>=1.19) with the following components installed:
    - [x] Ingress Controller, e.g. Cloud providers-native solution, [NGINX Ingress Controller]
    - [x] Block Storage CSI driver
-1. Your account should have sufficient access privileges, equivalent to the `cluster-admin` ClusterRole.
-1. Connect to your cluster (via either the console or the command line using the relevant CLI tool) and ensure the cluster is up and running using: `kubectl get nodes` (several `ready` nodes should be listed)
-1. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
+2. Your account should have sufficient access privileges, equivalent to the `cluster-admin` ClusterRole.
+3. Connect to your cluster (via either the console or the command line using the relevant CLI tool) and ensure the cluster is up and running using: `kubectl get nodes` (several `ready` nodes should be listed)
+4. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
 
 ```sh
 helm repo add sourcegraph https://helm.sourcegraph.com/release
@@ -808,7 +808,7 @@ storageClass:
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 4.5.1-rev.1 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 5.0.0-rev.1 sourcegraph sourcegraph/sourcegraph
 ```
 
 It may take some time before your ingress is up and ready to proceed. Depending on how your Ingress Controller works, you may be able to check on its status and obtain the public address of your Ingress using:
@@ -900,21 +900,21 @@ A [standard upgrade](../../updates/index.md#standard-upgrades) occurs between tw
 
 > ⚠️ You can only upgrade one minor version of Sourcegraph at a time.
 
-1. Update your copy of the Sourcegraph Helm repo to ensure you have all the latest versions:
+2. Update your copy of the Sourcegraph Helm repo to ensure you have all the latest versions:
 
 ```bash
 helm repo update sourcegraph
 ```
 
-1. (Optional) Review the changes that will be applied—see [Reviewing Changes](#reviewing-changes) for options.
+3. (Optional) Review the changes that will be applied—see [Reviewing Changes](#reviewing-changes) for options.
 
-1.  Install the new version:
+4.  Install the new version:
 
 ```bash
-helm upgrade --install -f override.yaml --version 4.5.1-rev.1 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install -f override.yaml --version 5.0.0-rev.1 sourcegraph sourcegraph/sourcegraph
 ```
 
-1.  Verify the installation has started:
+5.  Verify the installation has started:
 
 ```bash
 kubectl get pods --watch
@@ -930,7 +930,7 @@ A [multi-version upgrade](../../updates/index.md#multi-version-upgrades) is a do
 >
 > We recommend performing the entire upgrade procedure on an idle clone of the production instance and switch traffic over on success, if possible. This may be low-effort for installations with a canary environment or a blue/green deployment strategy.
 >
-> **If you do not feel confident running this process solo**, contact customer support team to help guide you thorough the process.
+> **If you do not feel confident running this process solo**, contact the customer support team to help guide you thorough the process.
 
 **Before performing a multi-version upgrade**:
 
@@ -1014,14 +1014,14 @@ CHART_VERSION=0.7.0 # Currently deployed version
 helm template sourcegraph -f override.yaml --version $CHART_VERSION sourcegraph sourcegraph/sourcegraph > original_manifests
 ```
 
-1. Make changes to your override file, and/or update the chart version, then render that output:
+2. Make changes to your override file, and/or update the chart version, then render that output:
 
 ```bash
 CHART_VERSION=3.39.0 # Not yet deployed version
 helm template sourcegraph -f override.yaml --version $CHART_VERSION sourcegraph sourcegraph/sourcegraph > new_manifests
 ```
 
-1. Compare the two outputs:
+3. Compare the two outputs:
 
 ```bash
 diff original_manifests new_manifests

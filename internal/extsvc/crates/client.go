@@ -17,12 +17,15 @@ type Client struct {
 	limiter *ratelimit.InstrumentedLimiter
 }
 
-func NewClient(urn string, httpfactory *httpcli.Factory) *Client {
-	uncached, _ := httpfactory.Doer(httpcli.NewCachedTransportOpt(httpcli.NoopCache{}, false))
+func NewClient(urn string, httpfactory *httpcli.Factory) (*Client, error) {
+	uncached, err := httpfactory.Doer(httpcli.NewCachedTransportOpt(httpcli.NoopCache{}, false))
+	if err != nil {
+		return nil, err
+	}
 	return &Client{
 		uncachedClient: uncached,
 		limiter:        ratelimit.DefaultRegistry.Get(urn),
-	}
+	}, nil
 }
 
 func (c *Client) Get(ctx context.Context, url string) (io.ReadCloser, error) {

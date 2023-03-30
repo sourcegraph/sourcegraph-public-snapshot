@@ -780,10 +780,14 @@ END;
 $$;
 
 CREATE FUNCTION soft_deleted_repository_name(name text) RETURNS text
-    LANGUAGE plpgsql STRICT
+    LANGUAGE plpgsql
     AS $$
 BEGIN
-    RETURN 'DELETED-' || extract(epoch from transaction_timestamp()) || '-' || name;
+    IF name LIKE 'DELETED-%' THEN
+        RETURN name;
+    ELSE
+        RETURN 'DELETED-' || extract(epoch from transaction_timestamp()) || '-' || name;
+    END IF;
 END;
 $$;
 
@@ -1609,9 +1613,10 @@ COMMENT ON TABLE codeintel_inference_scripts IS 'Contains auto-index job inferen
 CREATE TABLE codeintel_initial_path_ranks (
     id bigint NOT NULL,
     upload_id integer NOT NULL,
-    document_path text NOT NULL,
+    document_path text DEFAULT ''::text NOT NULL,
     graph_key text NOT NULL,
-    last_scanned_at timestamp with time zone
+    last_scanned_at timestamp with time zone,
+    document_paths text[] DEFAULT '{}'::text[] NOT NULL
 );
 
 CREATE SEQUENCE codeintel_initial_path_ranks_id_seq
@@ -2341,7 +2346,8 @@ CREATE TABLE gitserver_repos (
     last_changed timestamp with time zone DEFAULT now() NOT NULL,
     repo_size_bytes bigint,
     corrupted_at timestamp with time zone,
-    corruption_logs jsonb DEFAULT '[]'::jsonb NOT NULL
+    corruption_logs jsonb DEFAULT '[]'::jsonb NOT NULL,
+    cloning_progress text DEFAULT ''::text
 );
 
 COMMENT ON COLUMN gitserver_repos.corrupted_at IS 'Timestamp of when repo corruption was detected';
@@ -3499,6 +3505,7 @@ CREATE TABLE permission_sync_jobs (
     permissions_removed integer DEFAULT 0 NOT NULL,
     permissions_found integer DEFAULT 0 NOT NULL,
     code_host_states json[],
+    is_partial_success boolean DEFAULT false,
     CONSTRAINT permission_sync_jobs_for_repo_or_user CHECK (((user_id IS NULL) <> (repository_id IS NULL)))
 );
 

@@ -21,12 +21,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func addUser(t *testing.T, ctx context.Context, store *basestore.Store, userName string) *extsvc.Account {
+func addUser(t *testing.T, ctx context.Context, store *basestore.Store, userName string, withExternalAccount bool) *extsvc.Account {
 	t.Helper()
 
 	userID, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf(`INSERT INTO users(username, display_name, created_at) VALUES (%s, %s, NOW()) RETURNING id`, userName, userName)))
 	require.NoError(t, err)
 
+	if !withExternalAccount {
+		return &extsvc.Account{UserID: int32(userID)}
+	}
 	externalAccountID, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf(`
 		INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at)
 		VALUES(%s, %s, %s, %s, %s, NOW(), NOW()) RETURNING id`,
@@ -86,6 +89,20 @@ func addRepos(t *testing.T, ctx context.Context, store *basestore.Store, accessi
 	require.NoError(t, err)
 }
 
+func addPermissions(t *testing.T, ctx context.Context, store *basestore.Store, userID int32, repoIDs []int32) {
+	t.Helper()
+
+	err := store.Exec(ctx, sqlf.Sprintf(`
+	INSERT INTO user_permissions AS p (user_id, permission, object_type, updated_at, synced_at, object_ids_ints, migrated)
+	VALUES (%s::integer, 'read', 'repos', NOW(), NOW(), %s, FALSE)
+	ON CONFLICT ON CONSTRAINT
+  		user_permissions_perm_object_unique
+	DO UPDATE SET
+		object_ids_ints = p.object_ids_ints || excluded.object_ids_ints`,
+		userID, pq.Array(repoIDs)))
+	require.NoError(t, err)
+}
+
 var scanPermissions = basestore.NewSliceScanner(func(s dbutil.Scanner) (*authz.Permission, error) {
 	var p authz.Permission
 	if err := s.Scan(&p.UserID, &p.ExternalAccountID, &p.RepoID, &p.Source); err != nil {
@@ -137,8 +154,59 @@ func TestUnifiedPermissionsMigrator(t *testing.T) {
 
 		// setup 100 users with 3 repos each
 		for i := 0; i < 100; i++ {
-			account := addUser(t, ctx, store, "user-"+strconv.Itoa(i))
+			account := addUser(t, ctx, store, "user-"+strconv.Itoa(i), true)
 			addRepos(t, ctx, store, []*extsvc.Account{account}, 3)
+		}
+
+		// Ensure there is no progress before migration
+		migrator := newUnifiedPermissionsMigrator(store, 10, 60)
+		require.Equal(t, 10, migrator.batchSize)
+
+		progress, err := migrator.Progress(ctx, false)
+		require.NoError(t, err)
+		require.Equal(t, float64(0), progress)
+
+		for i := 0; i < 10; i++ {
+			err = migrator.Up(ctx)
+			require.NoError(t, err)
+
+			progress, err = migrator.Progress(ctx, false)
+			require.NoError(t, err)
+			require.Equal(t, float64(i+1)/10, progress)
+		}
+
+		require.Equal(t, float64(1), progress)
+	})
+
+	t.Run("Progress works correctly even for rows that do not have matching user, repo, external_account", func(t *testing.T) {
+		t.Cleanup(func() {
+			if !t.Failed() {
+				require.NoError(t, cleanUpTables(ctx, store))
+			}
+		})
+
+		// setup 100 users with different combinations of repos and external accounts, deleted_at, etc
+		for i := 0; i < 100; i++ {
+			userName := "user-" + strconv.Itoa(i)
+			// Add 20 users with no external accounts
+			account := addUser(t, ctx, store, userName, i < 40 || i >= 60)
+			if i >= 20 && i < 40 {
+				// Add 20 users with no repos
+				addPermissions(t, ctx, store, account.UserID, []int32{})
+				continue
+			}
+			if i >= 60 && i < 80 {
+				// mark 20 users as deleted
+				err := store.Exec(ctx, sqlf.Sprintf("UPDATE users SET deleted_at = NOW() WHERE id = %s", account.UserID))
+				require.NoError(t, err)
+			}
+			addRepos(t, ctx, store, []*extsvc.Account{account}, 3)
+			if i >= 80 {
+				// Mark repos as deleted
+				base := i*3 - 60 // there are 20 users without repos, so we need to offset by 60
+				err := store.Exec(ctx, sqlf.Sprintf("UPDATE repo SET deleted_at = NOW() WHERE id IN(%d, %d, %d)", (base+1), (base+2), (base+3)))
+				require.NoError(t, err)
+			}
 		}
 
 		// Ensure there is no progress before migration
@@ -165,7 +233,7 @@ func TestUnifiedPermissionsMigrator(t *testing.T) {
 		t.Helper()
 
 		// Set up test data
-		alice, bob := addUser(t, ctx, store, "alice"), addUser(t, ctx, store, "bob")
+		alice, bob := addUser(t, ctx, store, "alice", true), addUser(t, ctx, store, "bob", true)
 		addRepos(t, ctx, store, []*extsvc.Account{alice, bob}, 2)
 		addRepos(t, ctx, store, []*extsvc.Account{alice}, 3)
 		addRepos(t, ctx, store, []*extsvc.Account{bob}, 1)

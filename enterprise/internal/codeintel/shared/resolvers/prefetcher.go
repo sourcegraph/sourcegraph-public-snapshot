@@ -16,29 +16,27 @@ type Prefetcher struct {
 }
 
 type PrefetcherFactory struct {
-	autoindexingSvc AutoIndexingService
-	uploadSvc       UploadsService
+	uploadSvc UploadsService
 }
 
-func NewPrefetcherFactory(autoindexingSvc AutoIndexingService, uploadSvc UploadsService) *PrefetcherFactory {
+func NewPrefetcherFactory(uploadSvc UploadsService) *PrefetcherFactory {
 	return &PrefetcherFactory{
-		autoindexingSvc: autoindexingSvc,
-		uploadSvc:       uploadSvc,
+		uploadSvc: uploadSvc,
 	}
 }
 
 func (f *PrefetcherFactory) Create() *Prefetcher {
-	return NewPrefetcher(f.autoindexingSvc, f.uploadSvc)
+	return NewPrefetcher(f.uploadSvc)
 }
 
 // NewPrefetcher returns a prefetcher with an empty cache.
-func NewPrefetcher(autoindexingSvc AutoIndexingService, uploadSvc UploadsService) *Prefetcher {
+func NewPrefetcher(uploadSvc UploadsService) *Prefetcher {
 	return &Prefetcher{
 		uploadLoader: NewDataLoader[int, types.Upload](DataLoaderBackingServiceFunc[int, types.Upload](func(ctx context.Context, ids ...int) ([]types.Upload, error) {
 			return uploadSvc.GetUploadsByIDs(ctx, ids...)
 		})),
 		indexLoader: NewDataLoader[int, types.Index](DataLoaderBackingServiceFunc[int, types.Index](func(ctx context.Context, ids ...int) ([]types.Index, error) {
-			return autoindexingSvc.GetIndexesByIDs(ctx, ids...)
+			return uploadSvc.GetIndexesByIDs(ctx, ids...)
 		})),
 	}
 }

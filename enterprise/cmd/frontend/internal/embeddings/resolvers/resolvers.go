@@ -5,8 +5,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	contextdetectionbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/contextdetection"
 	repobg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
@@ -46,6 +48,13 @@ func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.Emb
 		return nil, errors.New("embeddings are not configured or disabled")
 	}
 
+	if envvar.SourcegraphDotComMode() {
+		isEnabled := cody.IsCodyExperimentalFeatureFlagEnabled(ctx)
+		if !isEnabled {
+			return nil, errors.New("cody experimental feature flag is not enabled for current user")
+		}
+	}
+
 	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.Repo)
 	if err != nil {
 		return nil, err
@@ -72,6 +81,12 @@ func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.Emb
 func (r *Resolver) IsContextRequiredForChatQuery(ctx context.Context, args graphqlbackend.IsContextRequiredForChatQueryInputArgs) (bool, error) {
 	if !conf.EmbeddingsEnabled() {
 		return false, errors.New("embeddings are not configured or disabled")
+	}
+	if envvar.SourcegraphDotComMode() {
+		isEnabled := cody.IsCodyExperimentalFeatureFlagEnabled(ctx)
+		if !isEnabled {
+			return false, errors.New("cody experimental feature flag is not enabled for current user")
+		}
 	}
 	return r.embeddingsClient.IsContextRequiredForChatQuery(ctx, embeddings.IsContextRequiredForChatQueryParameters{Query: args.Query})
 }

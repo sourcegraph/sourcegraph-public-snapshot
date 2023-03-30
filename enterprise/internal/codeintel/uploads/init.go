@@ -179,6 +179,30 @@ func NewJanitor(observationCtx *observation.Context, uploadSvc *Service, gitserv
 			ConfigJanitorInst.UnreferencedDocumentMaxAge,
 			observationCtx,
 		),
+
+		background.NewUnknownRepositoryJanitor(
+			uploadSvc.store,
+			ConfigJanitorInst.Interval,
+			observationCtx,
+		),
+
+		background.NewUnknownCommitJanitor2(
+			uploadSvc.store,
+			gitserverClient,
+			ConfigJanitorInst.Interval,
+			ConfigJanitorInst.CommitResolverBatchSize,
+			ConfigJanitorInst.MinimumTimeSinceLastCheck,
+			ConfigJanitorInst.CommitResolverMaximumCommitLag,
+			observationCtx,
+		),
+
+		background.NewExpiredRecordJanitor(
+			uploadSvc.store,
+			ConfigJanitorInst.Interval,
+			ConfigJanitorInst.FailedIndexBatchSize,
+			ConfigJanitorInst.FailedIndexMaxAge,
+			observationCtx,
+		),
 	}
 }
 

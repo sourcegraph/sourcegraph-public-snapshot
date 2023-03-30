@@ -70,6 +70,12 @@ func NewFirecrackerRunner(
 	dockerAuthConfig types.DockerAuthConfig,
 	operations *command.Operations,
 ) Runner {
+	// Use the option configuration unless the user has provided a custom configuration.
+	actualDockerAuthConfig := options.DockerOptions.DockerAuthConfig
+	if len(dockerAuthConfig.Auths) > 0 {
+		actualDockerAuthConfig = dockerAuthConfig
+	}
+
 	return &firecrackerRunner{
 		cmd:              cmd,
 		vmName:           vmName,
@@ -77,7 +83,7 @@ func NewFirecrackerRunner(
 		internalLogger:   log.Scoped("firecracker-runner", ""),
 		cmdLogger:        logger,
 		options:          options,
-		dockerAuthConfig: dockerAuthConfig,
+		dockerAuthConfig: actualDockerAuthConfig,
 		operations:       operations,
 	}
 }

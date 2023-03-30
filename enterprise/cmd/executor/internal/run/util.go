@@ -3,7 +3,6 @@ package run
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"runtime"
 	"strings"
 	"time"
@@ -94,14 +93,9 @@ func workerOptions(c *config.Config) workerutil.WorkerOptions {
 }
 
 func dockerOptions(c *config.Config) command.DockerOptions {
-	u, _ := url.Parse(c.FrontendURL)
 	return command.DockerOptions{
 		DockerAuthConfig: c.DockerAuthConfig,
-		// If the configured Sourcegraph endpoint is host.docker.internal add a
-		// host entry and route to it to the containers. This is used for LSIF
-		// uploads and should not be required anymore once we support native uploads.
-		AddHostGateway: u.Hostname() == "host.docker.internal",
-		Resources:      resourceOptions(c),
+		AddHostGateway:   c.DockerAddHostGateway,
 	}
 }
 

@@ -297,4 +297,7 @@ jest_test(
     data = [
         ":browser_tests",
     ],
+    patch_node_fs = False,
+    shard_count = 6,
+    tags = ["no-sandbox"],
 )

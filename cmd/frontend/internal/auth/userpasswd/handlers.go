@@ -381,14 +381,14 @@ func HandleUnlockAccount(logger log.Logger, _ database.DB, store LockoutStore) h
 			return
 		}
 
-		valid, error := store.VerifyUnlockAccountTokenAndReset(unlockAccountInfo.Token)
+		valid, err := store.VerifyUnlockAccountTokenAndReset(unlockAccountInfo.Token)
 
-		if !valid || error != nil {
-			err := "invalid token provided"
-			if error != nil {
-				err = error.Error()
+		if !valid || err != nil {
+			errStr := "invalid token provided"
+			if err != nil {
+				errStr = err.Error()
 			}
-			httpLogError(logger.Warn, w, err, http.StatusUnauthorized)
+			httpLogError(logger.Warn, w, errStr, http.StatusUnauthorized)
 			return
 		}
 	}
