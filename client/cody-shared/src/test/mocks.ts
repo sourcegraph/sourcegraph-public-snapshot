@@ -42,6 +42,10 @@ export class MockKeywordContextFetcher implements KeywordContextFetcher {
 export class MockEditor implements Editor {
     constructor(private mocks: Partial<Editor> = {}) {}
 
+    public getWorkspaceRootPath(): string | null {
+        return this.mocks.getWorkspaceRootPath?.() ?? null
+    }
+
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
         return this.mocks.getActiveTextEditorSelection?.() ?? null
     }

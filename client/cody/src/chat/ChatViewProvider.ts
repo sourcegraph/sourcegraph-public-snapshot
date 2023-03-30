@@ -22,7 +22,6 @@ import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../comm
 import { updateConfiguration } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { configureExternalServices } from '../external-services'
-import { getRootPath } from '../keyword-context/local-keyword-context-fetcher'
 import { getRgPath } from '../rg'
 import { TestSupport } from '../test-support'
 
@@ -103,7 +102,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     }
 
     private async onDidReceiveMessage(message: any): Promise<void> {
-        const rootPath = getRootPath()
         switch (message.command) {
             case 'initialized':
                 await this.sendToken()
@@ -141,7 +139,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             case 'links':
                 await vscode.env.openExternal(vscode.Uri.parse(message.value))
                 break
-            case 'openFile':
+            case 'openFile': {
+                const rootPath = this.editor.getWorkspaceRootPath()
                 if (rootPath !== null) {
                     const uri = vscode.Uri.file(path.join(rootPath, message.filePath))
                     // This opens the file in the active column.
@@ -155,6 +154,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     console.error('Could not open file because rootPath is null')
                 }
                 break
+            }
             default:
                 console.error('Invalid request type from Webview')
         }
