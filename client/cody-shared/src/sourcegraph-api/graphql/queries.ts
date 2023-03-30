@@ -36,15 +36,13 @@ query IsContextRequiredForChatQuery($query: String!) {
 }`
 
 export const LOG_EVENT_MUTATION = `
-mutation {
+mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String) {
     logEvent(
-    event: String!
-    userCookieID: String!
-    url: String!
-    source: EventSource!
-    argument: String
-    publicArgument: String
-    ) {
-    alwaysNil
-    }
+    event: $event
+    userCookieID: $userCookieID
+    url: $url
+    source: $source
+    argument: $argument
+    publicArgument: $publicArgument
+    )
 }`
