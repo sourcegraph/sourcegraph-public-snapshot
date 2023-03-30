@@ -9,7 +9,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/log"
 
@@ -709,10 +708,7 @@ func (s *permsStore) LoadUserPendingPermissions(ctx context.Context, p *authz.Us
 		return err
 	}
 	p.ID = id
-	p.IDs = make(map[int32]struct{}, len(ids))
-	for _, id := range ids {
-		p.IDs[id] = struct{}{}
-	}
+	p.IDs = collections.NewSet(ids...)
 
 	p.UpdatedAt = updatedAt
 	return nil
@@ -735,8 +731,8 @@ func (s *permsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 
 	var q *sqlf.Query
 
-	p.PendingUserIDs = map[int64]struct{}{}
-	p.UserIDs = map[int32]struct{}{}
+	p.PendingUserIDs = collections.NewSet[int64]()
+	p.UserIDs = collections.NewSet[int32]()
 
 	// Insert rows for AccountIDs without one in the "user_pending_permissions"
 	// table. The insert does not store any permission data but uses auto-increment
@@ -768,7 +764,7 @@ func (s *permsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 		for _, bindID := range accounts.AccountIDs {
 			id, ok := bindIDsToIDs[bindID]
 			if ok {
-				p.PendingUserIDs[id] = struct{}{}
+				p.PendingUserIDs.Add(id)
 			} else {
 				missingAccounts.AccountIDs = append(missingAccounts.AccountIDs, bindID)
 			}
@@ -792,7 +788,7 @@ func (s *permsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 
 			// Make up p.PendingUserIDs from the result set.
 			for _, id := range ids {
-				p.PendingUserIDs[id] = struct{}{}
+				p.PendingUserIDs.Add(id)
 			}
 		}
 
@@ -804,7 +800,7 @@ func (s *permsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 		return errors.Wrap(err, "load repo pending permissions")
 	}
 
-	oldIDs := sliceToSet(ids)
+	oldIDs := collections.NewSet(ids...)
 	added, removed := computeDiff(oldIDs, p.PendingUserIDs)
 
 	// In case there is nothing added or removed.
@@ -996,11 +992,8 @@ func (s *permsStore) GrantPendingPermissions(ctx context.Context, p *authz.UserG
 		return errors.Wrap(err, "load user pending permissions")
 	}
 
-	uniqueRepoIDs := make(map[int32]struct{}, len(ids))
-	for _, id := range ids {
-		uniqueRepoIDs[id] = struct{}{}
-	}
-	allRepoIDs := maps.Keys(uniqueRepoIDs)
+	uniqueRepoIDs := collections.NewSet(ids...)
+	allRepoIDs := uniqueRepoIDs.Values()
 
 	// Write to the unified user_repo_permissions table.
 	_, err = txs.setUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: p.UserID, ExternalAccountID: p.UserExternalAccountID}, allRepoIDs, authz.SourceUserSync, false)
@@ -1868,26 +1861,8 @@ func (s *permsStore) MapUsers(ctx context.Context, bindIDs []string, mapping *sc
 
 // computeDiff determines which ids were added or removed when comparing the old
 // list of ids, oldIDs, with the new set.
-func computeDiff[T comparable](oldIDs map[T]struct{}, set map[T]struct{}) (added []T, removed []T) {
-	for key := range set {
-		if _, ok := oldIDs[key]; !ok {
-			added = append(added, key)
-		}
-	}
-	for key := range oldIDs {
-		if _, ok := set[key]; !ok {
-			removed = append(removed, key)
-		}
-	}
-	return added, removed
-}
-
-func sliceToSet[T comparable](s []T) map[T]struct{} {
-	m := make(map[T]struct{}, len(s))
-	for _, n := range s {
-		m[n] = struct{}{}
-	}
-	return m
+func computeDiff[T comparable](oldIDs collections.Set[T], newIDs collections.Set[T]) ([]T, []T) {
+	return newIDs.Difference(oldIDs).Values(), oldIDs.Difference(newIDs).Values()
 }
 
 type ListUserPermissionsArgs struct {
