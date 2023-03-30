@@ -8,9 +8,18 @@ import { registerHighlightContributions, renderMarkdown as renderMarkdownCommon 
  * DOM. We could use isomorphic-dompurify for that, but that adds needless complexity for now. If
  * that becomes necessary, we can add that.
  */
-export function renderMarkdown(markdown: string): string {
+export function renderMarkdown(markdown: string, options: { speaker: 'human' | 'assistant' }): string {
     registerHighlightContributions()
 
-    // Add Cody-specific Markdown rendering if needed.
-    return renderMarkdownCommon(markdown)
+    let html = renderMarkdownCommon(markdown)
+
+    // Add Cody-specific Markdown for code blocks
+    if (options.speaker === 'assistant') {
+        html = html.replaceAll(
+            '<pre><code',
+            '<pre><button class="copy-code-button" onclick="navigator.clipboard.writeText(event.target.nextSibling.textContent).then(() => event.target.textContent = \'Copied\')">Copy</button><code'
+        )
+    }
+
+    return html
 }

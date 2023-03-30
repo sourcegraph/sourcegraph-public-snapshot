@@ -122,7 +122,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                                         {message.displayText && (
                                             <p
                                                 dangerouslySetInnerHTML={{
-                                                    __html: renderMarkdown(message.displayText),
+                                                    __html: renderMarkdown(message.displayText, {
+                                                        speaker: message.speaker,
+                                                    }),
                                                 }}
                                             />
                                         )}
@@ -146,7 +148,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                                         {messageInProgress.displayText ? (
                                             <p
                                                 dangerouslySetInnerHTML={{
-                                                    __html: renderMarkdown(messageInProgress.displayText),
+                                                    __html: renderMarkdown(messageInProgress.displayText, {
+                                                        speaker: messageInProgress.speaker,
+                                                    }),
                                                 }}
                                             />
                                         ) : (

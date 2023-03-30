@@ -209,12 +209,6 @@
     position: relative;
 }
 
-.chat-code-block-copy-btn {
-    position: absolute;
-    top: 0;
-    right: 0;
-}
-
 .link-button {
     background: none;
     border: none;
@@ -222,4 +216,27 @@
     cursor: pointer;
     font-size: inherit;
     text-decoration: underline;
+}
+
+pre {
+    position: relative;
+}
+
+.copy-code-button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 0.2em;
+    font-family: var(--vscode-font-family);
+    font-size: inherit;
+    text-decoration: underline;
+    color: var(--vscode-textLink-foreground);
+    background: none;
+    border: none;
+    cursor: pointer;
+    visibility: hidden;
+}
+
+pre:hover > .copy-code-button {
+    visibility: visible;
 }
