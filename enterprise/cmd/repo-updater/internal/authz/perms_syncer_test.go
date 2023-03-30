@@ -932,9 +932,10 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		perms := edb.NewMockPermsStore()
 		perms.TransactFunc.SetDefaultReturn(perms, nil)
 		perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]authz.UserIDWithExternalAccountID{"user": {UserID: 1, ExternalAccountID: 1}}, nil)
-		perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
-			assert.Equal(t, int32(1), p.RepoID)
-			assert.Equal(t, []int32{1}, p.GenerateSortedIDsSlice())
+		perms.SetRepoPermsFunc.SetDefaultHook(func(_ context.Context, repoID int32, userIDs []authz.UserIDWithExternalAccountID, source authz.PermsSource) (*database.SetPermissionsResult, error) {
+			assert.Equal(t, int32(1), repoID)
+			assert.Equal(t, []authz.UserIDWithExternalAccountID{{UserID: 1, ExternalAccountID: 1}}, userIDs)
+			assert.Equal(t, authz.SourceRepoSync, source)
 			return nil, nil
 		})
 
@@ -963,9 +964,10 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		perms := edb.NewMockPermsStore()
 		perms.TransactFunc.SetDefaultReturn(perms, nil)
 		perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]authz.UserIDWithExternalAccountID{"user": {UserID: 1, ExternalAccountID: 1}}, nil)
-		perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
-			assert.Equal(t, int32(1), p.RepoID)
-			assert.Equal(t, []int32{1}, p.GenerateSortedIDsSlice())
+		perms.SetRepoPermsFunc.SetDefaultHook(func(_ context.Context, repoID int32, userIDs []authz.UserIDWithExternalAccountID, source authz.PermsSource) (*database.SetPermissionsResult, error) {
+			assert.Equal(t, int32(1), repoID)
+			assert.Equal(t, []authz.UserIDWithExternalAccountID{{UserID: 1, ExternalAccountID: 1}}, userIDs)
+			assert.Equal(t, authz.SourceRepoSync, source)
 			return nil, nil
 		})
 
@@ -1013,9 +1015,10 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		perms := edb.NewMockPermsStore()
 		perms.TransactFunc.SetDefaultReturn(perms, nil)
 		perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]authz.UserIDWithExternalAccountID{"user": {UserID: 1, ExternalAccountID: 1}}, nil)
-		perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
-			assert.Equal(t, int32(1), p.RepoID)
-			assert.Equal(t, []int32{1}, p.GenerateSortedIDsSlice())
+		perms.SetRepoPermsFunc.SetDefaultHook(func(_ context.Context, repoID int32, userIDs []authz.UserIDWithExternalAccountID, source authz.PermsSource) (*database.SetPermissionsResult, error) {
+			assert.Equal(t, int32(1), repoID)
+			assert.Equal(t, []authz.UserIDWithExternalAccountID{{UserID: 1, ExternalAccountID: 1}}, userIDs)
+			assert.Equal(t, authz.SourceRepoSync, source)
 			return nil, nil
 		})
 
@@ -1065,9 +1068,10 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	perms := edb.NewMockPermsStore()
 	perms.TransactFunc.SetDefaultReturn(perms, nil)
 	perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]authz.UserIDWithExternalAccountID{"user": {UserID: 1, ExternalAccountID: 1}}, nil)
-	perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
-		assert.Equal(t, int32(1), p.RepoID)
-		assert.Equal(t, []int32{1}, p.GenerateSortedIDsSlice())
+	perms.SetRepoPermsFunc.SetDefaultHook(func(_ context.Context, repoID int32, userIDs []authz.UserIDWithExternalAccountID, source authz.PermsSource) (*database.SetPermissionsResult, error) {
+		assert.Equal(t, int32(1), repoID)
+		assert.Equal(t, []authz.UserIDWithExternalAccountID{{UserID: 1, ExternalAccountID: 1}}, userIDs)
+		assert.Equal(t, authz.SourceRepoSync, source)
 		return nil, nil
 	})
 	perms.SetRepoPendingPermissionsFunc.SetDefaultHook(func(_ context.Context, accounts *extsvc.Accounts, _ *authz.RepoPermissions) error {
