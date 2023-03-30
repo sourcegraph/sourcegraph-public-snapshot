@@ -12,13 +12,16 @@ type operations struct {
 	list *observation.Operation
 
 	// Commits
-	getStaleSourcedCommits    *observation.Operation
-	deleteSourcedCommits      *observation.Operation
-	updateSourcedCommits      *observation.Operation
-	getCommitsVisibleToUpload *observation.Operation
-	getOldestCommitDate       *observation.Operation
-	getCommitGraphMetadata    *observation.Operation
-	hasCommit                 *observation.Operation
+	getStaleSourcedCommits              *observation.Operation
+	deleteSourcedCommits                *observation.Operation
+	updateSourcedCommits                *observation.Operation
+	getCommitsVisibleToUpload           *observation.Operation
+	getOldestCommitDate                 *observation.Operation
+	getCommitGraphMetadata              *observation.Operation
+	hasCommit                           *observation.Operation
+	repositoryIDsWithErrors             *observation.Operation
+	numRepositoriesWithCodeIntelligence *observation.Operation
+	getRecentIndexesSummary             *observation.Operation
 
 	// Repositories
 	getRepositoriesForIndexScan             *observation.Operation
@@ -185,12 +188,15 @@ func newOperations(observationCtx *observation.Context) *operations {
 		reindexUploads:    op("ReindexUploads"),
 		reindexUploadByID: op("ReindexUploadByID"),
 
-		getIndexes:       op("GetIndexes"),
-		getIndexByID:     op("GetIndexByID"),
-		getIndexesByIDs:  op("GetIndexesByIDs"),
-		deleteIndexByID:  op("DeleteIndexByID"),
-		deleteIndexes:    op("DeleteIndexes"),
-		reindexIndexByID: op("ReindexIndexByID"),
-		reindexIndexes:   op("ReindexIndexes"),
+		getIndexes:                          op("GetIndexes"),
+		getIndexByID:                        op("GetIndexByID"),
+		getIndexesByIDs:                     op("GetIndexesByIDs"),
+		deleteIndexByID:                     op("DeleteIndexByID"),
+		deleteIndexes:                       op("DeleteIndexes"),
+		reindexIndexByID:                    op("ReindexIndexByID"),
+		reindexIndexes:                      op("ReindexIndexes"),
+		repositoryIDsWithErrors:             op("RepositoryIDsWithErrors"),
+		numRepositoriesWithCodeIntelligence: op("NumRepositoriesWithCodeIntelligence"),
+		getRecentIndexesSummary:             op("GetRecentIndexesSummary"),
 	}
 }

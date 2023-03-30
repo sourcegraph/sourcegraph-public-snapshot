@@ -6,6 +6,7 @@ import (
 
 	logger "github.com/sourcegraph/log"
 
+	autoindexingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -48,7 +49,6 @@ type Store interface {
 	HasCommit(ctx context.Context, repositoryID int, commit string) (_ bool, err error)
 
 	// Repositories
-	GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error)
 	GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error)
 	SetRepositoryAsDirty(ctx context.Context, repositoryID int) (err error)
 	GetDirtyRepositories(ctx context.Context) (_ []shared.DirtyRepository, err error)
@@ -114,6 +114,10 @@ type Store interface {
 
 	ReindexUploads(ctx context.Context, opts shared.ReindexUploadsOptions) error
 	ReindexUploadByID(ctx context.Context, id int) error
+
+	GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []autoindexingshared.IndexesWithRepositoryNamespace, err error)
+	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error)
+	RepositoryIDsWithErrors(ctx context.Context, offset, limit int) (_ []autoindexingshared.RepositoryWithCount, totalCount int, err error)
 }
 
 // store manages the database operations for uploads.
