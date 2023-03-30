@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	autoindexingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -23,6 +24,66 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestRecentIndexesSummary(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	t0 := time.Unix(1587396557, 0).UTC()
+	t1 := t0.Add(-time.Minute * 1)
+	t2 := t0.Add(-time.Minute * 2)
+	t3 := t0.Add(-time.Minute * 3)
+	t4 := t0.Add(-time.Minute * 4)
+	t5 := t0.Add(-time.Minute * 5)
+	t6 := t0.Add(-time.Minute * 6)
+	t7 := t0.Add(-time.Minute * 7)
+	t8 := t0.Add(-time.Minute * 8)
+	t9 := t0.Add(-time.Minute * 9)
+
+	r1 := 1
+	r2 := 2
+
+	addDefaults := func(index types.Index) types.Index {
+		index.Commit = makeCommit(index.ID)
+		index.RepositoryID = 50
+		index.RepositoryName = "n-50"
+		index.DockerSteps = []types.DockerStep{}
+		index.IndexerArgs = []string{}
+		index.LocalSteps = []string{}
+		return index
+	}
+
+	indexes := []types.Index{
+		addDefaults(types.Index{ID: 150, QueuedAt: t0, Root: "r1", Indexer: "i1", State: "queued", Rank: &r2}), // visible (group 1)
+		addDefaults(types.Index{ID: 151, QueuedAt: t1, Root: "r1", Indexer: "i1", State: "queued", Rank: &r1}), // visible (group 1)
+		addDefaults(types.Index{ID: 152, FinishedAt: &t2, Root: "r1", Indexer: "i1", State: "errored"}),        // visible (group 1)
+		addDefaults(types.Index{ID: 153, FinishedAt: &t3, Root: "r1", Indexer: "i2", State: "completed"}),      // visible (group 2)
+		addDefaults(types.Index{ID: 154, FinishedAt: &t4, Root: "r2", Indexer: "i1", State: "completed"}),      // visible (group 3)
+		addDefaults(types.Index{ID: 155, FinishedAt: &t5, Root: "r2", Indexer: "i1", State: "errored"}),        // shadowed
+		addDefaults(types.Index{ID: 156, FinishedAt: &t6, Root: "r2", Indexer: "i2", State: "completed"}),      // visible (group 4)
+		addDefaults(types.Index{ID: 157, FinishedAt: &t7, Root: "r2", Indexer: "i2", State: "errored"}),        // shadowed
+		addDefaults(types.Index{ID: 158, FinishedAt: &t8, Root: "r2", Indexer: "i2", State: "errored"}),        // shadowed
+		addDefaults(types.Index{ID: 159, FinishedAt: &t9, Root: "r2", Indexer: "i2", State: "errored"}),        // shadowed
+	}
+	insertIndexes(t, db, indexes...)
+
+	summary, err := store.GetRecentIndexesSummary(ctx, 50)
+	if err != nil {
+		t.Fatalf("unexpected error querying recent index summary: %s", err)
+	}
+
+	expected := []autoindexingshared.IndexesWithRepositoryNamespace{
+		{Root: "r1", Indexer: "i1", Indexes: []types.Index{indexes[0], indexes[1], indexes[2]}},
+		{Root: "r1", Indexer: "i2", Indexes: []types.Index{indexes[3]}},
+		{Root: "r2", Indexer: "i1", Indexes: []types.Index{indexes[4]}},
+		{Root: "r2", Indexer: "i2", Indexes: []types.Index{indexes[6]}},
+	}
+	if diff := cmp.Diff(expected, summary); diff != "" {
+		t.Errorf("unexpected index summary (-want +got):\n%s", diff)
+	}
+}
 
 func TestGetIndexes(t *testing.T) {
 	ctx := context.Background()

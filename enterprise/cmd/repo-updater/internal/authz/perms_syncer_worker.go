@@ -95,19 +95,9 @@ func (h *permsSyncerWorker) handlePermsSync(ctx context.Context, reqType request
 
 	// Adding an extra check in case of all providers errored out, but sync has been
 	// completed successfully. This can happen e.g. if we only got HTTP401 responses.
-	//
-	// Initializing `allProvidersFailedToSync` to `false` in case of receiving 0
-	// states and `true` otherwise. We will clear this flag as soon as we come across
-	// one non-errored state.
 	if err == nil {
-		allProvidersFailedToSync := len(providerStates) > 0
-		for _, state := range providerStates {
-			if state.Status != database.CodeHostStatusError {
-				allProvidersFailedToSync = false
-				break
-			}
-		}
-		if allProvidersFailedToSync {
+		total, _, failed := providerStates.CountStatuses()
+		if failed == total {
 			err = errors.New("All providers failed to sync permissions.")
 		}
 	}
@@ -120,8 +110,8 @@ func (h *permsSyncerWorker) handlePermsSync(ctx context.Context, reqType request
 
 	// NOTE(naman): here we are saving permissions added, removed and found results
 	// as well as the code host sync status to the job record.
-
-	if saveErr := h.jobsStore.SaveSyncResult(ctx, recordID, result, providerStates); saveErr != nil {
+	if saveErr := h.jobsStore.SaveSyncResult(ctx, recordID, err == nil, result, providerStates); saveErr != nil {
+		err = errors.Append(err, saveErr)
 		h.logger.Error(fmt.Sprintf("failed to save permissions sync job(%d) results", recordID), log.Error(saveErr))
 	}
 

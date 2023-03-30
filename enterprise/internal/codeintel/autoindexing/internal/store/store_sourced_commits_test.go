@@ -258,15 +258,28 @@ func insertRepo(t testing.TB, db database.DB, id int, name string) {
 	if strings.HasPrefix(name, "DELETED-") {
 		deletedAt = sqlf.Sprintf("%s", time.Unix(1587396557, 0).UTC())
 	}
-
-	query := sqlf.Sprintf(
-		`INSERT INTO repo (id, name, deleted_at) VALUES (%s, %s, %s) ON CONFLICT (id) DO NOTHING`,
+	insertRepoQuery := sqlf.Sprintf(
+		`INSERT INTO repo (id, name, deleted_at, private) VALUES (%s, %s, %s, %s) ON CONFLICT (id) DO NOTHING`,
 		id,
 		name,
 		deletedAt,
+		false,
 	)
-	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+	if _, err := db.ExecContext(context.Background(), insertRepoQuery.Query(sqlf.PostgresBindVar), insertRepoQuery.Args()...); err != nil {
 		t.Fatalf("unexpected error while upserting repository: %s", err)
+	}
+
+	status := "cloned"
+	if strings.HasPrefix(name, "DELETED-") {
+		status = "not_cloned"
+	}
+	updateGitserverRepoQuery := sqlf.Sprintf(
+		`UPDATE gitserver_repos SET clone_status = %s WHERE repo_id = %s`,
+		status,
+		id,
+	)
+	if _, err := db.ExecContext(context.Background(), updateGitserverRepoQuery.Query(sqlf.PostgresBindVar), updateGitserverRepoQuery.Args()...); err != nil {
+		t.Fatalf("unexpected error while upserting gitserver repository: %s", err)
 	}
 }
 

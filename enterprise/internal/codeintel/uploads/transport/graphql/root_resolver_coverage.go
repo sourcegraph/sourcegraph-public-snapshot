@@ -31,7 +31,7 @@ func (r *rootResolver) CodeIntelSummary(ctx context.Context) (_ resolverstubs.Co
 	ctx, _, endObservation := r.operations.codeIntelSummary.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	return newSummaryResolver(r.autoindexSvc, r.locationResolverFactory.Create()), nil
+	return newSummaryResolver(r.uploadSvc, r.autoindexSvc, r.locationResolverFactory.Create()), nil
 }
 
 func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID) (_ resolverstubs.CodeIntelRepositorySummaryResolver, err error) {
@@ -60,7 +60,7 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 		return nil, err
 	}
 
-	recentIndexes, err := r.autoindexSvc.GetRecentIndexesSummary(ctx, id)
+	recentIndexes, err := r.uploadSvc.GetRecentIndexesSummary(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -136,19 +136,21 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 //
 
 type summaryResolver struct {
-	autoindexSvc     AutoIndexingService
+	uploadsSvc       UploadsService
+	autoindexingSvc  AutoIndexingService
 	locationResolver *sharedresolvers.CachedLocationResolver
 }
 
-func newSummaryResolver(autoindexSvc AutoIndexingService, locationResolver *sharedresolvers.CachedLocationResolver) resolverstubs.CodeIntelSummaryResolver {
+func newSummaryResolver(uploadsSvc UploadsService, autoindexingSvc AutoIndexingService, locationResolver *sharedresolvers.CachedLocationResolver) resolverstubs.CodeIntelSummaryResolver {
 	return &summaryResolver{
-		autoindexSvc:     autoindexSvc,
+		uploadsSvc:       uploadsSvc,
+		autoindexingSvc:  autoindexingSvc,
 		locationResolver: locationResolver,
 	}
 }
 
 func (r *summaryResolver) NumRepositoriesWithCodeIntelligence(ctx context.Context) (int32, error) {
-	numRepositoriesWithCodeIntelligence, err := r.autoindexSvc.NumRepositoriesWithCodeIntelligence(ctx)
+	numRepositoriesWithCodeIntelligence, err := r.uploadsSvc.NumRepositoriesWithCodeIntelligence(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -168,7 +170,7 @@ func (r *summaryResolver) RepositoriesWithErrors(ctx context.Context, args *reso
 		offset = after
 	}
 
-	repositoryIDsWithErrors, totalCount, err := r.autoindexSvc.RepositoryIDsWithErrors(ctx, offset, pageSize)
+	repositoryIDsWithErrors, totalCount, err := r.uploadsSvc.RepositoryIDsWithErrors(ctx, offset, pageSize)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +208,7 @@ func (r *summaryResolver) RepositoriesWithConfiguration(ctx context.Context, arg
 		offset = after
 	}
 
-	repositoryIDsWithConfiguration, totalCount, err := r.autoindexSvc.RepositoryIDsWithConfiguration(ctx, offset, pageSize)
+	repositoryIDsWithConfiguration, totalCount, err := r.autoindexingSvc.RepositoryIDsWithConfiguration(ctx, offset, pageSize)
 	if err != nil {
 		return nil, err
 	}

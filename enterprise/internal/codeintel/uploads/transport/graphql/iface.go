@@ -31,14 +31,14 @@ type UploadsService interface {
 	GetCommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, err error)
 	GetRecentUploadsSummary(ctx context.Context, repositoryID int) ([]uploadshared.UploadsWithRepositoryNamespace, error)
 	GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
+	GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]shared.IndexesWithRepositoryNamespace, error)
+	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error)
+	RepositoryIDsWithErrors(ctx context.Context, offset, limit int) (_ []shared.RepositoryWithCount, totalCount int, err error)
 }
 
 type AutoIndexingService interface {
-	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error)
-	RepositoryIDsWithErrors(ctx context.Context, offset, limit int) (_ []shared.RepositoryWithCount, totalCount int, err error)
 	RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) (_ []shared.RepositoryWithAvailableIndexers, totalCount int, err error)
 	InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) ([]config.IndexJob, error)
-	GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]shared.IndexesWithRepositoryNamespace, error)
 	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
 }
 

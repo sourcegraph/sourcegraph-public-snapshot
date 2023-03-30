@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -28,11 +27,10 @@ func NewService(
 	gitserverClient gitserver.Client,
 ) *Service {
 	store := autoindexingstore.New(scopedContext("store", observationCtx), db)
-	symbolsClient := symbols.DefaultClient
 	repoUpdater := repoupdater.DefaultClient
 	inferenceSvc := inference.NewService()
 
-	svc := newService(scopedContext("service", observationCtx), store, inferenceSvc, repoUpdater, db.Repos(), gitserverClient, symbolsClient)
+	svc := newService(scopedContext("service", observationCtx), store, inferenceSvc, repoUpdater, db.Repos(), gitserverClient)
 
 	return svc
 }
@@ -91,7 +89,7 @@ func NewIndexSchedulers(
 	return []goroutine.BackgroundRoutine{
 		background.NewScheduler(
 			observationCtx,
-			uploadSvc, policiesSvc, policyMatcher, autoindexingSvc.indexEnqueuer, repoStore,
+			uploadSvc, autoindexingSvc, policiesSvc, policyMatcher, autoindexingSvc.indexEnqueuer, repoStore,
 			ConfigIndexingInst.SchedulerInterval,
 			background.IndexSchedulerConfig{
 				RepositoryProcessDelay: ConfigIndexingInst.RepositoryProcessDelay,
