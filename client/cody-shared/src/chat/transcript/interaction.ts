@@ -39,10 +39,7 @@ export class Interaction {
     }
 
     public async toPrompt(includeContext: boolean): Promise<Message[]> {
-        const messages: (ContextMessage | InteractionMessage)[] = [
-            PromptMixin.mixInto(this.humanMessage),
-            this.assistantMessage,
-        ]
+        console.log('prompt boi')
         if (includeContext) {
             messages.unshift(...(await this.context))
         }
