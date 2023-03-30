@@ -477,6 +477,7 @@ type ListPermissionSyncJobOpts struct {
 	NotNullProcessAfter bool
 	NotCanceled         bool
 	PartialSuccess      bool
+	WithQueueRank       bool
 
 	// SearchType and Query are related to text search for sync jobs.
 	SearchType PermissionsSyncSearchType
@@ -606,9 +607,22 @@ func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSy
 		}
 	}
 
+	columns := sqlf.Join(PermissionSyncJobColumns, ", ")
+	if opts.WithQueueRank {
+		columns = sqlf.Sprintf("%s, CASE WHEN queue_ranks.rank IS NOT NULL THEN queue_ranks.rank ELSE 0 END AS queue_rank", columns)
+		joinClause = sqlf.Sprintf(`
+			%s
+			LEFT JOIN (
+				SELECT id, ROW_NUMBER() OVER (ORDER BY permission_sync_jobs.priority DESC, permission_sync_jobs.process_after ASC NULLS FIRST, permission_sync_jobs.id ASC) AS rank
+				FROM permission_sync_jobs
+				WHERE state = 'queued'
+			) AS queue_ranks ON queue_ranks.id = permission_sync_jobs.id
+		`, joinClause)
+	}
+
 	q := sqlf.Sprintf(
 		listPermissionSyncJobQueryFmtstr,
-		sqlf.Join(PermissionSyncJobColumns, ", "),
+		columns,
 		joinClause,
 		whereClause,
 	)
@@ -623,11 +637,18 @@ func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSy
 
 	var syncJobs []*PermissionSyncJob
 	for rows.Next() {
-		job, err := ScanPermissionSyncJob(rows)
-		if err != nil {
-			return nil, err
+		var job PermissionSyncJob
+		if opts.WithQueueRank {
+			if err := scanPermissionSyncJobWithQueueRank(&job, rows); err != nil {
+				return nil, err
+			}
+		} else {
+			if err := scanPermissionSyncJob(&job, rows); err != nil {
+				return nil, err
+			}
+
 		}
-		syncJobs = append(syncJobs, job)
+		syncJobs = append(syncJobs, &job)
 	}
 
 	return syncJobs, nil
@@ -754,6 +775,7 @@ type PermissionSyncJob struct {
 	PermissionsFound   int
 	CodeHostStates     []PermissionSyncCodeHostState
 	IsPartialSuccess   bool
+	QueueRank          int32
 }
 
 func (j *PermissionSyncJob) RecordID() int { return j.ID }
@@ -832,6 +854,51 @@ func scanPermissionSyncJob(job *PermissionSyncJob, s dbutil.Scanner) error {
 		&job.PermissionsFound,
 		pq.Array(&codeHostStates),
 		&job.IsPartialSuccess,
+	); err != nil {
+		return err
+	}
+
+	job.ExecutionLogs = append(job.ExecutionLogs, executionLogs...)
+	job.CodeHostStates = append(job.CodeHostStates, codeHostStates...)
+
+	return nil
+}
+
+func scanPermissionSyncJobWithQueueRank(job *PermissionSyncJob, s dbutil.Scanner) error {
+	var executionLogs []executor.ExecutionLogEntry
+	var codeHostStates []PermissionSyncCodeHostState
+
+	if err := s.Scan(
+		&job.ID,
+		&job.State,
+		&job.Reason,
+		&job.CancellationReason,
+		&dbutil.NullInt32{N: &job.TriggeredByUserID},
+		&job.FailureMessage,
+		&job.QueuedAt,
+		&dbutil.NullTime{Time: &job.StartedAt},
+		&dbutil.NullTime{Time: &job.FinishedAt},
+		&dbutil.NullTime{Time: &job.ProcessAfter},
+		&job.NumResets,
+		&job.NumFailures,
+		&dbutil.NullTime{Time: &job.LastHeartbeatAt},
+		pq.Array(&executionLogs),
+		&job.WorkerHostname,
+		&job.Cancel,
+
+		&dbutil.NullInt{N: &job.RepositoryID},
+		&dbutil.NullInt{N: &job.UserID},
+
+		&job.Priority,
+		&job.NoPerms,
+		&job.InvalidateCaches,
+
+		&job.PermissionsAdded,
+		&job.PermissionsRemoved,
+		&job.PermissionsFound,
+		pq.Array(&codeHostStates),
+		&job.IsPartialSuccess,
+		&job.QueueRank,
 	); err != nil {
 		return err
 	}

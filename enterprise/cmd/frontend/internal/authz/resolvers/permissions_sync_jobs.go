@@ -106,7 +106,7 @@ func (s *permissionsSyncJobConnectionStore) UnmarshalCursor(cursor string, _ dat
 }
 
 func (s *permissionsSyncJobConnectionStore) getListArgs(pageArgs *database.PaginationArgs) database.ListPermissionSyncJobOpts {
-	opts := database.ListPermissionSyncJobOpts{}
+	opts := database.ListPermissionSyncJobOpts{WithQueueRank: true}
 	if pageArgs != nil {
 		opts.PaginationArgs = pageArgs
 	}
@@ -115,6 +115,10 @@ func (s *permissionsSyncJobConnectionStore) getListArgs(pageArgs *database.Pagin
 	}
 	if s.args.State != nil {
 		opts.State = *s.args.State
+
+		if opts.State != "QUEUED" {
+			opts.WithQueueRank = false
+		}
 	}
 	if s.args.Partial != nil {
 		opts.PartialSuccess = *s.args.Partial
@@ -258,6 +262,10 @@ func (p *permissionsSyncJobResolver) CodeHostStates() []graphqlbackend.CodeHostS
 
 func (p *permissionsSyncJobResolver) PartialSuccess() bool {
 	return p.job.IsPartialSuccess
+}
+
+func (p *permissionsSyncJobResolver) QueueRank() int32 {
+	return p.job.QueueRank
 }
 
 type codeHostStateResolver struct {

@@ -39,6 +39,7 @@ type PermissionsSyncJobResolver interface {
 	PermissionsFound() int32
 	CodeHostStates() []CodeHostStateResolver
 	PartialSuccess() bool
+	QueueRank() int32
 }
 
 type PermissionsSyncJobReasonResolver interface {

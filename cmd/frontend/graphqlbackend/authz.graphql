@@ -755,6 +755,10 @@ type PermissionsSyncJob implements Node {
     Show if the job has finished with a partially successful result.
     """
     partialSuccess: Boolean!
+    """
+    Rank of the permissions syncing job in processing queue. Rank if 0 if the job is not queued.
+    """
+    queueRank: Int!
 }
 
 """
