@@ -108,9 +108,8 @@ export const ValueLegendList: React.FunctionComponent<ValueLegendListProps> = ({
                                 <LoadingSpinner />
                             </div>
                         )
-                    } else {
-                        return <ValueLegendItem key={item.description} {...item} />
                     }
+                    return <ValueLegendItem key={item.description} {...item} />
                 })}
         </div>
         <div className={styles.legendRightPanel}>
