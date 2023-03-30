@@ -1,8 +1,15 @@
 package embed
 
 import (
+	"fmt"
 	"path/filepath"
+
 	"strings"
+
+	"github.com/grafana/regexp"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
 const MIN_EMBEDDABLE_FILE_SIZE = 32
@@ -17,30 +24,59 @@ var textFileExtensions = map[string]struct{}{
 	"txt":      {},
 }
 
-var excludedCodeFileExtensions = map[string]struct{}{
-	"sql":  {},
-	"svg":  {},
-	"json": {},
-	"yml":  {},
-	"yaml": {},
+var defaultExcludedFilePathRegexps = []*regexp.Regexp{
+	regexp.MustCompile(`(?i)\.(sql|svg|json|yml|yaml)$`),
+	regexp.MustCompile(`(?i)/?(__fixtures__|testdata|mocks|vendor|node_modules)/`),
 }
 
-var excludedFilePaths = []string{
-	"/__fixtures__",
-	"/testdata",
-	"/mocks",
-	"/vendor",
+var excludedFilePathRegexps = defaultExcludedFilePathRegexps
+
+func init() {
+	conf.ContributeValidator(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
+		embeddingsConf := c.SiteConfig().Embeddings
+		if embeddingsConf == nil {
+			return
+		}
+
+		for _, pattern := range embeddingsConf.ExcludedFilePathPatterns {
+			if _, err := regexp.Compile(pattern); err != nil {
+				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid regexp: `%s`. See the valid syntax: https://golang.org/pkg/regexp/", pattern)))
+			}
+		}
+
+		return
+	})
+
+	go func() {
+		conf.Watch(func() {
+			excludedFilePathRegexps = defaultExcludedFilePathRegexps
+
+			config := conf.Get()
+			if config == nil || config.Embeddings == nil {
+				return
+			}
+
+			for _, pattern := range config.Embeddings.ExcludedFilePathPatterns {
+				if re, err := regexp.Compile(pattern); err == nil {
+					excludedFilePathRegexps = append(excludedFilePathRegexps, re)
+				}
+			}
+		})
+	}()
 }
 
-func isEmbeddableFile(fileName string, content string) bool {
+func isExcludedFilePath(filePath string) bool {
+	for _, excludedFilePathRegexp := range excludedFilePathRegexps {
+		if excludedFilePathRegexp.MatchString(filePath) {
+			return true
+		}
+	}
+	return false
+}
+
+func isEmbeddableFileContent(content string) bool {
 	if len(strings.TrimSpace(content)) < MIN_EMBEDDABLE_FILE_SIZE {
 		return false
-	}
-
-	for _, excludedFilePath := range excludedFilePaths {
-		if strings.Contains(fileName, excludedFilePath) {
-			return false
-		}
 	}
 
 	lines := strings.Split(content, "\n")
@@ -69,17 +105,6 @@ func isValidTextFile(fileName string) bool {
 	}
 	basename := strings.ToLower(filepath.Base(fileName))
 	return strings.HasPrefix(basename, "license")
-}
-
-func isValidCodeFile(fileName string) bool {
-	basename := strings.ToLower(filepath.Base(fileName))
-	if strings.HasPrefix(basename, "dockerfile") {
-		return true
-	}
-
-	ext := strings.TrimPrefix(filepath.Ext(fileName), ".")
-	_, ok := excludedCodeFileExtensions[strings.ToLower(ext)]
-	return !ok
 }
 
 func min(a, b int) int {

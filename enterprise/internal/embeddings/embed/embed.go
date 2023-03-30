@@ -37,9 +37,13 @@ func EmbedRepo(
 ) (*embeddings.RepoEmbeddingIndex, error) {
 	codeFileNames, textFileNames := []string{}, []string{}
 	for _, fileName := range fileNames {
+		if isExcludedFilePath(fileName) {
+			continue
+		}
+
 		if isValidTextFile(fileName) {
 			textFileNames = append(textFileNames, fileName)
-		} else if isValidCodeFile(fileName) {
+		} else {
 			codeFileNames = append(codeFileNames, fileName)
 		}
 	}
@@ -139,7 +143,7 @@ func embedFiles(
 			continue
 		}
 		content := string(contentBytes)
-		if !isEmbeddableFile(fileName, content) {
+		if !isEmbeddableFileContent(content) {
 			continue
 		}
 
