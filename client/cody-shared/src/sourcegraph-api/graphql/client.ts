@@ -27,7 +27,7 @@ interface EmbeddingsSearchResponse {
     embeddingsSearch: EmbeddingsSearchResults
 }
 
-interface LogEventResponse { }
+interface LogEventResponse {}
 
 export interface EmbeddingsSearchResult {
     fileName: string
@@ -79,9 +79,15 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async logEvent(event: { name: string; userCookieID: string; url: string; argument?: string | {}; publicArgument?: string | {} }): Promise<void | Error> {
+    public async logEvent(event: {
+        name: string
+        userCookieID: string
+        url: string
+        argument?: string | {}
+        publicArgument?: string | {}
+    }): Promise<void | Error> {
         return this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(response =>
-            extractDataOrError(response, data => { })
+            extractDataOrError(response, data => {})
         )
     }
 

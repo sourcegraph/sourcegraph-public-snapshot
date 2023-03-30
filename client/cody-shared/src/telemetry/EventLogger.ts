@@ -47,6 +47,6 @@ export class EventLogger {
         }
         const argument = { ...eventProperties, version: this.version }
         const publicArgument = { ...publicProperties, version: this.version }
-        await this.apiClient.logEvent({name: eventName, userCookieID: this.uid, url: "", argument, publicArgument})
+        await this.apiClient.logEvent({ name: eventName, userCookieID: this.uid, url: '', argument, publicArgument })
     }
 }
