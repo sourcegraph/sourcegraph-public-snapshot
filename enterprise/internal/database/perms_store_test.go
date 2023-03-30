@@ -236,50 +236,6 @@ func TestPermsStore_LoadRepoPermissions(t *testing.T) {
 	})
 }
 
-func checkLegacyPermsTable(s *permsStore, sql string, expects map[int32][]uint32) error {
-	rows, err := s.Handle().QueryContext(context.Background(), sql)
-	if err != nil {
-		return err
-	}
-
-	for rows.Next() {
-		var id int32
-		var ids []int64
-		if err = rows.Scan(&id, pq.Array(&ids)); err != nil {
-			return err
-		}
-
-		intIDs := make([]uint32, 0, len(ids))
-		for _, id := range ids {
-			intIDs = append(intIDs, uint32(id))
-		}
-
-		if expects[id] == nil {
-			return errors.Errorf("unexpected row in table: (id: %v) -> (ids: %v)", id, intIDs)
-		}
-
-		comparator := func(a, b uint32) bool {
-			return a < b
-		}
-
-		if cmp.Diff(expects[id], intIDs, cmpopts.SortSlices(comparator)) != "" {
-			return errors.Errorf("intIDs - key %v: want %d but got %d", id, expects[id], intIDs)
-		}
-
-		delete(expects, id)
-	}
-
-	if err = rows.Close(); err != nil {
-		return err
-	}
-
-	if len(expects) > 0 {
-		return errors.Errorf("missing rows from table: %v", expects)
-	}
-
-	return nil
-}
-
 func TestPermsStore_SetUserExternalAccountPerms(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -2784,16 +2740,6 @@ func TestPermsStore_GrantPendingPermissions(t *testing.T) {
 
 			checkUserRepoPermissions(t, s, nil, test.expectUserRepoPerms)
 
-			err := checkLegacyPermsTable(s, `SELECT user_id, object_ids_ints FROM user_permissions`, test.expectUserPerms)
-			if err != nil {
-				t.Fatal("user_permissions:", err)
-			}
-
-			err = checkLegacyPermsTable(s, `SELECT repo_id, user_ids_ints FROM repo_permissions`, test.expectRepoPerms)
-			if err != nil {
-				t.Fatal("repo_permissions:", err)
-			}
-
 			// Query and check rows in "user_pending_permissions" table.
 			idToSpecs, err := checkUserPendingPermsTable(ctx, s, test.expectUserPendingPerms)
 			if err != nil {
@@ -3107,6 +3053,12 @@ func TestPermsStore_DatabaseDeadlocks(t *testing.T) {
 	const numOps = 50
 	var wg sync.WaitGroup
 	wg.Add(4)
+	go func() {
+		defer wg.Done()
+		for i := 0; i < numOps; i++ {
+			setUserPermissions(ctx, t)
+		}
+	}()
 	go func() {
 		defer wg.Done()
 		for i := 0; i < numOps; i++ {
