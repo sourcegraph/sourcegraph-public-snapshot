@@ -87,7 +87,7 @@ const config = {
   stats: {
     // Minimize logging in case if Webpack is used along with multiple other services.
     // Use `normal` output preset in case of running standalone web server.
-    preset: WEBPACK_SERVE_INDEX || IS_PRODUCTION ? 'normal' : 'errors-warnings',
+    preset: WEBPACK_SERVE_INDEX || IS_PRODUCTION ? 'normal' : 'errors',
     errorDetails: true,
     timings: true,
   },
@@ -98,6 +98,9 @@ const config = {
   target: 'browserslist',
   // Use cache only in `development` mode to speed up production build.
   cache: IS_PERSISTENT_CACHE_ENABLED && getCacheConfig({ invalidateCacheFiles: [] }),
+  performance: {
+    hints: false,
+  },
   optimization: {
     minimize: IS_PRODUCTION,
     minimizer: [getTerserPlugin(), new CssMinimizerWebpackPlugin()],
@@ -153,6 +156,7 @@ const config = {
     }),
     getProvidePlugin(),
     new MiniCssExtractPlugin({
+      ignoreOrder: true,
       // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
       filename:
         IS_PRODUCTION && !WEBPACK_USE_NAMED_CHUNKS
