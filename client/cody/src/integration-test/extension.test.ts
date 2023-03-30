@@ -78,6 +78,7 @@ suite('End-to-end', () => {
         console.log('Run the explain command')
         // Run the "explain" command
         await ensureExecuteCommand('cody.recipe.explain-code-high-level')
+        console.log('getExtension')
         const api = vscode.extensions.getExtension<ExtensionApi>('sourcegraph.cody-ai')
         assert.ok(api)
         assert.ok(api.exports)

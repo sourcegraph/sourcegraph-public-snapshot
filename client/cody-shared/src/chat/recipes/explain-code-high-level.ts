@@ -10,8 +10,14 @@ export class ExplainCodeHighLevel implements Recipe {
         return 'explain-code-high-level'
     }
 
-    public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
+    public async getInteraction(
+        _humanChatInput: string,
+        editor: Editor,
+        _intentDetector: IntentDetector,
+        codebaseContext: CodebaseContext
+    ): Promise<Interaction | null> {
+        console.log('🐛')
+        const selection = editor.getActiveTextEditorSelection()
         if (!selection) {
             return Promise.resolve(null)
         }
@@ -24,6 +30,7 @@ export class ExplainCodeHighLevel implements Recipe {
         const promptMessage = `Explain the following ${languageName} code at a high level. Only include details that are essential to an overal understanding of what's happening in the code.\n\`\`\`\n${truncatedSelectedText}\n\`\`\`\n${MARKDOWN_FORMAT_PROMPT}`
         const displayText = `Explain the following code at a high level:\n\`\`\`\n${selection.selectedText}\n\`\`\``
 
+        console.log('🐛🐛')
         return new Interaction(
             { speaker: 'human', text: promptMessage, displayText },
             { speaker: 'assistant' },
