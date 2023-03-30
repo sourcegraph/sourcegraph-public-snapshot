@@ -135,7 +135,7 @@ export class EventLogger implements TelemetryService {
      */
     private async logEvent(event: string, eventProperties?: any, publicArgument?: any): Promise<void> {
         const anonUserId = await this.getAnonUserID()
-        logEvent(
+        await logEvent(
             {
                 name: event,
                 userCookieID: anonUserId,
