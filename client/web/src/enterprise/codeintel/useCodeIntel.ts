@@ -148,7 +148,8 @@ export const useCodeIntel = ({
                         fetchSearchBasedReferences(deduplicateAndAddReferences)
                     }
 
-                    // TODO: explain wth is going on here?
+                    // When no definitions are found, the hover tooltip falls back to a search based
+                    // search, regardless of the mixPreciseAndSearchBasedReferences setting.
                     if (lsifData.definitions.nodes.length === 0) {
                         fetchSearchBasedDefinitions(setDefinitions)
                     }
