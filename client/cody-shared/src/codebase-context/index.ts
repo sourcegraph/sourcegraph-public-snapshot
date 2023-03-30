@@ -23,7 +23,7 @@ export class CodebaseContext {
     ) {}
 
     public async getContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
-        Logger.getInstance().log('context type: ' + this.contextType)
+        await Logger.getInstance().log('context type: ' + this.contextType)
         switch (this.contextType) {
             case 'blended':
                 return this.embeddings
@@ -55,7 +55,7 @@ export class CodebaseContext {
             options.numTextResults
         )
 
-        Logger.getInstance().logJSON(
+        await Logger.getInstance().logJSON(
             embeddingsSearchResults,
             (key, value) => (key === 'content' ? undefined : value),
             2

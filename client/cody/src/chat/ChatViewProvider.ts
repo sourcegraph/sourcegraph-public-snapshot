@@ -217,14 +217,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
         const logger = Logger.getInstance()
         if (this.mode === 'development') {
-            logger.setLogFunc((msg: string): void => {
+            logger.setLogFunc(async (msg: string): Promise<void> => {
                 if (this.mode === 'development') {
                     const timestamp = new Date().toLocaleTimeString('en-US', {
                         hour: '2-digit',
                         minute: '2-digit',
                         second: '2-digit',
                     })
-                    this.webview?.postMessage({ type: 'debug', message: `(${timestamp}) ${msg}` })
+                    await this.webview?.postMessage({ type: 'debug', message: `(${timestamp}) ${msg}` })
                 }
             })
         }
