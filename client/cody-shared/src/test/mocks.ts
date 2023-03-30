@@ -25,6 +25,10 @@ export class MockIntentDetector implements IntentDetector {
     public isCodebaseContextRequired(input: string): Promise<boolean | Error> {
         return this.mocks.isCodebaseContextRequired?.(input) ?? Promise.resolve(false)
     }
+
+    public isEditorContextRequired(input: string): boolean | Error {
+        return this.mocks.isEditorContextRequired?.(input) ?? false
+    }
 }
 
 export class MockKeywordContextFetcher implements KeywordContextFetcher {

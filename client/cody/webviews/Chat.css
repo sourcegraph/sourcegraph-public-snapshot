@@ -224,3 +224,12 @@
     padding: 4px 8px;
     border: none;
 }
+
+.link-button {
+    background: none;
+    border: none;
+    color: var(--vscode-textLink-foreground);
+    cursor: pointer;
+    font-size: inherit;
+    text-decoration: underline;
+}
