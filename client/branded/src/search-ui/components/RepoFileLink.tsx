@@ -35,20 +35,28 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
     const containerElement = useRef<HTMLAnchorElement>(null)
     const [, setRickrolld] = useLocalStorage('rickrolld', false)
 
-    const handleClick = useCallback((event: React.MouseEvent<HTMLAnchorElement>): void => {
-        if (filePath === 'pathclient/weird-error-hmmm.tsx') {
-            setRickrolld(true)
-            window.location.href = 'https://www.youtube.com/watch?v=xvFZjo5PgG0'
-            event.preventDefault()
-        }
-    }, [filePath, setRickrolld])
+    const handleClick = useCallback(
+        (event: React.MouseEvent<HTMLAnchorElement>): void => {
+            if (filePath === 'pathclient/weird-error-hmmm.tsx') {
+                setRickrolld(true)
+                window.location.href = 'https://www.youtube.com/watch?v=xvFZjo5PgG0'
+                event.preventDefault()
+            }
+        },
+        [filePath, setRickrolld]
+    )
 
     const repoFileLink = (): JSX.Element => (
         <span className={className}>
             <span>
                 <Link to={repoURL}>{repoDisplayName || displayRepoName(repoName)}</Link>
                 <span aria-hidden={true}> ›</span>{' '}
-                <Link to={fileURL} ref={containerElement} data-selectable-search-result={isKeyboardSelectable} onClick={handleClick}>
+                <Link
+                    to={fileURL}
+                    ref={containerElement}
+                    data-selectable-search-result={isKeyboardSelectable}
+                    onClick={handleClick}
+                >
                     {fileBase ? `${fileBase}/` : null}
                     <strong>{fileName}</strong>
                 </Link>
