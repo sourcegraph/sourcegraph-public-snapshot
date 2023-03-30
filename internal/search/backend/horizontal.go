@@ -70,7 +70,7 @@ type HorizontalSearcher struct {
 func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, streamer zoekt.Sender) error {
 	// We check for nil opts for convenience in tests. Must fix once we rely
 	// on this.
-	if opts != nil && opts.FlushWallTime > 0 {
+	if opts != nil && opts.UseDocumentRanks {
 		return s.streamSearchExperimentalRanking(ctx, q, opts, streamer)
 	}
 
@@ -211,13 +211,8 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 
 	siteConfig := newRankingSiteConfig(conf.Get().SiteConfiguration)
 
-	streamer, flushAll := newFlushCollectSender(opts, siteConfig.maxSizeBytes, streamer)
-	defer flushAll()
-
-	// We give each zoekt a little less time to flush so the frontend has a
-	// chance to collect them before flushing.
-	childOpts := *opts
-	childOpts.FlushWallTime -= childOpts.FlushWallTime / 5
+	flushSender := newFlushCollectSender(opts, endpoints, siteConfig.maxSizeBytes, streamer)
+	defer flushSender.Flush()
 
 	// During re-balancing a repository can appear on more than one replica.
 	var mu sync.Mutex
@@ -231,7 +226,7 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 	ch := make(chan error, len(clients))
 	for endpoint, c := range clients {
 		go func(endpoint string, c zoekt.Streamer) {
-			err := c.StreamSearch(ctx, q, &childOpts, stream.SenderFunc(func(sr *zoekt.SearchResult) {
+			err := c.StreamSearch(ctx, q, opts, stream.SenderFunc(func(sr *zoekt.SearchResult) {
 				// This shouldn't happen, but skip event if sr is nil.
 				if sr == nil {
 					return
@@ -241,14 +236,15 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 				sr.Files = dedupper.Dedup(endpoint, sr.Files)
 				mu.Unlock()
 
-				streamer.Send(sr)
+				flushSender.Send(endpoint, sr)
 			}))
 
 			if isZoektRolloutError(ctx, err) {
-				streamer.Send(crashEvent())
+				flushSender.Send(endpoint, crashEvent())
 				err = nil
 			}
 
+			flushSender.SendDone(endpoint)
 			ch <- err
 		}(endpoint, c)
 	}

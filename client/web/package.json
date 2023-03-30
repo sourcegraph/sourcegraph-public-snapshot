@@ -3,7 +3,6 @@
   "name": "@sourcegraph/web",
   "version": "1.10.1",
   "description": "The Sourcegraph web app",
-  "license": "Apache-2.0",
   "scripts": {
     "test": "jest --testPathIgnorePatterns end-to-end --testPathIgnorePatterns regression integration",
     "task:mocha": "cross-env TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha",

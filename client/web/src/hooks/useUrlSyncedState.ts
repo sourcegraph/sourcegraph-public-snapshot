@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 
 /**
  * "useState" like hook that syncs state with URL search parameters.
@@ -10,7 +10,7 @@ import { useHistory } from 'react-router'
 export function useURLSyncedState<T extends Record<string, string>>(
     initialData: T,
     initialSearchParameters: URLSearchParams = new URLSearchParams(window.location.search),
-    useHistoryHook = useHistory
+    useNavigateHook = useNavigate
 ): [T, (partialData: Partial<T>) => void] {
     const dataFromURL = Object.fromEntries(initialSearchParameters) as Partial<T>
     const [data, setData] = useState<T>({ ...initialData, ...dataFromURL })
@@ -19,7 +19,7 @@ export function useURLSyncedState<T extends Record<string, string>>(
         setData(data => ({ ...data, ...partialData }))
     }
 
-    const history = useHistoryHook()
+    const navigate = useNavigateHook()
     useEffect(() => {
         // Update the URL when the filters change
         const searchParameters = new URLSearchParams()
@@ -28,7 +28,7 @@ export function useURLSyncedState<T extends Record<string, string>>(
                 searchParameters.set(key, value)
             }
         }
-        history?.replace({ search: searchParameters.toString() })
-    }, [data, history])
+        navigate({ search: searchParameters.toString() }, { replace: true })
+    }, [data, navigate])
     return [data, setNewData]
 }

@@ -4,14 +4,14 @@
 # This allows the base image to be substituted for a GCP image that ships metrics to managed Prometheus. Default base image is regular upstream Prometheus
 #	https://cloud.google.com/stackdriver/docs/managed-prometheus/setup-unmanaged#run-gmp
 # To upgrade Prometheus or Alertmanager, see https://docs.sourcegraph.com/dev/background-information/observability/prometheus#upgrading-prometheus-or-alertmanager
-ARG BASE_IMAGE="prom/prometheus:v2.40.5@sha256:16e38fef3dad9d45f363988c290c6bd14b4d44006d157f6c2a41dfbcc4674505"
+ARG BASE_IMAGE="prom/prometheus:v2.42.0@sha256:5689a4360cf1479bbad944b1311a90b495546c498c46f48e44fa7e5ac6412191"
 # https://github.com/hadolint/hadolint/issues/339
 # hadolint ignore=DL3006
 FROM ${BASE_IMAGE} AS prom_upstream
-FROM prom/alertmanager:v0.24.0@sha256:088464f949de8065b9da7dfce7302a633d700e9d598e2bebc03310712f083b31 AS am_upstream
+FROM prom/alertmanager:v0.25.0@sha256:db8303fa05341f5dc6b19b36a97325cd1b8307254ed9042a2c554af71f3c0284 AS am_upstream
 
 # Build monitoring definitions
-FROM sourcegraph/alpine-3.14:196830_2023-02-01_af83eee939ca@sha256:b4d7040d41fcf37fbf96fe5a14c39ae15580a3a6c76355cc7ea04a74b6c3b9fa AS monitoring_builder
+FROM sourcegraph/alpine-3.14:208635_2023-03-20_4.5-5e69dce80501@sha256:9e480efdf1b7fa41a4aae0d1111cffed9653aca375f0af4d466eea9a703234f8 AS monitoring_builder
 RUN mkdir -p '/generated/prometheus'
 COPY ./.bin/monitoring-generator /bin/monitoring-generator
 RUN PROMETHEUS_DIR='/generated/prometheus' GRAFANA_DIR='' DOCS_DIR='' NO_PRUNE=true /bin/monitoring-generator
@@ -39,7 +39,7 @@ LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
 # Prometheus - extended from https://github.com/prometheus/prometheus/blob/VERSION/Dockerfile
 # Check the upstream image (replacing VERSION with the appropriate Prometheus version) when upgrading
 COPY --from=prom_upstream /bin/prometheus /bin/prometheus
-COPY --from=prom_upstream /bin/promtool /bin/promtoool
+COPY --from=prom_upstream /bin/promtool /bin/promtool
 COPY --from=prom_upstream /etc/prometheus/prometheus.yml /etc/prometheus/prometheus.yml
 COPY --from=prom_upstream /usr/share/prometheus/console_libraries/ /usr/share/prometheus/console_libraries/
 COPY --from=prom_upstream /usr/share/prometheus/consoles/ /usr/share/prometheus/consoles/

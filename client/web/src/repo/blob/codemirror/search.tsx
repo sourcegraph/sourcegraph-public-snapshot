@@ -13,16 +13,24 @@ import {
     SearchQuery,
     setSearchQuery,
 } from '@codemirror/search'
-import { Compartment, Extension, StateEffect } from '@codemirror/state'
+import {
+    Compartment,
+    Extension,
+    StateEffect,
+    TransactionSpec,
+    type Text as CodeMirrorText,
+    SelectionRange,
+} from '@codemirror/state'
 import { EditorView, KeyBinding, keymap, Panel, runScopeHandlers, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { mdiChevronDown, mdiChevronUp, mdiFormatLetterCase, mdiInformationOutline, mdiRegex } from '@mdi/js'
-import { History } from 'history'
 import { createRoot, Root } from 'react-dom/client'
+import { NavigateFunction } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
-import { debounceTime, distinctUntilChanged, startWith } from 'rxjs/operators'
+import { debounceTime, distinctUntilChanged, startWith, tap } from 'rxjs/operators'
 
 import { QueryInputToggle } from '@sourcegraph/branded'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import { pluralize } from '@sourcegraph/common'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { Button, Icon, Input, Label, Text, Tooltip } from '@sourcegraph/wildcard'
@@ -30,9 +38,8 @@ import { Button, Icon, Input, Label, Text, Tooltip } from '@sourcegraph/wildcard
 import { Keybindings } from '../../../components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { createElement } from '../../../util/dom'
 
-import { Container } from './react-interop'
-
 import { blobPropsFacet } from '.'
+import { CodeMirrorContainer } from './react-interop'
 
 const searchKeybinding = <Keybindings keybindings={[{ held: ['Mod'], ordered: ['F'] }]} />
 
@@ -51,40 +58,61 @@ const searchKeybindingTooltip = (
 // Match 'from' position -> 1-based serial number (index) of this match in the document.
 type SearchMatches = Map<number, number>
 
+export const BLOB_SEARCH_CONTAINER_ID = 'blob-search-container'
+
+interface SearchPanelState {
+    searchQuery: SearchQuery
+    // The input value is usually derived from searchQuery. But we are
+    // debouncing updating the searchQuery and without tracking the input value
+    // separately user input would be lossing characters and feel laggy.
+    inputValue: string
+    overrideBrowserSearch: boolean
+    matches: SearchMatches
+    // Currently selected 1-based match index.
+    currentMatchIndex: number | null
+}
+
 class SearchPanel implements Panel {
     public dom: HTMLElement
     public top = true
 
-    private state: {
-        searchQuery: SearchQuery
-        overrideBrowserSearch: boolean
-        history: History
-        matches: SearchMatches
-        // Currently selected 1-based match index.
-        currentMatchIndex: number | null
-    }
+    private state: SearchPanelState
     private root: Root | null = null
     private input: HTMLInputElement | null = null
     private searchTerm = new Subject<string>()
     private subscriptions = new Subscription()
+    private navigate: NavigateFunction
 
     constructor(private view: EditorView) {
         this.dom = createElement('div', {
             className: 'cm-sg-search-container d-flex align-items-center',
+            id: BLOB_SEARCH_CONTAINER_ID,
             onkeydown: this.onkeydown,
         })
+        this.navigate = view.state.facet(blobPropsFacet).navigate
 
+        const searchQuery = getSearchQuery(this.view.state)
+        const matches = calculateMatches(searchQuery, view.state.doc)
         this.state = {
-            searchQuery: getSearchQuery(this.view.state),
+            searchQuery,
+            inputValue: searchQuery.search,
             overrideBrowserSearch: this.view.state.field(overrideBrowserFindInPageShortcut),
-            history: this.view.state.facet(blobPropsFacet).history,
-            matches: this.view.state.field(searchMatches),
-            currentMatchIndex: this.view.state.field(currentSearchMatchIndex),
+            matches,
+            currentMatchIndex: getMatchIndexForSelection(matches, view.state.selection.main),
         }
 
         this.subscriptions.add(
             this.searchTerm
-                .pipe(startWith(this.state.searchQuery.search), debounceTime(100), distinctUntilChanged())
+                .pipe(
+                    startWith(this.state.searchQuery.search),
+                    distinctUntilChanged(),
+                    // Immediately update input for fast feedback
+                    tap(value => {
+                        this.state = { ...this.state, inputValue: value }
+                        this.render(this.state)
+                    }),
+                    debounceTime(100)
+                )
                 .subscribe(searchTerm => this.commit({ search: searchTerm }))
         )
     }
@@ -93,8 +121,14 @@ class SearchPanel implements Panel {
         let newState = this.state
 
         const searchQuery = getSearchQuery(update.state)
-        if (!searchQuery.eq(this.state.searchQuery)) {
-            newState = { ...newState, searchQuery }
+        const searchQueryChanged = !searchQuery.eq(this.state.searchQuery)
+        if (searchQueryChanged) {
+            newState = {
+                ...newState,
+                inputValue: searchQuery.search,
+                searchQuery,
+                matches: calculateMatches(searchQuery, update.view.state.doc),
+            }
         }
 
         const overrideBrowserSearch = update.state.field(overrideBrowserFindInPageShortcut)
@@ -102,32 +136,22 @@ class SearchPanel implements Panel {
             newState = { ...newState, overrideBrowserSearch }
         }
 
-        const history = update.state.facet(blobPropsFacet).history
-        if (history !== this.state.history) {
-            newState = { ...newState, history }
-        }
-
-        const currentMatchIndex = update.state.field(currentSearchMatchIndex)
-        if (currentMatchIndex !== this.state.currentMatchIndex) {
-            newState = { ...newState, currentMatchIndex }
-        }
-
-        const matches = update.state.field(searchMatches)
-        if (matches !== this.state.matches) {
-            newState = { ...newState, matches }
+        // It looks like update.SelectionSet is not set when the search query changes
+        if (searchQueryChanged || update.selectionSet) {
+            newState = {
+                ...newState,
+                currentMatchIndex: getMatchIndexForSelection(newState.matches, update.view.state.selection.main),
+            }
         }
 
         if (newState !== this.state) {
             this.state = newState
-            this.render({
-                ...newState,
-                totalMatches: this.state.matches.size,
-            })
+            this.render(this.state)
         }
     }
 
     public mount(): void {
-        this.render({ ...this.state, totalMatches: this.state.matches.size })
+        this.render(this.state)
     }
 
     public destroy(): void {
@@ -136,24 +160,20 @@ class SearchPanel implements Panel {
 
     private render({
         searchQuery,
+        inputValue,
         overrideBrowserSearch,
-        history,
         currentMatchIndex,
-        totalMatches,
-    }: {
-        searchQuery: SearchQuery
-        overrideBrowserSearch: boolean
-        history: History
-        currentMatchIndex: number | null
-        totalMatches: number
-    }): void {
+        matches,
+    }: SearchPanelState): void {
         if (!this.root) {
             this.root = createRoot(this.dom)
         }
 
+        const totalMatches = matches.size
+
         this.root.render(
-            <Container
-                history={history}
+            <CodeMirrorContainer
+                navigate={this.navigate}
                 onMount={() => {
                     this.input?.focus()
                     this.input?.select()
@@ -168,6 +188,7 @@ class SearchPanel implements Panel {
                         placeholder="Find..."
                         autoComplete="off"
                         inputClassName={searchQuery.search && totalMatches === 0 ? 'text-danger' : ''}
+                        value={inputValue}
                         onChange={event => this.searchTerm.next(event.target.value)}
                         main-field="true"
                     />
@@ -215,9 +236,8 @@ class SearchPanel implements Panel {
                 {searchQuery.search ? (
                     <div>
                         <Text className="m-0">
-                            {currentMatchIndex !== null && totalMatches > 0
-                                ? `${currentMatchIndex} / ${totalMatches}`
-                                : '0 results'}
+                            {currentMatchIndex !== null && `${currentMatchIndex} / `}
+                            {totalMatches} {pluralize('result', totalMatches)}
                         </Text>
                     </div>
                 ) : null}
@@ -233,7 +253,7 @@ class SearchPanel implements Panel {
                     </Label>
                     {searchKeybindingTooltip}
                 </div>
-            </Container>
+            </CodeMirrorContainer>
         )
     }
 
@@ -242,19 +262,12 @@ class SearchPanel implements Panel {
             effects: setOverrideBrowserFindInPageShortcut.of(override),
         })
 
-    private updateSelectedSearchMatch = ({ from }: { from: number }): void =>
-        this.view.dispatch({
-            effects: setCurrentSearchMatchIndex.of(this.state.matches.get(from) ?? null),
-        })
-
     private findNext = (): void => {
         findNext(this.view)
-        this.updateSelectedSearchMatch(this.view.state.selection.ranges[0])
     }
 
     private findPrevious = (): void => {
         findPrevious(this.view)
-        this.updateSelectedSearchMatch(this.view.state.selection.ranges[0])
     }
 
     // Taken from CodeMirror's default search panel implementation. This is
@@ -274,19 +287,6 @@ class SearchPanel implements Panel {
         }
     }
 
-    private calculateMatches = (query: SearchQuery): void => {
-        const newSearchMatches: SearchMatches = new Map()
-        let index = 1
-        let result = query.getCursor(this.view.state.doc).next()
-        while (!result.done) {
-            newSearchMatches.set(result.value.from, index++)
-            result = query.getCursor(this.view.state.doc, result.value.to).next()
-        }
-        this.view.dispatch({
-            effects: [setSearchMatches.of(newSearchMatches), setCurrentSearchMatchIndex.of(null)],
-        })
-    }
-
     private commit = ({
         search,
         caseSensitive,
@@ -303,11 +303,10 @@ class SearchPanel implements Panel {
         })
 
         if (!query.eq(this.state.searchQuery)) {
-            this.view.dispatch({ effects: setSearchQuery.of(query) })
+            let transactionSpec: TransactionSpec = {}
+            const effects: StateEffect<any>[] = [setSearchQuery.of(query)]
 
             if (query.search) {
-                this.calculateMatches(query)
-
                 // The following code scrolls next match into view if there is no
                 // match in the visible viewport. This is done by searching for the
                 // text from the currently top visible line and determining whether
@@ -327,25 +326,43 @@ class SearchPanel implements Panel {
                 if (result.done) {
                     // No match in the remainder of the document, wrap around
                     result = query.getCursor(this.view.state.doc).next()
-                    if (result.done) {
-                        // Search term is not in the document, nothing to do
-                        return
-                    }
                 }
 
-                this.updateSelectedSearchMatch(result.value)
+                if (!result.done) {
+                    // Taken from the original `findPrevious` and `findNext` CodeMirror implementation:
+                    // https://github.com/codemirror/search/blob/affb772655bab706e08f99bd50a0717bfae795f5/src/search.ts#L385-L416
 
-                // Taken from the original `findPrevious` and `findNext` CodeMirror implementation:
-                // https://github.com/codemirror/search/blob/affb772655bab706e08f99bd50a0717bfae795f5/src/search.ts#L385-L416
-                this.view.dispatch({
-                    selection: { anchor: result.value.from, head: result.value.to },
-                    scrollIntoView: true,
-                    effects: announceMatch(this.view, result.value),
-                    userEvent: 'select.search',
-                })
+                    transactionSpec = {
+                        selection: { anchor: result.value.from, head: result.value.to },
+                        scrollIntoView: true,
+                        userEvent: 'select.search',
+                    }
+                    effects.push(announceMatch(this.view, result.value))
+                }
+                // Search term is not in the document, nothing to do
             }
+
+            this.view.dispatch({
+                ...transactionSpec,
+                effects,
+            })
         }
     }
+}
+
+function calculateMatches(query: SearchQuery, document: CodeMirrorText): SearchMatches {
+    const newSearchMatches: SearchMatches = new Map()
+    let index = 1
+    let result = query.getCursor(document).next()
+    while (!result.done) {
+        newSearchMatches.set(result.value.from, index++)
+        result = query.getCursor(document, result.value.to).next()
+    }
+    return newSearchMatches
+}
+
+function getMatchIndexForSelection(matches: SearchMatches, range: SelectionRange): number | null {
+    return range.empty ? null : matches.get(range.from) ?? null
 }
 
 // Announce the current match to screen readers.
@@ -381,14 +398,47 @@ function announceMatch(view: EditorView, { from, to }: { from: number; to: numbe
     )
 }
 
+const theme = EditorView.theme({
+    '.cm-sg-search-container': {
+        backgroundColor: 'var(--code-bg)',
+        padding: '0.375rem 1rem',
+    },
+    '.cm-sg-search-input': {
+        borderRadius: 'var(--border-radius)',
+        border: '1px solid var(--input-border-color)',
+
+        '&:focus-within': {
+            borderColor: 'var(--inpt-focus-border-color)',
+            boxShadow: 'var(--input-focus-box-shadow)',
+        },
+
+        '& input': {
+            borderColor: 'transparent',
+            '&:focus': {
+                boxShadow: 'none',
+            },
+        },
+    },
+    '.search-container > input.form-control': {
+        width: '15rem',
+    },
+    '.cm-searchMatch': {
+        backgroundColor: 'var(--mark-bg)',
+    },
+    '.cm-searchMatch-selected': {
+        backgroundColor: 'var(--oc-orange-3)',
+    },
+    '.cm-sg-search-info': {
+        color: 'var(--gray-06)',
+    },
+})
+
 interface SearchConfig {
     overrideBrowserFindInPageShortcut: boolean
     onOverrideBrowserFindInPageToggle: (enabled: boolean) => void
 }
 
 const [overrideBrowserFindInPageShortcut, , setOverrideBrowserFindInPageShortcut] = createUpdateableField(true)
-const [searchMatches, , setSearchMatches] = createUpdateableField<SearchMatches>(new Map())
-const [currentSearchMatchIndex, , setCurrentSearchMatchIndex] = createUpdateableField<number | null>(null)
 
 export function search(config: SearchConfig): Extension {
     const keymapCompartment = new Compartment()
@@ -401,8 +451,6 @@ export function search(config: SearchConfig): Extension {
     }
 
     return [
-        searchMatches,
-        currentSearchMatchIndex,
         overrideBrowserFindInPageShortcut.init(() => config.overrideBrowserFindInPageShortcut),
         EditorView.updateListener.of(update => {
             const override = update.state.field(overrideBrowserFindInPageShortcut)
@@ -411,38 +459,7 @@ export function search(config: SearchConfig): Extension {
                 update.view.dispatch({ effects: keymapCompartment.reconfigure(keymap.of(getKeyBindings(override))) })
             }
         }),
-        EditorView.theme({
-            '.cm-sg-search-container': {
-                backgroundColor: 'var(--code-bg)',
-                padding: '0.375rem 1rem',
-            },
-            '.cm-sg-search-input': {
-                borderRadius: 'var(--border-radius)',
-                border: '1px solid var(--input-border-color)',
-            },
-            '.cm-sg-search-input:focus-within': {
-                borderColor: 'var(--inpt-focus-border-color)',
-                boxShadow: 'var(--input-focus-box-shadow)',
-            },
-            '.cm-sg-search-input input': {
-                borderColor: 'transparent',
-            },
-            '.cm-sg-search-input input:focus': {
-                boxShadow: 'none',
-            },
-            '.search-container > input.form-control': {
-                width: '15rem',
-            },
-            '.cm-searchMatch': {
-                backgroundColor: 'var(--mark-bg)',
-            },
-            '.cm-searchMatch-selected': {
-                backgroundColor: 'var(--oc-orange-3)',
-            },
-            '.cm-sg-search-info': {
-                color: 'var(--gray-06)',
-            },
-        }),
+        theme,
         keymapCompartment.of(keymap.of(getKeyBindings(config.overrideBrowserFindInPageShortcut))),
         codemirrorSearch({
             createPanel: view => new SearchPanel(view),

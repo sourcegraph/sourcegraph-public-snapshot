@@ -5,7 +5,7 @@
   "State": "CLOSED",
   "URL": "https://github.com/sourcegraph/automation-testing/pull/468",
   "HeadRefOid": "a5955a89096304d07531f7467b269b1bcf2727c7",
-  "BaseRefOid": "36f6827a9ac62710ca5fb3df18000b9e7eb9b6ea",
+  "BaseRefOid": "1c94aaf85d51e9d016b8ce4639b9f022d94c52e6",
   "HeadRefName": "test-pr-10",
   "BaseRefName": "master",
   "Number": 468,
@@ -16,12 +16,14 @@
   },
   "BaseRepository": {
    "ID": "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+   "Name": "automation-testing",
    "Owner": {
     "Login": "sourcegraph"
    }
   },
   "HeadRepository": {
    "ID": "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+   "Name": "automation-testing",
    "Owner": {
     "Login": "sourcegraph"
    }
@@ -31,6 +33,11 @@
     "AvatarURL": "https://avatars.githubusercontent.com/u/229984?v=4",
     "Login": "LawnGnome",
     "URL": "https://github.com/LawnGnome"
+   },
+   {
+    "AvatarURL": "https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466\u0026v=4",
+    "Login": "courier-new",
+    "URL": "https://github.com/courier-new"
    }
   ],
   "Labels": {
@@ -70,6 +77,29 @@
      },
      "CreatedAt": "2021-12-30T23:02:46Z",
      "URL": "https://github.com/sourcegraph/automation-testing/pull/468#event-5829292407"
+    }
+   },
+   {
+    "Type": "ReopenedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466\u0026v=4",
+      "Login": "courier-new",
+      "URL": "https://github.com/courier-new"
+     },
+     "CreatedAt": "2023-02-03T20:14:42Z"
+    }
+   },
+   {
+    "Type": "ClosedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466\u0026v=4",
+      "Login": "courier-new",
+      "URL": "https://github.com/courier-new"
+     },
+     "CreatedAt": "2023-02-03T20:15:12Z",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/468#event-8435938069"
     }
    }
   ],
@@ -120,5 +150,5 @@
   },
   "IsDraft": false,
   "CreatedAt": "2021-12-30T22:57:42Z",
-  "UpdatedAt": "2021-12-30T23:02:46Z"
+  "UpdatedAt": "2023-02-03T20:15:12Z"
  }

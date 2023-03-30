@@ -1,8 +1,8 @@
 import { FC, useEffect, useState } from 'react'
 
-import { mdiCog } from '@mdi/js'
+import { mdiWebhook } from '@mdi/js'
 import { noop } from 'lodash'
-import { RouteComponentProps } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -16,9 +16,10 @@ import { CREATE_OUTBOUND_WEBHOOK } from './backend'
 import { EventTypes } from './create-edit/EventTypes'
 import { SubmitButton } from './create-edit/SubmitButton'
 
-export interface CreatePageProps extends TelemetryProps, RouteComponentProps<{}> {}
+export interface CreatePageProps extends TelemetryProps {}
 
-export const CreatePage: FC<CreatePageProps> = ({ telemetryService, history }) => {
+export const CreatePage: FC<CreatePageProps> = ({ telemetryService }) => {
+    const navigate = useNavigate()
     useEffect(() => {
         telemetryService.logPageView('OutboundWebhooksCreatePage')
     }, [telemetryService])
@@ -40,20 +41,20 @@ export const CreatePage: FC<CreatePageProps> = ({ telemetryService, history }) =
                 url,
             },
         },
-        onCompleted: () => history.push('/site-admin/outbound-webhooks'),
+        onCompleted: () => navigate('/site-admin/webhooks/outgoing'),
     })
 
     return (
         <div>
-            <PageTitle title="Add outgoing webhook" />
+            <PageTitle title="Create outgoing webhook" />
             <PageHeader
                 path={[
-                    { icon: mdiCog },
-                    { to: '/site-admin/outbound-webhooks', text: 'Outgoing webhooks' },
-                    { to: '/site-admin/outbound-webhooks/create', text: 'Add' },
+                    { icon: mdiWebhook },
+                    { to: '/site-admin/webhooks/outgoing', text: 'Outgoing webhooks' },
+                    { text: 'Create' },
                 ]}
                 headingElement="h2"
-                description="Add a new outgoing webhook"
+                description="Create a new outgoing webhook"
                 className="mb-3"
             />
 

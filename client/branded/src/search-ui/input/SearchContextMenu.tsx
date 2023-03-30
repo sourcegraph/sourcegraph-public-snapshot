@@ -12,7 +12,6 @@ import { SearchContextMinimalFields } from '@sourcegraph/shared/src/graphql-oper
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { getDefaultSearchContextSpec, SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import {
     Badge,
     Button,
@@ -256,14 +255,14 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                                 <Text className="mb-0">
                                     To search across your team's private repositories,{' '}
                                     <Link
-                                        to={buildCloudTrialURL(authenticatedUser, 'context')}
+                                        to="https://about.sourcegraph.com"
                                         onClick={() =>
-                                            telemetryService.log('ClickedOnCloudCTA', {
-                                                cloudCtaType: 'ContextDropDown',
+                                            telemetryService.log('ClickedOnEnterpriseCTA', {
+                                                location: 'ContextDropDown',
                                             })
                                         }
                                     >
-                                        try Sourcegraph Cloud
+                                        get Sourcegraph Enterprise
                                     </Link>
                                     .
                                 </Text>

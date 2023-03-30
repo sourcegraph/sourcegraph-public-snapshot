@@ -4,21 +4,20 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -33,7 +32,7 @@ func TestDeleteUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewClient()).DeleteUser(ctx, &struct {
+		result, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).DeleteUser(ctx, &struct {
 			User graphql.ID
 			Hard *bool
 		}{
@@ -55,7 +54,7 @@ func TestDeleteUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := newSchemaResolver(db, gitserver.NewClient()).DeleteUser(ctx, &struct {
+		_, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).DeleteUser(ctx, &struct {
 			User graphql.ID
 			Hard *bool
 		}{
@@ -376,202 +375,89 @@ func TestDeleteOrganization_OnPremise(t *testing.T) {
 				`,
 		})
 	})
-
-	t.Run("Hard delete is not supported on-premise", func(t *testing.T) {
-		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
-			Context: ctx,
-			Query: `
-				mutation DeleteOrganization($organization: ID!, $hard: Boolean) {
-					deleteOrganization(organization: $organization, hard: $hard) {
-						alwaysNil
-					}
-				}
-				`,
-			Variables: map[string]any{
-				"organization": orgIDString,
-				"hard":         true,
-			},
-			ExpectedResult: `
-			{
-				"deleteOrganization": null
-			}
-			`,
-			ExpectedErrors: []*gqlerrors.QueryError{
-				{
-					Message: "hard deleting organization is only supported on Sourcegraph.com",
-					Path:    []any{"deleteOrganization"},
-				},
-			},
-		})
-	})
 }
 
-func TestDeleteOrganization_OnCloud(t *testing.T) {
-	users := database.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+func TestSetIsSiteAdmin(t *testing.T) {
+	testCases := map[string]struct {
+		isSiteAdmin           bool
+		argsUserID            int32
+		argsSiteAdmin         bool
+		result                *EmptyResponse
+		wantErr               error
+		securityLogEventCalls int
+		setIsSiteAdminCalls   int
+	}{
+		"authenticated as non-admin": {
+			isSiteAdmin:           false,
+			argsUserID:            1,
+			argsSiteAdmin:         true,
+			result:                nil,
+			wantErr:               auth.ErrMustBeSiteAdmin,
+			securityLogEventCalls: 1,
+			setIsSiteAdminCalls:   0,
+		},
+		"set current user as site-admin": {
+			isSiteAdmin:           true,
+			argsUserID:            1,
+			argsSiteAdmin:         true,
+			result:                nil,
+			wantErr:               errRefuseToSetCurrentUserSiteAdmin,
+			securityLogEventCalls: 1,
+			setIsSiteAdminCalls:   0,
+		},
+		"authenticated as site-admin: promoting to site-admin": {
+			isSiteAdmin:           true,
+			argsUserID:            2,
+			argsSiteAdmin:         true,
+			result:                &EmptyResponse{},
+			wantErr:               nil,
+			securityLogEventCalls: 1,
+			setIsSiteAdminCalls:   1,
+		},
+		"authenticated as site-admin: demoting to site-admin": {
+			isSiteAdmin:           true,
+			argsUserID:            2,
+			argsSiteAdmin:         false,
+			result:                &EmptyResponse{},
+			wantErr:               nil,
+			securityLogEventCalls: 1,
+			setIsSiteAdminCalls:   1,
+		},
+	}
 
-	orgMembers := database.NewMockOrgMemberStore()
-	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, nil)
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			users := database.NewMockUserStore()
+			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: tc.isSiteAdmin}, nil)
+			users.SetIsSiteAdminFunc.SetDefaultReturn(nil)
 
-	orgs := database.NewMockOrgStore()
+			securityLogEvents := database.NewMockSecurityEventLogsStore()
+			securityLogEvents.LogEventFunc.SetDefaultReturn()
 
-	mockedOrg := types.Org{ID: 1, Name: "acme"}
-	orgIDString := string(MarshalOrgID(mockedOrg.ID))
+			db := database.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+			db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
 
-	db := database.NewMockDB()
-	db.OrgsFunc.SetDefaultReturn(orgs)
-	db.UsersFunc.SetDefaultReturn(users)
-	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+			s := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs())
 
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			actorCtx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			result, err := s.SetUserIsSiteAdmin(actorCtx, &struct {
+				UserID    graphql.ID
+				SiteAdmin bool
+			}{
+				UserID:    MarshalUserID(tc.argsUserID),
+				SiteAdmin: tc.argsSiteAdmin,
+			})
 
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(orig)
+			if want := tc.wantErr; err != want {
+				t.Errorf("err: want %q but got %v", want, err)
+			}
+			if result != tc.result {
+				t.Errorf("result: want %v but got %v", tc.result, result)
+			}
 
-	t.Run("Returns an error when user is not an org member", func(t *testing.T) {
-		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
-			Context: ctx,
-			Query: `
-				mutation DeleteOrganization($organization: ID!, $hard: Boolean) {
-					deleteOrganization(organization: $organization, hard: $hard) {
-						alwaysNil
-					}
-				}
-				`,
-			Variables: map[string]any{
-				"organization": orgIDString,
-				"hard":         true,
-			},
-			ExpectedResult: `
-				{
-					"deleteOrganization": null
-				}
-				`,
-			ExpectedErrors: []*gqlerrors.QueryError{
-				{
-					Message: "current user is not an org member",
-					Path:    []any{"deleteOrganization"},
-				},
-			},
+			mockrequire.CalledN(t, securityLogEvents.LogEventFunc, tc.securityLogEventCalls)
+			mockrequire.CalledN(t, users.SetIsSiteAdminFunc, tc.setIsSiteAdminCalls)
 		})
-	})
-
-	t.Run("Returns an error when feature flag is not enabled", func(t *testing.T) {
-		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(&types.OrgMembership{ID: 1, OrgID: 1, UserID: 1},
-			nil)
-
-		mockedFeatureFlag := featureflag.FeatureFlag{
-			Name:      "org-deletion",
-			Bool:      &featureflag.FeatureFlagBool{Value: false},
-			Rollout:   nil,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-			DeletedAt: nil,
-		}
-		featureFlags := database.NewMockFeatureFlagStore()
-		featureFlags.GetFeatureFlagFunc.SetDefaultReturn(&mockedFeatureFlag, nil)
-
-		db.OrgMembersFunc.SetDefaultReturn(orgMembers)
-		db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
-
-		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
-			Context: ctx,
-			Query: `
-				mutation DeleteOrganization($organization: ID!, $hard: Boolean) {
-					deleteOrganization(organization: $organization, hard: $hard) {
-						alwaysNil
-					}
-				}
-				`,
-			Variables: map[string]any{
-				"organization": orgIDString,
-				"hard":         true,
-			},
-			ExpectedResult: `
-				{
-					"deleteOrganization": null
-				}
-				`,
-			ExpectedErrors: []*gqlerrors.QueryError{
-				{
-					Message: "hard deleting organization is not supported",
-					Path:    []any{"deleteOrganization"},
-				},
-			},
-		})
-	})
-
-	t.Run("Returns an error when user tries to soft delete an org in Cloud mode", func(t *testing.T) {
-		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
-			Context: ctx,
-			Query: `
-				mutation DeleteOrganization($organization: ID!, $hard: Boolean) {
-					deleteOrganization(organization: $organization, hard: $hard) {
-						alwaysNil
-					}
-				}
-				`,
-			Variables: map[string]any{
-				"organization": orgIDString,
-				"hard":         false,
-			},
-			ExpectedResult: `
-				{
-					"deleteOrganization": null
-				}
-				`,
-			ExpectedErrors: []*gqlerrors.QueryError{
-				{
-					Message: "soft deleting organization is not supported on Sourcegraph.com",
-					Path:    []any{"deleteOrganization"},
-				},
-			},
-		})
-	})
-
-	t.Run("Org member can hard delete their org", func(t *testing.T) {
-		mockedFeatureFlag := featureflag.FeatureFlag{
-			Name:      "org-deletion",
-			Bool:      &featureflag.FeatureFlagBool{Value: true},
-			Rollout:   nil,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-			DeletedAt: nil,
-		}
-		featureFlags := database.NewMockFeatureFlagStore()
-		featureFlags.GetFeatureFlagFunc.SetDefaultReturn(&mockedFeatureFlag, nil)
-
-		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(&types.OrgMembership{ID: 1, OrgID: 1, UserID: 1},
-			nil)
-		db.OrgMembersFunc.SetDefaultReturn(orgMembers)
-		db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
-
-		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
-			Context: ctx,
-			Query: `
-				mutation DeleteOrganization($organization: ID!, $hard: Boolean) {
-					deleteOrganization(organization: $organization, hard: $hard) {
-						alwaysNil
-					}
-				}
-				`,
-			Variables: map[string]any{
-				"organization": orgIDString,
-				"hard":         true,
-			},
-			ExpectedResult: `
-				{
-					"deleteOrganization": {
-						"alwaysNil": null
-					}
-				}
-				`,
-		})
-	})
+	}
 }

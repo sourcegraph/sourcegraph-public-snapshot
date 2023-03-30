@@ -9,7 +9,7 @@ import { QueryChangeSource, QueryState } from '@sourcegraph/shared/src/search'
 import type { MonacoFieldProps } from '../monaco-field'
 import * as Monaco from '../monaco-field'
 
-import { generateRepoFiltersQuery } from './utils/generate-repo-filters-query'
+import { generateRepoFiltersQuery, getRepoQueryPreview } from './utils/generate-repo-filters-query'
 
 import styles from './InsightQueryInput.module.scss'
 
@@ -18,8 +18,9 @@ type MonacoPublicProps = Omit<MonacoFieldProps, 'queryState' | 'onChange' | 'ari
 
 export interface InsightQueryInputProps extends MonacoPublicProps, NativeInputProps {
     value: string
+    repoQuery: string | null
+    repositories: string[]
     patternType: SearchPatternType
-    repositories?: string
     onChange: (value: string) => void
 }
 
@@ -28,13 +29,17 @@ export const InsightQueryInput = forwardRef<HTMLInputElement, PropsWithChildren<
         const {
             value,
             patternType,
-            repositories = '',
+            repoQuery,
+            repositories = [],
             'aria-invalid': ariaInvalid,
             onChange,
             children,
             ...otherProps
         } = props
-        const previewQuery = `${generateRepoFiltersQuery(repositories)} ${props.value}`.trim()
+
+        const repoQueryPreview =
+            repoQuery !== null ? getRepoQueryPreview(repoQuery) : generateRepoFiltersQuery(repositories)
+        const previewQuery = `${repoQueryPreview} ${props.value}`.trim()
 
         const handleOnChange = (queryState: QueryState): void => {
             if (queryState.query !== value) {

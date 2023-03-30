@@ -4,9 +4,9 @@ package linters
 import (
 	"bytes"
 	"context"
-	"io"
 
 	"github.com/sourcegraph/run"
+	"go.bobheadxi.dev/streamline/pipeline"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
@@ -69,7 +69,7 @@ var Targets = []Target{
 		Checks: []*linter{
 			tsEnterpriseImport,
 			inlineTemplates,
-			runScript("pnpm deduplicate", "dev/check/pnpm-deduplicate.sh"),
+			runScript("pnpm dedupe", "dev/check/pnpm-deduplicate.sh"),
 			checkUnversionedDocsLinks(),
 		},
 	},
@@ -95,6 +95,8 @@ var Targets = []Target{
 		Description: "Check protobuf code for linting errors, formatting, etc",
 		Checks: []*linter{
 			bufFormat,
+			bufGenerate,
+			bufLint,
 		},
 	},
 	Formatting,
@@ -126,7 +128,7 @@ func runCheck(name string, check check.CheckAction[*repo.State]) *linter {
 	}
 }
 
-// pnpmInstallFilter is a LineMap that filters out all the warning junk that pnpm install
+// pnpmInstallFilter is a pipeline that filters out all the warning junk that pnpm install
 // emits that seem inconsequential, for example:
 //
 //	warning "@storybook/addon-storyshots > react-test-renderer@16.14.0" has incorrect peer dependency "react@^16.14.0".
@@ -137,15 +139,8 @@ func runCheck(name string, check check.CheckAction[*repo.State]) *linter {
 //	warning "storybook-addon-designs > @figspec/react@1.0.0" has incorrect peer dependency "react@^16.14.0 || ^17.0.0".
 //	warning Workspaces can only be enabled in private projects.
 //	warning Workspaces can only be enabled in private projects.
-func pnpmInstallFilter() run.LineMap {
-	return func(ctx context.Context, line []byte, dst io.Writer) (int, error) {
-		// We can't seem to do a simple prefix check, so let's just do something lazy for
-		// now and figure it out later if it's an issue.
-		if bytes.Contains(line, []byte("warning")) {
-			return 0, nil
-		}
-		return dst.Write(line)
-	}
+func pnpmInstallFilter() pipeline.Pipeline {
+	return pipeline.Filter(func(line []byte) bool { return !bytes.Contains(line, []byte("warning")) })
 }
 
 // disabled can be used to mark a category or check as disabled.

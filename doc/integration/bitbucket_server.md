@@ -78,11 +78,11 @@ Disabling the webhook is as easy as removing the `"webhooks"` property from the 
 
 The plugin also supports an optional method of faster ACL permissions syncing that aims to improve the speed of fetching a user's permissions from Bitbucket (which can reduce the time a user has to wait to run a search if their permissions data has expired).
 
-You can enable this feature when [configuring the connection to your Bitbucket Server / Bitbucket Data Center instance on Sourcegraph](../admin/external_service/bitbucket_server.md#repository-permissions). For more information on when permissions are fetched, how long they're cached and how to configure that behavior, see our documentation on [Repository permissions](../admin/repo/permissions.md).
+You can enable this feature when [configuring the connection to your Bitbucket Server / Bitbucket Data Center instance on Sourcegraph](../admin/external_service/bitbucket_server.md#repository-permissions). For more information on when permissions are fetched, how long they're cached and how to configure that behavior, see our documentation on [Repository permissions](../admin/permissions/index.md).
 
 The speed improvements are most important on larger Bitbucket Server / Bitbucket Data Center instances with thousands of repositories. When connected to these instances, Sourcegraph would have to make many wasteful requests to fetch permission data if the plugin is not installed.
 
-To learn how and why this works, read the [through technical details of fast permission syncing](#fast-permissions-syncing) below.
+To learn how and why this works, read the [through technical details of fast permission syncing](#technical-details) below.
 
 ### Technical Details
 
@@ -124,7 +124,7 @@ If Sourcegraph is configured to make use of the Bitbucket Server plugin webhooks
 
 #### Fast permission syncing
 
-When Sourcegraph is configured to use [Bitbucket Server / Bitbucket Data Center's repository permissions](../../admin/repo/permissions.md#bitbucket_server) to control access to repositories on Sourcegraph, it needs to fetch permissions for each user.
+When Sourcegraph is configured to use [Bitbucket Server / Bitbucket Data Center's repository permissions](../admin/external_service/bitbucket_server.md#repository-permissions) to control access to repositories on Sourcegraph, it needs to fetch permissions for each user.
 
 The Bitbucket Server / Bitbucket Data Center REST API only provides **paginated** endpoints to fetch either the list of repositories a given user has access to, or the list of users that have access to a given repository. Both endpoints return the **full representation of the entities**.
 

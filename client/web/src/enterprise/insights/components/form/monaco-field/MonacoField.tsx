@@ -8,8 +8,6 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { QueryState } from '@sourcegraph/shared/src/search'
 import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
-import { useTheme, ThemePreference } from '../../../../../theme'
-
 import styles from './MonacoField.module.scss'
 
 interface Context {
@@ -73,7 +71,6 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
     // @ts-ignore
     useImperativeHandle(reference, () => null)
 
-    const { enhancedThemePreference } = useTheme()
     const monacoOptions = useMemo(() => ({ readOnly: disabled }), [disabled])
 
     return (
@@ -82,14 +79,12 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
             ariaInvalid={ariaInvalid?.toString()}
             ariaBusy={ariaBusy?.toString()}
             queryState={queryState}
-            isLightTheme={enhancedThemePreference === ThemePreference.Light}
             isSourcegraphDotCom={false}
             preventNewLine={false}
             interpretComments={true}
             onChange={onChange}
             patternType={patternType}
             caseSensitive={false}
-            globbing={false}
             placeholder={placeholder}
             className={classNames(className, styles.monacoField, 'form-control', 'with-invalid-icon', {
                 [styles.focusContainer]: !renderedWithinFocusContainer,

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/buf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/golang"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/proto"
@@ -17,11 +18,7 @@ var allGenerateTargets = generateTargets{
 		Help:   "Re-generate protocol buffer bindings using buf",
 		Runner: generateProtoRunner,
 		Completer: func() (options []string) {
-			root, err := root.RepositoryRoot()
-			if err != nil {
-				return
-			}
-			options, _ = proto.FindGeneratedFiles(root)
+			options, _ = buf.CodegenFiles()
 			return
 		},
 	},

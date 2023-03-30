@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -25,6 +26,12 @@ import (
 func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Handler) http.Handler {
 	logger = logger.Scoped("accessTokenAuth", "Access token authentication middleware")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// SCIM uses an auth token which is checked separately in the SCIM package.
+		if strings.HasPrefix(r.URL.Path, "/.api/scim/v2") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		w.Header().Add("Vary", "Authorization")
 
 		var sudoUser string
@@ -100,12 +107,6 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 			subjectUserID, err := db.AccessTokens().Lookup(r.Context(), token, requiredScope)
 			if err != nil {
 				if err == database.ErrAccessTokenNotFound || errors.HasType(err, database.InvalidTokenError{}) {
-					logger.Error(
-						"invalid access token",
-						log.String("token", token),
-						log.Error(err),
-					)
-
 					anonymousId, anonCookieSet := cookie.AnonymousUID(r)
 					if !anonCookieSet {
 						anonymousId = fmt.Sprintf("unknown user @ %s", time.Now()) // we don't have a reliable user identifier at the time of the failure

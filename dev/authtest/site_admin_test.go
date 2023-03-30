@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 )
 
@@ -79,6 +80,7 @@ func TestSiteAdminEndpoints(t *testing.T) {
 	t.Run("GraphQL queries", func(t *testing.T) {
 		type gqlTest struct {
 			name      string
+			errorStr  string
 			query     string
 			variables map[string]any
 		}
@@ -155,10 +157,10 @@ mutation {
 	updateSiteConfiguration(input: "", lastID: 0)
 }`,
 			}, {
-				name: "deleteLSIFUpload",
+				name: "deletePreciseIndex",
 				query: `
 mutation {
-	deleteLSIFUpload(id: "TFNJRjox") {
+	deletePreciseIndex(id: "TFNJRjox") {
 		alwaysNil
 	}
 }`,
@@ -209,7 +211,8 @@ mutation {
 	}
 }`,
 			}, {
-				name: "scheduleUserPermissionsSync",
+				name:     "scheduleUserPermissionsSync",
+				errorStr: auth.ErrMustBeSiteAdminOrSameUser.Error(),
 				query: `
 mutation {
 	scheduleUserPermissionsSync(user: "VXNlcjox") {
@@ -293,16 +296,6 @@ mutation {
 	}
 }`,
 			}, {
-				name: "users",
-				query: `
-{
-	users {
-		nodes {
-			id
-		}
-	}
-}`,
-			}, {
 				name: "surveyResponses",
 				query: `
 {
@@ -350,14 +343,6 @@ mutation {
 mutation {
 	randomizeUserPassword(user: "VXNlcjox") {
 		resetPasswordURL
-	}
-}`,
-			}, {
-				name: "setTag",
-				query: `
-mutation {
-	setTag(node: "VXNlcjox", tag: "tag", present: true) {
-		alwaysNil
 	}
 }`,
 			},
@@ -450,8 +435,13 @@ mutation {
 			t.Run(test.name, func(t *testing.T) {
 				err := userClient.GraphQL("", test.query, test.variables, nil)
 				got := fmt.Sprintf("%v", err)
-				if !strings.Contains(got, "must be site admin") {
-					t.Fatalf(`Want "must be site admin"" error but got %q`, got)
+				expected := auth.ErrMustBeSiteAdmin.Error()
+				if test.errorStr != "" {
+					expected = test.errorStr
+				}
+				// check if it's one of errors that we expect
+				if !strings.Contains(got, expected) {
+					t.Fatalf(`Want "%s" error, but got "%q"`, expected, got)
 				}
 			})
 		}

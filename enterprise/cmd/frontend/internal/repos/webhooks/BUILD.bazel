@@ -28,9 +28,14 @@ go_library(
 
 go_test(
     name = "webhooks_test",
+    timeout = "short",
     srcs = ["handlers_test.go"],
     data = glob(["testdata/**"]),
     embed = [":webhooks"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/external/globals",
         "//cmd/frontend/webhooks",
@@ -41,13 +46,19 @@ go_test(
         "//internal/extsvc/bitbucketcloud",
         "//internal/extsvc/bitbucketserver",
         "//internal/extsvc/gitlab/webhooks",
+        "//internal/grpc",
+        "//internal/grpc/defaults",
         "//internal/httpcli",
         "//internal/repos",
         "//internal/repoupdater",
         "//internal/repoupdater/protocol",
+        "//internal/repoupdater/v1:repoupdater",
         "//internal/types",
         "//schema",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
     ],
 )

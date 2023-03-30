@@ -9,12 +9,14 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -23,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -38,7 +41,7 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		act := actor.Actor{UID: 1}
 		ctx := actor.WithActor(context.Background(), &act)
-		sr := newSchemaResolver(db, gitserver.NewClient())
+		sr := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs())
 
 		spec := extsvc.AccountSpec{
 			ServiceType: extsvc.TypeGitHub,
@@ -54,6 +57,11 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 			ExternalAccount graphql.ID
 		}{
 			ExternalAccount: graphql.ID(base64.URLEncoding.EncodeToString([]byte("ExternalAccount:1"))),
+		}
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
+			if req.Reason != database.ReasonExternalAccountDeleted {
+				t.Errorf("got reason %s, want %s", req.Reason, database.ReasonExternalAccountDeleted)
+			}
 		}
 		_, err = sr.DeleteExternalAccount(ctx, &graphqlArgs)
 		require.NoError(t, err)
@@ -76,11 +84,12 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 
 	gerritURL := "https://gerrit.mycorp.com/"
 	testCases := map[string]struct {
-		user           *types.User
-		serviceType    string
-		serviceID      string
-		accountDetails string
-		wantErr        bool
+		user            *types.User
+		serviceType     string
+		serviceID       string
+		accountDetails  string
+		wantErr         bool
+		wantErrContains string
 	}{
 		"unauthed returns err": {
 			user:    nil,
@@ -103,6 +112,17 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 			serviceID:      gerritURL,
 			wantErr:        false,
 			accountDetails: `{"username": "alice", "password": "test"}`,
+		},
+		// OSS packages cannot import enterprise packages, but when we build the entire
+		// application this will be implemented.
+		//
+		// See enterprise/cmd/frontend/internal/auth/sourcegraphoperator for more details
+		// and additional test coverage on the functionality.
+		"Sourcegraph operator unimplemented in OSS": {
+			user:            &types.User{ID: 1, SiteAdmin: true},
+			serviceType:     auth.SourcegraphOperatorProviderType,
+			wantErr:         true,
+			wantErrContains: "unimplemented in Sourcegraph OSS",
 		},
 	}
 
@@ -152,7 +172,7 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 				ctx = actor.WithActor(ctx, &act)
 			}
 
-			sr := newSchemaResolver(db, gitserver.NewClient())
+			sr := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs())
 
 			args := struct {
 				ServiceType    string
@@ -168,6 +188,9 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 				if req.UserIDs[0] != tc.user.ID {
 					t.Errorf("got userID %d, want %d", req.UserIDs[0], tc.user.ID)
 				}
+				if req.Reason != database.ReasonExternalAccountAdded {
+					t.Errorf("got reason %s, want %s", req.Reason, database.ReasonExternalAccountAdded)
+				}
 			}
 
 			gerrit.MockVerifyAccount = func(_ context.Context, _ *url.URL, _ *gerrit.AccountCredentials) (*gerrit.Account, error) {
@@ -179,6 +202,9 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 			_, err = sr.AddExternalAccount(ctx, &args)
 			if tc.wantErr {
 				require.Error(t, err)
+				if tc.wantErrContains != "" {
+					assert.Contains(t, err.Error(), tc.wantErrContains)
+				}
 			} else {
 				require.NoError(t, err)
 			}

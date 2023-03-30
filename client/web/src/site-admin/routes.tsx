@@ -1,173 +1,255 @@
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
+import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
+
+import { isPackagesEnabled } from './flags'
+import { PermissionsSyncJobsPage } from './permissions-center/PermissionsSyncJobsPage'
 import { SiteAdminAreaRoute } from './SiteAdminArea'
 
-export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
+const AnalyticsOverviewPage = lazyComponent(() => import('./analytics/AnalyticsOverviewPage'), 'AnalyticsOverviewPage')
+const AnalyticsSearchPage = lazyComponent(() => import('./analytics/AnalyticsSearchPage'), 'AnalyticsSearchPage')
+const AnalyticsCodeIntelPage = lazyComponent(
+    () => import('./analytics/AnalyticsCodeIntelPage'),
+    'AnalyticsCodeIntelPage'
+)
+const AnalyticsExtensionsPage = lazyComponent(
+    () => import('./analytics/AnalyticsExtensionsPage'),
+    'AnalyticsExtensionsPage'
+)
+const AnalyticsUsersPage = lazyComponent(() => import('./analytics/AnalyticsUsersPage'), 'AnalyticsUsersPage')
+const AnalyticsCodeInsightsPage = lazyComponent(
+    () => import('./analytics/AnalyticsCodeInsightsPage'),
+    'AnalyticsCodeInsightsPage'
+)
+const AnalyticsBatchChangesPage = lazyComponent(
+    () => import('./analytics/AnalyticsBatchChangesPage'),
+    'AnalyticsBatchChangesPage'
+)
+const AnalyticsNotebooksPage = lazyComponent(
+    () => import('./analytics/AnalyticsNotebooksPage'),
+    'AnalyticsNotebooksPage'
+)
+const SiteAdminConfigurationPage = lazyComponent(
+    () => import('./SiteAdminConfigurationPage'),
+    'SiteAdminConfigurationPage'
+)
+const SiteAdminSettingsPage = lazyComponent(() => import('./SiteAdminSettingsPage'), 'SiteAdminSettingsPage')
+const SiteAdminExternalServicesArea = lazyComponent(
+    () => import('./SiteAdminExternalServicesArea'),
+    'SiteAdminExternalServicesArea'
+)
+const SiteAdminRepositoriesPage = lazyComponent(
+    () => import('./SiteAdminRepositoriesPage'),
+    'SiteAdminRepositoriesPage'
+)
+const SiteAdminOrgsPage = lazyComponent(() => import('./SiteAdminOrgsPage'), 'SiteAdminOrgsPage')
+export const UsersManagement = lazyComponent(() => import('./UserManagement'), 'UsersManagement')
+const AccessRequestsPage = lazyComponent(() => import('./AccessRequestsPage'), 'AccessRequestsPage')
+
+const SiteAdminCreateUserPage = lazyComponent(() => import('./SiteAdminCreateUserPage'), 'SiteAdminCreateUserPage')
+const SiteAdminTokensPage = lazyComponent(() => import('./SiteAdminTokensPage'), 'SiteAdminTokensPage')
+const SiteAdminUpdatesPage = lazyComponent(() => import('./SiteAdminUpdatesPage'), 'SiteAdminUpdatesPage')
+const SiteAdminPingsPage = lazyComponent(() => import('./SiteAdminPingsPage'), 'SiteAdminPingsPage')
+const SiteAdminReportBugPage = lazyComponent(() => import('./SiteAdminReportBugPage'), 'SiteAdminReportBugPage')
+const SiteAdminSurveyResponsesPage = lazyComponent(
+    () => import('./SiteAdminSurveyResponsesPage'),
+    'SiteAdminSurveyResponsesPage'
+)
+const SiteAdminMigrationsPage = lazyComponent(() => import('./SiteAdminMigrationsPage'), 'SiteAdminMigrationsPage')
+const SiteAdminOutboundRequestsPage = lazyComponent(
+    () => import('./SiteAdminOutboundRequestsPage'),
+    'SiteAdminOutboundRequestsPage'
+)
+const SiteAdminBackgroundJobsPage = lazyComponent(
+    () => import('./SiteAdminBackgroundJobsPage'),
+    'SiteAdminBackgroundJobsPage'
+)
+const SiteAdminFeatureFlagsPage = lazyComponent(
+    () => import('./SiteAdminFeatureFlagsPage'),
+    'SiteAdminFeatureFlagsPage'
+)
+const SiteAdminFeatureFlagConfigurationPage = lazyComponent(
+    () => import('./SiteAdminFeatureFlagConfigurationPage'),
+    'SiteAdminFeatureFlagConfigurationPage'
+)
+const OutboundWebhooksPage = lazyComponent(
+    () => import('./outbound-webhooks/OutboundWebhooksPage'),
+    'OutboundWebhooksPage'
+)
+const OutgoingWebhookCreatePage = lazyComponent(() => import('./outbound-webhooks/CreatePage'), 'CreatePage')
+const OutgoingWebhookEditPage = lazyComponent(() => import('./outbound-webhooks/EditPage'), 'EditPage')
+const SiteAdminWebhooksPage = lazyComponent(() => import('./SiteAdminWebhooksPage'), 'SiteAdminWebhooksPage')
+const SiteAdminWebhookCreatePage = lazyComponent(
+    () => import('./SiteAdminWebhookCreatePage'),
+    'SiteAdminWebhookCreatePage'
+)
+const SiteAdminWebhookPage = lazyComponent(() => import('./SiteAdminWebhookPage'), 'SiteAdminWebhookPage')
+const SiteAdminSlowRequestsPage = lazyComponent(
+    () => import('./SiteAdminSlowRequestsPage'),
+    'SiteAdminSlowRequestsPage'
+)
+const SiteAdminWebhookUpdatePage = lazyComponent(
+    () => import('./SiteAdminWebhookUpdatePage'),
+    'SiteAdminWebhookUpdatePage'
+)
+const SiteAdminPackagesPage = lazyComponent(() => import('./SiteAdminPackagesPage'), 'SiteAdminPackagesPage')
+
+export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/',
-        render: lazyComponent(() => import('./analytics/AnalyticsOverviewPage'), 'AnalyticsOverviewPage'),
-        exact: true,
+        render: () => <AnalyticsOverviewPage />,
     },
     {
         path: '/analytics/search',
-        render: lazyComponent(() => import('./analytics/AnalyticsSearchPage'), 'AnalyticsSearchPage'),
-        exact: true,
+        render: () => <AnalyticsSearchPage />,
     },
     {
         path: '/analytics/code-intel',
-        render: lazyComponent(() => import('./analytics/AnalyticsCodeIntelPage'), 'AnalyticsCodeIntelPage'),
-        exact: true,
+        render: () => <AnalyticsCodeIntelPage />,
     },
     {
         path: '/analytics/extensions',
-        render: lazyComponent(() => import('./analytics/AnalyticsExtensionsPage'), 'AnalyticsExtensionsPage'),
-        exact: true,
+        render: () => <AnalyticsExtensionsPage />,
     },
     {
         path: '/analytics/users',
-        render: lazyComponent(() => import('./analytics/AnalyticsUsersPage'), 'AnalyticsUsersPage'),
-        exact: true,
+        render: () => <AnalyticsUsersPage />,
     },
     {
         path: '/analytics/code-insights',
-        render: lazyComponent(() => import('./analytics/AnalyticsCodeInsightsPage'), 'AnalyticsCodeInsightsPage'),
-        exact: true,
+        render: () => <AnalyticsCodeInsightsPage />,
     },
     {
         path: '/analytics/batch-changes',
-        render: lazyComponent(() => import('./analytics/AnalyticsBatchChangesPage'), 'AnalyticsBatchChangesPage'),
-        exact: true,
+        render: () => <AnalyticsBatchChangesPage />,
     },
     {
         path: '/analytics/notebooks',
-        render: lazyComponent(() => import('./analytics/AnalyticsNotebooksPage'), 'AnalyticsNotebooksPage'),
-        exact: true,
+        render: () => <AnalyticsNotebooksPage />,
     },
     {
         path: '/configuration',
-        exact: true,
-        render: lazyComponent(() => import('./SiteAdminConfigurationPage'), 'SiteAdminConfigurationPage'),
+        render: props => <SiteAdminConfigurationPage {...props} />,
     },
     {
         path: '/global-settings',
-        exact: true,
-        render: lazyComponent(() => import('./SiteAdminSettingsPage'), 'SiteAdminSettingsPage'),
+        render: props => <SiteAdminSettingsPage {...props} />,
     },
     {
-        path: '/external-services',
-        render: lazyComponent(() => import('./SiteAdminExternalServicesArea'), 'SiteAdminExternalServicesArea'),
+        path: '/external-services/*',
+        render: props => <SiteAdminExternalServicesArea {...props} />,
     },
     {
         path: '/repositories',
-        render: lazyComponent(() => import('./SiteAdminRepositoriesPage'), 'SiteAdminRepositoriesPage'),
-        exact: true,
+        render: props => <SiteAdminRepositoriesPage {...props} />,
     },
     {
         path: '/organizations',
-        render: lazyComponent(() => import('./SiteAdminOrgsPage'), 'SiteAdminOrgsPage'),
-        exact: true,
+        render: props => <SiteAdminOrgsPage {...props} />,
     },
     {
-        path: '/users',
-        exact: true,
-        render: lazyComponent(() => import('./UserManagement'), 'UsersManagement'),
+        path: '/account-requests',
+        render: () => <AccessRequestsPage />,
+        condition: context =>
+            checkRequestAccessAllowed(
+                context.isSourcegraphDotCom,
+                window.context.allowSignup,
+                window.context.experimentalFeatures
+            ),
     },
     {
         path: '/users/new',
-        render: lazyComponent(() => import('./SiteAdminCreateUserPage'), 'SiteAdminCreateUserPage'),
-        exact: true,
+        render: () => <SiteAdminCreateUserPage />,
     },
     {
         path: '/tokens',
-        exact: true,
-        render: lazyComponent(() => import('./SiteAdminTokensPage'), 'SiteAdminTokensPage'),
+        render: props => <SiteAdminTokensPage {...props} />,
     },
     {
         path: '/updates',
-        render: lazyComponent(() => import('./SiteAdminUpdatesPage'), 'SiteAdminUpdatesPage'),
-        exact: true,
+        render: props => <SiteAdminUpdatesPage {...props} />,
     },
     {
         path: '/pings',
-        render: lazyComponent(() => import('./SiteAdminPingsPage'), 'SiteAdminPingsPage'),
-        exact: true,
+        render: props => <SiteAdminPingsPage {...props} />,
     },
     {
         path: '/report-bug',
-        exact: true,
-        render: lazyComponent(() => import('./SiteAdminReportBugPage'), 'SiteAdminReportBugPage'),
+        render: props => <SiteAdminReportBugPage {...props} />,
     },
     {
         path: '/surveys',
-        exact: true,
-        render: lazyComponent(() => import('./SiteAdminSurveyResponsesPage'), 'SiteAdminSurveyResponsesPage'),
+        render: props => <SiteAdminSurveyResponsesPage {...props} />,
     },
     {
         path: '/migrations',
-        exact: true,
-        render: lazyComponent(() => import('./SiteAdminMigrationsPage'), 'SiteAdminMigrationsPage'),
+        render: props => <SiteAdminMigrationsPage {...props} />,
     },
     {
         path: '/outbound-requests',
-        exact: true,
-        render: lazyComponent(() => import('./SiteAdminOutboundRequestsPage'), 'SiteAdminOutboundRequestsPage'),
+        render: props => <SiteAdminOutboundRequestsPage {...props} />,
     },
     {
         path: '/background-jobs',
-        exact: true,
-        render: lazyComponent(() => import('./SiteAdminBackgroundJobsPage'), 'SiteAdminBackgroundJobsPage'),
+        render: props => <SiteAdminBackgroundJobsPage {...props} />,
     },
     {
         path: '/feature-flags',
-        exact: true,
-        render: lazyComponent(() => import('./SiteAdminFeatureFlagsPage'), 'SiteAdminFeatureFlagsPage'),
+        render: props => <SiteAdminFeatureFlagsPage {...props} />,
     },
     {
         path: '/feature-flags/configuration/:name',
-        exact: true,
-        render: lazyComponent(
-            () => import('./SiteAdminFeatureFlagConfigurationPage'),
-            'SiteAdminFeatureFlagConfigurationPage'
-        ),
+        render: props => <SiteAdminFeatureFlagConfigurationPage {...props} />,
     },
     {
-        path: '/outbound-webhooks',
-        exact: true,
-        render: lazyComponent(() => import('./outbound-webhooks/OutboundWebhooksPage'), 'OutboundWebhooksPage'),
+        path: '/webhooks/outgoing',
+        render: props => <OutboundWebhooksPage {...props} />,
     },
     {
-        path: '/outbound-webhooks/create',
-        exact: true,
-        render: lazyComponent(() => import('./outbound-webhooks/CreatePage'), 'CreatePage'),
+        path: '/webhooks/outgoing/create',
+        render: props => <OutgoingWebhookCreatePage {...props} />,
     },
     {
-        path: '/outbound-webhooks/:id',
-        exact: true,
-        render: lazyComponent(() => import('./outbound-webhooks/EditPage'), 'EditPage'),
+        path: '/webhooks/outgoing/:id',
+        render: props => <OutgoingWebhookEditPage {...props} />,
     },
     {
-        path: '/webhooks',
-        exact: true,
-        render: lazyComponent(() => import('./SiteAdminWebhooksPage'), 'SiteAdminWebhooksPage'),
+        path: '/webhooks/incoming',
+        render: props => <SiteAdminWebhooksPage {...props} />,
     },
     {
-        path: '/webhooks/create',
-        exact: true,
-        render: lazyComponent(() => import('./SiteAdminWebhookCreatePage'), 'SiteAdminWebhookCreatePage'),
+        path: '/webhooks/incoming/create',
+        render: props => <SiteAdminWebhookCreatePage {...props} />,
     },
     {
-        path: '/webhooks/:id',
-        exact: true,
-        render: lazyComponent(() => import('./SiteAdminWebhookPage'), 'SiteAdminWebhookPage'),
+        path: '/webhooks/incoming/:id',
+        render: props => <SiteAdminWebhookPage {...props} />,
+    },
+    {
+        path: '/webhooks/incoming/:id/edit',
+        render: props => <SiteAdminWebhookUpdatePage {...props} />,
     },
     {
         path: '/slow-requests',
-        exact: true,
-        render: lazyComponent(() => import('./SiteAdminSlowRequestsPage'), 'SiteAdminSlowRequestsPage'),
+        render: props => <SiteAdminSlowRequestsPage {...props} />,
     },
     {
-        path: '/webhooks/:id/edit',
-        exact: true,
-        render: lazyComponent(() => import('./SiteAdminWebhookUpdatePage'), 'SiteAdminWebhookUpdatePage'),
+        path: '/packages',
+        render: props => <SiteAdminPackagesPage {...props} />,
+        condition: isPackagesEnabled,
     },
+    {
+        path: '/permissions-syncs',
+        render: props => <PermissionsSyncJobsPage {...props} />,
+    },
+]
+
+const siteAdminUserManagementRoute: SiteAdminAreaRoute = {
+    path: '/users',
+    render: () => <UsersManagement isEnterprise={false} renderAssignmentModal={() => null} />,
+}
+
+export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
+    ...otherSiteAdminRoutes,
+    siteAdminUserManagementRoute,
 ]

@@ -59,25 +59,102 @@ curl -H 'Private-Token: $ACCESS_TOKEN' -XGET 'https://$GITLAB_HOSTNAME/api/v4/pr
 
 ## Repository permissions
 
-By default, all Sourcegraph users can view all repositories. To configure Sourcegraph to use
-GitLab's per-user repository permissions, see "[Repository
-permissions](../repo/permissions.md#gitlab)".
+GitLab permissions can be configured in three ways:
+
+1. Set up GitLab as an OAuth sign-on provider for Sourcegraph (recommended)
+2. Use a GitLab administrator (sudo-level) personal access token in conjunction with another SSO provider
+   (recommended only if the first option is not possible)
+3. Assume username equivalency between Sourcegraph and GitLab (warning: this is generally unsafe and
+   should only be used if you are using strictly `http-header` authentication).
+
+> NOTE: It can take some time to complete full cycle of repository permissions sync if you have a large number of users or repositories. [See sync duration time](../permissions/syncing.md#sync-duration) for more information.
+
+### OAuth application
+
+Prerequisite: [Add GitLab as an authentication provider.](../auth/index.md#gitlab)
+
+Then, [add or edit a GitLab connection](#repository-syncing) and include the `authorization` field:
+
+```json
+{
+  "url": "https://gitlab.com",
+  "token": "$PERSONAL_ACCESS_TOKEN",
+  // ...
+  "authorization": {
+    "identityProvider": {
+      "type": "oauth"
+    }
+  }
+}
+```
+
+### Administrator (sudo-level) access token
+
+This method requires administrator access to GitLab so that Sourcegraph can access the [admin GitLab Users API endpoint](https://docs.gitlab.com/ee/api/users.html#for-admins). For each GitLab user, this endpoint provides the user ID that comes from the authentication provider, so Sourcegraph can associate a user in its system to a user in GitLab.
+
+Prerequisite: Add the [SAML](../auth/index.md#saml) or [OpenID Connect](../auth/index.md#openid-connect)
+authentication provider you use to sign into GitLab.
+
+Then, [add or edit a GitLab connection](#repository-syncing) using an administrator (sudo-level) personal access token, and include the `authorization` field:
+
+```json
+{
+  "url": "https://gitlab.com",
+  "token": "$PERSONAL_ACCESS_TOKEN",
+  // ...
+  "authorization": {
+    "identityProvider": {
+      "type": "external",
+      "authProviderID": "$AUTH_PROVIDER_ID",
+      "authProviderType": "$AUTH_PROVIDER_TYPE",
+      "gitlabProvider": "$AUTH_PROVIDER_GITLAB_ID"
+    }
+  }
+}
+```
+
+`$AUTH_PROVIDER_ID` and `$AUTH_PROVIDER_TYPE` identify the authentication provider to use and should
+match the fields specified in the authentication provider config
+(`auth.providers`). The authProviderID can be found in the `configID` field of the auth provider config.
+
+`$AUTH_PROVIDER_GITLAB_ID` should match the `identities.provider` returned by
+[the admin GitLab Users API endpoint](https://docs.gitlab.com/ee/api/users.html#for-admins).
+
+### Username
+
+Prerequisite: Ensure that `http-header` is the *only* authentication provider type configured for
+Sourcegraph. If this is not the case, then it will be possible for users to escalate privileges,
+because Sourcegraph usernames are mutable.
+
+[Add or edit a GitLab connection](#repository-syncing) and include the `authorization` field:
+
+```json
+{
+  "url": "https://gitlab.com",
+  "token": "$PERSONAL_ACCESS_TOKEN",
+  // ...
+  "authorization": {
+    "identityProvider": {
+      "type": "username"
+    }
+  }
+}
+```
 
 ## User authentication
 
 To configure GitLab as an authentication provider (which will enable sign-in via GitLab), see the
 [authentication documentation](../auth/index.md#gitlab).
 
-## Internal rate limits
+## Rate limits
 
-Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to GitLab.
+Always include a token in a configuration for a GitLab.com URL to avoid being denied service by GitLab's [unauthenticated rate limits](https://docs.gitlab.com/ee/user/gitlab_com/index.html#gitlabcom-specific-rate-limits).
 
-If enabled, the default rate is set at 36,000 per hour (10 per second) which can be configured via the `requestsPerHour` field (see below):
+When Sourcegraph hits a rate limit imposed by GitLab, Sourcegraph waits the appropriate amount of time specified by GitLab before retrying the request. This can be several minutes in extreme cases.
 
-- For Sourcegraph <=3.38, if rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
-- For Sourcegraph >=3.39, rate limiting should be enabled and configured for each individual code host connection.
+### Internal rate limits
 
-**NOTE** Internal rate limiting is only currently applied when synchronising changesets in [batch changes](../../batch_changes/index.md), repository permissions and repository metadata from code hosts.
+See [Internal rate limits](./rate_limits.md#internal-rate-limits).
 
 ## Configuration
 
@@ -127,4 +204,4 @@ We are actively collaborating with GitLab to improve our integration (e.g. the [
 
 Using the `webhooks` property on the external service has been deprecated.
 
-Please consult [this page](../config/webhooks.md) in order to configure webhooks.
+Please consult [this page](../config/webhooks/incoming.md) in order to configure webhooks.

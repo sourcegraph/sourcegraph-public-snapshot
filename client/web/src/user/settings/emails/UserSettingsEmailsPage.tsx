@@ -1,16 +1,24 @@
-import { FunctionComponent, useEffect, useState, useCallback } from 'react'
+import React, { FunctionComponent, useEffect, useState, useCallback } from 'react'
 
 import classNames from 'classnames'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { Container, PageHeader, LoadingSpinner, useObservable, Alert, ErrorAlert } from '@sourcegraph/wildcard'
+import { gql, dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
+import { Container, PageHeader, LoadingSpinner, Alert, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
-import { Scalars, UserEmailsResult, UserEmailsVariables, UserSettingsAreaUserFields } from '../../../graphql-operations'
-import { siteFlags } from '../../../site/backend'
+import {
+    Scalars,
+    UserEmail as UserEmailType,
+    UserEmailsResult,
+    UserEmailsVariables,
+    UserSettingsAreaUserFields,
+    UserSettingsEmailsSiteFlagsResult,
+    UserSettingsEmailsSiteFlagsVariables,
+} from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { ScimAlert } from '../ScimAlert'
 
 import { AddUserEmailForm } from './AddUserEmailForm'
 import { SetUserPrimaryEmailForm } from './SetUserPrimaryEmailForm'
@@ -22,14 +30,27 @@ interface Props {
     user: UserSettingsAreaUserFields
 }
 
-type UserEmail = (NonNullable<UserEmailsResult['node']> & { __typename: 'User' })['emails'][number]
 type Status = undefined | 'loading' | 'loaded' | ErrorLike
 type EmailActionError = undefined | ErrorLike
 
+// NOTE: The name of the query is also added in the refreshSiteFlags() function
+// found in client/web/src/site/backend.tsx
+const FLAGS_QUERY = gql`
+    query UserSettingsEmailsSiteFlags {
+        site {
+            id
+            sendsEmailVerificationEmails
+        }
+    }
+`
+
 export const UserSettingsEmailsPage: FunctionComponent<React.PropsWithChildren<Props>> = ({ user }) => {
-    const [emails, setEmails] = useState<UserEmail[]>([])
+    const [emails, setEmails] = useState<UserEmailType[]>([])
     const [statusOrError, setStatusOrError] = useState<Status>()
     const [emailActionError, setEmailActionError] = useState<EmailActionError>()
+
+    const { data } = useQuery<UserSettingsEmailsSiteFlagsResult, UserSettingsEmailsSiteFlagsVariables>(FLAGS_QUERY, {})
+    const flags = data?.site
 
     const onEmailRemove = useCallback(
         (deletedEmail: string): void => {
@@ -56,8 +77,6 @@ export const UserSettingsEmailsPage: FunctionComponent<React.PropsWithChildren<P
         }
     }, [user, setStatusOrError, setEmails])
 
-    const flags = useObservable(siteFlags)
-
     useEffect(() => {
         eventLogger.logViewEvent('UserSettingsEmails')
     }, [])
@@ -74,6 +93,7 @@ export const UserSettingsEmailsPage: FunctionComponent<React.PropsWithChildren<P
 
     return (
         <div className={styles.userSettingsEmailsPage} data-testid="user-settings-emails-page">
+            {user.scimControlled && <ScimAlert />}
             <PageTitle title="Emails" />
             <PageHeader headingElement="h2" path={[{ text: 'Emails' }]} className="mb-3" />
 
@@ -98,6 +118,7 @@ export const UserSettingsEmailsPage: FunctionComponent<React.PropsWithChildren<P
                                 onEmailResendVerification={fetchEmails}
                                 onDidRemove={onEmailRemove}
                                 onError={setEmailActionError}
+                                disableControls={user.scimControlled}
                             />
                         </li>
                     ))}
@@ -107,9 +128,14 @@ export const UserSettingsEmailsPage: FunctionComponent<React.PropsWithChildren<P
                 </ul>
             </Container>
             {/* re-fetch emails on onDidAdd to guarantee correct state */}
-            <AddUserEmailForm className={styles.emailForm} user={user.id} onDidAdd={fetchEmails} />
+            <AddUserEmailForm
+                className={styles.emailForm}
+                user={user}
+                onDidAdd={fetchEmails}
+                emails={new Set(emails.map(userEmail => userEmail.email))}
+            />
             <hr className="my-4" aria-hidden="true" />
-            <SetUserPrimaryEmailForm user={user.id} emails={emails} onDidSet={fetchEmails} />
+            <SetUserPrimaryEmailForm user={user} emails={emails} onDidSet={fetchEmails} />
         </div>
     )
 }
@@ -118,16 +144,19 @@ async function fetchUserEmails(userID: Scalars['ID']): Promise<UserEmailsResult>
     return dataOrThrowErrors(
         await requestGraphQL<UserEmailsResult, UserEmailsVariables>(
             gql`
+                fragment UserEmail on UserEmail {
+                    email
+                    isPrimary
+                    verified
+                    verificationPending
+                    viewerCanManuallyVerify
+                }
                 query UserEmails($user: ID!) {
                     node(id: $user) {
                         ... on User {
                             __typename
                             emails {
-                                email
-                                isPrimary
-                                verified
-                                verificationPending
-                                viewerCanManuallyVerify
+                                ...UserEmail
                             }
                         }
                     }

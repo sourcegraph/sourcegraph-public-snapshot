@@ -13,63 +13,33 @@ import {
     mdiSourceRepository,
 } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
-import { RouteComponentProps, useHistory, useLocation } from 'react-router'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Subject } from 'rxjs'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Badge, Button, Container, ErrorAlert, H3, Icon, Link, PageHeader, Tooltip } from '@sourcegraph/wildcard'
+import { Badge, Button, Container, ErrorAlert, H3, Icon, Link, PageHeader, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
-import {
-    FilteredConnection,
-    FilteredConnectionFilter,
-    FilteredConnectionQueryArguments,
-} from '../../../../components/FilteredConnection'
+import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
+import { CreatePolicyButtons } from '../components/CreatePolicyButtons'
 import { Duration } from '../components/Duration'
 import { EmptyPoliciesList } from '../components/EmptyPoliciesList'
 import { FlashMessage } from '../components/FlashMessage'
 import { queryPolicies as defaultQueryPolicies } from '../hooks/queryPolicies'
 import { useDeletePolicies } from '../hooks/useDeletePolicies'
+import { hasGlobalPolicyViolation } from '../shared'
 
 import styles from './CodeIntelConfigurationPage.module.scss'
 
-const filters: FilteredConnectionFilter[] = [
-    {
-        id: 'filters',
-        label: 'Show',
-        type: 'select',
-        values: [
-            {
-                label: 'All policies',
-                value: 'all',
-                args: {},
-            },
-            {
-                label: 'Policies affecting auto-indexing',
-                value: 'indexing',
-                args: { forIndexing: true },
-            },
-            {
-                label: 'Policies affecting data retention',
-                value: 'data-retention',
-                args: { forDataRetention: true },
-            },
-        ],
-    },
-]
-
-export interface CodeIntelConfigurationPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
+export interface CodeIntelConfigurationPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     queryPolicies?: typeof defaultQueryPolicies
     repo?: { id: string; name: string }
     indexingEnabled?: boolean
-    isLightTheme: boolean
     telemetryService: TelemetryService
 }
 
@@ -79,17 +49,22 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
     repo,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
     telemetryService,
-    ...props
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelConfiguration'), [telemetryService])
 
-    const history = useHistory()
-    const location = useLocation<{ message: string; modal: string }>()
+    const navigate = useNavigate()
+    const location = useLocation()
     const updates = useMemo(() => new Subject<void>(), [])
 
     const apolloClient = useApolloClient()
-    const queryPoliciesCallback = useCallback(
-        (args: FilteredConnectionQueryArguments) => queryPolicies({ ...args, repository: repo?.id }, apolloClient),
+    const queryDefaultPoliciesCallback = useCallback(
+        (args: FilteredConnectionQueryArguments) =>
+            queryPolicies({ ...args, repository: repo?.id, protected: true }, apolloClient),
+        [queryPolicies, repo?.id, apolloClient]
+    )
+    const queryCustomPoliciesCallback = useCallback(
+        (args: FilteredConnectionQueryArguments) =>
+            queryPolicies({ ...args, repository: repo?.id, protected: false }, apolloClient),
         [queryPolicies, repo?.id, apolloClient]
     )
 
@@ -107,13 +82,18 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
                 // Force update of filtered connection
                 updates.next()
 
-                history.push({
-                    pathname: './configuration',
-                    state: { modal: 'SUCCESS', message: `Configuration policy ${name} has been deleted.` },
-                })
+                navigate(
+                    {
+                        pathname: './',
+                    },
+                    {
+                        relative: 'path',
+                        state: { modal: 'SUCCESS', message: `Configuration policy ${name} has been deleted.` },
+                    }
+                )
             })
         },
-        [handleDeleteConfig, updates, history]
+        [handleDeleteConfig, updates, navigate]
     )
 
     return (
@@ -144,7 +124,7 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
                         graph data.
                     </>
                 }
-                actions={authenticatedUser?.siteAdmin && <CreatePolicyButtons repo={repo} history={history} />}
+                actions={authenticatedUser?.siteAdmin && <CreatePolicyButtons repo={repo} />}
                 className="mb-3"
             />
 
@@ -158,8 +138,12 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
                 </Container>
             )}
 
-            <Container>
-                <FilteredConnection<CodeIntelligenceConfigurationPolicyFields, PoliciesNodeProps>
+            <Container className="mb-3 pb-3">
+                <H3>Custom policies</H3>
+                <FilteredConnection<
+                    CodeIntelligenceConfigurationPolicyFields,
+                    Omit<UnprotectedPoliciesNodeProps, 'node'>
+                >
                     listComponent="div"
                     listClassName={classNames(styles.grid, 'mb-3')}
                     showMoreClassName="mb-0"
@@ -167,50 +151,82 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
                     pluralNoun="configuration policies"
                     nodeComponent={PoliciesNode}
                     nodeComponentProps={{ isDeleting, onDelete, indexingEnabled }}
-                    queryConnection={queryPoliciesCallback}
+                    queryConnection={queryCustomPoliciesCallback}
                     cursorPaging={true}
-                    filters={filters}
+                    filters={[
+                        {
+                            id: 'filters',
+                            label: 'Show',
+                            type: 'select',
+                            values: [
+                                {
+                                    label: 'All policies',
+                                    value: 'all',
+                                    args: {},
+                                },
+                                ...(indexingEnabled
+                                    ? [
+                                          {
+                                              label: 'Policies affecting auto-indexing',
+                                              value: 'indexing',
+                                              args: { forIndexing: true },
+                                          },
+                                      ]
+                                    : []),
+                                ...[
+                                    {
+                                        label: 'Policies affecting data retention',
+                                        value: 'data-retention',
+                                        args: { forDataRetention: true },
+                                    },
+                                ],
+                            ],
+                        },
+                    ]}
                     inputClassName="ml-2 flex-1"
-                    emptyElement={<EmptyPoliciesList />}
+                    emptyElement={<EmptyPoliciesList repo={repo} showCta={authenticatedUser?.siteAdmin} />}
                     updates={updates}
+                />
+            </Container>
+
+            <Container className="mb-3">
+                <H3>Default policies</H3>
+                <FilteredConnection<CodeIntelligenceConfigurationPolicyFields, Omit<PoliciesNodeProps, 'node'>>
+                    listComponent="div"
+                    listClassName={classNames(styles.grid, 'mb-3')}
+                    noun="configuration policy"
+                    pluralNoun="configuration policies"
+                    nodeComponent={PoliciesNode}
+                    nodeComponentProps={{ indexingEnabled }}
+                    queryConnection={queryDefaultPoliciesCallback}
+                    emptyElement={<EmptyPoliciesList repo={repo} />}
+                    hideSearch={true}
+                    summaryClassName="d-none"
+                    useURLQuery={false}
                 />
             </Container>
         </>
     )
 }
 
-interface CreatePolicyButtonsProps {
-    repo?: { id: string; name: string }
-    history: H.History
+interface ProtectedPoliciesNodeProps {
+    node: CodeIntelligenceConfigurationPolicyFields
+    indexingEnabled?: boolean
 }
 
-const CreatePolicyButtons: FunctionComponent<CreatePolicyButtonsProps> = ({ repo, history }) => (
-    <>
-        <Button variant="primary" className="" onClick={() => history.push('./configuration/new?type=head')}>
-            <>Create new {!repo && 'global'} policy for HEAD (tip of default branch)</>
-        </Button>
-
-        <Button variant="primary" className="ml-2" onClick={() => history.push('./configuration/new?type=branch')}>
-            <>Create new {!repo && 'global'} branch policy</>
-        </Button>
-
-        <Button variant="primary" className="ml-2" onClick={() => history.push('./configuration/new?type=tag')}>
-            <>Create new {!repo && 'global'} tag policy</>
-        </Button>
-    </>
-)
-
-interface PoliciesNodeProps {
+interface UnprotectedPoliciesNodeProps {
+    node: CodeIntelligenceConfigurationPolicyFields
     isDeleting: boolean
     onDelete: (id: string, name: string) => Promise<void>
     indexingEnabled?: boolean
 }
 
-const PoliciesNode: FunctionComponent<PoliciesNodeProps & { node: CodeIntelligenceConfigurationPolicyFields }> = ({
+type PoliciesNodeProps = ProtectedPoliciesNodeProps | UnprotectedPoliciesNodeProps
+
+const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNodeProps>> = ({
     node: policy,
-    isDeleting,
-    onDelete,
     indexingEnabled = false,
+    ...props
 }) => (
     <>
         <span className={styles.separator} />
@@ -237,17 +253,27 @@ const PoliciesNode: FunctionComponent<PoliciesNodeProps & { node: CodeIntelligen
         </div>
 
         <div className="h-100">
-            {!policy.protected && (
+            {!policy.protected && 'onDelete' in props && 'isDeleting' in props && (
                 <Button
                     aria-label="Delete the configuration policy"
                     variant="icon"
-                    onClick={() => onDelete(policy.id, policy.name)}
-                    disabled={isDeleting}
+                    onClick={() => props.onDelete(policy.id, policy.name)}
+                    disabled={props.isDeleting}
                 >
                     <Tooltip content="Delete this policy">
-                        <Icon className="text-danger" aria-hidden={true} svgPath={mdiDelete} />
+                        <Icon className="text-danger" aria-label="Delete this policy" svgPath={mdiDelete} />
                     </Tooltip>
                 </Button>
+            )}
+            {policy.protected && (
+                <Tooltip content="This configuration policy is protected. Protected configuration policies may not be deleted and only the retention duration and indexing options are editable.">
+                    <Icon
+                        svgPath={mdiLock}
+                        inline={true}
+                        aria-label="This configuration policy is protected. Protected configuration policies may not be deleted and only the retention duration and indexing options are editable."
+                        className="mr-2"
+                    />
+                </Tooltip>
             )}
         </div>
     </>
@@ -264,32 +290,40 @@ const PolicyDescription: FunctionComponent<PolicyDescriptionProps> = ({
     indexingEnabled = false,
     allowGlobalPolicies = window.context?.codeIntelAutoIndexingAllowGlobalPolicies,
 }) => (
-    <div>
-        <H3 className="d-inline">
-            {policy.protected && (
-                <Tooltip content="This configuration policy is protected. Protected configuration policies may not be deleted and only the retention duration and indexing options are editable.">
-                    <Icon svgPath={mdiLock} inline={true} aria-hidden={true} className="mr-2" />
-                </Tooltip>
-            )}
+    <div className={styles.policyDescription}>
+        <Link
+            to={
+                policy.repository === null
+                    ? `/site-admin/code-graph/configuration/${policy.id}`
+                    : `/${policy.repository.name}/-/code-graph/configuration/${policy.id}`
+            }
+        >
+            <Text weight="bold" className="mb-0">
+                {policy.name}
+            </Text>
+        </Link>
 
-            <span>{policy.name}</span>
+        {!policy.retentionEnabled && !(indexingEnabled && policy.indexingEnabled) && (
+            <Tooltip content="This policy has no enabled behaviors.">
+                <Icon
+                    svgPath={mdiCircleOffOutline}
+                    inline={true}
+                    aria-label="This policy has no enabled behaviors."
+                    className="ml-2"
+                />
+            </Tooltip>
+        )}
 
-            {!policy.retentionEnabled && !(indexingEnabled && policy.indexingEnabled) && (
-                <Tooltip content="This policy has no enabled behaviors.">
-                    <Icon svgPath={mdiCircleOffOutline} inline={true} aria-hidden={true} className="ml-2" />
-                </Tooltip>
-            )}
-
-            {indexingEnabled &&
-                policy.indexingEnabled &&
-                !allowGlobalPolicies &&
-                !policy.repository &&
-                (policy.repositoryPatterns || []).length === 0 && (
-                    <Tooltip content="This Sourcegraph instance has disabled global policies for auto-indexing.">
-                        <Icon svgPath={mdiAlert} inline={true} aria-hidden={true} className="text-warning ml-2" />
-                    </Tooltip>
-                )}
-        </H3>
+        {indexingEnabled && !allowGlobalPolicies && hasGlobalPolicyViolation(policy) && (
+            <Tooltip content="This Sourcegraph instance has disabled global policies for auto-indexing.">
+                <Icon
+                    svgPath={mdiAlert}
+                    inline={true}
+                    aria-label="This Sourcegraph instance has disabled global policies for auto-indexing."
+                    className="text-warning ml-2"
+                />
+            </Tooltip>
+        )}
     </div>
 )
 
@@ -301,11 +335,21 @@ const RepositoryAndGitObjectDescription: FunctionComponent<RepositoryAndGitObjec
     <div>
         {!policy.repository ? (
             <Tooltip content="This policy may apply to more than one repository.">
-                <Icon svgPath={mdiEarth} inline={true} aria-hidden={true} className="mr-2" />
+                <Icon
+                    svgPath={mdiEarth}
+                    inline={true}
+                    aria-label="This policy may apply to more than one repository."
+                    className="mr-2"
+                />
             </Tooltip>
         ) : (
             <Tooltip content="This policy applies to a specific repository.">
-                <Icon svgPath={mdiSourceRepository} inline={true} aria-hidden={true} className="mr-2" />
+                <Icon
+                    svgPath={mdiSourceRepository}
+                    inline={true}
+                    aria-label="This policy applies to a specific repository."
+                    className="mr-2"
+                />
             </Tooltip>
         )}
 
@@ -402,7 +446,12 @@ interface AutoIndexingDescriptionProps {
 const AutoIndexingDescription: FunctionComponent<AutoIndexingDescriptionProps> = ({ policy }) => (
     <div>
         <Tooltip content="This policy affects auto-indexing.">
-            <Icon svgPath={mdiDatabaseClock} inline={true} aria-hidden={true} className="mr-2" />
+            <Icon
+                svgPath={mdiDatabaseClock}
+                inline={true}
+                aria-label="This policy affects auto-indexing."
+                className="mr-2"
+            />
         </Tooltip>
 
         <span>
@@ -438,7 +487,12 @@ interface RetentionDescriptionProps {
 const RetentionDescription: FunctionComponent<RetentionDescriptionProps> = ({ policy }) => (
     <div>
         <Tooltip content="This policy affects data retention.">
-            <Icon svgPath={mdiDeleteClock} inline={true} aria-hidden={true} className="mr-2" />
+            <Icon
+                svgPath={mdiDeleteClock}
+                inline={true}
+                aria-label="This policy affects data retention."
+                className="mr-2"
+            />
         </Tooltip>
 
         <span>
@@ -452,9 +506,8 @@ const RetentionDescription: FunctionComponent<RetentionDescriptionProps> = ({ po
                 </>
             ) : (
                 <>matching commits</>
-            )}
+            )}{' '}
             <Badge variant="outlineSecondary">
-                {' '}
                 {policy.retentionDurationHours ? (
                     <>
                         for <Duration hours={policy.retentionDurationHours} /> after upload

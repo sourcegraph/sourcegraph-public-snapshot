@@ -461,7 +461,7 @@ type ParsedMainBranchImageTag struct {
 }
 
 // ParseMainBranchImageTag creates MainTag structs for tags created by
-// images.MainBranchImageTag.
+// images.BranchImageTag with a branch of "main".
 func ParseMainBranchImageTag(t string) (*ParsedMainBranchImageTag, error) {
 	s := ParsedMainBranchImageTag{}
 	t = strings.TrimSpace(t)

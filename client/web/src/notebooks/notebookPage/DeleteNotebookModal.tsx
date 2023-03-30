@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { FC, useCallback, useEffect } from 'react'
 
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
@@ -18,21 +18,22 @@ interface DeleteNotebookModalProps extends TelemetryProps {
 }
 
 const LOADING = 'loading' as const
+const deleteLabelId = 'deleteNotebookId'
 
-export const DeleteNotebookModal: React.FunctionComponent<React.PropsWithChildren<DeleteNotebookModalProps>> = ({
+export const DeleteNotebookModal: FC<DeleteNotebookModalProps> = ({
     notebookId,
     deleteNotebook,
     isOpen,
     toggleDeleteModal,
     telemetryService,
 }) => {
+    const navigate = useNavigate()
+
     useEffect(() => {
         if (isOpen) {
             telemetryService.log('SearchNotebookDeleteModalOpened')
         }
     }, [isOpen, telemetryService])
-    const deleteLabelId = 'deleteNotebookId'
-    const history = useHistory()
 
     const [onDelete, deleteCompletedOrError] = useEventObservable(
         useCallback(
@@ -42,14 +43,14 @@ export const DeleteNotebookModal: React.FunctionComponent<React.PropsWithChildre
                     mergeMap(() =>
                         deleteNotebook(notebookId).pipe(
                             tap(() => {
-                                history.push('/notebooks')
+                                navigate('/notebooks')
                             }),
                             startWith(LOADING),
                             catchError(error => [asError(error)])
                         )
                     )
                 ),
-            [deleteNotebook, history, notebookId, telemetryService]
+            [deleteNotebook, navigate, notebookId, telemetryService]
         )
     )
 

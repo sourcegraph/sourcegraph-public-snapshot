@@ -9,6 +9,7 @@ go_library(
         "//cmd/blobstore/shared",
         "//cmd/github-proxy/shared",
         "//cmd/searcher/shared",
+        "//enterprise/cmd/embeddings/shared",
         "//enterprise/cmd/executor/singlebinary",
         "//enterprise/cmd/frontend/shared",
         "//enterprise/cmd/gitserver/shared",
@@ -18,6 +19,7 @@ go_library(
         "//enterprise/cmd/symbols/shared",
         "//enterprise/cmd/worker/shared",
         "//internal/service",
+        "//internal/service/servegit",
     ],
 )
 

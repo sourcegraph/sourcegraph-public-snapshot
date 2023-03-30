@@ -1,7 +1,6 @@
 import { FC, useCallback, useEffect, useState } from 'react'
 
 import { noop } from 'lodash'
-import { RouteComponentProps } from 'react-router'
 
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { Button, Container, ErrorAlert, H2, LoadingSpinner, PageHeader, renderError, Text } from '@sourcegraph/wildcard'
@@ -26,14 +25,14 @@ import { RedirectionAlert } from './components/RedirectionAlert'
 
 import styles from './RepoSettingsOptionsPage.module.scss'
 
-interface Props extends RouteComponentProps<{}> {
+interface Props {
     repo: SettingsAreaRepositoryFields
 }
 
 /**
  * The repository settings options page.
  */
-export const RepoSettingsOptionsPage: FC<Props> = ({ repo, history }) => {
+export const RepoSettingsOptionsPage: FC<Props> = ({ repo }) => {
     useEffect(() => {
         eventLogger.logViewEvent('RepoSettings')
     })
@@ -91,7 +90,6 @@ export const RepoSettingsOptionsPage: FC<Props> = ({ repo, history }) => {
                                 updateExclusionLoading={updateExclusion}
                                 repo={repo}
                                 redirectAfterExclusion={services.length < 2}
-                                history={history}
                             />
                         ))}
                         {services.length > 1 && (

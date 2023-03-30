@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
-import { Navigate, useLocation, useParams } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation, useParams } from 'react-router-dom'
 
 import { Alert, Link, LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 

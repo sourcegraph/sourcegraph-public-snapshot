@@ -6,9 +6,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/buf",
     visibility = ["//visibility:public"],
     deps = [
-        "//dev/sg/internal/std",
         "//dev/sg/root",
         "//lib/errors",
+        "//lib/output",
         "@com_github_sourcegraph_run//:run",
     ],
 )

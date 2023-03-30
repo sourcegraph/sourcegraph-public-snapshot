@@ -4,25 +4,23 @@ use protobuf::Message;
 use rocket::serde::json::{json, Value as JsonValue};
 use serde::Deserialize;
 use sg_treesitter::jsonify_err;
-use syntect::html::{highlighted_html_for_string, ClassStyle};
 use syntect::{
     highlighting::ThemeSet,
+    html::{highlighted_html_for_string, ClassStyle},
     parsing::{SyntaxReference, SyntaxSet},
 };
 
 mod sg_treesitter;
-pub use sg_treesitter::dump_document;
-pub use sg_treesitter::dump_document_range;
-pub use sg_treesitter::index_language as treesitter_index;
-pub use sg_treesitter::index_language_with_config as treesitter_index_with_config;
-pub use sg_treesitter::lsif_highlight;
-pub use sg_treesitter::make_highlight_config;
-pub use sg_treesitter::FileRange as DocumentFileRange;
-pub use sg_treesitter::PackedRange as LsifPackedRange;
+pub use sg_treesitter::{
+    index_language as treesitter_index, index_language_with_config as treesitter_index_with_config,
+    lsif_highlight,
+};
 
 mod sg_syntect;
 use sg_syntect::ClassedTableGenerator;
 use tree_sitter_highlight::Error;
+
+use crate::sg_treesitter::treesitter_language;
 
 mod sg_sciptect;
 
@@ -37,7 +35,7 @@ lazy_static::lazy_static! {
 /// Struct from: internal/gosyntect/gosyntect.go
 ///
 /// Keep in sync with that struct.
-#[derive(Deserialize, Default)]
+#[derive(Deserialize, Default, Debug)]
 pub struct SourcegraphQuery {
     // Deprecated field with a default empty string value, kept for backwards
     // compatability with old clients.
@@ -70,7 +68,8 @@ pub struct SourcegraphQuery {
     pub theme: String,
 }
 
-#[derive(Deserialize, Default)]
+// NOTE: Keep in sync: internal/gosyntect/gosyntect.go
+#[derive(Deserialize, Default, Debug, PartialEq, Eq)]
 pub enum SyntaxEngine {
     #[default]
     #[serde(rename = "syntect")]
@@ -78,9 +77,12 @@ pub enum SyntaxEngine {
 
     #[serde(rename = "tree-sitter")]
     TreeSitter,
+
+    #[serde(rename = "scip-syntax")]
+    ScipSyntax,
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize, Default, Debug)]
 pub struct ScipHighlightQuery {
     // Which highlighting engine to use.
     pub engine: SyntaxEngine,
@@ -106,9 +108,27 @@ pub fn determine_filetype(q: &SourcegraphQuery) -> String {
         Err(_) => "".to_owned(),
     });
 
-    // We normalize all the filenames here
+    if filetype.is_empty() || filetype.to_lowercase() == "plain text" {
+        #[allow(clippy::single_match)]
+        match q.extension.as_str() {
+            "ncl" => return "nickel".to_string(),
+            _ => {}
+        };
+    }
+
+    // Normalize all the filenames here
     match filetype.as_str() {
+        "Rust Enhanced" => "rust",
+        "C++" => "cpp",
         "C#" => "c_sharp",
+        "JS Custom - React" => "javascript",
+        "TypeScriptReact" => {
+            if q.filepath.ends_with(".tsx") {
+                "tsx"
+            } else {
+                "typescript"
+            }
+        }
         filetype => filetype,
     }
     .to_lowercase()
@@ -160,11 +180,18 @@ pub fn determine_language<'a>(
         prefix_langs: Vec<(&'static str, &'static str)>,
         default: &'static str,
     }
-    let overrides = vec![Override {
-        extension: "cls",
-        prefix_langs: vec![("%", "TeX"), ("\\", "TeX")],
-        default: "Apex",
-    }];
+    let overrides = vec![
+        Override {
+            extension: "cls",
+            prefix_langs: vec![("%", "TeX"), ("\\", "TeX")],
+            default: "Apex",
+        },
+        Override {
+            extension: "xlsg",
+            prefix_langs: vec![],
+            default: "xlsg",
+        },
+    ];
 
     if let Some(Override {
         prefix_langs,
@@ -257,7 +284,7 @@ pub fn syntect_highlight(q: SourcegraphQuery) -> JsonValue {
 
 pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
     match q.engine {
-        crate::SyntaxEngine::Syntect => SYNTAX_SET.with(|ss| {
+        SyntaxEngine::Syntect => SYNTAX_SET.with(|ss| {
             let sg_query = SourcegraphQuery {
                 extension: "".to_string(),
                 filepath: q.filepath.clone(),
@@ -277,19 +304,21 @@ pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
             )
             .generate();
             let encoded = document.write_to_bytes().map_err(jsonify_err)?;
-            Ok(json!({"scip": base64::encode(&encoded), "plaintext": false}))
+            Ok(json!({"scip": base64::encode(encoded), "plaintext": false}))
         }),
-        crate::SyntaxEngine::TreeSitter => {
+        SyntaxEngine::TreeSitter | SyntaxEngine::ScipSyntax => {
             let language = q
                 .filetype
                 .ok_or_else(|| json!({"error": "Must pass a language for /scip" }))?
                 .to_lowercase();
 
-            match treesitter_index(&language, &q.code) {
+            let include_locals = q.engine == SyntaxEngine::ScipSyntax;
+
+            match treesitter_index(treesitter_language(&language), &q.code, include_locals) {
                 Ok(document) => {
                     let encoded = document.write_to_bytes().map_err(jsonify_err)?;
 
-                    Ok(json!({"scip": base64::encode(&encoded), "plaintext": false}))
+                    Ok(json!({"scip": base64::encode(encoded), "plaintext": false}))
                 }
                 Err(Error::InvalidLanguage) => Err(json!({
                     "error": format!("{} is not a valid filetype for treesitter", language)
@@ -302,9 +331,9 @@ pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use syntect::parsing::SyntaxSet;
+
+    use super::*;
 
     #[test]
     fn cls_tex() {

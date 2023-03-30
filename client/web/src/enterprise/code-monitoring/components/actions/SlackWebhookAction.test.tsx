@@ -1,10 +1,10 @@
 import { MockedResponse } from '@apollo/client/testing'
-import { render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SendTestSlackWebhookResult, SendTestSlackWebhookVariables } from '../../../../graphql-operations'
 import { mockAuthenticatedUser } from '../../testing/util'
@@ -25,7 +25,7 @@ describe('SlackWebhookAction', () => {
 
     test('open and submit', () => {
         const setActionSpy = sinon.spy()
-        const { getByTestId } = render(
+        const { getByTestId } = renderWithBrandedContext(
             <MockedTestProvider>
                 <SlackWebhookAction {...props} setAction={setActionSpy} />
             </MockedTestProvider>
@@ -53,7 +53,7 @@ describe('SlackWebhookAction', () => {
 
     test('open and edit', () => {
         const setActionSpy = sinon.spy()
-        const { getByTestId } = render(
+        const { getByTestId } = renderWithBrandedContext(
             <MockedTestProvider>
                 <SlackWebhookAction
                     {...props}
@@ -91,7 +91,7 @@ describe('SlackWebhookAction', () => {
 
     test('open and delete', () => {
         const setActionSpy = sinon.spy()
-        const { getByTestId } = render(
+        const { getByTestId } = renderWithBrandedContext(
             <MockedTestProvider>
                 <SlackWebhookAction
                     {...props}
@@ -115,7 +115,7 @@ describe('SlackWebhookAction', () => {
 
     test('enable and disable', () => {
         const setActionSpy = sinon.spy()
-        const { getByTestId } = render(
+        const { getByTestId } = renderWithBrandedContext(
             <MockedTestProvider>
                 <SlackWebhookAction
                     {...props}
@@ -158,7 +158,7 @@ describe('SlackWebhookAction', () => {
 
     test('open, edit, cancel, open again', () => {
         const setActionSpy = sinon.spy()
-        const { getByTestId } = render(
+        const { getByTestId } = renderWithBrandedContext(
             <MockedTestProvider>
                 <SlackWebhookAction
                     {...props}
@@ -211,7 +211,7 @@ describe('SlackWebhookAction', () => {
         }
 
         test('disabled if no webhook url set', () => {
-            const { getByTestId } = render(
+            const { getByTestId } = renderWithBrandedContext(
                 <MockedTestProvider>
                     <SlackWebhookAction {...props} />
                 </MockedTestProvider>
@@ -222,7 +222,7 @@ describe('SlackWebhookAction', () => {
         })
 
         test('disabled if no monitor name set', () => {
-            const { getByTestId } = render(
+            const { getByTestId } = renderWithBrandedContext(
                 <MockedTestProvider>
                     <SlackWebhookAction {...props} monitorName="" />
                 </MockedTestProvider>
@@ -241,7 +241,7 @@ describe('SlackWebhookAction', () => {
                 result: { data: { triggerTestSlackWebhookAction: { alwaysNil: null } } },
             }
 
-            const { getByTestId, queryByTestId } = render(
+            const { getByTestId, queryByTestId } = renderWithBrandedContext(
                 <MockedTestProvider mocks={[mockedResponse]}>
                     <SlackWebhookAction {...props} action={mockAction} />
                 </MockedTestProvider>
@@ -271,7 +271,7 @@ describe('SlackWebhookAction', () => {
                 error: new Error('An error occurred'),
             }
 
-            const { getByTestId, queryByTestId } = render(
+            const { getByTestId, queryByTestId } = renderWithBrandedContext(
                 <MockedTestProvider mocks={[mockedResponse]}>
                     <SlackWebhookAction {...props} action={mockAction} />
                 </MockedTestProvider>

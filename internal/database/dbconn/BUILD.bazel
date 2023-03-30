@@ -6,6 +6,8 @@ go_library(
         "bulk_insertion.go",
         "config.go",
         "connect.go",
+        "connection_updater.go",
+        "connector.go",
         "dynamic_metadata.go",
         "hooks_combine.go",
         "hooks_metrics.go",
@@ -16,11 +18,13 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/database/dbconn",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/database/dbconn/rds",
         "//internal/env",
         "//internal/lazyregexp",
         "//lib/errors",
         "@com_github_jackc_pgx_v4//:pgx",
         "@com_github_jackc_pgx_v4//stdlib",
+        "@com_github_lib_pq//:pq",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_qustavo_sqlhooks_v2//:sqlhooks",
@@ -34,6 +38,7 @@ go_library(
 
 go_test(
     name = "dbconn_test",
+    timeout = "short",
     srcs = ["config_test.go"],
     embed = [":dbconn"],
     deps = ["@com_github_sourcegraph_log//logtest"],

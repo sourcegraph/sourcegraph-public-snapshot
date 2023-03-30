@@ -1,5 +1,7 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
+# gazelle:exclude testdata
+
 go_library(
     name = "diff",
     srcs = ["diff.go"],
@@ -13,11 +15,13 @@ go_library(
 
 go_test(
     name = "diff_test",
+    timeout = "short",
     srcs = ["diff_test.go"],
+    data = ["//lib/codeintel/precise/diff/testdata:data"],
     embed = [":diff"],
     deps = [
         "//lib/codeintel/lsif/conversion",
         "//lib/codeintel/precise",
-        "@com_github_hexops_autogold//:autogold",
+        "@com_github_hexops_autogold_v2//:autogold",
     ],
 )

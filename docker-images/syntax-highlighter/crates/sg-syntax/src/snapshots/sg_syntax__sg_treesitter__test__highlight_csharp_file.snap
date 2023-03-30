@@ -1,9 +1,10 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
-expression: "dump_document(&document, src)"
+assertion_line: 323
+expression: "snapshot_treesitter_syntax_kinds(&document, src)"
 ---
   using System;
-//^^^^^ IdentifierKeyword 
-//      ^^^^^^ IdentifierNamespace 
-//            ^ PunctuationDelimiter 
+//^^^^^ Keyword
+//      ^^^^^^ IdentifierNamespace
+//            ^ PunctuationDelimiter
 

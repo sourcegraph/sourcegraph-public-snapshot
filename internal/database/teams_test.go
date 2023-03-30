@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -45,8 +46,8 @@ func TestTeams_CreateUpdateDelete(t *testing.T) {
 		}
 
 		// Should not allow a second insert
-		if err := store.CreateTeamMember(ctx, member); err == nil {
-			t.Fatal("no error for reinsert")
+		if err := store.CreateTeamMember(ctx, member); err != nil {
+			t.Fatal("error for reinsert")
 		}
 
 		if err := store.DeleteTeamMember(ctx, member); err != nil {
@@ -358,6 +359,44 @@ func TestTeams_GetListCount(t *testing.T) {
 				}
 			})
 		})
+
+		t.Run("ExceptAncestorID", func(t *testing.T) {
+			teams, cursor, err := store.ListTeams(internalCtx, ListTeamsOpts{ExceptAncestorID: engineeringTeam.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cursor != 0 {
+				t.Fatal("incorrect cursor returned")
+			}
+			want := []*types.Team{salesTeam, supportTeam}
+			sort.Slice(teams, func(i, j int) bool { return teams[i].ID < teams[j].ID })
+			sort.Slice(want, func(i, j int) bool { return want[i].ID < want[j].ID })
+			if diff := cmp.Diff(want, teams); diff != "" {
+				t.Errorf("non-ancestors -want+got: %s", diff)
+			}
+		})
+
+		t.Run("ExceptAncestorID contains", func(t *testing.T) {
+			contains, err := store.ContainsTeam(internalCtx, salesTeam.ID, ListTeamsOpts{ExceptAncestorID: engineeringTeam.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !contains {
+				t.Errorf("sales team is expected to be contained in all teams except the sub-tree rooted at engineering team")
+			}
+		})
+
+		t.Run("ExceptAncestorID does not contain", func(t *testing.T) {
+			for _, team := range []*types.Team{ownTeam, engineeringTeam} {
+				contains, err := store.ContainsTeam(internalCtx, ownTeam.ID, ListTeamsOpts{ExceptAncestorID: engineeringTeam.ID})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if contains {
+					t.Errorf("%q team is descendant of engineering, so is expected to be outside of list of teams excluding engineering descendants", team.Name)
+				}
+			}
+		})
 	})
 
 	t.Run("ListCountTeamMembers", func(t *testing.T) {
@@ -434,6 +473,35 @@ func TestTeams_GetListCount(t *testing.T) {
 
 			if diff := cmp.Diff(johndoe.ID, members[0].UserID); diff != "" {
 				t.Fatal(diff)
+			}
+		})
+
+		t.Run("IsMember", func(t *testing.T) {
+			opts := ListTeamMembersOpts{TeamID: batchesTeam.ID}
+			members, _, err := store.ListTeamMembers(internalCtx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(members) != 2 {
+				t.Fatalf("expected exactly 2 members, got %d", len(members))
+			}
+
+			for _, m := range members {
+				ok, err := store.IsTeamMember(internalCtx, batchesTeam.ID, m.UserID)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !ok {
+					t.Fatalf("expected %d to be a member but isn't", m.UserID)
+				}
+			}
+
+			ok, err := store.IsTeamMember(internalCtx, batchesTeam.ID, 999999)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if ok {
+				t.Fatal("expected not a member but was truthy")
 			}
 		})
 	})

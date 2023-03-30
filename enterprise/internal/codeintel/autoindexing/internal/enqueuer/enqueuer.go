@@ -10,16 +10,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/jobselector"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type IndexEnqueuer struct {
 	store           store.Store
 	repoUpdater     RepoUpdaterClient
-	gitserverClient GitserverClient
+	repoStore       database.RepoStore
+	gitserverClient gitserver.Client
 	operations      *operations
 	jobSelector     *jobselector.JobSelector
 }
@@ -28,12 +32,14 @@ func NewIndexEnqueuer(
 	observationCtx *observation.Context,
 	store store.Store,
 	repoUpdater RepoUpdaterClient,
-	gitserverClient GitserverClient,
+	repoStore database.RepoStore,
+	gitserverClient gitserver.Client,
 	jobSelector *jobselector.JobSelector,
 ) *IndexEnqueuer {
 	return &IndexEnqueuer{
 		store:           store,
 		repoUpdater:     repoUpdater,
+		repoStore:       repoStore,
 		gitserverClient: gitserverClient,
 		operations:      newOperations(observationCtx),
 		jobSelector:     jobSelector,
@@ -59,7 +65,12 @@ func (s *IndexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev,
 	})
 	defer endObservation(1, observation.Args{})
 
-	commitID, err := s.gitserverClient.ResolveRevision(ctx, repositoryID, rev)
+	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
+	if err != nil {
+		return nil, err
+	}
+
+	commitID, err := s.gitserverClient.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "gitserver.ResolveRevision")
 	}
@@ -71,12 +82,11 @@ func (s *IndexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev,
 
 // QueueIndexesForPackage enqueues index jobs for a dependency of a recently-processed precise code
 // intelligence index.
-func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
+func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg dependencies.MinimialVersionedPackageRepo, assumeSynced bool) (err error) {
 	ctx, trace, endObservation := s.operations.queueIndexForPackage.With(ctx, &err, observation.Args{
 		LogFields: []otlog.Field{
 			otlog.String("scheme", pkg.Scheme),
-			otlog.String("manager", pkg.Manager),
-			otlog.String("name", pkg.Name),
+			otlog.String("name", string(pkg.Name)),
 			otlog.String("version", pkg.Version),
 		},
 	})
@@ -90,16 +100,26 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.
 		attribute.String("repoName", string(repoName)),
 		attribute.String("revision", revision))
 
-	resp, err := s.repoUpdater.EnqueueRepoUpdate(ctx, repoName)
-	if err != nil {
-		if errcode.IsNotFound(err) {
-			return nil
-		}
+	var repoID int
+	if !assumeSynced {
+		resp, err := s.repoUpdater.EnqueueRepoUpdate(ctx, repoName)
+		if err != nil {
+			if errcode.IsNotFound(err) {
+				return nil
+			}
 
-		return errors.Wrap(err, "repoUpdater.EnqueueRepoUpdate")
+			return errors.Wrap(err, "repoUpdater.EnqueueRepoUpdate")
+		}
+		repoID = int(resp.ID)
+	} else {
+		repo, err := s.repoStore.GetByName(ctx, repoName)
+		if err != nil {
+			return errors.Wrap(err, "store.Repos.GetByName")
+		}
+		repoID = int(repo.ID)
 	}
 
-	commit, err := s.gitserverClient.ResolveRevision(ctx, int(resp.ID), revision)
+	commit, err := s.gitserverClient.ResolveRevision(ctx, repoName, revision, gitserver.ResolveRevisionOptions{})
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil
@@ -108,7 +128,7 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.
 		return errors.Wrap(err, "gitserverClient.ResolveRevision")
 	}
 
-	_, err = s.queueIndexForRepositoryAndCommit(ctx, int(resp.ID), string(commit), "", false, false)
+	_, err = s.queueIndexForRepositoryAndCommit(ctx, repoID, string(commit), "", false, false)
 	return err
 }
 

@@ -12,7 +12,6 @@ go_library(
         "//internal/api/internalapi",
         "//internal/database",
         "//internal/errcode",
-        "//internal/featureflag",
         "//internal/gitserver/protocol",
         "//internal/httpcli",
         "//internal/search",
@@ -34,8 +33,13 @@ go_library(
 
 go_test(
     name = "codemonitors_test",
+    timeout = "short",
     srcs = ["search_test.go"],
     embed = [":codemonitors"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/database",
         "//internal/actor",

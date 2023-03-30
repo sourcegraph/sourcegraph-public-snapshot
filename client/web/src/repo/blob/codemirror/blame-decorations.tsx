@@ -16,9 +16,9 @@ import {
     ViewUpdate,
     WidgetType,
 } from '@codemirror/view'
-import { History } from 'history'
 import { isEqual } from 'lodash'
 import { createRoot, Root } from 'react-dom/client'
+import { NavigateFunction } from 'react-router-dom'
 
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 
@@ -52,7 +52,7 @@ const [hoveredLine, setHoveredLine] = createUpdateableField<number | null>(null,
 class BlameDecorationWidget extends WidgetType {
     private container: HTMLElement | null = null
     private reactRoot: Root | null = null
-    private state: { history: History }
+    private state: { navigate: NavigateFunction }
 
     constructor(
         public view: EditorView,
@@ -65,7 +65,7 @@ class BlameDecorationWidget extends WidgetType {
     ) {
         super()
         const blobProps = this.view.state.facet(blobPropsFacet)
-        this.state = { history: blobProps.history }
+        this.state = { navigate: blobProps.navigate }
     }
 
     /* eslint-disable-next-line id-length*/
@@ -83,12 +83,11 @@ class BlameDecorationWidget extends WidgetType {
                 <BlameDecoration
                     line={this.line ?? 0}
                     blameHunk={this.hunk}
-                    history={this.state.history}
+                    navigate={this.state.navigate}
                     onSelect={this.selectRow}
                     onDeselect={this.deselectRow}
                     firstCommitDate={this.blameHunkMetadata.firstCommitDate}
                     externalURLs={this.blameHunkMetadata.externalURLs}
-                    isLightTheme={this.isLightTheme}
                     hideRecency={false}
                 />
             )
@@ -113,6 +112,40 @@ class BlameDecorationWidget extends WidgetType {
         setTimeout(() => this.reactRoot?.unmount(), 0)
     }
 }
+
+const blameDecorationTheme = EditorView.theme({
+    '.cm-line': {
+        // Position relative so that the blame-decoration inside can be
+        // aligned to the start of the line
+        position: 'relative',
+        // Move the start of the line to after the blame decoration.
+        // This is necessary because the start of the line is used for
+        // aligning tab characters.
+        paddingLeft: 'var(--blame-decoration-width) !important',
+    },
+    '.blame-decoration': {
+        // Remove the blame decoration from the content flow so that
+        // the tab start can be moved to the right
+        position: 'absolute',
+        left: '0',
+        height: '100%',
+        display: 'inline-block',
+        background: 'var(--body-bg)',
+        verticalAlign: 'bottom',
+        width: 'var(--blame-decoration-width)',
+
+        '.selected-line &, .highlighted-line &': {
+            background: 'inherit',
+        },
+    },
+
+    '.cm-content': {
+        // Make .cm-content overflow .blame-gutter
+        marginLeft: 'calc(var(--blame-decoration-width) * -1)',
+        // override default .cm-gutters z-index 200
+        zIndex: 201,
+    },
+})
 
 /**
  * Facet to show git blame decorations.
@@ -212,41 +245,7 @@ const showGitBlameDecorations = Facet.define<BlameDecorationsFacetProps, BlameDe
                 decorations: ({ decorations }) => decorations,
             }
         ),
-        EditorView.theme({
-            '.cm-line': {
-                // Position relative so that the blame-decoration inside can be
-                // aligned to the start of the line
-                position: 'relative',
-                // Move the start of the line to after the blame decoration.
-                // This is necessary because the start of the line is used for
-                // aligning tab characters.
-                //
-                // 1rem is the default padding-left so we have to add it here
-                paddingLeft: 'calc(var(--blame-decoration-width) + 1rem) !important',
-            },
-            '.blame-decoration': {
-                // Remove the blame decoration from the content flow so that
-                // the tab start can be moved to the right
-                position: 'absolute',
-                left: '0',
-                height: '100%',
-                display: 'inline-block',
-                background: 'var(--body-bg)',
-                verticalAlign: 'bottom',
-                width: 'var(--blame-decoration-width)',
-            },
-
-            '.selected-line .blame-decoration, .highlighted-line .blame-decoration': {
-                background: 'inherit',
-            },
-
-            '.cm-content': {
-                // Make .cm-content overflow .blame-gutter
-                marginLeft: 'calc(var(--blame-decoration-width) * -1)',
-                // override default .cm-gutters z-index 200
-                zIndex: 201,
-            },
-        }),
+        blameDecorationTheme,
     ],
 })
 
@@ -255,6 +254,13 @@ const blameGutterElement = new (class extends GutterMarker {
         return document.createElement('div')
     }
 })()
+
+const gutterTheme = EditorView.theme({
+    '.blame-gutter': {
+        background: 'var(--body-bg)',
+        width: 'var(--blame-decoration-width)',
+    },
+})
 
 const showBlameGutter = Facet.define<boolean>({
     combine: value => value.flat(),
@@ -272,31 +278,30 @@ const showBlameGutter = Facet.define<boolean>({
         // We override this behavior when blame decorations are shown to make inline decorations column-like view work.
         gutters({ fixed: false }),
 
-        EditorView.theme({
-            '.blame-gutter': {
-                background: 'var(--body-bg)',
-                width: 'var(--blame-decoration-width)',
-            },
-        }),
+        gutterTheme,
     ],
 })
 
-function blameLineStyles({ isBlameVisible }: { isBlameVisible: boolean }): Extension {
-    return EditorView.theme({
-        '.cm-line': {
-            lineHeight: isBlameVisible ? '1.5rem' : '1rem',
+const blameLineTheme = EditorView.theme({
+    '.cm-line': {
+        lineHeight: '1rem',
+        borderTop: 'none',
+
+        '.sg-blame-visible &': {
+            lineHeight: '1.5rem',
             // Avoid jumping when blame decorations are streamed in because we use a border
-            borderTop: isBlameVisible ? '1px solid transparent' : 'none',
+            borderTop: '1px solid transparent',
         },
-    })
-}
+    },
+})
 
 export const createBlameDecorationsExtension = (
     isBlameVisible: boolean,
     blameHunks: BlameHunkData | undefined,
     isLightTheme: boolean
 ): Extension => [
-    blameLineStyles({ isBlameVisible }),
+    EditorView.contentAttributes.of({ class: isBlameVisible ? 'sg-blame-visible' : '' }),
+    blameLineTheme,
     isBlameVisible ? showBlameGutter.of(isBlameVisible) : [],
     blameHunks?.current
         ? showGitBlameDecorations.of({

@@ -1,5 +1,6 @@
-import React, { useCallback, useState } from 'react'
+import { FC, useCallback, useState } from 'react'
 
+import { useApolloClient } from '@apollo/client'
 import { mdiCircle, mdiCog, mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
 
@@ -17,16 +18,12 @@ import styles from './ExternalServiceNode.module.scss'
 
 export interface ExternalServiceNodeProps {
     node: ListExternalServiceFields
-    routingPrefix: string
     editingDisabled: boolean
 }
 
-export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildren<ExternalServiceNodeProps>> = ({
-    node,
-    routingPrefix,
-    editingDisabled,
-}) => {
+export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editingDisabled }) => {
     const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
+    const client = useApolloClient()
     const onDelete = useCallback<React.MouseEventHandler>(async () => {
         if (!window.confirm(`Delete the external service ${node.displayName}?`)) {
             return
@@ -35,14 +32,19 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
         try {
             await deleteExternalService(node.id)
             setIsDeleting(false)
-            // eslint-disable-next-line rxjs/no-ignored-subscription
-            refreshSiteFlags().subscribe()
+            await refreshSiteFlags(client)
         } catch (error) {
             setIsDeleting(asError(error))
         } finally {
-            window.location.reload()
+            const deletedCodeHostId = client.cache.identify({
+                __typename: 'ExternalService',
+                id: node.id,
+            })
+
+            // Remove deleted code host from the apollo cache.
+            client.cache.evict({ id: deletedCodeHostId })
         }
-    }, [node])
+    }, [node, client])
 
     const IconComponent = defaultExternalServices[node.kind].icon
 
@@ -56,7 +58,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                     {EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES.has(node.syncJobs?.nodes[0]?.state) ? (
                         <Tooltip content="Sync is running">
                             <div aria-label="Sync is running">
-                                <LoadingSpinner className="mr-2" inline={true} />
+                                <LoadingSpinner className="m-0 mr-2" inline={true} />
                             </div>
                         </Tooltip>
                     ) : node.lastSyncError === null ? (
@@ -110,7 +112,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                     <Tooltip content={`${editingDisabled ? 'View' : 'Edit'} code host connection settings`}>
                         <Button
                             className="test-edit-external-service-button"
-                            to={`${routingPrefix}/external-services/${node.id}/edit`}
+                            to={`/site-admin/external-services/${node.id}/edit`}
                             variant="secondary"
                             size="sm"
                             as={Link}

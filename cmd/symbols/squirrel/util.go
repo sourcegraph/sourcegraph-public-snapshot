@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Nominal type for the ID of a tree-sitter node.
+// NodeId is a nominal type for the ID of a tree-sitter node.
 type NodeId string
 
 // walk walks every node in the tree-sitter tree, calling f(node) on each node.
@@ -62,14 +62,14 @@ func tabsToSpaces(s string) string {
 	return strings.ReplaceAll(s, "\t", "    ")
 }
 
-const TAB_SIZE = 4
+const tabSize = 4
 
-// lengthInSpaces returns the length of the string in spaces (using TAB_SIZE).
+// lengthInSpaces returns the length of the string in spaces (using tabSize).
 func lengthInSpaces(s string) int {
 	total := 0
 	for i := 0; i < len(s); i++ {
 		if s[i] == '\t' {
-			total += TAB_SIZE
+			total += tabSize
 		} else {
 			total++
 		}
@@ -86,7 +86,7 @@ func spacesToColumn(s string, column int) int {
 		}
 
 		if s[i] == '\t' {
-			total += TAB_SIZE
+			total += tabSize
 		} else {
 			total++
 		}
@@ -176,17 +176,6 @@ func allCaptures(query string, node Node) ([]Node, error) {
 	return captures, nil
 }
 
-func firstCapture(query string, node Node) (*Node, error) {
-	captures, err := allCaptures(query, node)
-	if err != nil {
-		return nil, err
-	}
-	if len(captures) == 0 {
-		return nil, nil
-	}
-	return &captures[0], nil
-}
-
 // nodeToRange returns the range of the node.
 func nodeToRange(node *sitter.Node) types.Range {
 	length := 1
@@ -227,7 +216,7 @@ func contains(slice []string, str string) bool {
 	return false
 }
 
-// A sitter.Node plus convenient info.
+// Node is a sitter.Node plus convenient info.
 type Node struct {
 	RepoCommitPath types.RepoCommitPath
 	*sitter.Node
@@ -250,7 +239,7 @@ func swapNodePtr(other Node, newNode *sitter.Node) *Node {
 }
 
 var unrecognizedFileExtensionError = errors.New("unrecognized file extension")
-var unsupportedLanguageError = errors.New("unsupported language")
+var UnsupportedLanguageError = errors.New("unsupported language")
 
 // Parses a file and returns info about it.
 func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCommitPath) (*Node, error) {
@@ -266,7 +255,7 @@ func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCo
 
 	langSpec, ok := langToLangSpec[langName]
 	if !ok {
-		return nil, unsupportedLanguageError
+		return nil, UnsupportedLanguageError
 	}
 
 	s.parser.SetLanguage(langSpec.language)
@@ -425,7 +414,7 @@ func (s *SquirrelService) symbolSearchOne(ctx context.Context, repo string, comm
 		Commit: commit,
 		Path:   symbol.Path,
 	})
-	if errors.Is(err, unsupportedLanguageError) || errors.Is(err, unrecognizedFileExtensionError) {
+	if errors.Is(err, UnsupportedLanguageError) || errors.Is(err, unrecognizedFileExtensionError) {
 		return nil, nil
 	}
 	if err != nil {

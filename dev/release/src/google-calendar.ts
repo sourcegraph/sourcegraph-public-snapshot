@@ -5,6 +5,7 @@ import { addMinutes } from 'date-fns'
 import { Credentials } from 'google-auth-library'
 import { google, calendar_v3 } from 'googleapis'
 import { OAuth2Client } from 'googleapis-common'
+import { DateTime } from 'luxon'
 import { readFile, writeFile } from 'mz/fs'
 import open from 'open'
 
@@ -51,7 +52,7 @@ async function authorize(credentials: OAuth2ClientOptions): Promise<OAuth2Client
         const { port } = server.address() as AddressInfo
         const oauth2Client = new OAuth2Client({
             clientId: credentials.installed.client_id,
-            clientSecret: credentials.installed.client_id,
+            clientSecret: credentials.installed.client_secret,
             redirectUri: `http://localhost:${port}`,
         })
 
@@ -148,11 +149,12 @@ export async function ensureEvent(
     })
 }
 
-async function listEvents(auth: OAuth2Client): Promise<calendar_v3.Schema$Event[] | undefined> {
+export async function listEvents(auth: OAuth2Client): Promise<calendar_v3.Schema$Event[] | undefined> {
     const calendar = google.calendar({ version: 'v3', auth })
     const result = await calendar.events.list({
         calendarId: 'primary',
         timeMin: new Date().toISOString(),
+        timeMax: DateTime.now().plus({ year: 1 }).toJSDate().toISOString(), // this ends up returning a lot of events, so filtering down to the next year should be fine
         maxResults: 2500,
         singleEvents: true,
         orderBy: 'startTime',

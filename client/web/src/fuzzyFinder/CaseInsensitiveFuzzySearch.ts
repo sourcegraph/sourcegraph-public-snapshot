@@ -40,6 +40,7 @@ export class CaseInsensitiveFuzzySearch extends FuzzySearch {
             selector: ({ text }) => text,
             limit: parameters.maxResults,
             match: extendedMatch,
+            casing: 'case-insensitive',
             tiebreakers,
         })
         const isEmpty = parameters.query === ''

@@ -18,7 +18,7 @@ import (
 	store2 "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -47,7 +47,7 @@ func TestGetSeries(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error from getSeries")
 		}
-		autogold.Want("series definition does not exist", "workHandler.getSeries: insight definition not found for series_id: seriesshouldnotexist").Equal(t, err.Error())
+		autogold.Expect("workHandler.getSeries: insight definition not found for series_id: seriesshouldnotexist").Equal(t, err.Error())
 	})
 
 	t.Run("series definition does exist", func(t *testing.T) {
@@ -76,7 +76,7 @@ func TestGetSeries(t *testing.T) {
 		if err != nil {
 			t.Fatal("unexpected error from getseries")
 		}
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 }
 

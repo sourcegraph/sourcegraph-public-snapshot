@@ -2,15 +2,15 @@ package webhooks
 
 import (
 	"context"
-	"reflect"
 	"sync"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/webhooks/outbound"
 )
 
@@ -32,22 +32,23 @@ func getService(db basestore.ShareableStore) outbound.OutboundWebhookService {
 // Note the typed helpers below — if you're sending a webhook for a type that is
 // already handled, you may as well use them and enjoy a slightly simpler
 // function call.
-func Enqueue[T any](
+func Enqueue(
 	ctx context.Context, logger log.Logger, db basestore.ShareableStore,
 	eventType string,
-	marshaller func(context.Context, basestore.ShareableStore, T) ([]byte, error),
-	value T,
+	marshaller func(context.Context, httpcli.Doer, graphql.ID) ([]byte, error),
+	id graphql.ID,
+	client httpcli.Doer,
 ) {
 	svc := getService(db)
 
 	// Webhooks are generally intended to be fire and forget from the point of
 	// view of calling code, so we'll simply log on error and carry on.
 	logger = logger.With(
-		log.String("payload_type", reflect.TypeOf(value).String()),
+		log.String("id", string(id)),
 		log.String("event_type", eventType),
 	)
 
-	payload, err := marshaller(ctx, db, value)
+	payload, err := marshaller(ctx, client, id)
 	if err != nil {
 		logger.Error("error marshalling webhook payload", log.Error(err))
 		return
@@ -61,14 +62,14 @@ func Enqueue[T any](
 
 func EnqueueBatchChange(
 	ctx context.Context, logger log.Logger, db basestore.ShareableStore,
-	eventType string, bc *types.BatchChange,
+	eventType string, id graphql.ID,
 ) {
-	Enqueue(ctx, logger, db, eventType, MarshalBatchChange, bc)
+	Enqueue(ctx, logger, db, eventType, marshalBatchChange, id, httpcli.InternalDoer)
 }
 
 func EnqueueChangeset(
 	ctx context.Context, logger log.Logger, db basestore.ShareableStore,
-	eventType string, ch *types.Changeset,
+	eventType string, id graphql.ID,
 ) {
-	Enqueue(ctx, logger, db, eventType, MarshalChangeset, ch)
+	Enqueue(ctx, logger, db, eventType, marshalChangeset, id, httpcli.InternalDoer)
 }

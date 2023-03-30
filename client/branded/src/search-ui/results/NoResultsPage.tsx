@@ -45,8 +45,9 @@ const Container: React.FunctionComponent<React.PropsWithChildren<ContainerProps>
     </div>
 )
 
-interface NoResultsPageProps extends ThemeProps, TelemetryProps, Pick<SearchContextProps, 'searchContextsEnabled'> {
+interface NoResultsPageProps extends TelemetryProps, Pick<SearchContextProps, 'searchContextsEnabled'> {
     isSourcegraphDotCom: boolean
+    enableOwnershipSearch: boolean
     showSearchContext: boolean
     showQueryExamples?: boolean
     setQueryState?: (query: QueryState) => void
@@ -57,6 +58,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
     searchContextsEnabled,
     telemetryService,
     isSourcegraphDotCom,
+    enableOwnershipSearch,
     showSearchContext,
     showQueryExamples,
     setQueryState,
@@ -91,6 +93,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                             telemetryService={telemetryService}
                             setQueryState={setQueryState}
                             isSourcegraphDotCom={isSourcegraphDotCom}
+                            enableOwnershipSearch={enableOwnershipSearch}
                         />
                     </div>
                 </>

@@ -1,5 +1,7 @@
 package rbac
 
+import "github.com/sourcegraph/sourcegraph/internal/types"
+
 // Schema refers to the RBAC structure which acts as a source of truth for permissions within
 // the RBAC system.
 type Schema struct {
@@ -8,6 +10,6 @@ type Schema struct {
 
 // Namespace represents a feature to be guarded by RBAC. (example: Batch Changes, Code Insights e.t.c)
 type Namespace struct {
-	Name    string   `json:"name"`
-	Actions []string `json:"actions"`
+	Name    types.PermissionNamespace `json:"name"`
+	Actions []string                  `json:"actions"`
 }

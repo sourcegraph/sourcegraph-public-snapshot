@@ -24,7 +24,7 @@ func TestGitserverProxySimple(t *testing.T) {
 	}
 
 	gs := NewMockGitserverClient()
-	gs.AddrForRepoFunc.PushReturn(originServerURL.Host, nil)
+	gs.AddrForRepoFunc.PushReturn(originServerURL.Host)
 
 	proxyServer := httptest.NewServer(gitserverProxy(logtest.Scoped(t), gs, "/info/refs"))
 	defer proxyServer.Close()
@@ -63,7 +63,7 @@ func TestGitserverProxyTargetPath(t *testing.T) {
 	}
 
 	gs := NewMockGitserverClient()
-	gs.AddrForRepoFunc.PushReturn(originServerURL.Host, nil)
+	gs.AddrForRepoFunc.PushReturn(originServerURL.Host)
 
 	proxyServer := httptest.NewServer(gitserverProxy(logtest.Scoped(t), gs, "/foo"))
 	defer proxyServer.Close()
@@ -95,7 +95,7 @@ func TestGitserverProxyHeaders(t *testing.T) {
 	}
 
 	gs := NewMockGitserverClient()
-	gs.AddrForRepoFunc.PushReturn(originServerURL.Host, nil)
+	gs.AddrForRepoFunc.PushReturn(originServerURL.Host)
 
 	proxyServer := httptest.NewServer(gitserverProxy(logtest.Scoped(t), gs, "/test"))
 	defer proxyServer.Close()
@@ -143,7 +143,7 @@ func TestGitserverProxyRedirectWithPayload(t *testing.T) {
 	}
 
 	gs := NewMockGitserverClient()
-	gs.AddrForRepoFunc.PushReturn(originServerURL.Host, nil)
+	gs.AddrForRepoFunc.PushReturn(originServerURL.Host)
 
 	proxyServer := httptest.NewServer(gitserverProxy(logtest.Scoped(t), gs, "/test"))
 	defer proxyServer.Close()

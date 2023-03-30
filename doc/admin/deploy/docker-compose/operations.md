@@ -89,8 +89,8 @@ docker-compose -f db-only-migrate.docker-compose.yaml up -d
 5\. Generate the database dumps
 
 ```bash
-docker exec pgsql sh -c 'pg_dump -C --username sg sg' > sourcegraph_db.out
-docker exec codeintel-db -c 'pg_dump -C --username sg sg' > codeintel_db.out
+docker exec pgsql sh -c 'pg_dump -C --clean --if-exists --username sg sg' > sourcegraph_db.out
+docker exec codeintel-db -c 'pg_dump -C --clean --if-exists --username sg sg' > codeintel_db.out
 ```
 
 6\. Ensure the `sourcegraph_db.out` and `codeintel_db.out` files are moved to a safe and secure location. 
@@ -110,7 +110,7 @@ docker-compose -f db-only-migrate.docker-compose.yaml up -d
 3\. Copy the database files into the containers
 
 ```bash
-docker cp sourcegraph_db.out pgsql:/tmp/sourecgraph_db.out
+docker cp sourcegraph_db.out pgsql:/tmp/sourcegraph_db.out
 docker cp codeintel_db.out codeintel-db:/tmp/codeintel_db.out
 ```
 
@@ -178,7 +178,7 @@ docker-compose -f db-only-migrate.docker-compose.yaml up -d
 3\. Copy the database files into the containers
 
 ```bash
-docker cp sourcegraph_db.out pgsql:/tmp/sourecgraph_db.out
+docker cp sourcegraph_db.out pgsql:/tmp/sourcegraph_db.out
 docker cp codeintel_db.out codeintel-db:/tmp/codeintel_db.out
 ```
 

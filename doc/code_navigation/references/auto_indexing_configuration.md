@@ -10,46 +10,11 @@ This document details the expected contents of [explicit index job configuration
 
 ## Keys
 
-The root of the configuration has two top-level keys, `index_jobs` and `shared_steps`, documented below.
+The root of the configuration has one top-level key, `index_jobs`, documented below.
 
 ### [`index_jobs`](#index-jobs)
 
 The index jobs field defines a set of [index job objects](#index-job-object) describing the actions to perform to successfully index a fresh clone of a repository. Each index job is executed independently (and possibly in parallel) by an executor.
-
-### [`shared_steps`](#shared-steps)
-
-The shared steps field defines an ordered sequence of pre-indexing actions (formatted as a [Docker step object](#docker-step-object)). Each step is executed before each index job is executed. Shared steps are executed individually once _per indexing job_ and are designed to be used as a way of sharing code and common configuration for projects within a repository (but are not designed as a way to share compute resources).
-
-## Examples
-
-In the following example, we have a repository configured to index three different projects: `cmd/foo`, `cmd/bar`, and `cmd/baz`. These projects are executed concurrently by available executor processes. Each index job shares an initial step that runs a `setup.sh` script in the root of the repository and installs Go dependencies. The index job for `cmd/bar` additionally requires a code generation step, which is performed after the shared step but before the indexer invocation.
-
-```yaml
-shared_steps:
-  image: sourcegraph/lsif-go
-  commands:
-    - ./setup.sh      # Run a custom setup script
-    - go mod download # Download dependencies
-
-index_jobs:
-  # Index cmd/foo
-  - indexer: sourcegraph/lsif-go
-    root: cmd/foo
-
-  # Index cmd/bar
-  # Requires an additional codegen step
-  - indexer: sourcegraph/lsif-go
-    steps:
-      - image: sourcegraph/lsif-go
-        commands:
-          - go generate ./...
-        root: cmd/bar
-    root: cmd/bar
-  
-  # Index cmd/baz
-  - indexer: sourcegraph/lsif-go
-    root: cmd/baz
-```
 
 ## Index job object
 
@@ -72,7 +37,7 @@ Each indexing job object can be configured with the following keys.
 
 #### [`steps`](#index-job-steps)
 
-The steps field defines an ordered sequence of pre-indexing actions (formatted as a [Docker step object](#docker-step-object)). If `shared_steps` are defined in the top level of the configuration, those steps are **prepended** to this sequence. Each step is executed before the indexer itself is invoked.
+The steps field defines an ordered sequence of pre-indexing actions (formatted as a [Docker step object](#docker-step-object)). Each step is executed before the indexer itself is invoked.
 
 #### [`indexer`](#index-job-indexer)
 
@@ -100,59 +65,62 @@ Supply this argument when the target indexer produces a differently named artifa
 
 The following example uses the Docker image `sourcegraph/lsif-go` pinned at the tag `v1.6.7` and additionally secured with an image digest. This index configuration runs the Go indexer with quiet output in the `dev/sg` directory and uploads the resulting index file (`dump.lsif` by default).
 
-```yaml
-indexer: sourcegraph/lsif-go:v1.6.7@sha256::9c2d9cf...1baed2b
-
-# sourcegraph/lsif-go does not define a Docker entrypoint, so we need to
-# indicate which binary to invoke (along with any additional arguments).
-# Here, -q and --no-animation are lsif-go flags that control verbosity.
-indexer_args:
-  - lsif-go
-  - -q
-  - --no-animation
-
-root: dev/sg
+```json
+{
+  "indexer": "sourcegraph/lsif-go:v1.6.7@sha256::9c2d9cf...1baed2b",
+  "indexer_args": [
+    "lsif-go",
+    "-q",
+    "--no-animation"
+  ],
+  "root": "dev/sg"
+}
 ```
 
 The following example uses the Docker image `sourcegraph/scip-typescript` pinned at the tag `autoindex`. This index configuration will run `npm install` followed by the TypeScript indexer `scip-typescript` in the `editors/code` directory. In this job, both commands run in the same workspace, but are invoked in different Docker containers. Both containers happen to be based on the same image, but that's not necessary.
 
-```yaml
-steps:
-  - image: sourcegraph/scip-typescript:autoindex
-    commands:
-      - npm install
-    root: editors/code
 
-# sourcegraph/scip-typescript does not define a Docker entrypoint, so we need
-# to indicate which binary to invoke (along with any additional arguments).
-indexer: sourcegraph/scip-typescript:autoiondex
-indexer_args:
-    - scip-typescript
-    - index
+Note: `sourcegraph/scip-typescript` does not define a Docker entrypoint, so we need to indicate which binary to invoke (along with any additional arguments).
 
-root: editors/code
+```json
+{
+  "steps": [
+    {
+      "image": "sourcegraph/scip-typescript:autoindex",
+      "commands": [
+        "npm install"
+      ],
+      "root": "editors/code"
+    }
+  ],
+  "indexer": "sourcegraph/scip-typescript:autoiondex",
+  "indexer_args": [
+    "scip-typescript",
+    "index"
+  ],
+  "root": "editors/code"
+}
 ```
 
 The following example uses the Docker image `sourcegraph/lsif-clang` using the default tag. This index configuration will run a series of commands followed by the Clang indexer. Because these commands are defined as _local_ steps, they will occur in the same Docker container as the index operation. This distinction is necessary when the setup process must affect more than the filesystem - here we needed to install OS packages and install a build-time tool.
 
-```yaml
-indexer: sourcegraph/lsif-clang
-local_steps:
-  - apt-get update
-  - DEBIAN_FRONTEND=noninteractive apt-get -y install build-essential ... clang-10
-  - python3 -m pip install compiledb
-  - python3 -m compiledb -n make
+Note: `sourcegraph/lsif-clang` does not define a Docker entrypoint, so we need to indicate which binary to invoke (along with any additional arguments). Here, we have lsif-clang consume the `compile_commands.json` manifest generated by the local steps defined in `local_steps`.
 
-# sourcegraph/lsif-clang does not define a Docker entrypoint, so we need 
-# to indicate which binary to invoke (along with any additional arguments).
-# Here, we have lsif-clang consume the compile_commands.json manifest generated
-# by the local steps defined above.
-indexer_args:
-  - lsif-clang
-  - compile_commands.json
-
-# Ensure lsif-clang generates the file expected by src code-intel upload.
-outfile: dump.lsif
+```json
+{
+  "indexer": "sourcegraph/lsif-clang",
+  "local_steps": [
+    "apt-get update",
+    "DEBIAN_FRONTEND=noninteractive apt-get -y install build-essential ... clang-10",
+    "python3 -m pip install compiledb",
+    "python3 -m compiledb -n make"
+  ],
+  "indexer_args": [
+    "lsif-clang",
+    "compile_commands.json"
+  ],
+  "outfile": "dump.lsif"
+}
 ```
 
 ## Docker step object
@@ -179,18 +147,24 @@ The working directory within the Docker container where the provided commands ar
 
 The following example runs `go generate` over all packages in the root of the repository.
 
-```yaml
-indexer: golang:1.17.3-buster@sha256:c1bae5f...3e4f07b
-commands:
-  - go generate ./...
+```json
+{
+  "indexer": "golang:1.17.3-buster@sha256:c1bae5f...3e4f07b",
+  "commands": [
+    "go generate ./..."
+  ]
+}
 ```
 
 The following example runs a series of commands to install dependencies in the `lib/proj` directory.
 
-```yaml
-indexer: node:alpine3.12@sha256:4435145...fd06fd3
-commands:
-  - yarn config set ignore-engines true
-  - yarn install
-root: lib/proj
+```json
+{
+  "indexer": "node:alpine3.12@sha256:4435145...fd06fd3",
+  "commands": [
+    "yarn config set ignore-engines true",
+    "yarn install"
+  ],
+  "root": "lib/proj"
+}
 ```

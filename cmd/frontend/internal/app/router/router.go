@@ -24,6 +24,7 @@ const (
 	SignIn             = "sign-in"
 	SignOut            = "sign-out"
 	SignUp             = "sign-up"
+	RequestAccess      = "request-access"
 	UnlockAccount      = "unlock-account"
 	UnlockUserAccount  = "unlock-user-account"
 	Welcome            = "welcome"
@@ -32,8 +33,6 @@ const (
 	ResetPasswordInit  = "reset-password.init"
 	ResetPasswordCode  = "reset-password.code"
 	CheckUsernameTaken = "check-username-taken"
-
-	RegistryExtensionBundle = "registry.extension.bundle"
 
 	UsageStatsDownload = "usage-stats.download"
 
@@ -75,6 +74,7 @@ func newRouter() *mux.Router {
 	base.Path("/-/logout").Methods("GET").Name(Logout)
 
 	base.Path("/-/sign-up").Methods("POST").Name(SignUp)
+	base.Path("/-/request-access").Methods("POST").Name(RequestAccess)
 	base.Path("/-/welcome").Methods("GET").Name(Welcome)
 	base.Path("/-/site-init").Methods("POST").Name(SiteInit)
 	base.Path("/-/verify-email").Methods("GET").Name(VerifyEmail)
@@ -86,8 +86,6 @@ func newRouter() *mux.Router {
 	base.Path("/-/reset-password-code").Methods("POST").Name(ResetPasswordCode)
 
 	base.Path("/-/check-username-taken/{username}").Methods("GET").Name(CheckUsernameTaken)
-
-	base.Path("/-/static/extension/{RegistryExtensionReleaseFilename}").Methods("GET").Name(RegistryExtensionBundle)
 
 	base.Path("/-/editor").Methods("GET").Name(Editor)
 

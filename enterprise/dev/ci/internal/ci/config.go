@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -101,26 +102,6 @@ func NewConfig(now time.Time) Config {
 		changedFiles = strings.Split(strings.TrimSpace(string(output)), "\n")
 	}
 
-	// special tag adjustments based on run type
-	switch {
-	case runType.Is(runtype.TaggedRelease):
-		// This tag is used for publishing versioned releases.
-		//
-		// The Git tag "v1.2.3" should map to the Docker image "1.2.3" (without v prefix).
-		tag = strings.TrimPrefix(tag, "v")
-	case runType.Is(runtype.MainBranch):
-		// This tag is used for deploying continuously. Only ever generate this on the
-		// main branch.
-		tag = images.MainBranchImageTag(now, commit, buildNumber)
-	default:
-		// Encode branch inside build tag by default.
-		tag = fmt.Sprintf("%s_%05d_%10s_%.12s", sanitizeBranchForDockerTag(branch), buildNumber, now.Format("2006-01-02"), commit)
-	}
-	if runType.Is(runtype.ImagePatch, runtype.ImagePatchNoTest, runtype.ExecutorPatchNoTest) {
-		// Add additional patch suffix
-		tag = tag + "_patch"
-	}
-
 	diff, changedFilesByDiffType := changed.ParseDiff(changedFiles)
 
 	return Config{
@@ -128,7 +109,7 @@ func NewConfig(now time.Time) Config {
 
 		Time:              now,
 		Branch:            branch,
-		Version:           tag,
+		Version:           versionFromTag(runType, tag, commit, buildNumber, branch, now),
 		Commit:            commit,
 		MustIncludeCommit: mustIncludeCommits,
 		Diff:              diff,
@@ -143,6 +124,52 @@ func NewConfig(now time.Time) Config {
 			SlackToken: os.Getenv("SLACK_INTEGRATION_TOKEN"),
 		},
 	}
+}
+
+// versionFromTag constructs the Sourcegraph version from the given build state.
+func versionFromTag(runType runtype.RunType, tag string, commit string, buildNumber int, branch string, now time.Time) string {
+	if runType.Is(runtype.TaggedRelease) {
+		// This tag is used for publishing versioned releases.
+		//
+		// The Git tag "v1.2.3" should map to the Docker image "1.2.3" (without v prefix).
+		return strings.TrimPrefix(tag, "v")
+	}
+
+	// "main" branch is used for continuous deployment and has a special-case format
+	version := images.BranchImageTag(now, commit, buildNumber, sanitizeBranchForDockerTag(branch), tryGetLatestTag())
+
+	// Add additional patch suffix
+	if runType.Is(runtype.ImagePatch, runtype.ImagePatchNoTest, runtype.ExecutorPatchNoTest) {
+		version = version + "_patch"
+	}
+
+	return version
+}
+
+func tryGetLatestTag() string {
+	output, err := exec.Command("git", "tag", "--list", "v*").CombinedOutput()
+	if err != nil {
+		return ""
+	}
+
+	tagMap := map[string]struct{}{}
+	for _, tag := range strings.Split(string(output), "\n") {
+		if version, ok := oobmigration.NewVersionFromString(tag); ok {
+			tagMap[version.String()] = struct{}{}
+		}
+	}
+	if len(tagMap) == 0 {
+		return ""
+	}
+
+	versions := make([]oobmigration.Version, 0, len(tagMap))
+	for tag := range tagMap {
+		version, _ := oobmigration.NewVersionFromString(tag)
+		versions = append(versions, version)
+	}
+	oobmigration.SortVersions(versions)
+
+	return versions[len(versions)-1].String()
 }
 
 func (c Config) shortCommit() string {
@@ -201,6 +228,10 @@ type MessageFlags struct {
 	// ForceReadyForReview, if true will skip the draft pull request check and run the Chromatic steps.
 	// This allows a user to run the job without marking their PR as ready for review
 	ForceReadyForReview bool
+
+	// ForceBazel, if true replaces jobs with their bazel equivalent when possible, and make then non
+	// soft-failing.
+	ForceBazel bool
 }
 
 // parseMessageFlags gets MessageFlags from the given commit message.
@@ -209,6 +240,7 @@ func parseMessageFlags(msg string) MessageFlags {
 		ProfilingEnabled:    strings.Contains(msg, "[buildkite-enable-profiling]"),
 		SkipHashCompare:     strings.Contains(msg, "[skip-hash-compare]"),
 		ForceReadyForReview: strings.Contains(msg, "[review-ready]"),
+		ForceBazel:          strings.Contains(msg, "[force-bazel]"),
 	}
 }
 

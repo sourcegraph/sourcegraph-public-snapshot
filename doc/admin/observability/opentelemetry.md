@@ -17,8 +17,8 @@ Refer to the [documentation](https://opentelemetry.io/docs/collector/configurati
 
 For more details on configuring the OpenTelemetry collector for your deployment method, refer to the deployment-specific guidance:
 
-- [Kubernetes (with Helm)](../deploy/kubernetes/helm.md#opentelemetry-collector)
-- [Kubernetes (without Helm)](../deploy/kubernetes/configure.md#opentelemetry-collector)
+- [Kubernetes with Kustomize](../deploy/kubernetes/configure.md#tracing)
+- [Kubernetes with Helm](../deploy/kubernetes/helm.md#opentelemetry-collector)
 - [Docker Compose](../deploy/docker-compose/operations.md#opentelemetry-collector)
 
 ## Tracing
@@ -211,8 +211,8 @@ Refer to the [`jaeger` exporter documentation](https://github.com/open-telemetry
 
 Most Sourcegraph deployment methods still ship with an opt-in Jaeger instance—to set this up, follow the relevant deployment guides, which will also set up the appropriate configuration for you:
 
-- [Kubernetes (with Helm)](../deploy/kubernetes/helm.md#enable-the-bundled-jaeger-deployment)
-- [Kubernetes (without Helm)](../deploy/kubernetes/configure.md#enable-the-bundled-jaeger-deployment)
+- [Kubernetes with Kustomize](../deploy/kubernetes/configure.md#deploy-opentelemetry-collector-with-jaeger-as-tracing-backend)
+- [Kubernetes with Helm](../deploy/kubernetes/helm.md#enable-the-bundled-jaeger-deployment)
 - [Docker Compose](../deploy/docker-compose/operations.md#enable-the-bundled-jaeger-deployment)
 
 If you wish to do additional configuration or connect to your own Jaeger instance, the deployed Collector image is bundled with a [basic configuration with Jaeger exporting](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/opentelemetry-collector/configs/jaeger.yaml).

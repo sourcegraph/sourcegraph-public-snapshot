@@ -192,6 +192,16 @@ func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbacke
 	return &batchChangesConnectionResolver{store: r.store, gitserverClient: r.gitserverClient, opts: opts}, nil
 }
 
+// This points to the Batch Change that can close or open this changeset on its codehost. If this is nil,
+// then the changeset is imported.
+func (r *changesetResolver) OwnedByBatchChange() *graphql.ID {
+	if batchChangeID := r.changeset.OwnedByBatchChangeID; batchChangeID != 0 {
+		bcID := bgql.MarshalBatchChangeID(batchChangeID)
+		return &bcID
+	}
+	return nil
+}
+
 func (r *changesetResolver) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.changeset.CreatedAt}
 }
@@ -254,6 +264,11 @@ func (r *changesetResolver) Author() (*graphqlbackend.PersonResolver, error) {
 	email, err := r.changeset.AuthorEmail()
 	if err != nil {
 		return nil, err
+	}
+
+	// For many code hosts, we can't get the author information from the API.
+	if name == "" && email == "" {
+		return nil, nil
 	}
 
 	return graphqlbackend.NewPersonResolver(
@@ -327,6 +342,13 @@ func (r *changesetResolver) ForkNamespace() *string {
 	return nil
 }
 
+func (r *changesetResolver) ForkName() *string {
+	if name := r.changeset.ExternalForkName; name != "" {
+		return &name
+	}
+	return nil
+}
+
 func (r *changesetResolver) ReviewState(ctx context.Context) *string {
 	if !r.changeset.Published() {
 		return nil
@@ -348,7 +370,23 @@ func (r *changesetResolver) CheckState() *string {
 	return &checkState
 }
 
-func (r *changesetResolver) Error() *string { return r.changeset.FailureMessage }
+// Error: `FailureMessage` is set by the reconciler worker if it fails when processing
+// a changeset job. However, for most reconciler operations, we automatically retry the
+// operation a number of times. When the reconciler worker picks up a failed changeset job
+// to restart processing, it clears out the `FailureMessage`, resulting in the error
+// disappearing in the UI where we use this resolver field. To retain this context even as
+// we retry to process the changeset, we copy over the error to `PreviousFailureMessage`
+// when re-enqueueing a changeset and clearing its original `FailureMessage`. Only when a
+// changeset is successfully processed will the `PreviousFailureMessage` be cleared.
+//
+// When resolving this field, we still prefer the latest `FailureMessage` we have, but if
+// there's not a `FailureMessage` and there is a `Previous` one, we return that.
+func (r *changesetResolver) Error() *string {
+	if r.changeset.FailureMessage != nil {
+		return r.changeset.FailureMessage
+	}
+	return r.changeset.PreviousFailureMessage
+}
 
 func (r *changesetResolver) SyncerError() *string { return r.changeset.SyncErrorMessage }
 

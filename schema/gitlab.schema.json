@@ -106,7 +106,7 @@
         "type": "object",
         "title": "ExcludedGitLabProject",
         "additionalProperties": false,
-        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }],
+        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }, { "required": ["emptyRepos"] }],
         "properties": {
           "name": {
             "description": "The name of a GitLab project (\"group/name\") to exclude from mirroring.",
@@ -116,11 +116,15 @@
           "id": {
             "description": "The ID of a GitLab project (as returned by the GitLab instance's API) to exclude from mirroring.",
             "type": "integer"
+          },
+          "emptyRepos": {
+            "description": "Whether to exclude empty repositories.",
+            "type": "boolean"
           }
         }
       },
       "examples": [
-        [{ "name": "group/name" }, { "id": 42 }],
+        [{ "name": "group/name" }, { "id": 42 }, { "emptyRepos": true }],
         [{ "name": "gitlab-org/gitlab-ee" }, { "name": "gitlab-com/www-gitlab-com" }]
       ]
     },
@@ -193,7 +197,7 @@
     },
     "webhooks": {
       "description": "An array of webhook configurations",
-      "deprecationMessage": "Deprecated in favour of first class webhooks. See https://docs.sourcegraph.com/admin/config/webhooks#deprecation-notice",
+      "deprecationMessage": "Deprecated in favour of first class webhooks. See https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice",
       "type": "array",
       "items": {
         "type": "object",

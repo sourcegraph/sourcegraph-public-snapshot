@@ -6,23 +6,11 @@ import {
     ParsedRepoURI,
     parseQueryAndHash,
     parseRepoRevision,
-    RepoDocumentation,
     RepoFile,
 } from '@sourcegraph/shared/src/util/url'
 
 export function toTreeURL(target: RepoFile): string {
     return `/${encodeRepoRevision(target)}/-/tree/${target.filePath}`
-}
-
-export function toDocumentationURL(target: RepoDocumentation): string {
-    return `/${encodeRepoRevision(target)}/-/docs${target.pathID}`
-}
-
-export function toDocumentationSingleSymbolURL(target: RepoDocumentation): string {
-    const hash = target.pathID.indexOf('#')
-    const path = hash === -1 ? target.pathID : target.pathID.slice(0, hash)
-    const qualifier = hash === -1 ? '' : target.pathID.slice(hash + '#'.length)
-    return `/${encodeRepoRevision(target)}/-/docs${path}?${qualifier}`
 }
 
 /**
@@ -103,6 +91,7 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI & Pick<ParsedRe
     const treeSeparator = pathname.indexOf('/-/tree/')
     const blobSeparator = pathname.indexOf('/-/blob/')
     const comparisonSeparator = pathname.indexOf('/-/compare/')
+    const commitsSeparator = pathname.indexOf('/-/commits/')
     if (treeSeparator !== -1) {
         filePath = decodeURIComponent(pathname.slice(treeSeparator + '/-/tree/'.length))
     }
@@ -111,6 +100,9 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI & Pick<ParsedRe
     }
     if (comparisonSeparator !== -1) {
         commitRange = pathname.slice(comparisonSeparator + '/-/compare/'.length)
+    }
+    if (commitsSeparator !== -1) {
+        filePath = decodeURIComponent(pathname.slice(commitsSeparator + '/-/commits/'.length))
     }
     let position: Position | undefined
     let range: Range | undefined

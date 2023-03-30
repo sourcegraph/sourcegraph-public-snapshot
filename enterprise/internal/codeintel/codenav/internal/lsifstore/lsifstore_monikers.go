@@ -35,86 +35,62 @@ func (s *store) GetMonikersByPosition(ctx context.Context, uploadID int, path st
 		monikersDocumentQuery,
 		uploadID,
 		path,
-		uploadID,
-		path,
 	)))
 	if err != nil || !exists {
 		return nil, err
 	}
 
-	if documentData.SCIPData != nil {
-		trace.AddEvent("TODO Domain Owner", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
-		occurrences := types.FindOccurrences(documentData.SCIPData.Occurrences, int32(line), int32(character))
-		trace.AddEvent("TODO Domain Owner", attribute.Int("numIntersectingOccurrences", len(occurrences)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
+	occurrences := types.FindOccurrences(documentData.SCIPData.Occurrences, int32(line), int32(character))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numIntersectingOccurrences", len(occurrences)))
 
-		// Make lookup map of symbol information by name
-		symbolMap := map[string]*scip.SymbolInformation{}
-		for _, symbol := range documentData.SCIPData.Symbols {
-			symbolMap[symbol.Symbol] = symbol
-		}
-
-		monikerData := make([][]precise.MonikerData, 0, len(occurrences))
-		for _, occurrence := range occurrences {
-			if occurrence.Symbol == "" || scip.IsLocalSymbol(occurrence.Symbol) {
-				continue
-			}
-			symbol, hasSymbol := symbolMap[occurrence.Symbol]
-
-			kind := precise.Import
-			if hasSymbol {
-				for _, o := range documentData.SCIPData.Occurrences {
-					if o.Symbol == occurrence.Symbol {
-						// TODO - do we need to check additional documents here?
-						if isDefinition := scip.SymbolRole_Definition.Matches(o); isDefinition {
-							kind = precise.Export
-						}
-
-						break
-					}
-				}
-			}
-
-			moniker, err := symbolNameToQualifiedMoniker(occurrence.Symbol, kind)
-			if err != nil {
-				return nil, err
-			}
-			occurrenceMonikers := []precise.MonikerData{moniker}
-
-			if hasSymbol {
-				for _, rel := range symbol.Relationships {
-					if rel.IsImplementation {
-						relatedMoniker, err := symbolNameToQualifiedMoniker(rel.Symbol, precise.Implementation)
-						if err != nil {
-							return nil, err
-						}
-
-						occurrenceMonikers = append(occurrenceMonikers, relatedMoniker)
-					}
-				}
-			}
-
-			monikerData = append(monikerData, occurrenceMonikers)
-		}
-		trace.AddEvent("TODO Domain Owner", attribute.Int("numMonikers", len(monikerData)))
-
-		return monikerData, nil
+	// Make lookup map of symbol information by name
+	symbolMap := map[string]*scip.SymbolInformation{}
+	for _, symbol := range documentData.SCIPData.Symbols {
+		symbolMap[symbol.Symbol] = symbol
 	}
 
-	trace.AddEvent("TODO Domain Owner", attribute.Int("numRanges", len(documentData.LSIFData.Ranges)))
-	ranges := precise.FindRanges(documentData.LSIFData.Ranges, line, character)
-	trace.AddEvent("TODO Domain Owner", attribute.Int("numIntersectingRanges", len(ranges)))
+	monikerData := make([][]precise.MonikerData, 0, len(occurrences))
+	for _, occurrence := range occurrences {
+		if occurrence.Symbol == "" || scip.IsLocalSymbol(occurrence.Symbol) {
+			continue
+		}
+		symbol, hasSymbol := symbolMap[occurrence.Symbol]
 
-	monikerData := make([][]precise.MonikerData, 0, len(ranges))
-	for _, r := range ranges {
-		batch := make([]precise.MonikerData, 0, len(r.MonikerIDs))
-		for _, monikerID := range r.MonikerIDs {
-			if moniker, exists := documentData.LSIFData.Monikers[monikerID]; exists {
-				batch = append(batch, moniker)
+		kind := precise.Import
+		if hasSymbol {
+			for _, o := range documentData.SCIPData.Occurrences {
+				if o.Symbol == occurrence.Symbol {
+					// TODO - do we need to check additional documents here?
+					if isDefinition := scip.SymbolRole_Definition.Matches(o); isDefinition {
+						kind = precise.Export
+					}
+
+					break
+				}
 			}
 		}
-		trace.AddEvent("TODO Domain Owner", attribute.Int("numMonikersForRange", len(batch)))
 
-		monikerData = append(monikerData, batch)
+		moniker, err := symbolNameToQualifiedMoniker(occurrence.Symbol, kind)
+		if err != nil {
+			return nil, err
+		}
+		occurrenceMonikers := []precise.MonikerData{moniker}
+
+		if hasSymbol {
+			for _, rel := range symbol.Relationships {
+				if rel.IsImplementation {
+					relatedMoniker, err := symbolNameToQualifiedMoniker(rel.Symbol, precise.Implementation)
+					if err != nil {
+						return nil, err
+					}
+
+					occurrenceMonikers = append(occurrenceMonikers, relatedMoniker)
+				}
+			}
+		}
+
+		monikerData = append(monikerData, occurrenceMonikers)
 	}
 	trace.AddEvent("TODO Domain Owner", attribute.Int("numMonikers", len(monikerData)))
 
@@ -122,41 +98,16 @@ func (s *store) GetMonikersByPosition(ctx context.Context, uploadID int, path st
 }
 
 const monikersDocumentQuery = `
-(
-	SELECT
-		sd.id,
-		sid.document_path,
-		NULL AS data,
-		NULL AS ranges,
-		NULL AS hovers,
-		NULL AS monikers,
-		NULL AS packages,
-		NULL AS diagnostics,
-		sd.raw_scip_payload AS scip_document
-	FROM codeintel_scip_document_lookup sid
-	JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
-	WHERE
-		sid.upload_id = %s AND
-		sid.document_path = %s
-	LIMIT 1
-) UNION (
-	SELECT
-		dump_id,
-		path,
-		data,
-		ranges,
-		NULL AS hovers,
-		monikers,
-		NULL AS packages,
-		NULL AS diagnostics,
-		NULL AS scip_document
-	FROM
-		lsif_data_documents
-	WHERE
-		dump_id = %s AND
-		path = %s
-	LIMIT 1
-)
+SELECT
+	sd.id,
+	sid.document_path,
+	sd.raw_scip_payload
+FROM codeintel_scip_document_lookup sid
+JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
+WHERE
+	sid.upload_id = %s AND
+	sid.document_path = %s
+LIMIT 1
 `
 
 func symbolNameToQualifiedMoniker(symbolName, kind string) (precise.MonikerData, error) {
@@ -200,16 +151,6 @@ func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, u
 		return nil, 0, nil
 	}
 
-	idQueries := make([]*sqlf.Query, 0, len(uploadIDs))
-	for _, id := range uploadIDs {
-		idQueries = append(idQueries, sqlf.Sprintf("%s", id))
-	}
-
-	monikerQueries := make([]*sqlf.Query, 0, len(monikers))
-	for _, arg := range monikers {
-		monikerQueries = append(monikerQueries, sqlf.Sprintf("(%s, %s)", arg.Scheme, arg.Identifier))
-	}
-
 	symbolNames := make([]string, 0, len(monikers))
 	for _, arg := range monikers {
 		symbolNames = append(symbolNames, arg.Identifier)
@@ -219,9 +160,6 @@ func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, u
 		bulkMonikerResultsQuery,
 		pq.Array(symbolNames),
 		pq.Array(uploadIDs),
-		sqlf.Sprintf(fmt.Sprintf("lsif_data_%s", tableName)),
-		sqlf.Join(idQueries, ", "),
-		sqlf.Join(monikerQueries, ", "),
 		sqlf.Sprintf(fmt.Sprintf("%s_ranges", strings.TrimSuffix(tableName, "s"))),
 	)
 
@@ -271,35 +209,16 @@ outer:
 const bulkMonikerResultsQuery = `
 WITH RECURSIVE
 ` + symbolIDsCTEs + `
-(
-	SELECT
-		dump_id,
-		scheme,
-		identifier,
-		data,
-		NULL AS scip_payload,
-		'' AS scip_uri
-	FROM %s
-	WHERE
-		dump_id IN (%s) AND
-		(scheme, identifier) IN (%s)
-	ORDER BY
-		(dump_id, scheme, identifier)
-) UNION ALL (
-	SELECT
-		ss.upload_id,
-		'scip',
-		msn.symbol_name,
-		NULL,
-		%s,
-		document_path
-	FROM matching_symbol_names msn
-	JOIN codeintel_scip_symbols ss ON ss.upload_id = msn.upload_id AND ss.symbol_id = msn.id
-	JOIN codeintel_scip_document_lookup dl ON dl.id = ss.document_lookup_id
-	ORDER BY
-		(ss.upload_id, msn.symbol_name)
-)
-ORDER BY dump_id, scheme, identifier
+SELECT
+	ss.upload_id,
+	'scip',
+	msn.symbol_name,
+	%s,
+	document_path
+FROM matching_symbol_names msn
+JOIN codeintel_scip_symbols ss ON ss.upload_id = msn.upload_id AND ss.symbol_id = msn.id
+JOIN codeintel_scip_document_lookup dl ON dl.id = ss.document_lookup_id
+ORDER BY ss.upload_id, msn.symbol_name
 `
 
 func monikersToString(vs []precise.MonikerData) string {

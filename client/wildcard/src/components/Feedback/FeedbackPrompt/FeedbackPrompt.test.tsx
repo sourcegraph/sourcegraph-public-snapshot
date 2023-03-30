@@ -1,9 +1,10 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
 import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
 
+import { renderWithBrandedContext } from '../../../testing'
 import { Button } from '../../Button'
 import { PopoverTrigger } from '../../Popover'
 
@@ -17,7 +18,7 @@ describe('FeedbackPrompt', () => {
     const onSubmit = sinon.stub()
 
     beforeEach(() => {
-        render(
+        renderWithBrandedContext(
             <FeedbackPrompt
                 openByDefault={true}
                 onSubmit={onSubmit}
@@ -63,7 +64,7 @@ describe('FeedbackPrompt', () => {
 
         submitFeedback()
 
-        expect(await screen.findByText(/thank you for your help/i)).toBeInTheDocument()
+        expect(await screen.findByText(/thank you/i)).toBeInTheDocument()
         sinon.assert.calledWith(onSubmit, sampleFeedback.feedback)
 
         expect(document.body).toMatchSnapshot()

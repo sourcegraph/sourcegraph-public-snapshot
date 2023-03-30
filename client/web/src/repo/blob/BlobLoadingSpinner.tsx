@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-import { useLocation } from 'react-router'
+import { useLocation } from 'react-router-dom'
 
 import { Link, LoadingSpinner } from '@sourcegraph/wildcard'
 

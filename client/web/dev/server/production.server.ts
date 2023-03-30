@@ -5,17 +5,17 @@ import expressStaticGzip from 'express-static-gzip'
 import { createProxyMiddleware } from 'http-proxy-middleware'
 import signale from 'signale'
 
-import { STATIC_ASSETS_PATH, STATIC_INDEX_PATH } from '@sourcegraph/build-config'
-
 import {
-    PROXY_ROUTES,
     getAPIProxySettings,
     ENVIRONMENT_CONFIG,
     HTTP_WEB_SERVER_URL,
     HTTPS_WEB_SERVER_URL,
+    getWebpackManifest,
+    STATIC_INDEX_PATH,
+    getIndexHTML,
 } from '../utils'
 
-const { SOURCEGRAPH_API_URL, SOURCEGRAPH_HTTP_PORT } = ENVIRONMENT_CONFIG
+const { SOURCEGRAPH_API_URL, SOURCEGRAPH_HTTP_PORT, STATIC_ASSETS_PATH } = ENVIRONMENT_CONFIG
 
 function startProductionServer(): void {
     if (!SOURCEGRAPH_API_URL) {
@@ -39,15 +39,18 @@ function startProductionServer(): void {
         })
     )
 
+    const { proxyRoutes, ...proxyConfig } = getAPIProxySettings({
+        apiURL: SOURCEGRAPH_API_URL,
+        ...(ENVIRONMENT_CONFIG.WEBPACK_SERVE_INDEX && {
+            getLocalIndexHTML(jsContextScript) {
+                const manifestFile = getWebpackManifest()
+                return getIndexHTML({ manifestFile, jsContextScript })
+            },
+        }),
+    })
+
     // Proxy API requests to the `process.env.SOURCEGRAPH_API_URL`.
-    app.use(
-        PROXY_ROUTES,
-        createProxyMiddleware(
-            getAPIProxySettings({
-                apiURL: SOURCEGRAPH_API_URL,
-            })
-        )
-    )
+    app.use(proxyRoutes, createProxyMiddleware(proxyConfig))
 
     // Redirect remaining routes to index.html
     app.get('/*', (_request, response) => response.sendFile(STATIC_INDEX_PATH))

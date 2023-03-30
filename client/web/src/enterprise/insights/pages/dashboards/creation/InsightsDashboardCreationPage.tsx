@@ -1,7 +1,7 @@
 import React, { useContext, useMemo } from 'react'
 
 import classNames from 'classnames'
-import { useHistory } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Container, Button, LoadingSpinner, useObservable, Link, Tooltip } from '@sourcegraph/wildcard'
@@ -9,7 +9,6 @@ import { PageHeader, Container, Button, LoadingSpinner, useObservable, Link, Too
 import { LoaderButton } from '../../../../../components/LoaderButton'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon, CodeInsightsPage } from '../../../components'
-import {} from '../../../components/code-insights-page/CodeInsightsPage'
 import { CodeInsightsBackendContext } from '../../../core'
 import { useUiFeatures } from '../../../hooks'
 
@@ -20,13 +19,16 @@ import {
 
 import styles from './InsightsDashboardCreationPage.module.scss'
 
-interface InsightsDashboardCreationPageProps extends TelemetryProps {}
+interface InsightsDashboardCreationPageProps extends TelemetryProps {
+    isSourcegraphApp: boolean
+}
 
 export const InsightsDashboardCreationPage: React.FunctionComponent<
     React.PropsWithChildren<InsightsDashboardCreationPageProps>
 > = props => {
     const { telemetryService } = props
-    const history = useHistory()
+
+    const navigate = useNavigate()
     const { dashboard } = useUiFeatures()
 
     const { createDashboard, getDashboardOwners } = useContext(CodeInsightsBackendContext)
@@ -45,10 +47,10 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<
         telemetryService.log('CodeInsightsDashboardCreationPageSubmitClick')
 
         // Navigate user to the dashboard page with new created dashboard
-        history.push(`/insights/dashboards/${createdDashboard.id}`)
+        navigate(`/insights/dashboards/${createdDashboard.id}`)
     }
 
-    const handleCancel = (): void => history.goBack()
+    const handleCancel = (): void => navigate(-1)
 
     // Loading state
     if (owners === undefined) {
@@ -56,7 +58,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<
     }
 
     return (
-        <CodeInsightsPage className={classNames('col-8', styles.page)}>
+        <CodeInsightsPage className={classNames('col-8', styles.page)} isSourcegraphApp={props.isSourcegraphApp}>
             <PageTitle title="Add dashboard - Code Insights" />
 
             <PageHeader path={[{ icon: CodeInsightsIcon }, { text: 'Add new dashboard' }]} />
@@ -69,7 +71,11 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<
             </span>
 
             <Container className="mt-4">
-                <InsightsDashboardCreationContent owners={owners} onSubmit={handleSubmit}>
+                <InsightsDashboardCreationContent
+                    owners={owners}
+                    onSubmit={handleSubmit}
+                    isSourcegraphApp={props.isSourcegraphApp}
+                >
                     {formAPI => (
                         <>
                             <Button

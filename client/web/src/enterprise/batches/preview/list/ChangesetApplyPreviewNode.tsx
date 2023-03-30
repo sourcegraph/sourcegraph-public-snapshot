@@ -1,7 +1,5 @@
 import React from 'react'
 
-import * as H from 'history'
-
 import { ChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 
@@ -13,8 +11,6 @@ import styles from './ChangesetApplyPreviewNode.module.scss'
 
 export interface ChangesetApplyPreviewNodeProps {
     node: ChangesetApplyPreviewFields
-    history: H.History
-    location: H.Location
     authenticatedUser: PreviewPageAuthenticatedUser
     selectable?: {
         onSelect: (id: string) => void

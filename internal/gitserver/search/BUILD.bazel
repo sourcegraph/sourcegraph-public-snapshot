@@ -16,6 +16,7 @@ go_library(
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
+        "//internal/byteutils",
         "//internal/gitserver/protocol",
         "//internal/search/casetransform",
         "//internal/search/result",
@@ -28,6 +29,7 @@ go_library(
 
 go_test(
     name = "search_test",
+    timeout = "short",
     srcs = [
         "diff_format_test.go",
         "diff_test.go",

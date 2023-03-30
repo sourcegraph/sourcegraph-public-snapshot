@@ -3,6 +3,8 @@ package query
 import (
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestRepoContainsFilePredicate(t *testing.T) {
@@ -127,6 +129,22 @@ func TestRepoHasDescriptionPredicate(t *testing.T) {
 	})
 }
 
+func TestRepoHasTopicPredicate(t *testing.T) {
+	t.Run("errors on empty", func(t *testing.T) {
+		var p RepoHasTopicPredicate
+		err := p.Unmarshal("", false)
+		require.Error(t, err)
+	})
+
+	t.Run("sets negated and topic", func(t *testing.T) {
+		var p RepoHasTopicPredicate
+		err := p.Unmarshal("topic1", true)
+		require.NoError(t, err)
+		require.Equal(t, "topic1", p.Topic)
+		require.True(t, p.Negated)
+	})
+}
+
 func TestRepoHasKVPPredicate(t *testing.T) {
 	t.Run("Unmarshal", func(t *testing.T) {
 		type test struct {
@@ -138,6 +156,10 @@ func TestRepoHasKVPPredicate(t *testing.T) {
 		valid := []test{
 			{`key:value`, `key:value`, &RepoHasKVPPredicate{Key: "key", Value: "value", Negated: false}},
 			{`empty string value`, `key:`, &RepoHasKVPPredicate{Key: "key", Value: "", Negated: false}},
+			{`quoted special characters`, `"key:colon":"value:colon"`, &RepoHasKVPPredicate{Key: "key:colon", Value: "value:colon", Negated: false}},
+			{`escaped quotes`, `"key\"quote":"value\"quote"`, &RepoHasKVPPredicate{Key: `key"quote`, Value: `value"quote`, Negated: false}},
+			{`space padding`, `  key:value  `, &RepoHasKVPPredicate{Key: `key`, Value: `value`, Negated: false}},
+			{`single quoted`, `'  key:':'value : '`, &RepoHasKVPPredicate{Key: `  key:`, Value: `value : `, Negated: false}},
 		}
 
 		for _, tc := range valid {
@@ -159,6 +181,8 @@ func TestRepoHasKVPPredicate(t *testing.T) {
 			{`no key`, `:value`, nil},
 			{`no key or value`, `:`, nil},
 			{`invalid syntax`, `key-value`, nil},
+			{`content outside of qutoes`, `key:"quoted value" abc`, nil},
+			{`bonus colons`, `key:value:other`, nil},
 		}
 
 		for _, tc := range invalid {

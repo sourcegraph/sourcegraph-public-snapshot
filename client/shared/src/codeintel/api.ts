@@ -1,5 +1,5 @@
 import { castArray } from 'lodash'
-import { Observable, of } from 'rxjs'
+import { from, Observable, of } from 'rxjs'
 import { defaultIfEmpty, map } from 'rxjs/operators'
 
 import {
@@ -14,7 +14,7 @@ import { isDefined } from '@sourcegraph/common/src/types'
 import * as clientType from '@sourcegraph/extension-api-types'
 
 import { match } from '../api/client/types/textDocument'
-import { FlatExtensionHostAPI } from '../api/contract'
+import { FlatExtensionHostAPI, ScipParameters } from '../api/contract'
 import { proxySubscribable } from '../api/extension/api/common'
 import { toPosition } from '../api/extension/api/types'
 import { PanelViewData } from '../api/extension/extensionHostApi'
@@ -29,17 +29,22 @@ import { LanguageSpec } from './legacy-extensions/language-specs/language-spec'
 import { languageSpecs } from './legacy-extensions/language-specs/languages'
 import { RedactingLogger } from './legacy-extensions/logging'
 import { createProviders, emptySourcegraphProviders, SourcegraphProviders } from './legacy-extensions/providers'
+import { Occurrence } from './scip'
 
 interface CodeIntelAPI {
-    hasReferenceProvidersForDocument(textParameters: TextDocumentPositionParameters): Observable<boolean>
-    getDefinition(textParameters: TextDocumentPositionParameters): Observable<clientType.Location[]>
+    hasReferenceProvidersForDocument(textParameters: TextDocumentPositionParameters): Promise<boolean>
+    getDefinition(
+        textParameters: TextDocumentPositionParameters,
+        scipParameters?: ScipParameters
+    ): Promise<clientType.Location[]>
     getReferences(
         textParameters: TextDocumentPositionParameters,
-        context: sourcegraph.ReferenceContext
-    ): Observable<clientType.Location[]>
-    getImplementations(parameters: TextDocumentPositionParameters): Observable<clientType.Location[]>
-    getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged | null>
-    getDocumentHighlights(textParameters: TextDocumentPositionParameters): Observable<DocumentHighlight[]>
+        context: sourcegraph.ReferenceContext,
+        scipParameters?: ScipParameters
+    ): Promise<clientType.Location[]>
+    getImplementations(parameters: TextDocumentPositionParameters): Promise<clientType.Location[]>
+    getHover(textParameters: TextDocumentPositionParameters): Promise<HoverMerged | null | undefined>
+    getDocumentHighlights(textParameters: TextDocumentPositionParameters): Promise<DocumentHighlight[]>
 }
 
 function createCodeIntelAPI(context: sourcegraph.CodeIntelContext): CodeIntelAPI {
@@ -75,42 +80,56 @@ export async function getOrCreateCodeIntelAPI(context: PlatformContext): Promise
 class DefaultCodeIntelAPI implements CodeIntelAPI {
     private locationResult(
         locations: sourcegraph.ProviderResult<sourcegraph.Definition>
-    ): Observable<clientType.Location[]> {
-        return locations.pipe(
-            defaultIfEmpty(),
-            map(result =>
-                castArray(result)
-                    .filter(isDefined)
-                    .map(location => ({ ...location, uri: location.uri.toString() }))
+    ): Promise<clientType.Location[]> {
+        return locations
+            .pipe(
+                defaultIfEmpty(),
+                map(result =>
+                    castArray(result)
+                        .filter(isDefined)
+                        .map(location => ({ ...location, uri: location.uri.toString() }))
+                )
             )
-        )
+            .toPromise()
     }
 
-    public hasReferenceProvidersForDocument(textParameters: TextDocumentPositionParameters): Observable<boolean> {
+    public hasReferenceProvidersForDocument(textParameters: TextDocumentPositionParameters): Promise<boolean> {
         const document = toTextDocument(textParameters.textDocument)
         const providers = findLanguageMatchingDocument(document)?.providers
-        return of(!!providers)
+        return Promise.resolve(!!providers)
     }
-    public getReferences(
+    public async getReferences(
         textParameters: TextDocumentPositionParameters,
-        context: sourcegraph.ReferenceContext
-    ): Observable<clientType.Location[]> {
+        context: sourcegraph.ReferenceContext,
+        scipParameters?: ScipParameters
+    ): Promise<clientType.Location[]> {
+        const locals = scipParameters ? localReferences(scipParameters) : []
+        if (locals.length > 0) {
+            return locals.map(local => ({ uri: textParameters.textDocument.uri, range: local.range }))
+        }
         const request = requestFor(textParameters)
         return this.locationResult(
             request.providers.references.provideReferences(request.document, request.position, context)
         )
     }
-    public getDefinition(textParameters: TextDocumentPositionParameters): Observable<clientType.Location[]> {
+    public async getDefinition(
+        textParameters: TextDocumentPositionParameters,
+        scipParameters?: ScipParameters
+    ): Promise<clientType.Location[]> {
+        const definitions = scipParameters ? localDefinition(scipParameters) : []
+        if (definitions.length > 0) {
+            return definitions.map(definition => ({ uri: textParameters.textDocument.uri, range: definition.range }))
+        }
         const request = requestFor(textParameters)
         return this.locationResult(request.providers.definition.provideDefinition(request.document, request.position))
     }
-    public getImplementations(textParameters: TextDocumentPositionParameters): Observable<clientType.Location[]> {
+    public async getImplementations(textParameters: TextDocumentPositionParameters): Promise<clientType.Location[]> {
         const request = requestFor(textParameters)
         return this.locationResult(
             request.providers.implementations.provideLocations(request.document, request.position)
         )
     }
-    public getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged | null> {
+    public getHover(textParameters: TextDocumentPositionParameters): Promise<HoverMerged | null | undefined> {
         const request = requestFor(textParameters)
         return (
             request.providers.hover
@@ -118,14 +137,18 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
                 // We intentionally don't use `defaultIfEmpty()` here because
                 // that makes the popover load with an empty docstring.
                 .pipe(map(result => fromHoverMerged([result])))
+                .toPromise()
         )
     }
-    public getDocumentHighlights(textParameters: TextDocumentPositionParameters): Observable<DocumentHighlight[]> {
+    public getDocumentHighlights(textParameters: TextDocumentPositionParameters): Promise<DocumentHighlight[]> {
         const request = requestFor(textParameters)
-        return request.providers.documentHighlights.provideDocumentHighlights(request.document, request.position).pipe(
-            defaultIfEmpty(),
-            map(result => result || [])
-        )
+        return request.providers.documentHighlights
+            .provideDocumentHighlights(request.document, request.position)
+            .pipe(
+                defaultIfEmpty(),
+                map(result => result || [])
+            )
+            .toPromise()
     }
 }
 
@@ -152,7 +175,7 @@ function toTextDocument(textDocument: TextDocumentIdentifier): sourcegraph.TextD
     }
 }
 
-function findLanguageMatchingDocument(textDocument: TextDocumentIdentifier): Language | undefined {
+export function findLanguageMatchingDocument(textDocument: TextDocumentIdentifier): Language | undefined {
     const document: Pick<TextDocument, 'uri' | 'languageId'> = toTextDocument(textDocument)
     for (const language of languages) {
         if (match(language.selector, document)) {
@@ -250,24 +273,26 @@ export function injectNewCodeintel(
             return proxySubscribable(of(panels))
         },
         hasReferenceProvidersForDocument(textParameters) {
-            return proxySubscribable(codeintel.hasReferenceProvidersForDocument(textParameters))
+            return proxySubscribable(from(codeintel.hasReferenceProvidersForDocument(textParameters)))
         },
         getLocations(id, parameters) {
             if (!id.startsWith('implementations_')) {
                 return proxySubscribable(thenMaybeLoadingResult(of([])))
             }
-            return proxySubscribable(thenMaybeLoadingResult(codeintel.getImplementations(parameters)))
+            return proxySubscribable(thenMaybeLoadingResult(from(codeintel.getImplementations(parameters))))
         },
         getDefinition(parameters) {
-            return proxySubscribable(thenMaybeLoadingResult(codeintel.getDefinition(parameters)))
+            return proxySubscribable(thenMaybeLoadingResult(from(codeintel.getDefinition(parameters))))
         },
-        getReferences(parameters, context) {
-            return proxySubscribable(thenMaybeLoadingResult(codeintel.getReferences(parameters, context)))
+        getReferences(parameters, context, scipParameters) {
+            return proxySubscribable(
+                thenMaybeLoadingResult(from(codeintel.getReferences(parameters, context, scipParameters)))
+            )
         },
         getDocumentHighlights: (textParameters: TextDocumentPositionParameters) =>
-            proxySubscribable(codeintel.getDocumentHighlights(textParameters)),
+            proxySubscribable(from(codeintel.getDocumentHighlights(textParameters))),
         getHover: (textParameters: TextDocumentPositionParameters) =>
-            proxySubscribable(thenMaybeLoadingResult(codeintel.getHover(textParameters))),
+            proxySubscribable(thenMaybeLoadingResult(from(codeintel.getHover(textParameters)))),
     }
 
     return new Proxy(old, {
@@ -281,4 +306,23 @@ export function injectNewCodeintel(
             return Reflect.get(target, prop, ...arguments)
         },
     })
+}
+
+export function localReferences(params: ScipParameters): Occurrence[] {
+    if (params.referenceOccurrence.symbol?.startsWith('local ')) {
+        return params.documentOccurrences.filter(occurrence => occurrence.symbol === params.referenceOccurrence.symbol)
+    }
+    return []
+}
+
+function localDefinition(params: ScipParameters): Occurrence[] {
+    if (!params.referenceOccurrence.symbol) {
+        return []
+    }
+    return params.documentOccurrences.filter(
+        definitionOccurrence =>
+            definitionOccurrence.symbol === params.referenceOccurrence.symbol &&
+            definitionOccurrence.symbolRoles &&
+            (definitionOccurrence.symbolRoles & 1) === 1
+    )
 }

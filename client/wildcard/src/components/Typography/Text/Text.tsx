@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { ReactNode } from 'react'
 
 import classNames from 'classnames'
 
@@ -11,6 +11,7 @@ import typographyStyles from '../Typography.module.scss'
 interface TextProps extends React.HTMLAttributes<HTMLParagraphElement>, TypographyProps {
     size?: typeof TYPOGRAPHY_SIZES[number]
     weight?: typeof TYPOGRAPHY_WEIGHTS[number]
+    children?: ReactNode | ReactNode[] | undefined
 }
 
 export const Text = React.forwardRef(function Text(

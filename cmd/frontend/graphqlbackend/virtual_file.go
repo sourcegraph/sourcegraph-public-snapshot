@@ -12,20 +12,30 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
+
+	"github.com/sourcegraph/sourcegraph/internal/binary"
 )
 
 // FileContentFunc is a closure that returns the contents of a file and is used by the VirtualFileResolver.
 type FileContentFunc func(ctx context.Context) (string, error)
 
-func NewVirtualFileResolver(stat fs.FileInfo, fileContent FileContentFunc) *VirtualFileResolver {
+type VirtualFileResolverOptions struct {
+	URL          string
+	CanonicalURL string
+	ExternalURLs []*externallink.Resolver
+}
+
+func NewVirtualFileResolver(stat fs.FileInfo, fileContent FileContentFunc, opts VirtualFileResolverOptions) *VirtualFileResolver {
 	return &VirtualFileResolver{
-		stat:        stat,
 		fileContent: fileContent,
+		opts:        opts,
+		stat:        stat,
 	}
 }
 
 type VirtualFileResolver struct {
 	fileContent FileContentFunc
+	opts        VirtualFileResolverOptions
 	// stat is this tree entry's file info. Its Name method must return the full path relative to
 	// the root, not the basename.
 	stat fs.FileInfo
@@ -42,18 +52,15 @@ func (r *VirtualFileResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileReso
 }
 
 func (r *VirtualFileResolver) URL(ctx context.Context) (string, error) {
-	// Todo: allow viewing arbitrary files in the webapp.
-	return "", nil
+	return r.opts.URL, nil
 }
 
 func (r *VirtualFileResolver) CanonicalURL() string {
-	// Todo: allow viewing arbitrary files in the webapp.
-	return ""
+	return r.opts.CanonicalURL
 }
 
 func (r *VirtualFileResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	// Todo: allow viewing arbitrary files in the webapp.
-	return []*externallink.Resolver{}, nil
+	return r.opts.ExternalURLs, nil
 }
 
 func (r *VirtualFileResolver) ByteSize(ctx context.Context) (int32, error) {
@@ -94,7 +101,7 @@ func (r *VirtualFileResolver) Binary(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return highlight.IsBinary([]byte(content)), nil
+	return binary.IsBinary([]byte(content)), nil
 }
 
 var highlightHistogram = promauto.NewHistogram(prometheus.HistogramOpts{

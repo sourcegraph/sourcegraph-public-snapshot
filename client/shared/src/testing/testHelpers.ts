@@ -1,11 +1,8 @@
-import 'message-port-polyfill'
-
 import { Remote } from 'comlink'
 import { throwError, of, Subscription, Unsubscribable, Subscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 
 import { createExtensionHostClientConnection } from '../api/client/connection'
-import { ExposedToClient } from '../api/client/mainthread-api'
 import { FlatExtensionHostAPI, MainThreadAPI } from '../api/contract'
 import { InitData, startExtensionHost } from '../api/extension/extensionHost'
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
@@ -40,14 +37,7 @@ const FIXTURE_INIT_DATA: TestInitData = {
 interface Mocks
     extends Pick<
         PlatformContext,
-        | 'settings'
-        | 'updateSettings'
-        | 'getGraphQLClient'
-        | 'requestGraphQL'
-        | 'getScriptURLForExtension'
-        | 'clientApplication'
-        | 'showMessage'
-        | 'showInputBox'
+        'settings' | 'updateSettings' | 'getGraphQLClient' | 'requestGraphQL' | 'clientApplication'
     > {}
 
 const NOOP_MOCKS: Mocks = {
@@ -55,7 +45,6 @@ const NOOP_MOCKS: Mocks = {
     updateSettings: () => Promise.reject(new Error('Mocks#updateSettings not implemented')),
     getGraphQLClient: () => Promise.reject(new Error('Mocks#getGraphQLClient not implemented')),
     requestGraphQL: () => throwError(new Error('Mocks#queryGraphQL not implemented')),
-    getScriptURLForExtension: () => undefined,
     clientApplication: 'sourcegraph',
 }
 
@@ -72,7 +61,6 @@ export async function integrationTestContext(
         extensionAPI: typeof sourcegraph
         extensionHostAPI: Remote<FlatExtensionHostAPI>
         mainThreadAPI: MainThreadAPI
-        exposedToClient: ExposedToClient
     } & Unsubscribable
 > {
     const mocks = partialMocks ? { ...NOOP_MOCKS, ...partialMocks } : NOOP_MOCKS
@@ -95,11 +83,7 @@ export async function integrationTestContext(
         clientApplication: 'sourcegraph',
     }
 
-    const {
-        api: extensionHostAPI,
-        mainThreadAPI,
-        exposedToClient,
-    } = await createExtensionHostClientConnection(
+    const { api: extensionHostAPI, mainThreadAPI } = await createExtensionHostClientConnection(
         Promise.resolve({
             endpoints: clientEndpoints,
             subscription: new Subscription(),
@@ -118,7 +102,6 @@ export async function integrationTestContext(
         extensionAPI,
         extensionHostAPI,
         mainThreadAPI,
-        exposedToClient,
         unsubscribe: () => extensionHost.unsubscribe(),
     }
 }

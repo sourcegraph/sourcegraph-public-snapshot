@@ -22,6 +22,9 @@
     "lint:js": "pnpm eslint 'src/**/*.[jt]s?(x)'",
     "prepublish": "pnpm eslint"
   },
+  "devDependencies": {
+    "sourcegraph": "workspace:*"
+  },
   "peerDependencies": {
     "sourcegraph": "*"
   }

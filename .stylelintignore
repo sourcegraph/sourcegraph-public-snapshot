@@ -5,4 +5,4 @@
 **/*.svg
 node_modules/
 __mocks__/
-client/plugin-backstage/
+client/backstage-common

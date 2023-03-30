@@ -93,7 +93,10 @@ func registerEnterpriseMigrators(runner *oobmigration.Runner, noDelay bool, deps
 	migrators := []migrations.TaggedMigrator{
 		iam.NewSubscriptionAccountNumberMigrator(deps.store, 500),
 		iam.NewLicenseKeyFieldsMigrator(deps.store, 500),
+		iam.NewUnifiedPermissionsMigrator(deps.store),
 		batches.NewSSHMigratorWithDB(deps.store, deps.keyring.BatchChangesCredentialKey, 5),
+		batches.NewExternalForkNameMigrator(deps.store, 500),
+		batches.NewEmptySpecIDMigrator(deps.store),
 		codeintel.NewDiagnosticsCountMigrator(deps.codeIntelStore, 1000, 0),
 		codeintel.NewDefinitionLocationsCountMigrator(deps.codeIntelStore, 1000, 0),
 		codeintel.NewReferencesLocationsCountMigrator(deps.codeIntelStore, 1000, 0),

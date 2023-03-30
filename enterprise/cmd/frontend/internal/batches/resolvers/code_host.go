@@ -30,7 +30,12 @@ func (c *batchChangesCodeHostResolver) RequiresSSH() bool {
 }
 
 func (c *batchChangesCodeHostResolver) RequiresUsername() bool {
-	return c.codeHost.ExternalServiceType == extsvc.TypeBitbucketCloud
+	switch c.codeHost.ExternalServiceType {
+	case extsvc.TypeBitbucketCloud, extsvc.TypeAzureDevOps:
+		return true
+	}
+
+	return false
 }
 
 func (c *batchChangesCodeHostResolver) HasWebhooks() bool {

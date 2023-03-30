@@ -1,12 +1,11 @@
 import * as React from 'react'
 
-import { RouteComponentProps } from 'react-router'
+import { Location, NavigateFunction } from 'react-router-dom'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 
 import { asError, createAggregateError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
@@ -52,17 +51,13 @@ function queryRepositoryComparison(args: {
         args
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.node) {
+            if (!data?.node) {
                 throw createAggregateError(errors)
             }
             const repo = data.node as RepositoryComparisonFields
             if (
-                !repo.comparison ||
-                !repo.comparison.range ||
-                !repo.comparison.range.baseRevSpec ||
-                !repo.comparison.range.baseRevSpec.object ||
-                !repo.comparison.range.headRevSpec ||
-                !repo.comparison.range.headRevSpec.object ||
+                !repo.comparison?.range?.baseRevSpec?.object ||
+                !repo.comparison?.range?.headRevSpec?.object ||
                 errors
             ) {
                 throw createAggregateError(errors)
@@ -73,7 +68,7 @@ function queryRepositoryComparison(args: {
     )
 }
 
-interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}>, ThemeProps {
+interface Props extends RepositoryCompareAreaPageProps {
     /** The base of the comparison. */
     base: { repoName: string; repoID: Scalars['ID']; revision?: string | null }
 
@@ -82,6 +77,10 @@ interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}>,
 
     /** An optional path of a specific file to compare */
     path: string | null
+
+    /** Required for `RepositoryCompareCommitsPage` */
+    location: Location
+    navigate: NavigateFunction
 }
 
 interface State {

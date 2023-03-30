@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
@@ -26,14 +26,14 @@ func TestEmail(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Html.Execute(&buf, templateData)
 			require.NoError(t, err)
-			autogold.Equal(t, autogold.Raw(buf.String()))
+			autogold.ExpectFile(t, autogold.Raw(buf.String()))
 		})
 
 		t.Run("text", func(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Text.Execute(&buf, templateData)
 			require.NoError(t, err)
-			autogold.Equal(t, autogold.Raw(buf.String()))
+			autogold.ExpectFile(t, autogold.Raw(buf.String()))
 		})
 
 		t.Run("subject", func(t *testing.T) {
@@ -59,14 +59,14 @@ func TestEmail(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Html.Execute(&buf, templateData)
 			require.NoError(t, err)
-			autogold.Equal(t, autogold.Raw(buf.String()))
+			autogold.ExpectFile(t, autogold.Raw(buf.String()))
 		})
 
 		t.Run("text", func(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Text.Execute(&buf, templateData)
 			require.NoError(t, err)
-			autogold.Equal(t, autogold.Raw(buf.String()))
+			autogold.ExpectFile(t, autogold.Raw(buf.String()))
 		})
 
 		t.Run("subject", func(t *testing.T) {
@@ -92,7 +92,7 @@ func TestEmail(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Html.Execute(&buf, templateData)
 			require.NoError(t, err)
-			autogold.Equal(t, autogold.Raw(buf.String()))
+			autogold.ExpectFile(t, autogold.Raw(buf.String()))
 
 		})
 
@@ -100,14 +100,14 @@ func TestEmail(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Text.Execute(&buf, templateData)
 			require.NoError(t, err)
-			autogold.Equal(t, autogold.Raw(buf.String()))
+			autogold.ExpectFile(t, autogold.Raw(buf.String()))
 		})
 
 		t.Run("subject", func(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Subj.Execute(&buf, templateData)
 			require.NoError(t, err)
-			autogold.Equal(t, autogold.Raw(buf.String()))
+			autogold.ExpectFile(t, autogold.Raw(buf.String()))
 		})
 	})
 
@@ -130,14 +130,14 @@ func TestEmail(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Html.Execute(&buf, templateData)
 			require.NoError(t, err)
-			autogold.Equal(t, autogold.Raw(buf.String()))
+			autogold.ExpectFile(t, autogold.Raw(buf.String()))
 		})
 
 		t.Run("text", func(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Text.Execute(&buf, templateData)
 			require.NoError(t, err)
-			autogold.Equal(t, autogold.Raw(buf.String()))
+			autogold.ExpectFile(t, autogold.Raw(buf.String()))
 		})
 
 		t.Run("subject", func(t *testing.T) {
@@ -167,14 +167,14 @@ func TestEmail(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Html.Execute(&buf, templateData)
 			require.NoError(t, err)
-			autogold.Equal(t, autogold.Raw(buf.String()))
+			autogold.ExpectFile(t, autogold.Raw(buf.String()))
 		})
 
 		t.Run("text", func(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Text.Execute(&buf, templateData)
 			require.NoError(t, err)
-			autogold.Equal(t, autogold.Raw(buf.String()))
+			autogold.ExpectFile(t, autogold.Raw(buf.String()))
 		})
 
 		t.Run("subject", func(t *testing.T) {

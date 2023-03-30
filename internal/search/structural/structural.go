@@ -120,9 +120,16 @@ func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *
 	event := agg.SearchEvent
 	if len(event.Results) == 0 && err == nil {
 		// retry structural search with a higher limit.
-		agg := streaming.NewAggregatingStream()
-		err := retryStructuralSearch(ctx, clients, args, repos, agg)
+		aggRetry := streaming.NewAggregatingStream()
+		err := retryStructuralSearch(ctx, clients, args, repos, aggRetry)
 		if err != nil {
+			// It is possible that the retry couldn't search any repos before the context
+			// expired, in which case we send the stats from the first try.
+			stats := aggRetry.Stats
+			if stats.Zero() {
+				stats = agg.Stats
+			}
+			stream.Send(streaming.SearchEvent{Stats: stats})
 			return err
 		}
 

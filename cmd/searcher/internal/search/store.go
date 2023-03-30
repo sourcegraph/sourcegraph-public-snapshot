@@ -23,10 +23,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -78,6 +79,11 @@ type Store struct {
 	// MaxCacheSizeBytes.
 	MaxCacheSizeBytes int64
 
+	// BackgroundTimeout is the maximum time spent fetching a working copy
+	// from gitserver. If zero then we will respect the passed in context of a
+	// request.
+	BackgroundTimeout time.Duration
+
 	// Log is the Logger to use.
 	Log log.Logger
 
@@ -91,7 +97,7 @@ type Store struct {
 	cache diskcache.Store
 
 	// fetchLimiter limits concurrent calls to FetchTar.
-	fetchLimiter *mutablelimiter.Limiter
+	fetchLimiter *limiter.MutableLimiter
 
 	// zipCache provides efficient access to repo zip files.
 	zipCache zipCache
@@ -107,17 +113,21 @@ type FilterFunc func(hdr *tar.Header) bool
 // search request paying the cost of initializing.
 func (s *Store) Start() {
 	s.once.Do(func() {
-		s.fetchLimiter = mutablelimiter.New(15)
+		s.fetchLimiter = limiter.NewMutable(15)
 		s.cache = diskcache.NewStore(s.Path, "store",
-			diskcache.WithBackgroundTimeout(10*time.Minute),
+			diskcache.WithBackgroundTimeout(s.BackgroundTimeout),
 			diskcache.WithBeforeEvict(s.zipCache.delete),
 			diskcache.WithobservationCtx(s.ObservationCtx),
 		)
 		_ = os.MkdirAll(s.Path, 0o700)
 		metrics.MustRegisterDiskMonitor(s.Path)
 
+		logger := s.Log
+		if deploy.IsApp() {
+			logger = logger.IncreaseLevel("mountinfo", "", log.LevelError)
+		}
 		o := mountinfo.CollectorOpts{Namespace: "searcher"}
-		m := mountinfo.NewCollector(s.Log, o, map[string]string{"cacheDir": s.Path})
+		m := mountinfo.NewCollector(logger, o, map[string]string{"cacheDir": s.Path})
 		s.ObservationCtx.Registerer.MustRegister(m)
 
 		go s.watchAndEvict()

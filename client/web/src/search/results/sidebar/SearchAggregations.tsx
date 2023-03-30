@@ -41,7 +41,7 @@ interface SearchAggregationsProps extends TelemetryProps {
      * That should update the query and re-trigger search (but this should be connected
      * to this UI through its consumer)
      */
-    onQuerySubmit: (newQuery: string) => void
+    onQuerySubmit: (newQuery: string, updatedSearchQuery: string) => void
 }
 
 export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
@@ -70,9 +70,9 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
         // Clearing the aggregation mode on drill down would provide a better experience
         // in most cases and preserve the desired behavior of the capture group search
         // when the original query had multiple capture groups
-        setAggregationMode(null)
+        const updatedSearchQuery = setAggregationMode(null)
 
-        onQuerySubmit(query)
+        onQuerySubmit(query, updatedSearchQuery)
         telemetryService.log(
             GroupResultsPing.ChartBarClick,
             { aggregationMode, index, uiMode: 'sidebar' },

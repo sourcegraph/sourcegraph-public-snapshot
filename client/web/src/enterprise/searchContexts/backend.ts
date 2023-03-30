@@ -9,10 +9,11 @@ import { RepositoriesByNamesResult, RepositoriesByNamesVariables } from '../../g
 export function fetchRepositoriesByNames(
     names: string[]
 ): Observable<RepositoriesByNamesResult['repositories']['nodes']> {
+    const first = names.length
     return requestGraphQL<RepositoriesByNamesResult, RepositoriesByNamesVariables>(
         gql`
-            query RepositoriesByNames($names: [String!]!) {
-                repositories(names: $names) {
+            query RepositoriesByNames($names: [String!]!, $first: Int!) {
+                repositories(names: $names, first: $first) {
                     nodes {
                         id
                         name
@@ -22,6 +23,7 @@ export function fetchRepositoriesByNames(
         `,
         {
             names,
+            first,
         }
     ).pipe(
         map(dataOrThrowErrors),

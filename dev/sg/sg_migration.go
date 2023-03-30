@@ -8,8 +8,9 @@ import (
 	"os"
 
 	"github.com/Masterminds/semver"
-	"github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
+
+	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/log"
 
@@ -477,4 +478,5 @@ func findTargetSquashCommit(migrationName string) (string, error) {
 
 var majorVersionChanges = map[int64]int64{
 	4: 44, // 4.0 equivalent to 3.44
+	5: 6,  // 5.0 equivalent to 4.6
 }

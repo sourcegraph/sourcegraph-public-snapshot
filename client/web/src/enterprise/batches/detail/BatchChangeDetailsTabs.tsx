@@ -1,11 +1,10 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import { mdiSourceBranch, mdiChartLineVariant, mdiFileDocument, mdiArchive, mdiMonitorStar } from '@mdi/js'
-import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Badge, Container, Icon, Link, Tab, TabPanel, TabPanels, Text } from '@sourcegraph/wildcard'
 
 import { isBatchChangesExecutionEnabled } from '../../../batches'
@@ -56,7 +55,7 @@ const getTabName = (tabIndex: number, shouldDisplayExecutionsTab: boolean): TabN
     ][tabIndex]
 
 /** `BatchChangeDetailsPage` and `BatchChangeDetailsTabs` share all these props */
-export interface BatchChangeDetailsProps extends ThemeProps, TelemetryProps {
+export interface BatchChangeDetailsProps extends TelemetryProps {
     /** The name of the tab that should be initially open */
     initialTab?: TabName
 
@@ -73,7 +72,6 @@ interface BatchChangeDetailsTabsProps extends BatchChangeDetailsProps, SettingsC
 
 export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChildren<BatchChangeDetailsTabsProps>> = ({
     batchChange,
-    isLightTheme,
     settingsCascade,
     initialTab = TabName.Changesets,
     queryExternalChangesetWithFileDiffs,
@@ -240,7 +238,6 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                             <BatchChangeBatchSpecList
                                 batchChangeID={batchChange.id}
                                 currentSpecID={batchChange.currentSpec.id}
-                                isLightTheme={isLightTheme}
                             />
                         </Container>
                     ) : (
@@ -256,7 +253,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                                     originalInput={batchChange.currentSpec.originalInput}
                                 />
                             </div>
-                            <BatchSpecInfo spec={batchChange.currentSpec} isLightTheme={isLightTheme} />
+                            <BatchSpecInfo spec={batchChange.currentSpec} />
                         </>
                     )}
                 </TabPanel>

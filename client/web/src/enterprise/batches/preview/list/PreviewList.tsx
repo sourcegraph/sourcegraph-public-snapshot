@@ -1,7 +1,6 @@
 import React, { useCallback, useContext, useState } from 'react'
 
 import { mdiMagnify } from '@mdi/js'
-import * as H from 'history'
 import { tap } from 'rxjs/operators'
 
 import { Container, Icon } from '@sourcegraph/wildcard'
@@ -29,8 +28,6 @@ import styles from './PreviewList.module.scss'
 
 interface Props {
     batchSpecID: Scalars['ID']
-    history: H.History
-    location: H.Location
     authenticatedUser: PreviewPageAuthenticatedUser
 
     /** For testing only. */
@@ -48,8 +45,6 @@ interface Props {
  */
 export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     batchSpecID,
-    history,
-    location,
     authenticatedUser,
 
     queryChangesetApplyPreview = _queryChangesetApplyPreview,
@@ -124,7 +119,7 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
                     queryArguments={queryArguments}
                 />
             ) : (
-                <PreviewFilterRow history={history} location={location} />
+                <PreviewFilterRow />
             )}
             <PublicationStatesUpdateAlerts />
             <FilteredConnection<
@@ -135,8 +130,6 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
                 className="mt-2"
                 nodeComponent={ChangesetApplyPreviewNode}
                 nodeComponentProps={{
-                    history,
-                    location,
                     authenticatedUser,
                     queryChangesetSpecFileDiffs,
                     expandChangesetDescriptions,

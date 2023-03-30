@@ -5,12 +5,13 @@ import (
 	"sort"
 	"time"
 
-	policies "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/store"
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -18,47 +19,41 @@ import (
 
 type Service struct {
 	store      store.Store
+	repoStore  database.RepoStore
 	uploadSvc  UploadService
-	gitserver  GitserverClient
+	gitserver  gitserver.Client
 	operations *operations
 }
 
 func newService(
 	observationCtx *observation.Context,
 	policiesStore store.Store,
+	repoStore database.RepoStore,
 	uploadSvc UploadService,
-	gitserver GitserverClient,
+	gitserver gitserver.Client,
 ) *Service {
 	return &Service{
 		store:      policiesStore,
+		repoStore:  repoStore,
 		uploadSvc:  uploadSvc,
 		gitserver:  gitserver,
 		operations: newOperations(observationCtx),
 	}
 }
 
-func (s *Service) getPolicyMatcherFromFactory(gitserver GitserverClient, extractor policies.Extractor, includeTipOfDefaultBranch bool, filterByCreatedDate bool) *policies.Matcher {
-	return policies.NewMatcher(gitserver, extractor, includeTipOfDefaultBranch, filterByCreatedDate)
+func (s *Service) getPolicyMatcherFromFactory(extractor Extractor, includeTipOfDefaultBranch bool, filterByCreatedDate bool) *Matcher {
+	return NewMatcher(s.gitserver, extractor, includeTipOfDefaultBranch, filterByCreatedDate)
 }
 
-func (s *Service) GetConfigurationPolicies(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) (_ []types.ConfigurationPolicy, totalCount int, err error) {
-	ctx, _, endObservation := s.operations.getConfigurationPolicies.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) GetConfigurationPolicies(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error) {
 	return s.store.GetConfigurationPolicies(ctx, opts)
 }
 
-func (s *Service) GetConfigurationPolicyByID(ctx context.Context, id int) (_ types.ConfigurationPolicy, _ bool, err error) {
-	ctx, _, endObservation := s.operations.getConfigurationPoliciesByID.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) GetConfigurationPolicyByID(ctx context.Context, id int) (types.ConfigurationPolicy, bool, error) {
 	return s.store.GetConfigurationPolicyByID(ctx, id)
 }
 
-func (s *Service) CreateConfigurationPolicy(ctx context.Context, configurationPolicy types.ConfigurationPolicy) (_ types.ConfigurationPolicy, err error) {
-	ctx, _, endObservation := s.operations.createConfigurationPolicy.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) CreateConfigurationPolicy(ctx context.Context, configurationPolicy types.ConfigurationPolicy) (types.ConfigurationPolicy, error) {
 	policy, err := s.store.CreateConfigurationPolicy(ctx, configurationPolicy)
 	if err != nil {
 		return policy, err
@@ -104,10 +99,7 @@ func (s *Service) UpdateConfigurationPolicy(ctx context.Context, policy types.Co
 	return s.updateReposMatchingPolicyPatterns(ctx, policy)
 }
 
-func (s *Service) DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error) {
-	ctx, _, endObservation := s.operations.deleteConfigurationPolicyByID.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) DeleteConfigurationPolicyByID(ctx context.Context, id int) error {
 	return s.store.DeleteConfigurationPolicyByID(ctx, id)
 }
 
@@ -115,7 +107,7 @@ func (s *Service) GetRetentionPolicyOverview(ctx context.Context, upload types.U
 	ctx, _, endObservation := s.operations.getRetentionPolicyOverview.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	policyMatcher := s.getPolicyMatcherFromFactory(s.gitserver, policies.RetentionExtractor, true, false)
+	policyMatcher := s.getPolicyMatcherFromFactory(RetentionExtractor, true, false)
 
 	configPolicies, _, err := s.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
 		RepositoryID:     upload.RepositoryID,
@@ -133,7 +125,12 @@ func (s *Service) GetRetentionPolicyOverview(ctx context.Context, upload types.U
 		return nil, 0, err
 	}
 
-	matchingPolicies, err := policyMatcher.CommitsDescribedByPolicy(ctx, upload.RepositoryID, configPolicies, time.Now(), visibleCommits...)
+	repo, err := s.repoStore.Get(ctx, api.RepoID(upload.RepositoryID))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	matchingPolicies, err := policyMatcher.CommitsDescribedByPolicy(ctx, upload.RepositoryID, repo.Name, configPolicies, time.Now(), visibleCommits...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -181,7 +178,7 @@ func (s *Service) GetRetentionPolicyOverview(ctx context.Context, upload types.U
 	return potentialMatches, len(potentialMatches), nil
 }
 
-func (s *Service) GetPreviewRepositoryFilter(ctx context.Context, patterns []string, limit int) (_ []int, totalCount int, repositoryMatchLimit *int, err error) {
+func (s *Service) GetPreviewRepositoryFilter(ctx context.Context, patterns []string, limit int) (_ []int, totalCount int, matchesAll bool, repositoryMatchLimit *int, err error) {
 	ctx, _, endObservation := s.operations.getPreviewRepositoryFilter.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -195,10 +192,14 @@ func (s *Service) GetPreviewRepositoryFilter(ctx context.Context, patterns []str
 
 	ids, totalCount, err := s.store.GetRepoIDsByGlobPatterns(ctx, patterns, limit, 0)
 	if err != nil {
-		return nil, 0, nil, err
+		return nil, 0, false, nil, err
+	}
+	totalRepoCount, err := s.store.RepoCount(ctx)
+	if err != nil {
+		return nil, 0, false, nil, err
 	}
 
-	return ids, totalCount, repositoryMatchLimit, nil
+	return ids, totalCount, totalCount == totalRepoCount, repositoryMatchLimit, nil
 }
 
 type GitObject struct {
@@ -218,10 +219,16 @@ func (s *Service) GetPreviewGitObjectFilter(
 	ctx, _, endObservation := s.operations.getPreviewGitObjectFilter.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	policyMatcher := s.getPolicyMatcherFromFactory(s.gitserver, policies.NoopExtractor, false, false)
+	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
+	if err != nil {
+		return nil, 0, nil, err
+	}
+
+	policyMatcher := s.getPolicyMatcherFromFactory(NoopExtractor, false, false)
 	policyMatches, err := policyMatcher.CommitsDescribedByPolicy(
 		ctx,
 		repositoryID,
+		repo.Name,
 		[]types.ConfigurationPolicy{{Type: gitObjectType, Pattern: pattern}},
 		timeutil.Now(),
 	)
@@ -270,17 +277,6 @@ func (s *Service) GetPreviewGitObjectFilter(
 	return gitObjects, totalCount, totalCountYoungerThanThreshold, nil
 }
 
-func (s *Service) GetUnsafeDB() database.DB {
-	return s.store.GetUnsafeDB()
-}
-
-func (s *Service) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []types.ConfigurationPolicy, err error) {
-	ctx, _, endObservation := s.operations.selectPoliciesForRepositoryMembershipUpdate.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.SelectPoliciesForRepositoryMembershipUpdate(ctx, batchSize)
-}
-
 func (s *Service) getCommitsVisibleToUpload(ctx context.Context, upload types.Upload) (commits []string, err error) {
 	var token *string
 	for first := true; first || token != nil; first = false {
@@ -302,7 +298,7 @@ func (s *Service) getCommitsVisibleToUpload(ctx context.Context, upload types.Up
 func (s *Service) populateMatchingCommits(
 	visibleCommits []string,
 	upload types.Upload,
-	matchingPolicies map[string][]policies.PolicyMatch,
+	matchingPolicies map[string][]PolicyMatch,
 	policies []types.ConfigurationPolicy,
 	now time.Time,
 ) ([]types.RetentionPolicyMatchCandidate, map[int]int) {

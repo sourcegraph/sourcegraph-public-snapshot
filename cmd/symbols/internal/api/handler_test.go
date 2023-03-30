@@ -3,11 +3,15 @@ package api
 import (
 	"context"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/go-ctags"
+	"github.com/sourcegraph/log/logtest"
+	"golang.org/x/sync/semaphore"
+
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	symbolsdatabase "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
@@ -16,13 +20,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	symbolsclient "github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"golang.org/x/sync/semaphore"
 )
 
 func init() {
@@ -70,9 +74,13 @@ func TestHandler(t *testing.T) {
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
+	connectionCache := internalgrpc.NewConnectionCache(logtest.Scoped(t))
+	t.Cleanup(connectionCache.Shutdown)
+
 	client := symbolsclient.Client{
-		Endpoints:  endpoint.Static(server.URL),
-		HTTPClient: httpcli.InternalDoer,
+		Endpoints:           endpoint.Static(server.URL),
+		GRPCConnectionCache: connectionCache,
+		HTTPClient:          httpcli.InternalDoer,
 	}
 
 	x := result.Symbol{Name: "x", Path: "a.js", Line: 0, Character: 4}
@@ -135,8 +143,8 @@ func TestHandler(t *testing.T) {
 				if testCase.expected != nil {
 					t.Errorf("unexpected search result. want=%+v, have=nil", testCase.expected)
 				}
-			} else if !reflect.DeepEqual(resultSymbols, testCase.expected) {
-				t.Errorf("unexpected search result. want=%+v, have=%+v", testCase.expected, resultSymbols)
+			} else if diff := cmp.Diff(resultSymbols, testCase.expected, cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("unexpected search result. diff: %s", diff)
 			}
 		})
 	}

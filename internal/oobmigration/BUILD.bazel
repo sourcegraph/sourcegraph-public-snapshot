@@ -23,7 +23,6 @@ go_library(
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbutil",
-        "//internal/goroutine",
         "//internal/lazyregexp",
         "//internal/metrics",
         "//internal/observation",
@@ -53,6 +52,10 @@ go_test(
         "version_test.go",
     ],
     embed = [":oobmigration"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/dbtest",

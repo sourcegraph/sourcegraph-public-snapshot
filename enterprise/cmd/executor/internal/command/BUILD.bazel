@@ -6,6 +6,7 @@ go_library(
         "docker.go",
         "firecracker.go",
         "logger.go",
+        "newrunner.go",
         "observability.go",
         "run.go",
         "runner.go",
@@ -15,7 +16,7 @@ go_library(
     visibility = ["//enterprise/cmd/executor:__subpackages__"],
     deps = [
         "//enterprise/cmd/executor/internal/config",
-        "//enterprise/internal/executor",
+        "//enterprise/internal/executor/types",
         "//internal/executor",
         "//internal/lazyregexp",
         "//internal/metrics",
@@ -31,6 +32,7 @@ go_library(
 
 go_test(
     name = "command_test",
+    timeout = "short",
     srcs = [
         "docker_test.go",
         "firecracker_test.go",
@@ -43,7 +45,7 @@ go_test(
     ],
     embed = [":command"],
     deps = [
-        "//enterprise/internal/executor",
+        "//enterprise/internal/executor/types",
         "//internal/executor",
         "//internal/observation",
         "//lib/errors",

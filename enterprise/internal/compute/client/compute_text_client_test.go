@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 )
@@ -48,8 +48,8 @@ data: {}`
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("resultCount", 3).Equal(t, resultCount)
-	autogold.Want("alertCount", 1).Equal(t, alertCount)
-	autogold.Want("errorCount", 1).Equal(t, errorCount)
-	autogold.Want("unknownCount", 0).Equal(t, unknownCount)
+	autogold.Expect(3).Equal(t, resultCount)
+	autogold.Expect(1).Equal(t, alertCount)
+	autogold.Expect(1).Equal(t, errorCount)
+	autogold.Expect(0).Equal(t, unknownCount)
 }

@@ -32,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -492,7 +493,7 @@ func (c *clientImplementor) lStat(ctx context.Context, checker authz.SubRepoPerm
 		return fis[0], nil
 	} else {
 		if filteringErr != nil {
-			err = errors.Wrap(err, "filtering paths")
+			err = errors.Wrap(filteringErr, "filtering paths")
 		} else {
 			err = &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
 		}
@@ -737,7 +738,7 @@ func streamBlameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChec
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed", args))
 	}
 
-	return newBlameHunkReader(ctx, rc), nil
+	return newBlameHunkReader(rc), nil
 }
 
 // BlameFile returns Git blame information about a file.
@@ -1025,15 +1026,21 @@ func (c *clientImplementor) LsFiles(ctx context.Context, checker authz.SubRepoPe
 // ListFiles returns a list of root-relative file paths matching the given
 // pattern in a particular commit of a repository.
 func (c *clientImplementor) ListFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp) (_ []string, err error) {
-	cmd := c.gitCommand(repo, "ls-tree", "--name-only", "-r", string(commit), "--")
+	cmd := c.gitCommand(repo, "ls-tree", "-z", "--name-only", "-r", string(commit), "--")
 
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	files := strings.Split(string(out), "\x00")
+	// Drop trailing empty string
+	if len(files) > 0 && files[len(files)-1] == "" {
+		files = files[:len(files)-1]
+	}
+
 	var matching []string
-	for _, path := range strings.Split(string(out), "\n") {
+	for _, path := range files {
 		if pattern.MatchString(path) {
 			matching = append(matching, path)
 		}
@@ -1142,51 +1149,6 @@ func parseDirectoryChildren(dirnames, paths []string) map[string][]string {
 	}
 
 	return childrenMap
-}
-
-func (c *clientImplementor) LFSSmudge(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (_ io.ReadCloser, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: LFSSmudge") //nolint:staticcheck // OT is deprecated
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.LogFields(log.Error(err))
-		}
-		span.Finish()
-	}()
-
-	// First read in pointer. Pointer should be less than 200 bytes according
-	// to a few different implementations. Note: git-lfs implementation uses
-	// 1024, but we only support newer kind of pointers which are smaller.
-	r, err := c.NewFileReader(ctx, checker, repo, commit, path)
-	if err != nil {
-		return nil, err
-	}
-
-	pointer := make([]byte, 201)
-	n, err := io.ReadFull(r, pointer)
-	pointer = pointer[:n]
-	if err == nil {
-		// This file is too big to be an LFS pointer. So we can fallback to
-		// just returning r (but need to simulate "unreading" the bytes we
-		// have read)
-
-		return withCloser{
-			Reader: io.MultiReader(bytes.NewReader(pointer), r),
-			Closer: r,
-		}, nil
-	} else if err != io.ErrUnexpectedEOF {
-		return nil, errors.Wrapf(err, "failed to read LFS pointer %q in %s@%s", path, repo, commit)
-	}
-
-	cmd := c.gitCommand(repo, "lfs", "smudge", path)
-	cmd.SetStdin(pointer)
-
-	return cmd.StdoutReader(ctx)
-}
-
-type withCloser struct {
-	io.Reader
-	io.Closer
 }
 
 // ListTags returns a list of all tags in the repository. If commitObjs is non-empty, only all tags pointing at those commits are returned.
@@ -1938,7 +1900,7 @@ func (c *clientImplementor) FirstEverCommit(ctx context.Context, checker authz.S
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", args, out))
 	}
 	lines := bytes.TrimSpace(out)
-	tokens := bytes.Split(lines, []byte("\n"))
+	tokens := bytes.SplitN(lines, []byte("\n"), 2)
 	if len(tokens) == 0 {
 		return nil, errors.New("FirstEverCommit returned no revisions")
 	}
@@ -2296,12 +2258,13 @@ var refPrefixes = map[string]gitdomain.RefType{
 // - %(HEAD) is `*` if the branch is the default branch (and whitesace otherwise)
 // - %(creatordate) is the ISO-formatted date the object was created
 func parseRefDescriptions(out []byte) (map[string][]gitdomain.RefDescription, error) {
-	lines := bytes.Split(out, []byte("\n"))
-	refDescriptions := make(map[string][]gitdomain.RefDescription, len(lines))
+	refDescriptions := make(map[string][]gitdomain.RefDescription, bytes.Count(out, []byte("\n")))
+
+	lr := byteutils.NewLineReader(out)
 
 lineLoop:
-	for _, line := range lines {
-		line = bytes.TrimSpace(line)
+	for lr.Scan() {
+		line := bytes.TrimSpace(lr.Line())
 		if len(line) == 0 {
 			continue
 		}
@@ -2444,10 +2407,7 @@ func (c *clientImplementor) ArchiveReader(
 		return nil, err
 	}
 
-	u, err := c.archiveURL(ctx, repo, options)
-	if err != nil {
-		return nil, err
-	}
+	u := c.archiveURL(repo, options)
 
 	resp, err := c.do(ctx, repo, "POST", u.String(), nil)
 	if err != nil {

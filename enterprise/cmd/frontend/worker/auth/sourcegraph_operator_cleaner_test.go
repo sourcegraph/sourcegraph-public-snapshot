@@ -54,6 +54,7 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 	//   4. riley, who is an expired SOAP user (will be cleaned up)
 	//   5. cris, who has a non-SOAP external account
 	//   6. cami, who is an expired SOAP user on the permanent accounts list
+	//      (is a service account)
 	// All the above except riley will be deleted.
 	wantNotDeleted := []string{"logan", "morgan", "jordan", "cris", "cami"}
 
@@ -65,7 +66,7 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	morganID, err := db.UserExternalAccounts().CreateUserAndSave(
+	morgan, err := db.UserExternalAccounts().CreateUserAndSave(
 		ctx,
 		database.NewUser{
 			Username: "morgan",
@@ -79,11 +80,11 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		extsvc.AccountData{},
 	)
 	require.NoError(t, err)
-	_, err = db.Handle().ExecContext(ctx, `UPDATE users SET created_at = $1 WHERE id = $2`, time.Now().Add(-61*time.Minute), morganID)
+	_, err = db.Handle().ExecContext(ctx, `UPDATE users SET created_at = $1 WHERE id = $2`, time.Now().Add(-61*time.Minute), morgan.ID)
 	require.NoError(t, err)
 	err = db.UserExternalAccounts().AssociateUserAndSave(
 		ctx,
-		morganID,
+		morgan.ID,
 		extsvc.AccountSpec{
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com",
@@ -109,7 +110,7 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	rileyID, err := db.UserExternalAccounts().CreateUserAndSave(
+	riley, err := db.UserExternalAccounts().CreateUserAndSave(
 		ctx,
 		database.NewUser{
 			Username: "riley",
@@ -123,7 +124,7 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		extsvc.AccountData{},
 	)
 	require.NoError(t, err)
-	_, err = db.Handle().ExecContext(ctx, `UPDATE users SET created_at = $1 WHERE id = $2`, time.Now().Add(-61*time.Minute), rileyID)
+	_, err = db.Handle().ExecContext(ctx, `UPDATE users SET created_at = $1 WHERE id = $2`, time.Now().Add(-61*time.Minute), riley.ID)
 	require.NoError(t, err)
 
 	_, err = db.UserExternalAccounts().CreateUserAndSave(
@@ -145,7 +146,7 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		ServiceAccount: true,
 	})
 	require.NoError(t, err)
-	camiID, err := db.UserExternalAccounts().CreateUserAndSave(
+	cami, err := db.UserExternalAccounts().CreateUserAndSave(
 		ctx,
 		database.NewUser{
 			Username: "cami",
@@ -159,7 +160,7 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		accountData,
 	)
 	require.NoError(t, err)
-	_, err = db.Handle().ExecContext(ctx, `UPDATE users SET created_at = $1 WHERE id = $2`, time.Now().Add(-61*time.Minute), camiID)
+	_, err = db.Handle().ExecContext(ctx, `UPDATE users SET created_at = $1 WHERE id = $2`, time.Now().Add(-61*time.Minute), cami.ID)
 	require.NoError(t, err)
 
 	t.Run("handle with cleanup", func(t *testing.T) {

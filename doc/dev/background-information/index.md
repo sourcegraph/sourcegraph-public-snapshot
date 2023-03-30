@@ -1,3 +1,5 @@
+<!-- Link back any new sections to doc/dev/index.md as well -->
+
 # Background information
 
 ## Overview
@@ -14,6 +16,8 @@
 
 - [`sg` - the Sourcegraph developer tool](./sg/index.md)
   - [Full `sg` reference](./sg/reference.md)
+- [Using Bazel](./bazel.md)
+  - [Bazel and client code](./bazel_web.md)
 - [Developing the web clients](web/index.md)
   - [Developing the web app](web/web_app.md)
   - [Developing the code host integrations](web/code_host_integrations.md)
@@ -24,6 +28,7 @@
   - [Temporary settings](web/temporary_settings.md)
   - [Build process](web/build.md)
 - [Developing the GraphQL API](graphql_api.md)
+- [Developing the SCIM API](scim_api.md)
 - [Developing batch changes](batch_changes/index.md)
 - [Developing code intelligence](codeintel/index.md)
 - [Developing code insights](insights/index.md)
@@ -39,6 +44,10 @@
 - [Developing a background routine](backgroundroutine.md)
 - [Building p4-fusion](./build_p4_fusion.md)
 - [The `gitserver` API](./gitserver-api.md)
+
+## Git
+
+- [`git gc` and its modes of operations in Sourcegraph](./git_gc.md)
 
 ## [Languages](languages/index.md)
 
@@ -76,3 +85,4 @@
 - [Deploy Sourcegraph with Helm chart (BETA)](../../admin/deploy/kubernetes/helm.md)
 - [Event level data usage pipeline](data-usage-pipeline.md)
 - [Adding, changing and debugging user event data](adding_event_level_data.md)
+- [GitHub API Oddities](github-api-oddities.md)

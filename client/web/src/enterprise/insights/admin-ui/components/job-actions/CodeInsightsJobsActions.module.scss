@@ -1,0 +1,29 @@
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.action {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.count {
+    background-color: var(--gray-03);
+    color: var(--body-color);
+    font-size: 0.75rem;
+    padding: 0.25rem;
+    border-radius: 50%;
+    width: 1.25rem;
+    height: 1.25rem;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+
+    :global(.theme-dark) & {
+        background-color: var(--gray-02);
+        color: var(--dark-text);
+    }
+}

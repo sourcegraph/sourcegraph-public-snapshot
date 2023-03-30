@@ -2,7 +2,7 @@ import React from 'react'
 
 import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
-import { useHistory } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { Button, Modal, H2, Icon, ErrorAlert } from '@sourcegraph/wildcard'
@@ -23,10 +23,10 @@ export const DeleteDashboardModal: React.FunctionComponent<
     React.PropsWithChildren<DeleteDashboardModalProps>
 > = props => {
     const { dashboard, onClose } = props
-    const history = useHistory()
+    const navigate = useNavigate()
 
     const handleDeleteSuccess = (): void => {
-        history.push('/insights/dashboards')
+        navigate('/insights/dashboards')
         onClose()
     }
 

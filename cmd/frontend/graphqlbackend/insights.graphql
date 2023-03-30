@@ -1420,10 +1420,10 @@ type InsightBackfillQueueItem {
     The title of the insight view
     """
     insightViewTitle: String!
-    # """
-    # The user that originally created the insight view
-    # """
-    # creator: User
+    """
+    The user that originally created the insight view
+    """
+    creator: User
     """
     The name of the series on the associated insight view
     """
@@ -1492,19 +1492,19 @@ enum InsightQueueItemState {
     UNKNOWN
 }
 
-# extend type Mutation {
-#     """
-#     Retry the backfill for a failed insight series. Can only be used by a site admin.
-#     """
-#     retryInsightSeriesBackfill(id: ID!): InsightBackfillQueueItem!
+extend type Mutation {
+    """
+    Retry the backfill for a failed insight series given the graphql ID of the InsightBackfillQueueItem. Can only be used by a site admin.
+    """
+    retryInsightSeriesBackfill(id: ID!): InsightBackfillQueueItem!
 
-#     """
-#     Updates the priority of an insight series backfill making it the highest priority
-#     """
-#     moveInsightSeriesBackfillToFrontOfQueue(id: ID!): InsightBackfillQueueItem!
+    """
+    Updates the priority of an insight series backfill making it the highest priority given the graphql ID of the InsightBackfillQueueItem.
+    """
+    moveInsightSeriesBackfillToFrontOfQueue(id: ID!): InsightBackfillQueueItem!
 
-#     """
-#     Updates the priority of an insight series backfill making it the lowest priority
-#     """
-#     moveInsightSeriesBackfillToBackOfQueue(id: ID!): InsightBackfillQueueItem!
-# }
+    """
+    Updates the priority of an insight series backfill making it the lowest priority given the graphql ID of the InsightBackfillQueueItem
+    """
+    moveInsightSeriesBackfillToBackOfQueue(id: ID!): InsightBackfillQueueItem!
+}

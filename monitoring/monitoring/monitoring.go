@@ -531,6 +531,11 @@ var (
 		handbookBasePath: "/departments",
 		teamName:         "Cloud",
 	}
+	ObservableOwnerCody = ObservableOwner{
+		identifier:   "cody",
+		handbookSlug: "cody",
+		teamName:     "Cody",
+	}
 )
 
 // toMarkdown returns a Markdown string that also links to the owner's team page in the handbook.

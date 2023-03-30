@@ -14,22 +14,27 @@ go_library(
     deps = [
         "//internal/api",
         "//internal/gitserver/gitdomain",
+        "//internal/gitserver/v1:gitserver",
         "//internal/search/result",
         "//lib/errors",
         "@com_github_opentracing_opentracing_go//log",
         "@io_opentelemetry_go_otel//attribute",
+        "@org_golang_google_protobuf//types/known/timestamppb",
     ],
 )
 
 go_test(
     name = "protocol_test",
+    timeout = "short",
     srcs = [
+        "gitserver_test.go",
         "search_test.go",
         "util_test.go",
     ],
     embed = [":protocol"],
     deps = [
         "//internal/api",
+        "//internal/search/result",
         "@com_github_stretchr_testify//require",
     ],
 )

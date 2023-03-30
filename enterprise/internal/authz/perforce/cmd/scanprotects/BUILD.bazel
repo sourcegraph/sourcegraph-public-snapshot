@@ -23,7 +23,9 @@ go_binary(
 
 go_test(
     name = "scanprotects_test",
+    timeout = "short",
     srcs = ["main_test.go"],
+    data = ["//enterprise/internal/authz/perforce/testdata:data"],
     embed = [":scanprotects_lib"],
     deps = [
         "@com_github_sourcegraph_log//logtest",

@@ -19,7 +19,7 @@ export interface ResultContainerProps {
     resultClassName?: string
     repoStars?: number
     resultType?: SearchMatch['type']
-    repoName: string
+    repoName?: string
     className?: string
     rankingDebug?: string
     onResultClicked?: () => void
@@ -31,6 +31,8 @@ const accessibleResultType: Record<SearchMatch['type'], string> = {
     repo: 'repository',
     path: 'file path',
     commit: 'commit',
+    person: 'person',
+    team: 'team',
 }
 
 /**
@@ -72,7 +74,7 @@ export const ResultContainer: ForwardReferenceExoticComponent<
                     {/* Add a result type to be read out to screen readers only, so that screen reader users can
                     easily scan the search results list (for example, by navigating by landmarks). */}
                     <span className="sr-only">{resultType ? accessibleResultType[resultType] : 'search'} result,</span>
-                    <CodeHostIcon repoName={repoName} className="text-muted flex-shrink-0 mr-1" />
+                    {repoName && <CodeHostIcon repoName={repoName} className="text-muted flex-shrink-0 mr-1" />}
                     <div
                         className={classNames(styles.headerTitle, titleClassName)}
                         data-testid="result-container-header"

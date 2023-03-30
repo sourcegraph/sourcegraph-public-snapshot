@@ -43,7 +43,7 @@ func Executor() *monitoring.Dashboard {
 			},
 		},
 		Groups: []monitoring.Group{
-			shared.CodeIntelligence.NewExecutorQueueGroup(queueContainerName, "$queue"),
+			shared.Executors.NewExecutorQueueGroup("executor", queueContainerName, "$queue"),
 			shared.CodeIntelligence.NewExecutorProcessorGroup(executorsJobName),
 			shared.CodeIntelligence.NewExecutorAPIQueueClientGroup(executorsJobName),
 			shared.CodeIntelligence.NewExecutorAPIFilesClientGroup(executorsJobName),

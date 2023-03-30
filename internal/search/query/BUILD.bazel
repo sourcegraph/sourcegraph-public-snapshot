@@ -37,6 +37,7 @@ go_library(
 
 go_test(
     name = "query_test",
+    timeout = "short",
     srcs = [
         "date_format_test.go",
         "mapper_test.go",
@@ -56,7 +57,7 @@ go_test(
         "//lib/errors",
         "@com_github_google_go_cmp//cmp",
         "@com_github_grafana_regexp//syntax",
-        "@com_github_hexops_autogold//:autogold",
+        "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_stretchr_testify//require",
     ],
 )

@@ -2,7 +2,6 @@ import React, { useCallback, useState } from 'react'
 
 import { mdiMenu } from '@mdi/js'
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router-dom'
 
 import { Button, Icon, ProductStatusBadge, ProductStatusType } from '@sourcegraph/wildcard'
 
@@ -19,7 +18,7 @@ import styles from './OrgSettingsSidebar.module.scss'
 
 export interface OrgSettingsSidebarItemConditionContext extends BatchChangesProps {
     org: OrgAreaOrganizationFields
-    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'siteAdmin' | 'tags'>
+    authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
 }
 
@@ -29,10 +28,7 @@ type OrgSettingsSidebarItem = NavItemDescriptor<OrgSettingsSidebarItemConditionC
 
 export type OrgSettingsSidebarItems = readonly OrgSettingsSidebarItem[]
 
-export interface OrgSettingsSidebarProps
-    extends OrgSettingsAreaRouteContext,
-        BatchChangesProps,
-        RouteComponentProps<{}> {
+export interface OrgSettingsSidebarProps extends OrgSettingsAreaRouteContext, BatchChangesProps {
     items: OrgSettingsSidebarItems
     isSourcegraphDotCom: boolean
     className?: string
@@ -45,7 +41,6 @@ export const OrgSettingsSidebar: React.FunctionComponent<React.PropsWithChildren
     org,
     authenticatedUser,
     className,
-    match,
     ...props
 }) => {
     const [isMobileExpanded, setIsMobileExpanded] = useState(false)
@@ -89,9 +84,9 @@ export const OrgSettingsSidebar: React.FunctionComponent<React.PropsWithChildren
                             condition(context) && (
                                 <SidebarNavItem
                                     key={label}
-                                    to={match.path + to}
-                                    exact={exact}
+                                    to={`/organizations/${org.name}/settings` + to}
                                     onClick={collapseMobileSidebar}
+                                    exact={exact}
                                 >
                                     {label} {status && <ProductStatusBadge className="ml-1" status={status} />}
                                 </SidebarNavItem>

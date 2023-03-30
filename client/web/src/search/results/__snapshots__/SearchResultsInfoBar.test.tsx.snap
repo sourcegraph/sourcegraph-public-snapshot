@@ -12,47 +12,12 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
       class="row"
     >
       <div />
-      <section
-        class="mb-0 d-flex justify-content-center outlined"
-      >
-        <svg
-          aria-hidden="true"
-          class="mdi-icon iconInline iconInlineMd mr-2 text-merged"
-          fill="currentColor"
-          height="24"
-          role="img"
-          viewBox="0 0 24 24"
-          width="24"
-        >
-          <path
-            d="M4,11V13H16L10.5,18.5L11.92,19.92L19.84,12L11.92,4.08L10.5,5.5L16,11H4Z"
-          />
-        </svg>
-        <p
-          class="my-auto"
-        >
-          To search across your private repositories, 
-          <a
-            class="anchorLink"
-            href="https://signup.sourcegraph.com/?email=chuck%40chuckeecheese.com&name=Chuck+Cheese"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            try Sourcegraph Cloud
-          </a>
-          .
-        </p>
-      </section>
       <div
         class="expander"
       />
       <ul
         class="nav align-items-center"
       >
-        <li
-          aria-hidden="true"
-          class="divider"
-        />
         <li
           class="mr-2 navItem"
         >
@@ -62,7 +27,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
             aria-label="Open search actions menu"
             class="btn btnSecondary btnOutline btnSm d-flex align-items-center text-decoration-none"
             data-reach-menu-button=""
-            id="menu-button-2"
+            id="menu-button-test-id"
             type="button"
           >
             Actions
@@ -121,47 +86,12 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
       class="row"
     >
       <div />
-      <section
-        class="mb-0 d-flex justify-content-center outlined"
-      >
-        <svg
-          aria-hidden="true"
-          class="mdi-icon iconInline iconInlineMd mr-2 text-merged"
-          fill="currentColor"
-          height="24"
-          role="img"
-          viewBox="0 0 24 24"
-          width="24"
-        >
-          <path
-            d="M4,11V13H16L10.5,18.5L11.92,19.92L19.84,12L11.92,4.08L10.5,5.5L16,11H4Z"
-          />
-        </svg>
-        <p
-          class="my-auto"
-        >
-          To search across your private repositories, 
-          <a
-            class="anchorLink"
-            href="https://signup.sourcegraph.com/?email=chuck%40chuckeecheese.com&name=Chuck+Cheese"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            try Sourcegraph Cloud
-          </a>
-          .
-        </p>
-      </section>
       <div
         class="expander"
       />
       <ul
         class="nav align-items-center"
       >
-        <li
-          aria-hidden="true"
-          class="divider"
-        />
         <li
           class="mr-2 navItem"
         >
@@ -171,7 +101,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
             aria-label="Open search actions menu"
             class="btn btnSecondary btnOutline btnSm d-flex align-items-center text-decoration-none"
             data-reach-menu-button=""
-            id="menu-button-6"
+            id="menu-button-test-id"
             type="button"
           >
             Actions
@@ -230,47 +160,12 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
       class="row"
     >
       <div />
-      <section
-        class="mb-0 d-flex justify-content-center outlined"
-      >
-        <svg
-          aria-hidden="true"
-          class="mdi-icon iconInline iconInlineMd mr-2 text-merged"
-          fill="currentColor"
-          height="24"
-          role="img"
-          viewBox="0 0 24 24"
-          width="24"
-        >
-          <path
-            d="M4,11V13H16L10.5,18.5L11.92,19.92L19.84,12L11.92,4.08L10.5,5.5L16,11H4Z"
-          />
-        </svg>
-        <p
-          class="my-auto"
-        >
-          To search across your private repositories, 
-          <a
-            class="anchorLink"
-            href="https://signup.sourcegraph.com/"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            try Sourcegraph Cloud
-          </a>
-          .
-        </p>
-      </section>
       <div
         class="expander"
       />
       <ul
         class="nav align-items-center"
       >
-        <li
-          aria-hidden="true"
-          class="divider"
-        />
         <li
           class="mr-2 navItem"
         >
@@ -280,7 +175,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
             aria-label="Open search actions menu"
             class="btn btnSecondary btnOutline btnSm d-flex align-items-center text-decoration-none"
             data-reach-menu-button=""
-            id="menu-button-8"
+            id="menu-button-test-id"
             type="button"
           >
             Actions
@@ -339,47 +234,12 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
       class="row"
     >
       <div />
-      <section
-        class="mb-0 d-flex justify-content-center outlined"
-      >
-        <svg
-          aria-hidden="true"
-          class="mdi-icon iconInline iconInlineMd mr-2 text-merged"
-          fill="currentColor"
-          height="24"
-          role="img"
-          viewBox="0 0 24 24"
-          width="24"
-        >
-          <path
-            d="M4,11V13H16L10.5,18.5L11.92,19.92L19.84,12L11.92,4.08L10.5,5.5L16,11H4Z"
-          />
-        </svg>
-        <p
-          class="my-auto"
-        >
-          To search across your private repositories, 
-          <a
-            class="anchorLink"
-            href="https://signup.sourcegraph.com/?email=chuck%40chuckeecheese.com&name=Chuck+Cheese"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            try Sourcegraph Cloud
-          </a>
-          .
-        </p>
-      </section>
       <div
         class="expander"
       />
       <ul
         class="nav align-items-center"
       >
-        <li
-          aria-hidden="true"
-          class="divider"
-        />
         <li
           class="mr-2 navItem"
         >
@@ -389,7 +249,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
             aria-label="Open search actions menu"
             class="btn btnSecondary btnOutline btnSm d-flex align-items-center text-decoration-none"
             data-reach-menu-button=""
-            id="menu-button-4"
+            id="menu-button-test-id"
             type="button"
           >
             Actions
@@ -448,47 +308,12 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
       class="row"
     >
       <div />
-      <section
-        class="mb-0 d-flex justify-content-center outlined"
-      >
-        <svg
-          aria-hidden="true"
-          class="mdi-icon iconInline iconInlineMd mr-2 text-merged"
-          fill="currentColor"
-          height="24"
-          role="img"
-          viewBox="0 0 24 24"
-          width="24"
-        >
-          <path
-            d="M4,11V13H16L10.5,18.5L11.92,19.92L19.84,12L11.92,4.08L10.5,5.5L16,11H4Z"
-          />
-        </svg>
-        <p
-          class="my-auto"
-        >
-          To search across your private repositories, 
-          <a
-            class="anchorLink"
-            href="https://signup.sourcegraph.com/"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            try Sourcegraph Cloud
-          </a>
-          .
-        </p>
-      </section>
       <div
         class="expander"
       />
       <ul
         class="nav align-items-center"
       >
-        <li
-          aria-hidden="true"
-          class="divider"
-        />
         <li
           class="mr-2 navItem"
         >
@@ -498,7 +323,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
             aria-label="Open search actions menu"
             class="btn btnSecondary btnOutline btnSm d-flex align-items-center text-decoration-none"
             data-reach-menu-button=""
-            id="menu-button-10"
+            id="menu-button-test-id"
             type="button"
           >
             Actions

@@ -306,6 +306,11 @@ func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Cont
 		UserIDs: userIDs,
 	}
 
+	perms := make([]authz.UserIDWithExternalAccountID, 0, len(userIDs))
+	for userID := range userIDs {
+		perms = append(perms, authz.UserIDWithExternalAccountID{UserID: userID})
+	}
+
 	txs, err := h.db.Perms().Transact(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to start transaction")
@@ -325,9 +330,8 @@ func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Cont
 	}
 
 	// set repo permissions (and user permissions)
-	err = txs.SetRepoPermissions(ctx, &p)
-	if err != nil {
-		return errors.Wrapf(err, "failed to set repo permissions for repo %d", repoID)
+	if _, err = txs.SetRepoPerms(ctx, int32(repoID), perms, authz.SourceAPI); err != nil {
+		return errors.Wrapf(err, "failed to set user repo permissions for repo %d and users %v", repoID, perms)
 	}
 
 	// set pending permissions

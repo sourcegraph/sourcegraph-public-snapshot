@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -49,14 +50,30 @@ func (m *migrator) Routines(startupCtx context.Context, observationCtx *observat
 	}
 
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
-		observationCtx.Logger.Warn("Skipping out-of-band migrations check")
+		if !deploy.IsApp() {
+			observationCtx.Logger.Warn("Skipping out-of-band migrations check")
+		}
 	} else {
 		if err := oobmigration.ValidateOutOfBandMigrationRunner(startupCtx, db, outOfBandMigrationRunner); err != nil {
 			return nil, err
 		}
 	}
 
+	version, err := currentVersion(observationCtx.Logger)
+	if err != nil {
+		return nil, err
+	}
+
 	return []goroutine.BackgroundRoutine{
-		outOfBandMigrationRunner,
+		&outOfBandMigrationRunnerWrapper{Runner: outOfBandMigrationRunner, version: version},
 	}, nil
+}
+
+type outOfBandMigrationRunnerWrapper struct {
+	*oobmigration.Runner
+	version oobmigration.Version
+}
+
+func (w *outOfBandMigrationRunnerWrapper) Start() {
+	w.Runner.Start(w.version)
 }

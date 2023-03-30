@@ -2,7 +2,20 @@
     max-height: 30rem;
     overflow: hidden;
     margin-top: 1rem;
-    padding: 0 0.25rem 0 0;
+    padding: 0 0.2rem 0 0.2rem;
+
+    // Mimic the header style of a markdown readme
+    &-pre-header {
+        max-width: 50rem;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.5rem;
+    }
+
+    &-pre {
+        max-width: 50rem;
+        white-space: pre-wrap;
+        word-break: break-all;
+    }
 
     &-fader {
         width: 100%;
@@ -16,6 +29,15 @@
         display: block;
         margin-top: 0.25rem;
     }
+}
+
+.readme-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    // 30rem for the readme height + 1.5rem for the link that will be rendered
+    // below it and additional margin.
+    height: 31.5rem;
 }
 
 .card-col-header-wrapper {

@@ -22,7 +22,7 @@ export function useCaptureInsightInitialValues(): UseCaptureInsightInitialValues
     // render creation UI form.
     // eslint-disable-next-line no-restricted-syntax
     const [localStorageFormValues, setLocalStorageValues] = useLocalStorage<CaptureGroupFormFields | undefined>(
-        'insights.capture-group-creation-ui',
+        'insights.capture-group-creation-ui-v2',
         undefined
     )
 

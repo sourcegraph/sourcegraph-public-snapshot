@@ -87,7 +87,7 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
                     <Icon inline={false} svgPath={mdiCheck} className={styles.successTick} aria-label="Success" />
                     <H3>We‘ve received your feedback!</H3>
                     <Text className="d-inline">
-                        Thank you for your help.
+                        Thank you.
                         {productResearchEnabled && authenticatedUser && (
                             <>
                                 {' '}
@@ -134,6 +134,12 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
                             prefix="Error submitting feedback"
                         />
                     )}
+                    <Text className="d-flex align-items-center justify-content-between mt-2">
+                        <span>
+                            By submitting your feedback, you agree to the{' '}
+                            <Link to="https://about.sourcegraph.com/terms/privacy">Sourcegraph Privacy Policy</Link>.
+                        </span>
+                    </Text>
                     <Button
                         disabled={!text || submitting}
                         role="menuitem"

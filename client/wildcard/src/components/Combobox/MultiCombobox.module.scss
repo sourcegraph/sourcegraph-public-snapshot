@@ -1,4 +1,5 @@
 .root {
+    width: 100%;
     display: flex;
     flex-wrap: wrap;
     gap: 0.25rem;
@@ -11,6 +12,35 @@
     &:focus-within {
         border-color: var(--input-focus-border-color);
         box-shadow: var(--input-focus-box-shadow);
+    }
+
+    &:has(:global(.is-valid)) {
+        border-color: var(--success);
+
+        :global(.theme-light) &:focus-within {
+            box-shadow: 0 0 0 2px var(--success-2);
+        }
+
+        :global(.theme-dark) &:focus-within {
+            box-shadow: 0 0 0 2px var(--success-3);
+        }
+    }
+
+    &:has(:global(.is-invalid)) {
+        border-color: var(--danger);
+
+        :global(.theme-light) &:focus-within {
+            box-shadow: 0 0 0 2px var(--danger-2);
+        }
+
+        :global(.theme-dark) &:focus-within {
+            box-shadow: 0 0 0 2px var(--danger-3);
+        }
+    }
+
+    &:has(:global(.form-control):disabled) {
+        color: var(--text-disabled);
+        background-color: var(--input-disabled-bg);
     }
 }
 
@@ -38,7 +68,7 @@
 .pill {
     display: flex;
     gap: 0.25rem;
-    padding: 0.25rem 0.25rem 0.25rem 0.5rem;
+    padding: 0.25rem 0.5rem;
     border-radius: 0.25rem;
     min-width: 0;
 
@@ -60,7 +90,7 @@
 
 .remove-pill {
     border: none;
-    margin-right: -0.25rem;
+    margin-right: -0.5rem;
     margin-top: -0.25rem;
     margin-bottom: -0.25rem;
     width: 1.75rem;

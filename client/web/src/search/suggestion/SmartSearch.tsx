@@ -3,10 +3,9 @@ import { MouseEvent, useCallback } from 'react'
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 
 import { smartSearchIconSvgPath } from '@sourcegraph/branded'
-import { pluralize } from '@sourcegraph/common'
 import { SmartSearchListItem } from '@sourcegraph/branded/src/search-ui/components/SmartSearchListItem'
-import { AggregateStreamingSearchResults, AlertKind } from '@sourcegraph/shared/src/search/stream'
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { pluralize } from '@sourcegraph/common'
+import { AggregateStreamingSearchResults, AlertKind, SmartSearchAlertKind } from '@sourcegraph/shared/src/search/stream'
 import { Icon, Collapse, CollapseHeader, CollapsePanel, H2, Text, Button } from '@sourcegraph/wildcard'
 
 import styles from './QuerySuggestion.module.scss'
@@ -16,7 +15,9 @@ interface SmartSearchProps {
     onDisableSmartSearch: () => void
 }
 
-const alertContent: { [key in AlertKind]: (queryCount: number) => { title: JSX.Element; subtitle: JSX.Element } } = {
+const alertContent: {
+    [key in SmartSearchAlertKind]: (queryCount: number) => { title: JSX.Element; subtitle: JSX.Element }
+} = {
     'smart-search-additional-results': (queryCount: number) => ({
         title: (
             <>

@@ -284,6 +284,7 @@ func (r *RepositoryResolver) Language(ctx context.Context) (string, error) {
 
 func (r *RepositoryResolver) Enabled() bool { return true }
 
+// CreatedAt is deprecated and will be removed in a future release.
 // No clients that we know of read this field. Additionally on performance profiles
 // the marshalling of timestamps is significant in our postgres client. So we
 // deprecate the fields and return fake data for created_at.
@@ -392,20 +393,6 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	})
 
 	return r.err
-}
-
-func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *resolverstubs.LSIFUploadsQueryArgs) (resolverstubs.LSIFUploadConnectionResolver, error) {
-	return EnterpriseResolvers.codeIntelResolver.LSIFUploadsByRepo(ctx, &resolverstubs.LSIFRepositoryUploadsQueryArgs{
-		LSIFUploadsQueryArgs: args,
-		RepositoryID:         r.ID(),
-	})
-}
-
-func (r *RepositoryResolver) LSIFIndexes(ctx context.Context, args *resolverstubs.LSIFIndexesQueryArgs) (resolverstubs.LSIFIndexConnectionResolver, error) {
-	return EnterpriseResolvers.codeIntelResolver.LSIFIndexesByRepo(ctx, &resolverstubs.LSIFRepositoryIndexesQueryArgs{
-		LSIFIndexesQueryArgs: args,
-		RepositoryID:         r.ID(),
-	})
 }
 
 func (r *RepositoryResolver) IndexConfiguration(ctx context.Context) (resolverstubs.IndexConfigurationResolver, error) {
@@ -708,4 +695,8 @@ func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct
 	}
 
 	return &EmptyResponse{}, r.db.RepoKVPs().Delete(ctx, repoID, args.Key)
+}
+
+func (r *RepositoryResolver) IngestedCodeowners(ctx context.Context) (CodeownersIngestedFileResolver, error) {
+	return EnterpriseResolvers.ownResolver.RepoIngestedCodeowners(ctx, r.IDInt32())
 }

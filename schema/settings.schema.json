@@ -21,24 +21,6 @@
             "pointer": true
           }
         },
-        "codeInsightsGqlApi": {
-          "deprecated": true,
-          "description": "DEPRECATED: Enables gql api instead of using setting cascade as a main storage fro code insights entities",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "codeInsightsAllRepos": {
-          "deprecated": true,
-          "description": "DEPRECATED: Enables the experimental ability to run an insight over all repositories on the instance.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "codeInsightsLandingPage": {
           "deprecated": true,
           "description": "DEPRECATED: Enables code insights landing page layout.",
@@ -57,72 +39,8 @@
             "pointer": true
           }
         },
-        "setupWizard": {
-          "description": "Experimental setup wizard",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "searchContextsQuery": {
           "description": "DEPRECATED: This feature is now permanently enabled. Enables query based search contexts",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "searchStats": {
-          "description": "Enables a button on the search results page that shows language statistics about the results for a search query.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "searchStreaming": {
-          "description": "DEPRECATED: This feature is now permanently enabled. Enables streaming search support.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "copyQueryButton": {
-          "description": "DEPRECATED: This feature is now permanently enabled. Enables displaying the copy query button in the search bar when hovering over the global navigation bar.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "showRepogroupHomepage": {
-          "description": "Enables the repository group homepage ",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "showOnboardingTour": {
-          "description": "REMOVED.",
-          "type": "boolean",
-          "default": true,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "showSearchContext": {
-          "description": "Enables the search context dropdown.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "showSearchContextManagement": {
-          "description": "REMOVED.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -133,14 +51,6 @@
           "description": "Enables the multiline search console at search/console",
           "type": "boolean",
           "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "codeNavigation": {
-          "description": "What kind of experimental code navigation UX to enable. The most recommended option is 'selection-driven'.",
-          "type": "string",
-          "enum": ["selection-driven", "link-driven"],
           "!go": {
             "pointer": true
           }
@@ -220,29 +130,6 @@
             "pointer": true
           }
         },
-        "codeIntelRepositoryBadge": {
-          "type": "object",
-          "properties": {
-            "enabled": {
-              "description": "Show the code intelligence badge when viewing a repository.",
-              "type": "boolean",
-              "default": false,
-              "!go": {
-                "pointer": true
-              }
-            },
-            "forNerds": {
-              "description": "Show entirely too much information.",
-              "type": "boolean",
-              "default": false,
-              "!go": {
-                "pointer": true
-              }
-            }
-          },
-          "required": ["enabled"],
-          "additionalProperties": false
-        },
         "showCodeMonitoringLogs": {
           "description": "Shows code monitoring logs tab.",
           "type": "boolean",
@@ -251,24 +138,8 @@
             "pointer": true
           }
         },
-        "homepageUserInvitation": {
-          "description": "Shows a panel to invite collaborators to Sourcegraph on home page.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "goCodeCheckerTemplates": {
           "description": "Shows a panel with code insights templates for go code checker results.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "enableGoImportsSearchQueryTransform": {
-          "description": "Lets you easily search for all files using a Go package. Adds a new operator `go.imports`: for all import statements of the package passed to the operator.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -346,11 +217,6 @@
           "!go": {
             "pointer": true
           }
-        },
-        "preloadGoToDefinition": {
-          "description": "Preload definitions for available tokens in the visible viewport.",
-          "type": "boolean",
-          "default": false
         },
         "symbolKindTags": {
           "description": "Show the initial letter of the symbol kind instead of icons.",
@@ -493,29 +359,6 @@
         "$ref": "#/definitions/SearchScope"
       }
     },
-    "search.repositoryGroups": {
-      "description": "DEPRECATED: Use search contexts instead.\n\nNamed groups of repositories that can be referenced in a search query using the `repogroup:` operator. The list can contain string literals (to include single repositories) and JSON objects with a \"regex\" field (to include all repositories matching the regular expression). Retrieving repogroups via the GQL interface will currently exclude repositories matched by regex patterns. #14208.",
-      "type": "object",
-      "additionalProperties": {
-        "type": "array",
-        "items": {
-          "anyOf": [
-            {
-              "type": "object",
-              "required": ["regex"]
-            },
-            {
-              "type": "string"
-            }
-          ]
-        }
-      }
-    },
-    "codeIntel.referencesPanel": {
-      "description": "What kind of references panel to use for exploring definitions and references. The tabbed panel is deprecated.",
-      "type": "string",
-      "enum": ["tree-view", "tabbed"]
-    },
     "codeIntel.disableSearchBased": {
       "description": "Never fall back to search-based code intelligence.",
       "type": "boolean"
@@ -552,27 +395,11 @@
       "description": "The timeout (in milliseconds) for un-indexed search requests.",
       "type": "number"
     },
-    "codeIntelligence.autoIndexRepositoryGroups": {
-      "description": "A list of search.repositoryGroups that have auto-indexing enabled.",
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
     "codeIntelligence.autoIndexPopularRepoLimit": {
       "description": "Up to this number of repos are auto-indexed automatically. Ordered by star count.",
       "type": "integer",
       "minimum": 0,
       "default": 0
-    },
-    "codeIntelligence.maxPanelResults": {
-      "description": "Maximum number of references/definitions (or other code intelligence results provided by extensions) shown in the panel. If not set a default value will be used to ensure best performance.",
-      "type": "integer"
-    },
-    "codeIntelligence.clickToGoToDefinition": {
-      "description": "Enable click to go to definition.",
-      "type": "boolean",
-      "default": true
     },
     "search.contextLines": {
       "description": "The default number of lines to show as context below and above search results. Default is 1.",
@@ -668,7 +495,12 @@
       }
     },
     "alerts.showPatchUpdates": {
-      "description": "Whether to show alerts for patch version updates. Alerts for major and minor version updates will always be shown.",
+      "description": "Whether to show alerts for patch version updates. Alerts for major and minor version updates will be shown if `alerts.showMajorMinorUpdatess` is true.",
+      "type": "boolean",
+      "default": true
+    },
+    "alerts.showMajorMinorUpdates": {
+      "description": "Whether to show alerts for major and minor version updates. Alerts for patch version updates will be shown if `alerts.showPatchUpdates` is true.",
       "type": "boolean",
       "default": true
     },
@@ -685,31 +517,6 @@
       "type": "string",
       "enum": ["browser-extension", "native-integration"],
       "default": "browser-extension"
-    },
-    "extensions": {
-      "description": "The Sourcegraph extensions to use. Enable an extension by adding a property `\"my/extension\": true` (where `my/extension` is the extension ID). Override a previously enabled extension and disable it by setting its value to `false`.",
-      "type": "object",
-      "propertyNames": {
-        "type": "string",
-        "description": "A valid extension ID.",
-        "pattern": "^([^/]+/)?[^/]+/[^/]+$"
-      },
-      "additionalProperties": {
-        "type": "boolean",
-        "description": "`true` to enable the extension, `false` to disable the extension (if it was previously enabled)"
-      }
-    },
-    "extensions.activeLoggers": {
-      "description": "The Sourcegraph extensions, by ID (e.g. `my/extension`), whose logs should be visible in the console.",
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
-    "codeHost.useNativeTooltips": {
-      "description": "Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).",
-      "type": "boolean",
-      "default": false
     },
     "search.hideSuggestions": {
       "description": "Disable search suggestions below the search bar when constructing queries. Defaults to false.",
@@ -749,7 +556,9 @@
     "perforce.codeHostToSwarmMap": {
       "description": "Key-value pairs of code host URLs to Swarm URLs. Keys should have no prefix and should not end with a slash, like \"perforce.company.com:1666\". Values should look like \"https://swarm.company.com/\", with a slash at the end.",
       "type": "object",
-      "additionalProperties": { "type": "string" },
+      "additionalProperties": {
+        "type": "string"
+      },
       "default": {}
     }
   },
@@ -802,8 +611,12 @@
       "description": "Performs a filter",
       "required": ["includeRepoRegexp", "excludeRepoRegexp"],
       "properties": {
-        "includeRepoRegexp": { "type": "string" },
-        "excludeRepoRegexp": { "type": "string" },
+        "includeRepoRegexp": {
+          "type": "string"
+        },
+        "excludeRepoRegexp": {
+          "type": "string"
+        },
         "repositories": {
           "type": "array",
           "items": {

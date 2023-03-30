@@ -4,6 +4,7 @@ import { mdiDotsVertical } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import {
     Link,
     Menu,
@@ -19,7 +20,6 @@ import {
     MenuHeader,
 } from '@sourcegraph/wildcard'
 
-import { useExperimentalFeatures } from '../../../../../../stores'
 import { Insight, InsightDashboard, InsightType, isLangStatsInsight, isVirtualDashboard } from '../../../../core'
 import { useUiFeatures } from '../../../../hooks'
 import { encodeDashboardIdQueryParam } from '../../../../routers.constant'
@@ -50,10 +50,10 @@ export const InsightContextMenu: FC<InsightCardMenuProps> = props => {
     const [showShareModal, setShowShareModal] = useState(false)
 
     const { insight: insightPermissions } = useUiFeatures()
-    const features = useExperimentalFeatures()
+    const goCodeCheckerTemplates = useExperimentalFeatures(features => features.goCodeCheckerTemplates)
 
     const menuPermissions = insightPermissions.getContextActionsPermissions(insight)
-    const showQuickFix = insight.title.includes('[quickfix]') && features?.goCodeCheckerTemplates
+    const showQuickFix = insight.title.includes('[quickfix]') && goCodeCheckerTemplates
 
     const quickFixUrl =
         insight.type === InsightType.SearchBased

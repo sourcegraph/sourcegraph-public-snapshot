@@ -4,16 +4,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 )
 
-type GetIndexesOptions struct {
-	RepositoryID  int
-	State         string
-	States        []string
-	Term          string
-	WithoutUpload bool
-	Limit         int
-	Offset        int
-}
-
 type SourcedCommits struct {
 	RepositoryID   int
 	RepositoryName string
@@ -33,16 +23,12 @@ type IndexesWithRepositoryNamespace struct {
 	Indexes []types.Index
 }
 
-type DeleteIndexesOptions struct {
-	States        []string
-	Term          string
-	RepositoryID  int
-	WithoutUpload bool
+type RepositoryWithCount struct {
+	RepositoryID int
+	Count        int
 }
 
-type ReindexIndexesOptions struct {
-	States        []string
-	Term          string
-	RepositoryID  int
-	WithoutUpload bool
+type RepositoryWithAvailableIndexers struct {
+	RepositoryID      int
+	AvailableIndexers map[string]AvailableIndexer
 }

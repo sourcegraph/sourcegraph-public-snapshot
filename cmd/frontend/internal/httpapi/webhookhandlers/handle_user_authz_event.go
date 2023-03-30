@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
@@ -26,9 +25,6 @@ import (
 func handleGitHubUserAuthzEvent(logger log.Logger, opts authz.FetchPermsOptions) webhooks.Handler {
 	return func(ctx context.Context, db database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
 		if !conf.ExperimentalFeatures().EnablePermissionsWebhooks {
-			return nil
-		}
-		if globals.PermissionsUserMapping().Enabled {
 			return nil
 		}
 

@@ -12,6 +12,7 @@ import (
 	"golang.org/x/sync/singleflight"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -22,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -30,7 +30,6 @@ import (
 // with the stored Repositories in Sourcegraph.
 type Syncer struct {
 	Sourcer Sourcer
-	Worker  *workerutil.Worker[*SyncJob]
 	Store   Store
 
 	// Synced is sent a collection of Repos that were synced by Sync (only if Synced is non-nil)
@@ -43,6 +42,10 @@ type Syncer struct {
 
 	// Ensure that we only run one sync per repo at a time
 	syncGroup singleflight.Group
+
+	// Hooks for enterprise specific functionality. Ignored in OSS
+	EnterpriseCreateRepoHook func(context.Context, Store, *types.Repo) error
+	EnterpriseUpdateRepoHook func(context.Context, Store, *types.Repo, *types.Repo) error
 }
 
 // RunOptions contains options customizing Run behaviour.
@@ -477,6 +480,10 @@ type SyncProgress struct {
 	Deleted int32 `json:"deleted,omitempty"`
 }
 
+type LicenseError struct {
+	error
+}
+
 // progressRecorderFunc is a function that implements persisting sync progress.
 // The final param represents whether this is the final call. This allows the
 // function to decide whether to drop some intermediate calls.
@@ -604,12 +611,19 @@ func (s *Syncer) SyncExternalService(
 
 		sourced := res.Repo
 
+		if envvar.SourcegraphDotComMode() && sourced.Private {
+			err := errors.Newf("%s is private, but dotcom does not support private repositories.", sourced.Name)
+			syncProgress.Errors++
+			logger.Error("failed to sync private repo", log.String("repo", string(sourced.Name)), log.Error(err))
+			errs = errors.Append(errs, err)
+			continue
+		}
+
 		var diff Diff
 		if diff, err = s.sync(ctx, svc, sourced); err != nil {
 			syncProgress.Errors++
 			logger.Error("failed to sync, skipping", log.String("repo", string(sourced.Name)), log.Error(err))
 			errs = errors.Append(errs, err)
-
 			continue
 		}
 
@@ -650,6 +664,9 @@ func (s *Syncer) SyncExternalService(
 						abortDeletion = true
 						break
 					}
+					continue
+				}
+				if errors.As(e, &LicenseError{}) {
 					continue
 				}
 				abortDeletion = true
@@ -736,6 +753,14 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 
 	switch len(stored) {
 	case 2: // Existing repo with a naming conflict
+		// Scenario where this can happen:
+		// 1. Repo `owner/repo1` with external_id 1 exists
+		// 2. Repo `owner/repo2` with external_id 2 exists
+		// 3. The owner deletes repo1, and renames repo2 to repo1
+		// 4. We sync and we receive `owner/repo1` with external_id 2
+		//
+		// Then the above query will return two results: one matching the name owner/repo1, and one matching the external_service_id 2
+		// The original owner/repo1 should be deleted, and then owner/repo2 with the matching external_service_id should be updated
 		s.ObsvCtx.Logger.Debug("naming conflict")
 
 		// Pick this sourced repo to own the name by deleting the other repo. If it still exists, it'll have a different
@@ -761,6 +786,11 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		fallthrough
 	case 1: // Existing repo, update.
 		s.ObsvCtx.Logger.Debug("existing repo")
+		if s.EnterpriseUpdateRepoHook != nil {
+			if err := s.EnterpriseUpdateRepoHook(ctx, tx, stored[0], sourced); err != nil {
+				return Diff{}, LicenseError{errors.Wrapf(err, "syncer: failed to update repo %s", sourced.Name)}
+			}
+		}
 		modified := stored[0].Update(sourced)
 		if modified == types.RepoUnmodified {
 			d.Unmodified = append(d.Unmodified, stored[0])
@@ -776,8 +806,15 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		s.ObsvCtx.Logger.Debug("appended to modified repos")
 	case 0: // New repo, create.
 		s.ObsvCtx.Logger.Debug("new repo")
+
+		if s.EnterpriseCreateRepoHook != nil {
+			if err := s.EnterpriseCreateRepoHook(ctx, tx, sourced); err != nil {
+				return Diff{}, LicenseError{errors.Wrapf(err, "syncer: failed to update repo %s", sourced.Name)}
+			}
+		}
+
 		if err = tx.CreateExternalServiceRepo(ctx, svc, sourced); err != nil {
-			return Diff{}, errors.Wrap(err, "syncer: failed to create external service repo")
+			return Diff{}, errors.Wrapf(err, "syncer: failed to create external service repo: %s", sourced.Name)
 		}
 
 		d.Added = append(d.Added, sourced)

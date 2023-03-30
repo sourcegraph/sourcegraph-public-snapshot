@@ -14,8 +14,22 @@ go_library(
 )
 
 go_test(
+    name = "client_test",
+    timeout = "short",
+    srcs = ["client_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":rubygems"],
+    deps = [
+        "//internal/conf/reposource",
+        "//internal/httptestutil",
+        "//internal/unpack",
+        "@com_github_stretchr_testify//require",
+    ],
+)
+
+go_test(
     name = "rubygems_test",
-    srcs = ["rubygems_test.go"],
+    srcs = ["client_test.go"],
     data = glob(["testdata/**"]),
     embed = [":rubygems"],
     deps = [

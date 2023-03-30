@@ -1,26 +1,28 @@
 # Install p4 CLI (keep this up to date with cmd/gitserver/Dockerfile)
-FROM sourcegraph/alpine-3.14:196830_2023-02-01_af83eee939ca@sha256:b4d7040d41fcf37fbf96fe5a14c39ae15580a3a6c76355cc7ea04a74b6c3b9fa AS p4cli
+FROM sourcegraph/alpine-3.14:208635_2023-03-20_4.5-5e69dce80501@sha256:9e480efdf1b7fa41a4aae0d1111cffed9653aca375f0af4d466eea9a703234f8 AS p4cli
 
-# hadolint ignore=DL3003
-RUN wget http://cdist2.perforce.com/perforce/r21.2/bin.linux26x86_64/p4 && \
-    mv p4 /usr/local/bin/p4 && \
-    chmod +x /usr/local/bin/p4
+# hash provided in http://filehost.perforce.com/perforce/r22.2/bin.linux26x86_64/SHA256SUMS
+# if the hash is not provided, calculate it by downloading the file and running `sha256sum` on it in Terminal
+RUN echo "8bc10fca1c5a26262b4072deec76150a668581a9749d0504cd443084773d4fd0  /usr/local/bin/p4" >expected_hash && \
+    wget http://cdist2.perforce.com/perforce/r22.2/bin.linux26x86_64/p4 -O /usr/local/bin/p4 && \
+    chmod +x /usr/local/bin/p4 && \
+    sha256sum -c expected_hash
 
 # Install p4-fusion (keep this up to date with cmd/gitserver/Dockerfile)
-FROM sourcegraph/alpine-3.14:196830_2023-02-01_af83eee939ca@sha256:b4d7040d41fcf37fbf96fe5a14c39ae15580a3a6c76355cc7ea04a74b6c3b9fa AS p4-fusion
+FROM sourcegraph/alpine-3.14:208635_2023-03-20_4.5-5e69dce80501@sha256:9e480efdf1b7fa41a4aae0d1111cffed9653aca375f0af4d466eea9a703234f8 AS p4-fusion
 
 COPY p4-fusion-install-alpine.sh /p4-fusion-install-alpine.sh
 RUN /p4-fusion-install-alpine.sh
 
 # Install coursier (keep this up to date with cmd/gitserver/Dockerfile)
-FROM sourcegraph/alpine-3.14:196830_2023-02-01_af83eee939ca@sha256:b4d7040d41fcf37fbf96fe5a14c39ae15580a3a6c76355cc7ea04a74b6c3b9fa AS coursier
+FROM sourcegraph/alpine-3.14:208635_2023-03-20_4.5-5e69dce80501@sha256:9e480efdf1b7fa41a4aae0d1111cffed9653aca375f0af4d466eea9a703234f8 AS coursier
 
 RUN wget -O coursier.gz https://github.com/coursier/coursier/releases/download/v2.1.0-RC4/cs-x86_64-pc-linux-static.gz && \
     gzip -d coursier.gz && \
     mv coursier /usr/local/bin/coursier && \
     chmod +x /usr/local/bin/coursier
 
-FROM sourcegraph/alpine-3.14:196830_2023-02-01_af83eee939ca@sha256:b4d7040d41fcf37fbf96fe5a14c39ae15580a3a6c76355cc7ea04a74b6c3b9fa
+FROM sourcegraph/alpine-3.14:208635_2023-03-20_4.5-5e69dce80501@sha256:9e480efdf1b7fa41a4aae0d1111cffed9653aca375f0af4d466eea9a703234f8
 # TODO(security): This container should not be running as root!
 #
 # The default user in sourcegraph/alpine is a non-root `sourcegraph` user but because old deployments
@@ -39,10 +41,9 @@ LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
 RUN apk add --no-cache --verbose \
-    # [NOTE: git-version-min-requirement]
-    # We require git 2.39.1+ because we need a fix for this vulnerability to be included:
-    # https://github.blog/2023-01-17-git-security-vulnerabilities-announced-2/
-    'git>=2.39.1-r1' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main \
+    # Minimal version requirement to address vulnerabilities
+    # https://github.blog/2023-02-14-git-security-vulnerabilities-announced-3/
+    'git>=2.39.2-r0' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main \
     git-lfs \
     git-p4 \
     --repository=http://dl-cdn.alpinelinux.org/alpine/v3.17/main  \

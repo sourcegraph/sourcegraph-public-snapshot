@@ -38,9 +38,8 @@ func (f *Flags) Parse() {
 
 // environments represent the currently available environment targets we may care about
 var environments = map[string]string{
-	"cloud":   "https://sourcegraph.com",
-	"k8s":     "https://k8s.sgdev.org",
-	"preprod": "https://preview.sgdev.dev",
+	"cloud": "https://sourcegraph.com",
+	"k8s":   "https://k8s.sgdev.org",
 }
 
 // Getenv wraps os.Getenv but allows a default fallback value
@@ -70,7 +69,7 @@ func getLiveVersion(client *http.Client, url string) (string, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return version, errors.Newf("received non-200 status code %v", resp.StatusCode)
+		return version, errors.Newf("received non-200 status code %v: %s", resp.StatusCode, err.Error())
 	}
 
 	defer resp.Body.Close()
@@ -78,19 +77,31 @@ func getLiveVersion(client *http.Client, url string) (string, error) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return version, err
-
 	}
 
-	// Response is in format build_date_hash
-	parts := strings.Split(string(body), "_")
+	return getCommitFromLiveVersion(string(body))
+}
+
+// getCommitFromLiveVersion strips the SHA from the live version string
+func getCommitFromLiveVersion(liveVersion string) (string, error) {
+	// Response is in format taggedversion-build_date_hash
+	parts := strings.Split(liveVersion, "_")
 
 	if len(parts) != 3 {
-		return version, errors.Newf("unknown version format %s", string(body))
+		return liveVersion, errors.Newf("unknown version format %s", liveVersion)
 	}
 
-	version = parts[2]
+	version := parts[2]
 
-	return version, nil
+	// New version format for continuous builds includes the tagged version, which needs to be stripped
+	parts = strings.Split(version, "-")
+	if len(parts) != 2 {
+		return version, errors.Newf("Unable to get SHA from version with format %s", version)
+	}
+
+	sha := parts[1]
+
+	return sha, nil
 }
 
 // checkForCommit checks for the current version in the

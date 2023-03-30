@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/binary"
 	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -163,7 +164,7 @@ func (r *GitTreeEntryResolver) Binary(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return highlight.IsBinary(r.fullContentBytes), nil
+	return binary.IsBinary(r.fullContentBytes), nil
 }
 
 func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
@@ -311,31 +312,6 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 	})
 }
 
-func (r *GitTreeEntryResolver) CodeIntelSupport(ctx context.Context) (resolverstubs.GitBlobCodeIntelSupportResolver, error) {
-	repo, err := r.commit.repoResolver.repo(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return EnterpriseResolvers.codeIntelResolver.GitBlobCodeIntelInfo(ctx, &resolverstubs.GitTreeEntryCodeIntelInfoArgs{
-		Repo: repo,
-		Path: r.Path(),
-	})
-}
-
-func (r *GitTreeEntryResolver) CodeIntelInfo(ctx context.Context) (resolverstubs.GitTreeCodeIntelSupportResolver, error) {
-	repo, err := r.commit.repoResolver.repo(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return EnterpriseResolvers.codeIntelResolver.GitTreeCodeIntelInfo(ctx, &resolverstubs.GitTreeEntryCodeIntelInfoArgs{
-		Repo:   repo,
-		Commit: string(r.Commit().OID()),
-		Path:   r.Path(),
-	})
-}
-
 func (r *GitTreeEntryResolver) LocalCodeIntel(ctx context.Context) (*JSONValue, error) {
 	repo, err := r.commit.repoResolver.repo(ctx)
 	if err != nil {
@@ -400,6 +376,14 @@ func (r *GitTreeEntryResolver) LFS(ctx context.Context) (*lfsResolver, error) {
 		return nil, err
 	}
 	return parseLFSPointer(content), nil
+}
+
+func (r *GitTreeEntryResolver) Ownership(ctx context.Context, args ListOwnershipArgs) (OwnershipConnectionResolver, error) {
+	_, ok := r.ToGitBlob()
+	if !ok {
+		return nil, nil
+	}
+	return EnterpriseResolvers.ownResolver.GitBlobOwnership(ctx, r, args)
 }
 
 func (r *GitTreeEntryResolver) parent(ctx context.Context) (*GitTreeEntryResolver, error) {

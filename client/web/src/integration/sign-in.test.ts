@@ -30,6 +30,10 @@ describe('SignIn', () => {
                 currentUser: null,
             }),
         })
+        testContext.overrideJsContext({
+            currentUser: undefined,
+        })
+
         await driver.page.goto(driver.sourcegraphBaseUrl + '/sign-in')
         await driver.page.waitForSelector('#username-or-email')
         await driver.page.waitForSelector('input[name="password"]')

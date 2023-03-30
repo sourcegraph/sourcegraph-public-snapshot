@@ -7,4 +7,4 @@ import { cleanup } from '@testing-library/react'
  * Normally `cleanup` should be called automatically after each test.
  * https://testing-library.com/docs/svelte-testing-library/api/#cleanup
  */
-global.afterEach(cleanup)
+afterEach(cleanup)

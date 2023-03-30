@@ -12,14 +12,16 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	iauth "github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
@@ -56,7 +58,7 @@ func HandleSignUp(logger log.Logger, db database.DB) http.HandlerFunc {
 		if handleEnabledCheck(logger, w) {
 			return
 		}
-		if pc, _ := getProviderConfig(); !pc.AllowSignup {
+		if pc, _ := GetProviderConfig(); !pc.AllowSignup {
 			http.Error(w, "Signup is not enabled (builtin auth provider allowSignup site configuration option)", http.StatusNotFound)
 			return
 		}
@@ -96,7 +98,7 @@ func checkEmailAbuse(ctx context.Context, db database.DB, addr string) (abused b
 	return false, "", nil
 }
 
-// doServeSignUp is called to create a new user account. It is called for the normal user signup process (where a
+// handleSignUp is called to create a new user account. It is called for the normal user signup process (where a
 // non-admin user is created) and for the site initialization process (where the initial site admin user account is
 // created).
 //
@@ -112,22 +114,54 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 		http.Error(w, "could not decode request body", http.StatusBadRequest)
 		return
 	}
+	err, statusCode, usr := unsafeSignUp(r.Context(), logger, db, creds, failIfNewUserIsNotInitialSiteAdmin)
+	if err != nil {
+		http.Error(w, err.Error(), statusCode)
+		return
+	}
 
+	// Write the session cookie
+	a := &sgactor.Actor{UID: usr.ID}
+	if err := session.SetActor(w, r, a, 0, usr.CreatedAt); err != nil {
+		httpLogError(logger.Error, w, "Could not create new user session", http.StatusInternalServerError, log.Error(err))
+	}
+
+	// Track user data
+	if r.UserAgent() != "Sourcegraph e2etest-bot" || r.UserAgent() != "test" {
+		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, LastSourceURL: creds.LastSourceURL, DatabaseID: usr.ID})
+	}
+
+	if err = usagestats.LogBackendEvent(db, sgactor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
+		logger.Warn("Failed to log event SignUpSucceeded", log.Error(err))
+	}
+}
+
+// unsafeSignUp is called to create a new user account. It is called for the normal user signup process (where a
+// non-admin user is created) and for the site initialization process (where the initial site admin user account is
+// created).
+//
+// 🚨 SECURITY: Any change to this function could introduce security exploits
+// and/or break sign up / initial admin account creation. Be careful.
+func unsafeSignUp(
+	ctx context.Context,
+	logger log.Logger,
+	db database.DB,
+	creds credentials,
+	failIfNewUserIsNotInitialSiteAdmin bool,
+) (error, int, *types.User) {
 	const defaultErrorMessage = "Signup failed unexpectedly."
 
 	if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(creds.Username); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return err, http.StatusBadRequest, nil
 	}
-	if err := checkEmailFormat(creds.Email); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+	if err := CheckEmailFormat(creds.Email); err != nil {
+		return err, http.StatusBadRequest, nil
 	}
 
 	// Create the user.
 	//
 	// We don't need to check the builtin auth provider's allowSignup because we assume the caller
-	// of doServeSignUp checks it, or else that failIfNewUserIsNotInitialSiteAdmin == true (in which
+	// of handleSignUp checks it, or else that failIfNewUserIsNotInitialSiteAdmin == true (in which
 	// case the only signup allowed is that of the initial site admin).
 	newUserData := database.NewUser{
 		Email:                 creds.Email,
@@ -144,8 +178,7 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 		code, err := backend.MakeEmailVerificationCode()
 		if err != nil {
 			logger.Error("Error generating email verification code for new user.", log.String("email", creds.Email), log.String("username", creds.Username), log.Error(err))
-			http.Error(w, defaultErrorMessage, http.StatusInternalServerError)
-			return
+			return errors.New(defaultErrorMessage), http.StatusInternalServerError, nil
 		}
 		newUserData.EmailVerificationCode = code
 	}
@@ -153,19 +186,18 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 	// Prevent abuse (users adding emails of other people whom they want to annoy) with the
 	// following abuse prevention checks.
 	if conf.EmailVerificationRequired() && !newUserData.EmailIsVerified {
-		abused, reason, err := checkEmailAbuse(r.Context(), db, creds.Email)
+		abused, reason, err := checkEmailAbuse(ctx, db, creds.Email)
 		if err != nil {
 			logger.Error("Error checking email abuse", log.String("email", creds.Email), log.Error(err))
-			http.Error(w, defaultErrorMessage, http.StatusInternalServerError)
-			return
+			return errors.New(defaultErrorMessage), http.StatusInternalServerError, nil
 		} else if abused {
 			logger.Error("Possible email address abuse prevented", log.String("email", creds.Email), log.String("reason", reason))
-			http.Error(w, "Email address is possibly being abused, please try again later or use a different email address.", http.StatusTooManyRequests)
-			return
+			msg := "Email address is possibly being abused, please try again later or use a different email address."
+			return errors.New(msg), http.StatusTooManyRequests, nil
 		}
 	}
 
-	usr, err := db.Users().Create(r.Context(), newUserData)
+	usr, err := db.Users().Create(ctx, newUserData)
 	if err != nil {
 		var (
 			message    string
@@ -187,17 +219,17 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 			message = defaultErrorMessage
 			statusCode = http.StatusInternalServerError
 		}
+		if deploy.IsApp() && strings.Contains(err.Error(), "site_already_initialized") {
+			return nil, http.StatusOK, nil
+		}
 		logger.Error("Error in user signup.", log.String("email", creds.Email), log.String("username", creds.Username), log.Error(err))
-		http.Error(w, message, statusCode)
-
-		if err = usagestats.LogBackendEvent(db, sgactor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpFailed", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
+		if err = usagestats.LogBackendEvent(db, sgactor.FromContext(ctx).UID, deviceid.FromContext(ctx), "SignUpFailed", nil, nil, featureflag.GetEvaluatedFlagSet(ctx), nil); err != nil {
 			logger.Warn("Failed to log event SignUpFailed", log.Error(err))
 		}
-
-		return
+		return errors.New(message), statusCode, nil
 	}
 
-	if err = db.Authz().GrantPendingPermissions(r.Context(), &database.GrantPendingPermissionsArgs{
+	if err = db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
 		UserID: usr.ID,
 		Perm:   authz.Read,
 		Type:   authz.PermRepos,
@@ -206,30 +238,16 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 	}
 
 	if conf.EmailVerificationRequired() && !newUserData.EmailIsVerified {
-		if err := backend.SendUserEmailVerificationEmail(r.Context(), usr.Username, creds.Email, newUserData.EmailVerificationCode); err != nil {
+		if err := backend.SendUserEmailVerificationEmail(ctx, usr.Username, creds.Email, newUserData.EmailVerificationCode); err != nil {
 			logger.Error("failed to send email verification (continuing, user's email will be unverified)", log.String("email", creds.Email), log.Error(err))
-		} else if err = db.UserEmails().SetLastVerification(r.Context(), usr.ID, creds.Email, newUserData.EmailVerificationCode, time.Now()); err != nil {
+		} else if err = db.UserEmails().SetLastVerification(ctx, usr.ID, creds.Email, newUserData.EmailVerificationCode, time.Now()); err != nil {
 			logger.Error("failed to set email last verification sent at (user's email is verified)", log.String("email", creds.Email), log.Error(err))
 		}
 	}
-
-	// Write the session cookie
-	a := &sgactor.Actor{UID: usr.ID}
-	if err := session.SetActor(w, r, a, 0, usr.CreatedAt); err != nil {
-		httpLogError(logger.Error, w, "Could not create new user session", http.StatusInternalServerError, log.Error(err))
-	}
-
-	// Track user data
-	if r.UserAgent() != "Sourcegraph e2etest-bot" {
-		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, LastSourceURL: creds.LastSourceURL, DatabaseID: usr.ID})
-	}
-
-	if err = usagestats.LogBackendEvent(db, sgactor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
-		logger.Warn("Failed to log event SignUpSucceeded", log.Error(err))
-	}
+	return nil, http.StatusOK, usr
 }
 
-func checkEmailFormat(email string) error {
+func CheckEmailFormat(email string) error {
 	// Max email length is 320 chars https://datatracker.ietf.org/doc/html/rfc3696#section-3
 	if len(email) > 320 {
 		return errors.Newf("maximum email length is 320, got %d", len(email))
@@ -363,14 +381,14 @@ func HandleUnlockAccount(logger log.Logger, _ database.DB, store LockoutStore) h
 			return
 		}
 
-		valid, error := store.VerifyUnlockAccountTokenAndReset(unlockAccountInfo.Token)
+		valid, err := store.VerifyUnlockAccountTokenAndReset(unlockAccountInfo.Token)
 
-		if !valid || error != nil {
-			err := "invalid token provided"
-			if error != nil {
-				err = error.Error()
+		if !valid || err != nil {
+			errStr := "invalid token provided"
+			if err != nil {
+				errStr = err.Error()
 			}
-			httpLogError(logger.Warn, w, err, http.StatusUnauthorized)
+			httpLogError(logger.Warn, w, errStr, http.StatusUnauthorized)
 			return
 		}
 	}
@@ -378,7 +396,7 @@ func HandleUnlockAccount(logger log.Logger, _ database.DB, store LockoutStore) h
 
 func HandleUnlockUserAccount(_ log.Logger, db database.DB, store LockoutStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := iauth.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
+		if err := auth.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
 			http.Error(w, "Only site admins can unlock user accounts", http.StatusUnauthorized)
 			return
 		}
@@ -453,7 +471,7 @@ func HandleCheckUsernameTaken(logger log.Logger, db database.DB) http.HandlerFun
 	logger = logger.Scoped("HandleCheckUsernameTaken", "checks for username uniqueness")
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		username, err := auth.NormalizeUsername(vars["username"])
+		username, err := NormalizeUsername(vars["username"])
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
@@ -477,3 +495,51 @@ func httpLogError(logFunc func(string, ...log.Field), w http.ResponseWriter, msg
 	logFunc(msg, errArgs...)
 	http.Error(w, msg, code)
 }
+
+// NormalizeUsername normalizes a proposed username into a format that meets Sourcegraph's
+// username formatting rules (based on, but not identical to
+// https://web.archive.org/web/20180215000330/https://help.github.com/enterprise/2.11/admin/guides/user-management/using-ldap):
+//
+// - Any characters not in `[a-zA-Z0-9-._]` are replaced with `-`
+// - Usernames with exactly one `@` character are interpreted as an email address, so the username will be extracted by truncating at the `@` character.
+// - Usernames with two or more `@` characters are not considered an email address, so the `@` will be treated as a non-standard character and be replaced with `-`
+// - Usernames with consecutive `-` or `.` characters are not allowed, so they are replaced with a single `-` or `.`
+// - Usernames that start with `.` or `-` are not allowed, starting periods and dashes are removed
+// - Usernames that end with `.` are not allowed, ending periods are removed
+//
+// Usernames that could not be converted return an error.
+//
+// Note: Do not forget to change database constraints on "users" and "orgs" tables.
+func NormalizeUsername(name string) (string, error) {
+	origName := name
+
+	// If the username is an email address, extract the username part.
+	if i := strings.Index(name, "@"); i != -1 && i == strings.LastIndex(name, "@") {
+		name = name[:i]
+	}
+
+	// Replace all non-alphanumeric characters with a dash.
+	name = disallowedCharacter.ReplaceAllString(name, "-")
+
+	// Replace all consecutive dashes and periods with a single dash.
+	name = consecutivePeriodsDashes.ReplaceAllString(name, "-")
+
+	// Trim leading and trailing dashes and periods.
+	name = sequencesToTrim.ReplaceAllString(name, "")
+
+	if name == "" {
+		return "", errors.Errorf("username %q could not be normalized to acceptable format", origName)
+	}
+
+	if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(name); err != nil {
+		return "", err
+	}
+
+	return name, nil
+}
+
+var (
+	disallowedCharacter      = lazyregexp.New(`[^\w\-\.]`)
+	consecutivePeriodsDashes = lazyregexp.New(`[\-\.]{2,}`)
+	sequencesToTrim          = lazyregexp.New(`(^[\-\.])|(\.$)|`)
+)

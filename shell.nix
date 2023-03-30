@@ -16,6 +16,19 @@ let
     #!${pkgs.stdenv.shell}
     exec ${pkgs.universal-ctags}/bin/ctags "$@"
   '';
+
+  # We let bazelisk manage the bazel version since we actually need to run two
+  # different versions thanks to aspect. Additionally bazelisk allows us to do
+  # things like "bazel configure". So we just install a script called bazel
+  # which calls bazelisk.
+  #
+  # Additionally bazel seems to break when CC and CXX is set to a nix managed
+  # compiler on darwin. So the script unsets those.
+  bazelisk = pkgs.writeScriptBin "bazel" ''
+    #!${pkgs.stdenv.shell}
+    unset CC CXX
+    exec ${pkgs.bazelisk}/bin/bazelisk "$@"
+  '';
 in
 pkgs.mkShell {
   name = "sourcegraph-dev";
@@ -35,7 +48,7 @@ pkgs.mkShell {
     universal-ctags
 
     # Build our backend.
-    go_1_19
+    go_1_20
 
     # Lots of our tooling and go tests rely on git et al.
     git
@@ -51,12 +64,11 @@ pkgs.mkShell {
     # Web tools. Need node 16.7 so we use unstable. Yarn should also be built
     # against it.
     nodejs-16_x
-    (nodePackages.pnpm.override {
-      nodejs = nodejs-16_x;
-      version = "7.24.2";
+    (nodejs-16_x.pkgs.pnpm.override {
+      version = "7.28.0";
       src = fetchurl {
-        url = "https://registry.npmjs.org/pnpm/-/pnpm-7.24.2.tgz";
-        sha512 = "sha512-XDTYvZf3xF/kaX0pcdh9GWpak9tV5uDGuNCjkN1SFa0UE350mJGpszmM/j2rVyfoOOFzVR73GNdN3Purd4rXlg==";
+        url = "https://registry.npmjs.org/pnpm/-/pnpm-7.28.0.tgz";
+        sha512 = "sha512-nbuY07S2519jEjaV9KLjSFmOwh0b6KIViIdc/RCJkgco8SZa2+ikQQe4N3CfNn5By5BH0dKVbZ8Ox1Mw8wItSA==";
       };
     })
     nodePackages.typescript
@@ -69,8 +81,7 @@ pkgs.mkShell {
     libiconv
     clippy
 
-    # The future?
-    bazel_6
+    bazelisk
   ];
 
   # Startup postgres

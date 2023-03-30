@@ -5,7 +5,7 @@ import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { Badge, Link, H2, Text, AnchorLink, Button } from '@sourcegraph/wildcard'
+import { Badge, Link, H2, Text } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -17,9 +17,6 @@ interface AuthProviderNodeProps {
     /** The auth provider to display in this item. */
     node: AuthProviderFields
 }
-
-/** Whether to show experimental auth features. */
-export const authExp = localStorage.getItem('authExp') !== null
 
 class AuthProviderNode extends React.PureComponent<AuthProviderNodeProps> {
     public render(): JSX.Element | null {
@@ -37,15 +34,6 @@ class AuthProviderNode extends React.PureComponent<AuthProviderNodeProps> {
                             </small>
                         )}
                     </div>
-                    {authExp && (
-                        <div className="text-nowrap">
-                            {this.props.node.authenticationURL && (
-                                <Button to={this.props.node.authenticationURL} variant="secondary" as={AnchorLink}>
-                                    Authenticate
-                                </Button>
-                            )}
-                        </div>
-                    )}
                 </div>
             </li>
         )
@@ -117,7 +105,7 @@ export class SiteAdminAuthenticationProvidersPage extends React.Component<Props>
             args
         ).pipe(
             map(({ data, errors }) => {
-                if (!data || !data.site || !data.site.authProviders || errors) {
+                if (!data?.site?.authProviders || errors) {
                     throw createAggregateError(errors)
                 }
                 return data.site.authProviders

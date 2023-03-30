@@ -12,6 +12,7 @@ import (
 )
 
 var ErrMustBeSiteAdmin = errors.New("must be site admin")
+var ErrMustBeSiteAdminOrSameUser = &InsufficientAuthorizationError{"must be authenticated as the authorized user or site admin"}
 
 // CheckCurrentUserIsSiteAdmin returns an error if the current user is NOT a site admin.
 func CheckCurrentUserIsSiteAdmin(ctx context.Context, db database.DB) error {
@@ -38,10 +39,10 @@ func CheckUserIsSiteAdmin(ctx context.Context, db database.DB, userID int32) err
 	}
 	user, err := db.Users().GetByID(ctx, userID)
 	if err != nil {
+		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
+			return ErrNotAuthenticated
+		}
 		return err
-	}
-	if user == nil {
-		return ErrNotAuthenticated
 	}
 	if !user.SiteAdmin {
 		return ErrMustBeSiteAdmin
@@ -75,7 +76,7 @@ func CheckSiteAdminOrSameUser(ctx context.Context, db database.DB, subjectUserID
 	if isSiteAdminErr == nil {
 		return nil
 	}
-	return &InsufficientAuthorizationError{"must be authenticated as the authorized user or site admin"}
+	return ErrMustBeSiteAdminOrSameUser
 }
 
 // CheckSameUser returns an error if the user is not the user specified by

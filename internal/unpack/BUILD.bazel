@@ -13,6 +13,7 @@ go_library(
 
 go_test(
     name = "unpack_test",
+    timeout = "short",
     srcs = ["unpack_test.go"],
     embed = [":unpack"],
     deps = [

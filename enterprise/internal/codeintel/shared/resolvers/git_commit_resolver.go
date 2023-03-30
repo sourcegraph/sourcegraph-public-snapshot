@@ -7,11 +7,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type GitCommitResolver struct {
+type gitCommitResolver struct {
 	// oid MUST be specified and a 40-character Git SHA.
-	oid GitObjectID
+	oid gitObjectID
 
 	repoResolver *RepositoryResolver
 
@@ -20,29 +22,32 @@ type GitCommitResolver struct {
 	inputRev *string
 }
 
-// NewGitCommitResolver returns a new CommitResolver. When commit is set to nil,
+// newGitCommitResolver returns a new CommitResolver. When commit is set to nil,
 // commit will be loaded lazily as needed by the resolver. Pass in a commit when
 // you have batch-loaded a bunch of them and already have them at hand.
-func NewGitCommitResolver(repo *RepositoryResolver, id api.CommitID) *GitCommitResolver {
-	return &GitCommitResolver{
-		oid:          GitObjectID(id),
+func newGitCommitResolver(repo *RepositoryResolver, id api.CommitID) *gitCommitResolver {
+	return &gitCommitResolver{
+		oid:          gitObjectID(id),
 		repoResolver: repo,
 	}
 }
 
-func (r *GitCommitResolver) ID() graphql.ID {
-	return marshalGitCommitID(r.repoResolver.ID(), r.oid)
+func (r *gitCommitResolver) ID() graphql.ID {
+	return resolverstubs.MarshalID("GitCommit", struct {
+		Repository graphql.ID  `json:"r"`
+		CommitID   gitObjectID `json:"c"`
+	}{Repository: r.repoResolver.ID(), CommitID: r.oid})
 }
 
-func (r *GitCommitResolver) Repository() resolverstubs.RepositoryResolver { return r.repoResolver }
+func (r *gitCommitResolver) Repository() resolverstubs.RepositoryResolver { return r.repoResolver }
 
-func (r *GitCommitResolver) OID() resolverstubs.GitObjectID { return resolverstubs.GitObjectID(r.oid) }
+func (r *gitCommitResolver) OID() resolverstubs.GitObjectID { return resolverstubs.GitObjectID(r.oid) }
 
-func (r *GitCommitResolver) AbbreviatedOID() string {
+func (r *gitCommitResolver) AbbreviatedOID() string {
 	return string(r.oid)[:7]
 }
 
-func (r *GitCommitResolver) URL() string {
+func (r *gitCommitResolver) URL() string {
 	u := r.repoResolver.url()
 	u.Path += "/-/commit/" + r.inputRevOrImmutableRev()
 	return u.String()
@@ -50,18 +55,15 @@ func (r *GitCommitResolver) URL() string {
 
 // inputRevOrImmutableRev returns the input revspec, if it is provided and nonempty. Otherwise it returns the
 // canonical OID for the revision.
-func (r *GitCommitResolver) inputRevOrImmutableRev() string {
+func (r *gitCommitResolver) inputRevOrImmutableRev() string {
 	if r.inputRev != nil && *r.inputRev != "" {
 		return *r.inputRev
 	}
 	return string(r.oid)
 }
 
-func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
-	// Dereference to copy the URL to avoid mutation
-	repoURL := *r.repoResolver.RepoMatch.URL()
-	repoURL.Path += "@" + string(r.oid)
-	return &repoURL
+func (r *gitCommitResolver) canonicalRepoRevURL() *url.URL {
+	return &url.URL{Path: "/" + r.repoResolver.Name() + "@" + string(r.oid)}
 }
 
 // repoRevURL returns the URL path prefix to use when constructing URLs to resources at this
@@ -69,9 +71,8 @@ func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
 // given. This is because the convention in the frontend is for repo-rev URLs to omit the "@rev"
 // portion (unlike for commit page URLs, which must include some revspec in
 // "/REPO/-/commit/REVSPEC").
-func (r *GitCommitResolver) repoRevURL() *url.URL {
-	// Dereference to copy to avoid mutation
-	repoURL := *r.repoResolver.RepoMatch.URL()
+func (r *gitCommitResolver) repoRevURL() *url.URL {
+	repoURL := &url.URL{Path: "/" + r.repoResolver.Name()}
 	var rev string
 	if r.inputRev != nil {
 		rev = *r.inputRev // use the original input rev from the user
@@ -81,5 +82,15 @@ func (r *GitCommitResolver) repoRevURL() *url.URL {
 	if rev != "" {
 		repoURL.Path += "@" + rev
 	}
-	return &repoURL
+	return repoURL
+}
+
+type gitObjectID string
+
+func (id *gitObjectID) UnmarshalGraphQL(input any) error {
+	if input, ok := input.(string); ok && gitserver.IsAbsoluteRevision(input) {
+		*id = gitObjectID(input)
+		return nil
+	}
+	return errors.New("GitObjectID: expected 40-character string (SHA-1 hash)")
 }

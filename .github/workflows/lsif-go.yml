@@ -18,7 +18,7 @@ jobs:
     steps:
       # Setup
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       # Run lsif-go
       - name: Run lsif-go

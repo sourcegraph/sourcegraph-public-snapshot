@@ -1,24 +1,21 @@
-import { createMemoryHistory } from 'history'
 import { noop } from 'lodash'
 import { NEVER } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
-import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SearchPatternType } from '../../graphql-operations'
 
 import { SearchResultsInfoBar, SearchResultsInfoBarProps } from './SearchResultsInfoBar'
 
-const history = createMemoryHistory()
 const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
-    extensionsController,
     platformContext: { settings: NEVER, sourcegraphURL: 'https://sourcegraph.com' },
     authenticatedUser: {
         id: 'userID',
         displayName: 'Chuck Cheese',
         emails: [{ email: 'chuck@chuckeecheese.com', isPrimary: true, verified: true }],
+        permissions: { nodes: [] },
     },
     allExpanded: true,
     onExpandAllResultsToggle: noop,
@@ -30,6 +27,14 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     setSidebarCollapsed: noop,
     sidebarCollapsed: false,
     isSourcegraphDotCom: true,
+    isRankingEnabled: true,
+    setRankingEnabled: noop,
+    options: {
+        version: 'V3',
+        patternType: SearchPatternType.standard,
+        caseSensitive: false,
+        trace: undefined,
+    },
 }
 
 const renderSearchResultsInfoBar = (
@@ -38,20 +43,18 @@ const renderSearchResultsInfoBar = (
     renderWithBrandedContext(
         <MockedTestProvider>
             <SearchResultsInfoBar {...COMMON_PROPS} {...props} />
-        </MockedTestProvider>,
-        { history }
+        </MockedTestProvider>
     )
 
 describe('SearchResultsInfoBar', () => {
-    beforeAll(() => {
-        window.context = {
-            enableLegacyExtensions: false,
-        } as any
-    })
-
     test('code monitoring feature flag disabled', () => {
         expect(
-            renderSearchResultsInfoBar({ query: 'foo type:diff', enableCodeMonitoring: false }).asFragment()
+            renderSearchResultsInfoBar({
+                query: 'foo type:diff',
+                enableCodeMonitoring: false,
+                isRankingEnabled: true,
+                setRankingEnabled: noop,
+            }).asFragment()
         ).toMatchSnapshot()
     })
 

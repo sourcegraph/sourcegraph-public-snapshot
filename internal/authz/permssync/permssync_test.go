@@ -21,7 +21,7 @@ func TestSchedulePermsSync_UserPermsTest(t *testing.T) {
 	permsSyncStore.CreateRepoSyncJobFunc.SetDefaultReturn(nil)
 
 	featureFlags := database.NewMockFeatureFlagStore()
-	featureFlags.GetGlobalFeatureFlagsFunc.SetDefaultReturn(map[string]bool{featureFlagName: true}, nil)
+	featureFlags.GetGlobalFeatureFlagsFunc.SetDefaultReturn(map[string]bool{}, nil)
 
 	db := database.NewMockDB()
 	db.PermissionSyncJobsFunc.SetDefaultReturn(permsSyncStore)
@@ -47,12 +47,8 @@ func TestSchedulePermsSync_RepoPermsTest(t *testing.T) {
 	permsSyncStore.CreateUserSyncJobFunc.SetDefaultReturn(nil)
 	permsSyncStore.CreateRepoSyncJobFunc.SetDefaultReturn(nil)
 
-	featureFlags := database.NewMockFeatureFlagStore()
-	featureFlags.GetGlobalFeatureFlagsFunc.SetDefaultReturn(map[string]bool{featureFlagName: true}, nil)
-
 	db := database.NewMockDB()
 	db.PermissionSyncJobsFunc.SetDefaultReturn(permsSyncStore)
-	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 	syncTime := time.Now().Add(37 * time.Second)
 	request := protocol.PermsSyncRequest{RepoIDs: []api.RepoID{1}, Reason: database.ReasonManualRepoSync, ProcessAfter: syncTime}

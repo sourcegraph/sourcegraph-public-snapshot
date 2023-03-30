@@ -15,7 +15,7 @@ import NpmIcon from 'mdi-react/NpmIcon'
 
 import { hasProperty } from '@sourcegraph/common'
 import { PerforceIcon, PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
-import { Link, Code, Text } from '@sourcegraph/wildcard'
+import { Link, Code, Text, setLinkComponent, RouterLink } from '@sourcegraph/wildcard'
 
 import awsCodeCommitSchemaJSON from '../../../../../schema/aws_codecommit.schema.json'
 import azureDevOpsSchemaJSON from '../../../../../schema/azuredevops.schema.json'
@@ -44,6 +44,8 @@ import {
 import { EditorAction } from '../../settings/EditorActionsGroup'
 
 import { GerritIcon } from './GerritIcon'
+
+setLinkComponent(RouterLink)
 
 /**
  * Metadata associated with adding a given external service.
@@ -519,6 +521,18 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
             const value = { secret: '<any_secret_string>' }
             const edits = modify(config, ['webhooks', -1], value, defaultModificationOptions)
             return { edits, selectText: '<any_secret_string>' }
+        },
+    },
+]
+
+const azureDevOpsEditorActions = (): EditorAction[] => [
+    {
+        id: 'excludeRepo',
+        label: 'Exclude a repository',
+        run: (config: string) => {
+            const value = { name: '<project>/<repository>' }
+            const edits = modify(config, ['exclude', -1], value, defaultModificationOptions)
+            return { edits, selectText: '<project>/<repository>' }
         },
     },
 ]
@@ -1295,30 +1309,37 @@ const AZUREDEVOPS: AddExternalServiceOptions = {
     defaultConfig: `{
   "url": "https://dev.azure.com",
   "username": "<username>",
-  "token": "<token>"
+  "token": "<token>",
+  "orgs": [],
+  "projects": []
 }`,
     instructions: (
         <div>
             <ol>
                 <li>
-                    In the configuration below, set <Field>url</Field> to the URL of Azure DevOps Services/Server.
+                    In the configuration below, set <Field>url</Field> to the URL of Azure DevOps Services:{' '}
+                    <Link to="https://dev.azure.com">https://dev.azure.com</Link>.
                 </li>
                 <li>
-                    In the configuration below, set <Field>username</Field> to the authenticated username for the Azure
-                    DevOps Services/Server instance.
+                    In the configuration below, set <Field>username</Field> to the authenticated username for Azure
+                    DevOps Services.
                 </li>
                 <li>
-                    In the configuration below, set <Field>token</Field> to the authenticated token for the Azure DevOps
-                    Services/Server instance. See the{' '}
+                    In the configuration below, set <Field>token</Field> to the authenticated token for Azure DevOps
+                    Services. See the{' '}
                     <Link to="https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&tabs=Windows#create-a-pat">
                         Azure DevOps documentation
                     </Link>{' '}
                     for instructions on how to create a Personal Access Token.
                 </li>
+                <li>
+                    In the configuration below, set <Field>orgs</Field> and/or <Field>projects</Field> to the
+                    organizations/projects you want to sync repositories from.
+                </li>
             </ol>
         </div>
     ),
-    editorActions: [],
+    editorActions: azureDevOpsEditorActions(),
 }
 
 const NPM_PACKAGES: AddExternalServiceOptions = {
@@ -1493,6 +1514,7 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     gitolite: GITOLITE,
     git: GENERIC_GIT,
     gerrit: GERRIT,
+    azuredevops: AZUREDEVOPS,
     ...(window.context?.experimentalFeatures?.pythonPackages === 'enabled' ? { pythonPackages: PYTHON_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.rustPackages === 'enabled' ? { rustPackages: RUST_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.rubyPackages === 'enabled' ? { rubyPackages: RUBY_PACKAGES } : {}),
@@ -1501,7 +1523,6 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     ...(window.context?.experimentalFeatures?.npmPackages === 'enabled' ? { npmPackages: NPM_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
     ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
-    ...(window.context?.experimentalFeatures?.azureDevOps === 'enabled' ? { azuredevops: AZUREDEVOPS } : {}),
 }
 
 export const nonCodeHostExternalServices: Record<string, AddExternalServiceOptions> = {
@@ -1535,7 +1556,7 @@ export const defaultExternalServices: Record<ExternalServiceKind, AddExternalSer
 }
 
 export const externalRepoIcon = (
-    externalRepo: ExternalRepositoryFields
+    externalRepo: Pick<ExternalRepositoryFields, 'serviceType'>
 ): React.ComponentType<{ className?: string }> | undefined => {
     const externalServiceKind = externalRepo.serviceType.toUpperCase() as ExternalServiceKind
     return defaultExternalServices[externalServiceKind]?.icon ?? undefined

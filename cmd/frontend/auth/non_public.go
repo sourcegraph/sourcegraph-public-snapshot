@@ -65,6 +65,7 @@ var (
 		router.Favicon:            {},
 		router.Logout:             {},
 		router.SignUp:             {},
+		router.RequestAccess:      {},
 		router.SiteInit:           {},
 		router.SignIn:             {},
 		router.SignOut:            {},
@@ -79,6 +80,7 @@ var (
 		uirouter.RouteSignUp:             {},
 		uirouter.RoutePasswordReset:      {},
 		uirouter.RoutePingFromSelfHosted: {},
+		uirouter.RouteRequestAccess:      {},
 	}
 	// Some routes return non-standard HTTP responses when a user is not
 	// signed in.

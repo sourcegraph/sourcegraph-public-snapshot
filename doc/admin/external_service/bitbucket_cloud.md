@@ -15,28 +15,46 @@ Currently, all repositories belonging to the user configured will be synced.
 
 In addition, there is one more field for configuring which repositories are mirrored:
 
-- [`teams`](bitbucket_cloud.md#configuration)<br>A list of teams that the configured user has access to whose repositories should be synced.
+- [`teams`](bitbucket_cloud.md#configuration)<br>A list of teams (workspaces) that the configured user has access to whose repositories should be synced.
 - [`exclude`](bitbucket_cloud.md#configuration)<br>A list of repositories to exclude, which takes precedence over the `teams` field.
 
 ### HTTPS cloning
 
 Sourcegraph clones repositories from your Bitbucket Cloud via HTTP(S), using the [`username`](bitbucket_cloud.md#configuration) and [`appPassword`](bitbucket_cloud.md#configuration) required fields you provide in the configuration.
 
-## Internal rate limits
+## Rate limits
 
-Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to Bitbucket Cloud. 
+Read about how Bitbucket Cloud applies rate limits [here](https://support.atlassian.com/bitbucket-cloud/docs/api-request-limits/).
 
-If enabled, the default rate is set at 7200 per hour (2 per second), which can be configured via the `requestsPerHour` field (see below):
+When Sourcegraph encounters rate limits on Bitbucket Cloud, it will retry the request with exponential back-off, until 5 minutes have passed. If the connection is still being rate limited after 5 minutes, the request will be dropped.
 
-- For Sourcegraph <=3.38, if rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
-- For Sourcegraph >=3.39, rate limiting should be enabled and configured for each individual code host connection.
+### Internal rate limits
 
-**NOTE** Internal rate limiting is only currently applied when synchronizing changesets in [batch changes](../../batch_changes/index.md), repository permissions, and repository metadata from code hosts.
+See [Internal rate limits](./rate_limits.md#internal-rate-limits)
 
 ## User authentication
 
 To configure Bitbucket Cloud as an authentication provider (which will enable sign-in via Bitbucket Cloud), see the
 [authentication documentation](../auth/index.md#bitbucket-cloud).
+
+## Repository permissions
+
+Prerequisite: [Add Bitbucket Cloud as an authentication provider](#user-authentication).
+
+Then, add or edit a Bitbucket Cloud connection as described above and include the `authorization` field:
+
+```json
+{
+  // The URL used to set up the Bitbucket Cloud authentication provider must match this URL.
+  "url": "https://bitbucket.com",
+  "username": "horsten",
+  "appPassword": "$APP_PASSWORD",
+  // ...
+  "authorization": {}
+}
+```
+
+> NOTE: It can take some time to complete full cycle of repository permissions sync if you have a large number of users or repositories. [See sync duration time](../permissions/syncing.md#sync-duration) for more information.
 
 ## Configuration
 
@@ -48,4 +66,4 @@ Bitbucket Cloud connections support the following configuration options, which a
 
 Using the `webhooks` property on the external service has been deprecated.
 
-Please consult [this page](../config/webhooks.md) in order to configure webhooks.
+Please consult [this page](../config/webhooks/incoming.md) in order to configure webhooks.

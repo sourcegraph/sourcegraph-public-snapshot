@@ -1,5 +1,4 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import * as H from 'history'
 import { WildcardMockLink } from 'wildcard-mock-link'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -13,7 +12,7 @@ import { OutboundWebhooksPage } from './OutboundWebhooksPage'
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
-    title: 'web/site-admin/outbound-webhooks/OutboundWebhooksPage',
+    title: 'web/site-admin/webhooks/outgoing/OutboundWebhooksPage',
     decorators: [decorator],
 }
 
@@ -23,12 +22,7 @@ export const Empty: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={new WildcardMockLink([buildOutboundWebhooksConnectionLink(0)])}>
-                <OutboundWebhooksPage
-                    match={{} as any}
-                    history={H.createMemoryHistory()}
-                    location={{} as any}
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                />
+                <OutboundWebhooksPage telemetryService={NOOP_TELEMETRY_SERVICE} />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -40,12 +34,7 @@ export const NotEmpty: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={new WildcardMockLink([buildOutboundWebhooksConnectionLink(20)])}>
-                <OutboundWebhooksPage
-                    match={{} as any}
-                    history={H.createMemoryHistory()}
-                    location={{} as any}
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                />
+                <OutboundWebhooksPage telemetryService={NOOP_TELEMETRY_SERVICE} />
             </MockedTestProvider>
         )}
     </WebStory>

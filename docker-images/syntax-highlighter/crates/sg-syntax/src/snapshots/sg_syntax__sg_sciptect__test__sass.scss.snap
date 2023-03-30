@@ -1,0 +1,54 @@
+---
+source: crates/sg-syntax/src/sg_sciptect.rs
+assertion_line: 616
+expression: "snapshot_sciptect_documents(&document, &contents)"
+---
+  @import '@reach/dialog/styles.css';
+//^^^^^^^ Keyword keyword.control.at-rule.css.sass
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral string.quoted.single.sass
+  
+  :root {
+//^^^^^ TagAttribute entity.other.attribute-name.tag.pseudo-class
+      --modal-body-padding: 1.5rem;
+//    ^^^^^^^^^^^^^^^^^^^^ IdentifierType support.type.property-name.css.sass
+//                         ^^^^ NumericLiteral constant.numeric.sass
+//                             ^^^ Keyword keyword.other.unit.scss
+  }
+  
+  [data-reach-dialog-overlay] {
+//^ PunctuationBracket punctuation.definition.entity.scss
+// ^^^^^^^^^^^^^^^^^^^^^^^^^ TagAttribute entity.other.attribute-name.attribute.scss
+      background-color: var(--modal-bg);
+//    ^^^^^^^^^^^^^^^^ IdentifierType support.type.property-name.css.sass
+//                      ^^^ Keyword keyword.control.untitled
+  }
+  
+  
+  /*
+//^^ Comment 11:0..13:3 comment.block.sass
+   * Positions
+   */
+  .center,
+//^^^^^^^ TagAttribute entity.other.attribute-name.class.sass
+  .top-third {
+//^^^^^^^^^^ TagAttribute entity.other.attribute-name.class.sass
+      transform: translate(-50%, -50%);
+//    ^^^^^^^^^ IdentifierType support.type.property-name.css.sass
+//                       ^ IdentifierFunction support.function.misc.scss
+//                        ^ PunctuationBracket punctuation.section.function.scss
+//                                   ^ PunctuationBracket punctuation.section.function.scss
+      position: absolute;
+//    ^^^^^^^^ IdentifierType support.type.property-name.css.sass
+      top: 50%;
+//    ^^^ IdentifierType support.type.property-name.css.sass
+//        ^^^ NumericLiteral constant.numeric.sass
+//           ^ Keyword keyword.other.unit.scss
+      margin: 0;
+//    ^^^^^^ IdentifierType support.type.property-name.css.sass
+//           ^^ NumericLiteral constant.numeric.sass
+      left: 50%;
+//    ^^^^ IdentifierType support.type.property-name.css.sass
+//         ^^^ NumericLiteral constant.numeric.sass
+//            ^ Keyword keyword.other.unit.scss
+  }
+

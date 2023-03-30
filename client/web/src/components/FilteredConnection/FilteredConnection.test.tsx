@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 
 import { cleanup, fireEvent, render, screen, waitFor, act } from '@testing-library/react'
 import * as H from 'history'
-import { MemoryRouter, useLocation } from 'react-router-dom-v5-compat'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { BehaviorSubject } from 'rxjs'
 import sinon from 'sinon'
 

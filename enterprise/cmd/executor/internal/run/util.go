@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"net/url"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -81,9 +80,12 @@ func getIgniteVersion(ctx context.Context) (string, error) {
 	return execOutput(ctx, "ignite", "version", "-o", "short")
 }
 
+// execCommand allows the ability to mock the command in unit tests.
+var execCommand = exec.CommandContext
+
 func execOutput(ctx context.Context, name string, args ...string) (string, error) {
 	var buf bytes.Buffer
-	cmd := exec.CommandContext(ctx, name, args...)
+	cmd := execCommand(ctx, name, args...)
 	cmd.Stderr = &buf
 	cmd.Stdout = &buf
 	if err := cmd.Run(); err != nil {
@@ -131,13 +133,9 @@ func workerOptions(c *config.Config) workerutil.WorkerOptions {
 }
 
 func dockerOptions(c *config.Config) command.DockerOptions {
-	u, _ := url.Parse(c.FrontendURL)
 	return command.DockerOptions{
 		DockerAuthConfig: c.DockerAuthConfig,
-		// If the configured Sourcegraph endpoint is host.docker.internal add a
-		// host entry and route to it to the containers. This is used for LSIF
-		// uploads and should not be required anymore once we support native uploads.
-		AddHostGateway: u.Hostname() == "host.docker.internal",
+		AddHostGateway:   c.DockerAddHostGateway,
 	}
 }
 
@@ -183,12 +181,14 @@ func queueOptions(c *config.Config, telemetryOptions queue.TelemetryOptions) que
 
 func filesOptions(c *config.Config) apiclient.BaseClientOptions {
 	return apiclient.BaseClientOptions{
+		ExecutorName:    c.WorkerHostname,
 		EndpointOptions: endpointOptions(c, "/.executors/files"),
 	}
 }
 
 func baseClientOptions(c *config.Config, pathPrefix string) apiclient.BaseClientOptions {
 	return apiclient.BaseClientOptions{
+		ExecutorName:    c.WorkerHostname,
 		EndpointOptions: endpointOptions(c, pathPrefix),
 	}
 }

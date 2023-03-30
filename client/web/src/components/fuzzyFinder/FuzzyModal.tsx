@@ -14,6 +14,7 @@ import { mdiClose } from '@mdi/js'
 import { TabsProps } from '@reach/tabs'
 import classNames from 'classnames'
 import * as H from 'history'
+import { escapeRegExp } from 'lodash'
 
 import { pluralize } from '@sourcegraph/common'
 import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
@@ -579,7 +580,7 @@ const SearchQueryLink: React.FunctionComponent<FuzzyState & { onClickItem: () =>
 function repoFilter(state: FuzzyState): string {
     const isGlobal = !state.repoRevision.repositoryName
     const revision = state.repoRevision.revision ? `@${state.repoRevision.revision}` : ''
-    return isGlobal ? '' : ` repo:${state.repoRevision.repositoryName}${revision}`
+    return isGlobal ? '' : ` repo:^${escapeRegExp(state.repoRevision.repositoryName)}$${revision}`
 }
 
 interface FuzzyResultsSummaryProps {
@@ -625,6 +626,7 @@ interface ProgressBarProps {
     value: number
     max: number
 }
+
 const ProgressBar: React.FunctionComponent<ProgressBarProps> = ({ value, max }) => {
     if (max === 0) {
         return <></>

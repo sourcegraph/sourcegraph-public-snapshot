@@ -2,7 +2,6 @@ import React from 'react'
 
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -23,7 +22,7 @@ import { useSearchTemplate } from './useSearchTemplate'
 
 import layoutStyles from '../batch-spec/Layout.module.scss'
 
-export interface CreateBatchChangePageProps extends SettingsCascadeProps<Settings>, ThemeProps {
+export interface CreateBatchChangePageProps extends SettingsCascadeProps<Settings> {
     authenticatedUser: AuthenticatedUser | null
     // TODO: This can go away once we only have the new SSBC create page
     headingElement: 'h1' | 'h2'

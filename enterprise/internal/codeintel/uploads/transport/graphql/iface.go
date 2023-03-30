@@ -5,30 +5,41 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
+	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	uploadshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
-type UploadService interface {
-	GetCommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, err error)
+type UploadsService interface {
+	sharedresolvers.UploadsService
+
+	GetIndexes(ctx context.Context, opts uploadshared.GetIndexesOptions) (_ []types.Index, _ int, err error)
+	GetUploads(ctx context.Context, opts uploadshared.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error)
 	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []types.UploadLog, err error)
-	GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error)
-	GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) (_ []string, _ int, err error)
-	GetUploads(ctx context.Context, opts uploadsshared.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error)
-	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error)
+	GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error)
+	DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
+	DeleteIndexes(ctx context.Context, opts uploadshared.DeleteIndexesOptions) (err error)
+	ReindexIndexByID(ctx context.Context, id int) (err error)
+	ReindexIndexes(ctx context.Context, opts uploadshared.ReindexIndexesOptions) (err error)
+	GetIndexers(ctx context.Context, opts uploadshared.GetIndexersOptions) ([]string, error)
+	GetUploadByID(ctx context.Context, id int) (_ types.Upload, _ bool, err error)
 	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
-	DeleteUploads(ctx context.Context, opts uploadsshared.DeleteUploadsOptions) (err error)
+	DeleteUploads(ctx context.Context, opts uploadshared.DeleteUploadsOptions) (err error)
+	ReindexUploads(ctx context.Context, opts uploadshared.ReindexUploadsOptions) error
+	ReindexUploadByID(ctx context.Context, id int) error
+	GetCommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, err error)
+	GetRecentUploadsSummary(ctx context.Context, repositoryID int) ([]uploadshared.UploadsWithRepositoryNamespace, error)
+	GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
+	GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]shared.IndexesWithRepositoryNamespace, error)
+	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error)
+	RepositoryIDsWithErrors(ctx context.Context, offset, limit int) (_ []shared.RepositoryWithCount, totalCount int, err error)
 }
 
 type AutoIndexingService interface {
-	GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error)
-	GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []types.Index, _ int, err error)
-	GetIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Index, err error)
-	GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error)
-	GetUnsafeDB() database.DB
+	RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) (_ []shared.RepositoryWithAvailableIndexers, totalCount int, err error)
+	InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) ([]config.IndexJob, error)
+	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
 }
 
 type PolicyService interface {

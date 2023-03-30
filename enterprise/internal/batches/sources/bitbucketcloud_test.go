@@ -219,7 +219,7 @@ func TestBitbucketCloudSource_LoadChangeset(t *testing.T) {
 
 		err := s.LoadChangeset(ctx, cs)
 		assert.Nil(t, err)
-		assertChangesetMatchesPullRequest(t, cs, pr)
+		assertBitbucketCloudChangesetMatchesPullRequest(t, cs, pr)
 	})
 }
 
@@ -277,7 +277,7 @@ func TestBitbucketCloudSource_CreateChangeset(t *testing.T) {
 		exists, err := s.CreateChangeset(ctx, cs)
 		assert.True(t, exists)
 		assert.Nil(t, err)
-		assertChangesetMatchesPullRequest(t, cs, pr)
+		assertBitbucketCloudChangesetMatchesPullRequest(t, cs, pr)
 	})
 
 	t.Run("success with fork", func(t *testing.T) {
@@ -305,7 +305,7 @@ func TestBitbucketCloudSource_CreateChangeset(t *testing.T) {
 		exists, err := s.CreateChangeset(ctx, cs)
 		assert.True(t, exists)
 		assert.Nil(t, err)
-		assertChangesetMatchesPullRequest(t, cs, pr)
+		assertBitbucketCloudChangesetMatchesPullRequest(t, cs, pr)
 	})
 }
 
@@ -324,7 +324,7 @@ func TestBitbucketCloudSource_CloseChangeset(t *testing.T) {
 			return nil, want
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
+		annotateBitbucketCloudChangesetWithPullRequest(cs, pr)
 		err := s.CloseChangeset(ctx, cs)
 		assert.NotNil(t, err)
 		assert.ErrorIs(t, err, want)
@@ -342,7 +342,7 @@ func TestBitbucketCloudSource_CloseChangeset(t *testing.T) {
 			return pr, nil
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
+		annotateBitbucketCloudChangesetWithPullRequest(cs, pr)
 		err := s.CloseChangeset(ctx, cs)
 		assert.NotNil(t, err)
 		assert.ErrorIs(t, err, want)
@@ -360,10 +360,10 @@ func TestBitbucketCloudSource_CloseChangeset(t *testing.T) {
 			return pr, nil
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
+		annotateBitbucketCloudChangesetWithPullRequest(cs, pr)
 		err := s.CloseChangeset(ctx, cs)
 		assert.Nil(t, err)
-		assertChangesetMatchesPullRequest(t, cs, pr)
+		assertBitbucketCloudChangesetMatchesPullRequest(t, cs, pr)
 	})
 }
 
@@ -383,7 +383,7 @@ func TestBitbucketCloudSource_UpdateChangeset(t *testing.T) {
 			return nil, want
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
+		annotateBitbucketCloudChangesetWithPullRequest(cs, pr)
 		err := s.UpdateChangeset(ctx, cs)
 		assert.NotNil(t, err)
 		assert.ErrorIs(t, err, want)
@@ -402,7 +402,7 @@ func TestBitbucketCloudSource_UpdateChangeset(t *testing.T) {
 			return pr, nil
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
+		annotateBitbucketCloudChangesetWithPullRequest(cs, pr)
 		err := s.UpdateChangeset(ctx, cs)
 		assert.NotNil(t, err)
 		assert.ErrorIs(t, err, want)
@@ -421,10 +421,10 @@ func TestBitbucketCloudSource_UpdateChangeset(t *testing.T) {
 			return pr, nil
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
+		annotateBitbucketCloudChangesetWithPullRequest(cs, pr)
 		err := s.UpdateChangeset(ctx, cs)
 		assert.Nil(t, err)
-		assertChangesetMatchesPullRequest(t, cs, pr)
+		assertBitbucketCloudChangesetMatchesPullRequest(t, cs, pr)
 	})
 }
 
@@ -444,7 +444,7 @@ func TestBitbucketCloudSource_CreateComment(t *testing.T) {
 			return nil, want
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
+		annotateBitbucketCloudChangesetWithPullRequest(cs, pr)
 		err := s.CreateComment(ctx, cs, "comment")
 		assert.NotNil(t, err)
 		assert.ErrorIs(t, err, want)
@@ -462,7 +462,7 @@ func TestBitbucketCloudSource_CreateComment(t *testing.T) {
 			return &bitbucketcloud.Comment{}, nil
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
+		annotateBitbucketCloudChangesetWithPullRequest(cs, pr)
 		err := s.CreateComment(ctx, cs, "comment")
 		assert.Nil(t, err)
 	})
@@ -484,7 +484,7 @@ func TestBitbucketCloudSource_MergeChangeset(t *testing.T) {
 			return nil, want
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
+		annotateBitbucketCloudChangesetWithPullRequest(cs, pr)
 		err := s.MergeChangeset(ctx, cs, false)
 		assert.NotNil(t, err)
 		target := ChangesetNotMergeableError{}
@@ -505,7 +505,7 @@ func TestBitbucketCloudSource_MergeChangeset(t *testing.T) {
 			return nil, want
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
+		annotateBitbucketCloudChangesetWithPullRequest(cs, pr)
 		err := s.MergeChangeset(ctx, cs, false)
 		assert.NotNil(t, err)
 		assert.ErrorIs(t, err, want)
@@ -524,7 +524,7 @@ func TestBitbucketCloudSource_MergeChangeset(t *testing.T) {
 			return pr, nil
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
+		annotateBitbucketCloudChangesetWithPullRequest(cs, pr)
 		err := s.MergeChangeset(ctx, cs, false)
 		assert.NotNil(t, err)
 		assert.ErrorIs(t, err, want)
@@ -552,19 +552,16 @@ func TestBitbucketCloudSource_MergeChangeset(t *testing.T) {
 					return pr, nil
 				})
 
-				annotateChangesetWithPullRequest(cs, pr)
+				annotateBitbucketCloudChangesetWithPullRequest(cs, pr)
 				err := s.MergeChangeset(ctx, cs, tc.squash)
 				assert.Nil(t, err)
-				assertChangesetMatchesPullRequest(t, cs, pr)
+				assertBitbucketCloudChangesetMatchesPullRequest(t, cs, pr)
 			})
 		}
 	})
 }
 
-func TestBitbucketCloudSource_Fork(t *testing.T) {
-	// We'll test both GetNamespaceFork and GetUserFork in here, since they're
-	// closely related anyway.
-
+func TestBitbucketCloudSource_GetFork(t *testing.T) {
 	ctx := context.Background()
 
 	upstream := &bitbucketcloud.Repo{
@@ -584,122 +581,184 @@ func TestBitbucketCloudSource_Fork(t *testing.T) {
 		UUID:     "fork-uuid",
 		FullName: "fork/repo",
 		Slug:     "repo",
+		Parent: &bitbucketcloud.Repo{
+			UUID: "repo-uuid",
+		},
 	}
 
-	t.Run("GetNamespaceFork", func(t *testing.T) {
-		t.Run("error checking for repo", func(t *testing.T) {
-			s, client := mockBitbucketCloudSource()
+	t.Run("error checking for repo", func(t *testing.T) {
+		s, client := mockBitbucketCloudSource()
 
-			want := errors.New("error")
-			client.RepoFunc.SetDefaultHook(func(ctx context.Context, namespace, slug string) (*bitbucketcloud.Repo, error) {
-				assert.Equal(t, "fork", namespace)
-				assert.Equal(t, "upstream-repo", slug)
-				return nil, want
-			})
-
-			repo, err := s.GetNamespaceFork(ctx, upstreamRepo, "fork")
-			assert.Nil(t, repo)
-			assert.NotNil(t, err)
-			assert.ErrorIs(t, err, want)
+		want := errors.New("error")
+		client.RepoFunc.SetDefaultHook(func(ctx context.Context, namespace, slug string) (*bitbucketcloud.Repo, error) {
+			assert.Equal(t, "fork", namespace)
+			assert.Equal(t, "upstream-repo", slug)
+			return nil, want
 		})
 
-		t.Run("forked repo already exists", func(t *testing.T) {
-			s, client := mockBitbucketCloudSource()
-
-			client.RepoFunc.SetDefaultHook(func(ctx context.Context, namespace, slug string) (*bitbucketcloud.Repo, error) {
-				assert.Equal(t, "fork", namespace)
-				assert.Equal(t, "upstream-repo", slug)
-				return fork, nil
-			})
-
-			forkRepo, err := s.GetNamespaceFork(ctx, upstreamRepo, "fork")
-			assert.Nil(t, err)
-			assert.NotNil(t, forkRepo)
-			assert.NotEqual(t, forkRepo, upstreamRepo)
-			assert.Equal(t, fork, forkRepo.Metadata)
-			assert.Equal(t, forkRepo.Sources[urn].CloneURL, "https://bitbucket.org/fork/repo")
-		})
-
-		t.Run("fork error", func(t *testing.T) {
-			s, client := mockBitbucketCloudSource()
-
-			client.RepoFunc.SetDefaultHook(func(ctx context.Context, namespace, slug string) (*bitbucketcloud.Repo, error) {
-				assert.Equal(t, "fork", namespace)
-				assert.Equal(t, "upstream-repo", slug)
-				return nil, &notFoundError{}
-			})
-
-			want := errors.New("error")
-			client.ForkRepositoryFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, fi bitbucketcloud.ForkInput) (*bitbucketcloud.Repo, error) {
-				assert.Same(t, upstream, r)
-				assert.EqualValues(t, "fork", fi.Workspace)
-				return nil, want
-			})
-
-			repo, err := s.GetNamespaceFork(ctx, upstreamRepo, "fork")
-			assert.Nil(t, repo)
-			assert.NotNil(t, err)
-			assert.ErrorIs(t, err, want)
-		})
-
-		t.Run("success", func(t *testing.T) {
-			s, client := mockBitbucketCloudSource()
-
-			client.RepoFunc.SetDefaultHook(func(ctx context.Context, namespace, slug string) (*bitbucketcloud.Repo, error) {
-				assert.Equal(t, "fork", namespace)
-				assert.Equal(t, "upstream-repo", slug)
-				return nil, &notFoundError{}
-			})
-
-			client.ForkRepositoryFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, fi bitbucketcloud.ForkInput) (*bitbucketcloud.Repo, error) {
-				assert.Same(t, upstream, r)
-				assert.EqualValues(t, "fork", fi.Workspace)
-				return fork, nil
-			})
-
-			forkRepo, err := s.GetNamespaceFork(ctx, upstreamRepo, "fork")
-			assert.Nil(t, err)
-			assert.NotNil(t, forkRepo)
-			assert.NotEqual(t, forkRepo, upstreamRepo)
-			assert.Equal(t, fork, forkRepo.Metadata)
-			assert.Equal(t, forkRepo.Sources[urn].CloneURL, "https://bitbucket.org/fork/repo")
-		})
+		repo, err := s.GetFork(ctx, upstreamRepo, strPtr("fork"), nil)
+		assert.Nil(t, repo)
+		assert.NotNil(t, err)
+		assert.ErrorIs(t, err, want)
 	})
 
-	t.Run("GetUserFork", func(t *testing.T) {
-		t.Run("error getting current user", func(t *testing.T) {
-			s, client := mockBitbucketCloudSource()
+	t.Run("forked repo already exists", func(t *testing.T) {
+		s, client := mockBitbucketCloudSource()
 
-			want := errors.New("error")
-			client.CurrentUserFunc.SetDefaultReturn(nil, want)
-
-			repo, err := s.GetUserFork(ctx, upstreamRepo)
-			assert.Nil(t, repo)
-			assert.NotNil(t, err)
-			assert.ErrorIs(t, err, want)
+		client.RepoFunc.SetDefaultHook(func(ctx context.Context, namespace, slug string) (*bitbucketcloud.Repo, error) {
+			assert.Equal(t, "fork", namespace)
+			assert.Equal(t, "upstream-repo", slug)
+			return fork, nil
 		})
 
-		t.Run("success", func(t *testing.T) {
-			s, client := mockBitbucketCloudSource()
+		forkRepo, err := s.GetFork(ctx, upstreamRepo, strPtr("fork"), nil)
+		assert.Nil(t, err)
+		assert.NotNil(t, forkRepo)
+		assert.NotEqual(t, forkRepo, upstreamRepo)
+		assert.Equal(t, fork, forkRepo.Metadata)
+		assert.Equal(t, forkRepo.Sources[urn].CloneURL, "https://bitbucket.org/fork/repo")
+	})
 
-			user := &bitbucketcloud.User{
-				Account: bitbucketcloud.Account{
-					Username: "user",
+	t.Run("fork error", func(t *testing.T) {
+		s, client := mockBitbucketCloudSource()
+
+		client.RepoFunc.SetDefaultHook(func(ctx context.Context, namespace, slug string) (*bitbucketcloud.Repo, error) {
+			assert.Equal(t, "fork", namespace)
+			assert.Equal(t, "upstream-repo", slug)
+			return nil, &notFoundError{}
+		})
+
+		want := errors.New("error")
+		client.ForkRepositoryFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, fi bitbucketcloud.ForkInput) (*bitbucketcloud.Repo, error) {
+			assert.Same(t, upstream, r)
+			assert.EqualValues(t, "fork", fi.Workspace)
+			assert.EqualValues(t, "upstream-repo", *fi.Name)
+			return nil, want
+		})
+
+		repo, err := s.GetFork(ctx, upstreamRepo, strPtr("fork"), nil)
+		assert.Nil(t, repo)
+		assert.NotNil(t, err)
+		assert.ErrorIs(t, err, want)
+	})
+
+	t.Run("not forked from parent", func(t *testing.T) {
+		s, client := mockBitbucketCloudSource()
+
+		user := &bitbucketcloud.User{
+			Account: bitbucketcloud.Account{
+				Username: "user",
+			},
+		}
+		client.CurrentUserFunc.SetDefaultReturn(user, nil)
+
+		client.RepoFunc.SetDefaultHook(func(ctx context.Context, namespace, slug string) (*bitbucketcloud.Repo, error) {
+			assert.Equal(t, "user", namespace)
+			assert.Equal(t, "upstream-repo", slug)
+			return nil, &notFoundError{}
+		})
+
+		client.ForkRepositoryFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, fi bitbucketcloud.ForkInput) (*bitbucketcloud.Repo, error) {
+			assert.Same(t, upstream, r)
+			assert.EqualValues(t, "user", fi.Workspace)
+			assert.EqualValues(t, "upstream-repo", *fi.Name)
+			// Returned repo that has a different parent
+			return &bitbucketcloud.Repo{
+				UUID:     "fork-uuid",
+				FullName: "user/repo",
+				Slug:     "repo",
+				Parent: &bitbucketcloud.Repo{
+					UUID: "some-other-repo-uuid",
 				},
-			}
-			client.CurrentUserFunc.SetDefaultReturn(user, nil)
-
-			client.RepoFunc.SetDefaultHook(func(ctx context.Context, namespace, slug string) (*bitbucketcloud.Repo, error) {
-				assert.Equal(t, "user", namespace)
-				assert.Equal(t, "upstream-repo", slug)
-				return fork, nil
-			})
-
-			repo, err := s.GetUserFork(ctx, upstreamRepo)
-			assert.Nil(t, err)
-			assert.NotNil(t, repo)
-			assert.Same(t, fork, repo.Metadata)
+			}, nil
 		})
+
+		forkRepo, err := s.GetFork(ctx, upstreamRepo, nil, nil)
+		assert.Nil(t, forkRepo)
+		assert.NotNil(t, err)
+		assert.ErrorContains(t, err, "repo was not forked from the given parent")
+	})
+
+	t.Run("error getting current user", func(t *testing.T) {
+		s, client := mockBitbucketCloudSource()
+
+		want := errors.New("error")
+		client.CurrentUserFunc.SetDefaultReturn(nil, want)
+
+		repo, err := s.GetFork(ctx, upstreamRepo, nil, nil)
+		assert.Nil(t, repo)
+		assert.NotNil(t, err)
+		assert.ErrorIs(t, err, want)
+	})
+
+	t.Run("success with default namespace, name", func(t *testing.T) {
+		s, client := mockBitbucketCloudSource()
+
+		user := &bitbucketcloud.User{
+			Account: bitbucketcloud.Account{
+				Username: "user",
+			},
+		}
+		client.CurrentUserFunc.SetDefaultReturn(user, nil)
+
+		client.RepoFunc.SetDefaultHook(func(ctx context.Context, namespace, slug string) (*bitbucketcloud.Repo, error) {
+			assert.Equal(t, "user", namespace)
+			assert.Equal(t, "upstream-repo", slug)
+			return fork, nil
+		})
+
+		repo, err := s.GetFork(ctx, upstreamRepo, nil, nil)
+		assert.Nil(t, err)
+		assert.NotNil(t, repo)
+		assert.Same(t, fork, repo.Metadata)
+	})
+
+	t.Run("success with default name", func(t *testing.T) {
+		s, client := mockBitbucketCloudSource()
+
+		client.RepoFunc.SetDefaultHook(func(ctx context.Context, namespace, slug string) (*bitbucketcloud.Repo, error) {
+			assert.Equal(t, "fork", namespace)
+			assert.Equal(t, "upstream-repo", slug)
+			return nil, &notFoundError{}
+		})
+
+		client.ForkRepositoryFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, fi bitbucketcloud.ForkInput) (*bitbucketcloud.Repo, error) {
+			assert.Same(t, upstream, r)
+			assert.EqualValues(t, "fork", fi.Workspace)
+			assert.EqualValues(t, "upstream-repo", *fi.Name)
+			return fork, nil
+		})
+
+		forkRepo, err := s.GetFork(ctx, upstreamRepo, strPtr("fork"), nil)
+		assert.Nil(t, err)
+		assert.NotNil(t, forkRepo)
+		assert.NotEqual(t, forkRepo, upstreamRepo)
+		assert.Equal(t, fork, forkRepo.Metadata)
+		assert.Equal(t, forkRepo.Sources[urn].CloneURL, "https://bitbucket.org/fork/repo")
+	})
+
+	t.Run("success with set namespace, name", func(t *testing.T) {
+		s, client := mockBitbucketCloudSource()
+
+		client.RepoFunc.SetDefaultHook(func(ctx context.Context, namespace, slug string) (*bitbucketcloud.Repo, error) {
+			assert.Equal(t, "fork", namespace)
+			assert.Equal(t, "special-fork-name", slug)
+			return nil, &notFoundError{}
+		})
+
+		client.ForkRepositoryFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, fi bitbucketcloud.ForkInput) (*bitbucketcloud.Repo, error) {
+			assert.Same(t, upstream, r)
+			assert.EqualValues(t, "fork", fi.Workspace)
+			assert.EqualValues(t, "special-fork-name", *fi.Name)
+			return fork, nil
+		})
+
+		forkRepo, err := s.GetFork(ctx, upstreamRepo, strPtr("fork"), strPtr("special-fork-name"))
+		assert.Nil(t, err)
+		assert.NotNil(t, forkRepo)
+		assert.NotEqual(t, forkRepo, upstreamRepo)
+		assert.Equal(t, fork, forkRepo.Metadata)
+		assert.Equal(t, forkRepo.Sources[urn].CloneURL, "https://bitbucket.org/fork/repo")
 	})
 }
 
@@ -784,7 +843,7 @@ func TestBitbucketCloudSource_setChangesetMetadata(t *testing.T) {
 	assert.ErrorContains(t, err, "setting changeset metadata")
 }
 
-func assertChangesetMatchesPullRequest(t *testing.T, cs *Changeset, pr *bitbucketcloud.PullRequest) {
+func assertBitbucketCloudChangesetMatchesPullRequest(t *testing.T, cs *Changeset, pr *bitbucketcloud.PullRequest) {
 	t.Helper()
 
 	// We're not thoroughly testing setChangesetMetadata() et al in this
@@ -834,7 +893,7 @@ func mockBitbucketCloudPullRequest(repo *bitbucketcloud.Repo) *bitbucketcloud.Pu
 	}
 }
 
-func annotateChangesetWithPullRequest(cs *Changeset, pr *bitbucketcloud.PullRequest) {
+func annotateBitbucketCloudChangesetWithPullRequest(cs *Changeset, pr *bitbucketcloud.PullRequest) {
 	cs.Metadata = &bbcs.AnnotatedPullRequest{
 		PullRequest: pr,
 		Statuses:    []*bitbucketcloud.PullRequestStatus{},
@@ -860,10 +919,10 @@ func mockAnnotatePullRequestError(client *MockBitbucketCloudClient) error {
 // mockAnnotatePullRequestSuccess configures the mock client to be able to
 // return a valid, empty set of statuses.
 func mockAnnotatePullRequestSuccess(client *MockBitbucketCloudClient) {
-	client.GetPullRequestStatusesFunc.SetDefaultReturn(mockEmptyResultSet(), nil)
+	client.GetPullRequestStatusesFunc.SetDefaultReturn(mockBitbucketCloudEmptyResultSet(), nil)
 }
 
-func mockEmptyResultSet() *bitbucketcloud.PaginatedResultSet {
+func mockBitbucketCloudEmptyResultSet() *bitbucketcloud.PaginatedResultSet {
 	return bitbucketcloud.NewPaginatedResultSet(mockBitbucketCloudURL(), func(ctx context.Context, r *http.Request) (*bitbucketcloud.PageToken, []any, error) {
 		return &bitbucketcloud.PageToken{}, nil, nil
 	})

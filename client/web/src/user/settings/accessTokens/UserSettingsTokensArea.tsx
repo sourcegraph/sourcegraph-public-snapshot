@@ -1,11 +1,10 @@
 import React, { useCallback, useState } from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { Route, Routes } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { HeroPage } from '../../../components/HeroPage'
+import { NotFoundPage } from '../../../components/HeroPage'
 import { CreateAccessTokenResult } from '../../../graphql-operations'
 import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
@@ -13,57 +12,38 @@ import { UserSettingsCreateAccessTokenCallbackPage } from './UserSettingsCreateA
 import { UserSettingsCreateAccessTokenPage } from './UserSettingsCreateAccessTokenPage'
 import { UserSettingsTokensPage } from './UserSettingsTokensPage'
 
-const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
-)
+interface Props extends Pick<UserSettingsAreaRouteContext, 'user' | 'authenticatedUser'>, TelemetryProps {
+    isSourcegraphDotCom: boolean
+}
 
-interface Props
-    extends Pick<UserSettingsAreaRouteContext, 'user' | 'authenticatedUser'>,
-        Pick<RouteComponentProps<{}>, 'history' | 'location' | 'match'>,
-        TelemetryProps {}
-
-export const UserSettingsTokensArea: React.FunctionComponent<React.PropsWithChildren<Props>> = outerProps => {
+export const UserSettingsTokensArea: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const [newToken, setNewToken] = useState<CreateAccessTokenResult['createAccessToken'] | undefined>()
+
     const onDidPresentNewToken = useCallback(() => {
         setNewToken(undefined)
     }, [])
+
     return (
-        <Switch>
+        <Routes>
             <Route
-                exact={true}
-                path={outerProps.match.url + '/new'}
-                render={props => (
-                    <UserSettingsCreateAccessTokenPage
-                        {...outerProps}
-                        {...props}
-                        onDidCreateAccessToken={setNewToken}
-                    />
-                )}
+                path="new"
+                element={<UserSettingsCreateAccessTokenPage {...props} onDidCreateAccessToken={setNewToken} />}
             />
             <Route
-                exact={true}
-                path={outerProps.match.url + '/new/callback'}
-                render={props => (
-                    <UserSettingsCreateAccessTokenCallbackPage
-                        {...outerProps}
-                        {...props}
-                        onDidCreateAccessToken={setNewToken}
-                    />
-                )}
+                path="new/callback"
+                element={<UserSettingsCreateAccessTokenCallbackPage {...props} onDidCreateAccessToken={setNewToken} />}
             />
             <Route
-                exact={true}
-                path={outerProps.match.url}
-                render={props => (
+                path=""
+                element={
                     <UserSettingsTokensPage
-                        {...outerProps}
                         {...props}
                         newToken={newToken}
                         onDidPresentNewToken={onDidPresentNewToken}
                     />
-                )}
+                }
             />
-            <Route component={NotFoundPage} key="hardcoded-key" />
-        </Switch>
+            <Route path="*" element={<NotFoundPage pageType="settings" />} />
+        </Routes>
     )
 }

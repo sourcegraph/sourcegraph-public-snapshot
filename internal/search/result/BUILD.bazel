@@ -12,6 +12,7 @@ go_library(
         "match.go",
         "merge.go",
         "merger.go",
+        "owner.go",
         "range.go",
         "repo.go",
         "result_type.go",
@@ -35,6 +36,7 @@ go_library(
 
 go_test(
     name = "result_test",
+    timeout = "short",
     srcs = [
         "commit_diff_test.go",
         "commit_json_test.go",
@@ -42,6 +44,7 @@ go_test(
         "deduper_test.go",
         "file_test.go",
         "match_test.go",
+        "merger_test.go",
         "range_test.go",
         "symbol_test.go",
     ],
@@ -52,7 +55,7 @@ go_test(
         "//internal/gitserver/gitdomain",
         "//internal/search/filter",
         "//internal/types",
-        "@com_github_hexops_autogold//:autogold",
+        "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_stretchr_testify//require",
     ],
 )

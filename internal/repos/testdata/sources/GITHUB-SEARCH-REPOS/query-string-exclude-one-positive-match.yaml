@@ -1,0 +1,65 @@
+---
+version: 1
+interactions:
+- request:
+    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tviewerPermission\n\tstargazerCount\n\tforkCount\n}\n\t\nquery($query:
+      String!, $type: SearchType!, $after: String, $first: Int!) {\n\tsearch(query:
+      $query, type: $type, after: $after, first: $first) {\n\t\trepositoryCount\n\t\tpageInfo
+      { hasNextPage,  endCursor }\n\t\tnodes { ... on Repository { ...RepositoryFields
+      } }\n\t}\n}","variables":{"first":5,"query":"sourcegraph sourcegraph -repo:sourcegraph/about","type":"REPOSITORY"}}'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/graphql
+    method: POST
+  response:
+    body: "{\"data\":{\"search\":{\"repositoryCount\":464,\"pageInfo\":{\"hasNextPage\":true,\"endCursor\":\"Y3Vyc29yOjU=\"},\"nodes\":[{\"id\":\"MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==\",\"databaseId\":41288708,\"nameWithOwner\":\"sourcegraph/sourcegraph\",\"description\":\"Code
+      Intelligence Platform\",\"url\":\"https://github.com/sourcegraph/sourcegraph\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"WRITE\",\"stargazerCount\":7390,\"forkCount\":895},{\"id\":\"MDEwOlJlcG9zaXRvcnkxMzA3NzAwNTM=\",\"databaseId\":130770053,\"nameWithOwner\":\"sourcegraph/src-cli\",\"description\":\"Sourcegraph
+      CLI\",\"url\":\"https://github.com/sourcegraph/src-cli\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"ADMIN\",\"stargazerCount\":208,\"forkCount\":55},{\"id\":\"MDEwOlJlcG9zaXRvcnkxNTM4NDkxMDM=\",\"databaseId\":153849103,\"nameWithOwner\":\"sourcegraph/deploy-sourcegraph-docker\",\"description\":\"Sourcegraph
+      with Docker Compose deployment reference\",\"url\":\"https://github.com/sourcegraph/deploy-sourcegraph-docker\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"WRITE\",\"stargazerCount\":70,\"forkCount\":338},{\"id\":\"MDEwOlJlcG9zaXRvcnkxMzIxOTI3MjY=\",\"databaseId\":132192726,\"nameWithOwner\":\"sourcegraph/deploy-sourcegraph\",\"description\":\"Deploy
+      Sourcegraph to a Kubernetes cluster for large-scale code search and intelligence\",\"url\":\"https://github.com/sourcegraph/deploy-sourcegraph\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"WRITE\",\"stargazerCount\":104,\"forkCount\":140},{\"id\":\"R_kgDOGH8C1A\",\"databaseId\":410976980,\"nameWithOwner\":\"sourcegraph/handbook\",\"description\":\"\U0001F4D8
+      The Sourcegraph handbook\",\"url\":\"https://github.com/sourcegraph/handbook\",\"isPrivate\":false,\"isFork\":false,\"isArchived\":false,\"isLocked\":false,\"isDisabled\":false,\"viewerPermission\":\"WRITE\",\"stargazerCount\":70,\"forkCount\":71}]}}}"
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Sun, 26 Feb 2023 04:40:13 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v4; param=antiope-preview; format=json
+      X-Github-Request-Id:
+      - EABA:7563:BC02E36:C012931:63FAE2AC
+      X-Ratelimit-Resource:
+      - graphql
+      X-Ratelimit-Used:
+      - "21"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""

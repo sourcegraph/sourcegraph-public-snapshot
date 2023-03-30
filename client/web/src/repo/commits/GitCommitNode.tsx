@@ -10,8 +10,10 @@ import { Button, ButtonGroup, Link, Icon, Code, screenReaderAnnounce, Tooltip } 
 
 import { GitCommitFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
+import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 import { DiffModeSelector } from '../commit/DiffModeSelector'
 import { DiffMode } from '../commit/RepositoryCommitPage'
+import { Linkified } from '../linkifiy/Linkified'
 
 import { GitCommitNodeByline } from './GitCommitNodeByline'
 
@@ -26,8 +28,8 @@ export interface GitCommitNodeProps {
     /** Display in a single line (more compactly). */
     compact?: boolean
 
-    /** Display in sidebar mode. */
-    sidebar?: boolean
+    /** Display in a single line, with less spacing between elements and no SHA. */
+    extraCompact?: boolean
 
     /** Expand the commit message body. */
     expandCommitMessageBody?: boolean
@@ -68,7 +70,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     afterElement,
     className,
     compact,
-    sidebar,
+    extraCompact,
     expandCommitMessageBody,
     hideExpandCommitMessageBody,
     messageSubjectClassName,
@@ -97,18 +99,30 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
         }, 1500)
     }, [])
 
+    if (extraCompact) {
+        // Implied by extraCompact
+        compact = true
+    }
+
     const messageElement = (
         <div
-            className={classNames('flex-grow-1', styles.message, compact && styles.messageSmall)}
+            className={classNames(
+                !extraCompact && 'flex-grow-1',
+                styles.message,
+                compact && styles.messageSmall,
+                extraCompact && styles.messageExtraSmall
+            )}
             data-testid="git-commit-node-message"
         >
-            <Link
-                to={node.canonicalURL}
-                className={classNames(messageSubjectClassName, styles.messageSubject)}
-                data-testid="git-commit-node-message-subject"
-            >
-                {node.subject}
-            </Link>
+            <span className={classNames('mr-2', styles.messageSubject)}>
+                <CommitMessageWithLinks
+                    to={node.canonicalURL}
+                    className={classNames(messageSubjectClassName, styles.messageLink)}
+                    message={node.subject}
+                    externalURLs={node.externalURLs}
+                />
+            </span>
+
             {node.body && !hideExpandCommitMessageBody && !expandCommitMessageBody && (
                 <Button
                     className={styles.messageToggle}
@@ -135,13 +149,15 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     const commitMessageBody =
         expandCommitMessageBody || showCommitMessageBody ? (
             <div className="w-100">
-                <pre className={styles.messageBody}>{node.body}</pre>
+                <pre className={styles.messageBody}>
+                    {node.body && <Linkified input={node.body} externalURLs={node.externalURLs} />}
+                </pre>
             </div>
         ) : undefined
 
     const bylineElement = (
         <GitCommitNodeByline
-            className={classNames(styles.byline, sidebar ? 'd-flex text-muted w-50' : 'd-flex text-muted')}
+            className={classNames(styles.byline, 'd-flex text-muted')}
             avatarClassName={compact ? undefined : styles.signatureUserAvatar}
             author={node.author}
             committer={node.committer}
@@ -180,8 +196,8 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                                 : `${node.parents.length} ${pluralize('parent', node.parents.length)}`}
                             :
                         </span>{' '}
-                        {node.parents.map((parent, index) => (
-                            <div className="d-flex" key={index}>
+                        {node.parents.map(parent => (
+                            <div className="d-flex" key={parent.oid}>
                                 <Link className={styles.shaAndParentsParent} to={parent.url}>
                                     <Code>{parent.oid}</Code>
                                 </Link>
@@ -238,33 +254,15 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
         </Code>
     )
 
-    if (sidebar) {
-        return (
-            <WrapperElement
-                key={node.id}
-                className={classNames(styles.gitCommitNode, styles.gitCommitNodeCompact, className)}
-            >
-                <div
-                    className={classNames('w-100 d-flex justify-content-between align-items-center flex-wrap-reverse')}
-                >
-                    {bylineElement}
-                    <small className={classNames('text-muted', styles.messageTimestamp)}>
-                        <Timestamp
-                            noAbout={true}
-                            preferAbsolute={preferAbsoluteTimestamps}
-                            date={node.committer ? node.committer.date : node.author.date}
-                        />
-                    </small>
-                    <Link to={node.canonicalURL}>{oidElement}</Link>
-                </div>
-            </WrapperElement>
-        )
-    }
-
     return (
         <WrapperElement
             key={node.id}
-            className={classNames(styles.gitCommitNode, compact && styles.gitCommitNodeCompact, className)}
+            className={classNames(
+                styles.gitCommitNode,
+                compact && styles.gitCommitNodeCompact,
+                extraCompact && styles.gitCommitNodeExtraCompact,
+                className
+            )}
         >
             <>
                 {!compact ? (
@@ -326,7 +324,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                         <div className={styles.innerWrapper}>
                             {bylineElement}
                             {messageElement}
-                            <Link to={node.canonicalURL}>{oidElement}</Link>
+                            {!extraCompact && <Link to={node.canonicalURL}>{oidElement}</Link>}
                             {afterElement}
                         </div>
                         {commitMessageBody}

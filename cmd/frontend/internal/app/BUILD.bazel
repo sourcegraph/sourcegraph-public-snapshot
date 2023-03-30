@@ -29,11 +29,11 @@ go_library(
         "//cmd/frontend/internal/app/otlpadapter",
         "//cmd/frontend/internal/app/router",
         "//cmd/frontend/internal/app/ui",
+        "//cmd/frontend/internal/auth/accessrequest",
         "//cmd/frontend/internal/auth/userpasswd",
         "//cmd/frontend/internal/routevar",
         "//cmd/frontend/internal/session",
         "//cmd/frontend/oneclickexport",
-        "//cmd/frontend/registry/api",
         "//internal/actor",
         "//internal/api",
         "//internal/auth",
@@ -57,7 +57,6 @@ go_library(
         "@com_github_gorilla_mux//:mux",
         "@com_github_grafana_regexp//:regexp",
         "@com_github_inconshreveable_log15//:log15",
-        "@com_github_nytimes_gziphandler//:gziphandler",
         "@com_github_sourcegraph_log//:log",
         "@org_uber_go_atomic//:atomic",
     ],
@@ -65,6 +64,7 @@ go_library(
 
 go_test(
     name = "app_test",
+    timeout = "short",
     srcs = [
         "app_test.go",
         "debug_test.go",
@@ -76,6 +76,10 @@ go_test(
         "verify_email_test.go",
     ],
     embed = [":app"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/backend",
         "//cmd/frontend/oneclickexport",

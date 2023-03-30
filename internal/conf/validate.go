@@ -219,12 +219,14 @@ var siteConfigSecrets = []struct {
 	{readPath: `auth\.unlockAccountLinkSigningKey`, editPaths: []string{"auth.unlockAccountLinkSigningKey"}},
 	{readPath: `dotcom.srcCliVersionCache.github.token`, editPaths: []string{"dotcom", "srcCliVersionCache", "github", "token"}},
 	{readPath: `dotcom.srcCliVersionCache.github.webhookSecret`, editPaths: []string{"dotcom", "srcCliVersionCache", "github", "webhookSecret"}},
+	{readPath: `embeddings.accessToken`, editPaths: []string{"embeddings", "accessToken"}},
+	{readPath: `completions.accessToken`, editPaths: []string{"completions", "accessToken"}},
 }
 
 // UnredactSecrets unredacts unchanged secrets back to their original value for
 // the given configuration.
 //
-// Updates to this function should also being reflected in the RedactSecrets.
+// Updates to this function should also be reflected in the RedactSecrets.
 func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 	oldCfg, err := ParseConfig(raw)
 	if err != nil {
@@ -244,6 +246,9 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 		}
 		if ap.Bitbucketcloud != nil {
 			oldSecrets[ap.Bitbucketcloud.ClientKey] = ap.Bitbucketcloud.ClientSecret
+		}
+		if ap.AzureDevOps != nil {
+			oldSecrets[ap.AzureDevOps.ClientID] = ap.AzureDevOps.ClientSecret
 		}
 	}
 
@@ -265,6 +270,9 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 		}
 		if ap.Bitbucketcloud != nil && ap.Bitbucketcloud.ClientSecret == redactedSecret {
 			ap.Bitbucketcloud.ClientSecret = oldSecrets[ap.Bitbucketcloud.ClientKey]
+		}
+		if ap.AzureDevOps != nil && ap.AzureDevOps.ClientSecret == redactedSecret {
+			ap.AzureDevOps.ClientSecret = oldSecrets[ap.AzureDevOps.ClientID]
 		}
 	}
 	unredactedSite, err := jsonc.Edit(input, newCfg.AuthProviders, "auth.providers")
@@ -332,6 +340,9 @@ func redactConfSecrets(raw conftypes.RawUnified, hashSecrets bool) (empty confty
 		}
 		if ap.Bitbucketcloud != nil {
 			ap.Bitbucketcloud.ClientSecret = getRedactedSecret(ap.Bitbucketcloud.ClientSecret)
+		}
+		if ap.AzureDevOps != nil {
+			ap.AzureDevOps.ClientSecret = getRedactedSecret(ap.AzureDevOps.ClientSecret)
 		}
 	}
 	redactedSite := raw.Site

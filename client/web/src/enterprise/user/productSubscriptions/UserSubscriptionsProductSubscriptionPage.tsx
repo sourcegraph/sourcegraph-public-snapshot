@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo } from 'react'
 
 import { parseISO } from 'date-fns'
-import * as H from 'history'
-import { RouteComponentProps } from 'react-router'
+import { useParams } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 import { validate as validateUUID } from 'uuid'
@@ -24,12 +23,11 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { BackToAllSubscriptionsLink } from './BackToAllSubscriptionsLink'
 import { UserProductSubscriptionStatus } from './UserProductSubscriptionStatus'
 
-interface Props extends Pick<RouteComponentProps<{ subscriptionUUID: string }>, 'match'> {
+interface Props {
     user: Pick<UserAreaUserFields, 'settingsURL'>
 
     /** For mocking in tests only. */
     _queryProductSubscription?: typeof queryProductSubscription
-    history: H.History
 }
 
 const LOADING = 'loading' as const
@@ -39,14 +37,13 @@ const LOADING = 'loading' as const
  */
 export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     user,
-    match: {
-        params: { subscriptionUUID },
-    },
     _queryProductSubscription = queryProductSubscription,
 }) => {
+    const { subscriptionUUID } = useParams()
+
     useEffect(() => eventLogger.logViewEvent('UserSubscriptionsProductSubscription'), [])
 
-    const isValidUUID = validateUUID(subscriptionUUID)
+    const isValidUUID = validateUUID(subscriptionUUID!)
     const validationError = !isValidUUID && new Error('Subscription ID is not a valid UUID')
 
     /**
@@ -56,7 +53,7 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<R
         useObservable(
             useMemo(
                 () =>
-                    _queryProductSubscription(subscriptionUUID).pipe(
+                    _queryProductSubscription(subscriptionUUID!).pipe(
                         catchError(error => [asError(error)]),
                         startWith(LOADING)
                     ),
@@ -142,7 +139,7 @@ function queryProductSubscription(uuid: string): Observable<ProductSubscriptionF
         { uuid }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.dotcom || !data.dotcom.productSubscription || (errors && errors.length > 0)) {
+            if (!data?.dotcom?.productSubscription || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             return data.dotcom.productSubscription

@@ -1,8 +1,7 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { FC, useEffect, useState, useCallback } from 'react'
 
 import { mdiCog } from '@mdi/js'
-import * as H from 'history'
-import { Redirect } from 'react-router'
+import { Navigate, useParams } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -10,7 +9,6 @@ import { Container, ErrorAlert, PageHeader, Icon, ButtonLink } from '@sourcegrap
 
 import {
     ExternalServiceFields,
-    Scalars,
     AddExternalServiceInput,
     ExternalServiceResult,
     ExternalServiceVariables,
@@ -24,11 +22,6 @@ import { resolveExternalServiceCategory } from './externalServices'
 import { ExternalServiceWebhook } from './ExternalServiceWebhook'
 
 interface Props extends TelemetryProps {
-    externalServiceID: Scalars['ID']
-    isLightTheme: boolean
-    history: H.History
-    routingPrefix: string
-
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
 
@@ -39,16 +32,14 @@ interface Props extends TelemetryProps {
 const getExternalService = (queryResult?: ExternalServiceResult): ExternalServiceFields | null =>
     queryResult?.node?.__typename === 'ExternalService' ? queryResult.node : null
 
-export const ExternalServiceEditPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    externalServiceID,
-    history,
-    routingPrefix,
-    isLightTheme,
+export const ExternalServiceEditPage: FC<Props> = ({
     telemetryService,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
     autoFocusForm,
 }) => {
+    const { externalServiceID } = useParams()
+
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalService')
     }, [telemetryService])
@@ -58,7 +49,7 @@ export const ExternalServiceEditPage: React.FunctionComponent<React.PropsWithChi
     const { error: fetchError, loading: fetchLoading } = useQuery<ExternalServiceResult, ExternalServiceVariables>(
         FETCH_EXTERNAL_SERVICE,
         {
-            variables: { id: externalServiceID },
+            variables: { id: externalServiceID! },
             notifyOnNetworkStatusChange: false,
             fetchPolicy: 'no-cache',
             onCompleted: result => {
@@ -114,7 +105,7 @@ export const ExternalServiceEditPage: React.FunctionComponent<React.PropsWithChi
     const combinedLoading = fetchLoading || updateExternalServiceLoading
 
     if (updated && !combinedLoading && externalService?.warning === null) {
-        return <Redirect to={`${routingPrefix}/external-services/${externalService.id}`} />
+        return <Navigate to={`/site-admin/external-services/${externalService.id}`} replace={true} />
     }
 
     return (
@@ -133,17 +124,18 @@ export const ExternalServiceEditPage: React.FunctionComponent<React.PropsWithChi
                             { icon: mdiCog },
                             { to: '/site-admin/external-services', text: 'Code hosts' },
                             {
+                                to: `/site-admin/external-services/${externalService.id}`,
                                 text: (
                                     <>
-                                        {externalService.displayName}
                                         {externalServiceCategory && (
                                             <Icon
                                                 inline={true}
                                                 as={externalServiceCategory.icon}
                                                 aria-label="Code host logo"
-                                                className="ml-2"
+                                                className="mr-2"
                                             />
                                         )}
+                                        {externalService.displayName}
                                     </>
                                 ),
                             },
@@ -175,8 +167,6 @@ export const ExternalServiceEditPage: React.FunctionComponent<React.PropsWithChi
                             loading={combinedLoading}
                             onSubmit={onSubmit}
                             onChange={onChange}
-                            history={history}
-                            isLightTheme={isLightTheme}
                             telemetryService={telemetryService}
                             autoFocus={autoFocusForm}
                             externalServicesFromFile={externalServicesFromFile}

@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 
 import { mdiArrowLeft, mdiPlus } from '@mdi/js'
-import * as H from 'history'
-import { RouteComponentProps } from 'react-router'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Observable, Subject, NEVER } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap, filter } from 'rxjs/operators'
 
@@ -46,13 +45,12 @@ import {
     SiteAdminProductLicenseNodeProps,
 } from './SiteAdminProductLicenseNode'
 
-interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {
+interface Props {
     /** For mocking in tests only. */
     _queryProductSubscription?: typeof queryProductSubscription
 
     /** For mocking in tests only. */
     _queryProductLicenses?: typeof queryProductLicenses
-    history: H.History
 }
 
 const LOADING = 'loading' as const
@@ -61,14 +59,11 @@ const LOADING = 'loading' as const
  * Displays a product subscription in the site admin area.
  */
 export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    history,
-    location,
-    match: {
-        params: { subscriptionUUID },
-    },
     _queryProductSubscription = queryProductSubscription,
     _queryProductLicenses = queryProductLicenses,
 }) => {
+    const navigate = useNavigate()
+    const { subscriptionUUID = '' } = useParams<{ subscriptionUUID: string }>()
     useEffect(() => eventLogger.logViewEvent('SiteAdminProductSubscription'), [])
 
     const [showGenerate, setShowGenerate] = useState<boolean>(false)
@@ -104,14 +99,14 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                     switchMap(() =>
                         archiveProductSubscription({ id: productSubscription.id }).pipe(
                             mapTo(undefined),
-                            tap(() => history.push('/site-admin/dotcom/product/subscriptions')),
+                            tap(() => navigate('/site-admin/dotcom/product/subscriptions')),
                             catchError(error => [asError(error)]),
                             startWith(LOADING)
                         )
                     )
                 )
             },
-            [history, productSubscription]
+            [navigate, productSubscription]
         )
     )
 
@@ -210,6 +205,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                             <CardBody>
                                 <SiteAdminGenerateProductLicenseForSubscriptionForm
                                     subscriptionID={productSubscription.id}
+                                    subscriptionAccount={productSubscription.account?.username || ''}
                                     onGenerate={onLicenseUpdate}
                                 />
                             </CardBody>
@@ -296,7 +292,7 @@ function queryProductSubscription(
         { uuid }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.dotcom || !data.dotcom.productSubscription || (errors && errors.length > 0)) {
+            if (!data?.dotcom?.productSubscription || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             return data.dotcom.productSubscription
@@ -333,13 +329,7 @@ function queryProductLicenses(
         }
     ).pipe(
         map(({ data, errors }) => {
-            if (
-                !data ||
-                !data.dotcom ||
-                !data.dotcom.productSubscription ||
-                !data.dotcom.productSubscription.productLicenses ||
-                (errors && errors.length > 0)
-            ) {
+            if (!data?.dotcom?.productSubscription?.productLicenses || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             return data.dotcom.productSubscription.productLicenses
@@ -361,7 +351,7 @@ function archiveProductSubscription(args: ArchiveProductSubscriptionVariables): 
         args
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.dotcom || !data.dotcom.archiveProductSubscription || (errors && errors.length > 0)) {
+            if (!data?.dotcom?.archiveProductSubscription || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
         })

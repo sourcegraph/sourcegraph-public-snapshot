@@ -30,7 +30,7 @@ export interface LivePreviewSeries {
 
 interface LineChartLivePreviewProps extends HTMLAttributes<HTMLElement> {
     disabled: boolean
-    repositories: string
+    repositories: string[]
     repoQuery: string | undefined
     repoMode: string
     stepValue: string
@@ -79,7 +79,7 @@ export const LineChartLivePreview: FC<LineChartLivePreviewProps> = props => {
                 {state.status === LivePreviewStatus.Loading ? (
                     <LivePreviewLoading>Loading code insight</LivePreviewLoading>
                 ) : state.status === LivePreviewStatus.Error ? (
-                    <ErrorAlert error={state.error} />
+                    <ErrorAlert error={state.error} className="m-0" />
                 ) : (
                     <LivePreviewChart>
                         {parent =>

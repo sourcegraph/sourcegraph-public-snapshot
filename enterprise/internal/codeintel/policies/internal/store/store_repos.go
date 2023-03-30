@@ -106,6 +106,16 @@ func makeWildcardPattern(pattern string) string {
 	return strings.ToLower(strings.ReplaceAll(pattern, "*", "%"))
 }
 
+// RepoCount returns the total number of policy-selectable repos.
+func (s *store) RepoCount(ctx context.Context) (_ int, err error) {
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(`SELECT SUM(total) FROM repo_statistics`)))
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
 // GetRepoIDsByGlobPatterns returns a page of repository identifiers and a total count of repositories matching
 // one of the given patterns.
 func (s *store) GetRepoIDsByGlobPatterns(ctx context.Context, patterns []string, limit, offset int) (_ []int, _ int, err error) {

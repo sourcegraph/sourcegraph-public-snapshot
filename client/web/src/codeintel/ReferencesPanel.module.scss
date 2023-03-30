@@ -1,5 +1,6 @@
 :root {
     --filter-input-height: 2.5rem;
+    --filter-input-padding-y: 0.25rem;
     --group-header-font-size: 0.875rem;
     --group-divider-height: 0.25rem;
     --card-header-height: 1.5rem;
@@ -8,8 +9,8 @@
 .filter {
     height: var(--filter-input-height);
     padding-left: 1rem;
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
+    padding-top: var(--filter-input-padding-y);
+    padding-bottom: var(--filter-input-padding-y);
     padding-right: 1rem;
 
     input {
@@ -105,6 +106,38 @@
         border-bottom: 1px solid var(--body-bg);
     }
 
+    &--link {
+        all: unset;
+
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        color: inherit;
+
+        padding-top: 0;
+        padding-bottom: 0;
+        width: 100%;
+        text-align: left;
+
+        transition: none !important;
+
+        // Avoid line number and filename getting put on different lines
+        white-space: nowrap;
+        padding-left: 0;
+        font-family: var(--code-font-family);
+
+        border: none;
+
+        &--code-excerpt {
+            flex: 1;
+            width: 100%;
+
+            :global(.line) {
+                min-width: 2.5rem;
+            }
+        }
+    }
+
     &--active {
         background-color: var(--color-bg-3);
     }
@@ -125,6 +158,8 @@
     }
 
     &--link:hover {
+        all: unset;
+
         background-color: var(--color-bg-2);
         cursor: pointer;
     }
@@ -134,38 +169,12 @@
         background-color: var(--color-bg-3);
     }
 
-    &--link {
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-        color: inherit;
-
-        padding-top: 0;
-        padding-bottom: 0;
-        width: 100%;
-        text-align: left;
-
-        transition: none !important;
-
-        // Avoid line number and filename getting put on different lines
-        white-space: nowrap;
-        padding-left: 0;
-        font-family: 'SF Mono', monospace;
-
-        border: none;
-
-        &--code-excerpt {
-            flex: 1;
-            width: 100%;
-
-            :global(.line) {
-                min-width: 2.5rem;
-            }
-        }
+    &--link:focus-visible {
+        box-shadow: var(--focus-box-shadow);
     }
 
     code {
-        font-family: 'SF Mono', monospace;
+        font-family: var(--code-font-family);
         overflow: hidden;
         color: var(--body-color);
         font-weight: 400;
@@ -173,7 +182,7 @@
     }
 
     mark {
-        font-family: 'SF Mono', monospace;
+        font-family: var(--code-font-family);
         font-weight: 400;
         font-size: 0.75rem;
     }
@@ -226,8 +235,6 @@
 
         border: none;
 
-        height: 1.8rem;
-
         background-color: var(--body-bg);
 
         h4 {
@@ -263,7 +270,7 @@
 
 // Lists of locations (definitions, references, implementations) on the left
 .location-lists {
-    height: calc(100% - var(--filter-input-height));
+    height: calc(100% - var(--filter-input-height) - 2 * var(--filter-input-padding-y));
     overflow: auto;
 }
 

@@ -8,7 +8,20 @@ import (
 )
 
 type operations struct {
-	getStaleSourcedCommits *observation.Operation
+	vacuumStaleDefinitions           *observation.Operation
+	vacuumStaleReferences            *observation.Operation
+	vacuumStalePaths                 *observation.Operation
+	vacuumAbandonedDefinitions       *observation.Operation
+	vacuumAbandonedReferences        *observation.Operation
+	vacuumAbandonedInitialPathCounts *observation.Operation
+	vacuumStaleGraphs                *observation.Operation
+	vacuumStaleRanks                 *observation.Operation
+	insertDefinitionsForRanking      *observation.Operation
+	insertReferencesForRanking       *observation.Operation
+	insertPathCountInputs            *observation.Operation
+	insertPathRanks                  *observation.Operation
+	insertInitialPathCounts          *observation.Operation
+	insertInitialPathRanks           *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -32,6 +45,19 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		getStaleSourcedCommits: op("StaleSourcedCommits"),
+		vacuumStaleDefinitions:           op("VacuumStaleDefinitions"),
+		vacuumStaleReferences:            op("VacuumStaleReferences"),
+		vacuumStalePaths:                 op("VacuumStalePaths"),
+		vacuumAbandonedDefinitions:       op("VacuumAbandonedDefinitions"),
+		vacuumAbandonedReferences:        op("VacuumAbandonedReferences"),
+		vacuumAbandonedInitialPathCounts: op("VacuumAbandonedInitialPathCounts"),
+		vacuumStaleGraphs:                op("VacuumStaleGraphs"),
+		vacuumStaleRanks:                 op("VacuumStaleRanks"),
+		insertDefinitionsForRanking:      op("InsertDefinitionsForRanking"),
+		insertReferencesForRanking:       op("InsertReferencesForRanking"),
+		insertPathCountInputs:            op("InsertPathCountInputs"),
+		insertPathRanks:                  op("InsertPathRanks"),
+		insertInitialPathCounts:          op("InsertInitialPathCounts"),
+		insertInitialPathRanks:           op("InsertInitialPathRanks"),
 	}
 }

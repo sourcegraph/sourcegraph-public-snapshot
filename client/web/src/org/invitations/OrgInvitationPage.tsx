@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect } from 'react'
 
 import classNames from 'classnames'
-import { useNavigate, useParams } from 'react-router-dom-v5-compat'
+import { useNavigate, useParams } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
 import { Alert, AnchorLink, Button, LoadingSpinner, Link, H2, H3, Form } from '@sourcegraph/wildcard'
 
@@ -20,7 +21,6 @@ import {
 } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { userURL } from '../../user'
-import { UserAvatar } from '../../user/UserAvatar'
 import { OrgAvatar } from '../OrgAvatar'
 
 import styles from './OrgInvitationPage.module.scss'

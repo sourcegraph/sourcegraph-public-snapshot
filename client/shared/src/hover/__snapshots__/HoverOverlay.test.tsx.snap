@@ -98,8 +98,6 @@ exports[`HoverOverlay actions and hover present 1`] = `
         <p>
           v
         </p>
-        
-
       </span>
     </div>
     <div
@@ -164,8 +162,6 @@ exports[`HoverOverlay actions error, hover present 1`] = `
         <p>
           v
         </p>
-        
-
       </span>
     </div>
     <div
@@ -247,89 +243,6 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
           data-loading-spinner="true"
           role="img"
         />
-      </div>
-    </div>
-    <div
-      class="actionsContainer"
-    >
-      <div
-        class="actions"
-      >
-        <div
-          class="actionsInner"
-        >
-          <button
-            class="test-action-item action test-tooltip-untitled"
-            type="button"
-          >
-              
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-</DocumentFragment>
-`;
-
-exports[`HoverOverlay actions, hover and alert present 1`] = `
-<DocumentFragment>
-  <div
-    class="card hoverOverlay"
-    data-testid="hover-overlay"
-    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
-  >
-    <div
-      class="hoverOverlayContents"
-      data-testid="hover-overlay-contents"
-    >
-      <span
-        class="hoverOverlayContent hoverOverlayContent test-tooltip-content"
-        data-testid="hover-overlay-content"
-      >
-        <p>
-          v
-        </p>
-        
-
-      </span>
-    </div>
-    <div
-      class="hoverOverlayAlerts"
-    >
-      <div
-        aria-live="polite"
-        class="alert"
-        role="alert"
-      >
-        <span
-          class="hoverOverlayContent hoverOverlayContent"
-          data-testid="hover-overlay-content"
-        >
-          <span>
-            <p>
-              Testing 
-              <code>
-                markdown
-              </code>
-               rendering.
-            </p>
-            
-
-          </span>
-        </span>
-        <div
-          class="alertDismiss"
-        >
-          <a
-            class=""
-            href=""
-            role="button"
-          >
-            <small>
-              Dismiss
-            </small>
-          </a>
-        </div>
       </div>
     </div>
     <div
@@ -471,8 +384,6 @@ exports[`HoverOverlay hover present 1`] = `
         <p>
           v
         </p>
-        
-
       </span>
     </div>
     <div
@@ -500,8 +411,6 @@ exports[`HoverOverlay hover present, actions loading 1`] = `
         <p>
           v
         </p>
-        
-
       </span>
     </div>
     <div
@@ -529,8 +438,6 @@ exports[`HoverOverlay multiple hovers present 1`] = `
         <p>
           v
         </p>
-        
-
       </span>
       <hr />
       <span
@@ -540,8 +447,6 @@ exports[`HoverOverlay multiple hovers present 1`] = `
         <p>
           v2
         </p>
-        
-
       </span>
     </div>
     <div

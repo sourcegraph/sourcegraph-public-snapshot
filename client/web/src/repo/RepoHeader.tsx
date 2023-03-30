@@ -2,26 +2,22 @@ import React, { useState, useMemo, useEffect } from 'react'
 
 import { mdiDotsVertical } from '@mdi/js'
 import classNames from 'classnames'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Menu, MenuList, Position, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { Breadcrumbs, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
-import type { ActionItemsToggleProps } from '../extensions/components/ActionItemsBar'
 import { ActionButtonDescriptor } from '../util/contributions'
 import { useBreakpoint } from '../util/dom'
 
 import { RepoHeaderActionDropdownToggle } from './components/RepoHeaderActions'
 
 import styles from './RepoHeader.module.scss'
-
-const ActionItemsToggle = lazyComponent(() => import('../extensions/components/ActionItemsBar'), 'ActionItemsToggle')
 
 /**
  * Stores the list of RepoHeaderContributions, manages addition/deletion, and ensures they are sorted.
@@ -85,7 +81,7 @@ export interface RepoHeaderContribution {
      * Render function called with RepoHeaderContext.
      * Use `actionType` to determine how to render the component.
      */
-    children: (context: RepoHeaderContext) => React.ReactElement
+    children: (context: RepoHeaderContext) => JSX.Element | null
 }
 
 /**
@@ -121,7 +117,7 @@ export interface RepoHeaderContext {
 
 export interface RepoHeaderActionButton extends ActionButtonDescriptor<RepoHeaderContext> {}
 
-interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps, ActionItemsToggleProps {
+interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps {
     /**
      * An array of render functions for action buttons that can be configured *in addition* to action buttons
      * contributed through {@link RepoHeaderContributionsLifecycleProps} and through extensions.
@@ -204,7 +200,6 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                 {/* Breadcrumb for the nav elements */}
                 <Breadcrumbs
                     breadcrumbs={props.breadcrumbs}
-                    location={location}
                     className={classNames('justify-content-start', !props.forceWrap ? styles.breadcrumbWrap : '')}
                 />
             </div>
@@ -252,14 +247,6 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                         </li>
                     </ul>
                 )}
-                {window.context.enableLegacyExtensions ? (
-                    <ul className="navbar-nav">
-                        <ActionItemsToggle
-                            useActionItemsToggle={props.useActionItemsToggle}
-                            extensionsController={props.extensionsController}
-                        />
-                    </ul>
-                ) : null}
             </ErrorBoundary>
         </nav>
     )

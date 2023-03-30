@@ -1,12 +1,10 @@
 import { gql, useQuery } from '@apollo/client'
 
-import { asError } from '@sourcegraph/common'
-
 import { RepositorySearchSuggestionsResult } from '../../../../../../graphql-operations'
 
 const GET_REPOSITORY_SUGGESTION = gql`
-    query RepositorySearchSuggestions($query: String!) {
-        repositories(first: 5, query: $query) {
+    query RepositorySearchSuggestions($query: String) {
+        repositories(first: 10, query: $query) {
             nodes {
                 id
                 name
@@ -16,35 +14,36 @@ const GET_REPOSITORY_SUGGESTION = gql`
 `
 
 interface UseRepoSuggestionsProps {
-    search: string | null
+    search: string
     disable?: boolean
+    selectedRepositories: string[]
 }
 
-export interface RepositorySuggestionData {
-    id: string
-    name: string
+interface UseRepoSuggestionsResult {
+    suggestions: string[]
+    loading: boolean
 }
 
-export function useRepoSuggestions(props: UseRepoSuggestionsProps): RepositorySuggestionData[] | Error | undefined {
-    const { search, disable = false } = props
+export function useRepoSuggestions(props: UseRepoSuggestionsProps): UseRepoSuggestionsResult {
+    const { search, disable = false, selectedRepositories } = props
 
-    const { data, loading, error } = useQuery<RepositorySearchSuggestionsResult>(GET_REPOSITORY_SUGGESTION, {
-        skip: disable || !search,
-        fetchPolicy: 'cache-first',
-        variables: { query: search },
+    const {
+        data: currentData,
+        previousData,
+        loading,
+    } = useQuery<RepositorySearchSuggestionsResult>(GET_REPOSITORY_SUGGESTION, {
+        skip: disable,
+        fetchPolicy: 'cache-and-network',
+        variables: { query: search === '' ? null : search },
     })
 
-    if (error) {
-        return asError(error)
-    }
+    const data = currentData ?? previousData
 
-    if (loading) {
-        return undefined
+    return {
+        suggestions:
+            data?.repositories.nodes
+                ?.filter(suggestion => !!suggestion.name && !selectedRepositories.includes(suggestion.name))
+                .map(suggestion => suggestion.name) ?? [],
+        loading,
     }
-
-    if (data) {
-        return data.repositories.nodes.filter(suggestion => !!suggestion.name)
-    }
-
-    return []
 }

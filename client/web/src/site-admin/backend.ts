@@ -111,6 +111,7 @@ const mirrorRepositoryInfoFieldsFragment = gql`
         cloned
         cloneInProgress
         updatedAt
+        nextSyncAt
         isCorrupted
         corruptionLogs {
             timestamp
@@ -577,16 +578,16 @@ export function createUser(username: string, email: string | undefined): Observa
     )
 }
 
-export function deleteOrganization(organization: Scalars['ID'], hard?: boolean): Promise<void> {
+export function deleteOrganization(organization: Scalars['ID']): Promise<void> {
     return requestGraphQL<DeleteOrganizationResult, DeleteOrganizationVariables>(
         gql`
-            mutation DeleteOrganization($organization: ID!, $hard: Boolean) {
-                deleteOrganization(organization: $organization, hard: $hard) {
+            mutation DeleteOrganization($organization: ID!) {
+                deleteOrganization(organization: $organization) {
                     alwaysNil
                 }
             }
         `,
-        { organization, hard: hard ?? null }
+        { organization }
     )
         .pipe(
             map(dataOrThrowErrors),
@@ -620,6 +621,20 @@ export function fetchSiteUpdateCheck(): Observable<SiteUpdateCheckResult['site']
         map(data => data.site)
     )
 }
+
+export const SITE_UPGRADE_READINESS = gql`
+    query SiteUpgradeReadiness {
+        site {
+            upgradeReadiness {
+                schemaDrift
+                requiredOutOfBandMigrations {
+                    id
+                    description
+                }
+            }
+        }
+    }
+`
 
 /**
  * Fetches all out-of-band migrations.
@@ -699,8 +714,8 @@ export function fetchFeatureFlags(): Observable<FeatureFlagFields[]> {
     )
 }
 
-export const REPOSITORY_STATS = gql`
-    query RepositoryStats {
+export const STATUS_AND_REPO_STATS = gql`
+    query StatusAndRepoStats {
         repositoryStats {
             __typename
             total
@@ -710,6 +725,41 @@ export const REPOSITORY_STATS = gql`
             failedFetch
             corrupted
             indexed
+        }
+        statusMessages {
+            ... on GitUpdatesDisabled {
+                __typename
+
+                message
+            }
+
+            ... on CloningProgress {
+                __typename
+
+                message
+            }
+
+            ... on IndexingProgress {
+                __typename
+
+                notIndexed
+                indexed
+            }
+
+            ... on SyncError {
+                __typename
+
+                message
+            }
+
+            ... on ExternalServiceSyncError {
+                __typename
+
+                externalService {
+                    id
+                    displayName
+                }
+            }
         }
     }
 `
@@ -836,7 +886,7 @@ export const useWebhookPageHeader = (): { loading: boolean; totalErrors: number;
     return { loading, totalErrors, totalNoEvents }
 }
 
-export const useWebhooksConnection = (): UseShowMorePaginationResult<WebhookFields> =>
+export const useWebhooksConnection = (): UseShowMorePaginationResult<WebhooksListResult, WebhookFields> =>
     useShowMorePagination<WebhooksListResult, WebhooksListVariables, WebhookFields>({
         query: WEBHOOKS,
         variables: {},
@@ -855,7 +905,7 @@ export const useWebhookLogsConnection = (
     webhookID: string,
     first: number,
     onlyErrors: boolean
-): UseShowMorePaginationResult<WebhookLogFields> =>
+): UseShowMorePaginationResult<WebhookLogsByWebhookIDResult, WebhookLogFields> =>
     useShowMorePagination<WebhookLogsByWebhookIDResult, WebhookLogsByWebhookIDVariables, WebhookLogFields>({
         query: WEBHOOK_LOGS_BY_ID,
         variables: {
@@ -887,5 +937,91 @@ export const UPDATE_WEBHOOK_QUERY = gql`
         updateWebhook(id: $id, name: $name, codeHostKind: $codeHostKind, codeHostURN: $codeHostURN, secret: $secret) {
             id
         }
+    }
+`
+
+export const EXTERNAL_SERVICE_KINDS = gql`
+    query ExternalServiceKinds {
+        externalServices {
+            nodes {
+                kind
+            }
+        }
+    }
+`
+
+const siteAdminPackageFieldsFragment = gql`
+    ${mirrorRepositoryInfoFieldsFragment}
+    ${externalRepositoryFieldsFragment}
+
+    fragment SiteAdminPackageFields on PackageRepoReference {
+        id
+        name
+        kind
+        blocked
+        repository {
+            id
+            name
+            url
+            mirrorInfo {
+                ...MirrorRepositoryInfoFields
+            }
+            externalRepository {
+                ...ExternalRepositoryFields
+            }
+        }
+    }
+`
+
+export const PACKAGES_QUERY = gql`
+    query Packages($kind: PackageRepoReferenceKind, $name: String, $first: Int!, $after: String) {
+        packageRepoReferences(kind: $kind, name: $name, first: $first, after: $after) {
+            nodes {
+                ...SiteAdminPackageFields
+            }
+            totalCount
+            pageInfo {
+                hasNextPage
+                endCursor
+            }
+        }
+    }
+
+    ${siteAdminPackageFieldsFragment}
+`
+
+export const SITE_CONFIGURATION_CHANGE_CONNECTION_QUERY = gql`
+    query SiteConfigurationHistory($first: Int, $last: Int, $after: String, $before: String) {
+        site {
+            __typename
+            configuration {
+                history(first: $first, last: $last, after: $after, before: $before) {
+                    __typename
+                    totalCount
+                    nodes {
+                        __typename
+                        ...SiteConfigurationChangeNode
+                    }
+                    pageInfo {
+                        hasNextPage
+                        hasPreviousPage
+                        endCursor
+                        startCursor
+                    }
+                }
+            }
+        }
+    }
+
+    fragment SiteConfigurationChangeNode on SiteConfigurationChange {
+        id
+        author {
+            id
+            username
+            displayName
+            avatarURL
+        }
+        diff
+        createdAt
     }
 `

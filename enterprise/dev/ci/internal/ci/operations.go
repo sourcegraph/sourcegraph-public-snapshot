@@ -28,9 +28,11 @@ type CoreTestOperationsOptions struct {
 	MinimumUpgradeableVersion  string
 	ClientLintOnlyChangedFiles bool
 	ForceReadyForReview        bool
-	// for addWebApp
+	// for addWebAppOSSBuild
 	CacheBundleSize      bool
 	CreateBundleSizeDiff bool
+	// ForceBazel replaces vanilla jobs with Bazel ones if enabled.
+	ForceBazel bool
 }
 
 // CoreTestOperations is a core set of tests that should be run in most CI cases. More
@@ -47,6 +49,10 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	// Base set
 	ops := operations.NewSet()
 
+	if opts.ForceBazel {
+		ops.Merge(BazelOperations(false)) // non soft-failing
+	}
+
 	// Simple, fast-ish linter checks
 	linterOps := operations.NewNamedSet("Linters and static analysis")
 	if diff.Has(changed.GraphQL) {
@@ -58,16 +64,43 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	ops.Merge(linterOps)
 
 	if diff.Has(changed.Client | changed.GraphQL) {
-		// If there are any Graphql changes, they are impacting the client as well.
-		clientChecks := operations.NewNamedSet("Client checks",
-			clientIntegrationTests,
-			clientChromaticTests(opts),
-			frontendTests,                // ~4.5m
-			addWebApp(opts),              // ~5.5m
-			addBrowserExtensionUnitTests, // ~4.5m
-			addJetBrainsUnitTests,        // ~2.5m
-			addTypescriptCheck,           // ~4m
-		)
+		var clientChecks *operations.Set
+		// TODO(Bazel) clean this once we go GA.
+		if opts.ForceBazel {
+			// If there are any Graphql changes, they are impacting the client as well.
+			clientChecks = operations.NewNamedSet("Client checks",
+				clientIntegrationTests,
+				clientChromaticTests(opts),
+				// frontendTests is now covered by Bazel
+				// frontendTests,                // ~4.5m
+				// addWebAppOSSBuild is now covered by Bazel
+				// addWebAppOSSBuild(opts),
+				addWebAppEnterpriseBuild(opts),
+				// addWebAppTests is now covered by Bazel
+				// addWebAppTests(opts),
+				// addBrowserExtensionsUnitTests is now covered by Bazel
+				// addBrowserExtensionUnitTests, // ~4.5m
+				addJetBrainsUnitTests, // ~2.5m
+				// addTypescriptCheck is now covered by Bazel
+				// addTypescriptCheck,    // ~4m
+				addVsceTests,          // ~3.0m
+				addCodyExtensionTests, // ~2.5m
+			)
+		} else {
+			// If there are any Graphql changes, they are impacting the client as well.
+			clientChecks = operations.NewNamedSet("Client checks",
+				clientIntegrationTests,
+				clientChromaticTests(opts),
+				frontendTests, // ~4.5m
+				addWebAppOSSBuild(opts),
+				addWebAppTests(opts),
+				addBrowserExtensionUnitTests, // ~4.5m
+				addJetBrainsUnitTests,        // ~2.5m
+				addTypescriptCheck,           // ~4m
+				addVsceTests,                 // ~3.0m
+				addCodyExtensionTests,        // ~2.5m
+			)
+		}
 
 		if opts.ClientLintOnlyChangedFiles {
 			clientChecks.Append(addClientLintersForChangedFiles)
@@ -78,7 +111,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		ops.Merge(clientChecks)
 	}
 
-	if diff.Has(changed.Go | changed.GraphQL) {
+	if diff.Has(changed.Go|changed.GraphQL) && !opts.ForceBazel {
 		// If there are any Graphql changes, they are impacting the backend as well.
 		ops.Merge(operations.NewNamedSet("Go checks",
 			addGoTests,
@@ -171,7 +204,7 @@ func addCIScriptsTests(pipeline *bk.Pipeline) {
 //	pipeline.AddStep(":lock: Checkov Terraform scanning",
 //		bk.Cmd("dev/ci/ci-checkov.sh"),
 //		bk.SoftFail(222))
-//}
+// }
 
 // pnpm ~41s + ~1s
 func addGraphQLLint(pipeline *bk.Pipeline) {
@@ -193,6 +226,10 @@ func addClientLintersForAllFiles(pipeline *bk.Pipeline) {
 		withPnpmCache(),
 		bk.Cmd("dev/ci/pnpm-run.sh lint:js:all"))
 
+	pipeline.AddStep(":eslint: ESLint (web)",
+		withPnpmCache(),
+		bk.Cmd("dev/ci/pnpm-run.sh lint:js:web"))
+
 	pipeline.AddStep(":stylelint: Stylelint (all)",
 		withPnpmCache(),
 		bk.Cmd("dev/ci/pnpm-run.sh lint:css:all"))
@@ -210,7 +247,7 @@ func addClientLintersForChangedFiles(pipeline *bk.Pipeline) {
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
-func addWebApp(opts CoreTestOperationsOptions) operations.Operation {
+func addWebAppOSSBuild(opts CoreTestOperationsOptions) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		// Webapp build
 		pipeline.AddStep(":webpack::globe_with_meridians: Build",
@@ -218,9 +255,11 @@ func addWebApp(opts CoreTestOperationsOptions) operations.Operation {
 			bk.Cmd("dev/ci/pnpm-build.sh client/web"),
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("ENTERPRISE", ""))
+	}
+}
 
-		addWebEnterpriseBuild(pipeline, opts)
-
+func addWebAppTests(opts CoreTestOperationsOptions) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
 		// Webapp tests
 		pipeline.AddStep(":jest::globe_with_meridians: Test (client/web)",
 			withPnpmCache(),
@@ -234,38 +273,40 @@ func addWebApp(opts CoreTestOperationsOptions) operations.Operation {
 }
 
 // Webapp enterprise build
-func addWebEnterpriseBuild(pipeline *bk.Pipeline, opts CoreTestOperationsOptions) {
-	commit := os.Getenv("BUILDKITE_COMMIT")
-	branch := os.Getenv("BUILDKITE_BRANCH")
+func addWebAppEnterpriseBuild(opts CoreTestOperationsOptions) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		commit := os.Getenv("BUILDKITE_COMMIT")
+		branch := os.Getenv("BUILDKITE_BRANCH")
 
-	cmds := []bk.StepOpt{
-		withPnpmCache(),
-		bk.Cmd("dev/ci/pnpm-build.sh client/web"),
-		bk.Env("NODE_ENV", "production"),
-		bk.Env("ENTERPRISE", "1"),
-		bk.Env("CHECK_BUNDLESIZE", "1"),
-		// To ensure the Bundlesize output can be diffed to the baseline on main
-		bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
+		cmds := []bk.StepOpt{
+			withPnpmCache(),
+			bk.Cmd("dev/ci/pnpm-build.sh client/web"),
+			bk.Env("NODE_ENV", "production"),
+			bk.Env("ENTERPRISE", "1"),
+			bk.Env("CHECK_BUNDLESIZE", "1"),
+			// To ensure the Bundlesize output can be diffed to the baseline on main
+			bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
+		}
+
+		if opts.CacheBundleSize {
+			cmds = append(cmds,
+				// Emit a stats.json file for bundle size diffs
+				bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
+				withBundleSizeCache(commit))
+		}
+
+		if opts.CreateBundleSizeDiff {
+			cmds = append(cmds,
+				// Emit a stats.json file for bundle size diffs
+				bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
+				bk.Env("BRANCH", branch),
+				bk.Env("COMMIT", commit),
+				bk.Cmd("dev/ci/report-bundle-diff.sh"),
+			)
+		}
+
+		pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build", cmds...)
 	}
-
-	if opts.CacheBundleSize {
-		cmds = append(cmds,
-			// Emit a stats.json file for bundle size diffs
-			bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
-			withBundleSizeCache(commit))
-	}
-
-	if opts.CreateBundleSizeDiff {
-		cmds = append(cmds,
-			// Emit a stats.json file for bundle size diffs
-			bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
-			bk.Env("BRANCH", branch),
-			bk.Env("COMMIT", commit),
-			bk.Cmd("dev/ci/report-bundle-diff.sh"),
-		)
-	}
-
-	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build", cmds...)
 }
 
 var browsers = []string{"chrome"}
@@ -275,14 +316,25 @@ func getParallelTestCount(webParallelTestCount int) int {
 }
 
 // Builds and tests the VS Code extensions.
-func addVsceIntegrationTests(pipeline *bk.Pipeline) {
+func addVsceTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(
-		":vscode: Puppeteer tests for VS Code extension",
+		":vscode: Tests for VS Code extension",
 		withPnpmCache(),
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm generate"),
 		bk.Cmd("pnpm --filter @sourcegraph/vscode run build:test"),
-		bk.Cmd("pnpm --filter @sourcegraph/vscode run test-integration --verbose"),
+		// TODO: fix integrations tests and re-enable: https://github.com/sourcegraph/sourcegraph/issues/40891
+		// bk.Cmd("pnpm --filter @sourcegraph/vscode run test-integration --verbose"),
+		// bk.AutomaticRetry(1),
+	)
+}
+
+func addCodyExtensionTests(pipeline *bk.Pipeline) {
+	pipeline.AddStep(
+		":vscode::robot_face: Integration tests for the Cody VS Code extension",
+		withPnpmCache(),
+		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
+		bk.Cmd("pnpm --filter cody-ai run test:integration"),
 		bk.AutomaticRetry(1),
 	)
 }
@@ -344,7 +396,7 @@ func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
 }
 
 func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":jest::java: Test (client/jetbrains)",
+	pipeline.AddStep(":java: Build (client/jetbrains)",
 		withPnpmCache(),
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm generate"),
@@ -399,6 +451,7 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		stepOpts := []bk.StepOpt{
 			withPnpmCache(),
+			bk.Skip("disabled, ongoing issue on their side"),
 			bk.AutomaticRetry(3),
 			bk.Cmd("./dev/ci/pnpm-install-with-retry.sh"),
 			bk.Cmd("pnpm gulp generate"),
@@ -436,9 +489,8 @@ func frontendTests(pipeline *bk.Pipeline) {
 
 // Adds the Go test step.
 func addGoTests(pipeline *bk.Pipeline) {
-	buildGoTests(func(description, testSuffix string) {
-		pipeline.AddStep(
-			fmt.Sprintf(":go: Test (%s)", description),
+	buildGoTests(func(description, testSuffix string, additionalOpts ...bk.StepOpt) {
+		opts := []bk.StepOpt{
 			// Max DB connections is set to 200: https://github.com/sourcegraph/infrastructure/blob/main/docker-images/buildkite-agent-stateless/postgresql.conf
 			// Because we run tests concurrently, the following must hold to avoid connection issues:
 			//
@@ -451,6 +503,12 @@ func addGoTests(pipeline *bk.Pipeline) {
 				Annotations: &bk.AnnotationOpts{},
 			}),
 			bk.Cmd("./dev/ci/codecov.sh -c -F go"),
+		}
+		opts = append(opts, additionalOpts...)
+
+		pipeline.AddStep(
+			fmt.Sprintf(":go: Test (%s)", description),
+			opts...,
 		)
 	})
 }
@@ -458,7 +516,7 @@ func addGoTests(pipeline *bk.Pipeline) {
 // Adds the Go backcompat test step.
 func addGoTestsBackcompat(minimumUpgradeableVersion string) func(pipeline *bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		buildGoTests(func(description, testSuffix string) {
+		buildGoTests(func(description, testSuffix string, additionalOpts ...bk.StepOpt) {
 			pipeline.AddStep(
 				fmt.Sprintf(":go::postgres: Backcompat test (%s)", description),
 				bk.Env("MINIMUM_UPGRADEABLE_VERSION", minimumUpgradeableVersion),
@@ -474,23 +532,41 @@ func addGoTestsBackcompat(minimumUpgradeableVersion string) func(pipeline *bk.Pi
 // be run as part of complete coverage. The description will be the specific test path
 // broken out to be run independently (or "all"), and the testSuffix will be the string
 // to pass to go test to filter test packaes (e.g., "only <pkg>" or "exclude <pkgs...>").
-func buildGoTests(f func(description, testSuffix string)) {
+func buildGoTests(f func(description, testSuffix string, additionalOpts ...bk.StepOpt)) {
 	// This is a bandage solution to speed up the go tests by running the slowest ones
 	// concurrently. As a results, the PR time affecting only Go code is divided by two.
-	slowGoTestPackages := []string{
+
+	// These are the slow packages that we do not want to run twice (once with gRPC, once without).
+	slowGoTestPackagesNonGRPC := []string{
+		"github.com/sourcegraph/sourcegraph/internal/database",            // 253s
+		"github.com/sourcegraph/sourcegraph/enterprise/internal/database", // 94s
+	}
+
+	// These are the slow packages that we _do_ want to run twice (once with gRPC, once without).
+	slowGoTestPackagesGRPC := []string{
 		"github.com/sourcegraph/sourcegraph/enterprise/internal/insights",                       // 82+162s
-		"github.com/sourcegraph/sourcegraph/internal/database",                                  // 253s
 		"github.com/sourcegraph/sourcegraph/internal/repos",                                     // 106s
 		"github.com/sourcegraph/sourcegraph/enterprise/internal/batches",                        // 52 + 60
 		"github.com/sourcegraph/sourcegraph/cmd/frontend",                                       // 100s
-		"github.com/sourcegraph/sourcegraph/enterprise/internal/database",                       // 94s
 		"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers", // 152s
 		"github.com/sourcegraph/sourcegraph/dev/sg",                                             // small, but much more practical to have it in its own job
 	}
 
-	f("all", "exclude "+strings.Join(slowGoTestPackages, " "))
+	allSlowPackages := append(slowGoTestPackagesNonGRPC, slowGoTestPackagesGRPC...)
+	enableGRPCEnvOpt := bk.Env("SG_FEATURE_FLAG_GRPC", "true")
 
-	for _, slowPkg := range slowGoTestPackages {
+	// Run all tests that aren't slow both with and without gRPC enabled
+	f("all", fmt.Sprintf("exclude %s", strings.Join(allSlowPackages, " ")))
+	f("all (gRPC)", fmt.Sprintf("exclude %s", strings.Join(allSlowPackages, " ")), enableGRPCEnvOpt)
+
+	// Run most slow packages both with and without gRPC
+	for _, slowPkg := range slowGoTestPackagesGRPC {
+		f(strings.ReplaceAll(slowPkg, "github.com/sourcegraph/sourcegraph/", ""), "only "+slowPkg)
+		f(strings.ReplaceAll(slowPkg, "github.com/sourcegraph/sourcegraph/", "")+" (gRPC)", "only "+slowPkg, enableGRPCEnvOpt)
+	}
+
+	// These packages won't benefit from duplicating the tests with gRPC enabled, so only run them once.
+	for _, slowPkg := range slowGoTestPackagesNonGRPC {
 		f(strings.ReplaceAll(slowPkg, "github.com/sourcegraph/sourcegraph/", ""), "only "+slowPkg)
 	}
 }
@@ -507,13 +583,21 @@ func addGoBuild(pipeline *bk.Pipeline) {
 // Runtime: ~11m
 func backendIntegrationTests(candidateImageTag string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":chains: Backend integration tests",
-			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
-			bk.Env("IMAGE",
-				images.DevRegistryImage("server", candidateImageTag)),
-			bk.Cmd("dev/ci/integration/backend/run.sh"),
-			bk.ArtifactPaths("./*.log"))
+		for _, enableGRPC := range []bool{true, false} {
+			description := ":chains: Backend integration tests"
+			if enableGRPC {
+				description += " (gRPC)"
+			}
+			pipeline.AddStep(
+				description,
+				// Run tests against the candidate server image
+				bk.DependsOn(candidateImageStepKey("server")),
+				bk.Env("IMAGE",
+					images.DevRegistryImage("server", candidateImageTag)),
+				bk.Env("SG_FEATURE_FLAG_GRPC", strconv.FormatBool(enableGRPC)),
+				bk.Cmd("dev/ci/integration/backend/run.sh"),
+				bk.ArtifactPaths("./*.log"))
+		}
 	}
 }
 
@@ -571,13 +655,22 @@ func addVsceReleaseSteps(pipeline *bk.Pipeline) {
 }
 
 // Release a snapshot of App.
-func addAppSnapshotReleaseSteps(c Config) operations.Operation {
-	// TODO(sqs): Use goreleaser-pro nightly feature? Blocked on
-	// https://github.com/goreleaser/goreleaser-cross/issues/22.
-
-	// goreleaser requires that the version is semver-compatible
-	// (https://goreleaser.com/limitations/semver/). This is fine for now in alpha.
-	version := fmt.Sprintf("0.0.%d-snapshot+%s-%.6s", c.BuildNumber, c.Time.Format("20060102"), c.Commit)
+func addAppReleaseSteps(c Config, insiders bool) operations.Operation {
+	// The version scheme we use for App is one of:
+	//
+	// * yyyy.mm.dd+$BUILDNUM.$COMMIT
+	// * yyyy.mm.dd-insiders+$BUILDNUM.$COMMIT
+	//
+	// We do not follow the Sourcegraph enterprise versioning scheme, because Sourcegraph App is
+	// released much more frequently than the enterprise versions by nature of being a desktop
+	// app.
+	//
+	// Also note that goreleaser requires the version is semver-compatible.
+	insidersStr := ""
+	if insiders {
+		insidersStr = "-insiders"
+	}
+	version := fmt.Sprintf("%s%s+%d.%.6s", c.Time.Format("2006.01.02"), insidersStr, c.BuildNumber, c.Commit)
 
 	return func(pipeline *bk.Pipeline) {
 		// Release App (.zip/.deb/.rpm to Google Cloud Storage, new tap for Homebrew, etc.).
@@ -614,6 +707,8 @@ func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operatio
 		previousMinorVersion := fmt.Sprintf("%d.%d", version.Major(), version.Minor()-1)
 		if version.Major() == 4 && version.Minor() == 0 {
 			previousMinorVersion = "3.43"
+		} else if version.Major() == 5 && version.Minor() == 0 {
+			previousMinorVersion = "4.5"
 		}
 
 		for _, branch := range []string{
@@ -898,7 +993,7 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 
 		var imgs []string
 		for _, image := range []string{publishImage, devImage} {
-			if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.ImagePatch, runtype.ImagePatchNoTest) {
+			if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.ImagePatch, runtype.ImagePatchNoTest, runtype.CandidatesNoTest) {
 				imgs = append(imgs, fmt.Sprintf("%s:%s", image, c.Version))
 			}
 

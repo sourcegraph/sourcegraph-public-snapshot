@@ -89,7 +89,7 @@ func TestUsers_ValidUsernames(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			valid := true
 			if _, err := db.Users().Create(ctx, NewUser{Username: test.name}); err != nil {
-				var e errCannotCreateUser
+				var e ErrCannotCreateUser
 				if errors.As(err, &e) && (e.Code() == "users_username_max_length" || e.Code() == "users_username_valid_chars") {
 					valid = false
 				} else {
@@ -125,6 +125,13 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	if !user.SiteAdmin {
 		t.Fatal("!user.SiteAdmin")
 	}
+	ur, err := getUserRoles(ctx, db, user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ur) != 2 {
+		t.Fatalf("expected user to be assigned two roles (USER and SITE_ADMINISTRATOR), got %d", len(ur))
+	}
 
 	// Creating a non-site-admin now that the site has already been initialized.
 	u2, err := db.Users().Create(ctx, NewUser{
@@ -139,6 +146,14 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	if u2.SiteAdmin {
 		t.Fatal("want u2 not site admin because site is already initialized")
 	}
+	ur, err = getUserRoles(ctx, db, u2.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ur) != 1 {
+		t.Fatalf("expected user to be assigned one role, got %d", len(ur))
+	}
+
 	// Similar to the above, but expect an error because we pass FailIfNotInitialUser: true.
 	_, err = db.Users().Create(ctx, NewUser{
 		Email:                 "a3@a3.com",
@@ -147,7 +162,7 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 		EmailVerificationCode: "c3",
 		FailIfNotInitialUser:  true,
 	})
-	if want := (errCannotCreateUser{"site_already_initialized"}); !errors.Is(err, want) {
+	if want := (ErrCannotCreateUser{"site_already_initialized"}); !errors.Is(err, want) {
 		t.Fatalf("got error %v, want %v", err, want)
 	}
 
@@ -172,6 +187,14 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	if u4.SiteAdmin {
 		t.Fatal("want u4 not site admin because site is already initialized")
 	}
+	ur, err = getUserRoles(ctx, db, u4.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ur) != 1 {
+		t.Fatalf("expected user to be assigned one role, got %d", len(ur))
+	}
+
 	// Similar to the above, but expect an error because we pass FailIfNotInitialUser: true.
 	if _, err := db.ExecContext(ctx, "UPDATE site_config SET initialized=false"); err != nil {
 		t.Fatal(err)
@@ -183,7 +206,7 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 		EmailVerificationCode: "c5",
 		FailIfNotInitialUser:  true,
 	})
-	if want := (errCannotCreateUser{"initial_site_admin_must_be_first_user"}); !errors.Is(err, want) {
+	if want := (ErrCannotCreateUser{"initial_site_admin_must_be_first_user"}); !errors.Is(err, want) {
 		t.Fatalf("got error %v, want %v", err, want)
 	}
 }
@@ -257,7 +280,6 @@ func TestUsers_ListCount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	user.Tags = []string{}
 
 	if count, err := db.Users().Count(ctx, &UsersListOptions{}); err != nil {
 		t.Fatal(err)
@@ -282,6 +304,13 @@ func TestUsers_ListCount(t *testing.T) {
 	}
 
 	if users, err := db.Users().List(ctx, &UsersListOptions{}); err != nil {
+		t.Fatal(err)
+	} else if users, want := normalizeUsers(users), normalizeUsers([]*types.User{user}); !reflect.DeepEqual(users, want) {
+		t.Errorf("got %+v, want %+v", users[0], user)
+	}
+
+	// By usernames.
+	if users, err := db.Users().List(ctx, &UsersListOptions{Usernames: []string{user.Username}}); err != nil {
 		t.Fatal(err)
 	} else if users, want := normalizeUsers(users), normalizeUsers([]*types.User{user}); !reflect.DeepEqual(users, want) {
 		t.Errorf("got %+v, want %+v", users[0], user)
@@ -456,14 +485,14 @@ func TestUsers_ListForSCIM_Query(t *testing.T) {
 		{NewUser: NewUser{Email: "charlie@example.com", Username: "charlie", EmailIsVerified: true}, SCIMExternalID: "CHARLIE", AdditionalVerifiedEmails: []string{"charlie2@example.com"}},
 	}
 	for _, newUser := range newUsers {
-		id, err := db.UserExternalAccounts().CreateUserAndSave(ctx, newUser.NewUser, extsvc.AccountSpec{ServiceType: "scim", AccountID: newUser.SCIMExternalID}, extsvc.AccountData{})
+		user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, newUser.NewUser, extsvc.AccountSpec{ServiceType: "scim", AccountID: newUser.SCIMExternalID}, extsvc.AccountData{})
 		for _, email := range newUser.AdditionalVerifiedEmails {
 			verificationCode := "x"
-			err := db.UserEmails().Add(ctx, id, email, &verificationCode)
+			err := db.UserEmails().Add(ctx, user.ID, email, &verificationCode)
 			if err != nil {
 				t.Fatal(err)
 			}
-			_, err = db.UserEmails().Verify(ctx, id, email, verificationCode)
+			_, err = db.UserEmails().Verify(ctx, user.ID, email, verificationCode)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -977,45 +1006,6 @@ func TestUsers_RecoverUsers(t *testing.T) {
 	})
 }
 
-func TestUsers_HasTag(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-
-	var id int32
-	if err := db.QueryRowContext(ctx, "INSERT INTO users (username, tags) VALUES ('karim', '{\"foo\", \"bar\"}') RETURNING id").Scan(&id); err != nil {
-		t.Fatal(err)
-	}
-
-	// lookup existing tag
-	ok, err := db.Users().HasTag(ctx, id, "foo")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !ok {
-		t.Fatal("expected tag to be found")
-	}
-
-	// lookup non-existing tag
-	ok, err = db.Users().HasTag(ctx, id, "baz")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if ok {
-		t.Fatal("expected tag to be not found")
-	}
-
-	// lookup non-existing user
-	ok, err = db.Users().HasTag(ctx, id+1, "bar")
-	if err == nil || ok {
-		t.Fatal("expected user to be not found")
-	}
-}
-
 func TestUsers_InvalidateSessions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -1060,7 +1050,7 @@ func TestUsers_InvalidateSessions(t *testing.T) {
 	}
 }
 
-func TestUsers_SetTag(t *testing.T) {
+func TestUsers_SetIsSiteAdmin(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -1069,93 +1059,61 @@ func TestUsers_SetTag(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	// Create user.
-	u, err := db.Users().Create(ctx, NewUser{Username: "u"})
+	adminUser, err := db.Users().Create(ctx, NewUser{Username: "u"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Create user. This user will have a `SiteAdmin` value of false because
+	// Global state hasn't been initialized at this point, so technically this is the
+	// first user.
+	if !adminUser.SiteAdmin {
+		t.Fatalf("expected site admin to be created")
+	}
+
+	regularUser, err := db.Users().Create(ctx, NewUser{Username: "u2"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	checkTags := func(t *testing.T, userID int32, wantTags []string) {
-		t.Helper()
-		u, err := db.Users().GetByID(ctx, userID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		sort.Strings(u.Tags)
-		sort.Strings(wantTags)
-		if !reflect.DeepEqual(u.Tags, wantTags) {
-			t.Errorf("got tags %v, want %v", u.Tags, wantTags)
-		}
-	}
-	checkUsersWithTag := func(t *testing.T, tag string, wantUsers []int32) {
-		t.Helper()
-		users, err := db.Users().List(ctx, &UsersListOptions{Tag: tag})
-		if err != nil {
-			t.Fatal(err)
-		}
-		userIDs := make([]int32, len(users))
-		for i, u := range users {
-			userIDs[i] = u.ID
-		}
-		if !reflect.DeepEqual(userIDs, wantUsers) {
-			t.Errorf("got user IDs %v, want %v", userIDs, wantUsers)
-		}
-	}
+	t.Run("revoking site admin role for a site admin", func(t *testing.T) {
+		// Confirm that the user has only two roles assigned to them.
+		ur, err := db.UserRoles().GetByUserID(ctx, GetUserRoleOpts{UserID: adminUser.ID})
+		require.NoError(t, err)
+		require.Len(t, ur, 2)
 
-	t.Run("fails on nonexistent user", func(t *testing.T) {
-		if err := db.Users().SetTag(ctx, 1234 /* doesn't exist */, "t", true); !errcode.IsNotFound(err) {
-			t.Errorf("got err %v, want errcode.IsNotFound", err)
-		}
-		if err := db.Users().SetTag(ctx, 1234 /* doesn't exist */, "t", false); !errcode.IsNotFound(err) {
-			t.Errorf("got err %v, want errcode.IsNotFound", err)
-		}
+		err = db.Users().SetIsSiteAdmin(ctx, adminUser.ID, false)
+		require.NoError(t, err)
+
+		// check that site admin role has been revoked for user
+		ur, err = db.UserRoles().GetByUserID(ctx, GetUserRoleOpts{UserID: adminUser.ID})
+		require.NoError(t, err)
+		// Since we've revoked the SITE_ADMINISTRATOR role, the user should still have the
+		// USER role assigned to them.
+		require.Len(t, ur, 1)
+
+		u, err := db.Users().GetByID(ctx, regularUser.ID)
+		require.NoError(t, err)
+		require.False(t, u.SiteAdmin)
 	})
 
-	t.Run("tags begins empty", func(t *testing.T) {
-		checkTags(t, u.ID, []string{})
-		checkUsersWithTag(t, "t1", []int32{})
-	})
+	t.Run("promoting a regular user to site admin", func(t *testing.T) {
+		// Confirm that the user has only one role assigned to them.
+		ur, err := db.UserRoles().GetByUserID(ctx, GetUserRoleOpts{UserID: regularUser.ID})
+		require.NoError(t, err)
+		require.Len(t, ur, 1)
 
-	t.Run("adds and removes tag", func(t *testing.T) {
-		if err := db.Users().SetTag(ctx, u.ID, "t1", true); err != nil {
-			t.Fatal(err)
-		}
-		checkTags(t, u.ID, []string{"t1"})
-		checkUsersWithTag(t, "t1", []int32{u.ID})
+		err = db.Users().SetIsSiteAdmin(ctx, regularUser.ID, true)
+		require.NoError(t, err)
 
-		t.Run("deduplicates", func(t *testing.T) {
-			if err := db.Users().SetTag(ctx, u.ID, "t1", true); err != nil {
-				t.Fatal(err)
-			}
-			checkTags(t, u.ID, []string{"t1"})
-		})
+		// check that site admin role has been assigned to user
+		ur, err = db.UserRoles().GetByUserID(ctx, GetUserRoleOpts{UserID: regularUser.ID})
+		require.NoError(t, err)
+		// The user should have both USER role and SITE_ADMINISTRATOR role assigned to them.
+		require.Len(t, ur, 2)
 
-		if err := db.Users().SetTag(ctx, u.ID, "t2", true); err != nil {
-			t.Fatal(err)
-		}
-		checkTags(t, u.ID, []string{"t1", "t2"})
-		checkUsersWithTag(t, "t1", []int32{u.ID})
-		checkUsersWithTag(t, "t2", []int32{u.ID})
-
-		if err := db.Users().SetTag(ctx, u.ID, "t1", false); err != nil {
-			t.Fatal(err)
-		}
-		checkTags(t, u.ID, []string{"t2"})
-		checkUsersWithTag(t, "t1", []int32{})
-		checkUsersWithTag(t, "t2", []int32{u.ID})
-
-		t.Run("removing nonexistent tag is noop", func(t *testing.T) {
-			if err := db.Users().SetTag(ctx, u.ID, "t1", false); err != nil {
-				t.Fatal(err)
-			}
-			checkTags(t, u.ID, []string{"t2"})
-		})
-
-		if err := db.Users().SetTag(ctx, u.ID, "t2", false); err != nil {
-			t.Fatal(err)
-		}
-		checkTags(t, u.ID, []string{})
-		checkUsersWithTag(t, "t2", []int32{})
+		u, err := db.Users().GetByID(ctx, regularUser.ID)
+		require.NoError(t, err)
+		require.True(t, u.SiteAdmin)
 	})
 }
 
@@ -1166,4 +1124,8 @@ func normalizeUsers(users []*types.User) []*types.User {
 		u.InvalidatedSessionsAt = u.InvalidatedSessionsAt.Local().Round(time.Second)
 	}
 	return users
+}
+
+func getUserRoles(ctx context.Context, db DB, userID int32) ([]*types.UserRole, error) {
+	return db.UserRoles().GetByUserID(ctx, GetUserRoleOpts{UserID: userID})
 }

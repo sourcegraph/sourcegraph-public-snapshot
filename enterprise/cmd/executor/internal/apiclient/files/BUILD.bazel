@@ -11,6 +11,7 @@ go_library(
     deps = [
         "//enterprise/cmd/executor/internal/apiclient",
         "//enterprise/cmd/executor/internal/worker/workspace",
+        "//enterprise/internal/executor/types",
         "//internal/metrics",
         "//internal/observation",
         "//lib/errors",
@@ -21,10 +22,12 @@ go_library(
 
 go_test(
     name = "files_test",
+    timeout = "short",
     srcs = ["client_test.go"],
     deps = [
         ":files",
         "//enterprise/cmd/executor/internal/apiclient",
+        "//enterprise/internal/executor/types",
         "//internal/observation",
         "//lib/errors",
         "@com_github_stretchr_testify//assert",

@@ -6,6 +6,7 @@ import (
 
 	logger "github.com/sourcegraph/log"
 
+	autoindexingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -22,20 +23,35 @@ type Store interface {
 	Transact(ctx context.Context) (Store, error)
 	Done(err error) error
 
+	GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []types.Index, _ int, err error)
+	GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error)
+	GetIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Index, err error)
+	DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
+	DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) (err error)
+	ReindexIndexByID(ctx context.Context, id int) (err error)
+	ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) (err error)
+
 	// Commits
 	GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error)
 	GetOldestCommitDate(ctx context.Context, repositoryID int) (time.Time, bool, error)
 	GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error)
+	ProcessSourcedCommits(
+		ctx context.Context,
+		minimumTimeSinceLastCheck time.Duration,
+		commitResolverMaximumCommitLag time.Duration,
+		limit int,
+		f func(ctx context.Context, repositoryID int, repositoryName, commit string) (bool, error),
+		now time.Time,
+	) (_, _ int, err error)
 	GetCommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, err error)
 	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, err error)
 	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (uploadsUpdated int, uploadsDeleted int, err error)
 	HasCommit(ctx context.Context, repositoryID int, commit string) (_ bool, err error)
 
 	// Repositories
-	GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error)
 	GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error)
 	SetRepositoryAsDirty(ctx context.Context, repositoryID int) (err error)
-	GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error)
+	GetDirtyRepositories(ctx context.Context) (_ []shared.DirtyRepository, err error)
 	RepoName(ctx context.Context, repositoryID int) (_ string, err error)              // TODO(numbers88s): renaming this after I remove dbStore from gitserver init.
 	RepoNames(ctx context.Context, repositoryIDs ...int) (_ map[int]string, err error) // TODO(numbers88s): renaming this after I remove dbStore from gitserver init.
 	SetRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error)
@@ -43,6 +59,7 @@ type Store interface {
 	HasRepository(ctx context.Context, repositoryID int) (_ bool, err error)
 
 	// Uploads
+	GetIndexers(ctx context.Context, opts shared.GetIndexersOptions) ([]string, error)
 	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (_ []types.Upload, _ int, err error)
 	GetUploadByID(ctx context.Context, id int) (_ types.Upload, _ bool, err error)
 	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error)
@@ -55,11 +72,11 @@ type Store interface {
 	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) (err error)
 	SourcedCommitsWithoutCommittedAt(ctx context.Context, batchSize int) ([]shared.SourcedCommits, error)
 	UpdateCommittedAt(ctx context.Context, repositoryID int, commit, commitDateString string) error
-	SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (int, error)
-	SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, maxTraversal int) (int, error)
+	SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (int, int, error)
+	SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, maxTraversal int) (int, int, error)
 	HardDeleteUploadsByIDs(ctx context.Context, ids ...int) error
-	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
-	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
+	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_, _ int, err error)
+	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_, _ int, err error)
 	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
 	DeleteUploads(ctx context.Context, opts shared.DeleteUploadsOptions) (err error)
 
@@ -85,7 +102,7 @@ type Store interface {
 
 	// Audit Logs
 	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []types.UploadLog, err error)
-	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error)
+	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (numRecordsScanned, numRecordsAltered int, err error)
 
 	// Dependencies
 	InsertDependencySyncingJob(ctx context.Context, uploadID int) (jobID int, err error)
@@ -95,17 +112,24 @@ type Store interface {
 
 	ReconcileCandidates(ctx context.Context, batchSize int) (_ []int, err error)
 
-	GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) ([]ExportedUpload, error)
-
-	ProcessStaleExportedUploads(
-		ctx context.Context,
-		graphKey string,
-		batchSize int,
-		deleter func(ctx context.Context, objectPrefix string) error,
-	) (totalDeleted int, err error)
-
 	ReindexUploads(ctx context.Context, opts shared.ReindexUploadsOptions) error
 	ReindexUploadByID(ctx context.Context, id int) error
+
+	// Commits
+	ProcessStaleSourcedCommits(
+		ctx context.Context,
+		minimumTimeSinceLastCheck time.Duration,
+		commitResolverBatchSize int,
+		commitResolverMaximumCommitLag time.Duration,
+		shouldDelete func(ctx context.Context, repositoryID int, repositoryName, commit string) (bool, error),
+	) (indexesScanned, indexesDeleted int, _ error)
+
+	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_, _ int, err error)
+
+	ExpireFailedRecords(ctx context.Context, batchSize int, failedIndexMaxAge time.Duration, now time.Time) (int, int, error)
+	GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []autoindexingshared.IndexesWithRepositoryNamespace, err error)
+	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error)
+	RepositoryIDsWithErrors(ctx context.Context, offset, limit int) (_ []autoindexingshared.RepositoryWithCount, totalCount int, err error)
 }
 
 // store manages the database operations for uploads.

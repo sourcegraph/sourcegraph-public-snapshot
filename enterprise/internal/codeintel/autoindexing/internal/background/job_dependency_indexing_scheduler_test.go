@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func TestDependencyIndexingSchedulerHandler(t *testing.T) {
@@ -92,15 +91,14 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 	if len(indexEnqueuer.QueueIndexesForPackageFunc.History()) != 7 {
 		t.Errorf("unexpected number of calls to QueueIndexesForPackage. want=%d have=%d", 6, len(indexEnqueuer.QueueIndexesForPackageFunc.History()))
 	} else {
-		var packages []precise.Package
+		var packages []dependencies.MinimialVersionedPackageRepo
 		for _, call := range indexEnqueuer.QueueIndexesForPackageFunc.History() {
 			packages = append(packages, call.Arg1)
 		}
 		sort.Slice(packages, func(i, j int) bool {
 			for _, pair := range [][2]string{
 				{packages[i].Scheme, packages[j].Scheme},
-				{packages[i].Manager, packages[j].Manager},
-				{packages[i].Name, packages[j].Name},
+				{string(packages[i].Name), string(packages[j].Name)},
 				{packages[i].Version, packages[j].Version},
 			} {
 				if pair[0] < pair[1] {
@@ -114,7 +112,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 			return false
 		})
 
-		expectedPackages := []precise.Package{
+		expectedPackages := []dependencies.MinimialVersionedPackageRepo{
 			{Scheme: "gomod", Name: "https://github.com/banana/world", Version: "v0.0.1"},
 			{Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v2.2.1"},
 			{Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v3.2.2"},
@@ -198,15 +196,14 @@ func TestDependencyIndexingSchedulerHandlerCustomer(t *testing.T) {
 	if len(indexEnqueuer.QueueIndexesForPackageFunc.History()) != 6 {
 		t.Errorf("unexpected number of calls to QueueIndexesForPackage. want=%d have=%d", 6, len(indexEnqueuer.QueueIndexesForPackageFunc.History()))
 	} else {
-		var packages []precise.Package
+		var packages []dependencies.MinimialVersionedPackageRepo
 		for _, call := range indexEnqueuer.QueueIndexesForPackageFunc.History() {
 			packages = append(packages, call.Arg1)
 		}
 		sort.Slice(packages, func(i, j int) bool {
 			for _, pair := range [][2]string{
 				{packages[i].Scheme, packages[j].Scheme},
-				{packages[i].Manager, packages[j].Manager},
-				{packages[i].Name, packages[j].Name},
+				{string(packages[i].Name), string(packages[j].Name)},
 				{packages[i].Version, packages[j].Version},
 			} {
 				if pair[0] < pair[1] {
@@ -220,7 +217,7 @@ func TestDependencyIndexingSchedulerHandlerCustomer(t *testing.T) {
 			return false
 		})
 
-		expectedPackages := []precise.Package{
+		expectedPackages := []dependencies.MinimialVersionedPackageRepo{
 			{Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v2.2.1"},
 			{Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v3.2.2"},
 			{Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v4.2.3"},

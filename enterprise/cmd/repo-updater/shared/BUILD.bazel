@@ -1,8 +1,9 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "shared",
     srcs = [
+        "licensing.go",
         "service.go",
         "shared.go",
     ],
@@ -17,20 +18,32 @@ go_library(
         "//enterprise/internal/authz",
         "//enterprise/internal/batches",
         "//enterprise/internal/database",
+        "//enterprise/internal/licensing",
         "//internal/actor",
-        "//internal/api",
         "//internal/authz",
-        "//internal/authz/permssync",
         "//internal/conf",
         "//internal/database",
-        "//internal/debugserver",
         "//internal/encryption/keyring",
         "//internal/goroutine",
         "//internal/httpcli",
         "//internal/observation",
-        "//internal/ratelimit",
         "//internal/repos",
         "//internal/service",
         "//internal/timeutil",
+        "//internal/types",
+        "//lib/errors",
+    ],
+)
+
+go_test(
+    name = "shared_test",
+    timeout = "short",
+    srcs = ["licensing_test.go"],
+    embed = [":shared"],
+    deps = [
+        "//enterprise/internal/licensing",
+        "//internal/database",
+        "//internal/repos",
+        "//internal/types",
     ],
 )

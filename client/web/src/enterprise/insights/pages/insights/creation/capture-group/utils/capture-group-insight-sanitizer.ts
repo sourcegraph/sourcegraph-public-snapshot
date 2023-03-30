@@ -3,8 +3,6 @@ import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
 
 import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../graphql-operations'
-import { getSanitizedRepositories } from '../../../../../components'
-import { MAX_NUMBER_OF_SERIES } from '../../../../../constants'
 import { InsightType, MinimalCaptureGroupInsightData } from '../../../../../core'
 import { CaptureGroupFormFields } from '../types'
 
@@ -15,14 +13,14 @@ export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields):
         type: InsightType.CaptureGroup,
         step: { [values.step]: +values.stepValue },
         repoQuery: values.repoMode === 'search-query' ? values.repoQuery.query : '',
-        repositories: values.repoMode === 'urls-list' ? getSanitizedRepositories(values.repositories) : [],
+        repositories: values.repoMode === 'urls-list' ? values.repositories : [],
 
         filters: {
             includeRepoRegexp: '',
             excludeRepoRegexp: '',
             context: '',
             seriesDisplayOptions: {
-                limit: MAX_NUMBER_OF_SERIES,
+                limit: null,
                 numSamples: null,
                 sortOptions: {
                     direction: SeriesSortDirection.DESC,

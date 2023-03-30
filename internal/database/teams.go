@@ -22,6 +22,8 @@ type ListTeamsOpts struct {
 	Cursor int32
 	// List teams of a specific parent team only.
 	WithParentID int32
+	// List teams that do not have given team as an ancestor in parent relationship.
+	ExceptAncestorID int32
 	// Only return root teams (teams that have no parent).
 	// This is used on the main overview list of teams.
 	RootOnly bool
@@ -31,7 +33,7 @@ type ListTeamsOpts struct {
 	ForUserMember int32
 }
 
-func (opts ListTeamsOpts) SQL() (where, joins []*sqlf.Query) {
+func (opts ListTeamsOpts) SQL() (where, joins, ctes []*sqlf.Query) {
 	where = []*sqlf.Query{
 		sqlf.Sprintf("teams.id >= %s", opts.Cursor),
 	}
@@ -51,8 +53,22 @@ func (opts ListTeamsOpts) SQL() (where, joins []*sqlf.Query) {
 		joins = append(joins, sqlf.Sprintf("JOIN team_members ON team_members.team_id = teams.id"))
 		where = append(where, sqlf.Sprintf("team_members.user_id = %s", opts.ForUserMember))
 	}
+	if opts.ExceptAncestorID != 0 {
+		joins = append(joins, sqlf.Sprintf("LEFT JOIN descendants ON descendants.team_id = teams.id"))
+		where = append(where, sqlf.Sprintf("descendants.team_id IS NULL"))
+		ctes = append(ctes, sqlf.Sprintf(
+			`WITH RECURSIVE descendants AS (
+				SELECT id AS team_id
+				FROM teams
+				WHERE id = %s
+			UNION ALL
+				SELECT t.id AS team_id
+				FROM teams t
+				INNER JOIN descendants d ON t.parent_team_id = d.team_id
+			)`, opts.ExceptAncestorID))
+	}
 
-	return where, joins
+	return where, joins, ctes
 }
 
 type TeamMemberListCursor struct {
@@ -121,6 +137,8 @@ type TeamStore interface {
 	ListTeams(ctx context.Context, opts ListTeamsOpts) ([]*types.Team, int32, error)
 	// CountTeams counts teams given the options.
 	CountTeams(ctx context.Context, opts ListTeamsOpts) (int32, error)
+	// Contains tells whether given search conditions contain team with given ID.
+	ContainsTeam(ctx context.Context, id int32, opts ListTeamsOpts) (bool, error)
 	// ListTeamMembers lists team members given the options. The matching teams,
 	// plus the next cursor are returned.
 	ListTeamMembers(ctx context.Context, opts ListTeamMembersOpts) ([]*types.TeamMember, *TeamMemberListCursor, error)
@@ -137,6 +155,8 @@ type TeamStore interface {
 	CreateTeamMember(ctx context.Context, members ...*types.TeamMember) error
 	// DeleteTeam deletes the given team members from the database.
 	DeleteTeamMember(ctx context.Context, members ...*types.TeamMember) error
+	// IsTeamMember checks if the given user is a member of the given team.
+	IsTeamMember(ctx context.Context, teamID, userID int32) (bool, error)
 }
 
 type teamStore struct {
@@ -202,7 +222,7 @@ LIMIT 1
 `
 
 func (s *teamStore) ListTeams(ctx context.Context, opts ListTeamsOpts) (_ []*types.Team, next int32, err error) {
-	conds, joins := opts.SQL()
+	conds, joins, ctes := opts.SQL()
 
 	if opts.LimitOffset != nil && opts.Limit > 0 {
 		opts.Limit++
@@ -210,6 +230,7 @@ func (s *teamStore) ListTeams(ctx context.Context, opts ListTeamsOpts) (_ []*typ
 
 	q := sqlf.Sprintf(
 		listTeamsQueryFmtstr,
+		sqlf.Join(ctes, "\n"),
 		sqlf.Join(teamColumns, ","),
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(conds, "AND"),
@@ -230,6 +251,7 @@ func (s *teamStore) ListTeams(ctx context.Context, opts ListTeamsOpts) (_ []*typ
 }
 
 const listTeamsQueryFmtstr = `
+%s
 SELECT %s
 FROM teams
 %s
@@ -242,10 +264,11 @@ ORDER BY
 func (s *teamStore) CountTeams(ctx context.Context, opts ListTeamsOpts) (int32, error) {
 	// Disable cursor for counting.
 	opts.Cursor = 0
-	conds, joins := opts.SQL()
+	conds, joins, ctes := opts.SQL()
 
 	q := sqlf.Sprintf(
 		countTeamsQueryFmtstr,
+		sqlf.Join(ctes, "\n"),
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(conds, "AND"),
 	)
@@ -255,10 +278,39 @@ func (s *teamStore) CountTeams(ctx context.Context, opts ListTeamsOpts) (int32, 
 }
 
 const countTeamsQueryFmtstr = `
+%s
 SELECT COUNT(*)
 FROM teams
 %s
 WHERE %s
+`
+
+func (s *teamStore) ContainsTeam(ctx context.Context, id int32, opts ListTeamsOpts) (bool, error) {
+	// Disable cursor for containment.
+	opts.Cursor = 0
+	conds, joins, ctes := opts.SQL()
+	q := sqlf.Sprintf(
+		containsTeamsQueryFmtstr,
+		sqlf.Join(ctes, "\n"),
+		sqlf.Join(joins, "\n"),
+		id,
+		sqlf.Join(conds, "AND"),
+	)
+	ids, err := basestore.ScanInts(s.Query(ctx, q))
+	if err != nil {
+		return false, err
+	}
+	return len(ids) > 0, nil
+}
+
+const containsTeamsQueryFmtstr = `
+%s
+SELECT 1
+FROM teams
+%s
+WHERE teams.id = %s
+AND %s
+LIMIT 1
 `
 
 func (s *teamStore) ListTeamMembers(ctx context.Context, opts ListTeamMembersOpts) (_ []*types.TeamMember, next *TeamMemberListCursor, err error) {
@@ -511,7 +563,7 @@ func (s *teamStore) CreateTeamMember(ctx context.Context, members ...*types.Team
 		"team_members",
 		batch.MaxNumPostgresParameters,
 		teamMemberInsertColumns,
-		"",
+		"ON CONFLICT DO NOTHING",
 		teamMemberStringColumns,
 		func(sc dbutil.Scanner) error {
 			i++
@@ -536,6 +588,25 @@ func (s *teamStore) DeleteTeamMember(ctx context.Context, members ...*types.Team
 
 const deleteTeamMemberQueryFmtstr = `
 DELETE FROM
+	team_members
+WHERE %s
+`
+
+func (s *teamStore) IsTeamMember(ctx context.Context, teamID, userID int32) (bool, error) {
+	conds := []*sqlf.Query{
+		sqlf.Sprintf("team_id = %s", teamID),
+		sqlf.Sprintf("user_id = %s", userID),
+	}
+
+	q := sqlf.Sprintf(isTeamMemberQueryFmtstr, sqlf.Join(conds, "AND"))
+	ok, _, err := basestore.ScanFirstBool(s.Query(ctx, q))
+	return ok, err
+}
+
+const isTeamMemberQueryFmtstr = `
+SELECT
+	COUNT(*) = 1
+FROM
 	team_members
 WHERE %s
 `

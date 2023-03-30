@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -32,6 +33,7 @@ func redisLoggerMiddleware() Middleware {
 			start := time.Now()
 			resp, err := cli.Do(req)
 			duration := time.Since(start)
+
 			limit := OutboundRequestLogLimit()
 			shouldRedactSensitiveHeaders := !deploy.IsDev(deploy.Type()) || RedactOutboundRequestHeaders()
 
@@ -51,7 +53,7 @@ func redisLoggerMiddleware() Middleware {
 
 			// Read body
 			var requestBody []byte
-			if req != nil && req.Body != nil {
+			if req != nil && req.GetBody != nil {
 				body, _ := req.GetBody()
 				if body != nil {
 					var readErr error
@@ -108,11 +110,13 @@ func redisLoggerMiddleware() Middleware {
 					errors.Wrap(jsonErr, "marshal log item"))
 			}
 
-			// Save new item
-			if err := outboundRequestsRedisFIFOList.Insert(logItemJson); err != nil {
-				middlewareErrors = errors.Append(middlewareErrors,
-					errors.Wrap(err, "insert log item"))
-			}
+			go func() {
+				// Save new item
+				if err := outboundRequestsRedisFIFOList.Insert(logItemJson); err != nil {
+					// Log would get upset if we created a logger at init time → create logger on the fly
+					log.Scoped("redisLoggerMiddleware", "").Error("insert log item", log.Error(err))
+				}
+			}()
 
 			return resp, err
 		})

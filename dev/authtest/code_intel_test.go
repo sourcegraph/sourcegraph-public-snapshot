@@ -67,7 +67,7 @@ func TestCodeIntelEndpoints(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Run("LSIF upload", func(t *testing.T) {
+	t.Run("SCIP upload", func(t *testing.T) {
 		// Update site configuration to enable "lsifEnforceAuth".
 		siteConfig, lastID, err := client.SiteConfiguration()
 		if err != nil {
@@ -96,7 +96,7 @@ func TestCodeIntelEndpoints(t *testing.T) {
 		// Retry because the configuration update endpoint is eventually consistent
 		var lastBody string
 		err = gqltestutil.Retry(15*time.Second, func() error {
-			resp, err := userClient.Post(*baseURL+"/.api/lsif/upload?commit=6ffc6072f5ed13d8e8782490705d9689cd2c546a&repository=github.com/sgtest/private", nil)
+			resp, err := userClient.Post(*baseURL+"/.api/scip/upload?commit=6ffc6072f5ed13d8e8782490705d9689cd2c546a&repository=github.com/sgtest/private", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -124,7 +124,7 @@ func TestCodeIntelEndpoints(t *testing.T) {
 		cleanup := setExecutorAccessToken(t, "")
 		defer cleanup()
 
-		resp, err := userClient.Get(*baseURL + "/.executors/")
+		resp, err := userClient.Get(*baseURL + "/.executors/test/auth")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -152,7 +152,7 @@ func TestCodeIntelEndpoints(t *testing.T) {
 		// sleep 5s to wait for site configuration to be restored from gqltest
 		time.Sleep(5 * time.Second)
 
-		resp, err := userClient.Get(*baseURL + "/.executors/")
+		resp, err := userClient.Get(*baseURL + "/.executors/test/auth")
 		if err != nil {
 			t.Fatal(err)
 		}

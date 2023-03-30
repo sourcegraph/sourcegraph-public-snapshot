@@ -26,9 +26,16 @@ type Service interface {
 	Configure() (env.Config, []debugserver.Endpoint)
 
 	// Start starts the service.
+	//
+	// When start returns or ready is called the service will be marked as
+	// ready.
+	//
 	// TODO(sqs): TODO(single-binary): make it monitorable with goroutine.Whatever interfaces.
-	Start(context.Context, *observation.Context, ReadyFunc, env.Config) error
+	Start(ctx context.Context, observationCtx *observation.Context, ready ReadyFunc, c env.Config) error
 }
 
-// ReadyFunc is called in (Service).Start when the service is ready to start serving clients.
+// ReadyFunc is called in (Service).Start to signal that the service is ready
+// to serve clients, even if Start has not returned. It is optional to call
+// ready, on Start returning the service will be marked as ready. It is safe
+// to call ready multiple times.
 type ReadyFunc func()

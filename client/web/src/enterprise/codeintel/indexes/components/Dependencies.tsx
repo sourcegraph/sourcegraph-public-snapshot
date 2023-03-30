@@ -1,9 +1,8 @@
 import { FunctionComponent, useCallback } from 'react'
 
 import { useApolloClient } from '@apollo/client'
-import { mdiMapSearch } from '@mdi/js'
+import { mdiChevronRight, mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
 import { Observable } from 'rxjs'
 
 import { H3, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
@@ -23,13 +22,11 @@ import styles from './Dependencies.module.scss'
 
 export interface DependencyListProps {
     index: PreciseIndexFields
-    history: H.History
     queryDependencyGraph?: typeof defaultQueryDependencyGraph
 }
 
 export const DependenciesList: FunctionComponent<DependencyListProps> = ({
     index,
-    history,
     queryDependencyGraph = defaultQueryDependencyGraph,
 }) => {
     const apolloClient = useApolloClient()
@@ -40,24 +37,17 @@ export const DependenciesList: FunctionComponent<DependencyListProps> = ({
     )
 
     return (
-        <DependencyOrDependentsPanel
-            noun="dependency"
-            pluralNoun="dependencies"
-            queryConnection={queryDependencies}
-            history={history}
-        />
+        <DependencyOrDependentsPanel noun="dependency" pluralNoun="dependencies" queryConnection={queryDependencies} />
     )
 }
 
 export interface DependentListProps {
     index: PreciseIndexFields
-    history: H.History
     queryDependencyGraph?: typeof defaultQueryDependencyGraph
 }
 
 export const DependentsList: FunctionComponent<DependentListProps> = ({
     index,
-    history,
     queryDependencyGraph = defaultQueryDependencyGraph,
 }) => {
     const apolloClient = useApolloClient()
@@ -67,36 +57,26 @@ export const DependentsList: FunctionComponent<DependentListProps> = ({
         [index, queryDependencyGraph, apolloClient]
     )
 
-    return (
-        <DependencyOrDependentsPanel
-            noun="dependent"
-            pluralNoun="dependents"
-            queryConnection={queryDependents}
-            history={history}
-        />
-    )
+    return <DependencyOrDependentsPanel noun="dependent" pluralNoun="dependents" queryConnection={queryDependents} />
 }
 
 interface DependencyOrDependentsPanelProps {
     noun: string
     pluralNoun: string
     queryConnection: (args: FilteredConnectionQueryArguments) => Observable<Connection<PreciseIndexFields>>
-    history: H.History
 }
 
 const DependencyOrDependentsPanel: FunctionComponent<DependencyOrDependentsPanelProps> = ({
     noun,
     pluralNoun,
     queryConnection,
-    history,
 }) => (
     <FilteredConnection
         listComponent="div"
-        listClassName={classNames(styles.grid, 'mb-3')}
+        listClassName={classNames(styles.list, 'mb-3')}
         noun={noun}
         pluralNoun={pluralNoun}
         nodeComponent={DependencyOrDependentNode}
-        nodeComponentProps={{ history }}
         queryConnection={queryConnection}
         cursorPaging={true}
         useURLQuery={false}
@@ -106,45 +86,46 @@ const DependencyOrDependentsPanel: FunctionComponent<DependencyOrDependentsPanel
 
 interface DependencyOrDependentNodeProps {
     node: PreciseIndexFields
-    history: H.History
 }
 
-const DependencyOrDependentNode: FunctionComponent<DependencyOrDependentNodeProps> = ({ node, history }) => (
-    <div
-        className={classNames(styles.grid, 'px-4')}
-        onClick={() => {
-            if (node.projectRoot) {
-                history.push(`/${node.projectRoot.repository.name}/-/code-graph/indexes/${node.id}`)
-            }
-        }}
-        aria-hidden={true}
-    >
+const DependencyOrDependentNode: FunctionComponent<DependencyOrDependentNodeProps> = ({ node }) => (
+    <div className={classNames(styles.listItem, 'px-4')}>
         <div>
-            <H3 className="m-0 mb-1">
-                {node.projectRoot ? (
-                    <Link to={node.projectRoot.repository.url} onClick={event => event.stopPropagation()}>
-                        {node.projectRoot.repository.name}
-                    </Link>
-                ) : (
-                    <span>Unknown repository</span>
-                )}
-            </H3>
-        </div>
+            <div>
+                <H3 className="m-0 mb-1">
+                    {node.projectRoot ? (
+                        <Link to={node.projectRoot.repository.url}>{node.projectRoot.repository.name}</Link>
+                    ) : (
+                        <span>Unknown repository</span>
+                    )}
+                </H3>
+            </div>
 
-        <div>
-            <span className="mr-2 d-block d-mdinline-block">
-                <ProjectDescription index={node} onLinkClick={event => event.stopPropagation()} />
-            </span>
+            <div>
+                <span className="mr-2 d-block d-mdinline-block">
+                    <ProjectDescription index={node} />
+                </span>
 
-            <small className="text-mute">
-                <PreciseIndexLastUpdated index={node} />{' '}
-                {node.shouldReindex && (
-                    <Tooltip content="This index has been marked as replaceable by auto-indexing.">
-                        <span className={classNames(styles.tag, 'ml-1 rounded')}>(replaceable by auto-indexing)</span>
-                    </Tooltip>
-                )}
-            </small>
+                <small className="text-mute">
+                    <PreciseIndexLastUpdated index={node} />{' '}
+                    {node.shouldReindex && (
+                        <Tooltip content="This index has been marked as replaceable by auto-indexing.">
+                            <span className={classNames(styles.tag, 'ml-1 rounded')}>
+                                (replaceable by auto-indexing)
+                            </span>
+                        </Tooltip>
+                    )}
+                </small>
+            </div>
         </div>
+        {node.projectRoot && (
+            <Link
+                to={`/${node.projectRoot.repository.name}/-/code-graph/indexes/${node.id}`}
+                className="d-flex justify-content-end align-items-center align-self-stretch p-0"
+            >
+                <Icon svgPath={mdiChevronRight} inline={false} aria-label="View details" />
+            </Link>
+        )}
     </div>
 )
 

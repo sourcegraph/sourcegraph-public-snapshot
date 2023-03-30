@@ -65,9 +65,7 @@ export function getInsightDataFromQuery(searchQuery: string | null): InsightData
 
     // Generate a string query from tokens with repo: and context filters only
     // in order to put this in the repo query field
-    const tokensWithRepoFiltersAndContext = tokens.filter(
-        token => isRepoFilter(token) || isFilterType(token, FilterType.context) || token.type === 'whitespace'
-    )
+    const tokensWithRepoFiltersOnly = tokens.filter(token => isRepoFilter(token) || token.type === 'whitespace')
 
     // Generate a string query from tokens without repo: filters for the insight
     // query field.
@@ -76,7 +74,7 @@ export function getInsightDataFromQuery(searchQuery: string | null): InsightData
     )
 
     return {
+        repoQuery: dedupeWhitespace(stringHuman(tokensWithRepoFiltersOnly)),
         seriesQuery: dedupeWhitespace(stringHuman(tokensWithoutRepoFiltersAndContext)),
-        repoQuery: dedupeWhitespace(stringHuman(tokensWithRepoFiltersAndContext)),
     }
 }

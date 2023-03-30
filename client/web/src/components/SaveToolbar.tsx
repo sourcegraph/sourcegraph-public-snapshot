@@ -12,6 +12,11 @@ export interface SaveToolbarProps {
     saving?: boolean
     error?: Error
 
+    /**
+     * Determine if consumer children is added before or after the toolbar actions.
+     */
+    childrenPosition?: 'start' | 'end'
+
     onSave: () => void
     onDiscard: () => void
     /**
@@ -32,7 +37,17 @@ export type SaveToolbarPropsGenerator<T extends object> = (
 
 export const SaveToolbar: React.FunctionComponent<
     React.PropsWithChildren<React.PropsWithChildren<SaveToolbarProps>>
-> = ({ dirty, saving, error, onSave, onDiscard, children, willShowError, saveDiscardDisabled }) => {
+> = ({
+    dirty,
+    saving,
+    error,
+    onSave,
+    onDiscard,
+    children,
+    childrenPosition = 'end',
+    willShowError,
+    saveDiscardDisabled,
+}) => {
     const disabled = saveDiscardDisabled ? saveDiscardDisabled() : saving || !dirty
     let saveDiscardTitle: string | undefined
     if (saving) {
@@ -54,6 +69,7 @@ export const SaveToolbar: React.FunctionComponent<
                 </div>
             )}
             <div className={classNames('mt-2', styles.actions)}>
+                {childrenPosition === 'start' && children}
                 <Button
                     disabled={disabled}
                     title={saveDiscardTitle || 'Save changes'}
@@ -72,7 +88,7 @@ export const SaveToolbar: React.FunctionComponent<
                 >
                     Discard changes
                 </Button>
-                {children}
+                {childrenPosition === 'end' && children}
                 {saving && (
                     <span className={classNames(styles.item, styles.message)}>
                         <LoadingSpinner /> Saving...

@@ -2,12 +2,12 @@ import { FC, ReactNode } from 'react'
 
 import { noop } from 'rxjs'
 
+import { FormChangeEvent, SubmissionErrors } from '@sourcegraph/wildcard'
+
 import {
     CreationUiLayout,
     CreationUIForm,
     CreationUIPreview,
-    FormChangeEvent,
-    SubmissionErrors,
     createDefaultEditSeries,
     EditableDataSeries,
     getSanitizedSeries,
@@ -51,7 +51,7 @@ export const SearchInsightCreationContent: FC<SearchInsightCreationContentProps>
     const handleFormReset = (): void => {
         // TODO [VK] Change useForm API in order to implement form.reset method.
         title.input.onChange('')
-        repositories.input.onChange('')
+        repositories.input.onChange([])
         repoQuery.input.onChange({ query: '' })
         // Focus first element of the form
         repositories.input.ref.current?.focus()
@@ -69,7 +69,7 @@ export const SearchInsightCreationContent: FC<SearchInsightCreationContentProps>
 
     const hasFilledValue =
         values.series?.some(line => line.name !== '' || line.query !== '') ||
-        values.repositories !== '' ||
+        values.repositories.length > 0 ||
         values.repoQuery.query !== '' ||
         values.title !== ''
 

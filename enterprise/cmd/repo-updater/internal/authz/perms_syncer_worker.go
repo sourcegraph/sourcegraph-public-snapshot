@@ -2,11 +2,11 @@ package authz
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -26,30 +26,24 @@ const (
 	SyncTypeUser
 )
 
-func MakePermsSyncerWorker(observationCtx *observation.Context, syncer permsSyncer, syncType syncType) *permsSyncerWorker {
-	logger := observationCtx.Logger.Scoped("RepoPermsSyncerWorkerRepo", "Repository permission sync worker")
-	recordsStore := syncjobs.NewRecordsStore(logger.Scoped("records", "Records provider states in redis"), conf.DefaultClient())
+func MakePermsSyncerWorker(observationCtx *observation.Context, syncer permsSyncer, syncType syncType, jobsStore database.PermissionSyncJobStore) *permsSyncerWorker {
+	logger := observationCtx.Logger.Scoped("RepoPermsSyncerWorkerRepo", "Repository permissions sync worker")
 	if syncType == SyncTypeUser {
-		logger = observationCtx.Logger.Scoped("UserPermsSyncerWorker", "User permission sync worker")
+		logger = observationCtx.Logger.Scoped("UserPermsSyncerWorker", "User permissions sync worker")
 	}
 	return &permsSyncerWorker{
-		logger:       logger,
-		syncer:       syncer,
-		syncType:     syncType,
-		recordsStore: recordsStore,
+		logger:    logger,
+		syncer:    syncer,
+		syncType:  syncType,
+		jobsStore: jobsStore,
 	}
-}
-
-type permsSyncer interface {
-	syncRepoPerms(context.Context, api.RepoID, bool, authz.FetchPermsOptions) ([]syncjobs.ProviderStatus, error)
-	syncUserPerms(context.Context, int32, bool, authz.FetchPermsOptions) ([]syncjobs.ProviderStatus, error)
 }
 
 type permsSyncerWorker struct {
-	logger       log.Logger
-	syncer       permsSyncer
-	syncType     syncType
-	recordsStore *syncjobs.RecordsStore
+	logger    log.Logger
+	syncer    permsSyncer
+	syncType  syncType
+	jobsStore database.PermissionSyncJobStore
 }
 
 // PreDequeue in our case does a nice trick of adding a predicate (WHERE clause)
@@ -71,59 +65,63 @@ func (h *permsSyncerWorker) Handle(ctx context.Context, _ log.Logger, record *da
 		reqID = int32(record.RepositoryID)
 	}
 
-	h.logger.Info(
-		"Handling permission sync job",
+	h.logger.Debug(
+		"Handling permissions sync job",
 		log.String("type", reqType.String()),
 		log.Int32("id", reqID),
 		log.Int("priority", int(record.Priority)),
 	)
 
-	// TODO(naman): when removing old perms syncer, `requestMeta` must be replaced
-	// by a new type to include new priority enum. `requestMeta.Priority` itself
-	// is not used anywhere in `syncer.syncPerms()`, therefore it is okay for now
-	// to pass old priority enum values.
-	// `requestQueue` can also be removed as it is only used by the old perms syncer.
-	return h.handlePermsSync(ctx, reqType, reqID, record.NoPerms, record.InvalidateCaches)
+	return h.handlePermsSync(ctx, reqType, reqID, record.ID, record.NoPerms, record.InvalidateCaches)
 }
 
 // handlePermsSync is effectively a sync version of `perms_syncer.syncPerms`
 // which calls `perms_syncer.syncUserPerms` or `perms_syncer.syncRepoPerms`
 // depending on a request type and logs/adds metrics of sync statistics
 // afterwards.
-func (h *permsSyncerWorker) handlePermsSync(ctx context.Context, reqType requestType, reqID int32, noPerms, invalidateCaches bool) error {
+func (h *permsSyncerWorker) handlePermsSync(ctx context.Context, reqType requestType, reqID int32, recordID int, noPerms, invalidateCaches bool) error {
+	var err error
+	var result *database.SetPermissionsResult
+	var providerStates database.CodeHostStatusesSet
+
 	switch reqType {
 	case requestTypeUser:
-		providerStatuses, err := h.syncer.syncUserPerms(ctx, reqID, noPerms, authz.FetchPermsOptions{InvalidateCaches: invalidateCaches})
-		return h.handleSyncResults(reqType, reqID, providerStatuses, err)
+		result, providerStates, err = h.syncer.syncUserPerms(ctx, reqID, noPerms, authz.FetchPermsOptions{InvalidateCaches: invalidateCaches})
 	case requestTypeRepo:
-		providerStatuses, err := h.syncer.syncRepoPerms(ctx, api.RepoID(reqID), noPerms, authz.FetchPermsOptions{InvalidateCaches: invalidateCaches})
-		return h.handleSyncResults(reqType, reqID, providerStatuses, err)
+		result, providerStates, err = h.syncer.syncRepoPerms(ctx, api.RepoID(reqID), noPerms, authz.FetchPermsOptions{InvalidateCaches: invalidateCaches})
 	default:
 		return errors.Newf("unexpected request type: %q", reqType)
 	}
-}
 
-func (h *permsSyncerWorker) handleSyncResults(reqType requestType, reqID int32, providerStates providerStatesSet, err error) error {
+	// Adding an extra check in case of all providers errored out, but sync has been
+	// completed successfully. This can happen e.g. if we only got HTTP401 responses.
+	if err == nil {
+		total, _, failed := providerStates.CountStatuses()
+		if failed == total {
+			err = errors.New("All providers failed to sync permissions.")
+		}
+	}
+
 	if err != nil {
 		h.logger.Error("failed to sync permissions", providerStates.SummaryField(), log.Error(err))
-
-		if reqType == requestTypeUser {
-			metricsFailedPermsSyncs.WithLabelValues("user").Inc()
-		} else {
-			metricsFailedPermsSyncs.WithLabelValues("repo").Inc()
-		}
 	} else {
 		h.logger.Debug("succeeded in syncing permissions", providerStates.SummaryField())
 	}
 
-	h.recordsStore.Record(reqType.String(), reqID, providerStates, err)
+	// NOTE(naman): here we are saving permissions added, removed and found results
+	// as well as the code host sync status to the job record.
+	if saveErr := h.jobsStore.SaveSyncResult(ctx, recordID, err == nil, result, providerStates); saveErr != nil {
+		err = errors.Append(err, saveErr)
+		h.logger.Error(fmt.Sprintf("failed to save permissions sync job(%d) results", recordID), log.Error(saveErr))
+	}
+
 	return err
 }
 
 func MakeStore(observationCtx *observation.Context, dbHandle basestore.TransactableHandle, syncType syncType) dbworkerstore.Store[*database.PermissionSyncJob] {
-	name := "repo_permission_sync_job_worker_store"
+	name := "repo_permissions_sync_job_worker_store"
 	if syncType == SyncTypeUser {
-		name = "user_permission_sync_job_worker_store"
+		name = "user_permissions_sync_job_worker_store"
 	}
 
 	return dbworkerstore.New(observationCtx, dbHandle, dbworkerstore.Options[*database.PermissionSyncJob]{
@@ -141,13 +139,13 @@ func MakeStore(observationCtx *observation.Context, dbHandle basestore.Transacta
 	})
 }
 
-func MakeWorker(ctx context.Context, observationCtx *observation.Context, workerStore dbworkerstore.Store[*database.PermissionSyncJob], permsSyncer *PermsSyncer, syncType syncType) *workerutil.Worker[*database.PermissionSyncJob] {
-	handler := MakePermsSyncerWorker(observationCtx, permsSyncer, syncType)
+func MakeWorker(ctx context.Context, observationCtx *observation.Context, workerStore dbworkerstore.Store[*database.PermissionSyncJob], permsSyncer *PermsSyncer, syncType syncType, jobsStore database.PermissionSyncJobStore) *workerutil.Worker[*database.PermissionSyncJob] {
+	handler := MakePermsSyncerWorker(observationCtx, permsSyncer, syncType, jobsStore)
 	// Number of handlers depends on a type of perms sync jobs this worker processes.
 	numHandlers := 1
-	name := "repo_permission_sync_job_worker"
+	name := "repo_permissions_sync_job_worker"
 	if syncType == SyncTypeUser {
-		name = "user_permission_sync_job_worker"
+		name = "user_permissions_sync_job_worker"
 		numHandlers = syncUsersMaxConcurrency()
 	}
 
@@ -162,8 +160,16 @@ func MakeWorker(ctx context.Context, observationCtx *observation.Context, worker
 
 func MakeResetter(observationCtx *observation.Context, workerStore dbworkerstore.Store[*database.PermissionSyncJob]) *dbworker.Resetter[*database.PermissionSyncJob] {
 	return dbworker.NewResetter(observationCtx.Logger, workerStore, dbworker.ResetterOptions{
-		Name:     "permission_sync_job_worker_resetter",
+		Name:     "permissions_sync_job_worker_resetter",
 		Interval: time.Second * 30, // Check for orphaned jobs every 30 seconds
-		Metrics:  dbworker.NewResetterMetrics(observationCtx, "permission_sync_job_worker"),
+		Metrics:  dbworker.NewResetterMetrics(observationCtx, "permissions_sync_job_worker"),
 	})
+}
+
+func syncUsersMaxConcurrency() int {
+	n := conf.Get().PermissionsSyncUsersMaxConcurrency
+	if n <= 0 {
+		return 1
+	}
+	return n
 }

@@ -2,10 +2,11 @@ package authz
 
 import (
 	"fmt"
-	"sort"
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -89,6 +90,51 @@ func (e ErrStalePermissions) Error() string {
 	return fmt.Sprintf("%s:%s permissions for user=%d are stale and being updated", e.Perm, e.Type, e.UserID)
 }
 
+// Permission determines if a user with a specific id
+// can read a repository with a specific id
+type Permission struct {
+	UserID            int32       // The internal database ID of a user
+	ExternalAccountID int32       // The internal database ID of a user external account
+	RepoID            int32       // The internal database ID of a repo
+	CreatedAt         time.Time   // The creation time
+	UpdatedAt         time.Time   // The last updated time
+	Source            PermsSource // source of the permission
+}
+
+// A struct that holds the entity we are updating the permissions for
+// It can be either a user or a repository.
+type PermissionEntity struct {
+	UserID            int32 // The internal database ID of a user
+	ExternalAccountID int32 // The internal database ID of a user external account
+	RepoID            int32 // The internal database ID of a repo
+}
+
+type UserIDWithExternalAccountID struct {
+	UserID            int32
+	ExternalAccountID int32
+}
+
+type PermsSource string
+
+const (
+	SourceRepoSync PermsSource = "repo_sync"
+	SourceUserSync PermsSource = "user_sync"
+	SourceAPI      PermsSource = "api"
+)
+
+// TracingFields returns tracing fields for the opentracing log.
+func (p *Permission) TracingFields() []otlog.Field {
+	fs := []otlog.Field{
+		otlog.Int32("SrcPermissions.UserID", p.UserID),
+		otlog.Int32("SrcPermissions.RepoID", p.RepoID),
+		otlog.Int32("SrcPermissions.ExternalAccountID", p.ExternalAccountID),
+		otlog.String("SrcPermissions.CreatedAt", p.CreatedAt.String()),
+		otlog.String("SrcPermissions.UpdatedAt", p.UpdatedAt.String()),
+		otlog.String("SrcPermissions.Source", string(p.Source)),
+	}
+	return fs
+}
+
 // UserPermissions are the permissions of a user to perform an action
 // on the given set of object IDs of the defined type.
 type UserPermissions struct {
@@ -103,25 +149,6 @@ type UserPermissions struct {
 // Expired returns true if these UserPermissions have elapsed the given ttl.
 func (p *UserPermissions) Expired(ttl time.Duration, now time.Time) bool {
 	return !now.Before(p.UpdatedAt.Add(ttl))
-}
-
-// AuthorizedRepos returns the intersection of the given repository IDs with
-// the authorized IDs.
-func (p *UserPermissions) AuthorizedRepos(repos []*types.Repo) []RepoPerms {
-	// Return directly if it's used for wrong permissions type or no permissions available.
-	if p.Type != PermRepos ||
-		p.IDs == nil || len(p.IDs) == 0 {
-		return []RepoPerms{}
-	}
-
-	perms := make([]RepoPerms, 0, len(repos))
-	for _, r := range repos {
-		_, ok := p.IDs[int32(r.ID)]
-		if r.ID != 0 && ok {
-			perms = append(perms, RepoPerms{Repo: r, Perms: p.Perm})
-		}
-	}
-	return perms
 }
 
 // GenerateSortedIDsSlice returns a sorted slice of the IDs set.
@@ -188,6 +215,34 @@ func (p *RepoPermissions) TracingFields() []otlog.Field {
 	return fs
 }
 
+// UserGrantPermissions defines the structure to grant pending permissions to a user.
+// See also UserPendingPermissions.
+type UserGrantPermissions struct {
+	// UserID of the user to grant permissions to.
+	UserID int32
+	// ID of the user external account that the permissions are from.
+	UserExternalAccountID int32
+	// The type of the code host as if it would be used as extsvc.AccountSpec.ServiceType
+	ServiceType string
+	// The ID of the code host as if it would be used as extsvc.AccountSpec.ServiceID
+	ServiceID string
+	// The account ID of the user external account, that the permissions are from
+	AccountID string
+}
+
+// TracingFields returns tracing fields for the opentracing log.
+func (p *UserGrantPermissions) TracingFields() []otlog.Field {
+	fs := []otlog.Field{
+		otlog.Int32("UserGrantPermissions.UserID", p.UserID),
+		otlog.Int32("UserGrantPermissions.UserExternalAccountID", p.UserExternalAccountID),
+		otlog.String("UserPendingPermissions.ServiceType", p.ServiceType),
+		otlog.String("UserPendingPermissions.ServiceID", p.ServiceID),
+		otlog.String("UserPendingPermissions.AccountID", p.AccountID),
+	}
+
+	return fs
+}
+
 // UserPendingPermissions defines permissions that a not-yet-created user has to
 // perform on a given set of object IDs. Not-yet-created users may exist on the
 // code host but not yet in Sourcegraph. "ServiceType", "ServiceID" and "BindID"
@@ -246,10 +301,7 @@ func (p *UserPendingPermissions) TracingFields() []otlog.Field {
 
 // convertMapSetToSortedSlice converts a map set into a slice of sorted integers
 func convertMapSetToSortedSlice(mapSet map[int32]struct{}) []int32 {
-	returnSlice := make([]int32, 0, len(mapSet))
-	for id := range mapSet {
-		returnSlice = append(returnSlice, id)
-	}
-	sort.Slice(returnSlice, func(i, j int) bool { return returnSlice[i] < returnSlice[j] })
-	return returnSlice
+	slice := maps.Keys(mapSet)
+	slices.Sort(slice)
+	return slice
 }

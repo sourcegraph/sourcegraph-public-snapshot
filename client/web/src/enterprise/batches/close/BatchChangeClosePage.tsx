@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react'
 
 import { subDays } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import { useParams } from 'react-router-dom'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
@@ -10,7 +11,7 @@ import { BatchChangesIcon } from '../../../batches/icons'
 import { CreatedByAndUpdatedByInfoByline } from '../../../components/Byline/CreatedByAndUpdatedByInfoByline'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
-import { BatchChangeChangesetsResult, BatchChangeFields, Scalars } from '../../../graphql-operations'
+import { BatchChangeChangesetsResult, Scalars } from '../../../graphql-operations'
 import {
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryChangesets as _queryChangesets,
@@ -26,10 +27,6 @@ export interface BatchChangeClosePageProps {
      * The namespace ID.
      */
     namespaceID: Scalars['ID']
-    /**
-     * The batch change name.
-     */
-    batchChangeName: BatchChangeFields['name']
 
     /** For testing only. */
     fetchBatchChangeByNamespace?: typeof _fetchBatchChangeByNamespace
@@ -43,17 +40,17 @@ export interface BatchChangeClosePageProps {
 
 export const BatchChangeClosePage: React.FunctionComponent<React.PropsWithChildren<BatchChangeClosePageProps>> = ({
     namespaceID,
-    batchChangeName,
     fetchBatchChangeByNamespace = _fetchBatchChangeByNamespace,
     queryChangesets,
     queryExternalChangesetWithFileDiffs,
     closeBatchChange,
 }) => {
+    const { batchChangeName } = useParams()
     const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
     const createdAfter = useMemo(() => subDays(new Date(), 3).toISOString(), [])
     const batchChange = useObservable(
         useMemo(
-            () => fetchBatchChangeByNamespace(namespaceID, batchChangeName, createdAfter),
+            () => fetchBatchChangeByNamespace(namespaceID, batchChangeName!, createdAfter),
             [fetchBatchChangeByNamespace, namespaceID, batchChangeName, createdAfter]
         )
     )

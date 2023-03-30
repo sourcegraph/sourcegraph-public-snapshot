@@ -1,2 +1,2 @@
-export { getSanitizedRepositories, getSanitizedRepositoryScope } from './repositories'
 export { getSanitizedSeries } from './series'
+export { getSanitizedRepositoryScope } from './repositories'

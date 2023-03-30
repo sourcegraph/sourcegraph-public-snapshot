@@ -16,6 +16,8 @@ import (
 
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/sourcegraph/log"
+	"golang.org/x/sync/errgroup"
+
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -25,22 +27,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
-	grpcdefaults "github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sharedsearch "github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/searcher/proto"
+	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"golang.org/x/sync/errgroup"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 )
 
 var (
-	cacheDir    = env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
+	cacheDirName = env.ChooseFallbackVariableName("SEARCHER_CACHE_DIR", "CACHE_DIR")
+
+	cacheDir    = env.Get(cacheDirName, "/tmp", "directory to store cached archives.")
 	cacheSizeMB = env.Get("SEARCHER_CACHE_SIZE_MB", "100000", "maximum size of the on disk cache in megabytes")
+
+	// Same environment variable name (and default value) used by symbols.
+	backgroundTimeout = env.MustGetDuration("PROCESSING_TIMEOUT", 2*time.Hour, "maximum time to spend processing a repository")
 
 	maxTotalPathsLengthRaw = env.Get("MAX_TOTAL_PATHS_LENGTH", "100000", "maximum sum of lengths of all paths in a single call to git archive")
 )
@@ -152,6 +156,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 			FilterTar:         search.NewFilter,
 			Path:              filepath.Join(cacheDir, "searcher-archives"),
 			MaxCacheSizeBytes: cacheSizeBytes,
+			BackgroundTimeout: backgroundTimeout,
 			Log:               storeObservationCtx.Logger,
 			ObservationCtx:    storeObservationCtx,
 		},
@@ -177,9 +182,8 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	grpcServer := grpc.NewServer(grpcdefaults.ServerOptions(logger)...)
-	reflection.Register(grpcServer)
-	grpcServer.RegisterService(&proto.Searcher_ServiceDesc, &search.Server{
+	grpcServer := defaults.NewServer(logger)
+	proto.RegisterSearcherServiceServer(grpcServer, &search.Server{
 		Service: sService,
 	})
 

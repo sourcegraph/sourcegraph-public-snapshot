@@ -3,7 +3,7 @@ import React, { useCallback, useContext, useMemo, useState } from 'react'
 import { mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
 import { CircularProgressbar } from 'react-circular-progressbar'
-import { useHistory } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 import { ModalVideo } from '@sourcegraph/branded'
 import { isExternalLink } from '@sourcegraph/common'
@@ -63,7 +63,7 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
 
     const onLanguageClose = useCallback(() => setShowLanguagePicker(false), [])
 
-    const history = useHistory()
+    const navigate = useNavigate()
     const handleLanguageSelect = useCallback(
         (language: TourLanguage) => {
             onLanguageSelect(language)
@@ -76,10 +76,10 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
             if (isExternalLink(url)) {
                 window.open(url, '_blank')
             } else {
-                history.push(url)
+                navigate(url)
             }
         },
-        [onStepClick, onLanguageSelect, selectedStep, history]
+        [onStepClick, onLanguageSelect, selectedStep, navigate]
     )
     const attributes = useMemo(
         () =>

@@ -2,6 +2,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_test")
 
 go_test(
     name = "gqltest_test",
+    timeout = "short",
     srcs = [
         "access_token_test.go",
         "bitbucket_projects_perms_sync_test.go",
@@ -18,13 +19,13 @@ go_test(
         "sub_repo_permissions_test.go",
     ],
     deps = [
-        "//cmd/frontend/graphqlbackend",
         "//internal/extsvc",
         "//internal/gqltestutil",
         "//internal/types",
         "//lib/errors",
         "//schema",
         "@com_github_google_go_cmp//cmp",
+        "@com_github_graph_gophers_graphql_go//relay",
         "@com_github_inconshreveable_log15//:log15",
         "@com_github_json_iterator_go//:go",
         "@com_github_stretchr_testify//assert",

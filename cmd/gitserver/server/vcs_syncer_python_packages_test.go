@@ -56,7 +56,7 @@ func TestUnpackPythonPackage_TGZ(t *testing.T) {
 	pkg := bytes.NewReader(createTgz(t, files))
 
 	tmp := t.TempDir()
-	if err := unpackPythonPackage(pkg, "https://some.where/pckg.tar.gz", tmp); err != nil {
+	if err := unpackPythonPackage(pkg, "https://some.where/pckg.tar.gz", tmp, tmp); err != nil {
 		t.Fatal()
 	}
 
@@ -126,7 +126,7 @@ func TestUnpackPythonPackage_ZIP(t *testing.T) {
 	}
 
 	tmp := t.TempDir()
-	if err := unpackPythonPackage(&zipBuf, "https://some.where/pckg.zip", tmp); err != nil {
+	if err := unpackPythonPackage(&zipBuf, "https://some.where/pckg.zip", tmp, tmp); err != nil {
 		t.Fatal()
 	}
 
@@ -170,13 +170,13 @@ func TestUnpackPythonPackage_InvalidZip(t *testing.T) {
 
 	pkg := bytes.NewReader(createTgz(t, files))
 
-	if err := unpackPythonPackage(pkg, "https://some.where/pckg.whl", t.TempDir()); err == nil {
-		t.Fatal()
+	if err := unpackPythonPackage(pkg, "https://some.where/pckg.whl", t.TempDir(), t.TempDir()); err == nil {
+		t.Fatal("no error returned from unpack package")
 	}
 }
 
 func TestUnpackPythonPackage_UnsupportedFormat(t *testing.T) {
-	if err := unpackPythonPackage(bytes.NewReader([]byte{}), "https://some.where/pckg.exe", ""); err == nil {
+	if err := unpackPythonPackage(bytes.NewReader([]byte{}), "https://some.where/pckg.exe", "", ""); err == nil {
 		t.Fatal()
 	}
 }
@@ -208,7 +208,7 @@ func TestUnpackPythonPackage_Wheel(t *testing.T) {
 	}
 
 	tmp := t.TempDir()
-	if err := unpackPythonPackage(b, wheelURL, tmp); err != nil {
+	if err := unpackPythonPackage(b, wheelURL, tmp, tmp); err != nil {
 		t.Fatal(err)
 	}
 
@@ -264,11 +264,8 @@ func newTestClient(t testing.TB, name string, update bool) *pypi.Client {
 		}
 	})
 
-	doer, err := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
-	if err != nil {
-		t.Fatal(err)
-	}
+	doer := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec))
 
-	c := pypi.NewClient("urn", []string{"https://pypi.org/simple"}, doer)
+	c, _ := pypi.NewClient("urn", []string{"https://pypi.org/simple"}, doer)
 	return c
 }

@@ -9,8 +9,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/kylelemons/godebug/pretty"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -22,6 +22,7 @@ import (
 // super-set of the validation performed by the OSS version.
 func TestValidateExternalServiceConfig(t *testing.T) {
 	t.Parallel()
+	t.Cleanup(licensing.TestingSkipFeatureChecks())
 
 	// Assertion helpers
 	equals := func(want ...string) func(testing.TB, []string) {
@@ -1291,7 +1292,6 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 			assert: equals("<nil>"),
 		},
 	} {
-		licensing.MockCheckFeatureError("")
 		tc := tc
 		t.Run(tc.kind+"/"+tc.desc, func(t *testing.T) {
 			var have []string

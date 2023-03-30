@@ -3,14 +3,12 @@ import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 're
 import { useApolloClient } from '@apollo/client'
 import { mdiDelete, mdiGraph, mdiHistory, mdiRecycle, mdiRedo, mdiTimerSand } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
-import { Redirect, RouteComponentProps, useLocation } from 'react-router'
+import { Navigate, useLocation, useParams, useNavigate } from 'react-router-dom'
 import { takeWhile } from 'rxjs/operators'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Alert,
     AlertProps,
@@ -50,16 +48,14 @@ import { useReindexPreciseIndex as defaultUseReindexPreciseIndex } from '../hook
 
 import styles from './CodeIntelPreciseIndexPage.module.scss'
 
-export interface CodeIntelPreciseIndexPageProps
-    extends RouteComponentProps<{ id: string }>,
-        ThemeProps,
-        TelemetryProps {
+export interface CodeIntelPreciseIndexPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     now?: () => Date
     queryDependencyGraph?: typeof defaultQueryDependencyGraph
     queryPreciseIndex?: typeof defaultQueryPreciseIndex
     useDeletePreciseIndex?: typeof defaultUseDeletePreciseIndex
     useReindexPreciseIndex?: typeof defaultUseReindexPreciseIndex
+    indexingEnabled?: boolean
 }
 
 const variantByState = new Map<PreciseIndexState, AlertProps['variant']>([
@@ -69,18 +65,18 @@ const variantByState = new Map<PreciseIndexState, AlertProps['variant']>([
 ])
 
 export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexPageProps> = ({
-    match: {
-        params: { id },
-    },
     authenticatedUser,
     queryPreciseIndex = defaultQueryPreciseIndex,
     useDeletePreciseIndex = defaultUseDeletePreciseIndex,
     useReindexPreciseIndex = defaultUseReindexPreciseIndex,
-    history,
+    indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
     telemetryService,
 }) => {
+    const { id } = useParams<{ id: string }>()
+    const navigate = useNavigate()
+    const location = useLocation()
+
     useEffect(() => telemetryService.logViewEvent('CodeIntelPreciseIndexPage'), [telemetryService])
-    const location = useLocation<{ message: string; modal: string }>()
 
     const apolloClient = useApolloClient()
     const { handleReindexPreciseIndex, reindexError } = useReindexPreciseIndex()
@@ -97,7 +93,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
     const indexOrError = useObservable(
         useMemo(
             // Continuously re-fetch state while it's in a non-terminal state
-            () => queryPreciseIndex(id, apolloClient).pipe(takeWhile(shouldReload, true)),
+            () => queryPreciseIndex(id!, apolloClient).pipe(takeWhile(shouldReload, true)),
             [id, queryPreciseIndex, apolloClient]
         )
     )
@@ -111,26 +107,32 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
 
         try {
             await handleDeletePreciseIndex({
-                variables: { id },
+                variables: { id: id! },
                 update: cache => cache.modify({ fields: { node: () => {} } }),
             })
             setDeletionOrError('deleted')
-            history.push({
-                state: {
-                    modal: 'SUCCESS',
-                    message: 'Index deleted.',
-                },
-            })
+            navigate(
+                {},
+                {
+                    state: {
+                        modal: 'SUCCESS',
+                        message: 'Index deleted.',
+                    },
+                }
+            )
         } catch (error) {
             setDeletionOrError(error)
-            history.push({
-                state: {
-                    modal: 'ERROR',
-                    message: 'There was an error while deleting an index.',
-                },
-            })
+            navigate(
+                {},
+                {
+                    state: {
+                        modal: 'ERROR',
+                        message: 'There was an error while deleting an index.',
+                    },
+                }
+            )
         }
-    }, [id, indexOrError, handleDeletePreciseIndex, history])
+    }, [id, indexOrError, handleDeletePreciseIndex, navigate])
 
     const reindexUpload = useCallback(async (): Promise<void> => {
         if (!indexOrError || isErrorLike(indexOrError)) {
@@ -141,29 +143,35 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
 
         try {
             await handleReindexPreciseIndex({
-                variables: { id },
+                variables: { id: id! },
                 update: cache => cache.modify({ fields: { node: () => {} } }),
             })
             setReindexOrError('reindexed')
-            history.push({
-                state: {
-                    modal: 'SUCCESS',
-                    message: 'Marked index as replaceable by auto-indexing.',
-                },
-            })
+            navigate(
+                {},
+                {
+                    state: {
+                        modal: 'SUCCESS',
+                        message: 'Marked index as replaceable by auto-indexing.',
+                    },
+                }
+            )
         } catch (error) {
             setReindexOrError(error)
-            history.push({
-                state: {
-                    modal: 'ERROR',
-                    message: 'There was an error while marking index as replaceable by auto-indexing.',
-                },
-            })
+            navigate(
+                {},
+                {
+                    state: {
+                        modal: 'ERROR',
+                        message: 'There was an error while marking index as replaceable by auto-indexing.',
+                    },
+                }
+            )
         }
-    }, [id, indexOrError, handleReindexPreciseIndex, history])
+    }, [id, indexOrError, handleReindexPreciseIndex, navigate])
 
     return deletionOrError === 'deleted' ? (
-        <Redirect to="." />
+        <Navigate to="../indexes" replace={true} />
     ) : isErrorLike(deletionOrError) ? (
         <ErrorAlert prefix="Error deleting precise index" error={deletionOrError} />
     ) : isErrorLike(reindexOrError) ? (
@@ -194,7 +202,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
             {!!location.state && <FlashMessage state={location.state.modal} message={location.state.message} />}
 
             <Container>
-                <IndexDescription index={indexOrError} history={history} />
+                <IndexDescription index={indexOrError} />
 
                 <div className="mt-2">
                     <Alert variant={variantByState.get(indexOrError.state) ?? 'primary'}>
@@ -232,7 +240,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                                     )}
                                 </span>
                             ) : indexOrError.state === PreciseIndexState.INDEXING ? (
-                                <span>Index is currently being indexed...</span>
+                                <span>Indexing in progress...</span>
                             ) : indexOrError.state === PreciseIndexState.PROCESSING ? (
                                 <span>Index is currently being processed...</span>
                             ) : indexOrError.state === PreciseIndexState.COMPLETED ? (
@@ -269,7 +277,9 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                             deletionOrError={deletionOrError}
                         />
 
-                        <CodeIntelReindexUpload reindexUpload={reindexUpload} reindexOrError={reindexOrError} />
+                        {indexingEnabled && (
+                            <CodeIntelReindexUpload reindexUpload={reindexUpload} reindexOrError={reindexOrError} />
+                        )}
                     </div>
                 )}
 
@@ -340,13 +350,13 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                             <>
                                 <TabPanel>
                                     <div className="mt-2">
-                                        <DependenciesList index={indexOrError} history={history} />
+                                        <DependenciesList index={indexOrError} />
                                     </div>
                                 </TabPanel>
 
                                 <TabPanel>
                                     <div className="mt-2">
-                                        <DependentsList index={indexOrError} history={history} />
+                                        <DependentsList index={indexOrError} />
                                     </div>
                                 </TabPanel>
 
@@ -374,10 +384,9 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
 
 interface IndexDescriptionProps {
     index: PreciseIndexFields
-    history: H.History
 }
 
-const IndexDescription: FunctionComponent<IndexDescriptionProps> = ({ index, history }) => (
+const IndexDescription: FunctionComponent<IndexDescriptionProps> = ({ index }) => (
     <Card>
         <CardBody>
             <CardTitle>
@@ -414,9 +423,11 @@ interface CodeIntelReindexUploadProps {
 }
 
 const CodeIntelReindexUpload: FunctionComponent<CodeIntelReindexUploadProps> = ({ reindexUpload, reindexOrError }) => (
-    <Button type="button" variant="secondary" onClick={reindexUpload} disabled={reindexOrError === 'loading'}>
-        <Icon aria-hidden={true} svgPath={mdiRedo} /> Mark index as replaceable by autoindexing
-    </Button>
+    <Tooltip content="Allow Sourcegraph to re-index this commit in the future and replace this data.">
+        <Button type="button" variant="secondary" onClick={reindexUpload} disabled={reindexOrError === 'loading'}>
+            <Icon aria-hidden={true} svgPath={mdiRedo} /> Mark index as replaceable by autoindexing
+        </Button>
+    </Tooltip>
 )
 
 interface CodeIntelDeleteUploadProps {

@@ -24,11 +24,13 @@ go_library(
         "@com_github_grafana_regexp//:regexp",
         "@com_github_jackc_pgx_v4//:pgx",
         "@com_github_sourcegraph_run//:run",
+        "@dev_bobheadxi_go_streamline//pipeline",
     ],
 )
 
 go_test(
     name = "dependencies_test",
+    timeout = "short",
     srcs = [
         "dependencies_test.go",
         "mac_test.go",

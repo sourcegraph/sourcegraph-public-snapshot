@@ -32,6 +32,8 @@ type janitorConfig struct {
 	CommitResolverMaximumCommitLag time.Duration
 	UploadTimeout                  time.Duration
 	ReconcilerBatchSize            int
+	FailedIndexBatchSize           int
+	FailedIndexMaxAge              time.Duration
 }
 
 var ConfigJanitorInst = &janitorConfig{}
@@ -52,6 +54,8 @@ func (c *janitorConfig) Load() {
 	c.CommitResolverMaximumCommitLag = c.GetInterval(commitResolverMaximumCommitLagName, "0s", "The maximum acceptable delay between accepting an upload and its commit becoming resolvable. Be cautious about setting this to a large value, as uploads for unresolvable commits will be retried periodically during this interval.")
 	c.UploadTimeout = c.GetInterval(uploadTimeoutName, "24h", "The maximum time an upload can be in the 'uploading' state.")
 	c.ReconcilerBatchSize = c.GetInt("CODEINTEL_UPLOADS_RECONCILER_BATCH_SIZE", "1000", "The number of uploads to reconcile in one cleanup routine invocation.")
+	c.FailedIndexBatchSize = c.GetInt("CODEINTEL_AUTOINDEXING_FAILED_INDEX_BATCH_SIZE", "1000", "The number of old, failed index records to delete at once.")
+	c.FailedIndexMaxAge = c.GetInterval("CODEINTEL_AUTOINDEXING_FAILED_INDEX_MAX_AGE", "730h", "The maximum age a non-relevant failed index record will remain queryable.")
 }
 
 type commitGraphConfig struct {
@@ -105,18 +109,4 @@ func (c *expirationConfig) Load() {
 	c.RepositoryProcessDelay = c.GetInterval(repositoryProcessDelay, "24h", "The minimum frequency that the same repository's uploads can be considered for expiration.")
 	c.UploadBatchSize = c.GetInt(uploadBatchSize, "100", "The number of uploads to consider for expiration at a time.")
 	c.UploadProcessDelay = c.GetInterval(uploadProcessDelay, "24h", "The minimum frequency that the same upload record can be considered for expiration.")
-}
-
-type exportConfig struct {
-	env.BaseConfig
-
-	RankingInterval    time.Duration
-	NumRankingRoutines int
-}
-
-var ConfigExportInst = &exportConfig{}
-
-func (c *exportConfig) Load() {
-	c.RankingInterval = c.GetInterval("CODEINTEL_UPLOADS_RANKING_INTERVAL", "1s", "How frequently to serialize a batch of the code intel graph for ranking.")
-	c.NumRankingRoutines = c.GetInt("CODEINTEL_UPLOADS_RANKING_NUM_ROUTINES", "4", "The number of concurrent ranking graph serializer routines to run per worker instance.")
 }
