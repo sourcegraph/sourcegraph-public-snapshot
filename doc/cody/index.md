@@ -25,7 +25,7 @@ Cody uses Sourcegraph to fetch relevant context to generate answers and code. Th
   1. Set the Sourcegraph URL to be `https://sourcegraph.com`
   1. Set the access token to be the token you just created
 
-<img width="553" alt="image" src="https://user-images.githubusercontent.com/25070988/227510233-5ce37649-6ae3-4470-91d0-71ed6c68b7ef.png">
+<img width="553" alt="Cody login screen" src="https://user-images.githubusercontent.com/25070988/227510233-5ce37649-6ae3-4470-91d0-71ed6c68b7ef.png">
 
 After installing, we recommend the following:
 
