@@ -15,6 +15,8 @@ import { requestGraphQL } from './backend/graphql'
  */
 export const authenticatedUser = new ReplaySubject<AuthenticatedUser | null>(1)
 
+// Trigger comment
+
 /**
  * Represent the current user info on the initial application load. Instead waiting for the `currentAuthStateQuery` query
  * we use the value provided us from the server. Subsequent updates are received via `authenticatedUser` subject.
