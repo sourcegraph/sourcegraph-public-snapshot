@@ -6,7 +6,7 @@
     "sourceRoot": "src",
     "outDir": "out",
   },
-  "include": ["**/*", ".*"],
+  "include": ["**/*", ".*", "package.json"],
   "exclude": ["out"],
   "references": [
     {

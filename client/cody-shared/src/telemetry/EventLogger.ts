@@ -1,13 +1,13 @@
 import { noop } from 'lodash'
 import { Observable, Subscription } from 'rxjs'
 import * as uuid from 'uuid'
+
 import { gql } from '@sourcegraph/http-client'
+import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
 import { version as packageVersion } from '../../package.json'
-import { configureExternalServices } from '../configureExternalServices'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { EventSource, logEventResult } from '../graphql-operations'
+import { EventSource } from '../graphql-operations'
 
 const uidKey = 'sourcegraphAnonymousUid'
 
@@ -48,6 +48,31 @@ export class ConditionalTelemetryService implements TelemetryService {
             }
         })
     }
+    /**
+     * @deprecated Use logPageView instead
+     */
+    public logViewEvent(eventName: string, eventProperties?: any): void {
+        // Wait for this.isEnabled to get a new value
+        setTimeout(() => {
+            if (this.isEnabled) {
+                this.innerTelemetryService.logViewEvent(eventName, eventProperties)
+            }
+        })
+    }
+    public logPageView(eventName: string, eventProperties?: any, publicArgument?: any): void {
+        // Wait for this.isEnabled to get a new value
+        setTimeout(() => {
+            if (this.isEnabled) {
+                this.innerTelemetryService.logPageView(eventName, eventProperties, publicArgument)
+            }
+        })
+    }
+    /**
+     * Logs page view events, adding a suffix
+     *
+     * @returns
+     *
+     */
     public unsubscribe(): void {
         // Reset initial state
         this.isEnabled = false
@@ -141,43 +166,64 @@ export const logEvent = (
     event: { name: string; userCookieID: string; url: string; argument?: string | {}; publicArgument?: string | {} },
     client: SourcegraphGraphQLAPIClient
 ): void => {
-    client.fetch({
-        request: gql`
-            mutation logEvent(
-                $name: String!
-                $userCookieID: String!
-                $url: String!
-                $source: EventSource!
-                $argument: String
-                $publicArgument: String
-            ) {
-                logEvent(
-                    event: $name
-                    userCookieID: $userCookieID
-                    url: $url
-                    source: $source
-                    argument: $argument
-                    publicArgument: $publicArgument
+    client
+        .fetch({
+            request: gql`
+                mutation logEvent(
+                    $name: String!
+                    $userCookieID: String!
+                    $url: String!
+                    $source: EventSource!
+                    $argument: String
+                    $publicArgument: String
                 ) {
-                    alwaysNil
+                    logEvent(
+                        event: $name
+                        userCookieID: $userCookieID
+                        url: $url
+                        source: $source
+                        argument: $argument
+                        publicArgument: $publicArgument
+                    ) {
+                        alwaysNil
+                    }
                 }
-            }
-        `,
-        variables: {
-            ...event,
-            source: EventSource.CODY,
-            argument: event.argument && JSON.stringify(event.argument),
-            publicArgument: event.publicArgument && JSON.stringify(event.publicArgument),
-        },
-        mightContainPrivateInfo: false,
-        // eslint-disable-next-line rxjs/no-ignored-subscription
-    }).subscribe({
-        error: error => {
-            // Swallow errors. If a Sourcegraph instance isn't upgraded, this request may fail
-            // (i.e. the new GraphQL API `logEvent` hasn't been added).
-            // However, end users shouldn't experience this failure, as their admin is
-            // responsible for updating the instance, and has been (or will be) notified
-            // that an upgrade is available via site-admin messaging.
-        },
-    })
+            `,
+            variables: {
+                ...event,
+                source: EventSource.CODY,
+                argument: event.argument && JSON.stringify(event.argument),
+                publicArgument: event.publicArgument && JSON.stringify(event.publicArgument),
+            },
+            mightContainPrivateInfo: false,
+            // eslint-disable-next-line rxjs/no-ignored-subscription
+        })
+        .subscribe({
+            error: (error: Error) => {
+                // Swallow errors. If a Sourcegraph instance isn't upgraded, this request may fail
+                // (i.e. the new GraphQL API `logEvent` hasn't been added).
+                // However, end users shouldn't experience this failure, as their admin is
+                // responsible for updating the instance, and has been (or will be) notified
+                // that an upgrade is available via site-admin messaging.
+            },
+        })
+    /**
+     * Implements {@link TelemetryService}.
+     *
+     * @deprecated Use logPageView instead
+     *
+     * @param pageTitle The title of the page being viewed.
+     */
+    public async logViewEvent(pageTitle: string, eventProperties?: any): Promise<void> {
+        await this.logEvent(`View${pageTitle}`, eventProperties)
+    }
+
+    /**
+     * Implements {@link TelemetryService}.
+     *
+     * @param eventName The name of the entity being viewed.
+     */
+    public async logPageView(eventName: string, eventProperties?: any, publicArgument?: any): Promise<void> {
+        await this.logEvent(`${eventName}Viewed`, eventProperties, publicArgument)
+    }
 }
