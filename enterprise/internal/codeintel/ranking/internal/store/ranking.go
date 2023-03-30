@@ -19,8 +19,7 @@ import (
 func (s *store) InsertDefinitionsForRanking(
 	ctx context.Context,
 	rankingGraphKey string,
-	rankingBatchNumber int,
-	definitions []shared.RankingDefinitions,
+	definitions chan shared.RankingDefinitions,
 ) (err error) {
 	ctx, _, endObservation := s.operations.insertDefinitionsForRanking.With(
 		ctx,
@@ -36,20 +35,8 @@ func (s *store) InsertDefinitionsForRanking(
 	defer func() { err = tx.Done(err) }()
 
 	inserter := func(inserter *batch.Inserter) error {
-		batchDefinitions := make([]shared.RankingDefinitions, 0, rankingBatchNumber)
-		for _, def := range definitions {
-			batchDefinitions = append(batchDefinitions, def)
-
-			if len(batchDefinitions) == rankingBatchNumber {
-				if err := insertDefinitions(ctx, inserter, rankingGraphKey, batchDefinitions); err != nil {
-					return err
-				}
-				batchDefinitions = make([]shared.RankingDefinitions, 0, rankingBatchNumber)
-			}
-		}
-
-		if len(batchDefinitions) > 0 {
-			if err := insertDefinitions(ctx, inserter, rankingGraphKey, batchDefinitions); err != nil {
+		for definition := range definitions {
+			if err := inserter.Insert(ctx, definition.UploadID, definition.SymbolName, definition.DocumentPath, rankingGraphKey); err != nil {
 				return err
 			}
 		}
@@ -76,31 +63,12 @@ func (s *store) InsertDefinitionsForRanking(
 	return nil
 }
 
-func insertDefinitions(
-	ctx context.Context,
-	inserter *batch.Inserter,
-	rankingGraphKey string,
-	definitions []shared.RankingDefinitions,
-) error {
-	for _, def := range definitions {
-		if err := inserter.Insert(
-			ctx,
-			def.UploadID,
-			def.SymbolName,
-			def.DocumentPath,
-			rankingGraphKey,
-		); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (s *store) InsertReferencesForRanking(
 	ctx context.Context,
 	rankingGraphKey string,
-	rankingBatchNumber int,
-	references shared.RankingReferences,
+	batchSize int,
+	uploadID int,
+	references chan string,
 ) (err error) {
 	ctx, _, endObservation := s.operations.insertReferencesForRanking.With(
 		ctx,
@@ -116,20 +84,8 @@ func (s *store) InsertReferencesForRanking(
 	defer func() { err = tx.Done(err) }()
 
 	inserter := func(inserter *batch.Inserter) error {
-		batchSymbolNames := make([]string, 0, rankingBatchNumber)
-		for _, ref := range references.SymbolNames {
-			batchSymbolNames = append(batchSymbolNames, ref)
-
-			if len(batchSymbolNames) == rankingBatchNumber {
-				if err := inserter.Insert(ctx, references.UploadID, pq.Array(batchSymbolNames), rankingGraphKey); err != nil {
-					return err
-				}
-				batchSymbolNames = make([]string, 0, rankingBatchNumber)
-			}
-		}
-
-		if len(batchSymbolNames) > 0 {
-			if err := inserter.Insert(ctx, references.UploadID, pq.Array(batchSymbolNames), rankingGraphKey); err != nil {
+		for symbols := range batchChannel(references, batchSize) {
+			if err := inserter.Insert(ctx, uploadID, pq.Array(symbols), rankingGraphKey); err != nil {
 				return err
 			}
 		}
@@ -337,7 +293,12 @@ unprocessed_path_counts AS (
 	SELECT
 		ipr.id,
 		ipr.upload_id,
-		ipr.document_path,
+		unnest(
+			CASE
+				WHEN ipr.document_path != '' THEN array_append('{}'::text[], ipr.document_path)
+				ELSE ipr.document_paths
+			END
+		) AS document_path,
 		ipr.graph_key
 	FROM codeintel_initial_path_ranks ipr
 	WHERE
@@ -378,7 +339,7 @@ SELECT
 	(SELECT COUNT(*) FROM ins)
 `
 
-func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, documentPath []string, graphKey string) (err error) {
+func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, documentPaths chan string, batchSize int, graphKey string) (err error) {
 	ctx, _, endObservation := s.operations.insertInitialPathRanks.With(
 		ctx,
 		&err,
@@ -395,8 +356,8 @@ func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, docume
 	defer func() { err = tx.Done(err) }()
 
 	inserter := func(inserter *batch.Inserter) error {
-		for _, path := range documentPath {
-			if err := inserter.Insert(ctx, path); err != nil {
+		for paths := range batchChannel(documentPaths, batchSize) {
+			if err := inserter.Insert(ctx, pq.Array(paths)); err != nil {
 				return err
 			}
 		}
@@ -413,7 +374,7 @@ func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, docume
 		tx.Handle(),
 		"t_codeintel_initial_path_ranks",
 		batch.MaxNumPostgresParameters,
-		[]string{"document_path"},
+		[]string{"document_paths"},
 		inserter,
 	); err != nil {
 		return err
@@ -428,18 +389,14 @@ func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, docume
 
 const createInitialPathTemporaryTableQuery = `
 CREATE TEMPORARY TABLE IF NOT EXISTS t_codeintel_initial_path_ranks (
-	document_path text NOT NULL
+	document_paths text[] NOT NULL
 )
 ON COMMIT DROP
 `
 
 const insertInitialPathRankCountsQuery = `
-INSERT INTO codeintel_initial_path_ranks (upload_id, document_path, graph_key)
-	SELECT
-		%s,
-		document_path,
-		%s
-	FROM t_codeintel_initial_path_ranks
+INSERT INTO codeintel_initial_path_ranks (upload_id, document_paths, graph_key)
+SELECT %s, document_paths, %s FROM t_codeintel_initial_path_ranks
 `
 
 func (s *store) InsertPathRanks(
@@ -609,7 +566,7 @@ candidates AS (
 		ld.id,
 		uvt.is_default_branch IS TRUE AS safe
 	FROM locked_definitions ld
-	LEFT JOIN lsif_uploads_visible_at_tip uvt ON  uvt.upload_id = ld.upload_id
+	LEFT JOIN lsif_uploads_visible_at_tip uvt ON uvt.repository_id = ld.repository_id AND uvt.upload_id = ld.upload_id
 ),
 updated_definitions AS (
 	UPDATE codeintel_ranking_definitions
@@ -743,7 +700,7 @@ candidates AS (
 		lipr.id,
 		uvt.is_default_branch IS TRUE AS safe
 	FROM locked_initial_path_ranks lipr
-	LEFT JOIN lsif_uploads_visible_at_tip uvt ON uvt.upload_id = lipr.upload_id
+	LEFT JOIN lsif_uploads_visible_at_tip uvt ON uvt.repository_id = lipr.repository_id AND uvt.upload_id = lipr.upload_id
 ),
 updated_initial_path_ranks AS (
 	UPDATE codeintel_initial_path_ranks
@@ -760,61 +717,108 @@ SELECT
 	(SELECT COUNT(*) FROM deleted_initial_path_ranks)
 `
 
-func (s *store) VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string) (
-	metadataRecordsDeleted int,
-	inputRecordsDeleted int,
-	err error,
-) {
+func (s *store) VacuumAbandonedDefinitions(ctx context.Context, graphKey string, batchSize int) (_ int, err error) {
+	ctx, _, endObservation := s.operations.vacuumAbandonedDefinitions.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumAbandonedDefinitionsQuery, graphKey, graphKey, batchSize)))
+	return count, err
+}
+
+const vacuumAbandonedDefinitionsQuery = `
+WITH
+locked_definitions AS (
+	SELECT id
+	FROM codeintel_ranking_definitions
+	WHERE (graph_key < %s OR graph_key > %s)
+	ORDER BY graph_key, id
+	FOR UPDATE SKIP LOCKED
+	LIMIT %s
+),
+deleted_definitions AS (
+	DELETE FROM codeintel_ranking_definitions
+	WHERE id IN (SELECT id FROM locked_definitions)
+	RETURNING 1
+)
+SELECT COUNT(*) FROM deleted_definitions
+`
+
+func (s *store) VacuumAbandonedReferences(ctx context.Context, graphKey string, batchSize int) (_ int, err error) {
+	ctx, _, endObservation := s.operations.vacuumAbandonedReferences.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumAbandonedReferencesQuery, graphKey, graphKey, batchSize)))
+	return count, err
+}
+
+const vacuumAbandonedReferencesQuery = `
+WITH
+locked_references AS (
+	SELECT id
+	FROM codeintel_ranking_references
+	WHERE (graph_key < %s OR graph_key > %s)
+	ORDER BY graph_key, id
+	FOR UPDATE SKIP LOCKED
+	LIMIT %s
+),
+deleted_references AS (
+	DELETE FROM codeintel_ranking_references
+	WHERE id IN (SELECT id FROM locked_references)
+	RETURNING 1
+)
+SELECT COUNT(*) FROM deleted_references
+`
+
+func (s *store) VacuumAbandonedInitialPathCounts(ctx context.Context, graphKey string, batchSize int) (_ int, err error) {
+	ctx, _, endObservation := s.operations.vacuumAbandonedInitialPathCounts.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumAbandonedInitialPathCountsQuery, graphKey, graphKey, batchSize)))
+	return count, err
+}
+
+const vacuumAbandonedInitialPathCountsQuery = `
+WITH
+locked_initial_paths AS (
+	SELECT id
+	FROM codeintel_initial_path_ranks
+	WHERE (graph_key < %s OR graph_key > %s)
+	ORDER BY graph_key, id
+	FOR UPDATE SKIP LOCKED
+	LIMIT %s
+),
+deleted_initial_paths AS (
+	DELETE FROM codeintel_initial_path_ranks
+	WHERE id IN (SELECT id FROM locked_initial_paths)
+	RETURNING 1
+)
+SELECT COUNT(*) FROM deleted_initial_paths
+`
+
+func (s *store) VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string, batchSize int) (_ int, err error) {
 	ctx, _, endObservation := s.operations.vacuumStaleGraphs.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
 	defer endObservation(1, observation.Args{})
 
-	rows, err := s.db.Query(ctx, sqlf.Sprintf(vacuumStaleGraphsQuery, derivativeGraphKey, derivativeGraphKey))
-	if err != nil {
-		return 0, 0, err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	for rows.Next() {
-		if err := rows.Scan(
-			&metadataRecordsDeleted,
-			&inputRecordsDeleted,
-		); err != nil {
-			return 0, 0, err
-		}
-	}
-
-	return metadataRecordsDeleted, inputRecordsDeleted, nil
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumStaleGraphsQuery, derivativeGraphKey, derivativeGraphKey, batchSize)))
+	return count, err
 }
 
 const vacuumStaleGraphsQuery = `
 WITH
-locked_references_processed AS (
-	SELECT id
-	FROM codeintel_ranking_references_processed
-	WHERE graph_key != %s
-	ORDER BY id
-	FOR UPDATE
-),
 locked_path_counts_inputs AS (
 	SELECT id
 	FROM codeintel_ranking_path_counts_inputs
-	WHERE graph_key != %s
-	ORDER BY id
-	FOR UPDATE
-),
-deleted_references_processed AS (
-	DELETE FROM codeintel_ranking_references_processed
-	WHERE id IN (SELECT id FROM locked_references_processed)
-	RETURNING 1
+	WHERE (graph_key < %s OR graph_key > %s)
+	ORDER BY graph_key, id
+	FOR UPDATE SKIP LOCKED
+	LIMIT %s
 ),
 deleted_path_counts_inputs AS (
 	DELETE FROM codeintel_ranking_path_counts_inputs
 	WHERE id IN (SELECT id FROM locked_path_counts_inputs)
 	RETURNING 1
 )
-SELECT
-	(SELECT COUNT(*) FROM deleted_references_processed),
-	(SELECT COUNT(*) FROM deleted_path_counts_inputs)
+SELECT COUNT(*) FROM deleted_path_counts_inputs
 `
 
 func (s *store) VacuumStaleRanks(ctx context.Context, derivativeGraphKey string) (rankRecordsDeleted, rankRecordsScanned int, err error) {
@@ -886,3 +890,26 @@ SELECT
 	(SELECT COUNT(*) FROM locked_records),
 	(SELECT COUNT(*) FROM del)
 `
+
+func batchChannel[T any](ch <-chan T, batchSize int) <-chan []T {
+	batches := make(chan []T)
+	go func() {
+		defer close(batches)
+
+		batch := make([]T, 0, batchSize)
+		for value := range ch {
+			batch = append(batch, value)
+
+			if len(batch) == batchSize {
+				batches <- batch
+				batch = make([]T, 0, batchSize)
+			}
+		}
+
+		if len(batch) > 0 {
+			batches <- batch
+		}
+	}()
+
+	return batches
+}

@@ -284,6 +284,7 @@ func (r *RepositoryResolver) Language(ctx context.Context) (string, error) {
 
 func (r *RepositoryResolver) Enabled() bool { return true }
 
+// CreatedAt is deprecated and will be removed in a future release.
 // No clients that we know of read this field. Additionally on performance profiles
 // the marshalling of timestamps is significant in our postgres client. So we
 // deprecate the fields and return fake data for created_at.

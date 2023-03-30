@@ -146,4 +146,4 @@ While the [Cache Buildkite Plugin](https://github.com/sourcegraph/cache-buildkit
            <<: *s3-settings
       ```
 
-   Add every plugin definition to the relevant steps in your `pipeline.yaml`. An example of a valid pipeline step with a plugin configured can be found [here](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/image-updater-pipeline/-/blob/.buildkite/image-updater/pipeline.yaml?L25).
+   Add every plugin definition to the relevant steps in your `pipeline.yaml`. An example of a valid pipeline step with a plugin configured can be found [here](https://sourcegraph.com/github.com/sourcegraph/image-updater-pipeline/-/blob/.buildkite/image-updater/pipeline.yaml?L25).

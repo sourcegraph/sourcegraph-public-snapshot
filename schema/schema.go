@@ -611,6 +611,8 @@ type Embeddings struct {
 	Dimensions int `json:"dimensions"`
 	// Enabled description: Toggles whether embedding service is enabled.
 	Enabled bool `json:"enabled"`
+	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
+	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
 	// Model description: The model used for embedding.
 	Model string `json:"model"`
 	// Url description: The url to the external embedding API service.
@@ -715,6 +717,8 @@ type ExcludedGitHubRepo struct {
 	Pattern string `json:"pattern,omitempty"`
 }
 type ExcludedGitLabProject struct {
+	// EmptyRepos description: Whether to exclude empty repositories.
+	EmptyRepos bool `json:"emptyRepos,omitempty"`
 	// Id description: The ID of a GitLab project (as returned by the GitLab instance's API) to exclude from mirroring.
 	Id int `json:"id,omitempty"`
 	// Name description: The name of a GitLab project ("group/name") to exclude from mirroring.
@@ -811,10 +815,8 @@ type ExperimentalFeatures struct {
 	StructuralSearch   string              `json:"structuralSearch,omitempty"`
 	SubRepoPermissions *SubRepoPermissions `json:"subRepoPermissions,omitempty"`
 	// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
-	TlsExternal *TlsExternal `json:"tls.external,omitempty"`
-	// UnifiedPermissions description: Enables the new unified permissions model, which stores repository permissions in a single table and a row for each permission instead of postgres arrays.
-	UnifiedPermissions bool           `json:"unifiedPermissions,omitempty"`
-	Additional         map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
+	TlsExternal *TlsExternal   `json:"tls.external,omitempty"`
+	Additional  map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
 }
 
 func (v ExperimentalFeatures) MarshalJSON() ([]byte, error) {
@@ -878,7 +880,6 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "structuralSearch")
 	delete(m, "subRepoPermissions")
 	delete(m, "tls.external")
-	delete(m, "unifiedPermissions")
 	if len(m) > 0 {
 		v.Additional = make(map[string]any, len(m))
 	}
@@ -2408,6 +2409,8 @@ type SiteConfiguration struct {
 	// EmailAddress description: The "from" address for emails sent by this server.
 	// Please see https://docs.sourcegraph.com/admin/config/email
 	EmailAddress string `json:"email.address,omitempty"`
+	// EmailSenderName description: The name to use in the "from" address for emails sent by this server.
+	EmailSenderName string `json:"email.senderName,omitempty"`
 	// EmailSmtp description: The SMTP server used to send transactional emails.
 	// Please see https://docs.sourcegraph.com/admin/config/email
 	EmailSmtp *SMTPServerConfig `json:"email.smtp,omitempty"`
@@ -2633,6 +2636,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "disablePublicRepoRedirects")
 	delete(m, "dotcom")
 	delete(m, "email.address")
+	delete(m, "email.senderName")
 	delete(m, "email.smtp")
 	delete(m, "email.templates")
 	delete(m, "embeddings")

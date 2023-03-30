@@ -61,12 +61,12 @@ func TestEmbeddingIndexStorage(t *testing.T) {
 	index := &RepoEmbeddingIndex{
 		RepoName: api.RepoName("repo"),
 		Revision: api.CommitID("commit"),
-		CodeIndex: EmbeddingIndex[RepoEmbeddingRowMetadata]{
+		CodeIndex: EmbeddingIndex{
 			Embeddings:      []float32{0.0, 0.1, 0.2},
 			ColumnDimension: 3,
 			RowMetadata:     []RepoEmbeddingRowMetadata{{FileName: "a.go", StartLine: 0, EndLine: 1}},
 		},
-		TextIndex: EmbeddingIndex[RepoEmbeddingRowMetadata]{
+		TextIndex: EmbeddingIndex{
 			Embeddings:      []float32{1.0, 2.1, 3.2},
 			ColumnDimension: 3,
 			RowMetadata:     []RepoEmbeddingRowMetadata{{FileName: "b.py", StartLine: 0, EndLine: 1}},
@@ -85,7 +85,7 @@ func TestEmbeddingIndexStorage(t *testing.T) {
 	require.Equal(t, index, downloadedIndex)
 }
 
-func getMockEmbeddingIndex(nRows int, columnDimension int) EmbeddingIndex[RepoEmbeddingRowMetadata] {
+func getMockEmbeddingIndex(nRows int, columnDimension int) EmbeddingIndex {
 	embeddings := make([]float32, nRows*columnDimension)
 	for idx := range embeddings {
 		embeddings[idx] = rand.Float32()
@@ -98,7 +98,7 @@ func getMockEmbeddingIndex(nRows int, columnDimension int) EmbeddingIndex[RepoEm
 		row.FileName = fmt.Sprintf("path/to/file/%d_%d.go", row.StartLine, row.EndLine)
 	}
 
-	return EmbeddingIndex[RepoEmbeddingRowMetadata]{
+	return EmbeddingIndex{
 		Embeddings:      embeddings,
 		ColumnDimension: columnDimension,
 		RowMetadata:     rowMetadata,

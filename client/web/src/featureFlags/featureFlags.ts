@@ -24,6 +24,7 @@ export type FeatureFlagName =
     | 'database-permission-sync-worker'
     | 'blob-page-switch-areas-shortcuts'
     | 'app-connect-dotcom'
+    | 'sentinel'
 
 interface OrgFlagOverride {
     orgID: string

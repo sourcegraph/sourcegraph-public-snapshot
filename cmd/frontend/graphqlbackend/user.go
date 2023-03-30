@@ -301,14 +301,6 @@ func (r *UserResolver) Organizations(ctx context.Context) (*orgConnectionStaticR
 	return &c, nil
 }
 
-func (r *UserResolver) Tags(ctx context.Context) ([]string, error) {
-	// 🚨 SECURITY: Only the user and admins are allowed to access the user's tags.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
-		return nil, err
-	}
-	return r.user.Tags, nil
-}
-
 func (r *UserResolver) SurveyResponses(ctx context.Context) ([]*surveyResponseResolver, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to access the user's survey responses.
 	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
@@ -369,9 +361,12 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 		return nil, err
 	}
 
+	logger := r.logger.Scoped("UpdatePassword", "password update").
+		With(log.Int32("userID", user.ID))
+
 	if conf.CanSendEmail() {
-		if err := backend.NewUserEmailsService(r.db, r.logger).SendUserEmailOnFieldUpdate(ctx, user.ID, "updated the password"); err != nil {
-			log15.Warn("Failed to send email to inform user of password update", "error", err)
+		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnFieldUpdate(ctx, user.ID, "updated the password"); err != nil {
+			logger.Warn("Failed to send email to inform user of password update", log.Error(err))
 		}
 	}
 	return &EmptyResponse{}, nil
@@ -394,9 +389,12 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 		return nil, err
 	}
 
+	logger := r.logger.Scoped("CreatePassword", "password creation").
+		With(log.Int32("userID", user.ID))
+
 	if conf.CanSendEmail() {
-		if err := backend.NewUserEmailsService(r.db, r.logger).SendUserEmailOnFieldUpdate(ctx, user.ID, "created a password"); err != nil {
-			log15.Warn("Failed to send email to inform user of password creation", "error", err)
+		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnFieldUpdate(ctx, user.ID, "created a password"); err != nil {
+			logger.Warn("Failed to send email to inform user of password creation", log.Error(err))
 		}
 	}
 	return &EmptyResponse{}, nil
@@ -473,7 +471,7 @@ func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatc
 	return EnterpriseResolvers.batchChangesResolver.BatchChangesCodeHosts(ctx, args)
 }
 
-func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error) {
+func (r *UserResolver) Roles(_ context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error) {
 	if envvar.SourcegraphDotComMode() {
 		return nil, errors.New("roles are not available on sourcegraph.com")
 	}

@@ -41,6 +41,7 @@ const repo: RepositoryFields = {
             serviceKind: ExternalServiceKind.GITHUB,
         },
     ],
+    isFork: false,
     viewerCanAdminister: false,
     defaultBranch: {
         displayName: 'main',

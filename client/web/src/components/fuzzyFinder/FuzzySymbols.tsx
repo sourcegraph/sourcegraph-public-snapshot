@@ -69,10 +69,15 @@ export class FuzzySymbols extends FuzzyQuery {
         const repositoryText = `${repositoryName}/`
         const symbolKindTags =
             isSettingsValid(this.settingsCascade) && this.settingsCascade.final.experimentalFeatures?.symbolKindTags
-        return values.map<SearchValue>(({ text, url, symbolKind, repoName, filePath }) => ({
+        return values.map<SearchValue>(({ text, url, symbolName, symbolKind, repoName, filePath }) => ({
             text: repositoryFilter ? text.replace(repositoryText, '') : text,
             url,
-            ranking: repoName && filePath ? this.userHistory.lastAccessedFilePath(repoName, filePath) : undefined,
+            historyRanking: () =>
+                repoName && filePath ? this.userHistory.lastAccessedFilePath(repoName, filePath) : undefined,
+            // Tiebreak by prioritizing symbols with shorter names because the
+            // user can always type more characters to narrow down the query
+            // against symbols with longer names.
+            ranking: -(symbolName?.length ?? Number.MIN_VALUE),
             icon: symbolKind ? (
                 <SymbolKind kind={symbolKind} className="mr-1" symbolKindTags={symbolKindTags} />
             ) : undefined,
@@ -103,6 +108,7 @@ export class FuzzySymbols extends FuzzyQuery {
                         text: `${symbol.name}${containerName} - ${repository}${result.file.path} - ${symbol.language}`,
                         url: symbol.url,
                         symbolKind: symbol.kind,
+                        symbolName: symbol.name,
                     })
                 }
             }

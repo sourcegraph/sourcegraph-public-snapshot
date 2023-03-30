@@ -19,6 +19,7 @@ func searchRepoEmbeddingIndex(
 	readFile readFileFn,
 	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
 	getQueryEmbedding getQueryEmbeddingFn,
+	debug bool,
 ) (*embeddings.EmbeddingSearchResults, error) {
 	embeddingIndex, err := getRepoEmbeddingIndex(ctx, params.RepoName)
 	if err != nil {
@@ -32,11 +33,11 @@ func searchRepoEmbeddingIndex(
 
 	var codeResults, textResults []embeddings.EmbeddingSearchResult
 	if params.CodeResultsCount > 0 && len(embeddingIndex.CodeIndex.Embeddings) > 0 {
-		codeResults = searchEmbeddingIndex(ctx, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.CodeIndex, readFile, embeddedQuery, params.CodeResultsCount)
+		codeResults = searchEmbeddingIndex(ctx, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.CodeIndex, readFile, embeddedQuery, params.CodeResultsCount, debug)
 	}
 
 	if params.TextResultsCount > 0 && len(embeddingIndex.TextIndex.Embeddings) > 0 {
-		textResults = searchEmbeddingIndex(ctx, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.TextIndex, readFile, embeddedQuery, params.TextResultsCount)
+		textResults = searchEmbeddingIndex(ctx, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.TextIndex, readFile, embeddedQuery, params.TextResultsCount, debug)
 	}
 
 	return &embeddings.EmbeddingSearchResults{CodeResults: codeResults, TextResults: textResults}, nil
@@ -48,15 +49,16 @@ func searchEmbeddingIndex(
 	ctx context.Context,
 	repoName api.RepoName,
 	revision api.CommitID,
-	index *embeddings.EmbeddingIndex[embeddings.RepoEmbeddingRowMetadata],
+	index *embeddings.EmbeddingIndex,
 	readFile readFileFn,
 	query []float32,
 	nResults int,
+	debug bool,
 ) []embeddings.EmbeddingSearchResult {
 	numWorkers := runtime.GOMAXPROCS(0)
-	rows := index.SimilaritySearch(query, nResults, embeddings.WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT})
+	rows := index.SimilaritySearch(query, nResults, embeddings.WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT}, debug)
 
-	results := make([]embeddings.EmbeddingSearchResult, len(rows))
+	// Hydrate content
 	for idx, row := range rows {
 		fileContent, err := readFile(ctx, repoName, revision, row.FileName)
 		if err != nil {
@@ -68,15 +70,10 @@ func searchEmbeddingIndex(
 		startLine := max(0, min(len(lines), row.StartLine))
 		endLine := max(0, min(len(lines), row.EndLine))
 
-		results[idx] = embeddings.EmbeddingSearchResult{
-			FileName:  row.FileName,
-			StartLine: row.StartLine,
-			EndLine:   row.EndLine,
-			Content:   strings.Join(lines[startLine:endLine], "\n"),
-		}
+		rows[idx].Content = strings.Join(lines[startLine:endLine], "\n")
 	}
 
-	return results
+	return rows
 }
 
 func min(a, b int) int {

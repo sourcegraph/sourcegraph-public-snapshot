@@ -30,7 +30,7 @@ const LIST_TEAM_MEMBER_FIELDS = gql`
     }
 `
 
-const LIST_TEAM_MEMBERS = gql`
+export const LIST_TEAM_MEMBERS = gql`
     query ListTeamMembers($first: Int, $after: String, $search: String, $teamName: String!) {
         team(name: $teamName) {
             id

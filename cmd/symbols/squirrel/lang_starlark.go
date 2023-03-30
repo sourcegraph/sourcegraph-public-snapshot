@@ -11,20 +11,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (squirrel *SquirrelService) getDefStarlark(ctx context.Context, node Node) (ret *Node, err error) {
-	defer squirrel.onCall(node, String(node.Type()), lazyNodeStringer(&ret))()
+func (s *SquirrelService) getDefStarlark(ctx context.Context, node Node) (ret *Node, err error) {
+	defer s.onCall(node, String(node.Type()), lazyNodeStringer(&ret))()
 	switch node.Type() {
 	case "identifier":
 		return starlarkBindingNamed(node.Node.Content(node.Contents), swapNode(node, getRoot(node.Node)))
 	case "string":
-		return squirrel.getDefStarlarkString(ctx, node)
+		return s.getDefStarlarkString(ctx, node)
 	default:
 		return nil, nil
 
 	}
 }
 
-func (squirrel *SquirrelService) getDefStarlarkString(ctx context.Context, node Node) (ret *Node, err error) {
+func (s *SquirrelService) getDefStarlarkString(ctx context.Context, node Node) (ret *Node, err error) {
 	sitterQuery, err := sitter.NewQuery([]byte(loadQuery), node.LangSpec.language)
 	if err != nil {
 		return nil, errors.Newf("failed to parse query: %s\n%s", err, loadQuery)
@@ -68,7 +68,7 @@ func (squirrel *SquirrelService) getDefStarlarkString(ctx context.Context, node 
 			Commit: node.RepoCommitPath.Commit,
 		}
 
-		destinationRoot, err := squirrel.parse(ctx, destinationRepoCommitPath)
+		destinationRoot, err := s.parse(ctx, destinationRepoCommitPath)
 		if err != nil {
 			return nil, err
 		}

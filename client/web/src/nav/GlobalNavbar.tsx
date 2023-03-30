@@ -5,6 +5,7 @@ import BarChartIcon from 'mdi-react/BarChartIcon'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import CommentQuoteOutline from 'mdi-react/CommentQuoteOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import ShieldHalfFullIcon from 'mdi-react/ShieldHalfFullIcon'
 import { RouteObject, useLocation } from 'react-router-dom'
 
 import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
@@ -16,14 +17,13 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, ButtonLink, useWindowSize } from '@sourcegraph/wildcard'
+import { Button, Link, ButtonLink, useWindowSize, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { CodeMonitoringProps } from '../codeMonitoring'
-import { CodyIcon } from '../cody/CodyIcon'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
@@ -34,6 +34,7 @@ import { NotebookProps } from '../notebooks'
 import { OwnConfigProps } from '../own/OwnConfigProps'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
+import { SentinelProps } from '../sentinel/types'
 import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
 import { useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
@@ -51,6 +52,7 @@ export interface GlobalNavbarProps
         TelemetryProps,
         SearchContextInputProps,
         CodeInsightsProps,
+        SentinelProps,
         BatchChangesProps,
         NotebookProps,
         CodeMonitoringProps,
@@ -124,6 +126,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     isSourcegraphApp,
     isRepositoryRelatedPage,
     codeInsightsEnabled,
+    sentinelEnabled,
     searchContextsEnabled,
     codeMonitoringEnabled,
     notebooksEnabled,
@@ -146,6 +149,11 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const showCodeMonitoring = codeMonitoringEnabled
     const showSearchNotebook = notebooksEnabled
 
+    const [isSentinelEnabled] = useFeatureFlag('sentinel')
+    // TODO: Include isSourcegraphDotCom in subsequent PR
+    // const showSentinel = sentinelEnabled && isSourcegraphDotCom && props.authenticatedUser?.siteAdmin
+    const showSentinel = isSentinelEnabled && props.authenticatedUser?.siteAdmin
+
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
         // the main query input to avoid misleading users
@@ -163,17 +171,19 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     // isCodeInsightsEnabled selector controls appearance based on user settings flags
     const codeInsights = codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)
 
+    const [codyEnabled] = useFeatureFlag('cody')
+
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
             !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
             ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Own' },
+            codyEnabled && { path: EnterprisePageRoutes.CodySearch, content: 'Cody' },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [ownEnabled, showSearchContext])
+    }, [codyEnabled, ownEnabled, showSearchContext])
 
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 
-    const [codyEnabled] = useFeatureFlag('cody')
     const isLightTheme = useIsLightTheme()
 
     return (
@@ -237,10 +247,10 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             </NavLink>
                         </NavItem>
                     )}
-                    {codyEnabled && (
-                        <NavItem icon={CodyIcon}>
-                            <NavLink variant={navLinkVariant} to="/cody">
-                                Cody
+                    {showSentinel && (
+                        <NavItem icon={ShieldHalfFullIcon}>
+                            <NavLink variant={navLinkVariant} to="/sentinel">
+                                Sentinel
                             </NavLink>
                         </NavItem>
                     )}
@@ -318,13 +328,15 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {isSourcegraphDotCom && (
                         <NavAction>
-                            <Link
-                                to="https://about.sourcegraph.com"
-                                className={styles.link}
-                                onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'NavBar' })}
-                            >
-                                {props.authenticatedUser && 'Get '} Enterprise
-                            </Link>
+                            <Tooltip content="The Sourcegraph desktop app runs locally and works on your own private code.">
+                                <Link
+                                    to="https://about.sourcegraph.com/app"
+                                    className={classNames(styles.link, 'small')}
+                                    onClick={() => eventLogger.log('ClickedOnAppCTA', { location: 'NavBar' })}
+                                >
+                                    Download app
+                                </Link>
+                            </Tooltip>
                         </NavAction>
                     )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}

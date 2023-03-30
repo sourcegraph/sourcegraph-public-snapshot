@@ -4,7 +4,7 @@ load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
-load("//dev:webpack.bzl", "webpack_bundle", "webpack_devserver")
+load("//dev:webpack.bzl", "webpack_bundle", "webpack_devserver", "webpack_web_app")
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
@@ -596,8 +596,9 @@ ts_project(
         "src/enterprise/codeintel/sort.ts",
         "src/enterprise/codeintel/useCodeIntel.ts",
         "src/enterprise/codeintel/useSearchBasedCodeIntel.ts",
-        "src/enterprise/cody/CodyPage.tsx",
-        "src/enterprise/cody/GlobalCodyArea.tsx",
+        "src/enterprise/cody/api.ts",
+        "src/enterprise/cody/icon.ts",
+        "src/enterprise/cody/search/CodySearchPage.tsx",
         "src/enterprise/dotcom/productSubscriptions/AccountEmailAddresses.tsx",
         "src/enterprise/dotcom/productSubscriptions/AccountName.tsx",
         "src/enterprise/dotcom/productSubscriptions/ProductLicenseValidity.tsx",
@@ -983,6 +984,7 @@ ts_project(
         "src/hooks/useScrollManager/mutationObserverWithTimeout.ts",
         "src/hooks/useScrollManager/useScrollManager.ts",
         "src/hooks/useUrlSyncedState.ts",
+        "src/hooks/useUrlSyncedString.ts",
         "src/initBuildInfo.ts",
         "src/insights/Icons.tsx",
         "src/insights/types.ts",
@@ -1168,6 +1170,7 @@ ts_project(
         "src/repo/blob/codemirror/hovercard.tsx",
         "src/repo/blob/codemirror/index.ts",
         "src/repo/blob/codemirror/linenumbers.ts",
+        "src/repo/blob/codemirror/links.ts",
         "src/repo/blob/codemirror/lock-line.ts",
         "src/repo/blob/codemirror/navigate-to-any-line-on-click.ts",
         "src/repo/blob/codemirror/occurrence-utils.ts",
@@ -1216,6 +1219,8 @@ ts_project(
         "src/repo/components/RepoHeaderActions/index.ts",
         "src/repo/components/RepoRevision/RepoRevision.tsx",
         "src/repo/components/RepoRevision/index.ts",
+        "src/repo/linkifiy/Linkified.tsx",
+        "src/repo/linkifiy/get-links.ts",
         "src/repo/packages/isPackageServiceType.ts",
         "src/repo/releases/RepositoryReleasesArea.tsx",
         "src/repo/releases/RepositoryReleasesTagsPage.tsx",
@@ -1358,6 +1363,7 @@ ts_project(
         "src/site-admin/SiteAdminWebhookPage.tsx",
         "src/site-admin/SiteAdminWebhookUpdatePage.tsx",
         "src/site-admin/SiteAdminWebhooksPage.tsx",
+        "src/site-admin/SiteConfigurationChangeList.tsx",
         "src/site-admin/UserManagement/components/Calendar/Calendar.tsx",
         "src/site-admin/UserManagement/components/Calendar/index.ts",
         "src/site-admin/UserManagement/components/DateRangeSelect.tsx",
@@ -1432,6 +1438,8 @@ ts_project(
         "src/site-admin/permissions-center/backend.ts",
         "src/site-admin/routes.tsx",
         "src/site-admin/sidebaritems.ts",
+        "src/site-admin/user-select/UserSelect.tsx",
+        "src/site-admin/user-select/backend.ts",
         "src/site-admin/webhooks/MessagePanel.tsx",
         "src/site-admin/webhooks/PerformanceGauge.tsx",
         "src/site-admin/webhooks/StatusCode.tsx",
@@ -1646,6 +1654,7 @@ ts_project(
         "//:node_modules/js-yaml",
         "//:node_modules/jsonc-parser",
         "//:node_modules/linguist-languages",
+        "//:node_modules/linkifyjs",
         "//:node_modules/lodash",
         "//:node_modules/lru-cache",
         "//:node_modules/marked",
@@ -1662,7 +1671,6 @@ ts_project(
         "//:node_modules/react-router-dom",
         "//:node_modules/react-spring",
         "//:node_modules/react-sticky-box",
-        "//:node_modules/react-use-websocket",
         "//:node_modules/recharts",
         "//:node_modules/rxjs",
         "//:node_modules/semver",
@@ -1747,6 +1755,7 @@ ts_project(
         "src/global/Notices.test.tsx",
         "src/hooks/useScrollManager/useScrollManager.test.tsx",
         "src/hooks/useUrlSyncedState.test.ts",
+        "src/hooks/useUrlSyncedString.test.tsx",
         "src/insights/utils/use-series-toggle.test.tsx",
         "src/marketing/page/SurveyPage.test.tsx",
         "src/marketing/toast/SurveyToast.test.tsx",
@@ -1767,7 +1776,9 @@ ts_project(
         "src/repo/blob/codemirror/utils.test.ts",
         "src/repo/commit/CommitMessageWithLinks.test.tsx",
         "src/repo/commits/GitCommitNodeByline.test.tsx",
+        "src/repo/linkifiy/get-links.test.ts",
         "src/repo/releases/RepositoryReleasesTagsPage.test.tsx",
+        "src/repo/tree/TreePage.test.tsx",
         "src/search/Notepad.test.tsx",
         "src/search/helpers.test.tsx",
         "src/search/index.test.ts",
@@ -1848,9 +1859,14 @@ npm_package(
 jest_test(
     name = "test",
     size = "enormous",  # make sure bazel reserves enough RAM for this.
-    timeout = "long",
+    timeout = "moderate",
     data = [
         ":web_tests",
+    ],
+    patch_node_fs = False,
+    shard_count = 6,  # this is has a large impact on the duration. We came to this number empirically.
+    tags = [
+        "no-sandbox",  # we are disabling the patch_node_fs, so the sandbox isn't really useful anymore.
     ],
 )
 
@@ -1923,8 +1939,8 @@ ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
     ]
 ]
 
-webpack_bundle(
-    name = "bundle-enterprise",
+webpack_web_app(
+    name = "app-enterprise",
     srcs = ENTERPRISE_BUNDLE_DATA_DEPS + [
         "//:babel_config",
         "//:browserslist",
@@ -1935,8 +1951,11 @@ webpack_bundle(
     },
     env = {
         "NODE_ENV": "production",
+        "ENTERPRISE": "true",
+        "INTEGRATION_TESTS": "true",
     },
     output_dir = True,
+    visibility = ["//client/web:__subpackages__"],
     webpack_config = "webpack.bazel.config.js",
     deps = WEBPACK_CONFIG_DEPS,
 )
@@ -1968,6 +1987,6 @@ build_test(
     name = "webpack_test",
     targets = [
         ":bundle",
-        ":bundle-enterprise",
+        ":app-enterprise",
     ],
 )

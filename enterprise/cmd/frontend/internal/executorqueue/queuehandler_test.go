@@ -50,7 +50,7 @@ func TestAuthMiddleware(t *testing.T) {
 		{
 			name:               "Wrong token",
 			headers:            http.Header{"Authorization": {"token-executor foobar"}},
-			expectedStatusCode: http.StatusForbidden,
+			expectedStatusCode: http.StatusUnauthorized,
 		},
 		{
 			name:                 "Invalid prefix",
