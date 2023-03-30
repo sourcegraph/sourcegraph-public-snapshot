@@ -182,8 +182,13 @@ Gazelle and the frontend: see [Bazel for Web bundle](./bazel_web.md).
 > For early adopters only.
 
 First you need to have `bazel` installed obviously, but also `iBazel` which will watch your files and rebuild if needed.
+As of late March 2023, Bazel v6.0.0 is required, to install it, run following commands.
 
-- `brew install bazel`
+- `brew tap bazelbuild/tap`
+- `brew extract bazel bazelbuild/tap --version 6.0.0`
+- `brew install bazel@6.0.0`
+
+To install `iBazel`, run:
 - `brew install ibazel`
 
 Then instead of running `sg start oss` you can use the `bazel` variant instead.
