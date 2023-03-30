@@ -56,7 +56,7 @@ func (c *Client) SetTransport(t http.RoundTripper) error {
 		if err != nil {
 			return err
 		}
-		*oldBase = *newBase
+		*oldBase = *newBase.Clone()
 	} else {
 		c.Underlying.Transport = &wrappedTransport{
 			RoundTripper: t,
