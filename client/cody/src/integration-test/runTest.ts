@@ -28,6 +28,7 @@ async function main(): Promise<void> {
         const launchArgs = [
             testWorkspacePath,
             '--disable-extensions', // disable other extensions
+            '--disable-gpu',
         ]
 
         // Download VS Code, unzip it, and run the integration test.
