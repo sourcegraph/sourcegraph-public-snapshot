@@ -1,6 +1,6 @@
 ### Embedded repositories
 
-Last updated: 03-30-2023 · 11:30 AM PST
+Last updated: 03-30-2023 · 4:06 PM PST
 
 - `https://github.com/apple/swift`
 - `https://github.com/apple/swift-algorithms`
@@ -294,3 +294,18 @@ Last updated: 03-30-2023 · 11:30 AM PST
 - `https://github.com/plaid/plaid-python`
 - `https://github.com/blender/blender-addons`
 - `https://github.com/mckaywrigley/chatbot-ui`
+- `https://github.com/nmrshll/auth-rs`
+- `https://github.com/nmrshll/auth-rs-warp`
+- `https://github.com/nmrshll/bb`
+- `https://github.com/nmrshll/chart`
+- `https://github.com/delta-io/delta`
+- `https://github.com/hashicorp/terraform-provider-aws`
+- `https://github.com/databricks/terraform-provider-databricks`
+- `https://github.com/lugia19/elevenlabslib`
+- `https://github.com/openai/evals`
+- `https://github.com/replicatedhq/kots`
+- `https://github.com/aws-amplify/amplify-js`
+- `https://github.com/vuejs/core`
+- `https://github.com/php/php-src`
+- `https://github.com/RimWorld-zh/RimWorld-Decompile`
+- `https://github.com/dotnet/Silk.NET`

@@ -1,9 +1,21 @@
 import React, { useMemo } from 'react'
 
-import { mdiBrain } from '@mdi/js'
+import { mdiArrowRightThin, mdiBrain } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Button, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Position,
+    Icon,
+    Link,
+    LoadingSpinner,
+    Menu,
+    MenuButton,
+    MenuDivider,
+    MenuHeader,
+    MenuList,
+    Tooltip,
+} from '@sourcegraph/wildcard'
 
 import { INDEX_COMPLETED_STATES, INDEX_FAILURE_STATES } from '../constants'
 import { useRepoCodeIntelStatus } from '../hooks/useRepoCodeIntelStatus'
@@ -60,7 +72,40 @@ export const BrainDot: React.FunctionComponent<BrainDotProps> = ({ repoName }) =
             : ''
     }, [indexes, suggestedIndexers])
 
-    return (
+    // TODO(nsc) - add a feature flag to enable nerd controls
+    // https://github.com/sourcegraph/sourcegraph/pull/49128/files#diff-04df7090c83826679f92f4ee2881b626422057a8e6b59750937e2888d74e411cL152
+    const forNerds = false
+
+    return forNerds ? (
+        <Menu>
+            <>
+                <MenuButton
+                    className={classNames('text-decoration-none', styles.braindot, dotStyle)}
+                    aria-label="Code graph"
+                >
+                    <Icon aria-hidden={true} svgPath={mdiBrain} />
+                </MenuButton>
+
+                <MenuList position={Position.bottomEnd} className={styles.dropdownMenu}>
+                    <MenuHeader>
+                        Nerd controls
+                        <span className="float-right">
+                            <Tooltip content="View code intelligence summary">
+                                <Link to={`/${repoName}/-/code-graph/dashboard`}>
+                                    <Icon aria-hidden={true} svgPath={mdiArrowRightThin} />
+                                </Link>
+                            </Tooltip>
+                        </span>
+                    </MenuHeader>
+
+                    <MenuDivider />
+
+                    {/* TODO - add content */}
+                    <LoadingSpinner className="mx-2" />
+                </MenuList>
+            </>
+        </Menu>
+    ) : (
         <Tooltip content="View code intelligence summary">
             <Link to={`/${repoName}/-/code-graph/dashboard`}>
                 <Button

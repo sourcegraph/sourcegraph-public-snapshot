@@ -96,6 +96,7 @@ func dockerOptions(c *config.Config) command.DockerOptions {
 	return command.DockerOptions{
 		DockerAuthConfig: c.DockerAuthConfig,
 		AddHostGateway:   c.DockerAddHostGateway,
+		Resources:        resourceOptions(c),
 	}
 }
 

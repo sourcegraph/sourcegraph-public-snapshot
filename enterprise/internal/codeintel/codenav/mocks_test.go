@@ -11,35 +11,10 @@ import (
 	"sync"
 
 	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/lsifstore"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/store"
 	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	types "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
-
-// MockStore is a mock implementation of the Store interface (from the
-// package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/store)
-// used for unit testing.
-type MockStore struct{}
-
-// NewMockStore creates a new mock of the Store interface. All methods
-// return zero values for all results, unless overwritten.
-func NewMockStore() *MockStore {
-	return &MockStore{}
-}
-
-// NewStrictMockStore creates a new mock of the Store interface. All methods
-// panic on invocation, unless overwritten.
-func NewStrictMockStore() *MockStore {
-	return &MockStore{}
-}
-
-// NewMockStoreFrom creates a new mock of the MockStore interface. All
-// methods delegate to the given implementation, unless overwritten.
-func NewMockStoreFrom(i store.Store) *MockStore {
-	return &MockStore{}
-}
 
 // MockLsifStore is a mock implementation of the LsifStore interface (from
 // the package
