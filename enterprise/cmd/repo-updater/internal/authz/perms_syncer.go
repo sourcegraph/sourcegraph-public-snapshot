@@ -211,7 +211,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		// Add existing user to permissions.
 		userIDSet.Add(perm.UserID)
 	}
-	regularCount := len(p.UserIDs)
+	regularCount := len(userIDSet)
 
 	// handle pending permissions
 	pendingAccountIDsSet.Remove(maps.Keys(accountIDsToUserIDs)...)

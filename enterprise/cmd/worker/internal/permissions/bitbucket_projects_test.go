@@ -13,6 +13,7 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -182,10 +183,7 @@ func TestSetPermissionsForUsers(t *testing.T) {
 
 			err := perms.LoadUserPendingPermissions(ctx, userPerms)
 			require.NoError(t, err)
-			require.Equal(t, map[int32]struct{}{
-				1: {},
-				2: {},
-			}, userPerms.IDs)
+			require.Equal(t, collections.NewSet[int32](1, 2), userPerms.IDs)
 		}
 	}
 
