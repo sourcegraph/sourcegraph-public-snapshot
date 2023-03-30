@@ -413,6 +413,8 @@ export interface GithubCodeHost extends CodeHost {
     }
 
     enhanceSearchPage: (sourcegraphURL: string) => void
+
+    enhancePullRequestPage: (sourcegraphURL: string) => void
 }
 
 export const isGithubCodeHost = (codeHost: CodeHost): codeHost is GithubCodeHost => codeHost.type === 'github'
@@ -425,6 +427,7 @@ const isSearchResultsPage = (): boolean =>
     Boolean(new URLSearchParams(window.location.search).get('q')) && !isAdvancedSearchPage()
 const isSearchPage = (): boolean =>
     isSimpleSearchPage() || isAdvancedSearchPage() || isRepoSearchPage() || isSearchResultsPage()
+const isPullRequestPage = (): boolean => /\/pull\/\d+$/.test(window.location.pathname)
 
 type GithubResultType =
     | 'repositories'
@@ -659,11 +662,36 @@ function enhanceSearchPage(sourcegraphURL: string): void {
     }
 }
 
+function enhancePullRequestPage(url: string): void {
+    if (!isPullRequestPage()) {
+        return
+    }
+
+    console.log('Enhancing GitHub pull request page')
+
+    const assignees = document.querySelector('.sidebar-assignee')
+
+    const contents = document.createElement('div')
+    contents.className = 'discussion-sidebar-item'
+
+    const header = document.createElement('div')
+    header.textContent = 'Suggested by Sourcegraph Own'
+    header.className = 'text-bold discussion-sidebar-heading'
+    contents.append(header)
+
+    contents.append(document.createTextNode('hello world'))
+
+    if (assignees) {
+        assignees.after(contents)
+    }
+}
+
 export const githubCodeHost: GithubCodeHost = {
     type: 'github',
     name: checkIsGitHubEnterprise() ? 'GitHub Enterprise' : 'GitHub',
     searchEnhancement,
     enhanceSearchPage,
+    enhancePullRequestPage,
     codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
     routeChange: mutations =>
         mutations.pipe(

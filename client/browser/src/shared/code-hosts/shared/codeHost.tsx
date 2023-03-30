@@ -761,6 +761,9 @@ export async function handleCodeHost({
         // if (codeHost.enhanceSearchPage) {
         //     subscriptions.add(enhanceSearchPage(sourcegraphURL))
         // }
+        if (codeHost.enhancePullRequestPage) {
+            subscriptions.add(codeHost.enhancePullRequestPage(sourcegraphURL))
+        }
     }
 
     if (!(await isSafeToContinueCodeIntel({ sourcegraphURL, requestGraphQL, codeHost, render }))) {
