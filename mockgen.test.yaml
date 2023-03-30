@@ -178,9 +178,6 @@
         - UploadService
 - filename: enterprise/internal/codeintel/codenav/mocks_test.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/store
-      interfaces:
-        - Store
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/lsifstore
       interfaces:
         - LsifStore

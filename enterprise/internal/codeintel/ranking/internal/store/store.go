@@ -28,51 +28,48 @@ type Store interface {
 	GetReferenceCountStatistics(ctx context.Context) (logmean float64, _ error)
 	LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error)
 	UpdatedAfter(ctx context.Context, t time.Time) ([]api.RepoName, error)
-
 	InsertDefinitionsForRanking(ctx context.Context, rankingGraphKey string, definitions chan shared.RankingDefinitions) error
 	InsertReferencesForRanking(ctx context.Context, rankingGraphKey string, batchSize int, uploadID int, references chan string) error
 	InsertInitialPathCounts(ctx context.Context, derivativeGraphKey string, batchSize int) (numInitialPathsProcessed int, numInitialPathRanksInserted int, err error)
 	InsertPathCountInputs(ctx context.Context, rankingGraphKey string, batchSize int) (numReferenceRecordsProcessed int, numInputsInserted int, err error)
-	InsertInitialPathRanks(ctx context.Context, uploadID int, documentPaths chan string, batchSize int, graphKey string) (err error)
-	InsertPathRanks(ctx context.Context, graphKey string, batchSize int) (numPathRanksInserted int, numInputsProcessed int, err error)
-
-	VacuumAbandonedDefinitions(ctx context.Context, graphKey string, batchSize int) (_ int, err error)
-	VacuumAbandonedReferences(ctx context.Context, graphKey string, batchSize int) (_ int, err error)
-	VacuumAbandonedInitialPathCounts(ctx context.Context, graphKey string, batchSize int) (_ int, err error)
-	VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string, batchSize int) (inputRecordsDeleted int, err error)
+	InsertInitialPathRanks(ctx context.Context, uploadID int, documentPaths chan string, batchSize int, graphKey string) error
+	InsertPathRanks(ctx context.Context, graphKey string, batchSize int) (numPathRanksInserted int, numInputsProcessed int, _ error)
+	VacuumAbandonedDefinitions(ctx context.Context, graphKey string, batchSize int) (int, error)
+	VacuumAbandonedReferences(ctx context.Context, graphKey string, batchSize int) (int, error)
+	VacuumAbandonedInitialPathCounts(ctx context.Context, graphKey string, batchSize int) (int, error)
+	VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string, batchSize int) (inputRecordsDeleted int, _ error)
+	GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) ([]shared.ExportedUpload, error)
 
 	VacuumStaleRanks(ctx context.Context, derivativeGraphKey string) (
 		rankRecordsScanned int,
 		rankRecordsSDeleted int,
-		err error,
+		_ error,
 	)
 
 	VacuumStaleDefinitions(ctx context.Context, graphKey string) (
 		numDefinitionRecordsScanned int,
 		numStaleDefinitionRecordsDeleted int,
-		err error,
+		_ error,
 	)
 
 	VacuumStaleReferences(ctx context.Context, graphKey string) (
 		numReferenceRecordsScanned int,
 		numStaleReferenceRecordsDeleted int,
-		err error,
+		_ error,
 	)
 
 	VacuumStaleInitialPaths(ctx context.Context, graphKey string) (
 		numPathRecordsScanned int,
 		numStalePathRecordsDeleted int,
-		err error,
+		_ error,
 	)
-
-	GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) ([]shared.ExportedUpload, error)
 
 	ProcessStaleExportedUploads(
 		ctx context.Context,
 		graphKey string,
 		batchSize int,
 		deleter func(ctx context.Context, objectPrefix string) error,
-	) (totalDeleted int, err error)
+	) (totalDeleted int, _ error)
 }
 
 // store manages the ranking store.

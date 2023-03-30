@@ -9,7 +9,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/lsifstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -23,7 +22,6 @@ import (
 )
 
 type Service struct {
-	store      store.Store
 	repoStore  database.RepoStore
 	lsifstore  lsifstore.LsifStore
 	gitserver  gitserver.Client
@@ -34,14 +32,12 @@ type Service struct {
 
 func newService(
 	observationCtx *observation.Context,
-	store store.Store,
 	repoStore database.RepoStore,
 	lsifstore lsifstore.LsifStore,
 	uploadSvc UploadService,
 	gitserver gitserver.Client,
 ) *Service {
 	return &Service{
-		store:      store,
 		repoStore:  repoStore,
 		lsifstore:  lsifstore,
 		gitserver:  gitserver,

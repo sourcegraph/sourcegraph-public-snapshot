@@ -2,7 +2,6 @@ package codenav
 
 import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/lsifstore"
-	codenavstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/store"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -16,12 +15,10 @@ func NewService(
 	uploadSvc UploadService,
 	gitserver gitserver.Client,
 ) *Service {
-	store := codenavstore.New(scopedContext("store", observationCtx), db)
 	lsifStore := lsifstore.New(scopedContext("lsifstore", observationCtx), codeIntelDB)
 
 	return newService(
 		observationCtx,
-		store,
 		db.Repos(),
 		lsifStore,
 		uploadSvc,

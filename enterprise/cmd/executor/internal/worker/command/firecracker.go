@@ -29,7 +29,7 @@ func NewFirecrackerSpec(vmName string, image string, scriptPath string, spec Spe
 	if dockerSpec.Dir != "" {
 		innerCommand = fmt.Sprintf("cd %s && %s", shellquote.Join(dockerSpec.Dir), innerCommand)
 	}
-	dockerSpec.Command = []string{"ignite", "exec", vmName, "--", "sh", "-c", innerCommand}
+	dockerSpec.Command = []string{"ignite", "exec", vmName, "--", innerCommand}
 	return dockerSpec
 }
 
