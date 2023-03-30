@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sg-executor
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: sg-executor
+  template:
+    metadata:
+      namespace: default
+      labels:
+        app: sg-executor
+    spec:
+      hostNetwork: true
+      serviceAccountName: sg-executor-service-account
+      containers:
+        - name: sg-executor
+          image: executor-kubernetes:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: EXECUTOR_FRONTEND_URL
+              value: http://host.docker.internal:3082
+            - name: EXECUTOR_FRONTEND_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: executor-frontend-password
+                  key: EXECUTOR_FRONTEND_PASSWORD
+            - name: EXECUTOR_QUEUE_NAME
+              value: batches
+            - name: EXECUTOR_MAXIMUM_NUM_JOBS
+              value: "10"
+            - name: SRC_LOG_LEVEL
+              value: info
+            - name: SRC_LOG_FORMAT
+              value: condensed
+            - name: SRC_TRACE_LOG
+              value: "false"
+            - name: EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY
+              value: 1Gi
+          volumeMounts:
+            - mountPath: /data
+              name: sg-executor-volume
+      volumes:
+        - name: sg-executor-volume
+          persistentVolumeClaim:
+            claimName: sg-executor-pvc
