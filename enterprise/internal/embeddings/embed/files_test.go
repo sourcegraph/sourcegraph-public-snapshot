@@ -26,7 +26,7 @@ func TestExcludingFilePaths(t *testing.T) {
 
 	excludedGlobPatterns := GetDefaultExcludedFilePathPatterns()
 	for _, file := range files {
-		if !isExcludedFilePath(file, excludedGlobPatterns) {
+		if !IsExcludedFilePath(file, excludedGlobPatterns) {
 			gotFiles = append(gotFiles, file)
 		}
 	}

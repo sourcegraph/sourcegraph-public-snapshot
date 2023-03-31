@@ -8,19 +8,20 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func getDocumentRanks(ctx context.Context, repoName string) (types.RepoPathRanks, error) {
+func getDocumentRanks(ctx context.Context, repoName api.RepoName) (types.RepoPathRanks, error) {
 	root, err := url.Parse(internalapi.Client.URL)
 	if err != nil {
 		return types.RepoPathRanks{}, err
 	}
 	u := root.ResolveReference(&url.URL{
-		Path: "/.internal/ranks/" + strings.Trim(repoName, "/") + "/documents",
+		Path: "/.internal/ranks/" + strings.Trim(string(repoName), "/") + "/documents",
 	})
 
 	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
@@ -46,16 +47,6 @@ func getDocumentRanks(ctx context.Context, repoName string) (types.RepoPathRanks
 		}
 	}
 
-	b, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return types.RepoPathRanks{}, err
-	}
-
-	ranks := types.RepoPathRanks{}
-	err = json.Unmarshal(b, &ranks)
-	if err != nil {
-		return types.RepoPathRanks{}, err
-	}
-
-	return ranks, nil
+	var ranks types.RepoPathRanks
+	return ranks, json.NewDecoder(resp.Body).Decode(&ranks)
 }

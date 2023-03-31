@@ -1,19 +1,22 @@
 package repo
 
 import (
+	"archive/tar"
 	"context"
+	"io"
+	"os"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"github.com/grafana/regexp"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	repoembeddingsbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/split"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
@@ -28,9 +31,7 @@ type handler struct {
 
 var _ workerutil.Handler[*repoembeddingsbg.RepoEmbeddingJob] = &handler{}
 
-var matchEverythingRegexp = regexp.MustCompile(``)
-
-const MAX_FILE_SIZE = 1000000 // 1MB
+const MAX_FILE_SIZE = 1_000_000 // 1MB
 
 // The threshold to embed the entire file is slightly larger than the chunk threshold to
 // avoid splitting small files unnecessarily.
@@ -54,24 +55,19 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		return err
 	}
 
-	files, err := h.gitserverClient.ListFiles(ctx, nil, repo.Name, record.Revision, matchEverythingRegexp)
+	documentRanks, err := getDocumentRanks(ctx, repo.Name)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get document ranks")
 	}
 
-	validFiles := []string{}
-	for _, file := range files {
-		stat, err := h.gitserverClient.Stat(ctx, nil, repo.Name, record.Revision, file)
-		if err != nil {
-			return err
-		}
-
-		if !stat.IsDir() && stat.Size() <= MAX_FILE_SIZE {
-			validFiles = append(validFiles, file)
-		}
+	repoTar, err := fetchTarToDisk(ctx, h.gitserverClient, repo.Name, record.Revision)
+	if err != nil {
+		return errors.Wrap(err, "fetching repo tar to disk")
 	}
-
-	embeddingsClient := embed.NewEmbeddingsClient()
+	defer func() {
+		_ = repoTar.Close()
+		_ = os.Remove(repoTar.Name())
+	}()
 
 	config := conf.Get().Embeddings
 	excludedGlobPatterns := embed.GetDefaultExcludedFilePathPatterns()
@@ -81,14 +77,93 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		ctx,
 		repo.Name,
 		record.Revision,
-		validFiles,
-		excludedGlobPatterns,
-		embeddingsClient,
+		embed.NewEmbeddingsClient(),
 		splitOptions,
-		func(fileName string) ([]byte, error) {
-			return h.gitserverClient.ReadFile(ctx, nil, repo.Name, record.Revision, fileName)
+		// TODO: Instead of iterating over the tar twice, and resetting the read header
+		// of the file, we should probably produce the text and code indexes
+		// at the same time, instead of after each other.
+		func(cb func(fileName string, fileReader io.Reader) error) error {
+			t := tar.NewReader(repoTar)
+			for {
+				if err := ctx.Err(); err != nil {
+					return err
+				}
+
+				thr, err := t.Next()
+				if err != nil {
+					if err == io.EOF {
+						return nil
+					}
+					return err
+				}
+				switch thr.Typeflag {
+				case tar.TypeReg, tar.TypeRegA:
+					// Skip files that are too big.
+					if thr.Size >= MAX_FILE_SIZE {
+						continue
+					}
+					if thr.Size < embed.MIN_EMBEDDABLE_FILE_SIZE {
+						continue
+					}
+					// Skip files that are excluded.
+					if embed.IsExcludedFilePath(thr.Name, excludedGlobPatterns) {
+						continue
+					}
+					// Only emit code files.
+					if embed.IsValidTextFile(thr.Name) {
+						continue
+					}
+					if err := cb(thr.Name, t); err != nil {
+						return err
+					}
+				default:
+					continue
+				}
+			}
 		},
-		getDocumentRanks,
+		func(cb func(fileName string, fileReader io.Reader) error) error {
+			if _, err := repoTar.Seek(0, 0); err != nil {
+				return err
+			}
+			t := tar.NewReader(repoTar)
+			for {
+				if err := ctx.Err(); err != nil {
+					return err
+				}
+
+				thr, err := t.Next()
+				if err != nil {
+					if err == io.EOF {
+						return nil
+					}
+					return err
+				}
+				switch thr.Typeflag {
+				case tar.TypeReg, tar.TypeRegA:
+					// Skip files that are too big.
+					if thr.Size >= MAX_FILE_SIZE {
+						continue
+					}
+					if thr.Size < embed.MIN_EMBEDDABLE_FILE_SIZE {
+						continue
+					}
+					// Skip files that are excluded.
+					if embed.IsExcludedFilePath(thr.Name, excludedGlobPatterns) {
+						continue
+					}
+					// Only emit text files.
+					if !embed.IsValidTextFile(thr.Name) {
+						continue
+					}
+					if err := cb(thr.Name, t); err != nil {
+						return err
+					}
+				default:
+					continue
+				}
+			}
+		},
+		documentRanks,
 	)
 
 	if err != nil {
@@ -96,4 +171,39 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 	}
 
 	return embeddings.UploadIndex(ctx, h.uploadStore, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)), repoEmbeddingIndex)
+}
+
+// fetchTarToDisk retrieves a tar for the given repo at the given commit and writes
+// it to a temporary file.
+func fetchTarToDisk(ctx context.Context, gitserverClient gitserver.Client, repoName api.RepoName, commit api.CommitID) (*os.File, error) {
+	r, err := gitserverClient.ArchiveReader(ctx, authz.DefaultSubRepoPermsChecker, repoName, gitserver.ArchiveOptions{
+		Treeish: string(commit),
+		Format:  "tar",
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create archive reader for repo")
+	}
+	defer r.Close()
+
+	tmpFile, err := os.CreateTemp(os.TempDir(), "embeddings-repo-*")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create temp dir to extract repo")
+	}
+
+	_, err = io.Copy(tmpFile, r)
+	if err != nil {
+		_ = tmpFile.Close()
+		_ = os.Remove(tmpFile.Name())
+		return nil, errors.Wrap(err, "failed to write tar file to disk")
+	}
+
+	// Reset read head to beginning of the file.
+	_, err = tmpFile.Seek(0, 0)
+	if err != nil {
+		_ = tmpFile.Close()
+		_ = os.Remove(tmpFile.Name())
+		return nil, errors.Wrap(err, "failed to reset file head")
+	}
+
+	return tmpFile, nil
 }
