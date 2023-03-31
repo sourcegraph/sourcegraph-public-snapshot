@@ -120,10 +120,38 @@ func TestEmbeddingIndexStorage(t *testing.T) {
 	ctx := context.Background()
 	uploadStore := newMockUploadStore()
 
+	err := UploadRepoEmbeddingIndex(ctx, uploadStore, "index", index)
+	require.NoError(t, err)
+
+	downloadedIndex, err := DownloadRepoEmbeddingIndex(ctx, uploadStore, "index")
+	require.NoError(t, err)
+
+	require.Equal(t, index, downloadedIndex)
+}
+
+func TestEmbeddingVersionMismatch(t *testing.T) {
+	index := &RepoEmbeddingIndex{
+		RepoName: api.RepoName("repo"),
+		Revision: api.CommitID("commit"),
+		CodeIndex: EmbeddingIndex{
+			Embeddings:      []float32{0.0, 0.1, 0.2},
+			ColumnDimension: 3,
+			RowMetadata:     []RepoEmbeddingRowMetadata{{FileName: "a.go", StartLine: 0, EndLine: 1}},
+		},
+		TextIndex: EmbeddingIndex{
+			Embeddings:      []float32{1.0, 2.1, 3.2},
+			ColumnDimension: 3,
+			RowMetadata:     []RepoEmbeddingRowMetadata{{FileName: "b.py", StartLine: 0, EndLine: 1}},
+		},
+	}
+
+	ctx := context.Background()
+	uploadStore := newMockUploadStore()
+
 	err := UploadIndex(ctx, uploadStore, "index", index)
 	require.NoError(t, err)
 
-	downloadedIndex, err := DownloadIndex[RepoEmbeddingIndex](ctx, uploadStore, "index")
+	downloadedIndex, err := DownloadRepoEmbeddingIndex(ctx, uploadStore, "index")
 	require.NoError(t, err)
 
 	require.Equal(t, index, downloadedIndex)
