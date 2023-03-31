@@ -19,6 +19,9 @@ import {
     VSCodeSecretStorage,
 } from './secret-storage'
 
+let eventLogger: EventLogger
+let vsCodeContext: vscode.ExtensionContext
+
 function getSecretStorage(context: vscode.ExtensionContext): SecretStorage {
     return process.env.CODY_TESTING === 'true' ? new InMemorySecretStorage() : new VSCodeSecretStorage(context.secrets)
 }
@@ -36,18 +39,29 @@ function sanitizeServerEndpoint(serverEndpoint: string): string {
     return serverEndpoint.trim().replace(trailingSlashRegexp, '')
 }
 
+export async function initializeEventLogger(): Promise<EventLogger> {
+    const context = vsCodeContext
+    const secretStorage = getSecretStorage(context)
+    const localStorage = new LocalStorage(context.globalState)
+    const config = getConfiguration(vscode.workspace.getConfiguration())
+    const accessToken = await getAccessToken(secretStorage)
+    const gqlAPIClient = new SourcegraphGraphQLAPIClient(sanitizeServerEndpoint(config.serverEndpoint), accessToken)
+    const eventLogger = new EventLogger(localStorage, gqlAPIClient)
+
+    return eventLogger
+}
+
 // Registers Commands and Webview at extension start up
 export const CommandsProvider = async (context: vscode.ExtensionContext): Promise<ExtensionApi> => {
     // for tests
     const extensionApi = new ExtensionApi()
 
+    vsCodeContext = context
     const secretStorage = getSecretStorage(context)
     const localStorage = new LocalStorage(context.globalState)
     const config = getConfiguration(vscode.workspace.getConfiguration())
 
-    const accessToken = await getAccessToken(secretStorage)
-    const gqlAPIClient = new SourcegraphGraphQLAPIClient(sanitizeServerEndpoint(config.serverEndpoint), accessToken)
-    const eventLogger = new EventLogger(localStorage, gqlAPIClient)
+    const eventLogger = await initializeEventLogger()
 
     // Create chat webview
     const chatProvider = await ChatViewProvider.create(
@@ -183,3 +197,5 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
 
     return extensionApi
 }
+
+export { eventLogger, vsCodeContext }
