@@ -71,8 +71,8 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, use_xvfb 
         "SOURCEGRAPH_BASE_URL": "$$E2E_SOURCEGRAPH_BASE_URL",
         "GH_TOKEN": "$$GH_TOKEN",
         "SOURCEGRAPH_SUDO_TOKEN": "fake-sg-token",
-        "NO_CLEANUP": "true",
-        "KEEP_BROWSER": "true",
+        "NO_CLEANUP": "false",
+        "KEEP_BROWSER": "false",
         "DEVTOOLS": "true",
         "BROWSER": "chrome",
 
