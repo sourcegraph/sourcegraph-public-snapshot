@@ -36,22 +36,16 @@ func UploadIndex[T any](ctx context.Context, uploadStore uploadstore.Store, key 
 	return err
 }
 
-func encodeRepoEmbeddingIndex(pw io.Writer, rei *RepoEmbeddingIndex, chunkSize int) error {
-	enc := gob.NewEncoder(pw)
-
-	// Write RepoName field
+func encodeRepoEmbeddingIndex(enc *gob.Encoder, rei *RepoEmbeddingIndex, chunkSize int) error {
 	if err := enc.Encode(rei.RepoName); err != nil {
 		return err
 	}
 
-	// Write Revision field
 	if err := enc.Encode(rei.Revision); err != nil {
 		return err
 	}
 
-	// Encode CodeIndex and TextIndex
 	for _, ei := range []EmbeddingIndex{rei.CodeIndex, rei.TextIndex} {
-		// Write Embeddings field
 		numChunks := (len(ei.Embeddings) + chunkSize - 1) / chunkSize
 		if err := enc.Encode(numChunks); err != nil {
 			return err
@@ -85,36 +79,8 @@ func encodeRepoEmbeddingIndex(pw io.Writer, rei *RepoEmbeddingIndex, chunkSize i
 	return nil
 }
 
-func UploadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store, key string, index *RepoEmbeddingIndex) error {
-	pr, pw := io.Pipe()
-
-	eg, ctx := errgroup.WithContext(ctx)
-
-	eg.Go(func() error {
-		defer pw.Close()
-
-		return encodeRepoEmbeddingIndex(pw, index, 1000)
-	})
-
-	eg.Go(func() error {
-		defer pr.Close()
-
-		_, err := uploadStore.Upload(ctx, key, pr)
-		return err
-	})
-
-	return eg.Wait()
-}
-
-func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store, key string) (*RepoEmbeddingIndex, error) {
-	file, err := uploadStore.Get(ctx, key)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = errors.Append(err, file.Close()) }()
-
+func decodeRepoEmbeddingIndex(dec *gob.Decoder) (*RepoEmbeddingIndex, error) {
 	rei := &RepoEmbeddingIndex{}
-	dec := gob.NewDecoder(file)
 
 	if err := dec.Decode(&rei.RepoName); err != nil {
 		return nil, err
@@ -124,9 +90,7 @@ func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Sto
 		return nil, err
 	}
 
-	// Decode CodeIndex and TextIndex
 	for _, ei := range []*EmbeddingIndex{&rei.CodeIndex, &rei.TextIndex} {
-		// Write Embeddings field
 		var numChunks int
 		if err := dec.Decode(&numChunks); err != nil {
 			return nil, err
@@ -154,4 +118,38 @@ func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Sto
 	}
 
 	return rei, nil
+}
+
+func UploadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store, key string, index *RepoEmbeddingIndex) error {
+	pr, pw := io.Pipe()
+
+	eg, ctx := errgroup.WithContext(ctx)
+
+	eg.Go(func() error {
+		defer pw.Close()
+
+		enc := gob.NewEncoder(pw)
+		return encodeRepoEmbeddingIndex(enc, index, 1000)
+	})
+
+	eg.Go(func() error {
+		defer pr.Close()
+
+		_, err := uploadStore.Upload(ctx, key, pr)
+		return err
+	})
+
+	return eg.Wait()
+}
+
+func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store, key string) (*RepoEmbeddingIndex, error) {
+	file, err := uploadStore.Get(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = errors.Append(err, file.Close()) }()
+
+	dec := gob.NewDecoder(file)
+
+	return decodeRepoEmbeddingIndex(dec)
 }
