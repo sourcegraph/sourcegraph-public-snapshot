@@ -659,7 +659,7 @@ func addCodyReleaseSteps(pipeline *bk.Pipeline) {
 		withPnpmCache(),
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm generate"),
-		bk.Cmd("pnpm --filter @sourcegraph/cody run release"))
+		bk.Cmd("pnpm --filter cody-ai run release"))
 }
 
 // Release a snapshot of App.
