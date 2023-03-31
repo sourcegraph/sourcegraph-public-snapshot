@@ -143,9 +143,12 @@ func (r *firecrackerRunner) setupFirecracker(ctx context.Context) (string, error
 	}
 
 	// Start the VM and wait for the SSH server to become available.
-	startCommandSpec := r.newCommandSpec(
-		"setup.firecracker.start",
-		command.Flatten(
+	startCommandSpec := command.Spec{
+		Key: "setup.firecracker.start",
+		// Tell ignite to use our temporary config file for maximum isolation of
+		// envs.
+		Env: []string{fmt.Sprintf("CNI_CONF_DIR=%s", cniConfigDir)},
+		Command: command.Flatten(
 			"ignite", "run",
 			"--runtime", "docker",
 			"--network-plugin", "cni",
@@ -159,21 +162,19 @@ func (r *firecrackerRunner) setupFirecracker(ctx context.Context) (string, error
 			"--sandbox-image", sanitizeImage(r.options.SandboxImage),
 			sanitizeImage(r.options.Image),
 		),
-		[]string{fmt.Sprintf("CNI_CONF_DIR=%s", cniConfigDir)},
-		r.operations.SetupFirecrackerStart,
-	)
+		Operation: r.operations.SetupFirecrackerStart,
+	}
 
 	if err = r.cmd.Run(ctx, r.cmdLogger, startCommandSpec); err != nil {
 		return "", errors.Wrap(err, "failed to start firecracker vm")
 	}
 
 	if r.options.VMStartupScriptPath != "" {
-		startupScriptCommandSpec := r.newCommandSpec(
-			"setup.startup-script",
-			command.Flatten("ignite", "exec", r.vmName, "--", r.options.VMStartupScriptPath),
-			nil,
-			r.operations.SetupStartupScript,
-		)
+		startupScriptCommandSpec := command.Spec{
+			Key:       "setup.startup-script",
+			Command:   command.Flatten("ignite", "exec", r.vmName, "--", r.options.VMStartupScriptPath),
+			Operation: r.operations.SetupStartupScript,
+		}
 		if err = r.cmd.Run(ctx, r.cmdLogger, startupScriptCommandSpec); err != nil {
 			return "", errors.Wrap(err, "failed to run startup script")
 		}
