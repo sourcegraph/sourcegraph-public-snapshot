@@ -1,34 +1,34 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import { isEqual } from 'lodash'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Container, Input, LoadingSpinner, ErrorAlert, PageSwitcher } from '@sourcegraph/wildcard'
+import { Container, ErrorAlert, Input, LoadingSpinner, PageSwitcher } from '@sourcegraph/wildcard'
 
 import { EXTERNAL_SERVICE_IDS_AND_NAMES } from '../components/externalServices/backend'
 import {
     buildFilterArgs,
     FilterControl,
-    FilteredConnectionFilterValue,
     FilteredConnectionFilter,
+    FilteredConnectionFilterValue,
 } from '../components/FilteredConnection'
 import { usePageSwitcherPagination } from '../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { getFilterFromURL, getUrlQuery } from '../components/FilteredConnection/utils'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import {
+    ExternalServiceIDsAndNamesResult,
+    ExternalServiceIDsAndNamesVariables,
     RepositoriesResult,
     RepositoriesVariables,
     RepositoryOrderBy,
-    ExternalServiceIDsAndNamesVariables,
-    ExternalServiceIDsAndNamesResult,
     SiteAdminRepositoryFields,
     StatusAndRepoStatsResult,
 } from '../graphql-operations'
 import { PageRoutes } from '../routes.constants'
 
 import { ValueLegendList, ValueLegendListProps } from './analytics/components/ValueLegendList'
-import { STATUS_AND_REPO_STATS, REPO_PAGE_POLL_INTERVAL, REPOSITORIES_QUERY } from './backend'
+import { REPOSITORIES_QUERY, REPO_PAGE_POLL_INTERVAL, STATUS_AND_REPO_STATS } from './backend'
 import { RepositoryNode } from './RepositoryNode'
 
 const STATUS_FILTERS: { [label: string]: FilteredConnectionFilterValue } = {
@@ -251,7 +251,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
             externalService: args.externalService ?? null,
             displayCloneProgress,
         } as RepositoriesVariables
-    }, [searchQuery, filterValues])
+    }, [searchQuery, filterValues, displayCloneProgress])
 
     const {
         connection,
