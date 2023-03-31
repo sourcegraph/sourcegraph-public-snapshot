@@ -147,22 +147,24 @@ func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Sto
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = errors.Append(err, file.Close()) }()
 
 	dec := gob.NewDecoder(file)
 
 	rei := &RepoEmbeddingIndex{}
 	// if decoding files, assume it is an old index and decode appropriately
 	if rei, err = decodeRepoEmbeddingIndex(dec); err != nil {
-		file, err := uploadStore.Get(ctx, key)
+		// close the existing file
+		file.Close()
+		// open a new file
+		file, err = uploadStore.Get(ctx, key)
 		if err != nil {
 			return nil, err
 		}
 		defer func() { err = errors.Append(err, file.Close()) }()
-		if err := gob.NewDecoder(file).Decode(&rei); err != nil {
+		if err = gob.NewDecoder(file).Decode(&rei); err != nil {
 			return nil, err
 		}
 	}
 
-	return rei, nil
+	return rei, err
 }
