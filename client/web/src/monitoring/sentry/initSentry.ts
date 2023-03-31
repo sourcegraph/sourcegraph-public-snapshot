@@ -24,7 +24,7 @@ export function initSentry(): void {
         const { sentryDSN, version } = window.context
 
         try {
-            const initSentry = () => {
+            const initSentry = (): void => {
                 Sentry.init({
                     dsn: sentryDSN,
                     // TODO frontend platform team, follow-up to https://github.com/sourcegraph/sourcegraph/pull/38411
