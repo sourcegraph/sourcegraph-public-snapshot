@@ -106,7 +106,6 @@ mocha_test(
     timeout = "long",
     data = ["//client/web:app-enterprise"],
     env = {
-        "HEADLESS": "true",
         "WEB_BUNDLE_PATH": "$(rootpath //client/web:app-enterprise)",
     },
     tags = ["no-cache"],
