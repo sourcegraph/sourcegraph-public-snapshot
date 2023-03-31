@@ -73,8 +73,8 @@ func newRepoEmbeddingJobWorker(
 	}
 	return dbworker.NewWorker[*repoembeddingsbg.RepoEmbeddingJob](ctx, workerStore, handler, workerutil.WorkerOptions{
 		Name:              "repo_embedding_job_worker",
-		Interval:          time.Minute, // Poll for a job once per minute
-		NumHandlers:       1,           // Process only one job at a time (per instance)
+		Interval:          10 * time.Second, // Poll for a job once every 10 seconds
+		NumHandlers:       1,                // Process only one job at a time (per instance)
 		HeartbeatInterval: 10 * time.Second,
 		Metrics:           workerutil.NewMetrics(observationCtx, "repo_embedding_job_worker"),
 	})

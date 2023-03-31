@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -88,7 +89,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	getContextDetectionEmbeddingIndex := getCachedContextDetectionEmbeddingIndex(uploadStore)
 
 	// Create HTTP server
-	handler := NewHandler(readFile, getRepoEmbeddingIndex, getQueryEmbedding, getContextDetectionEmbeddingIndex)
+	handler := NewHandler(logger, readFile, getRepoEmbeddingIndex, getQueryEmbedding, getContextDetectionEmbeddingIndex)
 	handler = handlePanic(logger, handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
@@ -108,6 +109,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 }
 
 func NewHandler(
+	logger log.Logger,
 	readFile readFileFn,
 	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
 	getQueryEmbedding getQueryEmbeddingFn,
@@ -128,8 +130,13 @@ func NewHandler(
 			return
 		}
 
-		res, err := searchRepoEmbeddingIndex(r.Context(), args, readFile, getRepoEmbeddingIndex, getQueryEmbedding, args.Debug)
+		res, err := searchRepoEmbeddingIndex(r.Context(), logger, args, readFile, getRepoEmbeddingIndex, getQueryEmbedding, args.Debug)
+		if errcode.IsNotFound(err) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 		if err != nil {
+			logger.Error("error searching embedding index", log.Error(err))
 			http.Error(w, fmt.Sprintf("error searching embedding index: %s", err.Error()), http.StatusInternalServerError)
 			return
 		}
@@ -153,7 +160,8 @@ func NewHandler(
 
 		isRequired, err := isContextRequiredForChatQuery(r.Context(), getQueryEmbedding, getContextDetectionEmbeddingIndex, args.Query)
 		if err != nil {
-			http.Error(w, "error detecting if context is required for query", http.StatusInternalServerError)
+			logger.Error("error detecting if context is required for query", log.Error(err))
+			http.Error(w, fmt.Sprintf("error detecting if context is required for query: %s", err.Error()), http.StatusInternalServerError)
 			return
 		}
 

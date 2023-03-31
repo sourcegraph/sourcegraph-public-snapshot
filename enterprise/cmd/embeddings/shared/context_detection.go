@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type getContextDetectionEmbeddingIndexFn func(ctx context.Context) (*embeddings.ContextDetectionEmbeddingIndex, error)
@@ -60,12 +61,12 @@ func isQuerySimilarToNoContextMessages(
 ) (bool, error) {
 	contextDetectionEmbeddingIndex, err := getContextDetectionEmbeddingIndex(ctx)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "getting context detection embedding index")
 	}
 
 	queryEmbedding, err := getQueryEmbedding(query)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "getting query embedding")
 	}
 
 	messagesWithContextSimilarity := embeddings.CosineSimilarity(contextDetectionEmbeddingIndex.MessagesWithAdditionalContextMeanEmbedding, queryEmbedding)
