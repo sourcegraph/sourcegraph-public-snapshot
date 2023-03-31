@@ -206,7 +206,6 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
                     'endpoint',
                     sanitizeCodebase(config.codebase),
                     sanitizeServerEndpoint(config.serverEndpoint)
-                    eventLogger = await initializeEventLogger()
                 )
             }
         })
@@ -221,7 +220,6 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
                         'token',
                         sanitizeCodebase(config.codebase),
                         sanitizeServerEndpoint(config.serverEndpoint)
-                        eventLogger = await initializeEventLogger()
                     )
                     .catch(error => console.error(error))
             }
