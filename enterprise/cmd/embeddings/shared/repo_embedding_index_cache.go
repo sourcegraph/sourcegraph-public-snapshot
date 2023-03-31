@@ -2,6 +2,7 @@ package shared
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	lru "github.com/hashicorp/golang-lru/v2"
@@ -24,6 +25,30 @@ type repoEmbeddingIndexCacheEntry struct {
 	finishedAt time.Time
 }
 
+type repoMutexMap struct {
+	sync.Mutex
+	mutexes map[api.RepoID]*sync.Mutex
+}
+
+func (r *repoMutexMap) LockRepo(repoID api.RepoID) {
+	r.Lock()
+	defer r.Unlock()
+
+	repoMutex, ok := r.mutexes[repoID]
+	if !ok {
+		repoMutex = &sync.Mutex{}
+		r.mutexes[repoID] = repoMutex
+	}
+	repoMutex.Lock()
+}
+
+func (r *repoMutexMap) UnlockRepo(repoID api.RepoID) {
+	r.Lock()
+	defer r.Unlock()
+
+	r.mutexes[repoID].Unlock()
+}
+
 func getCachedRepoEmbeddingIndex(
 	repoStore database.RepoStore,
 	repoEmbeddingJobsStore repo.RepoEmbeddingJobsStore,
@@ -33,6 +58,8 @@ func getCachedRepoEmbeddingIndex(
 	if err != nil {
 		return nil, errors.Wrap(err, "creating repo embedding index cache")
 	}
+
+	repoMutexMap := &repoMutexMap{mutexes: make(map[api.RepoID]*sync.Mutex)}
 
 	getAndCacheIndex := func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName, finishedAt *time.Time) (*embeddings.RepoEmbeddingIndex, error) {
 		embeddingIndex, err := downloadRepoEmbeddingIndex(ctx, repoEmbeddingIndexName)
@@ -48,6 +75,9 @@ func getCachedRepoEmbeddingIndex(
 		if err != nil {
 			return nil, err
 		}
+
+		repoMutexMap.LockRepo(repo.ID)
+		defer repoMutexMap.UnlockRepo(repo.ID)
 
 		lastFinishedRepoEmbeddingJob, err := repoEmbeddingJobsStore.GetLastCompletedRepoEmbeddingJob(ctx, repo.ID)
 		if err != nil {
