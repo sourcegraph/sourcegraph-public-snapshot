@@ -28,7 +28,6 @@ import {
     CollapseHeader,
     CollapsePanel,
     H3,
-    H4,
 } from '@sourcegraph/wildcard'
 
 import { LogOutput } from '../components/LogOutput'
