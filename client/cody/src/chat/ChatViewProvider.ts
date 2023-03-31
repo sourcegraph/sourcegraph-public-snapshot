@@ -310,7 +310,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     ): Promise<void> {
         this.webview = webviewView.webview
 
-        const extensionPath = vscode.Uri.parse(this.extensionPath)
+        const extensionPath = vscode.Uri.file(this.extensionPath)
         const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist')
 
         webviewView.webview.options = {
