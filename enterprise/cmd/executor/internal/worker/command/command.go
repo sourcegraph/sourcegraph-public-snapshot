@@ -202,6 +202,8 @@ const maxBuffer = 100 * 1024 * 1024
 // This function returns a non-nil error only if there was a system issue - commands that
 // run but fail due to a non-zero exit code will return a nil error and the exit code.
 func startCommand(ctx context.Context, cmd *exec.Cmd, pipeReaderWaitGroup *errgroup.Group) (int, error) {
+	fmt.Println("Command:", cmd.String())
+
 	if err := cmd.Start(); err != nil {
 		return 0, errors.Wrap(err, "starting command")
 	}
@@ -213,8 +215,6 @@ func startCommand(ctx context.Context, cmd *exec.Cmd, pipeReaderWaitGroup *errgr
 			return 0, errors.Wrap(err, "reading process pipes")
 		}
 	}
-
-	fmt.Println("Command:", cmd.String())
 
 	if err := cmd.Wait(); err != nil {
 		var e *exec.ExitError

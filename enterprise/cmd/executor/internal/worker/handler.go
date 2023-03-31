@@ -222,6 +222,22 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger c
 		}
 	}()
 
+	if h.options.RunnerOptions.FirecrackerOptions.Enabled {
+		// check loop device
+		out, err := h.cmdRunner.CombinedOutput(ctx, "ls", ws.Path())
+		fmt.Println("ls output: ", string(out))
+		if err != nil {
+			fmt.Println("ls failed: ", err)
+		}
+
+		// check if mounted
+		out, err = h.cmdRunner.CombinedOutput(ctx, "ignite", "exec", name, "--", "mount", "|", "grep", ws.Path())
+		fmt.Println("randell mount output: ", string(out))
+		if err != nil {
+			fmt.Println("randell mount failed: ", err)
+		}
+	}
+
 	// Invoke each docker step sequentially
 	for i, dockerStep := range job.DockerSteps {
 		var key string
