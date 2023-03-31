@@ -2,6 +2,10 @@ import React from 'react'
 
 export interface BrainDotProps {
     repoName: string
+    commit: string
+    path?: string
+    visibleIndexID?: string
+    setVisibleIndexID: (id?: string) => void
 }
 
 // This component is only a stub (hence the null body) that we overwrite in the enterprise

@@ -8,4 +8,5 @@ export interface CodeIntelligenceProps {
     codeIntelligenceEnabled: boolean
     brainDot?: typeof BrainDot
     useCodeIntel?: UseCodeIntel
+    selectedVisibleIndexID?: string
 }

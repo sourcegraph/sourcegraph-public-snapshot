@@ -17,6 +17,7 @@ const applyDefaultValuesToFetchBlobOptions = ({
     format = HighlightResponseFormat.HTML_HIGHLIGHT,
     startLine = null,
     endLine = null,
+    visibleIndexID = null,
     ...options
 }: FetchBlobOptions): Required<FetchBlobOptions> => ({
     ...options,
@@ -24,12 +25,15 @@ const applyDefaultValuesToFetchBlobOptions = ({
     format,
     startLine,
     endLine,
+    visibleIndexID,
 })
 
 function fetchBlobCacheKey(options: FetchBlobOptions): string {
-    const { disableTimeout, format, scipSnapshot } = applyDefaultValuesToFetchBlobOptions(options)
+    const { disableTimeout, format, scipSnapshot, visibleIndexID } = applyDefaultValuesToFetchBlobOptions(options)
 
-    return `${makeRepoURI(options)}?disableTimeout=${disableTimeout}&=${format}&snap=${scipSnapshot}`
+    return `${makeRepoURI(
+        options
+    )}?disableTimeout=${disableTimeout}&=${format}&snap=${scipSnapshot}&visible=${visibleIndexID}`
 }
 
 interface FetchBlobOptions {
@@ -41,14 +45,24 @@ interface FetchBlobOptions {
     startLine?: number | null
     endLine?: number | null
     scipSnapshot: boolean
+    visibleIndexID?: string | null
 }
 
 export const fetchBlob = memoizeObservable(
     (
         options: FetchBlobOptions
     ): Observable<(BlobFileFields & { snapshot?: { offset: number; data: string }[] }) | null> => {
-        const { repoName, revision, filePath, disableTimeout, format, startLine, endLine, scipSnapshot } =
-            applyDefaultValuesToFetchBlobOptions(options)
+        const {
+            repoName,
+            revision,
+            filePath,
+            disableTimeout,
+            format,
+            startLine,
+            endLine,
+            scipSnapshot,
+            visibleIndexID,
+        } = applyDefaultValuesToFetchBlobOptions(options)
 
         // We only want to include HTML data if explicitly requested. We always
         // include LSIF because this is used for languages that are configured
@@ -67,6 +81,7 @@ export const fetchBlob = memoizeObservable(
                     $startLine: Int
                     $endLine: Int
                     $snapshot: Boolean!
+                    $visibleIndexID: ID!
                 ) {
                     repository(name: $repoName) {
                         commit(rev: $revision) {
@@ -75,7 +90,7 @@ export const fetchBlob = memoizeObservable(
                             }
                             blob(path: $filePath) @include(if: $snapshot) {
                                 lsif {
-                                    snapshot {
+                                    snapshot(indexID: $visibleIndexID) {
                                         offset
                                         data
                                     }
@@ -111,7 +126,18 @@ export const fetchBlob = memoizeObservable(
                     }
                 }
             `,
-            { repoName, revision, filePath, disableTimeout, format, html, startLine, endLine, snapshot: scipSnapshot }
+            {
+                repoName,
+                revision,
+                filePath,
+                disableTimeout,
+                format,
+                html,
+                startLine,
+                endLine,
+                snapshot: scipSnapshot,
+                visibleIndexID: visibleIndexID ?? '',
+            }
         ).pipe(
             map(dataOrThrowErrors),
             map(data => {

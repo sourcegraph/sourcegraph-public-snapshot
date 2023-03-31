@@ -972,6 +972,20 @@ func (s *Service) getRequestedCommitDiagnostic(ctx context.Context, args Request
 	}, nil
 }
 
+func (s *Service) VisibleUploadsForPath(ctx context.Context, path string, requestState RequestState) (dumps []uploadsshared.Dump, err error) {
+	// TODO: osbv
+	visibleUploads, err := s.getUploadPaths(ctx, path, requestState)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, upload := range visibleUploads {
+		dumps = append(dumps, upload.Upload)
+	}
+
+	return
+}
+
 // getUploadPaths adjusts the current target path for each upload visible from the current target
 // commit. If an upload cannot be adjusted, it will be omitted from the returned slice.
 func (s *Service) getUploadPaths(ctx context.Context, path string, requestState RequestState) ([]visibleUpload, error) {
@@ -1311,29 +1325,29 @@ func (s *Service) getVisibleUpload(ctx context.Context, line, character int, upl
 	}, true, nil
 }
 
-func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, commit, path string) (data []shared.SnapshotData, err error) {
-	closestDumps, err := s.GetClosestDumpsForBlob(ctx, repositoryID, commit, path, true, "")
+func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, commit, path string, uploadID int) (data []shared.SnapshotData, err error) {
+	dumps, err := s.GetDumpsByIDs(ctx, []int{uploadID})
 	if err != nil {
 		return nil, err
 	}
 
-	if len(closestDumps) == 0 {
+	if len(dumps) == 0 {
 		return nil, nil
 	}
 
-	closestDump := closestDumps[0]
+	dump := dumps[0]
 
-	document, err := s.lsifstore.SCIPDocument(ctx, closestDump.ID, path)
+	document, err := s.lsifstore.SCIPDocument(ctx, dump.ID, path)
 	if err != nil {
 		return nil, err
 	}
 
-	file, err := s.gitserver.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, api.RepoName(closestDump.RepositoryName), api.CommitID(closestDump.Commit), path)
+	file, err := s.gitserver.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, api.RepoName(dump.RepositoryName), api.CommitID(dump.Commit), path)
 	if err != nil {
 		return nil, err
 	}
 
-	repo, err := s.repoStore.Get(ctx, api.RepoID(closestDump.ID))
+	repo, err := s.repoStore.Get(ctx, api.RepoID(dump.ID))
 	if err != nil {
 		return nil, err
 	}
@@ -1374,7 +1388,7 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 		snap.WriteRune(' ')
 		snap.WriteString(formatted)
 
-		_, newRange, ok, err := gittranslator.GetTargetCommitPositionFromSourcePosition(ctx, closestDump.Commit, types.Position{
+		_, newRange, ok, err := gittranslator.GetTargetCommitPositionFromSourcePosition(ctx, dump.Commit, shared.Position{
 			Line:      int(originalRange.Start.Line),
 			Character: int(originalRange.Start.Character),
 		}, false)

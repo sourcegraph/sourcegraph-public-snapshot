@@ -201,7 +201,9 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     """
     diagnostics(first: Int): DiagnosticConnection!
 
-    snapshot: [SnapshotData!]!
+    visibleIndexes: [PreciseIndex!]
+
+    snapshot(indexID: ID!): [SnapshotData!]
 }
 
 type SnapshotData {

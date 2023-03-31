@@ -78,6 +78,7 @@ func Init(
 		siteAdminChecker,
 		repoStore,
 		prefetcherFactory,
+		preciseIndexResolverFactory,
 		locationResolverFactory,
 		ConfigInst.HunkCacheSize,
 		ConfigInst.MaximumIndexesPerMonikerSearch,

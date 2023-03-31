@@ -305,6 +305,8 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         repoName,
     })
 
+    const [visibleIndexID, setVisibleIndexID] = useState<string>()
+
     const repoRevisionContainerContext: RepoRevisionContainerContext = {
         ...props,
         ...repoHeaderContributionsLifecycleProps,
@@ -313,6 +315,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         repoName,
         revision: revision || '',
         resolvedRevision,
+        selectedVisibleIndexID: visibleIndexID,
     }
 
     const perforceCodeHostUrlToSwarmUrlMap =
@@ -323,6 +326,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
 
     const repoContainerContext: Omit<RepoContainerContext, 'repo'> = {
         ...repoRevisionContainerContext,
+
         resolvedRevisionOrError,
         onDidUpdateExternalLinks: setExternalLinks,
         repoName,
@@ -376,7 +380,14 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                 >
                     {({ actionType }) =>
                         props.brainDot && actionType === 'nav' ? (
-                            <props.brainDot key="code-intelligence-status" repoName={repoName} />
+                            <props.brainDot
+                                key="code-intelligence-status"
+                                repoName={repoName}
+                                path={filePath}
+                                commit={resolvedRevision?.commitID ?? ''}
+                                visibleIndexID={visibleIndexID}
+                                setVisibleIndexID={setVisibleIndexID}
+                            />
                         ) : null
                     }
                 </RepoHeaderContributionPortal>

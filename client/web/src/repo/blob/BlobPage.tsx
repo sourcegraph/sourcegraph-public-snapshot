@@ -100,7 +100,7 @@ interface BlobPageProps
         SearchStreamingProps,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
-        Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel'>,
+        Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel' | 'selectedVisibleIndexID'>,
         NotebookProps,
         OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
@@ -190,17 +190,17 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
         }, [filePath, revision, repoName, props.telemetryService])
     )
 
-    const displaySCIPSnapshotData: boolean = newSettingsGetter(props.settingsCascade)<boolean>(
-        'codeIntel.displaySCIPSnapshotData',
-        false
-    )
+    // const displaySCIPSnapshotData: boolean = newSettingsGetter(props.settingsCascade)<boolean>(
+    //     'codeIntel.displaySCIPSnapshotData',
+    //     false
+    // )
 
-    const onClick = useCallback(async () => {
-        await updateSettings(props.platformContext, {
-            path: ['codeIntel.displaySCIPSnapshotData'],
-            value: !displaySCIPSnapshotData,
-        })
-    }, [displaySCIPSnapshotData, props.platformContext])
+    // const onClick = useCallback(async () => {
+    //     await updateSettings(props.platformContext, {
+    //         path: ['codeIntel.displaySCIPSnapshotData'],
+    //         value: !displaySCIPSnapshotData,
+    //     })
+    // }, [displaySCIPSnapshotData, props.platformContext])
 
     /**
      * Fetches formatted, but un-highlighted, blob content.
@@ -217,7 +217,8 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                         revision,
                         filePath,
                         format: HighlightResponseFormat.HTML_PLAINTEXT,
-                        scipSnapshot: displaySCIPSnapshotData,
+                        scipSnapshot: props.selectedVisibleIndexID !== undefined,
+                        visibleIndexID: props.selectedVisibleIndexID,
                     }).pipe(
                         map(blob => {
                             if (blob === null) {
@@ -244,9 +245,11 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                         })
                     )
                 ),
-            [filePath, mode, repoName, revision, span, displaySCIPSnapshotData]
+            [filePath, mode, repoName, revision, span, props.selectedVisibleIndexID]
         )
     )
+
+    console.log('BLOBPAGE', props.selectedVisibleIndexID)
 
     // Bundle latest blob with all other file info to pass to `Blob`
     // Prevents https://github.com/sourcegraph/sourcegraph/issues/14965 by not allowing
@@ -270,7 +273,8 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                             format: enableCodeMirror
                                 ? HighlightResponseFormat.JSON_SCIP
                                 : HighlightResponseFormat.HTML_HIGHLIGHT,
-                            scipSnapshot: displaySCIPSnapshotData,
+                            scipSnapshot: props.selectedVisibleIndexID !== undefined,
+                            visibleIndexID: props.selectedVisibleIndexID,
                         })
                     ),
                     map(blob => {
@@ -305,7 +309,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                     }),
                     catchError((error): [ErrorLike] => [asError(error)])
                 ),
-            [repoName, revision, filePath, enableCodeMirror, mode, displaySCIPSnapshotData]
+            [repoName, revision, filePath, enableCodeMirror, mode, props.selectedVisibleIndexID]
         )
     )
 
@@ -367,9 +371,6 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     // Always render these to avoid UI jitter during loading when switching to a new file.
     const alwaysRender = (
         <>
-            <Button variant="danger" onClick={onClick}>
-                Toggle SCIP snapshot view
-            </Button>
             <PageTitle title={getPageTitle()} />
             {window.context.isAuthenticatedUser && (
                 <RepoHeaderContributionPortal
