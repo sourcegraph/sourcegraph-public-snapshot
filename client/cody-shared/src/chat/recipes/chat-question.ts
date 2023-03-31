@@ -45,7 +45,7 @@ export class ChatQuestion implements Recipe {
         const isCodebaseContextRequired = await intentDetector.isCodebaseContextRequired(text)
         if (isCodebaseContextRequired) {
             // Request 16 context files in total. That amounts to roughly 16 * 256 = 4096 tokens used for context.
-            // That leaves us ~3000 tokens to include the chat history.
+            // That leaves us ~3000 tokens to include the chat history and editor context.
             const codebaseContextMessages = await codebaseContext.getContextMessages(text, {
                 numCodeResults: 13,
                 numTextResults: 3,
