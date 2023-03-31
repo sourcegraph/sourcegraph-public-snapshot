@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Use the shared volume in between dind and the agent to host the data, so we can delete it afterward.
+export DATA="/mnt/tmp/sourcegraph-data"
+
 echo Y | ./dev/run-server-image.sh -d --name sourcegraph
 
 SOURCEGRAPH_BASE_URL="http://localhost:7080"
