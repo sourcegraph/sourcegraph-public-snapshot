@@ -150,7 +150,7 @@ func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Sto
 
 	dec := gob.NewDecoder(file)
 
-	rei := &RepoEmbeddingIndex{}
+	var rei *RepoEmbeddingIndex
 	// if decoding files, assume it is an old index and decode appropriately
 	if rei, err = decodeRepoEmbeddingIndex(dec); err != nil {
 		// close the existing file
