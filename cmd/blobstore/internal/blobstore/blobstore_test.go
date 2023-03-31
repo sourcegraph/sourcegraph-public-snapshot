@@ -134,7 +134,7 @@ func TestCompose(t *testing.T) {
 
 	// Compose the objects together.
 	resultLength, err := store.Compose(ctx, "foobar-result", "foobar1", "foobar2", "foobar3")
-	autogold.Expect([]interface{}{0, "<nil>"}).Equal(t, []any{resultLength, fmt.Sprint(err)})
+	autogold.Expect([]interface{}{26, "<nil>"}).Equal(t, []any{resultLength, fmt.Sprint(err)})
 
 	// Check the resulting object
 	reader, err := store.Get(ctx, "foobar-result")
@@ -145,7 +145,7 @@ func TestCompose(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Expect("").Equal(t, string(data))
+	autogold.Expect("Hello 1! Hello 2! Hello 3!").Equal(t, string(data))
 
 	// Ensure the three objects we uploaded have been deleted.
 	assertObjectDoesNotExist(ctx, store, t, "foobar1")

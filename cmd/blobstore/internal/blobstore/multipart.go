@@ -142,7 +142,7 @@ func (s *Service) completeUpload(ctx context.Context, bucketName, objectName, up
 	if err != nil {
 		return err
 	}
-	maxPartNumber, minPartNumber := upload.partNumberRange()
+	minPartNumber, maxPartNumber := upload.partNumberRange()
 
 	// Open the parts of the upload.
 	var partReaders []io.Reader
@@ -182,7 +182,7 @@ func (s *Service) completeUpload(ctx context.Context, bucketName, objectName, up
 		return errors.Wrap(err, "creating composed object")
 	}
 
-	s.Log.Debug("completeUpload", sglog.String("key", bucketName+"/"+objectName), sglog.String("uploadID", uploadID))
+	s.Log.Debug("completeUpload", sglog.String("key", bucketName+"/"+objectName), sglog.String("uploadID", uploadID), sglog.Int("parts", len(partReaders)))
 	return nil
 }
 
@@ -211,7 +211,7 @@ func (s *Service) abortUpload(ctx context.Context, bucketName, objectName, uploa
 	if err != nil {
 		return err
 	}
-	maxPartNumber, minPartNumber := upload.partNumberRange()
+	minPartNumber, maxPartNumber := upload.partNumberRange()
 
 	// Delete the upload
 	if err := s.deletePendingUpload(ctx, bucketName, objectName, uploadID, minPartNumber, maxPartNumber); err != nil {
