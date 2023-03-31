@@ -56,7 +56,6 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs)
             "--config",
             "$(location //:mocha_config)",
             "--parallel",
-            "--jobs 4",
             "$(location :%s)/**/*.test.js" % bundle_name,
         ] + args,
         data = data + [
@@ -78,8 +77,8 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs)
             "KEEP_BROWSER": "false",
             "DEVTOOLS": "false",
             "BROWSER": "chrome",
-            "WINDOW_WIDTH": "1920",
-            "WINDOW_HEIGHT": "1080",
+            "WINDOW_WIDTH": "1280",
+            "WINDOW_HEIGHT": "1024",
             "LOG_BROWSER_CONSOLE": "false",
             # Enable findDom on CodeMirror
             "INTEGRATION_TESTS": "true",
