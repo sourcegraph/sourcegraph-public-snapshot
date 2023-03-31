@@ -200,4 +200,4 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
     return extensionApi
 }
 
-export { eventLogger, vsCodeContext }
+export { eventLogger }
