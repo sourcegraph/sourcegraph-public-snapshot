@@ -232,4 +232,5 @@
     cursor: pointer;
     font-size: inherit;
     text-decoration: underline;
+    text-align: left;
 }
