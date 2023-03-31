@@ -9,7 +9,9 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 
+	"github.com/kballard/go-shellquote"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
@@ -95,7 +97,7 @@ func (r *firecrackerRunner) Setup(ctx context.Context) error {
 	}
 	r.tmpDir = dir
 
-	dockerConfigPath, err := r.setupFirecracker(ctx)
+	dockerConfigPath, err := setupFirecracker1(ctx, r.cmd, r.cmdLogger, r.vmName, r.workspaceDevice, r.tmpDir, r.options, r.operations)
 	r.options.DockerOptions.ConfigPath = dockerConfigPath
 	return err
 }
@@ -346,6 +348,370 @@ func (r *firecrackerRunner) newCommandSpec(key string, cmd []string, env []strin
 }
 
 func (r *firecrackerRunner) Run(ctx context.Context, spec Spec) error {
-	firecrackerSpec := command.NewFirecrackerSpec(r.vmName, spec.Image, spec.ScriptPath, spec.CommandSpec, r.options.DockerOptions)
+	//firecrackerSpec := command.NewFirecrackerSpec(r.vmName, spec.Image, spec.ScriptPath, spec.CommandSpec, r.options.DockerOptions)
+	firecrackerSpec := formatFirecrackerCommand(spec.CommandSpec, r.vmName, spec.Image, spec.ScriptPath, r.options, r.options.DockerOptions.ConfigPath)
 	return r.cmd.Run(ctx, r.cmdLogger, firecrackerSpec)
+}
+
+// --
+
+func formatFirecrackerCommand(spec command.Spec, name string, image string, scriptPath string, options FirecrackerOptions, dockerConfigPath string) command.Spec {
+	rawOrDockerCommand := formatRawOrDockerCommand(image, scriptPath, spec, "/work", options.DockerOptions, dockerConfigPath)
+
+	innerCommand := shellquote.Join(rawOrDockerCommand.Command...)
+
+	// Note: src-cli run commands don't receive env vars in firecracker so we
+	// have to prepend them inline to the script.
+	// TODO: This branch should disappear when we make src-cli a non-special cased
+	// thing.
+	if image == "" && len(rawOrDockerCommand.Env) > 0 {
+		innerCommand = fmt.Sprintf("%s %s", strings.Join(quoteEnv(rawOrDockerCommand.Env), " "), innerCommand)
+	}
+
+	if rawOrDockerCommand.Dir != "" {
+		innerCommand = fmt.Sprintf("cd %s && %s", shellquote.Join(rawOrDockerCommand.Dir), innerCommand)
+	}
+
+	return command.Spec{
+		Key:       spec.Key,
+		Command:   []string{"ignite", "exec", name, "--", innerCommand},
+		Operation: spec.Operation,
+	}
+}
+
+func quoteEnv(env []string) []string {
+	quotedEnv := make([]string, len(env))
+
+	for i, e := range env {
+		elems := strings.SplitN(e, "=", 2)
+		quotedEnv[i] = fmt.Sprintf("%s=%s", elems[0], shellquote.Join(elems[1]))
+	}
+
+	return quotedEnv
+}
+
+// defaultCNIConfig is the CNI config used for our firecracker VMs.
+// TODO: Can we remove the portmap completely?
+const defaultCNIConfig1 = `
+{
+  "cniVersion": "0.4.0",
+  "name": "ignite-cni-bridge",
+  "plugins": [
+    {
+  	  "type": "bridge",
+  	  "bridge": "ignite0",
+  	  "isGateway": true,
+  	  "isDefaultGateway": true,
+  	  "promiscMode": false,
+  	  "ipMasq": true,
+  	  "ipam": {
+  	    "type": "host-local",
+  	    "subnet": %q
+  	  }
+    },
+    {
+  	  "type": "portmap",
+  	  "capabilities": {
+  	    "portMappings": true
+  	  }
+    },
+    {
+  	  "type": "firewall"
+    },
+    {
+  	  "type": "isolation"
+    },
+    {
+  	  "name": "slowdown",
+  	  "type": "bandwidth",
+  	  "ingressRate": %d,
+  	  "ingressBurst": %d,
+  	  "egressRate": %d,
+  	  "egressBurst": %d
+    }
+  ]
+}
+`
+
+// cniConfig generates a config file that configures the CNI explicitly and adds
+// the isolation plugin to the chain.
+// This is used to prevent cross-network communication (which currently doesn't
+// happen as we only have 1 bridge).
+// We also set the maximum bandwidth usable per VM to the configured value to avoid
+// abuse and to make sure multiple VMs on the same host won't starve others.
+func cniConfig1(maxIngressBandwidth, maxEgressBandwidth int) string {
+	return fmt.Sprintf(
+		defaultCNIConfig1,
+		config.CNISubnetCIDR,
+		maxIngressBandwidth,
+		2*maxIngressBandwidth,
+		maxEgressBandwidth,
+		2*maxEgressBandwidth,
+	)
+}
+
+// dockerDaemonConfig is a struct that marshals into a valid docker daemon config.
+type dockerDaemonConfig1 struct {
+	RegistryMirrors []string `json:"registry-mirrors"`
+}
+
+// dockerDaemonConfigFilename is the filename in the firecracker state tmp directory
+// for the optional docker daemon config file.
+const dockerDaemonConfigFilename1 = "docker-daemon.json"
+
+func newDockerDaemonConfig1(tmpDir string, mirrorAddresses []string) (_ string, err error) {
+	c, err := json.Marshal(&dockerDaemonConfig1{RegistryMirrors: mirrorAddresses})
+	if err != nil {
+		return "", errors.Wrap(err, "marshalling docker daemon config")
+	}
+
+	tmpFilePath := path.Join(tmpDir, dockerDaemonConfigFilename1)
+	err = os.WriteFile(tmpFilePath, c, os.ModePerm)
+	return tmpFilePath, errors.Wrap(err, "writing docker daemon config file")
+}
+
+// setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
+// machine instance. If a startup script path (an executable file on the host) is supplied,
+// it will be mounted into the new virtual machine instance and executed.
+func setupFirecracker1(ctx context.Context, runner command.Command, logger command.Logger, name, workspaceDevice, tmpDir string, options FirecrackerOptions, operations *command.Operations) (_ string, err error) {
+	var daemonConfigFile string
+	if len(options.DockerRegistryMirrorURLs) > 0 {
+		var err error
+		daemonConfigFile, err = newDockerDaemonConfig1(tmpDir, options.DockerRegistryMirrorURLs)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	// If docker auth config is present, write it.
+	var dockerConfigPath string
+	if len(options.DockerOptions.DockerAuthConfig.Auths) > 0 {
+		d, err := json.Marshal(options.DockerOptions.DockerAuthConfig)
+		if err != nil {
+			return "", err
+		}
+		dockerConfigPath, err = os.MkdirTemp(tmpDir, "docker_auth")
+		if err != nil {
+			return "", err
+		}
+		if err := os.WriteFile(filepath.Join(dockerConfigPath, "config.json"), d, os.ModePerm); err != nil {
+			return "", err
+		}
+	}
+
+	// Make subdirectory called "cni" to store CNI config in. All files from a directory
+	// will be considered so this has to be it's own directory with just our config file.
+	cniConfigDir := path.Join(tmpDir, "cni")
+	err = os.Mkdir(cniConfigDir, os.ModePerm)
+	if err != nil {
+		return "", err
+	}
+	cniConfigFile := path.Join(cniConfigDir, "10-sourcegraph-executors.conflist")
+	err = os.WriteFile(cniConfigFile, []byte(cniConfig(options.DockerOptions.Resources.MaxIngressBandwidth, options.DockerOptions.Resources.MaxEgressBandwidth)), os.ModePerm)
+	if err != nil {
+		return "", err
+	}
+
+	// Start the VM and wait for the SSH server to become available.
+	startCommand := command.Spec{
+		Key: "setup.firecracker.start",
+		// Tell ignite to use our temporary config file for maximum isolation of
+		// envs.
+		Env: []string{fmt.Sprintf("CNI_CONF_DIR=%s", cniConfigDir)},
+		Command: flatten(
+			"ignite", "run",
+			"--runtime", "docker",
+			"--network-plugin", "cni",
+			firecrackerResourceFlags1(options.DockerOptions.Resources),
+			firecrackerCopyfileFlags1(options.VMStartupScriptPath, daemonConfigFile, dockerConfigPath),
+			firecrackerVolumeFlags1(workspaceDevice, "/work"),
+			"--ssh",
+			"--name", name,
+			"--kernel-image", sanitizeImage1(options.KernelImage),
+			"--kernel-args", config.FirecrackerKernelArgs,
+			"--sandbox-image", sanitizeImage1(options.SandboxImage),
+			sanitizeImage1(options.Image),
+		),
+		Operation: operations.SetupFirecrackerStart,
+	}
+
+	if err := runner.Run(ctx, logger, startCommand); err != nil {
+		return "", errors.Wrap(err, "failed to start firecracker vm")
+	}
+
+	if options.VMStartupScriptPath != "" {
+		startupScriptCommand := command.Spec{
+			Key:       "setup.startup-script",
+			Command:   flatten("ignite", "exec", name, "--", options.VMStartupScriptPath),
+			Operation: operations.SetupStartupScript,
+		}
+		if err := runner.Run(ctx, logger, startupScriptCommand); err != nil {
+			return "", errors.Wrap(err, "failed to run startup script")
+		}
+	}
+
+	if dockerConfigPath != "" {
+		return "/etc/docker/cli", nil
+	}
+
+	return "", nil
+}
+
+func firecrackerResourceFlags1(options command.ResourceOptions) []string {
+	return []string{
+		"--cpus", strconv.Itoa(options.NumCPUs),
+		"--memory", options.Memory,
+		"--size", options.DiskSpace,
+	}
+}
+
+func firecrackerCopyfileFlags1(vmStartupScriptPath, daemonConfigFile, dockerConfigPath string) []string {
+	copyfiles := make([]string, 0, 2)
+	if vmStartupScriptPath != "" {
+		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", vmStartupScriptPath, vmStartupScriptPath))
+	}
+
+	if daemonConfigFile != "" {
+		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", daemonConfigFile, "/etc/docker/daemon.json"))
+	}
+
+	if dockerConfigPath != "" {
+		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", dockerConfigPath, "/etc/docker/cli"))
+	}
+
+	sort.Strings(copyfiles)
+	return intersperse("--copy-files", copyfiles)
+}
+
+func firecrackerVolumeFlags1(workspaceDevice, s string) []string {
+	return []string{"--volumes", fmt.Sprintf("%s:%s", workspaceDevice, s)}
+}
+
+var imagePattern1 = lazyregexp.New(`([^:@]+)(?::([^@]+))?(?:@sha256:([a-z0-9]{64}))?`)
+
+// sanitizeImage sanitizes the given docker image for use by ignite. The ignite utility
+// has some issue parsing docker tags that include a sha256 hash, so we try to remove it
+// from any of the image references before passing it to the ignite command.
+func sanitizeImage1(image string) string {
+	if matches := imagePattern1.FindStringSubmatch(image); len(matches) == 4 {
+		if matches[2] == "" {
+			return matches[1]
+		}
+
+		return fmt.Sprintf("%s:%s", matches[1], matches[2])
+	}
+
+	return image
+}
+
+// --
+
+func formatRawOrDockerCommand(image, scriptPath string, spec command.Spec, dir string, options command.DockerOptions, dockerConfigPath string) command.Spec {
+	// TODO - remove this once src-cli is not required anymore for SSBC.
+	if image == "" {
+		env := spec.Env
+		if dockerConfigPath != "" {
+			env = append(env, fmt.Sprintf("DOCKER_CONFIG=%s", dockerConfigPath))
+		}
+		return command.Spec{
+			Key:       spec.Key,
+			Command:   spec.Command,
+			Dir:       filepath.Join(dir, spec.Dir),
+			Env:       env,
+			Operation: spec.Operation,
+		}
+	}
+
+	hostDir := dir
+	if options.Resources.DockerHostMountPath != "" {
+		hostDir = filepath.Join(options.Resources.DockerHostMountPath, filepath.Base(dir))
+	}
+
+	return command.Spec{
+		Key: spec.Key,
+		Command: flatten(
+			"docker",
+			dockerConfigFlag1(dockerConfigPath),
+			"run", "--rm",
+			dockerHostGatewayFlag1(options.AddHostGateway),
+			dockerResourceFlags1(options.Resources),
+			dockerVolumeFlags1(hostDir),
+			dockerWorkingdirectoryFlags1(spec.Dir),
+			dockerEnvFlags1(spec.Env),
+			dockerEntrypointFlags1(),
+			image,
+			filepath.Join("/data", ".sourcegraph-executor", scriptPath),
+		),
+		Operation: spec.Operation,
+	}
+}
+
+// dockerHostGatewayFlag makes the Docker host accessible to the container (on the hostname
+// `host.docker.internal`), which simplifies the use of executors when the Sourcegraph instance is
+// running uncontainerized in the Docker host. This *only* takes effect if the site config
+// `executors.frontendURL` is a URL with hostname `host.docker.internal`, to reduce the risk of
+// unexpected compatibility or security issues with using --add-host=...  when it is not needed.
+func dockerHostGatewayFlag1(shouldAdd bool) []string {
+	if shouldAdd {
+		return []string{"--add-host=host.docker.internal:host-gateway"}
+	}
+	return nil
+}
+
+func dockerResourceFlags1(options command.ResourceOptions) []string {
+	flags := make([]string, 0, 2)
+	if options.NumCPUs != 0 {
+		flags = append(flags, "--cpus", strconv.Itoa(options.NumCPUs))
+	}
+	if options.Memory != "0" && options.Memory != "" {
+		flags = append(flags, "--memory", options.Memory)
+	}
+
+	return flags
+}
+
+func dockerVolumeFlags1(wd string) []string {
+	return []string{"-v", wd + ":/data"}
+}
+
+func dockerConfigFlag1(dockerConfigPath string) []string {
+	if dockerConfigPath == "" {
+		return nil
+	}
+	return []string{"--config", dockerConfigPath}
+}
+
+func dockerWorkingdirectoryFlags1(dir string) []string {
+	return []string{"-w", filepath.Join("/data", dir)}
+}
+
+func dockerEnvFlags1(env []string) []string {
+	return intersperse("-e", env)
+}
+
+func dockerEntrypointFlags1() []string {
+	return []string{"--entrypoint", "/bin/sh"}
+}
+func flatten(values ...any) []string {
+	union := make([]string, 0, len(values))
+	for _, value := range values {
+		switch v := value.(type) {
+		case string:
+			union = append(union, v)
+		case []string:
+			union = append(union, v...)
+		}
+	}
+
+	return union
+}
+
+// intersperse returns a slice following the pattern `flag, v1, flag, v2, ...`.
+func intersperse(flag string, values []string) []string {
+	interspersed := make([]string, 0, len(values))
+	for _, v := range values {
+		interspersed = append(interspersed, flag, v)
+	}
+
+	return interspersed
 }
