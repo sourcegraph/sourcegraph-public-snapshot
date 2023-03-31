@@ -339,7 +339,7 @@ export class Driver {
 
     public async close(): Promise<void> {
         this.subscriptions.unsubscribe()
-        if (!this.keepBrowser || true) {
+        if (!this.keepBrowser) {
             await this.browser.close()
         }
         logger.log(
