@@ -621,27 +621,21 @@ commands:
       EXECUTOR_QUEUE_NAME: batches
 
   blobstore:
-    cmd: |
-      docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
-      docker run --rm \
-        --name=$CONTAINER \
-        --cpus=1 \
-        --memory=1g \
-        -p 0.0.0.0:9000:9000 \
-        -e 'S3PROXY_AUTHORIZATION=none' \
-        -v "$BLOBSTORE_DISK":/data \
-        $IMAGE >"$BLOBSTORE_LOG_FILE" 2>&1
+    cmd: .bin/blobstore
     install: |
-      mkdir -p $BLOBSTORE_LOGS
-      mkdir -p $BLOBSTORE_DISK
-      chmod u+rwx $BLOBSTORE_LOGS $BLOBSTORE_DISK
-      CACHE=true ./docker-images/blobstore/build.sh >$BLOBSTORE_LOG_FILE 2>&1
+      # Ensure the old blobstore Docker container is not running
+      docker rm -f blobstore
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/blobstore github.com/sourcegraph/sourcegraph/cmd/blobstore
+    checkBinary: .bin/blobstore
+    watch:
+      - lib
+      - internal
+      - cmd/blobstore
     env:
-      BLOBSTORE_DISK: $HOME/.sourcegraph-dev/data/blobstore
-      BLOBSTORE_LOGS: $HOME/.sourcegraph-dev/logs/blobstore
-      BLOBSTORE_LOG_FILE: $HOME/.sourcegraph-dev/logs/blobstore/blobstore.log
-      IMAGE: sourcegraph/blobstore
-      CONTAINER: blobstore
+      BLOBSTORE_DATA_DIR: $HOME/.sourcegraph-dev/data/blobstore-go
 
   redis-postgres:
     # Add the following overwrites to your sg.config.overwrite.yaml to use the docker-compose
