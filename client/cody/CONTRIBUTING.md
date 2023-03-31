@@ -47,6 +47,10 @@ Follow the steps below to package and publish the VS Code extension.
 
 > NOTE: Since the extension has already been bundled during build, we will need to add the `--no-dependencies` flag to the `vsce` step during the packaging step to exclude the npm dependencies ([source](https://github.com/microsoft/vscode-vsce/issues/421#issuecomment-1038911725))
 
+### Prerequisite
+
+- Install the [VSCE CLI tool](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce)
+
 ### Release Steps
 
 1. Increment the `version` in [`package.json`](package.json) and then run:
