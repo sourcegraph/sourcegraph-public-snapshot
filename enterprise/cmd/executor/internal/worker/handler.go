@@ -231,21 +231,21 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger c
 		}
 
 		// check if mounted
-		out, err = h.cmdRunner.CombinedOutput(ctx, "ignite", "exec", name, "--", fmt.Sprintf("mount | grep %s", ws.Path()))
+		out, err = h.cmdRunner.CombinedOutput(ctx, "ignite", "exec", name, "--", fmt.Sprintf("\"mount | grep %s\"", ws.Path()))
 		fmt.Println("randell mount output: ", string(out))
 		if err != nil {
 			fmt.Println("randell mount failed: ", err)
 		}
 
 		// check if mounted
-		out, err = h.cmdRunner.CombinedOutput(ctx, "ignite", "exec", name, "--", "mount")
+		out, err = h.cmdRunner.CombinedOutput(ctx, "ignite", "exec", name, "--", "\"mount\"")
 		fmt.Println("randell mount grep output: ", string(out))
 		if err != nil {
 			fmt.Println("randell mount grep failed: ", err)
 		}
 
 		// check if mounted
-		out, err = h.cmdRunner.CombinedOutput(ctx, "ignite", "exec", name, "--", "ls /work")
+		out, err = h.cmdRunner.CombinedOutput(ctx, "ignite", "exec", name, "--", "\"ls /work\"")
 		fmt.Println("randell mount ls output: ", string(out))
 		if err != nil {
 			fmt.Println("randell mount ls failed: ", err)
