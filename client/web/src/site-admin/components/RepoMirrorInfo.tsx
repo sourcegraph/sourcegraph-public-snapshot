@@ -35,6 +35,7 @@ export const RepoMirrorInfo: React.FunctionComponent<
                                 </Tooltip>
                             </>
                         )}
+                        {mirrorInfo.cloneInProgress && <> {mirrorInfo.cloneProgress || ''}</>}
                     </>
                 )}
             </small>

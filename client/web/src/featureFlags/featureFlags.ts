@@ -24,6 +24,7 @@ export type FeatureFlagName =
     | 'blob-page-switch-areas-shortcuts'
     | 'app-connect-dotcom'
     | 'sentinel'
+    | 'clone-progress-logging'
 
 interface OrgFlagOverride {
     orgID: string

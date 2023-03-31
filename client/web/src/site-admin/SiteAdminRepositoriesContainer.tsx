@@ -29,6 +29,7 @@ import { PageRoutes } from '../routes.constants'
 import { ValueLegendList, ValueLegendListProps } from './analytics/components/ValueLegendList'
 import { STATUS_AND_REPO_STATS, REPO_PAGE_POLL_INTERVAL, REPOSITORIES_QUERY } from './backend'
 import { RepositoryNode } from './RepositoryNode'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
 const STATUS_FILTERS: { [label: string]: FilteredConnectionFilterValue } = {
     All: {
@@ -143,6 +144,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
     } = useQuery<StatusAndRepoStatsResult>(STATUS_AND_REPO_STATS, {})
     const location = useLocation()
     const navigate = useNavigate()
+    const [displayCloneProgress] = useFeatureFlag('clone-progress-logging')
 
     useEffect(() => {
         if (data?.repositoryStats?.total === 0 || data?.repositoryStats?.cloning !== 0) {
@@ -247,6 +249,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
             corrupted: args.corrupted ?? false,
             cloneStatus: args.cloneStatus ?? null,
             externalService: args.externalService ?? null,
+            displayCloneProgress
         } as RepositoriesVariables
     }, [searchQuery, filterValues])
 
