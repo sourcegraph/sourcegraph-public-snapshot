@@ -97,7 +97,7 @@ func (h *permsSyncerWorker) handlePermsSync(ctx context.Context, reqType request
 	// completed successfully. This can happen e.g. if we only got HTTP401 responses.
 	if err == nil {
 		total, _, failed := providerStates.CountStatuses()
-		if failed == total {
+		if failed == total && total > 0 {
 			err = errors.New("All providers failed to sync permissions.")
 		}
 	}
