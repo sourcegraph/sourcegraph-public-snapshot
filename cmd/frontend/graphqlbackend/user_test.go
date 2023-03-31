@@ -544,13 +544,17 @@ func TestUpdateUser(t *testing.T) {
 
 	t.Run("success with an empty avatarURL", func(t *testing.T) {
 		users := database.NewMockUserStore()
+		siteAdminUser := &types.User{SiteAdmin: true}
 		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+			if id == 0 {
+				return siteAdminUser, nil
+			}
 			return &types.User{
 				ID:       id,
 				Username: strconv.Itoa(int(id)),
 			}, nil
 		})
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(siteAdminUser, nil)
 		users.UpdateFunc.SetDefaultReturn(nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
@@ -582,7 +586,11 @@ func TestUpdateUser(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		users := database.NewMockUserStore()
+		siteAdminUser := &types.User{SiteAdmin: true}
 		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+			if id == 0 {
+				return siteAdminUser, nil
+			}
 			return &types.User{
 				ID:       id,
 				Username: strconv.Itoa(int(id)),

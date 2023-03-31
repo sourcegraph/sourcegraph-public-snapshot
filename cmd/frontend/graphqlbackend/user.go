@@ -282,7 +282,7 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 	// If user is changing their username, we need to verify if this action can be
 	// done.
 	if args.Username != nil && user.Username != *args.Username {
-		if !viewerCanChangeUsername(actor.FromActualUser(user), r.db, userID) {
+		if !viewerCanChangeUsername(actor.FromContext(ctx), r.db, userID) {
 			return nil, errors.Errorf("unable to change username because auth.enableUsernameChanges is false in site configuration")
 		}
 		update.Username = *args.Username
@@ -430,22 +430,18 @@ func (r *schemaResolver) SetTosAccepted(ctx context.Context, args *struct{ UserI
 		if err != nil {
 			return nil, err
 		}
-
-		// 🚨 SECURITY: Only the user and admins are allowed to set the Terms of Service accepted flag.
-		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, affectedUserID); err != nil {
-			return nil, err
-		}
 	} else {
 		user, err := r.db.Users().GetByCurrentAuthUser(ctx)
 		if err != nil {
 			return nil, err
 		}
-		affectedUserID = user.ID
 
-		// 🚨 SECURITY: Only the user and admins are allowed to set the Terms of Service accepted flag.
-		if err := auth.CheckSiteAdminOrSameUserFromActor(actor.FromActualUser(user), r.db, affectedUserID); err != nil {
-			return nil, err
-		}
+		affectedUserID = user.ID
+	}
+
+	// 🚨 SECURITY: Only the user and admins are allowed to set the Terms of Service accepted flag.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, affectedUserID); err != nil {
+		return nil, err
 	}
 
 	tosAccepted := true
