@@ -143,11 +143,50 @@ To opt out of managed SMTP, please let your Sourcegraph Account team know when r
 
 To learn more about how the Sourcegraph team operates managed SMTP internally, refer to [our handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/managed-smtp/).
 
-### Sourcegraph management access
+### Cody 
 
-[Sourcegraph management access](https://handbook.sourcegraph.com/departments/cloud/technical-docs/oidc_site_admin/) is the ability for Sourcergaph employees to grant time-bound and audit-trailed UI access to Cloud instances in the events of instance maintenance, issue troubleshooting, and customer assistance. Customer consent is guaranteed prior to human accesses.
+<aside class="experimental">
+<p>
+<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change or be removed in the future. We've released it as an experimental feature to provide a preview of functionality we're working on.
+</p>
+</aside>
 
-All Sourcegraph Cloud instances have Sourcegraph management access enabled by default, and customers may request to disable by contacting your Sourcegraph contact.
+Cody is an AI coding assistant that lives in your editor that can find, explain, and write code. Cody uses a combination of Large Language Models (LLMs), Sourcegraph search, and Sourcegraph code intelligence to provide answers that eliminate toil and keep human programmers in flow. You can think of Cody as your programmer buddy who has read through all the code in open source, all the questions on StackOverflow, and all your organization's private code, and is always there to answer questions you might have or suggest ways of doing something based on prior knowledge. Learn more from [Cody documentation](../cody/index.md) about how Cody can help you.
+
+On Cloud, Cody can be enabled by contacting your Sourcegraph account team. Once Cody has been enabled by us, you can follow the instruction below to try it out.
+
+#### Step 1: Configure the VS Code extension
+
+Now that Cody is turned on on your Sourcegraph Cloud instance, any user can configure and use the Cody VS Code extension. This does not require admin privilege.
+
+1. If you currently have a previous version of Cody installed, uninstall it and reload VS Code before proceeding to the next steps.
+1. Search for “Sourcegraph Cody” in your VS Code extension marketplace, and install it.
+
+<img width="500" alt="image" src="https://user-images.githubusercontent.com/25070988/227508342-cc6f29c0-ed91-4381-b651-16870c7c676b.png">
+
+3. Reload VS Code, and open the Cody extension. Review and accept the terms.
+
+4. Now you'll need to point the Cody extension to your Sourcegraph instance. On your instance, go to `settings` / `access token` (`https://<your-instance>.sourcegraph.com/users/<your-instance>/settings/tokens`). Generate an access token, copy it, and set it in the Cody extension.
+
+<img width="1369" alt="image" src="https://user-images.githubusercontent.com/25070988/227510686-4afcb1f9-a3a5-495f-b1bf-6d661ba53cce.png">
+
+5. In the Cody VS Code extension, set your instance URL and the access token
+    
+<img width="553" alt="image" src="https://user-images.githubusercontent.com/25070988/227510233-5ce37649-6ae3-4470-91d0-71ed6c68b7ef.png">
+
+You're all set!
+
+#### Step 2: Try Cody!
+
+A few things you can ask Cody:
+
+- "What are popular go libraries for building CLIs?"
+- Open your workspace, and ask "Do we have a React date picker component in this repository?"
+- Right click on a function, and ask Cody to explain it
+- Try any of the Cody recipes!
+
+<img width="510" alt="image" src="https://user-images.githubusercontent.com/25070988/227511383-aa60f074-817d-4875-af41-54558dfe1951.png">
+
 
 ## Requirements
 
@@ -181,6 +220,12 @@ For all managed instances, we will provide security capabilities from Cloudflare
 Your instance will be hosted in isolated Google Cloud infrastructure. See our [employee handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/) to learn more about the cloud architecture we use. Both your team and limited Sourcegraph personnel will have application-level administrator access to the instance.
 
 Only essential Sourcegraph personnel will have access to the instance, server, code, and any other sensitive materials, such as tokens or keys. The employees or contractors with access are bound by the same terms as Sourcegraph itself. Learn more in our [security policies for Sourcegraph Cloud](https://about.sourcegraph.com/security) or [contact us](https://about.sourcegraph.com/contact/sales) with any questions or concerns. You may also request a copy of our SOC 2 Report on our [security portal](https://security.sourcegraph.com).
+
+### Sourcegraph management access
+
+[Sourcegraph management access](https://handbook.sourcegraph.com/departments/cloud/technical-docs/oidc_site_admin/) is the ability for Sourcergaph employees to grant time-bound and audit-trailed UI access to Cloud instances in the events of instance maintenance, issue troubleshooting, and customer assistance. Customer consent is guaranteed prior to human accesses.
+
+All Sourcegraph Cloud instances have Sourcegraph management access enabled by default, and customers may request to disable by contacting your Sourcegraph contact.
 
 ## Accommodating special requirements
 

@@ -5,16 +5,17 @@ import { removeStopwords } from 'stopword'
 import StreamValues from 'stream-json/streamers/StreamValues'
 import * as vscode from 'vscode'
 
+import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { KeywordContextFetcher, KeywordContextFetcherResult } from '@sourcegraph/cody-shared/src/keyword-context'
 
 const fileExtRipgrepParams = ['-Tmarkdown', '-Tyaml', '-Tjson', '-g', '!*.lock']
 
 export class LocalKeywordContextFetcher implements KeywordContextFetcher {
-    constructor(private rgPath: string) {}
+    constructor(private rgPath: string, private editor: Editor) {}
 
     public async getContext(query: string, numResults: number): Promise<KeywordContextFetcherResult[]> {
         console.log('fetching keyword matches')
-        const rootPath = getRootPath()
+        const rootPath = this.editor.getWorkspaceRootPath()
         if (!rootPath) {
             return []
         }
@@ -209,21 +210,6 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
 
         return filenamesWithScores
     }
-}
-
-export function getRootPath(): string | null {
-    const uri = vscode.window.activeTextEditor?.document.uri
-    if (uri) {
-        const wsFolder = vscode.workspace.getWorkspaceFolder(uri)
-        if (wsFolder) {
-            return wsFolder.uri.fsPath
-        }
-    }
-
-    if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length >= 1) {
-        return vscode.workspace.workspaceFolders[0].uri.fsPath
-    }
-    return null
 }
 
 async function fetchFileStats(

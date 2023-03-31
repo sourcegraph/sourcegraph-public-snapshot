@@ -39,7 +39,11 @@ export async function configureExternalServices(
     }
     const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
 
-    const codebaseContext = new CodebaseContext(contextType, embeddingsSearch, new LocalKeywordContextFetcher(rgPath))
+    const codebaseContext = new CodebaseContext(
+        contextType,
+        embeddingsSearch,
+        new LocalKeywordContextFetcher(rgPath, editor)
+    )
 
     return {
         intentDetector: new SourcegraphIntentDetectorClient(client),

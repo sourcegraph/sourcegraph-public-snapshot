@@ -181,9 +181,11 @@ Gazelle and the frontend: see [Bazel for Web bundle](./bazel_web.md).
 
 > For early adopters only.
 
-First you need to have `bazel` installed obviously, but also `iBazel` which will watch your files and rebuild if needed.
+First you need to have `bazel` installed obviously, but also `iBazel` which will watch your files and rebuild if needed. We use a tool called `bazelisk` (which is also part of Bazel) to manage the version of `bazel`. It inspects a bunch of files to determine what `bazel` version to use for your repo.
 
-- `brew install bazel`
+If you want the setup automated run `sg setup`, otherwise you can install it manually by executing the following commands:
+
+- `brew install bazelisk`
 - `brew install ibazel`
 
 Then instead of running `sg start oss` you can use the `bazel` variant instead.

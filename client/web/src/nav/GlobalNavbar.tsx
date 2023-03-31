@@ -5,6 +5,7 @@ import BarChartIcon from 'mdi-react/BarChartIcon'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import CommentQuoteOutline from 'mdi-react/CommentQuoteOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import ShieldHalfFullIcon from 'mdi-react/ShieldHalfFullIcon'
 import { RouteObject, useLocation } from 'react-router-dom'
 
 import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
@@ -33,6 +34,7 @@ import { NotebookProps } from '../notebooks'
 import { OwnConfigProps } from '../own/OwnConfigProps'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
+import { SentinelProps } from '../sentinel/types'
 import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
 import { useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
@@ -50,6 +52,7 @@ export interface GlobalNavbarProps
         TelemetryProps,
         SearchContextInputProps,
         CodeInsightsProps,
+        SentinelProps,
         BatchChangesProps,
         NotebookProps,
         CodeMonitoringProps,
@@ -123,6 +126,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     isSourcegraphApp,
     isRepositoryRelatedPage,
     codeInsightsEnabled,
+    sentinelEnabled,
     searchContextsEnabled,
     codeMonitoringEnabled,
     notebooksEnabled,
@@ -144,6 +148,11 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom
     const showCodeMonitoring = codeMonitoringEnabled
     const showSearchNotebook = notebooksEnabled
+
+    const [isSentinelEnabled] = useFeatureFlag('sentinel')
+    // TODO: Include isSourcegraphDotCom in subsequent PR
+    // const showSentinel = sentinelEnabled && isSourcegraphDotCom && props.authenticatedUser?.siteAdmin
+    const showSentinel = isSentinelEnabled && props.authenticatedUser?.siteAdmin
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
@@ -235,6 +244,13 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <NavItem icon={BarChartIcon}>
                             <NavLink variant={navLinkVariant} to="/insights">
                                 Insights
+                            </NavLink>
+                        </NavItem>
+                    )}
+                    {showSentinel && (
+                        <NavItem icon={ShieldHalfFullIcon}>
+                            <NavLink variant={navLinkVariant} to="/sentinel">
+                                Sentinel
                             </NavLink>
                         </NavItem>
                     )}

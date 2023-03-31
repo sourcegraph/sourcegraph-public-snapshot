@@ -451,7 +451,6 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		stepOpts := []bk.StepOpt{
 			withPnpmCache(),
-			bk.Skip("disabled, ongoing issue on their side"),
 			bk.AutomaticRetry(3),
 			bk.Cmd("./dev/ci/pnpm-install-with-retry.sh"),
 			bk.Cmd("pnpm gulp generate"),
@@ -652,6 +651,15 @@ func addVsceReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm generate"),
 		bk.Cmd("pnpm --filter @sourcegraph/vscode run release"))
+}
+
+// Release the Cody extension.
+func addCodyReleaseSteps(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":vscode::robot_face: Cody release",
+		withPnpmCache(),
+		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
+		bk.Cmd("pnpm generate"),
+		bk.Cmd("pnpm --filter cody-ai run release"))
 }
 
 // Release a snapshot of App.

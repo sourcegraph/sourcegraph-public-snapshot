@@ -6,6 +6,7 @@ go_library(
         "iface.go",
         "job_backfill.go",
         "job_cleanup.go",
+        "job_cleanup2.go",
         "job_commitgraph.go",
         "job_expirer.go",
         "job_reconciler.go",

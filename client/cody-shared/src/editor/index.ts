@@ -16,6 +16,7 @@ export interface ActiveTextEditorVisibleContent {
 }
 
 export interface Editor {
+    getWorkspaceRootPath(): string | null
     getActiveTextEditor(): ActiveTextEditor | null
     getActiveTextEditorSelection(): ActiveTextEditorSelection | null
     getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null

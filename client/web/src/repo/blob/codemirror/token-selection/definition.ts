@@ -147,12 +147,10 @@ async function goToDefinition(
     params: TextDocumentPositionParameters
 ): Promise<DefinitionResult> {
     const api = await getOrCreateCodeIntelAPI(view.state.facet(blobPropsFacet).platformContext)
-    const definition = await api
-        .getDefinition(params, {
-            referenceOccurrence: occurrence,
-            documentOccurrences: view.state.facet(syntaxHighlight).occurrences,
-        })
-        .toPromise()
+    const definition = await api.getDefinition(params, {
+        referenceOccurrence: occurrence,
+        documentOccurrences: view.state.facet(syntaxHighlight).occurrences,
+    })
     const locationFrom: Location = { uri: params.textDocument.uri, range: occurrence.range }
 
     if (definition.length === 0) {

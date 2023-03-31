@@ -210,6 +210,10 @@ extend type Query {
         Optional filter to find permissions sync jobs for a repository. Please provide either this or userID, but not both.
         """
         repoID: ID
+        """
+        Optional filter to filter only partially successful sync jobs.
+        """
+        partial: Boolean
     ): PermissionsSyncJobsConnection!
 
     """
@@ -742,6 +746,10 @@ type PermissionsSyncJob implements Node {
     State of providers (code hosts) during permission sync job.
     """
     codeHostStates: [CodeHostState!]!
+    """
+    Show if the job has finished with a partially successful result.
+    """
+    partialSuccess: Boolean!
 }
 
 """

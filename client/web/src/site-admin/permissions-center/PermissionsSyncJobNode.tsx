@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import { mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
@@ -21,6 +21,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import {
+    CodeHostState,
     CodeHostStatus,
     PermissionsSyncJob,
     PermissionsSyncJobReason,
@@ -107,24 +108,22 @@ interface PermissionsSyncJobStatusBadgeProps {
 }
 
 export const PermissionsSyncJobStatusBadge: React.FunctionComponent<PermissionsSyncJobStatusBadgeProps> = ({ job }) => {
-    const { state, cancellationReason, failureMessage, codeHostStates } = job
-    const failingCodeHostSyncsNumber = useMemo(
-        () => codeHostStates.filter(({ status }) => status === CodeHostStatus.ERROR).length,
-        [codeHostStates]
-    )
-    const needsWarning = state === PermissionsSyncJobState.COMPLETED && failingCodeHostSyncsNumber > 0
-    const warningMessage = needsWarning
-        ? `${failingCodeHostSyncsNumber}/${codeHostStates.length} provider syncs were not successful`
-        : undefined
+    const { state, cancellationReason, failureMessage, codeHostStates, partialSuccess } = job
+    const warningMessage = partialSuccess ? getWarningMessage(codeHostStates) : undefined
     return (
         <Badge
             className={classNames(styles.statusContainer, 'mr-1')}
             tooltip={cancellationReason ?? failureMessage ?? warningMessage ?? undefined}
-            variant={needsWarning ? 'warning' : JOB_STATE_METADATA_MAPPING[state].badgeVariant}
+            variant={partialSuccess ? 'warning' : JOB_STATE_METADATA_MAPPING[state].badgeVariant}
         >
-            {state}
+            {partialSuccess ? 'PARTIAL' : state}
         </Badge>
     )
+}
+
+const getWarningMessage = (codeHostStates: CodeHostState[]): string => {
+    const failingCodeHostSyncsNumber = codeHostStates.filter(({ status }) => status === CodeHostStatus.ERROR).length
+    return `${failingCodeHostSyncsNumber}/${codeHostStates.length} provider syncs were not successful`
 }
 
 export const PermissionsSyncJobSubject: React.FunctionComponent<{ job: PermissionsSyncJob }> = ({ job }) => {
