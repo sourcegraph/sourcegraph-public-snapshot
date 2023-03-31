@@ -390,77 +390,12 @@ func quoteEnv(env []string) []string {
 	return quotedEnv
 }
 
-// defaultCNIConfig is the CNI config used for our firecracker VMs.
-// TODO: Can we remove the portmap completely?
-const defaultCNIConfig1 = `
-{
-  "cniVersion": "0.4.0",
-  "name": "ignite-cni-bridge",
-  "plugins": [
-    {
-  	  "type": "bridge",
-  	  "bridge": "ignite0",
-  	  "isGateway": true,
-  	  "isDefaultGateway": true,
-  	  "promiscMode": false,
-  	  "ipMasq": true,
-  	  "ipam": {
-  	    "type": "host-local",
-  	    "subnet": %q
-  	  }
-    },
-    {
-  	  "type": "portmap",
-  	  "capabilities": {
-  	    "portMappings": true
-  	  }
-    },
-    {
-  	  "type": "firewall"
-    },
-    {
-  	  "type": "isolation"
-    },
-    {
-  	  "name": "slowdown",
-  	  "type": "bandwidth",
-  	  "ingressRate": %d,
-  	  "ingressBurst": %d,
-  	  "egressRate": %d,
-  	  "egressBurst": %d
-    }
-  ]
-}
-`
-
-// cniConfig generates a config file that configures the CNI explicitly and adds
-// the isolation plugin to the chain.
-// This is used to prevent cross-network communication (which currently doesn't
-// happen as we only have 1 bridge).
-// We also set the maximum bandwidth usable per VM to the configured value to avoid
-// abuse and to make sure multiple VMs on the same host won't starve others.
-func cniConfig1(maxIngressBandwidth, maxEgressBandwidth int) string {
-	return fmt.Sprintf(
-		defaultCNIConfig1,
-		config.CNISubnetCIDR,
-		maxIngressBandwidth,
-		2*maxIngressBandwidth,
-		maxEgressBandwidth,
-		2*maxEgressBandwidth,
-	)
-}
-
-// dockerDaemonConfig is a struct that marshals into a valid docker daemon config.
-type dockerDaemonConfig1 struct {
-	RegistryMirrors []string `json:"registry-mirrors"`
-}
-
 // dockerDaemonConfigFilename is the filename in the firecracker state tmp directory
 // for the optional docker daemon config file.
 const dockerDaemonConfigFilename1 = "docker-daemon.json"
 
 func newDockerDaemonConfig1(tmpDir string, mirrorAddresses []string) (_ string, err error) {
-	c, err := json.Marshal(&dockerDaemonConfig1{RegistryMirrors: mirrorAddresses})
+	c, err := json.Marshal(&dockerDaemonConfig{RegistryMirrors: mirrorAddresses})
 	if err != nil {
 		return "", errors.Wrap(err, "marshalling docker daemon config")
 	}
@@ -522,15 +457,15 @@ func setupFirecracker1(ctx context.Context, runner command.Command, logger comma
 			"ignite", "run",
 			"--runtime", "docker",
 			"--network-plugin", "cni",
-			firecrackerResourceFlags1(options.DockerOptions.Resources),
-			firecrackerCopyfileFlags1(options.VMStartupScriptPath, daemonConfigFile, dockerConfigPath),
-			firecrackerVolumeFlags1(workspaceDevice, "/work"),
+			firecrackerResourceFlags(options.DockerOptions.Resources),
+			firecrackerCopyfileFlags(options.VMStartupScriptPath, daemonConfigFile, dockerConfigPath),
+			firecrackerVolumeFlags(workspaceDevice),
 			"--ssh",
 			"--name", name,
-			"--kernel-image", sanitizeImage1(options.KernelImage),
+			"--kernel-image", sanitizeImage(options.KernelImage),
 			"--kernel-args", config.FirecrackerKernelArgs,
-			"--sandbox-image", sanitizeImage1(options.SandboxImage),
-			sanitizeImage1(options.Image),
+			"--sandbox-image", sanitizeImage(options.SandboxImage),
+			sanitizeImage(options.Image),
 		),
 		Operation: operations.SetupFirecrackerStart,
 	}
@@ -555,53 +490,6 @@ func setupFirecracker1(ctx context.Context, runner command.Command, logger comma
 	}
 
 	return "", nil
-}
-
-func firecrackerResourceFlags1(options command.ResourceOptions) []string {
-	return []string{
-		"--cpus", strconv.Itoa(options.NumCPUs),
-		"--memory", options.Memory,
-		"--size", options.DiskSpace,
-	}
-}
-
-func firecrackerCopyfileFlags1(vmStartupScriptPath, daemonConfigFile, dockerConfigPath string) []string {
-	copyfiles := make([]string, 0, 2)
-	if vmStartupScriptPath != "" {
-		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", vmStartupScriptPath, vmStartupScriptPath))
-	}
-
-	if daemonConfigFile != "" {
-		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", daemonConfigFile, "/etc/docker/daemon.json"))
-	}
-
-	if dockerConfigPath != "" {
-		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", dockerConfigPath, "/etc/docker/cli"))
-	}
-
-	sort.Strings(copyfiles)
-	return intersperse("--copy-files", copyfiles)
-}
-
-func firecrackerVolumeFlags1(workspaceDevice, s string) []string {
-	return []string{"--volumes", fmt.Sprintf("%s:%s", workspaceDevice, s)}
-}
-
-var imagePattern1 = lazyregexp.New(`([^:@]+)(?::([^@]+))?(?:@sha256:([a-z0-9]{64}))?`)
-
-// sanitizeImage sanitizes the given docker image for use by ignite. The ignite utility
-// has some issue parsing docker tags that include a sha256 hash, so we try to remove it
-// from any of the image references before passing it to the ignite command.
-func sanitizeImage1(image string) string {
-	if matches := imagePattern1.FindStringSubmatch(image); len(matches) == 4 {
-		if matches[2] == "" {
-			return matches[1]
-		}
-
-		return fmt.Sprintf("%s:%s", matches[1], matches[2])
-	}
-
-	return image
 }
 
 // --
