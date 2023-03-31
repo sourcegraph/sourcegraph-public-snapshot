@@ -1,7 +1,6 @@
 import * as uuid from 'uuid'
 
 import { version as packageVersion } from '../../package.json'
-// import { LocalStorage } from './LocalStorageProvider'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
 const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
@@ -10,6 +9,7 @@ interface StorageProvider {
     get(key: string): string | null
     set(key: string, value: string): Promise<void>
 }
+
 export class EventLogger {
     private gqlAPIClient: SourcegraphGraphQLAPIClient
     private uid: string | null = null
@@ -40,10 +40,6 @@ export class EventLogger {
     }
 
     /**
-     * Implements {@link TelemetryService}.
-     *
-     * @todo Handle arbitrary action IDs.
-     *
      * @param eventName The ID of the action executed.
      */
     public async log(eventName: string, eventProperties?: any, publicProperties?: any): Promise<void> {
