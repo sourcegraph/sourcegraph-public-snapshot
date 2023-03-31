@@ -1,4 +1,3 @@
-/* eslint-disable react/no-array-index-key */
 /* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
@@ -15,6 +14,8 @@ import { vscodeAPI } from './utils/VSCodeApi'
 
 import './Chat.css'
 
+import { CodeBlocks } from './components/CodeBlocks'
+
 const SCROLL_THRESHOLD = 15
 
 interface ChatboxProps {
@@ -24,6 +25,12 @@ interface ChatboxProps {
     setFormInput: (input: string) => void
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
+}
+
+const escapeHTML = (html: string): string => {
+    const span = document.createElement('span')
+    span.textContent = html
+    return span.innerHTML
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -57,7 +64,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     const onChatSubmit = useCallback(() => {
         // Submit chat only when input is not empty
         if (formInput !== undefined) {
-            vscodeAPI.postMessage({ command: 'submit', text: formInput })
+            vscodeAPI.postMessage({ command: 'submit', text: escapeHTML(formInput) })
             setHistoryIndex(inputHistory.length + 1)
             setInputHistory([...inputHistory, formInput])
             setInputRows(5)
@@ -68,7 +75,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     const onChatKeyDown = useCallback(
         (event: React.KeyboardEvent<HTMLDivElement>): void => {
             // Submit input on Enter press (without shift)
-            if (event.key === 'Enter' && !event.shiftKey && formInput) {
+            // trim the formInput to make sure input value is not empty
+            if (event.key === 'Enter' && !event.shiftKey && formInput.trim()) {
                 event.preventDefault()
                 event.stopPropagation()
                 onChatSubmit()
@@ -119,13 +127,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                                     <div
                                         className={`bubble-content ${bubbleClassName(message.speaker)}-bubble-content`}
                                     >
-                                        {message.displayText && (
-                                            <p
-                                                dangerouslySetInnerHTML={{
-                                                    __html: renderMarkdown(message.displayText),
-                                                }}
-                                            />
-                                        )}
+                                        {message.displayText && <CodeBlocks displayText={message.displayText} />}
                                         {message.contextFiles && message.contextFiles.length > 0 && (
                                             <ContextFiles contextFiles={message.contextFiles} />
                                         )}
