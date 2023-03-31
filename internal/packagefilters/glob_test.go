@@ -25,7 +25,7 @@ func Test_GlobToRegex(t *testing.T) {
 		}
 		output, _ := GlobToRegex(test.glob)
 		if output != test.regex {
-			t.Errorf("unexpected regex output for %q (want=%q,got=%q)", test.glob, test.regex, output)
+			t.Errorf("unexpected regex output for %q (want=%q, got=%q)", test.glob, test.regex, output)
 		}
 
 		if _, err := regexp.Compile(output); err != nil {
