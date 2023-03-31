@@ -105,12 +105,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         switch (message.command) {
             case 'initialized':
                 await this.sendToken()
-                await this.sendTranscript()
-                await this.sendChatHistory()
+                this.sendTranscript()
+                this.sendChatHistory()
                 break
             case 'reset':
-                await this.onResetChat()
-                await this.sendChatHistory()
+                this.onResetChat()
+                this.sendChatHistory()
                 break
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text)
@@ -127,7 +127,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     await updateConfiguration('serverEndpoint', message.serverEndpoint)
                     await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
                 }
-                await this.sendLogin(isValid)
+                this.sendLogin(isValid)
                 break
             }
             case 'removeToken':
@@ -175,12 +175,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         this.cancelCompletionCallback = this.chat.chat(promptMessages, {
             onChange: text => this.onBotMessageChange(reformatBotMessage(text, responsePrefix)),
             onComplete: () => {
-                // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                this.onBotMessageComplete()
+                void this.onBotMessageComplete()
             },
             onError: err => {
-                // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                vscode.window.showErrorMessage(err)
+                void vscode.window.showErrorMessage(err)
             },
         })
     }
@@ -190,12 +188,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         this.cancelCompletionCallback = null
     }
 
-    private async onResetChat(): Promise<void> {
+    private onResetChat(): void {
         this.createNewChatID()
         this.cancelCompletion()
         this.isMessageInProgress = false
         this.transcript.reset()
-        await this.sendTranscript()
+        this.sendTranscript()
     }
 
     private async onHumanMessageSubmitted(text: string): Promise<void> {
@@ -226,46 +224,47 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         this.isMessageInProgress = true
         this.transcript.addInteraction(interaction)
 
-        await this.showTab('chat')
-        await this.sendTranscript()
+        this.showTab('chat')
+        this.sendTranscript()
 
         const prompt = await this.transcript.toPrompt(getPreamble(this.codebase))
         this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
     }
 
-    private async onBotMessageChange(text: string): Promise<void> {
+    private onBotMessageChange(text: string): void {
         this.transcript.addAssistantResponse(text)
-        await this.sendTranscript()
+        this.sendTranscript()
     }
 
     private async onBotMessageComplete(): Promise<void> {
         this.isMessageInProgress = false
         this.cancelCompletionCallback = null
-        await this.sendTranscript()
+        this.sendTranscript()
         await this.saveChatHistory()
     }
 
-    private async showTab(tab: string): Promise<void> {
-        await vscode.commands.executeCommand('cody.chat.focus')
-        await this.webview?.postMessage({ type: 'showTab', tab })
+    private showTab(tab: string): void {
+        void vscode.commands.executeCommand('cody.chat.focus')
+        void this.webview?.postMessage({ type: 'showTab', tab })
     }
 
-    private async sendTranscript(): Promise<void> {
-        await this.webview?.postMessage({
+    private sendTranscript(): void {
+        void this.webview?.postMessage({
             type: 'transcript',
             messages: this.transcript.toChat(),
             isMessageInProgress: this.isMessageInProgress,
         })
     }
 
-    private async sendLogin(isValid: boolean): Promise<void> {
-        await this.webview?.postMessage({ type: 'login', isValid })
+    private sendLogin(isValid: boolean): void {
+        void this.webview?.postMessage({ type: 'login', isValid })
     }
+
     /**
      * Sends access token to webview
      */
     private async sendToken(): Promise<void> {
-        await this.webview?.postMessage({
+        void this.webview?.postMessage({
             type: 'token',
             value: await getAccessToken(this.secretStorage),
             mode: this.mode,
@@ -287,13 +286,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     /**
      * Sends chat history to webview
      */
-    private async sendChatHistory(): Promise<void> {
+    private sendChatHistory(): void {
         const localHistory = this.localStorage.getChatHistory()
         if (localHistory) {
             this.chatHistory = localHistory.chat
             this.inputHistory = localHistory.input
         }
-        await this.webview?.postMessage({
+        void this.webview?.postMessage({
             type: 'history',
             messages: localHistory,
         })
@@ -318,7 +317,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             localResourceRoots: [webviewPath],
         }
 
-        //   Create Webview
+        // Create Webview
         const root = vscode.Uri.joinPath(webviewPath, 'index.html')
         const bytes = await vscode.workspace.fs.readFile(root)
         const decoded = new TextDecoder('utf-8').decode(bytes)

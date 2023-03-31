@@ -67,9 +67,10 @@ Follow the steps below to package and publish the VS Code extension.
    $ code --install-extension dist/cody.vsix
    ```
 
-3. To publish the packaged extension to the VS Code Extension Marketplace:
+3. To publish the packaged extension to the VS Code Extension Marketplace and Open VSX Registry:
 
    ```sh
    $ cd client/cody
    $ pnpm run vsce:publish
+   $ pnpm run ovsx:publish
    ```
