@@ -28,7 +28,7 @@ func (u *User) ToResource() scim.Resource {
 		first, middle, last := displayNameToPieces(u.DisplayName)
 		// Failed to convert account data to SCIM resource attributes. Fall back to core user data.
 		attributes = scim.ResourceAttributes{
-			AttrActive:      true,
+			AttrActive:      u.Active,
 			AttrUserName:    u.Username,
 			AttrDisplayName: u.DisplayName,
 			AttrName: map[string]interface{}{

@@ -27,12 +27,13 @@ func (u *userEntityUpdate) Update(ctx context.Context, before, after *scim.Resou
 	}
 	err := u.db.WithTransact(ctx, func(tx database.DB) error {
 		// build the list of actions
-		// The order is important as some actions may make the user not visible to future actions
+		// The order is important as some actions may make the user (not) visible to future actions
 		actions := []updateAction{
+			&activateUser{userID: u.user.ID, tx: tx}, // This is intentionally first so that user record to ready for other attribute changes
 			&updateUserProfileData{userID: u.user.ID, userName: u.user.Username, tx: tx},
 			&updateUserEmailData{userID: u.user.ID, tx: tx, db: u.db},
 			&updateUserExternalAccountData{userID: u.user.ID, tx: tx},
-			&hardDeleteInactiveUser{user: u.user, tx: tx}, // This is intentionally last this supports user deactivation but we still capture all other updates present
+			&softDeleteUser{user: u.user, tx: tx}, // This is intentionally last so that other attribute changes are captured
 		}
 
 		// run each action and quit if one fails
@@ -198,5 +199,48 @@ func (u *hardDeleteInactiveUser) Update(ctx context.Context, before, after *scim
 	if err != nil {
 		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not update").Error()}
 	}
+	return nil
+}
+
+// Action to soft delete the user when SCIM changes the active flag to "false"
+type softDeleteUser struct {
+	user *User
+	tx   database.DB
+}
+
+func (u *softDeleteUser) Update(ctx context.Context, before, after *scim.Resource) error {
+	// Check if user active went from true -> false
+	if !(before.Attributes[AttrActive] == true && after.Attributes[AttrActive] == false) {
+		return nil
+	}
+
+	if err := u.tx.Users().Delete(ctx, u.user.ID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Action to reactivate the user when SCIM changes the active flag to "true"
+type activateUser struct {
+	userID int32
+	tx     database.DB
+}
+
+func (u *activateUser) Update(ctx context.Context, before, after *scim.Resource) error {
+	// Check moved from active false -> true
+	if !(before.Attributes[AttrActive] == false && after.Attributes[AttrActive] == true) {
+		return nil
+	}
+
+	recoveredIDs, err := u.tx.Users().RecoverUsersList(ctx, []int32{u.userID})
+	if err != nil {
+		return err
+	}
+
+	if len(recoveredIDs) != 1 {
+		return errors.New("unable to activate user")
+	}
+
 	return nil
 }

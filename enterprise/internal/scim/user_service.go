@@ -367,7 +367,7 @@ func getAllUsersFromDB(ctx context.Context, store database.UserStore, startIndex
 	if count == nil {
 		totalCount = len(users)
 	} else {
-		totalCount, err = store.Count(ctx, &database.UsersListOptions{})
+		totalCount, err = store.CountForSCIM(ctx, &database.UsersListOptions{})
 	}
 
 	return
