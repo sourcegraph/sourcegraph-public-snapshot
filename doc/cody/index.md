@@ -68,7 +68,7 @@ Now that Cody is turned on on your Sourcegraph instance, any user can configure 
 1. If you currently have a previous version of Cody installed, uninstall it and reload VS Code before proceeding to the next steps.
 1. Search for “Sourcegraph Cody” in your VS Code extension marketplace, and install it.
 
-<img width="500" alt="image" src="https://user-images.githubusercontent.com/25070988/227508342-cc6f29c0-ed91-4381-b651-16870c7c676b.png">
+<img width="500" alt="Sourcegraph Cody in VS Code Marketplace" src="https://user-images.githubusercontent.com/55068936/228114612-65402e1c-7501-44cb-a846-46c4376b9572.png">
 
 3. Reload VS Code, and open the Cody extension. Review and accept the terms.
 
