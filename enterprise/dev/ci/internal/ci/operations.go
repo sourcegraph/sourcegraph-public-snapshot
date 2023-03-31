@@ -653,6 +653,18 @@ func addVsceReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("pnpm --filter @sourcegraph/vscode run release"))
 }
 
+// Release the Cody extension.
+func addCodyReleaseSteps(pipeline *bk.Pipeline) {
+	// Publish extension to the VS Code Marketplace
+	pipeline.AddStep(":vscode: Extension release",
+		withPnpmCache(),
+		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
+		bk.Cmd("pnpm generate"),
+		bk.Cmd("pnpm --filter @sourcegraph/vscode run vsce:package"),
+		bk.Cmd("pnpm --filter @sourcegraph/vscode run vsce:release"),
+		bk.Cmd("pnpm --filter @sourcegraph/vscode run ovsx:release"))
+}
+
 // Release a snapshot of App.
 func addAppReleaseSteps(c Config, insiders bool) operations.Operation {
 	// The version scheme we use for App is one of:

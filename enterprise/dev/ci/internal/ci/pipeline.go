@@ -189,6 +189,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			wait,
 			addVsceReleaseSteps)
 
+	case runtype.CodyReleaseBranch:
+		// If this is the Cody VS Code extension release branch, run the Cody tests and release
+		ops = operations.NewSet(
+			addClientLintersForAllFiles,
+			addCodyExtensionTests,
+			wait,
+			addVsceReleaseSteps)
+
 	case runtype.BextNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
