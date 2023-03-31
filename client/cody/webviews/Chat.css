@@ -56,8 +56,8 @@
 }
 
 .bubble-content pre,
-.bubble-content span>code,
-.bubble-content p>code {
+.bubble-content span > code,
+.bubble-content p > code {
     /* Our syntax highlighter emits colors intended for dark backgrounds only. */
     background-color: var(--code-background);
 }
@@ -133,19 +133,10 @@
     margin: 1rem;
     align-items: flex-start;
     position: relative;
-    border-top: 1px solid var(--vscode-sideBarSectionHeader-border);
 }
 
 .chat-input {
-    height: 10%;
     flex: 1;
-    resize: none;
-    color: var(--vscode-input-foreground);
-    border-radius: 14px;
-    box-sizing: border-box;
-    border: 1px solid var(--vscode-input-border);
-    min-height: 10%;
-    max-height: 30%;
 }
 
 .submit-button {
@@ -153,12 +144,6 @@
     bottom: 0;
     right: 0;
     position: absolute;
-}
-
-.chat-input {
-    outline: none;
-    color: var(--vscode-input-foreground);
-    background-color: var(--vscode-input-background);
 }
 
 .context-files-collapsed {
@@ -175,7 +160,7 @@
     margin-right: 0.5em;
 }
 
-.context-files-toggle-icon>i {
+.context-files-toggle-icon > i {
     font-size: cal(var(--vscode-editor-font-size) * 0.5) !important;
 }
 

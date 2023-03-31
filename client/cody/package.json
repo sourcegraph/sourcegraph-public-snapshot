@@ -38,8 +38,8 @@
     "vscode:prepublish": "scripts/check-rg.sh",
     "vsce:package": "pnpm --silent build && vsce package --no-dependencies -o dist/cody.vsix",
     "vsce:prerelease": "pnpm --silent build && vsce package patch --pre-release --no-dependencies -o dist/cody.vsix",
-    "vsce:publish": "vsce publish --packagePath dist/cody.vsix",
-    "ovsx:publish": "npx ovsx publish dist/cody.vsix",
+    "prerelease": "pnpm run vsce:package",
+    "release": "ts-node ./scripts/release.ts",
     "watch": "concurrently \"pnpm watch:esbuild\" \"pnpm watch:webview\"",
     "watch:esbuild": "pnpm esbuild --sourcemap --watch",
     "watch:webview": "vite build --mode development --watch"
