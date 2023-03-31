@@ -88,7 +88,6 @@ go_test(
         "//internal/executor",
         "//internal/gitserver/gitdomain",
         "//internal/observation",
-        "//internal/timeutil",
         "//lib/codeintel/precise",
         "//lib/errors",
         "//schema",
