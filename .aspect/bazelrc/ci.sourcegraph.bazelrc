@@ -29,3 +29,4 @@ build --test_env=TESTDB_MAXOPENCONNS=15
 build --test_env=BUILDKITE
 build --test_env=E2E_HEADLESS=false
 build --test_env=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080"
+build --test_env=GH_TOKEN
