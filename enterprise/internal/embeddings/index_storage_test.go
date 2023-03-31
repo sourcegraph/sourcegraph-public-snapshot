@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"reflect"
 	"testing"
 	"time"
 
@@ -15,6 +16,49 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+type noOpUploadStore struct{}
+
+func newNoOpUploadStore() uploadstore.Store {
+	return &noOpUploadStore{}
+}
+
+func (s *noOpUploadStore) Init(ctx context.Context) error {
+	return nil
+}
+
+func (s *noOpUploadStore) Get(ctx context.Context, key string) (io.ReadCloser, error) {
+	return nil, nil
+}
+
+func (s *noOpUploadStore) Upload(ctx context.Context, key string, r io.Reader) (int64, error) {
+	p := make([]byte, 1024)
+	totalRead := 0
+	for {
+		n, err := r.Read(p)
+		if err == io.EOF {
+			break
+		}
+		totalRead += n
+		if err != nil {
+			return int64(totalRead), err
+		}
+	}
+
+	return int64(totalRead), nil
+}
+
+func (s *noOpUploadStore) Compose(ctx context.Context, destination string, sources ...string) (int64, error) {
+	return 0, nil
+}
+
+func (s *noOpUploadStore) Delete(ctx context.Context, key string) error {
+	return nil
+}
+
+func (s *noOpUploadStore) ExpireObjects(ctx context.Context, prefix string, maxAge time.Duration) error {
+	return nil
+}
 
 type mockUploadStore struct {
 	files map[string][]byte
@@ -128,6 +172,37 @@ func BenchmarkEmbeddingIndexStorage(b *testing.B) {
 		_, err := DownloadIndex[RepoEmbeddingIndex](ctx, uploadStore, "index")
 		if err != nil {
 			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkRepoEmbeddingIndexStorage(b *testing.B) {
+	// Roughly the size of the sourcegraph/sourcegraph index.
+	index := &RepoEmbeddingIndex{
+		RepoName:  api.RepoName("repo"),
+		Revision:  api.CommitID("commit"),
+		CodeIndex: getMockEmbeddingIndex(40_000, 1536),
+		TextIndex: getMockEmbeddingIndex(10_000, 1536),
+	}
+
+	ctx := context.Background()
+	uploadStore := newMockUploadStore()
+
+	err := UploadRepoEmbeddingIndex(ctx, uploadStore, "index", index)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		dlIndex, err := DownloadRepoEmbeddingIndex(ctx, uploadStore, "index")
+		if err != nil {
+			b.Fatal(err)
+		}
+
+		if !reflect.DeepEqual(index, dlIndex) {
+			b.Fatal("indexes not equal")
 		}
 	}
 }
