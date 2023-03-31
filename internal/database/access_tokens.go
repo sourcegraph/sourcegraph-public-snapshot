@@ -443,8 +443,8 @@ func (s *accessTokenStore) delete(ctx context.Context, cond *sqlf.Query) error {
 	return nil
 }
 
-// tokenSHA256Hash returns the SHA-256 hash of its hex-encoded value (after stripping the "sgp_"
-// token prefix, if present).
+// tokenSHA256Hash returns the 32-byte long SHA-256 hash of its hex-encoded value
+// (after stripping the "sgp_" token prefix, if present).
 func tokenSHA256Hash(token string) ([]byte, error) {
 	token = strings.TrimPrefix(token, personalAccessTokenPrefix)
 	value, err := hex.DecodeString(token)

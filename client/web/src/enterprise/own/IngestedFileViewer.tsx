@@ -10,6 +10,19 @@ import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 
 import { selectableLineNumbers } from '../../repo/blob/codemirror/linenumbers'
 
+const theme = EditorView.theme({
+    '.selected-line, .cm-line.selected-line': {
+        backgroundColor: 'var(--code-selection-bg)',
+    },
+    '.cm-lineNumbers .cm-gutterElement:hover': {
+        textDecoration: 'none',
+        cursor: 'auto',
+    },
+    '.cm-scroller': {
+        borderRadius: 'var(--border-radius)',
+    },
+})
+
 export const IngestedFileViewer: React.FunctionComponent<{ contents: string }> = ({ contents }) => {
     const isLightTheme = useIsLightTheme()
 
@@ -24,18 +37,7 @@ export const IngestedFileViewer: React.FunctionComponent<{ contents: string }> =
         () => [
             EditorView.darkTheme.of(isLightTheme === false),
             EditorState.readOnly.of(true),
-            EditorView.theme({
-                '.selected-line, .cm-line.selected-line': {
-                    backgroundColor: 'var(--code-selection-bg)',
-                },
-                '.cm-lineNumbers .cm-gutterElement:hover': {
-                    textDecoration: 'none',
-                    cursor: 'auto',
-                },
-                '.cm-scroller': {
-                    borderRadius: 'var(--border-radius)',
-                },
-            }),
+            theme,
             selectableLineNumbers({
                 onSelection: () => {},
                 initialSelection: lineNumber ? { line: lineNumber } : null,

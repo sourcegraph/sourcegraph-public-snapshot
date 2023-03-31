@@ -376,31 +376,6 @@ type Mutation {
     """
     removeUserFromOrganization(user: ID!, organization: ID!): EmptyResponse
     """
-    Adds or removes a tag on a user.
-
-    Tags are used internally by Sourcegraph as feature flags for experimental features.
-
-    Only site admins may perform this mutation.
-    """
-    setTag(
-        """
-        The ID of the user whose tags to set.
-
-        (This parameter is named "node" to make it easy to support tagging other types of nodes
-        other than users in the future.)
-        """
-        node: ID!
-        """
-        The tag to set.
-        """
-        tag: String!
-        """
-        The desired state of the tag on the user (whether to add or remove): true to add, false to
-        remove.
-        """
-        present: Boolean!
-    ): EmptyResponse!
-    """
     Adds a Phabricator repository to Sourcegraph.
     """
     addPhabricatorRepo(
@@ -1030,6 +1005,7 @@ enum EventSource {
     BACKEND
     STATICWEB
     IDEEXTENSION
+    CODY
 }
 
 """
@@ -1578,10 +1554,6 @@ type Query {
         Return users whose usernames or display names match the query.
         """
         query: String
-        """
-        Return only users with the given tag.
-        """
-        tag: String
         """
         Returns users who have been active in a given period of time.
         """
@@ -6024,11 +5996,6 @@ type User implements Node & SettingsSubject & Namespace {
     This user's organization memberships.
     """
     organizationMemberships: OrganizationMembershipConnection!
-    """
-    Tags associated with the user. These are used for internal site management and feature selection.
-    Only the user and site admins can access this field.
-    """
-    tags: [String!]!
     """
     Whether the user has already accepted the terms of service or not.
     """

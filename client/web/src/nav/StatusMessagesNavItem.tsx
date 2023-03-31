@@ -103,7 +103,7 @@ function entryIcon(entryType: EntryType): JSX.Element {
             return (
                 <Icon
                     {...sharedProps}
-                    className={classNames('text-info', styles.icon)}
+                    className={classNames('text-primary', styles.icon)}
                     svgPath={mdiInformationOutline}
                     aria-label="Information"
                 />

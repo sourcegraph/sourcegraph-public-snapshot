@@ -42,6 +42,12 @@ function addOrReplace(decorations: DecorationItem[], item: DecorationItem): Deco
     return decorations
 }
 
+const theme = EditorView.theme({
+    '.cm-token-selection-definition-ready': {
+        textDecoration: 'underline',
+    },
+})
+
 /**
  * Returns `true` if the editor selection is empty or is inside the occurrence range.
  */
@@ -145,10 +151,6 @@ export function interactiveOccurrencesExtension(): Extension {
                 return Decoration.set(sortByFromPosition(ranges))
             }
         ),
-        EditorView.theme({
-            '.cm-token-selection-definition-ready': {
-                textDecoration: 'underline',
-            },
-        }),
+        theme,
     ]
 }

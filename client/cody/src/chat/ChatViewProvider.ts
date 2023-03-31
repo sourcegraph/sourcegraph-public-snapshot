@@ -1,7 +1,9 @@
+import path from 'path'
+
 import * as vscode from 'vscode'
 
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
+import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
@@ -42,6 +44,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
     constructor(
         private extensionPath: string,
+        private codebase: string,
         private transcript: Transcript,
         private chat: ChatClient,
         private intentDetector: IntentDetector,
@@ -84,6 +87,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         )
         return new ChatViewProvider(
             extensionPath,
+            codebase,
             new Transcript(),
             chatClient,
             intentDetector,
@@ -135,6 +139,22 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             case 'links':
                 await vscode.env.openExternal(vscode.Uri.parse(message.value))
                 break
+            case 'openFile': {
+                const rootPath = this.editor.getWorkspaceRootPath()
+                if (rootPath !== null) {
+                    const uri = vscode.Uri.file(path.join(rootPath, message.filePath))
+                    // This opens the file in the active column.
+                    try {
+                        const doc = await vscode.workspace.openTextDocument(uri)
+                        await vscode.window.showTextDocument(doc)
+                    } catch (error) {
+                        console.error(`Could not open file: ${error}`)
+                    }
+                } else {
+                    console.error('Could not open file because rootPath is null')
+                }
+                break
+            }
             default:
                 console.error('Invalid request type from Webview')
         }
@@ -209,12 +229,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         await this.showTab('chat')
         await this.sendTranscript()
 
-        const prompt = await this.transcript.toPrompt()
+        const prompt = await this.transcript.toPrompt(getPreamble(this.codebase))
         this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
     }
 
     private async onBotMessageChange(text: string): Promise<void> {
-        this.transcript.addAssistantResponse(text, renderMarkdown(text))
+        this.transcript.addAssistantResponse(text)
         await this.sendTranscript()
     }
 
@@ -290,7 +310,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     ): Promise<void> {
         this.webview = webviewView.webview
 
-        const extensionPath = vscode.Uri.parse(this.extensionPath)
+        const extensionPath = vscode.Uri.file(this.extensionPath)
         const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist')
 
         webviewView.webview.options = {
@@ -334,6 +354,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     this.mode
                 )
 
+                this.codebase = codebase
                 this.intentDetector = intentDetector
                 this.codebaseContext = codebaseContext
                 this.chat = chatClient

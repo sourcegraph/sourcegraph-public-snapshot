@@ -2,7 +2,10 @@ package embed
 
 import (
 	"path/filepath"
+
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 )
 
 const MIN_EMBEDDABLE_FILE_SIZE = 32
@@ -17,30 +20,47 @@ var textFileExtensions = map[string]struct{}{
 	"txt":      {},
 }
 
-var excludedCodeFileExtensions = map[string]struct{}{
-	"sql":  {},
-	"svg":  {},
-	"json": {},
-	"yml":  {},
-	"yaml": {},
+var defaultExcludedFilePathPatterns = []string{
+	"*.sql",
+	"*.svg",
+	"*.json",
+	"*.yml",
+	"*.yaml",
+	"__fixtures__/",
+	"node_modules/",
+	"testdata/",
+	"mocks/",
+	"vendor/",
 }
 
-var excludedFilePaths = []string{
-	"/__fixtures__",
-	"/testdata",
-	"/mocks",
-	"/vendor",
+func GetDefaultExcludedFilePathPatterns() []*paths.GlobPattern {
+	return CompileGlobPatterns(defaultExcludedFilePathPatterns)
 }
 
-func isEmbeddableFile(fileName string, content string) bool {
+func CompileGlobPatterns(patterns []string) []*paths.GlobPattern {
+	globPatterns := make([]*paths.GlobPattern, 0, len(patterns))
+	for _, pattern := range patterns {
+		globPattern, err := paths.Compile(pattern)
+		if err != nil {
+			continue
+		}
+		globPatterns = append(globPatterns, globPattern)
+	}
+	return globPatterns
+}
+
+func isExcludedFilePath(filePath string, excludedFilePathPatterns []*paths.GlobPattern) bool {
+	for _, excludedFilePathPattern := range excludedFilePathPatterns {
+		if excludedFilePathPattern.Match(filePath) {
+			return true
+		}
+	}
+	return false
+}
+
+func isEmbeddableFileContent(content string) bool {
 	if len(strings.TrimSpace(content)) < MIN_EMBEDDABLE_FILE_SIZE {
 		return false
-	}
-
-	for _, excludedFilePath := range excludedFilePaths {
-		if strings.Contains(fileName, excludedFilePath) {
-			return false
-		}
 	}
 
 	lines := strings.Split(content, "\n")
@@ -69,17 +89,6 @@ func isValidTextFile(fileName string) bool {
 	}
 	basename := strings.ToLower(filepath.Base(fileName))
 	return strings.HasPrefix(basename, "license")
-}
-
-func isValidCodeFile(fileName string) bool {
-	basename := strings.ToLower(filepath.Base(fileName))
-	if strings.HasPrefix(basename, "dockerfile") {
-		return true
-	}
-
-	ext := strings.TrimPrefix(filepath.Ext(fileName), ".")
-	_, ok := excludedCodeFileExtensions[strings.ToLower(ext)]
-	return !ok
 }
 
 func min(a, b int) int {

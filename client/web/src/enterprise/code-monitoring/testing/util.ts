@@ -12,7 +12,6 @@ export const mockUser: AuthenticatedUser = {
     username: 'username',
     siteAdmin: true,
     databaseID: 0,
-    tags: [],
     url: '',
     avatarURL: '',
     displayName: 'display name',

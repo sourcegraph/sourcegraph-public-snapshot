@@ -60,7 +60,6 @@ func main() {
 	flag.StringVar(&historyFlags.resultsCsvPath, "csv", "", "path for CSV results exports")
 	flag.StringVar(&historyFlags.honeycombDataset, "honeycomb.dataset", "", "honeycomb dataset to publish to")
 	flag.StringVar(&historyFlags.honeycombToken, "honeycomb.token", "", "honeycomb API token")
-	flag.StringVar(&historyFlags.okayHQToken, "okayhq.token", "", "okayhq API token")
 	flag.StringVar(&historyFlags.slackReportWebHook, "slack.report-webhook", "", "Slack Webhook URL to post weekly report on ")
 
 	flags.Parse()
@@ -298,9 +297,6 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 	}
 	if historyFlags.honeycombDataset != "" {
 		reporters = append(reporters, reportToHoneycomb)
-	}
-	if historyFlags.okayHQToken != "" {
-		reporters = append(reporters, reportToOkayHQ)
 	}
 	if historyFlags.slackReportWebHook != "" {
 		reporters = append(reporters, reportToSlack)

@@ -7,10 +7,12 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/log"
+	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -101,10 +103,7 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		}
 	}
 
-	userIDs := make(map[int32]struct{}, len(mapping))
-	for _, id := range mapping {
-		userIDs[id] = struct{}{}
-	}
+	userIDs := collections.NewSet(maps.Values(mapping)...)
 
 	p := &authz.RepoPermissions{
 		RepoID:  int32(repoID),
@@ -133,8 +132,6 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 
 	if _, err = txs.SetRepoPerms(ctx, p.RepoID, perms, authz.SourceAPI); err != nil {
 		return nil, errors.Wrap(err, "set user repo permissions")
-	} else if _, err = txs.SetRepoPermissions(ctx, p); err != nil {
-		return nil, errors.Wrap(err, "set repository permissions")
 	} else if err = txs.SetRepoPendingPermissions(ctx, accounts, p); err != nil {
 		return nil, errors.Wrap(err, "set repository pending permissions")
 	}

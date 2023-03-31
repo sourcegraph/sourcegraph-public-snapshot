@@ -132,7 +132,7 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
-// FeedbackSubmissionInput contains a happiness feedback response.
+// HappinessFeedbackSubmissionInput contains a happiness feedback response.
 type HappinessFeedbackSubmissionInput struct {
 	// Score is the user's happiness rating, from 1-4.
 	Score int32

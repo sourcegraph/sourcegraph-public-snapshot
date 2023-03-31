@@ -19,7 +19,7 @@ import (
 type rootResolver struct {
 	sentinelSvc             SentinelService
 	uploadSvc               uploadsgraphql.UploadsService
-	policySvc               sharedresolvers.PolicyService
+	policySvc               uploadsgraphql.PolicyService
 	gitserverClient         gitserver.Client
 	siteAdminChecker        sharedresolvers.SiteAdminChecker
 	repoStore               database.RepoStore
@@ -33,7 +33,7 @@ func NewRootResolver(
 	observationCtx *observation.Context,
 	sentinelSvc SentinelService,
 	uploadSvc uploadsgraphql.UploadsService,
-	policySvc sharedresolvers.PolicyService,
+	policySvc uploadsgraphql.PolicyService,
 	gitserverClient gitserver.Client,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
@@ -360,7 +360,7 @@ func (l *bulkLoader) GetVulnerabilityByID(ctx context.Context, id int) (shared.V
 type vulnerabilityMatchResolver struct {
 	sentinelSvc      SentinelService
 	uploadsSvc       uploadsgraphql.UploadsService
-	policySvc        sharedresolvers.PolicyService
+	policySvc        uploadsgraphql.PolicyService
 	gitserverClient  gitserver.Client
 	siteAdminChecker sharedresolvers.SiteAdminChecker
 	repoStore        database.RepoStore

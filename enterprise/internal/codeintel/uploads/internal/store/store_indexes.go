@@ -2,14 +2,17 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
+	autoindexingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -18,6 +21,79 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
+
+// DeleteIndexesWithoutRepository deletes indexes associated with repositories that were deleted at least
+// DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of indexes
+// that were removed for that repository.
+func (s *store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (totalCount int, deletedCount int, err error) {
+	ctx, trace, endObservation := s.operations.deleteIndexesWithoutRepository.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.db.Transact(ctx)
+	if err != nil {
+		return 0, 0, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
+	// a similar one on this index, but only for uploads that are completed or visible at tip.
+	totalCount, repositories, err := scanCountsAndTotalCount(tx.Query(ctx, sqlf.Sprintf(deleteIndexesWithoutRepositoryQuery, now.UTC(), DeletedRepositoryGracePeriod/time.Second)))
+	if err != nil {
+		return 0, 0, err
+	}
+
+	count := 0
+	for _, numDeleted := range repositories {
+		count += numDeleted
+	}
+	trace.AddEvent("scanCounts",
+		attribute.Int("count", count),
+		attribute.Int("numRepositories", len(repositories)))
+
+	return totalCount, count, nil
+}
+
+const deleteIndexesWithoutRepositoryQuery = `
+WITH
+candidates AS (
+	SELECT u.id
+	FROM repo r
+	JOIN lsif_indexes u ON u.repository_id = r.id
+	WHERE
+		%s - r.deleted_at >= %s * interval '1 second' OR
+		r.blocked IS NOT NULL
+
+	-- Lock these rows in a deterministic order so that we don't
+	-- deadlock with other processes updating the lsif_indexes table.
+	ORDER BY u.id FOR UPDATE
+),
+deleted AS (
+	DELETE FROM lsif_indexes u
+	WHERE id IN (SELECT id FROM candidates)
+	RETURNING u.id, u.repository_id
+)
+SELECT (SELECT COUNT(*) FROM candidates), d.repository_id, COUNT(*) FROM deleted d GROUP BY d.repository_id
+`
+
+func scanCountsAndTotalCount(rows *sql.Rows, queryErr error) (totalCount int, _ map[int]int, err error) {
+	if queryErr != nil {
+		return 0, nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	visibilities := map[int]int{}
+	for rows.Next() {
+		var id int
+		var count int
+		if err := rows.Scan(&totalCount, &id, &count); err != nil {
+			return 0, nil, err
+		}
+
+		visibilities[id] = count
+	}
+
+	return totalCount, visibilities, nil
+}
 
 // GetIndexes returns a list of indexes and the total count of records matching the given conditions.
 func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []types.Index, _ int, err error) {
@@ -332,20 +408,6 @@ func (s *store) GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool
 	return scanFirstIndex(s.db.Query(ctx, sqlf.Sprintf(getIndexByIDQuery, id, authzConds)))
 }
 
-const indexAssociatedUploadIDQueryFragment = `
-(
-	SELECT MAX(id) FROM lsif_uploads WHERE associated_index_id = u.id
-) AS associated_upload_id
-`
-
-const indexRankQueryFragment = `
-SELECT
-	r.id,
-	ROW_NUMBER() OVER (ORDER BY COALESCE(r.process_after, r.queued_at), r.id) as rank
-FROM lsif_indexes_with_repository_name r
-WHERE r.state = 'queued'
-`
-
 const getIndexByIDQuery = `
 SELECT
 	u.id,
@@ -519,3 +581,138 @@ func scanIndex(s dbutil.Scanner) (index types.Index, err error) {
 
 	return index, nil
 }
+
+// GetRecentIndexesSummary returns the set of "interesting" indexes for the repository with the given identifier.
+// The return value is a list of indexes grouped by root and indexer. In each group, the set of indexes should
+// include the set of unprocessed records as well as the latest finished record. These values allow users to
+// quickly determine if a particular root/indexer pair os up-to-date or having issues processing.
+func (s *store) GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []autoindexingshared.IndexesWithRepositoryNamespace, err error) {
+	ctx, logger, endObservation := s.operations.getRecentIndexesSummary.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	indexes, err := scanIndexes(s.db.Query(ctx, sqlf.Sprintf(recentIndexesSummaryQuery, repositoryID, repositoryID)))
+	if err != nil {
+		return nil, err
+	}
+	logger.AddEvent("scanIndexes", attribute.Int("numIndexes", len(indexes)))
+
+	groupedIndexes := make([]autoindexingshared.IndexesWithRepositoryNamespace, 1, len(indexes)+1)
+	for _, index := range indexes {
+		if last := groupedIndexes[len(groupedIndexes)-1]; last.Root != index.Root || last.Indexer != index.Indexer {
+			groupedIndexes = append(groupedIndexes, autoindexingshared.IndexesWithRepositoryNamespace{
+				Root:    index.Root,
+				Indexer: index.Indexer,
+			})
+		}
+
+		n := len(groupedIndexes)
+		groupedIndexes[n-1].Indexes = append(groupedIndexes[n-1].Indexes, index)
+	}
+
+	return groupedIndexes[1:], nil
+}
+
+const sanitizedIndexerExpression = `
+(
+    split_part(
+        split_part(
+            CASE
+                -- Strip sourcegraph/ prefix if it exists
+                WHEN strpos(indexer, 'sourcegraph/') = 1 THEN substr(indexer, length('sourcegraph/') + 1)
+                ELSE indexer
+            END,
+        '@', 1), -- strip off @sha256:...
+    ':', 1) -- strip off tag
+)
+`
+
+const indexAssociatedUploadIDQueryFragment = `
+(
+	SELECT MAX(id) FROM lsif_uploads WHERE associated_index_id = u.id
+) AS associated_upload_id
+`
+
+const indexRankQueryFragment = `
+SELECT
+	r.id,
+	ROW_NUMBER() OVER (ORDER BY COALESCE(r.process_after, r.queued_at), r.id) as rank
+FROM lsif_indexes_with_repository_name r
+WHERE r.state = 'queued'
+`
+
+const recentIndexesSummaryQuery = `
+WITH ranked_completed AS (
+	SELECT
+		u.id,
+		u.root,
+		u.indexer,
+		u.finished_at,
+		RANK() OVER (PARTITION BY root, ` + sanitizedIndexerExpression + ` ORDER BY finished_at DESC) AS rank
+	FROM lsif_indexes u
+	WHERE
+		u.repository_id = %s AND
+		u.state NOT IN ('queued', 'processing', 'deleted')
+),
+latest_indexes AS (
+	SELECT u.id, u.root, u.indexer, u.queued_at
+	FROM lsif_indexes u
+	WHERE
+		u.id IN (
+			SELECT rc.id
+			FROM ranked_completed rc
+			WHERE rc.rank = 1
+		)
+	ORDER BY u.root, u.indexer
+),
+new_indexes AS (
+	SELECT u.id
+	FROM lsif_indexes u
+	WHERE
+		u.repository_id = %s AND
+		u.state IN ('queued', 'processing') AND
+		u.queued_at >= (
+			SELECT lu.queued_at
+			FROM latest_indexes lu
+			WHERE
+				lu.root = u.root AND
+				lu.indexer = u.indexer
+			-- condition passes when latest_indexes is empty
+			UNION SELECT u.queued_at LIMIT 1
+		)
+)
+SELECT
+	u.id,
+	u.commit,
+	u.queued_at,
+	u.state,
+	u.failure_message,
+	u.started_at,
+	u.finished_at,
+	u.process_after,
+	u.num_resets,
+	u.num_failures,
+	u.repository_id,
+	u.repository_name,
+	u.docker_steps,
+	u.root,
+	u.indexer,
+	u.indexer_args,
+	u.outfile,
+	u.execution_logs,
+	s.rank,
+	u.local_steps,
+	` + indexAssociatedUploadIDQueryFragment + `,
+	u.should_reindex,
+	u.requested_envvars
+FROM lsif_indexes_with_repository_name u
+LEFT JOIN (` + indexRankQueryFragment + `) s
+ON u.id = s.id
+WHERE u.id IN (
+	SELECT lu.id FROM latest_indexes lu
+	UNION
+	SELECT nu.id FROM new_indexes nu
+)
+ORDER BY u.root, u.indexer
+`

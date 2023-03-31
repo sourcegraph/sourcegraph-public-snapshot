@@ -18,7 +18,7 @@ func TestInsertDependencySyncingJob(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	uploadID := 42
-	insertRepo(t, db, 50, "")
+	insertRepo(t, db, 50, "", false)
 	insertUploads(t, db, types.Upload{
 		ID:            uploadID,
 		Commit:        makeCommit(1),

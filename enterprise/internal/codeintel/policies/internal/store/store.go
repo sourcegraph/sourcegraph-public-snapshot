@@ -15,19 +15,19 @@ import (
 // Store provides the interface for policies storage.
 type Store interface {
 	// Configurations
-	GetConfigurationPolicies(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) (_ []types.ConfigurationPolicy, totalCount int, err error)
-	GetConfigurationPolicyByID(ctx context.Context, id int) (_ types.ConfigurationPolicy, _ bool, err error)
+	GetConfigurationPolicies(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error)
+	GetConfigurationPolicyByID(ctx context.Context, id int) (types.ConfigurationPolicy, bool, error)
 	CreateConfigurationPolicy(ctx context.Context, configurationPolicy types.ConfigurationPolicy) (types.ConfigurationPolicy, error)
-	UpdateConfigurationPolicy(ctx context.Context, policy types.ConfigurationPolicy) (err error)
-	DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error)
+	UpdateConfigurationPolicy(ctx context.Context, policy types.ConfigurationPolicy) error
+	DeleteConfigurationPolicyByID(ctx context.Context, id int) error
 
 	// Repositories
 	RepoCount(ctx context.Context) (int, error)
-	GetRepoIDsByGlobPatterns(ctx context.Context, patterns []string, limit, offset int) (_ []int, _ int, err error)
-	UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error)
+	GetRepoIDsByGlobPatterns(ctx context.Context, patterns []string, limit, offset int) ([]int, int, error)
+	UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) error
 
 	// Utilities
-	SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []types.ConfigurationPolicy, err error)
+	SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) ([]types.ConfigurationPolicy, error)
 }
 
 // store manages the policies store.

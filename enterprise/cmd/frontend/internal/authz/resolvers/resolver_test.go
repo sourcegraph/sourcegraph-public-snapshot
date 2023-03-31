@@ -203,13 +203,6 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 
 				return nil, nil
 			})
-			perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
-				ids := p.UserIDs
-				if diff := cmp.Diff(test.expUserIDs, ids); diff != "" {
-					return nil, errors.Errorf("p.UserIDs: %v", diff)
-				}
-				return nil, nil
-			})
 			perms.SetRepoPendingPermissionsFunc.SetDefaultHook(func(_ context.Context, accounts *extsvc.Accounts, _ *authz.RepoPermissions) error {
 				if diff := cmp.Diff(test.expAccounts, accounts); diff != "" {
 					return errors.Errorf("accounts: %v", diff)
@@ -2046,6 +2039,11 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 	finishedAt, err := time.Parse(timeFormat, "2023-03-02T15:05:05Z")
 	require.NoError(t, err)
 
+	codeHostStates := database.CodeHostStatusesSet{
+		{ProviderID: "1", ProviderType: "github", Status: database.CodeHostStatusSuccess, Message: "success!"},
+		{ProviderID: "2", ProviderType: "gitlab", Status: database.CodeHostStatusError, Message: "error!"},
+	}
+
 	// One job has a user who triggered it, another doesn't.
 	jobs := []*database.PermissionSyncJob{
 		{
@@ -2067,11 +2065,12 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 			PermissionsAdded:   1337,
 			PermissionsRemoved: 42,
 			PermissionsFound:   404,
-			CodeHostStates:     []database.PermissionSyncCodeHostState{{ProviderID: "1", ProviderType: "github", Status: database.CodeHostStatusSuccess, Message: "success!"}},
+			CodeHostStates:     codeHostStates,
+			IsPartialSuccess:   true,
 		},
 		{
 			ID:               4,
-			State:            "QUEUED",
+			State:            "FAILED",
 			Reason:           database.ReasonUserEmailRemoved,
 			RepositoryID:     1,
 			QueuedAt:         queuedAt,
@@ -2081,7 +2080,8 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 			Priority:         database.HighPriorityPermissionsSync,
 			NoPerms:          false,
 			InvalidateCaches: false,
-			CodeHostStates:   []database.PermissionSyncCodeHostState{{ProviderID: "1", ProviderType: "github", Status: database.CodeHostStatusError, Message: "error!"}},
+			CodeHostStates:   codeHostStates[1:],
+			IsPartialSuccess: false,
 		},
 	}
 	permissionSyncJobStore.ListFunc.SetDefaultReturn(jobs, nil)
@@ -2149,6 +2149,7 @@ query {
 			status
 			message
 		}
+		partialSuccess
 	}
   }
 }
@@ -2194,12 +2195,19 @@ query {
 						"providerType": "github",
 						"status": "SUCCESS",
 						"message": "success!"
+					},
+					{
+						"providerID": "2",
+						"providerType": "gitlab",
+						"status": "ERROR",
+						"message": "error!"
 					}
-				]
+				],
+				"partialSuccess": true
 			},
 			{
 				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjQ=",
-				"state": "QUEUED",
+				"state": "FAILED",
 				"failureMessage": null,
 				"reason": {
 					"group": "SOURCEGRAPH",
@@ -2228,12 +2236,13 @@ query {
 				"permissionsFound": 0,
 				"codeHostStates": [
 					{
-						"providerID": "1",
-						"providerType": "github",
+						"providerID": "2",
+						"providerType": "gitlab",
 						"status": "ERROR",
 						"message": "error!"
 					}
-				]
+				],
+				"partialSuccess": false
 			}
 		],
 		"pageInfo": {

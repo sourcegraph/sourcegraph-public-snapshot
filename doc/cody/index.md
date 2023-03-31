@@ -8,27 +8,37 @@
 
 Cody is an AI coding assistant that lives in your editor that can find, explain, and write code. Cody uses a combination of Large Language Models (LLMs), Sourcegraph search, and Sourcegraph code intelligence to provide answers that eliminate toil and keep human programmers in flow. You can think of Cody as your programmer buddy who has read through all the code in open source, all the questions on StackOverflow, and all your organization's private code, and is always there to answer questions you might have or suggest ways of doing something based on prior knowledge.
 
-Cody is in private alpha (tagged as an [experimental](../doc/admin/beta_and_experimental_features.md) feature) at this stage. If you are an existing Sourcegraph customer, contact your techical advisor or [sign up here](https://t.co/4TMTW1b3lR) to get access. New users should install the extension and connect to sourcegraph.com.
+Cody is in private alpha (tagged as an [experimental](../doc/admin/beta_and_experimental_features.md) feature) at this stage. 
+- If you are an existing Sourcegraph Enterprise customer or want to use Cody for your team, contact your techical advisor or [sign up here](https://sourcegraph.typeform.com/to/pIXTgwrd) to get access
+- If you want to try Cody on open source code, sign up [here](https://forms.gle/cffMa8mrr8YuHv8o8) and we'll e-mail you instructions to connect Cody to sourcegraph.com as soon as your account is added.
 
 Currently, Cody is available for VS Code. More editors are on the way—[join the Discord](https://discord.gg/8wJF5EdAyA) to inquire about your editor of choice.
 
-## Install Cody
+## Cody on Sourcegraph.com
 
 Cody uses Sourcegraph to fetch relevant context to generate answers and code. These instructions walk through installing Cody and connecting it to sourcegraph.com. For private instances of Sourcegraph, see the section below about enabling Cody for Enterprise.
 
 1. Sign into [sourcegraph.com](https://sourcegraph.com)
-1. Join the [Cody Discord](https://discord.gg/8wJF5EdAyA) and request Cody be enabled for your username. At this time, we are approving all requests.
+1. Request access [here](https://forms.gle/cffMa8mrr8YuHv8o8) and we'll send you an e-mail you as soon as your account is added. At this time, we are approving all requests.
 1. [Create a Sourcegraph access token](https://sourcegraph.com/user/settings/tokens)
 1. Install [the Cody VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
-  1. Set the Sourcegraph URL to be `"https://sourcegraph.com"`
+  1. Set the Sourcegraph URL to be `https://sourcegraph.com`
   1. Set the access token to be the token you just created
+
+<img width="553" alt="Cody login screen" src="https://user-images.githubusercontent.com/25070988/227510233-5ce37649-6ae3-4470-91d0-71ed6c68b7ef.png">
 
 After installing, we recommend the following:
 
-* Request embeddings for your repositories. Embeddings significantly improve the accuracy and quality of Cody's responses. To request embeddings, join the Cody Discord and ping a Sourcegraph team member.
+* [See the list](embedded-repos.md) of embedded repositories and request any that you'd like to add by pinging a Sourcegraph team member in [Discord](https://discord.gg/8wJF5EdAyA). Embeddings significantly improve the accuracy and quality of Cody's responses. Note that embeddings are only available for public repositories on sourcegraph.com. If you want to use Cody with embeddings on private code, consider moving to a Sourcegraph Enterprise instance.
 * Spread the word online and send us your feedback in Discord. Cody is open source and we'd love to hear from you if you have bug reports or feature requests.
 
-## Enable Cody for Enterprise
+## Cody on Sourcegraph Cloud
+
+On Sourcegraph Cloud, Cody is a managed service and you do not need to follow the self-hosted installation guide. Cody can be enabled on demand by contacting your account manager.
+
+Learn more from [Cody on Cloud](../cloud/index.md#cody)
+
+## Cody on your self-hosted Sourcegraph Enterprise instance
 
 There are two steps required to enable Cody for Enterprise: enable your Sourcegraph instance and configure the VS Code extension.
 
@@ -72,7 +82,6 @@ Now that Cody is turned on on your Sourcegraph instance, any user can configure 
 
 You're all set!
 
-
 ### Step 3: Try Cody!
 
 A few things you can ask Cody:
@@ -110,7 +119,7 @@ Here is the config for the OpenAI Embeddings API:
 
 To target a managed object storage service, you will need to set a handful of environment variables for configuration and authentication to the target service. **If you are running a sourcegraph/server deployment, set the environment variables on the server container. Otherwise, if running via Docker-compose or Kubernetes, set the environment variables on the `frontend`, `embeddings`, and `worker` containers.**
 
-### Using S3
+#### Using S3
 
 To target an S3 bucket you've already provisioned, set the following environment variables. Authentication can be done through [an access and secret key pair](https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html#access-keys-and-secret-access-keys) (and optional session token), or via the EC2 metadata API.
 
@@ -130,7 +139,7 @@ To target an S3 bucket you've already provisioned, set the following environment
 > NOTE: You don't need to set the `EMBEDDINGS_UPLOAD_AWS_ACCESS_KEY_ID` environment variable when using `EMBEDDINGS_UPLOAD_AWS_USE_EC2_ROLE_CREDENTIALS=true` because role credentials will be automatically resolved. 
 
 
-### Using GCS
+#### Using GCS
 
 To target a GCS bucket you've already provisioned, set the following environment variables. Authentication is done through a service account key, supplied as either a path to a volume-mounted file, or the contents read in as an environment variable payload.
 
@@ -140,8 +149,12 @@ To target a GCS bucket you've already provisioned, set the following environment
 - `EMBEDDINGS_UPLOAD_GOOGLE_APPLICATION_CREDENTIALS_FILE=</path/to/file>`
 - `EMBEDDINGS_UPLOAD_GOOGLE_APPLICATION_CREDENTIALS_FILE_CONTENT=<{"my": "content"}>`
 
-### Provisioning buckets
+#### Provisioning buckets
 
 If you would like to allow your Sourcegraph instance to control the creation and lifecycle configuration management of the target buckets, set the following environment variables:
 
 - `EMBEDDINGS_UPLOAD_MANAGE_BUCKET=true`
+
+### Environment variables for the `embeddings` service
+
+- `EMBEDDINGS_REPO_INDEX_CACHE_SIZE`: Number of repository embedding indexes to cache in memory (the default cache size is 5). Increasing the cache size will improve the search performance but require more memory resources.

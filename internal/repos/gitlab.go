@@ -31,7 +31,6 @@ type GitLabSource struct {
 	svc                 *types.ExternalService
 	config              *schema.GitLabConnection
 	exclude             excludeFunc
-	excludeEmptyRepos   bool
 	baseURL             *url.URL // URL with path /api/v4 (no trailing slash)
 	nameTransformations reposource.NameTransformations
 	provider            *gitlab.ClientProvider
@@ -89,12 +88,17 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 	}
 
 	var eb excludeBuilder
-	excludeEmptyRepos := false
 	for _, r := range c.Exclude {
 		eb.Exact(r.Name)
 		eb.Exact(strconv.Itoa(r.Id))
+		excludeFunc := func(repo any) bool {
+			if project, ok := repo.(gitlab.Project); ok {
+				return project.EmptyRepo
+			}
+			return false
+		}
 		if r.EmptyRepos {
-			excludeEmptyRepos = true
+			eb.Generic(excludeFunc)
 		}
 	}
 	exclude, err := eb.Build()
@@ -133,7 +137,6 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 		svc:                 svc,
 		config:              c,
 		exclude:             exclude,
-		excludeEmptyRepos:   excludeEmptyRepos,
 		baseURL:             baseURL,
 		nameTransformations: nts,
 		provider:            provider,
@@ -242,7 +245,7 @@ func (s *GitLabSource) remoteURL(proj *gitlab.Project) string {
 }
 
 func (s *GitLabSource) excludes(p *gitlab.Project) bool {
-	return s.exclude(p.PathWithNamespace) || s.exclude(strconv.Itoa(p.ID)) || (s.excludeEmptyRepos && p.EmptyRepo)
+	return s.exclude(p.PathWithNamespace) || s.exclude(strconv.Itoa(p.ID)) || s.exclude(*p)
 }
 
 func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceResult) {

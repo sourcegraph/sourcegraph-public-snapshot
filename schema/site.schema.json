@@ -510,14 +510,6 @@
           },
           "group": "AccessRequest",
           "default": true
-        },
-        "unifiedPermissions": {
-          "description": "Enables the new unified permissions model, which stores repository permissions in a single table and a row for each permission instead of postgres arrays.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": false
-          }
         }
       },
       "examples": [
@@ -2075,6 +2067,13 @@
           "description": "The url to the external embedding API service.",
           "type": "string",
           "format": "uri"
+        },
+        "excludedFilePathPatterns": {
+          "description": "A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
