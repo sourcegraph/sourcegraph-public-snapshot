@@ -81,7 +81,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs)
             "LOG_BROWSER_CONSOLE": "false",
 
             # Puppeteer config
-            "DISPLAY": ":1",
+            "DISPLAY": ":99",
         }),
         **kwargs
     )
