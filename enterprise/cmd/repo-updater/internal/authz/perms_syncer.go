@@ -123,7 +123,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		return result, providerStates, nil
 	}
 
-	pendingAccountIDsSet := make(map[string]struct{})
+	pendingAccountIDsSet := collections.NewSet[string]()
 	accountIDsToUserIDs := make(map[string]authz.UserIDWithExternalAccountID) // User External Account ID -> User ID.
 
 	extAccountIDs, err := provider.FetchRepoPerms(ctx, &extsvc.Repository{
@@ -181,10 +181,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		}
 
 		// Set up the set of all account IDs that need to be bound to permissions.
-		pendingAccountIDsSet = make(map[string]struct{}, len(accountIDs))
-		for i := range accountIDs {
-			pendingAccountIDsSet[accountIDs[i]] = struct{}{}
-		}
+		pendingAccountIDsSet.Add(accountIDs...)
 	}
 
 	// Load last finished sync job from database.
@@ -194,24 +191,6 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	})
 
 	// Save permissions to database.
-	p := &authz.RepoPermissions{
-		RepoID:  int32(repoID),
-		Perm:    authz.Read, // Note: We currently only support read for repository permissions.
-		UserIDs: map[int32]struct{}{},
-	}
-	for aid, perm := range accountIDsToUserIDs {
-		// Add existing user to permissions.
-		p.UserIDs[perm.UserID] = struct{}{}
-
-		// Remove existing user from the set of pending users.
-		delete(pendingAccountIDsSet, aid)
-	}
-
-	pendingAccountIDs := make([]string, 0, len(pendingAccountIDsSet))
-	for aid := range pendingAccountIDsSet {
-		pendingAccountIDs = append(pendingAccountIDs, aid)
-	}
-
 	// NOTE: Please read the docstring of permsUpdateLock field for reasoning of the lock.
 	s.permsUpdateLock.Lock()
 	defer s.permsUpdateLock.Unlock()
@@ -226,12 +205,24 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	if result, err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs), authz.SourceRepoSync); err != nil {
 		return result, providerStates, errors.Wrapf(err, "set user repo permissions for repository %q (id: %d)", repo.Name, repo.ID)
 	}
-	regularCount := len(p.UserIDs)
 
+	userIDSet := collections.NewSet[int32]()
+	for _, perm := range accountIDsToUserIDs {
+		// Add existing user to permissions.
+		userIDSet.Add(perm.UserID)
+	}
+	regularCount := len(userIDSet)
+
+	// handle pending permissions
+	pendingAccountIDsSet.Remove(maps.Keys(accountIDsToUserIDs)...)
 	accounts := &extsvc.Accounts{
 		ServiceType: provider.ServiceType(),
 		ServiceID:   provider.ServiceID(),
-		AccountIDs:  pendingAccountIDs,
+		AccountIDs:  pendingAccountIDsSet.Values(),
+	}
+	p := &authz.RepoPermissions{
+		RepoID: int32(repoID),
+		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
 	}
 	if err = txs.SetRepoPendingPermissions(ctx, accounts, p); err != nil {
 		return result, providerStates, errors.Wrapf(err, "set repository pending permissions for repository %q (id: %d)", repo.Name, repo.ID)

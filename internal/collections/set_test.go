@@ -11,9 +11,7 @@ func TestSet(t *testing.T) {
 	a := NewSet(1, 2, 3)
 	b := NewSet(2, 3, 4)
 
-	cmp := func(a, b int) bool {
-		return a < b
-	}
+	cmp := NaturalCompare[int]
 
 	t.Run("Set can be created from another Set", func(t *testing.T) {
 		c := NewSet(a.Values()...)
