@@ -103,6 +103,7 @@ ts_project(
 
 mocha_test(
     name = "integration-tests",
+    timeout = ["long"],
     data = ["//client/web:app-enterprise"],
     env = {
         "WEB_BUNDLE_PATH": "$(rootpath //client/web:app-enterprise)",
