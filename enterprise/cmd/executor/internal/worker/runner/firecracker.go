@@ -9,9 +9,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
-	"strings"
 
-	"github.com/kballard/go-shellquote"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
@@ -350,44 +348,5 @@ func (r *firecrackerRunner) newCommandSpec(key string, cmd []string, env []strin
 
 func (r *firecrackerRunner) Run(ctx context.Context, spec Spec) error {
 	firecrackerSpec := command.NewFirecrackerSpec(r.vmName, spec.Image, spec.ScriptPath, spec.CommandSpec, r.options.DockerOptions)
-	//firecrackerSpec := formatFirecrackerCommand(spec.CommandSpec, r.vmName, spec.Image, spec.ScriptPath, r.options, r.options.DockerOptions.ConfigPath)
 	return r.cmd.Run(ctx, r.cmdLogger, firecrackerSpec)
-}
-
-// --
-
-func formatFirecrackerCommand(spec command.Spec, name string, image string, scriptPath string, options FirecrackerOptions, dockerConfigPath string) command.Spec {
-	//rawOrDockerCommand := formatRawOrDockerCommand(image, scriptPath, spec, "/work", options.DockerOptions, dockerConfigPath)
-	rawOrDockerCommand := command.NewDockerSpec("/work", image, scriptPath, spec, options.DockerOptions)
-
-	innerCommand := shellquote.Join(rawOrDockerCommand.Command...)
-
-	// Note: src-cli run commands don't receive env vars in firecracker so we
-	// have to prepend them inline to the script.
-	// TODO: This branch should disappear when we make src-cli a non-special cased
-	// thing.
-	if image == "" && len(rawOrDockerCommand.Env) > 0 {
-		innerCommand = fmt.Sprintf("%s %s", strings.Join(quoteEnv(rawOrDockerCommand.Env), " "), innerCommand)
-	}
-
-	if rawOrDockerCommand.Dir != "" {
-		innerCommand = fmt.Sprintf("cd %s && %s", shellquote.Join(rawOrDockerCommand.Dir), innerCommand)
-	}
-
-	return command.Spec{
-		Key:       spec.Key,
-		Command:   []string{"ignite", "exec", name, "--", innerCommand},
-		Operation: spec.Operation,
-	}
-}
-
-func quoteEnv(env []string) []string {
-	quotedEnv := make([]string, len(env))
-
-	for i, e := range env {
-		elems := strings.SplitN(e, "=", 2)
-		quotedEnv[i] = fmt.Sprintf("%s=%s", elems[0], shellquote.Join(elems[1]))
-	}
-
-	return quotedEnv
 }
