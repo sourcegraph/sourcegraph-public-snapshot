@@ -15,9 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func TestSetRepositoryAsDirty(t *testing.T) {
@@ -114,75 +112,6 @@ func TestHasRepository(t *testing.T) {
 				t.Errorf("unexpected exists. want=%v have=%v", testCase.exists, exists)
 			}
 		})
-	}
-}
-
-func TestSetRepositoriesForRetentionScan(t *testing.T) {
-	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
-
-	insertUploads(t, db,
-		types.Upload{ID: 1, RepositoryID: 50, State: "completed"},
-		types.Upload{ID: 2, RepositoryID: 51, State: "completed"},
-		types.Upload{ID: 3, RepositoryID: 52, State: "completed"},
-		types.Upload{ID: 4, RepositoryID: 53, State: "completed"},
-		types.Upload{ID: 5, RepositoryID: 54, State: "errored"},
-		types.Upload{ID: 6, RepositoryID: 54, State: "deleted"},
-	)
-
-	now := timeutil.Now()
-
-	for _, repositoryID := range []int{50, 51, 52, 53, 54} {
-		// Only call this to insert a record into the lsif_dirty_repositories table
-		if err := store.SetRepositoryAsDirty(context.Background(), repositoryID); err != nil {
-			t.Fatalf("unexpected error marking repository as dirty`: %s", err)
-		}
-
-		// Only call this to update the updated_at field in the lsif_dirty_repositories table
-		if err := store.UpdateUploadsVisibleToCommits(context.Background(), repositoryID, gitdomain.ParseCommitGraph(nil), nil, time.Hour, time.Hour, 1, now); err != nil {
-			t.Fatalf("unexpected error updating commit graph: %s", err)
-		}
-	}
-
-	// Can return null last_index_scan
-	if repositories, err := store.SetRepositoriesForRetentionScan(context.Background(), time.Hour, 2); err != nil {
-		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
-	} else if diff := cmp.Diff([]int{50, 51}, repositories); diff != "" {
-		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
-	}
-
-	// 20 minutes later, first two repositories are still on cooldown
-	if repositories, err := store.SetRepositoriesForRetentionScanWithTime(context.Background(), time.Hour, 100, now.Add(time.Minute*20)); err != nil {
-		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
-	} else if diff := cmp.Diff([]int{52, 53}, repositories); diff != "" {
-		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
-	}
-
-	// 30 minutes later, all repositories are still on cooldown
-	if repositories, err := store.SetRepositoriesForRetentionScanWithTime(context.Background(), time.Hour, 100, now.Add(time.Minute*30)); err != nil {
-		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
-	} else if diff := cmp.Diff([]int(nil), repositories); diff != "" {
-		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
-	}
-
-	// 90 minutes later, all repositories are visible
-	if repositories, err := store.SetRepositoriesForRetentionScanWithTime(context.Background(), time.Hour, 100, now.Add(time.Minute*90)); err != nil {
-		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
-	} else if diff := cmp.Diff([]int{50, 51, 52, 53}, repositories); diff != "" {
-		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
-	}
-
-	// Make repository 5 newly visible
-	if _, err := db.ExecContext(context.Background(), `UPDATE lsif_uploads SET state = 'completed' WHERE id = 5`); err != nil {
-		t.Fatalf("unexpected error updating upload: %s", err)
-	}
-
-	// 95 minutes later, only new repository is visible
-	if repositoryIDs, err := store.SetRepositoriesForRetentionScanWithTime(context.Background(), time.Hour, 100, now.Add(time.Minute*95)); err != nil {
-		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
-	} else if diff := cmp.Diff([]int{54}, repositoryIDs); diff != "" {
-		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 }
 

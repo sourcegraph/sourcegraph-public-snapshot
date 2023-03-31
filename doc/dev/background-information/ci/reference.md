@@ -252,6 +252,19 @@ Base pipeline (more steps might be included based on branch changes):
 - Extension release
 - Upload build trace
 
+### Cody VS Code extension release build
+
+The run type for branches matching `cody/release` (exact match).
+
+Base pipeline (more steps might be included based on branch changes):
+
+- ESLint (all)
+- ESLint (web)
+- Stylelint (all)
+- Integration tests for the Cody VS Code extension
+- Cody release
+- Upload build trace
+
 ### Main branch
 
 The run type for branches matching `main` (exact match).

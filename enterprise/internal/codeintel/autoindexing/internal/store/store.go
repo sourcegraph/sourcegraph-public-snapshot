@@ -15,39 +15,27 @@ import (
 
 // Store provides the interface for autoindexing storage.
 type Store interface {
-	// Transactions
 	Transact(ctx context.Context) (Store, error)
 	Done(err error) error
 
-	// Indexes
-	InsertIndexes(ctx context.Context, indexes []types.Index) (_ []types.Index, err error)
-
-	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
-	IsQueued(ctx context.Context, repositoryID int, commit string) (_ bool, err error)
-	IsQueuedRootIndexer(ctx context.Context, repositoryID int, commit string, root string, indexer string) (_ bool, err error)
+	InsertIndexes(ctx context.Context, indexes []types.Index) ([]types.Index, error)
+	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
+	IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error)
+	IsQueuedRootIndexer(ctx context.Context, repositoryID int, commit string, root string, indexer string) (bool, error)
 	QueueRepoRev(ctx context.Context, repositoryID int, commit string) error
 	GetQueuedRepoRev(ctx context.Context, batchSize int) ([]RepoRev, error)
 	MarkRepoRevsAsProcessed(ctx context.Context, ids []int) error
-
-	// Index configurations
-	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error)
-	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) (err error)
-	GetInferenceScript(ctx context.Context) (script string, err error)
-	SetInferenceScript(ctx context.Context, script string) (err error)
-
-	// Language support
-	GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error)
-	SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error)
-
-	GetRepoName(ctx context.Context, repositoryID int) (_ string, err error)
-
-	RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) (_ []shared.RepositoryWithAvailableIndexers, totalCount int, err error)
+	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (shared.IndexConfiguration, bool, error)
+	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) error
+	GetInferenceScript(ctx context.Context) (string, error)
+	SetInferenceScript(ctx context.Context, script string) error
+	RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) ([]shared.RepositoryWithAvailableIndexers, int, error)
 	TopRepositoriesToConfigure(ctx context.Context, limit int) ([]shared.RepositoryWithCount, error)
-	SetConfigurationSummary(ctx context.Context, repositoryID int, numEvents int, availableIndexers map[string]shared.AvailableIndexer) (err error)
+	SetConfigurationSummary(ctx context.Context, repositoryID int, numEvents int, availableIndexers map[string]shared.AvailableIndexer) error
 	TruncateConfigurationSummary(ctx context.Context, numRecordsToRetain int) error
-
-	GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error)
-	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error)
+	GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) ([]int, error)
+	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (int, error)
+	GetRepoName(ctx context.Context, repositoryID int) (string, error)
 }
 
 // store manages the autoindexing store.
