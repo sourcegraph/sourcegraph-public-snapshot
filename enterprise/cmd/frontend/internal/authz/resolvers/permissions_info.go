@@ -41,8 +41,8 @@ func (r *permissionsInfoResolver) SyncedAt() *gqlutil.DateTime {
 	return &gqlutil.DateTime{Time: r.syncedAt}
 }
 
-func (r *permissionsInfoResolver) UpdatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.updatedAt}
+func (r *permissionsInfoResolver) UpdatedAt() *gqlutil.DateTime {
+	return gqlutil.FromTime(r.updatedAt)
 }
 
 func (r *permissionsInfoResolver) Unrestricted(ctx context.Context) bool {

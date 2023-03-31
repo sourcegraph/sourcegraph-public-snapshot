@@ -251,6 +251,7 @@ ts_project(
         "src/react-shortcuts/ShortcutProvider.tsx",
         "src/react-shortcuts/index.ts",
         "src/react-shortcuts/keys.ts",
+        "src/schema.ts",
         "src/schema/extensionSchema.ts",
         "src/schema/settings.schema.d.ts",  #keep
         "src/search/backend.ts",
@@ -347,7 +348,6 @@ ts_project(
         "//:node_modules/@types/node",
         "//:node_modules/@types/puppeteer",
         "//:node_modules/@types/react",
-        "//:node_modules/axe-core",  #keep
         "//:node_modules/classnames",
         "//:node_modules/comlink",
         "//:node_modules/core-js",

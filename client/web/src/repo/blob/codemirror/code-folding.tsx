@@ -114,6 +114,26 @@ function getFoldRange(state: EditorState, lineStart: number): { from: number; to
     return { from: startLine.to, to: endLine.to }
 }
 
+const theme = EditorView.theme({
+    '.cm-foldGutter': {
+        '& .fold-marker': {
+            height: '1rem',
+            width: '1rem',
+        },
+
+        '& .fold-icon': {
+            width: '100%',
+            height: '100%',
+            color: 'var(--text-muted)',
+            cursor: 'pointer',
+        },
+    },
+    '.cm-foldPlaceholder': {
+        background: 'var(--color-bg-3)',
+        borderColor: 'var(--border-color)',
+    },
+})
+
 /**
  * Enables indent-based code folding.
  */
@@ -158,21 +178,6 @@ export function codeFoldingExtension(): Extension {
             },
         })),
 
-        EditorView.theme({
-            '.cm-foldGutter .fold-marker': {
-                height: '1rem',
-                width: '1rem',
-            },
-            '.cm-foldGutter .fold-icon': {
-                width: '100%',
-                height: '100%',
-                color: 'var(--text-muted)',
-                cursor: 'pointer',
-            },
-            '.cm-foldPlaceholder': {
-                background: 'var(--color-bg-3)',
-                borderColor: 'var(--border-color)',
-            },
-        }),
+        theme,
     ]
 }

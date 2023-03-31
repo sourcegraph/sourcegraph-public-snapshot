@@ -1005,6 +1005,7 @@ enum EventSource {
     BACKEND
     STATICWEB
     IDEEXTENSION
+    CODY
 }
 
 """

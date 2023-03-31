@@ -34,12 +34,6 @@
     max-width: 600px;
 }
 
-.repo-description {
-    @media (--xs-breakpoint-down) {
-        overflow: hidden;
-    }
-}
-
 .alert-overflow {
     max-height: 300px;
     overflow-y: auto;

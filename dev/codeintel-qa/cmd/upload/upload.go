@@ -129,10 +129,9 @@ func upload(ctx context.Context, repoName, commit, file string) (string, error) 
 
 	cmd := exec.CommandContext(ctx, "src", append([]string{"lsif", "upload", "-json"}, args...)...)
 	cmd.Dir = tempDir
-	cmd.Env = []string{
-		fmt.Sprintf("SRC_ENDPOINT=%s", internal.SourcegraphEndpoint),
-		fmt.Sprintf("SRC_ACCESS_TOKEN=%s", internal.SourcegraphAccessToken),
-	}
+	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, fmt.Sprintf("SRC_ENDPOINT=%s", internal.SourcegraphEndpoint))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("SRC_ACCESS_TOKEN=%s", internal.SourcegraphAccessToken))
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
