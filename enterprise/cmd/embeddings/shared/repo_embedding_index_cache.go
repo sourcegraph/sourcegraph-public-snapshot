@@ -37,7 +37,7 @@ func getCachedRepoEmbeddingIndex(
 	getAndCacheIndex := func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName, finishedAt *time.Time) (*embeddings.RepoEmbeddingIndex, error) {
 		embeddingIndex, err := downloadRepoEmbeddingIndex(ctx, repoEmbeddingIndexName)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "downloading repo embedding index")
 		}
 		cache.Add(repoEmbeddingIndexName, repoEmbeddingIndexCacheEntry{index: embeddingIndex, finishedAt: *finishedAt})
 		return embeddingIndex, nil

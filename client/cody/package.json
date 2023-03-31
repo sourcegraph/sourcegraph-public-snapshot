@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Sourcegraph Cody",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -38,7 +38,7 @@
     "vscode:prepublish": "scripts/check-rg.sh",
     "vsce:package": "pnpm --silent build && vsce package --no-dependencies -o dist/cody.vsix",
     "vsce:prerelease": "pnpm --silent build && vsce package patch --pre-release --no-dependencies -o dist/cody.vsix",
-    "vsce:publish": "vsce publish --packagePath dist/cody.vsix",
+    "release": "ts-node ./scripts/release.ts",
     "watch": "concurrently \"pnpm watch:esbuild\" \"pnpm watch:webview\"",
     "watch:esbuild": "pnpm esbuild --sourcemap --watch",
     "watch:webview": "vite build --mode development --watch"

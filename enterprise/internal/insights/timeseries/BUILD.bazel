@@ -3,8 +3,8 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "timeseries",
     srcs = [
-        "frames.go",
-        "series.go",
+        "interval.go",
+        "timeseries.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries",
     visibility = ["//enterprise:__subpackages__"],
@@ -15,8 +15,8 @@ go_test(
     name = "timeseries_test",
     timeout = "short",
     srcs = [
-        "frames_test.go",
-        "series_test.go",
+        "interval_test.go",
+        "timeseries_test.go",
     ],
     embed = [":timeseries"],
     deps = [
