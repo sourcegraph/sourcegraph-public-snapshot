@@ -15,7 +15,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/commitgraph"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -25,7 +24,7 @@ import (
 
 type s2 interface {
 	Store
-	GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) ([]shared.SourcedCommits, error)
+	GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) ([]SourcedCommits, error)
 	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (int, error)
 	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (int, int, error)
 }
@@ -51,7 +50,7 @@ func TestGetStaleSourcedCommits(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error getting stale sourced commits: %s", err)
 	}
-	expectedCommits := []shared.SourcedCommits{
+	expectedCommits := []SourcedCommits{
 		{RepositoryID: 50, RepositoryName: "n-50", Commits: []string{makeCommit(1)}},
 		{RepositoryID: 51, RepositoryName: "n-51", Commits: []string{makeCommit(4), makeCommit(5)}},
 		{RepositoryID: 52, RepositoryName: "n-52", Commits: []string{makeCommit(7), makeCommit(8)}},
@@ -74,7 +73,7 @@ func TestGetStaleSourcedCommits(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error getting stale sourced commits: %s", err)
 	}
-	expectedCommits = []shared.SourcedCommits{
+	expectedCommits = []SourcedCommits{
 		{RepositoryID: 50, RepositoryName: "n-50", Commits: []string{makeCommit(1)}},
 		{RepositoryID: 51, RepositoryName: "n-51", Commits: []string{makeCommit(4), makeCommit(5)}},
 		{RepositoryID: 52, RepositoryName: "n-52", Commits: []string{makeCommit(7)}},

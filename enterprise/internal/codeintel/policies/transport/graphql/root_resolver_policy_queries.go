@@ -6,7 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 
-	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -31,7 +31,7 @@ func (r *rootResolver) CodeIntelligenceConfigurationPolicies(ctx context.Context
 		return nil, err
 	}
 
-	opts := policiesshared.GetConfigurationPoliciesOptions{
+	opts := policies.GetConfigurationPoliciesOptions{
 		Limit:  int(limit),
 		Offset: int(offset),
 	}

@@ -11,8 +11,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 
-	autoindexingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -260,7 +260,7 @@ func TestRepositoryIDsWithErrors(t *testing.T) {
 	if expected := 6; totalCount != expected {
 		t.Fatalf("unexpected total number of repositories. want=%d have=%d", expected, totalCount)
 	}
-	expected := []autoindexingshared.RepositoryWithCount{
+	expected := []uploadsshared.RepositoryWithCount{
 		{RepositoryID: 55, Count: 3},
 		{RepositoryID: 57, Count: 3},
 		{RepositoryID: 52, Count: 1},
@@ -275,7 +275,7 @@ func TestRepositoryIDsWithErrors(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error getting repositories with errors: %s", err)
 	}
-	expected = []autoindexingshared.RepositoryWithCount{
+	expected = []uploadsshared.RepositoryWithCount{
 		{RepositoryID: 54, Count: 1},
 		{RepositoryID: 56, Count: 1},
 	}

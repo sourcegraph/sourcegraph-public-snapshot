@@ -19,10 +19,10 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/lsifstore",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/codeintel/codenav/shared",
+        "//enterprise/internal/codeintel/codenav/internal/shared",
         "//enterprise/internal/codeintel/shared",
         "//enterprise/internal/codeintel/shared/types",
-        "//enterprise/internal/codeintel/uploads/shared",
+        "//enterprise/internal/codeintel/uploads",
         "//internal/database/basestore",
         "//internal/metrics",
         "//internal/observation",
@@ -56,7 +56,7 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//enterprise/internal/codeintel/codenav/shared",
+        "//enterprise/internal/codeintel/codenav/internal/shared",
         "//enterprise/internal/codeintel/shared",
         "//enterprise/internal/codeintel/shared/types",
         "//internal/database/dbtest",

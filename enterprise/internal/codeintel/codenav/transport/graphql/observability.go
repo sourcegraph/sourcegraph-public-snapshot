@@ -8,7 +8,7 @@ import (
 	traceLog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -81,7 +81,7 @@ func lowSlowRequest(logger log.Logger, duration time.Duration, err *error) {
 	logger.Warn("Slow codeintel request", fields...)
 }
 
-func getObservationArgs(args shared.RequestArgs) observation.Args {
+func getObservationArgs(args codenav.RequestArgs) observation.Args {
 	return observation.Args{
 		LogFields: []traceLog.Field{
 			traceLog.Int("repositoryID", args.RepositoryID),

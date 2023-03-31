@@ -5,7 +5,7 @@ import (
 
 	logger "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/internal/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"

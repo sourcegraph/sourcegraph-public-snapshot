@@ -9,7 +9,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	rankingshared2 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -19,7 +19,7 @@ import (
 func (s *store) InsertDefinitionsForRanking(
 	ctx context.Context,
 	rankingGraphKey string,
-	definitions chan shared.RankingDefinitions,
+	definitions chan rankingshared2.RankingDefinitions,
 ) (err error) {
 	ctx, _, endObservation := s.operations.insertDefinitionsForRanking.With(
 		ctx,

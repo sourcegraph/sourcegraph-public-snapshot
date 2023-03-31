@@ -9,8 +9,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -23,7 +23,7 @@ func TestRepositoryIDsWithConfiguration(t *testing.T) {
 	db := database.NewDB(logger, sqlDB)
 	store := New(&observation.TestContext, db)
 
-	testIndexerList := map[string]shared.AvailableIndexer{
+	testIndexerList := map[string]uploadsshared.AvailableIndexer{
 		"test-indexer": {
 			Roots: []string{"proj1", "proj2", "proj3"},
 			Indexer: types.CodeIntelIndexer{
@@ -51,7 +51,7 @@ func TestRepositoryIDsWithConfiguration(t *testing.T) {
 	if expected := 10; totalCount != expected {
 		t.Fatalf("unexpected total number of repositories. want=%d have=%d", expected, totalCount)
 	}
-	expected := []shared.RepositoryWithAvailableIndexers{
+	expected := []uploadsshared.RepositoryWithAvailableIndexers{
 		{RepositoryID: 69, AvailableIndexers: testIndexerList},
 		{RepositoryID: 68, AvailableIndexers: testIndexerList},
 		{RepositoryID: 67, AvailableIndexers: testIndexerList},
@@ -100,7 +100,7 @@ func TestTopRepositoriesToConfigure(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error getting top repositories to configure: %s", err)
 	}
-	expected := []shared.RepositoryWithCount{
+	expected := []uploadsshared.RepositoryWithCount{
 		{RepositoryID: 60, Count: 4}, // i=0,3,6,9
 		{RepositoryID: 50, Count: 3}, // manual
 		{RepositoryID: 61, Count: 3}, // i=1,4,7

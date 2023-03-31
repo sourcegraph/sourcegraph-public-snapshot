@@ -47,3 +47,19 @@ func GetKeyForLookup(indexer, root string) string {
 func sanitizeIndexer(indexer string) string {
 	return strings.TrimPrefix(strings.Split(strings.Split(indexer, "@")[0], ":")[0], "sourcegraph/")
 }
+
+type IndexesWithRepositoryNamespace struct {
+	Root    string
+	Indexer string
+	Indexes []types.Index
+}
+
+type RepositoryWithCount struct {
+	RepositoryID int
+	Count        int
+}
+
+type RepositoryWithAvailableIndexers struct {
+	RepositoryID      int
+	AvailableIndexers map[string]AvailableIndexer
+}

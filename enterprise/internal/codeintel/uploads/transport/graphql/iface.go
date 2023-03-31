@@ -4,10 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	uploadshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	uploadshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/shared"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
@@ -31,13 +30,13 @@ type UploadsService interface {
 	GetCommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, err error)
 	GetRecentUploadsSummary(ctx context.Context, repositoryID int) ([]uploadshared.UploadsWithRepositoryNamespace, error)
 	GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
-	GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]shared.IndexesWithRepositoryNamespace, error)
+	GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]uploadshared.IndexesWithRepositoryNamespace, error)
 	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error)
-	RepositoryIDsWithErrors(ctx context.Context, offset, limit int) (_ []shared.RepositoryWithCount, totalCount int, err error)
+	RepositoryIDsWithErrors(ctx context.Context, offset, limit int) (_ []uploadshared.RepositoryWithCount, totalCount int, err error)
 }
 
 type AutoIndexingService interface {
-	RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) (_ []shared.RepositoryWithAvailableIndexers, totalCount int, err error)
+	RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) (_ []uploadshared.RepositoryWithAvailableIndexers, totalCount int, err error)
 	InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) ([]config.IndexJob, error)
 	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
 }

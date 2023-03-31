@@ -11,7 +11,7 @@ import (
 	"sync"
 
 	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/lsifstore"
-	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
+	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/shared"
 	types "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )

@@ -9,9 +9,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -88,7 +87,7 @@ func TestUploadExpirer(t *testing.T) {
 }
 
 func setupMockPolicyService() *MockPolicyService {
-	policies := []types.ConfigurationPolicy{
+	policySlice := []types.ConfigurationPolicy{
 		{ID: 1, RepositoryID: nil},
 		{ID: 2, RepositoryID: intPtr(53)},
 		{ID: 3, RepositoryID: nil},
@@ -96,8 +95,8 @@ func setupMockPolicyService() *MockPolicyService {
 		{ID: 5, RepositoryID: intPtr(50)},
 	}
 
-	getConfigurationPolicies := func(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) (filtered []types.ConfigurationPolicy, _ int, _ error) {
-		for _, policy := range policies {
+	getConfigurationPolicies := func(ctx context.Context, opts policies.GetConfigurationPoliciesOptions) (filtered []types.ConfigurationPolicy, _ int, _ error) {
+		for _, policy := range policySlice {
 			if policy.RepositoryID == nil || *policy.RepositoryID == opts.RepositoryID {
 				filtered = append(filtered, policy)
 			}

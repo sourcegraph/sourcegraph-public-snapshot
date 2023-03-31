@@ -13,8 +13,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/transport/graphql",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
+        "//enterprise/internal/codeintel/autoindexing",
         "//enterprise/internal/codeintel/autoindexing/internal/inference",
-        "//enterprise/internal/codeintel/autoindexing/shared",
         "//enterprise/internal/codeintel/shared/resolvers",
         "//enterprise/internal/codeintel/shared/types",
         "//enterprise/internal/codeintel/uploads/transport/graphql",

@@ -8,7 +8,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -43,7 +43,7 @@ func (s *store) scanSingleDocumentDataObject(rows *sql.Rows) (QualifiedDocumentD
 		return QualifiedDocumentData{}, err
 	}
 
-	scipPayload, err := shared.Decompressor.Decompress(bytes.NewReader(compressedSCIPPayload))
+	scipPayload, err := uploads.Decompressor.Decompress(bytes.NewReader(compressedSCIPPayload))
 	if err != nil {
 		return QualifiedDocumentData{}, err
 	}

@@ -19,7 +19,7 @@ go_library(
         "//enterprise/internal/codeintel/shared",
         "//enterprise/internal/codeintel/shared/trie",
         "//enterprise/internal/codeintel/shared/types",
-        "//enterprise/internal/codeintel/uploads/shared",
+        "//enterprise/internal/codeintel/uploads/internal/shared",
         "//internal/database/basestore",
         "//internal/database/batch",
         "//internal/database/dbutil",

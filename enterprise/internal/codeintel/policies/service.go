@@ -5,8 +5,9 @@ import (
 	"sort"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/shared"
+	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/store"
-	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -24,6 +25,10 @@ type Service struct {
 	gitserver  gitserver.Client
 	operations *operations
 }
+
+type (
+	GetConfigurationPoliciesOptions = shared.GetConfigurationPoliciesOptions
+)
 
 func newService(
 	observationCtx *observation.Context,
@@ -45,8 +50,16 @@ func (s *Service) getPolicyMatcherFromFactory(extractor Extractor, includeTipOfD
 	return NewMatcher(s.gitserver, extractor, includeTipOfDefaultBranch, filterByCreatedDate)
 }
 
-func (s *Service) GetConfigurationPolicies(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error) {
-	return s.store.GetConfigurationPolicies(ctx, opts)
+func (s *Service) GetConfigurationPolicies(ctx context.Context, opts GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error) {
+	return s.store.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
+		RepositoryID:     opts.RepositoryID,
+		Term:             opts.Term,
+		Protected:        opts.Protected,
+		ForDataRetention: opts.ForDataRetention,
+		ForIndexing:      opts.ForIndexing,
+		Limit:            opts.Limit,
+		Offset:           opts.Offset,
+	})
 }
 
 func (s *Service) GetConfigurationPolicyByID(ctx context.Context, id int) (types.ConfigurationPolicy, bool, error) {
@@ -109,7 +122,7 @@ func (s *Service) GetRetentionPolicyOverview(ctx context.Context, upload types.U
 
 	policyMatcher := s.getPolicyMatcherFromFactory(RetentionExtractor, true, false)
 
-	configPolicies, _, err := s.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
+	configPolicies, _, err := s.GetConfigurationPolicies(ctx, GetConfigurationPoliciesOptions{
 		RepositoryID:     upload.RepositoryID,
 		Term:             query,
 		ForDataRetention: true,

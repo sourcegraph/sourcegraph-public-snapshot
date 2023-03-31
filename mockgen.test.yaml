@@ -86,7 +86,7 @@
         - RepoUpdaterClient
         - UploadService
         - IndexEnqueuer
-    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads
       interfaces:
         - PackageReferenceScanner
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store

@@ -6,10 +6,9 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
-
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 

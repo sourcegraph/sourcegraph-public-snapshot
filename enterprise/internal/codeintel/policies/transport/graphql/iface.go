@@ -4,13 +4,12 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 )
 
 type PoliciesService interface {
 	// Fetch policies
-	GetConfigurationPolicies(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error)
+	GetConfigurationPolicies(ctx context.Context, opts policies.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error)
 	GetConfigurationPolicyByID(ctx context.Context, id int) (types.ConfigurationPolicy, bool, error)
 
 	// Modify policies

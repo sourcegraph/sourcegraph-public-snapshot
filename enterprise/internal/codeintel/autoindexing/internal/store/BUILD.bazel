@@ -15,8 +15,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/codeintel/autoindexing/shared",
+        "//enterprise/internal/codeintel/autoindexing/internal/shared",
         "//enterprise/internal/codeintel/shared/types",
+        "//enterprise/internal/codeintel/uploads",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbutil",
@@ -49,8 +50,8 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//enterprise/internal/codeintel/autoindexing/shared",
         "//enterprise/internal/codeintel/shared/types",
+        "//enterprise/internal/codeintel/uploads",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbtest",

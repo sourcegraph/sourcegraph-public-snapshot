@@ -6,8 +6,9 @@ import (
 
 	logger "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -29,9 +30,9 @@ type Store interface {
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) error
 	GetInferenceScript(ctx context.Context) (string, error)
 	SetInferenceScript(ctx context.Context, script string) error
-	RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) ([]shared.RepositoryWithAvailableIndexers, int, error)
-	TopRepositoriesToConfigure(ctx context.Context, limit int) ([]shared.RepositoryWithCount, error)
-	SetConfigurationSummary(ctx context.Context, repositoryID int, numEvents int, availableIndexers map[string]shared.AvailableIndexer) error
+	RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) ([]uploadsshared.RepositoryWithAvailableIndexers, int, error)
+	TopRepositoriesToConfigure(ctx context.Context, limit int) ([]uploadsshared.RepositoryWithCount, error)
+	SetConfigurationSummary(ctx context.Context, repositoryID int, numEvents int, availableIndexers map[string]uploadsshared.AvailableIndexer) error
 	TruncateConfigurationSummary(ctx context.Context, numRecordsToRetain int) error
 	GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) ([]int, error)
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (int, error)

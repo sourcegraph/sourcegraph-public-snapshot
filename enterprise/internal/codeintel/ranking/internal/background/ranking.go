@@ -11,8 +11,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/lsifstore"
 	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
+	rankingshared2 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
@@ -142,7 +143,7 @@ func setDefinitionsForUpload(
 	document *scip.Document,
 ) (map[string]struct{}, error) {
 	seenDefinitions := map[string]struct{}{}
-	definitions := make(chan shared.RankingDefinitions)
+	definitions := make(chan rankingshared2.RankingDefinitions)
 
 	go func() {
 		defer close(definitions)
@@ -153,7 +154,7 @@ func setDefinitionsForUpload(
 			}
 
 			if scip.SymbolRole_Definition.Matches(occ) {
-				definitions <- shared.RankingDefinitions{
+				definitions <- rankingshared2.RankingDefinitions{
 					UploadID:     upload.ID,
 					SymbolName:   occ.Symbol,
 					DocumentPath: filepath.Join(upload.Root, path),

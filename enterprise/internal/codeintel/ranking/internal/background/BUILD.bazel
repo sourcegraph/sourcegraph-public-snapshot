@@ -13,7 +13,7 @@ go_library(
         "//enterprise/internal/codeintel/ranking/internal/shared",
         "//enterprise/internal/codeintel/ranking/internal/store",
         "//enterprise/internal/codeintel/shared/background",
-        "//enterprise/internal/codeintel/uploads/shared",
+        "//enterprise/internal/codeintel/uploads",
         "//internal/conf",
         "//internal/goroutine",
         "//internal/observation",

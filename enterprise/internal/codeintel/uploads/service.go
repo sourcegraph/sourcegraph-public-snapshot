@@ -9,11 +9,9 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	logger "github.com/sourcegraph/log"
 
-	autoindexingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -74,15 +72,15 @@ func (s *Service) GetCommitGraphMetadata(ctx context.Context, repositoryID int) 
 	return s.store.GetCommitGraphMetadata(ctx, repositoryID)
 }
 
-func (s *Service) GetDirtyRepositories(ctx context.Context) (_ []shared.DirtyRepository, err error) {
+func (s *Service) GetDirtyRepositories(ctx context.Context) (_ []DirtyRepository, err error) {
 	return s.store.GetDirtyRepositories(ctx)
 }
 
-func (s *Service) GetIndexers(ctx context.Context, opts shared.GetIndexersOptions) ([]string, error) {
+func (s *Service) GetIndexers(ctx context.Context, opts GetIndexersOptions) ([]string, error) {
 	return s.store.GetIndexers(ctx, opts)
 }
 
-func (s *Service) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) ([]types.Upload, int, error) {
+func (s *Service) GetUploads(ctx context.Context, opts GetUploadsOptions) ([]types.Upload, int, error) {
 	return s.store.GetUploads(ctx, opts)
 }
 
@@ -102,7 +100,7 @@ func (s *Service) DeleteUploadByID(ctx context.Context, id int) (bool, error) {
 	return s.store.DeleteUploadByID(ctx, id)
 }
 
-func (s *Service) DeleteUploads(ctx context.Context, opts shared.DeleteUploadsOptions) error {
+func (s *Service) DeleteUploads(ctx context.Context, opts DeleteUploadsOptions) error {
 	return s.store.DeleteUploads(ctx, opts)
 }
 
@@ -197,7 +195,7 @@ func (s *Service) GetDumpsByIDs(ctx context.Context, ids []int) ([]types.Dump, e
 	return s.store.GetDumpsByIDs(ctx, ids)
 }
 
-func (s *Service) ReferencesForUpload(ctx context.Context, uploadID int) (shared.PackageReferenceScanner, error) {
+func (s *Service) ReferencesForUpload(ctx context.Context, uploadID int) (PackageReferenceScanner, error) {
 	return s.store.ReferencesForUpload(ctx, uploadID)
 }
 
@@ -209,7 +207,7 @@ func (s *Service) GetUploadDocumentsForPath(ctx context.Context, bundleID int, p
 	return s.lsifstore.GetUploadDocumentsForPath(ctx, bundleID, pathPattern)
 }
 
-func (s *Service) GetRecentUploadsSummary(ctx context.Context, repositoryID int) ([]shared.UploadsWithRepositoryNamespace, error) {
+func (s *Service) GetRecentUploadsSummary(ctx context.Context, repositoryID int) ([]UploadsWithRepositoryNamespace, error) {
 	return s.store.GetRecentUploadsSummary(ctx, repositoryID)
 }
 
@@ -217,7 +215,7 @@ func (s *Service) GetLastUploadRetentionScanForRepository(ctx context.Context, r
 	return s.store.GetLastUploadRetentionScanForRepository(ctx, repositoryID)
 }
 
-func (s *Service) ReindexUploads(ctx context.Context, opts shared.ReindexUploadsOptions) error {
+func (s *Service) ReindexUploads(ctx context.Context, opts ReindexUploadsOptions) error {
 	return s.store.ReindexUploads(ctx, opts)
 }
 
@@ -225,7 +223,7 @@ func (s *Service) ReindexUploadByID(ctx context.Context, id int) error {
 	return s.store.ReindexUploadByID(ctx, id)
 }
 
-func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) ([]types.Index, int, error) {
+func (s *Service) GetIndexes(ctx context.Context, opts GetIndexesOptions) ([]types.Index, int, error) {
 	return s.store.GetIndexes(ctx, opts)
 }
 
@@ -241,7 +239,7 @@ func (s *Service) DeleteIndexByID(ctx context.Context, id int) (bool, error) {
 	return s.store.DeleteIndexByID(ctx, id)
 }
 
-func (s *Service) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) error {
+func (s *Service) DeleteIndexes(ctx context.Context, opts DeleteIndexesOptions) error {
 	return s.store.DeleteIndexes(ctx, opts)
 }
 
@@ -249,11 +247,11 @@ func (s *Service) ReindexIndexByID(ctx context.Context, id int) error {
 	return s.store.ReindexIndexByID(ctx, id)
 }
 
-func (s *Service) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) error {
+func (s *Service) ReindexIndexes(ctx context.Context, opts ReindexIndexesOptions) error {
 	return s.store.ReindexIndexes(ctx, opts)
 }
 
-func (s *Service) GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]autoindexingshared.IndexesWithRepositoryNamespace, error) {
+func (s *Service) GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]IndexesWithRepositoryNamespace, error) {
 	return s.store.GetRecentIndexesSummary(ctx, repositoryID)
 }
 
@@ -261,6 +259,6 @@ func (s *Service) NumRepositoriesWithCodeIntelligence(ctx context.Context) (int,
 	return s.store.NumRepositoriesWithCodeIntelligence(ctx)
 }
 
-func (s *Service) RepositoryIDsWithErrors(ctx context.Context, offset, limit int) ([]autoindexingshared.RepositoryWithCount, int, error) {
+func (s *Service) RepositoryIDsWithErrors(ctx context.Context, offset, limit int) ([]RepositoryWithCount, int, error) {
 	return s.store.RepositoryIDsWithErrors(ctx, offset, limit)
 }

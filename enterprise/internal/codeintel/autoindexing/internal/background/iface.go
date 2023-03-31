@@ -4,11 +4,9 @@ import (
 	"context"
 	"time"
 
-	autoindexingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -39,7 +37,7 @@ type PolicyMatcher interface {
 }
 
 type PoliciesService interface {
-	GetConfigurationPolicies(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) ([]codeinteltypes.ConfigurationPolicy, int, error)
+	GetConfigurationPolicies(ctx context.Context, opts policies.GetConfigurationPoliciesOptions) ([]codeinteltypes.ConfigurationPolicy, int, error)
 }
 
 type IndexEnqueuer interface {
@@ -57,7 +55,7 @@ type AutoIndexingService interface {
 
 type UploadService interface {
 	GetUploadByID(ctx context.Context, id int) (codeinteltypes.Upload, bool, error)
-	ReferencesForUpload(ctx context.Context, uploadID int) (shared.PackageReferenceScanner, error)
-	GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []shared.UploadsWithRepositoryNamespace, err error)
-	GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]autoindexingshared.IndexesWithRepositoryNamespace, error)
+	ReferencesForUpload(ctx context.Context, uploadID int) (uploads.PackageReferenceScanner, error)
+	GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []uploads.UploadsWithRepositoryNamespace, err error)
+	GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]uploads.IndexesWithRepositoryNamespace, error)
 }

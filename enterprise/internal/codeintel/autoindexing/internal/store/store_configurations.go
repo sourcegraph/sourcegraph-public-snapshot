@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 
 	"github.com/keegancsmith/sqlf"

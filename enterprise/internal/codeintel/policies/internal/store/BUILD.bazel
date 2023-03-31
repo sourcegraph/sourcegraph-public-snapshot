@@ -12,7 +12,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/store",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/codeintel/policies/shared",
+        "//enterprise/internal/codeintel/policies/internal/shared",
         "//enterprise/internal/codeintel/shared/types",
         "//internal/database",
         "//internal/database/basestore",
@@ -42,7 +42,7 @@ go_test(
     ],
     deps = [
         "//cmd/frontend/globals",
-        "//enterprise/internal/codeintel/policies/shared",
+        "//enterprise/internal/codeintel/policies/internal/shared",
         "//enterprise/internal/codeintel/shared/types",
         "//internal/database",
         "//internal/database/basestore",

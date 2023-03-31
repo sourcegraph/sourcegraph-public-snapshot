@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
-	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -170,7 +170,7 @@ func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID, p
 
 	for {
 		// Retrieve the set of configuration policies that affect indexing for this repository.
-		policies, totalCount, err := b.policiesSvc.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
+		policies, totalCount, err := b.policiesSvc.GetConfigurationPolicies(ctx, policies.GetConfigurationPoliciesOptions{
 			RepositoryID: repositoryID,
 			ForIndexing:  true,
 			Limit:        policyBatchSize,

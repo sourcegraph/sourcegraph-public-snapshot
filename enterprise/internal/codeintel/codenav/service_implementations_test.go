@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -36,7 +35,7 @@ func TestImplementations(t *testing.T) {
 	// Empty result set (prevents nil pointer as scanner is always non-nil)
 	mockUploadSvc.GetUploadIDsWithReferencesFunc.PushReturn([]int{}, 0, 0, nil)
 
-	locations := []shared.Location{
+	locations := []Location{
 		{DumpID: 51, Path: "a.go", Range: testRange1},
 		{DumpID: 51, Path: "b.go", Range: testRange2},
 		{DumpID: 51, Path: "a.go", Range: testRange3},
@@ -54,8 +53,8 @@ func TestImplementations(t *testing.T) {
 		{ID: 53, Commit: "deadbeef", Root: "sub4/"},
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
-	mockCursor := shared.ImplementationsCursor{Phase: "local"}
-	mockRequest := shared.RequestArgs{
+	mockCursor := ImplementationsCursor{Phase: "local"}
+	mockRequest := RequestArgs{
 		RepositoryID: 51,
 		Commit:       "deadbeef",
 		Path:         "s1/main.go",
@@ -99,7 +98,7 @@ func TestImplementationsWithSubRepoPermissions(t *testing.T) {
 	// Empty result set (prevents nil pointer as scanner is always non-nil)
 	mockUploadSvc.GetUploadIDsWithReferencesFunc.PushReturn([]int{}, 0, 0, nil)
 
-	locations := []shared.Location{
+	locations := []Location{
 		{DumpID: 51, Path: "a.go", Range: testRange1},
 		{DumpID: 51, Path: "b.go", Range: testRange2},
 		{DumpID: 51, Path: "a.go", Range: testRange3},
@@ -132,8 +131,8 @@ func TestImplementationsWithSubRepoPermissions(t *testing.T) {
 	mockRequestState.SetAuthChecker(checker)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	mockCursor := shared.ImplementationsCursor{Phase: "local"}
-	mockRequest := shared.RequestArgs{
+	mockCursor := ImplementationsCursor{Phase: "local"}
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -221,7 +220,7 @@ func TestImplementationsRemote(t *testing.T) {
 	mockLsifStore.GetPackageInformationFunc.PushReturn(packageInformation1, true, nil)
 	mockLsifStore.GetPackageInformationFunc.PushReturn(packageInformation2, true, nil)
 
-	locations := []shared.Location{
+	locations := []Location{
 		{DumpID: 51, Path: "a.go", Range: testRange1},
 		{DumpID: 51, Path: "b.go", Range: testRange2},
 		{DumpID: 51, Path: "a.go", Range: testRange3},
@@ -232,7 +231,7 @@ func TestImplementationsRemote(t *testing.T) {
 	mockLsifStore.GetImplementationLocationsFunc.PushReturn(locations[1:4], 3, nil)
 	mockLsifStore.GetImplementationLocationsFunc.PushReturn(locations[4:5], 1, nil)
 
-	monikerLocations := []shared.Location{
+	monikerLocations := []Location{
 		{DumpID: 53, Path: "a.go", Range: testRange1},
 		{DumpID: 53, Path: "b.go", Range: testRange2},
 		{DumpID: 53, Path: "a.go", Range: testRange3},
@@ -243,8 +242,8 @@ func TestImplementationsRemote(t *testing.T) {
 	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(monikerLocations[1:2], 1, nil) // impls batch 1
 	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(monikerLocations[2:], 3, nil)  // impls batch 2
 
-	mockCursor := shared.ImplementationsCursor{Phase: "local"}
-	mockRequest := shared.RequestArgs{
+	mockCursor := ImplementationsCursor{Phase: "local"}
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -408,7 +407,7 @@ func TestImplementationsRemoteWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore.GetPackageInformationFunc.PushReturn(packageInformation1, true, nil)
 	mockLsifStore.GetPackageInformationFunc.PushReturn(packageInformation2, true, nil)
 
-	locations := []shared.Location{
+	locations := []Location{
 		{DumpID: 51, Path: "a.go", Range: testRange1},
 		{DumpID: 51, Path: "b.go", Range: testRange2},
 		{DumpID: 51, Path: "a.go", Range: testRange3},
@@ -419,7 +418,7 @@ func TestImplementationsRemoteWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore.GetImplementationLocationsFunc.PushReturn(locations[1:4], 3, nil)
 	mockLsifStore.GetImplementationLocationsFunc.PushReturn(locations[4:5], 1, nil)
 
-	monikerLocations := []shared.Location{
+	monikerLocations := []Location{
 		{DumpID: 53, Path: "a.go", Range: testRange1},
 		{DumpID: 53, Path: "b.go", Range: testRange2},
 		{DumpID: 53, Path: "a.go", Range: testRange3},
@@ -431,8 +430,8 @@ func TestImplementationsRemoteWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(monikerLocations[2:], 3, nil)  // impls batch 2
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	mockCursor := shared.ImplementationsCursor{Phase: "local"}
-	mockRequest := shared.RequestArgs{
+	mockCursor := ImplementationsCursor{Phase: "local"}
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,

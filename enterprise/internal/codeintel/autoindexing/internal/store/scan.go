@@ -8,7 +8,7 @@ import (
 
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -118,16 +118,22 @@ func scanCountsAndTotalCount(rows *sql.Rows, queryErr error) (totalCount int, _ 
 	return totalCount, visibilities, nil
 }
 
+type sourcedCommits struct {
+	RepositoryID   int
+	RepositoryName string
+	Commits        []string
+}
+
 // scanSourcedCommits scans triples of repository ids/repository names/commits from the
 // return value of `*Store.query`. The output of this function is ordered by repository
 // identifier, then by commit.
-func scanSourcedCommits(rows *sql.Rows, queryErr error) (_ []shared.SourcedCommits, err error) {
+func scanSourcedCommits(rows *sql.Rows, queryErr error) (_ []sourcedCommits, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	sourcedCommitsMap := map[int]shared.SourcedCommits{}
+	sourcedCommitsMap := map[int]sourcedCommits{}
 	for rows.Next() {
 		var repositoryID int
 		var repositoryName string
@@ -136,14 +142,14 @@ func scanSourcedCommits(rows *sql.Rows, queryErr error) (_ []shared.SourcedCommi
 			return nil, err
 		}
 
-		sourcedCommitsMap[repositoryID] = shared.SourcedCommits{
+		sourcedCommitsMap[repositoryID] = sourcedCommits{
 			RepositoryID:   repositoryID,
 			RepositoryName: repositoryName,
 			Commits:        append(sourcedCommitsMap[repositoryID].Commits, commit),
 		}
 	}
 
-	flattened := make([]shared.SourcedCommits, 0, len(sourcedCommitsMap))
+	flattened := make([]sourcedCommits, 0, len(sourcedCommitsMap))
 	for _, sourcedCommits := range sourcedCommitsMap {
 		sort.Strings(sourcedCommits.Commits)
 		flattened = append(flattened, sourcedCommits)

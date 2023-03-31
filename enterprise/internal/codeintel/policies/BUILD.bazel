@@ -15,8 +15,8 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/policies/internal/background",
+        "//enterprise/internal/codeintel/policies/internal/shared",
         "//enterprise/internal/codeintel/policies/internal/store",
-        "//enterprise/internal/codeintel/policies/shared",
         "//enterprise/internal/codeintel/shared/types",
         "//internal/api",
         "//internal/authz",
@@ -47,8 +47,8 @@ go_test(
     ],
     embed = [":policies"],
     deps = [
+        "//enterprise/internal/codeintel/policies/internal/shared",
         "//enterprise/internal/codeintel/policies/internal/store",
-        "//enterprise/internal/codeintel/policies/shared",
         "//enterprise/internal/codeintel/shared/types",
         "//internal/api",
         "//internal/authz",

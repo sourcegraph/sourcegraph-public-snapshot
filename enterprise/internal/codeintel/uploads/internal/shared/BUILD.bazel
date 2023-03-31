@@ -4,10 +4,11 @@ go_library(
     name = "shared",
     srcs = [
         "indexers.go",
+        "scip_compressor.go",
+        "scip_decompressor.go",
         "types.go",
-        "workerutil.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared",
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/shared",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/shared/types",

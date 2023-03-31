@@ -10,7 +10,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/jobselector"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -118,7 +117,7 @@ func TestQueueIndexesExplicit(t *testing.T) {
 }
 
 func TestQueueIndexesInDatabase(t *testing.T) {
-	indexConfiguration := shared.IndexConfiguration{
+	indexConfiguration := IndexConfiguration{
 		ID:           1,
 		RepositoryID: 42,
 		Data: []byte(`{

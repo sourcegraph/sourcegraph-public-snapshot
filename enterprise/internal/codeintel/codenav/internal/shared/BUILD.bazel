@@ -3,7 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "shared",
     srcs = ["types.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared",
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/shared",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/shared/types",

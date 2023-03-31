@@ -13,8 +13,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/internal/background",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
+        "//enterprise/internal/codeintel/sentinel/internal/shared",
         "//enterprise/internal/codeintel/sentinel/internal/store",
-        "//enterprise/internal/codeintel/sentinel/shared",
         "//internal/goroutine",
         "//internal/lazyregexp",
         "//internal/observation",

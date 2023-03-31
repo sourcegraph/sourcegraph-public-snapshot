@@ -8,9 +8,8 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	autoindexingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -21,7 +20,7 @@ func init() {
 }
 
 func TestDependencySyncSchedulerJVM(t *testing.T) {
-	mockWorkerStore := NewMockWorkerStore[autoindexingshared.DependencySyncingJob]()
+	mockWorkerStore := NewMockWorkerStore[DependencySyncingJob]()
 	mockUploadsSvc := NewMockUploadService()
 	mockDepedenciesSvc := NewMockDependenciesService()
 	mockStore := NewMockStore()
@@ -40,7 +39,7 @@ func TestDependencySyncSchedulerJVM(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	job := autoindexingshared.DependencySyncingJob{
+	job := DependencySyncingJob{
 		UploadID: 42,
 	}
 	if err := handler.Handle(context.Background(), logger, job); err != nil {
@@ -72,7 +71,7 @@ func TestDependencySyncSchedulerJVM(t *testing.T) {
 
 func TestDependencySyncSchedulerGomod(t *testing.T) {
 	t.Skip()
-	mockWorkerStore := NewMockWorkerStore[autoindexingshared.DependencySyncingJob]()
+	mockWorkerStore := NewMockWorkerStore[DependencySyncingJob]()
 	mockUploadsSvc := NewMockUploadService()
 	mockDepedenciesSvc := NewMockDependenciesService()
 	mockStore := NewMockStore()
@@ -91,7 +90,7 @@ func TestDependencySyncSchedulerGomod(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	job := autoindexingshared.DependencySyncingJob{
+	job := DependencySyncingJob{
 		UploadID: 42,
 	}
 	if err := handler.Handle(context.Background(), logger, job); err != nil {

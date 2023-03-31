@@ -3,7 +3,7 @@ package graphql
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
@@ -15,7 +15,7 @@ type AutoIndexingService interface {
 	SetInferenceScript(ctx context.Context, script string) error
 
 	// Repository configuration
-	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (shared.IndexConfiguration, bool, error)
+	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (autoindexing.IndexConfiguration, bool, error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) error
 
 	// Inference

@@ -13,8 +13,8 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
+	rankingshared2 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -33,7 +33,7 @@ func TestInsertDefinition(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	expectedDefinitions := []shared.RankingDefinitions{
+	expectedDefinitions := []rankingshared2.RankingDefinitions{
 		{
 			UploadID:     1,
 			SymbolName:   "foo",
@@ -52,7 +52,7 @@ func TestInsertDefinition(t *testing.T) {
 	}
 
 	// Insert definitions
-	mockDefinitions := make(chan shared.RankingDefinitions, len(expectedDefinitions))
+	mockDefinitions := make(chan rankingshared2.RankingDefinitions, len(expectedDefinitions))
 	for _, def := range expectedDefinitions {
 		mockDefinitions <- def
 	}
@@ -70,6 +70,11 @@ func TestInsertDefinition(t *testing.T) {
 	if diff := cmp.Diff(expectedDefinitions, definitions); diff != "" {
 		t.Errorf("unexpected definitions (-want +got):\n%s", diff)
 	}
+}
+
+type rankingReferences struct {
+	UploadID    int
+	SymbolNames []string
 }
 
 func TestInsertReferences(t *testing.T) {
@@ -94,7 +99,7 @@ func TestInsertReferences(t *testing.T) {
 		t.Fatalf("unexpected error getting references: %s", err)
 	}
 
-	expectedReferences := []shared.RankingReferences{
+	expectedReferences := []rankingReferences{
 		{
 			UploadID:    1,
 			SymbolNames: []string{"foo", "bar", "baz"},
@@ -118,18 +123,18 @@ func TestInsertPathRanks(t *testing.T) {
 	insertUploads(t, db, types.Upload{ID: 1})
 
 	// Insert definitions
-	mockDefinitions := make(chan shared.RankingDefinitions, 3)
-	mockDefinitions <- shared.RankingDefinitions{
+	mockDefinitions := make(chan rankingshared2.RankingDefinitions, 3)
+	mockDefinitions <- rankingshared2.RankingDefinitions{
 		UploadID:     1,
 		SymbolName:   "foo",
 		DocumentPath: "foo.go",
 	}
-	mockDefinitions <- shared.RankingDefinitions{
+	mockDefinitions <- rankingshared2.RankingDefinitions{
 		UploadID:     1,
 		SymbolName:   "bar",
 		DocumentPath: "bar.go",
 	}
-	mockDefinitions <- shared.RankingDefinitions{
+	mockDefinitions <- rankingshared2.RankingDefinitions{
 		UploadID:     1,
 		SymbolName:   "foo",
 		DocumentPath: "foo.go",
@@ -275,23 +280,23 @@ func TestInsertPathCountInputs(t *testing.T) {
 	)
 
 	// Insert definitions
-	mockDefinitions := make(chan shared.RankingDefinitions, 4)
-	mockDefinitions <- shared.RankingDefinitions{
+	mockDefinitions := make(chan rankingshared2.RankingDefinitions, 4)
+	mockDefinitions <- rankingshared2.RankingDefinitions{
 		UploadID:     42,
 		SymbolName:   "foo",
 		DocumentPath: "foo.go",
 	}
-	mockDefinitions <- shared.RankingDefinitions{
+	mockDefinitions <- rankingshared2.RankingDefinitions{
 		UploadID:     42,
 		SymbolName:   "bar",
 		DocumentPath: "bar.go",
 	}
-	mockDefinitions <- shared.RankingDefinitions{
+	mockDefinitions <- rankingshared2.RankingDefinitions{
 		UploadID:     43,
 		SymbolName:   "baz",
 		DocumentPath: "baz.go",
 	}
-	mockDefinitions <- shared.RankingDefinitions{
+	mockDefinitions <- rankingshared2.RankingDefinitions{
 		UploadID:     43,
 		SymbolName:   "bonk",
 		DocumentPath: "bonk.go",
@@ -413,12 +418,12 @@ func TestVacuumStaleDefinitionsAndReferences(t *testing.T) {
 		types.Upload{ID: 3},
 	)
 
-	mockDefinitions := make(chan shared.RankingDefinitions, 5)
-	mockDefinitions <- shared.RankingDefinitions{UploadID: 1, SymbolName: "foo", DocumentPath: "foo.go"}
-	mockDefinitions <- shared.RankingDefinitions{UploadID: 1, SymbolName: "bar", DocumentPath: "bar.go"}
-	mockDefinitions <- shared.RankingDefinitions{UploadID: 2, SymbolName: "foo", DocumentPath: "foo.go"}
-	mockDefinitions <- shared.RankingDefinitions{UploadID: 2, SymbolName: "bar", DocumentPath: "bar.go"}
-	mockDefinitions <- shared.RankingDefinitions{UploadID: 3, SymbolName: "baz", DocumentPath: "baz.go"}
+	mockDefinitions := make(chan rankingshared2.RankingDefinitions, 5)
+	mockDefinitions <- rankingshared2.RankingDefinitions{UploadID: 1, SymbolName: "foo", DocumentPath: "foo.go"}
+	mockDefinitions <- rankingshared2.RankingDefinitions{UploadID: 1, SymbolName: "bar", DocumentPath: "bar.go"}
+	mockDefinitions <- rankingshared2.RankingDefinitions{UploadID: 2, SymbolName: "foo", DocumentPath: "foo.go"}
+	mockDefinitions <- rankingshared2.RankingDefinitions{UploadID: 2, SymbolName: "bar", DocumentPath: "bar.go"}
+	mockDefinitions <- rankingshared2.RankingDefinitions{UploadID: 3, SymbolName: "baz", DocumentPath: "baz.go"}
 	close(mockDefinitions)
 	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey, mockDefinitions); err != nil {
 		t.Fatalf("unexpected error inserting definitions: %s", err)
@@ -550,13 +555,13 @@ func TestVacuumAbandonedDefinitions(t *testing.T) {
 		symbols = append(symbols, fmt.Sprintf("s%d", j+1))
 	}
 
-	mockDefinitions1 := make(chan shared.RankingDefinitions, len(symbols))
-	mockDefinitions2 := make(chan shared.RankingDefinitions, len(symbols))
-	mockDefinitions3 := make(chan shared.RankingDefinitions, len(symbols))
+	mockDefinitions1 := make(chan rankingshared2.RankingDefinitions, len(symbols))
+	mockDefinitions2 := make(chan rankingshared2.RankingDefinitions, len(symbols))
+	mockDefinitions3 := make(chan rankingshared2.RankingDefinitions, len(symbols))
 	for _, symbol := range symbols {
-		mockDefinitions1 <- shared.RankingDefinitions{UploadID: 1, SymbolName: symbol, DocumentPath: "foo.go"}
-		mockDefinitions2 <- shared.RankingDefinitions{UploadID: 1, SymbolName: symbol, DocumentPath: "foo.go"}
-		mockDefinitions3 <- shared.RankingDefinitions{UploadID: 1, SymbolName: symbol, DocumentPath: "foo.go"}
+		mockDefinitions1 <- rankingshared2.RankingDefinitions{UploadID: 1, SymbolName: symbol, DocumentPath: "foo.go"}
+		mockDefinitions2 <- rankingshared2.RankingDefinitions{UploadID: 1, SymbolName: symbol, DocumentPath: "foo.go"}
+		mockDefinitions3 <- rankingshared2.RankingDefinitions{UploadID: 1, SymbolName: symbol, DocumentPath: "foo.go"}
 	}
 	close(mockDefinitions1)
 	close(mockDefinitions2)
@@ -837,7 +842,7 @@ func getRankingDefinitions(
 	t *testing.T,
 	db database.DB,
 	graphKey string,
-) (_ []shared.RankingDefinitions, err error) {
+) (_ []rankingshared2.RankingDefinitions, err error) {
 	query := fmt.Sprintf(
 		`SELECT upload_id, symbol_name, document_path FROM codeintel_ranking_definitions WHERE graph_key = '%s'`,
 		graphKey,
@@ -848,7 +853,7 @@ func getRankingDefinitions(
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	var definitions []shared.RankingDefinitions
+	var definitions []rankingshared2.RankingDefinitions
 	for rows.Next() {
 		var uploadID int
 		var symbolName string
@@ -857,7 +862,7 @@ func getRankingDefinitions(
 		if err != nil {
 			return nil, err
 		}
-		definitions = append(definitions, shared.RankingDefinitions{
+		definitions = append(definitions, rankingshared2.RankingDefinitions{
 			UploadID:     uploadID,
 			SymbolName:   symbolName,
 			DocumentPath: documentPath,
@@ -872,7 +877,7 @@ func getRankingReferences(
 	t *testing.T,
 	db database.DB,
 	graphKey string,
-) (_ []shared.RankingReferences, err error) {
+) (_ []rankingReferences, err error) {
 	query := fmt.Sprintf(
 		`SELECT upload_id, symbol_names FROM codeintel_ranking_references WHERE graph_key = '%s'`,
 		graphKey,
@@ -883,7 +888,7 @@ func getRankingReferences(
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	var references []shared.RankingReferences
+	var references []rankingReferences
 	for rows.Next() {
 		var uploadID int
 		var symbolNames []string
@@ -891,7 +896,7 @@ func getRankingReferences(
 		if err != nil {
 			return nil, err
 		}
-		references = append(references, shared.RankingReferences{
+		references = append(references, rankingReferences{
 			UploadID:    uploadID,
 			SymbolNames: symbolNames,
 		})

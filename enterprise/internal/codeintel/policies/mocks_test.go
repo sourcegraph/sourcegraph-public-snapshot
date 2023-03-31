@@ -10,8 +10,8 @@ import (
 	"context"
 	"sync"
 
+	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/shared"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/store"
-	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	types "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 )
 

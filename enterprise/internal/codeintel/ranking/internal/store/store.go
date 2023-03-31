@@ -9,7 +9,8 @@ import (
 	"github.com/lib/pq"
 	logger "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	rankingshared2 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
+	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -28,7 +29,7 @@ type Store interface {
 	GetReferenceCountStatistics(ctx context.Context) (logmean float64, _ error)
 	LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error)
 	UpdatedAfter(ctx context.Context, t time.Time) ([]api.RepoName, error)
-	InsertDefinitionsForRanking(ctx context.Context, rankingGraphKey string, definitions chan shared.RankingDefinitions) error
+	InsertDefinitionsForRanking(ctx context.Context, rankingGraphKey string, definitions chan rankingshared2.RankingDefinitions) error
 	InsertReferencesForRanking(ctx context.Context, rankingGraphKey string, batchSize int, uploadID int, references chan string) error
 	InsertInitialPathCounts(ctx context.Context, derivativeGraphKey string, batchSize int) (numInitialPathsProcessed int, numInitialPathRanksInserted int, err error)
 	InsertPathCountInputs(ctx context.Context, rankingGraphKey string, batchSize int) (numReferenceRecordsProcessed int, numInputsInserted int, err error)

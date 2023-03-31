@@ -8,8 +8,8 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	autoindexingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/shared"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -212,14 +212,14 @@ WHERE
 	r.blocked IS NULL
 `
 
-func (s *store) RepositoryIDsWithErrors(ctx context.Context, offset, limit int) (_ []autoindexingshared.RepositoryWithCount, totalCount int, err error) {
+func (s *store) RepositoryIDsWithErrors(ctx context.Context, offset, limit int) (_ []uploadsshared.RepositoryWithCount, totalCount int, err error) {
 	ctx, _, endObservation := s.operations.repositoryIDsWithErrors.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	defer endObservation(1, observation.Args{})
 
 	return scanRepositoryWithCounts(s.db.Query(ctx, sqlf.Sprintf(repositoriesWithErrorsQuery, limit, offset)))
 }
 
-var scanRepositoryWithCounts = basestore.NewSliceWithCountScanner(func(s dbutil.Scanner) (rc autoindexingshared.RepositoryWithCount, count int, _ error) {
+var scanRepositoryWithCounts = basestore.NewSliceWithCountScanner(func(s dbutil.Scanner) (rc uploadsshared.RepositoryWithCount, count int, _ error) {
 	err := s.Scan(&rc.RepositoryID, &rc.Count, &count)
 	return rc, count, err
 })

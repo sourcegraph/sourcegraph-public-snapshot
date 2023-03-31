@@ -11,8 +11,9 @@ import (
 	"sync"
 	"time"
 
+	shared1 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
-	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/shared"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	conftypes "github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	schema "github.com/sourcegraph/sourcegraph/schema"
@@ -131,7 +132,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		InsertDefinitionsForRankingFunc: &StoreInsertDefinitionsForRankingFunc{
-			defaultHook: func(context.Context, string, chan shared.RankingDefinitions) (r0 error) {
+			defaultHook: func(context.Context, string, chan shared1.RankingDefinitions) (r0 error) {
 				return
 			},
 		},
@@ -253,7 +254,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		InsertDefinitionsForRankingFunc: &StoreInsertDefinitionsForRankingFunc{
-			defaultHook: func(context.Context, string, chan shared.RankingDefinitions) error {
+			defaultHook: func(context.Context, string, chan shared1.RankingDefinitions) error {
 				panic("unexpected invocation of MockStore.InsertDefinitionsForRanking")
 			},
 		},
@@ -966,15 +967,15 @@ func (c StoreGetUploadsForRankingFuncCall) Results() []interface{} {
 // InsertDefinitionsForRanking method of the parent MockStore instance is
 // invoked.
 type StoreInsertDefinitionsForRankingFunc struct {
-	defaultHook func(context.Context, string, chan shared.RankingDefinitions) error
-	hooks       []func(context.Context, string, chan shared.RankingDefinitions) error
+	defaultHook func(context.Context, string, chan shared1.RankingDefinitions) error
+	hooks       []func(context.Context, string, chan shared1.RankingDefinitions) error
 	history     []StoreInsertDefinitionsForRankingFuncCall
 	mutex       sync.Mutex
 }
 
 // InsertDefinitionsForRanking delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockStore) InsertDefinitionsForRanking(v0 context.Context, v1 string, v2 chan shared.RankingDefinitions) error {
+func (m *MockStore) InsertDefinitionsForRanking(v0 context.Context, v1 string, v2 chan shared1.RankingDefinitions) error {
 	r0 := m.InsertDefinitionsForRankingFunc.nextHook()(v0, v1, v2)
 	m.InsertDefinitionsForRankingFunc.appendCall(StoreInsertDefinitionsForRankingFuncCall{v0, v1, v2, r0})
 	return r0
@@ -983,7 +984,7 @@ func (m *MockStore) InsertDefinitionsForRanking(v0 context.Context, v1 string, v
 // SetDefaultHook sets function that is called when the
 // InsertDefinitionsForRanking method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreInsertDefinitionsForRankingFunc) SetDefaultHook(hook func(context.Context, string, chan shared.RankingDefinitions) error) {
+func (f *StoreInsertDefinitionsForRankingFunc) SetDefaultHook(hook func(context.Context, string, chan shared1.RankingDefinitions) error) {
 	f.defaultHook = hook
 }
 
@@ -992,7 +993,7 @@ func (f *StoreInsertDefinitionsForRankingFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *StoreInsertDefinitionsForRankingFunc) PushHook(hook func(context.Context, string, chan shared.RankingDefinitions) error) {
+func (f *StoreInsertDefinitionsForRankingFunc) PushHook(hook func(context.Context, string, chan shared1.RankingDefinitions) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1001,19 +1002,19 @@ func (f *StoreInsertDefinitionsForRankingFunc) PushHook(hook func(context.Contex
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreInsertDefinitionsForRankingFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, chan shared.RankingDefinitions) error {
+	f.SetDefaultHook(func(context.Context, string, chan shared1.RankingDefinitions) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreInsertDefinitionsForRankingFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, chan shared.RankingDefinitions) error {
+	f.PushHook(func(context.Context, string, chan shared1.RankingDefinitions) error {
 		return r0
 	})
 }
 
-func (f *StoreInsertDefinitionsForRankingFunc) nextHook() func(context.Context, string, chan shared.RankingDefinitions) error {
+func (f *StoreInsertDefinitionsForRankingFunc) nextHook() func(context.Context, string, chan shared1.RankingDefinitions) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1055,7 +1056,7 @@ type StoreInsertDefinitionsForRankingFuncCall struct {
 	Arg1 string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 chan shared.RankingDefinitions
+	Arg2 chan shared1.RankingDefinitions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error

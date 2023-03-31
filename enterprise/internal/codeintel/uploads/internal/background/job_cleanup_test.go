@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -79,7 +78,13 @@ type updateInvocation struct {
 	Delete       bool
 }
 
-var testSourcedCommits = []shared.SourcedCommits{
+type sourcedCommits struct {
+	RepositoryID   int
+	RepositoryName string
+	Commits        []string
+}
+
+var testSourcedCommits = []sourcedCommits{
 	{RepositoryID: 1, RepositoryName: "foo", Commits: []string{"foo-x", "foo-y", "foo-z"}},
 	{RepositoryID: 2, RepositoryName: "bar", Commits: []string{"bar-x", "bar-y", "bar-z"}},
 	{RepositoryID: 3, RepositoryName: "baz", Commits: []string{"baz-x", "baz-y", "baz-z"}},

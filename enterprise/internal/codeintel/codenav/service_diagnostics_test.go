@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -39,7 +38,7 @@ func TestDiagnostics(t *testing.T) {
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
 
-	diagnostics := []shared.Diagnostic{
+	diagnostics := []Diagnostic{
 		{DiagnosticData: precise.DiagnosticData{Code: "c1"}},
 		{DiagnosticData: precise.DiagnosticData{Code: "c2"}},
 		{DiagnosticData: precise.DiagnosticData{Code: "c3"}},
@@ -50,7 +49,7 @@ func TestDiagnostics(t *testing.T) {
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[1:4], 3, nil)
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[4:], 26, nil)
 
-	mockRequest := shared.RequestArgs{
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -67,12 +66,12 @@ func TestDiagnostics(t *testing.T) {
 		t.Errorf("unexpected count. want=%d have=%d", 30, totalCount)
 	}
 
-	expectedDiagnostics := []shared.DiagnosticAtUpload{
-		{Dump: uploads[0], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub1/", DiagnosticData: precise.DiagnosticData{Code: "c1"}}},
-		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c2"}}},
-		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c3"}}},
-		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c4"}}},
-		{Dump: uploads[2], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub3/", DiagnosticData: precise.DiagnosticData{Code: "c5"}}},
+	expectedDiagnostics := []DiagnosticAtUpload{
+		{Dump: uploads[0], AdjustedCommit: "deadbeef", Diagnostic: Diagnostic{Path: "sub1/", DiagnosticData: precise.DiagnosticData{Code: "c1"}}},
+		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c2"}}},
+		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c3"}}},
+		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c4"}}},
+		{Dump: uploads[2], AdjustedCommit: "deadbeef", Diagnostic: Diagnostic{Path: "sub3/", DiagnosticData: precise.DiagnosticData{Code: "c5"}}},
 	}
 	if diff := cmp.Diff(expectedDiagnostics, adjustedDiagnostics); diff != "" {
 		t.Errorf("unexpected diagnostics (-want +got):\n%s", diff)
@@ -123,7 +122,7 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 	})
 	mockRequestState.SetAuthChecker(checker)
 
-	diagnostics := []shared.Diagnostic{
+	diagnostics := []Diagnostic{
 		{DiagnosticData: precise.DiagnosticData{Code: "c1"}},
 		{DiagnosticData: precise.DiagnosticData{Code: "c2"}},
 		{DiagnosticData: precise.DiagnosticData{Code: "c3"}},
@@ -135,7 +134,7 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[4:], 26, nil)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	mockRequest := shared.RequestArgs{
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -152,10 +151,10 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 		t.Errorf("unexpected count. want=%d have=%d", 30, totalCount)
 	}
 
-	expectedDiagnostics := []shared.DiagnosticAtUpload{
-		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c2"}}},
-		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c3"}}},
-		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c4"}}},
+	expectedDiagnostics := []DiagnosticAtUpload{
+		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c2"}}},
+		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c3"}}},
+		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c4"}}},
 	}
 	if diff := cmp.Diff(expectedDiagnostics, adjustedDiagnostics); diff != "" {
 		t.Errorf("unexpected diagnostics (-want +got):\n%s", diff)

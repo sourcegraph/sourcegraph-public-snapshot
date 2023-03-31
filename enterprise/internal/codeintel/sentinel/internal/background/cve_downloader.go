@@ -6,8 +6,8 @@ import (
 
 	logger "github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/internal/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 

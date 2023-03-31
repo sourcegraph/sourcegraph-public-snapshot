@@ -9,7 +9,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/internal/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"

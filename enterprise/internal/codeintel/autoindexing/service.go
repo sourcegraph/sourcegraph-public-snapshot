@@ -11,9 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/enqueuer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/jobselector"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -35,6 +36,10 @@ type Service struct {
 	logger          log.Logger
 	operations      *operations
 }
+
+type (
+	IndexConfiguration = shared.IndexConfiguration
+)
 
 func newService(
 	observationCtx *observation.Context,
@@ -80,7 +85,7 @@ func newService(
 	}
 }
 
-func (s *Service) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (shared.IndexConfiguration, bool, error) {
+func (s *Service) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (IndexConfiguration, bool, error) {
 	return s.store.GetIndexConfigurationByRepositoryID(ctx, repositoryID)
 }
 
@@ -172,7 +177,7 @@ func (s *Service) GetRepositoriesForIndexScan(ctx context.Context, table, column
 	return s.store.GetRepositoriesForIndexScan(ctx, table, column, processDelay, allowGlobalPolicies, repositoryMatchLimit, limit, now)
 }
 
-func (s *Service) RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) ([]shared.RepositoryWithAvailableIndexers, int, error) {
+func (s *Service) RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) ([]uploadsshared.RepositoryWithAvailableIndexers, int, error) {
 	return s.store.RepositoryIDsWithConfiguration(ctx, offset, limit)
 }
 

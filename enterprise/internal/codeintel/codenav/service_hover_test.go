@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -46,7 +45,7 @@ func TestHover(t *testing.T) {
 	mockLsifStore.GetHoverFunc.PushReturn("", types.Range{}, false, nil)
 	mockLsifStore.GetHoverFunc.PushReturn("doctext", expectedRange, true, nil)
 
-	mockRequest := shared.RequestArgs{
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -126,7 +125,7 @@ func TestHoverRemote(t *testing.T) {
 	mockLsifStore.GetPackageInformationFunc.PushReturn(packageInformation1, true, nil)
 	mockLsifStore.GetPackageInformationFunc.PushReturn(packageInformation2, true, nil)
 
-	locations := []shared.Location{
+	locations := []Location{
 		{DumpID: 151, Path: "a.go", Range: testRange1},
 		{DumpID: 151, Path: "b.go", Range: testRange2},
 		{DumpID: 151, Path: "a.go", Range: testRange3},
@@ -143,7 +142,7 @@ func TestHoverRemote(t *testing.T) {
 		return
 	})
 
-	mockRequest := shared.RequestArgs{
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,

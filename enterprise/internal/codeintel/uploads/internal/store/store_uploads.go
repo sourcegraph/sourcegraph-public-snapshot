@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"os"
 	"sort"
 	"strconv"
@@ -16,7 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/commitgraph"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
@@ -1158,7 +1159,7 @@ UPDATE lsif_uploads SET %s WHERE id IN (%s)
 
 // SourcedCommitsWithoutCommittedAt returns the repository and commits of uploads that do not have an
 // associated commit date value.
-func (s *store) SourcedCommitsWithoutCommittedAt(ctx context.Context, batchSize int) (_ []shared.SourcedCommits, err error) {
+func (s *store) SourcedCommitsWithoutCommittedAt(ctx context.Context, batchSize int) (_ []SourcedCommits, err error) {
 	ctx, _, endObservation := s.operations.sourcedCommitsWithoutCommittedAt.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("batchSize", batchSize),
 	}})
@@ -1426,7 +1427,7 @@ func (s *store) GetVisibleUploadsMatchingMonikers(ctx context.Context, repositor
 	defer endObservation(1, observation.Args{})
 
 	if len(monikers) == 0 {
-		return shared.PackageReferenceScannerFromSlice(), 0, nil
+		return PackageReferenceScannerFromSlice(), 0, nil
 	}
 
 	qs := make([]*sqlf.Query, 0, len(monikers))
@@ -1454,7 +1455,7 @@ func (s *store) GetVisibleUploadsMatchingMonikers(ctx context.Context, repositor
 		return nil, 0, err
 	}
 
-	return shared.PackageReferenceScannerFromRows(rows), totalCount, nil
+	return PackageReferenceScannerFromRows(rows), totalCount, nil
 }
 
 const referenceIDsCTEDefinitions = `
@@ -2304,4 +2305,64 @@ func buildDeleteUploadsLogFields(opts shared.DeleteUploadsOptions) []log.Field {
 		log.String("term", opts.Term),
 		log.Bool("visibleAtTip", opts.VisibleAtTip),
 	}
+}
+
+type rowScanner struct {
+	rows *sql.Rows
+}
+
+// packageReferenceScannerFromRows creates a PackageReferenceScanner that feeds the given values.
+func PackageReferenceScannerFromRows(rows *sql.Rows) shared.PackageReferenceScanner {
+	return &rowScanner{
+		rows: rows,
+	}
+}
+
+// Next reads the next package reference value from the database cursor.
+func (s *rowScanner) Next() (reference shared.PackageReference, _ bool, _ error) {
+	if !s.rows.Next() {
+		return shared.PackageReference{}, false, nil
+	}
+
+	if err := s.rows.Scan(
+		&reference.DumpID,
+		&reference.Scheme,
+		&reference.Manager,
+		&reference.Name,
+		&reference.Version,
+	); err != nil {
+		return shared.PackageReference{}, false, err
+	}
+
+	return reference, true, nil
+}
+
+// Close the underlying row object.
+func (s *rowScanner) Close() error {
+	return basestore.CloseRows(s.rows, nil)
+}
+
+type sliceScanner struct {
+	references []shared.PackageReference
+}
+
+// PackageReferenceScannerFromSlice creates a PackageReferenceScanner that feeds the given values.
+func PackageReferenceScannerFromSlice(references ...shared.PackageReference) shared.PackageReferenceScanner {
+	return &sliceScanner{
+		references: references,
+	}
+}
+
+func (s *sliceScanner) Next() (shared.PackageReference, bool, error) {
+	if len(s.references) == 0 {
+		return shared.PackageReference{}, false, nil
+	}
+
+	next := s.references[0]
+	s.references = s.references[1:]
+	return next, true, nil
+}
+
+func (s *sliceScanner) Close() error {
+	return nil
 }

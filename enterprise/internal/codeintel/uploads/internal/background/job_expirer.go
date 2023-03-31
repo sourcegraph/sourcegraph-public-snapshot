@@ -5,10 +5,9 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -153,8 +152,8 @@ func (s *expirer) handleRepository(ctx context.Context, repositoryID int, cfg Ex
 // repository and build a map from commits to the policies that apply to them.
 func (s *expirer) buildCommitMap(ctx context.Context, repositoryID int, cfg ExpirerConfig, now time.Time) (map[string][]policies.PolicyMatch, error) {
 	var (
-		offset   int
-		policies []types.ConfigurationPolicy
+		offset      int
+		policySlice []types.ConfigurationPolicy
 	)
 
 	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
@@ -165,7 +164,7 @@ func (s *expirer) buildCommitMap(ctx context.Context, repositoryID int, cfg Expi
 
 	for {
 		// Retrieve the complete set of configuration policies that affect data retention for this repository
-		policyBatch, totalCount, err := s.policySvc.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
+		policyBatch, totalCount, err := s.policySvc.GetConfigurationPolicies(ctx, policies.GetConfigurationPoliciesOptions{
 			RepositoryID:     repositoryID,
 			ForDataRetention: true,
 			Limit:            cfg.PolicyBatchSize,
@@ -176,7 +175,7 @@ func (s *expirer) buildCommitMap(ctx context.Context, repositoryID int, cfg Expi
 		}
 
 		offset += len(policyBatch)
-		policies = append(policies, policyBatch...)
+		policySlice = append(policySlice, policyBatch...)
 
 		if len(policyBatch) == 0 || offset >= totalCount {
 			break
@@ -184,7 +183,7 @@ func (s *expirer) buildCommitMap(ctx context.Context, repositoryID int, cfg Expi
 	}
 
 	// Get the set of commits within this repository that match a data retention policy
-	return s.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, repoName, policies, now)
+	return s.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, repoName, policySlice, now)
 }
 
 func (s *expirer) handleUploads(

@@ -7,7 +7,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/internal/shared"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 
 	gocvss20 "github.com/pandatix/go-cvss/20"

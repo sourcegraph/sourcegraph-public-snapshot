@@ -9,7 +9,6 @@ import (
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -124,7 +123,7 @@ func TestReferences(t *testing.T) {
 	)
 
 	offset := int32(25)
-	mockRefCursor := shared.ReferencesCursor{Phase: "local"}
+	mockRefCursor := codenav.ReferencesCursor{Phase: "local"}
 	encodedCursor := encodeReferencesCursor(mockRefCursor)
 	mockCursor := base64.StdEncoding.EncodeToString([]byte(encodedCursor))
 

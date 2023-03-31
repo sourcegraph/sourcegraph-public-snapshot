@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -39,7 +38,7 @@ func uploadIDsToString(vs []types.Dump) string {
 }
 
 // isSourceLocation returns true if the given location encloses the source position within one of the visible uploads.
-func isSourceLocation(visibleUploads []visibleUpload, location shared.Location) bool {
+func isSourceLocation(visibleUploads []visibleUpload, location Location) bool {
 	for i := range visibleUploads {
 		if location.DumpID == visibleUploads[i].Upload.ID && location.Path == visibleUploads[i].TargetPath {
 			if rangeContainsPosition(location.Range, visibleUploads[i].TargetPosition) {

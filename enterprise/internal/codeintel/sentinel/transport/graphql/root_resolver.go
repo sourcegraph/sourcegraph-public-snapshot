@@ -6,7 +6,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/internal/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -109,7 +110,7 @@ func (r *rootResolver) VulnerabilityMatches(ctx context.Context, args resolverst
 		repositoryName = *args.RepositoryName
 	}
 
-	matches, totalCount, err := r.sentinelSvc.GetVulnerabilityMatches(ctx, shared.GetVulnerabilityMatchesArgs{
+	matches, totalCount, err := r.sentinelSvc.GetVulnerabilityMatches(ctx, sentinel.GetVulnerabilityMatchesArgs{
 		Limit:          int(limit),
 		Offset:         int(offset),
 		Language:       language,
@@ -164,7 +165,7 @@ func (r *rootResolver) VulnerabilityMatchesCountByRepository(ctx context.Context
 		repositoryName = *args.RepositoryName
 	}
 
-	vulerabilityCounts, totalCount, err := r.sentinelSvc.GetVulnerabilityMatchesCountByRepository(ctx, shared.GetVulnerabilityMatchesCountByRepositoryArgs{
+	vulerabilityCounts, totalCount, err := r.sentinelSvc.GetVulnerabilityMatchesCountByRepository(ctx, sentinel.GetVulnerabilityMatchesCountByRepositoryArgs{
 		Limit:          int(limit),
 		Offset:         int(offset),
 		RepositoryName: repositoryName,
@@ -253,7 +254,7 @@ func (r *rootResolver) VulnerabilityMatchesSummaryCounts(ctx context.Context) (_
 //
 
 type vulnerabilityResolver struct {
-	v shared.Vulnerability
+	v sentinel.Vulnerability
 }
 
 func (r *vulnerabilityResolver) ID() graphql.ID {
@@ -296,7 +297,7 @@ func (r *vulnerabilityResolver) AffectedPackages() []resolverstubs.Vulnerability
 }
 
 type vulnerabilityAffectedPackageResolver struct {
-	p shared.AffectedPackage
+	p sentinel.AffectedPackage
 }
 
 func (r *vulnerabilityAffectedPackageResolver) PackageName() string { return r.p.PackageName }
@@ -320,7 +321,7 @@ func (r *vulnerabilityAffectedPackageResolver) AffectedSymbols() []resolverstubs
 }
 
 type vulnerabilityAffectedSymbolResolver struct {
-	s shared.AffectedSymbol
+	s sentinel.AffectedSymbol
 }
 
 func (r *vulnerabilityAffectedSymbolResolver) Path() string      { return r.s.Path }
@@ -338,12 +339,12 @@ func (f *bulkLoaderFactory) Create() *bulkLoader {
 }
 
 type bulkLoader struct {
-	loader *sharedresolvers.DataLoader[int, shared.Vulnerability]
+	loader *sharedresolvers.DataLoader[int, sentinel.Vulnerability]
 }
 
 func NewBulkLoader(sentinelSvc SentinelService) *bulkLoader {
 	return &bulkLoader{
-		loader: sharedresolvers.NewDataLoader[int, shared.Vulnerability](sharedresolvers.DataLoaderBackingServiceFunc[int, shared.Vulnerability](func(ctx context.Context, ids ...int) ([]shared.Vulnerability, error) {
+		loader: sharedresolvers.NewDataLoader[int, sentinel.Vulnerability](sharedresolvers.DataLoaderBackingServiceFunc[int, sentinel.Vulnerability](func(ctx context.Context, ids ...int) ([]shared.Vulnerability, error) {
 			return sentinelSvc.GetVulnerabilitiesByIDs(ctx, ids...)
 		})),
 	}
@@ -353,7 +354,7 @@ func (l *bulkLoader) MarkVulnerability(id int) {
 	l.loader.Presubmit(id)
 }
 
-func (l *bulkLoader) GetVulnerabilityByID(ctx context.Context, id int) (shared.Vulnerability, bool, error) {
+func (l *bulkLoader) GetVulnerabilityByID(ctx context.Context, id int) (sentinel.Vulnerability, bool, error) {
 	return l.loader.GetByID(ctx, id)
 }
 
@@ -368,7 +369,7 @@ type vulnerabilityMatchResolver struct {
 	locationResolver *sharedresolvers.CachedLocationResolver
 	errTracer        *observation.ErrCollector
 	bulkLoader       *bulkLoader
-	m                shared.VulnerabilityMatch
+	m                sentinel.VulnerabilityMatch
 }
 
 func (r *vulnerabilityMatchResolver) ID() graphql.ID {
@@ -429,7 +430,7 @@ func (v *vulnerabilityMatchesSummaryCountResolver) Repository() int32 {
 }
 
 type vulnerabilityMatchCountByRepositoryResolver struct {
-	v shared.VulnerabilityMatchesByRepository
+	v sentinel.VulnerabilityMatchesByRepository
 }
 
 func (v vulnerabilityMatchCountByRepositoryResolver) ID() graphql.ID {

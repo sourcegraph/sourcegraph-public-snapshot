@@ -6,7 +6,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -92,7 +92,7 @@ func (s *store) ReferencesForUpload(ctx context.Context, uploadID int) (_ shared
 		return nil, err
 	}
 
-	return shared.PackageReferenceScannerFromRows(rows), nil
+	return PackageReferenceScannerFromRows(rows), nil
 }
 
 const referencesForUploadQuery = `

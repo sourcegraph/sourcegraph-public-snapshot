@@ -15,7 +15,7 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/internal/shared"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 

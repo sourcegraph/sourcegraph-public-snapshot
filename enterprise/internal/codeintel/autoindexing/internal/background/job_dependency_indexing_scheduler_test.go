@@ -10,9 +10,8 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	autoindexingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -25,7 +24,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 	mockExtSvcStore := NewMockExternalServiceStore()
 	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
-	mockWorkerStore := NewMockWorkerStore[autoindexingshared.DependencyIndexingJob]()
+	mockWorkerStore := NewMockWorkerStore[DependencyIndexingJob]()
 
 	mockRepoStore.ListMinimalReposFunc.PushReturn([]types.MinimalRepo{
 		{
@@ -75,7 +74,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	job := autoindexingshared.DependencyIndexingJob{
+	job := DependencyIndexingJob{
 		UploadID:            42,
 		ExternalServiceKind: "",
 		ExternalServiceSync: time.Time{},
@@ -133,7 +132,7 @@ func TestDependencyIndexingSchedulerHandlerCustomer(t *testing.T) {
 	mockExtSvcStore := NewMockExternalServiceStore()
 	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
-	mockWorkerStore := NewMockWorkerStore[autoindexingshared.DependencyIndexingJob]()
+	mockWorkerStore := NewMockWorkerStore[DependencyIndexingJob]()
 	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(codeinteltypes.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
 	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 
@@ -176,7 +175,7 @@ func TestDependencyIndexingSchedulerHandlerCustomer(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	job := autoindexingshared.DependencyIndexingJob{
+	job := DependencyIndexingJob{
 		UploadID:            42,
 		ExternalServiceKind: "",
 		ExternalServiceSync: time.Time{},
@@ -237,7 +236,7 @@ func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
 	mockExtSvcStore := NewMockExternalServiceStore()
 	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
-	mockWorkerStore := NewMockWorkerStore[autoindexingshared.DependencyIndexingJob]()
+	mockWorkerStore := NewMockWorkerStore[DependencyIndexingJob]()
 	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(codeinteltypes.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
 	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 
@@ -269,7 +268,7 @@ func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
 		repoUpdater:        mockRepoUpdater,
 	}
 
-	job := autoindexingshared.DependencyIndexingJob{
+	job := DependencyIndexingJob{
 		UploadID:            42,
 		ExternalServiceKind: "",
 		ExternalServiceSync: time.Time{},
@@ -297,7 +296,7 @@ func TestDependencyIndexingSchedulerHandlerSkipNonExistant(t *testing.T) {
 	mockExtSvcStore := NewMockExternalServiceStore()
 	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
-	mockWorkerStore := NewMockWorkerStore[autoindexingshared.DependencyIndexingJob]()
+	mockWorkerStore := NewMockWorkerStore[DependencyIndexingJob]()
 	mockRepoStore := NewMockReposStore()
 
 	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(codeinteltypes.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
@@ -331,7 +330,7 @@ func TestDependencyIndexingSchedulerHandlerSkipNonExistant(t *testing.T) {
 		repoStore:          mockRepoStore,
 	}
 
-	job := autoindexingshared.DependencyIndexingJob{
+	job := DependencyIndexingJob{
 		UploadID:            42,
 		ExternalServiceKind: "",
 		ExternalServiceSync: time.Time{},
@@ -376,7 +375,7 @@ func TestDependencyIndexingSchedulerHandlerShouldSkipRepository(t *testing.T) {
 		repoStore:          mockRepoStore,
 	}
 
-	job := autoindexingshared.DependencyIndexingJob{
+	job := DependencyIndexingJob{
 		ExternalServiceKind: "",
 		ExternalServiceSync: time.Time{},
 		UploadID:            42,
@@ -424,7 +423,7 @@ func TestDependencyIndexingSchedulerHandlerNoExtsvc(t *testing.T) {
 		repoStore:          mockRepoStore,
 	}
 
-	job := autoindexingshared.DependencyIndexingJob{
+	job := DependencyIndexingJob{
 		ExternalServiceKind: extsvc.KindJVMPackages,
 		ExternalServiceSync: time.Time{},
 		UploadID:            42,

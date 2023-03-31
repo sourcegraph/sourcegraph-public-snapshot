@@ -9,7 +9,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -42,14 +42,14 @@ const repoNameQuery = `
 SELECT name FROM repo WHERE id = %s
 `
 
-func (s *store) RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) (_ []shared.RepositoryWithAvailableIndexers, totalCount int, err error) {
+func (s *store) RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) (_ []uploadsshared.RepositoryWithAvailableIndexers, totalCount int, err error) {
 	ctx, _, endObservation := s.operations.repositoryIDsWithConfiguration.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	defer endObservation(1, observation.Args{})
 
 	return scanRepositoryWithAvailableIndexers(s.db.Query(ctx, sqlf.Sprintf(repositoriesWithConfigurationQuery, limit, offset)))
 }
 
-var scanRepositoryWithAvailableIndexers = basestore.NewSliceWithCountScanner(func(s dbutil.Scanner) (rai shared.RepositoryWithAvailableIndexers, count int, _ error) {
+var scanRepositoryWithAvailableIndexers = basestore.NewSliceWithCountScanner(func(s dbutil.Scanner) (rai uploadsshared.RepositoryWithAvailableIndexers, count int, _ error) {
 	var payload string
 	if err := s.Scan(&rai.RepositoryID, &payload, &count); err != nil {
 		return rai, 0, err
@@ -75,13 +75,13 @@ ORDER BY num_events DESC LIMIT %s OFFSET %s
 // about one month
 const eventLogsWindow = time.Hour * 24 * 30
 
-func (s *store) TopRepositoriesToConfigure(ctx context.Context, limit int) (_ []shared.RepositoryWithCount, err error) {
+func (s *store) TopRepositoriesToConfigure(ctx context.Context, limit int) (_ []uploadsshared.RepositoryWithCount, err error) {
 	ctx, _, endObservation := s.operations.topRepositoriesToConfigure.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("limit", limit),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	repositories, err := basestore.NewSliceScanner(func(s dbutil.Scanner) (rc shared.RepositoryWithCount, _ error) {
+	repositories, err := basestore.NewSliceScanner(func(s dbutil.Scanner) (rc uploadsshared.RepositoryWithCount, _ error) {
 		err := s.Scan(&rc.RepositoryID, &rc.Count)
 		return rc, err
 	})(s.db.Query(ctx, sqlf.Sprintf(topRepositoriesToConfigureQuery, pq.Array(eventNames), eventLogsWindow/time.Hour, limit)))
@@ -116,7 +116,7 @@ ORDER BY num_events DESC, id
 LIMIT %s
 `
 
-func (s *store) SetConfigurationSummary(ctx context.Context, repositoryID int, numEvents int, availableIndexers map[string]shared.AvailableIndexer) (err error) {
+func (s *store) SetConfigurationSummary(ctx context.Context, repositoryID int, numEvents int, availableIndexers map[string]uploadsshared.AvailableIndexer) (err error) {
 	ctx, _, endObservation := s.operations.setConfigurationSummary.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
