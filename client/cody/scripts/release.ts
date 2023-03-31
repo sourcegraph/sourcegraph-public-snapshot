@@ -32,7 +32,7 @@ const commands = {
     // To publish to VS Code Marketplace
     vscode_publish: `vsce publish ${isPreRelease} --packagePath dist/cody.vsix --pat $VSCODE_MARKETPLACE_TOKEN`,
     // To publish to the open-vsx registry
-    openvsx_publish: 'pnpx ovsx publish dist/cody.vsix --pat $VSCODE_OPENVSX_TOKEN',
+    openvsx_publish: 'npx ovsx publish dist/cody.vsix --pat $VSCODE_OPENVSX_TOKEN',
 }
 
 childProcess.execSync('pnpm run download-rg', { stdio: 'inherit' })
