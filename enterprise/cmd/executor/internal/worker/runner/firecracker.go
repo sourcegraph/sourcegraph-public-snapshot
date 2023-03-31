@@ -97,7 +97,7 @@ func (r *firecrackerRunner) Setup(ctx context.Context) error {
 	}
 	r.tmpDir = dir
 
-	dockerConfigPath, err := setupFirecracker1(ctx, r.cmd, r.cmdLogger, r.vmName, r.workspaceDevice, r.tmpDir, r.options, r.operations)
+	dockerConfigPath, err := r.setupFirecracker(ctx)
 	r.options.DockerOptions.ConfigPath = dockerConfigPath
 	return err
 }
@@ -145,9 +145,12 @@ func (r *firecrackerRunner) setupFirecracker(ctx context.Context) (string, error
 	}
 
 	// Start the VM and wait for the SSH server to become available.
-	startCommandSpec := r.newCommandSpec(
-		"setup.firecracker.start",
-		command.Flatten(
+	startCommandSpec := command.Spec{
+		Key: "setup.firecracker.start",
+		// Tell ignite to use our temporary config file for maximum isolation of
+		// envs.
+		Env: []string{fmt.Sprintf("CNI_CONF_DIR=%s", cniConfigDir)},
+		Command: flatten(
 			"ignite", "run",
 			"--runtime", "docker",
 			"--network-plugin", "cni",
@@ -161,21 +164,19 @@ func (r *firecrackerRunner) setupFirecracker(ctx context.Context) (string, error
 			"--sandbox-image", sanitizeImage(r.options.SandboxImage),
 			sanitizeImage(r.options.Image),
 		),
-		[]string{fmt.Sprintf("CNI_CONF_DIR=%s", cniConfigDir)},
-		r.operations.SetupFirecrackerStart,
-	)
+		Operation: r.operations.SetupFirecrackerStart,
+	}
 
 	if err = r.cmd.Run(ctx, r.cmdLogger, startCommandSpec); err != nil {
 		return "", errors.Wrap(err, "failed to start firecracker vm")
 	}
 
 	if r.options.VMStartupScriptPath != "" {
-		startupScriptCommandSpec := r.newCommandSpec(
-			"setup.startup-script",
-			command.Flatten("ignite", "exec", r.vmName, "--", r.options.VMStartupScriptPath),
-			nil,
-			r.operations.SetupStartupScript,
-		)
+		startupScriptCommandSpec := command.Spec{
+			Key:       "setup.startup-script",
+			Command:   flatten("ignite", "exec", r.vmName, "--", r.options.VMStartupScriptPath),
+			Operation: r.operations.SetupStartupScript,
+		}
 		if err = r.cmd.Run(ctx, r.cmdLogger, startupScriptCommandSpec); err != nil {
 			return "", errors.Wrap(err, "failed to run startup script")
 		}
@@ -390,21 +391,6 @@ func quoteEnv(env []string) []string {
 	return quotedEnv
 }
 
-// dockerDaemonConfigFilename is the filename in the firecracker state tmp directory
-// for the optional docker daemon config file.
-const dockerDaemonConfigFilename1 = "docker-daemon.json"
-
-func newDockerDaemonConfig1(tmpDir string, mirrorAddresses []string) (_ string, err error) {
-	c, err := json.Marshal(&dockerDaemonConfig{RegistryMirrors: mirrorAddresses})
-	if err != nil {
-		return "", errors.Wrap(err, "marshalling docker daemon config")
-	}
-
-	tmpFilePath := path.Join(tmpDir, dockerDaemonConfigFilename1)
-	err = os.WriteFile(tmpFilePath, c, os.ModePerm)
-	return tmpFilePath, errors.Wrap(err, "writing docker daemon config file")
-}
-
 // setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
 // machine instance. If a startup script path (an executable file on the host) is supplied,
 // it will be mounted into the new virtual machine instance and executed.
@@ -412,7 +398,7 @@ func setupFirecracker1(ctx context.Context, runner command.Command, logger comma
 	var daemonConfigFile string
 	if len(options.DockerRegistryMirrorURLs) > 0 {
 		var err error
-		daemonConfigFile, err = newDockerDaemonConfig1(tmpDir, options.DockerRegistryMirrorURLs)
+		daemonConfigFile, err = newDockerDaemonConfig(tmpDir, options.DockerRegistryMirrorURLs)
 		if err != nil {
 			return "", err
 		}
