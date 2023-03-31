@@ -69,7 +69,7 @@ func searchEmbeddingIndex(
 		fileContent, err := readFile(ctx, repoName, revision, row.FileName)
 		if err != nil {
 			if !os.IsNotExist(err) {
-				logger.Error("error reading file", log.Error(err))
+				logger.Error("error reading file", log.String("repoName", string(repoName)), log.String("revision", string(revision)), log.String("fileName", row.FileName), log.Error(err))
 			}
 			continue
 		}
