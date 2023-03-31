@@ -880,6 +880,7 @@ go_library(
         "frontend/1680088638_add_is_partial_success_to_permission_sync_jobs/down.sql",
         "frontend/1680088638_add_is_partial_success_to_permission_sync_jobs/metadata.yaml",
         "frontend/1680088638_add_is_partial_success_to_permission_sync_jobs/up.sql",
+        "codeinsights/pbcopy",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/migrations",
     visibility = ["//visibility:public"],
