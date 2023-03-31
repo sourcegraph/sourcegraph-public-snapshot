@@ -16,7 +16,6 @@ class SCIPSnapshotDecorations extends WidgetType {
 
 export const scipSnapshot = (data?: { offset: number; data: string }[]): Extension => {
     const widgets = data?.map(line => {
-        console.log(line.data, line.offset)
         return Decoration.widget({
             widget: new SCIPSnapshotDecorations(line.data),
             block: true,

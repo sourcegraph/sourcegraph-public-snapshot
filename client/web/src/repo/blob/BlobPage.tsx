@@ -191,7 +191,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
         }, [filePath, revision, repoName, props.telemetryService])
     )
 
-    const [indexIDForSnapshotData] = useSessionStorage<{ [repoName: string]: string }>(
+    const [indexIDsForSnapshotData] = useSessionStorage<{ [repoName: string]: string }>(
         'blob.preciseIndexIDForSnapshotData',
         {}
     )
@@ -211,8 +211,8 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                         revision,
                         filePath,
                         format: HighlightResponseFormat.HTML_PLAINTEXT,
-                        scipSnapshot: indexIDForSnapshotData[repoName] !== undefined,
-                        visibleIndexID: indexIDForSnapshotData[repoName],
+                        scipSnapshot: indexIDsForSnapshotData[repoName] !== undefined,
+                        visibleIndexID: indexIDsForSnapshotData[repoName],
                     }).pipe(
                         map(blob => {
                             if (blob === null) {
@@ -239,7 +239,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                         })
                     )
                 ),
-            [filePath, mode, repoName, revision, span, indexIDForSnapshotData]
+            [filePath, mode, repoName, revision, span, indexIDsForSnapshotData]
         )
     )
 
@@ -265,8 +265,8 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                             format: enableCodeMirror
                                 ? HighlightResponseFormat.JSON_SCIP
                                 : HighlightResponseFormat.HTML_HIGHLIGHT,
-                            scipSnapshot: indexIDForSnapshotData[repoName] !== undefined,
-                            visibleIndexID: indexIDForSnapshotData[repoName],
+                            scipSnapshot: indexIDsForSnapshotData[repoName] !== undefined,
+                            visibleIndexID: indexIDsForSnapshotData[repoName],
                         })
                     ),
                     map(blob => {
@@ -301,7 +301,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                     }),
                     catchError((error): [ErrorLike] => [asError(error)])
                 ),
-            [repoName, revision, filePath, enableCodeMirror, mode, indexIDForSnapshotData]
+            [repoName, revision, filePath, enableCodeMirror, mode, indexIDsForSnapshotData]
         )
     )
 

@@ -323,7 +323,6 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
 
     const repoContainerContext: Omit<RepoContainerContext, 'repo'> = {
         ...repoRevisionContainerContext,
-
         resolvedRevisionOrError,
         onDidUpdateExternalLinks: setExternalLinks,
         repoName,
