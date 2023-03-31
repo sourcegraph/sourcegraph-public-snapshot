@@ -183,7 +183,7 @@ func TestSetPermissionsForUsers(t *testing.T) {
 
 			err := perms.LoadUserPendingPermissions(ctx, userPerms)
 			require.NoError(t, err)
-			require.Equal(t, collections.NewSet[int32](1, 2), userPerms.IDs)
+			require.Equal(t, []int32{1, 2}, userPerms.IDs.Sorted(collections.NaturalCompare[int32]))
 		}
 	}
 

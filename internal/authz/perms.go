@@ -201,7 +201,7 @@ type UserPendingPermissions struct {
 
 // GenerateSortedIDsSlice returns a sorted slice of the IDs set.
 func (p *UserPendingPermissions) GenerateSortedIDsSlice() []int32 {
-	return p.IDs.Sorted(func(a, b int32) bool { return a < b })
+	return p.IDs.Sorted(collections.NaturalCompare[int32])
 }
 
 // TracingFields returns tracing fields for the opentracing log.
