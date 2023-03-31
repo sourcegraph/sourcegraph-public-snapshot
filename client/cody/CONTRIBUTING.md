@@ -47,11 +47,6 @@ Follow the steps below to package and publish the VS Code extension.
 
 > NOTE: Since the extension has already been bundled during build, we will need to add the `--no-dependencies` flag to the `vsce` step during the packaging step to exclude the npm dependencies ([source](https://github.com/microsoft/vscode-vsce/issues/421#issuecomment-1038911725))
 
-### Prerequisite
-
-- Install the [VSCE CLI tool](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce)
-- Obtain the marketplace token for publishing Cody from 1Password
-
 ### Release Steps
 
 1. Increment the `version` in [`package.json`](package.json) and then run:
@@ -64,13 +59,18 @@ Follow the steps below to package and publish the VS Code extension.
 2. To try the packaged extension locally, disable any other installations of it and then run:
 
    ```sh
+   $ cd client/cody
    $ code --install-extension dist/cody.vsix
    ```
 
-3. To publish the packaged extension to the VS Code Extension Marketplace and Open VSX Registry:
+3. When the changes look good, create and merge a pull request with the changes into `main` and push an update to `cody/release` branch to trigger an automated release:
 
-   ```sh
-   $ cd client/cody
-   $ pnpm run vsce:publish
-   $ pnpm run ovsx:publish
-   ```
+```shell
+$ git push origin main:cody/release
+```
+
+- This will trigger the build pipeline for publishing the extension using the `pnpm release` command
+- Publish release to [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
+- Publish release to [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai)
+
+4. Visit the [buildkite page for the vsce/release pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=cody%2Frelease) to watch the build process
