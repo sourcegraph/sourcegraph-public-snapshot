@@ -353,6 +353,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 await logger.log('CodyVSCodeExtension:updateEndpoint:clicked')
                 if (action === 'Reload Window') {
                     await vscode.commands.executeCommand('workbench.action.reloadWindow')
+                    logger = await initializeEventLogger()
                 }
                 break
             }
