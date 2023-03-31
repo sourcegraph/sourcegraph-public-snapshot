@@ -23,12 +23,13 @@ import (
 )
 
 func (r *RepositoryResolver) MirrorInfo() *repositoryMirrorInfoResolver {
-	return &repositoryMirrorInfoResolver{repository: r, db: r.db}
+	return &repositoryMirrorInfoResolver{repository: r, db: r.db, gitServerClient: r.gitserverClient}
 }
 
 type repositoryMirrorInfoResolver struct {
-	repository *RepositoryResolver
-	db         database.DB
+	repository      *RepositoryResolver
+	db              database.DB
+	gitServerClient gitserver.Client
 
 	// memoize the repo-updater RepoUpdateSchedulerInfo call
 	repoUpdateSchedulerInfoOnce   sync.Once
@@ -136,7 +137,7 @@ func (r *repositoryMirrorInfoResolver) CloneProgress(ctx context.Context) (*stri
 		}
 		return strptr(info.CloningProgress), nil
 	}
-	progress, err := gitserver.NewClient().RepoCloneProgress(ctx, r.repository.RepoName())
+	progress, err := r.gitServerClient.RepoCloneProgress(ctx, r.repository.RepoName())
 	if err != nil {
 		return nil, err
 	}
@@ -321,7 +322,6 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 		return nil, errors.New("exactly one of the repository and name arguments must be set")
 	}
 
-	gsClient := gitserver.NewClient()
 	var repo *types.Repo
 	switch {
 	case args.Repository != nil:
@@ -329,7 +329,7 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 		if err != nil {
 			return nil, err
 		}
-		repo, err = backend.NewRepos(r.logger, r.db, gsClient).Get(ctx, repoID)
+		repo, err = backend.NewRepos(r.logger, r.db, r.gitserverClient).Get(ctx, repoID)
 		if err != nil {
 			return nil, err
 		}
@@ -339,7 +339,7 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 	}
 
 	var result checkMirrorRepositoryConnectionResult
-	if err := gsClient.IsRepoCloneable(ctx, repo.Name); err != nil {
+	if err := r.gitserverClient.IsRepoCloneable(ctx, repo.Name); err != nil {
 		result.errorMessage = err.Error()
 	}
 	return &result, nil
