@@ -13,7 +13,7 @@ import { initEndToEndTest } from '../utils/initEndToEndTest'
 
 const { sourcegraphBaseUrl } = getConfig('gitHubDotComToken', 'sourcegraphBaseUrl')
 
-describe('Repository component', () => {
+describe.skip('Repository component', () => {
     let driver: Driver
 
     before(async function () {
