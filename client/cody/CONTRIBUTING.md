@@ -69,12 +69,12 @@ Follow the steps below to package and publish the VS Code extension.
 
 3. When the changes look good, create and merge a pull request with the changes into `main` and push an update to `cody/release` branch to trigger an automated release:
 
-```shell
-$ git push origin main:cody/release
-```
+   ```shell
+   $ git push origin main:cody/release
+   ```
 
-- This will trigger the build pipeline for publishing the extension using the `pnpm release` command
-- Publish release to [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
-- Publish release to [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai)
+   - This will trigger the build pipeline for publishing the extension using the `pnpm release` command
+   - Publish release to [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
+   - Publish release to [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai)
 
-4. Visit the [buildkite page for the vsce/release pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=cody%2Frelease) to watch the build process
+   4. Visit the [buildkite page for the vsce/release pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=cody%2Frelease) to watch the build process
