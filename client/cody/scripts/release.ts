@@ -1,8 +1,6 @@
 /* eslint-disable no-sync */
 import childProcess from 'child_process'
 
-// import fs from 'fs'
-
 import * as semver from 'semver'
 
 import { version } from '../package.json'
