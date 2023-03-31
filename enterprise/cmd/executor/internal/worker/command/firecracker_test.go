@@ -101,8 +101,6 @@ func TestNewFirecrackerSpec(t *testing.T) {
 					"--",
 					"cd /work/some/dir && FOO=BAR src exec -f batch.yml",
 				},
-				Dir: "/work/some/dir",
-				Env: []string{"FOO=BAR"},
 			},
 		},
 		{
@@ -122,7 +120,6 @@ func TestNewFirecrackerSpec(t *testing.T) {
 					"--",
 					"cd /work/some/dir && src exec -f batch.yml",
 				},
-				Dir: "/work/some/dir",
 			},
 		},
 	}
