@@ -357,7 +357,8 @@ func (r *firecrackerRunner) Run(ctx context.Context, spec Spec) error {
 // --
 
 func formatFirecrackerCommand(spec command.Spec, name string, image string, scriptPath string, options FirecrackerOptions, dockerConfigPath string) command.Spec {
-	rawOrDockerCommand := formatRawOrDockerCommand(image, scriptPath, spec, "/work", options.DockerOptions, dockerConfigPath)
+	//rawOrDockerCommand := formatRawOrDockerCommand(image, scriptPath, spec, "/work", options.DockerOptions, dockerConfigPath)
+	rawOrDockerCommand := command.NewDockerSpec("/work", image, scriptPath, spec, options.DockerOptions)
 
 	innerCommand := shellquote.Join(rawOrDockerCommand.Command...)
 
@@ -389,93 +390,6 @@ func quoteEnv(env []string) []string {
 	}
 
 	return quotedEnv
-}
-
-// setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
-// machine instance. If a startup script path (an executable file on the host) is supplied,
-// it will be mounted into the new virtual machine instance and executed.
-func setupFirecracker1(ctx context.Context, runner command.Command, logger command.Logger, name, workspaceDevice, tmpDir string, options FirecrackerOptions, operations *command.Operations) (_ string, err error) {
-	var daemonConfigFile string
-	if len(options.DockerRegistryMirrorURLs) > 0 {
-		var err error
-		daemonConfigFile, err = newDockerDaemonConfig(tmpDir, options.DockerRegistryMirrorURLs)
-		if err != nil {
-			return "", err
-		}
-	}
-
-	// If docker auth config is present, write it.
-	var dockerConfigPath string
-	if len(options.DockerOptions.DockerAuthConfig.Auths) > 0 {
-		d, err := json.Marshal(options.DockerOptions.DockerAuthConfig)
-		if err != nil {
-			return "", err
-		}
-		dockerConfigPath, err = os.MkdirTemp(tmpDir, "docker_auth")
-		if err != nil {
-			return "", err
-		}
-		if err := os.WriteFile(filepath.Join(dockerConfigPath, "config.json"), d, os.ModePerm); err != nil {
-			return "", err
-		}
-	}
-
-	// Make subdirectory called "cni" to store CNI config in. All files from a directory
-	// will be considered so this has to be it's own directory with just our config file.
-	cniConfigDir := path.Join(tmpDir, "cni")
-	err = os.Mkdir(cniConfigDir, os.ModePerm)
-	if err != nil {
-		return "", err
-	}
-	cniConfigFile := path.Join(cniConfigDir, "10-sourcegraph-executors.conflist")
-	err = os.WriteFile(cniConfigFile, []byte(cniConfig(options.DockerOptions.Resources.MaxIngressBandwidth, options.DockerOptions.Resources.MaxEgressBandwidth)), os.ModePerm)
-	if err != nil {
-		return "", err
-	}
-
-	// Start the VM and wait for the SSH server to become available.
-	startCommand := command.Spec{
-		Key: "setup.firecracker.start",
-		// Tell ignite to use our temporary config file for maximum isolation of
-		// envs.
-		Env: []string{fmt.Sprintf("CNI_CONF_DIR=%s", cniConfigDir)},
-		Command: flatten(
-			"ignite", "run",
-			"--runtime", "docker",
-			"--network-plugin", "cni",
-			firecrackerResourceFlags(options.DockerOptions.Resources),
-			firecrackerCopyfileFlags(options.VMStartupScriptPath, daemonConfigFile, dockerConfigPath),
-			firecrackerVolumeFlags(workspaceDevice),
-			"--ssh",
-			"--name", name,
-			"--kernel-image", sanitizeImage(options.KernelImage),
-			"--kernel-args", config.FirecrackerKernelArgs,
-			"--sandbox-image", sanitizeImage(options.SandboxImage),
-			sanitizeImage(options.Image),
-		),
-		Operation: operations.SetupFirecrackerStart,
-	}
-
-	if err := runner.Run(ctx, logger, startCommand); err != nil {
-		return "", errors.Wrap(err, "failed to start firecracker vm")
-	}
-
-	if options.VMStartupScriptPath != "" {
-		startupScriptCommand := command.Spec{
-			Key:       "setup.startup-script",
-			Command:   flatten("ignite", "exec", name, "--", options.VMStartupScriptPath),
-			Operation: operations.SetupStartupScript,
-		}
-		if err := runner.Run(ctx, logger, startupScriptCommand); err != nil {
-			return "", errors.Wrap(err, "failed to run startup script")
-		}
-	}
-
-	if dockerConfigPath != "" {
-		return "/etc/docker/cli", nil
-	}
-
-	return "", nil
 }
 
 // --
