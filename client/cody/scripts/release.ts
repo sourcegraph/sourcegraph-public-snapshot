@@ -35,6 +35,7 @@ const commands = {
     openvsx_publish: 'pnpx ovsx publish dist/cody.vsix --pat $VSCODE_OPENVSX_TOKEN',
 }
 
+childProcess.execSync('pnpm run download-rg', { stdio: 'inherit' })
 childProcess.execSync('pnpm run vsce:package', { stdio: 'inherit' })
 
 const latestVersion = getPublishedVersion()
