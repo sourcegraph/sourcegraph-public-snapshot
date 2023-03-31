@@ -8,5 +8,5 @@ export function checkRequestAccessAllowed({
     allowSignup,
     authAccessRequest,
 }: Pick<SourcegraphContext, 'sourcegraphDotComMode' | 'allowSignup' | 'authAccessRequest'>): boolean {
-    return !sourcegraphDotComMode && !allowSignup && !authAccessRequest?.disabled
+    return !sourcegraphDotComMode && !allowSignup && authAccessRequest?.enabled !== false
 }

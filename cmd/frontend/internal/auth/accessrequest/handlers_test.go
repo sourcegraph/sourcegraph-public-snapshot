@@ -30,11 +30,11 @@ func TestRequestAccess(t *testing.T) {
 	handler := HandleRequestAccess(logger, db)
 
 	t.Run("accessRequest feature is disabled", func(t *testing.T) {
-		trueVal := true
+		falseVal := false
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
 				AuthAccessRequest: &schema.AuthAccessRequest{
-					Disabled: &trueVal,
+					Enabled: &falseVal,
 				},
 			},
 		})

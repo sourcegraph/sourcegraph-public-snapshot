@@ -14,15 +14,15 @@ describe('checkRequestAccessAllowed', () => {
         expect(checkRequestAccessAllowed({ ...defaultContext, allowSignup: true })).toBe(false)
     })
 
-    it('should return false if auth access request is disabled', () => {
-        expect(checkRequestAccessAllowed({ ...defaultContext, authAccessRequest: { disabled: true } })).toBe(false)
+    it('should return false if explicitly set enabled=false', () => {
+        expect(checkRequestAccessAllowed({ ...defaultContext, authAccessRequest: { enabled: false } })).toBe(false)
     })
 
     it('should return true if all conditions are met', () => {
         expect(checkRequestAccessAllowed(defaultContext)).toBe(true)
     })
 
-    it('should return true if explicitly set disabled=false', () => {
-        expect(checkRequestAccessAllowed({ ...defaultContext, authAccessRequest: { disabled: false } })).toBe(true)
+    it('should return true if explicitly set enabled=true', () => {
+        expect(checkRequestAccessAllowed({ ...defaultContext, authAccessRequest: { enabled: true } })).toBe(true)
     })
 })

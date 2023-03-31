@@ -331,7 +331,7 @@ func IsBuiltinSignupAllowed() bool {
 // IsAccessRequestEnabled returns whether request access experimental feature is enabled or not.
 func IsAccessRequestEnabled() bool {
 	authAccessRequest := Get().AuthAccessRequest
-	return authAccessRequest == nil || authAccessRequest.Disabled == nil || !*authAccessRequest.Disabled
+	return authAccessRequest == nil || authAccessRequest.Enabled == nil || *authAccessRequest.Enabled
 }
 
 // SearchSymbolsParallelism returns 20, or the site config

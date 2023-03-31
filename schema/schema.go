@@ -96,8 +96,8 @@ type AuditLog struct {
 
 // AuthAccessRequest description: The config options for access requests
 type AuthAccessRequest struct {
-	// Disabled description: Enable/disable the access request feature, which allows users to request access if built-in signup is disabled.
-	Disabled *bool `json:"disabled,omitempty"`
+	// Enabled description: Enable/disable the access request feature, which allows users to request access if built-in signup is disabled.
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.

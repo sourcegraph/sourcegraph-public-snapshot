@@ -1879,13 +1879,13 @@
       "type": "object",
       "group": "Authentication",
       "properties": {
-        "disabled": {
+        "enabled": {
           "description": "Enable/disable the access request feature, which allows users to request access if built-in signup is disabled.",
           "type": "boolean",
           "!go": {
             "pointer": true
           },
-          "default": false
+          "default": true
         }
       }
     },
