@@ -305,8 +305,6 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         repoName,
     })
 
-    const [visibleIndexID, setVisibleIndexID] = useState<string>()
-
     const repoRevisionContainerContext: RepoRevisionContainerContext = {
         ...props,
         ...repoHeaderContributionsLifecycleProps,
@@ -315,7 +313,6 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         repoName,
         revision: revision || '',
         resolvedRevision,
-        selectedVisibleIndexID: visibleIndexID,
     }
 
     const perforceCodeHostUrlToSwarmUrlMap =
@@ -385,8 +382,6 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                                 repoName={repoName}
                                 path={filePath}
                                 commit={resolvedRevision?.commitID ?? ''}
-                                visibleIndexID={visibleIndexID}
-                                setVisibleIndexID={setVisibleIndexID}
                             />
                         ) : null
                     }

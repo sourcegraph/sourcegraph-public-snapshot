@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 
 import { mdiArrowRightThin, mdiBrain } from '@mdi/js'
 import classNames from 'classnames'
@@ -16,6 +16,7 @@ import {
     MenuList,
     Tooltip,
     RadioButton,
+    useSessionStorage,
 } from '@sourcegraph/wildcard'
 
 import { INDEX_COMPLETED_STATES, INDEX_FAILURE_STATES } from '../constants'
@@ -30,17 +31,9 @@ export interface BrainDotProps {
     repoName: string
     commit: string
     path?: string
-    visibleIndexID?: string
-    setVisibleIndexID: (id?: string) => void
 }
 
-export const BrainDot: React.FunctionComponent<BrainDotProps> = ({
-    repoName,
-    commit,
-    path,
-    setVisibleIndexID,
-    visibleIndexID,
-}) => {
+export const BrainDot: React.FunctionComponent<BrainDotProps> = ({ repoName, commit, path }) => {
     const { data: statusData } = useRepoCodeIntelStatus({ repository: repoName })
 
     const { data: visibleIndexes, loading: visibleIndexesLoading } = useVisibleIndexes({
@@ -91,6 +84,12 @@ export const BrainDot: React.FunctionComponent<BrainDotProps> = ({
             : ''
     }, [indexes, suggestedIndexers])
 
+    const [indexIDsForSnapshotData, setIndexIDForSnapshotData] = useSessionStorage<{ [repoName: string]: string }>(
+        'blob.preciseIndexIDForSnapshotData',
+        {}
+    )
+    const visibleIndexID = indexIDsForSnapshotData[repoName]
+
     // TODO(nsc) - add a feature flag to enable nerd controls
     // https://github.com/sourcegraph/sourcegraph/pull/49128/files#diff-04df7090c83826679f92f4ee2881b626422057a8e6b59750937e2888d74e411cL152
     const forNerds = true
@@ -122,14 +121,20 @@ export const BrainDot: React.FunctionComponent<BrainDotProps> = ({
                     {visibleIndexesLoading && <LoadingSpinner className="mx-2" />}
                     {visibleIndexes && visibleIndexes?.length > 0 && (
                         <MenuHeader>
-                            <span style={{ paddingBottom: '1em' }}>Display debug information for uploaded index.</span>
+                            <Tooltip content="Not intended for regular use">
+                                <span>Display debug information for uploaded index.</span>
+                            </Tooltip>
                             {[
                                 <RadioButton
                                     id="none"
                                     name="none"
                                     label="None"
+                                    wrapperClassName="py-1"
                                     checked={visibleIndexID === undefined}
-                                    onChange={_ => setVisibleIndexID(undefined)}
+                                    onChange={() => {
+                                        delete indexIDsForSnapshotData[repoName]
+                                        setIndexIDForSnapshotData(indexIDsForSnapshotData)
+                                    }}
                                 />,
                                 ...visibleIndexes!!.map(index => {
                                     return (
@@ -138,12 +143,16 @@ export const BrainDot: React.FunctionComponent<BrainDotProps> = ({
                                                 id={index.id}
                                                 name={index.id}
                                                 checked={visibleIndexID === index.id}
+                                                wrapperClassName="py-1"
                                                 label={
                                                     <>
                                                         Index at <code>{index.inputCommit}</code>
                                                     </>
                                                 }
-                                                onChange={_ => setVisibleIndexID(index.id)}
+                                                onChange={() => {
+                                                    indexIDsForSnapshotData[repoName] = index.id
+                                                    setIndexIDForSnapshotData(indexIDsForSnapshotData)
+                                                }}
                                             />
                                         </Tooltip>
                                     )

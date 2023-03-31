@@ -53,7 +53,7 @@ export interface RepoRevisionContainerContext
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         BatchChangesProps,
-        Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel' | 'selectedVisibleIndexID'>,
+        Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel'>,
         CodeInsightsProps,
         NotebookProps,
         OwnConfigProps {
@@ -198,11 +198,8 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
     const repoRevisionContainerContext: RepoRevisionContainerContext = {
         ...props,
         ...breadcrumbSetters,
-        selectedVisibleIndexID: props.selectedVisibleIndexID,
         resolvedRevision,
     }
-
-    console.log('REPOREVISIONCONTAINER', props.selectedVisibleIndexID)
 
     const { filePath } = parseBrowserRepoURL(location.pathname)
 

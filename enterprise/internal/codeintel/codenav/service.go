@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"unsafe"
 
 	traceLog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
@@ -1338,7 +1339,7 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 	dump := dumps[0]
 
 	document, err := s.lsifstore.SCIPDocument(ctx, dump.ID, path)
-	if err != nil {
+	if err != nil || document == nil {
 		return nil, err
 	}
 
@@ -1375,8 +1376,15 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 
 		originalRange := scip.NewRange(occ.Range)
 
+		lineOffset := int32(linemap.positions[originalRange.Start.Line])
+		line := file[lineOffset : lineOffset+originalRange.Start.Character]
+		// also done in Go strings builder https://sourcegraph.com/github.com/golang/go@go1.19.7/-/blob/src/strings/builder.go?L48
+		lineStr := *(*string)(unsafe.Pointer(&line))
+
+		tabCount := strings.Count(lineStr, "\t")
+
 		var snap strings.Builder
-		snap.WriteString(strings.Repeat(" ", int(originalRange.Start.Character)))
+		snap.WriteString(strings.Repeat(" ", (int(originalRange.Start.Character)-tabCount)+(tabCount*4)))
 		snap.WriteString(strings.Repeat("^", int(originalRange.End.Character-originalRange.Start.Character)))
 		snap.WriteRune(' ')
 
@@ -1399,8 +1407,6 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 			fmt.Println("FAILED TO TRANSLATE")
 			continue
 		}
-
-		fmt.Printf("%s %+v %+v %d\n", formatted, newRange, originalRange, linemap.positions[newRange.Line+1])
 
 		data = append(data, shared.SnapshotData{
 			DocumentOffset: linemap.positions[newRange.Line+1],

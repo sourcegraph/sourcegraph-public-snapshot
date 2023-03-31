@@ -40,6 +40,7 @@ import {
     Text,
     useEventObservable,
     useObservable,
+    useSessionStorage,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -100,7 +101,7 @@ interface BlobPageProps
         SearchStreamingProps,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
-        Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel' | 'selectedVisibleIndexID'>,
+        Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel'>,
         NotebookProps,
         OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
@@ -190,17 +191,10 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
         }, [filePath, revision, repoName, props.telemetryService])
     )
 
-    // const displaySCIPSnapshotData: boolean = newSettingsGetter(props.settingsCascade)<boolean>(
-    //     'codeIntel.displaySCIPSnapshotData',
-    //     false
-    // )
-
-    // const onClick = useCallback(async () => {
-    //     await updateSettings(props.platformContext, {
-    //         path: ['codeIntel.displaySCIPSnapshotData'],
-    //         value: !displaySCIPSnapshotData,
-    //     })
-    // }, [displaySCIPSnapshotData, props.platformContext])
+    const [indexIDForSnapshotData] = useSessionStorage<{ [repoName: string]: string }>(
+        'blob.preciseIndexIDForSnapshotData',
+        {}
+    )
 
     /**
      * Fetches formatted, but un-highlighted, blob content.
@@ -217,8 +211,8 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                         revision,
                         filePath,
                         format: HighlightResponseFormat.HTML_PLAINTEXT,
-                        scipSnapshot: props.selectedVisibleIndexID !== undefined,
-                        visibleIndexID: props.selectedVisibleIndexID,
+                        scipSnapshot: indexIDForSnapshotData[repoName] !== undefined,
+                        visibleIndexID: indexIDForSnapshotData[repoName],
                     }).pipe(
                         map(blob => {
                             if (blob === null) {
@@ -245,11 +239,9 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                         })
                     )
                 ),
-            [filePath, mode, repoName, revision, span, props.selectedVisibleIndexID]
+            [filePath, mode, repoName, revision, span, indexIDForSnapshotData]
         )
     )
-
-    console.log('BLOBPAGE', props.selectedVisibleIndexID)
 
     // Bundle latest blob with all other file info to pass to `Blob`
     // Prevents https://github.com/sourcegraph/sourcegraph/issues/14965 by not allowing
@@ -273,8 +265,8 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                             format: enableCodeMirror
                                 ? HighlightResponseFormat.JSON_SCIP
                                 : HighlightResponseFormat.HTML_HIGHLIGHT,
-                            scipSnapshot: props.selectedVisibleIndexID !== undefined,
-                            visibleIndexID: props.selectedVisibleIndexID,
+                            scipSnapshot: indexIDForSnapshotData[repoName] !== undefined,
+                            visibleIndexID: indexIDForSnapshotData[repoName],
                         })
                     ),
                     map(blob => {
@@ -309,7 +301,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                     }),
                     catchError((error): [ErrorLike] => [asError(error)])
                 ),
-            [repoName, revision, filePath, enableCodeMirror, mode, props.selectedVisibleIndexID]
+            [repoName, revision, filePath, enableCodeMirror, mode, indexIDForSnapshotData]
         )
     )
 
