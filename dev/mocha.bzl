@@ -56,6 +56,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs)
             "--config",
             "$(location //:mocha_config)",
             "--parallel",
+            "--jobs 16",
             "$(location :%s)/**/*.test.js" % bundle_name,
         ] + args,
         data = data + [
