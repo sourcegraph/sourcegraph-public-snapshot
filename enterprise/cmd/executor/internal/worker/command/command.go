@@ -214,6 +214,8 @@ func startCommand(ctx context.Context, cmd *exec.Cmd, pipeReaderWaitGroup *errgr
 		}
 	}
 
+	fmt.Println("Command:", cmd.String())
+
 	if err := cmd.Wait(); err != nil {
 		var e *exec.ExitError
 		if errors.As(err, &e) {
