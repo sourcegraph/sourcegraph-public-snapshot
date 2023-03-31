@@ -150,7 +150,7 @@ func (r *firecrackerRunner) setupFirecracker(ctx context.Context) (string, error
 		// Tell ignite to use our temporary config file for maximum isolation of
 		// envs.
 		Env: []string{fmt.Sprintf("CNI_CONF_DIR=%s", cniConfigDir)},
-		Command: flatten(
+		Command: command.Flatten(
 			"ignite", "run",
 			"--runtime", "docker",
 			"--network-plugin", "cni",
@@ -174,7 +174,7 @@ func (r *firecrackerRunner) setupFirecracker(ctx context.Context) (string, error
 	if r.options.VMStartupScriptPath != "" {
 		startupScriptCommandSpec := command.Spec{
 			Key:       "setup.startup-script",
-			Command:   flatten("ignite", "exec", r.vmName, "--", r.options.VMStartupScriptPath),
+			Command:   command.Flatten("ignite", "exec", r.vmName, "--", r.options.VMStartupScriptPath),
 			Operation: r.operations.SetupStartupScript,
 		}
 		if err = r.cmd.Run(ctx, r.cmdLogger, startupScriptCommandSpec); err != nil {
@@ -349,8 +349,8 @@ func (r *firecrackerRunner) newCommandSpec(key string, cmd []string, env []strin
 }
 
 func (r *firecrackerRunner) Run(ctx context.Context, spec Spec) error {
-	//firecrackerSpec := command.NewFirecrackerSpec(r.vmName, spec.Image, spec.ScriptPath, spec.CommandSpec, r.options.DockerOptions)
-	firecrackerSpec := formatFirecrackerCommand(spec.CommandSpec, r.vmName, spec.Image, spec.ScriptPath, r.options, r.options.DockerOptions.ConfigPath)
+	firecrackerSpec := command.NewFirecrackerSpec(r.vmName, spec.Image, spec.ScriptPath, spec.CommandSpec, r.options.DockerOptions)
+	//firecrackerSpec := formatFirecrackerCommand(spec.CommandSpec, r.vmName, spec.Image, spec.ScriptPath, r.options, r.options.DockerOptions.ConfigPath)
 	return r.cmd.Run(ctx, r.cmdLogger, firecrackerSpec)
 }
 
@@ -390,116 +390,4 @@ func quoteEnv(env []string) []string {
 	}
 
 	return quotedEnv
-}
-
-// --
-
-func formatRawOrDockerCommand(image, scriptPath string, spec command.Spec, dir string, options command.DockerOptions, dockerConfigPath string) command.Spec {
-	// TODO - remove this once src-cli is not required anymore for SSBC.
-	if image == "" {
-		env := spec.Env
-		if dockerConfigPath != "" {
-			env = append(env, fmt.Sprintf("DOCKER_CONFIG=%s", dockerConfigPath))
-		}
-		return command.Spec{
-			Key:       spec.Key,
-			Command:   spec.Command,
-			Dir:       filepath.Join(dir, spec.Dir),
-			Env:       env,
-			Operation: spec.Operation,
-		}
-	}
-
-	hostDir := dir
-	if options.Resources.DockerHostMountPath != "" {
-		hostDir = filepath.Join(options.Resources.DockerHostMountPath, filepath.Base(dir))
-	}
-
-	return command.Spec{
-		Key: spec.Key,
-		Command: flatten(
-			"docker",
-			dockerConfigFlag1(dockerConfigPath),
-			"run", "--rm",
-			dockerHostGatewayFlag1(options.AddHostGateway),
-			dockerResourceFlags1(options.Resources),
-			dockerVolumeFlags1(hostDir),
-			dockerWorkingdirectoryFlags1(spec.Dir),
-			dockerEnvFlags1(spec.Env),
-			dockerEntrypointFlags1(),
-			image,
-			filepath.Join("/data", ".sourcegraph-executor", scriptPath),
-		),
-		Operation: spec.Operation,
-	}
-}
-
-// dockerHostGatewayFlag makes the Docker host accessible to the container (on the hostname
-// `host.docker.internal`), which simplifies the use of executors when the Sourcegraph instance is
-// running uncontainerized in the Docker host. This *only* takes effect if the site config
-// `executors.frontendURL` is a URL with hostname `host.docker.internal`, to reduce the risk of
-// unexpected compatibility or security issues with using --add-host=...  when it is not needed.
-func dockerHostGatewayFlag1(shouldAdd bool) []string {
-	if shouldAdd {
-		return []string{"--add-host=host.docker.internal:host-gateway"}
-	}
-	return nil
-}
-
-func dockerResourceFlags1(options command.ResourceOptions) []string {
-	flags := make([]string, 0, 2)
-	if options.NumCPUs != 0 {
-		flags = append(flags, "--cpus", strconv.Itoa(options.NumCPUs))
-	}
-	if options.Memory != "0" && options.Memory != "" {
-		flags = append(flags, "--memory", options.Memory)
-	}
-
-	return flags
-}
-
-func dockerVolumeFlags1(wd string) []string {
-	return []string{"-v", wd + ":/data"}
-}
-
-func dockerConfigFlag1(dockerConfigPath string) []string {
-	if dockerConfigPath == "" {
-		return nil
-	}
-	return []string{"--config", dockerConfigPath}
-}
-
-func dockerWorkingdirectoryFlags1(dir string) []string {
-	return []string{"-w", filepath.Join("/data", dir)}
-}
-
-func dockerEnvFlags1(env []string) []string {
-	return intersperse("-e", env)
-}
-
-func dockerEntrypointFlags1() []string {
-	return []string{"--entrypoint", "/bin/sh"}
-}
-func flatten(values ...any) []string {
-	union := make([]string, 0, len(values))
-	for _, value := range values {
-		switch v := value.(type) {
-		case string:
-			union = append(union, v)
-		case []string:
-			union = append(union, v...)
-		}
-	}
-
-	return union
-}
-
-// intersperse returns a slice following the pattern `flag, v1, flag, v2, ...`.
-func intersperse(flag string, values []string) []string {
-	interspersed := make([]string, 0, len(values))
-	for _, v := range values {
-		interspersed = append(interspersed, flag, v)
-	}
-
-	return interspersed
 }
