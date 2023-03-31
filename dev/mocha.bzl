@@ -75,6 +75,8 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, use_xvfb 
         "KEEP_BROWSER": "false",
         "DEVTOOLS": "true",
         "BROWSER": "chrome",
+        "WINDOW_WIDTH": "1920",
+        "WINDOW_HEIGHT": "1080",
 
         # Puppeteer config
         "DISPLAY": ":99",
