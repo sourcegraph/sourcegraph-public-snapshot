@@ -54,8 +54,8 @@ ts_project(
 
 mocha_test(
     name = "e2e",
-    env = {"INCLUDE_ADMIN_ONBOARDING": "false"},
     timeout = "long",
+    env = {"INCLUDE_ADMIN_ONBOARDING": "false"},
     tags = [
         "no-sandbox",
         "requires-network",
