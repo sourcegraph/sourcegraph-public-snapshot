@@ -25,21 +25,16 @@ export class CodebaseContext {
     }
 
     public async getContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
-        console.log('🐝')
         switch (this.contextType) {
             case 'blended':
-                console.log('🐝 blended')
                 return this.embeddings
                     ? this.getEmbeddingsContextMessages(query, options)
                     : this.getKeywordContextMessages(query, options)
             case 'embeddings':
-                console.log('🐝 embeddings')
                 return this.getEmbeddingsContextMessages(query, options)
             case 'keyword':
-                console.log('🐝 keyword')
                 return this.getKeywordContextMessages(query, options)
             default:
-                console.log('🐝 default')
                 return []
         }
     }

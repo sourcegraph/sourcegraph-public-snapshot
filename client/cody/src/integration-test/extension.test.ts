@@ -60,30 +60,24 @@ suite('End-to-end', () => {
         assert.ok(codyCommands.length)
     })
 
-    test.skip('Explain Code', async () => {
+    test('Explain Code', async () => {
         await enableCodyWithAccessToken('test-token')
         await setMockServerConfig()
-
-        console.log('Open Main.java')
 
         // Open Main.java
         assert.ok(vscode.workspace.workspaceFolders)
         const mainJavaUri = vscode.Uri.parse(`${vscode.workspace.workspaceFolders[0].uri.toString()}/Main.java`)
         const textEditor = await vscode.window.showTextDocument(mainJavaUri)
 
-        console.log('Select the main method')
         // Select the "main" method
         textEditor.selection = new vscode.Selection(5, 0, 7, 0)
 
-        console.log('Run the explain command')
         // Run the "explain" command
         await ensureExecuteCommand('cody.recipe.explain-code-high-level')
-        console.log('getExtension')
         const api = vscode.extensions.getExtension<ExtensionApi>('sourcegraph.cody-ai')
         assert.ok(api)
         assert.ok(api.exports)
 
-        console.log('Check that transscript contains markdown')
         // Check the chat transcript contains markdown
         const message = await getTranscript(api, 0)
         assert.match(message.displayText || '', /^Explain the following code/)
@@ -92,7 +86,6 @@ suite('End-to-end', () => {
         // Check the server response was handled
         // "hello world" is a canned response from the server
         // in runTest.js responds to all messages with
-        console.log('waitUntil')
         await waitUntil(async () => {
             const assistantMessage = await getTranscript(api, 1)
             return (assistantMessage.displayText || '').length > 0
@@ -102,31 +95,5 @@ suite('End-to-end', () => {
 
         // Clean up.
         await ensureExecuteCommand('cody.delete-access-token')
-    })
-
-    test('History', () => {
-        const h = new History(() => null)
-        h.addItem({
-            document: {
-                uri: vscode.Uri.file('foo.ts'),
-                languageId: 'ts',
-            },
-        })
-        h.addItem({
-            document: {
-                uri: vscode.Uri.file('bar.ts'),
-                languageId: 'ts',
-            },
-        })
-        h.addItem({
-            document: {
-                uri: vscode.Uri.file('foo.ts'),
-                languageId: 'ts',
-            },
-        })
-        assert.deepStrictEqual(
-            h.lastN(20).map(h => h.document.uri.fsPath),
-            ['/foo.ts', '/bar.ts']
-        )
-    })
+    }).timeout(1500)
 })

@@ -39,7 +39,6 @@ export class Interaction {
     }
 
     public async toPrompt(includeContext: boolean): Promise<Message[]> {
-        console.log('prompt boi')
         if (includeContext) {
             messages.unshift(...(await this.context))
         }

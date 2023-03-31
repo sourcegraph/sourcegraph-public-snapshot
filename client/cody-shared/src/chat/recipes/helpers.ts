@@ -35,13 +35,11 @@ export async function getContextMessagesFromSelection(
     fileName: string,
     codebaseContext: CodebaseContext
 ): Promise<ContextMessage[]> {
-    console.log('💈')
     const selectedTextContext = await codebaseContext.getContextMessages(selectedText, {
         numCodeResults: 4,
         numTextResults: 0,
     })
 
-    console.log('💈💈')
     return selectedTextContext.concat(
         [precedingText, followingText].flatMap(text =>
             getContextMessageWithResponse(populateCodeContextTemplate(text, fileName), fileName)
