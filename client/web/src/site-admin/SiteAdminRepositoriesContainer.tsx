@@ -15,6 +15,7 @@ import {
 } from '../components/FilteredConnection'
 import { usePageSwitcherPagination } from '../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { getFilterFromURL, getUrlQuery } from '../components/FilteredConnection/utils'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import {
     RepositoriesResult,
     RepositoriesVariables,
@@ -29,7 +30,6 @@ import { PageRoutes } from '../routes.constants'
 import { ValueLegendList, ValueLegendListProps } from './analytics/components/ValueLegendList'
 import { STATUS_AND_REPO_STATS, REPO_PAGE_POLL_INTERVAL, REPOSITORIES_QUERY } from './backend'
 import { RepositoryNode } from './RepositoryNode'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
 const STATUS_FILTERS: { [label: string]: FilteredConnectionFilterValue } = {
     All: {
@@ -249,7 +249,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
             corrupted: args.corrupted ?? false,
             cloneStatus: args.cloneStatus ?? null,
             externalService: args.externalService ?? null,
-            displayCloneProgress
+            displayCloneProgress,
         } as RepositoriesVariables
     }, [searchQuery, filterValues])
 
