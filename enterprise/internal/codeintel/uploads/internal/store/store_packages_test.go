@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -21,7 +20,7 @@ func TestUpdatePackages(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	// for foreign key relation
-	insertUploads(t, db, types.Upload{ID: 42})
+	insertUploads(t, db, shared.Upload{ID: 42})
 
 	if err := store.UpdatePackages(context.Background(), 42, []precise.Package{
 		{Scheme: "s0", Name: "n0", Version: "v0"},

@@ -281,9 +281,9 @@ func (s *scipWriter) flush(ctx context.Context) error {
 	}
 
 	symbolNameMap := map[string]struct{}{}
-	invertedRangeIndexes := make([][]types.InvertedRangeIndex, 0, len(documents))
+	invertedRangeIndexes := make([][]shared.InvertedRangeIndex, 0, len(documents))
 	for _, document := range documents {
-		index := types.ExtractSymbolIndexes(document.scipDocument)
+		index := shared.ExtractSymbolIndexes(document.scipDocument)
 		invertedRangeIndexes = append(invertedRangeIndexes, index)
 
 		for _, invertedRange := range index {

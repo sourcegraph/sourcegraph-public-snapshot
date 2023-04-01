@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -115,7 +114,7 @@ func TestInsertPathRanks(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertUploads(t, db, types.Upload{ID: 1})
+	insertUploads(t, db, shared.Upload{ID: 1})
 
 	// Insert definitions
 	mockDefinitions := make(chan shared.RankingDefinitions, 3)
@@ -220,7 +219,7 @@ func TestInsertInitialPathCounts(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	// Creates repository 50
-	insertUploads(t, db, types.Upload{ID: 1})
+	insertUploads(t, db, shared.Upload{ID: 1})
 
 	mockUploadID := 1
 	mockPathNames := make(chan string, 3)
@@ -265,13 +264,13 @@ func TestInsertPathCountInputs(t *testing.T) {
 	t2 := time.Now().Add(-time.Minute * 20)
 
 	insertUploads(t, db,
-		types.Upload{ID: 42, RepositoryID: 50},
-		types.Upload{ID: 43, RepositoryID: 51},
-		types.Upload{ID: 90, RepositoryID: 52},
-		types.Upload{ID: 91, RepositoryID: 53, FinishedAt: &t1}, // younger
-		types.Upload{ID: 92, RepositoryID: 53, FinishedAt: &t2}, // older
-		types.Upload{ID: 93, RepositoryID: 54, Root: "lib/", Indexer: "test"},
-		types.Upload{ID: 94, RepositoryID: 54, Root: "lib/", Indexer: "test"},
+		shared.Upload{ID: 42, RepositoryID: 50},
+		shared.Upload{ID: 43, RepositoryID: 51},
+		shared.Upload{ID: 90, RepositoryID: 52},
+		shared.Upload{ID: 91, RepositoryID: 53, FinishedAt: &t1}, // younger
+		shared.Upload{ID: 92, RepositoryID: 53, FinishedAt: &t2}, // older
+		shared.Upload{ID: 93, RepositoryID: 54, Root: "lib/", Indexer: "test"},
+		shared.Upload{ID: 94, RepositoryID: 54, Root: "lib/", Indexer: "test"},
 	)
 
 	// Insert definitions
@@ -408,9 +407,9 @@ func TestVacuumStaleDefinitionsAndReferences(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
-		types.Upload{ID: 1},
-		types.Upload{ID: 2},
-		types.Upload{ID: 3},
+		shared.Upload{ID: 1},
+		shared.Upload{ID: 2},
+		shared.Upload{ID: 3},
 	)
 
 	mockDefinitions := make(chan shared.RankingDefinitions, 5)
@@ -502,7 +501,7 @@ func TestVacuumStaleInitialPaths(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	for _, uploadID := range []int{1, 2, 3} {
-		insertUploads(t, db, types.Upload{ID: uploadID})
+		insertUploads(t, db, shared.Upload{ID: uploadID})
 
 		mockPathNames := make(chan string, 3)
 		mockPathNames <- "foo.go"
@@ -1002,7 +1001,7 @@ func insertVisibleAtTipInternal(t testing.TB, db database.DB, repositoryID int, 
 }
 
 // insertUploads populates the lsif_uploads table with the given upload models.
-func insertUploads(t testing.TB, db database.DB, uploads ...types.Upload) {
+func insertUploads(t testing.TB, db database.DB, uploads ...shared.Upload) {
 	for _, upload := range uploads {
 		if upload.Commit == "" {
 			upload.Commit = makeCommit(upload.ID)

@@ -3199,7 +3199,7 @@ func NewMockUploadService() *MockUploadService {
 			},
 		},
 		GetUploadByIDFunc: &UploadServiceGetUploadByIDFunc{
-			defaultHook: func(context.Context, int) (r0 types.Upload, r1 bool, r2 error) {
+			defaultHook: func(context.Context, int) (r0 shared1.Upload, r1 bool, r2 error) {
 				return
 			},
 		},
@@ -3226,7 +3226,7 @@ func NewStrictMockUploadService() *MockUploadService {
 			},
 		},
 		GetUploadByIDFunc: &UploadServiceGetUploadByIDFunc{
-			defaultHook: func(context.Context, int) (types.Upload, bool, error) {
+			defaultHook: func(context.Context, int) (shared1.Upload, bool, error) {
 				panic("unexpected invocation of MockUploadService.GetUploadByID")
 			},
 		},
@@ -3485,15 +3485,15 @@ func (c UploadServiceGetRecentUploadsSummaryFuncCall) Results() []interface{} {
 // UploadServiceGetUploadByIDFunc describes the behavior when the
 // GetUploadByID method of the parent MockUploadService instance is invoked.
 type UploadServiceGetUploadByIDFunc struct {
-	defaultHook func(context.Context, int) (types.Upload, bool, error)
-	hooks       []func(context.Context, int) (types.Upload, bool, error)
+	defaultHook func(context.Context, int) (shared1.Upload, bool, error)
+	hooks       []func(context.Context, int) (shared1.Upload, bool, error)
 	history     []UploadServiceGetUploadByIDFuncCall
 	mutex       sync.Mutex
 }
 
 // GetUploadByID delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockUploadService) GetUploadByID(v0 context.Context, v1 int) (types.Upload, bool, error) {
+func (m *MockUploadService) GetUploadByID(v0 context.Context, v1 int) (shared1.Upload, bool, error) {
 	r0, r1, r2 := m.GetUploadByIDFunc.nextHook()(v0, v1)
 	m.GetUploadByIDFunc.appendCall(UploadServiceGetUploadByIDFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -3502,7 +3502,7 @@ func (m *MockUploadService) GetUploadByID(v0 context.Context, v1 int) (types.Upl
 // SetDefaultHook sets function that is called when the GetUploadByID method
 // of the parent MockUploadService instance is invoked and the hook queue is
 // empty.
-func (f *UploadServiceGetUploadByIDFunc) SetDefaultHook(hook func(context.Context, int) (types.Upload, bool, error)) {
+func (f *UploadServiceGetUploadByIDFunc) SetDefaultHook(hook func(context.Context, int) (shared1.Upload, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -3510,7 +3510,7 @@ func (f *UploadServiceGetUploadByIDFunc) SetDefaultHook(hook func(context.Contex
 // GetUploadByID method of the parent MockUploadService instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *UploadServiceGetUploadByIDFunc) PushHook(hook func(context.Context, int) (types.Upload, bool, error)) {
+func (f *UploadServiceGetUploadByIDFunc) PushHook(hook func(context.Context, int) (shared1.Upload, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3518,20 +3518,20 @@ func (f *UploadServiceGetUploadByIDFunc) PushHook(hook func(context.Context, int
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *UploadServiceGetUploadByIDFunc) SetDefaultReturn(r0 types.Upload, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, int) (types.Upload, bool, error) {
+func (f *UploadServiceGetUploadByIDFunc) SetDefaultReturn(r0 shared1.Upload, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (shared1.Upload, bool, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadServiceGetUploadByIDFunc) PushReturn(r0 types.Upload, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, int) (types.Upload, bool, error) {
+func (f *UploadServiceGetUploadByIDFunc) PushReturn(r0 shared1.Upload, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (shared1.Upload, bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *UploadServiceGetUploadByIDFunc) nextHook() func(context.Context, int) (types.Upload, bool, error) {
+func (f *UploadServiceGetUploadByIDFunc) nextHook() func(context.Context, int) (shared1.Upload, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3572,7 +3572,7 @@ type UploadServiceGetUploadByIDFuncCall struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 types.Upload
+	Result0 shared1.Upload
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 bool

@@ -56,7 +56,7 @@ type AutoIndexingService interface {
 }
 
 type UploadService interface {
-	GetUploadByID(ctx context.Context, id int) (codeinteltypes.Upload, bool, error)
+	GetUploadByID(ctx context.Context, id int) (shared.Upload, bool, error)
 	ReferencesForUpload(ctx context.Context, uploadID int) (shared.PackageReferenceScanner, error)
 	GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []shared.UploadsWithRepositoryNamespace, err error)
 	GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]uploadsshared.IndexesWithRepositoryNamespace, error)

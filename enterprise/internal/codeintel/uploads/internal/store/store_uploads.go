@@ -14,7 +14,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -64,7 +63,7 @@ WHERE
 `
 
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
-func (s *store) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error) {
+func (s *store) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []shared.Upload, totalCount int, err error) {
 	ctx, trace, endObservation := s.operations.getUploads.With(ctx, &err, observation.Args{LogFields: buildGetUploadsLogFields(opts)})
 	defer endObservation(1, observation.Args{})
 
@@ -276,13 +275,13 @@ WHERE
 `
 
 // GetUploadByID returns an upload by its identifier and boolean flag indicating its existence.
-func (s *store) GetUploadByID(ctx context.Context, id int) (_ types.Upload, _ bool, err error) {
+func (s *store) GetUploadByID(ctx context.Context, id int) (_ shared.Upload, _ bool, err error) {
 	ctx, _, endObservation := s.operations.getUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{log.Int("id", id)}})
 	defer endObservation(1, observation.Args{})
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
 	if err != nil {
-		return types.Upload{}, false, err
+		return shared.Upload{}, false, err
 	}
 
 	return scanFirstUpload(s.db.Query(ctx, sqlf.Sprintf(getUploadByIDQuery, id, authzConds)))
@@ -321,7 +320,7 @@ JOIN repo ON repo.id = u.repository_id
 WHERE repo.deleted_at IS NULL AND u.state != 'deleted' AND u.id = %s AND %s
 `
 
-func (s *store) getUploadsByIDs(ctx context.Context, allowDeleted bool, ids ...int) (_ []types.Upload, err error) {
+func (s *store) getUploadsByIDs(ctx context.Context, allowDeleted bool, ids ...int) (_ []shared.Upload, err error) {
 	ctx, _, endObservation := s.operations.getUploadsByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("ids", intsToString(ids)),
 	}})
@@ -351,11 +350,11 @@ func (s *store) getUploadsByIDs(ctx context.Context, allowDeleted bool, ids ...i
 
 // GetUploadsByIDs returns an upload for each of the given identifiers. Not all given ids will necessarily
 // have a corresponding element in the returned list.
-func (s *store) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error) {
+func (s *store) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []shared.Upload, err error) {
 	return s.getUploadsByIDs(ctx, false, ids...)
 }
 
-func (s *store) GetUploadsByIDsAllowDeleted(ctx context.Context, ids ...int) (_ []types.Upload, err error) {
+func (s *store) GetUploadsByIDsAllowDeleted(ctx context.Context, ids ...int) (_ []shared.Upload, err error) {
 	return s.getUploadsByIDs(ctx, true, ids...)
 }
 
@@ -1918,7 +1917,7 @@ CREATE TEMPORARY TABLE t_lsif_uploads_visible_at_tip (
 `
 
 // InsertUpload inserts a new upload and returns its identifier.
-func (s *store) InsertUpload(ctx context.Context, upload types.Upload) (id int, err error) {
+func (s *store) InsertUpload(ctx context.Context, upload shared.Upload) (id int, err error) {
 	ctx, _, endObservation := s.operations.insertUpload.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{

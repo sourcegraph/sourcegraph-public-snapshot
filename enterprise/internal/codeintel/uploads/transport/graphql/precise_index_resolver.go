@@ -12,6 +12,7 @@ import (
 	policiesgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/transport/graphql"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -30,7 +31,7 @@ type preciseIndexResolver struct {
 	repoStore        database.RepoStore
 	locationResolver *sharedresolvers.CachedLocationResolver
 	traceErrs        *observation.ErrCollector
-	upload           *types.Upload
+	upload           *shared.Upload
 	index            *types.Index
 }
 
@@ -44,7 +45,7 @@ func NewPreciseIndexResolver(
 	repoStore database.RepoStore,
 	locationResolver *sharedresolvers.CachedLocationResolver,
 	traceErrs *observation.ErrCollector,
-	upload *types.Upload,
+	upload *shared.Upload,
 	index *types.Index,
 ) (resolverstubs.PreciseIndexResolver, error) {
 	if index != nil && index.AssociatedUploadID != nil && upload == nil {
@@ -442,10 +443,10 @@ func (r *retentionPolicyMatcherResolver) ProtectingCommits() *[]string {
 //
 
 type lsifUploadsAuditLogResolver struct {
-	log types.UploadLog
+	log shared.UploadLog
 }
 
-func newLSIFUploadsAuditLogsResolver(log types.UploadLog) resolverstubs.LSIFUploadsAuditLogsResolver {
+func newLSIFUploadsAuditLogsResolver(log shared.UploadLog) resolverstubs.LSIFUploadsAuditLogsResolver {
 	return &lsifUploadsAuditLogResolver{log: log}
 }
 

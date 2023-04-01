@@ -10,6 +10,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -112,7 +113,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 		indexerNames = types.NamesForKey(*args.IndexerKey)
 	}
 
-	var uploads []types.Upload
+	var uploads []shared.Upload
 	totalUploadCount := 0
 	if !skipUploads {
 		if uploads, totalUploadCount, err = r.uploadSvc.GetUploads(ctx, uploadsshared.GetUploadsOptions{
@@ -147,11 +148,11 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 	}
 
 	type pair struct {
-		upload *types.Upload
+		upload *shared.Upload
 		index  *types.Index
 	}
 	pairs := make([]pair, 0, pageSize)
-	addUpload := func(upload types.Upload) { pairs = append(pairs, pair{&upload, nil}) }
+	addUpload := func(upload shared.Upload) { pairs = append(pairs, pair{&upload, nil}) }
 	addIndex := func(index types.Index) { pairs = append(pairs, pair{nil, &index}) }
 
 	uIdx := 0

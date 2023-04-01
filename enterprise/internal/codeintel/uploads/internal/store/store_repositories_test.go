@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -97,8 +98,8 @@ func TestHasRepository(t *testing.T) {
 		{52, false},
 	}
 
-	insertUploads(t, db, types.Upload{ID: 1, RepositoryID: 50})
-	insertUploads(t, db, types.Upload{ID: 2, RepositoryID: 51, State: "deleted"})
+	insertUploads(t, db, shared.Upload{ID: 1, RepositoryID: 50})
+	insertUploads(t, db, shared.Upload{ID: 2, RepositoryID: 51, State: "deleted"})
 
 	for _, testCase := range testCases {
 		name := fmt.Sprintf("repositoryID=%d", testCase.repositoryID)
@@ -178,10 +179,10 @@ func TestNumRepositoriesWithCodeIntelligence(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
-		types.Upload{ID: 100, RepositoryID: 50},
-		types.Upload{ID: 101, RepositoryID: 51},
-		types.Upload{ID: 102, RepositoryID: 52}, // Not in commit graph
-		types.Upload{ID: 103, RepositoryID: 53}, // Not on default branch
+		shared.Upload{ID: 100, RepositoryID: 50},
+		shared.Upload{ID: 101, RepositoryID: 51},
+		shared.Upload{ID: 102, RepositoryID: 52}, // Not in commit graph
+		shared.Upload{ID: 103, RepositoryID: 53}, // Not on default branch
 	)
 
 	if _, err := db.ExecContext(ctx, `
@@ -217,24 +218,24 @@ func TestRepositoryIDsWithErrors(t *testing.T) {
 	t3 := now.Add(-time.Minute * 3)
 
 	insertUploads(t, db,
-		types.Upload{ID: 100, RepositoryID: 50},                  // Repo 50 = success (no index)
-		types.Upload{ID: 101, RepositoryID: 51},                  // Repo 51 = success (+ successful index)
-		types.Upload{ID: 103, RepositoryID: 53, State: "failed"}, // Repo 53 = failed
+		shared.Upload{ID: 100, RepositoryID: 50},                  // Repo 50 = success (no index)
+		shared.Upload{ID: 101, RepositoryID: 51},                  // Repo 51 = success (+ successful index)
+		shared.Upload{ID: 103, RepositoryID: 53, State: "failed"}, // Repo 53 = failed
 
 		// Repo 54 = multiple failures for same project
-		types.Upload{ID: 150, RepositoryID: 54, State: "failed", FinishedAt: &t1},
-		types.Upload{ID: 151, RepositoryID: 54, State: "failed", FinishedAt: &t2},
-		types.Upload{ID: 152, RepositoryID: 54, State: "failed", FinishedAt: &t3},
+		shared.Upload{ID: 150, RepositoryID: 54, State: "failed", FinishedAt: &t1},
+		shared.Upload{ID: 151, RepositoryID: 54, State: "failed", FinishedAt: &t2},
+		shared.Upload{ID: 152, RepositoryID: 54, State: "failed", FinishedAt: &t3},
 
 		// Repo 55 = multiple failures for different projects
-		types.Upload{ID: 160, RepositoryID: 55, State: "failed", FinishedAt: &t1, Root: "proj1"},
-		types.Upload{ID: 161, RepositoryID: 55, State: "failed", FinishedAt: &t2, Root: "proj2"},
-		types.Upload{ID: 162, RepositoryID: 55, State: "failed", FinishedAt: &t3, Root: "proj3"},
+		shared.Upload{ID: 160, RepositoryID: 55, State: "failed", FinishedAt: &t1, Root: "proj1"},
+		shared.Upload{ID: 161, RepositoryID: 55, State: "failed", FinishedAt: &t2, Root: "proj2"},
+		shared.Upload{ID: 162, RepositoryID: 55, State: "failed", FinishedAt: &t3, Root: "proj3"},
 
 		// Repo 58 = multiple failures with later success (not counted)
-		types.Upload{ID: 170, RepositoryID: 58, State: "completed", FinishedAt: &t1},
-		types.Upload{ID: 171, RepositoryID: 58, State: "failed", FinishedAt: &t2},
-		types.Upload{ID: 172, RepositoryID: 58, State: "failed", FinishedAt: &t3},
+		shared.Upload{ID: 170, RepositoryID: 58, State: "completed", FinishedAt: &t1},
+		shared.Upload{ID: 171, RepositoryID: 58, State: "failed", FinishedAt: &t2},
+		shared.Upload{ID: 172, RepositoryID: 58, State: "failed", FinishedAt: &t3},
 	)
 	insertIndexes(t, db,
 		types.Index{ID: 201, RepositoryID: 51},                  // Repo 51 = success

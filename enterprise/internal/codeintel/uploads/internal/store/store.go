@@ -54,10 +54,10 @@ type Store interface {
 
 	// Uploads
 	GetIndexers(ctx context.Context, opts shared.GetIndexersOptions) ([]string, error)
-	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) ([]types.Upload, int, error)
-	GetUploadByID(ctx context.Context, id int) (types.Upload, bool, error)
-	GetUploadsByIDs(ctx context.Context, ids ...int) ([]types.Upload, error)
-	GetUploadsByIDsAllowDeleted(ctx context.Context, ids ...int) ([]types.Upload, error)
+	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) ([]shared.Upload, int, error)
+	GetUploadByID(ctx context.Context, id int) (shared.Upload, bool, error)
+	GetUploadsByIDs(ctx context.Context, ids ...int) ([]shared.Upload, error)
+	GetUploadsByIDsAllowDeleted(ctx context.Context, ids ...int) ([]shared.Upload, error)
 	GetUploadIDsWithReferences(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData, ignoreIDs []int, repositoryID int, commit string, limit int, offset int, trace observation.TraceLogger) ([]int, int, int, error)
 	GetVisibleUploadsMatchingMonikers(ctx context.Context, repositoryID int, commit string, orderedMonikers []precise.QualifiedMonikerData, limit, offset int) (shared.PackageReferenceScanner, int, error)
 	GetRecentUploadsSummary(ctx context.Context, repositoryID int) ([]shared.UploadsWithRepositoryNamespace, error)
@@ -75,7 +75,7 @@ type Store interface {
 	DeleteUploads(ctx context.Context, opts shared.DeleteUploadsOptions) error
 
 	// Uploads (uploading)
-	InsertUpload(ctx context.Context, upload types.Upload) (int, error)
+	InsertUpload(ctx context.Context, upload shared.Upload) (int, error)
 	AddUploadPart(ctx context.Context, uploadID, partIndex int) error
 	MarkQueued(ctx context.Context, id int, uploadSize *int64) error
 	MarkFailed(ctx context.Context, id int, reason string) error
@@ -95,14 +95,14 @@ type Store interface {
 	ReferencesForUpload(ctx context.Context, uploadID int) (shared.PackageReferenceScanner, error)
 
 	// Audit Logs
-	GetAuditLogsForUpload(ctx context.Context, uploadID int) ([]types.UploadLog, error)
+	GetAuditLogsForUpload(ctx context.Context, uploadID int) ([]shared.UploadLog, error)
 	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (numRecordsScanned, numRecordsAltered int, _ error)
 
 	// Dependencies
 	InsertDependencySyncingJob(ctx context.Context, uploadID int) (int, error)
 
 	// Workerutil
-	WorkerutilStore(observationCtx *observation.Context) dbworkerstore.Store[types.Upload]
+	WorkerutilStore(observationCtx *observation.Context) dbworkerstore.Store[shared.Upload]
 
 	ReconcileCandidates(ctx context.Context, batchSize int) ([]int, error)
 

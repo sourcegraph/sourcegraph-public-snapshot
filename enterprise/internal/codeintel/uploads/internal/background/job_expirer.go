@@ -190,7 +190,7 @@ func (s *expirer) buildCommitMap(ctx context.Context, repositoryID int, cfg Expi
 func (s *expirer) handleUploads(
 	ctx context.Context,
 	commitMap map[string][]policies.PolicyMatch,
-	uploads []types.Upload,
+	uploads []shared.Upload,
 	cfg ExpirerConfig,
 	metrics *ExpirationMetrics,
 	now time.Time,
@@ -246,7 +246,7 @@ func (s *expirer) handleUploads(
 func (s *expirer) isUploadProtectedByPolicy(
 	ctx context.Context,
 	commitMap map[string][]policies.PolicyMatch,
-	upload types.Upload,
+	upload shared.Upload,
 	cfg ExpirerConfig,
 	metrics *ExpirationMetrics,
 	now time.Time,

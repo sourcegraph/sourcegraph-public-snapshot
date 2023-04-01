@@ -158,10 +158,10 @@ func TestGetIndexes(t *testing.T) {
 		types.Index{ID: 10, QueuedAt: t10},
 	)
 	insertUploads(t, db,
-		types.Upload{ID: uploadID1, AssociatedIndexID: &indexID1},
-		types.Upload{ID: uploadID2, AssociatedIndexID: &indexID2},
-		types.Upload{ID: uploadID3, AssociatedIndexID: &indexID3},
-		types.Upload{ID: uploadID4, AssociatedIndexID: &indexID4},
+		shared.Upload{ID: uploadID1, AssociatedIndexID: &indexID1},
+		shared.Upload{ID: uploadID2, AssociatedIndexID: &indexID2},
+		shared.Upload{ID: uploadID3, AssociatedIndexID: &indexID3},
+		shared.Upload{ID: uploadID4, AssociatedIndexID: &indexID4},
 	)
 
 	testCases := []struct {
@@ -302,7 +302,7 @@ func TestGetIndexByID(t *testing.T) {
 	}
 
 	insertIndexes(t, db, expected)
-	insertUploads(t, db, types.Upload{ID: uploadID, AssociatedIndexID: &expected.ID})
+	insertUploads(t, db, shared.Upload{ID: uploadID, AssociatedIndexID: &expected.ID})
 
 	if index, exists, err := store.GetIndexByID(ctx, 1); err != nil {
 		t.Fatalf("unexpected error getting index: %s", err)
@@ -352,10 +352,10 @@ func TestGetIndexesByIDs(t *testing.T) {
 		types.Index{ID: 10},
 	)
 	insertUploads(t, db,
-		types.Upload{ID: uploadID1, AssociatedIndexID: &indexID1},
-		types.Upload{ID: uploadID2, AssociatedIndexID: &indexID2},
-		types.Upload{ID: uploadID3, AssociatedIndexID: &indexID3},
-		types.Upload{ID: uploadID4, AssociatedIndexID: &indexID4},
+		shared.Upload{ID: uploadID1, AssociatedIndexID: &indexID1},
+		shared.Upload{ID: uploadID2, AssociatedIndexID: &indexID2},
+		shared.Upload{ID: uploadID3, AssociatedIndexID: &indexID3},
+		shared.Upload{ID: uploadID4, AssociatedIndexID: &indexID4},
 	)
 
 	t.Run("fetch", func(t *testing.T) {

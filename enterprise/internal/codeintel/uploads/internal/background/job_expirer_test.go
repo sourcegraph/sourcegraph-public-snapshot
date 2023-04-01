@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -113,7 +114,7 @@ func setupMockPolicyService() *MockPolicyService {
 }
 
 func setupMockUploadService(now time.Time) *MockStore {
-	uploads := []types.Upload{
+	uploads := []shared.Upload{
 		{ID: 11, State: "completed", RepositoryID: 50, Commit: "deadbeef01", UploadedAt: daysAgo(now, 1)}, // repo 50
 		{ID: 12, State: "completed", RepositoryID: 50, Commit: "deadbeef02", UploadedAt: daysAgo(now, 2)},
 		{ID: 13, State: "completed", RepositoryID: 50, Commit: "deadbeef03", UploadedAt: daysAgo(now, 3)},
@@ -159,8 +160,8 @@ func setupMockUploadService(now time.Time) *MockStore {
 		return scannedIDs, nil
 	}
 
-	getUploads := func(ctx context.Context, opts uploadsshared.GetUploadsOptions) ([]types.Upload, int, error) {
-		var filtered []types.Upload
+	getUploads := func(ctx context.Context, opts uploadsshared.GetUploadsOptions) ([]shared.Upload, int, error) {
+		var filtered []shared.Upload
 		for _, upload := range uploads {
 			if upload.RepositoryID != opts.RepositoryID {
 				continue

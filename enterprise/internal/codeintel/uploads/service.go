@@ -25,7 +25,7 @@ import (
 type Service struct {
 	store           store.Store
 	repoStore       RepoStore
-	workerutilStore dbworkerstore.Store[types.Upload]
+	workerutilStore dbworkerstore.Store[shared.Upload]
 	lsifstore       lsifstore.LsifStore
 	gitserverClient gitserver.Client
 	rankingBucket   *storage.BucketHandle
@@ -82,15 +82,15 @@ func (s *Service) GetIndexers(ctx context.Context, opts shared.GetIndexersOption
 	return s.store.GetIndexers(ctx, opts)
 }
 
-func (s *Service) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) ([]types.Upload, int, error) {
+func (s *Service) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) ([]shared.Upload, int, error) {
 	return s.store.GetUploads(ctx, opts)
 }
 
-func (s *Service) GetUploadByID(ctx context.Context, id int) (types.Upload, bool, error) {
+func (s *Service) GetUploadByID(ctx context.Context, id int) (shared.Upload, bool, error) {
 	return s.store.GetUploadByID(ctx, id)
 }
 
-func (s *Service) GetUploadsByIDs(ctx context.Context, ids ...int) ([]types.Upload, error) {
+func (s *Service) GetUploadsByIDs(ctx context.Context, ids ...int) ([]shared.Upload, error) {
 	return s.store.GetUploadsByIDs(ctx, ids...)
 }
 
@@ -201,7 +201,7 @@ func (s *Service) ReferencesForUpload(ctx context.Context, uploadID int) (shared
 	return s.store.ReferencesForUpload(ctx, uploadID)
 }
 
-func (s *Service) GetAuditLogsForUpload(ctx context.Context, uploadID int) ([]types.UploadLog, error) {
+func (s *Service) GetAuditLogsForUpload(ctx context.Context, uploadID int) ([]shared.UploadLog, error) {
 	return s.store.GetAuditLogsForUpload(ctx, uploadID)
 }
 

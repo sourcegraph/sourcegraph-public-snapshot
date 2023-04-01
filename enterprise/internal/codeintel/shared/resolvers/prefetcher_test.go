@@ -7,13 +7,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 )
 
 func TestPrefetcherUploads(t *testing.T) {
 	mockUploadResolver := NewMockUploadsService()
 	prefetcher := NewPrefetcher(mockUploadResolver)
 
-	uploads := map[int]types.Upload{
+	uploads := map[int]shared.Upload{
 		1: {ID: 1},
 		2: {ID: 2},
 		3: {ID: 3},
@@ -21,8 +22,8 @@ func TestPrefetcherUploads(t *testing.T) {
 		5: {ID: 5},
 	}
 
-	mockUploadResolver.GetUploadsByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...int) ([]types.Upload, error) {
-		matching := make([]types.Upload, 0, len(ids))
+	mockUploadResolver.GetUploadsByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...int) ([]shared.Upload, error) {
+		matching := make([]shared.Upload, 0, len(ids))
 		for _, id := range ids {
 			matching = append(matching, uploads[id])
 		}

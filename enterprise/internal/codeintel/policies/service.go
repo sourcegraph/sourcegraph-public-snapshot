@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/store"
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -103,7 +104,7 @@ func (s *Service) DeleteConfigurationPolicyByID(ctx context.Context, id int) err
 	return s.store.DeleteConfigurationPolicyByID(ctx, id)
 }
 
-func (s *Service) GetRetentionPolicyOverview(ctx context.Context, upload types.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []types.RetentionPolicyMatchCandidate, totalCount int, err error) {
+func (s *Service) GetRetentionPolicyOverview(ctx context.Context, upload shared.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []types.RetentionPolicyMatchCandidate, totalCount int, err error) {
 	ctx, _, endObservation := s.operations.getRetentionPolicyOverview.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -277,7 +278,7 @@ func (s *Service) GetPreviewGitObjectFilter(
 	return gitObjects, totalCount, totalCountYoungerThanThreshold, nil
 }
 
-func (s *Service) getCommitsVisibleToUpload(ctx context.Context, upload types.Upload) (commits []string, err error) {
+func (s *Service) getCommitsVisibleToUpload(ctx context.Context, upload shared.Upload) (commits []string, err error) {
 	var token *string
 	for first := true; first || token != nil; first = false {
 		cs, nextToken, err := s.uploadSvc.GetCommitsVisibleToUpload(ctx, upload.ID, 50, token)
@@ -297,7 +298,7 @@ func (s *Service) getCommitsVisibleToUpload(ctx context.Context, upload types.Up
 // policy IDs mapped to their index in the slice.
 func (s *Service) populateMatchingCommits(
 	visibleCommits []string,
-	upload types.Upload,
+	upload shared.Upload,
 	matchingPolicies map[string][]PolicyMatch,
 	policies []types.ConfigurationPolicy,
 	now time.Time,

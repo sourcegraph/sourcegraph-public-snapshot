@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-func scanCompleteUpload(s dbutil.Scanner) (upload types.Upload, _ error) {
+func scanCompleteUpload(s dbutil.Scanner) (upload shared.Upload, _ error) {
 	var rawUploadedParts []sql.NullInt32
 	if err := s.Scan(
 		&upload.ID,
@@ -236,7 +236,7 @@ func scanRepoNames(rows *sql.Rows, queryErr error) (_ map[int]string, err error)
 	return names, nil
 }
 
-func scanUploadAuditLog(s dbutil.Scanner) (log types.UploadLog, _ error) {
+func scanUploadAuditLog(s dbutil.Scanner) (log shared.UploadLog, _ error) {
 	hstores := pgtype.HstoreArray{}
 	err := s.Scan(
 		&log.LogTimestamp,

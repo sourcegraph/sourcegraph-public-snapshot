@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/commitgraph"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -107,7 +108,7 @@ func TestFindClosestDumps(t *testing.T) {
 	//       |              |           |
 	//       +-- [3] -- 4 --+           +--- 8
 
-	uploads := []types.Upload{
+	uploads := []shared.Upload{
 		{ID: 1, Commit: makeCommit(1)},
 		{ID: 2, Commit: makeCommit(3)},
 		{ID: 3, Commit: makeCommit(7)},
@@ -175,7 +176,7 @@ func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
 	//              |
 	//              +-- 7 -- 8
 
-	uploads := []types.Upload{
+	uploads := []shared.Upload{
 		{ID: 1, Commit: makeCommit(2)},
 	}
 	insertUploads(t, db, uploads...)
@@ -231,7 +232,7 @@ func TestFindClosestDumpsAlternateCommitGraphWithOverwrittenVisibleUploads(t *te
 	//
 	// 1 -- [2] -- 3 -- 4 -- [5]
 
-	uploads := []types.Upload{
+	uploads := []shared.Upload{
 		{ID: 1, Commit: makeCommit(2)},
 		{ID: 2, Commit: makeCommit(5)},
 	}
@@ -284,7 +285,7 @@ func TestFindClosestDumpsDistinctRoots(t *testing.T) {
 	//
 	// [1] -- 2
 
-	uploads := []types.Upload{
+	uploads := []shared.Upload{
 		{ID: 1, Commit: makeCommit(1), Root: "root1/"},
 		{ID: 2, Commit: makeCommit(1), Root: "root2/"},
 	}
@@ -350,7 +351,7 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 	// | 8        | 5      | root2/  | lsif-go | (overwrites root2/ at commit 2)
 	// | 9        | 6      | root1/  | lsif-go | (overwrites root1/ at commit 2)
 
-	uploads := []types.Upload{
+	uploads := []shared.Upload{
 		{ID: 1, Commit: makeCommit(1), Indexer: "lsif-go", Root: "root3/"},
 		{ID: 2, Commit: makeCommit(1), Indexer: "scip-python", Root: "root4/"},
 		{ID: 3, Commit: makeCommit(2), Indexer: "lsif-go", Root: "root1/"},
@@ -414,7 +415,7 @@ func TestFindClosestDumpsIndexerName(t *testing.T) {
 	//
 	// [1] --+-- [2] --+-- [3] --+-- [4] --+-- 5
 
-	uploads := []types.Upload{
+	uploads := []shared.Upload{
 		{ID: 1, Commit: makeCommit(1), Root: "root1/", Indexer: "idx1"},
 		{ID: 2, Commit: makeCommit(2), Root: "root2/", Indexer: "idx1"},
 		{ID: 3, Commit: makeCommit(3), Root: "root3/", Indexer: "idx1"},
@@ -503,7 +504,7 @@ func TestFindClosestDumpsIntersectingPath(t *testing.T) {
 	//
 	// [1]
 
-	uploads := []types.Upload{
+	uploads := []shared.Upload{
 		{ID: 1, Commit: makeCommit(1), Root: "web/src/", Indexer: "lsif-eslint"},
 	}
 	insertUploads(t, db, uploads...)
@@ -551,7 +552,7 @@ func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
 	//       |                ||       /
 	//       +-- [5] -- 6 --- || -----+
 
-	uploads := []types.Upload{
+	uploads := []shared.Upload{
 		{ID: 1, Commit: makeCommit(1)},
 		{ID: 2, Commit: makeCommit(5)},
 	}
@@ -749,7 +750,7 @@ func TestDeleteOverlappingDumps(t *testing.T) {
 	db := database.NewDB(logger, sqlDB)
 	store := New(&observation.TestContext, db)
 
-	insertUploads(t, db, types.Upload{
+	insertUploads(t, db, shared.Upload{
 		ID:      1,
 		Commit:  makeCommit(1),
 		Root:    "cmd/",
@@ -775,7 +776,7 @@ func TestDeleteOverlappingDumpsNoMatches(t *testing.T) {
 	db := database.NewDB(logger, sqlDB)
 	store := New(&observation.TestContext, db)
 
-	insertUploads(t, db, types.Upload{
+	insertUploads(t, db, shared.Upload{
 		ID:      1,
 		Commit:  makeCommit(1),
 		Root:    "cmd/",
@@ -813,7 +814,7 @@ func TestDeleteOverlappingDumpsIgnoresIncompleteUploads(t *testing.T) {
 	db := database.NewDB(logger, sqlDB)
 	store := New(&observation.TestContext, db)
 
-	insertUploads(t, db, types.Upload{
+	insertUploads(t, db, shared.Upload{
 		ID:      1,
 		Commit:  makeCommit(1),
 		Root:    "cmd/",
@@ -834,8 +835,8 @@ func TestDeleteOverlappingDumpsIgnoresIncompleteUploads(t *testing.T) {
 	}
 }
 
-func dumpToUpload(expected types.Dump) types.Upload {
-	return types.Upload{
+func dumpToUpload(expected types.Dump) shared.Upload {
+	return shared.Upload{
 		ID:                expected.ID,
 		Commit:            expected.Commit,
 		Root:              expected.Root,
@@ -855,7 +856,7 @@ func dumpToUpload(expected types.Dump) types.Upload {
 	}
 }
 
-func toCommitGraphView(uploads []types.Upload) *commitgraph.CommitGraphView {
+func toCommitGraphView(uploads []shared.Upload) *commitgraph.CommitGraphView {
 	commitGraphView := commitgraph.NewCommitGraphView()
 	for _, upload := range uploads {
 		commitGraphView.Add(commitgraph.UploadMeta{UploadID: upload.ID}, upload.Commit, fmt.Sprintf("%s:%s", upload.Root, upload.Indexer))

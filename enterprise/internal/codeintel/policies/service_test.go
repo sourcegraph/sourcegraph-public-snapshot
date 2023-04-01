@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -31,14 +32,14 @@ func TestGetRetentionPolicyOverview(t *testing.T) {
 	cases := []struct {
 		name            string
 		expectedMatches int
-		upload          types.Upload
+		upload          shared.Upload
 		mockPolicies    []types.RetentionPolicyMatchCandidate
 		refDescriptions map[string][]gitdomain.RefDescription
 	}{
 		{
 			name:            "basic single upload match",
 			expectedMatches: 1,
-			upload: types.Upload{
+			upload: shared.Upload{
 				Commit:     "deadbeef0",
 				UploadedAt: mockClock.Now().Add(-time.Hour * 23),
 			},
@@ -66,7 +67,7 @@ func TestGetRetentionPolicyOverview(t *testing.T) {
 		{
 			name:            "matching but expired",
 			expectedMatches: 0,
-			upload: types.Upload{
+			upload: shared.Upload{
 				Commit:     "deadbeef0",
 				UploadedAt: mockClock.Now().Add(-time.Hour * 25),
 			},
@@ -94,7 +95,7 @@ func TestGetRetentionPolicyOverview(t *testing.T) {
 		{
 			name:            "tip of default branch match",
 			expectedMatches: 1,
-			upload: types.Upload{
+			upload: shared.Upload{
 				Commit:     "deadbeef0",
 				UploadedAt: mockClock.Now().Add(-time.Hour * 25),
 			},
@@ -117,7 +118,7 @@ func TestGetRetentionPolicyOverview(t *testing.T) {
 		{
 			name:            "direct match (1 of 2 policies)",
 			expectedMatches: 1,
-			upload: types.Upload{
+			upload: shared.Upload{
 				Commit:     "deadbeef0",
 				UploadedAt: mockClock.Now().Add(-time.Minute),
 			},
@@ -154,7 +155,7 @@ func TestGetRetentionPolicyOverview(t *testing.T) {
 		{
 			name:            "direct match (ignore visible)",
 			expectedMatches: 1,
-			upload: types.Upload{
+			upload: shared.Upload{
 				Commit:     "deadbeef1",
 				UploadedAt: mockClock.Now().Add(-time.Minute),
 			},
@@ -234,7 +235,7 @@ func TestRetentionPolicyOverview_ByVisibility(t *testing.T) {
 
 	cases := []struct {
 		name            string
-		upload          types.Upload
+		upload          shared.Upload
 		mockPolicies    []types.RetentionPolicyMatchCandidate
 		visibleCommits  []string
 		refDescriptions map[string][]gitdomain.RefDescription
@@ -243,7 +244,7 @@ func TestRetentionPolicyOverview_ByVisibility(t *testing.T) {
 		{
 			name:            "basic single visibility",
 			expectedMatches: 1,
-			upload: types.Upload{
+			upload: shared.Upload{
 				Commit:     "deadbeef0",
 				UploadedAt: mockClock.Now().Add(-time.Minute * 24),
 			},
@@ -274,7 +275,7 @@ func TestRetentionPolicyOverview_ByVisibility(t *testing.T) {
 			name:            "visibile to tip of default branch",
 			expectedMatches: 1,
 			visibleCommits:  []string{"deadbeef0", "deadbeef1"},
-			upload: types.Upload{
+			upload: shared.Upload{
 				Commit:     "deadbeef0",
 				UploadedAt: mockClock.Now().Add(-time.Hour * 24),
 			},

@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -27,7 +26,7 @@ func TestDependencySyncSchedulerJVM(t *testing.T) {
 	mockExtsvcStore := NewMockExternalServiceStore()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
-	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(types.Upload{ID: 42, RepositoryID: 50, Indexer: "scip-java"}, true, nil)
+	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(shared.Upload{ID: 42, RepositoryID: 50, Indexer: "scip-java"}, true, nil)
 	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: dependencies.JVMPackagesScheme, Name: "name1", Version: "v2.2.0"}}, true, nil)
 
 	handler := dependencySyncSchedulerHandler{
@@ -78,7 +77,7 @@ func TestDependencySyncSchedulerGomod(t *testing.T) {
 	mockExtsvcStore := NewMockExternalServiceStore()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
-	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(types.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
+	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(shared.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
 	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "name1", Version: "v2.2.0"}}, true, nil)
 
 	handler := dependencySyncSchedulerHandler{
