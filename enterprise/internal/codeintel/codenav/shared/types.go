@@ -1,7 +1,7 @@
 package shared
 
 import (
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -32,7 +32,7 @@ type CodeIntelligenceRange struct {
 // UploadLocation is a path and range pair from within a particular upload. The target commit
 // denotes the target commit for which the location was set (the originally requested commit).
 type UploadLocation struct {
-	Dump         types.Dump
+	Dump         shared.Dump
 	Path         string
 	TargetCommit string
 	TargetRange  Range

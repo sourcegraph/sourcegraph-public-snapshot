@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -33,7 +33,7 @@ func TestDefinitions(t *testing.T) {
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
 
 	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
-	uploads := []types.Dump{
+	uploads := []uploadsshared.Dump{
 		{ID: 50, Commit: mockCommit, Root: "sub1/"},
 		{ID: 51, Commit: mockCommit, Root: "sub2/"},
 		{ID: 52, Commit: mockCommit, Root: "sub3/"},
@@ -89,7 +89,7 @@ func TestDefinitionsWithSubRepoPermissions(t *testing.T) {
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
 	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
-	uploads := []types.Dump{
+	uploads := []uploadsshared.Dump{
 		{ID: 50, Commit: mockCommit, Root: "sub1/"},
 		{ID: 51, Commit: mockCommit, Root: "sub2/"},
 		{ID: 52, Commit: mockCommit, Root: "sub3/"},
@@ -160,7 +160,7 @@ func TestDefinitionsRemote(t *testing.T) {
 		t.Fatalf("unexpected error setting local git tree translator: %s", err)
 	}
 	mockRequestState.GitTreeTranslator = mockedGitTreeTranslator()
-	uploads := []types.Dump{
+	uploads := []uploadsshared.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -168,7 +168,7 @@ func TestDefinitionsRemote(t *testing.T) {
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
 
-	dumps := []types.Dump{
+	dumps := []uploadsshared.Dump{
 		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
@@ -278,7 +278,7 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
 	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, mockPath, hunkCache)
-	uploads := []types.Dump{
+	uploads := []uploadsshared.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -300,7 +300,7 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 	})
 	mockRequestState.SetAuthChecker(checker)
 
-	dumps := []types.Dump{
+	dumps := []uploadsshared.Dump{
 		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},

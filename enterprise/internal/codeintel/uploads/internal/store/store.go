@@ -81,10 +81,10 @@ type Store interface {
 	MarkFailed(ctx context.Context, id int, reason string) error
 
 	// Dumps
-	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) ([]types.Dump, error)
-	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) ([]types.Dump, error)
-	GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) ([]types.Dump, error)
-	GetDumpsByIDs(ctx context.Context, ids []int) ([]types.Dump, error)
+	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) ([]shared.Dump, error)
+	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) ([]shared.Dump, error)
+	GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) ([]shared.Dump, error)
+	GetDumpsByIDs(ctx context.Context, ids []int) ([]shared.Dump, error)
 	DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) error
 
 	// Packages

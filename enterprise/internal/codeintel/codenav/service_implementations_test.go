@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -47,7 +47,7 @@ func TestImplementations(t *testing.T) {
 	mockLsifStore.GetImplementationLocationsFunc.PushReturn(locations[1:4], 3, nil)
 	mockLsifStore.GetImplementationLocationsFunc.PushReturn(locations[4:], 1, nil)
 
-	uploads := []types.Dump{
+	uploads := []uploadsshared.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -110,7 +110,7 @@ func TestImplementationsWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore.GetImplementationLocationsFunc.PushReturn(locations[1:4], 3, nil)
 	mockLsifStore.GetImplementationLocationsFunc.PushReturn(locations[4:], 1, nil)
 
-	uploads := []types.Dump{
+	uploads := []uploadsshared.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -170,7 +170,7 @@ func TestImplementationsRemote(t *testing.T) {
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
 	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, mockPath, hunkCache)
-	uploads := []types.Dump{
+	uploads := []uploadsshared.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -178,7 +178,7 @@ func TestImplementationsRemote(t *testing.T) {
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
 
-	remoteUploads := []types.Dump{
+	remoteUploads := []uploadsshared.Dump{
 		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
@@ -186,7 +186,7 @@ func TestImplementationsRemote(t *testing.T) {
 	}
 	mockUploadSvc.GetDumpsWithDefinitionsForMonikersFunc.PushReturn(remoteUploads, nil)
 
-	referenceUploads := []types.Dump{
+	referenceUploads := []uploadsshared.Dump{
 		{ID: 250, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 251, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 252, Commit: "deadbeef3", Root: "sub3/"},
@@ -344,7 +344,7 @@ func TestImplementationsRemoteWithSubRepoPermissions(t *testing.T) {
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
 	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
-	uploads := []types.Dump{
+	uploads := []uploadsshared.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -365,7 +365,7 @@ func TestImplementationsRemoteWithSubRepoPermissions(t *testing.T) {
 	})
 	mockRequestState.SetAuthChecker(checker)
 
-	definitionUploads := []types.Dump{
+	definitionUploads := []uploadsshared.Dump{
 		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
@@ -373,7 +373,7 @@ func TestImplementationsRemoteWithSubRepoPermissions(t *testing.T) {
 	}
 	mockUploadSvc.GetDumpsWithDefinitionsForMonikersFunc.PushReturn(definitionUploads, nil)
 
-	referenceUploads := []types.Dump{
+	referenceUploads := []uploadsshared.Dump{
 		{ID: 250, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 251, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 252, Commit: "deadbeef3", Root: "sub3/"},

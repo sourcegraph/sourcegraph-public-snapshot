@@ -4,14 +4,14 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // visibleUpload pairs an upload visible from the current target commit with the
 // current target path and position matched to the data within the underlying index.
 type visibleUpload struct {
-	Upload                types.Dump
+	Upload                uploadsshared.Dump
 	TargetPath            string
 	TargetPosition        shared.Position
 	TargetPathWithoutRoot string
@@ -61,7 +61,7 @@ type RequestArgs struct {
 // the target commit for which the location was adjusted (the originally requested commit).
 type DiagnosticAtUpload struct {
 	shared.Diagnostic
-	Dump           types.Dump
+	Dump           uploadsshared.Dump
 	AdjustedCommit string
 	AdjustedRange  shared.Range
 }

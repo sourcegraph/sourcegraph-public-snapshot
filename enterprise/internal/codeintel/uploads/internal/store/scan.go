@@ -7,7 +7,6 @@ import (
 	"github.com/jackc/pgtype"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -79,7 +78,7 @@ func scanCountsWithTotalCount(rows *sql.Rows, queryErr error) (totalCount int, _
 }
 
 // scanDumps scans a slice of dumps from the return value of `*Store.query`.
-func scanDump(s dbutil.Scanner) (dump types.Dump, err error) {
+func scanDump(s dbutil.Scanner) (dump shared.Dump, err error) {
 	return dump, s.Scan(
 		&dump.ID,
 		&dump.Commit,

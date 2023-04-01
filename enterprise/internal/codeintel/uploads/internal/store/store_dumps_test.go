@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -42,7 +41,7 @@ func TestGetDumpsByIDs(t *testing.T) {
 	startedAt := uploadedAt.Add(time.Minute)
 	finishedAt := uploadedAt.Add(time.Minute * 2)
 	expectedAssociatedIndexID := 42
-	expected1 := types.Dump{
+	expected1 := shared.Dump{
 		ID:                1,
 		Commit:            makeCommit(1),
 		Root:              "sub/",
@@ -58,7 +57,7 @@ func TestGetDumpsByIDs(t *testing.T) {
 		IndexerVersion:    "latest",
 		AssociatedIndexID: &expectedAssociatedIndexID,
 	}
-	expected2 := types.Dump{
+	expected2 := shared.Dump{
 		ID:                2,
 		Commit:            makeCommit(2),
 		Root:              "other/",
@@ -640,7 +639,7 @@ func TestDefinitionDumps(t *testing.T) {
 	uploadedAt := time.Unix(1587396557, 0).UTC()
 	startedAt := uploadedAt.Add(time.Minute)
 	finishedAt := uploadedAt.Add(time.Minute * 2)
-	expected1 := types.Dump{
+	expected1 := shared.Dump{
 		ID:             1,
 		Commit:         makeCommit(1),
 		Root:           "sub/",
@@ -655,7 +654,7 @@ func TestDefinitionDumps(t *testing.T) {
 		Indexer:        "lsif-go",
 		IndexerVersion: "latest",
 	}
-	expected2 := types.Dump{
+	expected2 := shared.Dump{
 		ID:                2,
 		Commit:            makeCommit(2),
 		Root:              "other/",
@@ -671,7 +670,7 @@ func TestDefinitionDumps(t *testing.T) {
 		IndexerVersion:    "1.2.3",
 		AssociatedIndexID: nil,
 	}
-	expected3 := types.Dump{
+	expected3 := shared.Dump{
 		ID:             3,
 		Commit:         makeCommit(3),
 		Root:           "sub/",
@@ -835,7 +834,7 @@ func TestDeleteOverlappingDumpsIgnoresIncompleteUploads(t *testing.T) {
 	}
 }
 
-func dumpToUpload(expected types.Dump) shared.Upload {
+func dumpToUpload(expected shared.Dump) shared.Upload {
 	return shared.Upload{
 		ID:                expected.ID,
 		Commit:            expected.Commit,
@@ -952,7 +951,7 @@ func testFindClosestDumps(t *testing.T, store Store, testCases []FindClosestDump
 			testCase.indexer,
 		)
 
-		assertDumpIDs := func(t *testing.T, dumps []types.Dump) {
+		assertDumpIDs := func(t *testing.T, dumps []shared.Dump) {
 			if len(testCase.anyOfIDs) > 0 {
 				testAnyOf(t, dumps, testCase.anyOfIDs)
 				return
@@ -993,7 +992,7 @@ func testFindClosestDumps(t *testing.T, store Store, testCases []FindClosestDump
 	}
 }
 
-func testAnyOf(t *testing.T, dumps []types.Dump, expectedIDs []int) {
+func testAnyOf(t *testing.T, dumps []shared.Dump, expectedIDs []int) {
 	if len(dumps) != 1 {
 		t.Errorf("unexpected nearest dump length. want=%d have=%d", 1, len(dumps))
 		return
@@ -1014,7 +1013,7 @@ func testPresence(needle int, haystack []int) bool {
 	return false
 }
 
-func testAllOf(t *testing.T, dumps []types.Dump, expectedIDs []int) {
+func testAllOf(t *testing.T, dumps []shared.Dump, expectedIDs []int) {
 	if len(dumps) != len(expectedIDs) {
 		t.Errorf("unexpected nearest dump length. want=%d have=%d", 1, len(dumps))
 	}
