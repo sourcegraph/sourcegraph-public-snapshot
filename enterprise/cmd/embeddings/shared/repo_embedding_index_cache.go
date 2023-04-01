@@ -25,28 +25,36 @@ type repoEmbeddingIndexCacheEntry struct {
 	finishedAt time.Time
 }
 
+// repoMutexMap tracks a mutex for each repository, creating one if it does not yet exist for a given repository ID.
+// This allows concurrent access to the cache for different repositories, while serializing access for a given repository.
 type repoMutexMap struct {
+	// Mutex prevents concurrent access to the repoMutexes map below.
 	sync.Mutex
-	mutexes map[api.RepoID]*sync.Mutex
+	repoMutexes map[api.RepoID]*sync.Mutex
 }
 
 func (r *repoMutexMap) LockRepo(repoID api.RepoID) {
 	r.Lock()
-	defer r.Unlock()
-
-	repoMutex, ok := r.mutexes[repoID]
+	// IMPORTANT: do not use `defer r.Unlock()` because it creates a deadlock.
+	// With defer and 2 concurrent requests, request 1 locks the map, and locks the mutex for repo A.
+	// Request 2 comes in, locks the map, and tries to lock the mutex for repo A, but it has to wait (while still locking the map mutex).
+	// Request 1 finishes processing, tries to unlock the mutex for repo A, but it can't because request 2 locked the access to the map, creating a deadlock.
+	repoMutex, ok := r.repoMutexes[repoID]
 	if !ok {
 		repoMutex = &sync.Mutex{}
-		r.mutexes[repoID] = repoMutex
+		r.repoMutexes[repoID] = repoMutex
 	}
+	r.Unlock()
+
 	repoMutex.Lock()
 }
 
 func (r *repoMutexMap) UnlockRepo(repoID api.RepoID) {
 	r.Lock()
-	defer r.Unlock()
+	repoMutex := r.repoMutexes[repoID]
+	r.Unlock()
 
-	r.mutexes[repoID].Unlock()
+	repoMutex.Unlock()
 }
 
 func getCachedRepoEmbeddingIndex(
@@ -59,7 +67,7 @@ func getCachedRepoEmbeddingIndex(
 		return nil, errors.Wrap(err, "creating repo embedding index cache")
 	}
 
-	repoMutexMap := &repoMutexMap{mutexes: make(map[api.RepoID]*sync.Mutex)}
+	repoMutexMap := &repoMutexMap{repoMutexes: make(map[api.RepoID]*sync.Mutex)}
 
 	getAndCacheIndex := func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName, finishedAt *time.Time) (*embeddings.RepoEmbeddingIndex, error) {
 		embeddingIndex, err := downloadRepoEmbeddingIndex(ctx, repoEmbeddingIndexName)
@@ -76,6 +84,9 @@ func getCachedRepoEmbeddingIndex(
 			return nil, err
 		}
 
+		// Acquire a mutex for the given repository to serialize access.
+		// This avoids multiple routines concurrently downloading the same embedding index
+		// when the cache is empty, which can lead to an out-of-memory error.
 		repoMutexMap.LockRepo(repo.ID)
 		defer repoMutexMap.UnlockRepo(repo.ID)
 
