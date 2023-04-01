@@ -6,9 +6,9 @@ import (
 
 	logger "github.com/sourcegraph/log"
 
-	autoindexingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -121,9 +121,9 @@ type Store interface {
 	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (int, int, error)
 
 	ExpireFailedRecords(ctx context.Context, batchSize int, failedIndexMaxAge time.Duration, now time.Time) (int, int, error)
-	GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]autoindexingshared.IndexesWithRepositoryNamespace, error)
+	GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]uploadsshared.IndexesWithRepositoryNamespace, error)
 	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error)
-	RepositoryIDsWithErrors(ctx context.Context, offset, limit int) ([]autoindexingshared.RepositoryWithCount, int, error)
+	RepositoryIDsWithErrors(ctx context.Context, offset, limit int) ([]uploadsshared.RepositoryWithCount, int, error)
 }
 
 // store manages the database operations for uploads.

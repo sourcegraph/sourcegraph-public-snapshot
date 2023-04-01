@@ -8,9 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
-//
-// TODO - move to uploads
-
 type AvailableIndexer struct {
 	Roots   []string
 	Indexer types.CodeIntelIndexer

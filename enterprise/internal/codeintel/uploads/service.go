@@ -9,11 +9,11 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	logger "github.com/sourcegraph/log"
 
-	autoindexingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -253,7 +253,7 @@ func (s *Service) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexes
 	return s.store.ReindexIndexes(ctx, opts)
 }
 
-func (s *Service) GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]autoindexingshared.IndexesWithRepositoryNamespace, error) {
+func (s *Service) GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]uploadsshared.IndexesWithRepositoryNamespace, error) {
 	return s.store.GetRecentIndexesSummary(ctx, repositoryID)
 }
 
@@ -261,6 +261,6 @@ func (s *Service) NumRepositoriesWithCodeIntelligence(ctx context.Context) (int,
 	return s.store.NumRepositoriesWithCodeIntelligence(ctx)
 }
 
-func (s *Service) RepositoryIDsWithErrors(ctx context.Context, offset, limit int) ([]autoindexingshared.RepositoryWithCount, int, error) {
+func (s *Service) RepositoryIDsWithErrors(ctx context.Context, offset, limit int) ([]uploadsshared.RepositoryWithCount, int, error) {
 	return s.store.RepositoryIDsWithErrors(ctx, offset, limit)
 }

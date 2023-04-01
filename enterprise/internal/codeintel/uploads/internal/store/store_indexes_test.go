@@ -15,9 +15,9 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	autoindexingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
@@ -113,7 +113,7 @@ func TestRecentIndexesSummary(t *testing.T) {
 		t.Fatalf("unexpected error querying recent index summary: %s", err)
 	}
 
-	expected := []autoindexingshared.IndexesWithRepositoryNamespace{
+	expected := []uploadsshared.IndexesWithRepositoryNamespace{
 		{Root: "r1", Indexer: "i1", Indexes: []types.Index{indexes[0], indexes[1], indexes[2]}},
 		{Root: "r1", Indexer: "i2", Indexes: []types.Index{indexes[3]}},
 		{Root: "r2", Indexer: "i1", Indexes: []types.Index{indexes[4]}},

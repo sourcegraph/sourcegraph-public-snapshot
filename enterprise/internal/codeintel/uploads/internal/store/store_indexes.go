@@ -12,9 +12,9 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	autoindexingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -586,7 +586,7 @@ func scanIndex(s dbutil.Scanner) (index types.Index, err error) {
 // The return value is a list of indexes grouped by root and indexer. In each group, the set of indexes should
 // include the set of unprocessed records as well as the latest finished record. These values allow users to
 // quickly determine if a particular root/indexer pair os up-to-date or having issues processing.
-func (s *store) GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []autoindexingshared.IndexesWithRepositoryNamespace, err error) {
+func (s *store) GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []uploadsshared.IndexesWithRepositoryNamespace, err error) {
 	ctx, logger, endObservation := s.operations.getRecentIndexesSummary.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
@@ -598,10 +598,10 @@ func (s *store) GetRecentIndexesSummary(ctx context.Context, repositoryID int) (
 	}
 	logger.AddEvent("scanIndexes", attribute.Int("numIndexes", len(indexes)))
 
-	groupedIndexes := make([]autoindexingshared.IndexesWithRepositoryNamespace, 1, len(indexes)+1)
+	groupedIndexes := make([]uploadsshared.IndexesWithRepositoryNamespace, 1, len(indexes)+1)
 	for _, index := range indexes {
 		if last := groupedIndexes[len(groupedIndexes)-1]; last.Root != index.Root || last.Indexer != index.Indexer {
-			groupedIndexes = append(groupedIndexes, autoindexingshared.IndexesWithRepositoryNamespace{
+			groupedIndexes = append(groupedIndexes, uploadsshared.IndexesWithRepositoryNamespace{
 				Root:    index.Root,
 				Indexer: index.Indexer,
 			})

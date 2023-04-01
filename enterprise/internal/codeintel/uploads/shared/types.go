@@ -131,6 +131,22 @@ type ExportedUpload struct {
 	ObjectPrefix string
 }
 
+type IndexesWithRepositoryNamespace struct {
+	Root    string
+	Indexer string
+	Indexes []types.Index
+}
+
+type RepositoryWithCount struct {
+	RepositoryID int
+	Count        int
+}
+
+type RepositoryWithAvailableIndexers struct {
+	RepositoryID      int
+	AvailableIndexers map[string]AvailableIndexer
+}
+
 //
 // TODO - move to store
 

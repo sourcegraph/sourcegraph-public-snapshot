@@ -1,13 +1,10 @@
-package shared
+package background
 
 import "time"
 
-//
-// TODO - move into store
-
-// DependencyIndexingJob is a subset of the lsif_dependency_indexing_jobs table and acts as the
+// dependencyIndexingJob is a subset of the lsif_dependency_indexing_jobs table and acts as the
 // queue and execution record for indexing the dependencies of a particular completed upload.
-type DependencyIndexingJob struct {
+type dependencyIndexingJob struct {
 	ID                  int        `json:"id"`
 	State               string     `json:"state"`
 	FailureMessage      *string    `json:"failureMessage"`
@@ -21,13 +18,13 @@ type DependencyIndexingJob struct {
 	ExternalServiceSync time.Time  `json:"externalServiceSync"`
 }
 
-func (u DependencyIndexingJob) RecordID() int {
+func (u dependencyIndexingJob) RecordID() int {
 	return u.ID
 }
 
-// DependencySyncingJob is a subset of the lsif_dependency_syncing_jobs table and acts as the
+// dependencySyncingJob is a subset of the lsif_dependency_syncing_jobs table and acts as the
 // queue and execution record for indexing the dependencies of a particular completed upload.
-type DependencySyncingJob struct {
+type dependencySyncingJob struct {
 	ID             int        `json:"id"`
 	State          string     `json:"state"`
 	FailureMessage *string    `json:"failureMessage"`
@@ -39,6 +36,6 @@ type DependencySyncingJob struct {
 	UploadID       int        `json:"uploadId"`
 }
 
-func (u DependencySyncingJob) RecordID() int {
+func (u dependencySyncingJob) RecordID() int {
 	return u.ID
 }
