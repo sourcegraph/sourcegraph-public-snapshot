@@ -59,6 +59,8 @@ function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (da
 }
 
 export class SourcegraphGraphQLAPIClient {
+    private dotcomUrl = 'https://sourcegraph.com'
+
     constructor(private instanceUrl: string, private accessToken: string) {}
 
     public async getCurrentUserId(): Promise<string | Error> {
@@ -88,7 +90,13 @@ export class SourcegraphGraphQLAPIClient {
         publicArgument?: string | {}
     }): Promise<void | Error> {
         return this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(response => {
-            extractDataOrError(response, data => {})
+            extractDataOrError(response, data => {
+                return this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
+                    response => {
+                        extractDataOrError(response, data => {})
+                    }
+                )
+            })
         })
     }
 
@@ -115,6 +123,16 @@ export class SourcegraphGraphQLAPIClient {
     private async fetchSourcegraphAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
         return fetch(`${this.instanceUrl}/.api/graphql`, {
             headers: { authorization: `token ${this.accessToken}` },
+            method: 'POST',
+            body: JSON.stringify({ query, variables }),
+        })
+            .then(verifyResponseCode)
+            .then(response => response.json() as T)
+            .catch(() => new Error('error fetching Sourcegraph GraphQL API'))
+    }
+
+    private async fetchSourcegraphDotcomAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
+        return fetch(`${this.dotcomUrl}/.api/graphql`, {
             method: 'POST',
             body: JSON.stringify({ query, variables }),
         })
