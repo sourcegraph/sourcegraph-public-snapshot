@@ -9,6 +9,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	policiesgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/transport/graphql"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -415,11 +416,11 @@ func (r *preciseIndexResolver) AuditLogs(ctx context.Context) (*[]resolverstubs.
 
 type retentionPolicyMatcherResolver struct {
 	repoStore    database.RepoStore
-	policy       types.RetentionPolicyMatchCandidate
+	policy       policiesshared.RetentionPolicyMatchCandidate
 	errCollector *observation.ErrCollector
 }
 
-func newRetentionPolicyMatcherResolver(repoStore database.RepoStore, policy types.RetentionPolicyMatchCandidate) resolverstubs.CodeIntelligenceRetentionPolicyMatchResolver {
+func newRetentionPolicyMatcherResolver(repoStore database.RepoStore, policy policiesshared.RetentionPolicyMatchCandidate) resolverstubs.CodeIntelligenceRetentionPolicyMatchResolver {
 	return &retentionPolicyMatcherResolver{repoStore: repoStore, policy: policy}
 }
 

@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -154,7 +153,7 @@ func (s *expirer) handleRepository(ctx context.Context, repositoryID int, cfg Ex
 func (s *expirer) buildCommitMap(ctx context.Context, repositoryID int, cfg ExpirerConfig, now time.Time) (map[string][]policies.PolicyMatch, error) {
 	var (
 		offset   int
-		policies []types.ConfigurationPolicy
+		policies []policiesshared.ConfigurationPolicy
 	)
 
 	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))

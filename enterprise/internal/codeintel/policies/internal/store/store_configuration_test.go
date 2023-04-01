@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -168,10 +167,10 @@ func TestDeleteConfigurationPolicyByID(t *testing.T) {
 	d1 := time.Hour * 5
 	d2 := time.Hour * 6
 
-	configurationPolicy := types.ConfigurationPolicy{
+	configurationPolicy := policiesshared.ConfigurationPolicy{
 		RepositoryID:              &repositoryID,
 		Name:                      "name",
-		Type:                      types.GitObjectTypeCommit,
+		Type:                      policiesshared.GitObjectTypeCommit,
 		Pattern:                   "deadbeef",
 		RetentionEnabled:          false,
 		RetentionDuration:         &d1,
@@ -212,10 +211,10 @@ func TestDeleteConfigurationProtectedPolicy(t *testing.T) {
 	d1 := time.Hour * 5
 	d2 := time.Hour * 6
 
-	configurationPolicy := types.ConfigurationPolicy{
+	configurationPolicy := policiesshared.ConfigurationPolicy{
 		RepositoryID:              &repositoryID,
 		Name:                      "name",
-		Type:                      types.GitObjectTypeCommit,
+		Type:                      policiesshared.GitObjectTypeCommit,
 		Pattern:                   "deadbeef",
 		RetentionEnabled:          false,
 		RetentionDuration:         &d1,

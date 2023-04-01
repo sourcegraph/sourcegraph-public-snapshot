@@ -12,7 +12,6 @@ import (
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/store"
 	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
-	types "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 )
 
 // MockStore is a mock implementation of the Store interface (from the
@@ -60,7 +59,7 @@ type MockStore struct {
 func NewMockStore() *MockStore {
 	return &MockStore{
 		CreateConfigurationPolicyFunc: &StoreCreateConfigurationPolicyFunc{
-			defaultHook: func(context.Context, types.ConfigurationPolicy) (r0 types.ConfigurationPolicy, r1 error) {
+			defaultHook: func(context.Context, shared.ConfigurationPolicy) (r0 shared.ConfigurationPolicy, r1 error) {
 				return
 			},
 		},
@@ -70,12 +69,12 @@ func NewMockStore() *MockStore {
 			},
 		},
 		GetConfigurationPoliciesFunc: &StoreGetConfigurationPoliciesFunc{
-			defaultHook: func(context.Context, shared.GetConfigurationPoliciesOptions) (r0 []types.ConfigurationPolicy, r1 int, r2 error) {
+			defaultHook: func(context.Context, shared.GetConfigurationPoliciesOptions) (r0 []shared.ConfigurationPolicy, r1 int, r2 error) {
 				return
 			},
 		},
 		GetConfigurationPolicyByIDFunc: &StoreGetConfigurationPolicyByIDFunc{
-			defaultHook: func(context.Context, int) (r0 types.ConfigurationPolicy, r1 bool, r2 error) {
+			defaultHook: func(context.Context, int) (r0 shared.ConfigurationPolicy, r1 bool, r2 error) {
 				return
 			},
 		},
@@ -90,12 +89,12 @@ func NewMockStore() *MockStore {
 			},
 		},
 		SelectPoliciesForRepositoryMembershipUpdateFunc: &StoreSelectPoliciesForRepositoryMembershipUpdateFunc{
-			defaultHook: func(context.Context, int) (r0 []types.ConfigurationPolicy, r1 error) {
+			defaultHook: func(context.Context, int) (r0 []shared.ConfigurationPolicy, r1 error) {
 				return
 			},
 		},
 		UpdateConfigurationPolicyFunc: &StoreUpdateConfigurationPolicyFunc{
-			defaultHook: func(context.Context, types.ConfigurationPolicy) (r0 error) {
+			defaultHook: func(context.Context, shared.ConfigurationPolicy) (r0 error) {
 				return
 			},
 		},
@@ -112,7 +111,7 @@ func NewMockStore() *MockStore {
 func NewStrictMockStore() *MockStore {
 	return &MockStore{
 		CreateConfigurationPolicyFunc: &StoreCreateConfigurationPolicyFunc{
-			defaultHook: func(context.Context, types.ConfigurationPolicy) (types.ConfigurationPolicy, error) {
+			defaultHook: func(context.Context, shared.ConfigurationPolicy) (shared.ConfigurationPolicy, error) {
 				panic("unexpected invocation of MockStore.CreateConfigurationPolicy")
 			},
 		},
@@ -122,12 +121,12 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		GetConfigurationPoliciesFunc: &StoreGetConfigurationPoliciesFunc{
-			defaultHook: func(context.Context, shared.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error) {
+			defaultHook: func(context.Context, shared.GetConfigurationPoliciesOptions) ([]shared.ConfigurationPolicy, int, error) {
 				panic("unexpected invocation of MockStore.GetConfigurationPolicies")
 			},
 		},
 		GetConfigurationPolicyByIDFunc: &StoreGetConfigurationPolicyByIDFunc{
-			defaultHook: func(context.Context, int) (types.ConfigurationPolicy, bool, error) {
+			defaultHook: func(context.Context, int) (shared.ConfigurationPolicy, bool, error) {
 				panic("unexpected invocation of MockStore.GetConfigurationPolicyByID")
 			},
 		},
@@ -142,12 +141,12 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		SelectPoliciesForRepositoryMembershipUpdateFunc: &StoreSelectPoliciesForRepositoryMembershipUpdateFunc{
-			defaultHook: func(context.Context, int) ([]types.ConfigurationPolicy, error) {
+			defaultHook: func(context.Context, int) ([]shared.ConfigurationPolicy, error) {
 				panic("unexpected invocation of MockStore.SelectPoliciesForRepositoryMembershipUpdate")
 			},
 		},
 		UpdateConfigurationPolicyFunc: &StoreUpdateConfigurationPolicyFunc{
-			defaultHook: func(context.Context, types.ConfigurationPolicy) error {
+			defaultHook: func(context.Context, shared.ConfigurationPolicy) error {
 				panic("unexpected invocation of MockStore.UpdateConfigurationPolicy")
 			},
 		},
@@ -197,15 +196,15 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 // CreateConfigurationPolicy method of the parent MockStore instance is
 // invoked.
 type StoreCreateConfigurationPolicyFunc struct {
-	defaultHook func(context.Context, types.ConfigurationPolicy) (types.ConfigurationPolicy, error)
-	hooks       []func(context.Context, types.ConfigurationPolicy) (types.ConfigurationPolicy, error)
+	defaultHook func(context.Context, shared.ConfigurationPolicy) (shared.ConfigurationPolicy, error)
+	hooks       []func(context.Context, shared.ConfigurationPolicy) (shared.ConfigurationPolicy, error)
 	history     []StoreCreateConfigurationPolicyFuncCall
 	mutex       sync.Mutex
 }
 
 // CreateConfigurationPolicy delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockStore) CreateConfigurationPolicy(v0 context.Context, v1 types.ConfigurationPolicy) (types.ConfigurationPolicy, error) {
+func (m *MockStore) CreateConfigurationPolicy(v0 context.Context, v1 shared.ConfigurationPolicy) (shared.ConfigurationPolicy, error) {
 	r0, r1 := m.CreateConfigurationPolicyFunc.nextHook()(v0, v1)
 	m.CreateConfigurationPolicyFunc.appendCall(StoreCreateConfigurationPolicyFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -214,7 +213,7 @@ func (m *MockStore) CreateConfigurationPolicy(v0 context.Context, v1 types.Confi
 // SetDefaultHook sets function that is called when the
 // CreateConfigurationPolicy method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreCreateConfigurationPolicyFunc) SetDefaultHook(hook func(context.Context, types.ConfigurationPolicy) (types.ConfigurationPolicy, error)) {
+func (f *StoreCreateConfigurationPolicyFunc) SetDefaultHook(hook func(context.Context, shared.ConfigurationPolicy) (shared.ConfigurationPolicy, error)) {
 	f.defaultHook = hook
 }
 
@@ -222,7 +221,7 @@ func (f *StoreCreateConfigurationPolicyFunc) SetDefaultHook(hook func(context.Co
 // CreateConfigurationPolicy method of the parent MockStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *StoreCreateConfigurationPolicyFunc) PushHook(hook func(context.Context, types.ConfigurationPolicy) (types.ConfigurationPolicy, error)) {
+func (f *StoreCreateConfigurationPolicyFunc) PushHook(hook func(context.Context, shared.ConfigurationPolicy) (shared.ConfigurationPolicy, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -230,20 +229,20 @@ func (f *StoreCreateConfigurationPolicyFunc) PushHook(hook func(context.Context,
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreCreateConfigurationPolicyFunc) SetDefaultReturn(r0 types.ConfigurationPolicy, r1 error) {
-	f.SetDefaultHook(func(context.Context, types.ConfigurationPolicy) (types.ConfigurationPolicy, error) {
+func (f *StoreCreateConfigurationPolicyFunc) SetDefaultReturn(r0 shared.ConfigurationPolicy, r1 error) {
+	f.SetDefaultHook(func(context.Context, shared.ConfigurationPolicy) (shared.ConfigurationPolicy, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreCreateConfigurationPolicyFunc) PushReturn(r0 types.ConfigurationPolicy, r1 error) {
-	f.PushHook(func(context.Context, types.ConfigurationPolicy) (types.ConfigurationPolicy, error) {
+func (f *StoreCreateConfigurationPolicyFunc) PushReturn(r0 shared.ConfigurationPolicy, r1 error) {
+	f.PushHook(func(context.Context, shared.ConfigurationPolicy) (shared.ConfigurationPolicy, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreCreateConfigurationPolicyFunc) nextHook() func(context.Context, types.ConfigurationPolicy) (types.ConfigurationPolicy, error) {
+func (f *StoreCreateConfigurationPolicyFunc) nextHook() func(context.Context, shared.ConfigurationPolicy) (shared.ConfigurationPolicy, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -282,10 +281,10 @@ type StoreCreateConfigurationPolicyFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 types.ConfigurationPolicy
+	Arg1 shared.ConfigurationPolicy
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 types.ConfigurationPolicy
+	Result0 shared.ConfigurationPolicy
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -415,15 +414,15 @@ func (c StoreDeleteConfigurationPolicyByIDFuncCall) Results() []interface{} {
 // GetConfigurationPolicies method of the parent MockStore instance is
 // invoked.
 type StoreGetConfigurationPoliciesFunc struct {
-	defaultHook func(context.Context, shared.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error)
-	hooks       []func(context.Context, shared.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error)
+	defaultHook func(context.Context, shared.GetConfigurationPoliciesOptions) ([]shared.ConfigurationPolicy, int, error)
+	hooks       []func(context.Context, shared.GetConfigurationPoliciesOptions) ([]shared.ConfigurationPolicy, int, error)
 	history     []StoreGetConfigurationPoliciesFuncCall
 	mutex       sync.Mutex
 }
 
 // GetConfigurationPolicies delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockStore) GetConfigurationPolicies(v0 context.Context, v1 shared.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error) {
+func (m *MockStore) GetConfigurationPolicies(v0 context.Context, v1 shared.GetConfigurationPoliciesOptions) ([]shared.ConfigurationPolicy, int, error) {
 	r0, r1, r2 := m.GetConfigurationPoliciesFunc.nextHook()(v0, v1)
 	m.GetConfigurationPoliciesFunc.appendCall(StoreGetConfigurationPoliciesFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -432,7 +431,7 @@ func (m *MockStore) GetConfigurationPolicies(v0 context.Context, v1 shared.GetCo
 // SetDefaultHook sets function that is called when the
 // GetConfigurationPolicies method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreGetConfigurationPoliciesFunc) SetDefaultHook(hook func(context.Context, shared.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error)) {
+func (f *StoreGetConfigurationPoliciesFunc) SetDefaultHook(hook func(context.Context, shared.GetConfigurationPoliciesOptions) ([]shared.ConfigurationPolicy, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -440,7 +439,7 @@ func (f *StoreGetConfigurationPoliciesFunc) SetDefaultHook(hook func(context.Con
 // GetConfigurationPolicies method of the parent MockStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *StoreGetConfigurationPoliciesFunc) PushHook(hook func(context.Context, shared.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error)) {
+func (f *StoreGetConfigurationPoliciesFunc) PushHook(hook func(context.Context, shared.GetConfigurationPoliciesOptions) ([]shared.ConfigurationPolicy, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -448,20 +447,20 @@ func (f *StoreGetConfigurationPoliciesFunc) PushHook(hook func(context.Context, 
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreGetConfigurationPoliciesFunc) SetDefaultReturn(r0 []types.ConfigurationPolicy, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, shared.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error) {
+func (f *StoreGetConfigurationPoliciesFunc) SetDefaultReturn(r0 []shared.ConfigurationPolicy, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, shared.GetConfigurationPoliciesOptions) ([]shared.ConfigurationPolicy, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetConfigurationPoliciesFunc) PushReturn(r0 []types.ConfigurationPolicy, r1 int, r2 error) {
-	f.PushHook(func(context.Context, shared.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error) {
+func (f *StoreGetConfigurationPoliciesFunc) PushReturn(r0 []shared.ConfigurationPolicy, r1 int, r2 error) {
+	f.PushHook(func(context.Context, shared.GetConfigurationPoliciesOptions) ([]shared.ConfigurationPolicy, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *StoreGetConfigurationPoliciesFunc) nextHook() func(context.Context, shared.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error) {
+func (f *StoreGetConfigurationPoliciesFunc) nextHook() func(context.Context, shared.GetConfigurationPoliciesOptions) ([]shared.ConfigurationPolicy, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -503,7 +502,7 @@ type StoreGetConfigurationPoliciesFuncCall struct {
 	Arg1 shared.GetConfigurationPoliciesOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.ConfigurationPolicy
+	Result0 []shared.ConfigurationPolicy
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 int
@@ -528,15 +527,15 @@ func (c StoreGetConfigurationPoliciesFuncCall) Results() []interface{} {
 // GetConfigurationPolicyByID method of the parent MockStore instance is
 // invoked.
 type StoreGetConfigurationPolicyByIDFunc struct {
-	defaultHook func(context.Context, int) (types.ConfigurationPolicy, bool, error)
-	hooks       []func(context.Context, int) (types.ConfigurationPolicy, bool, error)
+	defaultHook func(context.Context, int) (shared.ConfigurationPolicy, bool, error)
+	hooks       []func(context.Context, int) (shared.ConfigurationPolicy, bool, error)
 	history     []StoreGetConfigurationPolicyByIDFuncCall
 	mutex       sync.Mutex
 }
 
 // GetConfigurationPolicyByID delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockStore) GetConfigurationPolicyByID(v0 context.Context, v1 int) (types.ConfigurationPolicy, bool, error) {
+func (m *MockStore) GetConfigurationPolicyByID(v0 context.Context, v1 int) (shared.ConfigurationPolicy, bool, error) {
 	r0, r1, r2 := m.GetConfigurationPolicyByIDFunc.nextHook()(v0, v1)
 	m.GetConfigurationPolicyByIDFunc.appendCall(StoreGetConfigurationPolicyByIDFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -545,7 +544,7 @@ func (m *MockStore) GetConfigurationPolicyByID(v0 context.Context, v1 int) (type
 // SetDefaultHook sets function that is called when the
 // GetConfigurationPolicyByID method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreGetConfigurationPolicyByIDFunc) SetDefaultHook(hook func(context.Context, int) (types.ConfigurationPolicy, bool, error)) {
+func (f *StoreGetConfigurationPolicyByIDFunc) SetDefaultHook(hook func(context.Context, int) (shared.ConfigurationPolicy, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -554,7 +553,7 @@ func (f *StoreGetConfigurationPolicyByIDFunc) SetDefaultHook(hook func(context.C
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *StoreGetConfigurationPolicyByIDFunc) PushHook(hook func(context.Context, int) (types.ConfigurationPolicy, bool, error)) {
+func (f *StoreGetConfigurationPolicyByIDFunc) PushHook(hook func(context.Context, int) (shared.ConfigurationPolicy, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -562,20 +561,20 @@ func (f *StoreGetConfigurationPolicyByIDFunc) PushHook(hook func(context.Context
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreGetConfigurationPolicyByIDFunc) SetDefaultReturn(r0 types.ConfigurationPolicy, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, int) (types.ConfigurationPolicy, bool, error) {
+func (f *StoreGetConfigurationPolicyByIDFunc) SetDefaultReturn(r0 shared.ConfigurationPolicy, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (shared.ConfigurationPolicy, bool, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetConfigurationPolicyByIDFunc) PushReturn(r0 types.ConfigurationPolicy, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, int) (types.ConfigurationPolicy, bool, error) {
+func (f *StoreGetConfigurationPolicyByIDFunc) PushReturn(r0 shared.ConfigurationPolicy, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (shared.ConfigurationPolicy, bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *StoreGetConfigurationPolicyByIDFunc) nextHook() func(context.Context, int) (types.ConfigurationPolicy, bool, error) {
+func (f *StoreGetConfigurationPolicyByIDFunc) nextHook() func(context.Context, int) (shared.ConfigurationPolicy, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -617,7 +616,7 @@ type StoreGetConfigurationPolicyByIDFuncCall struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 types.ConfigurationPolicy
+	Result0 shared.ConfigurationPolicy
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 bool
@@ -865,8 +864,8 @@ func (c StoreRepoCountFuncCall) Results() []interface{} {
 // behavior when the SelectPoliciesForRepositoryMembershipUpdate method of
 // the parent MockStore instance is invoked.
 type StoreSelectPoliciesForRepositoryMembershipUpdateFunc struct {
-	defaultHook func(context.Context, int) ([]types.ConfigurationPolicy, error)
-	hooks       []func(context.Context, int) ([]types.ConfigurationPolicy, error)
+	defaultHook func(context.Context, int) ([]shared.ConfigurationPolicy, error)
+	hooks       []func(context.Context, int) ([]shared.ConfigurationPolicy, error)
 	history     []StoreSelectPoliciesForRepositoryMembershipUpdateFuncCall
 	mutex       sync.Mutex
 }
@@ -874,7 +873,7 @@ type StoreSelectPoliciesForRepositoryMembershipUpdateFunc struct {
 // SelectPoliciesForRepositoryMembershipUpdate delegates to the next hook
 // function in the queue and stores the parameter and result values of this
 // invocation.
-func (m *MockStore) SelectPoliciesForRepositoryMembershipUpdate(v0 context.Context, v1 int) ([]types.ConfigurationPolicy, error) {
+func (m *MockStore) SelectPoliciesForRepositoryMembershipUpdate(v0 context.Context, v1 int) ([]shared.ConfigurationPolicy, error) {
 	r0, r1 := m.SelectPoliciesForRepositoryMembershipUpdateFunc.nextHook()(v0, v1)
 	m.SelectPoliciesForRepositoryMembershipUpdateFunc.appendCall(StoreSelectPoliciesForRepositoryMembershipUpdateFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -883,7 +882,7 @@ func (m *MockStore) SelectPoliciesForRepositoryMembershipUpdate(v0 context.Conte
 // SetDefaultHook sets function that is called when the
 // SelectPoliciesForRepositoryMembershipUpdate method of the parent
 // MockStore instance is invoked and the hook queue is empty.
-func (f *StoreSelectPoliciesForRepositoryMembershipUpdateFunc) SetDefaultHook(hook func(context.Context, int) ([]types.ConfigurationPolicy, error)) {
+func (f *StoreSelectPoliciesForRepositoryMembershipUpdateFunc) SetDefaultHook(hook func(context.Context, int) ([]shared.ConfigurationPolicy, error)) {
 	f.defaultHook = hook
 }
 
@@ -892,7 +891,7 @@ func (f *StoreSelectPoliciesForRepositoryMembershipUpdateFunc) SetDefaultHook(ho
 // MockStore instance invokes the hook at the front of the queue and
 // discards it. After the queue is empty, the default hook function is
 // invoked for any future action.
-func (f *StoreSelectPoliciesForRepositoryMembershipUpdateFunc) PushHook(hook func(context.Context, int) ([]types.ConfigurationPolicy, error)) {
+func (f *StoreSelectPoliciesForRepositoryMembershipUpdateFunc) PushHook(hook func(context.Context, int) ([]shared.ConfigurationPolicy, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -900,20 +899,20 @@ func (f *StoreSelectPoliciesForRepositoryMembershipUpdateFunc) PushHook(hook fun
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreSelectPoliciesForRepositoryMembershipUpdateFunc) SetDefaultReturn(r0 []types.ConfigurationPolicy, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) ([]types.ConfigurationPolicy, error) {
+func (f *StoreSelectPoliciesForRepositoryMembershipUpdateFunc) SetDefaultReturn(r0 []shared.ConfigurationPolicy, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]shared.ConfigurationPolicy, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreSelectPoliciesForRepositoryMembershipUpdateFunc) PushReturn(r0 []types.ConfigurationPolicy, r1 error) {
-	f.PushHook(func(context.Context, int) ([]types.ConfigurationPolicy, error) {
+func (f *StoreSelectPoliciesForRepositoryMembershipUpdateFunc) PushReturn(r0 []shared.ConfigurationPolicy, r1 error) {
+	f.PushHook(func(context.Context, int) ([]shared.ConfigurationPolicy, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreSelectPoliciesForRepositoryMembershipUpdateFunc) nextHook() func(context.Context, int) ([]types.ConfigurationPolicy, error) {
+func (f *StoreSelectPoliciesForRepositoryMembershipUpdateFunc) nextHook() func(context.Context, int) ([]shared.ConfigurationPolicy, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -956,7 +955,7 @@ type StoreSelectPoliciesForRepositoryMembershipUpdateFuncCall struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.ConfigurationPolicy
+	Result0 []shared.ConfigurationPolicy
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -978,15 +977,15 @@ func (c StoreSelectPoliciesForRepositoryMembershipUpdateFuncCall) Results() []in
 // UpdateConfigurationPolicy method of the parent MockStore instance is
 // invoked.
 type StoreUpdateConfigurationPolicyFunc struct {
-	defaultHook func(context.Context, types.ConfigurationPolicy) error
-	hooks       []func(context.Context, types.ConfigurationPolicy) error
+	defaultHook func(context.Context, shared.ConfigurationPolicy) error
+	hooks       []func(context.Context, shared.ConfigurationPolicy) error
 	history     []StoreUpdateConfigurationPolicyFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdateConfigurationPolicy delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockStore) UpdateConfigurationPolicy(v0 context.Context, v1 types.ConfigurationPolicy) error {
+func (m *MockStore) UpdateConfigurationPolicy(v0 context.Context, v1 shared.ConfigurationPolicy) error {
 	r0 := m.UpdateConfigurationPolicyFunc.nextHook()(v0, v1)
 	m.UpdateConfigurationPolicyFunc.appendCall(StoreUpdateConfigurationPolicyFuncCall{v0, v1, r0})
 	return r0
@@ -995,7 +994,7 @@ func (m *MockStore) UpdateConfigurationPolicy(v0 context.Context, v1 types.Confi
 // SetDefaultHook sets function that is called when the
 // UpdateConfigurationPolicy method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreUpdateConfigurationPolicyFunc) SetDefaultHook(hook func(context.Context, types.ConfigurationPolicy) error) {
+func (f *StoreUpdateConfigurationPolicyFunc) SetDefaultHook(hook func(context.Context, shared.ConfigurationPolicy) error) {
 	f.defaultHook = hook
 }
 
@@ -1003,7 +1002,7 @@ func (f *StoreUpdateConfigurationPolicyFunc) SetDefaultHook(hook func(context.Co
 // UpdateConfigurationPolicy method of the parent MockStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *StoreUpdateConfigurationPolicyFunc) PushHook(hook func(context.Context, types.ConfigurationPolicy) error) {
+func (f *StoreUpdateConfigurationPolicyFunc) PushHook(hook func(context.Context, shared.ConfigurationPolicy) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1012,19 +1011,19 @@ func (f *StoreUpdateConfigurationPolicyFunc) PushHook(hook func(context.Context,
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreUpdateConfigurationPolicyFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, types.ConfigurationPolicy) error {
+	f.SetDefaultHook(func(context.Context, shared.ConfigurationPolicy) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreUpdateConfigurationPolicyFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, types.ConfigurationPolicy) error {
+	f.PushHook(func(context.Context, shared.ConfigurationPolicy) error {
 		return r0
 	})
 }
 
-func (f *StoreUpdateConfigurationPolicyFunc) nextHook() func(context.Context, types.ConfigurationPolicy) error {
+func (f *StoreUpdateConfigurationPolicyFunc) nextHook() func(context.Context, shared.ConfigurationPolicy) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1063,7 +1062,7 @@ type StoreUpdateConfigurationPolicyFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 types.ConfigurationPolicy
+	Arg1 shared.ConfigurationPolicy
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error

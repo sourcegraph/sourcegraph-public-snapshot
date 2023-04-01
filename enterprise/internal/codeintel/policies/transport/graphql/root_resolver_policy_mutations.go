@@ -6,7 +6,7 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -38,11 +38,11 @@ func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		repositoryID = &id
 	}
 
-	opts := types.ConfigurationPolicy{
+	opts := shared.ConfigurationPolicy{
 		RepositoryID:              repositoryID,
 		Name:                      args.Name,
 		RepositoryPatterns:        args.RepositoryPatterns,
-		Type:                      types.GitObjectType(args.Type),
+		Type:                      shared.GitObjectType(args.Type),
 		Pattern:                   args.Pattern,
 		RetentionEnabled:          args.RetentionEnabled,
 		RetentionDuration:         toDuration(args.RetentionDurationHours),
@@ -79,11 +79,11 @@ func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		return nil, err
 	}
 
-	opts := types.ConfigurationPolicy{
+	opts := shared.ConfigurationPolicy{
 		ID:                        id,
 		Name:                      args.Name,
 		RepositoryPatterns:        args.RepositoryPatterns,
-		Type:                      types.GitObjectType(args.Type),
+		Type:                      shared.GitObjectType(args.Type),
 		Pattern:                   args.Pattern,
 		RetentionEnabled:          args.RetentionEnabled,
 		RetentionDuration:         toDuration(args.RetentionDurationHours),
@@ -130,10 +130,10 @@ func (r *rootResolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Con
 const maxDurationHours = 87600 // 10 years
 
 func validateConfigurationPolicy(policy resolverstubs.CodeIntelConfigurationPolicy) error {
-	switch types.GitObjectType(policy.Type) {
-	case types.GitObjectTypeCommit:
-	case types.GitObjectTypeTag:
-	case types.GitObjectTypeTree:
+	switch shared.GitObjectType(policy.Type) {
+	case shared.GitObjectTypeCommit:
+	case shared.GitObjectTypeTag:
+	case shared.GitObjectTypeTree:
 	default:
 		return errors.Errorf("illegal git object type '%s', expected 'GIT_COMMIT', 'GIT_TAG', or 'GIT_TREE'", policy.Type)
 	}
@@ -144,7 +144,7 @@ func validateConfigurationPolicy(policy resolverstubs.CodeIntelConfigurationPoli
 	if policy.Pattern == "" {
 		return errors.Errorf("no pattern supplied")
 	}
-	if types.GitObjectType(policy.Type) == types.GitObjectTypeCommit && policy.Pattern != "HEAD" {
+	if shared.GitObjectType(policy.Type) == shared.GitObjectTypeCommit && policy.Pattern != "HEAD" {
 		return errors.Errorf("pattern must be HEAD for policy type 'GIT_COMMIT'")
 	}
 	if policy.RetentionDurationHours != nil && (*policy.RetentionDurationHours < 0 || *policy.RetentionDurationHours > maxDurationHours) {
