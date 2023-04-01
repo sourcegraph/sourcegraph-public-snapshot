@@ -24,14 +24,9 @@ func NewJVMPackagesSource(ctx context.Context, svc *types.ExternalService) (*Pac
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 
-	var configDeps []string
-	if c.Maven != nil {
-		configDeps = c.Maven.Dependencies
-	}
-
 	return &PackagesSource{
 		svc:        svc,
-		configDeps: configDeps,
+		configDeps: c.Maven.Dependencies,
 		scheme:     dependencies.JVMPackagesScheme,
 		src:        &jvmPackagesSource{config: &c},
 	}, nil

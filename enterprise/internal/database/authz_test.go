@@ -335,14 +335,6 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 				if _, err := s.store.SetRepoPerms(ctx, update.repoID, userIDs, authz.SourceAPI); err != nil {
 					t.Fatal(err)
 				}
-				_, err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
-					RepoID:  update.repoID,
-					Perm:    authz.Read,
-					UserIDs: toMapset(update.userIDs...),
-				})
-				if err != nil {
-					t.Fatal(err)
-				}
 			}
 
 			repos, err := s.AuthorizedRepos(ctx, test.args)
@@ -374,13 +366,6 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 
 	// Set both effective and pending permissions for a user
 	if _, err = s.store.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: user.ID}, []int32{int32(repo.ID)}, authz.SourceAPI); err != nil {
-		t.Fatal(err)
-	}
-	if _, err = s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
-		RepoID:  int32(repo.ID),
-		Perm:    authz.Read,
-		UserIDs: toMapset(user.ID),
-	}); err != nil {
 		t.Fatal(err)
 	}
 

@@ -144,6 +144,7 @@ func (r *schemaResolver) DeleteExternalAccount(ctx context.Context, args *struct
 
 	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{
 		UserIDs: []int32{account.UserID},
+		Reason:  database.ReasonExternalAccountDeleted,
 	})
 
 	return &EmptyResponse{}, nil
@@ -178,6 +179,7 @@ func (r *schemaResolver) AddExternalAccount(ctx context.Context, args *struct {
 
 	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{
 		UserIDs: []int32{a.UID},
+		Reason:  database.ReasonExternalAccountAdded,
 	})
 
 	return &EmptyResponse{}, nil

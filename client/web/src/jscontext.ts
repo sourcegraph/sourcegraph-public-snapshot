@@ -44,7 +44,6 @@ export type SourcegraphContextCurrentUser = Pick<
     | 'avatarURL'
     | 'displayName'
     | 'siteAdmin'
-    | 'tags'
     | 'url'
     | 'settingsURL'
     | 'viewerCanAdminister'
@@ -228,6 +227,8 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
         requireUpperandLowerCase?: boolean
     }
 
+    authAccessRequest?: SiteConfiguration['auth.accessRequest']
+
     /** Custom branding for the homepage and search icon. */
     branding?: {
         /** The URL of the favicon to be used for your instance */
@@ -264,13 +265,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Whether the feedback survey is enabled. */
     disableFeedbackSurvey?: boolean
-
-    /**
-     * Total amount of connected local repositories, it's only related to
-     * Sourcegraph App, common instance will always have this setting with 0
-     */
-    totalLocalRepositories: number
-    totalRemoteRepositories: number
 }
 
 export interface BrandAssets {

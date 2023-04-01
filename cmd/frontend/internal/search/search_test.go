@@ -170,7 +170,7 @@ func TestDisplayLimit(t *testing.T) {
 	}
 
 	// any returns item, true if skipped contains an item matching reason.
-	any := func(reason api.SkippedReason, skipped []api.Skipped) (api.Skipped, bool) {
+	anySkipped := func(reason api.SkippedReason, skipped []api.Skipped) (api.Skipped, bool) {
 		for _, s := range skipped {
 			if s.Reason == reason {
 				return s, true
@@ -233,7 +233,7 @@ func TestDisplayLimit(t *testing.T) {
 			var matchCount int
 			decoder := streamhttp.FrontendStreamDecoder{
 				OnProgress: func(progress *api.Progress) {
-					if skipped, ok := any(api.DisplayLimit, progress.Skipped); ok {
+					if skipped, ok := anySkipped(api.DisplayLimit, progress.Skipped); ok {
 						displayLimitHit = true
 						message = skipped.Message
 					}

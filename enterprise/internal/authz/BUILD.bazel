@@ -6,7 +6,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/authz",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//cmd/frontend/globals",
         "//enterprise/internal/authz/azuredevops",
         "//enterprise/internal/authz/bitbucketcloud",
         "//enterprise/internal/authz/bitbucketserver",

@@ -114,6 +114,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                         setSearchMode={setSearchMode}
                         settingsCascade={props.settingsCascade}
                         navbarSearchQuery={queryState.query}
+                        submitSearch={submitSearchOnChange}
                     />
                 </LazyExperimentalSearchInput>
             </Form>

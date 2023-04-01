@@ -65,7 +65,6 @@ func TestQueueIndexesExplicit(t *testing.T) {
 		nil,                    // repoUpdater
 		defaultMockRepoStore(), // repoStore
 		mockGitserverClient,
-		nil, // symbolsClient
 	)
 	_, _ = service.QueueIndexes(context.Background(), 42, "HEAD", conf, false, false)
 
@@ -162,7 +161,6 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 		nil,                    // repoUpdater
 		defaultMockRepoStore(), // repoStore
 		mockGitserverClient,
-		nil, // symbolsClient
 	)
 	_, _ = service.QueueIndexes(context.Background(), 42, "HEAD", "", false, false)
 
@@ -264,7 +262,6 @@ func TestQueueIndexesInRepository(t *testing.T) {
 		nil,                    // repoUpdater
 		defaultMockRepoStore(), // repoStore
 		gitserverClient,
-		nil, // symbolsClient
 	)
 
 	if _, err := service.QueueIndexes(context.Background(), 42, "HEAD", "", false, false); err != nil {
@@ -349,7 +346,6 @@ func TestQueueIndexesInferred(t *testing.T) {
 		nil,                    // repoUpdater
 		defaultMockRepoStore(), // repoStore
 		gitserverClient,
-		nil, // symbolsClient
 	)
 
 	for _, id := range []int{41, 42, 43, 44} {
@@ -434,7 +430,6 @@ func TestQueueIndexesForPackage(t *testing.T) {
 		mockRepoUpdater,        // repoUpdater
 		defaultMockRepoStore(), // repoStore
 		gitserverClient,
-		nil, //
 	)
 
 	_ = service.QueueIndexesForPackage(context.Background(), dependencies.MinimialVersionedPackageRepo{

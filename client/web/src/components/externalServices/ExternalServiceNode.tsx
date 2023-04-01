@@ -36,7 +36,13 @@ export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editin
         } catch (error) {
             setIsDeleting(asError(error))
         } finally {
-            window.location.reload()
+            const deletedCodeHostId = client.cache.identify({
+                __typename: 'ExternalService',
+                id: node.id,
+            })
+
+            // Remove deleted code host from the apollo cache.
+            client.cache.evict({ id: deletedCodeHostId })
         }
     }, [node, client])
 
@@ -52,7 +58,7 @@ export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editin
                     {EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES.has(node.syncJobs?.nodes[0]?.state) ? (
                         <Tooltip content="Sync is running">
                             <div aria-label="Sync is running">
-                                <LoadingSpinner className="mr-2" inline={true} />
+                                <LoadingSpinner className="m-0 mr-2" inline={true} />
                             </div>
                         </Tooltip>
                     ) : node.lastSyncError === null ? (

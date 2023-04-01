@@ -28,7 +28,9 @@
 }
 
 .search-nav-bar {
-    z-index: 1;
+    // It has level 2 because of repo container page elements operate with
+    // first level of z-indexes
+    z-index: 2;
     width: 100%;
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--border-color);

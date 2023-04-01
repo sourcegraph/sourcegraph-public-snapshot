@@ -103,12 +103,12 @@ func (c *gitserverClient) ReadFile(ctx context.Context, repoCommitPath types.Rep
 	return data, nil
 }
 
-func (g *gitserverClient) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
-	return g.innerClient.LogReverseEach(ctx, repo, commit, n, onLogEntry)
+func (c *gitserverClient) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
+	return c.innerClient.LogReverseEach(ctx, repo, commit, n, onLogEntry)
 }
 
-func (g *gitserverClient) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
-	return g.innerClient.RevList(ctx, repo, commit, onCommit)
+func (c *gitserverClient) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	return c.innerClient.RevList(ctx, repo, commit, onCommit)
 }
 
 var NUL = []byte{0}

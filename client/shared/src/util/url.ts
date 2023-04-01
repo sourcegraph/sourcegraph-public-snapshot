@@ -11,7 +11,6 @@ import {
 import { Position } from '@sourcegraph/extension-api-types'
 
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
-import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
 import { discreteValueAliases } from '../search/query/filters'
 import { findFilter, FilterKind } from '../search/query/query'
@@ -558,32 +557,6 @@ export function buildSearchURLQuery(
     searchParameters.set('sm', (searchMode || SearchMode.Precise).toString())
 
     return searchParameters.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
-}
-
-/**
- *
- * @param authenticatedUser - User email/name for Enterprise form prefill
- * @param product - CTA source product page, determines dynamic Enterprise description
- * @returns signup UR string with relevant params attached
- */
-export const buildEnterpriseTrialURL = (
-    authenticatedUser: Pick<AuthenticatedUser, 'displayName' | 'emails'> | null | undefined,
-    product?: string
-): string => {
-    const url = new URL('https://signup.sourcegraph.com/')
-
-    if (product) {
-        url.searchParams.append('p', product)
-    }
-    const primaryEmail = authenticatedUser?.emails.find(email => email.isPrimary)
-    if (primaryEmail) {
-        url.searchParams.append('email', primaryEmail.email)
-    }
-    if (authenticatedUser?.displayName) {
-        url.searchParams.append('name', authenticatedUser.displayName)
-    }
-
-    return url.toString()
 }
 
 /**

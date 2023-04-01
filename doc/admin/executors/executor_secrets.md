@@ -15,11 +15,11 @@
 
 Executor secrets can be used to define additional values to be used in Sourcegraph executors.
 
-Secret values are currently only available in server-side batch changes. Use [`step.env`](../batch_changes/references/batch_spec_yaml_reference.md#steps-env) to reference configured secrets in executions.
+Secret values are currently only available in server-side batch changes. Use [`step.env`](../../batch_changes/references/batch_spec_yaml_reference.md#steps-env) to reference configured secrets in executions.
 
 ## How secrets work
 
-Executor secrets are defined per-feature. If you want to define a secret for server-side batch changes, create a secret for that namespace. Batch Changes is currently the only namespace. Secrets are [encrypted](config/encryption.md) if encryption is on, and always redacted in log outputs.
+Executor secrets are defined per-feature. If you want to define a secret for server-side batch changes, create a secret for that namespace. Batch Changes is currently the only namespace. Secrets are [encrypted](../config/encryption.md) if encryption is on, and always redacted in log outputs.
 
 There are two types of secrets: 
 

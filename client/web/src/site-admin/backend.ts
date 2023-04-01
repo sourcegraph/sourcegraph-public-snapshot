@@ -989,3 +989,39 @@ export const PACKAGES_QUERY = gql`
 
     ${siteAdminPackageFieldsFragment}
 `
+
+export const SITE_CONFIGURATION_CHANGE_CONNECTION_QUERY = gql`
+    query SiteConfigurationHistory($first: Int, $last: Int, $after: String, $before: String) {
+        site {
+            __typename
+            configuration {
+                history(first: $first, last: $last, after: $after, before: $before) {
+                    __typename
+                    totalCount
+                    nodes {
+                        __typename
+                        ...SiteConfigurationChangeNode
+                    }
+                    pageInfo {
+                        hasNextPage
+                        hasPreviousPage
+                        endCursor
+                        startCursor
+                    }
+                }
+            }
+        }
+    }
+
+    fragment SiteConfigurationChangeNode on SiteConfigurationChange {
+        id
+        author {
+            id
+            username
+            displayName
+            avatarURL
+        }
+        diff
+        createdAt
+    }
+`

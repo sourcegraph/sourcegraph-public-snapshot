@@ -45,6 +45,7 @@ var (
 	}, []string{"type", "field", "error", "source", "request_name"})
 )
 
+// Note: we have both pointer and value receivers on this type, and we are fine with that.
 type requestTracer struct {
 	DB     database.DB
 	tracer *otel.Tracer
@@ -728,6 +729,8 @@ var EnterpriseResolvers = struct {
 	ownResolver                 OwnResolver
 }{}
 
+// Root returns a new schemaResolver.
+//
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
 	return newSchemaResolver(r.db, r.gitserverClient, r.enterpriseSearchJobs)

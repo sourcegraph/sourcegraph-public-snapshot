@@ -75,7 +75,7 @@ A command line interface to Sourcegraph's API is available. Today, it is roughly
 - Pipe multi-line GraphQL queries into it easily.
 - Get any API query written using the CLI as a `curl` command using the `src api -get-curl` flag.
 
-To learn more, see [github.com/sourcegraph/src-cli](https://github.com/sourcegraph/src-cli)
+To learn more, see [sourcegraph/src-cli](https://sourcegraph.com/github.com/sourcegraph/src-cli)
 
 ### Using the API via curl
 

@@ -13,6 +13,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 import { DiffModeSelector } from '../commit/DiffModeSelector'
 import { DiffMode } from '../commit/RepositoryCommitPage'
+import { Linkified } from '../linkifiy/Linkified'
 
 import { GitCommitNodeByline } from './GitCommitNodeByline'
 
@@ -148,7 +149,9 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     const commitMessageBody =
         expandCommitMessageBody || showCommitMessageBody ? (
             <div className="w-100">
-                <pre className={styles.messageBody}>{node.body}</pre>
+                <pre className={styles.messageBody}>
+                    {node.body && <Linkified input={node.body} externalURLs={node.externalURLs} />}
+                </pre>
             </div>
         ) : undefined
 

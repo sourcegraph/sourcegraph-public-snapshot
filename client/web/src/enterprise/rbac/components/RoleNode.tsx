@@ -192,6 +192,7 @@ const ModifiableRoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refe
                         isChecked={isChecked}
                         onBlur={onBlur}
                         onChange={onChange}
+                        roleName={node.name}
                     />
                     <LoaderButton
                         alwaysShowLabel={true}
@@ -258,7 +259,12 @@ const LockedRoleNode: React.FunctionComponent<Pick<RoleNodeProps, 'node' | 'allP
                 </div>
 
                 <CollapsePanel className={styles.roleNodePermissions} forcedRender={false}>
-                    <PermissionsList allPermissions={allPermissions} isChecked={isChecked} disabled={true} />
+                    <PermissionsList
+                        allPermissions={allPermissions}
+                        isChecked={isChecked}
+                        disabled={true}
+                        roleName={node.name}
+                    />
                 </CollapsePanel>
             </Collapse>
         </li>

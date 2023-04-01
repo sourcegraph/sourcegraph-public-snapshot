@@ -116,6 +116,9 @@ func (s *permissionsSyncJobConnectionStore) getListArgs(pageArgs *database.Pagin
 	if s.args.State != nil {
 		opts.State = *s.args.State
 	}
+	if s.args.Partial != nil {
+		opts.PartialSuccess = *s.args.Partial
+	}
 	if s.args.UserID != nil {
 		if userID, err := graphqlbackend.UnmarshalUserID(*s.args.UserID); err == nil {
 			opts.UserID = int(userID)
@@ -253,6 +256,10 @@ func (p *permissionsSyncJobResolver) CodeHostStates() []graphqlbackend.CodeHostS
 	return resolvers
 }
 
+func (p *permissionsSyncJobResolver) PartialSuccess() bool {
+	return p.job.IsPartialSuccess
+}
+
 type codeHostStateResolver struct {
 	state database.PermissionSyncCodeHostState
 }
@@ -265,7 +272,7 @@ func (c codeHostStateResolver) ProviderType() string {
 	return c.state.ProviderType
 }
 
-func (c codeHostStateResolver) Status() string {
+func (c codeHostStateResolver) Status() database.CodeHostStatus {
 	return c.state.Status
 }
 
@@ -281,8 +288,14 @@ type permissionSyncJobReasonResolver struct {
 func (p permissionSyncJobReasonResolver) Group() string {
 	return string(p.group)
 }
-func (p permissionSyncJobReasonResolver) Reason() string {
-	return string(p.reason)
+func (p permissionSyncJobReasonResolver) Reason() *string {
+	if p.reason == "" {
+		return nil
+	}
+
+	reason := string(p.reason)
+
+	return &reason
 }
 
 type subject struct {

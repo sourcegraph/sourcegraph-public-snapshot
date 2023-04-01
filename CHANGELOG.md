@@ -21,13 +21,16 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- Access tokens now begin with the prefix `sgp_` to make them identifiable as secrets. You can also prepend `sgp_` to previously generated access tokens, although they will continue to work as-is without that prefix.
 
 ### Fixed
 
--
+- GitHub `repositoryQuery` searches now respect date ranges and use API requests more efficiently. #[49969](https://github.com/sourcegraph/sourcegraph/pull/49969)
+- Fixed an issue where search based references were not displayed in the references panel. [#50157](https://github.com/sourcegraph/sourcegraph/pull/50157)
 
 ### Removed
+
+- User tags are removed in favor of the newer feature flags functionality. [#49318](https://github.com/sourcegraph/sourcegraph/pull/49318)
 
 -
 

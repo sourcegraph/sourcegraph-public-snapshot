@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/gobwas/glob"
-	lru "github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.uber.org/atomic"
@@ -39,7 +39,7 @@ type SubRepoPermsClient struct {
 	since             func(time.Time) time.Duration
 
 	group   *singleflight.Group
-	cache   *lru.Cache
+	cache   *lru.Cache[int32, cachedRules]
 	enabled *atomic.Bool
 }
 
@@ -96,7 +96,7 @@ func (rules compiledRules) GetPermissionsForPath(path string) authz.Perms {
 // Note that sub-repo permissions are currently opt-in via the
 // experimentalFeatures.enableSubRepoPermissions option.
 func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) (*SubRepoPermsClient, error) {
-	cache, err := lru.New(defaultCacheSize)
+	cache, err := lru.New[int32, cachedRules](defaultCacheSize)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating LRU cache")
 	}
@@ -241,15 +241,14 @@ func (s *SubRepoPermsClient) FilePermissionsFunc(ctx context.Context, userID int
 // getCompiledRules fetches rules for the given repo with caching.
 func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32) (map[api.RepoName]compiledRules, error) {
 	// Fast path for cached rules
-	item, _ := s.cache.Get(userID)
-	cached, ok := item.(cachedRules)
+	cached, _ := s.cache.Get(userID)
 
 	ttl := defaultCacheTTL
 	if c := conf.Get(); c.ExperimentalFeatures != nil && c.ExperimentalFeatures.SubRepoPermissions != nil && c.ExperimentalFeatures.SubRepoPermissions.UserCacheTTLSeconds > 0 {
 		ttl = time.Duration(c.ExperimentalFeatures.SubRepoPermissions.UserCacheTTLSeconds) * time.Second
 	}
 
-	if ok && s.since(cached.timestamp) <= ttl {
+	if s.since(cached.timestamp) <= ttl {
 		metricSubRepoPermCacheHit.Inc()
 		return cached.rules, nil
 	}

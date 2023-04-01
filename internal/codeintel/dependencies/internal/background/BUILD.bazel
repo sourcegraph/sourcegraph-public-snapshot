@@ -13,6 +13,7 @@ go_library(
     deps = [
         "//internal/actor",
         "//internal/api",
+        "//internal/byteutils",
         "//internal/codeintel/dependencies/internal/store",
         "//internal/codeintel/dependencies/shared",
         "//internal/conf/reposource",

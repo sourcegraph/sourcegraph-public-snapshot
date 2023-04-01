@@ -24,7 +24,7 @@ export const NeedsRepositoryConfigurationAlert: React.FunctionComponent<
         variant="success"
         className={classNames('d-flex align-items-center', className)}
     >
-        <Link className="site-alert__link" to={PageRoutes.SetupWizard} onClick={onClickCTA}>
+        <Link className="site-alert__link" to={`${PageRoutes.SetupWizard}/remote-repositories`} onClick={onClickCTA}>
             <span className="underline">Go to setup wizard</span>
         </Link>
         &nbsp;to add remote repositories from GitHub, GitLab, etc.

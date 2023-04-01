@@ -30,6 +30,9 @@ export interface InputProps {
     /** Description block shown below the input. */
     message?: ReactNode
 
+    /** Description block shown above the input (but below the label) */
+    description?: ReactNode
+
     /** Custom class name for input element. */
     inputClassName?: string
 
@@ -56,6 +59,7 @@ export const Input = forwardRef(function Input(props, reference) {
         variant = 'regular',
         label,
         message,
+        description,
         className,
         inputClassName,
         inputSymbol,
@@ -94,6 +98,7 @@ export const Input = forwardRef(function Input(props, reference) {
         return (
             <Label className={classNames(styles.label, className)}>
                 {label && <div className="mb-2">{variant === 'regular' ? label : <small>{label}</small>}</div>}
+                {description && <InputDescription className="ml-0 mb-2 mt-n1">{description}</InputDescription>}
                 {inputWithMessage}
             </Label>
         )

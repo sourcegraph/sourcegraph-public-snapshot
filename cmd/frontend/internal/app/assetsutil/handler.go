@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 )
 
-// Creates the static asset handler. The handler should be wrapped into a middleware
+// NewAssetHandler creates the static asset handler. The handler should be wrapped into a middleware
 // that enables cross-origin requests to allow the loading of the Phabricator native extension assets.
 func NewAssetHandler(mux *http.ServeMux) http.Handler {
 	fs := httpgzip.FileServer(assets.Assets, httpgzip.FileServerOptions{DisableDirListing: true})

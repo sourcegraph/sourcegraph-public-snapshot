@@ -37,8 +37,9 @@ export enum EnterprisePageRoutes {
     Notebook = '/notebooks/:id',
     Notebooks = '/notebooks',
     SearchNotebook = '/search/notebook',
-    Cody = '/cody/*',
+    CodySearch = '/search/cody',
     Own = '/own',
     AppComingSoon = '/app/coming-soon',
     AppAuthCallback = '/app/auth/callback',
+    Sentinel = '/sentinel/*',
 }

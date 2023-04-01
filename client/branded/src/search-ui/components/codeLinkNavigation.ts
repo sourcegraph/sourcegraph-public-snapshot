@@ -120,7 +120,7 @@ function isTextSelectionEvent(event: MouseEvent<HTMLElement>): boolean {
  * - Firefox will insert \t\n in between table rows, causing the copied
  * text to be different from what is in the file/search result.
  */
-export function onClickCodeExcerptHref(
+function onClickCodeExcerptHref(
     event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>,
     onClickHref: (href: string) => void
 ): void {

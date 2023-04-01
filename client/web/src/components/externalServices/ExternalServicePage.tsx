@@ -183,7 +183,21 @@ export const ExternalServicePage: FC<Props> = props => {
                         path={[
                             { icon: mdiCog },
                             { to: '/site-admin/external-services', text: 'Code hosts' },
-                            { text: externalService.displayName },
+                            {
+                                text: (
+                                    <>
+                                        {externalServiceCategory && (
+                                            <Icon
+                                                inline={true}
+                                                as={externalServiceCategory.icon}
+                                                aria-label="Code host logo"
+                                                className="mr-2"
+                                            />
+                                        )}
+                                        {externalService.displayName}
+                                    </>
+                                ),
+                            },
                         ]}
                         byline={
                             <CreatedByAndUpdatedByInfoByline

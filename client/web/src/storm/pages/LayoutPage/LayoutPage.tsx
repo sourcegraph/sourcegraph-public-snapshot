@@ -72,6 +72,9 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
         routeMatch.pathname.startsWith(EnterprisePageRoutes.Notebooks)
     )
     const isSearchNotebookListPage = location.pathname === EnterprisePageRoutes.Notebooks
+    const isCodySearchPage = routeMatches.some(routeMatch =>
+        routeMatch.pathname.startsWith(EnterprisePageRoutes.CodySearch)
+    )
 
     // eslint-disable-next-line no-restricted-syntax
     const [wasSetupWizardSkipped] = useLocalStorage('setup.skipped', false)
@@ -91,8 +94,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     // so that Layout can always render the navbar.
     const needsSiteInit = window.context?.needsSiteInit
     const disableFeedbackSurvey = window.context?.disableFeedbackSurvey
-    const needsRepositoryConfiguration =
-        window.context.totalLocalRepositories + window.context.totalRemoteRepositories === 0
+    const needsRepositoryConfiguration = window.context?.needsRepositoryConfiguration
     const isSiteInit = location.pathname === PageRoutes.SiteAdminInit
     const isSignInOrUp = useIsSignInOrSignUpPage()
 
@@ -201,7 +203,8 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                         !isSearchHomepage &&
                         !isCommunitySearchContextPage &&
                         !isSearchConsolePage &&
-                        !isSearchNotebooksPage
+                        !isSearchNotebooksPage &&
+                        !isCodySearchPage
                     }
                     setFuzzyFinderIsVisible={setFuzzyFinderVisible}
                     isRepositoryRelatedPage={isRepositoryRelatedPage}

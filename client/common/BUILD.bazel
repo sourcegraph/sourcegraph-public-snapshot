@@ -53,12 +53,13 @@ ts_project(
     # TODO(bazel): "#keep"s required for type-only imports
     deps = [
         ":node_modules/@sourcegraph/extension-api-types",  #keep
+        "//:node_modules/@types/dompurify",
         "//:node_modules/@types/highlight.js",
         "//:node_modules/@types/history",  #keep
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/marked",
         "//:node_modules/@types/node",  #keep
-        "//:node_modules/@types/sanitize-html",
+        "//:node_modules/dompurify",
         "//:node_modules/highlight.js",
         "//:node_modules/highlightjs-graphql",
         "//:node_modules/history",  #keep
@@ -67,7 +68,6 @@ ts_project(
         "//:node_modules/marked",
         "//:node_modules/react-router-dom",  #keep
         "//:node_modules/rxjs",
-        "//:node_modules/sanitize-html",
         "//:node_modules/utility-types",  #keep
     ],
 )

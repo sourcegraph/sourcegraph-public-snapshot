@@ -2,6 +2,7 @@ import React from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 
+import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
 import { Alert, Container, H2, H3, Link, Text, Icon, useReducedMotion } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -11,6 +12,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 
 export interface GettingStartedProps {
     isSourcegraphDotCom: boolean
+    isSourcegraphApp?: boolean
     // canCreate indicates whether or not the currently-authenticated user has sufficient
     // permissions to create a batch change in whatever context this getting started
     // section is being presented. If not, canCreate will be a string reason why the user
@@ -19,8 +21,11 @@ export interface GettingStartedProps {
     className?: string
 }
 
+const productPageUrl = 'https://about.sourcegraph.com/batch-changes'
+
 export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<GettingStartedProps>> = ({
     isSourcegraphDotCom,
+    isSourcegraphApp,
     canCreate,
     className,
 }) => {
@@ -80,7 +85,15 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                                 </Link>
                             </li>
                             <li>
-                                <Link to="https://about.sourcegraph.com/batch-changes" target="_blank" rel="noopener">
+                                <Link
+                                    to={
+                                        isSourcegraphApp
+                                            ? addSourcegraphAppOutboundUrlParameters(productPageUrl)
+                                            : productPageUrl
+                                    }
+                                    target="_blank"
+                                    rel="noopener"
+                                >
                                     Product page{' '}
                                     <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
                                 </Link>

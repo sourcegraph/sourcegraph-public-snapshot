@@ -727,9 +727,10 @@ func TestDefinitionDumps(t *testing.T) {
 	}
 
 	t.Run("enforce repository permissions", func(t *testing.T) {
-		// Enable permissions user mapping forces checking repository permissions
+		// Turning on explicit permissions forces checking repository permissions
 		// against permissions tables in the database, which should effectively block
-		// all access because permissions tables are empty.
+		// all access because permissions tables are empty and repo that dumps belong
+		// to are private.
 		before := globals.PermissionsUserMapping()
 		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
 		defer globals.SetPermissionsUserMapping(before)

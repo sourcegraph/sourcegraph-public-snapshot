@@ -94,12 +94,6 @@ export function tokenSelectionExtension(): Extension {
                     goToDefinitionOnMouseEvent(view, event, { isLongClick: true })
                 }, LONG_CLICK_DURATION)
             },
-            click(event: MouseEvent) {
-                // Prevent click handlers because we handle events on mouseup.
-                // Without the line below, Cmd+Click gets unpredicable behavior
-                // where it sporadically opens goto-def links in a new tab.
-                event.preventDefault()
-            },
         }),
     ]
 }

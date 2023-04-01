@@ -36,9 +36,9 @@ http_archive(
 
 http_archive(
     name = "aspect_rules_jest",
-    sha256 = "fa103b278137738ef08fd23d3c8c9157897a7159af2aa22714bc71680da58583",
-    strip_prefix = "rules_jest-0.16.1",
-    url = "https://github.com/aspect-build/rules_jest/archive/refs/tags/v0.16.1.tar.gz",
+    sha256 = "bf8f4a4d2a833e4f96f866c686c38bcee69d3bdae8a827b1c9d2fdf92212bc0b",
+    strip_prefix = "rules_jest-95d8f1961a9c6f3aee2929881b1b74461652e775",
+    url = "https://github.com/aspect-build/rules_jest/archive/95d8f1961a9c6f3aee2929881b1b74461652e775.tar.gz"
 )
 
 http_archive(
@@ -76,7 +76,6 @@ http_archive(
         "https://github.com/protocolbuffers/protobuf/archive/v3.15.0.tar.gz",
     ],
 )
-
 
 http_archive(
     name = "rules_rust",

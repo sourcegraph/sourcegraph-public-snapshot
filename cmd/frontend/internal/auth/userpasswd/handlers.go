@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -218,6 +219,9 @@ func unsafeSignUp(
 			message = defaultErrorMessage
 			statusCode = http.StatusInternalServerError
 		}
+		if deploy.IsApp() && strings.Contains(err.Error(), "site_already_initialized") {
+			return nil, http.StatusOK, nil
+		}
 		logger.Error("Error in user signup.", log.String("email", creds.Email), log.String("username", creds.Username), log.Error(err))
 		if err = usagestats.LogBackendEvent(db, sgactor.FromContext(ctx).UID, deviceid.FromContext(ctx), "SignUpFailed", nil, nil, featureflag.GetEvaluatedFlagSet(ctx), nil); err != nil {
 			logger.Warn("Failed to log event SignUpFailed", log.Error(err))
@@ -377,14 +381,14 @@ func HandleUnlockAccount(logger log.Logger, _ database.DB, store LockoutStore) h
 			return
 		}
 
-		valid, error := store.VerifyUnlockAccountTokenAndReset(unlockAccountInfo.Token)
+		valid, err := store.VerifyUnlockAccountTokenAndReset(unlockAccountInfo.Token)
 
-		if !valid || error != nil {
-			err := "invalid token provided"
-			if error != nil {
-				err = error.Error()
+		if !valid || err != nil {
+			errStr := "invalid token provided"
+			if err != nil {
+				errStr = err.Error()
 			}
-			httpLogError(logger.Warn, w, err, http.StatusUnauthorized)
+			httpLogError(logger.Warn, w, errStr, http.StatusUnauthorized)
 			return
 		}
 	}

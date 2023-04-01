@@ -38,17 +38,18 @@ type PermissionsSyncJobResolver interface {
 	PermissionsRemoved() int32
 	PermissionsFound() int32
 	CodeHostStates() []CodeHostStateResolver
+	PartialSuccess() bool
 }
 
 type PermissionsSyncJobReasonResolver interface {
 	Group() string
-	Reason() string
+	Reason() *string
 }
 
 type CodeHostStateResolver interface {
 	ProviderID() string
 	ProviderType() string
-	Status() string
+	Status() database.CodeHostStatus
 	Message() string
 }
 
@@ -65,4 +66,5 @@ type ListPermissionsSyncJobsArgs struct {
 	Query       *string
 	UserID      *graphql.ID
 	RepoID      *graphql.ID
+	Partial     *bool
 }

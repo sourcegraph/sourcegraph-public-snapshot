@@ -615,7 +615,6 @@ func creationPagesPingBuilder(now time.Time) PingQueryBuilder {
 
 		"CodeInsightsCreateSearchBasedInsightClick",
 		"CodeInsightsCreateCodeStatsInsightClick",
-		"CodeInsightsExploreInsightExtensionsClick",
 
 		"CodeInsightsSearchBasedCreationPageSubmitClick",
 		"CodeInsightsSearchBasedCreationPageCancelClick",

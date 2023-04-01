@@ -25,7 +25,7 @@ func NewPythonPackagesSource(ctx context.Context, svc *types.ExternalService, cf
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 
-	cli, err := cf.Doer()
+	client, err := pypi.NewClient(svc.URN(), c.Urls, cf)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func NewPythonPackagesSource(ctx context.Context, svc *types.ExternalService, cf
 		svc:        svc,
 		configDeps: c.Dependencies,
 		scheme:     dependencies.PythonPackagesScheme,
-		src:        &pythonPackagesSource{client: pypi.NewClient(svc.URN(), c.Urls, cli)},
+		src:        &pythonPackagesSource{client},
 	}, nil
 }
 

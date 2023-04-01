@@ -22,7 +22,7 @@
       "type": "npm",
       "script": "build:dev",
       "problemMatcher": "$tsc-watch",
-      "options": { "cwd": "client/cody/vscode-codegen" },
+      "options": { "cwd": "client/cody" },
       "isBackground": true
     },
     {

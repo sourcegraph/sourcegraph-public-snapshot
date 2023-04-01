@@ -146,18 +146,15 @@ func TestWithCreationPings(t *testing.T) {
 			(2, 'ViewInsights', '{}', '', 1, $2, 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
 			(3, 'ViewCodeInsightsCreationPage', '{}', '', 1, $2, 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
 			(4, 'ViewCodeInsightsCreationPage', '{}', '', 1, $2, 'WEB', '3.23.0', $1::timestamp - interval '10 days'),
-			(5, 'CodeInsightsExploreInsightExtensionsClick', '{}', '', 2, $3, 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(6, 'CodeInsightsExploreInsightExtensionsClick', '{}', '', 2, $3, 'WEB', '3.23.0', $1::timestamp - interval '10 days'),
-			(7, 'ViewCodeInsightsCreationPage', '{}', '', 2, $3, 'WEB', '3.23.0', $1::timestamp - interval '2 days'),
-			(8, 'ViewCodeInsightsCreationPage', '{}', '', 2, $3, 'WEB', '3.23.0', $1::timestamp - interval '2 days')
+			(5, 'ViewCodeInsightsCreationPage', '{}', '', 2, $3, 'WEB', '3.23.0', $1::timestamp - interval '2 days'),
+			(6, 'ViewCodeInsightsCreationPage', '{}', '', 2, $3, 'WEB', '3.23.0', $1::timestamp - interval '2 days')
 	`, now, user1, user2)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	want := map[types.PingName]types.AggregatedPingStats{
-		"CodeInsightsExploreInsightExtensionsClick": {Name: "CodeInsightsExploreInsightExtensionsClick", UniqueCount: 1, TotalCount: 1},
-		"ViewCodeInsightsCreationPage":              {Name: "ViewCodeInsightsCreationPage", UniqueCount: 2, TotalCount: 3},
+		"ViewCodeInsightsCreationPage": {Name: "ViewCodeInsightsCreationPage", UniqueCount: 2, TotalCount: 3},
 	}
 
 	stats := &types.CodeInsightsUsageStatistics{}
