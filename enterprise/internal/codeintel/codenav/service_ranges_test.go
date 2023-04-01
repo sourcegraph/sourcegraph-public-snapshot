@@ -89,7 +89,7 @@ func TestRanges(t *testing.T) {
 	mockLsifStore.GetRangesFunc.PushReturn(ranges[1:4], nil)
 	mockLsifStore.GetRangesFunc.PushReturn(ranges[4:], nil)
 
-	mockRequest := shared.RequestArgs{
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -111,7 +111,7 @@ func TestRanges(t *testing.T) {
 	adjustedLocation7 := types.UploadLocation{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3}
 	adjustedLocation8 := types.UploadLocation{Dump: uploads[2], Path: "sub3/a.go", TargetCommit: "deadbeef", TargetRange: testRange4}
 
-	expectedRanges := []shared.AdjustedCodeIntelligenceRange{
+	expectedRanges := []AdjustedCodeIntelligenceRange{
 		{Range: testRange1, HoverText: "text1", Definitions: []types.UploadLocation{}, References: []types.UploadLocation{adjustedLocation1}, Implementations: []types.UploadLocation{}},
 		{Range: testRange2, HoverText: "text2", Definitions: []types.UploadLocation{adjustedLocation2}, References: []types.UploadLocation{adjustedLocation3}, Implementations: []types.UploadLocation{}},
 		{Range: testRange3, HoverText: "text3", Definitions: []types.UploadLocation{adjustedLocation4}, References: []types.UploadLocation{adjustedLocation5}, Implementations: []types.UploadLocation{}},

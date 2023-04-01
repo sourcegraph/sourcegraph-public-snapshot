@@ -50,7 +50,7 @@ func TestDefinitions(t *testing.T) {
 	}
 	mockLsifStore.GetDefinitionLocationsFunc.PushReturn(locations, len(locations), nil)
 
-	mockRequest := shared.RequestArgs{
+	mockRequest := RequestArgs{
 		RepositoryID: 51,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -120,7 +120,7 @@ func TestDefinitionsWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore.GetDefinitionLocationsFunc.PushReturn(locations, len(locations), nil)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	mockRequest := shared.RequestArgs{
+	mockRequest := RequestArgs{
 		RepositoryID: 51,
 		Commit:       "deadbeef",
 		Path:         "s1/main.go",
@@ -209,7 +209,7 @@ func TestDefinitionsRemote(t *testing.T) {
 	}
 	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(locations, len(locations), nil)
 
-	mockRequest := shared.RequestArgs{
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -343,7 +343,7 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(locations, len(locations), nil)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	mockRequest := shared.RequestArgs{
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       "deadbeef",
 		Path:         "s1/main.go",

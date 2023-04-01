@@ -46,7 +46,7 @@ func TestHover(t *testing.T) {
 	mockLsifStore.GetHoverFunc.PushReturn("", types.Range{}, false, nil)
 	mockLsifStore.GetHoverFunc.PushReturn("doctext", expectedRange, true, nil)
 
-	mockRequest := shared.RequestArgs{
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -143,7 +143,7 @@ func TestHoverRemote(t *testing.T) {
 		return
 	})
 
-	mockRequest := shared.RequestArgs{
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,

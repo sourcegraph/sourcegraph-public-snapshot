@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -51,7 +50,7 @@ func TestStencil(t *testing.T) {
 	mockLsifStore.GetStencilFunc.PushReturn(nil, nil)
 	mockLsifStore.GetStencilFunc.PushReturn(expectedRanges, nil)
 
-	mockRequest := shared.RequestArgs{
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -109,7 +108,7 @@ func TestStencilWithDuplicateRanges(t *testing.T) {
 	// Duplicate the ranges to test that we dedupe them
 	mockLsifStore.GetStencilFunc.PushReturn(append(expectedRanges, expectedRanges...), nil)
 
-	mockRequest := shared.RequestArgs{
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,

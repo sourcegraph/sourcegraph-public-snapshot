@@ -54,8 +54,8 @@ func TestImplementations(t *testing.T) {
 		{ID: 53, Commit: "deadbeef", Root: "sub4/"},
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
-	mockCursor := shared.ImplementationsCursor{Phase: "local"}
-	mockRequest := shared.RequestArgs{
+	mockCursor := ImplementationsCursor{Phase: "local"}
+	mockRequest := RequestArgs{
 		RepositoryID: 51,
 		Commit:       "deadbeef",
 		Path:         "s1/main.go",
@@ -132,8 +132,8 @@ func TestImplementationsWithSubRepoPermissions(t *testing.T) {
 	mockRequestState.SetAuthChecker(checker)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	mockCursor := shared.ImplementationsCursor{Phase: "local"}
-	mockRequest := shared.RequestArgs{
+	mockCursor := ImplementationsCursor{Phase: "local"}
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -243,8 +243,8 @@ func TestImplementationsRemote(t *testing.T) {
 	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(monikerLocations[1:2], 1, nil) // impls batch 1
 	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(monikerLocations[2:], 3, nil)  // impls batch 2
 
-	mockCursor := shared.ImplementationsCursor{Phase: "local"}
-	mockRequest := shared.RequestArgs{
+	mockCursor := ImplementationsCursor{Phase: "local"}
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -431,8 +431,8 @@ func TestImplementationsRemoteWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(monikerLocations[2:], 3, nil)  // impls batch 2
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	mockCursor := shared.ImplementationsCursor{Phase: "local"}
-	mockRequest := shared.RequestArgs{
+	mockCursor := ImplementationsCursor{Phase: "local"}
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,

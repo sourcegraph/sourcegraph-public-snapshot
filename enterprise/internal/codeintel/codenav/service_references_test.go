@@ -66,8 +66,8 @@ func TestReferences(t *testing.T) {
 	mockLsifStore.GetReferenceLocationsFunc.PushReturn(locations[1:4], 3, nil)
 	mockLsifStore.GetReferenceLocationsFunc.PushReturn(locations[4:], 1, nil)
 
-	mockCursor := shared.ReferencesCursor{Phase: "local"}
-	mockRequest := shared.RequestArgs{
+	mockCursor := ReferencesCursor{Phase: "local"}
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -143,8 +143,8 @@ func TestReferencesWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore.GetReferenceLocationsFunc.PushReturn(locations[4:], 1, nil)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	mockCursor := shared.ReferencesCursor{Phase: "local"}
-	mockRequest := shared.RequestArgs{
+	mockCursor := ReferencesCursor{Phase: "local"}
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -266,8 +266,8 @@ func TestReferencesRemote(t *testing.T) {
 	// }
 	// resolver.SetUploadsDataLoader(uploads)
 
-	mockCursor := shared.ReferencesCursor{Phase: "local"}
-	mockRequest := shared.RequestArgs{
+	mockCursor := ReferencesCursor{Phase: "local"}
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -447,8 +447,8 @@ func TestReferencesRemoteWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(monikerLocations[2:], 3, nil)  // refs batch 2
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	mockCursor := shared.ReferencesCursor{Phase: "local"}
-	mockRequest := shared.RequestArgs{
+	mockCursor := ReferencesCursor{Phase: "local"}
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,

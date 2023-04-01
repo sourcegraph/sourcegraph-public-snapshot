@@ -50,7 +50,7 @@ func TestDiagnostics(t *testing.T) {
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[1:4], 3, nil)
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[4:], 26, nil)
 
-	mockRequest := shared.RequestArgs{
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -67,7 +67,7 @@ func TestDiagnostics(t *testing.T) {
 		t.Errorf("unexpected count. want=%d have=%d", 30, totalCount)
 	}
 
-	expectedDiagnostics := []shared.DiagnosticAtUpload{
+	expectedDiagnostics := []DiagnosticAtUpload{
 		{Dump: uploads[0], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub1/", DiagnosticData: precise.DiagnosticData{Code: "c1"}}},
 		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c2"}}},
 		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c3"}}},
@@ -135,7 +135,7 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[4:], 26, nil)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	mockRequest := shared.RequestArgs{
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -152,7 +152,7 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 		t.Errorf("unexpected count. want=%d have=%d", 30, totalCount)
 	}
 
-	expectedDiagnostics := []shared.DiagnosticAtUpload{
+	expectedDiagnostics := []DiagnosticAtUpload{
 		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c2"}}},
 		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c3"}}},
 		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c4"}}},
