@@ -1426,7 +1426,7 @@ func (s *store) GetVisibleUploadsMatchingMonikers(ctx context.Context, repositor
 	defer endObservation(1, observation.Args{})
 
 	if len(monikers) == 0 {
-		return shared.PackageReferenceScannerFromSlice(), 0, nil
+		return PackageReferenceScannerFromSlice(), 0, nil
 	}
 
 	qs := make([]*sqlf.Query, 0, len(monikers))
@@ -1454,7 +1454,7 @@ func (s *store) GetVisibleUploadsMatchingMonikers(ctx context.Context, repositor
 		return nil, 0, err
 	}
 
-	return shared.PackageReferenceScannerFromRows(rows), totalCount, nil
+	return PackageReferenceScannerFromRows(rows), totalCount, nil
 }
 
 const referenceIDsCTEDefinitions = `

@@ -1,11 +1,9 @@
 package shared
 
 import (
-	"database/sql"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
 //
@@ -145,69 +143,6 @@ type RepositoryWithCount struct {
 type RepositoryWithAvailableIndexers struct {
 	RepositoryID      int
 	AvailableIndexers map[string]AvailableIndexer
-}
-
-//
-// TODO - move to store
-
-type rowScanner struct {
-	rows *sql.Rows
-}
-
-// packageReferenceScannerFromRows creates a PackageReferenceScanner that feeds the given values.
-func PackageReferenceScannerFromRows(rows *sql.Rows) PackageReferenceScanner {
-	return &rowScanner{
-		rows: rows,
-	}
-}
-
-// Next reads the next package reference value from the database cursor.
-func (s *rowScanner) Next() (reference PackageReference, _ bool, _ error) {
-	if !s.rows.Next() {
-		return PackageReference{}, false, nil
-	}
-
-	if err := s.rows.Scan(
-		&reference.DumpID,
-		&reference.Scheme,
-		&reference.Manager,
-		&reference.Name,
-		&reference.Version,
-	); err != nil {
-		return PackageReference{}, false, err
-	}
-
-	return reference, true, nil
-}
-
-// Close the underlying row object.
-func (s *rowScanner) Close() error {
-	return basestore.CloseRows(s.rows, nil)
-}
-
-type sliceScanner struct {
-	references []PackageReference
-}
-
-// PackageReferenceScannerFromSlice creates a PackageReferenceScanner that feeds the given values.
-func PackageReferenceScannerFromSlice(references ...PackageReference) PackageReferenceScanner {
-	return &sliceScanner{
-		references: references,
-	}
-}
-
-func (s *sliceScanner) Next() (PackageReference, bool, error) {
-	if len(s.references) == 0 {
-		return PackageReference{}, false, nil
-	}
-
-	next := s.references[0]
-	s.references = s.references[1:]
-	return next, true, nil
-}
-
-func (s *sliceScanner) Close() error {
-	return nil
 }
 
 type UploadsWithRepositoryNamespace struct {
