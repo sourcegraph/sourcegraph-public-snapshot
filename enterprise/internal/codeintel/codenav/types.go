@@ -47,9 +47,6 @@ func (s *qualifiedMonikerSet) add(qualifiedMoniker precise.QualifiedMonikerData)
 	s.monikers = append(s.monikers, qualifiedMoniker)
 }
 
-//
-// TODO
-
 type RequestArgs struct {
 	RepositoryID int
 	Commit       string
