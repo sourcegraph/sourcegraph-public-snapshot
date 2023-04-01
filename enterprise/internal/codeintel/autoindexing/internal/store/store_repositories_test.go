@@ -9,7 +9,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -26,7 +25,7 @@ func TestRepositoryIDsWithConfiguration(t *testing.T) {
 	testIndexerList := map[string]uploadsshared.AvailableIndexer{
 		"test-indexer": {
 			Roots: []string{"proj1", "proj2", "proj3"},
-			Indexer: types.CodeIntelIndexer{
+			Indexer: uploadsshared.CodeIntelIndexer{
 				Name: "test-indexer",
 			},
 		},

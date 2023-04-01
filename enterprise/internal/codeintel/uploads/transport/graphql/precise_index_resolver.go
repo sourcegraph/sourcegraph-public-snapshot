@@ -225,9 +225,9 @@ func (r *preciseIndexResolver) PlaceInQueue() *int32 {
 func (r *preciseIndexResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
 	if r.index != nil {
 		// Note: check index as index fields may contain docker shas
-		return types.NewCodeIntelIndexerResolver(r.index.Indexer, r.index.Indexer)
+		return NewCodeIntelIndexerResolver(r.index.Indexer, r.index.Indexer)
 	} else if r.upload != nil {
-		return types.NewCodeIntelIndexerResolver(r.upload.Indexer, "")
+		return NewCodeIntelIndexerResolver(r.upload.Indexer, "")
 	}
 
 	return nil

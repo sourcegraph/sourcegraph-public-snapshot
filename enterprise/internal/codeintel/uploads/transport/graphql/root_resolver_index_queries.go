@@ -110,7 +110,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 
 	var indexerNames []string
 	if args.IndexerKey != nil {
-		indexerNames = types.NamesForKey(*args.IndexerKey)
+		indexerNames = uploadsshared.NamesForKey(*args.IndexerKey)
 	}
 
 	var uploads []shared.Upload
@@ -259,7 +259,7 @@ func (r *rootResolver) IndexerKeys(ctx context.Context, args *resolverstubs.Inde
 
 	keyMap := map[string]struct{}{}
 	for _, indexer := range indexers {
-		keyMap[types.NewCodeIntelIndexerResolver(indexer, "").Key()] = struct{}{}
+		keyMap[NewCodeIntelIndexerResolver(indexer, "").Key()] = struct{}{}
 	}
 
 	var keys []string

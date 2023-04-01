@@ -1,6 +1,9 @@
-package types
+package shared
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type CodeIntelIndexer struct {
 	LanguageKey  string
@@ -145,4 +148,22 @@ func makeIndexer(key, name, urn string, dockerImages ...string) CodeIntelIndexer
 		URN:          urn,
 		DockerImages: dockerImages,
 	}
+}
+
+func IndexerFromName(name string) CodeIntelIndexer {
+	// drop the Docker image tag if one exists
+	name = strings.Split(name, "@sha256:")[0]
+	name = strings.Split(name, ":")[0]
+
+	if indexer, ok := imageToIndexer[name]; ok {
+		return indexer
+	}
+
+	for _, indexer := range allIndexers {
+		if indexer.Name == name {
+			return indexer
+		}
+	}
+
+	return CodeIntelIndexer{Name: name}
 }

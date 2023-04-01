@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
 type AvailableIndexer struct {
 	Roots   []string
-	Indexer types.CodeIntelIndexer
+	Indexer CodeIntelIndexer
 }
 
 type JobsOrHints interface {
@@ -28,7 +27,7 @@ func PopulateInferredAvailableIndexers[J JobsOrHints](jobsOrHints []J, blocklist
 		if _, ok := blocklist[key]; !ok {
 			ai := inferredAvailableIndexers[key]
 			ai.Roots = append(ai.Roots, job.GetRoot())
-			if p, ok := types.PreferredIndexers[indexer]; ok {
+			if p, ok := PreferredIndexers[indexer]; ok {
 				ai.Indexer = p
 			}
 

@@ -153,7 +153,7 @@ func (r *autoIndexJobDescriptionResolver) Root() string {
 }
 
 func (r *autoIndexJobDescriptionResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
-	return codeinteltypes.NewCodeIntelIndexerResolver(r.indexJob.Indexer, r.indexJob.Indexer)
+	return uploadsgraphql.NewCodeIntelIndexerResolver(r.indexJob.Indexer, r.indexJob.Indexer)
 }
 
 func (r *autoIndexJobDescriptionResolver) ComparisonKey() string {
