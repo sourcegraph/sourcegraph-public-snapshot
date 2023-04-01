@@ -156,9 +156,9 @@ esbuild_register_toolchains(
 # Commit to include unreleased https://github.com/aspect-build/rules_webpack/commit/4a5f04a4bc504f71d32825124c7872ff721aa1b0
 http_archive(
     name = "aspect_rules_webpack",
-    sha256 = "8d81f8d018127c72270ea4b7287be5c4ff63d9656a34334c305d52f14e0c922f",
-    strip_prefix = "rules_webpack-4a5f04a4bc504f71d32825124c7872ff721aa1b0",
-    url = "https://github.com/aspect-build/rules_webpack/archive/4a5f04a4bc504f71d32825124c7872ff721aa1b0.tar.gz",
+    sha256 = "b843cd0172725d44fcec007efbcdd603c8ba0cd56f32fe6b9976cee559140d16",
+    strip_prefix = "rules_webpack-493e78c1a4ffcc9f7097d579aa37a79f58e279d7",
+    url = "https://github.com/aspect-build/rules_webpack/archive/493e78c1a4ffcc9f7097d579aa37a79f58e279d7.tar.gz",
 )
 
 load("@aspect_rules_webpack//webpack:dependencies.bzl", "rules_webpack_dependencies")
