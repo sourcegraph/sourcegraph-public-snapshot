@@ -89,15 +89,20 @@ export class SourcegraphGraphQLAPIClient {
         argument?: string | {}
         publicArgument?: string | {}
     }): Promise<void | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(response => {
-            extractDataOrError(response, data => {
-                return this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
+        try {
+            await Promise.all([
+                this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(response => {
+                    extractDataOrError(response, data => {})
+                }),
+                this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
                     response => {
                         extractDataOrError(response, data => {})
                     }
-                )
-            })
-        })
+                ),
+            ])
+        } catch (err) {
+            return err
+        }
     }
 
     public async searchEmbeddings(
