@@ -135,9 +135,9 @@ jest_npm_repositories()
 # rules_esbuild setup ===========================
 http_archive(
     name = "aspect_rules_esbuild",
-    sha256 = "621c8ccb8a1400951c52357377eda4c575c6c901689bb629969881e0be8a8614",
-    strip_prefix = "rules_esbuild-175023fede7d2532dd35d89cb43b43cbe9e75678",
-    url = "https://github.com/aspect-build/rules_esbuild/archive/175023fede7d2532dd35d89cb43b43cbe9e75678.tar.gz",
+    sha256 = "082b386b8fe085fdff737849875998eb95d07ba3805984bbdde44b2890d9d0a6",
+    strip_prefix = "rules_esbuild-50920ae0ef9ee6d7985b851965b95954a139be75",
+    url = "https://github.com/aspect-build/rules_esbuild/archive/50920ae0ef9ee6d7985b851965b95954a139be75.tar.gz",
 )
 
 load("@aspect_rules_esbuild//esbuild:dependencies.bzl", "rules_esbuild_dependencies")
