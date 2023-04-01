@@ -100,8 +100,8 @@ export class SourcegraphGraphQLAPIClient {
                     }
                 ),
             ])
-        } catch (err) {
-            return err
+        } catch (error) {
+            return error
         }
     }
 
