@@ -2,6 +2,7 @@ package shared
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -62,4 +63,48 @@ func TestGetCachedRepoEmbeddingIndex(t *testing.T) {
 	if !hasDownloadedRepoEmbeddingIndex {
 		t.Fatal("expected to download the index after a newer embedding job is completed")
 	}
+}
+
+func TestConcurrentGetCachedRepoEmbeddingIndex(t *testing.T) {
+	t.Parallel()
+
+	mockRepoEmbeddingJobsStore := repo.NewMockRepoEmbeddingJobsStore()
+	mockRepoStore := database.NewMockRepoStore()
+
+	mockRepoStore.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (*types.Repo, error) { return &types.Repo{ID: 1}, nil })
+
+	finishedAt := time.Now()
+	mockRepoEmbeddingJobsStore.GetLastCompletedRepoEmbeddingJobFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (*repo.RepoEmbeddingJob, error) {
+		return &repo.RepoEmbeddingJob{FinishedAt: &finishedAt}, nil
+	})
+
+	var mu sync.Mutex
+	hasDownloadedRepoEmbeddingIndex := false
+	getRepoEmbeddingIndex, err := getCachedRepoEmbeddingIndex(mockRepoStore, mockRepoEmbeddingJobsStore, func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
+		mu.Lock()
+		defer mu.Unlock()
+
+		if hasDownloadedRepoEmbeddingIndex {
+			t.Fatal("index already downloaded")
+		}
+		hasDownloadedRepoEmbeddingIndex = true
+		// Simulate the download time.
+		time.Sleep(time.Millisecond * 500)
+		return &embeddings.RepoEmbeddingIndex{}, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	numRequests := 4
+	var wg sync.WaitGroup
+	wg.Add(numRequests)
+	for i := 0; i < numRequests; i++ {
+		ctx := context.Background()
+		go func() {
+			defer wg.Done()
+			getRepoEmbeddingIndex(ctx, api.RepoName("a"))
+		}()
+	}
+	wg.Wait()
 }
