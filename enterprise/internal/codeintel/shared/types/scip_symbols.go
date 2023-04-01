@@ -6,6 +6,9 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 )
 
+//
+// TODO - move to uploads
+
 type InvertedRangeIndex struct {
 	SymbolName           string
 	DefinitionRanges     []int32

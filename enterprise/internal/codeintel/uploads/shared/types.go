@@ -8,16 +8,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
-type DirtyRepository struct {
-	RepositoryID   int
-	RepositoryName string
-	DirtyToken     int
-}
+//
+// TODO - make invisible
 
 type SourcedCommits struct {
 	RepositoryID   int
 	RepositoryName string
 	Commits        []string
+}
+
+type DirtyRepository struct {
+	RepositoryID   int
+	RepositoryName string
+	DirtyToken     int
 }
 
 type GetIndexersOptions struct {
@@ -65,43 +68,6 @@ type DeleteUploadsOptions struct {
 	VisibleAtTip bool
 }
 
-type DependencyReferenceCountUpdateType int
-
-const (
-	DependencyReferenceCountUpdateTypeNone DependencyReferenceCountUpdateType = iota
-	DependencyReferenceCountUpdateTypeAdd
-	DependencyReferenceCountUpdateTypeRemove
-)
-
-type CursorAdjustedUpload struct {
-	DumpID               int      `json:"dumpID"`
-	AdjustedPath         string   `json:"adjustedPath"`
-	AdjustedPosition     Position `json:"adjustedPosition"`
-	AdjustedPathInBundle string   `json:"adjustedPathInBundle"`
-}
-
-// AdjustedUpload pairs an upload visible from the current target commit with the
-// current target path and position adjusted so that it matches the data within the
-// underlying index.
-type AdjustedUpload struct {
-	Upload               types.Dump
-	AdjustedPath         string
-	AdjustedPosition     Position
-	AdjustedPathInBundle string
-}
-
-// Range is an inclusive bounds within a file.
-type Range struct {
-	Start Position
-	End   Position
-}
-
-// Position is a unique position within a file.
-type Position struct {
-	Line      int
-	Character int
-}
-
 // Package pairs a package scheme+manager+name+version with the dump that provides it.
 type Package struct {
 	DumpID  int
@@ -129,6 +95,44 @@ type PackageReferenceScanner interface {
 	// Close the underlying row object.
 	Close() error
 }
+
+type GetIndexesOptions struct {
+	RepositoryID  int
+	State         string
+	States        []string
+	Term          string
+	IndexerNames  []string
+	WithoutUpload bool
+	Limit         int
+	Offset        int
+}
+
+type DeleteIndexesOptions struct {
+	States        []string
+	IndexerNames  []string
+	Term          string
+	RepositoryID  int
+	WithoutUpload bool
+}
+
+type ReindexIndexesOptions struct {
+	States        []string
+	IndexerNames  []string
+	Term          string
+	RepositoryID  int
+	WithoutUpload bool
+}
+
+type ExportedUpload struct {
+	ID           int
+	Repo         string
+	RepoID       int
+	Root         string
+	ObjectPrefix string
+}
+
+//
+// TODO - move to store
 
 type rowScanner struct {
 	rows *sql.Rows
@@ -196,22 +200,8 @@ type UploadsWithRepositoryNamespace struct {
 	Uploads []types.Upload
 }
 
-type UploadLog struct {
-	LogTimestamp      time.Time
-	RecordDeletedAt   *time.Time
-	UploadID          int
-	Commit            string
-	Root              string
-	RepositoryID      int
-	UploadedAt        time.Time
-	Indexer           string
-	IndexerVersion    *string
-	UploadSize        *int
-	AssociatedIndexID *int
-	TransitionColumns []map[string]*string
-	Reason            *string
-	Operation         string
-}
+//
+// TODO - move to ranking
 
 type RankingDefinitions struct {
 	UploadID     int
@@ -222,39 +212,4 @@ type RankingDefinitions struct {
 type RankingReferences struct {
 	UploadID    int
 	SymbolNames []string
-}
-
-type ExportedUpload struct {
-	ID           int
-	Repo         string
-	RepoID       int
-	Root         string
-	ObjectPrefix string
-}
-
-type GetIndexesOptions struct {
-	RepositoryID  int
-	State         string
-	States        []string
-	Term          string
-	IndexerNames  []string
-	WithoutUpload bool
-	Limit         int
-	Offset        int
-}
-
-type DeleteIndexesOptions struct {
-	States        []string
-	IndexerNames  []string
-	Term          string
-	RepositoryID  int
-	WithoutUpload bool
-}
-
-type ReindexIndexesOptions struct {
-	States        []string
-	IndexerNames  []string
-	Term          string
-	RepositoryID  int
-	WithoutUpload bool
 }

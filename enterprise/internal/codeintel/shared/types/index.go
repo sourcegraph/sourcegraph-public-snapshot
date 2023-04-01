@@ -9,6 +9,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+//
+// TODO - move into uploads service
+
 type Index struct {
 	ID                 int                          `json:"id"`
 	Commit             string                       `json:"commit"`

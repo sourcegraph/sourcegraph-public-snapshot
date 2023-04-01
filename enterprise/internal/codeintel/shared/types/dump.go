@@ -2,6 +2,9 @@ package types
 
 import "time"
 
+//
+// TODO - replace with upload records
+
 // Dump is a subset of the lsif_uploads table (queried via the lsif_dumps_with_repository_name view)
 // and stores only processed records.
 type Dump struct {

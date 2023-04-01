@@ -2,6 +2,9 @@ package shared
 
 import "time"
 
+//
+// TODO - move into store
+
 // DependencyIndexingJob is a subset of the lsif_dependency_indexing_jobs table and acts as the
 // queue and execution record for indexing the dependencies of a particular completed upload.
 type DependencyIndexingJob struct {

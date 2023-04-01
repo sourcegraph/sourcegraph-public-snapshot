@@ -12,6 +12,26 @@ type Location struct {
 	Range  types.Range
 }
 
+// Diagnostic describes diagnostic information attached to a location within a
+// particular dump.
+type Diagnostic struct {
+	DumpID int
+	Path   string
+	precise.DiagnosticData
+}
+
+// CodeIntelligenceRange pairs a range with its definitions, references, implementations, and hover text.
+type CodeIntelligenceRange struct {
+	Range           types.Range
+	Definitions     []Location
+	References      []Location
+	Implementations []Location
+	HoverText       string
+}
+
+//
+// TODO - move to service (only user)
+
 type RequestArgs struct {
 	RepositoryID int
 	Commit       string
@@ -31,14 +51,6 @@ type DiagnosticAtUpload struct {
 	AdjustedRange  types.Range
 }
 
-// Diagnostic describes diagnostic information attached to a location within a
-// particular dump.
-type Diagnostic struct {
-	DumpID int
-	Path   string
-	precise.DiagnosticData
-}
-
 // AdjustedCodeIntelligenceRange stores definition, reference, and hover information for all ranges
 // within a block of lines. The definition and reference locations have been adjusted to fit the
 // target (originally requested) commit.
@@ -47,15 +59,6 @@ type AdjustedCodeIntelligenceRange struct {
 	Definitions     []types.UploadLocation
 	References      []types.UploadLocation
 	Implementations []types.UploadLocation
-	HoverText       string
-}
-
-// CodeIntelligenceRange pairs a range with its definitions, references, implementations, and hover text.
-type CodeIntelligenceRange struct {
-	Range           types.Range
-	Definitions     []Location
-	References      []Location
-	Implementations []Location
 	HoverText       string
 }
 

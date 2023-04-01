@@ -2,6 +2,9 @@ package types
 
 import "strings"
 
+//
+// TODO - move to resolvers
+
 type CodeIntelIndexerResolver interface {
 	Key() string
 	Name() string

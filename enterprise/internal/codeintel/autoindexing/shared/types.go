@@ -4,6 +4,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 )
 
+//
+// TODO - make invisible
+
 type SourcedCommits struct {
 	RepositoryID   int
 	RepositoryName string
@@ -12,10 +15,13 @@ type SourcedCommits struct {
 
 // IndexConfiguration stores the index configuration for a repository.
 type IndexConfiguration struct {
-	ID           int    `json:"id"`
-	RepositoryID int    `json:"repository_id"`
-	Data         []byte `json:"data"`
+	ID           int
+	RepositoryID int
+	Data         []byte
 }
+
+//
+// TODO - move to uploads?
 
 type IndexesWithRepositoryNamespace struct {
 	Root    string

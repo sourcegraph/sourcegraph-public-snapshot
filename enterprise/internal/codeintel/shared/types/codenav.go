@@ -1,5 +1,8 @@
 package types
 
+//
+// TOOD - move to codenav
+
 // UploadLocation is a path and range pair from within a particular upload. The target commit
 // denotes the target commit for which the location was set (the originally requested commit).
 type UploadLocation struct {

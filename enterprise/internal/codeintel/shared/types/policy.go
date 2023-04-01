@@ -2,6 +2,9 @@ package types
 
 import "time"
 
+//
+// TODO - move to policies
+
 type ConfigurationPolicy struct {
 	ID                        int
 	RepositoryID              *int

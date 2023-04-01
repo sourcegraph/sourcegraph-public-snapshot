@@ -2,6 +2,9 @@ package types
 
 import "time"
 
+//
+// TODO - move to uploads
+
 type Upload struct {
 	ID                int
 	Commit            string
