@@ -61,7 +61,7 @@ func TestDefinitions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error querying definitions: %s", err)
 	}
-	expectedLocations := []types.UploadLocation{
+	expectedLocations := []shared.UploadLocation{
 		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: mockCommit, TargetRange: testRange1},
 		{Dump: uploads[1], Path: "sub2/b.go", TargetCommit: mockCommit, TargetRange: testRange2},
 		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: mockCommit, TargetRange: testRange3},
@@ -132,7 +132,7 @@ func TestDefinitionsWithSubRepoPermissions(t *testing.T) {
 		t.Fatalf("unexpected error querying definitions: %s", err)
 	}
 
-	expectedLocations := []types.UploadLocation{
+	expectedLocations := []shared.UploadLocation{
 		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
 		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
 	}
@@ -222,7 +222,7 @@ func TestDefinitionsRemote(t *testing.T) {
 		t.Fatalf("unexpected error querying definitions: %s", err)
 	}
 
-	xLocations := []types.UploadLocation{
+	xLocations := []shared.UploadLocation{
 		{Dump: remoteUploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef2", TargetRange: testRange1},
 		{Dump: remoteUploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange2},
 		{Dump: remoteUploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef2", TargetRange: testRange3},
@@ -355,7 +355,7 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 		t.Fatalf("unexpected error querying definitions: %s", err)
 	}
 
-	expectedLocations := []types.UploadLocation{
+	expectedLocations := []shared.UploadLocation{
 		{Dump: dumps[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange2},
 		{Dump: dumps[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange4},
 	}
@@ -397,10 +397,10 @@ func mockedGitTreeTranslator() GitTreeTranslator {
 	mockPositionAdjuster.GetTargetCommitPathFromSourcePathFunc.SetDefaultHook(func(ctx context.Context, commit string, path string, _ bool) (string, bool, error) {
 		return commit, true, nil
 	})
-	mockPositionAdjuster.GetTargetCommitPositionFromSourcePositionFunc.SetDefaultHook(func(ctx context.Context, commit string, pos types.Position, _ bool) (string, types.Position, bool, error) {
+	mockPositionAdjuster.GetTargetCommitPositionFromSourcePositionFunc.SetDefaultHook(func(ctx context.Context, commit string, pos shared.Position, _ bool) (string, shared.Position, bool, error) {
 		return commit, pos, true, nil
 	})
-	mockPositionAdjuster.GetTargetCommitRangeFromSourceRangeFunc.SetDefaultHook(func(ctx context.Context, commit string, path string, rx types.Range, _ bool) (string, types.Range, bool, error) {
+	mockPositionAdjuster.GetTargetCommitRangeFromSourceRangeFunc.SetDefaultHook(func(ctx context.Context, commit string, path string, rx shared.Range, _ bool) (string, shared.Range, bool, error) {
 		return commit, rx, true, nil
 	})
 

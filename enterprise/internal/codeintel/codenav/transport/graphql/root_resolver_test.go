@@ -9,6 +9,7 @@ import (
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -259,7 +260,7 @@ func TestHover(t *testing.T) {
 		mockOperations,
 	)
 
-	mockCodeNavService.GetHoverFunc.SetDefaultReturn("text", types.Range{}, true, nil)
+	mockCodeNavService.GetHoverFunc.SetDefaultReturn("text", shared.Range{}, true, nil)
 	args := &resolverstubs.LSIFQueryPositionArgs{Line: 10, Character: 15}
 	if _, err := resolver.Hover(context.Background(), args); err != nil {
 		t.Fatalf("unexpected error: %s", err)
@@ -403,12 +404,12 @@ func TestResolveLocations(t *testing.T) {
 	factory := sharedresolvers.NewCachedLocationResolverFactory(nil, repos, gsClient)
 	locationResolver := factory.Create()
 
-	r1 := types.Range{Start: types.Position{Line: 11, Character: 12}, End: types.Position{Line: 13, Character: 14}}
-	r2 := types.Range{Start: types.Position{Line: 21, Character: 22}, End: types.Position{Line: 23, Character: 24}}
-	r3 := types.Range{Start: types.Position{Line: 31, Character: 32}, End: types.Position{Line: 33, Character: 34}}
-	r4 := types.Range{Start: types.Position{Line: 41, Character: 42}, End: types.Position{Line: 43, Character: 44}}
+	r1 := shared.Range{Start: shared.Position{Line: 11, Character: 12}, End: shared.Position{Line: 13, Character: 14}}
+	r2 := shared.Range{Start: shared.Position{Line: 21, Character: 22}, End: shared.Position{Line: 23, Character: 24}}
+	r3 := shared.Range{Start: shared.Position{Line: 31, Character: 32}, End: shared.Position{Line: 33, Character: 34}}
+	r4 := shared.Range{Start: shared.Position{Line: 41, Character: 42}, End: shared.Position{Line: 43, Character: 44}}
 
-	locations, err := resolveLocations(context.Background(), locationResolver, []types.UploadLocation{
+	locations, err := resolveLocations(context.Background(), locationResolver, []shared.UploadLocation{
 		{Dump: types.Dump{RepositoryID: 50}, TargetCommit: "deadbeef1", TargetRange: r1, Path: "p1"},
 		{Dump: types.Dump{RepositoryID: 51}, TargetCommit: "deadbeef2", TargetRange: r2, Path: "p2"},
 		{Dump: types.Dump{RepositoryID: 52}, TargetCommit: "deadbeef3", TargetRange: r3, Path: "p3"},

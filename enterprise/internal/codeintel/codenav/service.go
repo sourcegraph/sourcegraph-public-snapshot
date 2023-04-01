@@ -48,7 +48,7 @@ func newService(
 }
 
 // GetHover returns the set of locations defining the symbol at the given position.
-func (s *Service) GetHover(ctx context.Context, args RequestArgs, requestState RequestState) (_ string, _ types.Range, _ bool, err error) {
+func (s *Service) GetHover(ctx context.Context, args RequestArgs, requestState RequestState) (_ string, _ shared.Range, _ bool, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getHover, serviceObserverThreshold, observation.Args{
 		LogFields: []traceLog.Field{
 			traceLog.Int("repositoryID", args.RepositoryID),
@@ -64,7 +64,7 @@ func (s *Service) GetHover(ctx context.Context, args RequestArgs, requestState R
 
 	adjustedUploads, err := s.getVisibleUploads(ctx, args.Line, args.Character, requestState)
 	if err != nil {
-		return "", types.Range{}, false, err
+		return "", shared.Range{}, false, err
 	}
 
 	// Keep track of each adjusted range we know about enclosing the requested position.
@@ -73,7 +73,7 @@ func (s *Service) GetHover(ctx context.Context, args RequestArgs, requestState R
 	// have to look in the definition index and search for the text there. We don't
 	// want to return the range associated with the definition, as the range is used
 	// as a hint to highlight a range in the current document.
-	adjustedRanges := make([]types.Range, 0, len(adjustedUploads))
+	adjustedRanges := make([]shared.Range, 0, len(adjustedUploads))
 
 	cachedUploads := requestState.GetCacheUploads()
 	for i := range adjustedUploads {
@@ -89,7 +89,7 @@ func (s *Service) GetHover(ctx context.Context, args RequestArgs, requestState R
 			adjustedUpload.TargetPosition.Character,
 		)
 		if err != nil {
-			return "", types.Range{}, false, errors.Wrap(err, "lsifStore.Hover")
+			return "", shared.Range{}, false, errors.Wrap(err, "lsifStore.Hover")
 		}
 		if !exists {
 			continue
@@ -98,7 +98,7 @@ func (s *Service) GetHover(ctx context.Context, args RequestArgs, requestState R
 		// Adjust the highlighted range back to the appropriate range in the target commit
 		_, adjustedRange, _, err := s.getSourceRange(ctx, args, requestState, cachedUploads[i].RepositoryID, cachedUploads[i].Commit, args.Path, rn)
 		if err != nil {
-			return "", types.Range{}, false, err
+			return "", shared.Range{}, false, err
 		}
 		if text != "" {
 			// Text attached to source range
@@ -118,7 +118,7 @@ func (s *Service) GetHover(ctx context.Context, args RequestArgs, requestState R
 	// The range we will end up returning is interpreted within the context of the current text
 	// document, so any range inside of a remote index would be of no use. We'll return the first
 	// (inner-most) range that we adjusted from the source index traversals above.
-	var adjustedRange types.Range
+	var adjustedRange shared.Range
 	if len(adjustedRanges) > 0 {
 		adjustedRange = adjustedRanges[0]
 	}
@@ -126,7 +126,7 @@ func (s *Service) GetHover(ctx context.Context, args RequestArgs, requestState R
 	// Gather all import monikers attached to the ranges enclosing the requested position
 	orderedMonikers, err := s.getOrderedMonikers(ctx, adjustedUploads, "import")
 	if err != nil {
-		return "", types.Range{}, false, err
+		return "", shared.Range{}, false, err
 	}
 	trace.AddEvent("TODO Domain Owner",
 		attribute.Int("numMonikers", len(orderedMonikers)),
@@ -137,7 +137,7 @@ func (s *Service) GetHover(ctx context.Context, args RequestArgs, requestState R
 	// any of the indexes we have already performed an LSIF graph traversal in above.
 	uploads, err := s.getUploadsWithDefinitionsForMonikers(ctx, orderedMonikers, requestState)
 	if err != nil {
-		return "", types.Range{}, false, err
+		return "", shared.Range{}, false, err
 	}
 	trace.AddEvent("TODO Domain Owner",
 		attribute.Int("numDefinitionUploads", len(uploads)),
@@ -147,7 +147,7 @@ func (s *Service) GetHover(ctx context.Context, args RequestArgs, requestState R
 	// attached to one of the source ranges.
 	locations, _, err := s.getBulkMonikerLocations(ctx, uploads, orderedMonikers, "definitions", DefinitionsLimit, 0)
 	if err != nil {
-		return "", types.Range{}, false, err
+		return "", shared.Range{}, false, err
 	}
 	trace.AddEvent("TODO Domain Owner", attribute.Int("numLocations", len(locations)))
 
@@ -161,7 +161,7 @@ func (s *Service) GetHover(ctx context.Context, args RequestArgs, requestState R
 			locations[i].Range.Start.Character,
 		)
 		if err != nil {
-			return "", types.Range{}, false, errors.Wrap(err, "lsifStore.Hover")
+			return "", shared.Range{}, false, errors.Wrap(err, "lsifStore.Hover")
 		}
 		if exists && text != "" {
 			// Text attached to definition
@@ -170,11 +170,11 @@ func (s *Service) GetHover(ctx context.Context, args RequestArgs, requestState R
 	}
 
 	// No text available
-	return "", types.Range{}, false, nil
+	return "", shared.Range{}, false, nil
 }
 
 // GetReferences returns the list of source locations that reference the symbol at the given position.
-func (s *Service) GetReferences(ctx context.Context, args RequestArgs, requestState RequestState, cursor ReferencesCursor) (_ []types.UploadLocation, _ ReferencesCursor, err error) {
+func (s *Service) GetReferences(ctx context.Context, args RequestArgs, requestState RequestState, cursor ReferencesCursor) (_ []shared.UploadLocation, _ ReferencesCursor, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getReferences, serviceObserverThreshold, observation.Args{
 		LogFields: []traceLog.Field{
 			traceLog.Int("repositoryID", args.RepositoryID),
@@ -498,8 +498,8 @@ func (s *Service) getPageRemoteLocations(
 // getUploadLocations translates a set of locations into an equivalent set of locations in the requested
 // commit. If includeFallbackLocations is true, then any range in the indexed commit that cannot be translated
 // will use the indexed location. Otherwise, such location are dropped.
-func (s *Service) getUploadLocations(ctx context.Context, args RequestArgs, requestState RequestState, locations []shared.Location, includeFallbackLocations bool) ([]types.UploadLocation, error) {
-	uploadLocations := make([]types.UploadLocation, 0, len(locations))
+func (s *Service) getUploadLocations(ctx context.Context, args RequestArgs, requestState RequestState, locations []shared.Location, includeFallbackLocations bool) ([]shared.UploadLocation, error) {
+	uploadLocations := make([]shared.UploadLocation, 0, len(locations))
 
 	checkerEnabled := authz.SubRepoEnabled(requestState.authChecker)
 	var a *actor.Actor
@@ -538,13 +538,13 @@ func (s *Service) getUploadLocations(ctx context.Context, args RequestArgs, requ
 // getUploadLocation translates a location (relative to the indexed commit) into an equivalent location in
 // the requested commit. If the translation fails, then the original commit and range are used as the
 // commit and range of the adjusted location and a false flag is returned.
-func (s *Service) getUploadLocation(ctx context.Context, args RequestArgs, requestState RequestState, dump types.Dump, location shared.Location) (types.UploadLocation, bool, error) {
+func (s *Service) getUploadLocation(ctx context.Context, args RequestArgs, requestState RequestState, dump types.Dump, location shared.Location) (shared.UploadLocation, bool, error) {
 	adjustedCommit, adjustedRange, ok, err := s.getSourceRange(ctx, args, requestState, dump.RepositoryID, dump.Commit, dump.Root+location.Path, location.Range)
 	if err != nil {
-		return types.UploadLocation{}, ok, err
+		return shared.UploadLocation{}, ok, err
 	}
 
-	return types.UploadLocation{
+	return shared.UploadLocation{
 		Dump:         dump,
 		Path:         dump.Root + location.Path,
 		TargetCommit: adjustedCommit,
@@ -555,14 +555,14 @@ func (s *Service) getUploadLocation(ctx context.Context, args RequestArgs, reque
 // getSourceRange translates a range (relative to the indexed commit) into an equivalent range in the requested
 // commit. If the translation fails, then the original commit and range are returned along with a false-valued
 // flag.
-func (s *Service) getSourceRange(ctx context.Context, args RequestArgs, requestState RequestState, repositoryID int, commit, path string, rng types.Range) (string, types.Range, bool, error) {
+func (s *Service) getSourceRange(ctx context.Context, args RequestArgs, requestState RequestState, repositoryID int, commit, path string, rng shared.Range) (string, shared.Range, bool, error) {
 	if repositoryID != args.RepositoryID {
 		// No diffs between distinct repositories
 		return commit, rng, true, nil
 	}
 
 	if _, sourceRange, ok, err := requestState.GitTreeTranslator.GetTargetCommitRangeFromSourceRange(ctx, commit, path, rng, true); err != nil {
-		return "", types.Range{}, false, errors.Wrap(err, "gitTreeTranslator.GetTargetCommitRangeFromSourceRange")
+		return "", shared.Range{}, false, errors.Wrap(err, "gitTreeTranslator.GetTargetCommitRangeFromSourceRange")
 	} else if ok {
 		return args.Commit, sourceRange, true, nil
 	}
@@ -651,7 +651,7 @@ func (s *Service) getBulkMonikerLocations(ctx context.Context, uploads []types.D
 // DefinitionsLimit is maximum the number of locations returned from Definitions.
 const DefinitionsLimit = 100
 
-func (s *Service) GetImplementations(ctx context.Context, args RequestArgs, requestState RequestState, cursor ImplementationsCursor) (_ []types.UploadLocation, _ ImplementationsCursor, err error) {
+func (s *Service) GetImplementations(ctx context.Context, args RequestArgs, requestState RequestState, cursor ImplementationsCursor) (_ []shared.UploadLocation, _ ImplementationsCursor, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getImplementations, serviceObserverThreshold, observation.Args{
 		LogFields: []traceLog.Field{
 			traceLog.Int("repositoryID", args.RepositoryID),
@@ -775,7 +775,7 @@ func (s *Service) GetImplementations(ctx context.Context, args RequestArgs, requ
 }
 
 // GetDefinitions returns the set of locations defining the symbol at the given position.
-func (s *Service) GetDefinitions(ctx context.Context, args RequestArgs, requestState RequestState) (_ []types.UploadLocation, err error) {
+func (s *Service) GetDefinitions(ctx context.Context, args RequestArgs, requestState RequestState) (_ []shared.UploadLocation, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getDefinitions, serviceObserverThreshold, observation.Args{
 		LogFields: []traceLog.Field{
 			traceLog.Int("repositoryID", args.RepositoryID),
@@ -934,12 +934,12 @@ func (s *Service) GetDiagnostics(ctx context.Context, args RequestArgs, requestS
 // getRequestedCommitDiagnostic translates a diagnostic (relative to the indexed commit) into an equivalent diagnostic
 // in the requested commit.
 func (s *Service) getRequestedCommitDiagnostic(ctx context.Context, args RequestArgs, requestState RequestState, adjustedUpload visibleUpload, diagnostic shared.Diagnostic) (DiagnosticAtUpload, error) {
-	rn := types.Range{
-		Start: types.Position{
+	rn := shared.Range{
+		Start: shared.Position{
 			Line:      diagnostic.StartLine,
 			Character: diagnostic.StartCharacter,
 		},
-		End: types.Position{
+		End: shared.Position{
 			Line:      diagnostic.EndLine,
 			Character: diagnostic.EndCharacter,
 		},
@@ -1078,7 +1078,7 @@ func (s *Service) getCodeIntelligenceRange(ctx context.Context, args RequestArgs
 }
 
 // GetStencil returns the set of locations defining the symbol at the given position.
-func (s *Service) GetStencil(ctx context.Context, args RequestArgs, requestState RequestState) (adjustedRanges []types.Range, err error) {
+func (s *Service) GetStencil(ctx context.Context, args RequestArgs, requestState RequestState) (adjustedRanges []shared.Range, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getStencil, serviceObserverThreshold, observation.Args{
 		LogFields: []traceLog.Field{
 			traceLog.Int("repositoryID", args.RepositoryID),
@@ -1291,7 +1291,7 @@ func (s *Service) getVisibleUploads(ctx context.Context, line, character int, r 
 // getVisibleUpload returns the current target path and the given position for the given upload. If
 // the upload cannot be adjusted, a false-valued flag is returned.
 func (s *Service) getVisibleUpload(ctx context.Context, line, character int, upload types.Dump, r RequestState) (visibleUpload, bool, error) {
-	position := types.Position{
+	position := shared.Position{
 		Line:      line,
 		Character: character,
 	}

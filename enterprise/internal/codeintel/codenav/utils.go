@@ -52,7 +52,7 @@ func isSourceLocation(visibleUploads []visibleUpload, location shared.Location) 
 }
 
 // rangeContainsPosition returns true if the given range encloses the given position.
-func rangeContainsPosition(r types.Range, pos types.Position) bool {
+func rangeContainsPosition(r shared.Range, pos shared.Position) bool {
 	if pos.Line < r.Start.Line {
 		return false
 	}
@@ -72,7 +72,7 @@ func rangeContainsPosition(r types.Range, pos types.Position) bool {
 	return true
 }
 
-func sortRanges(ranges []types.Range) []types.Range {
+func sortRanges(ranges []shared.Range) []shared.Range {
 	sort.Slice(ranges, func(i, j int) bool {
 		iStart := ranges[i].Start
 		jStart := ranges[j].Start
@@ -118,7 +118,7 @@ func sortRanges(ranges []types.Range) []types.Range {
 	return ranges
 }
 
-func dedupeRanges(ranges []types.Range) []types.Range {
+func dedupeRanges(ranges []shared.Range) []shared.Range {
 	if len(ranges) == 0 {
 		return ranges
 	}

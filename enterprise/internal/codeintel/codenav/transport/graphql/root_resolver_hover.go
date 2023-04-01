@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/go-lsp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 )
 
@@ -46,6 +46,6 @@ func (r *hoverResolver) Range() resolverstubs.RangeResolver { return newRangeRes
 //
 //
 
-func sharedRangeTolspRange(r types.Range) lsp.Range {
+func sharedRangeTolspRange(r shared.Range) lsp.Range {
 	return lsp.Range{Start: convertPosition(r.Start.Line, r.Start.Character), End: convertPosition(r.End.Line, r.End.Character)}
 }

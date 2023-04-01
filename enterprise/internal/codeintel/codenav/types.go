@@ -13,7 +13,7 @@ import (
 type visibleUpload struct {
 	Upload                types.Dump
 	TargetPath            string
-	TargetPosition        types.Position
+	TargetPosition        shared.Position
 	TargetPathWithoutRoot string
 }
 
@@ -66,17 +66,17 @@ type DiagnosticAtUpload struct {
 	shared.Diagnostic
 	Dump           types.Dump
 	AdjustedCommit string
-	AdjustedRange  types.Range
+	AdjustedRange  shared.Range
 }
 
 // AdjustedCodeIntelligenceRange stores definition, reference, and hover information for all ranges
 // within a block of lines. The definition and reference locations have been adjusted to fit the
 // target (originally requested) commit.
 type AdjustedCodeIntelligenceRange struct {
-	Range           types.Range
-	Definitions     []types.UploadLocation
-	References      []types.UploadLocation
-	Implementations []types.UploadLocation
+	Range           shared.Range
+	Definitions     []shared.UploadLocation
+	References      []shared.UploadLocation
+	Implementations []shared.UploadLocation
 	HoverText       string
 }
 
@@ -103,10 +103,10 @@ type ImplementationsCursor struct {
 
 // cursorAdjustedUpload
 type CursorToVisibleUpload struct {
-	DumpID                int            `json:"dumpID"`
-	TargetPath            string         `json:"adjustedPath"`
-	TargetPosition        types.Position `json:"adjustedPosition"`
-	TargetPathWithoutRoot string         `json:"adjustedPathInBundle"`
+	DumpID                int             `json:"dumpID"`
+	TargetPath            string          `json:"adjustedPath"`
+	TargetPosition        shared.Position `json:"adjustedPosition"`
+	TargetPathWithoutRoot string          `json:"adjustedPathInBundle"`
 }
 
 // localCursor is an upload offset and a location offset within that upload.

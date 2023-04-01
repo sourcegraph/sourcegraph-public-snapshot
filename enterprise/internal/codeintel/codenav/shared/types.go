@@ -9,7 +9,7 @@ import (
 type Location struct {
 	DumpID int
 	Path   string
-	Range  types.Range
+	Range  Range
 }
 
 // Diagnostic describes diagnostic information attached to a location within a
@@ -22,9 +22,29 @@ type Diagnostic struct {
 
 // CodeIntelligenceRange pairs a range with its definitions, references, implementations, and hover text.
 type CodeIntelligenceRange struct {
-	Range           types.Range
+	Range           Range
 	Definitions     []Location
 	References      []Location
 	Implementations []Location
 	HoverText       string
+}
+
+// UploadLocation is a path and range pair from within a particular upload. The target commit
+// denotes the target commit for which the location was set (the originally requested commit).
+type UploadLocation struct {
+	Dump         types.Dump
+	Path         string
+	TargetCommit string
+	TargetRange  Range
+}
+
+type Range struct {
+	Start Position
+	End   Position
+}
+
+// Position is a unique position within a file.
+type Position struct {
+	Line      int
+	Character int
 }

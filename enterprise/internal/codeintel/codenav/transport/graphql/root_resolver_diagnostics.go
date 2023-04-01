@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -68,7 +68,7 @@ func (r *diagnosticResolver) Location(ctx context.Context) (resolverstubs.Locati
 	return resolveLocation(
 		ctx,
 		r.locationResolver,
-		types.UploadLocation{
+		shared.UploadLocation{
 			Dump:         r.diagnostic.Dump,
 			Path:         r.diagnostic.Path,
 			TargetCommit: r.diagnostic.AdjustedCommit,

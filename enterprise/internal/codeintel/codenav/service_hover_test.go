@@ -39,11 +39,11 @@ func TestHover(t *testing.T) {
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
 
-	expectedRange := types.Range{
-		Start: types.Position{Line: 10, Character: 10},
-		End:   types.Position{Line: 15, Character: 25},
+	expectedRange := shared.Range{
+		Start: shared.Position{Line: 10, Character: 10},
+		End:   shared.Position{Line: 15, Character: 25},
 	}
-	mockLsifStore.GetHoverFunc.PushReturn("", types.Range{}, false, nil)
+	mockLsifStore.GetHoverFunc.PushReturn("", shared.Range{}, false, nil)
 	mockLsifStore.GetHoverFunc.PushReturn("doctext", expectedRange, true, nil)
 
 	mockRequest := RequestArgs{
@@ -90,15 +90,15 @@ func TestHoverRemote(t *testing.T) {
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
 
-	expectedRange := types.Range{
-		Start: types.Position{Line: 10, Character: 10},
-		End:   types.Position{Line: 15, Character: 25},
+	expectedRange := shared.Range{
+		Start: shared.Position{Line: 10, Character: 10},
+		End:   shared.Position{Line: 15, Character: 25},
 	}
 	mockLsifStore.GetHoverFunc.PushReturn("", expectedRange, true, nil)
 
-	remoteRange := types.Range{
-		Start: types.Position{Line: 30, Character: 30},
-		End:   types.Position{Line: 35, Character: 45},
+	remoteRange := shared.Range{
+		Start: shared.Position{Line: 30, Character: 30},
+		End:   shared.Position{Line: 35, Character: 45},
 	}
 	mockLsifStore.GetHoverFunc.PushReturn("doctext", remoteRange, true, nil)
 
