@@ -802,7 +802,7 @@ func TestSourcedCommitsWithoutCommittedAt(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error getting stale sourced commits: %s", err)
 	}
-	expectedCommits := []shared.SourcedCommits{
+	expectedCommits := []SourcedCommits{
 		{RepositoryID: 50, RepositoryName: "n-50", Commits: []string{makeCommit(1)}},
 		{RepositoryID: 51, RepositoryName: "n-51", Commits: []string{makeCommit(4), makeCommit(5)}},
 		{RepositoryID: 52, RepositoryName: "n-52", Commits: []string{makeCommit(7), makeCommit(8)}},
@@ -823,7 +823,7 @@ func TestSourcedCommitsWithoutCommittedAt(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error getting stale sourced commits: %s", err)
 	}
-	expectedCommits = []shared.SourcedCommits{
+	expectedCommits = []SourcedCommits{
 		{RepositoryID: 51, RepositoryName: "n-51", Commits: []string{makeCommit(5)}},
 		{RepositoryID: 52, RepositoryName: "n-52", Commits: []string{makeCommit(7), makeCommit(8)}},
 	}

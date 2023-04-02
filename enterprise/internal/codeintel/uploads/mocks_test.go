@@ -531,7 +531,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		SourcedCommitsWithoutCommittedAtFunc: &StoreSourcedCommitsWithoutCommittedAtFunc{
-			defaultHook: func(context.Context, int) (r0 []shared.SourcedCommits, r1 error) {
+			defaultHook: func(context.Context, int) (r0 []store.SourcedCommits, r1 error) {
 				return
 			},
 		},
@@ -858,7 +858,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		SourcedCommitsWithoutCommittedAtFunc: &StoreSourcedCommitsWithoutCommittedAtFunc{
-			defaultHook: func(context.Context, int) ([]shared.SourcedCommits, error) {
+			defaultHook: func(context.Context, int) ([]store.SourcedCommits, error) {
 				panic("unexpected invocation of MockStore.SourcedCommitsWithoutCommittedAt")
 			},
 		},
@@ -7358,15 +7358,15 @@ func (c StoreSoftDeleteExpiredUploadsViaTraversalFuncCall) Results() []interface
 // SourcedCommitsWithoutCommittedAt method of the parent MockStore instance
 // is invoked.
 type StoreSourcedCommitsWithoutCommittedAtFunc struct {
-	defaultHook func(context.Context, int) ([]shared.SourcedCommits, error)
-	hooks       []func(context.Context, int) ([]shared.SourcedCommits, error)
+	defaultHook func(context.Context, int) ([]store.SourcedCommits, error)
+	hooks       []func(context.Context, int) ([]store.SourcedCommits, error)
 	history     []StoreSourcedCommitsWithoutCommittedAtFuncCall
 	mutex       sync.Mutex
 }
 
 // SourcedCommitsWithoutCommittedAt delegates to the next hook function in
 // the queue and stores the parameter and result values of this invocation.
-func (m *MockStore) SourcedCommitsWithoutCommittedAt(v0 context.Context, v1 int) ([]shared.SourcedCommits, error) {
+func (m *MockStore) SourcedCommitsWithoutCommittedAt(v0 context.Context, v1 int) ([]store.SourcedCommits, error) {
 	r0, r1 := m.SourcedCommitsWithoutCommittedAtFunc.nextHook()(v0, v1)
 	m.SourcedCommitsWithoutCommittedAtFunc.appendCall(StoreSourcedCommitsWithoutCommittedAtFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -7375,7 +7375,7 @@ func (m *MockStore) SourcedCommitsWithoutCommittedAt(v0 context.Context, v1 int)
 // SetDefaultHook sets function that is called when the
 // SourcedCommitsWithoutCommittedAt method of the parent MockStore instance
 // is invoked and the hook queue is empty.
-func (f *StoreSourcedCommitsWithoutCommittedAtFunc) SetDefaultHook(hook func(context.Context, int) ([]shared.SourcedCommits, error)) {
+func (f *StoreSourcedCommitsWithoutCommittedAtFunc) SetDefaultHook(hook func(context.Context, int) ([]store.SourcedCommits, error)) {
 	f.defaultHook = hook
 }
 
@@ -7384,7 +7384,7 @@ func (f *StoreSourcedCommitsWithoutCommittedAtFunc) SetDefaultHook(hook func(con
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *StoreSourcedCommitsWithoutCommittedAtFunc) PushHook(hook func(context.Context, int) ([]shared.SourcedCommits, error)) {
+func (f *StoreSourcedCommitsWithoutCommittedAtFunc) PushHook(hook func(context.Context, int) ([]store.SourcedCommits, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -7392,20 +7392,20 @@ func (f *StoreSourcedCommitsWithoutCommittedAtFunc) PushHook(hook func(context.C
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreSourcedCommitsWithoutCommittedAtFunc) SetDefaultReturn(r0 []shared.SourcedCommits, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) ([]shared.SourcedCommits, error) {
+func (f *StoreSourcedCommitsWithoutCommittedAtFunc) SetDefaultReturn(r0 []store.SourcedCommits, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]store.SourcedCommits, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreSourcedCommitsWithoutCommittedAtFunc) PushReturn(r0 []shared.SourcedCommits, r1 error) {
-	f.PushHook(func(context.Context, int) ([]shared.SourcedCommits, error) {
+func (f *StoreSourcedCommitsWithoutCommittedAtFunc) PushReturn(r0 []store.SourcedCommits, r1 error) {
+	f.PushHook(func(context.Context, int) ([]store.SourcedCommits, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreSourcedCommitsWithoutCommittedAtFunc) nextHook() func(context.Context, int) ([]shared.SourcedCommits, error) {
+func (f *StoreSourcedCommitsWithoutCommittedAtFunc) nextHook() func(context.Context, int) ([]store.SourcedCommits, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -7448,7 +7448,7 @@ type StoreSourcedCommitsWithoutCommittedAtFuncCall struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared.SourcedCommits
+	Result0 []store.SourcedCommits
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

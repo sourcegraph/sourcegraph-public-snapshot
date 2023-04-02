@@ -63,7 +63,7 @@ type Store interface {
 	GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
 	UpdateUploadsVisibleToCommits(ctx context.Context, repositoryID int, graph *gitdomain.CommitGraph, refDescriptions map[string][]gitdomain.RefDescription, maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration, dirtyToken int, now time.Time) error
 	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) error
-	SourcedCommitsWithoutCommittedAt(ctx context.Context, batchSize int) ([]shared.SourcedCommits, error)
+	SourcedCommitsWithoutCommittedAt(ctx context.Context, batchSize int) ([]SourcedCommits, error)
 	UpdateCommittedAt(ctx context.Context, repositoryID int, commit, commitDateString string) error
 	SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (int, int, error)
 	SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, maxTraversal int) (int, int, error)
@@ -123,6 +123,12 @@ type Store interface {
 	GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]uploadsshared.IndexesWithRepositoryNamespace, error)
 	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error)
 	RepositoryIDsWithErrors(ctx context.Context, offset, limit int) ([]uploadsshared.RepositoryWithCount, int, error)
+}
+
+type SourcedCommits struct {
+	RepositoryID   int
+	RepositoryName string
+	Commits        []string
 }
 
 // store manages the database operations for uploads.

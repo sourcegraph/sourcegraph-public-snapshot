@@ -129,15 +129,6 @@ func (s DockerStep) Value() (driver.Value, error) {
 	return json.Marshal(s)
 }
 
-//
-// TODO - make invisible
-
-type SourcedCommits struct {
-	RepositoryID   int
-	RepositoryName string
-	Commits        []string
-}
-
 type DirtyRepository struct {
 	RepositoryID   int
 	RepositoryName string

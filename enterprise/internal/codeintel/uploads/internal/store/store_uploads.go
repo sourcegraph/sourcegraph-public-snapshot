@@ -1157,7 +1157,7 @@ UPDATE lsif_uploads SET %s WHERE id IN (%s)
 
 // SourcedCommitsWithoutCommittedAt returns the repository and commits of uploads that do not have an
 // associated commit date value.
-func (s *store) SourcedCommitsWithoutCommittedAt(ctx context.Context, batchSize int) (_ []shared.SourcedCommits, err error) {
+func (s *store) SourcedCommitsWithoutCommittedAt(ctx context.Context, batchSize int) (_ []SourcedCommits, err error) {
 	ctx, _, endObservation := s.operations.sourcedCommitsWithoutCommittedAt.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("batchSize", batchSize),
 	}})
