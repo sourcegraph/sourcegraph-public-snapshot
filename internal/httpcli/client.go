@@ -41,12 +41,10 @@ type Doer interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
-type MockDoer struct {
-	DoFunc func(*http.Request) (*http.Response, error)
-}
+type MockDoer func(*http.Request) (*http.Response, error)
 
 func (m MockDoer) Do(req *http.Request) (*http.Response, error) {
-	return m.DoFunc(req)
+	return m(req)
 }
 
 // DoerFunc is function adapter that implements the http.RoundTripper

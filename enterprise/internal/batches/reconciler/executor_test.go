@@ -43,35 +43,35 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func mockDoer(req *http.Request) (*http.Response, error) {
+	return &http.Response{
+		StatusCode: http.StatusOK,
+		Body: io.NopCloser(bytes.NewReader([]byte(fmt.Sprintf(
+			// The actual changeset returned by the mock client is not important,
+			// as long as it satisfies the type for webhooks.gqlChangesetResponse
+			`{"data": {"node": {"id": "%s","externalID": "%s","batchChanges": {"nodes": [{"id": "%s"}]},"repository": {"id": "%s","name": "github.com/test/test"},"createdAt": "2023-02-25T00:53:50Z","updatedAt": "2023-02-25T00:53:50Z","title": "%s","body": "%s","author": {"name": "%s", "email": "%s"},"state": "%s","labels": [],"externalURL": {"url": "%s"},"forkNamespace": null,"reviewState": "%s","checkState": null,"error": null,"syncerError": null,"forkName": null,"ownedByBatchChange": null}}}`,
+			"123",
+			"123",
+			"123",
+			"123",
+			"title",
+			"body",
+			"author",
+			"email",
+			"OPEN",
+			"some-url",
+			"PENDING",
+		)))),
+	}, nil
+}
+
 func TestExecutor_ExecutePlan(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	orig := httpcli.InternalDoer
-	httpcli.InternalDoer = httpcli.MockDoer{
-		DoFunc: func(req *http.Request) (*http.Response, error) {
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Body: io.NopCloser(bytes.NewReader([]byte(fmt.Sprintf(
-					// The actual changeset returned by the mock client is not important,
-					// as long as it satisfies the type for webhooks.gqlChangesetResponse
-					`{"data": {"node": {"id": "%s","externalID": "%s","batchChanges": {"nodes": [{"id": "%s"}]},"repository": {"id": "%s","name": "github.com/test/test"},"createdAt": "2023-02-25T00:53:50Z","updatedAt": "2023-02-25T00:53:50Z","title": "%s","body": "%s","author": {"name": "%s", "email": "%s"},"state": "%s","labels": [],"externalURL": {"url": "%s"},"forkNamespace": null,"reviewState": "%s","checkState": null,"error": null,"syncerError": null,"forkName": null,"ownedByBatchChange": null}}}`,
-					"123",
-					"123",
-					"123",
-					"123",
-					"title",
-					"body",
-					"author",
-					"email",
-					"OPEN",
-					"some-url",
-					"PENDING",
-				)))),
-			}, nil
-		},
-	}
+	httpcli.InternalDoer = httpcli.DoerFunc(mockDoer)
 	t.Cleanup(func() { httpcli.InternalDoer = orig })
 
 	logger := logtest.Scoped(t)
