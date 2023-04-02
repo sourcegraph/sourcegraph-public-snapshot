@@ -20,6 +20,7 @@ import {
 } from './secret-storage'
 
 let eventLogger: EventLogger
+let serverEndpoint: string
 let vsCodeContext: vscode.ExtensionContext
 
 function getSecretStorage(context: vscode.ExtensionContext): SecretStorage {
@@ -45,7 +46,8 @@ export async function initializeEventLogger(): Promise<EventLogger> {
     const localStorage = new LocalStorage(context.globalState)
     const config = getConfiguration(vscode.workspace.getConfiguration())
     const accessToken = await getAccessToken(secretStorage)
-    const gqlAPIClient = new SourcegraphGraphQLAPIClient(sanitizeServerEndpoint(config.serverEndpoint), accessToken)
+    serverEndpoint = sanitizeServerEndpoint(config.serverEndpoint)
+    const gqlAPIClient = new SourcegraphGraphQLAPIClient(serverEndpoint, accessToken)
     const eventLogger = new EventLogger(localStorage, gqlAPIClient)
 
     return eventLogger
@@ -87,7 +89,11 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         vscode.commands.registerCommand('cody.toggle-enabled', async () => {
             const config = vscode.workspace.getConfiguration()
             await config.update('cody.enabled', !config.get('cody.enabled'), vscode.ConfigurationTarget.Global)
-            await eventLogger.log('CodyVSCodeExtension:codyToggleEnabled:clicked')
+            await eventLogger.log(
+                'CodyVSCodeExtension:codyToggleEnabled:clicked',
+                { serverEndpoint },
+                { serverEndpoint }
+            )
         }),
         // Access token
         vscode.commands.registerCommand('cody.set-access-token', async (args: any[]) => {
@@ -96,11 +102,19 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
                 return
             }
             await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, tokenInput)
-            await eventLogger.log('CodyVSCodeExtension:codySetAccessToken:clicked')
+            await eventLogger.log(
+                'CodyVSCodeExtension:codySetAccessToken:clicked',
+                { serverEndpoint },
+                { serverEndpoint }
+            )
         }),
         vscode.commands.registerCommand('cody.delete-access-token', async () => {
             await secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-            await eventLogger.log('CodyVSCodeExtension:codyDeleteAccessToken:clicked')
+            await eventLogger.log(
+                'CodyVSCodeExtension:codyDeleteAccessToken:clicked',
+                { serverEndpoint },
+                { serverEndpoint }
+            )
         }),
         // TOS
         vscode.commands.registerCommand('cody.accept-tos', version =>
@@ -111,32 +125,56 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         ),
         // Commands
         vscode.commands.registerCommand('cody.recipe.explain-code', async () => {
-            await eventLogger.log('CodyVSCodeExtension:askCodyExplainCode:clicked')
+            await eventLogger.log(
+                'CodyVSCodeExtension:askCodyExplainCode:clicked',
+                { serverEndpoint },
+                { serverEndpoint }
+            )
             await executeRecipe('explain-code-detailed')
         }),
         vscode.commands.registerCommand('cody.recipe.explain-code-high-level', async () => {
             await executeRecipe('explain-code-high-level')
-            await eventLogger.log('CodyVSCodeExtension:codyExplainCodeHighLevel:clicked')
+            await eventLogger.log(
+                'CodyVSCodeExtension:codyExplainCodeHighLevel:clicked',
+                { serverEndpoint },
+                { serverEndpoint }
+            )
         }),
         vscode.commands.registerCommand('cody.recipe.generate-unit-test', async () => {
             await executeRecipe('generate-unit-test')
-            await eventLogger.log('CodyVSCodeExtension:codyGenerateUnitTest:clicked')
+            await eventLogger.log(
+                'CodyVSCodeExtension:codyGenerateUnitTest:clicked',
+                { serverEndpoint },
+                { serverEndpoint }
+            )
         }),
         vscode.commands.registerCommand('cody.recipe.generate-docstring', async () => {
             await executeRecipe('generate-docstring')
-            await eventLogger.log('CodyVSCodeExtension:codyGenerateDocstring:clicked')
+            await eventLogger.log(
+                'CodyVSCodeExtension:codyGenerateDocstring:clicked',
+                { serverEndpoint },
+                { serverEndpoint }
+            )
         }),
         vscode.commands.registerCommand('cody.recipe.translate-to-language', async () => {
             await executeRecipe('translate-to-language')
-            await eventLogger.log('CodyVSCodeExtension:codyTranslateToLanguage:clicked')
+            await eventLogger.log(
+                'CodyVSCodeExtension:codyTranslateToLanguage:clicked',
+                { serverEndpoint },
+                { serverEndpoint }
+            )
         }),
         vscode.commands.registerCommand('cody.recipe.git-history', async () => {
             await executeRecipe('git-history')
-            await eventLogger.log('CodyVSCodeExtension:codyGitHistory:clicked')
+            await eventLogger.log('CodyVSCodeExtension:codyGitHistory:clicked', { serverEndpoint }, { serverEndpoint })
         }),
         vscode.commands.registerCommand('cody.recipe.improve-variable-names', async () => {
             await executeRecipe('improve-variable-names')
-            await eventLogger.log('CodyVSCodeExtension:codyImproveVariableNames:clicked')
+            await eventLogger.log(
+                'CodyVSCodeExtension:codyImproveVariableNames:clicked',
+                { serverEndpoint },
+                { serverEndpoint }
+            )
         })
     )
 
@@ -198,4 +236,4 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
     return extensionApi
 }
 
-export { eventLogger }
+export { eventLogger, serverEndpoint }

@@ -90,16 +90,26 @@ export class SourcegraphGraphQLAPIClient {
         publicArgument?: string | {}
     }): Promise<void | Error> {
         try {
-            await Promise.all([
-                this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(response => {
-                    extractDataOrError(response, data => {})
-                }),
-                this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
+            if (this.instanceUrl === this.dotcomUrl) {
+                await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
                     response => {
                         extractDataOrError(response, data => {})
                     }
-                ),
-            ])
+                )
+            } else {
+                await Promise.all([
+                    this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
+                        response => {
+                            extractDataOrError(response, data => {})
+                        }
+                    ),
+                    this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
+                        response => {
+                            extractDataOrError(response, data => {})
+                        }
+                    ),
+                ])
+            }
         } catch (error) {
             return error
         }
@@ -136,6 +146,7 @@ export class SourcegraphGraphQLAPIClient {
             .catch(() => new Error('error fetching Sourcegraph GraphQL API'))
     }
 
+    // make an anonymous request to the dotcom API
     private async fetchSourcegraphDotcomAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
         return fetch(`${this.dotcomUrl}/.api/graphql`, {
             method: 'POST',

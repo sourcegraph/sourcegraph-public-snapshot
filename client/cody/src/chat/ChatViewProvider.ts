@@ -15,7 +15,7 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { version as packageVersion } from '../../package.json'
 import { ChatHistory } from '../../webviews/utils/types'
-import { initializeEventLogger } from '../command/CommandsProvider'
+import { initializeEventLogger, serverEndpoint } from '../command/CommandsProvider'
 import { LocalStorage } from '../command/LocalStorageProvider'
 import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../command/secret-storage'
 import { updateConfiguration } from '../configuration'
@@ -125,14 +125,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 if (isValid) {
                     await updateConfiguration('serverEndpoint', message.serverEndpoint)
                     logger = await initializeEventLogger()
-                    await logger.log('CodyVSCodeExtension:login:clicked')
+                    await logger.log('CodyVSCodeExtension:login:clicked', { serverEndpoint }, { serverEndpoint })
                 }
                 await this.sendLogin(isValid)
                 break
             }
             case 'removeToken':
                 await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-                await logger.log('CodyVSCodeExtension:codyDeleteAccessToken:clicked')
+                await logger.log(
+                    'CodyVSCodeExtension:codyDeleteAccessToken:clicked',
+                    { serverEndpoint },
+                    { serverEndpoint }
+                )
                 break
             case 'removeHistory':
                 await this.localStorage.removeChatHistory()
@@ -148,7 +152,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     private async acceptTOS(version: string): Promise<void> {
         this.tosVersion = version
         await vscode.commands.executeCommand('cody.accept-tos', version)
-        await logger.log('CodyVSCodeExtension:acceptTerms:clicked')
+        await logger.log('CodyVSCodeExtension:acceptTerms:clicked', { serverEndpoint }, { serverEndpoint })
     }
 
     private createNewChatID(): void {
@@ -217,7 +221,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
         const prompt = await this.transcript.toPrompt()
         this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
-        await logger.log(`CodyVSCodeExtension:recipe:${recipe.getID()}:clicked`)
+        await logger.log(`CodyVSCodeExtension:recipe:${recipe.getID()}:clicked`, { serverEndpoint }, { serverEndpoint })
     }
 
     private async onBotMessageChange(text: string): Promise<void> {
@@ -350,7 +354,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     'Cody configuration has been updated.',
                     'Reload Window'
                 )
-                await logger.log('CodyVSCodeExtension:updateEndpoint:clicked')
+                await logger.log('CodyVSCodeExtension:updateEndpoint:clicked', { serverEndpoint }, { serverEndpoint })
                 if (action === 'Reload Window') {
                     await vscode.commands.executeCommand('workbench.action.reloadWindow')
                     logger = await initializeEventLogger()
