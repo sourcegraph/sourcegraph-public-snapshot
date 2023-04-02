@@ -13,7 +13,6 @@ import (
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
-	types "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	shared1 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	protocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -140,7 +139,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		InsertIndexesFunc: &StoreInsertIndexesFunc{
-			defaultHook: func(context.Context, []types.Index) (r0 []types.Index, r1 error) {
+			defaultHook: func(context.Context, []shared1.Index) (r0 []shared1.Index, r1 error) {
 				return
 			},
 		},
@@ -247,7 +246,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		InsertIndexesFunc: &StoreInsertIndexesFunc{
-			defaultHook: func(context.Context, []types.Index) ([]types.Index, error) {
+			defaultHook: func(context.Context, []shared1.Index) ([]shared1.Index, error) {
 				panic("unexpected invocation of MockStore.InsertIndexes")
 			},
 		},
@@ -1273,15 +1272,15 @@ func (c StoreInsertDependencyIndexingJobFuncCall) Results() []interface{} {
 // StoreInsertIndexesFunc describes the behavior when the InsertIndexes
 // method of the parent MockStore instance is invoked.
 type StoreInsertIndexesFunc struct {
-	defaultHook func(context.Context, []types.Index) ([]types.Index, error)
-	hooks       []func(context.Context, []types.Index) ([]types.Index, error)
+	defaultHook func(context.Context, []shared1.Index) ([]shared1.Index, error)
+	hooks       []func(context.Context, []shared1.Index) ([]shared1.Index, error)
 	history     []StoreInsertIndexesFuncCall
 	mutex       sync.Mutex
 }
 
 // InsertIndexes delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) InsertIndexes(v0 context.Context, v1 []types.Index) ([]types.Index, error) {
+func (m *MockStore) InsertIndexes(v0 context.Context, v1 []shared1.Index) ([]shared1.Index, error) {
 	r0, r1 := m.InsertIndexesFunc.nextHook()(v0, v1)
 	m.InsertIndexesFunc.appendCall(StoreInsertIndexesFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -1289,7 +1288,7 @@ func (m *MockStore) InsertIndexes(v0 context.Context, v1 []types.Index) ([]types
 
 // SetDefaultHook sets function that is called when the InsertIndexes method
 // of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreInsertIndexesFunc) SetDefaultHook(hook func(context.Context, []types.Index) ([]types.Index, error)) {
+func (f *StoreInsertIndexesFunc) SetDefaultHook(hook func(context.Context, []shared1.Index) ([]shared1.Index, error)) {
 	f.defaultHook = hook
 }
 
@@ -1297,7 +1296,7 @@ func (f *StoreInsertIndexesFunc) SetDefaultHook(hook func(context.Context, []typ
 // InsertIndexes method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreInsertIndexesFunc) PushHook(hook func(context.Context, []types.Index) ([]types.Index, error)) {
+func (f *StoreInsertIndexesFunc) PushHook(hook func(context.Context, []shared1.Index) ([]shared1.Index, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1305,20 +1304,20 @@ func (f *StoreInsertIndexesFunc) PushHook(hook func(context.Context, []types.Ind
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreInsertIndexesFunc) SetDefaultReturn(r0 []types.Index, r1 error) {
-	f.SetDefaultHook(func(context.Context, []types.Index) ([]types.Index, error) {
+func (f *StoreInsertIndexesFunc) SetDefaultReturn(r0 []shared1.Index, r1 error) {
+	f.SetDefaultHook(func(context.Context, []shared1.Index) ([]shared1.Index, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreInsertIndexesFunc) PushReturn(r0 []types.Index, r1 error) {
-	f.PushHook(func(context.Context, []types.Index) ([]types.Index, error) {
+func (f *StoreInsertIndexesFunc) PushReturn(r0 []shared1.Index, r1 error) {
+	f.PushHook(func(context.Context, []shared1.Index) ([]shared1.Index, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreInsertIndexesFunc) nextHook() func(context.Context, []types.Index) ([]types.Index, error) {
+func (f *StoreInsertIndexesFunc) nextHook() func(context.Context, []shared1.Index) ([]shared1.Index, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1356,10 +1355,10 @@ type StoreInsertIndexesFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 []types.Index
+	Arg1 []shared1.Index
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.Index
+	Result0 []shared1.Index
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

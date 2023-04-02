@@ -9,7 +9,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -131,7 +130,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 		}
 	}
 
-	var indexes []types.Index
+	var indexes []uploadsshared.Index
 	totalIndexCount := 0
 	if !skipIndexes {
 		if indexes, totalIndexCount, err = r.uploadSvc.GetIndexes(ctx, uploadsshared.GetIndexesOptions{
@@ -149,11 +148,11 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 
 	type pair struct {
 		upload *shared.Upload
-		index  *types.Index
+		index  *uploadsshared.Index
 	}
 	pairs := make([]pair, 0, pageSize)
 	addUpload := func(upload shared.Upload) { pairs = append(pairs, pair{&upload, nil}) }
-	addIndex := func(index types.Index) { pairs = append(pairs, pair{nil, &index}) }
+	addIndex := func(index uploadsshared.Index) { pairs = append(pairs, pair{nil, &index}) }
 
 	uIdx := 0
 	iIdx := 0

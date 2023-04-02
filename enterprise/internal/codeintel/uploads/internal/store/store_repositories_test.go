@@ -11,7 +11,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -238,19 +237,19 @@ func TestRepositoryIDsWithErrors(t *testing.T) {
 		shared.Upload{ID: 172, RepositoryID: 58, State: "failed", FinishedAt: &t3},
 	)
 	insertIndexes(t, db,
-		types.Index{ID: 201, RepositoryID: 51},                  // Repo 51 = success
-		types.Index{ID: 202, RepositoryID: 52, State: "failed"}, // Repo 52 = failing index
-		types.Index{ID: 203, RepositoryID: 53},                  // Repo 53 = success (+ failing upload)
+		uploadsshared.Index{ID: 201, RepositoryID: 51},                  // Repo 51 = success
+		uploadsshared.Index{ID: 202, RepositoryID: 52, State: "failed"}, // Repo 52 = failing index
+		uploadsshared.Index{ID: 203, RepositoryID: 53},                  // Repo 53 = success (+ failing upload)
 
 		// Repo 56 = multiple failures for same project
-		types.Index{ID: 250, RepositoryID: 56, State: "failed", FinishedAt: &t1},
-		types.Index{ID: 251, RepositoryID: 56, State: "failed", FinishedAt: &t2},
-		types.Index{ID: 252, RepositoryID: 56, State: "failed", FinishedAt: &t3},
+		uploadsshared.Index{ID: 250, RepositoryID: 56, State: "failed", FinishedAt: &t1},
+		uploadsshared.Index{ID: 251, RepositoryID: 56, State: "failed", FinishedAt: &t2},
+		uploadsshared.Index{ID: 252, RepositoryID: 56, State: "failed", FinishedAt: &t3},
 
 		// Repo 57 = multiple failures for different projects
-		types.Index{ID: 260, RepositoryID: 57, State: "failed", FinishedAt: &t1, Root: "proj1"},
-		types.Index{ID: 261, RepositoryID: 57, State: "failed", FinishedAt: &t2, Root: "proj2"},
-		types.Index{ID: 262, RepositoryID: 57, State: "failed", FinishedAt: &t3, Root: "proj3"},
+		uploadsshared.Index{ID: 260, RepositoryID: 57, State: "failed", FinishedAt: &t1, Root: "proj1"},
+		uploadsshared.Index{ID: 261, RepositoryID: 57, State: "failed", FinishedAt: &t2, Root: "proj2"},
+		uploadsshared.Index{ID: 262, RepositoryID: 57, State: "failed", FinishedAt: &t3, Root: "proj3"},
 	)
 
 	// Query page 1

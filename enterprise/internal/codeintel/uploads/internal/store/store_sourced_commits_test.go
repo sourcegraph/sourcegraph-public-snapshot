@@ -10,7 +10,7 @@ import (
 	logger "github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -35,11 +35,11 @@ func TestProcessStaleSourcedCommits(t *testing.T) {
 	now := time.Unix(1587396557, 0).UTC()
 
 	insertIndexes(t, db,
-		types.Index{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
-		types.Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2)},
-		types.Index{ID: 3, RepositoryID: 50, Commit: makeCommit(3)},
-		types.Index{ID: 4, RepositoryID: 51, Commit: makeCommit(6)},
-		types.Index{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
+		uploadsshared.Index{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
+		uploadsshared.Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2)},
+		uploadsshared.Index{ID: 3, RepositoryID: 50, Commit: makeCommit(3)},
+		uploadsshared.Index{ID: 4, RepositoryID: 51, Commit: makeCommit(6)},
+		uploadsshared.Index{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
 	)
 
 	const (

@@ -6,19 +6,19 @@ import (
 
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
 type UploadsService interface {
 	sharedresolvers.UploadsService
 
-	GetIndexes(ctx context.Context, opts uploadshared.GetIndexesOptions) (_ []types.Index, _ int, err error)
+	GetIndexes(ctx context.Context, opts uploadshared.GetIndexesOptions) (_ []uploadsshared.Index, _ int, err error)
 	GetUploads(ctx context.Context, opts uploadshared.GetUploadsOptions) (uploads []shared.Upload, totalCount int, err error)
 	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []shared.UploadLog, err error)
-	GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error)
+	GetIndexByID(ctx context.Context, id int) (_ uploadsshared.Index, _ bool, err error)
 	DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
 	DeleteIndexes(ctx context.Context, opts uploadshared.DeleteIndexesOptions) (err error)
 	ReindexIndexByID(ctx context.Context, id int) (err error)

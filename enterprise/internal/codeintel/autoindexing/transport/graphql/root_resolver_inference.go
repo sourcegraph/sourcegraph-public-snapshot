@@ -9,7 +9,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
-	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -123,15 +123,15 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 type autoIndexJobDescriptionResolver struct {
 	siteAdminChecker sharedresolvers.SiteAdminChecker
 	indexJob         config.IndexJob
-	steps            []codeinteltypes.DockerStep
+	steps            []uploadsshared.DockerStep
 }
 
 func newDescriptionResolvers(siteAdminChecker sharedresolvers.SiteAdminChecker, indexConfiguration *config.IndexConfiguration) ([]resolverstubs.AutoIndexJobDescriptionResolver, error) {
 	var resolvers []resolverstubs.AutoIndexJobDescriptionResolver
 	for _, indexJob := range indexConfiguration.IndexJobs {
-		var steps []codeinteltypes.DockerStep
+		var steps []uploadsshared.DockerStep
 		for _, step := range indexJob.Steps {
-			steps = append(steps, codeinteltypes.DockerStep{
+			steps = append(steps, uploadsshared.DockerStep{
 				Root:     step.Root,
 				Image:    step.Image,
 				Commands: step.Commands,
@@ -161,7 +161,7 @@ func (r *autoIndexJobDescriptionResolver) ComparisonKey() string {
 }
 
 func (r *autoIndexJobDescriptionResolver) Steps() resolverstubs.IndexStepsResolver {
-	return uploadsgraphql.NewIndexStepsResolver(r.siteAdminChecker, codeinteltypes.Index{
+	return uploadsgraphql.NewIndexStepsResolver(r.siteAdminChecker, uploadsshared.Index{
 		DockerSteps:      r.steps,
 		LocalSteps:       r.indexJob.LocalSteps,
 		Root:             r.indexJob.Root,

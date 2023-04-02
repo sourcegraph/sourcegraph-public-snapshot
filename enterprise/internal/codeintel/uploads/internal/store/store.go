@@ -6,7 +6,6 @@ import (
 
 	logger "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -23,9 +22,9 @@ type Store interface {
 	Transact(ctx context.Context) (Store, error)
 	Done(err error) error
 
-	GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) ([]types.Index, int, error)
-	GetIndexByID(ctx context.Context, id int) (types.Index, bool, error)
-	GetIndexesByIDs(ctx context.Context, ids ...int) ([]types.Index, error)
+	GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) ([]uploadsshared.Index, int, error)
+	GetIndexByID(ctx context.Context, id int) (uploadsshared.Index, bool, error)
+	GetIndexesByIDs(ctx context.Context, ids ...int) ([]uploadsshared.Index, error)
 	DeleteIndexByID(ctx context.Context, id int) (bool, error)
 	DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) error
 	ReindexIndexByID(ctx context.Context, id int) error

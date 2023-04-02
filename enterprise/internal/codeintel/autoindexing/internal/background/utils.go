@@ -6,7 +6,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -23,7 +23,7 @@ const StalledIndexMaxAge = time.Second * 25
 // "queued" on its next reset.
 const IndexMaxNumResets = 3
 
-var IndexWorkerStoreOptions = dbworkerstore.Options[types.Index]{
+var IndexWorkerStoreOptions = dbworkerstore.Options[uploadsshared.Index]{
 	Name:              "codeintel_index",
 	TableName:         "lsif_indexes",
 	ViewName:          "lsif_indexes_with_repository_name u",
@@ -60,7 +60,7 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf(`u.requested_envvars`),
 }
 
-func scanIndex(s dbutil.Scanner) (index types.Index, err error) {
+func scanIndex(s dbutil.Scanner) (index uploadsshared.Index, err error) {
 	var executionLogs []executor.ExecutionLogEntry
 	if err := s.Scan(
 		&index.ID,

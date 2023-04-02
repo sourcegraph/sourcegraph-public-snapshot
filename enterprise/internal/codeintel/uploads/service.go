@@ -9,7 +9,6 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	logger "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -225,15 +224,15 @@ func (s *Service) ReindexUploadByID(ctx context.Context, id int) error {
 	return s.store.ReindexUploadByID(ctx, id)
 }
 
-func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) ([]types.Index, int, error) {
+func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) ([]uploadsshared.Index, int, error) {
 	return s.store.GetIndexes(ctx, opts)
 }
 
-func (s *Service) GetIndexByID(ctx context.Context, id int) (types.Index, bool, error) {
+func (s *Service) GetIndexByID(ctx context.Context, id int) (uploadsshared.Index, bool, error) {
 	return s.store.GetIndexByID(ctx, id)
 }
 
-func (s *Service) GetIndexesByIDs(ctx context.Context, ids ...int) ([]types.Index, error) {
+func (s *Service) GetIndexesByIDs(ctx context.Context, ids ...int) ([]uploadsshared.Index, error) {
 	return s.store.GetIndexesByIDs(ctx, ids...)
 }
 

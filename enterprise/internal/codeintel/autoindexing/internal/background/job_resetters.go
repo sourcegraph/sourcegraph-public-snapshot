@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -13,7 +13,7 @@ import (
 // NewIndexResetter returns a background routine that periodically resets index
 // records that are marked as being processed but are no longer being processed
 // by a worker.
-func NewIndexResetter(logger log.Logger, interval time.Duration, store dbworkerstore.Store[types.Index], metrics *resetterMetrics) *dbworker.Resetter[types.Index] {
+func NewIndexResetter(logger log.Logger, interval time.Duration, store dbworkerstore.Store[uploadsshared.Index], metrics *resetterMetrics) *dbworker.Resetter[uploadsshared.Index] {
 	return dbworker.NewResetter(logger.Scoped("indexResetter", ""), store, dbworker.ResetterOptions{
 		Name:     "precise_code_intel_index_worker_resetter",
 		Interval: interval,
