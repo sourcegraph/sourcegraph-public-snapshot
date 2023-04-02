@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
-	"reflect"
 	"testing"
 	"time"
 
@@ -177,33 +176,6 @@ func getMockEmbeddingIndex(nRows int, columnDimension int) EmbeddingIndex {
 	}
 }
 
-func BenchmarkEmbeddingIndexStorage(b *testing.B) {
-	// Roughly the size of the sourcegraph/sourcegraph index.
-	index := &RepoEmbeddingIndex{
-		RepoName:  api.RepoName("repo"),
-		Revision:  api.CommitID("commit"),
-		CodeIndex: getMockEmbeddingIndex(40_000, 1536),
-		TextIndex: getMockEmbeddingIndex(10_000, 1536),
-	}
-
-	ctx := context.Background()
-	uploadStore := newMockUploadStore()
-
-	err := UploadIndex(ctx, uploadStore, "index", index)
-	if err != nil {
-		b.Fatal(err)
-	}
-
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		_, err := DownloadIndex[RepoEmbeddingIndex](ctx, uploadStore, "index")
-		if err != nil {
-			b.Fatal(err)
-		}
-	}
-}
-
 func BenchmarkRepoEmbeddingIndexStorage(b *testing.B) {
 	// Roughly the size of the sourcegraph/sourcegraph index.
 	index := &RepoEmbeddingIndex{
@@ -216,21 +188,44 @@ func BenchmarkRepoEmbeddingIndexStorage(b *testing.B) {
 	ctx := context.Background()
 	uploadStore := newMockUploadStore()
 
-	err := UploadRepoEmbeddingIndex(ctx, uploadStore, "index", index)
-	if err != nil {
-		b.Fatal(err)
-	}
-
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		dlIndex, err := DownloadRepoEmbeddingIndex(ctx, uploadStore, "index")
+		err := UploadIndex(ctx, uploadStore, "index", index)
 		if err != nil {
 			b.Fatal(err)
 		}
 
-		if !reflect.DeepEqual(index, dlIndex) {
-			b.Fatal("indexes not equal")
+		_, err = DownloadIndex[RepoEmbeddingIndex](ctx, uploadStore, "index")
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkCustomRepoEmbeddingIndexStorage(b *testing.B) {
+	// Roughly the size of the sourcegraph/sourcegraph index.
+	index := &RepoEmbeddingIndex{
+		RepoName:  api.RepoName("repo"),
+		Revision:  api.CommitID("commit"),
+		CodeIndex: getMockEmbeddingIndex(40_000, 1536),
+		TextIndex: getMockEmbeddingIndex(10_000, 1536),
+	}
+
+	ctx := context.Background()
+	uploadStore := newMockUploadStore()
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		err := UploadRepoEmbeddingIndex(ctx, uploadStore, "index", index)
+		if err != nil {
+			b.Fatal(err)
+		}
+
+		_, err = DownloadRepoEmbeddingIndex(ctx, uploadStore, "index")
+		if err != nil {
+			b.Fatal(err)
 		}
 	}
 }

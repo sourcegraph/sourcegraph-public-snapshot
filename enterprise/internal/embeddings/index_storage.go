@@ -36,6 +36,8 @@ func UploadIndex[T any](ctx context.Context, uploadStore uploadstore.Store, key 
 	return err
 }
 
+const EMBEDDINGS_CHUNK_SIZE = 10_000
+
 func encodeRepoEmbeddingIndex(enc *gob.Encoder, rei *RepoEmbeddingIndex, chunkSize int) error {
 	if err := enc.Encode(rei.RepoName); err != nil {
 		return err
@@ -46,10 +48,23 @@ func encodeRepoEmbeddingIndex(enc *gob.Encoder, rei *RepoEmbeddingIndex, chunkSi
 	}
 
 	for _, ei := range []EmbeddingIndex{rei.CodeIndex, rei.TextIndex} {
+		if err := enc.Encode(ei.ColumnDimension); err != nil {
+			return err
+		}
+
+		if err := enc.Encode(ei.RowMetadata); err != nil {
+			return err
+		}
+
+		if err := enc.Encode(ei.Ranks); err != nil {
+			return err
+		}
+
 		numChunks := (len(ei.Embeddings) + chunkSize - 1) / chunkSize
 		if err := enc.Encode(numChunks); err != nil {
 			return err
 		}
+
 		for i := 0; i < numChunks; i++ {
 			start := i * chunkSize
 			end := start + chunkSize
@@ -61,18 +76,6 @@ func encodeRepoEmbeddingIndex(enc *gob.Encoder, rei *RepoEmbeddingIndex, chunkSi
 			if err := enc.Encode(ei.Embeddings[start:end]); err != nil {
 				return err
 			}
-		}
-
-		if err := enc.Encode(ei.ColumnDimension); err != nil {
-			return err
-		}
-
-		if err := enc.Encode(ei.RowMetadata); err != nil {
-			return err
-		}
-
-		if err := enc.Encode(ei.Ranks); err != nil {
-			return err
 		}
 	}
 
@@ -91,19 +94,6 @@ func decodeRepoEmbeddingIndex(dec *gob.Decoder) (*RepoEmbeddingIndex, error) {
 	}
 
 	for _, ei := range []*EmbeddingIndex{&rei.CodeIndex, &rei.TextIndex} {
-		var numChunks int
-		if err := dec.Decode(&numChunks); err != nil {
-			return nil, err
-		}
-
-		for i := 0; i < numChunks; i++ {
-			var embeddingSlice []float32
-			if err := dec.Decode(&embeddingSlice); err != nil {
-				return nil, err
-			}
-			ei.Embeddings = append(ei.Embeddings, embeddingSlice...)
-		}
-
 		if err := dec.Decode(&ei.ColumnDimension); err != nil {
 			return nil, err
 		}
@@ -114,6 +104,20 @@ func decodeRepoEmbeddingIndex(dec *gob.Decoder) (*RepoEmbeddingIndex, error) {
 
 		if err := dec.Decode(&ei.Ranks); err != nil {
 			return nil, err
+		}
+
+		var numChunks int
+		if err := dec.Decode(&numChunks); err != nil {
+			return nil, err
+		}
+
+		ei.Embeddings = make([]float32, 0, numChunks*ei.ColumnDimension)
+		for i := 0; i < numChunks; i++ {
+			var embeddingSlice []float32
+			if err := dec.Decode(&embeddingSlice); err != nil {
+				return nil, err
+			}
+			ei.Embeddings = append(ei.Embeddings, embeddingSlice...)
 		}
 	}
 
@@ -129,7 +133,7 @@ func UploadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store
 		defer pw.Close()
 
 		enc := gob.NewEncoder(pw)
-		return encodeRepoEmbeddingIndex(enc, index, 1000)
+		return encodeRepoEmbeddingIndex(enc, index, EMBEDDINGS_CHUNK_SIZE)
 	})
 
 	eg.Go(func() error {
@@ -150,20 +154,13 @@ func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Sto
 
 	dec := gob.NewDecoder(file)
 
-	var rei *RepoEmbeddingIndex
-	// if decoding files, assume it is an old index and decode appropriately
-	if rei, err = decodeRepoEmbeddingIndex(dec); err != nil {
-		// close the existing file
-		file.Close()
-		// open a new file
-		file, err = uploadStore.Get(ctx, key)
-		if err != nil {
-			return nil, err
-		}
-		defer func() { err = errors.Append(err, file.Close()) }()
-		if err = gob.NewDecoder(file).Decode(&rei); err != nil {
-			return nil, err
-		}
+	rei, err := decodeRepoEmbeddingIndex(dec)
+	// If decoding fails, assume it is an old index and decode with a generic decoder.
+	if err != nil {
+		// Close the existing file.
+		_ = file.Close()
+
+		return DownloadIndex[RepoEmbeddingIndex](ctx, uploadStore, key)
 	}
 
 	return rei, err
