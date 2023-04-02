@@ -273,17 +273,3 @@ type UploadsWithRepositoryNamespace struct {
 	Indexer string
 	Uploads []Upload
 }
-
-//
-// TODO - move to ranking
-
-type RankingDefinitions struct {
-	UploadID     int
-	SymbolName   string
-	DocumentPath string
-}
-
-type RankingReferences struct {
-	UploadID    int
-	SymbolNames []string
-}
