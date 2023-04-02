@@ -30,7 +30,7 @@ import (
 )
 
 // executePlan executes the given reconciler plan.
-func executePlan(ctx context.Context, logger log.Logger, client gitserver.Client, sourcer sources.Sourcer, noSleepBeforeSync bool, tx *store.Store, plan *Plan) (err error, afterDone func(store *store.Store)) {
+func executePlan(ctx context.Context, logger log.Logger, client gitserver.Client, sourcer sources.Sourcer, noSleepBeforeSync bool, tx *store.Store, plan *Plan) (afterDone func(store *store.Store), err error) {
 	e := &executor{
 		client:            client,
 		logger:            logger.Scoped("executor", "An executor for a single Batch Changes reconciler plan"),
@@ -69,7 +69,7 @@ type executor struct {
 	remoteOnce sync.Once
 }
 
-func (e *executor) Run(ctx context.Context, plan *Plan) (err error, afterDone func(store *store.Store)) {
+func (e *executor) Run(ctx context.Context, plan *Plan) (afterDone func(store *store.Store), err error) {
 	if plan.Ops.IsNone() {
 		return nil, nil
 	}
@@ -80,7 +80,7 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error, afterDone fu
 	// requested, since it isn't useful outside of that context.
 	e.targetRepo, err = e.tx.Repos().Get(ctx, e.ch.RepoID)
 	if err != nil {
-		return errors.Wrap(err, "failed to load repository"), nil
+		return nil, errors.Wrap(err, "failed to load repository")
 	}
 
 	// If we are only pushing, without publishing or updating, we want to be sure to
@@ -99,25 +99,25 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error, afterDone fu
 			err = e.importChangeset(ctx)
 
 		case btypes.ReconcilerOperationPush:
-			err, afterDone = e.pushChangesetPatch(ctx, triggerUpdateWebhook)
+			afterDone, err = e.pushChangesetPatch(ctx, triggerUpdateWebhook)
 
 		case btypes.ReconcilerOperationPublish:
-			err, afterDone = e.publishChangeset(ctx, false)
+			afterDone, err = e.publishChangeset(ctx, false)
 
 		case btypes.ReconcilerOperationPublishDraft:
-			err, afterDone = e.publishChangeset(ctx, true)
+			afterDone, err = e.publishChangeset(ctx, true)
 
 		case btypes.ReconcilerOperationReopen:
-			err, afterDone = e.reopenChangeset(ctx)
+			afterDone, err = e.reopenChangeset(ctx)
 
 		case btypes.ReconcilerOperationUpdate:
-			err, afterDone = e.updateChangeset(ctx)
+			afterDone, err = e.updateChangeset(ctx)
 
 		case btypes.ReconcilerOperationUndraft:
-			err, afterDone = e.undraftChangeset(ctx)
+			afterDone, err = e.undraftChangeset(ctx)
 
 		case btypes.ReconcilerOperationClose:
-			err, afterDone = e.closeChangeset(ctx)
+			afterDone, err = e.closeChangeset(ctx)
 
 		case btypes.ReconcilerOperationSleep:
 			e.sleep()
@@ -136,32 +136,32 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error, afterDone fu
 		}
 
 		if err != nil {
-			return err, afterDone
+			return afterDone, err
 		}
 	}
 
 	events, err := e.ch.Events()
 	if err != nil {
 		log15.Error("Events", "err", err)
-		return errcode.MakeNonRetryable(err), afterDone
+		return afterDone, errcode.MakeNonRetryable(err)
 	}
 	state.SetDerivedState(ctx, e.tx.Repos(), e.client, e.ch, events)
 
 	if err := e.tx.UpsertChangesetEvents(ctx, events...); err != nil {
 		log15.Error("UpsertChangesetEvents", "err", err)
-		return err, afterDone
+		return afterDone, err
 	}
 
 	e.ch.PreviousFailureMessage = nil
 
-	return e.tx.UpdateChangeset(ctx, e.ch), afterDone
+	return afterDone, e.tx.UpdateChangeset(ctx, e.ch)
 }
 
 var errCannotPushToArchivedRepo = errcode.MakeNonRetryable(errors.New("cannot push to an archived repo"))
 
 // pushChangesetPatch creates the commits for the changeset on its codehost. If the option
 // triggerUpdateWebhook is set, it will also enqueue an update webhook for the changeset.
-func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook bool) (err error, afterDone func(store *store.Store)) {
+func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook bool) (afterDone func(store *store.Store), err error) {
 	if triggerUpdateWebhook {
 		afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdateError) }
 	}
@@ -173,33 +173,33 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 		// TODO: Do we need to check whether it's published or not?
 	})
 	if err != nil && err != store.ErrNoResults {
-		return err, afterDone
+		return afterDone, err
 	}
 
 	if existingSameBranch != nil && existingSameBranch.ID != e.ch.ID {
-		return errPublishSameBranch{}, afterDone
+		return afterDone, errPublishSameBranch{}
 	}
 
 	// Create a commit and push it
 	// Figure out which authenticator we should use to modify the changeset.
 	css, err := e.changesetSource(ctx)
 	if err != nil {
-		return err, afterDone
+		return afterDone, err
 	}
 	remoteRepo, err := e.remoteRepo(ctx)
 	if err != nil {
-		return err, afterDone
+		return afterDone, err
 	}
 
 	// Short circuit any attempt to push to an archived repo, since we can save
 	// gitserver the work (and it'll keep retrying).
 	if remoteRepo.Archived {
-		return errCannotPushToArchivedRepo, afterDone
+		return afterDone, errCannotPushToArchivedRepo
 	}
 
 	pushConf, err := css.GitserverPushConfig(remoteRepo)
 	if err != nil {
-		return err, afterDone
+		return afterDone, err
 	}
 	opts := buildCommitOpts(e.targetRepo, e.spec, pushConf)
 
@@ -209,9 +209,9 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 		if acss, ok := css.(sources.ArchivableChangesetSource); ok {
 			if acss.IsArchivedPushError(pce.CombinedOutput) {
 				if err := e.handleArchivedRepo(ctx); err != nil {
-					return errors.Wrap(err, "handling archived repo"), afterDone
+					return afterDone, errors.Wrap(err, "handling archived repo")
 				}
-				return errCannotPushToArchivedRepo, afterDone
+				return afterDone, errCannotPushToArchivedRepo
 			}
 		}
 	}
@@ -219,11 +219,11 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 	if triggerUpdateWebhook && err == nil {
 		afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdate) }
 	}
-	return err, afterDone
+	return afterDone, err
 }
 
 // publishChangeset creates the given changeset on its code host.
-func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err error, afterDone func(store *store.Store)) {
+func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (afterDone func(store *store.Store), err error) {
 	afterDoneUpdate := func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdateError) }
 	afterDonePublish := func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdateError) }
 
@@ -234,17 +234,17 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 		// At this point in time, we haven't yet established if the changeset has already
 		// been published or not. When in doubt, we record a more generic "update error"
 		// event.
-		return errors.Wrapf(err, "decorating body for changeset %d", e.ch.ID), afterDoneUpdate
+		return afterDoneUpdate, errors.Wrapf(err, "decorating body for changeset %d", e.ch.ID)
 	}
 
 	css, err := e.changesetSource(ctx)
 	if err != nil {
-		return err, afterDoneUpdate
+		return afterDoneUpdate, err
 	}
 
 	remoteRepo, err := e.remoteRepo(ctx)
 	if err != nil {
-		return err, afterDoneUpdate
+		return afterDoneUpdate, err
 	}
 
 	cs := &sources.Changeset{
@@ -262,14 +262,14 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 		// If the changeset shall be published in draft mode, make sure the changeset source implements DraftChangesetSource.
 		draftCss, err := sources.ToDraftChangesetSource(css)
 		if err != nil {
-			return err, afterDoneUpdate
+			return afterDoneUpdate, err
 		}
 		exists, err = draftCss.CreateDraftChangeset(ctx, cs)
 		if err != nil {
 			// For several code hosts, it's also impossible to tell if a changeset exists
 			// already or not, yet. Since we're here *intending* to publish, we'll just
 			// emit ChangesetPublish webhook events here.
-			return errors.Wrap(err, "creating draft changeset"), afterDonePublish
+			return afterDonePublish, errors.Wrap(err, "creating draft changeset")
 		}
 	} else {
 		// If we're running this method a second time, because we failed due to an
@@ -281,7 +281,7 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 			// For several code hosts, it's also impossible to tell if a changeset exists
 			// already or not, yet. Since we're here *intending* to publish, we'll just
 			// emit ChangesetPublish webhook events here.
-			return errors.Wrap(err, "creating changeset"), afterDonePublish
+			return afterDonePublish, errors.Wrap(err, "creating changeset")
 		}
 	}
 
@@ -289,14 +289,14 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 	if exists {
 		outdated, err = cs.IsOutdated()
 		if err != nil {
-			return errors.Wrap(err, "could not determine whether changeset needs update"), afterDonePublish
+			return afterDonePublish, errors.Wrap(err, "could not determine whether changeset needs update")
 		}
 
 		// If the changeset is actually outdated, we can be reasonably sure it already
 		// exists on the code host. Here, we'll emit a ChangesetUpdate webhook event.
 		if outdated {
 			if err := css.UpdateChangeset(ctx, cs); err != nil {
-				return errors.Wrap(err, "updating changeset"), afterDoneUpdate
+				return afterDoneUpdate, errors.Wrap(err, "updating changeset")
 			}
 		}
 	}
@@ -311,7 +311,7 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 		afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetPublish) }
 	}
 
-	return nil, afterDone
+	return afterDone, nil
 }
 
 func (e *executor) syncChangeset(ctx context.Context) error {
@@ -362,23 +362,23 @@ func (e *executor) loadChangeset(ctx context.Context) error {
 
 // updateChangeset updates the given changeset's attribute on the code host
 // according to its ChangesetSpec and the delta previously computed.
-func (e *executor) updateChangeset(ctx context.Context) (err error, afterDone func(store *store.Store)) {
+func (e *executor) updateChangeset(ctx context.Context) (afterDone func(store *store.Store), err error) {
 	afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdateError) }
 	// Depending on the changeset, we may want to add to the body (for example,
 	// to add a backlink to Sourcegraph).
 	body, err := e.decorateChangesetBody(ctx)
 	if err != nil {
-		return errors.Wrapf(err, "decorating body for changeset %d", e.ch.ID), afterDone
+		return afterDone, errors.Wrapf(err, "decorating body for changeset %d", e.ch.ID)
 	}
 
 	css, err := e.changesetSource(ctx)
 	if err != nil {
-		return err, afterDone
+		return afterDone, err
 	}
 
 	remoteRepo, err := e.remoteRepo(ctx)
 	if err != nil {
-		return err, afterDone
+		return afterDone, err
 	}
 
 	// We must construct the sources.Changeset after invoking changesetSource,
@@ -396,29 +396,29 @@ func (e *executor) updateChangeset(ctx context.Context) (err error, afterDone fu
 	if err := css.UpdateChangeset(ctx, &cs); err != nil {
 		if errcode.IsArchived(err) {
 			if err := e.handleArchivedRepo(ctx); err != nil {
-				return err, afterDone
+				return afterDone, err
 			}
 		} else {
-			return errors.Wrap(err, "updating changeset"), afterDone
+			return afterDone, errors.Wrap(err, "updating changeset")
 		}
 	}
 
 	afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdate) }
-	return nil, afterDone
+	return afterDone, nil
 }
 
 // reopenChangeset reopens the given changeset attribute on the code host.
-func (e *executor) reopenChangeset(ctx context.Context) (err error, afterDone func(store *store.Store)) {
+func (e *executor) reopenChangeset(ctx context.Context) (afterDone func(store *store.Store), err error) {
 	afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdateError) }
 
 	css, err := e.changesetSource(ctx)
 	if err != nil {
-		return err, afterDone
+		return afterDone, err
 	}
 
 	remoteRepo, err := e.remoteRepo(ctx)
 	if err != nil {
-		return err, afterDone
+		return afterDone, err
 	}
 
 	cs := sources.Changeset{
@@ -431,11 +431,11 @@ func (e *executor) reopenChangeset(ctx context.Context) (err error, afterDone fu
 		Changeset:  e.ch,
 	}
 	if err := css.ReopenChangeset(ctx, &cs); err != nil {
-		return errors.Wrap(err, "reopening changeset"), afterDone
+		return afterDone, errors.Wrap(err, "reopening changeset")
 	}
 
 	afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdate) }
-	return nil, afterDone
+	return afterDone, nil
 }
 
 func (e *executor) detachChangeset() {
@@ -469,7 +469,7 @@ func (e *executor) reattachChangeset() {
 }
 
 // closeChangeset closes the given changeset on its code host if its ExternalState is OPEN or DRAFT.
-func (e *executor) closeChangeset(ctx context.Context) (err error, afterDone func(store *store.Store)) {
+func (e *executor) closeChangeset(ctx context.Context) (afterDone func(store *store.Store), err error) {
 	afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdateError) }
 
 	e.ch.Closing = false
@@ -481,12 +481,12 @@ func (e *executor) closeChangeset(ctx context.Context) (err error, afterDone fun
 
 	css, err := e.changesetSource(ctx)
 	if err != nil {
-		return err, afterDone
+		return afterDone, err
 	}
 
 	remoteRepo, err := e.remoteRepo(ctx)
 	if err != nil {
-		return err, afterDone
+		return afterDone, err
 	}
 
 	cs := &sources.Changeset{
@@ -496,30 +496,30 @@ func (e *executor) closeChangeset(ctx context.Context) (err error, afterDone fun
 	}
 
 	if err := css.CloseChangeset(ctx, cs); err != nil {
-		return errors.Wrap(err, "closing changeset"), afterDone
+		return afterDone, errors.Wrap(err, "closing changeset")
 	}
 
 	afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetClose) }
-	return nil, afterDone
+	return afterDone, nil
 }
 
 // undraftChangeset marks the given changeset on its code host as ready for review.
-func (e *executor) undraftChangeset(ctx context.Context) (err error, afterDone func(store *store.Store)) {
+func (e *executor) undraftChangeset(ctx context.Context) (afterDone func(store *store.Store), err error) {
 	afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdateError) }
 
 	css, err := e.changesetSource(ctx)
 	if err != nil {
-		return err, afterDone
+		return afterDone, err
 	}
 
 	draftCss, err := sources.ToDraftChangesetSource(css)
 	if err != nil {
-		return err, afterDone
+		return afterDone, err
 	}
 
 	remoteRepo, err := e.remoteRepo(ctx)
 	if err != nil {
-		return nil, afterDone
+		return afterDone, nil
 	}
 
 	cs := &sources.Changeset{
@@ -533,11 +533,11 @@ func (e *executor) undraftChangeset(ctx context.Context) (err error, afterDone f
 	}
 
 	if err := draftCss.UndraftChangeset(ctx, cs); err != nil {
-		return errors.Wrap(err, "undrafting changeset"), afterDone
+		return afterDone, errors.Wrap(err, "undrafting changeset")
 	}
 
 	afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdate) }
-	return nil, afterDone
+	return afterDone, nil
 }
 
 // sleep sleeps for 3 seconds.

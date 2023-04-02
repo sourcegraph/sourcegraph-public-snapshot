@@ -692,7 +692,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			})
 
 			// Execute the plan
-			err, afterDone := executePlan(
+			afterDone, err := executePlan(
 				ctx,
 				logtest.Scoped(t),
 				state.MockClient,
@@ -855,7 +855,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	})
 	plan.Changeset = bt.BuildChangeset(bt.TestChangesetOpts{Repo: repo.ID})
 
-	err, _ := executePlan(ctx, logtest.Scoped(t), nil, stesting.NewFakeSourcer(nil, &stesting.FakeChangesetSource{}), true, bstore, plan)
+	_, err := executePlan(ctx, logtest.Scoped(t), nil, stesting.NewFakeSourcer(nil, &stesting.FakeChangesetSource{}), true, bstore, plan)
 	if err == nil {
 		t.Fatal("reconciler did not return error")
 	}
@@ -891,7 +891,7 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 
 		plan.AddOp(btypes.ReconcilerOperationClose)
 
-		err, _ := executePlan(ctx, logtest.Scoped(t), nil, sourcer, true, bstore, plan)
+		_, err := executePlan(ctx, logtest.Scoped(t), nil, sourcer, true, bstore, plan)
 		if err != ourError {
 			t.Fatalf("executePlan did not return expected error: %s", err)
 		}
@@ -904,7 +904,7 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 
 		plan.AddOp(btypes.ReconcilerOperationDetach)
 
-		err, _ := executePlan(ctx, logtest.Scoped(t), nil, sourcer, true, bstore, plan)
+		_, err := executePlan(ctx, logtest.Scoped(t), nil, sourcer, true, bstore, plan)
 		if err != nil {
 			t.Fatalf("executePlan returned unexpected error: %s", err)
 		}

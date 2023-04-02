@@ -55,7 +55,7 @@ func (b *bulkProcessorWorker) HandlerFunc() workerutil.HandlerFunc[*btypes.Chang
 		}
 
 		p := processor.New(logger, tx, b.sourcer)
-		err, afterDone := p.Process(ctx, job)
+		afterDone, err := p.Process(ctx, job)
 
 		defer func() {
 			err = tx.Done(err)

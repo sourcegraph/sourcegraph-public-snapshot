@@ -45,7 +45,7 @@ func (r *Reconciler) HandlerFunc() workerutil.HandlerFunc[*btypes.Changeset] {
 		}
 
 		ctx = metrics.ContextWithTask(ctx, "Batches.Reconciler")
-		err, afterDone := r.process(ctx, logger, tx, job)
+		afterDone, err := r.process(ctx, logger, tx, job)
 
 		defer func() {
 			err = tx.Done(err)
@@ -78,7 +78,7 @@ func (r *Reconciler) HandlerFunc() workerutil.HandlerFunc[*btypes.Changeset] {
 // If an error is returned, the workerutil.Worker that called this function
 // (through the HandlerFunc) will set the changeset's ReconcilerState to
 // errored and set its FailureMessage to the error.
-func (r *Reconciler) process(ctx context.Context, logger log.Logger, tx *store.Store, ch *btypes.Changeset) (err error, afterDone func(store *store.Store)) {
+func (r *Reconciler) process(ctx context.Context, logger log.Logger, tx *store.Store, ch *btypes.Changeset) (afterDone func(store *store.Store), err error) {
 	// Copy over and reset the previous error message.
 	if ch.FailureMessage != nil {
 		ch.PreviousFailureMessage = ch.FailureMessage
@@ -94,7 +94,7 @@ func (r *Reconciler) process(ctx context.Context, logger log.Logger, tx *store.S
 	// state. Current changeset is only (at the moment) used for previewing.
 	plan, err := DeterminePlan(prev, curr, nil, ch)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 
 	logger.Info("Reconciler processing changeset", log.Int64("changeset", ch.ID), log.String("operations", fmt.Sprintf("%+v", plan.Ops)))
