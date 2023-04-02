@@ -93,7 +93,7 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 		With(log.Int32("userID", uid))
 
 	if conf.CanSendEmail() {
-		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnFieldUpdate(ctx, userID, "created an access token"); err != nil {
+		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnFieldUpdate(ctx, userID, "an access token was created"); err != nil {
 			logger.Warn("Failed to send email to inform user of access token creation", log.Error(err))
 		}
 	}
@@ -161,7 +161,7 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 		With(log.Int32("userID", subjectUserID))
 
 	if conf.CanSendEmail() {
-		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnFieldUpdate(ctx, subjectUserID, "deleted an access token"); err != nil {
+		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnFieldUpdate(ctx, subjectUserID, "an access token was deleted"); err != nil {
 			logger.Warn("Failed to send email to inform user of access token deletion", log.Error(err))
 		}
 	}

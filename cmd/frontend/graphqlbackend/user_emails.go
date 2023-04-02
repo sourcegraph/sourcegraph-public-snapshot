@@ -116,7 +116,7 @@ func (r *schemaResolver) AddUserEmail(ctx context.Context, args *addUserEmailArg
 	}
 
 	if conf.CanSendEmail() {
-		if err := userEmails.SendUserEmailOnFieldUpdate(ctx, userID, "added an email"); err != nil {
+		if err := userEmails.SendUserEmailOnFieldUpdate(ctx, userID, "an email was added"); err != nil {
 			logger.Warn("Failed to send email to inform user of email addition", log.Error(err))
 		}
 	}

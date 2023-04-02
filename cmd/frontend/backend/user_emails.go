@@ -140,7 +140,7 @@ func (e *userEmails) Remove(ctx context.Context, userID int32, email string) err
 		}
 
 		if conf.CanSendEmail() {
-			if err := e.SendUserEmailOnFieldUpdate(ctx, userID, "removed an email"); err != nil {
+			if err := e.SendUserEmailOnFieldUpdate(ctx, userID, "An email was removed"); err != nil {
 				logger.Warn("Failed to send email to inform user of email removal", log.Error(err))
 			}
 		}
@@ -176,7 +176,7 @@ func (e *userEmails) SetPrimaryEmail(ctx context.Context, userID int32, email st
 	}
 
 	if conf.CanSendEmail() {
-		if err := e.SendUserEmailOnFieldUpdate(ctx, userID, "changed primary email"); err != nil {
+		if err := e.SendUserEmailOnFieldUpdate(ctx, userID, "A primary email was changed"); err != nil {
 			logger.Warn("Failed to send email to inform user of primary address change", log.Error(err))
 		}
 	}
@@ -311,18 +311,28 @@ func (e *userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, id int32, c
 }
 
 var updateAccountEmailTemplate = txemail.MustValidate(txtypes.Templates{
-	Subject: `Update to your Sourcegraph account ({{.Host}})`,
+	Subject: `({{.Change}}) on your Sourcegraph account ({{.Host}})`,
 	Text: `
-Somebody (likely you) {{.Change}} for the user {{.Username}} on Sourcegraph ({{.Host}}).
+Hey there,
 
-If this was not you please change your password immediately.
+{{.Change}} for the user {{.Username}} on Sourcegraph ({{.Host}}).
+
+If this was you, then no action is required.
+
+If you did not take this action, please change your password immediately.
 `,
 	HTML: `
 <p>
-Somebody (likely you) <strong>{{.Change}}</strong> for the user <strong>{{.Username}}</strong> on Sourcegraph ({{.Host}}).
+Hey there,
 </p>
 
-<p><strong>If this was not you please change your password immediately.</strong></p>
+<p>
+<strong>{{.Change}}</strong> for the user <strong>{{.Username}}</strong> on Sourcegraph ({{.Host}}).
+</p>
+
+<p>If this was you, then no action is required.</p>
+
+<p>If you <strong>did not</strong> take this action, please change your password immediately.</p>
 `,
 })
 

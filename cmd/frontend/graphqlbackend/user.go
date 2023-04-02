@@ -365,7 +365,7 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 		With(log.Int32("userID", user.ID))
 
 	if conf.CanSendEmail() {
-		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnFieldUpdate(ctx, user.ID, "updated the password"); err != nil {
+		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnFieldUpdate(ctx, user.ID, "the password was updated"); err != nil {
 			logger.Warn("Failed to send email to inform user of password update", log.Error(err))
 		}
 	}
@@ -393,7 +393,7 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 		With(log.Int32("userID", user.ID))
 
 	if conf.CanSendEmail() {
-		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnFieldUpdate(ctx, user.ID, "created a password"); err != nil {
+		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnFieldUpdate(ctx, user.ID, "a password was created"); err != nil {
 			logger.Warn("Failed to send email to inform user of password creation", log.Error(err))
 		}
 	}

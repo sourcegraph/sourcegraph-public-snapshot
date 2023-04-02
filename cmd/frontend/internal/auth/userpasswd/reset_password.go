@@ -165,7 +165,7 @@ func HandleResetPasswordCode(logger log.Logger, db database.DB) http.HandlerFunc
 		}
 
 		if conf.CanSendEmail() {
-			if err := backend.NewUserEmailsService(db, logger).SendUserEmailOnFieldUpdate(ctx, params.UserID, "reset the password"); err != nil {
+			if err := backend.NewUserEmailsService(db, logger).SendUserEmailOnFieldUpdate(ctx, params.UserID, "the password was reset"); err != nil {
 				logger.Warn("Failed to send email to inform user of password reset", log.Error(err))
 			}
 		}
