@@ -1129,7 +1129,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				return "", nil
 			})
 
-			err, _ := executePlan(
+			_, err := executePlan(
 				actor.WithActor(ctx, actor.FromUser(tt.user.ID)),
 				logtest.Scoped(t),
 				gitserverClient,
