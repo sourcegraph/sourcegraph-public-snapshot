@@ -161,7 +161,7 @@
 }
 
 .context-files-toggle-icon > i {
-    font-size: cal(var(--vscode-editor-font-size) * 0.5) !important;
+    font-size: calc(var(--vscode-editor-font-size) * 0.5) !important;
 }
 
 .context-files-list-title {
@@ -210,11 +210,8 @@
     border: none;
 }
 
-.link-button {
-    background: none;
-    border: none;
-    color: var(--vscode-textLink-foreground);
-    cursor: pointer;
-    font-size: inherit;
-    text-decoration: underline;
+.chat-input {
+    outline: none;
+    color: var(--vscode-input-foreground);
+    background-color: var(--vscode-input-background);
 }
