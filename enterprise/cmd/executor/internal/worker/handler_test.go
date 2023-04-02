@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
-	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -42,7 +41,7 @@ func TestHandle(t *testing.T) {
 		VirtualMachineFiles: map[string]types.VirtualMachineFile{
 			"test.txt": {Content: []byte("<file payload>")},
 		},
-		DockerSteps: []uploadsshared.DockerStep{
+		DockerSteps: []types.DockerStep{
 			{
 				Image:    "go",
 				Commands: []string{"go", "mod", "install"},
@@ -153,7 +152,7 @@ func TestHandle_WorkspaceFile(t *testing.T) {
 			"test.txt":  {Content: []byte("<file payload>")},
 			"script.sh": {Bucket: "batch-changes", Key: "123/abc", ModifiedAt: virtualFileModifiedAt},
 		},
-		DockerSteps: []uploadsshared.DockerStep{
+		DockerSteps: []types.DockerStep{
 			{
 				Image:    "go",
 				Commands: []string{"go", "mod", "install"},
