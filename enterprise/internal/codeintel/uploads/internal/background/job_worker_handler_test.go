@@ -18,8 +18,8 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -35,7 +35,7 @@ import (
 func TestHandle(t *testing.T) {
 	setupRepoMocks(t)
 
-	upload := codeinteltypes.Upload{
+	upload := shared.Upload{
 		ID:           42,
 		Root:         "",
 		Commit:       "deadbeef",
@@ -44,7 +44,7 @@ func TestHandle(t *testing.T) {
 		ContentType:  "application/x-protobuf+scip",
 	}
 
-	mockWorkerStore := NewMockWorkerStore[codeinteltypes.Upload]()
+	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
 	mockDBStore := NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
 	mockLSIFStore := NewMockLsifStore()
@@ -252,7 +252,7 @@ func TestHandle(t *testing.T) {
 
 			case "template/src/util/graphql.ts":
 				foundDocument2 = true
-				if diff := cmp.Diff(testedInvertedRangeIndex, codeinteltypes.ExtractSymbolIndexes(call.Arg2)); diff != "" {
+				if diff := cmp.Diff(testedInvertedRangeIndex, shared.ExtractSymbolIndexes(call.Arg2)); diff != "" {
 					t.Errorf("unexpected inverted range index (-want +got):\n%s", diff)
 				}
 			}
@@ -269,7 +269,7 @@ func TestHandle(t *testing.T) {
 func TestHandleError(t *testing.T) {
 	setupRepoMocks(t)
 
-	upload := codeinteltypes.Upload{
+	upload := shared.Upload{
 		ID:           42,
 		Root:         "root/",
 		Commit:       "deadbeef",
@@ -278,7 +278,7 @@ func TestHandleError(t *testing.T) {
 		ContentType:  "application/x-protobuf+scip",
 	}
 
-	mockWorkerStore := NewMockWorkerStore[codeinteltypes.Upload]()
+	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
 	mockDBStore := NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
 	mockLSIFStore := NewMockLsifStore()
@@ -334,7 +334,7 @@ func TestHandleError(t *testing.T) {
 }
 
 func TestHandleCloneInProgress(t *testing.T) {
-	upload := codeinteltypes.Upload{
+	upload := shared.Upload{
 		ID:           42,
 		Root:         "root/",
 		Commit:       "deadbeef",
@@ -343,7 +343,7 @@ func TestHandleCloneInProgress(t *testing.T) {
 		ContentType:  "application/x-protobuf+scip",
 	}
 
-	mockWorkerStore := NewMockWorkerStore[codeinteltypes.Upload]()
+	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
 	mockDBStore := NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()

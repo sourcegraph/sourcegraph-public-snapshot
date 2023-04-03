@@ -1,0 +1,219 @@
+:root {
+    font-family: system-ui, sans-serif;
+    --vscode-icon-foreground: #000000;
+    --vscode-input-placeholderForeground: #6c6c6c;
+    --vscode-editor-background: #ffffff;
+    --vscode-input-border: #000000;
+    --human-bubble-color: #565eb9;
+    --human-text-color: #e1e1e1;
+    --bot-bubble-color: #dddddd;
+}
+
+:global(.inner-container) {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+:global(.non-transcript-container), :global(.transcript-container) {
+    flex: 1;
+}
+
+.terms {
+    margin-top: 1rem;
+    font-size: 0.85rem;
+}
+.terms summary {
+    color: GrayText;
+    cursor: pointer;
+    font-size: 0.75rem;
+}
+
+:global(.bubble) {
+    min-width: 0;
+    max-width: min(80%, 800px);
+}
+
+:global(.bubble-container) {
+    padding: 0;
+}
+
+:global(.bubble-footer) {
+    flex-direction: row;
+    margin-top: 0.5em;
+    color: GrayText;
+    align-content: center;
+    justify-content: space-between;
+}
+
+:global(.bubble-footer-timestamp) {
+    margin-top: 0.5em;
+    align-self: center;
+}
+
+:global(.human-bubble-footer) :global(.bubble-footer-timestamp) {
+    display: flex;
+    justify-content: flex-end;
+}
+
+:global(.bot-bubble-footer) {
+    display: flex;
+}
+
+:global(.bubble-content) {
+    line-height: 150%;
+    padding: 16px;
+    border-top-right-radius: 16px;
+    border-top-left-radius: 16px;
+    word-break: break-word;
+}
+
+:global(.bubble-content) *:first-child {
+    margin-top: 0 !important;
+}
+
+:global(.bubble-content) *:last-child {
+    margin-bottom: 0 !important;
+}
+
+:global(.bubble-content) pre {
+    padding: 8px;
+    border-radius: 8px;
+    overflow-x: auto;
+}
+
+:global(.bubble-content) pre,
+:global(.bubble-content) span > code,
+:global(.bubble-content) p > code {
+    /* Our syntax highlighter emits colors intended for dark backgrounds only. */
+    background-color: #444444;
+}
+
+:global(.bubble-content) span > code,
+:global(.bubble-content) p > code {
+    padding: 0px 2px;
+    margin: 0px -2px;
+    display: inline-block;
+}
+
+
+:global(.bubble-content) pre,
+:global(.bubble-content) code {
+    background-color: #444444;
+    color: white;
+}
+
+:global(.human-bubble-content) {
+    background-color: var(--human-bubble-color);
+    color: var(--human-text-color);
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 16px;
+}
+
+:global(.bot-bubble-content) {
+    background-color: #cccccc;
+    color: black;
+    border-bottom-right-radius: 16px;
+    border-bottom-left-radius: 0;
+}
+
+:global(.bubble-row) {
+    display: flex;
+    padding: 1rem;
+}
+
+:global(.bubble-row:first-child) {
+    margin-top: auto;
+}
+
+:global(.human-bubble-row) {
+    justify-content: end;
+}
+
+:global(.bot-bubble-row) {
+    justify-content: start;
+}
+
+@keyframes blink {
+    50% {
+        background-color: transparent;
+    }
+}
+
+:global(.bubble-loader) {
+    display: flex;
+    justify-content: space-between;
+}
+
+:global(.bubble-loader-dot) {
+    animation: 1s blink infinite;
+    width: 10px;
+    height: 10px;
+    border-radius: 0.5rem;
+    background-color: GrayText;
+}
+
+:global(.bubble-loader-dot):nth-child(2) {
+    animation-delay: 250ms;
+}
+
+:global(.bubble-loader-dot):nth-child(3) {
+    animation-delay: 500ms;
+}
+
+:global(.submit-container) {
+    cursor: pointer;
+}
+
+:global(.input-row) {
+    display: flex;
+    padding: 1rem;
+    align-items: flex-start;
+    position: sticky;
+    bottom: 0;
+    background-color: Canvas;
+    border-top: solid 1px ButtonBorder;
+}
+
+:global(.chat-input) {
+    height: 10vh;
+    flex: 1;
+    resize: none;
+    border-radius: 14px;
+    box-sizing: border-box;
+    border: 1px solid ButtonBorder;
+    min-height: 10vh;
+    max-height: 30vh;
+    padding: 20px;
+    font-family: system-ui, sans-serif;
+    font-size: 16px;
+}
+
+:global(.submit-button) {
+    margin: 16px;
+    padding: 5px 10px 2px 12px;
+    bottom: 0;
+    right: 0;
+    position: absolute;
+    background: none;
+    border: solid 1px ButtonBorder;
+    border-radius: 10px;
+    fill: ButtonText;
+}
+
+:global(.chat-input) {
+    color: FieldText;
+    background-color: #222;
+}
+
+:global(.chat-code-block-container) {
+    position: relative;
+}
+
+:global(.chat-code-block-copy-btn) {
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+
+

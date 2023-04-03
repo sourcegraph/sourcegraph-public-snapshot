@@ -38,7 +38,6 @@
     "vscode:prepublish": "scripts/check-rg.sh",
     "vsce:package": "pnpm --silent build && vsce package --no-dependencies -o dist/cody.vsix",
     "vsce:prerelease": "pnpm --silent build && vsce package patch --pre-release --no-dependencies -o dist/cody.vsix",
-    "prerelease": "pnpm run download-rg && pnpm run vsce:package",
     "release": "ts-node ./scripts/release.ts",
     "watch": "concurrently \"pnpm watch:esbuild\" \"pnpm watch:webview\"",
     "watch:esbuild": "pnpm esbuild --sourcemap --watch",
@@ -237,6 +236,7 @@
   },
   "dependencies": {
     "openai": "^3.2.1",
-    "@sourcegraph/cody-shared": "workspace:*"
+    "@sourcegraph/cody-shared": "workspace:*",
+    "@sourcegraph/cody-ui": "workspace:*"
   }
 }

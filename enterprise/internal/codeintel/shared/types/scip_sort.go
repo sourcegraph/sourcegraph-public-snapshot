@@ -6,6 +6,9 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 )
 
+//
+// TODO - move to SCIP repo
+
 // FindSymbol returns the symbol with the given name in the given document. If there is no symbol by
 // that name, this function returns nil.
 func FindSymbol(document *scip.Document, symbolName string) *scip.SymbolInformation {

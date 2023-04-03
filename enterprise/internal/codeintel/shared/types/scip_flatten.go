@@ -2,6 +2,9 @@ package types
 
 import "github.com/sourcegraph/scip/bindings/go/scip"
 
+//
+// TODO - move to SCIP repo
+
 // FlattenDocuments merges elements of the given slice with the same relative path. This allows us to make
 // the assumption post-canonicalization that each index has one representation of a given document path in
 // the database. This function returns a new slice.
