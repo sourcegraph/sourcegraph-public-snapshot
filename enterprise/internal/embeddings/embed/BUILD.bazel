@@ -15,6 +15,7 @@ go_library(
         "//enterprise/internal/paths",
         "//internal/api",
         "//internal/binary",
+        "//internal/byteutils",
         "//internal/codeintel/types",
         "//internal/conf",
         "//internal/httpcli",

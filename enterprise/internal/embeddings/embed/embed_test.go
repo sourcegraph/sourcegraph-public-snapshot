@@ -1,14 +1,15 @@
 package embed
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/split"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -72,32 +73,35 @@ func TestEmbedRepo(t *testing.T) {
 		"binary.bin":       0.7,
 	}
 
-	getDocumentRanks := func(ctx context.Context, repoName string) (types.RepoPathRanks, error) {
-		return types.RepoPathRanks{
+	t.Run("no files", func(t *testing.T) {
+		index, err := EmbedRepo(ctx, repoName, revision, client, splitOptions, func(f func(fileName string, fileReader io.Reader) error) error {
+			return nil
+		}, func(f func(fileName string, fileReader io.Reader) error) error {
+			return nil
+		}, types.RepoPathRanks{
 			MeanRank: 0,
 			Paths:    mockRanks,
-		}, nil
-	}
-
-	readFile := func(fileName string) ([]byte, error) {
-		content, ok := mockFiles[fileName]
-		if !ok {
-			return nil, errors.Newf("file %s not found", fileName)
-		}
-		return content, nil
-	}
-
-	excludedGlobPatterns := GetDefaultExcludedFilePathPatterns()
-
-	t.Run("no files", func(t *testing.T) {
-		index, err := EmbedRepo(ctx, repoName, revision, []string{}, excludedGlobPatterns, client, splitOptions, readFile, getDocumentRanks)
+		})
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 0)
 		require.Len(t, index.TextIndex.Embeddings, 0)
 	})
 
 	t.Run("code files only", func(t *testing.T) {
-		index, err := EmbedRepo(ctx, repoName, revision, []string{"a.go"}, excludedGlobPatterns, client, splitOptions, readFile, getDocumentRanks)
+		index, err := EmbedRepo(ctx, repoName, revision, client, splitOptions,
+			func(f func(fileName string, fileReader io.Reader) error) error {
+				if err := f("a.go", bytes.NewReader(mockFiles["a.go"])); err != nil {
+					return err
+				}
+				return nil
+			},
+			func(f func(fileName string, fileReader io.Reader) error) error {
+				return nil
+			},
+			types.RepoPathRanks{
+				MeanRank: 0,
+				Paths:    mockRanks,
+			})
 		require.NoError(t, err)
 		require.Len(t, index.TextIndex.Embeddings, 0)
 		require.Len(t, index.CodeIndex.Embeddings, 6)
@@ -106,7 +110,20 @@ func TestEmbedRepo(t *testing.T) {
 	})
 
 	t.Run("text files only", func(t *testing.T) {
-		index, err := EmbedRepo(ctx, repoName, revision, []string{"b.md"}, excludedGlobPatterns, client, splitOptions, readFile, getDocumentRanks)
+		index, err := EmbedRepo(ctx, repoName, revision, client, splitOptions,
+			func(f func(fileName string, fileReader io.Reader) error) error {
+				return nil
+			},
+			func(f func(fileName string, fileReader io.Reader) error) error {
+				if err := f("b.md", bytes.NewReader(mockFiles["b.md"])); err != nil {
+					return err
+				}
+				return nil
+			},
+			types.RepoPathRanks{
+				MeanRank: 0,
+				Paths:    mockRanks,
+			})
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 0)
 		require.Len(t, index.TextIndex.Embeddings, 6)
@@ -116,7 +133,31 @@ func TestEmbedRepo(t *testing.T) {
 
 	t.Run("mixed code and text files", func(t *testing.T) {
 		files := []string{"a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin"}
-		index, err := EmbedRepo(ctx, repoName, revision, files, excludedGlobPatterns, client, splitOptions, readFile, getDocumentRanks)
+		index, err := EmbedRepo(ctx, repoName, revision, client, splitOptions,
+			func(f func(fileName string, fileReader io.Reader) error) error {
+				for _, file := range files {
+					if !IsValidTextFile(file) {
+						if err := f(file, bytes.NewReader(mockFiles[file])); err != nil {
+							return err
+						}
+					}
+				}
+				return nil
+			},
+			func(f func(fileName string, fileReader io.Reader) error) error {
+				for _, file := range files {
+					if IsValidTextFile(file) {
+						if err := f(file, bytes.NewReader(mockFiles[file])); err != nil {
+							return err
+						}
+					}
+				}
+				return nil
+			},
+			types.RepoPathRanks{
+				MeanRank: 0,
+				Paths:    mockRanks,
+			})
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 15)
 		require.Len(t, index.CodeIndex.RowMetadata, 5)
