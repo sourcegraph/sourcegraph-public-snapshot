@@ -380,7 +380,7 @@ func processDocument(
 		return rangeIDs
 	}
 
-	scipDocument := types.CanonicalizeDocument(scip.ConvertLSIFDocument(
+	scipDocument := ogscip.CanonicalizeDocument(scip.ConvertLSIFDocument(
 		uploadID,
 		targetRangeFetcher,
 		indexerName,
