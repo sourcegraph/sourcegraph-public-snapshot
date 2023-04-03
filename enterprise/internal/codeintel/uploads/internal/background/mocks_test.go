@@ -13,10 +13,8 @@ import (
 
 	sqlf "github.com/keegancsmith/sqlf"
 	scip "github.com/sourcegraph/scip/bindings/go/scip"
-	shared2 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	policies "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
-	types "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	shared1 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -25,7 +23,7 @@ import (
 	executor "github.com/sourcegraph/sourcegraph/internal/executor"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	observation "github.com/sourcegraph/sourcegraph/internal/observation"
-	types1 "github.com/sourcegraph/sourcegraph/internal/types"
+	types "github.com/sourcegraph/sourcegraph/internal/types"
 	workerutil "github.com/sourcegraph/sourcegraph/internal/workerutil"
 	store1 "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -46,7 +44,7 @@ type MockPolicyMatcher struct {
 func NewMockPolicyMatcher() *MockPolicyMatcher {
 	return &MockPolicyMatcher{
 		CommitsDescribedByPolicyFunc: &PolicyMatcherCommitsDescribedByPolicyFunc{
-			defaultHook: func(context.Context, int, api.RepoName, []types.ConfigurationPolicy, time.Time, ...string) (r0 map[string][]policies.PolicyMatch, r1 error) {
+			defaultHook: func(context.Context, int, api.RepoName, []shared.ConfigurationPolicy, time.Time, ...string) (r0 map[string][]policies.PolicyMatch, r1 error) {
 				return
 			},
 		},
@@ -58,7 +56,7 @@ func NewMockPolicyMatcher() *MockPolicyMatcher {
 func NewStrictMockPolicyMatcher() *MockPolicyMatcher {
 	return &MockPolicyMatcher{
 		CommitsDescribedByPolicyFunc: &PolicyMatcherCommitsDescribedByPolicyFunc{
-			defaultHook: func(context.Context, int, api.RepoName, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error) {
+			defaultHook: func(context.Context, int, api.RepoName, []shared.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error) {
 				panic("unexpected invocation of MockPolicyMatcher.CommitsDescribedByPolicy")
 			},
 		},
@@ -80,15 +78,15 @@ func NewMockPolicyMatcherFrom(i PolicyMatcher) *MockPolicyMatcher {
 // CommitsDescribedByPolicy method of the parent MockPolicyMatcher instance
 // is invoked.
 type PolicyMatcherCommitsDescribedByPolicyFunc struct {
-	defaultHook func(context.Context, int, api.RepoName, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error)
-	hooks       []func(context.Context, int, api.RepoName, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error)
+	defaultHook func(context.Context, int, api.RepoName, []shared.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error)
+	hooks       []func(context.Context, int, api.RepoName, []shared.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error)
 	history     []PolicyMatcherCommitsDescribedByPolicyFuncCall
 	mutex       sync.Mutex
 }
 
 // CommitsDescribedByPolicy delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockPolicyMatcher) CommitsDescribedByPolicy(v0 context.Context, v1 int, v2 api.RepoName, v3 []types.ConfigurationPolicy, v4 time.Time, v5 ...string) (map[string][]policies.PolicyMatch, error) {
+func (m *MockPolicyMatcher) CommitsDescribedByPolicy(v0 context.Context, v1 int, v2 api.RepoName, v3 []shared.ConfigurationPolicy, v4 time.Time, v5 ...string) (map[string][]policies.PolicyMatch, error) {
 	r0, r1 := m.CommitsDescribedByPolicyFunc.nextHook()(v0, v1, v2, v3, v4, v5...)
 	m.CommitsDescribedByPolicyFunc.appendCall(PolicyMatcherCommitsDescribedByPolicyFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
 	return r0, r1
@@ -97,7 +95,7 @@ func (m *MockPolicyMatcher) CommitsDescribedByPolicy(v0 context.Context, v1 int,
 // SetDefaultHook sets function that is called when the
 // CommitsDescribedByPolicy method of the parent MockPolicyMatcher instance
 // is invoked and the hook queue is empty.
-func (f *PolicyMatcherCommitsDescribedByPolicyFunc) SetDefaultHook(hook func(context.Context, int, api.RepoName, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error)) {
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) SetDefaultHook(hook func(context.Context, int, api.RepoName, []shared.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error)) {
 	f.defaultHook = hook
 }
 
@@ -106,7 +104,7 @@ func (f *PolicyMatcherCommitsDescribedByPolicyFunc) SetDefaultHook(hook func(con
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *PolicyMatcherCommitsDescribedByPolicyFunc) PushHook(hook func(context.Context, int, api.RepoName, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error)) {
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) PushHook(hook func(context.Context, int, api.RepoName, []shared.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -115,19 +113,19 @@ func (f *PolicyMatcherCommitsDescribedByPolicyFunc) PushHook(hook func(context.C
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *PolicyMatcherCommitsDescribedByPolicyFunc) SetDefaultReturn(r0 map[string][]policies.PolicyMatch, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, api.RepoName, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error) {
+	f.SetDefaultHook(func(context.Context, int, api.RepoName, []shared.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *PolicyMatcherCommitsDescribedByPolicyFunc) PushReturn(r0 map[string][]policies.PolicyMatch, r1 error) {
-	f.PushHook(func(context.Context, int, api.RepoName, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error) {
+	f.PushHook(func(context.Context, int, api.RepoName, []shared.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error) {
 		return r0, r1
 	})
 }
 
-func (f *PolicyMatcherCommitsDescribedByPolicyFunc) nextHook() func(context.Context, int, api.RepoName, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error) {
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) nextHook() func(context.Context, int, api.RepoName, []shared.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -173,7 +171,7 @@ type PolicyMatcherCommitsDescribedByPolicyFuncCall struct {
 	Arg2 api.RepoName
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 []types.ConfigurationPolicy
+	Arg3 []shared.ConfigurationPolicy
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
 	Arg4 time.Time
@@ -222,7 +220,7 @@ type MockPolicyService struct {
 func NewMockPolicyService() *MockPolicyService {
 	return &MockPolicyService{
 		GetConfigurationPoliciesFunc: &PolicyServiceGetConfigurationPoliciesFunc{
-			defaultHook: func(context.Context, shared.GetConfigurationPoliciesOptions) (r0 []types.ConfigurationPolicy, r1 int, r2 error) {
+			defaultHook: func(context.Context, shared.GetConfigurationPoliciesOptions) (r0 []shared.ConfigurationPolicy, r1 int, r2 error) {
 				return
 			},
 		},
@@ -234,7 +232,7 @@ func NewMockPolicyService() *MockPolicyService {
 func NewStrictMockPolicyService() *MockPolicyService {
 	return &MockPolicyService{
 		GetConfigurationPoliciesFunc: &PolicyServiceGetConfigurationPoliciesFunc{
-			defaultHook: func(context.Context, shared.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error) {
+			defaultHook: func(context.Context, shared.GetConfigurationPoliciesOptions) ([]shared.ConfigurationPolicy, int, error) {
 				panic("unexpected invocation of MockPolicyService.GetConfigurationPolicies")
 			},
 		},
@@ -256,15 +254,15 @@ func NewMockPolicyServiceFrom(i PolicyService) *MockPolicyService {
 // GetConfigurationPolicies method of the parent MockPolicyService instance
 // is invoked.
 type PolicyServiceGetConfigurationPoliciesFunc struct {
-	defaultHook func(context.Context, shared.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error)
-	hooks       []func(context.Context, shared.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error)
+	defaultHook func(context.Context, shared.GetConfigurationPoliciesOptions) ([]shared.ConfigurationPolicy, int, error)
+	hooks       []func(context.Context, shared.GetConfigurationPoliciesOptions) ([]shared.ConfigurationPolicy, int, error)
 	history     []PolicyServiceGetConfigurationPoliciesFuncCall
 	mutex       sync.Mutex
 }
 
 // GetConfigurationPolicies delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockPolicyService) GetConfigurationPolicies(v0 context.Context, v1 shared.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error) {
+func (m *MockPolicyService) GetConfigurationPolicies(v0 context.Context, v1 shared.GetConfigurationPoliciesOptions) ([]shared.ConfigurationPolicy, int, error) {
 	r0, r1, r2 := m.GetConfigurationPoliciesFunc.nextHook()(v0, v1)
 	m.GetConfigurationPoliciesFunc.appendCall(PolicyServiceGetConfigurationPoliciesFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -273,7 +271,7 @@ func (m *MockPolicyService) GetConfigurationPolicies(v0 context.Context, v1 shar
 // SetDefaultHook sets function that is called when the
 // GetConfigurationPolicies method of the parent MockPolicyService instance
 // is invoked and the hook queue is empty.
-func (f *PolicyServiceGetConfigurationPoliciesFunc) SetDefaultHook(hook func(context.Context, shared.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error)) {
+func (f *PolicyServiceGetConfigurationPoliciesFunc) SetDefaultHook(hook func(context.Context, shared.GetConfigurationPoliciesOptions) ([]shared.ConfigurationPolicy, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -282,7 +280,7 @@ func (f *PolicyServiceGetConfigurationPoliciesFunc) SetDefaultHook(hook func(con
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *PolicyServiceGetConfigurationPoliciesFunc) PushHook(hook func(context.Context, shared.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error)) {
+func (f *PolicyServiceGetConfigurationPoliciesFunc) PushHook(hook func(context.Context, shared.GetConfigurationPoliciesOptions) ([]shared.ConfigurationPolicy, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -290,20 +288,20 @@ func (f *PolicyServiceGetConfigurationPoliciesFunc) PushHook(hook func(context.C
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *PolicyServiceGetConfigurationPoliciesFunc) SetDefaultReturn(r0 []types.ConfigurationPolicy, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, shared.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error) {
+func (f *PolicyServiceGetConfigurationPoliciesFunc) SetDefaultReturn(r0 []shared.ConfigurationPolicy, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, shared.GetConfigurationPoliciesOptions) ([]shared.ConfigurationPolicy, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *PolicyServiceGetConfigurationPoliciesFunc) PushReturn(r0 []types.ConfigurationPolicy, r1 int, r2 error) {
-	f.PushHook(func(context.Context, shared.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error) {
+func (f *PolicyServiceGetConfigurationPoliciesFunc) PushReturn(r0 []shared.ConfigurationPolicy, r1 int, r2 error) {
+	f.PushHook(func(context.Context, shared.GetConfigurationPoliciesOptions) ([]shared.ConfigurationPolicy, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *PolicyServiceGetConfigurationPoliciesFunc) nextHook() func(context.Context, shared.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error) {
+func (f *PolicyServiceGetConfigurationPoliciesFunc) nextHook() func(context.Context, shared.GetConfigurationPoliciesOptions) ([]shared.ConfigurationPolicy, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -346,7 +344,7 @@ type PolicyServiceGetConfigurationPoliciesFuncCall struct {
 	Arg1 shared.GetConfigurationPoliciesOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.ConfigurationPolicy
+	Result0 []shared.ConfigurationPolicy
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 int
@@ -649,17 +647,17 @@ func NewMockStore() *MockStore {
 			},
 		},
 		FindClosestDumpsFunc: &StoreFindClosestDumpsFunc{
-			defaultHook: func(context.Context, int, string, string, bool, string) (r0 []types.Dump, r1 error) {
+			defaultHook: func(context.Context, int, string, string, bool, string) (r0 []shared1.Dump, r1 error) {
 				return
 			},
 		},
 		FindClosestDumpsFromGraphFragmentFunc: &StoreFindClosestDumpsFromGraphFragmentFunc{
-			defaultHook: func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) (r0 []types.Dump, r1 error) {
+			defaultHook: func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) (r0 []shared1.Dump, r1 error) {
 				return
 			},
 		},
 		GetAuditLogsForUploadFunc: &StoreGetAuditLogsForUploadFunc{
-			defaultHook: func(context.Context, int) (r0 []types.UploadLog, r1 error) {
+			defaultHook: func(context.Context, int) (r0 []shared1.UploadLog, r1 error) {
 				return
 			},
 		},
@@ -679,17 +677,17 @@ func NewMockStore() *MockStore {
 			},
 		},
 		GetDumpsByIDsFunc: &StoreGetDumpsByIDsFunc{
-			defaultHook: func(context.Context, []int) (r0 []types.Dump, r1 error) {
+			defaultHook: func(context.Context, []int) (r0 []shared1.Dump, r1 error) {
 				return
 			},
 		},
 		GetDumpsWithDefinitionsForMonikersFunc: &StoreGetDumpsWithDefinitionsForMonikersFunc{
-			defaultHook: func(context.Context, []precise.QualifiedMonikerData) (r0 []types.Dump, r1 error) {
+			defaultHook: func(context.Context, []precise.QualifiedMonikerData) (r0 []shared1.Dump, r1 error) {
 				return
 			},
 		},
 		GetIndexByIDFunc: &StoreGetIndexByIDFunc{
-			defaultHook: func(context.Context, int) (r0 types.Index, r1 bool, r2 error) {
+			defaultHook: func(context.Context, int) (r0 shared1.Index, r1 bool, r2 error) {
 				return
 			},
 		},
@@ -699,12 +697,12 @@ func NewMockStore() *MockStore {
 			},
 		},
 		GetIndexesFunc: &StoreGetIndexesFunc{
-			defaultHook: func(context.Context, shared1.GetIndexesOptions) (r0 []types.Index, r1 int, r2 error) {
+			defaultHook: func(context.Context, shared1.GetIndexesOptions) (r0 []shared1.Index, r1 int, r2 error) {
 				return
 			},
 		},
 		GetIndexesByIDsFunc: &StoreGetIndexesByIDsFunc{
-			defaultHook: func(context.Context, ...int) (r0 []types.Index, r1 error) {
+			defaultHook: func(context.Context, ...int) (r0 []shared1.Index, r1 error) {
 				return
 			},
 		},
@@ -719,7 +717,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		GetRecentIndexesSummaryFunc: &StoreGetRecentIndexesSummaryFunc{
-			defaultHook: func(context.Context, int) (r0 []shared2.IndexesWithRepositoryNamespace, r1 error) {
+			defaultHook: func(context.Context, int) (r0 []shared1.IndexesWithRepositoryNamespace, r1 error) {
 				return
 			},
 		},
@@ -734,7 +732,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		GetUploadByIDFunc: &StoreGetUploadByIDFunc{
-			defaultHook: func(context.Context, int) (r0 types.Upload, r1 bool, r2 error) {
+			defaultHook: func(context.Context, int) (r0 shared1.Upload, r1 bool, r2 error) {
 				return
 			},
 		},
@@ -744,17 +742,17 @@ func NewMockStore() *MockStore {
 			},
 		},
 		GetUploadsFunc: &StoreGetUploadsFunc{
-			defaultHook: func(context.Context, shared1.GetUploadsOptions) (r0 []types.Upload, r1 int, r2 error) {
+			defaultHook: func(context.Context, shared1.GetUploadsOptions) (r0 []shared1.Upload, r1 int, r2 error) {
 				return
 			},
 		},
 		GetUploadsByIDsFunc: &StoreGetUploadsByIDsFunc{
-			defaultHook: func(context.Context, ...int) (r0 []types.Upload, r1 error) {
+			defaultHook: func(context.Context, ...int) (r0 []shared1.Upload, r1 error) {
 				return
 			},
 		},
 		GetUploadsByIDsAllowDeletedFunc: &StoreGetUploadsByIDsAllowDeletedFunc{
-			defaultHook: func(context.Context, ...int) (r0 []types.Upload, r1 error) {
+			defaultHook: func(context.Context, ...int) (r0 []shared1.Upload, r1 error) {
 				return
 			},
 		},
@@ -784,7 +782,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		InsertUploadFunc: &StoreInsertUploadFunc{
-			defaultHook: func(context.Context, types.Upload) (r0 int, r1 error) {
+			defaultHook: func(context.Context, shared1.Upload) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -844,7 +842,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		RepositoryIDsWithErrorsFunc: &StoreRepositoryIDsWithErrorsFunc{
-			defaultHook: func(context.Context, int, int) (r0 []shared2.RepositoryWithCount, r1 int, r2 error) {
+			defaultHook: func(context.Context, int, int) (r0 []shared1.RepositoryWithCount, r1 int, r2 error) {
 				return
 			},
 		},
@@ -869,7 +867,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		SourcedCommitsWithoutCommittedAtFunc: &StoreSourcedCommitsWithoutCommittedAtFunc{
-			defaultHook: func(context.Context, int) (r0 []shared1.SourcedCommits, r1 error) {
+			defaultHook: func(context.Context, int) (r0 []store.SourcedCommits, r1 error) {
 				return
 			},
 		},
@@ -904,7 +902,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		WorkerutilStoreFunc: &StoreWorkerutilStoreFunc{
-			defaultHook: func(*observation.Context) (r0 store1.Store[types.Upload]) {
+			defaultHook: func(*observation.Context) (r0 store1.Store[shared1.Upload]) {
 				return
 			},
 		},
@@ -976,17 +974,17 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		FindClosestDumpsFunc: &StoreFindClosestDumpsFunc{
-			defaultHook: func(context.Context, int, string, string, bool, string) ([]types.Dump, error) {
+			defaultHook: func(context.Context, int, string, string, bool, string) ([]shared1.Dump, error) {
 				panic("unexpected invocation of MockStore.FindClosestDumps")
 			},
 		},
 		FindClosestDumpsFromGraphFragmentFunc: &StoreFindClosestDumpsFromGraphFragmentFunc{
-			defaultHook: func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]types.Dump, error) {
+			defaultHook: func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]shared1.Dump, error) {
 				panic("unexpected invocation of MockStore.FindClosestDumpsFromGraphFragment")
 			},
 		},
 		GetAuditLogsForUploadFunc: &StoreGetAuditLogsForUploadFunc{
-			defaultHook: func(context.Context, int) ([]types.UploadLog, error) {
+			defaultHook: func(context.Context, int) ([]shared1.UploadLog, error) {
 				panic("unexpected invocation of MockStore.GetAuditLogsForUpload")
 			},
 		},
@@ -1006,17 +1004,17 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		GetDumpsByIDsFunc: &StoreGetDumpsByIDsFunc{
-			defaultHook: func(context.Context, []int) ([]types.Dump, error) {
+			defaultHook: func(context.Context, []int) ([]shared1.Dump, error) {
 				panic("unexpected invocation of MockStore.GetDumpsByIDs")
 			},
 		},
 		GetDumpsWithDefinitionsForMonikersFunc: &StoreGetDumpsWithDefinitionsForMonikersFunc{
-			defaultHook: func(context.Context, []precise.QualifiedMonikerData) ([]types.Dump, error) {
+			defaultHook: func(context.Context, []precise.QualifiedMonikerData) ([]shared1.Dump, error) {
 				panic("unexpected invocation of MockStore.GetDumpsWithDefinitionsForMonikers")
 			},
 		},
 		GetIndexByIDFunc: &StoreGetIndexByIDFunc{
-			defaultHook: func(context.Context, int) (types.Index, bool, error) {
+			defaultHook: func(context.Context, int) (shared1.Index, bool, error) {
 				panic("unexpected invocation of MockStore.GetIndexByID")
 			},
 		},
@@ -1026,12 +1024,12 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		GetIndexesFunc: &StoreGetIndexesFunc{
-			defaultHook: func(context.Context, shared1.GetIndexesOptions) ([]types.Index, int, error) {
+			defaultHook: func(context.Context, shared1.GetIndexesOptions) ([]shared1.Index, int, error) {
 				panic("unexpected invocation of MockStore.GetIndexes")
 			},
 		},
 		GetIndexesByIDsFunc: &StoreGetIndexesByIDsFunc{
-			defaultHook: func(context.Context, ...int) ([]types.Index, error) {
+			defaultHook: func(context.Context, ...int) ([]shared1.Index, error) {
 				panic("unexpected invocation of MockStore.GetIndexesByIDs")
 			},
 		},
@@ -1046,7 +1044,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		GetRecentIndexesSummaryFunc: &StoreGetRecentIndexesSummaryFunc{
-			defaultHook: func(context.Context, int) ([]shared2.IndexesWithRepositoryNamespace, error) {
+			defaultHook: func(context.Context, int) ([]shared1.IndexesWithRepositoryNamespace, error) {
 				panic("unexpected invocation of MockStore.GetRecentIndexesSummary")
 			},
 		},
@@ -1061,7 +1059,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		GetUploadByIDFunc: &StoreGetUploadByIDFunc{
-			defaultHook: func(context.Context, int) (types.Upload, bool, error) {
+			defaultHook: func(context.Context, int) (shared1.Upload, bool, error) {
 				panic("unexpected invocation of MockStore.GetUploadByID")
 			},
 		},
@@ -1071,17 +1069,17 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		GetUploadsFunc: &StoreGetUploadsFunc{
-			defaultHook: func(context.Context, shared1.GetUploadsOptions) ([]types.Upload, int, error) {
+			defaultHook: func(context.Context, shared1.GetUploadsOptions) ([]shared1.Upload, int, error) {
 				panic("unexpected invocation of MockStore.GetUploads")
 			},
 		},
 		GetUploadsByIDsFunc: &StoreGetUploadsByIDsFunc{
-			defaultHook: func(context.Context, ...int) ([]types.Upload, error) {
+			defaultHook: func(context.Context, ...int) ([]shared1.Upload, error) {
 				panic("unexpected invocation of MockStore.GetUploadsByIDs")
 			},
 		},
 		GetUploadsByIDsAllowDeletedFunc: &StoreGetUploadsByIDsAllowDeletedFunc{
-			defaultHook: func(context.Context, ...int) ([]types.Upload, error) {
+			defaultHook: func(context.Context, ...int) ([]shared1.Upload, error) {
 				panic("unexpected invocation of MockStore.GetUploadsByIDsAllowDeleted")
 			},
 		},
@@ -1111,7 +1109,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		InsertUploadFunc: &StoreInsertUploadFunc{
-			defaultHook: func(context.Context, types.Upload) (int, error) {
+			defaultHook: func(context.Context, shared1.Upload) (int, error) {
 				panic("unexpected invocation of MockStore.InsertUpload")
 			},
 		},
@@ -1171,7 +1169,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		RepositoryIDsWithErrorsFunc: &StoreRepositoryIDsWithErrorsFunc{
-			defaultHook: func(context.Context, int, int) ([]shared2.RepositoryWithCount, int, error) {
+			defaultHook: func(context.Context, int, int) ([]shared1.RepositoryWithCount, int, error) {
 				panic("unexpected invocation of MockStore.RepositoryIDsWithErrors")
 			},
 		},
@@ -1196,7 +1194,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		SourcedCommitsWithoutCommittedAtFunc: &StoreSourcedCommitsWithoutCommittedAtFunc{
-			defaultHook: func(context.Context, int) ([]shared1.SourcedCommits, error) {
+			defaultHook: func(context.Context, int) ([]store.SourcedCommits, error) {
 				panic("unexpected invocation of MockStore.SourcedCommitsWithoutCommittedAt")
 			},
 		},
@@ -1231,7 +1229,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		WorkerutilStoreFunc: &StoreWorkerutilStoreFunc{
-			defaultHook: func(*observation.Context) store1.Store[types.Upload] {
+			defaultHook: func(*observation.Context) store1.Store[shared1.Upload] {
 				panic("unexpected invocation of MockStore.WorkerutilStore")
 			},
 		},
@@ -2760,15 +2758,15 @@ func (c StoreExpireFailedRecordsFuncCall) Results() []interface{} {
 // StoreFindClosestDumpsFunc describes the behavior when the
 // FindClosestDumps method of the parent MockStore instance is invoked.
 type StoreFindClosestDumpsFunc struct {
-	defaultHook func(context.Context, int, string, string, bool, string) ([]types.Dump, error)
-	hooks       []func(context.Context, int, string, string, bool, string) ([]types.Dump, error)
+	defaultHook func(context.Context, int, string, string, bool, string) ([]shared1.Dump, error)
+	hooks       []func(context.Context, int, string, string, bool, string) ([]shared1.Dump, error)
 	history     []StoreFindClosestDumpsFuncCall
 	mutex       sync.Mutex
 }
 
 // FindClosestDumps delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) FindClosestDumps(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 string) ([]types.Dump, error) {
+func (m *MockStore) FindClosestDumps(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 string) ([]shared1.Dump, error) {
 	r0, r1 := m.FindClosestDumpsFunc.nextHook()(v0, v1, v2, v3, v4, v5)
 	m.FindClosestDumpsFunc.appendCall(StoreFindClosestDumpsFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
 	return r0, r1
@@ -2777,7 +2775,7 @@ func (m *MockStore) FindClosestDumps(v0 context.Context, v1 int, v2 string, v3 s
 // SetDefaultHook sets function that is called when the FindClosestDumps
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreFindClosestDumpsFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, string) ([]types.Dump, error)) {
+func (f *StoreFindClosestDumpsFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, string) ([]shared1.Dump, error)) {
 	f.defaultHook = hook
 }
 
@@ -2785,7 +2783,7 @@ func (f *StoreFindClosestDumpsFunc) SetDefaultHook(hook func(context.Context, in
 // FindClosestDumps method of the parent MockStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreFindClosestDumpsFunc) PushHook(hook func(context.Context, int, string, string, bool, string) ([]types.Dump, error)) {
+func (f *StoreFindClosestDumpsFunc) PushHook(hook func(context.Context, int, string, string, bool, string) ([]shared1.Dump, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2793,20 +2791,20 @@ func (f *StoreFindClosestDumpsFunc) PushHook(hook func(context.Context, int, str
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreFindClosestDumpsFunc) SetDefaultReturn(r0 []types.Dump, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string, string, bool, string) ([]types.Dump, error) {
+func (f *StoreFindClosestDumpsFunc) SetDefaultReturn(r0 []shared1.Dump, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, string, bool, string) ([]shared1.Dump, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreFindClosestDumpsFunc) PushReturn(r0 []types.Dump, r1 error) {
-	f.PushHook(func(context.Context, int, string, string, bool, string) ([]types.Dump, error) {
+func (f *StoreFindClosestDumpsFunc) PushReturn(r0 []shared1.Dump, r1 error) {
+	f.PushHook(func(context.Context, int, string, string, bool, string) ([]shared1.Dump, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreFindClosestDumpsFunc) nextHook() func(context.Context, int, string, string, bool, string) ([]types.Dump, error) {
+func (f *StoreFindClosestDumpsFunc) nextHook() func(context.Context, int, string, string, bool, string) ([]shared1.Dump, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2859,7 +2857,7 @@ type StoreFindClosestDumpsFuncCall struct {
 	Arg5 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.Dump
+	Result0 []shared1.Dump
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -2881,15 +2879,15 @@ func (c StoreFindClosestDumpsFuncCall) Results() []interface{} {
 // the FindClosestDumpsFromGraphFragment method of the parent MockStore
 // instance is invoked.
 type StoreFindClosestDumpsFromGraphFragmentFunc struct {
-	defaultHook func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]types.Dump, error)
-	hooks       []func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]types.Dump, error)
+	defaultHook func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]shared1.Dump, error)
+	hooks       []func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]shared1.Dump, error)
 	history     []StoreFindClosestDumpsFromGraphFragmentFuncCall
 	mutex       sync.Mutex
 }
 
 // FindClosestDumpsFromGraphFragment delegates to the next hook function in
 // the queue and stores the parameter and result values of this invocation.
-func (m *MockStore) FindClosestDumpsFromGraphFragment(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 string, v6 *gitdomain.CommitGraph) ([]types.Dump, error) {
+func (m *MockStore) FindClosestDumpsFromGraphFragment(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 string, v6 *gitdomain.CommitGraph) ([]shared1.Dump, error) {
 	r0, r1 := m.FindClosestDumpsFromGraphFragmentFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
 	m.FindClosestDumpsFromGraphFragmentFunc.appendCall(StoreFindClosestDumpsFromGraphFragmentFuncCall{v0, v1, v2, v3, v4, v5, v6, r0, r1})
 	return r0, r1
@@ -2898,7 +2896,7 @@ func (m *MockStore) FindClosestDumpsFromGraphFragment(v0 context.Context, v1 int
 // SetDefaultHook sets function that is called when the
 // FindClosestDumpsFromGraphFragment method of the parent MockStore instance
 // is invoked and the hook queue is empty.
-func (f *StoreFindClosestDumpsFromGraphFragmentFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]types.Dump, error)) {
+func (f *StoreFindClosestDumpsFromGraphFragmentFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]shared1.Dump, error)) {
 	f.defaultHook = hook
 }
 
@@ -2907,7 +2905,7 @@ func (f *StoreFindClosestDumpsFromGraphFragmentFunc) SetDefaultHook(hook func(co
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *StoreFindClosestDumpsFromGraphFragmentFunc) PushHook(hook func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]types.Dump, error)) {
+func (f *StoreFindClosestDumpsFromGraphFragmentFunc) PushHook(hook func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]shared1.Dump, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2915,20 +2913,20 @@ func (f *StoreFindClosestDumpsFromGraphFragmentFunc) PushHook(hook func(context.
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreFindClosestDumpsFromGraphFragmentFunc) SetDefaultReturn(r0 []types.Dump, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]types.Dump, error) {
+func (f *StoreFindClosestDumpsFromGraphFragmentFunc) SetDefaultReturn(r0 []shared1.Dump, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]shared1.Dump, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreFindClosestDumpsFromGraphFragmentFunc) PushReturn(r0 []types.Dump, r1 error) {
-	f.PushHook(func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]types.Dump, error) {
+func (f *StoreFindClosestDumpsFromGraphFragmentFunc) PushReturn(r0 []shared1.Dump, r1 error) {
+	f.PushHook(func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]shared1.Dump, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreFindClosestDumpsFromGraphFragmentFunc) nextHook() func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]types.Dump, error) {
+func (f *StoreFindClosestDumpsFromGraphFragmentFunc) nextHook() func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]shared1.Dump, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2986,7 +2984,7 @@ type StoreFindClosestDumpsFromGraphFragmentFuncCall struct {
 	Arg6 *gitdomain.CommitGraph
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.Dump
+	Result0 []shared1.Dump
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -3007,15 +3005,15 @@ func (c StoreFindClosestDumpsFromGraphFragmentFuncCall) Results() []interface{} 
 // StoreGetAuditLogsForUploadFunc describes the behavior when the
 // GetAuditLogsForUpload method of the parent MockStore instance is invoked.
 type StoreGetAuditLogsForUploadFunc struct {
-	defaultHook func(context.Context, int) ([]types.UploadLog, error)
-	hooks       []func(context.Context, int) ([]types.UploadLog, error)
+	defaultHook func(context.Context, int) ([]shared1.UploadLog, error)
+	hooks       []func(context.Context, int) ([]shared1.UploadLog, error)
 	history     []StoreGetAuditLogsForUploadFuncCall
 	mutex       sync.Mutex
 }
 
 // GetAuditLogsForUpload delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockStore) GetAuditLogsForUpload(v0 context.Context, v1 int) ([]types.UploadLog, error) {
+func (m *MockStore) GetAuditLogsForUpload(v0 context.Context, v1 int) ([]shared1.UploadLog, error) {
 	r0, r1 := m.GetAuditLogsForUploadFunc.nextHook()(v0, v1)
 	m.GetAuditLogsForUploadFunc.appendCall(StoreGetAuditLogsForUploadFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -3024,7 +3022,7 @@ func (m *MockStore) GetAuditLogsForUpload(v0 context.Context, v1 int) ([]types.U
 // SetDefaultHook sets function that is called when the
 // GetAuditLogsForUpload method of the parent MockStore instance is invoked
 // and the hook queue is empty.
-func (f *StoreGetAuditLogsForUploadFunc) SetDefaultHook(hook func(context.Context, int) ([]types.UploadLog, error)) {
+func (f *StoreGetAuditLogsForUploadFunc) SetDefaultHook(hook func(context.Context, int) ([]shared1.UploadLog, error)) {
 	f.defaultHook = hook
 }
 
@@ -3032,7 +3030,7 @@ func (f *StoreGetAuditLogsForUploadFunc) SetDefaultHook(hook func(context.Contex
 // GetAuditLogsForUpload method of the parent MockStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *StoreGetAuditLogsForUploadFunc) PushHook(hook func(context.Context, int) ([]types.UploadLog, error)) {
+func (f *StoreGetAuditLogsForUploadFunc) PushHook(hook func(context.Context, int) ([]shared1.UploadLog, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3040,20 +3038,20 @@ func (f *StoreGetAuditLogsForUploadFunc) PushHook(hook func(context.Context, int
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreGetAuditLogsForUploadFunc) SetDefaultReturn(r0 []types.UploadLog, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) ([]types.UploadLog, error) {
+func (f *StoreGetAuditLogsForUploadFunc) SetDefaultReturn(r0 []shared1.UploadLog, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]shared1.UploadLog, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetAuditLogsForUploadFunc) PushReturn(r0 []types.UploadLog, r1 error) {
-	f.PushHook(func(context.Context, int) ([]types.UploadLog, error) {
+func (f *StoreGetAuditLogsForUploadFunc) PushReturn(r0 []shared1.UploadLog, r1 error) {
+	f.PushHook(func(context.Context, int) ([]shared1.UploadLog, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreGetAuditLogsForUploadFunc) nextHook() func(context.Context, int) ([]types.UploadLog, error) {
+func (f *StoreGetAuditLogsForUploadFunc) nextHook() func(context.Context, int) ([]shared1.UploadLog, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3094,7 +3092,7 @@ type StoreGetAuditLogsForUploadFuncCall struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.UploadLog
+	Result0 []shared1.UploadLog
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -3451,15 +3449,15 @@ func (c StoreGetDirtyRepositoriesFuncCall) Results() []interface{} {
 // StoreGetDumpsByIDsFunc describes the behavior when the GetDumpsByIDs
 // method of the parent MockStore instance is invoked.
 type StoreGetDumpsByIDsFunc struct {
-	defaultHook func(context.Context, []int) ([]types.Dump, error)
-	hooks       []func(context.Context, []int) ([]types.Dump, error)
+	defaultHook func(context.Context, []int) ([]shared1.Dump, error)
+	hooks       []func(context.Context, []int) ([]shared1.Dump, error)
 	history     []StoreGetDumpsByIDsFuncCall
 	mutex       sync.Mutex
 }
 
 // GetDumpsByIDs delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) GetDumpsByIDs(v0 context.Context, v1 []int) ([]types.Dump, error) {
+func (m *MockStore) GetDumpsByIDs(v0 context.Context, v1 []int) ([]shared1.Dump, error) {
 	r0, r1 := m.GetDumpsByIDsFunc.nextHook()(v0, v1)
 	m.GetDumpsByIDsFunc.appendCall(StoreGetDumpsByIDsFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -3467,7 +3465,7 @@ func (m *MockStore) GetDumpsByIDs(v0 context.Context, v1 []int) ([]types.Dump, e
 
 // SetDefaultHook sets function that is called when the GetDumpsByIDs method
 // of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreGetDumpsByIDsFunc) SetDefaultHook(hook func(context.Context, []int) ([]types.Dump, error)) {
+func (f *StoreGetDumpsByIDsFunc) SetDefaultHook(hook func(context.Context, []int) ([]shared1.Dump, error)) {
 	f.defaultHook = hook
 }
 
@@ -3475,7 +3473,7 @@ func (f *StoreGetDumpsByIDsFunc) SetDefaultHook(hook func(context.Context, []int
 // GetDumpsByIDs method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreGetDumpsByIDsFunc) PushHook(hook func(context.Context, []int) ([]types.Dump, error)) {
+func (f *StoreGetDumpsByIDsFunc) PushHook(hook func(context.Context, []int) ([]shared1.Dump, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3483,20 +3481,20 @@ func (f *StoreGetDumpsByIDsFunc) PushHook(hook func(context.Context, []int) ([]t
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreGetDumpsByIDsFunc) SetDefaultReturn(r0 []types.Dump, r1 error) {
-	f.SetDefaultHook(func(context.Context, []int) ([]types.Dump, error) {
+func (f *StoreGetDumpsByIDsFunc) SetDefaultReturn(r0 []shared1.Dump, r1 error) {
+	f.SetDefaultHook(func(context.Context, []int) ([]shared1.Dump, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetDumpsByIDsFunc) PushReturn(r0 []types.Dump, r1 error) {
-	f.PushHook(func(context.Context, []int) ([]types.Dump, error) {
+func (f *StoreGetDumpsByIDsFunc) PushReturn(r0 []shared1.Dump, r1 error) {
+	f.PushHook(func(context.Context, []int) ([]shared1.Dump, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreGetDumpsByIDsFunc) nextHook() func(context.Context, []int) ([]types.Dump, error) {
+func (f *StoreGetDumpsByIDsFunc) nextHook() func(context.Context, []int) ([]shared1.Dump, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3537,7 +3535,7 @@ type StoreGetDumpsByIDsFuncCall struct {
 	Arg1 []int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.Dump
+	Result0 []shared1.Dump
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -3559,15 +3557,15 @@ func (c StoreGetDumpsByIDsFuncCall) Results() []interface{} {
 // the GetDumpsWithDefinitionsForMonikers method of the parent MockStore
 // instance is invoked.
 type StoreGetDumpsWithDefinitionsForMonikersFunc struct {
-	defaultHook func(context.Context, []precise.QualifiedMonikerData) ([]types.Dump, error)
-	hooks       []func(context.Context, []precise.QualifiedMonikerData) ([]types.Dump, error)
+	defaultHook func(context.Context, []precise.QualifiedMonikerData) ([]shared1.Dump, error)
+	hooks       []func(context.Context, []precise.QualifiedMonikerData) ([]shared1.Dump, error)
 	history     []StoreGetDumpsWithDefinitionsForMonikersFuncCall
 	mutex       sync.Mutex
 }
 
 // GetDumpsWithDefinitionsForMonikers delegates to the next hook function in
 // the queue and stores the parameter and result values of this invocation.
-func (m *MockStore) GetDumpsWithDefinitionsForMonikers(v0 context.Context, v1 []precise.QualifiedMonikerData) ([]types.Dump, error) {
+func (m *MockStore) GetDumpsWithDefinitionsForMonikers(v0 context.Context, v1 []precise.QualifiedMonikerData) ([]shared1.Dump, error) {
 	r0, r1 := m.GetDumpsWithDefinitionsForMonikersFunc.nextHook()(v0, v1)
 	m.GetDumpsWithDefinitionsForMonikersFunc.appendCall(StoreGetDumpsWithDefinitionsForMonikersFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -3576,7 +3574,7 @@ func (m *MockStore) GetDumpsWithDefinitionsForMonikers(v0 context.Context, v1 []
 // SetDefaultHook sets function that is called when the
 // GetDumpsWithDefinitionsForMonikers method of the parent MockStore
 // instance is invoked and the hook queue is empty.
-func (f *StoreGetDumpsWithDefinitionsForMonikersFunc) SetDefaultHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]types.Dump, error)) {
+func (f *StoreGetDumpsWithDefinitionsForMonikersFunc) SetDefaultHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]shared1.Dump, error)) {
 	f.defaultHook = hook
 }
 
@@ -3585,7 +3583,7 @@ func (f *StoreGetDumpsWithDefinitionsForMonikersFunc) SetDefaultHook(hook func(c
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *StoreGetDumpsWithDefinitionsForMonikersFunc) PushHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]types.Dump, error)) {
+func (f *StoreGetDumpsWithDefinitionsForMonikersFunc) PushHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]shared1.Dump, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3593,20 +3591,20 @@ func (f *StoreGetDumpsWithDefinitionsForMonikersFunc) PushHook(hook func(context
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreGetDumpsWithDefinitionsForMonikersFunc) SetDefaultReturn(r0 []types.Dump, r1 error) {
-	f.SetDefaultHook(func(context.Context, []precise.QualifiedMonikerData) ([]types.Dump, error) {
+func (f *StoreGetDumpsWithDefinitionsForMonikersFunc) SetDefaultReturn(r0 []shared1.Dump, r1 error) {
+	f.SetDefaultHook(func(context.Context, []precise.QualifiedMonikerData) ([]shared1.Dump, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetDumpsWithDefinitionsForMonikersFunc) PushReturn(r0 []types.Dump, r1 error) {
-	f.PushHook(func(context.Context, []precise.QualifiedMonikerData) ([]types.Dump, error) {
+func (f *StoreGetDumpsWithDefinitionsForMonikersFunc) PushReturn(r0 []shared1.Dump, r1 error) {
+	f.PushHook(func(context.Context, []precise.QualifiedMonikerData) ([]shared1.Dump, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreGetDumpsWithDefinitionsForMonikersFunc) nextHook() func(context.Context, []precise.QualifiedMonikerData) ([]types.Dump, error) {
+func (f *StoreGetDumpsWithDefinitionsForMonikersFunc) nextHook() func(context.Context, []precise.QualifiedMonikerData) ([]shared1.Dump, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3649,7 +3647,7 @@ type StoreGetDumpsWithDefinitionsForMonikersFuncCall struct {
 	Arg1 []precise.QualifiedMonikerData
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.Dump
+	Result0 []shared1.Dump
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -3670,15 +3668,15 @@ func (c StoreGetDumpsWithDefinitionsForMonikersFuncCall) Results() []interface{}
 // StoreGetIndexByIDFunc describes the behavior when the GetIndexByID method
 // of the parent MockStore instance is invoked.
 type StoreGetIndexByIDFunc struct {
-	defaultHook func(context.Context, int) (types.Index, bool, error)
-	hooks       []func(context.Context, int) (types.Index, bool, error)
+	defaultHook func(context.Context, int) (shared1.Index, bool, error)
+	hooks       []func(context.Context, int) (shared1.Index, bool, error)
 	history     []StoreGetIndexByIDFuncCall
 	mutex       sync.Mutex
 }
 
 // GetIndexByID delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) GetIndexByID(v0 context.Context, v1 int) (types.Index, bool, error) {
+func (m *MockStore) GetIndexByID(v0 context.Context, v1 int) (shared1.Index, bool, error) {
 	r0, r1, r2 := m.GetIndexByIDFunc.nextHook()(v0, v1)
 	m.GetIndexByIDFunc.appendCall(StoreGetIndexByIDFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -3686,7 +3684,7 @@ func (m *MockStore) GetIndexByID(v0 context.Context, v1 int) (types.Index, bool,
 
 // SetDefaultHook sets function that is called when the GetIndexByID method
 // of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreGetIndexByIDFunc) SetDefaultHook(hook func(context.Context, int) (types.Index, bool, error)) {
+func (f *StoreGetIndexByIDFunc) SetDefaultHook(hook func(context.Context, int) (shared1.Index, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -3694,7 +3692,7 @@ func (f *StoreGetIndexByIDFunc) SetDefaultHook(hook func(context.Context, int) (
 // GetIndexByID method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreGetIndexByIDFunc) PushHook(hook func(context.Context, int) (types.Index, bool, error)) {
+func (f *StoreGetIndexByIDFunc) PushHook(hook func(context.Context, int) (shared1.Index, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3702,20 +3700,20 @@ func (f *StoreGetIndexByIDFunc) PushHook(hook func(context.Context, int) (types.
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreGetIndexByIDFunc) SetDefaultReturn(r0 types.Index, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, int) (types.Index, bool, error) {
+func (f *StoreGetIndexByIDFunc) SetDefaultReturn(r0 shared1.Index, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (shared1.Index, bool, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetIndexByIDFunc) PushReturn(r0 types.Index, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, int) (types.Index, bool, error) {
+func (f *StoreGetIndexByIDFunc) PushReturn(r0 shared1.Index, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (shared1.Index, bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *StoreGetIndexByIDFunc) nextHook() func(context.Context, int) (types.Index, bool, error) {
+func (f *StoreGetIndexByIDFunc) nextHook() func(context.Context, int) (shared1.Index, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3756,7 +3754,7 @@ type StoreGetIndexByIDFuncCall struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 types.Index
+	Result0 shared1.Index
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 bool
@@ -3887,15 +3885,15 @@ func (c StoreGetIndexersFuncCall) Results() []interface{} {
 // StoreGetIndexesFunc describes the behavior when the GetIndexes method of
 // the parent MockStore instance is invoked.
 type StoreGetIndexesFunc struct {
-	defaultHook func(context.Context, shared1.GetIndexesOptions) ([]types.Index, int, error)
-	hooks       []func(context.Context, shared1.GetIndexesOptions) ([]types.Index, int, error)
+	defaultHook func(context.Context, shared1.GetIndexesOptions) ([]shared1.Index, int, error)
+	hooks       []func(context.Context, shared1.GetIndexesOptions) ([]shared1.Index, int, error)
 	history     []StoreGetIndexesFuncCall
 	mutex       sync.Mutex
 }
 
 // GetIndexes delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) GetIndexes(v0 context.Context, v1 shared1.GetIndexesOptions) ([]types.Index, int, error) {
+func (m *MockStore) GetIndexes(v0 context.Context, v1 shared1.GetIndexesOptions) ([]shared1.Index, int, error) {
 	r0, r1, r2 := m.GetIndexesFunc.nextHook()(v0, v1)
 	m.GetIndexesFunc.appendCall(StoreGetIndexesFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -3903,7 +3901,7 @@ func (m *MockStore) GetIndexes(v0 context.Context, v1 shared1.GetIndexesOptions)
 
 // SetDefaultHook sets function that is called when the GetIndexes method of
 // the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreGetIndexesFunc) SetDefaultHook(hook func(context.Context, shared1.GetIndexesOptions) ([]types.Index, int, error)) {
+func (f *StoreGetIndexesFunc) SetDefaultHook(hook func(context.Context, shared1.GetIndexesOptions) ([]shared1.Index, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -3911,7 +3909,7 @@ func (f *StoreGetIndexesFunc) SetDefaultHook(hook func(context.Context, shared1.
 // GetIndexes method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreGetIndexesFunc) PushHook(hook func(context.Context, shared1.GetIndexesOptions) ([]types.Index, int, error)) {
+func (f *StoreGetIndexesFunc) PushHook(hook func(context.Context, shared1.GetIndexesOptions) ([]shared1.Index, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3919,20 +3917,20 @@ func (f *StoreGetIndexesFunc) PushHook(hook func(context.Context, shared1.GetInd
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreGetIndexesFunc) SetDefaultReturn(r0 []types.Index, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, shared1.GetIndexesOptions) ([]types.Index, int, error) {
+func (f *StoreGetIndexesFunc) SetDefaultReturn(r0 []shared1.Index, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, shared1.GetIndexesOptions) ([]shared1.Index, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetIndexesFunc) PushReturn(r0 []types.Index, r1 int, r2 error) {
-	f.PushHook(func(context.Context, shared1.GetIndexesOptions) ([]types.Index, int, error) {
+func (f *StoreGetIndexesFunc) PushReturn(r0 []shared1.Index, r1 int, r2 error) {
+	f.PushHook(func(context.Context, shared1.GetIndexesOptions) ([]shared1.Index, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *StoreGetIndexesFunc) nextHook() func(context.Context, shared1.GetIndexesOptions) ([]types.Index, int, error) {
+func (f *StoreGetIndexesFunc) nextHook() func(context.Context, shared1.GetIndexesOptions) ([]shared1.Index, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3973,7 +3971,7 @@ type StoreGetIndexesFuncCall struct {
 	Arg1 shared1.GetIndexesOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.Index
+	Result0 []shared1.Index
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 int
@@ -3997,15 +3995,15 @@ func (c StoreGetIndexesFuncCall) Results() []interface{} {
 // StoreGetIndexesByIDsFunc describes the behavior when the GetIndexesByIDs
 // method of the parent MockStore instance is invoked.
 type StoreGetIndexesByIDsFunc struct {
-	defaultHook func(context.Context, ...int) ([]types.Index, error)
-	hooks       []func(context.Context, ...int) ([]types.Index, error)
+	defaultHook func(context.Context, ...int) ([]shared1.Index, error)
+	hooks       []func(context.Context, ...int) ([]shared1.Index, error)
 	history     []StoreGetIndexesByIDsFuncCall
 	mutex       sync.Mutex
 }
 
 // GetIndexesByIDs delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) GetIndexesByIDs(v0 context.Context, v1 ...int) ([]types.Index, error) {
+func (m *MockStore) GetIndexesByIDs(v0 context.Context, v1 ...int) ([]shared1.Index, error) {
 	r0, r1 := m.GetIndexesByIDsFunc.nextHook()(v0, v1...)
 	m.GetIndexesByIDsFunc.appendCall(StoreGetIndexesByIDsFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -4014,7 +4012,7 @@ func (m *MockStore) GetIndexesByIDs(v0 context.Context, v1 ...int) ([]types.Inde
 // SetDefaultHook sets function that is called when the GetIndexesByIDs
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreGetIndexesByIDsFunc) SetDefaultHook(hook func(context.Context, ...int) ([]types.Index, error)) {
+func (f *StoreGetIndexesByIDsFunc) SetDefaultHook(hook func(context.Context, ...int) ([]shared1.Index, error)) {
 	f.defaultHook = hook
 }
 
@@ -4022,7 +4020,7 @@ func (f *StoreGetIndexesByIDsFunc) SetDefaultHook(hook func(context.Context, ...
 // GetIndexesByIDs method of the parent MockStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreGetIndexesByIDsFunc) PushHook(hook func(context.Context, ...int) ([]types.Index, error)) {
+func (f *StoreGetIndexesByIDsFunc) PushHook(hook func(context.Context, ...int) ([]shared1.Index, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4030,20 +4028,20 @@ func (f *StoreGetIndexesByIDsFunc) PushHook(hook func(context.Context, ...int) (
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreGetIndexesByIDsFunc) SetDefaultReturn(r0 []types.Index, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...int) ([]types.Index, error) {
+func (f *StoreGetIndexesByIDsFunc) SetDefaultReturn(r0 []shared1.Index, r1 error) {
+	f.SetDefaultHook(func(context.Context, ...int) ([]shared1.Index, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetIndexesByIDsFunc) PushReturn(r0 []types.Index, r1 error) {
-	f.PushHook(func(context.Context, ...int) ([]types.Index, error) {
+func (f *StoreGetIndexesByIDsFunc) PushReturn(r0 []shared1.Index, r1 error) {
+	f.PushHook(func(context.Context, ...int) ([]shared1.Index, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreGetIndexesByIDsFunc) nextHook() func(context.Context, ...int) ([]types.Index, error) {
+func (f *StoreGetIndexesByIDsFunc) nextHook() func(context.Context, ...int) ([]shared1.Index, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4084,7 +4082,7 @@ type StoreGetIndexesByIDsFuncCall struct {
 	Arg1 []int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.Index
+	Result0 []shared1.Index
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -4337,15 +4335,15 @@ func (c StoreGetOldestCommitDateFuncCall) Results() []interface{} {
 // GetRecentIndexesSummary method of the parent MockStore instance is
 // invoked.
 type StoreGetRecentIndexesSummaryFunc struct {
-	defaultHook func(context.Context, int) ([]shared2.IndexesWithRepositoryNamespace, error)
-	hooks       []func(context.Context, int) ([]shared2.IndexesWithRepositoryNamespace, error)
+	defaultHook func(context.Context, int) ([]shared1.IndexesWithRepositoryNamespace, error)
+	hooks       []func(context.Context, int) ([]shared1.IndexesWithRepositoryNamespace, error)
 	history     []StoreGetRecentIndexesSummaryFuncCall
 	mutex       sync.Mutex
 }
 
 // GetRecentIndexesSummary delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockStore) GetRecentIndexesSummary(v0 context.Context, v1 int) ([]shared2.IndexesWithRepositoryNamespace, error) {
+func (m *MockStore) GetRecentIndexesSummary(v0 context.Context, v1 int) ([]shared1.IndexesWithRepositoryNamespace, error) {
 	r0, r1 := m.GetRecentIndexesSummaryFunc.nextHook()(v0, v1)
 	m.GetRecentIndexesSummaryFunc.appendCall(StoreGetRecentIndexesSummaryFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -4354,7 +4352,7 @@ func (m *MockStore) GetRecentIndexesSummary(v0 context.Context, v1 int) ([]share
 // SetDefaultHook sets function that is called when the
 // GetRecentIndexesSummary method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreGetRecentIndexesSummaryFunc) SetDefaultHook(hook func(context.Context, int) ([]shared2.IndexesWithRepositoryNamespace, error)) {
+func (f *StoreGetRecentIndexesSummaryFunc) SetDefaultHook(hook func(context.Context, int) ([]shared1.IndexesWithRepositoryNamespace, error)) {
 	f.defaultHook = hook
 }
 
@@ -4362,7 +4360,7 @@ func (f *StoreGetRecentIndexesSummaryFunc) SetDefaultHook(hook func(context.Cont
 // GetRecentIndexesSummary method of the parent MockStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *StoreGetRecentIndexesSummaryFunc) PushHook(hook func(context.Context, int) ([]shared2.IndexesWithRepositoryNamespace, error)) {
+func (f *StoreGetRecentIndexesSummaryFunc) PushHook(hook func(context.Context, int) ([]shared1.IndexesWithRepositoryNamespace, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4370,20 +4368,20 @@ func (f *StoreGetRecentIndexesSummaryFunc) PushHook(hook func(context.Context, i
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreGetRecentIndexesSummaryFunc) SetDefaultReturn(r0 []shared2.IndexesWithRepositoryNamespace, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) ([]shared2.IndexesWithRepositoryNamespace, error) {
+func (f *StoreGetRecentIndexesSummaryFunc) SetDefaultReturn(r0 []shared1.IndexesWithRepositoryNamespace, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]shared1.IndexesWithRepositoryNamespace, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetRecentIndexesSummaryFunc) PushReturn(r0 []shared2.IndexesWithRepositoryNamespace, r1 error) {
-	f.PushHook(func(context.Context, int) ([]shared2.IndexesWithRepositoryNamespace, error) {
+func (f *StoreGetRecentIndexesSummaryFunc) PushReturn(r0 []shared1.IndexesWithRepositoryNamespace, r1 error) {
+	f.PushHook(func(context.Context, int) ([]shared1.IndexesWithRepositoryNamespace, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreGetRecentIndexesSummaryFunc) nextHook() func(context.Context, int) ([]shared2.IndexesWithRepositoryNamespace, error) {
+func (f *StoreGetRecentIndexesSummaryFunc) nextHook() func(context.Context, int) ([]shared1.IndexesWithRepositoryNamespace, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4424,7 +4422,7 @@ type StoreGetRecentIndexesSummaryFuncCall struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared2.IndexesWithRepositoryNamespace
+	Result0 []shared1.IndexesWithRepositoryNamespace
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -4662,15 +4660,15 @@ func (c StoreGetRepositoriesMaxStaleAgeFuncCall) Results() []interface{} {
 // StoreGetUploadByIDFunc describes the behavior when the GetUploadByID
 // method of the parent MockStore instance is invoked.
 type StoreGetUploadByIDFunc struct {
-	defaultHook func(context.Context, int) (types.Upload, bool, error)
-	hooks       []func(context.Context, int) (types.Upload, bool, error)
+	defaultHook func(context.Context, int) (shared1.Upload, bool, error)
+	hooks       []func(context.Context, int) (shared1.Upload, bool, error)
 	history     []StoreGetUploadByIDFuncCall
 	mutex       sync.Mutex
 }
 
 // GetUploadByID delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) GetUploadByID(v0 context.Context, v1 int) (types.Upload, bool, error) {
+func (m *MockStore) GetUploadByID(v0 context.Context, v1 int) (shared1.Upload, bool, error) {
 	r0, r1, r2 := m.GetUploadByIDFunc.nextHook()(v0, v1)
 	m.GetUploadByIDFunc.appendCall(StoreGetUploadByIDFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -4678,7 +4676,7 @@ func (m *MockStore) GetUploadByID(v0 context.Context, v1 int) (types.Upload, boo
 
 // SetDefaultHook sets function that is called when the GetUploadByID method
 // of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreGetUploadByIDFunc) SetDefaultHook(hook func(context.Context, int) (types.Upload, bool, error)) {
+func (f *StoreGetUploadByIDFunc) SetDefaultHook(hook func(context.Context, int) (shared1.Upload, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -4686,7 +4684,7 @@ func (f *StoreGetUploadByIDFunc) SetDefaultHook(hook func(context.Context, int) 
 // GetUploadByID method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreGetUploadByIDFunc) PushHook(hook func(context.Context, int) (types.Upload, bool, error)) {
+func (f *StoreGetUploadByIDFunc) PushHook(hook func(context.Context, int) (shared1.Upload, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4694,20 +4692,20 @@ func (f *StoreGetUploadByIDFunc) PushHook(hook func(context.Context, int) (types
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreGetUploadByIDFunc) SetDefaultReturn(r0 types.Upload, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, int) (types.Upload, bool, error) {
+func (f *StoreGetUploadByIDFunc) SetDefaultReturn(r0 shared1.Upload, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (shared1.Upload, bool, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetUploadByIDFunc) PushReturn(r0 types.Upload, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, int) (types.Upload, bool, error) {
+func (f *StoreGetUploadByIDFunc) PushReturn(r0 shared1.Upload, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (shared1.Upload, bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *StoreGetUploadByIDFunc) nextHook() func(context.Context, int) (types.Upload, bool, error) {
+func (f *StoreGetUploadByIDFunc) nextHook() func(context.Context, int) (shared1.Upload, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4748,7 +4746,7 @@ type StoreGetUploadByIDFuncCall struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 types.Upload
+	Result0 shared1.Upload
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 bool
@@ -4907,15 +4905,15 @@ func (c StoreGetUploadIDsWithReferencesFuncCall) Results() []interface{} {
 // StoreGetUploadsFunc describes the behavior when the GetUploads method of
 // the parent MockStore instance is invoked.
 type StoreGetUploadsFunc struct {
-	defaultHook func(context.Context, shared1.GetUploadsOptions) ([]types.Upload, int, error)
-	hooks       []func(context.Context, shared1.GetUploadsOptions) ([]types.Upload, int, error)
+	defaultHook func(context.Context, shared1.GetUploadsOptions) ([]shared1.Upload, int, error)
+	hooks       []func(context.Context, shared1.GetUploadsOptions) ([]shared1.Upload, int, error)
 	history     []StoreGetUploadsFuncCall
 	mutex       sync.Mutex
 }
 
 // GetUploads delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) GetUploads(v0 context.Context, v1 shared1.GetUploadsOptions) ([]types.Upload, int, error) {
+func (m *MockStore) GetUploads(v0 context.Context, v1 shared1.GetUploadsOptions) ([]shared1.Upload, int, error) {
 	r0, r1, r2 := m.GetUploadsFunc.nextHook()(v0, v1)
 	m.GetUploadsFunc.appendCall(StoreGetUploadsFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -4923,7 +4921,7 @@ func (m *MockStore) GetUploads(v0 context.Context, v1 shared1.GetUploadsOptions)
 
 // SetDefaultHook sets function that is called when the GetUploads method of
 // the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreGetUploadsFunc) SetDefaultHook(hook func(context.Context, shared1.GetUploadsOptions) ([]types.Upload, int, error)) {
+func (f *StoreGetUploadsFunc) SetDefaultHook(hook func(context.Context, shared1.GetUploadsOptions) ([]shared1.Upload, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -4931,7 +4929,7 @@ func (f *StoreGetUploadsFunc) SetDefaultHook(hook func(context.Context, shared1.
 // GetUploads method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreGetUploadsFunc) PushHook(hook func(context.Context, shared1.GetUploadsOptions) ([]types.Upload, int, error)) {
+func (f *StoreGetUploadsFunc) PushHook(hook func(context.Context, shared1.GetUploadsOptions) ([]shared1.Upload, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4939,20 +4937,20 @@ func (f *StoreGetUploadsFunc) PushHook(hook func(context.Context, shared1.GetUpl
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreGetUploadsFunc) SetDefaultReturn(r0 []types.Upload, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, shared1.GetUploadsOptions) ([]types.Upload, int, error) {
+func (f *StoreGetUploadsFunc) SetDefaultReturn(r0 []shared1.Upload, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, shared1.GetUploadsOptions) ([]shared1.Upload, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetUploadsFunc) PushReturn(r0 []types.Upload, r1 int, r2 error) {
-	f.PushHook(func(context.Context, shared1.GetUploadsOptions) ([]types.Upload, int, error) {
+func (f *StoreGetUploadsFunc) PushReturn(r0 []shared1.Upload, r1 int, r2 error) {
+	f.PushHook(func(context.Context, shared1.GetUploadsOptions) ([]shared1.Upload, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *StoreGetUploadsFunc) nextHook() func(context.Context, shared1.GetUploadsOptions) ([]types.Upload, int, error) {
+func (f *StoreGetUploadsFunc) nextHook() func(context.Context, shared1.GetUploadsOptions) ([]shared1.Upload, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4993,7 +4991,7 @@ type StoreGetUploadsFuncCall struct {
 	Arg1 shared1.GetUploadsOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.Upload
+	Result0 []shared1.Upload
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 int
@@ -5017,15 +5015,15 @@ func (c StoreGetUploadsFuncCall) Results() []interface{} {
 // StoreGetUploadsByIDsFunc describes the behavior when the GetUploadsByIDs
 // method of the parent MockStore instance is invoked.
 type StoreGetUploadsByIDsFunc struct {
-	defaultHook func(context.Context, ...int) ([]types.Upload, error)
-	hooks       []func(context.Context, ...int) ([]types.Upload, error)
+	defaultHook func(context.Context, ...int) ([]shared1.Upload, error)
+	hooks       []func(context.Context, ...int) ([]shared1.Upload, error)
 	history     []StoreGetUploadsByIDsFuncCall
 	mutex       sync.Mutex
 }
 
 // GetUploadsByIDs delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) GetUploadsByIDs(v0 context.Context, v1 ...int) ([]types.Upload, error) {
+func (m *MockStore) GetUploadsByIDs(v0 context.Context, v1 ...int) ([]shared1.Upload, error) {
 	r0, r1 := m.GetUploadsByIDsFunc.nextHook()(v0, v1...)
 	m.GetUploadsByIDsFunc.appendCall(StoreGetUploadsByIDsFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -5034,7 +5032,7 @@ func (m *MockStore) GetUploadsByIDs(v0 context.Context, v1 ...int) ([]types.Uplo
 // SetDefaultHook sets function that is called when the GetUploadsByIDs
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreGetUploadsByIDsFunc) SetDefaultHook(hook func(context.Context, ...int) ([]types.Upload, error)) {
+func (f *StoreGetUploadsByIDsFunc) SetDefaultHook(hook func(context.Context, ...int) ([]shared1.Upload, error)) {
 	f.defaultHook = hook
 }
 
@@ -5042,7 +5040,7 @@ func (f *StoreGetUploadsByIDsFunc) SetDefaultHook(hook func(context.Context, ...
 // GetUploadsByIDs method of the parent MockStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreGetUploadsByIDsFunc) PushHook(hook func(context.Context, ...int) ([]types.Upload, error)) {
+func (f *StoreGetUploadsByIDsFunc) PushHook(hook func(context.Context, ...int) ([]shared1.Upload, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -5050,20 +5048,20 @@ func (f *StoreGetUploadsByIDsFunc) PushHook(hook func(context.Context, ...int) (
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreGetUploadsByIDsFunc) SetDefaultReturn(r0 []types.Upload, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...int) ([]types.Upload, error) {
+func (f *StoreGetUploadsByIDsFunc) SetDefaultReturn(r0 []shared1.Upload, r1 error) {
+	f.SetDefaultHook(func(context.Context, ...int) ([]shared1.Upload, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetUploadsByIDsFunc) PushReturn(r0 []types.Upload, r1 error) {
-	f.PushHook(func(context.Context, ...int) ([]types.Upload, error) {
+func (f *StoreGetUploadsByIDsFunc) PushReturn(r0 []shared1.Upload, r1 error) {
+	f.PushHook(func(context.Context, ...int) ([]shared1.Upload, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreGetUploadsByIDsFunc) nextHook() func(context.Context, ...int) ([]types.Upload, error) {
+func (f *StoreGetUploadsByIDsFunc) nextHook() func(context.Context, ...int) ([]shared1.Upload, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -5104,7 +5102,7 @@ type StoreGetUploadsByIDsFuncCall struct {
 	Arg1 []int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.Upload
+	Result0 []shared1.Upload
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -5133,15 +5131,15 @@ func (c StoreGetUploadsByIDsFuncCall) Results() []interface{} {
 // GetUploadsByIDsAllowDeleted method of the parent MockStore instance is
 // invoked.
 type StoreGetUploadsByIDsAllowDeletedFunc struct {
-	defaultHook func(context.Context, ...int) ([]types.Upload, error)
-	hooks       []func(context.Context, ...int) ([]types.Upload, error)
+	defaultHook func(context.Context, ...int) ([]shared1.Upload, error)
+	hooks       []func(context.Context, ...int) ([]shared1.Upload, error)
 	history     []StoreGetUploadsByIDsAllowDeletedFuncCall
 	mutex       sync.Mutex
 }
 
 // GetUploadsByIDsAllowDeleted delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockStore) GetUploadsByIDsAllowDeleted(v0 context.Context, v1 ...int) ([]types.Upload, error) {
+func (m *MockStore) GetUploadsByIDsAllowDeleted(v0 context.Context, v1 ...int) ([]shared1.Upload, error) {
 	r0, r1 := m.GetUploadsByIDsAllowDeletedFunc.nextHook()(v0, v1...)
 	m.GetUploadsByIDsAllowDeletedFunc.appendCall(StoreGetUploadsByIDsAllowDeletedFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -5150,7 +5148,7 @@ func (m *MockStore) GetUploadsByIDsAllowDeleted(v0 context.Context, v1 ...int) (
 // SetDefaultHook sets function that is called when the
 // GetUploadsByIDsAllowDeleted method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreGetUploadsByIDsAllowDeletedFunc) SetDefaultHook(hook func(context.Context, ...int) ([]types.Upload, error)) {
+func (f *StoreGetUploadsByIDsAllowDeletedFunc) SetDefaultHook(hook func(context.Context, ...int) ([]shared1.Upload, error)) {
 	f.defaultHook = hook
 }
 
@@ -5159,7 +5157,7 @@ func (f *StoreGetUploadsByIDsAllowDeletedFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *StoreGetUploadsByIDsAllowDeletedFunc) PushHook(hook func(context.Context, ...int) ([]types.Upload, error)) {
+func (f *StoreGetUploadsByIDsAllowDeletedFunc) PushHook(hook func(context.Context, ...int) ([]shared1.Upload, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -5167,20 +5165,20 @@ func (f *StoreGetUploadsByIDsAllowDeletedFunc) PushHook(hook func(context.Contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreGetUploadsByIDsAllowDeletedFunc) SetDefaultReturn(r0 []types.Upload, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...int) ([]types.Upload, error) {
+func (f *StoreGetUploadsByIDsAllowDeletedFunc) SetDefaultReturn(r0 []shared1.Upload, r1 error) {
+	f.SetDefaultHook(func(context.Context, ...int) ([]shared1.Upload, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetUploadsByIDsAllowDeletedFunc) PushReturn(r0 []types.Upload, r1 error) {
-	f.PushHook(func(context.Context, ...int) ([]types.Upload, error) {
+func (f *StoreGetUploadsByIDsAllowDeletedFunc) PushReturn(r0 []shared1.Upload, r1 error) {
+	f.PushHook(func(context.Context, ...int) ([]shared1.Upload, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreGetUploadsByIDsAllowDeletedFunc) nextHook() func(context.Context, ...int) ([]types.Upload, error) {
+func (f *StoreGetUploadsByIDsAllowDeletedFunc) nextHook() func(context.Context, ...int) ([]shared1.Upload, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -5222,7 +5220,7 @@ type StoreGetUploadsByIDsAllowDeletedFuncCall struct {
 	Arg1 []int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.Upload
+	Result0 []shared1.Upload
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -5818,15 +5816,15 @@ func (c StoreInsertDependencySyncingJobFuncCall) Results() []interface{} {
 // StoreInsertUploadFunc describes the behavior when the InsertUpload method
 // of the parent MockStore instance is invoked.
 type StoreInsertUploadFunc struct {
-	defaultHook func(context.Context, types.Upload) (int, error)
-	hooks       []func(context.Context, types.Upload) (int, error)
+	defaultHook func(context.Context, shared1.Upload) (int, error)
+	hooks       []func(context.Context, shared1.Upload) (int, error)
 	history     []StoreInsertUploadFuncCall
 	mutex       sync.Mutex
 }
 
 // InsertUpload delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) InsertUpload(v0 context.Context, v1 types.Upload) (int, error) {
+func (m *MockStore) InsertUpload(v0 context.Context, v1 shared1.Upload) (int, error) {
 	r0, r1 := m.InsertUploadFunc.nextHook()(v0, v1)
 	m.InsertUploadFunc.appendCall(StoreInsertUploadFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -5834,7 +5832,7 @@ func (m *MockStore) InsertUpload(v0 context.Context, v1 types.Upload) (int, erro
 
 // SetDefaultHook sets function that is called when the InsertUpload method
 // of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreInsertUploadFunc) SetDefaultHook(hook func(context.Context, types.Upload) (int, error)) {
+func (f *StoreInsertUploadFunc) SetDefaultHook(hook func(context.Context, shared1.Upload) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -5842,7 +5840,7 @@ func (f *StoreInsertUploadFunc) SetDefaultHook(hook func(context.Context, types.
 // InsertUpload method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreInsertUploadFunc) PushHook(hook func(context.Context, types.Upload) (int, error)) {
+func (f *StoreInsertUploadFunc) PushHook(hook func(context.Context, shared1.Upload) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -5851,19 +5849,19 @@ func (f *StoreInsertUploadFunc) PushHook(hook func(context.Context, types.Upload
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreInsertUploadFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, types.Upload) (int, error) {
+	f.SetDefaultHook(func(context.Context, shared1.Upload) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreInsertUploadFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, types.Upload) (int, error) {
+	f.PushHook(func(context.Context, shared1.Upload) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreInsertUploadFunc) nextHook() func(context.Context, types.Upload) (int, error) {
+func (f *StoreInsertUploadFunc) nextHook() func(context.Context, shared1.Upload) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -5901,7 +5899,7 @@ type StoreInsertUploadFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 types.Upload
+	Arg1 shared1.Upload
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int
@@ -7132,15 +7130,15 @@ func (c StoreReindexUploadsFuncCall) Results() []interface{} {
 // RepositoryIDsWithErrors method of the parent MockStore instance is
 // invoked.
 type StoreRepositoryIDsWithErrorsFunc struct {
-	defaultHook func(context.Context, int, int) ([]shared2.RepositoryWithCount, int, error)
-	hooks       []func(context.Context, int, int) ([]shared2.RepositoryWithCount, int, error)
+	defaultHook func(context.Context, int, int) ([]shared1.RepositoryWithCount, int, error)
+	hooks       []func(context.Context, int, int) ([]shared1.RepositoryWithCount, int, error)
 	history     []StoreRepositoryIDsWithErrorsFuncCall
 	mutex       sync.Mutex
 }
 
 // RepositoryIDsWithErrors delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockStore) RepositoryIDsWithErrors(v0 context.Context, v1 int, v2 int) ([]shared2.RepositoryWithCount, int, error) {
+func (m *MockStore) RepositoryIDsWithErrors(v0 context.Context, v1 int, v2 int) ([]shared1.RepositoryWithCount, int, error) {
 	r0, r1, r2 := m.RepositoryIDsWithErrorsFunc.nextHook()(v0, v1, v2)
 	m.RepositoryIDsWithErrorsFunc.appendCall(StoreRepositoryIDsWithErrorsFuncCall{v0, v1, v2, r0, r1, r2})
 	return r0, r1, r2
@@ -7149,7 +7147,7 @@ func (m *MockStore) RepositoryIDsWithErrors(v0 context.Context, v1 int, v2 int) 
 // SetDefaultHook sets function that is called when the
 // RepositoryIDsWithErrors method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreRepositoryIDsWithErrorsFunc) SetDefaultHook(hook func(context.Context, int, int) ([]shared2.RepositoryWithCount, int, error)) {
+func (f *StoreRepositoryIDsWithErrorsFunc) SetDefaultHook(hook func(context.Context, int, int) ([]shared1.RepositoryWithCount, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -7157,7 +7155,7 @@ func (f *StoreRepositoryIDsWithErrorsFunc) SetDefaultHook(hook func(context.Cont
 // RepositoryIDsWithErrors method of the parent MockStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *StoreRepositoryIDsWithErrorsFunc) PushHook(hook func(context.Context, int, int) ([]shared2.RepositoryWithCount, int, error)) {
+func (f *StoreRepositoryIDsWithErrorsFunc) PushHook(hook func(context.Context, int, int) ([]shared1.RepositoryWithCount, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -7165,20 +7163,20 @@ func (f *StoreRepositoryIDsWithErrorsFunc) PushHook(hook func(context.Context, i
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreRepositoryIDsWithErrorsFunc) SetDefaultReturn(r0 []shared2.RepositoryWithCount, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, int, int) ([]shared2.RepositoryWithCount, int, error) {
+func (f *StoreRepositoryIDsWithErrorsFunc) SetDefaultReturn(r0 []shared1.RepositoryWithCount, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, int, int) ([]shared1.RepositoryWithCount, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreRepositoryIDsWithErrorsFunc) PushReturn(r0 []shared2.RepositoryWithCount, r1 int, r2 error) {
-	f.PushHook(func(context.Context, int, int) ([]shared2.RepositoryWithCount, int, error) {
+func (f *StoreRepositoryIDsWithErrorsFunc) PushReturn(r0 []shared1.RepositoryWithCount, r1 int, r2 error) {
+	f.PushHook(func(context.Context, int, int) ([]shared1.RepositoryWithCount, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *StoreRepositoryIDsWithErrorsFunc) nextHook() func(context.Context, int, int) ([]shared2.RepositoryWithCount, int, error) {
+func (f *StoreRepositoryIDsWithErrorsFunc) nextHook() func(context.Context, int, int) ([]shared1.RepositoryWithCount, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -7222,7 +7220,7 @@ type StoreRepositoryIDsWithErrorsFuncCall struct {
 	Arg2 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared2.RepositoryWithCount
+	Result0 []shared1.RepositoryWithCount
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 int
@@ -7696,15 +7694,15 @@ func (c StoreSoftDeleteExpiredUploadsViaTraversalFuncCall) Results() []interface
 // SourcedCommitsWithoutCommittedAt method of the parent MockStore instance
 // is invoked.
 type StoreSourcedCommitsWithoutCommittedAtFunc struct {
-	defaultHook func(context.Context, int) ([]shared1.SourcedCommits, error)
-	hooks       []func(context.Context, int) ([]shared1.SourcedCommits, error)
+	defaultHook func(context.Context, int) ([]store.SourcedCommits, error)
+	hooks       []func(context.Context, int) ([]store.SourcedCommits, error)
 	history     []StoreSourcedCommitsWithoutCommittedAtFuncCall
 	mutex       sync.Mutex
 }
 
 // SourcedCommitsWithoutCommittedAt delegates to the next hook function in
 // the queue and stores the parameter and result values of this invocation.
-func (m *MockStore) SourcedCommitsWithoutCommittedAt(v0 context.Context, v1 int) ([]shared1.SourcedCommits, error) {
+func (m *MockStore) SourcedCommitsWithoutCommittedAt(v0 context.Context, v1 int) ([]store.SourcedCommits, error) {
 	r0, r1 := m.SourcedCommitsWithoutCommittedAtFunc.nextHook()(v0, v1)
 	m.SourcedCommitsWithoutCommittedAtFunc.appendCall(StoreSourcedCommitsWithoutCommittedAtFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -7713,7 +7711,7 @@ func (m *MockStore) SourcedCommitsWithoutCommittedAt(v0 context.Context, v1 int)
 // SetDefaultHook sets function that is called when the
 // SourcedCommitsWithoutCommittedAt method of the parent MockStore instance
 // is invoked and the hook queue is empty.
-func (f *StoreSourcedCommitsWithoutCommittedAtFunc) SetDefaultHook(hook func(context.Context, int) ([]shared1.SourcedCommits, error)) {
+func (f *StoreSourcedCommitsWithoutCommittedAtFunc) SetDefaultHook(hook func(context.Context, int) ([]store.SourcedCommits, error)) {
 	f.defaultHook = hook
 }
 
@@ -7722,7 +7720,7 @@ func (f *StoreSourcedCommitsWithoutCommittedAtFunc) SetDefaultHook(hook func(con
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *StoreSourcedCommitsWithoutCommittedAtFunc) PushHook(hook func(context.Context, int) ([]shared1.SourcedCommits, error)) {
+func (f *StoreSourcedCommitsWithoutCommittedAtFunc) PushHook(hook func(context.Context, int) ([]store.SourcedCommits, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -7730,20 +7728,20 @@ func (f *StoreSourcedCommitsWithoutCommittedAtFunc) PushHook(hook func(context.C
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreSourcedCommitsWithoutCommittedAtFunc) SetDefaultReturn(r0 []shared1.SourcedCommits, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) ([]shared1.SourcedCommits, error) {
+func (f *StoreSourcedCommitsWithoutCommittedAtFunc) SetDefaultReturn(r0 []store.SourcedCommits, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]store.SourcedCommits, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreSourcedCommitsWithoutCommittedAtFunc) PushReturn(r0 []shared1.SourcedCommits, r1 error) {
-	f.PushHook(func(context.Context, int) ([]shared1.SourcedCommits, error) {
+func (f *StoreSourcedCommitsWithoutCommittedAtFunc) PushReturn(r0 []store.SourcedCommits, r1 error) {
+	f.PushHook(func(context.Context, int) ([]store.SourcedCommits, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreSourcedCommitsWithoutCommittedAtFunc) nextHook() func(context.Context, int) ([]shared1.SourcedCommits, error) {
+func (f *StoreSourcedCommitsWithoutCommittedAtFunc) nextHook() func(context.Context, int) ([]store.SourcedCommits, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -7786,7 +7784,7 @@ type StoreSourcedCommitsWithoutCommittedAtFuncCall struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared1.SourcedCommits
+	Result0 []store.SourcedCommits
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -8473,15 +8471,15 @@ func (c StoreUpdateUploadsVisibleToCommitsFuncCall) Results() []interface{} {
 // StoreWorkerutilStoreFunc describes the behavior when the WorkerutilStore
 // method of the parent MockStore instance is invoked.
 type StoreWorkerutilStoreFunc struct {
-	defaultHook func(*observation.Context) store1.Store[types.Upload]
-	hooks       []func(*observation.Context) store1.Store[types.Upload]
+	defaultHook func(*observation.Context) store1.Store[shared1.Upload]
+	hooks       []func(*observation.Context) store1.Store[shared1.Upload]
 	history     []StoreWorkerutilStoreFuncCall
 	mutex       sync.Mutex
 }
 
 // WorkerutilStore delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) WorkerutilStore(v0 *observation.Context) store1.Store[types.Upload] {
+func (m *MockStore) WorkerutilStore(v0 *observation.Context) store1.Store[shared1.Upload] {
 	r0 := m.WorkerutilStoreFunc.nextHook()(v0)
 	m.WorkerutilStoreFunc.appendCall(StoreWorkerutilStoreFuncCall{v0, r0})
 	return r0
@@ -8490,7 +8488,7 @@ func (m *MockStore) WorkerutilStore(v0 *observation.Context) store1.Store[types.
 // SetDefaultHook sets function that is called when the WorkerutilStore
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreWorkerutilStoreFunc) SetDefaultHook(hook func(*observation.Context) store1.Store[types.Upload]) {
+func (f *StoreWorkerutilStoreFunc) SetDefaultHook(hook func(*observation.Context) store1.Store[shared1.Upload]) {
 	f.defaultHook = hook
 }
 
@@ -8498,7 +8496,7 @@ func (f *StoreWorkerutilStoreFunc) SetDefaultHook(hook func(*observation.Context
 // WorkerutilStore method of the parent MockStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreWorkerutilStoreFunc) PushHook(hook func(*observation.Context) store1.Store[types.Upload]) {
+func (f *StoreWorkerutilStoreFunc) PushHook(hook func(*observation.Context) store1.Store[shared1.Upload]) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -8506,20 +8504,20 @@ func (f *StoreWorkerutilStoreFunc) PushHook(hook func(*observation.Context) stor
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreWorkerutilStoreFunc) SetDefaultReturn(r0 store1.Store[types.Upload]) {
-	f.SetDefaultHook(func(*observation.Context) store1.Store[types.Upload] {
+func (f *StoreWorkerutilStoreFunc) SetDefaultReturn(r0 store1.Store[shared1.Upload]) {
+	f.SetDefaultHook(func(*observation.Context) store1.Store[shared1.Upload] {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreWorkerutilStoreFunc) PushReturn(r0 store1.Store[types.Upload]) {
-	f.PushHook(func(*observation.Context) store1.Store[types.Upload] {
+func (f *StoreWorkerutilStoreFunc) PushReturn(r0 store1.Store[shared1.Upload]) {
+	f.PushHook(func(*observation.Context) store1.Store[shared1.Upload] {
 		return r0
 	})
 }
 
-func (f *StoreWorkerutilStoreFunc) nextHook() func(*observation.Context) store1.Store[types.Upload] {
+func (f *StoreWorkerutilStoreFunc) nextHook() func(*observation.Context) store1.Store[shared1.Upload] {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -8557,7 +8555,7 @@ type StoreWorkerutilStoreFuncCall struct {
 	Arg0 *observation.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 store1.Store[types.Upload]
+	Result0 store1.Store[shared1.Upload]
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -8587,7 +8585,7 @@ type MockRepoStore struct {
 func NewMockRepoStore() *MockRepoStore {
 	return &MockRepoStore{
 		GetFunc: &RepoStoreGetFunc{
-			defaultHook: func(context.Context, api.RepoID) (r0 *types1.Repo, r1 error) {
+			defaultHook: func(context.Context, api.RepoID) (r0 *types.Repo, r1 error) {
 				return
 			},
 		},
@@ -8599,7 +8597,7 @@ func NewMockRepoStore() *MockRepoStore {
 func NewStrictMockRepoStore() *MockRepoStore {
 	return &MockRepoStore{
 		GetFunc: &RepoStoreGetFunc{
-			defaultHook: func(context.Context, api.RepoID) (*types1.Repo, error) {
+			defaultHook: func(context.Context, api.RepoID) (*types.Repo, error) {
 				panic("unexpected invocation of MockRepoStore.Get")
 			},
 		},
@@ -8619,15 +8617,15 @@ func NewMockRepoStoreFrom(i RepoStore) *MockRepoStore {
 // RepoStoreGetFunc describes the behavior when the Get method of the parent
 // MockRepoStore instance is invoked.
 type RepoStoreGetFunc struct {
-	defaultHook func(context.Context, api.RepoID) (*types1.Repo, error)
-	hooks       []func(context.Context, api.RepoID) (*types1.Repo, error)
+	defaultHook func(context.Context, api.RepoID) (*types.Repo, error)
+	hooks       []func(context.Context, api.RepoID) (*types.Repo, error)
 	history     []RepoStoreGetFuncCall
 	mutex       sync.Mutex
 }
 
 // Get delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockRepoStore) Get(v0 context.Context, v1 api.RepoID) (*types1.Repo, error) {
+func (m *MockRepoStore) Get(v0 context.Context, v1 api.RepoID) (*types.Repo, error) {
 	r0, r1 := m.GetFunc.nextHook()(v0, v1)
 	m.GetFunc.appendCall(RepoStoreGetFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -8635,7 +8633,7 @@ func (m *MockRepoStore) Get(v0 context.Context, v1 api.RepoID) (*types1.Repo, er
 
 // SetDefaultHook sets function that is called when the Get method of the
 // parent MockRepoStore instance is invoked and the hook queue is empty.
-func (f *RepoStoreGetFunc) SetDefaultHook(hook func(context.Context, api.RepoID) (*types1.Repo, error)) {
+func (f *RepoStoreGetFunc) SetDefaultHook(hook func(context.Context, api.RepoID) (*types.Repo, error)) {
 	f.defaultHook = hook
 }
 
@@ -8643,7 +8641,7 @@ func (f *RepoStoreGetFunc) SetDefaultHook(hook func(context.Context, api.RepoID)
 // Get method of the parent MockRepoStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *RepoStoreGetFunc) PushHook(hook func(context.Context, api.RepoID) (*types1.Repo, error)) {
+func (f *RepoStoreGetFunc) PushHook(hook func(context.Context, api.RepoID) (*types.Repo, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -8651,20 +8649,20 @@ func (f *RepoStoreGetFunc) PushHook(hook func(context.Context, api.RepoID) (*typ
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *RepoStoreGetFunc) SetDefaultReturn(r0 *types1.Repo, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoID) (*types1.Repo, error) {
+func (f *RepoStoreGetFunc) SetDefaultReturn(r0 *types.Repo, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID) (*types.Repo, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *RepoStoreGetFunc) PushReturn(r0 *types1.Repo, r1 error) {
-	f.PushHook(func(context.Context, api.RepoID) (*types1.Repo, error) {
+func (f *RepoStoreGetFunc) PushReturn(r0 *types.Repo, r1 error) {
+	f.PushHook(func(context.Context, api.RepoID) (*types.Repo, error) {
 		return r0, r1
 	})
 }
 
-func (f *RepoStoreGetFunc) nextHook() func(context.Context, api.RepoID) (*types1.Repo, error) {
+func (f *RepoStoreGetFunc) nextHook() func(context.Context, api.RepoID) (*types.Repo, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -8705,7 +8703,7 @@ type RepoStoreGetFuncCall struct {
 	Arg1 api.RepoID
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *types1.Repo
+	Result0 *types.Repo
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

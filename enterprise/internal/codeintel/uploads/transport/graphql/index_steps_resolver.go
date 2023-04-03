@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
@@ -23,10 +23,10 @@ import (
 // The setup and teardown steps match the executor setup and teardown.
 type indexStepsResolver struct {
 	siteAdminChecker sharedresolvers.SiteAdminChecker
-	index            types.Index
+	index            uploadsshared.Index
 }
 
-func NewIndexStepsResolver(siteAdminChecker sharedresolvers.SiteAdminChecker, index types.Index) resolverstubs.IndexStepsResolver {
+func NewIndexStepsResolver(siteAdminChecker sharedresolvers.SiteAdminChecker, index uploadsshared.Index) resolverstubs.IndexStepsResolver {
 	return &indexStepsResolver{siteAdminChecker: siteAdminChecker, index: index}
 }
 
@@ -117,11 +117,11 @@ func (r *indexStepsResolver) executionLogEntryResolversWithPrefix(prefix string)
 
 type preIndexStepResolver struct {
 	siteAdminChecker sharedresolvers.SiteAdminChecker
-	step             types.DockerStep
+	step             uploadsshared.DockerStep
 	entry            *executor.ExecutionLogEntry
 }
 
-func newPreIndexStepResolver(siteAdminChecker sharedresolvers.SiteAdminChecker, step types.DockerStep, entry *executor.ExecutionLogEntry) resolverstubs.PreIndexStepResolver {
+func newPreIndexStepResolver(siteAdminChecker sharedresolvers.SiteAdminChecker, step uploadsshared.DockerStep, entry *executor.ExecutionLogEntry) resolverstubs.PreIndexStepResolver {
 	return &preIndexStepResolver{
 		siteAdminChecker: siteAdminChecker,
 		step:             step,
@@ -146,11 +146,11 @@ func (r *preIndexStepResolver) LogEntry() resolverstubs.ExecutionLogEntryResolve
 
 type indexStepResolver struct {
 	siteAdminChecker sharedresolvers.SiteAdminChecker
-	index            types.Index
+	index            uploadsshared.Index
 	entry            *executor.ExecutionLogEntry
 }
 
-func newIndexStepResolver(siteAdminChecker sharedresolvers.SiteAdminChecker, index types.Index, entry *executor.ExecutionLogEntry) resolverstubs.IndexStepResolver {
+func newIndexStepResolver(siteAdminChecker sharedresolvers.SiteAdminChecker, index uploadsshared.Index, entry *executor.ExecutionLogEntry) resolverstubs.IndexStepResolver {
 	return &indexStepResolver{
 		siteAdminChecker: siteAdminChecker,
 		index:            index,

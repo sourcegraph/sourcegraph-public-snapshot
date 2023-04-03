@@ -4,6 +4,9 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 )
 
+//
+// TODO - move to SCIP repo
+
 // CanonicalizeDocument deterministically re-orders the fields of the given document.
 func CanonicalizeDocument(document *scip.Document) *scip.Document {
 	document.Occurrences = CanonicalizeOccurrences(document.Occurrences)

@@ -11,8 +11,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 
-	autoindexingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -97,8 +97,8 @@ func TestHasRepository(t *testing.T) {
 		{52, false},
 	}
 
-	insertUploads(t, db, types.Upload{ID: 1, RepositoryID: 50})
-	insertUploads(t, db, types.Upload{ID: 2, RepositoryID: 51, State: "deleted"})
+	insertUploads(t, db, shared.Upload{ID: 1, RepositoryID: 50})
+	insertUploads(t, db, shared.Upload{ID: 2, RepositoryID: 51, State: "deleted"})
 
 	for _, testCase := range testCases {
 		name := fmt.Sprintf("repositoryID=%d", testCase.repositoryID)
@@ -178,10 +178,10 @@ func TestNumRepositoriesWithCodeIntelligence(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
-		types.Upload{ID: 100, RepositoryID: 50},
-		types.Upload{ID: 101, RepositoryID: 51},
-		types.Upload{ID: 102, RepositoryID: 52}, // Not in commit graph
-		types.Upload{ID: 103, RepositoryID: 53}, // Not on default branch
+		shared.Upload{ID: 100, RepositoryID: 50},
+		shared.Upload{ID: 101, RepositoryID: 51},
+		shared.Upload{ID: 102, RepositoryID: 52}, // Not in commit graph
+		shared.Upload{ID: 103, RepositoryID: 53}, // Not on default branch
 	)
 
 	if _, err := db.ExecContext(ctx, `
@@ -217,39 +217,39 @@ func TestRepositoryIDsWithErrors(t *testing.T) {
 	t3 := now.Add(-time.Minute * 3)
 
 	insertUploads(t, db,
-		types.Upload{ID: 100, RepositoryID: 50},                  // Repo 50 = success (no index)
-		types.Upload{ID: 101, RepositoryID: 51},                  // Repo 51 = success (+ successful index)
-		types.Upload{ID: 103, RepositoryID: 53, State: "failed"}, // Repo 53 = failed
+		shared.Upload{ID: 100, RepositoryID: 50},                  // Repo 50 = success (no index)
+		shared.Upload{ID: 101, RepositoryID: 51},                  // Repo 51 = success (+ successful index)
+		shared.Upload{ID: 103, RepositoryID: 53, State: "failed"}, // Repo 53 = failed
 
 		// Repo 54 = multiple failures for same project
-		types.Upload{ID: 150, RepositoryID: 54, State: "failed", FinishedAt: &t1},
-		types.Upload{ID: 151, RepositoryID: 54, State: "failed", FinishedAt: &t2},
-		types.Upload{ID: 152, RepositoryID: 54, State: "failed", FinishedAt: &t3},
+		shared.Upload{ID: 150, RepositoryID: 54, State: "failed", FinishedAt: &t1},
+		shared.Upload{ID: 151, RepositoryID: 54, State: "failed", FinishedAt: &t2},
+		shared.Upload{ID: 152, RepositoryID: 54, State: "failed", FinishedAt: &t3},
 
 		// Repo 55 = multiple failures for different projects
-		types.Upload{ID: 160, RepositoryID: 55, State: "failed", FinishedAt: &t1, Root: "proj1"},
-		types.Upload{ID: 161, RepositoryID: 55, State: "failed", FinishedAt: &t2, Root: "proj2"},
-		types.Upload{ID: 162, RepositoryID: 55, State: "failed", FinishedAt: &t3, Root: "proj3"},
+		shared.Upload{ID: 160, RepositoryID: 55, State: "failed", FinishedAt: &t1, Root: "proj1"},
+		shared.Upload{ID: 161, RepositoryID: 55, State: "failed", FinishedAt: &t2, Root: "proj2"},
+		shared.Upload{ID: 162, RepositoryID: 55, State: "failed", FinishedAt: &t3, Root: "proj3"},
 
 		// Repo 58 = multiple failures with later success (not counted)
-		types.Upload{ID: 170, RepositoryID: 58, State: "completed", FinishedAt: &t1},
-		types.Upload{ID: 171, RepositoryID: 58, State: "failed", FinishedAt: &t2},
-		types.Upload{ID: 172, RepositoryID: 58, State: "failed", FinishedAt: &t3},
+		shared.Upload{ID: 170, RepositoryID: 58, State: "completed", FinishedAt: &t1},
+		shared.Upload{ID: 171, RepositoryID: 58, State: "failed", FinishedAt: &t2},
+		shared.Upload{ID: 172, RepositoryID: 58, State: "failed", FinishedAt: &t3},
 	)
 	insertIndexes(t, db,
-		types.Index{ID: 201, RepositoryID: 51},                  // Repo 51 = success
-		types.Index{ID: 202, RepositoryID: 52, State: "failed"}, // Repo 52 = failing index
-		types.Index{ID: 203, RepositoryID: 53},                  // Repo 53 = success (+ failing upload)
+		uploadsshared.Index{ID: 201, RepositoryID: 51},                  // Repo 51 = success
+		uploadsshared.Index{ID: 202, RepositoryID: 52, State: "failed"}, // Repo 52 = failing index
+		uploadsshared.Index{ID: 203, RepositoryID: 53},                  // Repo 53 = success (+ failing upload)
 
 		// Repo 56 = multiple failures for same project
-		types.Index{ID: 250, RepositoryID: 56, State: "failed", FinishedAt: &t1},
-		types.Index{ID: 251, RepositoryID: 56, State: "failed", FinishedAt: &t2},
-		types.Index{ID: 252, RepositoryID: 56, State: "failed", FinishedAt: &t3},
+		uploadsshared.Index{ID: 250, RepositoryID: 56, State: "failed", FinishedAt: &t1},
+		uploadsshared.Index{ID: 251, RepositoryID: 56, State: "failed", FinishedAt: &t2},
+		uploadsshared.Index{ID: 252, RepositoryID: 56, State: "failed", FinishedAt: &t3},
 
 		// Repo 57 = multiple failures for different projects
-		types.Index{ID: 260, RepositoryID: 57, State: "failed", FinishedAt: &t1, Root: "proj1"},
-		types.Index{ID: 261, RepositoryID: 57, State: "failed", FinishedAt: &t2, Root: "proj2"},
-		types.Index{ID: 262, RepositoryID: 57, State: "failed", FinishedAt: &t3, Root: "proj3"},
+		uploadsshared.Index{ID: 260, RepositoryID: 57, State: "failed", FinishedAt: &t1, Root: "proj1"},
+		uploadsshared.Index{ID: 261, RepositoryID: 57, State: "failed", FinishedAt: &t2, Root: "proj2"},
+		uploadsshared.Index{ID: 262, RepositoryID: 57, State: "failed", FinishedAt: &t3, Root: "proj3"},
 	)
 
 	// Query page 1
@@ -260,7 +260,7 @@ func TestRepositoryIDsWithErrors(t *testing.T) {
 	if expected := 6; totalCount != expected {
 		t.Fatalf("unexpected total number of repositories. want=%d have=%d", expected, totalCount)
 	}
-	expected := []autoindexingshared.RepositoryWithCount{
+	expected := []uploadsshared.RepositoryWithCount{
 		{RepositoryID: 55, Count: 3},
 		{RepositoryID: 57, Count: 3},
 		{RepositoryID: 52, Count: 1},
@@ -275,7 +275,7 @@ func TestRepositoryIDsWithErrors(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error getting repositories with errors: %s", err)
 	}
-	expected = []autoindexingshared.RepositoryWithCount{
+	expected = []uploadsshared.RepositoryWithCount{
 		{RepositoryID: 54, Count: 1},
 		{RepositoryID: 56, Count: 1},
 	}

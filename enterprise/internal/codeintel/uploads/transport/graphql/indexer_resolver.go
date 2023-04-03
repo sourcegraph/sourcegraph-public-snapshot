@@ -1,6 +1,8 @@
-package types
+package graphql
 
-import "strings"
+import (
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+)
 
 type CodeIntelIndexerResolver interface {
 	Key() string
@@ -10,33 +12,15 @@ type CodeIntelIndexerResolver interface {
 }
 
 type codeIntelIndexerResolver struct {
-	indexer   CodeIntelIndexer
+	indexer   uploadsshared.CodeIntelIndexer
 	imageName string
 }
 
 func NewCodeIntelIndexerResolver(name, imageName string) CodeIntelIndexerResolver {
-	return NewCodeIntelIndexerResolverFrom(indexerFromName(name), imageName)
+	return NewCodeIntelIndexerResolverFrom(uploadsshared.IndexerFromName(name), imageName)
 }
 
-func indexerFromName(name string) CodeIntelIndexer {
-	// drop the Docker image tag if one exists
-	name = strings.Split(name, "@sha256:")[0]
-	name = strings.Split(name, ":")[0]
-
-	if indexer, ok := imageToIndexer[name]; ok {
-		return indexer
-	}
-
-	for _, indexer := range allIndexers {
-		if indexer.Name == name {
-			return indexer
-		}
-	}
-
-	return CodeIntelIndexer{Name: name}
-}
-
-func NewCodeIntelIndexerResolverFrom(indexer CodeIntelIndexer, imageName string) CodeIntelIndexerResolver {
+func NewCodeIntelIndexerResolverFrom(indexer uploadsshared.CodeIntelIndexer, imageName string) CodeIntelIndexerResolver {
 	return &codeIntelIndexerResolver{indexer: indexer, imageName: imageName}
 }
 

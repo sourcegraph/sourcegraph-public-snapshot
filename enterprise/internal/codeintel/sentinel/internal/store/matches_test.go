@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -277,20 +277,20 @@ func TestGetVulnerabilityMatchesSummaryCount(t *testing.T) {
 
 	/* Insert uploads for four (4) repositories */
 	insertUploads(t, db,
-		types.Upload{ID: 50, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
-		types.Upload{ID: 51, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
-		types.Upload{ID: 52, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
-		types.Upload{ID: 53, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
-		types.Upload{ID: 54, RepositoryID: 75, RepositoryName: "github.com/go-mockgen/xtools"},
-		types.Upload{ID: 55, RepositoryID: 75, RepositoryName: "github.com/go-mockgen/xtools"},
-		types.Upload{ID: 56, RepositoryID: 75, RepositoryName: "github.com/go-mockgen/xtools"},
-		types.Upload{ID: 57, RepositoryID: 90, RepositoryName: "github.com/testify/config"},
-		types.Upload{ID: 58, RepositoryID: 90, RepositoryName: "github.com/testify/config"},
-		types.Upload{ID: 59, RepositoryID: 90, RepositoryName: "github.com/testify/config"},
-		types.Upload{ID: 60, RepositoryID: 90, RepositoryName: "github.com/testify/config"},
-		types.Upload{ID: 61, RepositoryID: 90, RepositoryName: "github.com/testify/config"},
-		types.Upload{ID: 62, RepositoryID: 200, RepositoryName: "github.com/go-sentinel/config"},
-		types.Upload{ID: 63, RepositoryID: 200, RepositoryName: "github.com/go-sentinel/config"},
+		uploadsshared.Upload{ID: 50, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
+		uploadsshared.Upload{ID: 51, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
+		uploadsshared.Upload{ID: 52, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
+		uploadsshared.Upload{ID: 53, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
+		uploadsshared.Upload{ID: 54, RepositoryID: 75, RepositoryName: "github.com/go-mockgen/xtools"},
+		uploadsshared.Upload{ID: 55, RepositoryID: 75, RepositoryName: "github.com/go-mockgen/xtools"},
+		uploadsshared.Upload{ID: 56, RepositoryID: 75, RepositoryName: "github.com/go-mockgen/xtools"},
+		uploadsshared.Upload{ID: 57, RepositoryID: 90, RepositoryName: "github.com/testify/config"},
+		uploadsshared.Upload{ID: 58, RepositoryID: 90, RepositoryName: "github.com/testify/config"},
+		uploadsshared.Upload{ID: 59, RepositoryID: 90, RepositoryName: "github.com/testify/config"},
+		uploadsshared.Upload{ID: 60, RepositoryID: 90, RepositoryName: "github.com/testify/config"},
+		uploadsshared.Upload{ID: 61, RepositoryID: 90, RepositoryName: "github.com/testify/config"},
+		uploadsshared.Upload{ID: 62, RepositoryID: 200, RepositoryName: "github.com/go-sentinel/config"},
+		uploadsshared.Upload{ID: 63, RepositoryID: 200, RepositoryName: "github.com/go-sentinel/config"},
 	)
 
 	/*
@@ -393,13 +393,13 @@ func setupReferences(t *testing.T, db database.DB) {
 	store := basestore.NewWithHandle(db.Handle())
 
 	insertUploads(t, db,
-		types.Upload{ID: 50, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
-		types.Upload{ID: 51, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
-		types.Upload{ID: 52, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
-		types.Upload{ID: 53, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
-		types.Upload{ID: 54, RepositoryID: 75, RepositoryName: "github.com/go-mockgen/xtools"},
-		types.Upload{ID: 55, RepositoryID: 75, RepositoryName: "github.com/go-mockgen/xtools"},
-		types.Upload{ID: 56, RepositoryID: 75, RepositoryName: "github.com/go-mockgen/xtools"},
+		uploadsshared.Upload{ID: 50, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
+		uploadsshared.Upload{ID: 51, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
+		uploadsshared.Upload{ID: 52, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
+		uploadsshared.Upload{ID: 53, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
+		uploadsshared.Upload{ID: 54, RepositoryID: 75, RepositoryName: "github.com/go-mockgen/xtools"},
+		uploadsshared.Upload{ID: 55, RepositoryID: 75, RepositoryName: "github.com/go-mockgen/xtools"},
+		uploadsshared.Upload{ID: 56, RepositoryID: 75, RepositoryName: "github.com/go-mockgen/xtools"},
 	)
 
 	if err := store.Exec(context.Background(), sqlf.Sprintf(`
@@ -419,7 +419,7 @@ func setupReferences(t *testing.T, db database.DB) {
 }
 
 // insertUploads populates the lsif_uploads table with the given upload models.
-func insertUploads(t testing.TB, db database.DB, uploads ...types.Upload) {
+func insertUploads(t testing.TB, db database.DB, uploads ...uploadsshared.Upload) {
 	for _, upload := range uploads {
 		if upload.Commit == "" {
 			upload.Commit = makeCommit(upload.ID)

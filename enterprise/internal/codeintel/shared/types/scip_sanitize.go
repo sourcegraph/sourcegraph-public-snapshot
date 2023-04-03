@@ -6,6 +6,9 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 )
 
+//
+// TODO - move to SCIP repo
+
 // SanitizeDocument ensures that all strings in the given document are valid UTF-8.
 // This is a requirement for successful protobuf encoding.
 func SanitizeDocument(document *scip.Document) *scip.Document {

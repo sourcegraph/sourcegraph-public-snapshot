@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -349,7 +350,7 @@ func packageFromSymbol(symbolName string) (precise.Package, bool) {
 func writeSCIPData(
 	ctx context.Context,
 	lsifStore lsifstore.LsifStore,
-	upload codeinteltypes.Upload,
+	upload shared.Upload,
 	correlatedSCIPData lsifstore.ProcessedSCIPData,
 	trace observation.TraceLogger,
 ) (err error) {

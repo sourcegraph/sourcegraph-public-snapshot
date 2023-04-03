@@ -10,7 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -88,7 +88,7 @@ func TestUploadExpirer(t *testing.T) {
 }
 
 func setupMockPolicyService() *MockPolicyService {
-	policies := []types.ConfigurationPolicy{
+	policies := []policiesshared.ConfigurationPolicy{
 		{ID: 1, RepositoryID: nil},
 		{ID: 2, RepositoryID: intPtr(53)},
 		{ID: 3, RepositoryID: nil},
@@ -96,7 +96,7 @@ func setupMockPolicyService() *MockPolicyService {
 		{ID: 5, RepositoryID: intPtr(50)},
 	}
 
-	getConfigurationPolicies := func(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) (filtered []types.ConfigurationPolicy, _ int, _ error) {
+	getConfigurationPolicies := func(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) (filtered []policiesshared.ConfigurationPolicy, _ int, _ error) {
 		for _, policy := range policies {
 			if policy.RepositoryID == nil || *policy.RepositoryID == opts.RepositoryID {
 				filtered = append(filtered, policy)
@@ -113,7 +113,7 @@ func setupMockPolicyService() *MockPolicyService {
 }
 
 func setupMockUploadService(now time.Time) *MockStore {
-	uploads := []types.Upload{
+	uploads := []shared.Upload{
 		{ID: 11, State: "completed", RepositoryID: 50, Commit: "deadbeef01", UploadedAt: daysAgo(now, 1)}, // repo 50
 		{ID: 12, State: "completed", RepositoryID: 50, Commit: "deadbeef02", UploadedAt: daysAgo(now, 2)},
 		{ID: 13, State: "completed", RepositoryID: 50, Commit: "deadbeef03", UploadedAt: daysAgo(now, 3)},
@@ -159,8 +159,8 @@ func setupMockUploadService(now time.Time) *MockStore {
 		return scannedIDs, nil
 	}
 
-	getUploads := func(ctx context.Context, opts uploadsshared.GetUploadsOptions) ([]types.Upload, int, error) {
-		var filtered []types.Upload
+	getUploads := func(ctx context.Context, opts uploadsshared.GetUploadsOptions) ([]shared.Upload, int, error) {
+		var filtered []shared.Upload
 		for _, upload := range uploads {
 			if upload.RepositoryID != opts.RepositoryID {
 				continue
@@ -249,7 +249,7 @@ func testUploadExpirerMockPolicyMatcher() *MockPolicyMatcher {
 		},
 	}
 
-	commitsDescribedByPolicy := func(ctx context.Context, repositoryID int, repoName api.RepoName, policies []types.ConfigurationPolicy, now time.Time, _ ...string) (map[string][]policies.PolicyMatch, error) {
+	commitsDescribedByPolicy := func(ctx context.Context, repositoryID int, repoName api.RepoName, policies []policiesshared.ConfigurationPolicy, now time.Time, _ ...string) (map[string][]policies.PolicyMatch, error) {
 		return policyMatches[repositoryID], nil
 	}
 

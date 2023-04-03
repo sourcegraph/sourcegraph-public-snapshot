@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -18,8 +17,8 @@ func TestReindexUploads(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertUploads(t, db, types.Upload{ID: 1, State: "completed"})
-	insertUploads(t, db, types.Upload{ID: 2, State: "errored"})
+	insertUploads(t, db, shared.Upload{ID: 1, State: "completed"})
+	insertUploads(t, db, shared.Upload{ID: 2, State: "errored"})
 
 	if err := store.ReindexUploads(context.Background(), shared.ReindexUploadsOptions{
 		States:       []string{"errored"},
@@ -44,10 +43,10 @@ func TestReindexUploadsWithIndexerKey(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertUploads(t, db, types.Upload{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
-	insertUploads(t, db, types.Upload{ID: 2, Indexer: "sourcegraph/scip-go"})
-	insertUploads(t, db, types.Upload{ID: 3, Indexer: "sourcegraph/scip-typescript"})
-	insertUploads(t, db, types.Upload{ID: 4, Indexer: "sourcegraph/scip-typescript"})
+	insertUploads(t, db, shared.Upload{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
+	insertUploads(t, db, shared.Upload{ID: 2, Indexer: "sourcegraph/scip-go"})
+	insertUploads(t, db, shared.Upload{ID: 3, Indexer: "sourcegraph/scip-typescript"})
+	insertUploads(t, db, shared.Upload{ID: 4, Indexer: "sourcegraph/scip-typescript"})
 
 	if err := store.ReindexUploads(context.Background(), shared.ReindexUploadsOptions{
 		IndexerNames: []string{"scip-go"},
@@ -77,8 +76,8 @@ func TestReindexUploadByID(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertUploads(t, db, types.Upload{ID: 1, State: "completed"})
-	insertUploads(t, db, types.Upload{ID: 2, State: "errored"})
+	insertUploads(t, db, shared.Upload{ID: 1, State: "completed"})
+	insertUploads(t, db, shared.Upload{ID: 2, State: "errored"})
 
 	if err := store.ReindexUploadByID(context.Background(), 2); err != nil {
 		t.Fatalf("unexpected error reindexing uploads: %s", err)
