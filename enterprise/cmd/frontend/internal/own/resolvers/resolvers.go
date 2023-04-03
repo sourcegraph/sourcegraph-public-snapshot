@@ -292,3 +292,45 @@ func areOwnEndpointsAvailable(ctx context.Context) error {
 	}
 	return nil
 }
+
+func (r *ownResolver) AggregatedOwners(ctx context.Context,
+	blob *graphqlbackend.GitTreeEntryResolver,
+	args graphqlbackend.AggregatedOwnersArgs,
+) (graphqlbackend.AggregatedOwnershipConnectionResolver, error) {
+	return &aggregatedOwnershipConnectionResolver{}, nil
+}
+
+type aggregatedOwnershipConnectionResolver struct {
+	owners []*aggregatedOwnershipResolver
+}
+
+func (r *aggregatedOwnershipConnectionResolver) TotalCount(ctx context.Context) int32 {
+	return int32(len(r.owners))
+}
+
+func (r *aggregatedOwnershipConnectionResolver) PageInfo(ctx context.Context) *graphqlutil.PageInfo {
+	return graphqlutil.HasNextPage(false)
+}
+
+func (r *aggregatedOwnershipConnectionResolver) Nodes(ctx context.Context) []graphqlbackend.AggregatedOwnershipResolver {
+	var rs []graphqlbackend.AggregatedOwnershipResolver
+	for _, o := range r.owners {
+		rs = append(rs, o)
+	}
+	return rs
+}
+
+type aggregatedOwnershipResolver struct {
+	owner      *ownerResolver
+	totalFiles int32
+}
+
+func (r *aggregatedOwnershipResolver) Owner(ctx context.Context) (graphqlbackend.OwnerResolver, error) {
+	return r.owner, nil
+}
+
+func (r *aggregatedOwnershipResolver) TotalFiles(ctx context.Context) int32 { return r.totalFiles }
+
+func (r *aggregatedOwnershipResolver) Reasons(ctx context.Context) ([]graphqlbackend.OwnershipReasonResolver, error) {
+	return nil, nil
+}

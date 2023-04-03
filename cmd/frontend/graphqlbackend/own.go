@@ -16,8 +16,15 @@ type ListOwnershipArgs struct {
 	Reasons *[]string
 }
 
+type AggregatedOwnersArgs struct {
+	Revision string
+	First    *int32
+	After    *string
+}
+
 type OwnResolver interface {
 	GitBlobOwnership(ctx context.Context, blob *GitTreeEntryResolver, args ListOwnershipArgs) (OwnershipConnectionResolver, error)
+	AggregatedOwners(ctx context.Context, treeOrBlob *GitTreeEntryResolver, args AggregatedOwnersArgs) (AggregatedOwnershipConnectionResolver, error)
 
 	PersonOwnerField(person *PersonResolver) string
 	UserOwnerField(user *UserResolver) string
@@ -33,6 +40,19 @@ type OwnResolver interface {
 	AddCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
 	UpdateCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
 	DeleteCodeownersFiles(context.Context, *DeleteCodeownersFileArgs) (*EmptyResponse, error)
+}
+
+type AggregatedOwnershipConnectionResolver interface {
+	TotalCount(ctx context.Context) int32
+	PageInfo(ctx context.Context) *graphqlutil.PageInfo
+	Nodes(ctx context.Context) []AggregatedOwnershipResolver
+}
+
+type AggregatedOwnershipResolver interface {
+	Owner(ctx context.Context) (OwnerResolver, error)
+	TotalFiles(ctx context.Context) int32
+	//Samples(ctx context.Context) ([]*AggregatedOwnershipSampleResolver, error)
+	Reasons(ctx context.Context) ([]OwnershipReasonResolver, error)
 }
 
 type OwnershipConnectionResolver interface {

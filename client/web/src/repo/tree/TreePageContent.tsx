@@ -19,11 +19,11 @@ import { Card, CardHeader, Link, Tooltip } from '@sourcegraph/wildcard'
 import { requestGraphQL } from '../../backend/graphql'
 import {
     ConnectionContainer,
+    ConnectionError,
     ConnectionList,
     ConnectionLoading,
     ConnectionSummary,
     SummaryContainer,
-    ConnectionError,
 } from '../../components/FilteredConnection/ui'
 import {
     CommitAtTimeResult,
@@ -32,12 +32,12 @@ import {
     DiffSinceVariables,
     GitCommitFields,
     RepositoryContributorNodeFields,
-    TreePageRepositoryContributorsResult,
-    TreePageRepositoryContributorsVariables,
     Scalars,
     TreeCommitsResult,
-    TreePageRepositoryFields,
     TreeCommitsVariables,
+    TreePageRepositoryContributorsResult,
+    TreePageRepositoryContributorsVariables,
+    TreePageRepositoryFields,
 } from '../../graphql-operations'
 import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
@@ -214,6 +214,13 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                     <Card className={styles.commits}>
                         <CardHeader className={panelStyles.cardColHeaderWrapper}>Commits</CardHeader>
                         <Commits {...props} />
+                    </Card>
+                )}
+
+                {!isPackage && (
+                    <Card className={styles.contributors}>
+                        <CardHeader className={panelStyles.cardColHeaderWrapper}>Contributors</CardHeader>
+                        <Contributors {...props} />
                     </Card>
                 )}
 
