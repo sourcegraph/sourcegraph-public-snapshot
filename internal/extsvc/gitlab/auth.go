@@ -49,7 +49,7 @@ func (pat *SudoableToken) Hash() string {
 func RequestedOAuthScopes(defaultAPIScope string) []string {
 	scopes := []string{"read_user"}
 	if defaultAPIScope == "" {
-		defaultAPIScope = "api"
+		scopes = append(scopes, "api")
 	} else {
 		scopes = append(scopes, defaultAPIScope)
 	}
