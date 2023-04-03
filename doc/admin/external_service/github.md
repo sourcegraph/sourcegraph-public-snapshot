@@ -87,7 +87,7 @@ When creating your fine-grained access token, select the following permissions d
 
 <br>
 
-> WARNING: Fine-grained tokens does not support the `repositoryQuery` code host connection option or batch changes. Both of these features rely on GitHub's GraphQL API, which is [unsupported by fine-grained access tokens](https://docs.github.com/en/graphql/guides/forming-calls-with-graphql#authenticating-with-graphql).
+> WARNING: Fine-grained tokens don't support the `repositoryQuery` code host connection option or batch changes. Both of these features rely on GitHub's GraphQL API, which is [unsupported by fine-grained access tokens](https://docs.github.com/en/graphql/guides/forming-calls-with-graphql#authenticating-with-graphql).
 
 ## Rate limits
 
