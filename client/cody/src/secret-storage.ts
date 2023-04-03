@@ -11,7 +11,7 @@ export interface SecretStorage {
     get(key: string): Thenable<string | undefined>
     store(key: string, value: string): Thenable<void>
     delete(key: string): Thenable<void>
-    onDidChange(callback: (key: string) => void): vscode.Disposable
+    onDidChange(callback: (key: string) => Promise<void>): vscode.Disposable
 }
 
 export class VSCodeSecretStorage implements SecretStorage {
@@ -29,14 +29,14 @@ export class VSCodeSecretStorage implements SecretStorage {
         return this.secretStorage.delete(key)
     }
 
-    public onDidChange(callback: (key: string) => void): vscode.Disposable {
+    public onDidChange(callback: (key: string) => Promise<void>): vscode.Disposable {
         return this.secretStorage.onDidChange(event => callback(event.key))
     }
 }
 
 export class InMemorySecretStorage implements SecretStorage {
     private storage: Map<string, string>
-    private callbacks: ((key: string) => void)[]
+    private callbacks: ((key: string) => Promise<void>)[]
 
     constructor() {
         this.storage = new Map<string, string>()
@@ -52,7 +52,7 @@ export class InMemorySecretStorage implements SecretStorage {
 
         for (const cb of this.callbacks) {
             // eslint-disable-next-line callback-return
-            cb(key)
+            void cb(key)
         }
 
         return Promise.resolve()
@@ -63,13 +63,13 @@ export class InMemorySecretStorage implements SecretStorage {
 
         for (const cb of this.callbacks) {
             // eslint-disable-next-line callback-return
-            cb(key)
+            void cb(key)
         }
 
         return Promise.resolve()
     }
 
-    public onDidChange(callback: (key: string) => void): vscode.Disposable {
+    public onDidChange(callback: (key: string) => Promise<void>): vscode.Disposable {
         this.callbacks.push(callback)
 
         return new vscode.Disposable(() => {

@@ -8,8 +8,8 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
-import { getAccessToken, SecretStorage } from './command/secret-storage'
 import { LocalKeywordContextFetcher } from './keyword-context/local-keyword-context-fetcher'
+import { getAccessToken, SecretStorage } from './secret-storage'
 
 interface ExternalServices {
     intentDetector: IntentDetector
