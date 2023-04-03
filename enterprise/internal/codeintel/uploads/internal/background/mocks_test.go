@@ -8737,10 +8737,6 @@ type MockLsifStore struct {
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *LsifStoreDoneFunc
-	// GetUploadDocumentsForPathFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// GetUploadDocumentsForPath.
-	GetUploadDocumentsForPathFunc *LsifStoreGetUploadDocumentsForPathFunc
 	// IDsWithMetaFunc is an instance of a mock function object controlling
 	// the behavior of the method IDsWithMeta.
 	IDsWithMetaFunc *LsifStoreIDsWithMetaFunc
@@ -8757,9 +8753,6 @@ type MockLsifStore struct {
 	// ReconcileCandidatesFunc is an instance of a mock function object
 	// controlling the behavior of the method ReconcileCandidates.
 	ReconcileCandidatesFunc *LsifStoreReconcileCandidatesFunc
-	// ScanDocumentsFunc is an instance of a mock function object
-	// controlling the behavior of the method ScanDocuments.
-	ScanDocumentsFunc *LsifStoreScanDocumentsFunc
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *LsifStoreTransactFunc
@@ -8781,11 +8774,6 @@ func NewMockLsifStore() *MockLsifStore {
 		},
 		DoneFunc: &LsifStoreDoneFunc{
 			defaultHook: func(error) (r0 error) {
-				return
-			},
-		},
-		GetUploadDocumentsForPathFunc: &LsifStoreGetUploadDocumentsForPathFunc{
-			defaultHook: func(context.Context, int, string) (r0 []string, r1 int, r2 error) {
 				return
 			},
 		},
@@ -8811,11 +8799,6 @@ func NewMockLsifStore() *MockLsifStore {
 		},
 		ReconcileCandidatesFunc: &LsifStoreReconcileCandidatesFunc{
 			defaultHook: func(context.Context, int) (r0 []int, r1 error) {
-				return
-			},
-		},
-		ScanDocumentsFunc: &LsifStoreScanDocumentsFunc{
-			defaultHook: func(context.Context, int, func(path string, document *scip.Document) error) (r0 error) {
 				return
 			},
 		},
@@ -8846,11 +8829,6 @@ func NewStrictMockLsifStore() *MockLsifStore {
 				panic("unexpected invocation of MockLsifStore.Done")
 			},
 		},
-		GetUploadDocumentsForPathFunc: &LsifStoreGetUploadDocumentsForPathFunc{
-			defaultHook: func(context.Context, int, string) ([]string, int, error) {
-				panic("unexpected invocation of MockLsifStore.GetUploadDocumentsForPath")
-			},
-		},
 		IDsWithMetaFunc: &LsifStoreIDsWithMetaFunc{
 			defaultHook: func(context.Context, []int) ([]int, error) {
 				panic("unexpected invocation of MockLsifStore.IDsWithMeta")
@@ -8876,11 +8854,6 @@ func NewStrictMockLsifStore() *MockLsifStore {
 				panic("unexpected invocation of MockLsifStore.ReconcileCandidates")
 			},
 		},
-		ScanDocumentsFunc: &LsifStoreScanDocumentsFunc{
-			defaultHook: func(context.Context, int, func(path string, document *scip.Document) error) error {
-				panic("unexpected invocation of MockLsifStore.ScanDocuments")
-			},
-		},
 		TransactFunc: &LsifStoreTransactFunc{
 			defaultHook: func(context.Context) (lsifstore.LsifStore, error) {
 				panic("unexpected invocation of MockLsifStore.Transact")
@@ -8902,9 +8875,6 @@ func NewMockLsifStoreFrom(i lsifstore.LsifStore) *MockLsifStore {
 		DoneFunc: &LsifStoreDoneFunc{
 			defaultHook: i.Done,
 		},
-		GetUploadDocumentsForPathFunc: &LsifStoreGetUploadDocumentsForPathFunc{
-			defaultHook: i.GetUploadDocumentsForPath,
-		},
 		IDsWithMetaFunc: &LsifStoreIDsWithMetaFunc{
 			defaultHook: i.IDsWithMeta,
 		},
@@ -8919,9 +8889,6 @@ func NewMockLsifStoreFrom(i lsifstore.LsifStore) *MockLsifStore {
 		},
 		ReconcileCandidatesFunc: &LsifStoreReconcileCandidatesFunc{
 			defaultHook: i.ReconcileCandidates,
-		},
-		ScanDocumentsFunc: &LsifStoreScanDocumentsFunc{
-			defaultHook: i.ScanDocuments,
 		},
 		TransactFunc: &LsifStoreTransactFunc{
 			defaultHook: i.Transact,
@@ -9264,123 +9231,6 @@ func (c LsifStoreDoneFuncCall) Args() []interface{} {
 // invocation.
 func (c LsifStoreDoneFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// LsifStoreGetUploadDocumentsForPathFunc describes the behavior when the
-// GetUploadDocumentsForPath method of the parent MockLsifStore instance is
-// invoked.
-type LsifStoreGetUploadDocumentsForPathFunc struct {
-	defaultHook func(context.Context, int, string) ([]string, int, error)
-	hooks       []func(context.Context, int, string) ([]string, int, error)
-	history     []LsifStoreGetUploadDocumentsForPathFuncCall
-	mutex       sync.Mutex
-}
-
-// GetUploadDocumentsForPath delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockLsifStore) GetUploadDocumentsForPath(v0 context.Context, v1 int, v2 string) ([]string, int, error) {
-	r0, r1, r2 := m.GetUploadDocumentsForPathFunc.nextHook()(v0, v1, v2)
-	m.GetUploadDocumentsForPathFunc.appendCall(LsifStoreGetUploadDocumentsForPathFuncCall{v0, v1, v2, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the
-// GetUploadDocumentsForPath method of the parent MockLsifStore instance is
-// invoked and the hook queue is empty.
-func (f *LsifStoreGetUploadDocumentsForPathFunc) SetDefaultHook(hook func(context.Context, int, string) ([]string, int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetUploadDocumentsForPath method of the parent MockLsifStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *LsifStoreGetUploadDocumentsForPathFunc) PushHook(hook func(context.Context, int, string) ([]string, int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LsifStoreGetUploadDocumentsForPathFunc) SetDefaultReturn(r0 []string, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, int, string) ([]string, int, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LsifStoreGetUploadDocumentsForPathFunc) PushReturn(r0 []string, r1 int, r2 error) {
-	f.PushHook(func(context.Context, int, string) ([]string, int, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *LsifStoreGetUploadDocumentsForPathFunc) nextHook() func(context.Context, int, string) ([]string, int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LsifStoreGetUploadDocumentsForPathFunc) appendCall(r0 LsifStoreGetUploadDocumentsForPathFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of LsifStoreGetUploadDocumentsForPathFuncCall
-// objects describing the invocations of this function.
-func (f *LsifStoreGetUploadDocumentsForPathFunc) History() []LsifStoreGetUploadDocumentsForPathFuncCall {
-	f.mutex.Lock()
-	history := make([]LsifStoreGetUploadDocumentsForPathFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LsifStoreGetUploadDocumentsForPathFuncCall is an object that describes an
-// invocation of method GetUploadDocumentsForPath on an instance of
-// MockLsifStore.
-type LsifStoreGetUploadDocumentsForPathFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []string
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 int
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LsifStoreGetUploadDocumentsForPathFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LsifStoreGetUploadDocumentsForPathFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // LsifStoreIDsWithMetaFunc describes the behavior when the IDsWithMeta
@@ -9934,114 +9784,6 @@ func (c LsifStoreReconcileCandidatesFuncCall) Args() []interface{} {
 // invocation.
 func (c LsifStoreReconcileCandidatesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// LsifStoreScanDocumentsFunc describes the behavior when the ScanDocuments
-// method of the parent MockLsifStore instance is invoked.
-type LsifStoreScanDocumentsFunc struct {
-	defaultHook func(context.Context, int, func(path string, document *scip.Document) error) error
-	hooks       []func(context.Context, int, func(path string, document *scip.Document) error) error
-	history     []LsifStoreScanDocumentsFuncCall
-	mutex       sync.Mutex
-}
-
-// ScanDocuments delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockLsifStore) ScanDocuments(v0 context.Context, v1 int, v2 func(path string, document *scip.Document) error) error {
-	r0 := m.ScanDocumentsFunc.nextHook()(v0, v1, v2)
-	m.ScanDocumentsFunc.appendCall(LsifStoreScanDocumentsFuncCall{v0, v1, v2, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the ScanDocuments method
-// of the parent MockLsifStore instance is invoked and the hook queue is
-// empty.
-func (f *LsifStoreScanDocumentsFunc) SetDefaultHook(hook func(context.Context, int, func(path string, document *scip.Document) error) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ScanDocuments method of the parent MockLsifStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *LsifStoreScanDocumentsFunc) PushHook(hook func(context.Context, int, func(path string, document *scip.Document) error) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LsifStoreScanDocumentsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, func(path string, document *scip.Document) error) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LsifStoreScanDocumentsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, func(path string, document *scip.Document) error) error {
-		return r0
-	})
-}
-
-func (f *LsifStoreScanDocumentsFunc) nextHook() func(context.Context, int, func(path string, document *scip.Document) error) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LsifStoreScanDocumentsFunc) appendCall(r0 LsifStoreScanDocumentsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of LsifStoreScanDocumentsFuncCall objects
-// describing the invocations of this function.
-func (f *LsifStoreScanDocumentsFunc) History() []LsifStoreScanDocumentsFuncCall {
-	f.mutex.Lock()
-	history := make([]LsifStoreScanDocumentsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LsifStoreScanDocumentsFuncCall is an object that describes an invocation
-// of method ScanDocuments on an instance of MockLsifStore.
-type LsifStoreScanDocumentsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 func(path string, document *scip.Document) error
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LsifStoreScanDocumentsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LsifStoreScanDocumentsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // LsifStoreTransactFunc describes the behavior when the Transact method of
