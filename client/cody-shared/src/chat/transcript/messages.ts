@@ -11,3 +11,12 @@ export interface InteractionMessage extends Message {
     timestamp: string
     prefix?: string
 }
+
+export interface UserLocalHistory {
+    chat: ChatHistory
+    input: string[]
+}
+
+export interface ChatHistory {
+    [chatID: string]: ChatMessage[]
+}

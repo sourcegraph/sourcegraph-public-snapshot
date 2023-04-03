@@ -2,7 +2,7 @@
 // A memento represents a storage utility. It can store and retrieve values.
 import { Memento } from 'vscode'
 
-import { UserLocalHistory } from '../../webviews/utils/types'
+import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 export class LocalStorage {
     private KEY_LOCAL_HISTORY = 'cody-local-chatHistory'
