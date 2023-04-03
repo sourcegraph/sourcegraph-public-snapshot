@@ -11,32 +11,26 @@ interface StorageProvider {
 }
 
 export class EventLogger {
-    private gqlAPIClient: SourcegraphGraphQLAPIClient
-    private uid: string | null = null
     private version = packageVersion
-    private localStorageService: StorageProvider
-    private newInstall = false
 
-    constructor(storage: StorageProvider, gqlAPIClient: SourcegraphGraphQLAPIClient) {
-        this.localStorageService = storage
-        this.gqlAPIClient = gqlAPIClient
-        this.initializeLogParameters()
-            .then(() => {})
-            .catch(() => {})
-    }
+    private constructor(private gqlAPIClient: SourcegraphGraphQLAPIClient, private uid: string) {}
 
-    private async initializeLogParameters(): Promise<void> {
-        let anonymousUserID = this.localStorageService.get(ANONYMOUS_USER_ID_KEY)
+    public static async create(
+        localStorageService: StorageProvider,
+        gqlAPIClient: SourcegraphGraphQLAPIClient
+    ): Promise<EventLogger> {
+        let anonymousUserID = localStorageService.get(ANONYMOUS_USER_ID_KEY)
+        let newInstall = false
         if (!anonymousUserID) {
+            newInstall = true
             anonymousUserID = uuid.v4()
-            this.newInstall = true
-            await this.localStorageService.set(ANONYMOUS_USER_ID_KEY, anonymousUserID)
+            await localStorageService.set(ANONYMOUS_USER_ID_KEY, anonymousUserID)
         }
-        this.uid = anonymousUserID
-        if (this.newInstall) {
-            await this.log('CodyInstalled')
-            this.newInstall = false
+        const eventLogger = new EventLogger(gqlAPIClient, anonymousUserID)
+        if (newInstall) {
+            await eventLogger.log('CodyInstalled')
         }
+        return eventLogger
     }
 
     /**
