@@ -192,6 +192,7 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 	}
 
 	return runner.KubernetesOptions{
+		Enabled:    config.IsKubernetes(),
 		ConfigPath: c.KubernetesConfigPath,
 		ContainerOptions: command.KubernetesContainerOptions{
 			NodeName:     c.KubernetesNodeName,

@@ -216,13 +216,6 @@ func TestNew(t *testing.T) {
 }
 
 func TestNew_Kubernetes(t *testing.T) {
-	err := os.Setenv("KUBERNETES_SERVICE_HOST", "http://localhost")
-	require.NoError(t, err)
-	err = os.Setenv("KUBERNETES_SERVICE_PORT", "8000")
-	require.NoError(t, err)
-	defer os.Unsetenv("KUBERNETES_SERVICE_HOST")
-	defer os.Unsetenv("KUBERNETES_SERVICE_PORT")
-
 	tempFile, err := os.CreateTemp("", "kubeconfig")
 	require.NoError(t, err)
 	defer os.Remove(tempFile.Name())
@@ -251,6 +244,7 @@ kind: Config
 		workspace.CloneOptions{},
 		runner.Options{
 			KubernetesOptions: runner.KubernetesOptions{
+				Enabled:          true,
 				ConfigPath:       tempFile.Name(),
 				ContainerOptions: command.KubernetesContainerOptions{},
 			},

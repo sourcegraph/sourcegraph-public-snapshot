@@ -8,7 +8,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
@@ -87,7 +86,7 @@ func New(
 		}
 	}
 
-	if config.IsKubernetes() {
+	if runnerOpts.KubernetesOptions.Enabled {
 		configPath := runnerOpts.KubernetesOptions.ConfigPath
 		kubeConfig, err := clientcmd.BuildConfigFromFlags("", configPath)
 		if err != nil {
