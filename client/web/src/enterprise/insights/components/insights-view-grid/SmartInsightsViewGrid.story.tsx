@@ -1190,6 +1190,11 @@ function generateDefaultRequestVariables(insightId: string): GetInsightViewVaria
 
 export const SmartInsightsViewGridExample = (): JSX.Element => (
     <MockedTestProvider mocks={INSIGHT_DATA_MOCKS} addTypename={true}>
-        <SmartInsightsViewGrid insights={INSIGHT_CONFIGURATIONS} telemetryService={NOOP_TELEMETRY_SERVICE} />
+        <SmartInsightsViewGrid
+            id="test-insight-id"
+            persistSizeAndOrder={false}
+            insights={INSIGHT_CONFIGURATIONS}
+            telemetryService={NOOP_TELEMETRY_SERVICE}
+        />
     </MockedTestProvider>
 )

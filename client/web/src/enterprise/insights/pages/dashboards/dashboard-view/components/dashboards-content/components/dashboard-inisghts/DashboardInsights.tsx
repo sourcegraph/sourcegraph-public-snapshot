@@ -40,7 +40,12 @@ export const DashboardInsights: FC<DashboardInsightsProps> = props => {
     return (
         <InsightContext.Provider value={insightContextValue}>
             {insights.length > 0 ? (
-                <SmartInsightsViewGrid insights={insights} telemetryService={telemetryService} className={className} />
+                <SmartInsightsViewGrid
+                    id={currentDashboard.id}
+                    insights={insights}
+                    telemetryService={telemetryService}
+                    className={className}
+                />
             ) : (
                 <EmptyCustomDashboard dashboard={currentDashboard} onAddInsightRequest={onAddInsightRequest} />
             )}
