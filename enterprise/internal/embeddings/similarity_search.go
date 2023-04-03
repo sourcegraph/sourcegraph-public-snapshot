@@ -83,7 +83,7 @@ type WorkerOptions struct {
 
 // SimilaritySearch finds the `nResults` most similar rows to a query vector. It uses the cosine similarity metric.
 // IMPORTANT: The vectors in the embedding index have to be normalized for similarity search to work correctly.
-func (index *EmbeddingIndex) SimilaritySearch(query []float32, numResults int, workerOptions WorkerOptions, debug bool) []EmbeddingSearchResult {
+func (index *EmbeddingIndex) SimilaritySearch(query []float32, numResults int, workerOptions WorkerOptions, opts SearchOpts) []EmbeddingSearchResult {
 	if numResults == 0 {
 		return []EmbeddingSearchResult{}
 	}
@@ -104,13 +104,13 @@ func (index *EmbeddingIndex) SimilaritySearch(query []float32, numResults int, w
 			// Capture the loop variable value so we can use it in the closure below.
 			workerIdx := workerIdx
 			wg.Go(func() {
-				heaps[workerIdx] = index.partialSimilaritySearch(query, numResults, rowsPerWorker[workerIdx], debug)
+				heaps[workerIdx] = index.partialSimilaritySearch(query, numResults, rowsPerWorker[workerIdx], opts)
 			})
 		}
 		wg.Wait()
 	} else {
 		// Run the similarity search directly when we have a single worker to eliminate the concurrency overhead.
-		heaps[0] = index.partialSimilaritySearch(query, numResults, rowsPerWorker[0], debug)
+		heaps[0] = index.partialSimilaritySearch(query, numResults, rowsPerWorker[0], opts)
 	}
 
 	// Collect all heap neighbors from workers into a single array.
@@ -136,7 +136,7 @@ func (index *EmbeddingIndex) SimilaritySearch(query []float32, numResults int, w
 	return results
 }
 
-func (index *EmbeddingIndex) partialSimilaritySearch(query []float32, numResults int, partialRows partialRows, debug bool) *nearestNeighborsHeap {
+func (index *EmbeddingIndex) partialSimilaritySearch(query []float32, numResults int, partialRows partialRows, opts SearchOpts) *nearestNeighborsHeap {
 	nRows := partialRows.end - partialRows.start
 	if nRows <= 0 {
 		return nil
@@ -145,12 +145,12 @@ func (index *EmbeddingIndex) partialSimilaritySearch(query []float32, numResults
 
 	nnHeap := newNearestNeighborsHeap()
 	for i := partialRows.start; i < partialRows.start+numResults; i++ {
-		score, debugInfo := index.score(query, i, debug)
+		score, debugInfo := index.score(query, i, opts)
 		heap.Push(nnHeap, nearestNeighbor{index: i, score: score, debug: debugInfo})
 	}
 
 	for i := partialRows.start + numResults; i < partialRows.end; i++ {
-		score, debugInfo := index.score(query, i, debug)
+		score, debugInfo := index.score(query, i, opts)
 		// Add row if it has greater similarity than the smallest similarity in the heap.
 		// This way we ensure keep a set of the highest similarities in the heap.
 		if score > nnHeap.Peek().score {
@@ -167,10 +167,10 @@ const (
 	scoreSimilarityWeight float32 = 2.0 / 3.0
 )
 
-func (index *EmbeddingIndex) score(query []float32, i int, debug bool) (score float32, debugInfo string) {
+func (index *EmbeddingIndex) score(query []float32, i int, opts SearchOpts) (score float32, debugInfo string) {
 	addScore := func(what string, s float32) {
 		score += s
-		if debug {
+		if opts.Debug {
 			debugInfo += fmt.Sprintf("%s:%.2f, ", what, s)
 		}
 	}
@@ -183,7 +183,7 @@ func (index *EmbeddingIndex) score(query []float32, i int, debug bool) (score fl
 	addScore("similarity", scoreSimilarityWeight*similarity)
 
 	// handle missing ranks
-	if len(index.Ranks) > i {
+	if opts.UseDocumentRanks && len(index.Ranks) > i {
 		// The file rank represents a log (base 2) count. The log ranks should be
 		// bounded at 32, but we cap it just in case to ensure it falls in the range [0,
 		// 1]. I am not using math.Min here to avoid the back and forth conversion
@@ -195,7 +195,7 @@ func (index *EmbeddingIndex) score(query []float32, i int, debug bool) (score fl
 		addScore("rank", scoreFileRankWeight*normalizedRank)
 	}
 
-	if debug {
+	if opts.Debug {
 		debugInfo = fmt.Sprintf("score: %.2f, %s", score, debugInfo)
 	}
 
@@ -222,4 +222,9 @@ func max(a, b int) int {
 		return a
 	}
 	return b
+}
+
+type SearchOpts struct {
+	Debug            bool
+	UseDocumentRanks bool
 }
