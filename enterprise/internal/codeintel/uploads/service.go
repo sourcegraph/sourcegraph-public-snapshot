@@ -204,9 +204,9 @@ func (s *Service) GetAuditLogsForUpload(ctx context.Context, uploadID int) ([]sh
 	return s.store.GetAuditLogsForUpload(ctx, uploadID)
 }
 
-func (s *Service) GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error) {
-	return s.lsifstore.GetUploadDocumentsForPath(ctx, bundleID, pathPattern)
-}
+// func (s *Service) GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error) {
+// 	return s.lsifstore.GetUploadDocumentsForPath(ctx, bundleID, pathPattern)
+// }
 
 func (s *Service) GetRecentUploadsSummary(ctx context.Context, repositoryID int) ([]shared.UploadsWithRepositoryNamespace, error) {
 	return s.store.GetRecentUploadsSummary(ctx, repositoryID)
