@@ -38,9 +38,10 @@ const staticExtensions: Extension = [
             caretColor: 'var(--search-query-text-color)',
             fontFamily: 'var(--code-font-family)',
             fontSize: 'var(--code-font-size)',
-        },
-        '.cm-content.focus-visible': {
-            boxShadow: 'none',
+
+            '&.focus-visible': {
+                boxShadow: 'none',
+            },
         },
         '.cm-line': {
             padding: '0',

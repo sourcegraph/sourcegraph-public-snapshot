@@ -17,6 +17,7 @@ type operations struct {
 	// Indexes
 	insertIndex                    *observation.Operation
 	indexesInserted                prometheus.Counter
+	getRepositoriesForIndexScan    *observation.Operation
 	getIndexes                     *observation.Operation
 	getIndexByID                   *observation.Operation
 	getIndexesByIDs                *observation.Operation
@@ -127,5 +128,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		topRepositoriesToConfigure:          op("TopRepositoriesToConfigure"),
 		setConfigurationSummary:             op("SetConfigurationSummary"),
 		truncateConfigurationSummary:        op("TruncateConfigurationSummary"),
+		getRepositoriesForIndexScan:         op("GetRepositoriesForIndexScan"),
 	}
 }

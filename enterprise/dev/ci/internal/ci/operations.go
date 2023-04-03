@@ -653,6 +653,15 @@ func addVsceReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("pnpm --filter @sourcegraph/vscode run release"))
 }
 
+// Release the Cody extension.
+func addCodyReleaseSteps(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":vscode::robot_face: Cody release",
+		withPnpmCache(),
+		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
+		bk.Cmd("pnpm generate"),
+		bk.Cmd("pnpm --filter cody-ai run release"))
+}
+
 // Release a snapshot of App.
 func addAppReleaseSteps(c Config, insiders bool) operations.Operation {
 	// The version scheme we use for App is one of:

@@ -23,11 +23,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type s2 interface {
+	Store
+	GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) ([]shared.SourcedCommits, error)
+	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (int, error)
+	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (int, int, error)
+}
+
 func TestGetStaleSourcedCommits(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(&observation.TestContext, db)
+	store := New(&observation.TestContext, db).(s2)
 
 	now := time.Unix(1587396557, 0).UTC()
 
@@ -81,7 +88,7 @@ func TestUpdateSourcedCommits(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(&observation.TestContext, db)
+	store := New(&observation.TestContext, db).(s2)
 
 	now := time.Unix(1587396557, 0).UTC()
 
@@ -123,7 +130,7 @@ func TestDeleteSourcedCommits(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(&observation.TestContext, db)
+	store := New(&observation.TestContext, db).(s2)
 
 	now := time.Unix(1587396557, 0).UTC()
 

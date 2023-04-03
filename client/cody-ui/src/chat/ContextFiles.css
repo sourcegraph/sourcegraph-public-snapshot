@@ -1,0 +1,47 @@
+.context-files-collapsed {
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    display: flex;
+    cursor: pointer;
+}
+
+.context-files-expanded {
+    display: flex;
+}
+.context-files-expanded li code {
+    color: black !important;
+}
+
+.context-files-toggle-icon {
+    cursor: pointer;
+    margin-right: 0.5em;
+}
+
+.context-files-toggle-icon > i {
+    font-size: calc(var(--vscode-editor-font-size) * 0.5) !important;
+}
+
+.context-files-list-title {
+    cursor: pointer;
+    font-style: italic;
+}
+
+.context-files-list-container {
+    padding-inline-start: 1em;
+}
+
+.context-files-collapsed .context-files-toggle-icon {
+    display: flex;
+    align-items: flex-start;
+    padding-top: 0.2rem;
+}
+
+.context-files-collapsed-text {
+    display: flex;
+    align-items: flex-start;
+    font-style: italic;
+}
+
+.context-file {
+    padding: 0.1rem;
+}

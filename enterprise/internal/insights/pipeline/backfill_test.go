@@ -141,18 +141,18 @@ func TestMakeSearchJobs(t *testing.T) {
 		SampleIntervalUnit:  string(types.Week),
 		SampleIntervalValue: 1,
 	}
-	// All the series in this test reuse the same time data, so we will reuse these frames across all request objects.
-	frames := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
+	// All the series in this test reuse the same time data, so we will reuse these sampling timestamps across all request objects.
+	sampleTimes := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
 		Value: series.SampleIntervalValue,
 	}, series.CreatedAt.Truncate(time.Minute))
 
-	t.Log(fmt.Sprintf("frames: %v", frames))
+	t.Log(fmt.Sprintf("sampleTimes: %v", sampleTimes))
 	t.Log(fmt.Sprintf("first: %v", createdDate.Add(-1*threeWeeks)))
 
 	backfillReq := &BackfillRequest{
 		Series:      series,
-		SampleTimes: frames,
+		SampleTimes: sampleTimes,
 		Repo:        &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
 	}
 
@@ -165,7 +165,7 @@ func TestMakeSearchJobs(t *testing.T) {
 			SampleIntervalUnit:  string(types.Week),
 			SampleIntervalValue: 1,
 		},
-		SampleTimes: frames,
+		SampleTimes: sampleTimes,
 		Repo:        &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
 	}
 
@@ -178,7 +178,7 @@ func TestMakeSearchJobs(t *testing.T) {
 			SampleIntervalUnit:  string(types.Week),
 			SampleIntervalValue: 1,
 		},
-		SampleTimes: frames,
+		SampleTimes: sampleTimes,
 		Repo:        &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
 	}
 

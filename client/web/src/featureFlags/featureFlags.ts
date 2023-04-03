@@ -21,9 +21,10 @@ export type FeatureFlagName =
     | 'search-ownership'
     | 'cody'
     | 'search-ranking'
-    | 'database-permission-sync-worker'
     | 'blob-page-switch-areas-shortcuts'
     | 'app-connect-dotcom'
+    | 'sentinel'
+    | 'cody-experimental'
 
 interface OrgFlagOverride {
     orgID: string

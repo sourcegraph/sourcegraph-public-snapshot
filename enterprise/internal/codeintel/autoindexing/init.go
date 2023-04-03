@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -28,11 +27,10 @@ func NewService(
 	gitserverClient gitserver.Client,
 ) *Service {
 	store := autoindexingstore.New(scopedContext("store", observationCtx), db)
-	symbolsClient := symbols.DefaultClient
 	repoUpdater := repoupdater.DefaultClient
 	inferenceSvc := inference.NewService()
 
-	svc := newService(scopedContext("service", observationCtx), store, inferenceSvc, repoUpdater, db.Repos(), gitserverClient, symbolsClient)
+	svc := newService(scopedContext("service", observationCtx), store, inferenceSvc, repoUpdater, db.Repos(), gitserverClient)
 
 	return svc
 }
@@ -52,34 +50,6 @@ func NewResetters(observationCtx *observation.Context, db database.DB) []gorouti
 	}
 }
 
-func NewJanitorJobs(observationCtx *observation.Context, autoindexingSvc *Service, gitserverClient gitserver.Client) []goroutine.BackgroundRoutine {
-	return []goroutine.BackgroundRoutine{
-		background.NewUnknownRepositoryJanitor(
-			autoindexingSvc.store,
-			ConfigCleanupInst.Interval,
-			observationCtx,
-		),
-
-		background.NewUnknownCommitJanitor(
-			autoindexingSvc.store,
-			gitserverClient,
-			ConfigCleanupInst.Interval,
-			ConfigCleanupInst.CommitResolverBatchSize,
-			ConfigCleanupInst.MinimumTimeSinceLastCheck,
-			ConfigCleanupInst.CommitResolverMaximumCommitLag,
-			observationCtx,
-		),
-
-		background.NewExpiredRecordJanitor(
-			autoindexingSvc.store,
-			ConfigCleanupInst.Interval,
-			ConfigCleanupInst.FailedIndexBatchSize,
-			ConfigCleanupInst.FailedIndexMaxAge,
-			observationCtx,
-		),
-	}
-}
-
 func NewIndexSchedulers(
 	observationCtx *observation.Context,
 	uploadSvc UploadService,
@@ -91,7 +61,7 @@ func NewIndexSchedulers(
 	return []goroutine.BackgroundRoutine{
 		background.NewScheduler(
 			observationCtx,
-			uploadSvc, policiesSvc, policyMatcher, autoindexingSvc.indexEnqueuer, repoStore,
+			uploadSvc, autoindexingSvc, policiesSvc, policyMatcher, autoindexingSvc.indexEnqueuer, repoStore,
 			ConfigIndexingInst.SchedulerInterval,
 			background.IndexSchedulerConfig{
 				RepositoryProcessDelay: ConfigIndexingInst.RepositoryProcessDelay,

@@ -1,9 +1,12 @@
+import path from 'path'
+
 import * as vscode from 'vscode'
 
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatMessage, ChatHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
@@ -14,7 +17,6 @@ import { EventLogger } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { version as packageVersion } from '../../package.json'
-import { ChatHistory } from '../../webviews/utils/types'
 import { initializeEventLogger, serverEndpoint } from '../command/CommandsProvider'
 import { LocalStorage } from '../command/LocalStorageProvider'
 import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../command/secret-storage'
@@ -45,6 +47,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
     constructor(
         private extensionPath: string,
+        private codebase: string,
         private transcript: Transcript,
         private chat: ChatClient,
         private intentDetector: IntentDetector,
@@ -87,6 +90,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         )
         return new ChatViewProvider(
             extensionPath,
+            codebase,
             new Transcript(),
             chatClient,
             intentDetector,
@@ -104,12 +108,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         switch (message.command) {
             case 'initialized':
                 await this.sendToken()
-                await this.sendTranscript()
-                await this.sendChatHistory()
+                this.sendTranscript()
+                this.sendChatHistory()
                 break
             case 'reset':
-                await this.onResetChat()
-                await this.sendChatHistory()
+                this.onResetChat()
+                this.sendChatHistory()
                 break
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text)
@@ -127,7 +131,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     logger = await initializeEventLogger()
                     await logger.log('CodyVSCodeExtension:login:clicked', { serverEndpoint }, { serverEndpoint })
                 }
-                await this.sendLogin(isValid)
+                this.sendLogin(isValid)
                 break
             }
             case 'removeToken':
@@ -144,6 +148,22 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             case 'links':
                 await vscode.env.openExternal(vscode.Uri.parse(message.value))
                 break
+            case 'openFile': {
+                const rootPath = this.editor.getWorkspaceRootPath()
+                if (rootPath !== null) {
+                    const uri = vscode.Uri.file(path.join(rootPath, message.filePath))
+                    // This opens the file in the active column.
+                    try {
+                        const doc = await vscode.workspace.openTextDocument(uri)
+                        await vscode.window.showTextDocument(doc)
+                    } catch (error) {
+                        console.error(`Could not open file: ${error}`)
+                    }
+                } else {
+                    console.error('Could not open file because rootPath is null')
+                }
+                break
+            }
             default:
                 console.error('Invalid request type from Webview')
         }
@@ -165,12 +185,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         this.cancelCompletionCallback = this.chat.chat(promptMessages, {
             onChange: text => this.onBotMessageChange(reformatBotMessage(text, responsePrefix)),
             onComplete: () => {
-                // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                this.onBotMessageComplete()
+                void this.onBotMessageComplete()
             },
             onError: err => {
-                // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                vscode.window.showErrorMessage(err)
+                void vscode.window.showErrorMessage(err)
             },
         })
     }
@@ -180,12 +198,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         this.cancelCompletionCallback = null
     }
 
-    private async onResetChat(): Promise<void> {
+    private onResetChat(): void {
         this.createNewChatID()
         this.cancelCompletion()
         this.isMessageInProgress = false
         this.transcript.reset()
-        await this.sendTranscript()
+        this.sendTranscript()
     }
 
     private async onHumanMessageSubmitted(text: string): Promise<void> {
@@ -216,47 +234,48 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         this.isMessageInProgress = true
         this.transcript.addInteraction(interaction)
 
-        await this.showTab('chat')
-        await this.sendTranscript()
+        this.showTab('chat')
+        this.sendTranscript()
 
-        const prompt = await this.transcript.toPrompt()
+        const prompt = await this.transcript.toPrompt(getPreamble(this.codebase))
         this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
         await logger.log(`CodyVSCodeExtension:recipe:${recipe.getID()}:clicked`, { serverEndpoint }, { serverEndpoint })
     }
 
-    private async onBotMessageChange(text: string): Promise<void> {
+    private onBotMessageChange(text: string): void {
         this.transcript.addAssistantResponse(text)
-        await this.sendTranscript()
+        this.sendTranscript()
     }
 
     private async onBotMessageComplete(): Promise<void> {
         this.isMessageInProgress = false
         this.cancelCompletionCallback = null
-        await this.sendTranscript()
+        this.sendTranscript()
         await this.saveChatHistory()
     }
 
-    private async showTab(tab: string): Promise<void> {
-        await vscode.commands.executeCommand('cody.chat.focus')
-        await this.webview?.postMessage({ type: 'showTab', tab })
+    private showTab(tab: string): void {
+        void vscode.commands.executeCommand('cody.chat.focus')
+        void this.webview?.postMessage({ type: 'showTab', tab })
     }
 
-    private async sendTranscript(): Promise<void> {
-        await this.webview?.postMessage({
+    private sendTranscript(): void {
+        void this.webview?.postMessage({
             type: 'transcript',
             messages: this.transcript.toChat(),
             isMessageInProgress: this.isMessageInProgress,
         })
     }
 
-    private async sendLogin(isValid: boolean): Promise<void> {
-        await this.webview?.postMessage({ type: 'login', isValid })
+    private sendLogin(isValid: boolean): void {
+        void this.webview?.postMessage({ type: 'login', isValid })
     }
+
     /**
      * Sends access token to webview
      */
     private async sendToken(): Promise<void> {
-        await this.webview?.postMessage({
+        void this.webview?.postMessage({
             type: 'token',
             value: await getAccessToken(this.secretStorage),
             mode: this.mode,
@@ -278,13 +297,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     /**
      * Sends chat history to webview
      */
-    private async sendChatHistory(): Promise<void> {
+    private sendChatHistory(): void {
         const localHistory = this.localStorage.getChatHistory()
         if (localHistory) {
             this.chatHistory = localHistory.chat
             this.inputHistory = localHistory.input
         }
-        await this.webview?.postMessage({
+        void this.webview?.postMessage({
             type: 'history',
             messages: localHistory,
         })
@@ -301,7 +320,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     ): Promise<void> {
         this.webview = webviewView.webview
 
-        const extensionPath = vscode.Uri.parse(this.extensionPath)
+        const extensionPath = vscode.Uri.file(this.extensionPath)
         const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist')
 
         webviewView.webview.options = {
@@ -309,7 +328,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             localResourceRoots: [webviewPath],
         }
 
-        //   Create Webview
+        // Create Webview
         const root = vscode.Uri.joinPath(webviewPath, 'index.html')
         const bytes = await vscode.workspace.fs.readFile(root)
         const decoded = new TextDecoder('utf-8').decode(bytes)
@@ -346,6 +365,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     this.mode
                 )
 
+                this.codebase = codebase
                 this.intentDetector = intentDetector
                 this.codebaseContext = codebaseContext
                 this.chat = chatClient

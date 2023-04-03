@@ -28,13 +28,16 @@ export class Transcript {
         })
     }
 
-    public async toPrompt(): Promise<Message[]> {
+    public async toPrompt(preamble: Message[] = []): Promise<Message[]> {
         const messages: Message[] = []
         for (let index = 0; index < this.interactions.length; index++) {
             const interactionMessages = await this.interactions[index].toPrompt(index === this.interactions.length - 1)
             messages.push(...interactionMessages)
         }
-        return truncatePrompt(messages)
+
+        const preambleTokensUsage = preamble.reduce((acc, message) => acc + estimateTokensUsage(message), 0)
+        const truncatedMessages = truncatePrompt(messages, MAX_AVAILABLE_PROMPT_LENGTH - preambleTokensUsage)
+        return [...preamble, ...truncatedMessages]
     }
 
     public toChat(): ChatMessage[] {
@@ -46,9 +49,9 @@ export class Transcript {
     }
 }
 
-function truncatePrompt(messages: Message[]): Message[] {
+function truncatePrompt(messages: Message[], maxTokens: number): Message[] {
     const newPromptMessages = []
-    let availablePromptTokensBudget = MAX_AVAILABLE_PROMPT_LENGTH
+    let availablePromptTokensBudget = maxTokens
     for (let i = messages.length - 1; i >= 1; i -= 2) {
         const humanMessage = messages[i - 1]
         const botMessage = messages[i]
