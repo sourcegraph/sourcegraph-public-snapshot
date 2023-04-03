@@ -210,7 +210,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
         } else if (data.statusMessages?.some(({ __typename: type }) => type === 'IndexingProgress')) {
             codeHostMessage = 'Indexing repositories...'
             iconProps = { as: CloudSyncIconRefresh }
-        } else if (data.statusMessages.length === 0 && data.repositoryStats.total === 0) {
+        } else if (data.statusMessages?.some(({ __typename: type }) => type === 'NoRepositoriesDetected')) {
             codeHostMessage = 'No repositories detected'
             iconProps = { as: CloudInfoIconRefresh }
         } else {
@@ -236,19 +236,6 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
 
         // no status messages
         if (data.statusMessages.length === 0) {
-            if (data.repositoryStats.total === 0) {
-                return (
-                    <StatusMessagesNavItemEntry
-                        key="no-repositories"
-                        title="No repositories detected"
-                        message="Connect a code host to connect repositories to Sourcegraph."
-                        linkTo="/setup"
-                        linkText="Setup code hosts"
-                        linkOnClick={toggleIsOpen}
-                        entryType="info"
-                    />
-                )
-            }
             return (
                 <StatusMessagesNavItemEntry
                     key="up-to-date"
@@ -276,6 +263,19 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                                 linkText="View site configuration"
                                 linkOnClick={toggleIsOpen}
                                 entryType="warning"
+                            />
+                        )
+                    }
+                    if (status.__typename === 'NoRepositoriesDetected') {
+                        return (
+                            <StatusMessagesNavItemEntry
+                                key="no-repositories"
+                                title="No repositories detected"
+                                message="Connect a code host to connect repositories to Sourcegraph."
+                                linkTo="/setup"
+                                linkText="Setup code hosts"
+                                linkOnClick={toggleIsOpen}
+                                entryType="info"
                             />
                         )
                     }
