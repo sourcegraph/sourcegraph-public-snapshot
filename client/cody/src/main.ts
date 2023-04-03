@@ -11,6 +11,8 @@ import { getConfiguration } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
+import { InteractiveEditorSessionProvider } from './interactive/editorSessionProvider'
+import { InteractiveSessionProvider } from './interactive/sessionProvider'
 import { getRgPath } from './rg'
 import {
     CODY_ACCESS_TOKEN_SECRET,
@@ -203,6 +205,14 @@ const register = async (
                 await completionsProvider.fetchAndShowCompletions()
             }),
             vscode.languages.registerInlineCompletionItemProvider({ scheme: 'file' }, completionsProvider)
+        )
+    }
+
+    if (config.experimentalInteractive) {
+        await vscode.commands.executeCommand('setContext', 'cody.interactiveSession.enabled', true)
+        disposables.push(
+            vscode.interactive.registerInteractiveSessionProvider('cody', new InteractiveSessionProvider()),
+            vscode.interactive.registerInteractiveEditorSessionProvider(new InteractiveEditorSessionProvider())
         )
     }
 
