@@ -2,7 +2,7 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import React, { useState } from 'react'
 
-import './ContextFiles.css'
+import styles from './ContextFiles.module.css'
 
 export interface FileLinkProps {
     path: string
@@ -18,9 +18,9 @@ export const ContextFiles: React.FunctionComponent<{
         return (
             <p>
                 Cody read{' '}
-                <code className="context-file">
+                <span className={styles.contextFile}>
                     <FileLink path={contextFiles[0]} />
-                </code>{' '}
+                </span>{' '}
                 to provide an answer.
             </p>
         )
@@ -28,20 +28,18 @@ export const ContextFiles: React.FunctionComponent<{
 
     if (isExpanded) {
         return (
-            <div className="context-files-expanded">
-                <span className="context-files-toggle-icon" onClick={() => setIsExpanded(false)}>
-                    <i className="codicon codicon-triangle-down" slot="start" />
+            <div className={styles.contextFilesExpanded}>
+                <span className={styles.contextFilesToggleIcon} onClick={() => setIsExpanded(false)}>
+                    ▼
                 </span>
                 <div>
-                    <div className="context-files-list-title" onClick={() => setIsExpanded(false)}>
+                    <div className={styles.contextFilesListTitle} onClick={() => setIsExpanded(false)}>
                         Cody read the following files to provide an answer:
                     </div>
-                    <ul className="context-files-list-container">
+                    <ul className={styles.contextFilesListContainer}>
                         {contextFiles.map(file => (
-                            <li key={file}>
-                                <code className="context-file">
-                                    <FileLink path={file} />
-                                </code>
+                            <li key={file} className={styles.contextFile}>
+                                <FileLink path={file} />
                             </li>
                         ))}
                     </ul>
@@ -51,13 +49,11 @@ export const ContextFiles: React.FunctionComponent<{
     }
 
     return (
-        <div className="context-files-collapsed" onClick={() => setIsExpanded(true)}>
-            <span className="context-files-toggle-icon">
-                <i className="codicon codicon-triangle-right" slot="start" />
-            </span>
-            <div className="context-files-collapsed-text">
+        <div className={styles.contextFilesCollapsed} onClick={() => setIsExpanded(true)}>
+            <span className={styles.contextFilesToggleIcon}>▸</span>
+            <div className={styles.contextFilesCollapsedText}>
                 <span>
-                    Cody read <code className="context-file">{contextFiles[0].split('/').pop()}</code> and{' '}
+                    Cody read <span className={styles.contextFile}>{contextFiles[0].split('/').pop()}</span> and{' '}
                     {contextFiles.length - 1} other {contextFiles.length > 2 ? 'files' : 'file'} to provide an answer.
                 </span>
             </div>

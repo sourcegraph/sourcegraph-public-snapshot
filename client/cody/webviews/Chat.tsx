@@ -7,11 +7,10 @@ import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messag
 import { Chat as ChatUI, ChatUISubmitButtonProps, ChatUITextAreaProps } from '@sourcegraph/cody-ui/src/Chat'
 import { SubmitSvg, ResetIcon } from '@sourcegraph/cody-ui/src/utils/icons'
 
+import { FileLink } from './FileLink'
 import { vscodeAPI } from './utils/VSCodeApi'
 
-import './Chat.css'
-
-import { FileLink } from './FileLink'
+import styles from './Chat.module.css'
 
 interface ChatboxProps {
     messageInProgress: ChatMessage | null
@@ -55,6 +54,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             submitButtonComponent={SubmitButton}
             fileLinkComponent={FileLink}
             tipsRecommendations={TIPS_RECOMMENDATIONS}
+            bubbleContentClassName={styles.bubbleContent}
+            humanBubbleContentClassName={styles.humanBubbleContent}
+            botBubbleContentClassName={styles.botBubbleContent}
+            codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
+            bubbleFooterClassName={styles.bubbleFooter}
+            bubbleLoaderDotClassName={styles.bubbleLoaderDot}
+            inputRowClassName={styles.inputRow}
+            chatInputClassName={styles.chatInputClassName}
         />
     )
 }
@@ -69,7 +76,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     onKeyDown,
 }) => (
     <VSCodeTextArea
-        className={classNames('chat-input', className)}
+        className={classNames(styles.chatInput, className)}
         rows={rows}
         value={value}
         autofocus={autoFocus}
@@ -81,7 +88,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
 
 const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ className, disabled, onClick }) => (
     <VSCodeButton
-        className={classNames('submit-button', className)}
+        className={classNames(styles.submitButton, className)}
         appearance="icon"
         type="button"
         disabled={disabled}

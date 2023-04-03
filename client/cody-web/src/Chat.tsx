@@ -30,6 +30,13 @@ export const Chat: React.FunctionComponent<
                 <Terms />
             </details>
         }
+        bubbleContentClassName={styles.bubbleContent}
+        humanBubbleContentClassName={styles.humanBubbleContent}
+        botBubbleContentClassName={styles.botBubbleContent}
+        bubbleFooterClassName={styles.bubbleFooter}
+        bubbleLoaderDotClassName={styles.bubbleLoaderDot}
+        inputRowClassName={styles.inputRow}
+        chatInputClassName={styles.chatInput}
     />
 )
 

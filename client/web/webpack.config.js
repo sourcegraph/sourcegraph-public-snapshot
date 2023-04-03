@@ -285,6 +285,11 @@ const config = {
         exclude: /\.module\.css$/,
         use: getCSSLoaders(styleLoader, getBasicCSSLoader()),
       },
+      {
+        test: /\.module\.css$/,
+        include: [path.resolve(__dirname, '../cody-ui')],
+        use: getCSSLoaders(styleLoader, getCSSModulesLoader({ sourceMap: IS_DEVELOPMENT })),
+      },
       getMonacoCSSRule(),
       getMonacoTTFRule(),
       { test: /\.ya?ml$/, type: 'asset/source' },

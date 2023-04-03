@@ -2,8 +2,9 @@ import React, { useCallback, useState } from 'react'
 
 import { isEqual } from 'lodash'
 
-import styles from './Settings.module.css'
 import { WebConfiguration, useConfig } from './useConfig'
+
+import styles from './Settings.module.css'
 
 const SAMPLE_PUBLIC_CODEBASES = ['github.com/sourcegraph/sourcegraph', 'github.com/hashicorp/errwrap']
 

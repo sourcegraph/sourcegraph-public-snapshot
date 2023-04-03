@@ -1,14 +1,14 @@
 import React from 'react'
 
+import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
+
 import { vscodeAPI } from './utils/VSCodeApi'
 
-import './FileLink.css'
-
-import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
+import styles from './FileLink.module.css'
 
 export const FileLink: React.FunctionComponent<FileLinkProps> = ({ path }) => (
     <button
-        className="link-button"
+        className={styles.linkButton}
         type="button"
         onClick={() => {
             vscodeAPI.postMessage({ command: 'openFile', filePath: path })
