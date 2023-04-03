@@ -122,7 +122,7 @@ func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int,
 		return nil, nil, err
 	}
 
-	indexJobHints, err := s.jobSelector.InferIndexJobHintsFromRepositoryStructure(ctx, repositoryID, commit)
+	indexJobHints, err := s.jobSelector.InferIndexJobHintsFromRepositoryStructure(ctx, repo.Name, commit)
 	if err != nil {
 		return nil, nil, err
 	}

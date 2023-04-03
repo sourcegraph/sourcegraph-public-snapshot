@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// Store provides the interface for policies storage.
 type Store interface {
 	// Configurations
 	GetConfigurationPolicies(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) ([]shared.ConfigurationPolicy, int, error)
@@ -30,7 +29,6 @@ type Store interface {
 	SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) ([]shared.ConfigurationPolicy, error)
 }
 
-// store manages the policies store.
 type store struct {
 	db         *basestore.Store
 	logger     logger.Logger

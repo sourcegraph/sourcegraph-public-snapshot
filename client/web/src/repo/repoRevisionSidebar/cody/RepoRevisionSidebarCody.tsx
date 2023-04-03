@@ -73,6 +73,13 @@ export const RepoRevisionSidebarCody: React.FunctionComponent<
                     <Terms />
                 </details>
             }
+            bubbleContentClassName={styles.bubbleContent}
+            humanBubbleContentClassName={styles.humanBubbleContent}
+            botBubbleContentClassName={styles.botBubbleContent}
+            bubbleFooterClassName="text-muted small"
+            bubbleLoaderDotClassName={styles.bubbleLoaderDot}
+            inputRowClassName={styles.inputRow}
+            chatInputClassName={styles.chatInput}
         />
     )
 }

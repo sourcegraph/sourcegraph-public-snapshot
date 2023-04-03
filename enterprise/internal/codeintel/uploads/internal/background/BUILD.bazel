@@ -23,7 +23,6 @@ go_library(
         "//enterprise/internal/codeintel/policies",
         "//enterprise/internal/codeintel/policies/shared",
         "//enterprise/internal/codeintel/shared/background",
-        "//enterprise/internal/codeintel/shared/types",
         "//enterprise/internal/codeintel/uploads/internal/lsifstore",
         "//enterprise/internal/codeintel/uploads/internal/store",
         "//enterprise/internal/codeintel/uploads/shared",

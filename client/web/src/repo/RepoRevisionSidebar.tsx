@@ -148,7 +148,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                             >
                                 {/* TODO: See if we can render more here, instead of waiting for these props */}
                                 {props.repoID && props.commitID && (
-                                    <TabPanels>
+                                    <TabPanels className="h-100">
                                         <TabPanel>
                                             <RepoRevisionSidebarFileTree
                                                 key={initialFilePath}
@@ -175,7 +175,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                                             />
                                         </TabPanel>
                                         {codyEnabled && (
-                                            <TabPanel>
+                                            <TabPanel className="h-100">
                                                 <RepoRevisionSidebarCody
                                                     repoName={props.repoName}
                                                     repoID={props.repoID}

@@ -1,13 +1,16 @@
 import React, { useEffect } from 'react'
 
+import classNames from 'classnames'
+
 import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
+
+import styles from './CodeBlocks.module.css'
 
 interface CodeBlocksProps {
     displayText: string
-}
 
-const copyButtonContainerClass = 'chat-code-block-copy-button-container'
-const copyButtonClass = 'chat-code-block-copy-button'
+    copyButtonClassName?: string
+}
 
 function wrapElement(element: HTMLElement, wrapperElement: HTMLElement): void {
     if (!element.parentNode) {
@@ -17,10 +20,10 @@ function wrapElement(element: HTMLElement, wrapperElement: HTMLElement): void {
     wrapperElement.append(element)
 }
 
-function createCopyButtonWithContainer(text: string): HTMLElement {
+function createCopyButtonWithContainer(text: string, className: string): HTMLElement {
     const copyButton = document.createElement('button')
     copyButton.textContent = 'Copy'
-    copyButton.className = copyButtonClass
+    copyButton.className = className
     copyButton.addEventListener('click', () => {
         navigator.clipboard.writeText(text).catch(error => console.error(error))
         copyButton.textContent = 'Copied!'
@@ -30,24 +33,27 @@ function createCopyButtonWithContainer(text: string): HTMLElement {
     // The container will contain the copy button and the <pre> element with the code.
     // This allows us to position the copy button independent of the code.
     const container = document.createElement('div')
-    container.className = copyButtonContainerClass
+    container.className = styles.container
     container.append(copyButton)
     return container
 }
 
-export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({ displayText }) => {
+export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({ displayText, copyButtonClassName }) => {
     useEffect(() => {
         const preElements = document.querySelectorAll('pre')
         for (const preElement of preElements) {
             const preText = preElement.textContent
-            const hasCopyButton = preElement.querySelector(`.${copyButtonContainerClass}`)
+            const hasCopyButton = preElement.querySelector(`.${styles.container}`)
             if (!hasCopyButton && preText && preText.trim().length > 0) {
                 // We have to wrap the `<pre>` tag in the copy button container, otherwise
                 // the Copy button scrolls along with the code.
-                wrapElement(preElement, createCopyButtonWithContainer(preText))
+                wrapElement(
+                    preElement,
+                    createCopyButtonWithContainer(preText, classNames(styles.copyButton, copyButtonClassName))
+                )
             }
         }
-    }, [displayText])
+    }, [copyButtonClassName, displayText])
 
     return <p dangerouslySetInnerHTML={{ __html: renderMarkdown(displayText) }} />
 }

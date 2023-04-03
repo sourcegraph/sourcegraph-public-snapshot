@@ -78,13 +78,8 @@ func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context,
 }
 
 // inferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobHints over all registered recognizers.
-func (s *JobSelector) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error) {
-	repoName, err := s.store.GetRepoName(ctx, repositoryID)
-	if err != nil {
-		return nil, err
-	}
-
-	indexes, err := s.inferenceSvc.InferIndexJobHints(ctx, api.RepoName(repoName), commit, overrideScript)
+func (s *JobSelector) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, repoName api.RepoName, commit string) ([]config.IndexJobHint, error) {
+	indexes, err := s.inferenceSvc.InferIndexJobHints(ctx, repoName, commit, overrideScript)
 	if err != nil {
 		return nil, err
 	}

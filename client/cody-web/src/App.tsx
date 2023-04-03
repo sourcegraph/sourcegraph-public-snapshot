@@ -6,10 +6,11 @@ import { CodySvg } from '@sourcegraph/cody-ui/src/utils/icons'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Alert, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import styles from './App.module.css'
 import { Chat } from './Chat'
 import { Settings } from './settings/Settings'
 import { useConfig } from './settings/useConfig'
+
+import styles from './App.module.css'
 
 export const App: React.FunctionComponent = () => {
     const [config, setConfig] = useConfig()
