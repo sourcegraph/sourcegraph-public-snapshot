@@ -3,9 +3,9 @@ package resolvers
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"sync"
 
+	"github.com/grafana/regexp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
