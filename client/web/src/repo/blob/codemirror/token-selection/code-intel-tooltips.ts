@@ -213,7 +213,7 @@ async function hoverRequest(
     params: TextDocumentPositionParameters
 ): Promise<HoverResult> {
     const api = await getOrCreateCodeIntelAPI(view.state.facet(blobPropsFacet).platformContext)
-    const hover = await api.getHover(params).toPromise()
+    const hover = await api.getHover(params)
 
     let markdownContents: string =
         hover === null || hover === undefined || hover.contents.length === 0

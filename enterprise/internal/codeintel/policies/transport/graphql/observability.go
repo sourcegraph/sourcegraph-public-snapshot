@@ -11,10 +11,10 @@ type operations struct {
 	configurationPolicies     *observation.Operation
 	configurationPolicyByID   *observation.Operation
 	createConfigurationPolicy *observation.Operation
-	updateConfigurationPolicy *observation.Operation
 	deleteConfigurationPolicy *observation.Operation
-	previewRepoFilter         *observation.Operation
 	previewGitObjectFilter    *observation.Operation
+	previewRepoFilter         *observation.Operation
+	updateConfigurationPolicy *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -37,9 +37,9 @@ func newOperations(observationCtx *observation.Context) *operations {
 		configurationPolicies:     op("ConfigurationPolicies"),
 		configurationPolicyByID:   op("ConfigurationPolicyByID"),
 		createConfigurationPolicy: op("CreateConfigurationPolicy"),
-		updateConfigurationPolicy: op("UpdateConfigurationPolicy"),
 		deleteConfigurationPolicy: op("DeleteConfigurationPolicy"),
-		previewRepoFilter:         op("PreviewRepoFilter"),
 		previewGitObjectFilter:    op("PreviewGitObjectFilter"),
+		previewRepoFilter:         op("PreviewRepoFilter"),
+		updateConfigurationPolicy: op("UpdateConfigurationPolicy"),
 	}
 }

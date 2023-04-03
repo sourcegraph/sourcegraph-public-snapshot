@@ -142,13 +142,13 @@ WHERE
 	ss.%s IS NOT NULL
 `
 
-func newRange(startLine, startCharacter, endLine, endCharacter int) types.Range {
-	return types.Range{
-		Start: types.Position{
+func newRange(startLine, startCharacter, endLine, endCharacter int) shared.Range {
+	return shared.Range{
+		Start: shared.Position{
 			Line:      startLine,
 			Character: startCharacter,
 		},
-		End: types.Position{
+		End: shared.Position{
 			Line:      endLine,
 			Character: endCharacter,
 		},

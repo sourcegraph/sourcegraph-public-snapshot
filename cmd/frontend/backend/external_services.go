@@ -72,7 +72,7 @@ func (e *externalServices) SyncExternalService(ctx context.Context, svc *types.E
 	return err
 }
 
-// ExcludeRepoFromExternalService excludes given repo from given external service config.
+// ExcludeRepoFromExternalServices excludes given repo from given external service config.
 //
 // Function is pretty beefy, what it does is:
 // - finds an external service by ID and checks if it supports repo exclusion

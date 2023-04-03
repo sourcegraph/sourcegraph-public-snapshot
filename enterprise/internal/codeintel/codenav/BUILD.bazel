@@ -17,7 +17,6 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/codenav/internal/lsifstore",
-        "//enterprise/internal/codeintel/codenav/internal/store",
         "//enterprise/internal/codeintel/codenav/shared",
         "//enterprise/internal/codeintel/shared",
         "//enterprise/internal/codeintel/shared/types",
@@ -57,7 +56,6 @@ go_test(
     embed = [":codenav"],
     deps = [
         "//enterprise/internal/codeintel/codenav/internal/lsifstore",
-        "//enterprise/internal/codeintel/codenav/internal/store",
         "//enterprise/internal/codeintel/codenav/shared",
         "//enterprise/internal/codeintel/shared/types",
         "//internal/actor",

@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -77,27 +78,64 @@ func TestValidateSrcCLIVersion(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			server, client := newTestServerAndClient(t, func(w http.ResponseWriter, r *http.Request) {
 				err := json.NewEncoder(w).Encode(struct {
 					Version string `json:"version"`
 				}{test.latestVersion})
 				require.NoError(t, err)
-			}))
-			defer server.Close()
-
-			client, err := apiclient.NewBaseClient(apiclient.BaseClientOptions{
-				EndpointOptions: apiclient.EndpointOptions{
-					URL: server.URL,
-				},
 			})
-			require.NoError(t, err)
+			defer server.Close()
 
 			mockedStdout = fmt.Sprintf("Current version: %s", test.currentVersion)
 
-			err = validateSrcCLIVersion(context.Background(), client, apiclient.EndpointOptions{URL: server.URL})
+			err := validateSrcCLIVersion(context.Background(), client, apiclient.EndpointOptions{URL: server.URL})
 			if test.expectedErr != nil {
 				assert.NotNil(t, err)
 				assert.Equal(t, errors.Is(err, ErrSrcPatchBehind), test.isSrcPatchErr)
+				assert.Equal(t, test.expectedErr.Error(), err.Error())
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
+}
+
+func TestValidateAuthorizationToken(t *testing.T) {
+	tests := []struct {
+		name                string
+		statusCode          int
+		expectedErr         error
+		isUnauthorizedError bool
+	}{
+		{
+			name:       "Valid response",
+			statusCode: http.StatusOK,
+		},
+		{
+			name:                "Unauthorized",
+			statusCode:          http.StatusUnauthorized,
+			expectedErr:         authorizationFailedErr,
+			isUnauthorizedError: true,
+		},
+		{
+			name:                "Internal server error",
+			statusCode:          http.StatusInternalServerError,
+			expectedErr:         errors.New("failed to validate authorization token: unexpected status code 500"),
+			isUnauthorizedError: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			server, _ := newTestServerAndClient(t, func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(test.statusCode)
+			})
+			defer server.Close()
+
+			baseClientOpts := baseClientOptions(&config.Config{FrontendURL: server.URL}, "")
+			err := validateAuthorizationToken(context.Background(), baseClientOpts)
+			if test.expectedErr != nil {
+				assert.NotNil(t, err)
+				assert.Equal(t, errors.Is(err, authorizationFailedErr), test.isUnauthorizedError)
 				assert.Equal(t, test.expectedErr.Error(), err.Error())
 			} else {
 				assert.Nil(t, err)
@@ -139,4 +177,16 @@ func TestExecCommandHelper(t *testing.T) {
 	require.NoError(t, err)
 
 	os.Exit(i)
+}
+
+func newTestServerAndClient(t *testing.T, handlerFunc func(w http.ResponseWriter, r *http.Request)) (*httptest.Server, *apiclient.BaseClient) {
+	server := httptest.NewServer(http.HandlerFunc(handlerFunc))
+	client, err := apiclient.NewBaseClient(apiclient.BaseClientOptions{
+		EndpointOptions: apiclient.EndpointOptions{
+			URL: server.URL,
+		},
+	})
+	require.NoError(t, err)
+
+	return server, client
 }

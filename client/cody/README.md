@@ -1,121 +1,86 @@
-# Cody
+<div align="center">
+    <p>Cody: An AI-Powered Programming Assistant</p>
+    <a href="https://docs.sourcegraph.com/cody">Docs</a> •
+    <a href="https://discord.gg/s2qDtYGnAE">Discord</a> •
+    <a href="https://twitter.com/sourcegraph">Twitter</a>
+    <br /><br />
+    <a href="https://srcgr.ph/discord">
+        <img src="https://img.shields.io/discord/969688426372825169?color=5765F2" alt="Discord" />
+    </a>
+    <a href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai">
+        <img src="https://img.shields.io/vscode-marketplace/v/sourcegraph.cody-ai.svg?label=vs%20marketplace" alt="VS Marketplace" />
+    </a>
+</div>
 
-## Usage and features
+## Cody (experimental)
 
-- Autocomplete: `alt-\` to show autocompletion suggestions
-- Chatbot: Click the robot icon in the primary side panel
+Cody is a coding assistant that answers code questions and writes code for you by reading your entire codebase and the code graph.
 
-## Install
+**Status:** experimental ([request access](https://about.sourcegraph.com/cody))
 
-See the [#announce-cody Slack channel](https://app.slack.com/client/T02FSM7DL/C04MZPE4JKD) for instructions.
+## Main features
+
+- Answer questions about your codebase instantly
+- Generate documentation and unit tests on demand
+- Write code snippets and prototypes for you
+- Translate comments and functions in your code between languages
+
+## Installation
+
+Here are the ways to install Cody in Visual Studio Code:
+
+### In Visual Studio Code
+
+1. Open the Extensions tab on the left side of VS Code (<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd>).
+2. Search for `Sourcegraph Cody` and click Install.
+3. Once installed, **reload** VS Code.
+4. After reloading, click the Cody icon in the VS Code Activity Bar to open the extension.
+   - Alternatively, you can launch the extension by pressing <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> and searching for "Cody: Focus on chat view" and searching for "Cody: Focus on chat view".
+
+### Through the Visual Studio Marketplace
+
+1. Install Cody from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai).
+2. After installing the plugin, click the Cody icon in the VS Code Activity Bar to open the extension.
+
+## Setting up the Cody extension
+
+To set up the Cody extension, you will need to enter the URL of your Sourcegraph instance and an access token used for authentication.
+
+1. Open the Cody chat view by clicking on the Cody icon in the sidebar.
+2. If you are setting up Cody for the first time, you should see the terms of service.
+3. To proceed, read the terms and click "I accept", if you accept the terms of service.
+4. Aftewards, you should see the login screen, where you have to enter the URL of your Sourcegraph instance and an access token used for authentication.
+5. Once you have filled out the login form, click the Login button to login to Cody.
+
+### Generating a Sourcegraph access token
+
+1. Go to your Sourcegraph instance.
+2. In your account settings, navigate to `Access tokens`.
+3. Click `Generate new token`.
+4. Copy the token.
+
+### Codebase
+
+To enable codebase-aware answers, you have to set the codebase setting to let Cody know which repository you are working on in the current workspace. You can do that as follows:
+
+1. Open the VS Code workspace settings by pressing <kbd>Cmd</kbd>, (or File > Preferences (Settings) on Windows & Linux).
+2. Search for the "Cody: Codebase" setting.
+3. Enter the repository name as listed on your Sourcegraph instance.
+   1. For example: `github.com/sourcegraph/sourcegraph` without the `https` protocol
+
+Setting the codebase will edit the `.vscode/settings.json` file in your repository, which you can then commit and save for future usage.
+
+## Extension Settings
+
+This extension contributes the following settings:
+
+| Setting             | Description                                                                                                                  | Example                              |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| cody.enabled        | Enable or disable Cody.                                                                                                      | true/false                           |
+| cody.serverEndpoint | URL of the Sourcegraph instance.                                                                                             | "https://example.sourcegraph.com"    |
+| cody.codebase       | Name of the repository opened in the current workspace. Use the same repository name as listed on your Sourcegraph instance. | "github.com/sourcegraph/sourcegraph" |
+| cody.useContext     | Context source for Cody. One of: "embeddings", "keyword", "blended", or "none".                                              | "embeddings"                         |
 
 ## Development
 
-There are four separate components:
-
-- `vscode-codegen`: the VS Code extension
-- `server`: the server that serves the completion and chat endpoints
-- `embeddings`: generates the embeddings and serves the embeddings endpoint
-- `common`: a library shared by the extension and server with common types
-
-### Setup
-
-1. Install [asdf](https://asdf-vm.com/)
-1. Run `asdf install` (if needed, run `asdf plugin add NAME` for any missing plugins)
-1. Set the following environment variables:
-
-   ```
-   export OPENAI_API_KEY=sk-...
-   export ANTHROPIC_API_KEY=...
-   export EMBEDDINGS_DIR=/path/to/embeddings/dir
-   export CODY_USERS_PATH=/path/to/users.json
-   ```
-
-   See [Cody secrets](https://docs.google.com/document/d/1b5oqnE0kSUrgrb4Z2Alnhfods5e4Y5gx_oaIcQH4TZM/edit) (internal Google Doc) for these secret values.
-
-1. Install dependencies:
-
-   ```shell
-   brew install wget  # Use your system's package manager
-   pnpm install
-   (cd embeddings && pip3 install -r requirements.txt)
-   ```
-
-### Build and run
-
-Build and watch the TypeScript code (if you're running VS Code, this runs automatically in the background):
-
-1. `pnpm exec tsc --build`
-
-Run the server:
-
-1. `cd server && CODY_PORT=9300 pnpm run dev`
-
-Run the embeddings API:
-
-1. Generate embeddings, including for at least 1 codebase. See [embeddings/README.md](embeddings/README.md).
-
-   For example:
-
-   ```shell
-   cd embeddings
-   python3 embed_repos.py --repos https://github.com/sourcegraph/conc --output-dir=$EMBEDDINGS_DIR
-   python3 embed_context_dataset.py --output-dir=$EMBEDDINGS_DIR
-   ```
-
-   If you do this, ensure your `CODY_USERS_PATH` file has `github.com/sourcegraph/conc` in the `accessibleCodebaseIDs`.
-
-1. `cd embeddings && asdf env python uvicorn api:app --reload --port 9301`
-
-### Developing the [VS Code extension](vscode-codegen/)
-
-1. Change your VS Code user settings to use your local dev servers:
-
-   ```json
-   "cody.serverEndpoint": "http://localhost:9300",
-   "cody.embeddingsEndpoint": "http://localhost:9301",
-   "cody.debug": true,
-   ```
-
-2. Run `pnpm install` from the root of this repository
-3. Select `Launch Cody Extension` from the dropdown menu in the `RUN AND DEBUG` sidebar
-   1. Remove `node_modeules` and rerun `pnpm install` if the start up failed
-4. Refresh the extension to see updated changes
-
-#### File structure
-
-- `vscode-codegen/src`: source code of the components for the extension
-  host
-- `vscode-codegen/webviews`: source code of the extension UI (webviews),
-  build with Vite and rollup.js using the `vscode-codegen/vite.config.ts` file at directory
-  root
-- `vscode-codegen/dist`: build outputs from both webpack and vite
-- `vscode-codegen/resources`: everything in this directory will be move to
-  the ./dist directory automatically during build time for easy packaging
-- `vscode-codegen/index.html`: the entry file that Vite looks for to build
-  the webviews. The extension host reads this file at run time and replace
-  the variables inside the file with webview specific uri and info
-
-### Testing the [VS Code extension](vscode-codegen/)
-
-```
-$ cd vscode-codegen
-$ pnpm test
-```
-
-### Publishing the [VS Code extension](vscode-codegen/)
-
-Increment the `version` in [`vscode-codegen/package.json`](vscode-codegen/package.json) and then run:
-
-```shell
-cd vscode-codegen
-pnpm run vsce:package
-
-# To try the packaged extension locally, disable any other installations of it and then run:
-#   code --install-extension dist/kodj.vsix
-
-# To publish the packaged extension to the VS Code Extension Marketplace:
-pnpm exec vsce publish --packagePath dist/kodj.vsix
-```
-
-> NOTE: Since the extension has already been bundled, we will need to add the `--no-dependencies` flag during the packaging step to exclude the npm dependencies ([source](https://github.com/microsoft/vscode-vsce/issues/421#issuecomment-1038911725))
+Please see the [CONTRIBUTING](./CONTRIBUTING.md) document if you are interested in contributing to our code base.

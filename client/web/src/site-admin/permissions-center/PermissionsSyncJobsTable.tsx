@@ -88,6 +88,7 @@ const DEFAULT_FILTERS = {
     state: '',
     searchType: '',
     query: '',
+    partial: '',
 }
 const PERMISSIONS_SYNC_JOBS_POLL_INTERVAL = 5000
 
@@ -122,6 +123,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 state: stringToState(filters.state),
                 searchType: stringToSearchType(filters.searchType),
                 query: debouncedQuery,
+                partial: filters.partial === 'true',
                 userID,
                 repoID,
             } as PermissionsSyncJobsVariables,
@@ -154,6 +156,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
         (searchType: PermissionsSyncJobsSearchType | null) => setFilters({ searchType: searchType?.toString() || '' }),
         [setFilters]
     )
+    const setPartial = useCallback((partial: boolean) => setFilters({ partial: partial.toString() }), [setFilters])
 
     const [notification, setNotification] = useState<Notification | undefined>(undefined)
     const [showNotification, setShowNotification] = useState<boolean>(false)
@@ -305,7 +308,11 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 {connection?.nodes && (
                     <div className={styles.filtersGrid}>
                         <PermissionsSyncJobReasonGroupPicker value={filters.reason} onChange={setReason} />
-                        <PermissionsSyncJobStatePicker value={filters.state} onChange={setState} />
+                        <PermissionsSyncJobStatePicker
+                            value={filters.partial === 'true' ? 'partial' : filters.state}
+                            onChange={setState}
+                            onPartialSuccessChange={setPartial}
+                        />
                         <PermissionsSyncJobSearchTypePicker value={filters.searchType} onChange={setSearchType} />
                         <PermissionsSyncJobSearchPane filters={filters} setFilters={setFilters} />
                     </div>
@@ -389,9 +396,11 @@ const AnimatedAlert: React.FunctionComponent<React.PropsWithChildren<{ className
     return (
         <animated.div style={style}>
             {/* Keep this in sync with calculation above: mb-3 = 1rem */}
-            <Alert ref={ref} variant="success" className={classNames(className, 'mb-3')}>
-                {children}
-            </Alert>
+            {visible && (
+                <Alert ref={ref} variant="success" className={classNames(className, 'mb-3')}>
+                    {children}
+                </Alert>
+            )}
         </animated.div>
     )
 }
@@ -400,13 +409,7 @@ const TableColumns: IColumn<PermissionsSyncJob>[] = [
     {
         key: 'Status',
         header: 'Status',
-        render: ({ state, cancellationReason, failureMessage }: PermissionsSyncJob) => (
-            <PermissionsSyncJobStatusBadge
-                state={state}
-                cancellationReason={cancellationReason}
-                failureMessage={failureMessage}
-            />
-        ),
+        render: job => <PermissionsSyncJobStatusBadge job={job} />,
     },
     {
         key: 'Name',
@@ -480,18 +483,31 @@ const PermissionsSyncJobReasonGroupPicker: FC<PermissionsSyncJobReasonGroupPicke
 interface PermissionsSyncJobStatePickerProps {
     value: string
     onChange: (state: PermissionsSyncJobState | null) => void
+    onPartialSuccessChange: (partial: boolean) => void
 }
 
 const PermissionsSyncJobStatePicker: FC<PermissionsSyncJobStatePickerProps> = props => {
-    const { onChange, value } = props
+    const { onChange, onPartialSuccessChange, value } = props
 
     const handleSelect = (event: ChangeEvent<HTMLSelectElement>): void => {
-        const nextValue = event.target.value === '' ? null : (event.target.value as PermissionsSyncJobState)
+        let nextValue = null
+        let partial = false
+        switch (event.target.value) {
+            case '':
+                break
+            case 'partial':
+                partial = true
+                break
+            default:
+                nextValue = event.target.value as PermissionsSyncJobState
+        }
         onChange(nextValue)
+        onPartialSuccessChange(partial)
     }
 
+    const selectedValue = value === 'partial' ? 'partial' : stringToState(value) || ''
     return (
-        <Select id="stateSelector" value={stringToState(value) || ''} label="State" onChange={handleSelect}>
+        <Select id="stateSelector" value={selectedValue} label="State" onChange={handleSelect}>
             <option value="">Any</option>
             <option value={PermissionsSyncJobState.CANCELED}>Canceled</option>
             <option value={PermissionsSyncJobState.COMPLETED}>Completed</option>
@@ -499,6 +515,7 @@ const PermissionsSyncJobStatePicker: FC<PermissionsSyncJobStatePickerProps> = pr
             <option value={PermissionsSyncJobState.FAILED}>Failed</option>
             <option value={PermissionsSyncJobState.PROCESSING}>Processing</option>
             <option value={PermissionsSyncJobState.QUEUED}>Queued</option>
+            <option value="partial">Partial</option>
         </Select>
     )
 }

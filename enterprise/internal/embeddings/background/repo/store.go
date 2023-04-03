@@ -2,6 +2,8 @@ package repo
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -15,6 +17,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
+
+type RepoEmbeddingJobNotFoundErr struct {
+	repoID api.RepoID
+}
+
+func (r *RepoEmbeddingJobNotFoundErr) Error() string {
+	return fmt.Sprintf("repo embedding job not found: repoID=%d", r.repoID)
+}
+
+func (r *RepoEmbeddingJobNotFoundErr) NotFound() bool {
+	return true
+}
 
 var repoEmbeddingJobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("repo_embedding_jobs.id"),
@@ -124,7 +138,11 @@ LIMIT 1
 
 func (s *repoEmbeddingJobsStore) GetLastCompletedRepoEmbeddingJob(ctx context.Context, repoID api.RepoID) (*RepoEmbeddingJob, error) {
 	q := sqlf.Sprintf(getLastFinishedRepoEmbeddingJob, sqlf.Join(repoEmbeddingJobsColumns, ", "), repoID)
-	return scanRepoEmbeddingJob(s.QueryRow(ctx, q))
+	job, err := scanRepoEmbeddingJob(s.QueryRow(ctx, q))
+	if err == sql.ErrNoRows {
+		return nil, &RepoEmbeddingJobNotFoundErr{repoID: repoID}
+	}
+	return job, nil
 }
 
 const getLastRepoEmbeddingJobForRevision = `
@@ -137,7 +155,11 @@ LIMIT 1
 
 func (s *repoEmbeddingJobsStore) GetLastRepoEmbeddingJobForRevision(ctx context.Context, repoID api.RepoID, revision api.CommitID) (*RepoEmbeddingJob, error) {
 	q := sqlf.Sprintf(getLastRepoEmbeddingJobForRevision, sqlf.Join(repoEmbeddingJobsColumns, ", "), repoID, revision)
-	return scanRepoEmbeddingJob(s.QueryRow(ctx, q))
+	job, err := scanRepoEmbeddingJob(s.QueryRow(ctx, q))
+	if err == sql.ErrNoRows {
+		return nil, &RepoEmbeddingJobNotFoundErr{repoID: repoID}
+	}
+	return job, nil
 }
 
 const countRepoEmbeddingJobsQuery = `

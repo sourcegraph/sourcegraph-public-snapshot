@@ -12,7 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/lsifstore"
 	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/shared"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
@@ -40,7 +41,7 @@ func exportRankingGraph(
 
 	for _, upload := range uploads {
 		documentPaths := []string{}
-		if err := lsifstore.InsertDefinitionsAndReferencesForDocument(ctx, upload, graphKey, writeBatchSize, func(ctx context.Context, upload shared.ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error {
+		if err := lsifstore.InsertDefinitionsAndReferencesForDocument(ctx, upload, graphKey, writeBatchSize, func(ctx context.Context, upload uploadsshared.ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error {
 			documentPaths = append(documentPaths, path)
 			numDefinitions, numReferences, err := setDefinitionsAndReferencesForUpload(ctx, store, upload, rankingBatchSize, rankingGraphKey, path, document)
 			numDefinitionsInserted += numDefinitions
@@ -58,7 +59,13 @@ func exportRankingGraph(
 			return 0, 0, 0, err
 		}
 
-		if err := store.InsertInitialPathRanks(ctx, upload.ID, documentPaths, graphKey); err != nil {
+		paths := make(chan string, len(documentPaths))
+		for _, path := range documentPaths {
+			paths <- path
+		}
+		close(paths)
+
+		if err := store.InsertInitialPathRanks(ctx, upload.ID, paths, writeBatchSize, graphKey); err != nil {
 			logger.Error(
 				"Failed to insert initial path counts",
 				log.Int("id", upload.ID),
@@ -86,58 +93,86 @@ const skipPrefix = "lsif ."
 func setDefinitionsAndReferencesForUpload(
 	ctx context.Context,
 	store store.Store,
-	upload shared.ExportedUpload,
-	rankingBatchNumber int,
+	upload uploadsshared.ExportedUpload,
+	batchSize int,
 	rankingGraphKey, path string,
 	document *scip.Document,
 ) (int, int, error) {
+	seenDefinitions, err := setDefinitionsForUpload(ctx, store, upload, rankingGraphKey, path, document)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	references := make(chan string)
+	referencesCount := 0
+
+	go func() {
+		defer close(references)
+
+		for _, occ := range document.Occurrences {
+			if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) || strings.HasPrefix(occ.Symbol, skipPrefix) {
+				continue
+			}
+
+			if _, ok := seenDefinitions[occ.Symbol]; ok {
+				continue
+			}
+			if !scip.SymbolRole_Definition.Matches(occ) {
+				references <- occ.Symbol
+				referencesCount++
+			}
+		}
+	}()
+
+	if err := store.InsertReferencesForRanking(ctx, rankingGraphKey, batchSize, upload.ID, references); err != nil {
+		for range references {
+			// Drain channel to ensure it closes
+		}
+
+		return 0, 0, err
+	}
+
+	return len(seenDefinitions), referencesCount, nil
+}
+
+func setDefinitionsForUpload(
+	ctx context.Context,
+	store store.Store,
+	upload uploadsshared.ExportedUpload,
+	rankingGraphKey, path string,
+	document *scip.Document,
+) (map[string]struct{}, error) {
 	seenDefinitions := map[string]struct{}{}
-	definitions := []shared.RankingDefinitions{}
-	for _, occ := range document.Occurrences {
-		if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) || strings.HasPrefix(occ.Symbol, skipPrefix) {
-			continue
+	definitions := make(chan shared.RankingDefinitions)
+
+	go func() {
+		defer close(definitions)
+
+		for _, occ := range document.Occurrences {
+			if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) || strings.HasPrefix(occ.Symbol, skipPrefix) {
+				continue
+			}
+
+			if scip.SymbolRole_Definition.Matches(occ) {
+				definitions <- shared.RankingDefinitions{
+					UploadID:     upload.ID,
+					SymbolName:   occ.Symbol,
+					DocumentPath: filepath.Join(upload.Root, path),
+				}
+				seenDefinitions[occ.Symbol] = struct{}{}
+			}
+		}
+	}()
+
+	if err := store.InsertDefinitionsForRanking(ctx, rankingGraphKey, definitions); err != nil {
+		for range definitions {
+			// Drain channel to ensure it closes
 		}
 
-		if scip.SymbolRole_Definition.Matches(occ) {
-			definitions = append(definitions, shared.RankingDefinitions{
-				UploadID:     upload.ID,
-				SymbolName:   occ.Symbol,
-				DocumentPath: filepath.Join(upload.Root, path),
-			})
-			seenDefinitions[occ.Symbol] = struct{}{}
-		}
+		return nil, err
 	}
 
-	references := []string{}
-	for _, occ := range document.Occurrences {
-		if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) || strings.HasPrefix(occ.Symbol, skipPrefix) {
-			continue
-		}
-
-		if _, ok := seenDefinitions[occ.Symbol]; ok {
-			continue
-		}
-		if !scip.SymbolRole_Definition.Matches(occ) {
-			references = append(references, occ.Symbol)
-		}
-	}
-
-	if len(definitions) > 0 {
-		if err := store.InsertDefinitionsForRanking(ctx, rankingGraphKey, rankingBatchNumber, definitions); err != nil {
-			return 0, 0, err
-		}
-	}
-
-	if len(references) > 0 {
-		if err := store.InsertReferencesForRanking(ctx, rankingGraphKey, rankingBatchNumber, shared.RankingReferences{
-			UploadID:    upload.ID,
-			SymbolNames: references,
-		}); err != nil {
-			return 0, 0, err
-		}
-	}
-
-	return len(definitions), len(references), nil
+	return seenDefinitions, nil
 }
 
 func vacuumStaleDefinitions(ctx context.Context, store store.Store) (int, int, error) {
@@ -167,12 +202,36 @@ func vacuumStaleInitialPaths(ctx context.Context, store store.Store) (int, int, 
 	return numPathRecordsScanned, numStalePathRecordsDeleted, err
 }
 
-func vacuumStaleGraphs(ctx context.Context, store store.Store) (int, int, error) {
+func vacuumAbandonedDefinitions(ctx context.Context, store store.Store) (int, error) {
 	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
-		return 0, 0, nil
+		return 0, nil
 	}
 
-	return store.VacuumStaleGraphs(ctx, rankingshared.DerivativeGraphKeyFromTime(time.Now()))
+	return store.VacuumAbandonedDefinitions(ctx, rankingshared.GraphKey(), vacuumBatchSize)
+}
+
+func vacuumAbandonedReferences(ctx context.Context, store store.Store) (int, error) {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+		return 0, nil
+	}
+
+	return store.VacuumAbandonedReferences(ctx, rankingshared.GraphKey(), vacuumBatchSize)
+}
+
+func vacuumAbandonedInitialPathCounts(ctx context.Context, store store.Store) (int, error) {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+		return 0, nil
+	}
+
+	return store.VacuumAbandonedInitialPathCounts(ctx, rankingshared.GraphKey(), vacuumBatchSize)
+}
+
+func vacuumStaleGraphs(ctx context.Context, store store.Store) (int, error) {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+		return 0, nil
+	}
+
+	return store.VacuumStaleGraphs(ctx, rankingshared.DerivativeGraphKeyFromTime(time.Now()), vacuumBatchSize)
 }
 
 func vacuumStaleRanks(ctx context.Context, store store.Store) (int, int, error) {

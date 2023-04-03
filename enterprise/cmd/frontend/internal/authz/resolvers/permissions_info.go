@@ -41,11 +41,11 @@ func (r *permissionsInfoResolver) SyncedAt() *gqlutil.DateTime {
 	return &gqlutil.DateTime{Time: r.syncedAt}
 }
 
-func (r *permissionsInfoResolver) UpdatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.updatedAt}
+func (r *permissionsInfoResolver) UpdatedAt() *gqlutil.DateTime {
+	return gqlutil.FromTime(r.updatedAt)
 }
 
-func (r *permissionsInfoResolver) Unrestricted(ctx context.Context) bool {
+func (r *permissionsInfoResolver) Unrestricted(_ context.Context) bool {
 	return r.unrestricted
 }
 
@@ -149,7 +149,7 @@ var permissionsInfoUserConnectionOptions = &graphqlutil.ConnectionResolverOption
 	MaxPageSize: &permissionsInfoUserConnectionMaxPageSize,
 }
 
-func (r *permissionsInfoResolver) Users(_ context.Context, args graphqlbackend.PermissionsInfoUsersArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionsInfoUserResolver], error) {
+func (r *permissionsInfoResolver) Users(ctx context.Context, args graphqlbackend.PermissionsInfoUsersArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionsInfoUserResolver], error) {
 	if r.repoID == 0 {
 		return nil, nil
 	}
@@ -160,6 +160,7 @@ func (r *permissionsInfoResolver) Users(_ context.Context, args graphqlbackend.P
 	}
 
 	connectionStore := &permissionsInfoUsersStore{
+		ctx:    ctx,
 		repoID: r.repoID,
 		db:     r.db,
 		ossDB:  r.ossDB,
@@ -170,6 +171,7 @@ func (r *permissionsInfoResolver) Users(_ context.Context, args graphqlbackend.P
 }
 
 type permissionsInfoUsersStore struct {
+	ctx    context.Context
 	repoID api.RepoID
 	db     edb.EnterpriseDB
 	ossDB  database.DB
@@ -177,7 +179,7 @@ type permissionsInfoUsersStore struct {
 }
 
 func (s *permissionsInfoUsersStore) MarshalCursor(node graphqlbackend.PermissionsInfoUserResolver, _ database.OrderBy) (*string, error) {
-	cursor := node.User().Username()
+	cursor := node.User(s.ctx).Username()
 
 	return &cursor, nil
 }
@@ -216,8 +218,8 @@ func (r permissionsInfoUserResolver) ID() graphql.ID {
 	return graphqlbackend.MarshalUserID(r.perm.User.ID)
 }
 
-func (r permissionsInfoUserResolver) User() *graphqlbackend.UserResolver {
-	return graphqlbackend.NewUserResolver(r.db, r.perm.User)
+func (r permissionsInfoUserResolver) User(ctx context.Context) *graphqlbackend.UserResolver {
+	return graphqlbackend.NewUserResolver(ctx, r.db, r.perm.User)
 }
 
 func (r permissionsInfoUserResolver) Reason() string {

@@ -22,7 +22,6 @@ const currentAuthStateQuery = gql`
             email
             displayName
             siteAdmin
-            tags
             url
             settingsURL
             organizations {
@@ -38,7 +37,6 @@ const currentAuthStateQuery = gql`
                 canSignOut
             }
             viewerCanAdminister
-            tags
         }
     }
 `

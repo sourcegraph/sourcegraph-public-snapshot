@@ -4,7 +4,7 @@ load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
-load("//dev:webpack.bzl", "webpack_bundle", "webpack_devserver")
+load("//dev:webpack.bzl", "webpack_bundle", "webpack_devserver", "webpack_web_app")
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
@@ -31,6 +31,8 @@ ts_config(
         "//client/build-config:tsconfig",
         "//client/client-api:tsconfig",
         "//client/codeintellify:tsconfig",
+        "//client/cody-shared:tsconfig",
+        "//client/cody-ui:tsconfig",
         "//client/common:tsconfig",
         "//client/extension-api-types:tsconfig",
         "//client/http-client:tsconfig",
@@ -596,8 +598,9 @@ ts_project(
         "src/enterprise/codeintel/sort.ts",
         "src/enterprise/codeintel/useCodeIntel.ts",
         "src/enterprise/codeintel/useSearchBasedCodeIntel.ts",
-        "src/enterprise/cody/CodyPage.tsx",
-        "src/enterprise/cody/GlobalCodyArea.tsx",
+        "src/enterprise/cody/api.ts",
+        "src/enterprise/cody/icon.ts",
+        "src/enterprise/cody/search/CodySearchPage.tsx",
         "src/enterprise/dotcom/productSubscriptions/AccountEmailAddresses.tsx",
         "src/enterprise/dotcom/productSubscriptions/AccountName.tsx",
         "src/enterprise/dotcom/productSubscriptions/ProductLicenseValidity.tsx",
@@ -923,6 +926,22 @@ ts_project(
         "src/enterprise/searchContexts/hooks/useDefaultContext.ts",
         "src/enterprise/searchContexts/hooks/useToggleSearchContextStar.ts",
         "src/enterprise/searchContexts/repositoryRevisionsConfigParser.ts",
+        "src/enterprise/sentinel/LandingImage.ts",
+        "src/enterprise/sentinel/SentinelAppRouter.tsx",
+        "src/enterprise/sentinel/SentinelLandingPage.tsx",
+        "src/enterprise/sentinel/SentinelRouter.tsx",
+        "src/enterprise/sentinel/SentinelView.tsx",
+        "src/enterprise/sentinel/components/SentinelBanner/SentinelBanner.tsx",
+        "src/enterprise/sentinel/components/SentinelBanner/ShieldImg.tsx",
+        "src/enterprise/sentinel/components/SummaryTable/SummaryTable.tsx",
+        "src/enterprise/sentinel/components/VulnerabilityCard/VulnerabilityCard.tsx",
+        "src/enterprise/sentinel/components/VulnerabilityList/VulnerabilityList.tsx",
+        "src/enterprise/sentinel/components/VulnerabilitySidebar/VulnerabilitySidebar.tsx",
+        "src/enterprise/sentinel/graphql/graphqlQueries.ts",
+        "src/enterprise/sentinel/graphql/useSentinelQuery.ts",
+        "src/enterprise/sentinel/graphql/useVulnerabilityMatchesCountByRepoQuery.ts",
+        "src/enterprise/sentinel/index.ts",
+        "src/enterprise/sentinel/utils/isSentinelEnabled.ts",
         "src/enterprise/site-admin/SiteAdminAuthenticationProvidersPage.tsx",
         "src/enterprise/site-admin/SiteAdminExternalAccountsPage.tsx",
         "src/enterprise/site-admin/SiteAdminPreciseIndexPage.tsx",
@@ -983,6 +1002,7 @@ ts_project(
         "src/hooks/useScrollManager/mutationObserverWithTimeout.ts",
         "src/hooks/useScrollManager/useScrollManager.ts",
         "src/hooks/useUrlSyncedState.ts",
+        "src/hooks/useUrlSyncedString.ts",
         "src/initBuildInfo.ts",
         "src/insights/Icons.tsx",
         "src/insights/types.ts",
@@ -1225,6 +1245,7 @@ ts_project(
         "src/repo/repoContainerRoutes.tsx",
         "src/repo/repoHeaderActionButtons.tsx",
         "src/repo/repoRevisionContainerRoutes.tsx",
+        "src/repo/repoRevisionSidebar/cody/RepoRevisionSidebarCody.tsx",
         "src/repo/settings/RepoSettingsArea.tsx",
         "src/repo/settings/RepoSettingsIndexPage.tsx",
         "src/repo/settings/RepoSettingsMirrorPage.tsx",
@@ -1292,6 +1313,7 @@ ts_project(
         "src/search/suggestion/DidYouMean.tsx",
         "src/search/suggestion/SmartSearch.tsx",
         "src/search/useExperimentalSearchInput.ts",
+        "src/sentinel/types.ts",
         "src/settings/DynamicallyImportedMonacoSettingsEditor.tsx",
         "src/settings/EditorActionsGroup.tsx",
         "src/settings/MonacoSettingsEditor.tsx",
@@ -1361,7 +1383,7 @@ ts_project(
         "src/site-admin/SiteAdminWebhookPage.tsx",
         "src/site-admin/SiteAdminWebhookUpdatePage.tsx",
         "src/site-admin/SiteAdminWebhooksPage.tsx",
-        "src/site-admin/SiteConfigurationChangeListPage.tsx",
+        "src/site-admin/SiteConfigurationChangeList.tsx",
         "src/site-admin/UserManagement/components/Calendar/Calendar.tsx",
         "src/site-admin/UserManagement/components/Calendar/index.ts",
         "src/site-admin/UserManagement/components/DateRangeSelect.tsx",
@@ -1431,11 +1453,12 @@ ts_project(
         "src/site-admin/packages/modal-content/EditPackageFilterModalContent.tsx",
         "src/site-admin/packages/modal-content/ManagePackageFiltersModalContent.tsx",
         "src/site-admin/permissions-center/PermissionsSyncJobNode.tsx",
-        "src/site-admin/permissions-center/PermissionsSyncJobsPage.tsx",
         "src/site-admin/permissions-center/PermissionsSyncJobsTable.tsx",
         "src/site-admin/permissions-center/backend.ts",
         "src/site-admin/routes.tsx",
         "src/site-admin/sidebaritems.ts",
+        "src/site-admin/user-select/UserSelect.tsx",
+        "src/site-admin/user-select/backend.ts",
         "src/site-admin/webhooks/MessagePanel.tsx",
         "src/site-admin/webhooks/PerformanceGauge.tsx",
         "src/site-admin/webhooks/StatusCode.tsx",
@@ -1478,6 +1501,7 @@ ts_project(
         "src/team/area/TeamMembersPage.tsx",
         "src/team/area/TeamProfilePage.tsx",
         "src/team/area/backend.ts",
+        "src/team/area/test-utils.ts",
         "src/team/backend.ts",
         "src/team/index.ts",
         "src/team/list/DeleteTeamModal.tsx",
@@ -1571,6 +1595,8 @@ ts_project(
         ":node_modules/@sourcegraph/branded",
         ":node_modules/@sourcegraph/client-api",  #keep
         ":node_modules/@sourcegraph/codeintellify",
+        ":node_modules/@sourcegraph/cody-shared",
+        ":node_modules/@sourcegraph/cody-ui",
         ":node_modules/@sourcegraph/common",
         ":node_modules/@sourcegraph/extension-api-types",  #keep
         ":node_modules/@sourcegraph/http-client",
@@ -1667,7 +1693,6 @@ ts_project(
         "//:node_modules/react-router-dom",
         "//:node_modules/react-spring",
         "//:node_modules/react-sticky-box",
-        "//:node_modules/react-use-websocket",
         "//:node_modules/recharts",
         "//:node_modules/rxjs",
         "//:node_modules/semver",
@@ -1752,6 +1777,7 @@ ts_project(
         "src/global/Notices.test.tsx",
         "src/hooks/useScrollManager/useScrollManager.test.tsx",
         "src/hooks/useUrlSyncedState.test.ts",
+        "src/hooks/useUrlSyncedString.test.tsx",
         "src/insights/utils/use-series-toggle.test.tsx",
         "src/marketing/page/SurveyPage.test.tsx",
         "src/marketing/toast/SurveyToast.test.tsx",
@@ -1795,6 +1821,7 @@ ts_project(
         "src/user/index.test.ts",
         "src/user/settings/profile/UserSettingsProfilePage.test.tsx",
         "src/user/settings/research/ProductResearch.test.tsx",
+        "src/util/checkRequestAccessAllowed.test.ts",
         "src/util/codeStatsUtils.test.ts",
         "src/util/getReactElements.test.tsx",
         "src/util/prettyBytesBigint.test.ts",
@@ -1936,8 +1963,8 @@ ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
     ]
 ]
 
-webpack_bundle(
-    name = "bundle-enterprise",
+webpack_web_app(
+    name = "app-enterprise",
     srcs = ENTERPRISE_BUNDLE_DATA_DEPS + [
         "//:babel_config",
         "//:browserslist",
@@ -1948,6 +1975,8 @@ webpack_bundle(
     },
     env = {
         "NODE_ENV": "production",
+        "ENTERPRISE": "true",
+        "INTEGRATION_TESTS": "true",
     },
     output_dir = True,
     visibility = ["//ui/assets:__subpackages__"],
@@ -1982,6 +2011,6 @@ build_test(
     name = "webpack_test",
     targets = [
         ":bundle",
-        ":bundle-enterprise",
+        ":app-enterprise",
     ],
 )

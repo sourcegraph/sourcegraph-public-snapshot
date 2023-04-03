@@ -501,23 +501,6 @@
           "!go": {
             "pointer": true
           }
-        },
-        "accessRequest.enabled": {
-          "description": "Enables/disables the request access feature, which allows users to request access if built-in signup is disabled.",
-          "type": "boolean",
-          "!go": {
-            "pointer": true
-          },
-          "group": "AccessRequest",
-          "default": true
-        },
-        "unifiedPermissions": {
-          "description": "Enables the new unified permissions model, which stores repository permissions in a single table and a row for each permission instead of postgres arrays.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": false
-          }
         }
       },
       "examples": [
@@ -1891,6 +1874,21 @@
       "group": "Authentication",
       "default": 5
     },
+    "auth.accessRequest": {
+      "description": "The config options for access requests",
+      "type": "object",
+      "group": "Authentication",
+      "properties": {
+        "enabled": {
+          "description": "Enable/disable the access request feature, which allows users to request access if built-in signup is disabled.",
+          "type": "boolean",
+          "!go": {
+            "pointer": true
+          },
+          "default": true
+        }
+      }
+    },
     "update.channel": {
       "description": "The channel on which to automatically check for Sourcegraph updates.",
       "type": ["string"],
@@ -2075,6 +2073,13 @@
           "description": "The url to the external embedding API service.",
           "type": "string",
           "format": "uri"
+        },
+        "excludedFilePathPatterns": {
+          "description": "A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -2100,7 +2105,7 @@
           "type": "string",
           "description": "The external completions provider.",
           "default": "anthropic",
-          "enum": ["anthropic"]
+          "enum": ["anthropic", "openai"]
         }
       }
     }

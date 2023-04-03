@@ -50,6 +50,9 @@ type EmbeddingsSearchParameters struct {
 	Query            string       `json:"query"`
 	CodeResultsCount int          `json:"codeResultsCount"`
 	TextResultsCount int          `json:"textResultsCount"`
+
+	// If set to "True", EmbeddingSearchResult.Debug will contain useful information about scoring.
+	Debug bool `json:"debug"`
 }
 
 type IsContextRequiredForChatQueryParameters struct {

@@ -135,17 +135,3 @@ func (bs *Breadcrumbs) prettyString(readFile readFileFunc) string {
 	bs.pretty(sb, readFile)
 	return sb.String()
 }
-
-// Returns breadcrumbs that have one of the given messages.
-func pickBreadcrumbs(breadcrumbs []Breadcrumb, messages []string) []Breadcrumb {
-	var picked []Breadcrumb
-	for _, b := range breadcrumbs {
-		for _, message := range messages {
-			if strings.Contains(b.message(), message) {
-				picked = append(picked, b)
-				break
-			}
-		}
-	}
-	return picked
-}

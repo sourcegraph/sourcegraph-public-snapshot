@@ -69,14 +69,14 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                         Searching millions of public repositories
                     </div>
                     <div className="mt-3">
-                        <Link
-                            to="https://about.sourcegraph.com"
-                            onClick={() =>
-                                telemetryService.log('ClickedOnEnterpriseCTA', { location: 'HomeAboveSearch' })
-                            }
-                        >
-                            Get Sourcegraph Enterprise <Icon svgPath={mdiArrowRight} aria-hidden={true} />
-                        </Link>
+                        <Tooltip content="The Sourcegraph desktop app runs locally and works on your own private code.">
+                            <Link
+                                to="https://about.sourcegraph.com/app"
+                                onClick={() => telemetryService.log('ClickedOnAppCTA', { location: 'HomeAboveSearch' })}
+                            >
+                                Download Sourcegraph app <Icon svgPath={mdiArrowRight} aria-hidden={true} />
+                            </Link>
+                        </Tooltip>
                     </div>
                 </div>
             )}

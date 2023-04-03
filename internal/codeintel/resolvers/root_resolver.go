@@ -53,13 +53,13 @@ func (r *Resolver) NodeResolvers() map[string]NodeByIDFunc {
 				return nil, err
 			}
 
-			return r.autoIndexingRootResolver.PreciseIndexByID(ctx, MarshalID("PreciseIndex", fmt.Sprintf("U:%d", uploadID)))
+			return r.uploadsRootResolver.PreciseIndexByID(ctx, MarshalID("PreciseIndex", fmt.Sprintf("U:%d", uploadID)))
 		},
 		"CodeIntelligenceConfigurationPolicy": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.policiesRootResolver.ConfigurationPolicyByID(ctx, id)
 		},
 		"PreciseIndex": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return r.autoIndexingRootResolver.PreciseIndexByID(ctx, id)
+			return r.uploadsRootResolver.PreciseIndexByID(ctx, id)
 		},
 		"Vulnerability": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.sentinelRootResolver.VulnerabilityByID(ctx, id)
@@ -101,32 +101,40 @@ func (r *Resolver) VulnerabilityMatchByID(ctx context.Context, id graphql.ID) (_
 	return r.sentinelRootResolver.VulnerabilityMatchByID(ctx, id)
 }
 
+func (r *Resolver) VulnerabilityMatchesSummaryCounts(ctx context.Context) (_ VulnerabilityMatchesSummaryCountResolver, err error) {
+	return r.sentinelRootResolver.VulnerabilityMatchesSummaryCounts(ctx)
+}
+
+func (r *Resolver) VulnerabilityMatchesCountByRepository(ctx context.Context, args GetVulnerabilityMatchCountByRepositoryArgs) (_ VulnerabilityMatchCountByRepositoryConnectionResolver, err error) {
+	return r.sentinelRootResolver.VulnerabilityMatchesCountByRepository(ctx, args)
+}
+
 func (r *Resolver) IndexerKeys(ctx context.Context, opts *IndexerKeyQueryArgs) (_ []string, err error) {
-	return r.autoIndexingRootResolver.IndexerKeys(ctx, opts)
+	return r.uploadsRootResolver.IndexerKeys(ctx, opts)
 }
 
 func (r *Resolver) PreciseIndexes(ctx context.Context, args *PreciseIndexesQueryArgs) (_ PreciseIndexConnectionResolver, err error) {
-	return r.autoIndexingRootResolver.PreciseIndexes(ctx, args)
+	return r.uploadsRootResolver.PreciseIndexes(ctx, args)
 }
 
 func (r *Resolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ PreciseIndexResolver, err error) {
-	return r.autoIndexingRootResolver.PreciseIndexByID(ctx, id)
+	return r.uploadsRootResolver.PreciseIndexByID(ctx, id)
 }
 
 func (r *Resolver) DeletePreciseIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
-	return r.autoIndexingRootResolver.DeletePreciseIndex(ctx, args)
+	return r.uploadsRootResolver.DeletePreciseIndex(ctx, args)
 }
 
 func (r *Resolver) DeletePreciseIndexes(ctx context.Context, args *DeletePreciseIndexesArgs) (*EmptyResponse, error) {
-	return r.autoIndexingRootResolver.DeletePreciseIndexes(ctx, args)
+	return r.uploadsRootResolver.DeletePreciseIndexes(ctx, args)
 }
 
 func (r *Resolver) ReindexPreciseIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
-	return r.autoIndexingRootResolver.ReindexPreciseIndex(ctx, args)
+	return r.uploadsRootResolver.ReindexPreciseIndex(ctx, args)
 }
 
 func (r *Resolver) ReindexPreciseIndexes(ctx context.Context, args *ReindexPreciseIndexesArgs) (*EmptyResponse, error) {
-	return r.autoIndexingRootResolver.ReindexPreciseIndexes(ctx, args)
+	return r.uploadsRootResolver.ReindexPreciseIndexes(ctx, args)
 }
 
 func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (_ CodeIntelligenceCommitGraphResolver, err error) {
@@ -143,14 +151,6 @@ func (r *Resolver) InferAutoIndexJobsForRepo(ctx context.Context, args *InferAut
 
 func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (_ GitBlobLSIFDataResolver, err error) {
 	return r.codenavResolver.GitBlobLSIFData(ctx, args)
-}
-
-func (r *Resolver) GitBlobCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (_ GitBlobCodeIntelSupportResolver, err error) {
-	return r.autoIndexingRootResolver.GitBlobCodeIntelInfo(ctx, args)
-}
-
-func (r *Resolver) GitTreeCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (resolver GitTreeCodeIntelSupportResolver, err error) {
-	return r.autoIndexingRootResolver.GitTreeCodeIntelInfo(ctx, args)
 }
 
 func (r *Resolver) ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (_ CodeIntelligenceConfigurationPolicyResolver, err error) {
@@ -174,11 +174,11 @@ func (r *Resolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context
 }
 
 func (r *Resolver) CodeIntelSummary(ctx context.Context) (_ CodeIntelSummaryResolver, err error) {
-	return r.autoIndexingRootResolver.CodeIntelSummary(ctx)
+	return r.uploadsRootResolver.CodeIntelSummary(ctx)
 }
 
 func (r *Resolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ CodeIntelRepositorySummaryResolver, err error) {
-	return r.autoIndexingRootResolver.RepositorySummary(ctx, id)
+	return r.uploadsRootResolver.RepositorySummary(ctx, id)
 }
 
 func (r *Resolver) IndexConfiguration(ctx context.Context, id graphql.ID) (_ IndexConfigurationResolver, err error) {

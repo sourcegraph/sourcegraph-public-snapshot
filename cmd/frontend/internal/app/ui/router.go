@@ -80,7 +80,7 @@ const (
 	routeViews                   = "views"
 	routeDevToolTime             = "devtooltime"
 	routeEmbed                   = "embed"
-	routeCody                    = "cody"
+	routeCodySearch              = "cody-search"
 	routeOwn                     = "own"
 	routeAppComingSoon           = "app-coming-soon"
 	routeAppAuthCallback         = "app-auth-callback"
@@ -148,6 +148,7 @@ func newRouter() *mux.Router {
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
 	r.Path("/search/stream").Methods("GET").Name(routeSearchStream)
 	r.Path("/search/console").Methods("GET").Name(routeSearchConsole)
+	r.Path("/search/cody").Methods("GET").Name(routeCodySearch)
 	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
 	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
 	r.PathPrefix("/request-access").Methods("GET").Name(uirouter.RouteRequestAccess)
@@ -178,7 +179,6 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/subscriptions").Methods("GET").Name(routeSubscriptions)
 	r.PathPrefix("/views").Methods("GET").Name(routeViews)
 	r.PathPrefix("/devtooltime").Methods("GET").Name(routeDevToolTime)
-	r.PathPrefix("/cody").Methods("GET").Name(routeCody)
 	r.PathPrefix("/own").Methods("GET").Name(routeOwn)
 	r.Path("/app/coming-soon").Methods("GET").Name(routeAppComingSoon)
 	r.Path("/app/auth/callback").Methods("GET").Name(routeAppAuthCallback)
@@ -294,7 +294,7 @@ func initRouter(db database.DB, enterpriseJobs jobutil.EnterpriseJobs, router *m
 	router.Get(routeSnippets).Handler(brandedNoIndex("Snippets"))
 	router.Get(routeSubscriptions).Handler(brandedNoIndex("Subscriptions"))
 	router.Get(routeViews).Handler(brandedNoIndex("View"))
-	router.Get(routeCody).Handler(brandedNoIndex("Cody"))
+	router.Get(routeCodySearch).Handler(brandedNoIndex("Search (Cody)"))
 	router.Get(routeOwn).Handler(brandedNoIndex("Own"))
 	router.Get(routeAppComingSoon).Handler(brandedNoIndex("Coming soon"))
 	router.Get(routeAppAuthCallback).Handler(brandedNoIndex("Auth callback"))

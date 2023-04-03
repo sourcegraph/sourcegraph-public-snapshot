@@ -6,6 +6,8 @@
 </p>
 </aside>
 
+<span class="badge badge-note">Sourcegraph 5.0+</span>
+
 Outgoing webhooks can be configured on a Sourcegraph instance in order to send Sourcegraph events to external tools and services. This allows for deeper integrations between Sourcegraph and other applications.
 
 Currently, webhooks are only implemented for events related to [Batch Changes](../../batch_changes/index.md). They also cannot yet be scoped to specific entities, meaning that they will be triggered for all events of the specified type across Sourcegraph. Expanded support for more event types and scoped events is planned for the future. Please [let us know](mailto:feedback@sourcegraph.com) what types of events you would like to see implemented next, or if you have any other feedback!
@@ -34,8 +36,6 @@ The outgoing webhook will now be created and active. To view or edit its details
 - **batch_change:apply** - Triggered when a batch spec is applied to a batch change.
 - **batch_change:close** - Triggered when a batch change is closed.
 - **batch_change:delete** - Triggered when a batch change is deleted.
-
-> NOTE: There is one notable limitation in the initial release of outgoing webhooks: the payloads of batch changes sent will appear to "lag behind" the events that trigger them slightly. For example, if you close a batch change, the `batch_change:close` event will be sent immediately, but the payload will contain the batch change in the state as it was _just before_ it was closed. This is because the webhook payload is constructed before the batch change is updated in the database. This will be fixed in a future release.
 
 #### Example payload
 
@@ -77,8 +77,6 @@ The batch change webhook event payload mirrors the [GraphQL API](../../../api/gr
 - **changeset:publish_error** - Triggered when an attempt to publish a changeset to the code host fails.
 - **changeset:update** - Triggered when a changeset is updated on the code host by Sourcegraph.
 - **changeset:update_error** - Triggered when an attempt to update a changeset on the code host fails.
-
-> NOTE: There is one notable limitation in the initial release of outgoing webhooks: the payloads of changesets sent will appear to "lag behind" the events that trigger them slightly. For example, if you publish a changeset, the `changeset:publish` event will be sent immediately, but the payload will contain the changeset in the state as it was _just before_ it was published. This is because the webhook payload is constructed before the changeset is updated in the database. This will be fixed in a future release.
 
 #### Example payload
 

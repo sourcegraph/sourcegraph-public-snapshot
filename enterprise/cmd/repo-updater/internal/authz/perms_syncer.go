@@ -15,7 +15,7 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -123,7 +123,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		return result, providerStates, nil
 	}
 
-	pendingAccountIDsSet := make(map[string]struct{})
+	pendingAccountIDsSet := collections.NewSet[string]()
 	accountIDsToUserIDs := make(map[string]authz.UserIDWithExternalAccountID) // User External Account ID -> User ID.
 
 	extAccountIDs, err := provider.FetchRepoPerms(ctx, &extsvc.Repository{
@@ -181,10 +181,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		}
 
 		// Set up the set of all account IDs that need to be bound to permissions.
-		pendingAccountIDsSet = make(map[string]struct{}, len(accountIDs))
-		for i := range accountIDs {
-			pendingAccountIDsSet[accountIDs[i]] = struct{}{}
-		}
+		pendingAccountIDsSet.Add(accountIDs...)
 	}
 
 	// Load last finished sync job from database.
@@ -194,24 +191,6 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	})
 
 	// Save permissions to database.
-	p := &authz.RepoPermissions{
-		RepoID:  int32(repoID),
-		Perm:    authz.Read, // Note: We currently only support read for repository permissions.
-		UserIDs: map[int32]struct{}{},
-	}
-	for aid, perm := range accountIDsToUserIDs {
-		// Add existing user to permissions.
-		p.UserIDs[perm.UserID] = struct{}{}
-
-		// Remove existing user from the set of pending users.
-		delete(pendingAccountIDsSet, aid)
-	}
-
-	pendingAccountIDs := make([]string, 0, len(pendingAccountIDsSet))
-	for aid := range pendingAccountIDsSet {
-		pendingAccountIDs = append(pendingAccountIDs, aid)
-	}
-
 	// NOTE: Please read the docstring of permsUpdateLock field for reasoning of the lock.
 	s.permsUpdateLock.Lock()
 	defer s.permsUpdateLock.Unlock()
@@ -222,24 +201,28 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 	defer func() { err = txs.Done(err) }()
 
-	// Write to new user_repo_permissions table by default.
-	var unifiedResult *database.SetPermissionsResult
-	if unifiedResult, err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs), authz.SourceRepoSync); err != nil {
+	// Write to both user_repo_permissions and repo_permissions tables by default.
+	if result, err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs), authz.SourceRepoSync); err != nil {
 		return result, providerStates, errors.Wrapf(err, "set user repo permissions for repository %q (id: %d)", repo.Name, repo.ID)
 	}
-	result, err = txs.SetRepoPermissions(ctx, p)
-	if err != nil {
-		return result, providerStates, errors.Wrapf(err, "set repository permissions for repository %q (id: %d)", repo.Name, repo.ID)
-	}
-	if edb.UnifiedPermsEnabled() {
-		result = unifiedResult
-	}
-	regularCount := len(p.UserIDs)
 
+	userIDSet := collections.NewSet[int32]()
+	for _, perm := range accountIDsToUserIDs {
+		// Add existing user to permissions.
+		userIDSet.Add(perm.UserID)
+	}
+	regularCount := len(userIDSet)
+
+	// handle pending permissions
+	pendingAccountIDsSet.Remove(maps.Keys(accountIDsToUserIDs)...)
 	accounts := &extsvc.Accounts{
 		ServiceType: provider.ServiceType(),
 		ServiceID:   provider.ServiceID(),
-		AccountIDs:  pendingAccountIDs,
+		AccountIDs:  pendingAccountIDsSet.Values(),
+	}
+	p := &authz.RepoPermissions{
+		RepoID: int32(repoID),
+		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
 	}
 	if err = txs.SetRepoPendingPermissions(ctx, accounts, p); err != nil {
 		return result, providerStates, errors.Wrapf(err, "set repository pending permissions for repository %q (id: %d)", repo.Name, repo.ID)
@@ -272,13 +255,14 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 
 // syncUserPerms processes permissions syncing request in user-centric way. When `noPerms` is true,
 // the method will use partial results to update permissions tables even when error occurs.
-func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms bool, fetchOpts authz.FetchPermsOptions) (result *database.SetPermissionsResult, providerStates database.CodeHostStatusesSet, err error) {
+func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms bool, fetchOpts authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
+	var err error
 	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms", "")
 	defer save(requestTypeUser, userID, &err)
 
 	user, err := s.db.Users().GetByID(ctx, userID)
 	if err != nil {
-		return result, providerStates, errors.Wrap(err, "get user")
+		return nil, nil, errors.Wrap(err, "get user")
 	}
 
 	logger := s.logger.Scoped("syncUserPerms", "processes permissions sync request in user-centric way").With(
@@ -288,9 +272,9 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	)
 
 	results, err := s.fetchUserPermsViaExternalAccounts(ctx, user, noPerms, fetchOpts)
-	providerStates = results.providerStates
+	providerStates := results.providerStates
 	if err != nil {
-		return result, providerStates, errors.Wrapf(err, "fetch permissions via external accounts for user %q (id: %d)", user.Username, user.ID)
+		return nil, providerStates, errors.Wrapf(err, "fetch permissions via external accounts for user %q (id: %d)", user.Username, user.ID)
 	}
 
 	// Get last sync time from the database, we don't care about errors here
@@ -304,27 +288,18 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	}
 
 	// Save new permissions to database.
-	p := &authz.UserPermissions{
-		UserID: userID,
-		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
-		Type:   authz.PermRepos,
-		IDs:    map[int32]struct{}{},
-	}
-
-	unifiedResult := &database.SetPermissionsResult{}
-	for acctID, repoIDs := range results.repoPerms {
-		// Write to new user_repo_permissions table by default.
-		stats, err := s.saveUserPermsForAccount(ctx, userID, acctID, repoIDs)
+	repoIDs := collections.Set[int32]{}
+	result := &database.SetPermissionsResult{}
+	for acctID, rp := range results.repoPerms {
+		stats, err := s.saveUserPermsForAccount(ctx, userID, acctID, rp)
 		if err != nil {
 			return result, providerStates, errors.Wrapf(err, "set user repo permissions for user %q (id: %d, external_account_id: %d)", user.Username, user.ID, acctID)
 		}
-		unifiedResult.Added += stats.Added
-		unifiedResult.Found += stats.Found
-		unifiedResult.Removed += stats.Removed
+		result.Added += stats.Added
+		result.Found += stats.Found
+		result.Removed += stats.Removed
 
-		for _, repoID := range repoIDs {
-			p.IDs[repoID] = struct{}{}
-		}
+		repoIDs.Add(rp...)
 	}
 
 	// Set sub-repository permissions.
@@ -345,28 +320,18 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	s.permsUpdateLock.Lock()
 	defer s.permsUpdateLock.Unlock()
 
-	result, err = s.permsStore.SetUserPermissions(ctx, p)
-	if err != nil {
-		return result, providerStates, errors.Wrapf(err, "set user permissions for user %q (id: %d)", user.Username, user.ID)
-	}
-
-	// Return result from unified table if flag enabled.
-	if edb.UnifiedPermsEnabled() {
-		result = unifiedResult
-	}
-
 	logger.Debug("synced",
-		log.Int("count", len(p.IDs)),
+		log.Int("count", len(repoIDs)),
 		log.Object("fetchOpts", log.Bool("InvalidateCache", fetchOpts.InvalidateCaches)),
 	)
 
 	metricsSuccessPermsSyncs.WithLabelValues("user").Inc()
 
 	if latestSyncJob != nil {
-		metricsPermsConsecutiveSyncDelay.WithLabelValues("user").Set(p.SyncedAt.Sub(latestSyncJob.FinishedAt).Seconds())
+		metricsPermsConsecutiveSyncDelay.WithLabelValues("user").Set(s.clock().Sub(latestSyncJob.FinishedAt).Seconds())
 	} else {
 		metricsFirstPermsSyncs.WithLabelValues("user").Inc()
-		metricsPermsFirstSyncDelay.WithLabelValues("user").Set(p.SyncedAt.Sub(user.CreatedAt).Seconds())
+		metricsPermsFirstSyncDelay.WithLabelValues("user").Set(s.clock().Sub(user.CreatedAt).Seconds())
 	}
 
 	return result, providerStates, nil
@@ -504,8 +469,6 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	results.subRepoPerms = make(map[api.ExternalRepoSpec]*authz.SubRepoPermissions)
 	results.repoPerms = make(map[int32][]int32, len(accts))
 
-	unifiedPermsEnabled := conf.ExperimentalFeatures().UnifiedPermissions
-
 	for _, acct := range accts {
 		var repoSpecs, includeContainsSpecs, excludeContainsSpecs []api.ExternalRepoSpec
 
@@ -580,18 +543,9 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 				}
 
 				// Load last synced repos for this user and account from user_repo_permissions table.
-				var currentRepos []api.RepoID
-				if unifiedPermsEnabled {
-					currentRepos, err = s.permsStore.FetchReposByExternalAccount(ctx, acct.ID)
-					if err != nil {
-						return results, errors.Wrap(err, "fetching existing repo permissions")
-					}
-				} else {
-					// Use the old user_permissions table if feature flag is off.
-					currentRepos, err = s.permsStore.FetchReposByUserAndExternalService(ctx, user.ID, provider.ServiceType(), provider.ServiceID())
-					if err != nil {
-						return results, errors.Wrap(err, "fetching existing repo permissions")
-					}
+				currentRepos, err := s.permsStore.FetchReposByExternalAccount(ctx, acct.ID)
+				if err != nil {
+					return results, errors.Wrap(err, "fetching existing repo permissions")
 				}
 				// Put all the repo IDs into the results.
 				for _, repoID := range currentRepos {
@@ -804,10 +758,4 @@ func (t requestType) String() string {
 		return "user"
 	}
 	return strconv.Itoa(int(t))
-}
-
-// higherPriorityThan returns true if the current request type has higher
-// priority than the other one.
-func (t requestType) higherPriorityThan(t2 requestType) bool {
-	return t > t2
 }
