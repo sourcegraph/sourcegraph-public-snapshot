@@ -219,7 +219,7 @@ const showGitBlameDecorations = Facet.define<BlameDecorationsFacetProps, BlameDe
                 // Move the start of the line to after the blame decoration.
                 // This is necessary because the start of the line is used for
                 // aligning tab characters.
-                paddingLeft: 'calc(var(--blame-decoration-width) + 1rem) !important',
+                paddingLeft: 'var(--blame-decoration-width) !important',
             },
             '.blame-decoration': {
                 // Remove the blame decoration from the content flow so that
