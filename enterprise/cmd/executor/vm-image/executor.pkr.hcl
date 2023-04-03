@@ -101,11 +101,12 @@ source "amazon-ebs" "aws" {
     shutdown_behavior = "terminate"
     ami_regions       = var.aws_regions
     tags              = {
-        Name          = var.name
-        OS_Version    = "Ubuntu"
-        Release       = "Latest"
-        Base_AMI_Name = "{{ .SourceAMIName }}"
-        Extra         = "{{ .SourceAMITags.TagName }}"
+        Name                             = var.name
+        OS_Version                       = "Ubuntu"
+        Release                          = "Latest"
+        Base_AMI_Name                    = "{{ .SourceAMIName }}"
+        Extra                            = "{{ .SourceAMITags.TagName }}"
+        Amazon_AMI_Management_Identifier = var.name
     }
 }
 
@@ -149,8 +150,7 @@ build {
     post-processor "amazon-ami-management" {
         only       = ["amazon-ebs.aws"]
         regions    = ["us-west-2"]
-        identifier = "executors-nightly"
+        identifier = var.name
         keep_days  = 60
-        dry_run    = true
     }
 }
