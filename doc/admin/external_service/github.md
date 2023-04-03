@@ -75,18 +75,19 @@ No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps
 
 ### Fine-grained access token permissions
 
+Fine-grained tokens can access public repositories, but can only access the private repositories of the account they are scoped to.
+
 When creating your fine-grained access token, select the following permissions depending on the purpose of the token:
 
 | Feature                                               | Required token scopes                                  |
 | ----------------------------------------------------- | ------------------------------------------------------ |
 | [Sync private repositories](#private-repositories)    | `Repository permissions: Contents - Access: Read-only` |
 | [Sync repository permissions][permissions]            | `Repository permissions: Contents - Access: Read-only` |
+| [Batch changes][batch-changes]                        | `Unsupported`                                          |
 
 <br>
 
-> NOTE: Fine-grained tokens does not support the `repositoryQuery` code host connection option.
-
-Fine-grained tokens can access public repositories, but can only access the private repositories of the account they are scoped to.
+> WARNING: Fine-grained tokens does not support the `repositoryQuery` code host connection option or batch changes. Both of these features rely on GitHub's GraphQL API, which is [unsupported by fine-grained access tokens](https://docs.github.com/en/graphql/guides/forming-calls-with-graphql#authenticating-with-graphql).
 
 ## Rate limits
 
