@@ -5,7 +5,7 @@ import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, Button, Code, H3, Modal } from '@sourcegraph/wildcard'
+import { Alert, Button, Code, H3, Modal, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 
@@ -51,7 +51,10 @@ export const SearchResultsCsvExportModal: React.FunctionComponent<SearchResultsC
         if (query.includes('select:file.owners')) {
             telemetryService.log('searchResults:ownershipCsv:exported')
         }
+
         setLoading(true)
+        setError(undefined)
+
         downloadSearchResults(sourcegraphURL, query, options, results, shouldRerunSearch)
             .then(() => {
                 onClose()
@@ -72,6 +75,8 @@ export const SearchResultsCsvExportModal: React.FunctionComponent<SearchResultsC
     return (
         <Modal aria-labelledby={MODAL_LABEL_ID}>
             <H3 id={MODAL_LABEL_ID}>Export search results</H3>
+
+            <Text>Your search results will be exported as a CSV file.</Text>
 
             {!searchCompleted && (
                 <Alert variant="danger">Your search has not completed. Please wait for the search to finish.</Alert>
