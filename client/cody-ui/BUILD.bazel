@@ -17,7 +17,7 @@ ts_config(
 )
 
 filegroup(
-	name = "cody-ui_styles",
+    name = "cody-ui_styles",
     srcs = glob(["**/*.css"]),
 )
 
@@ -32,9 +32,9 @@ ts_project(
         "src/index.ts",
         "src/utils/icons.tsx",
     ],
-	data = [
-		":cody-ui_styles"
-	],
+    data = [
+        ":cody-ui_styles",
+    ],
     tsconfig = ":tsconfig",
     # TODO(bazel): "#keep"s required for type-only imports
     deps = [
