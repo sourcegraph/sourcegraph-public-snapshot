@@ -2,13 +2,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "types",
-    srcs = [
-        "ranges.go",
-        "scip_canonicalize.go",
-        "scip_flatten.go",
-        "scip_sanitize.go",
-        "scip_sort.go",
-    ],
+    srcs = ["ranges.go"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
@@ -20,10 +14,7 @@ go_library(
 go_test(
     name = "types_test",
     timeout = "short",
-    srcs = [
-        "ranges_test.go",
-        "scip_test.go",
-    ],
+    srcs = ["ranges_test.go"],
     embed = [":types"],
     deps = [
         "@com_github_google_go_cmp//cmp",
