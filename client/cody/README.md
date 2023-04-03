@@ -16,7 +16,7 @@
 
 Cody is a coding assistant that answers code questions and writes code for you by reading your entire codebase and the code graph.
 
-**Status:** experimental ([request access](https://about.sourcegraph.com/cody))
+**Status:** Experimental. To enable Cody for use on open source code, you must first [request access](https://forms.gle/cffMa8mrr8YuHv8o8). At this time, we are approving all requests and we'll send you an e-mail as soon as your account has been enabled. If you'd like to enable Cody for use on private code, contact us [here](https://sourcegraph.typeform.com/to/pIXTgwrd). 
 
 ## Main features
 
@@ -27,7 +27,7 @@ Cody is a coding assistant that answers code questions and writes code for you b
 
 ## Installation
 
-Here are the ways to install Cody in Visual Studio Code:
+Once you've been granted access to Cody (instructions above), there are several ways to install Cody in Visual Studio Code:
 
 ### In Visual Studio Code
 
