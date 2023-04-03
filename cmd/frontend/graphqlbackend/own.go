@@ -22,9 +22,16 @@ type AggregatedOwnersArgs struct {
 	After    *string
 }
 
+func (a AggregatedOwnersArgs) GetFirst() int32 {
+	if a.First != nil {
+		return *a.First
+	}
+	return 10
+}
+
 type OwnResolver interface {
 	GitBlobOwnership(ctx context.Context, blob *GitTreeEntryResolver, args ListOwnershipArgs) (OwnershipConnectionResolver, error)
-	AggregatedOwners(ctx context.Context, treeOrBlob *GitTreeEntryResolver, args AggregatedOwnersArgs) (AggregatedOwnershipConnectionResolver, error)
+	AggregatedOwners(ctx context.Context, repo *RepositoryResolver, args AggregatedOwnersArgs) (AggregatedOwnershipConnectionResolver, error)
 
 	PersonOwnerField(person *PersonResolver) string
 	UserOwnerField(user *UserResolver) string

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/grafana/regexp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -294,14 +295,83 @@ func areOwnEndpointsAvailable(ctx context.Context) error {
 }
 
 func (r *ownResolver) AggregatedOwners(ctx context.Context,
-	blob *graphqlbackend.GitTreeEntryResolver,
+	repo *graphqlbackend.RepositoryResolver,
 	args graphqlbackend.AggregatedOwnersArgs,
 ) (graphqlbackend.AggregatedOwnershipConnectionResolver, error) {
-	return &aggregatedOwnershipConnectionResolver{}, nil
+	repoName := api.RepoName(repo.Name())
+	repoID := repo.IDInt32()
+	commitID := api.CommitID(args.Revision)
+	ownService := r.ownService()
+	rs, err := ownService.RulesetForRepo(ctx, repoName, repoID, commitID)
+	if err != nil {
+		return nil, err
+	}
+	fs, err := r.gitserver.ListFiles(ctx, nil, api.RepoName(repo.Name()), api.CommitID(args.Revision), regexp.MustCompile(""))
+	type key struct {
+		handle string
+		email  string
+	}
+	owners := map[key]aggregatedOwnershipResolver{}
+	for _, f := range fs {
+		fmt.Println(f)
+		if rule := rs.Match(f); rule != nil {
+			for _, x := range rule.GetOwner() {
+				ow := *x
+				stats := owners[key{handle: ow.Handle, email: ow.Email}]
+				if stats.totalFiles == 0 {
+					fmt.Println(ow.Handle, ow.Email)
+				}
+				ro, err := ownService.ResolveOwnersWithType(ctx, []*codeownerspb.Owner{&ow})
+				if err != nil {
+					return nil, err
+				}
+				if len(ro) == 1 {
+					stats.owner = ro[0]
+				}
+				stats.db = r.db
+				stats.totalFiles++
+				stats.exampleReason = &codeownersFileEntryResolver{
+					db:              r.db,
+					gitserverClient: r.gitserver,
+					source:          rs.GetSource(),
+					repo:            repo,
+					matchLineNumber: rule.GetLineNumber(),
+				}
+				stats.order = ow.Handle + ow.Email
+				owners[key{handle: ow.Handle, email: ow.Email}] = stats
+			}
+		}
+	}
+	var os []*aggregatedOwnershipResolver
+	for _, v := range owners {
+		w := v
+		os = append(os, &w)
+	}
+	// highest total files at the beginning
+	sort.Slice(os, func(i, j int) bool { return !(os[i].totalFiles < os[j].totalFiles) })
+	return &aggregatedOwnershipConnectionResolver{owners: os, args: args}, err
 }
 
 type aggregatedOwnershipConnectionResolver struct {
 	owners []*aggregatedOwnershipResolver
+	args   graphqlbackend.AggregatedOwnersArgs
+}
+
+func (r *aggregatedOwnershipConnectionResolver) startIndex() int {
+	for i := 0; r.args.After != nil && i < len(r.owners); i++ {
+		if r.owners[i].order == *r.args.After {
+			return i
+		}
+	}
+	return 0
+}
+
+func (r *aggregatedOwnershipConnectionResolver) endIndex() int {
+	idx := len(r.owners)
+	if x := r.startIndex() + int(r.args.GetFirst()); x < idx {
+		return x
+	}
+	return idx
 }
 
 func (r *aggregatedOwnershipConnectionResolver) TotalCount(ctx context.Context) int32 {
@@ -309,28 +379,35 @@ func (r *aggregatedOwnershipConnectionResolver) TotalCount(ctx context.Context) 
 }
 
 func (r *aggregatedOwnershipConnectionResolver) PageInfo(ctx context.Context) *graphqlutil.PageInfo {
-	return graphqlutil.HasNextPage(false)
+	start := r.startIndex()
+	if len(r.owners) <= start+int(r.args.GetFirst()) {
+		return graphqlutil.HasNextPage(false)
+	}
+	return graphqlutil.EncodeCursor(&r.owners[start+int(r.args.GetFirst())].order)
 }
 
 func (r *aggregatedOwnershipConnectionResolver) Nodes(ctx context.Context) []graphqlbackend.AggregatedOwnershipResolver {
 	var rs []graphqlbackend.AggregatedOwnershipResolver
-	for _, o := range r.owners {
+	for _, o := range r.owners[r.startIndex():r.endIndex()] {
 		rs = append(rs, o)
 	}
 	return rs
 }
 
 type aggregatedOwnershipResolver struct {
-	owner      *ownerResolver
-	totalFiles int32
+	db            edb.EnterpriseDB
+	order         string
+	owner         codeowners.ResolvedOwner
+	totalFiles    int32
+	exampleReason *codeownersFileEntryResolver
 }
 
 func (r *aggregatedOwnershipResolver) Owner(ctx context.Context) (graphqlbackend.OwnerResolver, error) {
-	return r.owner, nil
+	return &ownerResolver{db: r.db, resolvedOwner: r.owner}, nil
 }
 
 func (r *aggregatedOwnershipResolver) TotalFiles(ctx context.Context) int32 { return r.totalFiles }
 
 func (r *aggregatedOwnershipResolver) Reasons(ctx context.Context) ([]graphqlbackend.OwnershipReasonResolver, error) {
-	return nil, nil
+	return []graphqlbackend.OwnershipReasonResolver{r.exampleReason}, nil
 }

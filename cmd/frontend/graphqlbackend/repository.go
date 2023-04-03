@@ -702,5 +702,5 @@ func (r *RepositoryResolver) IngestedCodeowners(ctx context.Context) (Codeowners
 }
 
 func (r *RepositoryResolver) AggregatedOwners(ctx context.Context, args AggregatedOwnersArgs) (AggregatedOwnershipConnectionResolver, error) {
-	return EnterpriseResolvers.ownResolver.AggregatedOwners(ctx, nil, args)
+	return EnterpriseResolvers.ownResolver.AggregatedOwners(ctx, r, args)
 }
