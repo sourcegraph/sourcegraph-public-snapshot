@@ -77,7 +77,7 @@ func (s *permissionsSyncJobConnectionStore) resolveSubject(ctx context.Context, 
 		if err != nil {
 			return nil, err
 		}
-		userResolver = graphqlbackend.NewUserResolver(s.db, user)
+		userResolver = graphqlbackend.NewUserResolver(ctx, s.db, user)
 	} else {
 		repo, err := s.db.Repos().Get(ctx, api.RepoID(job.RepositoryID))
 		if err != nil {

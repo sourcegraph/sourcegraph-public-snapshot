@@ -142,7 +142,7 @@ type PermissionsInfoRepositoriesArgs struct {
 
 type PermissionsInfoUserResolver interface {
 	ID() graphql.ID
-	User() *UserResolver
+	User(context.Context) *UserResolver
 	Reason() string
 	UpdatedAt() *gqlutil.DateTime
 }

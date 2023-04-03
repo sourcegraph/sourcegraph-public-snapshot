@@ -6,8 +6,10 @@ import './Chat.css'
 
 import { useCallback, useState } from 'react'
 
-import { ContextFiles } from './Chat'
-import { ChatHistory, ChatMessage } from './utils/types'
+import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ContextFiles } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
+
+import { FileLink } from './FileLink'
 import { vscodeAPI } from './utils/VSCodeApi'
 
 interface HistoryProps {
@@ -70,7 +72,10 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
                                                     <p dangerouslySetInnerHTML={{ __html: message.displayText }} />
                                                 )}
                                                 {message.contextFiles && message.contextFiles.length > 0 && (
-                                                    <ContextFiles contextFiles={message.contextFiles} />
+                                                    <ContextFiles
+                                                        contextFiles={message.contextFiles}
+                                                        fileLinkComponent={FileLink}
+                                                    />
                                                 )}
                                             </div>
                                         ))}
