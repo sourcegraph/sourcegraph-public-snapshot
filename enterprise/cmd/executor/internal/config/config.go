@@ -2,8 +2,8 @@ package config
 
 import (
 	"encoding/json"
-	"path/filepath"
 	"net/url"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -50,7 +50,7 @@ type Config struct {
 	DockerRegistryNodeExporterURL                  string
 	WorkerHostname                                 string
 	DockerRegistryMirrorURL                        string
-	DockerAddHostGateway           bool
+	DockerAddHostGateway                           bool
 	DockerAuthConfig                               types.DockerAuthConfig
 	KubernetesConfigPath                           string
 	KubernetesNodeName                             string
