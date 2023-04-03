@@ -5,12 +5,14 @@ go_library(
     srcs = [
         "docker.go",
         "firecracker.go",
+        "kubernetes.go",
         "runtime.go",
         "shell.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runtime",
     visibility = ["//enterprise/cmd/executor:__subpackages__"],
     deps = [
+        "//enterprise/cmd/executor/internal/config",
         "//enterprise/cmd/executor/internal/util",
         "//enterprise/cmd/executor/internal/worker/command",
         "//enterprise/cmd/executor/internal/worker/runner",
@@ -18,6 +20,9 @@ go_library(
         "//enterprise/internal/executor/types",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//rest",
+        "@io_k8s_client_go//tools/clientcmd",
     ],
 )
 
@@ -26,6 +31,7 @@ go_test(
     srcs = [
         "docker_test.go",
         "firecracker_test.go",
+        "kubernetes_test.go",
         "mocks_test.go",
         "runtime_test.go",
         "shell_test.go",

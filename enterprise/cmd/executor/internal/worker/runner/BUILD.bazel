@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "docker.go",
         "firecracker.go",
+        "kubernetes.go",
         "runner.go",
         "shell.go",
     ],
@@ -27,6 +28,7 @@ go_test(
     srcs = [
         "docker_test.go",
         "firecracker_test.go",
+        "kubernetes_test.go",
         "mocks_test.go",
         "shell_test.go",
     ],
@@ -37,7 +39,15 @@ go_test(
         "//internal/executor",
         "//internal/observation",
         "//lib/errors",
+        "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
+        "@io_k8s_api//batch/v1:batch",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/resource",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_client_go//kubernetes/fake",
+        "@io_k8s_client_go//testing",
     ],
 )
