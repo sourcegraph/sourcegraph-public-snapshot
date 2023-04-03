@@ -83,11 +83,11 @@ npm_package(
 ts_project(
     name = "cody-shared_tests",
     testonly = True,
-    tsconfig = ":tsconfig",
     srcs = [
         "src/chat/transcript/transcript.test.ts",
         "src/test/mocks.ts",
     ],
+    tsconfig = ":tsconfig",
     deps = [
         ":cody-shared_lib",
         "//:node_modules/@types/node",
