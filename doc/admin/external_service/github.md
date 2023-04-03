@@ -50,6 +50,8 @@ The GitHub service requires a `token` in order to access their API. There are tw
 - **[Fine-grained access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token#creating-a-fine-grained-personal-access-token)**:<br>Allows scoping access tokens to specific repositories with specific permissions. Consult the [table below](#fine-grained-access-token-permissions) for the required permissions.
 - **[Machine user token](https://developer.github.com/v3/guides/managing-deploy-keys/#machine-users)**:<br>Generates a token for a machine user that is affiliated with an organization instead of a user account.
 
+### Personal access token scopes
+
 No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps/scopes-for-oauth-apps#available-scopes) are required if you only want to sync public repositories and don't want to use any of the following features. Otherwise, the following token scopes are required for specific features:
 
 | Feature                                               | Required token scopes                                                                                          |
@@ -79,7 +81,7 @@ Fine-grained tokens can access public repositories, but can only access the priv
 
 When creating your fine-grained access token, select the following permissions depending on the purpose of the token:
 
-| Feature                                               | Required token scopes                                  |
+| Feature                                               | Required token permissions                                  |
 | ----------------------------------------------------- | ------------------------------------------------------ |
 | [Sync private repositories](#private-repositories)    | `Repository permissions: Contents - Access: Read-only` |
 | [Sync repository permissions][permissions]            | `Repository permissions: Contents - Access: Read-only` |
