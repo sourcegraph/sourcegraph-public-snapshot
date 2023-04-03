@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
@@ -44,7 +45,7 @@ func TestLatestSrcCLIVersion(t *testing.T) {
 			}))
 			defer server.Close()
 
-			client, err := apiclient.NewBaseClient(apiclient.BaseClientOptions{EndpointOptions: apiclient.EndpointOptions{URL: server.URL}})
+			client, err := apiclient.NewBaseClient(logtest.Scoped(t), apiclient.BaseClientOptions{EndpointOptions: apiclient.EndpointOptions{URL: server.URL}})
 			require.NoError(t, err)
 
 			version, err := util.LatestSrcCLIVersion(context.Background(), client, apiclient.EndpointOptions{URL: server.URL})

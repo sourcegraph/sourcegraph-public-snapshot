@@ -124,7 +124,6 @@ func TestConfig_Load_Defaults(t *testing.T) {
 	assert.Empty(t, cfg.DockerRegistryNodeExporterURL)
 	assert.Zero(t, cfg.MaxActiveTime)
 	assert.Empty(t, cfg.DockerRegistryMirrorURL)
-	assert.Empty(t, cfg.KubernetesConfigPath)
 	assert.Empty(t, cfg.KubernetesNodeName)
 	assert.Empty(t, cfg.KubernetesNodeSelector)
 	assert.Nil(t, cfg.KubernetesNodeRequiredAffinityMatchExpressions)
@@ -162,7 +161,7 @@ func TestConfig_Validate(t *testing.T) {
 		},
 		{
 			name:        "Default config",
-			expectedErr: errors.New("3 errors occurred:\n\t* invalid value \"\" for EXECUTOR_FRONTEND_URL: no value supplied\n\t* invalid value \"\" for EXECUTOR_FRONTEND_PASSWORD: no value supplied\n\t* invalid value \"\" for EXECUTOR_QUEUE_NAME: no value supplied"),
+			expectedErr: errors.New("4 errors occurred:\n\t* invalid value \"\" for EXECUTOR_FRONTEND_URL: no value supplied\n\t* invalid value \"\" for EXECUTOR_FRONTEND_PASSWORD: no value supplied\n\t* invalid value \"\" for EXECUTOR_QUEUE_NAME: no value supplied\n\t* EXECUTOR_FRONTEND_URL must be in the format scheme://host (and optionally :port)"),
 		},
 		{
 			name: "Invalid EXECUTOR_DOCKER_AUTH_CONFIG",

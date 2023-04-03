@@ -51,7 +51,7 @@ func TestKubernetesRunner_Run(t *testing.T) {
 					return true, &corev1.PodList{Items: []corev1.Pod{
 						{ObjectMeta: metav1.ObjectMeta{
 							Name:   "my-pod",
-							Labels: map[string]string{"job-name": "job-some-queue-42-some-key"},
+							Labels: map[string]string{"job-name": "sg-executor-job-some-queue-42-some-key"},
 						}}},
 					}, nil
 				})
@@ -61,24 +61,24 @@ func TestKubernetesRunner_Run(t *testing.T) {
 
 				assert.Equal(t, "create", actions[0].GetVerb())
 				assert.Equal(t, "jobs", actions[0].GetResource().Resource)
-				assert.Equal(t, "job-some-queue-42-some-key", actions[0].(k8stesting.CreateAction).GetObject().(*batchv1.Job).Name)
+				assert.Equal(t, "sg-executor-job-some-queue-42-some-key", actions[0].(k8stesting.CreateAction).GetObject().(*batchv1.Job).Name)
 
 				assert.Equal(t, "get", actions[1].GetVerb())
 				assert.Equal(t, "jobs", actions[1].GetResource().Resource)
-				assert.Equal(t, "job-some-queue-42-some-key", actions[1].(k8stesting.GetAction).GetName())
+				assert.Equal(t, "sg-executor-job-some-queue-42-some-key", actions[1].(k8stesting.GetAction).GetName())
 
 				assert.Equal(t, "list", actions[2].GetVerb())
 				assert.Equal(t, "pods", actions[2].GetResource().Resource)
-				assert.Equal(t, "job-name=job-some-queue-42-some-key", actions[2].(k8stesting.ListAction).GetListRestrictions().Labels.String())
+				assert.Equal(t, "job-name=sg-executor-job-some-queue-42-some-key", actions[2].(k8stesting.ListAction).GetListRestrictions().Labels.String())
 
 				assert.Equal(t, "get", actions[3].GetVerb())
 				assert.Equal(t, "pods", actions[3].GetResource().Resource)
 				assert.Equal(t, "log", actions[3].GetSubresource())
-				assert.Equal(t, "job-container", actions[3].(k8stesting.GenericAction).GetValue().(*corev1.PodLogOptions).Container)
+				assert.Equal(t, "sg-executor-job-container", actions[3].(k8stesting.GenericAction).GetValue().(*corev1.PodLogOptions).Container)
 
 				assert.Equal(t, "delete", actions[4].GetVerb())
 				assert.Equal(t, "jobs", actions[4].GetResource().Resource)
-				assert.Equal(t, "job-some-queue-42-some-key", actions[4].(k8stesting.DeleteAction).GetName())
+				assert.Equal(t, "sg-executor-job-some-queue-42-some-key", actions[4].(k8stesting.DeleteAction).GetName())
 			},
 		},
 		{

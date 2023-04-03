@@ -95,7 +95,7 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 				assert.Equal(t, "get", actions[0].GetVerb())
 				assert.Equal(t, "pods", actions[0].GetResource().Resource)
 				assert.Equal(t, "log", actions[0].GetSubresource())
-				assert.Equal(t, "job-container", actions[0].(k8stesting.GenericAction).GetValue().(*corev1.PodLogOptions).Container)
+				assert.Equal(t, "sg-executor-job-container", actions[0].(k8stesting.GenericAction).GetValue().(*corev1.PodLogOptions).Container)
 
 				require.Len(t, logger.LogEntryFunc.History(), 1)
 				assert.Equal(t, "my-key", logger.LogEntryFunc.History()[0].Arg0)
@@ -343,7 +343,7 @@ func TestNewKubernetesJob(t *testing.T) {
 	assert.Equal(t, corev1.RestartPolicyNever, job.Spec.Template.Spec.RestartPolicy)
 
 	require.Len(t, job.Spec.Template.Spec.Containers, 1)
-	assert.Equal(t, "job-container", job.Spec.Template.Spec.Containers[0].Name)
+	assert.Equal(t, "sg-executor-job-container", job.Spec.Template.Spec.Containers[0].Name)
 	assert.Equal(t, "my-image:latest", job.Spec.Template.Spec.Containers[0].Image)
 	assert.Equal(t, []string{"echo", "hello"}, job.Spec.Template.Spec.Containers[0].Command)
 	assert.Equal(t, "/data", job.Spec.Template.Spec.Containers[0].WorkingDir)
@@ -358,11 +358,11 @@ func TestNewKubernetesJob(t *testing.T) {
 	assert.Equal(t, resource.MustParse("1Gi"), *job.Spec.Template.Spec.Containers[0].Resources.Requests.Memory())
 
 	require.Len(t, job.Spec.Template.Spec.Containers[0].VolumeMounts, 1)
-	assert.Equal(t, "job-volume", job.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name)
+	assert.Equal(t, "sg-executor-job-volume", job.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name)
 	assert.Equal(t, "/data", job.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath)
 	assert.Equal(t, "/my/path", job.Spec.Template.Spec.Containers[0].VolumeMounts[0].SubPath)
 
 	require.Len(t, job.Spec.Template.Spec.Volumes, 1)
-	assert.Equal(t, "job-volume", job.Spec.Template.Spec.Volumes[0].Name)
+	assert.Equal(t, "sg-executor-job-volume", job.Spec.Template.Spec.Volumes[0].Name)
 	assert.Equal(t, "my-pvc", job.Spec.Template.Spec.Volumes[0].PersistentVolumeClaim.ClaimName)
 }
