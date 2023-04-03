@@ -35,15 +35,15 @@ const MAX_FILE_SIZE = 1000000 // 1MB
 // The threshold to embed the entire file is slightly larger than the chunk threshold to
 // avoid splitting small files unnecessarily.
 const (
-	EMBED_ENTIRE_FILE_TOKENS_THRESHOLD           = 384
-	EMBEDDING_CHUNK_TOKENS_THRESHOLD             = 256
-	EMBEDDING_CHUNK_EARLY_SPLIT_TOKENS_THRESHOLD = EMBEDDING_CHUNK_TOKENS_THRESHOLD - 32
+	embedEntireFileTokensThreshold          = 384
+	embeddingChunkTokensThreshold           = 256
+	embeddingChunkEarlySplitTokensThreshold = embeddingChunkTokensThreshold - 32
 )
 
 var splitOptions = split.SplitOptions{
-	NoSplitTokensThreshold:         EMBED_ENTIRE_FILE_TOKENS_THRESHOLD,
-	ChunkTokensThreshold:           EMBEDDING_CHUNK_TOKENS_THRESHOLD,
-	ChunkEarlySplitTokensThreshold: EMBEDDING_CHUNK_EARLY_SPLIT_TOKENS_THRESHOLD,
+	NoSplitTokensThreshold:         embedEntireFileTokensThreshold,
+	ChunkTokensThreshold:           embeddingChunkTokensThreshold,
+	ChunkEarlySplitTokensThreshold: embeddingChunkEarlySplitTokensThreshold,
 }
 
 func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoembeddingsbg.RepoEmbeddingJob) error {

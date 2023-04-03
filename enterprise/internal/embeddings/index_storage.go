@@ -36,7 +36,49 @@ func UploadIndex[T any](ctx context.Context, uploadStore uploadstore.Store, key 
 	return err
 }
 
-const EMBEDDINGS_CHUNK_SIZE = 10_000
+func UploadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store, key string, index *RepoEmbeddingIndex) error {
+	pr, pw := io.Pipe()
+
+	eg, ctx := errgroup.WithContext(ctx)
+
+	eg.Go(func() error {
+		defer pw.Close()
+
+		enc := gob.NewEncoder(pw)
+		return encodeRepoEmbeddingIndex(enc, index, embeddingsChunkSize)
+	})
+
+	eg.Go(func() error {
+		defer pr.Close()
+
+		_, err := uploadStore.Upload(ctx, key, pr)
+		return err
+	})
+
+	return eg.Wait()
+}
+
+func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store, key string) (*RepoEmbeddingIndex, error) {
+	file, err := uploadStore.Get(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+
+	dec := gob.NewDecoder(file)
+
+	rei, err := decodeRepoEmbeddingIndex(dec)
+	// If decoding fails, assume it is an old index and decode with a generic decoder.
+	if err != nil {
+		// Close the existing file.
+		_ = file.Close()
+
+		return DownloadIndex[RepoEmbeddingIndex](ctx, uploadStore, key)
+	}
+
+	return rei, err
+}
+
+const embeddingsChunkSize = 10_000
 
 func encodeRepoEmbeddingIndex(enc *gob.Encoder, rei *RepoEmbeddingIndex, chunkSize int) error {
 	if err := enc.Encode(rei.RepoName); err != nil {
@@ -122,46 +164,4 @@ func decodeRepoEmbeddingIndex(dec *gob.Decoder) (*RepoEmbeddingIndex, error) {
 	}
 
 	return rei, nil
-}
-
-func UploadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store, key string, index *RepoEmbeddingIndex) error {
-	pr, pw := io.Pipe()
-
-	eg, ctx := errgroup.WithContext(ctx)
-
-	eg.Go(func() error {
-		defer pw.Close()
-
-		enc := gob.NewEncoder(pw)
-		return encodeRepoEmbeddingIndex(enc, index, EMBEDDINGS_CHUNK_SIZE)
-	})
-
-	eg.Go(func() error {
-		defer pr.Close()
-
-		_, err := uploadStore.Upload(ctx, key, pr)
-		return err
-	})
-
-	return eg.Wait()
-}
-
-func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store, key string) (*RepoEmbeddingIndex, error) {
-	file, err := uploadStore.Get(ctx, key)
-	if err != nil {
-		return nil, err
-	}
-
-	dec := gob.NewDecoder(file)
-
-	rei, err := decodeRepoEmbeddingIndex(dec)
-	// If decoding fails, assume it is an old index and decode with a generic decoder.
-	if err != nil {
-		// Close the existing file.
-		_ = file.Close()
-
-		return DownloadIndex[RepoEmbeddingIndex](ctx, uploadStore, key)
-	}
-
-	return rei, err
 }
