@@ -26,11 +26,6 @@ func SurveyResponses(db DB) *SurveyResponseStore {
 	return &SurveyResponseStore{Store: basestore.NewWithHandle(db.Handle())}
 }
 
-// NewSurveyResponseStoreWithDB instantiates and returns a new SurveyResponseStore using the other store handle.
-func SurveyResponsesWith(other basestore.ShareableStore) *SurveyResponseStore {
-	return &SurveyResponseStore{Store: basestore.NewWithHandle(other.Handle())}
-}
-
 func (s *SurveyResponseStore) With(other basestore.ShareableStore) *SurveyResponseStore {
 	return &SurveyResponseStore{Store: s.Store.With(other)}
 }
@@ -98,7 +93,7 @@ func (s *SurveyResponseStore) Last30DaysAverageScore(ctx context.Context) (float
 	return avg.Float64, err
 }
 
-// Last30DaysNPS returns the net promoter score for all surveys submitted in the last 30 days.
+// Last30DaysNetPromoterScore returns the net promoter score for all surveys submitted in the last 30 days.
 // This is calculated as 100*((% of responses that are >= 9) - (% of responses that are <= 6))
 func (s *SurveyResponseStore) Last30DaysNetPromoterScore(ctx context.Context) (int, error) {
 	since := thirtyDaysAgo()
@@ -123,7 +118,7 @@ func (s *SurveyResponseStore) Last30DaysNetPromoterScore(ctx context.Context) (i
 	return int(promoterPercent - detractorPercent), err
 }
 
-// Last30Count returns the count of surveys submitted in the last 30 days.
+// Last30DaysCount returns the count of surveys submitted in the last 30 days.
 func (s *SurveyResponseStore) Last30DaysCount(ctx context.Context) (int, error) {
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM survey_responses WHERE created_at>%s", thirtyDaysAgo())
 
