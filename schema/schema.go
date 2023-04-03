@@ -2353,6 +2353,8 @@ type SiteConfiguration struct {
 	AuthUnlockAccountLinkSigningKey string `json:"auth.unlockAccountLinkSigningKey,omitempty"`
 	// AuthUserOrgMap description: Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form `{"*": ["org1", "org2"]}`, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is `"*"`.
 	AuthUserOrgMap map[string][]string `json:"auth.userOrgMap,omitempty"`
+	// AuthPrimaryLoginProvidersCount description: The number of primary login providers configured. These are shown by default to the user on login screen. Other providers are shown under `More ways to login` section.
+	AuthPrimaryLoginProvidersCount int `json:"auth.primaryLoginProvidersCount,omitempty"`
 	// AuthzEnforceForSiteAdmins description: When true, site admins will only be able to see private code they have access to via our authz system.
 	AuthzEnforceForSiteAdmins bool `json:"authz.enforceForSiteAdmins,omitempty"`
 	// AuthzRefreshInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.

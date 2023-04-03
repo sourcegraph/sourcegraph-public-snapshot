@@ -25,6 +25,13 @@ describe('SignInPage', () => {
             authenticationURL: '/.auth/github/login?pc=f00bar',
             serviceID: 'https://github.com',
         },
+        {
+            serviceType: 'gitlab',
+            displayName: 'GitLab',
+            isBuiltin: false,
+            authenticationURL: '/.auth/gitlab/login?pc=f00bar',
+            serviceID: 'https://gitlab.com',
+        },
     ]
 
     const render = (
@@ -35,6 +42,7 @@ describe('SignInPage', () => {
             sourcegraphDotComMode?: boolean
             experimentalFeatures?: SiteConfiguration['experimentalFeatures']
             allowSignup?: boolean
+            primaryLoginProvidersCount?: Number
         }
     ) =>
         renderWithBrandedContext(
@@ -51,6 +59,7 @@ describe('SignInPage', () => {
                                 resetPasswordEnabled: true,
                                 xhrHeaders: {},
                                 experimentalFeatures: props.experimentalFeatures ?? {},
+                                primaryLoginProvidersCount: props.primaryLoginProvidersCount ?? 5,
                             }}
                             isSourcegraphDotCom={false}
                         />
@@ -64,9 +73,9 @@ describe('SignInPage', () => {
         const rendered = render('/sign-in', {})
         expect(
             within(rendered.baseElement)
-                .queryByText(txt => txt.includes('Continue with Email'))
+                .queryByText(txt => txt.includes('More ways to login'))
                 ?.closest('a')
-        ).toHaveAttribute('href', '/sign-in?email=1&')
+        ).toBeVisible()
         expect(
             within(rendered.baseElement)
                 .queryByText(txt => txt.includes('Sign up'))
@@ -77,7 +86,7 @@ describe('SignInPage', () => {
     })
 
     it('renders sign in page (server) with email form expanded', () => {
-        const rendered = render('/sign-in?email=1', {})
+        const rendered = render('/sign-in?showMore', {})
         expect(
             within(rendered.baseElement).queryByText(txt => txt.includes('Continue with Email'))
         ).not.toBeInTheDocument()
@@ -100,7 +109,7 @@ describe('SignInPage', () => {
             authProviders: authProviders.filter(authProvider => authProvider.serviceType === 'builtin'),
         })
         expect(
-            within(rendered.baseElement).queryByText(txt => txt.includes('Continue with Email'))
+            within(rendered.baseElement).queryByText(txt => txt.includes('More ways to login'))
         ).not.toBeInTheDocument()
 
         expect(rendered.asFragment()).toMatchSnapshot()
