@@ -482,6 +482,6 @@ func (r *schemaResolver) SetAutoUpgrade(ctx context.Context, args *struct {
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err
 	}
-	upgradestore.NewWith(r.db.Handle()).SetAutoUpgrade(ctx, args.Enable)
-	return &EmptyResponse{}, nil
+	err := upgradestore.NewWith(r.db.Handle()).SetAutoUpgrade(ctx, args.Enable)
+	return &EmptyResponse{}, err
 }

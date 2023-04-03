@@ -89,11 +89,9 @@ func Upgrade(
 		if fromFlag.Get(cmd) != "" || toFlag.Get(cmd) != "" {
 			fromStr = fromFlag.Get(cmd)
 			toStr = toFlag.Get(cmd)
-		} else {
-			if autoUpgrade {
-				fromStr = currentVersion
-				toStr = version.Version()
-			}
+		} else if autoUpgrade {
+			fromStr = currentVersion
+			toStr = version.Version()
 		}
 		// check for null case
 		if fromStr == "" || toStr == "" {
