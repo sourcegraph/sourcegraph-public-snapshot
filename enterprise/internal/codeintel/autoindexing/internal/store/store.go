@@ -17,19 +17,6 @@ type Store interface {
 	Transact(ctx context.Context) (Store, error)
 	Done(err error) error
 
-	// Index scanning/queueing
-	GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) ([]int, error)
-	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
-	IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error)
-	IsQueuedRootIndexer(ctx context.Context, repositoryID int, commit string, root string, indexer string) (bool, error)
-	QueueRepoRev(ctx context.Context, repositoryID int, commit string) error
-	GetQueuedRepoRev(ctx context.Context, batchSize int) ([]RepoRev, error)
-	MarkRepoRevsAsProcessed(ctx context.Context, ids []int) error
-
-	// Manual index insertion
-	InsertIndexes(ctx context.Context, indexes []uploadsshared.Index) ([]uploadsshared.Index, error)
-	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (int, error)
-
 	// Inference configuration
 	GetInferenceScript(ctx context.Context) (string, error)
 	SetInferenceScript(ctx context.Context, script string) error
@@ -38,11 +25,26 @@ type Store interface {
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (shared.IndexConfiguration, bool, error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) error
 
-	// Summary building
+	// Coverage summaries
 	TopRepositoriesToConfigure(ctx context.Context, limit int) ([]uploadsshared.RepositoryWithCount, error)
 	RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) ([]uploadsshared.RepositoryWithAvailableIndexers, int, error)
+	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
 	SetConfigurationSummary(ctx context.Context, repositoryID int, numEvents int, availableIndexers map[string]uploadsshared.AvailableIndexer) error
 	TruncateConfigurationSummary(ctx context.Context, numRecordsToRetain int) error
+
+	// Scheduler
+	GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) ([]int, error)
+	GetQueuedRepoRev(ctx context.Context, batchSize int) ([]RepoRev, error)
+	MarkRepoRevsAsProcessed(ctx context.Context, ids []int) error
+
+	// Enqueuer
+	IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error)
+	IsQueuedRootIndexer(ctx context.Context, repositoryID int, commit string, root string, indexer string) (bool, error)
+	InsertIndexes(ctx context.Context, indexes []uploadsshared.Index) ([]uploadsshared.Index, error)
+
+	// Dependency indexing
+	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (int, error)
+	QueueRepoRev(ctx context.Context, repositoryID int, commit string) error
 }
 
 type store struct {
