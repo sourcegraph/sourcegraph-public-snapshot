@@ -10,6 +10,8 @@ client/cody/node_modules
 client/cody/common/node_modules
 client/cody/server/node_modules
 client/cody-shared/node_modules
+client/cody-ui/node_modules
+client/cody-web/node_modules
 client/cody/vscode-codegen/node_modules
 client/common/node_modules
 client/eslint-plugin-wildcard/node_modules
