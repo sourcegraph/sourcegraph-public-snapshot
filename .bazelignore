@@ -50,4 +50,6 @@ cmd/sitemap
 
 internal/cmd/progress-bot
 client/cody
+client/cody-ui
 client/cody-shared
+client/cody-web
