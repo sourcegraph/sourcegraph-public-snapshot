@@ -39,6 +39,8 @@ ts_config(
         "//client/storybook:tsconfig",
         "//client/testing:tsconfig",
         "//client/wildcard:tsconfig",
+        "//client/cody-shared:tsconfig",
+        "//client/cody-ui:tsconfig",
         "//schema:tsconfig",
     ],
 )
