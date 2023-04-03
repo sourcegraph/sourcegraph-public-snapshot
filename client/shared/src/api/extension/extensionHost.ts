@@ -1,9 +1,11 @@
 import * as comlink from 'comlink'
 import { isMatch } from 'lodash'
-import { ReplaySubject, Subscription, Unsubscribable } from 'rxjs'
+import { from, ReplaySubject, Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 
-import { EndpointPair } from '../../platform/context'
+import { injectNewCodeintel } from '../../codeintel/api'
+import { newSettingsGetter } from '../../codeintel/legacy-extensions/api'
+import { EndpointPair, PlatformContext } from '../../platform/context'
 import { SettingsCascade } from '../../settings/settings'
 import { ClientAPI } from '../client/api/api'
 import { registerComlinkTransferHandlers } from '../util'
@@ -131,7 +133,11 @@ function createExtensionAndExtensionHostAPIs(
     // Create extension host state
     const extensionHostState = createExtensionHostState(initData, proxy, mainThreadAPIInitializations)
     // Create extension host API
-    const extensionHostAPINew = createExtensionHostAPI(extensionHostState)
+    const extensionHostAPINew = injectNewCodeintel(createExtensionHostAPI(extensionHostState), {
+        requestGraphQL: (({ request, variables }) =>
+            from(proxy.executeCommand('queryGraphQL', [request, variables]))) as PlatformContext['requestGraphQL'],
+        settings: newSettingsGetter(initData.initialSettings),
+    })
     // Create extension API factory
     const createExtensionAPI = createExtensionAPIFactory(extensionHostState, proxy, initData)
 
