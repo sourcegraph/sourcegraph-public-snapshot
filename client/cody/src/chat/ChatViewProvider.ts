@@ -13,9 +13,11 @@ import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { EventLogger } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { version as packageVersion } from '../../package.json'
+import { initializeEventLogger, serverEndpoint } from '../command/CommandsProvider'
 import { LocalStorage } from '../command/LocalStorageProvider'
 import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../command/secret-storage'
 import { updateConfiguration } from '../configuration'
@@ -23,6 +25,8 @@ import { VSCodeEditor } from '../editor/vscode-editor'
 import { configureExternalServices } from '../external-services'
 import { getRgPath } from '../rg'
 import { TestSupport } from '../test-support'
+
+let logger: EventLogger
 
 async function isValidLogin(serverEndpoint: string, accessToken: string): Promise<boolean> {
     const client = new SourcegraphGraphQLAPIClient(serverEndpoint, accessToken)
@@ -124,13 +128,19 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 const isValid = await isValidLogin(message.serverEndpoint, message.accessToken)
                 if (isValid) {
                     await updateConfiguration('serverEndpoint', message.serverEndpoint)
-                    await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
+                    logger = await initializeEventLogger()
+                    await logger.log('CodyVSCodeExtension:login:clicked', { serverEndpoint }, { serverEndpoint })
                 }
                 this.sendLogin(isValid)
                 break
             }
             case 'removeToken':
                 await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
+                await logger.log(
+                    'CodyVSCodeExtension:codyDeleteAccessToken:clicked',
+                    { serverEndpoint },
+                    { serverEndpoint }
+                )
                 break
             case 'removeHistory':
                 await this.localStorage.removeChatHistory()
@@ -162,6 +172,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     private async acceptTOS(version: string): Promise<void> {
         this.tosVersion = version
         await vscode.commands.executeCommand('cody.accept-tos', version)
+        await logger.log('CodyVSCodeExtension:acceptTerms:clicked', { serverEndpoint }, { serverEndpoint })
     }
 
     private createNewChatID(): void {
@@ -228,6 +239,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
         const prompt = await this.transcript.toPrompt(getPreamble(this.codebase))
         this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
+        await logger.log(`CodyVSCodeExtension:recipe:${recipe.getID()}:clicked`, { serverEndpoint }, { serverEndpoint })
     }
 
     private onBotMessageChange(text: string): void {
@@ -322,6 +334,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         const decoded = new TextDecoder('utf-8').decode(bytes)
         const resources = webviewView.webview.asWebviewUri(webviewPath)
         const nonce = this.getNonce()
+        logger = await initializeEventLogger()
 
         webviewView.webview.html = decoded
             .replaceAll('./', `${resources.toString()}/`)
@@ -361,8 +374,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     'Cody configuration has been updated.',
                     'Reload Window'
                 )
+                await logger.log('CodyVSCodeExtension:updateEndpoint:clicked', { serverEndpoint }, { serverEndpoint })
                 if (action === 'Reload Window') {
                     await vscode.commands.executeCommand('workbench.action.reloadWindow')
+                    logger = await initializeEventLogger()
                 }
                 break
             }
