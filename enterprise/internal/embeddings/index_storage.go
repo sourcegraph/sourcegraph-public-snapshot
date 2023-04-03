@@ -80,6 +80,9 @@ func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Sto
 
 const embeddingsChunkSize = 10_000
 
+// encodeRepoEmbeddingIndex is a specialized encoder for repo embedding indexes. Instead of GOB-encoding
+// the entire RepoEmbeddingIndex, we encode each field separately, and we encode the embeddings array by chunks.
+// This way we avoid allocating a separate very large slice for the embeddings.
 func encodeRepoEmbeddingIndex(enc *gob.Encoder, rei *RepoEmbeddingIndex, chunkSize int) error {
 	if err := enc.Encode(rei.RepoName); err != nil {
 		return err
