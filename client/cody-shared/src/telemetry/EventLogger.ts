@@ -28,7 +28,7 @@ export class EventLogger {
         }
         const eventLogger = new EventLogger(gqlAPIClient, anonymousUserID)
         if (newInstall) {
-            void eventLogger.log('CodyInstalled')
+            await eventLogger.log('CodyInstalled')
         }
         return eventLogger
     }
