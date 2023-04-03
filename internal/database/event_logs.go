@@ -1434,7 +1434,7 @@ WITH events AS (
     ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
   FROM event_logs
   WHERE
-    timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
+    timestamp >= ` + makeDateTruncExpression("rolling_month", "%s::timestamp") + `
     AND name IN (` + strings.Join(searchLatencyEventNames, ", ") + `)
 )
 SELECT
@@ -1469,7 +1469,7 @@ WITH events AS (
   FROM event_logs
   CROSS JOIN LATERAL jsonb_each(argument->'code_search'->'query_data'->'query') json
   WHERE
-    timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
+    timestamp >= ` + makeDateTruncExpression("rolling_month", "%s::timestamp") + `
     AND name = 'SearchResultsQueried'
 )
 SELECT
