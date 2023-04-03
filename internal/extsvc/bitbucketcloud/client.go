@@ -149,7 +149,7 @@ func (c *client) Ping(ctx context.Context) error {
 		return errors.Wrap(err, "creating request")
 	}
 
-	err, _ = c.do(ctx, req, nil)
+	_, err = c.do(ctx, req, nil)
 	if err != nil && !errcode.IsNotFound(err) {
 		return err
 	}
@@ -196,7 +196,7 @@ func (c *client) reqPage(ctx context.Context, url string, results any) (*PageTok
 	}
 
 	var next PageToken
-	err, _ = c.do(ctx, req, &struct {
+	_, err = c.do(ctx, req, &struct {
 		*PageToken
 		Values any `json:"values"`
 	}{
@@ -211,7 +211,7 @@ func (c *client) reqPage(ctx context.Context, url string, results any) (*PageTok
 	return &next, nil
 }
 
-func (c *client) do(ctx context.Context, req *http.Request, result any) (err error, code int) {
+func (c *client) do(ctx context.Context, req *http.Request, result any) (code int, err error) {
 	req.URL = c.URL.ResolveReference(req.URL)
 
 	// If the request doesn't expect a body, then including a content-type can
@@ -222,7 +222,7 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) (err err
 		req.Header.Set("Content-Type", "application/json; charset=utf-8")
 		reqBody, err = io.ReadAll(req.Body)
 		if err != nil {
-			return err, code
+			return code, err
 		}
 	}
 	req.Body = io.NopCloser(bytes.NewReader(reqBody))
@@ -246,7 +246,7 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) (err err
 		resp, err = oauthutil.DoRequest(ctx, nil, c.httpClient, req, c.Auth)
 		code = resp.StatusCode
 		if err != nil {
-			return err, code
+			return code, err
 		}
 
 		if code != http.StatusTooManyRequests {
@@ -265,22 +265,22 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) (err err
 
 	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err, code
+		return code, err
 	}
 
 	if code < http.StatusOK || code >= http.StatusBadRequest {
-		return errors.WithStack(&httpError{
+		return code, errors.WithStack(&httpError{
 			URL:        req.URL,
 			StatusCode: code,
 			Body:       string(bs),
-		}), code
+		})
 	}
 
 	if result != nil {
-		return json.Unmarshal(bs, result), code
+		return code, json.Unmarshal(bs, result)
 	}
 
-	return nil, code
+	return code, nil
 }
 
 type PageToken struct {
