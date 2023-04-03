@@ -55,11 +55,11 @@ func resolveLocation(ctx context.Context, locationResolver *sharedresolvers.Cach
 //
 
 type locationResolver struct {
-	resource *sharedresolvers.GitTreeEntryResolver
+	resource resolverstubs.GitTreeEntryResolver
 	lspRange *lsp.Range
 }
 
-func newLocationResolver(resource *sharedresolvers.GitTreeEntryResolver, lspRange *lsp.Range) resolverstubs.LocationResolver {
+func newLocationResolver(resource resolverstubs.GitTreeEntryResolver, lspRange *lsp.Range) resolverstubs.LocationResolver {
 	return &locationResolver{
 		resource: resource,
 		lspRange: lspRange,
@@ -80,16 +80,11 @@ func (r *locationResolver) rangeInternal() *rangeResolver {
 }
 
 func (r *locationResolver) URL(ctx context.Context) (string, error) {
-	url, err := r.resource.URL(ctx)
-	if err != nil {
-		return "", err
-	}
-	return r.urlPath(url), nil
+	return r.urlPath(r.resource.URL()), nil
 }
 
 func (r *locationResolver) CanonicalURL() string {
-	url := r.resource.CanonicalURL()
-	return r.urlPath(url)
+	return r.urlPath(r.resource.URL())
 }
 
 func (r *locationResolver) urlPath(prefix string) string {

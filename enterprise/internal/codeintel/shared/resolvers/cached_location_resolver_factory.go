@@ -6,19 +6,17 @@ import (
 )
 
 type CachedLocationResolverFactory struct {
-	cloneURLToRepoName CloneURLToRepoNameFunc
-	repoStore          database.RepoStore
-	gitserverClient    gitserver.Client
+	repoStore       database.RepoStore
+	gitserverClient gitserver.Client
 }
 
-func NewCachedLocationResolverFactory(cloneURLToRepoName CloneURLToRepoNameFunc, repoStore database.RepoStore, gitserverClient gitserver.Client) *CachedLocationResolverFactory {
+func NewCachedLocationResolverFactory(repoStore database.RepoStore, gitserverClient gitserver.Client) *CachedLocationResolverFactory {
 	return &CachedLocationResolverFactory{
-		cloneURLToRepoName: cloneURLToRepoName,
-		repoStore:          repoStore,
-		gitserverClient:    gitserverClient,
+		repoStore:       repoStore,
+		gitserverClient: gitserverClient,
 	}
 }
 
 func (f *CachedLocationResolverFactory) Create() *CachedLocationResolver {
-	return newCachedLocationResolver(f.cloneURLToRepoName, f.repoStore, f.gitserverClient)
+	return newCachedLocationResolver(f.repoStore, f.gitserverClient)
 }
