@@ -1,42 +1,36 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
-    name = "workspace",
+    name = "runtime",
     srcs = [
-        "clone.go",
         "docker.go",
-        "files.go",
-        "firecracker.go",
-        "util.go",
-        "workspace.go",
+        "runtime.go",
+        "shell.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace",
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runtime",
     visibility = ["//enterprise/cmd/executor:__subpackages__"],
     deps = [
         "//enterprise/cmd/executor/internal/util",
         "//enterprise/cmd/executor/internal/worker/command",
+        "//enterprise/cmd/executor/internal/worker/runner",
+        "//enterprise/cmd/executor/internal/worker/workspace",
         "//enterprise/internal/executor/types",
         "//lib/errors",
-        "@com_github_c2h5oh_datasize//:datasize",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
 go_test(
-    name = "workspace_test",
-    srcs = [
-        "docker_test.go",
-        "firecracker_test.go",
-        "mocks_test.go",
-    ],
-    embed = [":workspace"],
+    name = "runtime_test",
+    srcs = ["runtime_test.go"],
     deps = [
+        ":runtime",
         "//enterprise/cmd/executor/internal/util",
         "//enterprise/cmd/executor/internal/worker/command",
-        "//enterprise/internal/executor/types",
-        "//internal/executor",
-        "//internal/observation",
-        "//lib/errors",
+        "//enterprise/cmd/executor/internal/worker/workspace",
+        "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//mock",
         "@com_github_stretchr_testify//require",
     ],
 )
