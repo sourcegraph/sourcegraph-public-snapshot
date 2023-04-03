@@ -152,5 +152,6 @@ build {
         regions    = ["us-west-2"]
         identifier = var.name
         keep_days  = 60
+        dry_run    = true
     }
 }
