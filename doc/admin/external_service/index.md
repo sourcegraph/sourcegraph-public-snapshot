@@ -156,9 +156,9 @@ We recognize there are other code hosts including CVS, SVN, and many more. Today
 
 [Src-srv-git](./non-git.md) and the [explicit permissions API](../permissions/api.md) follow the same scale guidance shared above (up to 100k repos and 10k users).
 
-## Full Code Host Docs
+## Configure a code host connection
 
-**Site admins** can configure the following code hosts:
+**Site admins** can configure Sourcegraph to sync code from the following code hosts:
 
 - [GitHub](github.md)
 - [GitLab](gitlab.md)
@@ -177,11 +177,6 @@ We recognize there are other code hosts including CVS, SVN, and many more. Today
     - [Python dependencies](python.md)
     - [Ruby dependencies](ruby.md)
     - [Rust dependencies](rust.md)
-
-**Users** can configure the following public code hosts:
-
-- [GitHub.com](github.md)
-- [GitLab.com](gitlab.md)
 
 ## Rate limits
 
