@@ -4,8 +4,6 @@ import (
 	"sort"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 )
 
 type InvertedRangeIndex struct {
@@ -96,7 +94,7 @@ func collapseRanges(ranges []*scip.Range) []int32 {
 	}
 
 	rangeComponents := make([]int32, 0, len(ranges)*4)
-	for _, r := range types.SortRanges(ranges) {
+	for _, r := range scip.SortRanges(ranges) {
 		rangeComponents = append(rangeComponents, r.Start.Line, r.Start.Character, r.End.Line, r.End.Character)
 	}
 

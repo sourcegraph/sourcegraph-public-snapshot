@@ -11,7 +11,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -35,7 +34,7 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 	}
 
 	trace.AddEvent("SCIPData", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
-	occurrences := types.FindOccurrences(documentData.SCIPData.Occurrences, int32(line), int32(character))
+	occurrences := scip.FindOccurrences(documentData.SCIPData.Occurrences, int32(line), int32(character))
 	trace.AddEvent("FindOccurences", attribute.Int("numIntersectingOccurrences", len(occurrences)))
 
 	for _, occurrence := range occurrences {
