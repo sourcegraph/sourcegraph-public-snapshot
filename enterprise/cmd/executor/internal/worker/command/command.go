@@ -61,7 +61,7 @@ func (c *RealCommand) Run(ctx context.Context, cmdLogger Logger, spec Spec) (err
 	ctx, _, endObservation := spec.Operation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	c.Logger.Info("Running command", log.Strings("command", spec.Command))
+	c.Logger.Info("Running command", log.Strings("command", spec.Command), log.String("workingDir", spec.Dir))
 
 	// Check if we can even run the command.
 	if err := validateCommand(spec.Command); err != nil {
