@@ -5,7 +5,6 @@ go_library(
     srcs = [
         "iface.go",
         "index_steps_resolver.go",
-        "indexer_resolver.go",
         "observability.go",
         "precise_index_resolver.go",
         "root_resolver.go",
@@ -20,9 +19,10 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/autoindexing",
-        "//enterprise/internal/codeintel/policies/shared",
+        "//enterprise/internal/codeintel/autoindexing/shared",
         "//enterprise/internal/codeintel/policies/transport/graphql",
         "//enterprise/internal/codeintel/shared/resolvers",
+        "//enterprise/internal/codeintel/shared/types",
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/api",
         "//internal/auth",

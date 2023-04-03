@@ -13,6 +13,7 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/policies/shared",
+        "//enterprise/internal/codeintel/shared/types",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbutil",
@@ -42,6 +43,7 @@ go_test(
     deps = [
         "//cmd/frontend/globals",
         "//enterprise/internal/codeintel/policies/shared",
+        "//enterprise/internal/codeintel/shared/types",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbtest",

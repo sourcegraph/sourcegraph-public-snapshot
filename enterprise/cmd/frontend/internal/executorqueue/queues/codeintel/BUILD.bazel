@@ -11,7 +11,7 @@ go_library(
     deps = [
         "//enterprise/cmd/frontend/internal/executorqueue/handler",
         "//enterprise/internal/codeintel/autoindexing",
-        "//enterprise/internal/codeintel/uploads/shared",
+        "//enterprise/internal/codeintel/shared/types",
         "//enterprise/internal/executor/types",
         "//internal/conf",
         "//internal/database",
@@ -31,7 +31,7 @@ go_test(
     embed = [":codeintel"],
     deps = [
         "//enterprise/cmd/frontend/internal/executorqueue/handler",
-        "//enterprise/internal/codeintel/uploads/shared",
+        "//enterprise/internal/codeintel/shared/types",
         "//enterprise/internal/executor/types",
         "//internal/conf",
         "//internal/database",

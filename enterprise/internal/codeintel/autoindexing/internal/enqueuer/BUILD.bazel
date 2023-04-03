@@ -13,7 +13,7 @@ go_library(
         "//enterprise/internal/codeintel/autoindexing/internal/inference",
         "//enterprise/internal/codeintel/autoindexing/internal/jobselector",
         "//enterprise/internal/codeintel/autoindexing/internal/store",
-        "//enterprise/internal/codeintel/uploads/shared",
+        "//enterprise/internal/codeintel/shared/types",
         "//internal/api",
         "//internal/codeintel/dependencies",
         "//internal/database",

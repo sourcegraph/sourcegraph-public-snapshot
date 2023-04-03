@@ -10,7 +10,7 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/autoindexing/internal/store",
-        "//enterprise/internal/codeintel/uploads/shared",
+        "//enterprise/internal/codeintel/shared/types",
         "//internal/api",
         "//internal/authz",
         "//internal/database",

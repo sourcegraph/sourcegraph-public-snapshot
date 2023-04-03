@@ -12,7 +12,6 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/ranking/internal/shared",
-        "//enterprise/internal/codeintel/ranking/shared",
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/api",
         "//internal/database",
@@ -43,7 +42,7 @@ go_test(
     ],
     deps = [
         "//enterprise/internal/codeintel/ranking/internal/shared",
-        "//enterprise/internal/codeintel/ranking/shared",
+        "//enterprise/internal/codeintel/shared/types",
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/api",
         "//internal/database",

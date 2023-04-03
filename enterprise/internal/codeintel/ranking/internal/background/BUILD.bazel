@@ -12,7 +12,6 @@ go_library(
         "//enterprise/internal/codeintel/ranking/internal/lsifstore",
         "//enterprise/internal/codeintel/ranking/internal/shared",
         "//enterprise/internal/codeintel/ranking/internal/store",
-        "//enterprise/internal/codeintel/ranking/shared",
         "//enterprise/internal/codeintel/shared/background",
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/conf",

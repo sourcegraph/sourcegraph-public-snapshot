@@ -6,7 +6,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/codeintel/uploads/shared",
+        "//enterprise/internal/codeintel/shared/types",
         "//lib/codeintel/precise",
     ],
 )

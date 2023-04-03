@@ -16,7 +16,7 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/autoindexing/shared",
-        "//enterprise/internal/codeintel/uploads/shared",
+        "//enterprise/internal/codeintel/shared/types",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbutil",
@@ -49,7 +49,8 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//enterprise/internal/codeintel/uploads/shared",
+        "//enterprise/internal/codeintel/autoindexing/shared",
+        "//enterprise/internal/codeintel/shared/types",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbtest",

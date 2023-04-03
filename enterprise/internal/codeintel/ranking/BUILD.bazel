@@ -39,7 +39,6 @@ go_test(
     embed = [":ranking"],
     deps = [
         "//enterprise/internal/codeintel/ranking/internal/store",
-        "//enterprise/internal/codeintel/ranking/shared",
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/api",
         "//internal/conf",
