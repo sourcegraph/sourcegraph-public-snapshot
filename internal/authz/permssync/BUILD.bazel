@@ -7,7 +7,6 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/database",
-        "//internal/repoupdater",
         "//internal/repoupdater/protocol",
         "@com_github_sourcegraph_log//:log",
     ],

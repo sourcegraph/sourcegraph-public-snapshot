@@ -14,7 +14,6 @@ type InternalAPIMessage struct {
 
 // Message describes an email message to be sent.
 type Message struct {
-	FromName   string   // email "From" address proper name
 	To         []string // email "To" recipients
 	ReplyTo    *string  // optional "ReplyTo" address
 	MessageID  *string  // optional "Message-ID" header

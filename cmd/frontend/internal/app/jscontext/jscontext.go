@@ -104,7 +104,6 @@ type CurrentUser struct {
 	URL                 string     `json:"url"`
 	SettingsURL         string     `json:"settingsURL"`
 	ViewerCanAdminister bool       `json:"viewerCanAdminister"`
-	Tags                []string   `json:"tags"`
 	TosAccepted         bool       `json:"tosAccepted"`
 	Searchable          bool       `json:"searchable"`
 
@@ -166,6 +165,8 @@ type JSContext struct {
 	AuthPasswordPolicy    authPasswordPolicy `json:"authPasswordPolicy"`
 
 	AuthProviders []authProviderInfo `json:"authProviders"`
+
+	AuthAccessRequest *schema.AuthAccessRequest `json:"authAccessRequest"`
 
 	Branding *schema.Branding `json:"branding"`
 
@@ -343,6 +344,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		AuthProviders: authProviders,
 
+		AuthAccessRequest: conf.Get().AuthAccessRequest,
+
 		Branding: globals.Branding(),
 
 		BatchChangesEnabled:                enterprise.BatchChangesEnabledForUser(ctx, db) == nil,
@@ -401,10 +404,6 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 	if err != nil {
 		return nil
 	}
-	tags, err := userResolver.Tags(ctx)
-	if err != nil {
-		return nil
-	}
 
 	session, err := userResolver.Session(ctx)
 	if err != nil && session == nil {
@@ -424,7 +423,6 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		Searchable:          userResolver.Searchable(ctx),
 		SettingsURL:         derefString(userResolver.SettingsURL()),
 		SiteAdmin:           siteAdmin,
-		Tags:                tags,
 		TosAccepted:         userResolver.TosAccepted(ctx),
 		URL:                 userResolver.URL(),
 		Username:            userResolver.Username(),

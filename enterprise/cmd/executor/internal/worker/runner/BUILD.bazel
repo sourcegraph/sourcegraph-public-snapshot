@@ -1,0 +1,53 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "runner",
+    srcs = [
+        "docker.go",
+        "firecracker.go",
+        "kubernetes.go",
+        "runner.go",
+        "shell.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner",
+    visibility = ["//enterprise/cmd/executor:__subpackages__"],
+    deps = [
+        "//enterprise/cmd/executor/internal/config",
+        "//enterprise/cmd/executor/internal/util",
+        "//enterprise/cmd/executor/internal/worker/command",
+        "//enterprise/internal/executor/types",
+        "//internal/lazyregexp",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "runner_test",
+    srcs = [
+        "docker_test.go",
+        "firecracker_test.go",
+        "kubernetes_test.go",
+        "mocks_test.go",
+        "shell_test.go",
+    ],
+    embed = [":runner"],
+    deps = [
+        "//enterprise/cmd/executor/internal/worker/command",
+        "//enterprise/internal/executor/types",
+        "//internal/executor",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//batch/v1:batch",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/resource",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_client_go//kubernetes/fake",
+        "@io_k8s_client_go//testing",
+    ],
+)

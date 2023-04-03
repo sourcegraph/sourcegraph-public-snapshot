@@ -27,7 +27,7 @@ type CloneURLToRepoNameFunc func(ctx context.Context, submoduleURL string) (api.
 // Prefer using the constructor, NewGitTreeEntryResolver.
 type GitTreeEntryResolver struct {
 	cloneURLToRepoName CloneURLToRepoNameFunc
-	commit             *GitCommitResolver
+	commit             *gitCommitResolver
 
 	contentOnce sync.Once
 	content     []byte
@@ -40,7 +40,7 @@ type GitTreeEntryResolver struct {
 	logger log.Logger
 }
 
-func NewGitTreeEntryResolver(cloneURLToRepoName CloneURLToRepoNameFunc, commit *GitCommitResolver, stat fs.FileInfo) *GitTreeEntryResolver {
+func newGitTreeEntryResolver(cloneURLToRepoName CloneURLToRepoNameFunc, commit *gitCommitResolver, stat fs.FileInfo) *GitTreeEntryResolver {
 	return &GitTreeEntryResolver{
 		cloneURLToRepoName: cloneURLToRepoName,
 		commit:             commit, stat: stat, logger: log.Scoped("git tree entry resolver", "")}
@@ -119,7 +119,7 @@ func (r *GitTreeEntryResolver) Submodule() resolverstubs.GitSubmoduleResolver {
 	}
 
 	if submoduleInfo, ok := r.stat.Sys().(gitdomain.Submodule); ok {
-		return NewGitSubmoduleResolver(submoduleInfo)
+		return newGitSubmoduleResolver(submoduleInfo)
 	}
 	return nil
 }

@@ -154,7 +154,6 @@ go_library(
         "survey_response.go",
         "survey_responses.go",
         "symbols.go",
-        "tags.go",
         "teams.go",
         "temporary_settings.go",
         "testing.go",
@@ -192,6 +191,7 @@ go_library(
         "codeintel.codenav.graphql",
         "codeintel.policies.graphql",
         "codeintel.sentinel.graphql",
+        "codeintel.graphql",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend",
     deps = [

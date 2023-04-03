@@ -164,7 +164,7 @@ func (r *slowRequestConnectionResolver) PageInfo(ctx context.Context) (*graphqlu
 	}
 }
 
-// ID returns an opaque ID for that node.
+// Index returns an opaque ID for that node.
 func (r *slowRequestResolver) Index() string {
 	return r.req.Index
 }

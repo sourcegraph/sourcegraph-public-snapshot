@@ -84,7 +84,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "4.5.0"
+	const minimumUpgradeableVersion = "5.0.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
@@ -188,6 +188,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addVsceTests,
 			wait,
 			addVsceReleaseSteps)
+
+	case runtype.CodyReleaseBranch:
+		// If this is the Cody VS Code extension release branch, run the Cody tests and release
+		ops = operations.NewSet(
+			addClientLintersForAllFiles,
+			addCodyExtensionTests,
+			wait,
+			addCodyReleaseSteps)
 
 	case runtype.BextNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and

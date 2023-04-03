@@ -1,10 +1,8 @@
+import DOMPurify, { Config as DOMPurifyConfig } from 'dompurify'
 import { highlight, highlightAuto } from 'highlight.js/lib/core'
-import { without } from 'lodash'
 // This is the only file allowed to import this module, all other modules must use renderMarkdown() exported from here
 // eslint-disable-next-line no-restricted-imports
 import { marked } from 'marked'
-import sanitize from 'sanitize-html'
-import { Overwrite } from 'utility-types'
 
 import { logger } from '../logger'
 
@@ -44,15 +42,11 @@ export const highlightCodeSafe = (code: string, language?: string): string => {
     }
 }
 
-const svgPresentationAttributes = ['fill', 'stroke', 'stroke-width'] as const
-const ALL_VALUES_ALLOWED = [/.*/]
-
 /**
  * Renders the given markdown to HTML, highlighting code and sanitizing dangerous HTML.
  * Can throw an exception on parse errors.
  *
  * @param markdown The markdown to render
- * @param options Options object for passing additional parameters
  */
 export const renderMarkdown = (
     markdown: string,
@@ -63,19 +57,9 @@ export const renderMarkdown = (
         disableAutolinks?: boolean
         renderer?: marked.Renderer
         headerPrefix?: string
-    } & (
-        | {
-              /** Strip off any HTML and return a plain text string, useful for previews */
-              plainText: true
-          }
-        | {
-              /** Following options apply to non-plaintext output only. */
-              plainText?: false
-
-              /** Allow links to data: URIs and that download files. */
-              allowDataUriLinksAndDownloads?: boolean
-          }
-    ) = {}
+        /** Strip off any HTML and return a plain text string, useful for previews */
+        plainText?: boolean
+    } = {}
 ): string => {
     const tokenizer = new marked.Tokenizer()
     if (options.disableAutolinks) {
@@ -96,94 +80,18 @@ export const renderMarkdown = (
         tokenizer,
     })
 
-    let sanitizeOptions: Overwrite<sanitize.IOptions, sanitize.IDefaults>
-    if (options.plainText) {
-        sanitizeOptions = {
-            ...sanitize.defaults,
-            allowedAttributes: {},
-            allowedSchemes: [],
-            allowedSchemesByTag: {},
-            allowedTags: [],
-            selfClosing: [],
-        }
-    } else {
-        sanitizeOptions = {
-            ...sanitize.defaults,
-            // Ensure <object> must have type attribute set
-            exclusiveFilter: ({ tag, attribs }) => tag === 'object' && !attribs.type,
+    const dompurifyConfig: DOMPurifyConfig & { RETURN_DOM_FRAGMENT?: false; RETURN_DOM?: false } = options.plainText
+        ? {
+              ALLOWED_TAGS: [],
+              ALLOWED_ATTR: [],
+              KEEP_CONTENT: true,
+          }
+        : {
+              USE_PROFILES: { html: true },
+              FORBID_ATTR: ['rel', 'style'],
+          }
 
-            allowedTags: [
-                ...without(sanitize.defaults.allowedTags, 'iframe'),
-                'img',
-                'picture',
-                'source',
-                'svg',
-                'rect',
-                'defs',
-                'pattern',
-                'mask',
-                'circle',
-                'path',
-                'title',
-            ],
-            allowedAttributes: {
-                ...sanitize.defaults.allowedAttributes,
-                a: [
-                    ...sanitize.defaults.allowedAttributes.a,
-                    'title',
-                    'class',
-                    { name: 'rel', values: ['noopener', 'noreferrer'] },
-                ],
-                img: [...sanitize.defaults.allowedAttributes.img, 'alt', 'width', 'height', 'align', 'style'],
-                // Support different images depending on media queries (e.g. color theme, reduced motion)
-                source: ['srcset', 'media'],
-                svg: ['width', 'height', 'viewbox', 'version', 'preserveaspectratio', 'style'],
-                rect: ['x', 'y', 'width', 'height', 'transform', ...svgPresentationAttributes],
-                path: ['d', ...svgPresentationAttributes],
-                circle: ['cx', 'cy', ...svgPresentationAttributes],
-                pattern: ['id', 'width', 'height', 'patternunits', 'patterntransform'],
-                mask: ['id'],
-                // Allow highligh.js styles, e.g.
-                // <span class="hljs-keyword">
-                // <code class="language-javascript">
-                span: ['class'],
-                code: ['class'],
-                // Support deep-linking
-                h1: ['id'],
-                h2: ['id'],
-                h3: ['id'],
-                h4: ['id'],
-                h5: ['id'],
-                h6: ['id'],
-            },
-            allowedStyles: {
-                img: {
-                    padding: ALL_VALUES_ALLOWED,
-                    'padding-left': ALL_VALUES_ALLOWED,
-                    'padding-right': ALL_VALUES_ALLOWED,
-                    'padding-top': ALL_VALUES_ALLOWED,
-                    'padding-bottom': ALL_VALUES_ALLOWED,
-                },
-                // SVGs are usually for charts in code insights.
-                // Allow them to be responsive.
-                svg: {
-                    flex: ALL_VALUES_ALLOWED,
-                    'flex-grow': ALL_VALUES_ALLOWED,
-                    'flex-shrink': ALL_VALUES_ALLOWED,
-                    'flex-basis': ALL_VALUES_ALLOWED,
-                },
-            },
-        }
-        if (options.allowDataUriLinksAndDownloads) {
-            sanitizeOptions.allowedAttributes.a = [...sanitizeOptions.allowedAttributes.a, 'download']
-            sanitizeOptions.allowedSchemesByTag = {
-                ...sanitizeOptions.allowedSchemesByTag,
-                a: [...(sanitizeOptions.allowedSchemesByTag.a || sanitizeOptions.allowedSchemes), 'data'],
-            }
-        }
-    }
-
-    return sanitize(rendered, sanitizeOptions)
+    return DOMPurify.sanitize(rendered, dompurifyConfig).trim()
 }
 
 export const markdownLexer = (markdown: string): marked.TokensList => marked.lexer(markdown)

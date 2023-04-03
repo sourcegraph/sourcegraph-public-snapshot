@@ -24,12 +24,10 @@ async function getDocumentHighlights(view: EditorView, occurrence: Occurrence): 
     const blobProps = view.state.facet(blobPropsFacet)
 
     const api = await getOrCreateCodeIntelAPI(blobProps.platformContext)
-    const promise = api
-        .getDocumentHighlights({
-            textDocument: { uri: toURIWithPath(blobProps.blobInfo) },
-            position: occurrence.range.start,
-        })
-        .toPromise()
+    const promise = api.getDocumentHighlights({
+        textDocument: { uri: toURIWithPath(blobProps.blobInfo) },
+        position: occurrence.range.start,
+    })
     cache.set(occurrence, promise)
     return promise
 }

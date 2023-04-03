@@ -1140,7 +1140,7 @@ func TestTeamsPaginated(t *testing.T) {
 		}
 	}
 	var (
-		hasNextPage bool = true
+		hasNextPage = true
 		cursor      string
 	)
 	query := `query Teams($cursor: String!) {
@@ -1443,7 +1443,7 @@ func TestMembersPaginated(t *testing.T) {
 		}
 	}
 	var (
-		hasNextPage bool = true
+		hasNextPage = true
 		cursor      string
 	)
 	query := `query Members($cursor: String!) {

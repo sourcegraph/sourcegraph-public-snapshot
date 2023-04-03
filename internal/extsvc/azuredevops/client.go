@@ -143,13 +143,13 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 	numRetries := 0
 	for c.waitForRateLimit && resp.StatusCode == http.StatusTooManyRequests &&
 		numRetries < c.maxRateLimitRetries {
-		if c.externalRateLimiter.WaitForRateLimit(ctx, 1) {
-			req.Body = io.NopCloser(bytes.NewReader(reqBody))
-			resp, err = oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth)
-			numRetries++
-		} else {
-			break
-		}
+		// We always retry since we got a StatusTooManyRequests. This is safe
+		// since we bound retries by maxRateLimitRetries.
+		_ = c.externalRateLimiter.WaitForRateLimit(ctx, 1)
+
+		req.Body = io.NopCloser(bytes.NewReader(reqBody))
+		resp, err = oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth)
+		numRetries++
 	}
 
 	defer resp.Body.Close()

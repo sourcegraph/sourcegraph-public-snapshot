@@ -406,8 +406,6 @@ func TestFirecrackerRunner_Run(t *testing.T) {
 		"exec",
 		"test",
 		"--",
-		"sh",
-		"-c",
 		"docker --config /docker/config run --rm --add-host=host.docker.internal:host-gateway --cpus 10 --memory 1G -v /work:/data -w /data/workingdir -e FOO=bar --entrypoint /bin/sh alpine /data/.sourcegraph-executor/some/script",
 	}, cmd.RunFunc.History()[0].Arg2.Command)
 }

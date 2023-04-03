@@ -87,11 +87,14 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 		return nil, errors.Errorf("all access tokens must have scope %q", authz.ScopeUserAll)
 	}
 
-	id, token, err := r.db.AccessTokens().Create(ctx, userID, args.Scopes, args.Note, actor.FromContext(ctx).UID)
+	uid := actor.FromContext(ctx).UID
+	id, token, err := r.db.AccessTokens().Create(ctx, userID, args.Scopes, args.Note, uid)
+	logger := r.logger.Scoped("CreateAccessToken", "access token creation").
+		With(log.Int32("userID", uid))
 
 	if conf.CanSendEmail() {
-		if err := backend.NewUserEmailsService(r.db, r.logger).SendUserEmailOnFieldUpdate(ctx, userID, "created an access token"); err != nil {
-			r.logger.Warn("Failed to send email to inform user of access token creation", log.Error(err))
+		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnFieldUpdate(ctx, userID, "created an access token"); err != nil {
+			logger.Warn("Failed to send email to inform user of access token creation", log.Error(err))
 		}
 	}
 
@@ -154,9 +157,12 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 
 	}
 
+	logger := r.logger.Scoped("DeleteAccessToken", "access token deletion").
+		With(log.Int32("userID", subjectUserID))
+
 	if conf.CanSendEmail() {
-		if err := backend.NewUserEmailsService(r.db, r.logger).SendUserEmailOnFieldUpdate(ctx, subjectUserID, "deleted an access token"); err != nil {
-			r.logger.Warn("Failed to send email to inform user of access token deletion", log.Error(err))
+		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnFieldUpdate(ctx, subjectUserID, "deleted an access token"); err != nil {
+			logger.Warn("Failed to send email to inform user of access token deletion", log.Error(err))
 		}
 	}
 

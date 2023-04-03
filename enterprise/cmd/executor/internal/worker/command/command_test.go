@@ -25,19 +25,19 @@ func TestCommand_Run(t *testing.T) {
 	operations := command.NewOperations(&observation.TestContext)
 
 	tests := []struct {
-		name        string
-		command     []string
-		mockFunc    func(t *testing.T, cmdRunner *fakeCmdRunner, logger *mockLogger)
-		expectedErr error
+		name         string
+		command      []string
+		mockExitCode int
+		mockStdout   string
+		mockFunc     func(t *testing.T, cmdRunner *fakeCmdRunner, logger *mockLogger)
+		expectedErr  error
 	}{
 		{
-			name:    "Success",
-			command: []string{"git", "pull"},
+			name:         "Success",
+			command:      []string{"git", "pull"},
+			mockExitCode: 0,
+			mockStdout:   "got the stuff",
 			mockFunc: func(t *testing.T, cmdRunner *fakeCmdRunner, logger *mockLogger) {
-				cmdRunner.
-					On("CommandContext", mock.Anything, "git", []string{"pull"}).
-					Return(0, "got the stuff")
-
 				logEntry := new(mockLogEntry)
 				logger.
 					On("LogEntry", "some-key", []string{"git", "pull"}).
@@ -57,13 +57,11 @@ func TestCommand_Run(t *testing.T) {
 			expectedErr: command.ErrIllegalCommand,
 		},
 		{
-			name:    "Bad exit code",
-			command: []string{"git", "pull"},
+			name:         "Bad exit code",
+			command:      []string{"git", "pull"},
+			mockExitCode: 1,
+			mockStdout:   "something went wrong",
 			mockFunc: func(t *testing.T, cmdRunner *fakeCmdRunner, logger *mockLogger) {
-				cmdRunner.
-					On("CommandContext", mock.Anything, "git", []string{"pull"}).
-					Return(1, "something went wrong")
-
 				logEntry := new(mockLogEntry)
 				logger.
 					On("LogEntry", "some-key", []string{"git", "pull"}).
@@ -92,10 +90,15 @@ func TestCommand_Run(t *testing.T) {
 
 			dir := t.TempDir()
 			spec := command.Spec{
-				Key:       "some-key",
-				Command:   test.command,
-				Dir:       dir,
-				Env:       []string{"FOO=BAR"},
+				Key:     "some-key",
+				Command: test.command,
+				Dir:     dir,
+				Env: []string{
+					"FOO=BAR",
+					"GO_WANT_HELPER_PROCESS=1",
+					fmt.Sprintf("EXIT_STATUS=%d", test.mockExitCode),
+					fmt.Sprintf("STDOUT=%s", test.mockStdout),
+				},
 				Operation: operations.Exec,
 			}
 			err := cmd.Run(context.Background(), logger, spec)
@@ -157,14 +160,7 @@ var _ util.CmdRunner = &fakeCmdRunner{}
 func (f *fakeCmdRunner) CommandContext(ctx context.Context, name string, args ...string) *exec.Cmd {
 	cs := []string{"-test.run=TestExecCommandHelper", "--"}
 	cs = append(cs, args...)
-	calledArgs := f.Called(ctx, name, args)
-	cmd := exec.Command(os.Args[0], cs...)
-	cmd.Env = []string{
-		"GO_WANT_HELPER_PROCESS=1",
-		fmt.Sprintf("EXIT_STATUS=%d", calledArgs.Int(0)),
-		fmt.Sprintf("STDOUT=%s", calledArgs.String(1)),
-	}
-	return cmd
+	return exec.Command(os.Args[0], cs...)
 }
 
 func (f *fakeCmdRunner) CombinedOutput(ctx context.Context, name string, args ...string) ([]byte, error) {

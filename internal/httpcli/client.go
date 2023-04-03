@@ -438,10 +438,13 @@ func NewCachedTransportOpt(c httpcache.Cache, markCachedResponses bool) Opt {
 			cli.Transport = http.DefaultTransport
 		}
 
-		cli.Transport = &httpcache.Transport{
-			Transport:           cli.Transport,
-			Cache:               c,
-			MarkCachedResponses: markCachedResponses,
+		cli.Transport = &wrappedTransport{
+			RoundTripper: &httpcache.Transport{
+				Transport:           cli.Transport,
+				Cache:               c,
+				MarkCachedResponses: markCachedResponses,
+			},
+			Wrapped: cli.Transport,
 		}
 
 		return nil

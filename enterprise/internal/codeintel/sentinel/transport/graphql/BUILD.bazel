@@ -12,6 +12,7 @@ go_library(
     deps = [
         "//enterprise/internal/codeintel/sentinel/shared",
         "//enterprise/internal/codeintel/shared/resolvers",
+        "//enterprise/internal/codeintel/uploads/transport/graphql",
         "//internal/codeintel/resolvers",
         "//internal/database",
         "//internal/gitserver",

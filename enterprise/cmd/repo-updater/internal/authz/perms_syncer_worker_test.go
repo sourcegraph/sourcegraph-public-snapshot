@@ -179,6 +179,7 @@ loop:
 			require.Equal(t, 1, job.PermissionsAdded)
 			require.Equal(t, 2, job.PermissionsRemoved)
 			require.Equal(t, 5, job.PermissionsFound)
+			require.False(t, job.IsPartialSuccess)
 		}
 
 		// Check that repo sync job has the failure message.
@@ -229,6 +230,8 @@ func TestPermsSyncerWorker_UserSyncJobs(t *testing.T) {
 	require.NoError(t, err)
 	user3, err := userStore.Create(ctx, database.NewUser{Username: "user3"})
 	require.NoError(t, err)
+	user4, err := userStore.Create(ctx, database.NewUser{Username: "user4"})
+	require.NoError(t, err)
 	repoStore := db.Repos()
 	err = repoStore.Create(ctx, &types.Repo{Name: "github.com/soucegraph/sourcegraph"}, &types.Repo{Name: "github.com/soucegraph/about"})
 	require.NoError(t, err)
@@ -236,7 +239,8 @@ func TestPermsSyncerWorker_UserSyncJobs(t *testing.T) {
 	// Creating a worker.
 	observationCtx := &observation.TestContext
 	dummySyncer := &dummySyncerWithErrors{
-		userIDErrors: map[int32]errorType{2: allProvidersFailed, 3: realError},
+		userIDErrors:      map[int32]errorType{2: allProvidersFailed, 3: realError},
+		userIDNoProviders: map[int32]struct{}{4: {}},
 	}
 
 	syncJobsStore := db.PermissionSyncJobs()
@@ -258,6 +262,11 @@ func TestPermsSyncerWorker_UserSyncJobs(t *testing.T) {
 		database.PermissionSyncJobOpts{Reason: database.ReasonRepoNoPermissions, NoPerms: true, Priority: database.HighPriorityPermissionsSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
 
+	// Adding user perms sync job without perms providers synced.
+	err = syncJobsStore.CreateUserSyncJob(ctx, user4.ID,
+		database.PermissionSyncJobOpts{Reason: database.ReasonRepoNoPermissions, NoPerms: true, Priority: database.HighPriorityPermissionsSync, TriggeredByUserID: user1.ID})
+	require.NoError(t, err)
+
 	// Adding repo perms sync job, which should not be processed by current worker!
 	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(1), database.PermissionSyncJobOpts{Reason: database.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionsSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
@@ -272,9 +281,9 @@ loop:
 			t.Fatal(err)
 		}
 		for _, job := range jobs {
-			// We don't check job with ID=3 because it is a repo sync job which is not
+			// We don't check job with ID=5 because it is a repo sync job which is not
 			// processed by current worker.
-			if job.ID != 4 && (job.State == database.PermissionsSyncJobStateQueued || job.State == database.PermissionsSyncJobStateProcessing) {
+			if job.ID != 5 && (job.State == database.PermissionsSyncJobStateQueued || job.State == database.PermissionsSyncJobStateProcessing) {
 				// wait and retry
 				time.Sleep(500 * time.Millisecond)
 				continue loop
@@ -284,9 +293,9 @@ loop:
 		// Adding additional 3 rounds of checks to make sure that we've waited enough
 		// time to get a chance for repo sync job to be processed (by mistake).
 		for _, job := range jobs {
-			// We only check job with ID=3 because it is a repo sync job which should not
+			// We only check job with ID=5 because it is a repo sync job which should not
 			// processed by current worker.
-			if job.ID == 4 && remainingRounds > 0 {
+			if job.ID == 5 && remainingRounds > 0 {
 				// wait and retry
 				time.Sleep(500 * time.Millisecond)
 				remainingRounds = remainingRounds - 1
@@ -320,6 +329,7 @@ loop:
 			require.Equal(t, 1, job.PermissionsAdded)
 			require.Equal(t, 2, job.PermissionsRemoved)
 			require.Equal(t, 5, job.PermissionsFound)
+			require.True(t, job.IsPartialSuccess)
 		}
 
 		// Check that failed job has the failure message.
@@ -344,8 +354,19 @@ loop:
 			require.Equal(t, 0, job.PermissionsFound)
 		}
 
-		// Check that repo sync job wasn't picked up by user sync worker.
+		// Check that user sync job was completed and results were saved even though
+		// there weren't any perms providers.
 		if jobID == 4 {
+			require.Equal(t, database.PermissionsSyncJobStateCompleted, job.State)
+			require.Nil(t, job.FailureMessage)
+			require.Equal(t, 0, job.PermissionsAdded)
+			require.Equal(t, 0, job.PermissionsRemoved)
+			require.Equal(t, 0, job.PermissionsFound)
+			require.False(t, job.IsPartialSuccess)
+		}
+
+		// Check that repo sync job wasn't picked up by user sync worker.
+		if jobID == 5 {
 			require.Equal(t, database.PermissionsSyncJobStateQueued, job.State)
 			require.Nil(t, job.FailureMessage)
 			require.Equal(t, 0, job.PermissionsAdded)
@@ -484,9 +505,10 @@ const (
 
 type dummySyncerWithErrors struct {
 	sync.Mutex
-	request      combinedRequest
-	userIDErrors map[int32]errorType
-	repoIDErrors map[api.RepoID]errorType
+	request           combinedRequest
+	userIDErrors      map[int32]errorType
+	repoIDErrors      map[api.RepoID]errorType
+	userIDNoProviders map[int32]struct{}
 }
 
 func (d *dummySyncerWithErrors) syncRepoPerms(_ context.Context, repoID api.RepoID, noPerms bool, options authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
@@ -503,13 +525,15 @@ func (d *dummySyncerWithErrors) syncRepoPerms(_ context.Context, repoID api.Repo
 	}
 
 	codeHostStates := database.CodeHostStatusesSet{{ProviderID: "id1", Status: database.CodeHostStatusSuccess}, {ProviderID: "id2", Status: database.CodeHostStatusSuccess}}
+	result := database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}
 	if typ, ok := d.repoIDErrors[repoID]; ok && typ == allProvidersFailed {
 		for idx := range codeHostStates {
 			codeHostStates[idx].Status = database.CodeHostStatusError
 		}
+		result = database.SetPermissionsResult{}
 	}
 
-	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, codeHostStates, nil
+	return &result, codeHostStates, nil
 }
 func (d *dummySyncerWithErrors) syncUserPerms(_ context.Context, userID int32, noPerms bool, options authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
 	d.Lock()
@@ -525,11 +549,18 @@ func (d *dummySyncerWithErrors) syncUserPerms(_ context.Context, userID int32, n
 	}
 
 	codeHostStates := database.CodeHostStatusesSet{{ProviderID: "id1", Status: database.CodeHostStatusError}, {ProviderID: "id2", Status: database.CodeHostStatusSuccess}}
+	result := database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}
 	if typ, ok := d.userIDErrors[userID]; ok && typ == allProvidersFailed {
 		for idx := range codeHostStates {
 			codeHostStates[idx].Status = database.CodeHostStatusError
 		}
+		return &database.SetPermissionsResult{}, codeHostStates, nil
 	}
 
-	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, codeHostStates, nil
+	if _, ok := d.userIDNoProviders[userID]; ok {
+		codeHostStates = database.CodeHostStatusesSet{}
+		result = database.SetPermissionsResult{}
+	}
+
+	return &result, codeHostStates, nil
 }

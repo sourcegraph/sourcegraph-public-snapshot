@@ -232,8 +232,10 @@ type PermissionSyncJobStore interface {
 	List(ctx context.Context, opts ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error)
 	GetLatestFinishedSyncJob(ctx context.Context, opts ListPermissionSyncJobOpts) (*PermissionSyncJob, error)
 	Count(ctx context.Context, opts ListPermissionSyncJobOpts) (int, error)
+	CountUsersWithFailingSyncJob(ctx context.Context) (int32, error)
+	CountReposWithFailingSyncJob(ctx context.Context) (int32, error)
 	CancelQueuedJob(ctx context.Context, reason string, id int) error
-	SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, codeHostStatuses CodeHostStatusesSet) error
+	SaveSyncResult(ctx context.Context, id int, finishedSuccessfully bool, result *SetPermissionsResult, codeHostStatuses CodeHostStatusesSet) error
 }
 
 type permissionSyncJobStore struct {
@@ -434,16 +436,31 @@ type SetPermissionsResult struct {
 	Found   int
 }
 
-func (s *permissionSyncJobStore) SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, statuses CodeHostStatusesSet) error {
+func (s *permissionSyncJobStore) SaveSyncResult(ctx context.Context, id int, finishedSuccessfully bool, result *SetPermissionsResult, statuses CodeHostStatusesSet) error {
+	var added, removed, found int
+	partialSuccess := false
+	if result != nil {
+		added = result.Added
+		removed = result.Removed
+		found = result.Found
+	}
+	// If the job is successful, then we need to check for partial success.
+	if finishedSuccessfully {
+		_, success, failed := statuses.CountStatuses()
+		if success > 0 && failed > 0 {
+			partialSuccess = true
+		}
+	}
 	q := sqlf.Sprintf(`
 		UPDATE permission_sync_jobs
 		SET
 			permissions_added = %d,
 			permissions_removed = %d,
 			permissions_found = %d,
-			code_host_states = %s
+			code_host_states = %s,
+			is_partial_success = %s
 		WHERE id = %d
-		`, result.Added, result.Removed, result.Found, pq.Array(statuses), id)
+		`, added, removed, found, pq.Array(statuses), partialSuccess, id)
 
 	_, err := s.ExecResult(ctx, q)
 	return err
@@ -459,6 +476,7 @@ type ListPermissionSyncJobOpts struct {
 	NullProcessAfter    bool
 	NotNullProcessAfter bool
 	NotCanceled         bool
+	PartialSuccess      bool
 
 	// SearchType and Query are related to text search for sync jobs.
 	SearchType PermissionsSyncSearchType
@@ -490,8 +508,14 @@ func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
 	if opts.Reason != "" {
 		conds = append(conds, sqlf.Sprintf("reason = %s", opts.Reason))
 	}
-	if opts.State != "" {
+	// If partial success parameter is set, we skip the `state` parameter because it
+	// should be `completed`, otherwise it won't make any sense.
+	if opts.PartialSuccess {
+		conds = append(conds, sqlf.Sprintf("is_partial_success = TRUE"))
+		conds = append(conds, sqlf.Sprintf("state = lower(%s)", PermissionsSyncJobStateCompleted))
+	} else if opts.State != "" {
 		conds = append(conds, sqlf.Sprintf("state = lower(%s)", opts.State))
+		conds = append(conds, sqlf.Sprintf("is_partial_success = FALSE"))
 	}
 	if opts.NullProcessAfter {
 		conds = append(conds, sqlf.Sprintf("process_after IS NULL"))
@@ -656,6 +680,50 @@ func (s *permissionSyncJobStore) Count(ctx context.Context, opts ListPermissionS
 	return count, nil
 }
 
+const countUsersWithFailingSyncJobsQuery = `
+SELECT COUNT(*)
+FROM (
+  SELECT DISTINCT ON (user_id) id, state
+  FROM permission_sync_jobs
+  WHERE
+	user_id is NOT NULL
+	AND state IN ('completed', 'failed')
+  ORDER BY user_id, finished_at DESC
+) AS tmp
+WHERE state = 'failed';
+`
+
+// CountUsersWithFailingSyncJob returns count of users with LATEST sync job failing.
+func (s *permissionSyncJobStore) CountUsersWithFailingSyncJob(ctx context.Context) (int32, error) {
+	var count int32
+
+	err := s.QueryRow(ctx, sqlf.Sprintf(countUsersWithFailingSyncJobsQuery)).Scan(&count)
+
+	return count, err
+}
+
+const countReposWithFailingSyncJobsQuery = `
+SELECT COUNT(*)
+FROM (
+  SELECT DISTINCT ON (repository_id) id, state
+  FROM permission_sync_jobs
+  WHERE
+	repository_id is NOT NULL
+	AND state IN ('completed', 'failed')
+  ORDER BY repository_id, finished_at DESC
+) AS tmp
+WHERE state = 'failed';
+`
+
+// CountReposWithFailingSyncJob returns count of repos with LATEST sync job failing.
+func (s *permissionSyncJobStore) CountReposWithFailingSyncJob(ctx context.Context) (int32, error) {
+	var count int32
+
+	err := s.QueryRow(ctx, sqlf.Sprintf(countReposWithFailingSyncJobsQuery)).Scan(&count)
+
+	return count, err
+}
+
 type PermissionSyncJob struct {
 	ID                 int
 	State              PermissionsSyncJobState
@@ -685,6 +753,7 @@ type PermissionSyncJob struct {
 	PermissionsRemoved int
 	PermissionsFound   int
 	CodeHostStates     []PermissionSyncCodeHostState
+	IsPartialSuccess   bool
 }
 
 func (j *PermissionSyncJob) RecordID() int { return j.ID }
@@ -718,6 +787,7 @@ var PermissionSyncJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("permission_sync_jobs.permissions_removed"),
 	sqlf.Sprintf("permission_sync_jobs.permissions_found"),
 	sqlf.Sprintf("permission_sync_jobs.code_host_states"),
+	sqlf.Sprintf("permission_sync_jobs.is_partial_success"),
 }
 
 func ScanPermissionSyncJob(s dbutil.Scanner) (*PermissionSyncJob, error) {
@@ -761,6 +831,7 @@ func scanPermissionSyncJob(job *PermissionSyncJob, s dbutil.Scanner) error {
 		&job.PermissionsRemoved,
 		&job.PermissionsFound,
 		pq.Array(&codeHostStates),
+		&job.IsPartialSuccess,
 	); err != nil {
 		return err
 	}

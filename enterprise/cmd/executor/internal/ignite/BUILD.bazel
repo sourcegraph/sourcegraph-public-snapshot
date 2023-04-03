@@ -5,6 +5,7 @@ go_library(
     srcs = ["list.go"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite",
     visibility = ["//enterprise/cmd/executor:__subpackages__"],
+    deps = ["//enterprise/cmd/executor/internal/util"],
 )
 
 go_test(

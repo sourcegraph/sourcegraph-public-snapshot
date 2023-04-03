@@ -42,7 +42,7 @@ go_library(
         "//internal/trace",
         "//internal/uploadstore",
         "//lib/errors",
-        "@com_github_hashicorp_golang_lru//:golang-lru",
+        "@com_github_hashicorp_golang_lru_v2//:golang-lru",
         "@com_github_sourcegraph_log//:log",
     ],
 )

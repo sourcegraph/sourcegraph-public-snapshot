@@ -320,7 +320,7 @@ func InvalidateSessionCurrentUser(w http.ResponseWriter, r *http.Request, db dat
 	return deleteSession(w, r)
 }
 
-// Bulk "InvalidateSessionsByID" action.
+// InvalidateSessionsByIDs is a bulk action.
 func InvalidateSessionsByIDs(ctx context.Context, db database.DB, ids []int32) error {
 	return db.Users().InvalidateSessionsByIDs(ctx, ids)
 }

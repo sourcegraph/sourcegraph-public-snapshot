@@ -57,16 +57,22 @@ type HTTPClient struct {
 
 var _ Client = &HTTPClient{}
 
-func NewHTTPClient(urn string, registryURL string, credentials string, httpfactory *httpcli.Factory) *HTTPClient {
-	uncached, _ := httpfactory.Doer(httpcli.NewCachedTransportOpt(httpcli.NoopCache{}, false))
-	cached, _ := httpfactory.Doer()
+func NewHTTPClient(urn string, registryURL string, credentials string, httpfactory *httpcli.Factory) (*HTTPClient, error) {
+	uncached, err := httpfactory.Doer(httpcli.NewCachedTransportOpt(httpcli.NoopCache{}, false))
+	if err != nil {
+		return nil, err
+	}
+	cached, err := httpfactory.Doer()
+	if err != nil {
+		return nil, err
+	}
 	return &HTTPClient{
 		registryURL:    registryURL,
 		uncachedClient: uncached,
 		cachedClient:   cached,
 		limiter:        ratelimit.DefaultRegistry.Get(urn),
 		credentials:    credentials,
-	}
+	}, nil
 }
 
 type PackageInfo struct {

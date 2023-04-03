@@ -61,7 +61,7 @@ func (c *RealCommand) Run(ctx context.Context, cmdLogger Logger, spec Spec) (err
 	ctx, _, endObservation := spec.Operation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	c.Logger.Info("Running command", log.Strings("command", spec.Command))
+	c.Logger.Info("Running command", log.Strings("command", spec.Command), log.String("workingDir", spec.Dir))
 
 	// Check if we can even run the command.
 	if err := validateCommand(spec.Command); err != nil {
@@ -150,7 +150,7 @@ func (c *RealCommand) prepCommand(ctx context.Context, options Spec) (cmd *exec.
 		env = append(env, fmt.Sprintf("%s=%s", k, os.Getenv(k)))
 	}
 
-	cmd.Env = append(cmd.Env, env...)
+	cmd.Env = env
 
 	stdout, err = cmd.StdoutPipe()
 	if err != nil {
@@ -167,7 +167,7 @@ func (c *RealCommand) prepCommand(ctx context.Context, options Spec) (cmd *exec.
 
 // forwardedHostEnvVars is a list of environment variable names that are inherited
 // when executing a command on the host. These are commonly required by programs
-// we shell out to, such a docker.
+// we invoke, such as calling docker commands.
 var forwardedHostEnvVars = []string{"HOME", "PATH", "USER", "DOCKER_HOST"}
 
 func readProcessPipes(w io.WriteCloser, stdout, stderr io.Reader) *errgroup.Group {

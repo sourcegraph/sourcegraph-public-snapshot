@@ -12,6 +12,7 @@ import (
 
 // KubernetesOptions contains options for the Kubernetes runner.
 type KubernetesOptions struct {
+	Enabled          bool
 	ConfigPath       string
 	ContainerOptions command.KubernetesContainerOptions
 }

@@ -33,13 +33,19 @@ func NewDockerRunner(
 	options command.DockerOptions,
 	dockerAuthConfig types.DockerAuthConfig,
 ) Runner {
+	// Use the option configuration unless the user has provided a custom configuration.
+	actualDockerAuthConfig := options.DockerAuthConfig
+	if len(dockerAuthConfig.Auths) > 0 {
+		actualDockerAuthConfig = dockerAuthConfig
+	}
+
 	return &dockerRunner{
 		cmd:              cmd,
 		dir:              dir,
 		internalLogger:   log.Scoped("docker-runner", ""),
 		commandLogger:    logger,
 		options:          options,
-		dockerAuthConfig: dockerAuthConfig,
+		dockerAuthConfig: actualDockerAuthConfig,
 	}
 }
 

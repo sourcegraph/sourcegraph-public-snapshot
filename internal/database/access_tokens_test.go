@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
@@ -46,6 +47,10 @@ func TestAccessTokens_Create(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertSecurityEventCount(t, db, SecurityEventAccessTokenCreated, 1)
+
+	if !strings.HasPrefix(tv0, "sgp_") {
+		t.Errorf("got %q, want prefix 'sgp_'", tv0)
+	}
 
 	got, err := db.AccessTokens().GetByID(ctx, tid0)
 	if err != nil {
@@ -430,4 +435,30 @@ func TestAccessTokens_Lookup_deletedUser(t *testing.T) {
 			t.Fatal("Create: want error creating token for deleted creator user")
 		}
 	})
+}
+
+func TestAccessTokens_tokenSHA256Hash(t *testing.T) {
+	testCases := []struct {
+		name      string
+		token     string
+		wantError bool
+	}{
+		{name: "empty", token: ""},
+		{name: "short", token: "abc123"},
+		{name: "invalid", token: "×", wantError: true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			hash, err := tokenSHA256Hash(tc.token)
+			if tc.wantError {
+				assert.ErrorContains(t, err, "invalid token")
+			} else {
+				assert.NoError(t, err)
+				if len(hash) != 32 {
+					t.Errorf("got %d characters, want 32", len(hash))
+				}
+			}
+		})
+	}
 }

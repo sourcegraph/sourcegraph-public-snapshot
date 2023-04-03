@@ -55,17 +55,15 @@ func newExecutorQueuesHandler(
 		base := mux.NewRouter().PathPrefix("/.executors/").Subrouter()
 		base.StrictSlash(true)
 
-		// TODO: this is to make some integration tests happy (dev/authtest/code_intel_test.go). Add a meaningful route here.
-		// Previously, this function (newExecutorQueuesHandler) wrapped the entire base router in a middleware.
-		// This allowed code_intel_test.go to call `/.executors/` and get 500s and 401s because it would interact with
-		// middleware first before interacting the actual handler (which did not exist).
-		// With changes to support different middleware (executor token vs job token), the base route is no longer
-		// wrapped in a middleware. This means the integration tests get a 404 because the route (/.executors/) does not
-		// exist (since is no handler for that route).
-		// So adding a handler to that specific route make those tests happy. In the future, add a meaningful route and
-		// update the integration tests to use that route.
-		testRouter := base.PathPrefix("/").Subrouter()
-		testRouter.Path("/").Methods(http.MethodGet).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Used by code_intel_test.go to test authentication HTTP status codes.
+		// Also used by `executor validate` to check whether a token is set.
+		testRouter := base.PathPrefix("/test").Subrouter()
+		testRouter.Path("/auth").Methods(http.MethodGet).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			if _, err := w.Write([]byte("ok")); err != nil {
+				logger.Error("failed to test authentication", log.Error(err))
+			}
+
 		})
 		testRouter.Use(withInternalActor, executorAuth)
 
@@ -181,7 +179,7 @@ func validateExecutorToken(w http.ResponseWriter, r *http.Request, logger log.Lo
 	// code via timing attack. It is not important to avoid leaking the *length* of
 	// the code, because the length of verification codes is constant.
 	if subtle.ConstantTimeCompare([]byte(token), []byte(expectedAccessToken)) == 0 {
-		w.WriteHeader(http.StatusForbidden)
+		w.WriteHeader(http.StatusUnauthorized)
 		return false
 	}
 

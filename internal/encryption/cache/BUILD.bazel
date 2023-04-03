@@ -10,7 +10,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/encryption",
-        "@com_github_hashicorp_golang_lru//:golang-lru",
+        "@com_github_hashicorp_golang_lru_v2//:golang-lru",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
     ],

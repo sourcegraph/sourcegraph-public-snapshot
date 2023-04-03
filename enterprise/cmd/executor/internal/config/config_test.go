@@ -124,7 +124,6 @@ func TestConfig_Load_Defaults(t *testing.T) {
 	assert.Empty(t, cfg.DockerRegistryNodeExporterURL)
 	assert.Zero(t, cfg.MaxActiveTime)
 	assert.Empty(t, cfg.DockerRegistryMirrorURL)
-	assert.Empty(t, cfg.KubernetesConfigPath)
 	assert.Empty(t, cfg.KubernetesNodeName)
 	assert.Empty(t, cfg.KubernetesNodeSelector)
 	assert.Nil(t, cfg.KubernetesNodeRequiredAffinityMatchExpressions)
@@ -162,7 +161,7 @@ func TestConfig_Validate(t *testing.T) {
 		},
 		{
 			name:        "Default config",
-			expectedErr: errors.New("3 errors occurred:\n\t* invalid value \"\" for EXECUTOR_FRONTEND_URL: no value supplied\n\t* invalid value \"\" for EXECUTOR_FRONTEND_PASSWORD: no value supplied\n\t* invalid value \"\" for EXECUTOR_QUEUE_NAME: no value supplied"),
+			expectedErr: errors.New("4 errors occurred:\n\t* invalid value \"\" for EXECUTOR_FRONTEND_URL: no value supplied\n\t* invalid value \"\" for EXECUTOR_FRONTEND_PASSWORD: no value supplied\n\t* invalid value \"\" for EXECUTOR_QUEUE_NAME: no value supplied\n\t* EXECUTOR_FRONTEND_URL must be in the format scheme://host (and optionally :port)"),
 		},
 		{
 			name: "Invalid EXECUTOR_DOCKER_AUTH_CONFIG",
@@ -181,6 +180,22 @@ func TestConfig_Validate(t *testing.T) {
 				}
 			},
 			expectedErr: errors.New("invalid EXECUTOR_DOCKER_AUTH_CONFIG, failed to parse: unexpected end of JSON input"),
+		},
+		{
+			name: "Invalid frontend URL",
+			getterFunc: func(name string, defaultValue, description string) string {
+				switch name {
+				case "EXECUTOR_QUEUE_NAME":
+					return "batches"
+				case "EXECUTOR_FRONTEND_URL":
+					return "sourcegraph.example.com"
+				case "EXECUTOR_FRONTEND_PASSWORD":
+					return "some-password"
+				default:
+					return defaultValue
+				}
+			},
+			expectedErr: errors.New("EXECUTOR_FRONTEND_URL must be in the format scheme://host (and optionally :port)"),
 		},
 	}
 	for _, test := range tests {

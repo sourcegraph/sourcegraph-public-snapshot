@@ -28,6 +28,8 @@ export const esbuildDevelopmentServer = async (
 
     const ctx = await esbuildContext(BUILD_OPTIONS)
 
+    await ctx.watch()
+
     // Start esbuild's server on a random local port.
     const { host: esbuildHost, port: esbuildPort } = await ctx.serve({
         host: 'localhost',

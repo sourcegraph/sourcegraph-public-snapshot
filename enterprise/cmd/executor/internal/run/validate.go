@@ -1,7 +1,9 @@
 package run
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/sourcegraph/log"
 	"github.com/urfave/cli/v2"
@@ -23,18 +25,19 @@ func Validate(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, con
 		return err
 	}
 
+	telemetryOptions := newQueueTelemetryOptions(cliCtx.Context, runner, conf.UseFirecracker, logger)
+	copts := queueOptions(conf, telemetryOptions)
+	client, err := apiclient.NewBaseClient(logger, copts.BaseClientOptions)
+	if err != nil {
+		return err
+	}
+
 	if !config.IsKubernetes() {
 		// Then, validate all tools that are required are installed.
-		if err := util.ValidateRequiredTools(runner, conf.UseFirecracker); err != nil {
+		if err = util.ValidateRequiredTools(runner, conf.UseFirecracker); err != nil {
 			return err
 		}
 
-		telemetryOptions := newQueueTelemetryOptions(cliCtx.Context, runner, conf.UseFirecracker, logger)
-		copts := queueOptions(conf, telemetryOptions)
-		client, err := apiclient.NewBaseClient(logger, copts.BaseClientOptions)
-		if err != nil {
-			return err
-		}
 		// Validate src-cli is of a good version, rely on the connected instance to tell
 		// us what "good" means.
 		if err = util.ValidateSrcCLIVersion(cliCtx.Context, runner, client, copts.BaseClientOptions.EndpointOptions); err != nil {
@@ -47,13 +50,18 @@ func Validate(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, con
 		}
 	}
 
+	// Validate frontend access token returns status 200.
+	if err = validateAuthorizationToken(cliCtx.Context, client); err != nil {
+		return err
+	}
+
 	if conf.UseFirecracker {
 		// Validate ignite is installed.
-		if err := util.ValidateIgniteInstalled(cliCtx.Context, runner); err != nil {
+		if err = util.ValidateIgniteInstalled(cliCtx.Context, runner); err != nil {
 			return err
 		}
 		// Validate all required CNI plugins are installed.
-		if err := util.ValidateCNIInstalled(runner); err != nil {
+		if err = util.ValidateCNIInstalled(runner); err != nil {
 			return err
 		}
 
@@ -62,6 +70,26 @@ func Validate(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, con
 	}
 
 	fmt.Print("All checks passed!\n")
+
+	return nil
+}
+
+var authorizationFailedErr = errors.New("failed to authorize with frontend, is executors.accessToken set correctly in the site-config?")
+
+func validateAuthorizationToken(ctx context.Context, client *apiclient.BaseClient) error {
+	req, err := client.NewJSONRequest(http.MethodGet, ".executors/test/auth", nil)
+	if err != nil {
+		return err
+	}
+
+	if err = client.DoAndDrop(ctx, req); err != nil {
+		var unexpectedStatusCodeError *apiclient.UnexpectedStatusCodeErr
+		if errors.As(err, &unexpectedStatusCodeError) && (unexpectedStatusCodeError.StatusCode == http.StatusUnauthorized) {
+			return authorizationFailedErr
+		} else {
+			return errors.Wrap(err, "failed to validate authorization token")
+		}
+	}
 
 	return nil
 }

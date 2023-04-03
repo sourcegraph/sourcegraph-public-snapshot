@@ -55,10 +55,10 @@ func TestGetConfigurationPolicies(t *testing.T) {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
 	}
 
-	insertRepo(t, db, 41, "gitlab.com/test1")
-	insertRepo(t, db, 42, "github.com/test2")
-	insertRepo(t, db, 43, "bitbucket.org/test3")
-	insertRepo(t, db, 44, "localhost/secret-repo")
+	insertRepo(t, db, 41, "gitlab.com/test1", false)
+	insertRepo(t, db, 42, "github.com/test2", false)
+	insertRepo(t, db, 43, "bitbucket.org/test3", false)
+	insertRepo(t, db, 44, "localhost/secret-repo", false)
 
 	for policyID, patterns := range map[int][]string{
 		106: {"gitlab.com/*"},
@@ -263,7 +263,7 @@ func testStoreWithoutConfigurationPolicies(t *testing.T, db database.DB) Store {
 
 // insertRepo creates a repository record with the given id and name. If there is already a repository
 // with the given identifier, nothing happens
-func insertRepo(t testing.TB, db database.DB, id int, name string) {
+func insertRepo(t testing.TB, db database.DB, id int, name string, private bool) {
 	if name == "" {
 		name = fmt.Sprintf("n-%d", id)
 	}
@@ -274,10 +274,11 @@ func insertRepo(t testing.TB, db database.DB, id int, name string) {
 	}
 
 	query := sqlf.Sprintf(
-		`INSERT INTO repo (id, name, deleted_at) VALUES (%s, %s, %s) ON CONFLICT (id) DO NOTHING`,
+		`INSERT INTO repo (id, name, deleted_at, private) VALUES (%s, %s, %s, %s) ON CONFLICT (id) DO NOTHING`,
 		id,
 		name,
 		deletedAt,
+		private,
 	)
 	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error while upserting repository: %s", err)

@@ -1939,7 +1939,7 @@ func TestInsertUploadUploading(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertRepo(t, db, 50, "")
+	insertRepo(t, db, 50, "", false)
 
 	id, err := store.InsertUpload(context.Background(), types.Upload{
 		Commit:       makeCommit(1),
@@ -1989,7 +1989,7 @@ func TestInsertUploadQueued(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertRepo(t, db, 50, "")
+	insertRepo(t, db, 50, "", false)
 
 	id, err := store.InsertUpload(context.Background(), types.Upload{
 		Commit:        makeCommit(1),
@@ -2042,7 +2042,7 @@ func TestInsertUploadWithAssociatedIndexID(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertRepo(t, db, 50, "")
+	insertRepo(t, db, 50, "", false)
 
 	associatedIndexIDArg := 42
 	id, err := store.InsertUpload(context.Background(), types.Upload{

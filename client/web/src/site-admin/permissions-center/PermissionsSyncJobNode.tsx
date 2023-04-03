@@ -21,6 +21,8 @@ import {
 } from '@sourcegraph/wildcard'
 
 import {
+    CodeHostState,
+    CodeHostStatus,
     PermissionsSyncJob,
     PermissionsSyncJobReason,
     PermissionsSyncJobReasonGroup,
@@ -102,24 +104,27 @@ export const JOB_STATE_METADATA_MAPPING: Record<PermissionsSyncJobState, JobStat
 }
 
 interface PermissionsSyncJobStatusBadgeProps {
-    state: PermissionsSyncJobState
-    cancellationReason: string | null
-    failureMessage: string | null
+    job: PermissionsSyncJob
 }
 
-export const PermissionsSyncJobStatusBadge: React.FunctionComponent<PermissionsSyncJobStatusBadgeProps> = ({
-    state,
-    cancellationReason,
-    failureMessage,
-}) => (
-    <Badge
-        className={classNames(styles.statusContainer, 'mr-1')}
-        tooltip={cancellationReason ?? failureMessage ?? undefined}
-        variant={JOB_STATE_METADATA_MAPPING[state].badgeVariant}
-    >
-        {state}
-    </Badge>
-)
+export const PermissionsSyncJobStatusBadge: React.FunctionComponent<PermissionsSyncJobStatusBadgeProps> = ({ job }) => {
+    const { state, cancellationReason, failureMessage, codeHostStates, partialSuccess } = job
+    const warningMessage = partialSuccess ? getWarningMessage(codeHostStates) : undefined
+    return (
+        <Badge
+            className={classNames(styles.statusContainer, 'mr-1')}
+            tooltip={cancellationReason ?? failureMessage ?? warningMessage ?? undefined}
+            variant={partialSuccess ? 'warning' : JOB_STATE_METADATA_MAPPING[state].badgeVariant}
+        >
+            {partialSuccess ? 'PARTIAL' : state}
+        </Badge>
+    )
+}
+
+const getWarningMessage = (codeHostStates: CodeHostState[]): string => {
+    const failingCodeHostSyncsNumber = codeHostStates.filter(({ status }) => status === CodeHostStatus.ERROR).length
+    return `${failingCodeHostSyncsNumber}/${codeHostStates.length} provider syncs were not successful`
+}
 
 export const PermissionsSyncJobSubject: React.FunctionComponent<{ job: PermissionsSyncJob }> = ({ job }) => {
     const [isOpen, setIsOpen] = useState<boolean>(false)

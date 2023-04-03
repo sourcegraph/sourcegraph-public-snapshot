@@ -27,6 +27,43 @@ import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { blobPropsFacet } from './index'
 import { isValidLineRange, MOUSE_MAIN_BUTTON } from './utils'
 
+const selectedLinesTheme = EditorView.theme({
+    /**
+     * [RectangleMarker.forRange](https://sourcegraph.com/github.com/codemirror/view@a0a0b9ef5a4deaf58842422ac080030042d83065/-/blob/src/layer.ts?L60-75)
+     * returns absolutely positioned markers. Markers top position has extra 1px (6px in case blame decorations
+     * are visible) more in its `top` value breaking alignment wih the line.
+     * We compensate this spacing by setting negative margin-top.
+     */
+    '.selected-lines-layer .selected-line': {
+        marginTop: '-1px',
+
+        // Ensure selection marker height matches line height.
+        minHeight: '1rem',
+    },
+    '.selected-lines-layer .selected-line.blame-visible': {
+        marginTop: '-6px',
+
+        // Ensure selection marker height matches the increased line height.
+        minHeight: 'calc(1.5rem + 1px)',
+    },
+
+    // Selected line background is set by adding 'selected-line' class to the layer markers.
+    '.cm-line.selected-line': {
+        background: 'transparent',
+    },
+
+    /**
+     * Rectangle markers `left` position matches the position of the character at the start of range
+     * (for selected lines it is first character of the first line in a range). When line content (`.cm-line`)
+     * has some padding to the left (e.g. to create extra space between gutters and code) there is a gap in
+     * highlight (background color) between the selected line gutters (decorated with {@link selectedLineGutterMarker}) and layer.
+     * To remove this gap we move padding from `.cm-line` to the last gutter.
+     */
+    '.cm-gutter:last-child .cm-gutterElement': {
+        paddingRight: '1rem',
+    },
+})
+
 /**
  * Represents the currently selected line range. null means no lines are
  * selected. Line numbers are 1-based.
@@ -135,42 +172,8 @@ export const selectedLines = StateField.define<SelectedLineRange>({
             },
             class: 'selected-lines-layer',
         }),
-        EditorView.theme({
-            /**
-             * [RectangleMarker.forRange](https://sourcegraph.com/github.com/codemirror/view@a0a0b9ef5a4deaf58842422ac080030042d83065/-/blob/src/layer.ts?L60-75)
-             * returns absolutely positioned markers. Markers top position has extra 1px (6px in case blame decorations
-             * are visible) more in its `top` value breaking alignment wih the line.
-             * We compensate this spacing by setting negative margin-top.
-             */
-            '.selected-lines-layer .selected-line': {
-                marginTop: '-1px',
 
-                // Ensure selection marker height matches line height.
-                minHeight: '1rem',
-            },
-            '.selected-lines-layer .selected-line.blame-visible': {
-                marginTop: '-6px',
-
-                // Ensure selection marker height matches the increased line height.
-                minHeight: 'calc(1.5rem + 1px)',
-            },
-
-            // Selected line background is set by adding 'selected-line' class to the layer markers.
-            '.cm-line.selected-line': {
-                background: 'transparent',
-            },
-
-            /**
-             * Rectangle markers `left` position matches the position of the character at the start of range
-             * (for selected lines it is first character of the first line in a range). When line content (`.cm-line`)
-             * has some padding to the left (e.g. to create extra space between gutters and code) there is a gap in
-             * highlight (background color) between the selected line gutters (decorated with {@link selectedLineGutterMarker}) and layer.
-             * To remove this gap we move padding from `.cm-line` to the last gutter.
-             */
-            '.cm-gutter:last-child .cm-gutterElement': {
-                paddingRight: '1rem',
-            },
-        }),
+        selectedLinesTheme,
 
         gutterLineClass.compute([field], state => {
             const range = state.field(field)
@@ -250,6 +253,23 @@ const scrollIntoView = ViewPlugin.fromClass(
         }
     }
 )
+
+const selectedLineNumberTheme = EditorView.theme({
+    '.cm-lineNumbers': {
+        cursor: 'pointer',
+        color: 'var(--line-number-color)',
+
+        '& .cm-gutterElement': {
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+        },
+
+        '& .cm-gutterElement:hover': {
+            textDecoration: 'underline',
+        },
+    },
+})
 
 interface SelectableLineNumbersConfig {
     onSelection: (range: SelectedLineRange) => void
@@ -352,20 +372,7 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
                 },
             },
         }),
-        EditorView.theme({
-            '.cm-lineNumbers': {
-                cursor: 'pointer',
-                color: 'var(--line-number-color)',
-            },
-            '.cm-lineNumbers .cm-gutterElement': {
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-end',
-            },
-            '.cm-lineNumbers .cm-gutterElement:hover': {
-                textDecoration: 'underline',
-            },
-        }),
+        selectedLineNumberTheme,
     ]
 }
 

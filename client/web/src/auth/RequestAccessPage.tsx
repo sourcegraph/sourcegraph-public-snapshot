@@ -129,13 +129,13 @@ const RequestAccessForm: React.FunctionComponent<RequestAccessFormProps> = ({ on
 /**
  * The request access page component.
  */
-export const RequestAccessPage: React.FunctionComponent<{}> = () => {
+export const RequestAccessPage: React.FunctionComponent = () => {
     useEffect(() => eventLogger.logPageView('RequestAccessPage'), [])
     const location = useLocation()
     const navigate = useNavigate()
     const [error, setError] = useState<Error | null>(null)
-    const { sourcegraphDotComMode, allowSignup, experimentalFeatures, isAuthenticatedUser, xhrHeaders } = window.context
-    const isRequestAccessAllowed = checkRequestAccessAllowed(sourcegraphDotComMode, allowSignup, experimentalFeatures)
+    const { sourcegraphDotComMode, isAuthenticatedUser, xhrHeaders } = window.context
+    const isRequestAccessAllowed = checkRequestAccessAllowed(window.context)
 
     if (isAuthenticatedUser) {
         const returnTo = getReturnTo(location)

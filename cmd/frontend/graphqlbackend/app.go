@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"path/filepath"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
 
@@ -31,7 +30,7 @@ type AppResolver interface {
 
 type LocalDirectoryResolver interface {
 	Path() string
-	Repositories() ([]LocalRepositoryResolver, error)
+	Repositories(ctx context.Context) ([]LocalRepositoryResolver, error)
 }
 
 type LocalRepositoryResolver interface {
@@ -109,18 +108,11 @@ func (r *localDirectoryResolver) Path() string {
 	return r.path
 }
 
-func (r *localDirectoryResolver) Repositories() ([]LocalRepositoryResolver, error) {
-	// TODO(keegan) this should be injected from the global instance. For now
-	// we are hardcoding the relevant defaults for ServeConfig.
-	srv := &servegit.Serve{
-		ServeConfig: servegit.ServeConfig{
-			Timeout:  5 * time.Second,
-			MaxDepth: 10,
-		},
-		Logger: log.Scoped("serve", ""),
+func (r *localDirectoryResolver) Repositories(ctx context.Context) ([]LocalRepositoryResolver, error) {
+	repos, err := servegit.Service.Repos(ctx, r.path)
+	if err != nil {
+		return nil, err
 	}
-
-	repos, err := srv.Repos(r.path)
 	if err != nil {
 		return nil, err
 	}

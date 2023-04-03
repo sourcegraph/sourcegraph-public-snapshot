@@ -21,11 +21,7 @@ type CodeNavService interface {
 }
 
 type AutoIndexingService interface {
-	sharedresolvers.AutoIndexingService
-
 	QueueRepoRev(ctx context.Context, repositoryID int, rev string) error
 }
 
 type UploadsService = sharedresolvers.UploadsService
-
-type PolicyService = sharedresolvers.PolicyService

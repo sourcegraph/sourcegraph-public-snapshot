@@ -40,8 +40,8 @@ import (
 
 func newMockDB() database.DB {
 	db := database.NewMockDB()
-	gr := database.NewMockGitserverRepoStore()
-	db.GitserverReposFunc.SetDefaultReturn(gr)
+	db.GitserverReposFunc.SetDefaultReturn(database.NewMockGitserverRepoStore())
+	db.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
 	return db
 }
 

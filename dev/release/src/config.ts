@@ -183,6 +183,8 @@ export interface ReleaseCaptainInformation {
 export interface InProgress extends ReleaseCaptainInformation {
     releases: ActiveReleaseDefinition[]
     srcCliVersion?: string
+    googleExecutorVersion?: string
+    awsExecutorVersion?: string
 }
 
 export interface ReleaseConfig {
@@ -272,6 +274,20 @@ async function getScheduledReleaseWithInput(
 export function setSrcCliVersion(config: ReleaseConfig, version: string): void {
     if (config.in_progress) {
         config.in_progress.srcCliVersion = version
+    }
+    saveReleaseConfig(config)
+}
+
+export function setGoogleExecutorVersion(config: ReleaseConfig, version: string): void {
+    if (config.in_progress) {
+        config.in_progress.googleExecutorVersion = version
+    }
+    saveReleaseConfig(config)
+}
+
+export function setAWSExecutorVersion(config: ReleaseConfig, version: string): void {
+    if (config.in_progress) {
+        config.in_progress.awsExecutorVersion = version
     }
     saveReleaseConfig(config)
 }

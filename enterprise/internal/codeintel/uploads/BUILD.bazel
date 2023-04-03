@@ -14,6 +14,7 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//cmd/frontend/backend",
+        "//enterprise/internal/codeintel/autoindexing/shared",
         "//enterprise/internal/codeintel/policies",
         "//enterprise/internal/codeintel/shared",
         "//enterprise/internal/codeintel/shared/types",
@@ -50,6 +51,7 @@ go_test(
     srcs = ["mocks_test.go"],
     embed = [":uploads"],
     deps = [
+        "//enterprise/internal/codeintel/autoindexing/shared",
         "//enterprise/internal/codeintel/policies",
         "//enterprise/internal/codeintel/policies/shared",
         "//enterprise/internal/codeintel/shared/types",

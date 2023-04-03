@@ -134,7 +134,7 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, job 
 		return errors.Wrap(err, "backfill.SetScope")
 	}
 
-	frames := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
+	sampleTimes := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
 		Value: series.SampleIntervalValue,
 	}, series.CreatedAt.Truncate(time.Minute))
@@ -142,7 +142,7 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, job 
 	if err := h.timeseriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{
 		{
 			InsightSeriesID: series.ID,
-			RecordingTimes:  timeseries.MakeRecordingsFromFrames(frames, false),
+			RecordingTimes:  timeseries.MakeRecordingsFromTimes(sampleTimes, false),
 		},
 	}); err != nil {
 		return errors.Wrap(err, "NewBackfillHandler.SetInsightSeriesRecordingTimes")

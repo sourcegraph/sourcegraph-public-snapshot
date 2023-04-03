@@ -52,9 +52,10 @@ func Init(logger log.Logger) {
 	//
 	// setDefaultEnv(logger, "JAEGER_SERVER_URL", "http://localhost:16686")
 
-	// The s3proxy blobstore does need to be running. TODO(sqs): TODO(single-binary): bundle this somehow?
+	// Use blobstore on localhost.
 	setDefaultEnv(logger, "PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT", "http://localhost:9000")
 	setDefaultEnv(logger, "PRECISE_CODE_INTEL_UPLOAD_BACKEND", "blobstore")
+	setDefaultEnv(logger, "EMBEDDINGS_UPLOAD_AWS_ENDPOINT", "http://localhost:9000")
 
 	// Need to override this because without a host (eg ":3080") it listens only on localhost, which
 	// is not accessible from the containers
@@ -122,6 +123,9 @@ func Init(logger log.Logger) {
 	// is safe to do.
 	setDefaultEnv(logger, "EXECUTOR_FRONTEND_URL", "http://localhost:3080")
 	setDefaultEnv(logger, "EXECUTOR_FRONTEND_PASSWORD", confdefaults.AppInMemoryExecutorPassword)
+	// Required because we set "executors.frontendURL": "http://host.docker.internal:3080" in site
+	// configuration.
+	setDefaultEnv(logger, "EXECUTOR_DOCKER_ADD_HOST_GATEWAY", "true")
 
 	// TODO(single-binary): HACK: This is a hack to workaround the fact that the 2nd time you run `sourcegraph`
 	// OOB migration validation fails:

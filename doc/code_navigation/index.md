@@ -71,47 +71,47 @@ Code navigation is made up of multiple features that build on top of each other:
    <tbody>
       <tr>
         <td>Go</td>
-        <td><a href="https://github.com/sourcegraph/lsif-go">lsif-go</a></td>
+        <td><a href="https://sourcegraph.com/github.com/sourcegraph/lsif-go">lsif-go</a></td>
         <td>🟢 GA</td>
       </tr>
       <tr>
         <td>TypeScript/JavaScript</td>
-        <td><a href="https://github.com/sourcegraph/scip-typescript">scip-typescript</a></td>
+        <td><a href="https://sourcegraph.com/github.com/sourcegraph/scip-typescript">scip-typescript</a></td>
         <td>🟢 GA</td>
       </tr>
       <tr>
         <td>C/C++</td>
-        <td><a href="https://github.com/sourcegraph/lsif-clang">lsif-clang</a></td>
+        <td><a href="https://sourcegraph.com/github.com/sourcegraph/lsif-clang">lsif-clang</a></td>
         <td>🟡 Partially available</td>
       </tr>
       <tr>
          <td>Java</td>
-        <td><a href="https://github.com/sourcegraph/scip-java">scip-java</a></td>
+        <td><a href="https://sourcegraph.com/github.com/sourcegraph/scip-java">scip-java</a></td>
         <td>🟢 GA</td>
       </tr>
       <tr>
         <td>Scala</td>
-        <td><a href="https://github.com/sourcegraph/scip-java">scip-java</a></td>
+        <td><a href="https://sourcegraph.com/github.com/sourcegraph/scip-java">scip-java</a></td>
         <td>🟢 GA</td>
       </tr>
       <tr>
         <td>Kotlin</td>
-        <td><a href="https://github.com/sourcegraph/scip-java">scip-java</a></td>
+        <td><a href="https://sourcegraph.com/github.com/sourcegraph/scip-java">scip-java</a></td>
         <td>🟢 GA</td>
       </tr>
       <tr>
         <td>Rust</td>
-        <td><a href="https://github.com/rust-lang/rust-analyzer">rust-analyzer</a></td>
+        <td><a href="https://sourcegraph.com/github.com/rust-lang/rust-analyzer">rust-analyzer</a></td>
         <td>🟢 GA</td>
       </tr>
      <tr>
         <td>Python</td>
-        <td><a href="https://github.com/sourcegraph/scip-python">scip-python</a></td>
+        <td><a href="https://sourcegraph.com/github.com/sourcegraph/scip-python">scip-python</a></td>
         <td>🟢 GA</td>
       </tr>
      <tr>
         <td>Ruby</td>
-        <td><a href="https://github.com/sourcegraph/scip-ruby">scip-ruby</a></td>
+        <td><a href="https://sourcegraph.com/github.com/sourcegraph/scip-ruby">scip-ruby</a></td>
         <td>🟡 Partially available</td>
       </tr>
    </tbody>
@@ -130,8 +130,8 @@ Here's how you go from search-based code navigation to **automatically-updating,
     - [Index a Go repository](how-to/index_a_go_repository.md#manual-indexing)
     - [Index a TypeScript or JavaScript repository](how-to/index_a_typescript_and_javascript_repository.md#manual-indexing)
     - [Index a Java, Scala & Kotlin repository](https://sourcegraph.github.io/scip-java/docs/getting-started.html)
-    - [Index a Python repository](https://github.com/sourcegraph/scip-python)
-    - [Index a Ruby repository](https://github.com/sourcegraph/scip-ruby)
+    - [Index a Python repository](https://sourcegraph.com/github.com/sourcegraph/scip-python)
+    - [Index a Ruby repository](https://sourcegraph.com/github.com/sourcegraph/scip-ruby)
     - [Index a C++ repository](how-to/index_a_cpp_repository.md)
 
 

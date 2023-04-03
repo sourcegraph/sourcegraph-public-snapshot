@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"unicode/utf8"
 
+	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/casetransform"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -158,7 +159,12 @@ func (dm *DiffMatches) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit,
 		var hunkHighlights map[int]MatchedHunk
 		for hunkIdx, hunk := range fileDiff.Hunks {
 			var lineHighlights map[int]result.Ranges
-			for lineIdx, line := range bytes.Split(hunk.Body, []byte("\n")) {
+			lr := byteutils.NewLineReader(hunk.Body)
+			lineIdx := -1
+			for lr.Scan() {
+				line := lr.Line()
+				lineIdx++
+
 				if len(line) == 0 {
 					continue
 				}
