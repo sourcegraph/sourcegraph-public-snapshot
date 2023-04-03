@@ -210,7 +210,7 @@ function generateResponse(
                 state: state ?? null,
                 searchType: null,
                 query: '',
-                partial: partial,
+                partial,
             },
         },
         result: {
