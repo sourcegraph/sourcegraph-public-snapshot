@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
-	"reflect"
 	"testing"
 	"time"
 
@@ -101,7 +100,7 @@ func (s *mockUploadStore) ExpireObjects(ctx context.Context, prefix string, maxA
 	return nil
 }
 
-func TestEmbeddingIndexStorage(t *testing.T) {
+func TestRepoEmbeddingIndexStorage(t *testing.T) {
 	index := &RepoEmbeddingIndex{
 		RepoName: api.RepoName("repo"),
 		Revision: api.CommitID("commit"),
@@ -129,7 +128,7 @@ func TestEmbeddingIndexStorage(t *testing.T) {
 	require.Equal(t, index, downloadedIndex)
 }
 
-func TestEmbeddingVersionMismatch(t *testing.T) {
+func TestRepoEmbeddingVersionMismatch(t *testing.T) {
 	index := &RepoEmbeddingIndex{
 		RepoName: api.RepoName("repo"),
 		Revision: api.CommitID("commit"),
@@ -148,9 +147,11 @@ func TestEmbeddingVersionMismatch(t *testing.T) {
 	ctx := context.Background()
 	uploadStore := newMockUploadStore()
 
+	// Upload the index using the "old" function.
 	err := UploadIndex(ctx, uploadStore, "index", index)
 	require.NoError(t, err)
 
+	// Download the index using the new, custom function.
 	downloadedIndex, err := DownloadRepoEmbeddingIndex(ctx, uploadStore, "index")
 	require.NoError(t, err)
 
@@ -177,7 +178,7 @@ func getMockEmbeddingIndex(nRows int, columnDimension int) EmbeddingIndex {
 	}
 }
 
-func BenchmarkEmbeddingIndexStorage(b *testing.B) {
+func BenchmarkRepoEmbeddingIndexUpload(b *testing.B) {
 	// Roughly the size of the sourcegraph/sourcegraph index.
 	index := &RepoEmbeddingIndex{
 		RepoName:  api.RepoName("repo"),
@@ -187,24 +188,19 @@ func BenchmarkEmbeddingIndexStorage(b *testing.B) {
 	}
 
 	ctx := context.Background()
-	uploadStore := newMockUploadStore()
-
-	err := UploadIndex(ctx, uploadStore, "index", index)
-	if err != nil {
-		b.Fatal(err)
-	}
+	uploadStore := newNoOpUploadStore()
 
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, err := DownloadIndex[RepoEmbeddingIndex](ctx, uploadStore, "index")
+		err := UploadIndex(ctx, uploadStore, "index", index)
 		if err != nil {
 			b.Fatal(err)
 		}
 	}
 }
 
-func BenchmarkRepoEmbeddingIndexStorage(b *testing.B) {
+func BenchmarkCustomRepoEmbeddingIndexUpload(b *testing.B) {
 	// Roughly the size of the sourcegraph/sourcegraph index.
 	index := &RepoEmbeddingIndex{
 		RepoName:  api.RepoName("repo"),
@@ -214,23 +210,14 @@ func BenchmarkRepoEmbeddingIndexStorage(b *testing.B) {
 	}
 
 	ctx := context.Background()
-	uploadStore := newMockUploadStore()
-
-	err := UploadRepoEmbeddingIndex(ctx, uploadStore, "index", index)
-	if err != nil {
-		b.Fatal(err)
-	}
+	uploadStore := newNoOpUploadStore()
 
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		dlIndex, err := DownloadRepoEmbeddingIndex(ctx, uploadStore, "index")
+		err := UploadRepoEmbeddingIndex(ctx, uploadStore, "index", index)
 		if err != nil {
 			b.Fatal(err)
-		}
-
-		if !reflect.DeepEqual(index, dlIndex) {
-			b.Fatal("indexes not equal")
 		}
 	}
 }
