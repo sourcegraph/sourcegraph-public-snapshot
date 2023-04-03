@@ -46,7 +46,8 @@ See [GitHub API token and access](#github-api-token-and-access) for more details
 
 The GitHub service requires a `token` in order to access their API. There are two different types of tokens you can supply:
 
-- **[Personal access token](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line)**:<br>This gives Sourcegraph the same level of access to repositories as the account that created the token. If you're not wanting to mix your personal repositories with your organizations repositories, you could add an entry to the `exclude` array, or you can use a machine user token.
+- **[Personal access token](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line)**:<br>This gives Sourcegraph the same level of access to repositories as the account that created the token. If you don't want to mix your personal repositories with your organizations repositories, you could add an entry to the `exclude` array, or you can use a machine user token or a fine-grained access token.
+- **[Fine-grained access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token#creating-a-fine-grained-personal-access-token)**:<br>Allows scoping access tokens to specific repositories with specific permissions. Consult the [table below](#fine-grained-access-token-permissions) for the required permissions.
 - **[Machine user token](https://developer.github.com/v3/guides/managing-deploy-keys/#machine-users)**:<br>Generates a token for a machine user that is affiliated with an organization instead of a user account.
 
 No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps/scopes-for-oauth-apps#available-scopes) are required if you only want to sync public repositories and don't want to use any of the following features. Otherwise, the following token scopes are required for specific features:
@@ -55,7 +56,6 @@ No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps
 | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | [Sync private repositories](#private-repositories)    | `repo`                                                                                                         |
 | [Sync repository permissions][permissions]            | `repo`                                                                                                         |
-| [Repository permissions caching][permissions-caching] | `repo`, `write:org`                                                                                            |
 | [Batch changes][batch-changes]                        | `repo`, `read:org`, `user:email`, `read:discussion`, and `workflow` ([learn more][batch-changes-interactions]) |
 
 [permissions]: #repository-permissions
@@ -73,9 +73,20 @@ No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps
 >
 > Learn more about how the GitHub API is used and what level of access is required in the corresponding feature documentation.
 
-### Fine-grained personal access tokens
+### Fine-grained access token permissions
 
-GitHub's fine-grained personal access tokens are not yet supported.
+When creating your fine-grained access token, select the following permissions depending on the purpose of the token:
+
+| Feature                                               | Required token scopes                                  |
+| ----------------------------------------------------- | ------------------------------------------------------ |
+| [Sync private repositories](#private-repositories)    | `Repository permissions: Contents - Access: Read-only` |
+| [Sync repository permissions][permissions]            | `Repository permissions: Contents - Access: Read-only` |
+
+<br>
+
+> NOTE: Fine-grained tokens does not support the `repositoryQuery` code host connection option.
+
+Fine-grained tokens can access public repositories, but can only access the private repositories of the account they are scoped to.
 
 ## Rate limits
 
@@ -227,7 +238,7 @@ When the search rate limit quota is exhausted, an error like `failed to list Git
 
 The  `repositoryQuery` option `"public"` is valuable in that it allows sourcegraph to sync all public repositories, however, it does not return whether or not a repo is archived. This can result in archived repos appearing in normal search. You can see an example of what is returned by the GitHub API for a query to "public" [here](https://docs.github.com/en/rest/reference/repos#list-public-repositories).
 
-If you would like to sync all public repositories while omitting archived repos, consider generating a GitHub token with access to only public repositories, then use `respositoryQuery` with option `affiliated` and an `exclude` argument with option `public` as seen in the example below:
+If you would like to sync all public repositories while omitting archived repos, consider generating a GitHub token with access to only public repositories, then use `repositoryQuery` with option `affiliated` and an `exclude` argument with option `public` as seen in the example below:
 ```
 {
     "url": "https://github.example.com",
