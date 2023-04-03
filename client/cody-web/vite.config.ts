@@ -16,7 +16,7 @@ export default defineConfig({
     },
     css: {
         modules: {
-            localsConvention: 'camelCase',
+            localsConvention: 'camelCaseOnly',
         },
     },
     build: {

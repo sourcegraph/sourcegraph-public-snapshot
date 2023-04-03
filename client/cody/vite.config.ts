@@ -9,6 +9,11 @@ export default defineConfig({
     plugins: [react()],
     publicDir: 'resources',
     base: './',
+    css: {
+        modules: {
+            localsConvention: 'camelCaseOnly',
+        },
+    },
     build: {
         emptyOutDir: false,
         outDir: 'dist',

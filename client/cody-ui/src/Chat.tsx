@@ -9,9 +9,11 @@ import { CodeBlocks } from './chat/CodeBlocks'
 import { ContextFiles, FileLinkProps } from './chat/ContextFiles'
 import { Tips } from './Tips'
 
+import styles from './Chat.module.css'
+
 const SCROLL_THRESHOLD = 15
 
-interface ChatProps {
+interface ChatProps extends ChatClassNames {
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
     formInput: string
@@ -25,6 +27,17 @@ interface ChatProps {
     tipsRecommendations?: JSX.Element[]
     afterTips?: JSX.Element
     className?: string
+}
+
+interface ChatClassNames {
+    bubbleContentClassName?: string
+    humanBubbleContentClassName?: string
+    botBubbleContentClassName?: string
+    codeBlocksCopyButtonClassName?: string
+    bubbleFooterClassName?: string
+    bubbleLoaderDotClassName?: string
+    inputRowClassName?: string
+    chatInputClassName?: string
 }
 
 export interface ChatUITextAreaProps {
@@ -56,6 +69,14 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     tipsRecommendations,
     afterTips,
     className,
+    bubbleContentClassName,
+    humanBubbleContentClassName,
+    botBubbleContentClassName,
+    codeBlocksCopyButtonClassName,
+    bubbleFooterClassName,
+    bubbleLoaderDotClassName,
+    inputRowClassName,
+    chatInputClassName,
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
@@ -109,7 +130,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [inputHistory, onChatSubmit, formInput, historyIndex, setFormInput]
     )
 
-    const bubbleClassName = (speaker: string): string => (speaker === 'human' ? 'human' : 'bot')
+    const getBubbleClassName = (speaker: string): string => (speaker === 'human' ? 'human' : 'bot')
 
     useEffect(() => {
         if (transcriptContainerRef.current) {
@@ -128,24 +149,43 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     }, [transcript, transcriptContainerRef])
 
     return (
-        <div className={classNames(className, 'inner-container')}>
-            <div ref={transcriptContainerRef} className={`${transcript.length >= 1 ? '' : 'non-'}transcript-container`}>
+        <div className={classNames(className, styles.innerContainer)}>
+            <div
+                ref={transcriptContainerRef}
+                className={transcript.length >= 1 ? styles.transcriptContainer : styles.nonTranscriptContainer}
+            >
                 {/* Show Tips view if no conversation has happened */}
                 {transcript.length === 0 && !messageInProgress && (
                     <Tips recommendations={tipsRecommendations} after={afterTips} />
                 )}
                 {transcript.length > 0 && (
-                    <div className="bubble-container">
+                    <div className={styles.bubbleContainer}>
                         {transcript.map((message, index) => (
                             <div
+                                // eslint-disable-next-line react/no-array-index-key
                                 key={`message-${index}`}
-                                className={`bubble-row ${bubbleClassName(message.speaker)}-bubble-row`}
+                                className={classNames(
+                                    styles.bubbleRow,
+                                    styles[`${getBubbleClassName(message.speaker)}BubbleRow`]
+                                )}
                             >
-                                <div className={`bubble ${bubbleClassName(message.speaker)}-bubble`}>
+                                <div className={styles.bubble}>
                                     <div
-                                        className={`bubble-content ${bubbleClassName(message.speaker)}-bubble-content`}
+                                        className={classNames(
+                                            styles.bubbleContent,
+                                            styles[`${getBubbleClassName(message.speaker)}BubbleContent`],
+                                            bubbleContentClassName,
+                                            message.speaker === 'human'
+                                                ? humanBubbleContentClassName
+                                                : botBubbleContentClassName
+                                        )}
                                     >
-                                        {message.displayText && <CodeBlocks displayText={message.displayText} />}
+                                        {message.displayText && (
+                                            <CodeBlocks
+                                                displayText={message.displayText}
+                                                copyButtonClassName={codeBlocksCopyButtonClassName}
+                                            />
+                                        )}
                                         {message.contextFiles && message.contextFiles.length > 0 && (
                                             <ContextFiles
                                                 contextFiles={message.contextFiles}
@@ -153,8 +193,14 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                                             />
                                         )}
                                     </div>
-                                    <div className={`bubble-footer ${bubbleClassName(message.speaker)}-bubble-footer`}>
-                                        <div className="bubble-footer-timestamp">{`${
+                                    <div
+                                        className={classNames(
+                                            styles.bubbleFooter,
+                                            styles[`${getBubbleClassName(message.speaker)}BubbleFooter`],
+                                            bubbleFooterClassName
+                                        )}
+                                    >
+                                        <div className={styles.bubbleFooterTimestamp}>{`${
                                             message.speaker === 'assistant' ? 'Cody' : 'Me'
                                         } · ${message.timestamp}`}</div>
                                     </div>
@@ -163,9 +209,15 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         ))}
 
                         {messageInProgress && messageInProgress.speaker === 'assistant' && (
-                            <div className="bubble-row bot-bubble-row">
-                                <div className="bubble bot-bubble">
-                                    <div className="bubble-content bot-bubble-content">
+                            <div className={classNames(styles.bubbleRow, styles.botBubbleRow)}>
+                                <div className={styles.bubble}>
+                                    <div
+                                        className={classNames(
+                                            styles.bubbleContent,
+                                            styles.botBubbleContent,
+                                            botBubbleContentClassName
+                                        )}
+                                    >
                                         {messageInProgress.displayText ? (
                                             <p
                                                 dangerouslySetInnerHTML={{
@@ -173,14 +225,29 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                                                 }}
                                             />
                                         ) : (
-                                            <div className="bubble-loader">
-                                                <div className="bubble-loader-dot" />
-                                                <div className="bubble-loader-dot" />
-                                                <div className="bubble-loader-dot" />
+                                            <div className={styles.bubbleLoader}>
+                                                <div
+                                                    className={classNames(
+                                                        styles.bubbleLoaderDot,
+                                                        bubbleLoaderDotClassName
+                                                    )}
+                                                />
+                                                <div
+                                                    className={classNames(
+                                                        styles.bubbleLoaderDot,
+                                                        bubbleLoaderDotClassName
+                                                    )}
+                                                />
+                                                <div
+                                                    className={classNames(
+                                                        styles.bubbleLoaderDot,
+                                                        bubbleLoaderDotClassName
+                                                    )}
+                                                />
                                             </div>
                                         )}
                                     </div>
-                                    <div className="bubble-footer bot-bubble-footer">
+                                    <div className={styles.bubbleFooter}>
                                         <span>Cody is typing...</span>
                                     </div>
                                 </div>
@@ -189,9 +256,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     </div>
                 )}
             </div>
-            <form className="input-row">
+            <form className={classNames(styles.inputRow, inputRowClassName)}>
                 <TextArea
-                    className="chat-input"
+                    className={classNames(styles.chatInput, chatInputClassName)}
                     rows={inputRows}
                     value={formInput}
                     autoFocus={true}
@@ -202,7 +269,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     }}
                     onKeyDown={onChatKeyDown}
                 />
-                <SubmitButton className="submit-button" onClick={onChatSubmit} disabled={!!messageInProgress} />
+                <SubmitButton className={styles.submitButton} onClick={onChatSubmit} disabled={!!messageInProgress} />
             </form>
         </div>
     )
