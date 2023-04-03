@@ -47,12 +47,12 @@ func (pat *SudoableToken) Hash() string {
 // RequestedOAuthScopes returns the list of OAuth scopes given the default API
 // scope and any extra scopes.
 func RequestedOAuthScopes(defaultAPIScope string) []string {
-  scopes := []string{"read_user"}
-  if defaultAPIScope == "api" || defaultAPIScope == "read_api" {
-    scopes = append(scopes, defaultAPIScope)
-  } else {
-    scopes = append(scopes, "api")
-  }
+	scopes := []string{"read_user"}
+	if defaultAPIScope == "" {
+		defaultAPIScope = "api"
+	} else {
+		scopes = append(scopes, defaultAPIScope)
+	}
 
-  return scopes
+	return scopes
 }
