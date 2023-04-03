@@ -8,15 +8,5 @@
   },
   "include": ["**/*", ".*", "package.json"],
   "exclude": ["out"],
-  "references": [
-    {
-      "path": "../common",
-    },
-    {
-      "path": "../http-client",
-    },
-    {
-      "path": "../shared",
-    },
-  ],
+  "references": [{ "path": "../common" }],
 }
