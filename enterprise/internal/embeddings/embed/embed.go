@@ -65,6 +65,7 @@ func createEmptyEmbeddingIndex(columnDimension int) embeddings.EmbeddingIndex[em
 		Embeddings:      []float32{},
 		RowMetadata:     []embeddings.RepoEmbeddingRowMetadata{},
 		ColumnDimension: columnDimension,
+		Ranks:           []float32{},
 	}
 }
 
@@ -91,6 +92,7 @@ func embedFiles(
 		Embeddings:      make([]float32, 0, len(fileNames)*dimensions),
 		RowMetadata:     make([]embeddings.RepoEmbeddingRowMetadata, 0, len(fileNames)),
 		ColumnDimension: dimensions,
+		Ranks:           []float32{},
 	}
 
 	// addEmbeddableChunks batches embeddable chunks, gets embeddings for the batches, and appends them to the index above.

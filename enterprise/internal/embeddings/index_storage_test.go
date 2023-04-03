@@ -132,12 +132,12 @@ func TestRepoEmbeddingVersionMismatch(t *testing.T) {
 	index := &RepoEmbeddingIndex{
 		RepoName: api.RepoName("repo"),
 		Revision: api.CommitID("commit"),
-		CodeIndex: EmbeddingIndex{
+		CodeIndex: EmbeddingIndex[RepoEmbeddingRowMetadata]{
 			Embeddings:      []float32{0.0, 0.1, 0.2},
 			ColumnDimension: 3,
 			RowMetadata:     []RepoEmbeddingRowMetadata{{FileName: "a.go", StartLine: 0, EndLine: 1}},
 		},
-		TextIndex: EmbeddingIndex{
+		TextIndex: EmbeddingIndex[RepoEmbeddingRowMetadata]{
 			Embeddings:      []float32{1.0, 2.1, 3.2},
 			ColumnDimension: 3,
 			RowMetadata:     []RepoEmbeddingRowMetadata{{FileName: "b.py", StartLine: 0, EndLine: 1}},
