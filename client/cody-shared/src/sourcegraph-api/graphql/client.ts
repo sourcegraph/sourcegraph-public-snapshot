@@ -7,6 +7,7 @@ import {
     IS_CONTEXT_REQUIRED_QUERY,
     REPOSITORY_ID_QUERY,
     SEARCH_EMBEDDINGS_QUERY,
+    LOG_EVENT_MUTATION,
 } from './queries'
 
 interface APIResponse<T> {
@@ -25,6 +26,8 @@ interface RepositoryIdResponse {
 interface EmbeddingsSearchResponse {
     embeddingsSearch: EmbeddingsSearchResults
 }
+
+interface LogEventResponse {}
 
 export interface EmbeddingsSearchResult {
     fileName: string
@@ -56,6 +59,8 @@ function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (da
 }
 
 export class SourcegraphGraphQLAPIClient {
+    private dotcomUrl = 'https://sourcegraph.com'
+
     constructor(private instanceUrl: string, private accessToken: string | null) {}
 
     public async getCurrentUserId(): Promise<string | Error> {
@@ -74,6 +79,40 @@ export class SourcegraphGraphQLAPIClient {
                 data.repository ? data.repository.id : new Error(`repository ${repoName} not found`)
             )
         )
+    }
+
+    public async logEvent(event: {
+        event: string
+        userCookieID: string
+        url: string
+        source: string
+        argument?: string | {}
+        publicArgument?: string | {}
+    }): Promise<void | Error> {
+        try {
+            if (this.instanceUrl === this.dotcomUrl) {
+                await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
+                    response => {
+                        extractDataOrError(response, data => {})
+                    }
+                )
+            } else {
+                await Promise.all([
+                    this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
+                        response => {
+                            extractDataOrError(response, data => {})
+                        }
+                    ),
+                    this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
+                        response => {
+                            extractDataOrError(response, data => {})
+                        }
+                    ),
+                ])
+            }
+        } catch (error) {
+            return error
+        }
     }
 
     public async searchEmbeddings(
@@ -105,6 +144,17 @@ export class SourcegraphGraphQLAPIClient {
             .then(verifyResponseCode)
             .then(response => response.json() as T)
             .catch(error => new Error(`accessing Sourcegraph GraphQL API: ${error}`))
+    }
+
+    // make an anonymous request to the dotcom API
+    private async fetchSourcegraphDotcomAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
+        return fetch(`${this.dotcomUrl}/.api/graphql`, {
+            method: 'POST',
+            body: JSON.stringify({ query, variables }),
+        })
+            .then(verifyResponseCode)
+            .then(response => response.json() as T)
+            .catch(() => new Error('error fetching Sourcegraph GraphQL API'))
     }
 }
 
