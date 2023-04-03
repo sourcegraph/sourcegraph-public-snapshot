@@ -81,6 +81,8 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
 
     const showMoreProviders = searchParams.has('showMore') && (builtInAuthProvider || moreProviders.length > 0)
     const hasProviders = builtInAuthProvider || thirdPartyAuthProviders.length > 0
+    const showMoreWaysToLogin =
+        !showMoreProviders && (moreProviders.length > 0 || (primaryProviders.length > 0 && builtInAuthProvider))
 
     const providers = showMoreProviders ? moreProviders : primaryProviders
 
@@ -138,7 +140,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                         </Button>
                     </div>
                 ))}
-                {!showMoreProviders && moreProviders.length > 0 && (
+                {showMoreWaysToLogin && (
                     <div className="mb-2">
                         <Button
                             to={`${location.pathname}?showMore&${searchParams.toString()}`}

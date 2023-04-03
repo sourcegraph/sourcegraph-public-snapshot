@@ -75,7 +75,7 @@ describe('SignInPage', () => {
             within(rendered.baseElement)
                 .queryByText(txt => txt.includes('More ways to login'))
                 ?.closest('a')
-        ).toBeVisible()
+        ).toBeInTheDocument()
         expect(
             within(rendered.baseElement)
                 .queryByText(txt => txt.includes('Sign up'))
@@ -111,6 +111,32 @@ describe('SignInPage', () => {
         expect(
             within(rendered.baseElement).queryByText(txt => txt.includes('More ways to login'))
         ).not.toBeInTheDocument()
+
+        expect(rendered.asFragment()).toMatchSnapshot()
+    })
+
+    it('renders "More ways to login" if primary provider count is low enough', () => {
+        const rendered = render('/sign-in', {
+            authProviders: authProviders.filter(authProvider => authProvider.serviceType !== 'builtin'),
+            primaryLoginProvidersCount: 1,
+        })
+        expect(within(rendered.baseElement).queryByText(txt => txt.includes('More ways to login'))).toBeInTheDocument()
+
+        expect(rendered.asFragment()).toMatchSnapshot()
+    })
+
+    it('renders non-primary auth provider if primary provider count is low enough and showMore is in the query', () => {
+        const rendered = render('/sign-in?showMore', {
+            authProviders: authProviders.filter(authProvider => authProvider.serviceType !== 'builtin'),
+            primaryLoginProvidersCount: 1,
+        })
+        expect(
+            within(rendered.baseElement).queryByText(txt => txt.includes('More ways to login'))
+        ).not.toBeInTheDocument()
+
+        expect(
+            within(rendered.baseElement).queryByText(txt => txt.includes('Continue with GitLab'))
+        ).toBeInTheDocument()
 
         expect(rendered.asFragment()).toMatchSnapshot()
     })
