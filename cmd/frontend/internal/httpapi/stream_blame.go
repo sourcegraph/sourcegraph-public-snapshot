@@ -66,6 +66,10 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
 		requestedPath := mux.Vars(r)["Path"]
 		streamWriter, err := streamhttp.NewWriter(w)
