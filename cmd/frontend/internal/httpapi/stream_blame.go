@@ -46,28 +46,18 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 		}
 
 		repo, commitID, err := handlerutil.GetRepoAndRev(r.Context(), logger, db, mux.Vars(r))
-		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		if errors.HasType(err, &gitserver.RepoNotCloneableErr{}) {
-			if errcode.IsNotFound(err) {
-				w.WriteHeader(http.StatusNotFound)
-				return
-			}
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		if errcode.IsNotFound(err) || errcode.IsBlocked(err) {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		if errcode.IsUnauthorized(err) {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				w.WriteHeader(http.StatusNotFound)
+			} else if errors.HasType(err, &gitserver.RepoNotCloneableErr{}) && errcode.IsNotFound(err) {
+				w.WriteHeader(http.StatusNotFound)
+			} else if errcode.IsNotFound(err) || errcode.IsBlocked(err) {
+				w.WriteHeader(http.StatusNotFound)
+			} else if errcode.IsUnauthorized(err) {
+				w.WriteHeader(http.StatusUnauthorized)
+			} else {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
 			return
 		}
 
