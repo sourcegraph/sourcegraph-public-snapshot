@@ -115,7 +115,7 @@ func Pre(
 			if err != nil {
 				return errors.Wrap(err, "getAbsoluteMountPath")
 			}
-			fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("cp", workspaceFilePath, mount.Mountpoint))
+			fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("cp", "-r", workspaceFilePath, mount.Mountpoint))
 		}
 	}
 
