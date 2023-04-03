@@ -251,6 +251,7 @@
           "type": "string",
           "default": "https://sourcegraph.com",
           "example": "https://example.sourcegraph.com",
+          "format": "uri",
           "description": "URL to the Sourcegraph instance."
         },
         "cody.codebase": {
