@@ -21,7 +21,7 @@ pkg="github.com/sourcegraph/sourcegraph/enterprise/cmd/executor"
 go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist,shell -o "$OUTPUT/$(basename $pkg)" "$pkg"
 popd 1>/dev/null
 
-docker build -f enterprise/cmd/executor/kubernetes/Dockerfile -t "$IMAGE" "$OUTPUT" \
+docker build -f enterprise/cmd/executor-kubernetes/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
