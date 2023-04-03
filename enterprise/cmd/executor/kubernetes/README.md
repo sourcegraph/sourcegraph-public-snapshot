@@ -23,7 +23,8 @@ The following is a guide to setting up a local development environment for the e
 Run the following command to build the image.
 
 ```bash
-IMAGE=executor-kubernetes ./build.sh
+# Build the image in enterprise/cmd/executor-kubernetes
+IMAGE=executor-kubernetes ../../executor-kuberentes/build.sh
 ```
 
 ## Secrets
