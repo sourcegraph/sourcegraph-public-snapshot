@@ -75,6 +75,47 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 	excludedGlobPatterns := embed.GetDefaultExcludedFilePathPatterns()
 	excludedGlobPatterns = append(excludedGlobPatterns, embed.CompileGlobPatterns(config.ExcludedFilePathPatterns)...)
 
+	processFilesLoop := func(t *tar.Reader, processFile func(fileName string, fileReader io.Reader) error, onlyTextFiles bool) error {
+		for {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+
+			thr, err := t.Next()
+			if err != nil {
+				if err == io.EOF {
+					return nil
+				}
+				return err
+			}
+			switch thr.Typeflag {
+			case tar.TypeReg, tar.TypeRegA:
+				// Skip files that are too big.
+				if thr.Size >= MAX_FILE_SIZE {
+					continue
+				}
+				if thr.Size < embed.MIN_EMBEDDABLE_FILE_SIZE {
+					continue
+				}
+				// Skip files that are excluded.
+				if embed.IsExcludedFilePath(thr.Name, excludedGlobPatterns) {
+					continue
+				}
+				// Only emit files based on onlyTextFiles. If onlyTextFiles is true,
+				// only valid text files are considered. Otherwise, if it's a code file,
+				// it's skipped.
+				if embed.IsValidTextFile(thr.Name) != onlyTextFiles {
+					continue
+				}
+				if err := processFile(thr.Name, t); err != nil {
+					return err
+				}
+			default:
+				continue
+			}
+		}
+	}
+
 	repoEmbeddingIndex, err := embed.EmbedRepo(
 		ctx,
 		repo.Name,
@@ -84,86 +125,16 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		// TODO: Instead of iterating over the tar twice, and resetting the read header
 		// of the file, we should probably produce the text and code indexes
 		// at the same time, instead of after each other.
-		func(cb func(fileName string, fileReader io.Reader) error) error {
+		func(processFile func(fileName string, fileReader io.Reader) error) error {
 			t := tar.NewReader(repoTar)
-			for {
-				if err := ctx.Err(); err != nil {
-					return err
-				}
-
-				thr, err := t.Next()
-				if err != nil {
-					if err == io.EOF {
-						return nil
-					}
-					return err
-				}
-				switch thr.Typeflag {
-				case tar.TypeReg, tar.TypeRegA:
-					// Skip files that are too big.
-					if thr.Size >= MAX_FILE_SIZE {
-						continue
-					}
-					if thr.Size < embed.MIN_EMBEDDABLE_FILE_SIZE {
-						continue
-					}
-					// Skip files that are excluded.
-					if embed.IsExcludedFilePath(thr.Name, excludedGlobPatterns) {
-						continue
-					}
-					// Only emit code files.
-					if embed.IsValidTextFile(thr.Name) {
-						continue
-					}
-					if err := cb(thr.Name, t); err != nil {
-						return err
-					}
-				default:
-					continue
-				}
-			}
+			return processFilesLoop(t, processFile, false)
 		},
-		func(cb func(fileName string, fileReader io.Reader) error) error {
+		func(processFile func(fileName string, fileReader io.Reader) error) error {
 			if _, err := repoTar.Seek(0, 0); err != nil {
 				return err
 			}
 			t := tar.NewReader(repoTar)
-			for {
-				if err := ctx.Err(); err != nil {
-					return err
-				}
-
-				thr, err := t.Next()
-				if err != nil {
-					if err == io.EOF {
-						return nil
-					}
-					return err
-				}
-				switch thr.Typeflag {
-				case tar.TypeReg, tar.TypeRegA:
-					// Skip files that are too big.
-					if thr.Size >= MAX_FILE_SIZE {
-						continue
-					}
-					if thr.Size < embed.MIN_EMBEDDABLE_FILE_SIZE {
-						continue
-					}
-					// Skip files that are excluded.
-					if embed.IsExcludedFilePath(thr.Name, excludedGlobPatterns) {
-						continue
-					}
-					// Only emit text files.
-					if !embed.IsValidTextFile(thr.Name) {
-						continue
-					}
-					if err := cb(thr.Name, t); err != nil {
-						return err
-					}
-				default:
-					continue
-				}
-			}
+			return processFilesLoop(t, processFile, false)
 		},
 		documentRanks,
 	)
