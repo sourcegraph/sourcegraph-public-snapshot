@@ -30,6 +30,7 @@ ts_project(
         "src/chat/CodeBlocks.tsx",
         "src/chat/ContextFiles.tsx",
         "src/index.ts",
+        "src/typings.d.ts",
         "src/utils/icons.tsx",
     ],
     data = [
