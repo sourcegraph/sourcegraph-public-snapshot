@@ -15,7 +15,7 @@ These graphs pull directly from the event log table within the Sourcegraph insta
 On the user page Admin Analytics, you'll find many different types of user metrics. This section defines what those metrics mean:
 
 - Monthly Active Users (MAU): The total count of active users in a given calendar month. If viewing in the middle of a calendar month, this will show the active users so far in that calendar month 
-- Active Users (30/60/90 days): The total count of active users in the past 30/60/90 days 
+- Active Users (rolling 30/60/90 days): The total count of active users in the past 30/60/90 days 
 - Registered Users: The number of accounts on the instance. 
 - Pending Requests: The number of developers who have requested an account for this Sourcegraph instance (note: This functionality was introduced in [Sourcegraph 5.0](https://about.sourcegraph.com/blog/release/5.0)) 
 
