@@ -1,4 +1,4 @@
-package sharedresolvers
+package gitresolvers
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	"time"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -38,7 +37,7 @@ func TestCachedLocationResolver(t *testing.T) {
 	})
 
 	var commitCalls uint32
-	factory := NewCachedLocationResolverFactory(nil, repos, gsClient)
+	factory := NewCachedLocationResolverFactory(repos, gsClient)
 	locationResolver := factory.Create()
 
 	var repositoryIDs []api.RepoID
@@ -58,7 +57,7 @@ func TestCachedLocationResolver(t *testing.T) {
 
 	type resolverPair struct {
 		key      string
-		resolver *GitTreeEntryResolver
+		resolver resolverstubs.GitTreeEntryResolver
 	}
 	resolvers := make(chan resolverPair, numRoutines*len(repositoryIDs)*len(commits)*len(paths))
 
@@ -137,7 +136,7 @@ func TestCachedLocationResolver(t *testing.T) {
 	}
 
 	close(resolvers)
-	resolversByKey := map[string][]*GitTreeEntryResolver{}
+	resolversByKey := map[string][]resolverstubs.GitTreeEntryResolver{}
 	for pair := range resolvers {
 		resolversByKey[pair.key] = append(resolversByKey[pair.key], pair.resolver)
 	}
@@ -159,7 +158,7 @@ func TestCachedLocationResolverUnknownRepository(t *testing.T) {
 
 	gsClient := gitserver.NewMockClient()
 
-	factory := NewCachedLocationResolverFactory(nil, repos, gsClient)
+	factory := NewCachedLocationResolverFactory(repos, gsClient)
 	locationResolver := factory.Create()
 
 	repositoryResolver, err := locationResolver.Repository(context.Background(), 50)
@@ -190,7 +189,7 @@ func TestCachedLocationResolverUnknownCommit(t *testing.T) {
 	gsClient := gitserver.NewMockClient()
 	gsClient.ResolveRevisionFunc.SetDefaultReturn("", &gitdomain.RevisionNotFoundError{})
 
-	factory := NewCachedLocationResolverFactory(nil, repos, gsClient)
+	factory := NewCachedLocationResolverFactory(repos, gsClient)
 	locationResolver := factory.Create()
 
 	commitResolver, err := locationResolver.Commit(context.Background(), 50, "deadbeef")

@@ -1,12 +1,11 @@
-package sharedresolvers
+package gitresolvers
 
 import (
 	"context"
-	"io/fs"
-	"os"
-	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/dataloader"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -22,44 +21,44 @@ import (
 // locations (but does not batch or pre-fetch). Location resolvers generally have a small set of paths
 // with large multiplicity, so the savings here can be significant.
 type CachedLocationResolver struct {
-	repositoryCache *DoubleLockedCache[api.RepoID, cachedRepositoryResolver]
+	repositoryCache *dataloader.DoubleLockedCache[api.RepoID, cachedRepositoryResolver]
 }
 
 type cachedRepositoryResolver struct {
-	repositoryResolver *RepositoryResolver
-	commitCache        *DoubleLockedCache[string, cachedCommitResolver]
+	repositoryResolver resolverstubs.RepositoryResolver
+	commitCache        *dataloader.DoubleLockedCache[string, cachedCommitResolver]
 }
 
 type cachedCommitResolver struct {
-	commitResolver *gitCommitResolver
-	dirCache       *DoubleLockedCache[string, *GitTreeEntryResolver]
-	pathCache      *DoubleLockedCache[string, *GitTreeEntryResolver]
+	commitResolver resolverstubs.GitCommitResolver
+	dirCache       *dataloader.DoubleLockedCache[string, *cachedGitTreeEntryResolver]
+	pathCache      *dataloader.DoubleLockedCache[string, *cachedGitTreeEntryResolver]
 }
 
-func (r *GitTreeEntryResolver) RecordID() string        { return r.stat.Name() }
-func (r cachedRepositoryResolver) RecordID() api.RepoID { return r.repositoryResolver.repo.ID }
-func (r cachedCommitResolver) RecordID() string         { return string(r.commitResolver.oid) }
+type cachedGitTreeEntryResolver struct {
+	treeEntryResolver resolverstubs.GitTreeEntryResolver
+}
+
+// DoubleLockedCache[K, V] requires V to conform to Identifier[K]
+func (r cachedRepositoryResolver) RecordID() api.RepoID { return r.repositoryResolver.RepoID() }
+func (r cachedCommitResolver) RecordID() string         { return string(r.commitResolver.OID()) }
+func (r *cachedGitTreeEntryResolver) RecordID() string  { return r.treeEntryResolver.Path() }
 
 func newCachedLocationResolver(
-	cloneURLToRepoName CloneURLToRepoNameFunc,
 	repoStore database.RepoStore,
 	gitserverClient gitserver.Client,
 ) *CachedLocationResolver {
-	resolveRepo := func(ctx context.Context, repoID api.RepoID) (*RepositoryResolver, error) {
-		repo, err := repoStore.Get(ctx, repoID)
-		if err != nil {
-			if errcode.IsNotFound(err) {
-				return nil, nil
-			}
-
-			return nil, err
+	resolveRepo := func(ctx context.Context, repoID api.RepoID) (resolverstubs.RepositoryResolver, error) {
+		resolver, err := NewRepositoryFromID(ctx, repoStore, int(repoID))
+		if errcode.IsNotFound(err) {
+			return nil, nil
 		}
 
-		return newRepositoryResolver(repo), nil
+		return resolver, err
 	}
 
-	resolveCommit := func(ctx context.Context, repositoryResolver *RepositoryResolver, commit string) (*gitCommitResolver, error) {
-		commitID, err := gitserverClient.ResolveRevision(ctx, repositoryResolver.repo.Name, commit, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+	resolveCommit := func(ctx context.Context, repositoryResolver resolverstubs.RepositoryResolver, commit string) (resolverstubs.GitCommitResolver, error) {
+		commitID, err := gitserverClient.ResolveRevision(ctx, api.RepoName(repositoryResolver.Name()), commit, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 		if err != nil {
 			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 				return nil, nil
@@ -67,13 +66,12 @@ func newCachedLocationResolver(
 			return nil, err
 		}
 
-		commitResolver := newGitCommitResolver(repositoryResolver, commitID)
-		commitResolver.inputRev = &commit
+		commitResolver := NewGitCommitResolver(repositoryResolver, commitID, commit)
 		return commitResolver, nil
 	}
 
-	resolvePath := func(commitResolver *gitCommitResolver, path string, isDir bool) *GitTreeEntryResolver {
-		return newGitTreeEntryResolver(cloneURLToRepoName, commitResolver, createFileInfo(path, isDir))
+	resolvePath := func(commitResolver resolverstubs.GitCommitResolver, path string, isDir bool) *cachedGitTreeEntryResolver {
+		return &cachedGitTreeEntryResolver{NewGitTreeEntryResolver(commitResolver, path, isDir)}
 	}
 
 	resolveRepositoryCached := func(ctx context.Context, repoID api.RepoID) (*cachedRepositoryResolver, error) {
@@ -90,10 +88,10 @@ func newCachedLocationResolver(
 
 			return &cachedCommitResolver{
 				commitResolver: commitResolver,
-				dirCache: NewDoubleLockedCache(MultiFactoryFromFactoryFunc(func(ctx context.Context, path string) (*GitTreeEntryResolver, error) {
+				dirCache: dataloader.NewDoubleLockedCache(dataloader.NewMultiFactoryFromFactoryFunc(func(ctx context.Context, path string) (*cachedGitTreeEntryResolver, error) {
 					return resolvePath(commitResolver, path, true), nil
 				})),
-				pathCache: NewDoubleLockedCache(MultiFactoryFromFactoryFunc(func(ctx context.Context, path string) (*GitTreeEntryResolver, error) {
+				pathCache: dataloader.NewDoubleLockedCache(dataloader.NewMultiFactoryFromFactoryFunc(func(ctx context.Context, path string) (*cachedGitTreeEntryResolver, error) {
 					return resolvePath(commitResolver, path, false), nil
 				})),
 			}, nil
@@ -101,17 +99,17 @@ func newCachedLocationResolver(
 
 		return &cachedRepositoryResolver{
 			repositoryResolver: repositoryResolver,
-			commitCache:        NewDoubleLockedCache(MultiFactoryFromFallibleFactoryFunc(resolveCommitCached)),
+			commitCache:        dataloader.NewDoubleLockedCache(dataloader.NewMultiFactoryFromFallibleFactoryFunc(resolveCommitCached)),
 		}, nil
 	}
 
 	return &CachedLocationResolver{
-		repositoryCache: NewDoubleLockedCache(MultiFactoryFromFallibleFactoryFunc(resolveRepositoryCached)),
+		repositoryCache: dataloader.NewDoubleLockedCache(dataloader.NewMultiFactoryFromFallibleFactoryFunc(resolveRepositoryCached)),
 	}
 }
 
 // Repository resolves (once) the given repository. May return nil if the repository is not available.
-func (r *CachedLocationResolver) Repository(ctx context.Context, id api.RepoID) (*RepositoryResolver, error) {
+func (r *CachedLocationResolver) Repository(ctx context.Context, id api.RepoID) (resolverstubs.RepositoryResolver, error) {
 	repositoryWrapper, ok, err := r.repositoryCache.GetOrLoad(ctx, id)
 	if err != nil || !ok {
 		return nil, err
@@ -121,7 +119,7 @@ func (r *CachedLocationResolver) Repository(ctx context.Context, id api.RepoID) 
 }
 
 // Commit resolves (once) the given repository and commit. May return nil if the repository or commit is unknown.
-func (r *CachedLocationResolver) Commit(ctx context.Context, id api.RepoID, commit string) (*gitCommitResolver, error) {
+func (r *CachedLocationResolver) Commit(ctx context.Context, id api.RepoID, commit string) (resolverstubs.GitCommitResolver, error) {
 	repositoryWrapper, ok, err := r.repositoryCache.GetOrLoad(ctx, id)
 	if err != nil || !ok {
 		return nil, err
@@ -136,7 +134,7 @@ func (r *CachedLocationResolver) Commit(ctx context.Context, id api.RepoID, comm
 }
 
 // Path resolves (once) the given repository, commit, and path. May return nil if the repository, commit, or path is unknown.
-func (r *CachedLocationResolver) Path(ctx context.Context, id api.RepoID, commit, path string, isDir bool) (*GitTreeEntryResolver, error) {
+func (r *CachedLocationResolver) Path(ctx context.Context, id api.RepoID, commit, path string, isDir bool) (resolverstubs.GitTreeEntryResolver, error) {
 	repositoryWrapper, ok, err := r.repositoryCache.GetOrLoad(ctx, id)
 	if err != nil || !ok {
 		return nil, err
@@ -153,27 +151,5 @@ func (r *CachedLocationResolver) Path(ctx context.Context, id api.RepoID, commit
 	}
 
 	resolver, _, err := cache.GetOrLoad(ctx, path)
-	return resolver, err
+	return resolver.treeEntryResolver, err
 }
-
-type fileInfo struct {
-	path  string
-	size  int64
-	isDir bool
-}
-
-func createFileInfo(path string, isDir bool) fs.FileInfo {
-	return fileInfo{path: path, isDir: isDir}
-}
-
-func (f fileInfo) Name() string { return f.path }
-func (f fileInfo) Size() int64  { return f.size }
-func (f fileInfo) IsDir() bool  { return f.isDir }
-func (f fileInfo) Mode() os.FileMode {
-	if f.IsDir() {
-		return os.ModeDir
-	}
-	return 0
-}
-func (f fileInfo) ModTime() time.Time { return time.Now() }
-func (f fileInfo) Sys() any           { return any(nil) }

@@ -29,6 +29,7 @@ ts_project(
         "src/Tips.tsx",
         "src/chat/CodeBlocks.tsx",
         "src/chat/ContextFiles.tsx",
+        "src/globals.d.ts",
         "src/index.ts",
         "src/utils/icons.tsx",
     ],

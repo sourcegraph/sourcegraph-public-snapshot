@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsShared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -136,10 +137,10 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 type summaryResolver struct {
 	uploadsSvc       UploadsService
 	autoindexingSvc  AutoIndexingService
-	locationResolver *sharedresolvers.CachedLocationResolver
+	locationResolver *gitresolvers.CachedLocationResolver
 }
 
-func newSummaryResolver(uploadsSvc UploadsService, autoindexingSvc AutoIndexingService, locationResolver *sharedresolvers.CachedLocationResolver) resolverstubs.CodeIntelSummaryResolver {
+func newSummaryResolver(uploadsSvc UploadsService, autoindexingSvc AutoIndexingService, locationResolver *gitresolvers.CachedLocationResolver) resolverstubs.CodeIntelSummaryResolver {
 	return &summaryResolver{
 		uploadsSvc:       uploadsSvc,
 		autoindexingSvc:  autoindexingSvc,
@@ -299,8 +300,8 @@ type repositorySummaryResolver struct {
 	summary           RepositorySummary
 	availableIndexers []inferredAvailableIndexers2
 	limitErr          error
-	prefetcher        *sharedresolvers.Prefetcher
-	locationResolver  *sharedresolvers.CachedLocationResolver
+	prefetcher        *Prefetcher
+	locationResolver  *gitresolvers.CachedLocationResolver
 	errTracer         *observation.ErrCollector
 }
 
@@ -315,11 +316,11 @@ func newRepositorySummaryResolver(
 	gitserverClient gitserver.Client,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
-	locationResolver *sharedresolvers.CachedLocationResolver,
+	locationResolver *gitresolvers.CachedLocationResolver,
 	summary RepositorySummary,
 	availableIndexers []inferredAvailableIndexers2,
 	limitErr error,
-	prefetcher *sharedresolvers.Prefetcher,
+	prefetcher *Prefetcher,
 	errTracer *observation.ErrCollector,
 ) resolverstubs.CodeIntelRepositorySummaryResolver {
 	return &repositorySummaryResolver{

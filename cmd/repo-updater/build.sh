@@ -11,7 +11,7 @@ cleanup() {
 }
 
 trap cleanup EXIT
-if [[ "$DOCKER_BAZEL" == "true" ]]; then
+if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
    bazel build //cmd/repo-updater \
      --stamp \
      --workspace_status_command=./dev/bazel_stamp_vars.sh \

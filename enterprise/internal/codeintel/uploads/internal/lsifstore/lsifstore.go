@@ -16,7 +16,7 @@ type LsifStore interface {
 	Transact(ctx context.Context) (LsifStore, error)
 	Done(err error) error
 
-	// Write SCIP
+	// Insert
 	InsertMetadata(ctx context.Context, uploadID int, meta ProcessedMetadata) error
 	NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, error)
 

@@ -51,6 +51,7 @@ type EmbeddingsSearchParameters struct {
 	CodeResultsCount int          `json:"codeResultsCount"`
 	TextResultsCount int          `json:"textResultsCount"`
 
+	UseDocumentRanks bool `json:"useDocumentRanks"`
 	// If set to "True", EmbeddingSearchResult.Debug will contain useful information about scoring.
 	Debug bool `json:"debug"`
 }

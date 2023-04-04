@@ -13,6 +13,9 @@ import (
 )
 
 type Store interface {
+	// Global metadata
+	RepoCount(ctx context.Context) (int, error)
+
 	// Configurations
 	GetConfigurationPolicies(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) ([]shared.ConfigurationPolicy, int, error)
 	GetConfigurationPolicyByID(ctx context.Context, id int) (shared.ConfigurationPolicy, bool, error)
@@ -20,12 +23,9 @@ type Store interface {
 	UpdateConfigurationPolicy(ctx context.Context, policy shared.ConfigurationPolicy) error
 	DeleteConfigurationPolicyByID(ctx context.Context, id int) error
 
-	// Repositories
-	RepoCount(ctx context.Context) (int, error)
+	// Repository matches
 	GetRepoIDsByGlobPatterns(ctx context.Context, patterns []string, limit, offset int) ([]int, int, error)
 	UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) error
-
-	// Utilities
 	SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) ([]shared.ConfigurationPolicy, error)
 }
 

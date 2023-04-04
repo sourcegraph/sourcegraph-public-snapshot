@@ -24,5 +24,17 @@ func main() {
 		map[string]string{"Name": "precise-code-intel-worker", "Host": "127.0.0.1:6088"},
 	)
 
+	enableEmbeddings, _ := strconv.ParseBool(os.Getenv("SRC_ENABLE_EMBEDDINGS"))
+	if enableEmbeddings {
+		shared.ProcfileAdditions = append(
+			shared.ProcfileAdditions,
+			`embeddings: embeddings`,
+		)
+		shared.SrcProfServices = append(
+			shared.SrcProfServices,
+			map[string]string{"Name": "embeddings", "Host": "127.0.0.1:6099"},
+		)
+	}
+
 	shared.Main()
 }
