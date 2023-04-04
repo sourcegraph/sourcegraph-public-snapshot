@@ -1897,6 +1897,7 @@ jest_test(
 # webpack dev environment -------------------
 WEBPACK_CONFIG_DEPS = [
     ":node_modules/@sourcegraph/build-config",
+    "//:node_modules/@babel/runtime",
     "//:node_modules/@pmmmwh/react-refresh-webpack-plugin",
     "//:node_modules/@sentry/webpack-plugin",
     "//:node_modules/buffer",

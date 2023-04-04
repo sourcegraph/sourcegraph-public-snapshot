@@ -64,6 +64,7 @@ module.exports = api => {
     ],
     plugins: [
       ['@babel/plugin-transform-typescript', { isTSX: true }],
+      '@babel/plugin-transform-runtime',
       'babel-plugin-lodash',
       [
         'webpack-chunkname',
