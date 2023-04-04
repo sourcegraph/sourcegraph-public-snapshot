@@ -37,12 +37,11 @@ describe('SignInPage', () => {
     const render = (
         route: string,
         props: {
-            authProviders?: AuthProvider[]
+            authProviders?: SourcegraphContext['authProviders']
             authenticatedUser?: AuthenticatedUser
-            sourcegraphDotComMode?: boolean
-            experimentalFeatures?: SiteConfiguration['experimentalFeatures']
-            allowSignup?: boolean
-            primaryLoginProvidersCount?: Number
+            sourcegraphDotComMode?: SourcegraphContext['sourcegraphDotComMode']
+            allowSignup?: SourcegraphContext['allowSignup']
+            primaryLoginProvidersCount?: SourcegraphContext['primaryLoginProvidersCount']
         }
     ) =>
         renderWithBrandedContext(
@@ -61,7 +60,6 @@ describe('SignInPage', () => {
                                 experimentalFeatures: props.experimentalFeatures ?? {},
                                 primaryLoginProvidersCount: props.primaryLoginProvidersCount ?? 5,
                             }}
-                            isSourcegraphDotCom={false}
                         />
                     }
                 />

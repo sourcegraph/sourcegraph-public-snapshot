@@ -21,24 +21,24 @@ import { UsernamePasswordSignInForm } from './UsernamePasswordSignInForm'
 
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 
-interface SignInPageProps {
+export interface SignInPageProps {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
         | 'allowSignup'
         | 'authProviders'
         | 'sourcegraphDotComMode'
+        | 'primaryLoginProvidersCount'
+        // needed for checkRequestAccessAllowed
+        | 'authAccessRequest'
+        // needed for UsernamePasswordSignInForm
         | 'xhrHeaders'
         | 'resetPasswordEnabled'
-        | 'experimentalFeatures'
-        | 'authAccessRequest'
-        | 'primaryLoginProvidersCount'
     >
-    isSourcegraphDotCom: boolean
 }
 
 export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInPageProps>> = props => {
-    const { isSourcegraphDotCom, context, authenticatedUser } = props
+    const { context, authenticatedUser } = props
     useEffect(() => eventLogger.logViewEvent('SignIn', null, false))
 
     const location = useLocation()
@@ -70,7 +70,6 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
 
     const unsetShowMore = (e: React.MouseEvent) => {
         searchParams.delete('showMore')
-        console.log('S', searchParams)
         setSearchParams(searchParams)
         e.preventDefault()
     }
@@ -156,7 +155,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
             {context.allowSignup ? (
                 <Text>
                     New to Sourcegraph? <Link to="/sign-up">Sign up.</Link>{' '}
-                    {isSourcegraphDotCom && (
+                    {context.sourcegraphDotComMode && (
                         <>
                             To use Sourcegraph on private repositories,{' '}
                             <Link
