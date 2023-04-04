@@ -24,6 +24,7 @@ export type FeatureFlagName =
     | 'app-connect-dotcom'
     | 'sentinel'
     | 'cody-experimental'
+    | 'clone-progress-logging'
 
 interface OrgFlagOverride {
     orgID: string
