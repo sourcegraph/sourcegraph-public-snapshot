@@ -117,7 +117,7 @@
 
 .chat-input {
     flex: 1;
-    border-radius: 1rem;
+    border-radius: .4rem;
     resize: none;
 }
 
@@ -132,7 +132,7 @@
     border: none;
     cursor: pointer;
     height: 2rem;
-    width: 2rem;
+    width: 1.6rem;
 }
 
 .submit-button:hover {
