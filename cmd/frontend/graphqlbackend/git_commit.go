@@ -417,3 +417,10 @@ func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
 	repoUrl.Path += "@" + string(r.oid)
 	return &repoUrl
 }
+
+func (r *GitCommitResolver) AggregatedOwners(ctx context.Context, args AggregatedOwnersArgs) (AggregatedOwnershipConnectionResolver, error) {
+	if r.inputRev != nil {
+		args.Revision = *r.inputRev
+	}
+	return EnterpriseResolvers.ownResolver.AggregatedOwners(ctx, r.repoResolver, args)
+}

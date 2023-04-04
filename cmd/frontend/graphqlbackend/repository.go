@@ -700,7 +700,3 @@ func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct
 func (r *RepositoryResolver) IngestedCodeowners(ctx context.Context) (CodeownersIngestedFileResolver, error) {
 	return EnterpriseResolvers.ownResolver.RepoIngestedCodeowners(ctx, r.IDInt32())
 }
-
-func (r *RepositoryResolver) AggregatedOwners(ctx context.Context, args AggregatedOwnersArgs) (AggregatedOwnershipConnectionResolver, error) {
-	return EnterpriseResolvers.ownResolver.AggregatedOwners(ctx, r, args)
-}

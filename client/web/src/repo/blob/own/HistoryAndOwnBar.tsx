@@ -10,11 +10,16 @@ import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { Alert, Button, Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
-import { FetchOwnersAndHistoryResult, FetchOwnersAndHistoryVariables } from '../../../graphql-operations'
+import {
+    FetchOwnersAndHistoryResult,
+    FetchOwnersAndHistoryVariables,
+    FetchRepoOwnersResult,
+    FetchRepoOwnersVariables,
+} from '../../../graphql-operations'
 import { formatPersonName } from '../../../person/PersonLink'
 import { GitCommitNode } from '../../commits/GitCommitNode'
 
-import { FETCH_OWNERS_AND_HISTORY } from './grapqlQueries'
+import { FETCH_OWNERS_AND_HISTORY, FETCH_REPO_OWNERS } from './grapqlQueries'
 
 import styles from './HistoryAndOwnBar.module.scss'
 
@@ -77,6 +82,100 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
                     className={styles.history}
                 />
             )}
+            {ownership && (
+                <Tooltip content="Show ownership details" placement="left">
+                    <Button className={styles.own} onClick={openOwnershipPanel}>
+                        <div className={styles.ownBranding}>
+                            <Icon svgPath={mdiAccount} aria-hidden="true" className={styles.ownIcon} /> Own
+                        </div>
+
+                        <div className={styles.ownItems}>
+                            {ownership.nodes.length === 0 && (
+                                <div className={classNames(styles.ownItem, styles.ownItemEmpty)}>No owner found</div>
+                            )}
+
+                            {ownership.nodes.slice(0, 2).map((ownership, index) => (
+                                // There will only be 2 owners max and they won't change, so
+                                // it's safe to use the index as a key.
+                                // eslint-disable-next-line react/no-array-index-key
+                                <div className={styles.ownItem} key={index}>
+                                    {ownership.owner.__typename === 'Person' && (
+                                        <>
+                                            <UserAvatar user={ownership.owner} className="mx-2" inline={true} />
+                                            {formatPersonName(ownership.owner)}
+                                        </>
+                                    )}
+                                    {ownership.owner.__typename === 'Team' && (
+                                        <>
+                                            <TeamAvatar
+                                                team={{
+                                                    ...ownership.owner,
+                                                    displayName: ownership.owner.teamDisplayName,
+                                                }}
+                                                className="mx-2"
+                                                inline={true}
+                                            />
+                                            {ownership.owner.teamDisplayName || ownership.owner.name}
+                                        </>
+                                    )}
+                                </div>
+                            ))}
+                            {ownership.totalCount > 2 && (
+                                <div className={styles.ownMore}>+{ownership.totalCount - 2} more</div>
+                            )}
+                        </div>
+                    </Button>
+                </Tooltip>
+            )}
+        </div>
+    )
+}
+
+export const RepoHistoryAndOwnBar: React.FunctionComponent<{
+    repoID: string
+    revision: string
+}> = ({ repoID, revision }) => {
+    const navigate = useNavigate()
+
+    const openOwnershipPanel = useCallback(() => {
+        navigate({ hash: '#tab=ownership' })
+    }, [navigate])
+
+    const { data, error, loading } = useQuery<FetchRepoOwnersResult, FetchRepoOwnersVariables>(FETCH_REPO_OWNERS, {
+        variables: {
+            repo: repoID,
+            revision: revision,
+        },
+    })
+
+    useEffect(() => {
+        if (error) {
+            logger.error(error)
+        }
+    }, [error])
+
+    if (loading) {
+        return (
+            <div className={styles.wrapper}>
+                <LoadingSpinner />
+            </div>
+        )
+    }
+
+    if (error || !(data?.node?.__typename === 'Repository' && data.node.commit)) {
+        return (
+            <div className={styles.wrapper}>
+                <Alert variant="danger" className="mb-0 py-1" aria-live="polite">
+                    Error getting history and ownership details about this file.
+                </Alert>
+            </div>
+        )
+    }
+
+    const ownership = data.node.commit?.aggregatedOwners
+
+    return (
+        <div className={styles.wrapper}>
             {ownership && (
                 <Tooltip content="Show ownership details" placement="left">
                     <Button className={styles.own} onClick={openOwnershipPanel}>

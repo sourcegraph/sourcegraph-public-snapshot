@@ -220,14 +220,13 @@ extend type Repository {
     A file containing manually ingested codeowners data, if any. Null if no data has been uploaded.
     """
     ingestedCodeowners: CodeownersIngestedFile
+}
+
+extend type GitCommit {
     """
     Owners of the repository
     """
     aggregatedOwners(
-        """
-        The Git revision range to compute contributors in.
-        """
-        revision: String!
         """
         Returns the first n ownership records from the list.
         """

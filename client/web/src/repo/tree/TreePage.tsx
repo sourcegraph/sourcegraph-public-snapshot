@@ -51,6 +51,7 @@ import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { RepositoryFields } from '../../graphql-operations'
 import { OwnConfigProps } from '../../own/OwnConfigProps'
 import { basename } from '../../util/path'
+import { RepoHistoryAndOwnBar } from '../blob/own/HistoryAndOwnBar'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { isPackageServiceType } from '../packages/isPackageServiceType'
 
@@ -217,6 +218,7 @@ export const TreePage: FC<Props> = ({
 
     const RootHeaderSection = (): React.ReactElement => (
         <div className="d-flex flex-wrap justify-content-between px-0">
+            {ownFeatureFlagEnabled && repo?.id && <RepoHistoryAndOwnBar repoID={repo?.id} revision={commitID} />}
             <div className={styles.header}>
                 <PageHeader className="mb-3 test-tree-page-title">
                     <PageHeader.Heading as="h2" styleAs="h1">

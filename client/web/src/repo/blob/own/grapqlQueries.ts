@@ -89,3 +89,30 @@ export const FETCH_OWNERS_AND_HISTORY = gql`
         }
     }
 `
+
+export const FETCH_REPO_OWNERS = gql`
+    ${OWNER_FIELDS}
+
+    query FetchRepoOwners($repo: ID!, $revision: String!) {
+        node(id: $repo) {
+            ... on Repository {
+                commit(rev: $revision) {
+                    aggregatedOwners {
+                        totalCount
+                        nodes {
+                            totalFiles
+                            owner {
+                                ...OwnerFields
+                            }
+                            reasons {
+                                ... on CodeownersFileEntry {
+                                    title
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+`
