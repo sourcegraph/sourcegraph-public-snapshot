@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"sort"
 	"testing"
@@ -13,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -267,25 +265,4 @@ func TestSelectPoliciesForRepositoryMembershipUpdate(t *testing.T) {
 	} else if diff := cmp.Diff([]int{101, 102, 104}, ids(policies)); diff != "" {
 		t.Fatalf("unexpected configuration policy list (-want +got):\n%s", diff)
 	}
-}
-
-// scanPolicyRepositories returns a map of policyIDs that have a slice of their correspondent repoIDs (repoIDs associated with that policyIDs).
-func scanPolicyRepositories(rows *sql.Rows, queryErr error) (_ map[int][]int, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	policies := map[int][]int{}
-	for rows.Next() {
-		var policyID int
-		var repoID int
-		if err := rows.Scan(&policyID, &repoID); err != nil {
-			return nil, err
-		}
-
-		policies[policyID] = append(policies[policyID], repoID)
-	}
-
-	return policies, nil
 }
