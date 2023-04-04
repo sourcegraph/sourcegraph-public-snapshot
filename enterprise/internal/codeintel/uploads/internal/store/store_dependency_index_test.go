@@ -6,7 +6,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -19,7 +19,7 @@ func TestInsertDependencySyncingJob(t *testing.T) {
 
 	uploadID := 42
 	insertRepo(t, db, 50, "", false)
-	insertUploads(t, db, types.Upload{
+	insertUploads(t, db, shared.Upload{
 		ID:            uploadID,
 		Commit:        makeCommit(1),
 		Root:          "sub/",

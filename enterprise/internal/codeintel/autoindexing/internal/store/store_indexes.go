@@ -8,14 +8,14 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // InsertIndexes inserts a new index and returns the hydrated index models.
-func (s *store) InsertIndexes(ctx context.Context, indexes []types.Index) (_ []types.Index, err error) {
+func (s *store) InsertIndexes(ctx context.Context, indexes []uploadsshared.Index) (_ []uploadsshared.Index, err error) {
 	ctx, _, endObservation := s.operations.insertIndex.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
@@ -30,7 +30,7 @@ func (s *store) InsertIndexes(ctx context.Context, indexes []types.Index) (_ []t
 	values := make([]*sqlf.Query, 0, len(indexes))
 	for _, index := range indexes {
 		if index.DockerSteps == nil {
-			index.DockerSteps = []types.DockerStep{}
+			index.DockerSteps = []uploadsshared.DockerStep{}
 		}
 		if index.IndexerArgs == nil {
 			index.IndexerArgs = []string{}
@@ -90,7 +90,7 @@ RETURNING id
 
 // getIndexesByIDs returns an index for each of the given identifiers. Not all given ids will necessarily
 // have a corresponding element in the returned list.
-func (s *store) getIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Index, err error) {
+func (s *store) getIndexesByIDs(ctx context.Context, ids ...int) (_ []uploadsshared.Index, err error) {
 	ctx, _, endObservation := s.operations.getIndexesByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("ids", intsToString(ids)),
 	}})

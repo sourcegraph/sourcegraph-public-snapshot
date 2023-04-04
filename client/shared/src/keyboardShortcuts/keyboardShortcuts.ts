@@ -15,11 +15,12 @@ type KEYBOARD_SHORTCUT_IDENTIFIERS =
     | 'focusCodeEditor'
     | 'focusFileTree'
     | 'focusSymbols'
+    | 'focusCody'
 
 export type KEYBOARD_SHORTCUT_MAPPING = Record<KEYBOARD_SHORTCUT_IDENTIFIERS, KeyboardShortcut>
 
 export const EXPERIMENTAL_BLOB_PAGE_SHORTCUTS: Record<
-    'focusCodeEditor' | 'focusFileTree' | 'focusSymbols',
+    'focusCodeEditor' | 'focusFileTree' | 'focusSymbols' | 'focusCody',
     KeyboardShortcut
 > = {
     focusCodeEditor: {
@@ -33,6 +34,10 @@ export const EXPERIMENTAL_BLOB_PAGE_SHORTCUTS: Record<
     focusSymbols: {
         title: 'Focus symbols',
         keybindings: [{ ordered: ['s'] }],
+    },
+    focusCody: {
+        title: 'Focus Cody',
+        keybindings: [{ held: ['Alt'], ordered: ['/'] }],
     },
 }
 

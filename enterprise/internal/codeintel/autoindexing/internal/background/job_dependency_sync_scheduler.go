@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -27,14 +26,14 @@ import (
 // NewDependencySyncScheduler returns a new worker instance that processes
 // records from lsif_dependency_syncing_jobs.
 func NewDependencySyncScheduler(
-	dependencySyncStore dbworkerstore.Store[shared.DependencySyncingJob],
+	dependencySyncStore dbworkerstore.Store[dependencySyncingJob],
 	uploadSvc UploadService,
 	depsSvc DependenciesService,
 	store store.Store,
 	externalServiceStore ExternalServiceStore,
 	metrics workerutil.WorkerObservability,
 	pollInterval time.Duration,
-) *workerutil.Worker[shared.DependencySyncingJob] {
+) *workerutil.Worker[dependencySyncingJob] {
 	rootContext := actor.WithInternalActor(context.Background())
 	handler := &dependencySyncSchedulerHandler{
 		uploadsSvc:  uploadSvc,
@@ -44,7 +43,7 @@ func NewDependencySyncScheduler(
 		extsvcStore: externalServiceStore,
 	}
 
-	return dbworker.NewWorker[shared.DependencySyncingJob](rootContext, dependencySyncStore, handler, workerutil.WorkerOptions{
+	return dbworker.NewWorker[dependencySyncingJob](rootContext, dependencySyncStore, handler, workerutil.WorkerOptions{
 		Name:              "precise_code_intel_dependency_sync_scheduler_worker",
 		Description:       "reads dependency package references from code-intel uploads to be synced to the instance",
 		NumHandlers:       1,
@@ -58,7 +57,7 @@ type dependencySyncSchedulerHandler struct {
 	uploadsSvc  UploadService
 	depsSvc     DependenciesService
 	store       store.Store
-	workerStore dbworkerstore.Store[shared.DependencySyncingJob]
+	workerStore dbworkerstore.Store[dependencySyncingJob]
 	extsvcStore ExternalServiceStore
 }
 
@@ -73,7 +72,7 @@ var schemeToExternalService = map[string]string{
 	dependencies.RubyPackagesScheme:   extsvc.KindRubyPackages,
 }
 
-func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.Logger, job shared.DependencySyncingJob) error {
+func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.Logger, job dependencySyncingJob) error {
 	if !autoIndexingEnabled() {
 		return nil
 	}

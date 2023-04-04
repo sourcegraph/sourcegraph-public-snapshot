@@ -16,18 +16,17 @@ type LsifStore interface {
 	Transact(ctx context.Context) (LsifStore, error)
 	Done(err error) error
 
-	GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error)
-	DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int) (err error)
-
+	// Insert
 	InsertMetadata(ctx context.Context, uploadID int, meta ProcessedMetadata) error
 	NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, error)
 
+	// Reconciliation and cleanup
 	IDsWithMeta(ctx context.Context, ids []int) ([]int, error)
 	ReconcileCandidates(ctx context.Context, batchSize int) ([]int, error)
+	DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int) (err error)
 	DeleteUnreferencedDocuments(ctx context.Context, batchSize int, maxAge time.Duration, now time.Time) (numScanned, numDeleted int, err error)
 
-	// Stream
-	ScanDocuments(ctx context.Context, id int, f func(path string, document *scip.Document) error) (err error)
+	// Scan/export data
 	InsertDefinitionsAndReferencesForDocument(ctx context.Context, upload shared.ExportedUpload, rankingGraphKey string, rankingBatchSize int, f func(ctx context.Context, upload shared.ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error) (err error)
 }
 

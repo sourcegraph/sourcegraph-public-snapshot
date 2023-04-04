@@ -8,12 +8,12 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // Stencil returns all ranges within a single document.
-func (s *store) GetStencil(ctx context.Context, bundleID int, path string) (_ []types.Range, err error) {
+func (s *store) GetStencil(ctx context.Context, bundleID int, path string) (_ []shared.Range, err error) {
 	ctx, trace, endObservation := s.operations.getStencil.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
@@ -31,7 +31,7 @@ func (s *store) GetStencil(ctx context.Context, bundleID int, path string) (_ []
 
 	trace.AddEvent("TODO Domain Owner", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
 
-	ranges := make([]types.Range, 0, len(documentData.SCIPData.Occurrences))
+	ranges := make([]shared.Range, 0, len(documentData.SCIPData.Occurrences))
 	for _, occurrence := range documentData.SCIPData.Occurrences {
 		ranges = append(ranges, translateRange(scip.NewRange(occurrence.Range)))
 	}

@@ -3,7 +3,7 @@ package lsifstore
 import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -27,13 +27,13 @@ type QualifiedDocumentData struct {
 	SCIPData *scip.Document
 }
 
-func translateRange(r *scip.Range) types.Range {
-	return types.Range{
-		Start: types.Position{
+func translateRange(r *scip.Range) shared.Range {
+	return shared.Range{
+		Start: shared.Position{
 			Line:      int(r.Start.Line),
 			Character: int(r.Start.Character),
 		},
-		End: types.Position{
+		End: shared.Position{
 			Line:      int(r.End.Line),
 			Character: int(r.End.Character),
 		},

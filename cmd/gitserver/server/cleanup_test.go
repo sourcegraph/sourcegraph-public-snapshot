@@ -340,14 +340,12 @@ func TestCleanupExpired(t *testing.T) {
 	repoNonBare := path.Join(root, "repo-non-bare", ".git")
 	repoPerforce := path.Join(root, "repo-perforce", ".git")
 	repoPerforceGCOld := path.Join(root, "repo-perforce-gc-old", ".git")
-	repoRemoteURLScrub := path.Join(root, "repo-remote-url-scrub", ".git")
 	remote := path.Join(root, "remote", ".git")
 	for _, gitDirPath := range []string{
 		repoNew, repoOld,
 		repoGCNew, repoGCOld,
 		repoBoom, repoCorrupt,
 		repoPerforce, repoPerforceGCOld,
-		repoRemoteURLScrub,
 		remote,
 	} {
 		cmd := exec.Command("git", "--bare", "init", gitDirPath)
@@ -410,9 +408,6 @@ func TestCleanupExpired(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := setRepositoryType(GitDir(repoPerforceGCOld), "perforce"); err != nil {
-		t.Fatal(err)
-	}
-	if err := exec.Command("git", "-C", repoRemoteURLScrub, "remote", "add", "origin", "http://hello:world@boom.com/").Run(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -478,13 +473,6 @@ func TestCleanupExpired(t *testing.T) {
 	}
 	if !now.After(recloneTime(repoBoom)) {
 		t.Error("expected repoBoom reclone time to be updated to not now")
-	}
-
-	// we scrubbed remote URL
-	if out, err := exec.Command("git", "-C", repoRemoteURLScrub, "remote", "-v").Output(); len(out) > 0 {
-		t.Fatalf("expected no output from git remote after URL scrubbing, got: %s", out)
-	} else if err != nil {
-		t.Fatal(err)
 	}
 
 	if _, err := os.Stat(repoNonBare); err == nil {

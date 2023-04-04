@@ -8,6 +8,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/dataloader"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -23,9 +25,9 @@ type rootResolver struct {
 	gitserverClient         gitserver.Client
 	siteAdminChecker        sharedresolvers.SiteAdminChecker
 	repoStore               database.RepoStore
-	prefetcherFactory       *sharedresolvers.PrefetcherFactory
+	prefetcherFactory       *uploadsgraphql.PrefetcherFactory
 	bulkLoaderFactory       *bulkLoaderFactory
-	locationResolverFactory *sharedresolvers.CachedLocationResolverFactory
+	locationResolverFactory *gitresolvers.CachedLocationResolverFactory
 	operations              *operations
 }
 
@@ -37,8 +39,8 @@ func NewRootResolver(
 	gitserverClient gitserver.Client,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
-	prefetcherFactory *sharedresolvers.PrefetcherFactory,
-	locationResolverFactory *sharedresolvers.CachedLocationResolverFactory,
+	prefetcherFactory *uploadsgraphql.PrefetcherFactory,
+	locationResolverFactory *gitresolvers.CachedLocationResolverFactory,
 ) resolverstubs.SentinelServiceResolver {
 	return &rootResolver{
 		sentinelSvc:             sentinelSvc,
@@ -338,12 +340,12 @@ func (f *bulkLoaderFactory) Create() *bulkLoader {
 }
 
 type bulkLoader struct {
-	loader *sharedresolvers.DataLoader[int, shared.Vulnerability]
+	loader *dataloader.DataLoader[int, shared.Vulnerability]
 }
 
 func NewBulkLoader(sentinelSvc SentinelService) *bulkLoader {
 	return &bulkLoader{
-		loader: sharedresolvers.NewDataLoader[int, shared.Vulnerability](sharedresolvers.DataLoaderBackingServiceFunc[int, shared.Vulnerability](func(ctx context.Context, ids ...int) ([]shared.Vulnerability, error) {
+		loader: dataloader.New[int, shared.Vulnerability](dataloader.BackingServiceFunc[int, shared.Vulnerability](func(ctx context.Context, ids ...int) ([]shared.Vulnerability, error) {
 			return sentinelSvc.GetVulnerabilitiesByIDs(ctx, ids...)
 		})),
 	}
@@ -364,8 +366,8 @@ type vulnerabilityMatchResolver struct {
 	gitserverClient  gitserver.Client
 	siteAdminChecker sharedresolvers.SiteAdminChecker
 	repoStore        database.RepoStore
-	prefetcher       *sharedresolvers.Prefetcher
-	locationResolver *sharedresolvers.CachedLocationResolver
+	prefetcher       *uploadsgraphql.Prefetcher
+	locationResolver *gitresolvers.CachedLocationResolver
 	errTracer        *observation.ErrCollector
 	bulkLoader       *bulkLoader
 	m                shared.VulnerabilityMatch

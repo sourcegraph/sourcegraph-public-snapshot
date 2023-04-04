@@ -13,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -31,7 +30,7 @@ import (
 // NewDependencyIndexingScheduler returns a new worker instance that processes
 // records from lsif_dependency_indexing_jobs.
 func NewDependencyIndexingScheduler(
-	dependencyIndexingStore dbworkerstore.Store[shared.DependencyIndexingJob],
+	dependencyIndexingStore dbworkerstore.Store[dependencyIndexingJob],
 	uploadSvc UploadService,
 	repoStore ReposStore,
 	externalServiceStore ExternalServiceStore,
@@ -41,7 +40,7 @@ func NewDependencyIndexingScheduler(
 	metrics workerutil.WorkerObservability,
 	pollInterval time.Duration,
 	numHandlers int,
-) *workerutil.Worker[shared.DependencyIndexingJob] {
+) *workerutil.Worker[dependencyIndexingJob] {
 	rootContext := actor.WithInternalActor(context.Background())
 
 	handler := &dependencyIndexingSchedulerHandler{
@@ -54,7 +53,7 @@ func NewDependencyIndexingScheduler(
 		repoUpdater:        repoUpdater,
 	}
 
-	return dbworker.NewWorker[shared.DependencyIndexingJob](rootContext, dependencyIndexingStore, handler, workerutil.WorkerOptions{
+	return dbworker.NewWorker[dependencyIndexingJob](rootContext, dependencyIndexingStore, handler, workerutil.WorkerOptions{
 		Name:              "precise_code_intel_dependency_indexing_scheduler_worker",
 		Description:       "queues code-intel auto-indexing jobs for dependency packages",
 		NumHandlers:       numHandlers,
@@ -70,7 +69,7 @@ type dependencyIndexingSchedulerHandler struct {
 	indexEnqueuer      IndexEnqueuer
 	extsvcStore        ExternalServiceStore
 	gitserverRepoStore GitserverRepoStore
-	workerStore        dbworkerstore.Store[shared.DependencyIndexingJob]
+	workerStore        dbworkerstore.Store[dependencyIndexingJob]
 	repoUpdater        RepoUpdaterClient
 }
 
@@ -79,13 +78,13 @@ const requeueBackoff = time.Second * 30
 // default is false aka index scheduler is enabled
 var disableIndexScheduler, _ = strconv.ParseBool(os.Getenv("CODEINTEL_DEPENDENCY_INDEX_SCHEDULER_DISABLED"))
 
-var _ workerutil.Handler[shared.DependencyIndexingJob] = &dependencyIndexingSchedulerHandler{}
+var _ workerutil.Handler[dependencyIndexingJob] = &dependencyIndexingSchedulerHandler{}
 
 // Handle iterates all import monikers associated with a given upload that has
 // recently completed processing. Each moniker is interpreted according to its
 // scheme to determine the dependent repository and commit. A set of indexing
 // jobs are enqueued for each repository and commit pair.
-func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger log.Logger, job shared.DependencyIndexingJob) error {
+func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger log.Logger, job dependencyIndexingJob) error {
 	if !autoIndexingEnabled() || disableIndexScheduler {
 		return nil
 	}

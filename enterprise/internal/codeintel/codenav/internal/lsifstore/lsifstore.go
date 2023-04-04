@@ -5,43 +5,30 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 type LsifStore interface {
-	// Hover
-	GetHover(ctx context.Context, bundleID int, path string, line, character int) (string, types.Range, bool, error)
-
-	// References
-	GetReferenceLocations(ctx context.Context, uploadID int, path string, line, character, limit, offset int) ([]shared.Location, int, error)
-
-	// Implementation
-	GetImplementationLocations(ctx context.Context, uploadID int, path string, line, character, limit, offset int) ([]shared.Location, int, error)
-
-	// Definition
-	GetDefinitionLocations(ctx context.Context, uploadID int, path string, line, character, limit, offset int) ([]shared.Location, int, error)
-
-	// Monikers
-	GetMonikersByPosition(ctx context.Context, uploadID int, path string, line, character int) ([][]precise.MonikerData, error)
-	GetBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) ([]shared.Location, int, error)
-
-	// Packages
-	GetPackageInformation(ctx context.Context, uploadID int, path, packageInformationID string) (precise.PackageInformationData, bool, error)
-
-	// Diagnostics
-	GetDiagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) ([]shared.Diagnostic, int, error)
-
-	// Stencil
-	GetStencil(ctx context.Context, bundleID int, path string) ([]types.Range, error)
-
-	// Ranges
+	// Whole-document metadata
+	GetPathExists(ctx context.Context, bundleID int, path string) (bool, error)
+	GetStencil(ctx context.Context, bundleID int, path string) ([]shared.Range, error)
 	GetRanges(ctx context.Context, bundleID int, path string, startLine, endLine int) ([]shared.CodeIntelligenceRange, error)
 
-	// Paths
-	GetPathExists(ctx context.Context, bundleID int, path string) (bool, error)
+	// Fetch symbol names by position
+	GetMonikersByPosition(ctx context.Context, uploadID int, path string, line, character int) ([][]precise.MonikerData, error)
+	GetPackageInformation(ctx context.Context, uploadID int, path, packageInformationID string) (precise.PackageInformationData, bool, error)
+
+	// Fetch locations by position
+	GetDefinitionLocations(ctx context.Context, uploadID int, path string, line, character, limit, offset int) ([]shared.Location, int, error)
+	GetImplementationLocations(ctx context.Context, uploadID int, path string, line, character, limit, offset int) ([]shared.Location, int, error)
+	GetReferenceLocations(ctx context.Context, uploadID int, path string, line, character, limit, offset int) ([]shared.Location, int, error)
+	GetBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) ([]shared.Location, int, error)
+
+	// Metadata by position
+	GetHover(ctx context.Context, bundleID int, path string, line, character int) (string, shared.Range, bool, error)
+	GetDiagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) ([]shared.Diagnostic, int, error)
 }
 
 type store struct {

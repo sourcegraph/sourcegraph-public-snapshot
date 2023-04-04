@@ -41,6 +41,12 @@ type Doer interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
+type MockDoer func(*http.Request) (*http.Response, error)
+
+func (m MockDoer) Do(req *http.Request) (*http.Response, error) {
+	return m(req)
+}
+
 // DoerFunc is function adapter that implements the http.RoundTripper
 // interface by calling itself.
 type DoerFunc func(*http.Request) (*http.Response, error)

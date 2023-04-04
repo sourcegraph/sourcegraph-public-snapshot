@@ -74,7 +74,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	getRepoEmbeddingIndex, err := getCachedRepoEmbeddingIndex(repoStore, repoEmbeddingJobsStore, func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
-		return embeddings.DownloadIndex[embeddings.RepoEmbeddingIndex](ctx, uploadStore, string(repoEmbeddingIndexName))
+		return embeddings.DownloadRepoEmbeddingIndex(ctx, uploadStore, string(repoEmbeddingIndexName))
 	})
 	if err != nil {
 		return err
@@ -130,7 +130,7 @@ func NewHandler(
 			return
 		}
 
-		res, err := searchRepoEmbeddingIndex(r.Context(), logger, args, readFile, getRepoEmbeddingIndex, getQueryEmbedding, args.Debug)
+		res, err := searchRepoEmbeddingIndex(r.Context(), logger, args, readFile, getRepoEmbeddingIndex, getQueryEmbedding)
 		if errcode.IsNotFound(err) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
