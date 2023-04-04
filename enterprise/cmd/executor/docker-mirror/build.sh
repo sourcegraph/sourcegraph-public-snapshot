@@ -11,8 +11,8 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "--- gcp secret"
-gcloud secrets versions access latest --secret=e2e-builder-sa-key --quiet --project=sourcegraph-ci >"$TMR_WORKDIR/builder-sa-key.json"
+#echo "--- gcp secret"
+#gcloud secrets versions access latest --secret=e2e-builder-sa-key --quiet --project=sourcegraph-ci >"$TMR_WORKDIR/builder-sa-key.json"
 
 echo "--- packer build"
 
