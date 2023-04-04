@@ -270,7 +270,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                         return (
                             <StatusMessagesNavItemEntry
                                 key="no-repositories"
-                                title="No repositories detected"
+                                title="No repositories"
                                 message="Connect a code host to connect repositories to Sourcegraph."
                                 linkTo="/setup"
                                 linkText="Setup code hosts"
