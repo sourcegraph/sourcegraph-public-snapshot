@@ -13,7 +13,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -29,12 +29,12 @@ func TestInsertIndexes(t *testing.T) {
 
 	insertRepo(t, db, 50, "")
 
-	indexes, err := store.InsertIndexes(ctx, []types.Index{
+	indexes, err := store.InsertIndexes(ctx, []uploadsshared.Index{
 		{
 			State:        "queued",
 			Commit:       makeCommit(1),
 			RepositoryID: 50,
-			DockerSteps: []types.DockerStep{
+			DockerSteps: []uploadsshared.DockerStep{
 				{
 					Image:    "cimg/node:12.16",
 					Commands: []string{"yarn install --frozen-lockfile --no-progress"},
@@ -54,7 +54,7 @@ func TestInsertIndexes(t *testing.T) {
 			State:        "queued",
 			Commit:       makeCommit(2),
 			RepositoryID: 50,
-			DockerSteps: []types.DockerStep{
+			DockerSteps: []uploadsshared.DockerStep{
 				{
 					Image:    "cimg/rust:nightly",
 					Commands: []string{"cargo install"},
@@ -80,7 +80,7 @@ func TestInsertIndexes(t *testing.T) {
 
 	rank1 := 1
 	rank2 := 2
-	expected := []types.Index{
+	expected := []uploadsshared.Index{
 		{
 			ID:             1,
 			Commit:         makeCommit(1),
@@ -91,7 +91,7 @@ func TestInsertIndexes(t *testing.T) {
 			FinishedAt:     nil,
 			RepositoryID:   50,
 			RepositoryName: "n-50",
-			DockerSteps: []types.DockerStep{
+			DockerSteps: []uploadsshared.DockerStep{
 				{
 					Image:    "cimg/node:12.16",
 					Commands: []string{"yarn install --frozen-lockfile --no-progress"},
@@ -118,7 +118,7 @@ func TestInsertIndexes(t *testing.T) {
 			FinishedAt:     nil,
 			RepositoryID:   50,
 			RepositoryName: "n-50",
-			DockerSteps: []types.DockerStep{
+			DockerSteps: []uploadsshared.DockerStep{
 				{
 					Image:    "cimg/rust:nightly",
 					Commands: []string{"cargo install"},
@@ -185,10 +185,10 @@ func TestIsQueued(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertIndexes(t, db, types.Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1)})
-	insertIndexes(t, db, types.Index{ID: 2, RepositoryID: 1, Commit: makeCommit(1), ShouldReindex: true})
-	insertIndexes(t, db, types.Index{ID: 3, RepositoryID: 4, Commit: makeCommit(1), ShouldReindex: true})
-	insertIndexes(t, db, types.Index{ID: 4, RepositoryID: 5, Commit: makeCommit(4), ShouldReindex: true})
+	insertIndexes(t, db, uploadsshared.Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1)})
+	insertIndexes(t, db, uploadsshared.Index{ID: 2, RepositoryID: 1, Commit: makeCommit(1), ShouldReindex: true})
+	insertIndexes(t, db, uploadsshared.Index{ID: 3, RepositoryID: 4, Commit: makeCommit(1), ShouldReindex: true})
+	insertIndexes(t, db, uploadsshared.Index{ID: 4, RepositoryID: 5, Commit: makeCommit(4), ShouldReindex: true})
 	insertUploads(t, db, Upload{ID: 2, RepositoryID: 2, Commit: makeCommit(2)})
 	insertUploads(t, db, Upload{ID: 3, RepositoryID: 3, Commit: makeCommit(3), State: "deleted"})
 	insertUploads(t, db, Upload{ID: 4, RepositoryID: 5, Commit: makeCommit(4), ShouldReindex: true})
@@ -230,12 +230,12 @@ func TestIsQueuedRootIndexer(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	now := time.Now()
-	insertIndexes(t, db, types.Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1)})
-	insertIndexes(t, db, types.Index{ID: 2, RepositoryID: 1, Commit: makeCommit(1), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 2)})
-	insertIndexes(t, db, types.Index{ID: 3, RepositoryID: 2, Commit: makeCommit(2), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1), ShouldReindex: true})
-	insertIndexes(t, db, types.Index{ID: 4, RepositoryID: 2, Commit: makeCommit(2), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 2)})
-	insertIndexes(t, db, types.Index{ID: 5, RepositoryID: 3, Commit: makeCommit(3), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1)})
-	insertIndexes(t, db, types.Index{ID: 6, RepositoryID: 3, Commit: makeCommit(3), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 2), ShouldReindex: true})
+	insertIndexes(t, db, uploadsshared.Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1)})
+	insertIndexes(t, db, uploadsshared.Index{ID: 2, RepositoryID: 1, Commit: makeCommit(1), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 2)})
+	insertIndexes(t, db, uploadsshared.Index{ID: 3, RepositoryID: 2, Commit: makeCommit(2), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1), ShouldReindex: true})
+	insertIndexes(t, db, uploadsshared.Index{ID: 4, RepositoryID: 2, Commit: makeCommit(2), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 2)})
+	insertIndexes(t, db, uploadsshared.Index{ID: 5, RepositoryID: 3, Commit: makeCommit(3), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1)})
+	insertIndexes(t, db, uploadsshared.Index{ID: 6, RepositoryID: 3, Commit: makeCommit(3), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 2), ShouldReindex: true})
 
 	testCases := []struct {
 		repositoryID int
@@ -465,7 +465,7 @@ func (r printableRank) String() string {
 }
 
 // insertIndexes populates the lsif_indexes table with the given index models.
-func insertIndexes(t testing.TB, db database.DB, indexes ...types.Index) {
+func insertIndexes(t testing.TB, db database.DB, indexes ...uploadsshared.Index) {
 	for _, index := range indexes {
 		if index.Commit == "" {
 			index.Commit = makeCommit(index.ID)
@@ -477,7 +477,7 @@ func insertIndexes(t testing.TB, db database.DB, indexes ...types.Index) {
 			index.RepositoryID = 50
 		}
 		if index.DockerSteps == nil {
-			index.DockerSteps = []types.DockerStep{}
+			index.DockerSteps = []uploadsshared.DockerStep{}
 		}
 		if index.IndexerArgs == nil {
 			index.IndexerArgs = []string{}

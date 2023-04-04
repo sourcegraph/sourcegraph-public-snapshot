@@ -53,10 +53,23 @@ func (b *bulkProcessorWorker) HandlerFunc() workerutil.HandlerFunc[*btypes.Chang
 		if err != nil {
 			return err
 		}
-		defer func() { err = tx.Done(err) }()
 
 		p := processor.New(logger, tx, b.sourcer)
+		afterDone, err := p.Process(ctx, job)
 
-		return p.Process(ctx, job)
+		defer func() {
+			err = tx.Done(err)
+			// If afterDone is provided, it is enqueuing a new webhook. We call afterDone
+			// regardless of whether or not the transaction succeeds because the webhook
+			// should represent the interaction with the code host, not the database
+			// transaction. The worst case is that the transaction actually did fail and
+			// thus the changeset in the webhook payload is out-of-date. But we will still
+			// have enqueued the appropriate webhook.
+			if afterDone != nil {
+				afterDone(b.store)
+			}
+		}()
+
+		return err
 	}
 }

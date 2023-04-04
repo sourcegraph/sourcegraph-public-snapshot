@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "rootDir": ".",
+    "sourceRoot": "src",
+    "outDir": "out",
+    "jsx": "react-jsx",
+    "declaration": true,
+    "types": ["./src/typings.d.ts"],
+  },
+  "include": ["**/*", ".*"],
+  "exclude": ["out", "dist"],
+  "references": [{ "path": "../cody-shared" }],
+}

@@ -10,12 +10,12 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // GetHover returns the hover text of the symbol at the given position.
-func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, character int) (_ string, _ types.Range, _ bool, err error) {
+func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, character int) (_ string, _ shared.Range, _ bool, err error) {
 	ctx, trace, endObservation := s.operations.getHover.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
@@ -30,11 +30,11 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 		path,
 	)))
 	if err != nil || !exists {
-		return "", types.Range{}, false, err
+		return "", shared.Range{}, false, err
 	}
 
 	trace.AddEvent("SCIPData", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
-	occurrences := types.FindOccurrences(documentData.SCIPData.Occurrences, int32(line), int32(character))
+	occurrences := scip.FindOccurrences(documentData.SCIPData.Occurrences, int32(line), int32(character))
 	trace.AddEvent("FindOccurences", attribute.Int("numIntersectingOccurrences", len(occurrences)))
 
 	for _, occurrence := range occurrences {
@@ -53,7 +53,7 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 	// symbols when processing the documents below.
 
 	symbolNames := make([]string, 0, len(occurrences))
-	rangeBySymbol := make(map[string]types.Range, len(occurrences))
+	rangeBySymbol := make(map[string]shared.Range, len(occurrences))
 
 	for _, occurrence := range occurrences {
 		if occurrence.Symbol == "" || scip.IsLocalSymbol(occurrence.Symbol) {
@@ -77,7 +77,7 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 		bundleID,
 	)))
 	if err != nil {
-		return "", types.Range{}, false, err
+		return "", shared.Range{}, false, err
 	}
 
 	// Re-perform the symbol information search. This loop is constructed to prefer matches for symbols
@@ -99,7 +99,7 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 		}
 	}
 
-	return "", types.Range{}, false, nil
+	return "", shared.Range{}, false, nil
 }
 
 const hoverDocumentQuery = `

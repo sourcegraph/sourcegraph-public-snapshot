@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
@@ -17,7 +17,7 @@ func TestCommitsDescribedByPolicyForRetention(t *testing.T) {
 	mainGitserverClient := testUploadExpirerMockGitserverClient("main", now)
 	developGitserverClient := testUploadExpirerMockGitserverClient("develop", now)
 
-	runTest := func(t *testing.T, gitserverClient *gitserver.MockClient, policies []types.ConfigurationPolicy, expectedPolicyMatches map[string][]PolicyMatch) {
+	runTest := func(t *testing.T, gitserverClient *gitserver.MockClient, policies []policiesshared.ConfigurationPolicy, expectedPolicyMatches map[string][]PolicyMatch) {
 		policyMatches, err := NewMatcher(gitserverClient, RetentionExtractor, true, false).CommitsDescribedByPolicy(context.Background(), 50, "r50", policies, now)
 		if err != nil {
 			t.Fatalf("unexpected error finding matches: %s", err)
@@ -42,7 +42,7 @@ func TestCommitsDescribedByPolicyForRetention(t *testing.T) {
 	testDuration := time.Hour * 24
 
 	t.Run("matches tag policies", func(t *testing.T) {
-		policies := []types.ConfigurationPolicy{
+		policies := []policiesshared.ConfigurationPolicy{
 			{
 				ID:                policyID,
 				Type:              "GIT_TAG",
@@ -59,7 +59,7 @@ func TestCommitsDescribedByPolicyForRetention(t *testing.T) {
 	})
 
 	t.Run("matches branches tip policies", func(t *testing.T) {
-		policies := []types.ConfigurationPolicy{
+		policies := []policiesshared.ConfigurationPolicy{
 			{
 				ID:                policyID,
 				Type:              "GIT_TREE",
@@ -76,7 +76,7 @@ func TestCommitsDescribedByPolicyForRetention(t *testing.T) {
 	})
 
 	t.Run("matches commits on branch policies", func(t *testing.T) {
-		policies := []types.ConfigurationPolicy{
+		policies := []policiesshared.ConfigurationPolicy{
 			{
 				ID:                        policyID,
 				Type:                      "GIT_TREE",
@@ -95,7 +95,7 @@ func TestCommitsDescribedByPolicyForRetention(t *testing.T) {
 	})
 
 	t.Run("matches commit policies", func(t *testing.T) {
-		policies := []types.ConfigurationPolicy{
+		policies := []policiesshared.ConfigurationPolicy{
 			{
 				ID:                policyID,
 				Type:              "GIT_COMMIT",

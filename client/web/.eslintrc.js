@@ -19,4 +19,14 @@ module.exports = {
       },
     },
   ],
+  rules: {
+    'no-restricted-imports': [
+      'error',
+      {
+        // Allow any imports from @sourcegraph/cody-* packages while those packages' APIs are being
+        // stabilized.
+        patterns: ['!@sourcegraph/cody-shared/*', '!@sourcegraph/cody-ui/*'],
+      },
+    ],
+  },
 }

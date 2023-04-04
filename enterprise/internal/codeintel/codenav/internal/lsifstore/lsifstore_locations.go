@@ -12,7 +12,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -58,7 +57,7 @@ func (s *store) getLocations(
 	}
 
 	trace.AddEvent("SCIPData", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
-	occurrences := types.FindOccurrences(documentData.SCIPData.Occurrences, int32(line), int32(character))
+	occurrences := scip.FindOccurrences(documentData.SCIPData.Occurrences, int32(line), int32(character))
 	trace.AddEvent("FindOccurences", attribute.Int("numIntersectingOccurrences", len(occurrences)))
 
 	for _, occurrence := range occurrences {
@@ -142,13 +141,13 @@ WHERE
 	ss.%s IS NOT NULL
 `
 
-func newRange(startLine, startCharacter, endLine, endCharacter int) types.Range {
-	return types.Range{
-		Start: types.Position{
+func newRange(startLine, startCharacter, endLine, endCharacter int) shared.Range {
+	return shared.Range{
+		Start: shared.Position{
 			Line:      startLine,
 			Character: startCharacter,
 		},
-		End: types.Position{
+		End: shared.Position{
 			Line:      endLine,
 			Character: endCharacter,
 		},
@@ -205,7 +204,7 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 	// matches the given occurrence. This will give us additional symbol names that
 	// we should include in reference and implementation searches.
 
-	if symbol := types.FindSymbol(document, occurrence.Symbol); symbol != nil {
+	if symbol := scip.FindSymbol(document, occurrence.Symbol); symbol != nil {
 		hoverText = symbol.Documentation
 
 		for _, rel := range symbol.Relationships {

@@ -166,6 +166,8 @@ type JSContext struct {
 
 	AuthProviders []authProviderInfo `json:"authProviders"`
 
+	AuthAccessRequest *schema.AuthAccessRequest `json:"authAccessRequest"`
+
 	Branding *schema.Branding `json:"branding"`
 
 	BatchChangesEnabled                bool `json:"batchChangesEnabled"`
@@ -342,6 +344,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		AuthProviders: authProviders,
 
+		AuthAccessRequest: conf.Get().AuthAccessRequest,
+
 		Branding: globals.Branding(),
 
 		BatchChangesEnabled:                enterprise.BatchChangesEnabledForUser(ctx, db) == nil,
@@ -390,13 +394,13 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		return nil
 	}
 
-	userResolver := graphqlbackend.NewUserResolver(db, user)
+	userResolver := graphqlbackend.NewUserResolver(ctx, db, user)
 
-	siteAdmin, err := userResolver.SiteAdmin(ctx)
+	siteAdmin, err := userResolver.SiteAdmin()
 	if err != nil {
 		return nil
 	}
-	canAdminister, err := userResolver.ViewerCanAdminister(ctx)
+	canAdminister, err := userResolver.ViewerCanAdminister()
 	if err != nil {
 		return nil
 	}
@@ -440,7 +444,7 @@ func resolveUserPermissions(ctx context.Context, userResolver *graphqlbackend.Us
 		Nodes:           []Permission{},
 	}
 
-	permissionResolver, err := userResolver.Permissions(ctx)
+	permissionResolver, err := userResolver.Permissions()
 	if err != nil {
 		return connection
 	}

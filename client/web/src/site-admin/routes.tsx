@@ -150,12 +150,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/account-requests',
         render: () => <AccessRequestsPage />,
-        condition: context =>
-            checkRequestAccessAllowed(
-                context.isSourcegraphDotCom,
-                window.context.allowSignup,
-                window.context.experimentalFeatures
-            ),
+        condition: () => checkRequestAccessAllowed(window.context),
     },
     {
         path: '/users/new',

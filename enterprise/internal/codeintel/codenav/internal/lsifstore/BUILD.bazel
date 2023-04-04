@@ -58,7 +58,6 @@ go_test(
     deps = [
         "//enterprise/internal/codeintel/codenav/shared",
         "//enterprise/internal/codeintel/shared",
-        "//enterprise/internal/codeintel/shared/types",
         "//internal/database/dbtest",
         "//internal/observation",
         "//lib/codeintel/precise",

@@ -12,9 +12,8 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	autoindexingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -96,7 +95,7 @@ func scanCountsAndTotalCount(rows *sql.Rows, queryErr error) (totalCount int, _ 
 }
 
 // GetIndexes returns a list of indexes and the total count of records matching the given conditions.
-func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []types.Index, _ int, err error) {
+func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []uploadsshared.Index, _ int, err error) {
 	ctx, trace, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", opts.RepositoryID),
 		log.String("state", opts.State),
@@ -394,7 +393,7 @@ func makeIndexStateCondition(states []string) *sqlf.Query {
 }
 
 // GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
-func (s *store) GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error) {
+func (s *store) GetIndexByID(ctx context.Context, id int) (_ uploadsshared.Index, _ bool, err error) {
 	ctx, _, endObservation := s.operations.getIndexByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 	}})
@@ -402,7 +401,7 @@ func (s *store) GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
 	if err != nil {
-		return types.Index{}, false, err
+		return uploadsshared.Index{}, false, err
 	}
 
 	return scanFirstIndex(s.db.Query(ctx, sqlf.Sprintf(getIndexByIDQuery, id, authzConds)))
@@ -442,7 +441,7 @@ WHERE repo.deleted_at IS NULL AND u.id = %s AND %s
 
 // GetIndexesByIDs returns an index for each of the given identifiers. Not all given ids will necessarily
 // have a corresponding element in the returned list.
-func (s *store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Index, err error) {
+func (s *store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []uploadsshared.Index, err error) {
 	ctx, _, endObservation := s.operations.getIndexesByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("ids", intsToString(ids)),
 	}})
@@ -547,7 +546,7 @@ var scanIndexes = basestore.NewSliceScanner(scanIndex)
 // scanFirstIndex scans a slice of indexes from the return value of `*Store.query` and returns the first.
 var scanFirstIndex = basestore.NewFirstScanner(scanIndex)
 
-func scanIndex(s dbutil.Scanner) (index types.Index, err error) {
+func scanIndex(s dbutil.Scanner) (index uploadsshared.Index, err error) {
 	var executionLogs []executor.ExecutionLogEntry
 	if err := s.Scan(
 		&index.ID,
@@ -586,7 +585,7 @@ func scanIndex(s dbutil.Scanner) (index types.Index, err error) {
 // The return value is a list of indexes grouped by root and indexer. In each group, the set of indexes should
 // include the set of unprocessed records as well as the latest finished record. These values allow users to
 // quickly determine if a particular root/indexer pair os up-to-date or having issues processing.
-func (s *store) GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []autoindexingshared.IndexesWithRepositoryNamespace, err error) {
+func (s *store) GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []uploadsshared.IndexesWithRepositoryNamespace, err error) {
 	ctx, logger, endObservation := s.operations.getRecentIndexesSummary.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
@@ -598,10 +597,10 @@ func (s *store) GetRecentIndexesSummary(ctx context.Context, repositoryID int) (
 	}
 	logger.AddEvent("scanIndexes", attribute.Int("numIndexes", len(indexes)))
 
-	groupedIndexes := make([]autoindexingshared.IndexesWithRepositoryNamespace, 1, len(indexes)+1)
+	groupedIndexes := make([]uploadsshared.IndexesWithRepositoryNamespace, 1, len(indexes)+1)
 	for _, index := range indexes {
 		if last := groupedIndexes[len(groupedIndexes)-1]; last.Root != index.Root || last.Indexer != index.Indexer {
-			groupedIndexes = append(groupedIndexes, autoindexingshared.IndexesWithRepositoryNamespace{
+			groupedIndexes = append(groupedIndexes, uploadsshared.IndexesWithRepositoryNamespace{
 				Root:    index.Root,
 				Indexer: index.Indexer,
 			})

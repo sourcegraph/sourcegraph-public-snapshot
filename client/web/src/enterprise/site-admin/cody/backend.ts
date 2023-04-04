@@ -45,6 +45,7 @@ export const REPO_EMBEDDING_JOBS_LIST_QUERY = gql`
             }
             totalCount
             pageInfo {
+                endCursor
                 hasNextPage
             }
         }

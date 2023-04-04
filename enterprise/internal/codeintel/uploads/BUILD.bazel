@@ -14,10 +14,8 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//cmd/frontend/backend",
-        "//enterprise/internal/codeintel/autoindexing/shared",
         "//enterprise/internal/codeintel/policies",
         "//enterprise/internal/codeintel/shared",
-        "//enterprise/internal/codeintel/shared/types",
         "//enterprise/internal/codeintel/uploads/internal/background",
         "//enterprise/internal/codeintel/uploads/internal/lsifstore",
         "//enterprise/internal/codeintel/uploads/internal/store",
@@ -51,10 +49,8 @@ go_test(
     srcs = ["mocks_test.go"],
     embed = [":uploads"],
     deps = [
-        "//enterprise/internal/codeintel/autoindexing/shared",
         "//enterprise/internal/codeintel/policies",
         "//enterprise/internal/codeintel/policies/shared",
-        "//enterprise/internal/codeintel/shared/types",
         "//enterprise/internal/codeintel/uploads/internal/lsifstore",
         "//enterprise/internal/codeintel/uploads/internal/store",
         "//enterprise/internal/codeintel/uploads/shared",

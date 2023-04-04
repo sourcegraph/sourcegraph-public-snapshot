@@ -6,8 +6,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -16,11 +16,11 @@ import (
 
 type configurationPolicyResolver struct {
 	repoStore           database.RepoStore
-	configurationPolicy types.ConfigurationPolicy
+	configurationPolicy shared.ConfigurationPolicy
 	errTracer           *observation.ErrCollector
 }
 
-func NewConfigurationPolicyResolver(repoStore database.RepoStore, configurationPolicy types.ConfigurationPolicy, errTracer *observation.ErrCollector) resolverstubs.CodeIntelligenceConfigurationPolicyResolver {
+func NewConfigurationPolicyResolver(repoStore database.RepoStore, configurationPolicy shared.ConfigurationPolicy, errTracer *observation.ErrCollector) resolverstubs.CodeIntelligenceConfigurationPolicyResolver {
 	return &configurationPolicyResolver{
 		repoStore:           repoStore,
 		configurationPolicy: configurationPolicy,
@@ -62,11 +62,11 @@ func (r *configurationPolicyResolver) Type() (_ resolverstubs.GitObjectType, err
 	)
 
 	switch r.configurationPolicy.Type {
-	case types.GitObjectTypeCommit:
+	case shared.GitObjectTypeCommit:
 		return resolverstubs.GitObjectTypeCommit, nil
-	case types.GitObjectTypeTag:
+	case shared.GitObjectTypeTag:
 		return resolverstubs.GitObjectTypeTag, nil
-	case types.GitObjectTypeTree:
+	case shared.GitObjectTypeTree:
 		return resolverstubs.GitObjectTypeTree, nil
 	default:
 		return "", errors.Errorf("unknown git object type %s", r.configurationPolicy.Type)

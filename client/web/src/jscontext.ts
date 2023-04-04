@@ -227,6 +227,8 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
         requireUpperandLowerCase?: boolean
     }
 
+    authAccessRequest?: SiteConfiguration['auth.accessRequest']
+
     /** Custom branding for the homepage and search icon. */
     branding?: {
         /** The URL of the favicon to be used for your instance */

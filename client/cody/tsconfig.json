@@ -6,6 +6,7 @@
     "sourceRoot": "src",
     "outDir": "out",
     "jsx": "react-jsx",
+    "types": ["./webviews/typings.d.ts", "jest"],
   },
   "include": [
     "src",
@@ -17,5 +18,5 @@
     "jest.config.js",
   ],
   "exclude": ["scripts", "out", "dist"],
-  "references": [{ "path": "../cody-shared" }],
+  "references": [{ "path": "../cody-shared" }, { "path": "../cody-ui" }],
 }

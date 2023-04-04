@@ -16,7 +16,7 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/autoindexing/shared",
-        "//enterprise/internal/codeintel/shared/types",
+        "//enterprise/internal/codeintel/uploads/shared",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbutil",
@@ -24,7 +24,6 @@ go_library(
         "//internal/memo",
         "//internal/metrics",
         "//internal/observation",
-        "//lib/errors",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_lib_pq//:pq",
         "@com_github_opentracing_opentracing_go//log",
@@ -49,8 +48,7 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//enterprise/internal/codeintel/autoindexing/shared",
-        "//enterprise/internal/codeintel/shared/types",
+        "//enterprise/internal/codeintel/uploads/shared",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbtest",
