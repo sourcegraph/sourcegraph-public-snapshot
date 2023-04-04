@@ -4,18 +4,15 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestGetConfigurationPolicies(t *testing.T) {
@@ -249,41 +246,4 @@ func TestDeleteConfigurationProtectedPolicy(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected record")
 	}
-}
-
-// removes default configuration policies
-func testStoreWithoutConfigurationPolicies(t *testing.T, db database.DB) Store {
-	if _, err := db.ExecContext(context.Background(), `TRUNCATE lsif_configuration_policies`); err != nil {
-		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
-	}
-
-	return New(&observation.TestContext, db)
-}
-
-// insertRepo creates a repository record with the given id and name. If there is already a repository
-// with the given identifier, nothing happens
-func insertRepo(t testing.TB, db database.DB, id int, name string, private bool) {
-	if name == "" {
-		name = fmt.Sprintf("n-%d", id)
-	}
-
-	deletedAt := sqlf.Sprintf("NULL")
-	if strings.HasPrefix(name, "DELETED-") {
-		deletedAt = sqlf.Sprintf("%s", time.Unix(1587396557, 0).UTC())
-	}
-
-	query := sqlf.Sprintf(
-		`INSERT INTO repo (id, name, deleted_at, private) VALUES (%s, %s, %s, %s) ON CONFLICT (id) DO NOTHING`,
-		id,
-		name,
-		deletedAt,
-		private,
-	)
-	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-		t.Fatalf("unexpected error while upserting repository: %s", err)
-	}
-}
-
-func boolPtr(value bool) *bool {
-	return &value
 }
