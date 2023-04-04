@@ -58,6 +58,7 @@ mocha_test(
     env = {"INCLUDE_ADMIN_ONBOARDING": "false"},
     tags = [
         "requires-network",
+        "no-sandbox"
     ],
     tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
     use_xvfb = False,
