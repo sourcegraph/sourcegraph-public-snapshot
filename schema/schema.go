@@ -2329,6 +2329,8 @@ type SiteConfiguration struct {
 	AuthPasswordPolicy *AuthPasswordPolicy `json:"auth.passwordPolicy,omitempty"`
 	// AuthPasswordResetLinkExpiry description: The duration (in seconds) that a password reset link is considered valid.
 	AuthPasswordResetLinkExpiry int `json:"auth.passwordResetLinkExpiry,omitempty"`
+	// AuthPrimaryLoginProvidersCount description: The number of auth providers that will be shown to the user on the login screen. Other providers are shown under `More ways to login` section.
+	AuthPrimaryLoginProvidersCount int `json:"auth.primaryLoginProvidersCount,omitempty"`
 	// AuthProviders description: The authentication providers to use for identifying and signing in users. See instructions below for configuring SAML, OpenID Connect (including Google Workspace), and HTTP authentication proxies. Multiple authentication providers are supported (by specifying multiple elements in this array).
 	AuthProviders []AuthProviders `json:"auth.providers,omitempty"`
 	// AuthPublic description: WARNING: This option has been removed as of 3.8.
@@ -2353,8 +2355,6 @@ type SiteConfiguration struct {
 	AuthUnlockAccountLinkSigningKey string `json:"auth.unlockAccountLinkSigningKey,omitempty"`
 	// AuthUserOrgMap description: Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form `{"*": ["org1", "org2"]}`, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is `"*"`.
 	AuthUserOrgMap map[string][]string `json:"auth.userOrgMap,omitempty"`
-	// AuthPrimaryLoginProvidersCount description: The number of primary login providers configured. These are shown by default to the user on login screen. Other providers are shown under `More ways to login` section.
-	AuthPrimaryLoginProvidersCount int `json:"auth.primaryLoginProvidersCount,omitempty"`
 	// AuthzEnforceForSiteAdmins description: When true, site admins will only be able to see private code they have access to via our authz system.
 	AuthzEnforceForSiteAdmins bool `json:"authz.enforceForSiteAdmins,omitempty"`
 	// AuthzRefreshInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
@@ -2609,6 +2609,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "auth.minPasswordLength")
 	delete(m, "auth.passwordPolicy")
 	delete(m, "auth.passwordResetLinkExpiry")
+	delete(m, "auth.primaryLoginProvidersCount")
 	delete(m, "auth.providers")
 	delete(m, "auth.public")
 	delete(m, "auth.sessionExpiry")
