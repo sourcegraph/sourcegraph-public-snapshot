@@ -2,6 +2,7 @@ package lsifstore
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -13,22 +14,112 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // GetDefinitionLocations returns the set of locations defining the symbol at the given position.
 func (s *store) GetDefinitionLocations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error) {
-	return s.getLocations(ctx, "definition_ranges", extractDefinitionRanges, s.operations.getDefinitions, bundleID, path, line, character, limit, offset)
+	return s.getLocations(ctx, "definition_ranges", extractDefinitionRanges, s.operations.getDefinitionLocations, bundleID, path, line, character, limit, offset)
 }
 
 // GetReferenceLocations returns the set of locations referencing the symbol at the given position.
 func (s *store) GetReferenceLocations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error) {
-	return s.getLocations(ctx, "reference_ranges", extractReferenceRanges, s.operations.getReferences, bundleID, path, line, character, limit, offset)
+	return s.getLocations(ctx, "reference_ranges", extractReferenceRanges, s.operations.getReferenceLocations, bundleID, path, line, character, limit, offset)
 }
 
 // GetImplementationLocations returns the set of locations implementing the symbol at the given position.
 func (s *store) GetImplementationLocations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error) {
-	return s.getLocations(ctx, "implementation_ranges", extractImplementationRanges, s.operations.getImplementations, bundleID, path, line, character, limit, offset)
+	return s.getLocations(ctx, "implementation_ranges", extractImplementationRanges, s.operations.getImplementationLocations, bundleID, path, line, character, limit, offset)
 }
+
+// GetBulkMonikerLocations returns the locations (within one of the given uploads) with an attached moniker
+// whose scheme+identifier matches one of the given monikers. This method also returns the size of the
+// complete result set to aid in pagination.
+func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error) {
+	ctx, trace, endObservation := s.operations.getBulkMonikerLocations.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("tableName", tableName),
+		log.Int("numUploadIDs", len(uploadIDs)),
+		log.String("uploadIDs", intsToString(uploadIDs)),
+		log.Int("numMonikers", len(monikers)),
+		log.String("monikers", monikersToString(monikers)),
+		log.Int("limit", limit),
+		log.Int("offset", offset),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if len(uploadIDs) == 0 || len(monikers) == 0 {
+		return nil, 0, nil
+	}
+
+	symbolNames := make([]string, 0, len(monikers))
+	for _, arg := range monikers {
+		symbolNames = append(symbolNames, arg.Identifier)
+	}
+
+	query := sqlf.Sprintf(
+		bulkMonikerResultsQuery,
+		pq.Array(symbolNames),
+		pq.Array(uploadIDs),
+		sqlf.Sprintf(fmt.Sprintf("%s_ranges", strings.TrimSuffix(tableName, "s"))),
+	)
+
+	locationData, err := s.scanQualifiedMonikerLocations(s.db.Query(ctx, query))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	totalCount = 0
+	for _, monikerLocations := range locationData {
+		totalCount += len(monikerLocations.Locations)
+	}
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numDumps", len(locationData)),
+		attribute.Int("totalCount", totalCount))
+
+	max := totalCount
+	if totalCount > limit {
+		max = limit
+	}
+
+	locations := make([]shared.Location, 0, max)
+outer:
+	for _, monikerLocations := range locationData {
+		for _, row := range monikerLocations.Locations {
+			offset--
+			if offset >= 0 {
+				continue
+			}
+
+			locations = append(locations, shared.Location{
+				DumpID: monikerLocations.DumpID,
+				Path:   row.URI,
+				Range:  newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
+			})
+
+			if len(locations) >= limit {
+				break outer
+			}
+		}
+	}
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numLocations", len(locations)))
+
+	return locations, totalCount, nil
+}
+
+const bulkMonikerResultsQuery = `
+WITH RECURSIVE
+` + symbolIDsCTEs + `
+SELECT
+	ss.upload_id,
+	'scip',
+	msn.symbol_name,
+	%s,
+	document_path
+FROM matching_symbol_names msn
+JOIN codeintel_scip_symbols ss ON ss.upload_id = msn.upload_id AND ss.symbol_id = msn.id
+JOIN codeintel_scip_document_lookup dl ON dl.id = ss.document_lookup_id
+ORDER BY ss.upload_id, msn.symbol_name
+`
 
 func (s *store) getLocations(
 	ctx context.Context,
@@ -141,28 +232,6 @@ WHERE
 	ss.%s IS NOT NULL
 `
 
-func newRange(startLine, startCharacter, endLine, endCharacter int) shared.Range {
-	return shared.Range{
-		Start: shared.Position{
-			Line:      startLine,
-			Character: startCharacter,
-		},
-		End: shared.Position{
-			Line:      endLine,
-			Character: endCharacter,
-		},
-	}
-}
-
-func intsToString(vs []int) string {
-	strs := make([]string, 0, len(vs))
-	for _, v := range vs {
-		strs = append(strs, strconv.Itoa(v))
-	}
-
-	return strings.Join(strs, ", ")
-}
-
 type extractedOccurrenceData struct {
 	definitions     []*scip.Range
 	references      []*scip.Range
@@ -260,4 +329,22 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 		implementations: implementations,
 		hoverText:       hoverText,
 	}
+}
+
+func intsToString(vs []int) string {
+	strs := make([]string, 0, len(vs))
+	for _, v := range vs {
+		strs = append(strs, strconv.Itoa(v))
+	}
+
+	return strings.Join(strs, ", ")
+}
+
+func monikersToString(vs []precise.MonikerData) string {
+	strs := make([]string, 0, len(vs))
+	for _, v := range vs {
+		strs = append(strs, fmt.Sprintf("%s:%s:%s", v.Kind, v.Scheme, v.Identifier))
+	}
+
+	return strings.Join(strs, ", ")
 }
