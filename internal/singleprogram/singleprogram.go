@@ -253,6 +253,7 @@ exec docker run --rm -i \
     --user guest \
     --name=weaviate-$$ \
 	-p 8181:8181 \
+	-e OPENAI_APIKEY="$OPENAI_APIKEY" \
     -v ~/.sourcegraph-weaviate:/var/lib/weaviate \
     shengl/weaviate:latest "$@"
 `

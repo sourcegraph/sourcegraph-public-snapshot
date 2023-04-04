@@ -1,6 +1,7 @@
 package weaviate
 
 import (
+	"fmt"
 	"net"
 	"os/exec"
 
@@ -29,5 +30,8 @@ func start(observationCtx *observation.Context, cgf *Config) error {
 	addr := net.JoinHostPort(host, port)
 	logger.Info("listening", log.String("addr", addr))
 
-	return exec.Command(cgf.Path).Start()
+	cmd := exec.Command(cgf.Path)
+	cmd.Env = append(cmd.Env, fmt.Sprintf("OPENAI_APIKEY=%s", cgf.OpenAIApiKey))
+
+	return cmd.Start()
 }
