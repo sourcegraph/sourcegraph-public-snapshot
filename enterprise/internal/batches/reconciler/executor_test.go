@@ -1,8 +1,11 @@
 package reconciler
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -12,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -20,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -38,10 +43,36 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func mockDoer(req *http.Request) (*http.Response, error) {
+	return &http.Response{
+		StatusCode: http.StatusOK,
+		Body: io.NopCloser(bytes.NewReader([]byte(fmt.Sprintf(
+			// The actual changeset returned by the mock client is not important,
+			// as long as it satisfies the type for webhooks.gqlChangesetResponse
+			`{"data": {"node": {"id": "%s","externalID": "%s","batchChanges": {"nodes": [{"id": "%s"}]},"repository": {"id": "%s","name": "github.com/test/test"},"createdAt": "2023-02-25T00:53:50Z","updatedAt": "2023-02-25T00:53:50Z","title": "%s","body": "%s","author": {"name": "%s", "email": "%s"},"state": "%s","labels": [],"externalURL": {"url": "%s"},"forkNamespace": null,"reviewState": "%s","checkState": null,"error": null,"syncerError": null,"forkName": null,"ownedByBatchChange": null}}}`,
+			"123",
+			"123",
+			"123",
+			"123",
+			"title",
+			"body",
+			"author",
+			"email",
+			"OPEN",
+			"some-url",
+			"PENDING",
+		)))),
+	}, nil
+}
+
 func TestExecutor_ExecutePlan(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+
+	orig := httpcli.InternalDoer
+	httpcli.InternalDoer = httpcli.DoerFunc(mockDoer)
+	t.Cleanup(func() { httpcli.InternalDoer = orig })
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
@@ -50,6 +81,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
 	bstore := store.NewWithClock(db, &observation.TestContext, et.TestKey{}, clock)
+	wstore := database.OutboundWebhookJobsWith(bstore, nil)
 
 	admin := bt.CreateTestUser(t, db, true)
 	ctx = actor.WithActor(ctx, actor.FromUser(admin.ID))
@@ -105,6 +137,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 		wantChangeset       bt.ChangesetAssertions
 		wantNonRetryableErr bool
+
+		wantWebhookType string
 	}
 
 	tests := map[string]testCase{
@@ -174,6 +208,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				Body:             githubPR.Body,
 				DiffStat:         state.DiffStat,
 			},
+
+			wantWebhookType: webhooks.ChangesetPublish,
 		},
 		"retry push and publish": {
 			// This test case makes sure that everything works when the code host says
@@ -208,6 +244,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				Body:             githubPR.Body,
 				DiffStat:         state.DiffStat,
 			},
+
+			wantWebhookType: webhooks.ChangesetUpdate,
 		},
 		"push and publish to archived repo, detected at push": {
 			hasCurrentSpec: true,
@@ -281,6 +319,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				Title: githubPR.Title,
 				Body:  githubPR.Body,
 			},
+
+			wantWebhookType: webhooks.ChangesetUpdate,
 		},
 		"update to archived repo": {
 			hasCurrentSpec: true,
@@ -311,6 +351,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				Title: githubPR.Title,
 				Body:  githubPR.Body,
 			},
+
+			wantWebhookType: webhooks.ChangesetUpdate,
 		},
 		"push sleep sync": {
 			hasCurrentSpec: true,
@@ -339,6 +381,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				ExternalBranch:   githubHeadRef,
 				DiffStat:         state.DiffStat,
 			},
+
+			wantWebhookType: webhooks.ChangesetUpdate,
 		},
 		"close open changeset": {
 			hasCurrentSpec: true,
@@ -371,6 +415,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				Body:     closedGitHubPR.Body,
 				DiffStat: state.DiffStat,
 			},
+
+			wantWebhookType: webhooks.ChangesetClose,
 		},
 		"close closed changeset": {
 			hasCurrentSpec: true,
@@ -430,6 +476,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				Body:     githubPR.Body,
 				DiffStat: state.DiffStat,
 			},
+
+			wantWebhookType: webhooks.ChangesetUpdate,
 		},
 		"push and publishdraft": {
 			hasCurrentSpec: true,
@@ -460,6 +508,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				Body:     draftGithubPR.Body,
 				DiffStat: state.DiffStat,
 			},
+
+			wantWebhookType: webhooks.ChangesetPublish,
 		},
 		"undraft": {
 			hasCurrentSpec: true,
@@ -487,6 +537,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				Body:     githubPR.Body,
 				DiffStat: state.DiffStat,
 			},
+
+			wantWebhookType: webhooks.ChangesetUpdate,
 		},
 		"archive open changeset": {
 			hasCurrentSpec: false,
@@ -525,6 +577,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 				ArchivedInOwnerBatchChange: true,
 			},
+
+			wantWebhookType: webhooks.ChangesetClose,
 		},
 		"detach changeset": {
 			hasCurrentSpec: false,
@@ -638,7 +692,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			})
 
 			// Execute the plan
-			err := executePlan(
+			afterDone, err := executePlan(
 				ctx,
 				logtest.Scoped(t),
 				state.MockClient,
@@ -736,10 +790,32 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			if hasDetachOperation {
 				assert.NotNil(t, changeset.DetachedAt)
 			}
+
+			// Assert that a webhook job will be created if one is needed
+			if tc.wantWebhookType != "" {
+				if afterDone == nil {
+					t.Fatal("expected non-nil afterDone")
+				}
+
+				afterDone(bstore)
+				webhook, err := wstore.GetLast(ctx)
+
+				if err != nil {
+					t.Fatalf("could not get latest webhook job: %s", err)
+				}
+				if webhook == nil {
+					t.Fatalf("expected webhook job to be created")
+				}
+				if webhook.EventType != tc.wantWebhookType {
+					t.Fatalf("wrong webhook job type. want=%s, have=%s", tc.wantWebhookType, webhook.EventType)
+				}
+			} else if afterDone != nil {
+				t.Fatal("expected nil afterDone")
+			}
 		})
 
 		// After each test: clean up database.
-		bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+		bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs", "outbound_webhook_jobs")
 	}
 }
 
@@ -779,7 +855,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	})
 	plan.Changeset = bt.BuildChangeset(bt.TestChangesetOpts{Repo: repo.ID})
 
-	err := executePlan(ctx, logtest.Scoped(t), nil, stesting.NewFakeSourcer(nil, &stesting.FakeChangesetSource{}), true, bstore, plan)
+	_, err := executePlan(ctx, logtest.Scoped(t), nil, stesting.NewFakeSourcer(nil, &stesting.FakeChangesetSource{}), true, bstore, plan)
 	if err == nil {
 		t.Fatal("reconciler did not return error")
 	}
@@ -815,7 +891,7 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 
 		plan.AddOp(btypes.ReconcilerOperationClose)
 
-		err := executePlan(ctx, logtest.Scoped(t), nil, sourcer, true, bstore, plan)
+		_, err := executePlan(ctx, logtest.Scoped(t), nil, sourcer, true, bstore, plan)
 		if err != ourError {
 			t.Fatalf("executePlan did not return expected error: %s", err)
 		}
@@ -828,7 +904,7 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 
 		plan.AddOp(btypes.ReconcilerOperationDetach)
 
-		err := executePlan(ctx, logtest.Scoped(t), nil, sourcer, true, bstore, plan)
+		_, err := executePlan(ctx, logtest.Scoped(t), nil, sourcer, true, bstore, plan)
 		if err != nil {
 			t.Fatalf("executePlan returned unexpected error: %s", err)
 		}
@@ -1053,7 +1129,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				return "", nil
 			})
 
-			err := executePlan(
+			_, err := executePlan(
 				actor.WithActor(ctx, actor.FromUser(tt.user.ID)),
 				logtest.Scoped(t),
 				gitserverClient,

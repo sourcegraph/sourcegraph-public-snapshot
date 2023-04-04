@@ -15,9 +15,8 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	autoindexingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
@@ -30,10 +29,10 @@ func TestDeleteIndexesWithoutRepository(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	var indexes []types.Index
+	var indexes []uploadsshared.Index
 	for i := 0; i < 25; i++ {
 		for j := 0; j < 10+i; j++ {
-			indexes = append(indexes, types.Index{ID: len(indexes) + 1, RepositoryID: 50 + i})
+			indexes = append(indexes, uploadsshared.Index{ID: len(indexes) + 1, RepositoryID: 50 + i})
 		}
 	}
 	insertIndexes(t, db, indexes...)
@@ -84,27 +83,27 @@ func TestRecentIndexesSummary(t *testing.T) {
 	r1 := 1
 	r2 := 2
 
-	addDefaults := func(index types.Index) types.Index {
+	addDefaults := func(index uploadsshared.Index) uploadsshared.Index {
 		index.Commit = makeCommit(index.ID)
 		index.RepositoryID = 50
 		index.RepositoryName = "n-50"
-		index.DockerSteps = []types.DockerStep{}
+		index.DockerSteps = []uploadsshared.DockerStep{}
 		index.IndexerArgs = []string{}
 		index.LocalSteps = []string{}
 		return index
 	}
 
-	indexes := []types.Index{
-		addDefaults(types.Index{ID: 150, QueuedAt: t0, Root: "r1", Indexer: "i1", State: "queued", Rank: &r2}), // visible (group 1)
-		addDefaults(types.Index{ID: 151, QueuedAt: t1, Root: "r1", Indexer: "i1", State: "queued", Rank: &r1}), // visible (group 1)
-		addDefaults(types.Index{ID: 152, FinishedAt: &t2, Root: "r1", Indexer: "i1", State: "errored"}),        // visible (group 1)
-		addDefaults(types.Index{ID: 153, FinishedAt: &t3, Root: "r1", Indexer: "i2", State: "completed"}),      // visible (group 2)
-		addDefaults(types.Index{ID: 154, FinishedAt: &t4, Root: "r2", Indexer: "i1", State: "completed"}),      // visible (group 3)
-		addDefaults(types.Index{ID: 155, FinishedAt: &t5, Root: "r2", Indexer: "i1", State: "errored"}),        // shadowed
-		addDefaults(types.Index{ID: 156, FinishedAt: &t6, Root: "r2", Indexer: "i2", State: "completed"}),      // visible (group 4)
-		addDefaults(types.Index{ID: 157, FinishedAt: &t7, Root: "r2", Indexer: "i2", State: "errored"}),        // shadowed
-		addDefaults(types.Index{ID: 158, FinishedAt: &t8, Root: "r2", Indexer: "i2", State: "errored"}),        // shadowed
-		addDefaults(types.Index{ID: 159, FinishedAt: &t9, Root: "r2", Indexer: "i2", State: "errored"}),        // shadowed
+	indexes := []uploadsshared.Index{
+		addDefaults(uploadsshared.Index{ID: 150, QueuedAt: t0, Root: "r1", Indexer: "i1", State: "queued", Rank: &r2}), // visible (group 1)
+		addDefaults(uploadsshared.Index{ID: 151, QueuedAt: t1, Root: "r1", Indexer: "i1", State: "queued", Rank: &r1}), // visible (group 1)
+		addDefaults(uploadsshared.Index{ID: 152, FinishedAt: &t2, Root: "r1", Indexer: "i1", State: "errored"}),        // visible (group 1)
+		addDefaults(uploadsshared.Index{ID: 153, FinishedAt: &t3, Root: "r1", Indexer: "i2", State: "completed"}),      // visible (group 2)
+		addDefaults(uploadsshared.Index{ID: 154, FinishedAt: &t4, Root: "r2", Indexer: "i1", State: "completed"}),      // visible (group 3)
+		addDefaults(uploadsshared.Index{ID: 155, FinishedAt: &t5, Root: "r2", Indexer: "i1", State: "errored"}),        // shadowed
+		addDefaults(uploadsshared.Index{ID: 156, FinishedAt: &t6, Root: "r2", Indexer: "i2", State: "completed"}),      // visible (group 4)
+		addDefaults(uploadsshared.Index{ID: 157, FinishedAt: &t7, Root: "r2", Indexer: "i2", State: "errored"}),        // shadowed
+		addDefaults(uploadsshared.Index{ID: 158, FinishedAt: &t8, Root: "r2", Indexer: "i2", State: "errored"}),        // shadowed
+		addDefaults(uploadsshared.Index{ID: 159, FinishedAt: &t9, Root: "r2", Indexer: "i2", State: "errored"}),        // shadowed
 	}
 	insertIndexes(t, db, indexes...)
 
@@ -113,11 +112,11 @@ func TestRecentIndexesSummary(t *testing.T) {
 		t.Fatalf("unexpected error querying recent index summary: %s", err)
 	}
 
-	expected := []autoindexingshared.IndexesWithRepositoryNamespace{
-		{Root: "r1", Indexer: "i1", Indexes: []types.Index{indexes[0], indexes[1], indexes[2]}},
-		{Root: "r1", Indexer: "i2", Indexes: []types.Index{indexes[3]}},
-		{Root: "r2", Indexer: "i1", Indexes: []types.Index{indexes[4]}},
-		{Root: "r2", Indexer: "i2", Indexes: []types.Index{indexes[6]}},
+	expected := []uploadsshared.IndexesWithRepositoryNamespace{
+		{Root: "r1", Indexer: "i1", Indexes: []uploadsshared.Index{indexes[0], indexes[1], indexes[2]}},
+		{Root: "r1", Indexer: "i2", Indexes: []uploadsshared.Index{indexes[3]}},
+		{Root: "r2", Indexer: "i1", Indexes: []uploadsshared.Index{indexes[4]}},
+		{Root: "r2", Indexer: "i2", Indexes: []uploadsshared.Index{indexes[6]}},
 	}
 	if diff := cmp.Diff(expected, summary); diff != "" {
 		t.Errorf("unexpected index summary (-want +got):\n%s", diff)
@@ -146,22 +145,22 @@ func TestGetIndexes(t *testing.T) {
 	uploadID1, uploadID2, uploadID3, uploadID4 := 10, 11, 12, 13
 
 	insertIndexes(t, db,
-		types.Index{ID: 1, Commit: makeCommit(3331), QueuedAt: t1, State: "queued", AssociatedUploadID: &uploadID1},
-		types.Index{ID: 2, QueuedAt: t2, State: "errored", FailureMessage: &failureMessage},
-		types.Index{ID: 3, Commit: makeCommit(3333), QueuedAt: t3, State: "queued", AssociatedUploadID: &uploadID1},
-		types.Index{ID: 4, QueuedAt: t4, State: "queued", RepositoryID: 51, RepositoryName: "foo bar x"},
-		types.Index{ID: 5, Commit: makeCommit(3333), QueuedAt: t5, State: "processing", AssociatedUploadID: &uploadID1},
-		types.Index{ID: 6, QueuedAt: t6, State: "processing", RepositoryID: 52, RepositoryName: "foo bar y"},
-		types.Index{ID: 7, QueuedAt: t7, Indexer: "lsif-typescript"},
-		types.Index{ID: 8, QueuedAt: t8, Indexer: "scip-ocaml"},
-		types.Index{ID: 9, QueuedAt: t9, State: "queued"},
-		types.Index{ID: 10, QueuedAt: t10},
+		uploadsshared.Index{ID: 1, Commit: makeCommit(3331), QueuedAt: t1, State: "queued", AssociatedUploadID: &uploadID1},
+		uploadsshared.Index{ID: 2, QueuedAt: t2, State: "errored", FailureMessage: &failureMessage},
+		uploadsshared.Index{ID: 3, Commit: makeCommit(3333), QueuedAt: t3, State: "queued", AssociatedUploadID: &uploadID1},
+		uploadsshared.Index{ID: 4, QueuedAt: t4, State: "queued", RepositoryID: 51, RepositoryName: "foo bar x"},
+		uploadsshared.Index{ID: 5, Commit: makeCommit(3333), QueuedAt: t5, State: "processing", AssociatedUploadID: &uploadID1},
+		uploadsshared.Index{ID: 6, QueuedAt: t6, State: "processing", RepositoryID: 52, RepositoryName: "foo bar y"},
+		uploadsshared.Index{ID: 7, QueuedAt: t7, Indexer: "lsif-typescript"},
+		uploadsshared.Index{ID: 8, QueuedAt: t8, Indexer: "scip-ocaml"},
+		uploadsshared.Index{ID: 9, QueuedAt: t9, State: "queued"},
+		uploadsshared.Index{ID: 10, QueuedAt: t10},
 	)
 	insertUploads(t, db,
-		types.Upload{ID: uploadID1, AssociatedIndexID: &indexID1},
-		types.Upload{ID: uploadID2, AssociatedIndexID: &indexID2},
-		types.Upload{ID: uploadID3, AssociatedIndexID: &indexID3},
-		types.Upload{ID: uploadID4, AssociatedIndexID: &indexID4},
+		shared.Upload{ID: uploadID1, AssociatedIndexID: &indexID1},
+		shared.Upload{ID: uploadID2, AssociatedIndexID: &indexID2},
+		shared.Upload{ID: uploadID3, AssociatedIndexID: &indexID3},
+		shared.Upload{ID: uploadID4, AssociatedIndexID: &indexID4},
 	)
 
 	testCases := []struct {
@@ -272,7 +271,7 @@ func TestGetIndexByID(t *testing.T) {
 	uploadID := 5
 	queuedAt := time.Unix(1587396557, 0).UTC()
 	startedAt := queuedAt.Add(time.Minute)
-	expected := types.Index{
+	expected := uploadsshared.Index{
 		ID:             1,
 		Commit:         makeCommit(1),
 		QueuedAt:       queuedAt,
@@ -282,7 +281,7 @@ func TestGetIndexByID(t *testing.T) {
 		FinishedAt:     nil,
 		RepositoryID:   123,
 		RepositoryName: "n-123",
-		DockerSteps: []types.DockerStep{
+		DockerSteps: []uploadsshared.DockerStep{
 			{
 				Image:    "cimg/node:12.16",
 				Commands: []string{"yarn install --frozen-lockfile --no-progress"},
@@ -302,7 +301,7 @@ func TestGetIndexByID(t *testing.T) {
 	}
 
 	insertIndexes(t, db, expected)
-	insertUploads(t, db, types.Upload{ID: uploadID, AssociatedIndexID: &expected.ID})
+	insertUploads(t, db, shared.Upload{ID: uploadID, AssociatedIndexID: &expected.ID})
 
 	if index, exists, err := store.GetIndexByID(ctx, 1); err != nil {
 		t.Fatalf("unexpected error getting index: %s", err)
@@ -340,22 +339,22 @@ func TestGetIndexesByIDs(t *testing.T) {
 	uploadID1, uploadID2, uploadID3, uploadID4 := 10, 11, 12, 13
 
 	insertIndexes(t, db,
-		types.Index{ID: 1, AssociatedUploadID: &uploadID1},
-		types.Index{ID: 2},
-		types.Index{ID: 3, AssociatedUploadID: &uploadID1},
-		types.Index{ID: 4},
-		types.Index{ID: 5, AssociatedUploadID: &uploadID1},
-		types.Index{ID: 6},
-		types.Index{ID: 7},
-		types.Index{ID: 8},
-		types.Index{ID: 9},
-		types.Index{ID: 10},
+		uploadsshared.Index{ID: 1, AssociatedUploadID: &uploadID1},
+		uploadsshared.Index{ID: 2},
+		uploadsshared.Index{ID: 3, AssociatedUploadID: &uploadID1},
+		uploadsshared.Index{ID: 4},
+		uploadsshared.Index{ID: 5, AssociatedUploadID: &uploadID1},
+		uploadsshared.Index{ID: 6},
+		uploadsshared.Index{ID: 7},
+		uploadsshared.Index{ID: 8},
+		uploadsshared.Index{ID: 9},
+		uploadsshared.Index{ID: 10},
 	)
 	insertUploads(t, db,
-		types.Upload{ID: uploadID1, AssociatedIndexID: &indexID1},
-		types.Upload{ID: uploadID2, AssociatedIndexID: &indexID2},
-		types.Upload{ID: uploadID3, AssociatedIndexID: &indexID3},
-		types.Upload{ID: uploadID4, AssociatedIndexID: &indexID4},
+		shared.Upload{ID: uploadID1, AssociatedIndexID: &indexID1},
+		shared.Upload{ID: uploadID2, AssociatedIndexID: &indexID2},
+		shared.Upload{ID: uploadID3, AssociatedIndexID: &indexID3},
+		shared.Upload{ID: uploadID4, AssociatedIndexID: &indexID4},
 	)
 
 	t.Run("fetch", func(t *testing.T) {
@@ -407,13 +406,13 @@ func TestGetQueuedIndexRank(t *testing.T) {
 	t7 := t1.Add(+time.Minute * 5)
 
 	insertIndexes(t, db,
-		types.Index{ID: 1, QueuedAt: t1, State: "queued"},
-		types.Index{ID: 2, QueuedAt: t2, State: "queued"},
-		types.Index{ID: 3, QueuedAt: t3, State: "queued"},
-		types.Index{ID: 4, QueuedAt: t4, State: "queued"},
-		types.Index{ID: 5, QueuedAt: t5, State: "queued"},
-		types.Index{ID: 6, QueuedAt: t6, State: "processing"},
-		types.Index{ID: 7, QueuedAt: t1, State: "queued", ProcessAfter: &t7},
+		uploadsshared.Index{ID: 1, QueuedAt: t1, State: "queued"},
+		uploadsshared.Index{ID: 2, QueuedAt: t2, State: "queued"},
+		uploadsshared.Index{ID: 3, QueuedAt: t3, State: "queued"},
+		uploadsshared.Index{ID: 4, QueuedAt: t4, State: "queued"},
+		uploadsshared.Index{ID: 5, QueuedAt: t5, State: "queued"},
+		uploadsshared.Index{ID: 6, QueuedAt: t6, State: "processing"},
+		uploadsshared.Index{ID: 7, QueuedAt: t1, State: "queued", ProcessAfter: &t7},
 	)
 
 	if index, _, _ := store.GetIndexByID(context.Background(), 1); index.Rank == nil || *index.Rank != 1 {
@@ -448,7 +447,7 @@ func TestDeleteIndexByID(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertIndexes(t, db, types.Index{ID: 1})
+	insertIndexes(t, db, uploadsshared.Index{ID: 1})
 
 	if found, err := store.DeleteIndexByID(context.Background(), 1); err != nil {
 		t.Fatalf("unexpected error deleting index: %s", err)
@@ -469,8 +468,8 @@ func TestDeleteIndexes(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertIndexes(t, db, types.Index{ID: 1, State: "completed"})
-	insertIndexes(t, db, types.Index{ID: 2, State: "errored"})
+	insertIndexes(t, db, uploadsshared.Index{ID: 1, State: "completed"})
+	insertIndexes(t, db, uploadsshared.Index{ID: 2, State: "errored"})
 
 	if err := store.DeleteIndexes(context.Background(), shared.DeleteIndexesOptions{
 		States:       []string{"errored"},
@@ -493,10 +492,10 @@ func TestDeleteIndexesWithIndexerKey(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertIndexes(t, db, types.Index{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
-	insertIndexes(t, db, types.Index{ID: 2, Indexer: "sourcegraph/scip-go"})
-	insertIndexes(t, db, types.Index{ID: 3, Indexer: "sourcegraph/scip-typescript"})
-	insertIndexes(t, db, types.Index{ID: 4, Indexer: "sourcegraph/scip-typescript"})
+	insertIndexes(t, db, uploadsshared.Index{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
+	insertIndexes(t, db, uploadsshared.Index{ID: 2, Indexer: "sourcegraph/scip-go"})
+	insertIndexes(t, db, uploadsshared.Index{ID: 3, Indexer: "sourcegraph/scip-typescript"})
+	insertIndexes(t, db, uploadsshared.Index{ID: 4, Indexer: "sourcegraph/scip-typescript"})
 
 	if err := store.DeleteIndexes(context.Background(), shared.DeleteIndexesOptions{
 		IndexerNames: []string{"scip-go"},
@@ -540,8 +539,8 @@ func TestReindexIndexes(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertIndexes(t, db, types.Index{ID: 1, State: "completed"})
-	insertIndexes(t, db, types.Index{ID: 2, State: "errored"})
+	insertIndexes(t, db, uploadsshared.Index{ID: 1, State: "completed"})
+	insertIndexes(t, db, uploadsshared.Index{ID: 2, State: "errored"})
 
 	if err := store.ReindexIndexes(context.Background(), shared.ReindexIndexesOptions{
 		States:       []string{"errored"},
@@ -566,8 +565,8 @@ func TestReindexIndexByID(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertIndexes(t, db, types.Index{ID: 1, State: "completed"})
-	insertIndexes(t, db, types.Index{ID: 2, State: "errored"})
+	insertIndexes(t, db, uploadsshared.Index{ID: 1, State: "completed"})
+	insertIndexes(t, db, uploadsshared.Index{ID: 2, State: "errored"})
 
 	if err := store.ReindexIndexByID(context.Background(), 2); err != nil {
 		t.Fatalf("unexpected error deleting indexes: %s", err)
@@ -588,10 +587,10 @@ func TestReindexIndexesWithIndexerKey(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertIndexes(t, db, types.Index{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
-	insertIndexes(t, db, types.Index{ID: 2, Indexer: "sourcegraph/scip-go"})
-	insertIndexes(t, db, types.Index{ID: 3, Indexer: "sourcegraph/scip-typescript"})
-	insertIndexes(t, db, types.Index{ID: 4, Indexer: "sourcegraph/scip-typescript"})
+	insertIndexes(t, db, uploadsshared.Index{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
+	insertIndexes(t, db, uploadsshared.Index{ID: 2, Indexer: "sourcegraph/scip-go"})
+	insertIndexes(t, db, uploadsshared.Index{ID: 3, Indexer: "sourcegraph/scip-typescript"})
+	insertIndexes(t, db, uploadsshared.Index{ID: 4, Indexer: "sourcegraph/scip-typescript"})
 
 	if err := store.ReindexIndexes(context.Background(), shared.ReindexIndexesOptions{
 		IndexerNames: []string{"scip-go"},
@@ -617,7 +616,7 @@ func TestReindexIndexesWithIndexerKey(t *testing.T) {
 }
 
 // insertIndexes populates the lsif_indexes table with the given index models.
-func insertIndexes(t testing.TB, db database.DB, indexes ...types.Index) {
+func insertIndexes(t testing.TB, db database.DB, indexes ...uploadsshared.Index) {
 	for _, index := range indexes {
 		if index.Commit == "" {
 			index.Commit = makeCommit(index.ID)
@@ -629,7 +628,7 @@ func insertIndexes(t testing.TB, db database.DB, indexes ...types.Index) {
 			index.RepositoryID = 50
 		}
 		if index.DockerSteps == nil {
-			index.DockerSteps = []types.DockerStep{}
+			index.DockerSteps = []uploadsshared.DockerStep{}
 		}
 		if index.IndexerArgs == nil {
 			index.IndexerArgs = []string{}

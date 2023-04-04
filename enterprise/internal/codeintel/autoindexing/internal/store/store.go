@@ -7,45 +7,52 @@ import (
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// Store provides the interface for autoindexing storage.
 type Store interface {
 	Transact(ctx context.Context) (Store, error)
 	Done(err error) error
 
-	InsertIndexes(ctx context.Context, indexes []types.Index) ([]types.Index, error)
-	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
-	IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error)
-	IsQueuedRootIndexer(ctx context.Context, repositoryID int, commit string, root string, indexer string) (bool, error)
-	QueueRepoRev(ctx context.Context, repositoryID int, commit string) error
-	GetQueuedRepoRev(ctx context.Context, batchSize int) ([]RepoRev, error)
-	MarkRepoRevsAsProcessed(ctx context.Context, ids []int) error
-	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (shared.IndexConfiguration, bool, error)
-	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) error
+	// Inference configuration
 	GetInferenceScript(ctx context.Context) (string, error)
 	SetInferenceScript(ctx context.Context, script string) error
-	RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) ([]shared.RepositoryWithAvailableIndexers, int, error)
-	TopRepositoriesToConfigure(ctx context.Context, limit int) ([]shared.RepositoryWithCount, error)
-	SetConfigurationSummary(ctx context.Context, repositoryID int, numEvents int, availableIndexers map[string]shared.AvailableIndexer) error
+
+	// Repository configuration
+	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (shared.IndexConfiguration, bool, error)
+	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) error
+
+	// Coverage summaries
+	TopRepositoriesToConfigure(ctx context.Context, limit int) ([]uploadsshared.RepositoryWithCount, error)
+	RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) ([]uploadsshared.RepositoryWithAvailableIndexers, int, error)
+	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
+	SetConfigurationSummary(ctx context.Context, repositoryID int, numEvents int, availableIndexers map[string]uploadsshared.AvailableIndexer) error
 	TruncateConfigurationSummary(ctx context.Context, numRecordsToRetain int) error
+
+	// Scheduler
 	GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) ([]int, error)
+	GetQueuedRepoRev(ctx context.Context, batchSize int) ([]RepoRev, error)
+	MarkRepoRevsAsProcessed(ctx context.Context, ids []int) error
+
+	// Enqueuer
+	IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error)
+	IsQueuedRootIndexer(ctx context.Context, repositoryID int, commit string, root string, indexer string) (bool, error)
+	InsertIndexes(ctx context.Context, indexes []uploadsshared.Index) ([]uploadsshared.Index, error)
+
+	// Dependency indexing
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (int, error)
-	GetRepoName(ctx context.Context, repositoryID int) (string, error)
+	QueueRepoRev(ctx context.Context, repositoryID int, commit string) error
 }
 
-// store manages the autoindexing store.
 type store struct {
 	db         *basestore.Store
 	logger     logger.Logger
 	operations *operations
 }
 
-// New returns a new autoindexing store.
 func New(observationCtx *observation.Context, db database.DB) Store {
 	return &store{
 		db:         basestore.NewWithHandle(db.Handle()),

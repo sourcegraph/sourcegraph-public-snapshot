@@ -17,8 +17,9 @@ import (
 	"google.golang.org/protobuf/proto"
 	"k8s.io/utils/lru"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/ranges"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/trie"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -379,7 +380,7 @@ func processDocument(
 		return rangeIDs
 	}
 
-	scipDocument := types.CanonicalizeDocument(scip.ConvertLSIFDocument(
+	scipDocument := ogscip.CanonicalizeDocument(scip.ConvertLSIFDocument(
 		uploadID,
 		targetRangeFetcher,
 		indexerName,
@@ -679,9 +680,9 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 	}
 
 	symbolNameMap := map[string]struct{}{}
-	invertedRangeIndexes := make([][]types.InvertedRangeIndex, 0, len(documents))
+	invertedRangeIndexes := make([][]shared.InvertedRangeIndex, 0, len(documents))
 	for _, document := range documents {
-		index := types.ExtractSymbolIndexes(document.scipDocument)
+		index := shared.ExtractSymbolIndexes(document.scipDocument)
 		invertedRangeIndexes = append(invertedRangeIndexes, index)
 
 		for _, invertedRange := range index {
@@ -724,15 +725,15 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 
 	for i, invertedRangeIndexes := range invertedRangeIndexes {
 		for _, index := range invertedRangeIndexes {
-			definitionRanges, err := types.EncodeRanges(index.DefinitionRanges)
+			definitionRanges, err := ranges.EncodeRanges(index.DefinitionRanges)
 			if err != nil {
 				return err
 			}
-			referenceRanges, err := types.EncodeRanges(index.ReferenceRanges)
+			referenceRanges, err := ranges.EncodeRanges(index.ReferenceRanges)
 			if err != nil {
 				return err
 			}
-			implementationRanges, err := types.EncodeRanges(index.ImplementationRanges)
+			implementationRanges, err := ranges.EncodeRanges(index.ImplementationRanges)
 			if err != nil {
 				return err
 			}

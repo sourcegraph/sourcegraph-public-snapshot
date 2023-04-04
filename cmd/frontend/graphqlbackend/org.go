@@ -189,7 +189,7 @@ func (s *membersConnectionStore) ComputeNodes(ctx context.Context, args *databas
 
 	var userResolvers []*UserResolver
 	for _, user := range users {
-		userResolvers = append(userResolvers, NewUserResolver(s.db, user))
+		userResolvers = append(userResolvers, NewUserResolver(ctx, s.db, user))
 	}
 
 	return userResolvers, nil
