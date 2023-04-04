@@ -81,6 +81,8 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         telemetryService: props.telemetryService,
     }
 
+    console.log('$$$$$$$$$$$$$$$$$$$$$$$ re-render the site admin area $$$$$$$$$$$$$$$$$$$$$$$')
+
     return (
         <Page>
             <PageHeader>
