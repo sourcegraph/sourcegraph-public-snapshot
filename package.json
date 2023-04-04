@@ -384,6 +384,7 @@
     "@sentry/browser": "^7.8.1",
     "@sourcegraph/extension-api-classes": "^1.1.0",
     "@storybook/addon-controls": "^6.5.14",
+    "@tauri-apps/api": "^1.2.0",
     "@testing-library/react": "^13.4.0",
     "@visx/annotation": "^2.10.0",
     "@visx/axis": "^2.11.1",
