@@ -114,53 +114,45 @@ source "amazon-ebs" "aws" {
     }
 }
 
-source "file" "basic-example" {
-    content = "Lorem ipsum dolor sit amet"
-    target  = "dummy_artifact"
-}
-
 build {
-    #    sources = [
-    #        "source.googlecompute.gcp",
-    #        "source.amazon-ebs.aws"
-    #    ]
     sources = [
-        "source.file.basic-example"
+        "source.googlecompute.gcp",
+        "source.amazon-ebs.aws"
     ]
 
-    #    provisioner "file" {
-    #        sources     = ["executor"]
-    #        destination = "/tmp/"
-    #    }
-    #
-    #    provisioner "file" {
-    #        sources     = ["executor-vm.tar"]
-    #        destination = "/tmp/executor-vm.tar"
-    #    }
-    #
-    #    provisioner "shell" {
-    #        execute_command = "chmod +x {{ .Path }}; {{ .Vars }} sudo -E bash {{ .Path }}"
-    #        script          = "install.sh"
-    #        override        = {
-    #            "gcp" = {
-    #                environment_vars = [
-    #                    "SRC_CLI_VERSION=${var.src_cli_version}",
-    #                    "VERSION=${var.version}",
-    #                    "PLATFORM_TYPE=gcp"
-    #                ]
-    #            },
-    #            "aws" = {
-    #                environment_vars = [
-    #                    "SRC_CLI_VERSION=${var.src_cli_version}",
-    #                    "VERSION=${var.version}",
-    #                    "PLATFORM_TYPE=aws"
-    #                ]
-    #            }
-    #        }
-    #    }
+    provisioner "file" {
+        sources     = ["executor"]
+        destination = "/tmp/"
+    }
+
+    provisioner "file" {
+        sources     = ["executor-vm.tar"]
+        destination = "/tmp/executor-vm.tar"
+    }
+
+    provisioner "shell" {
+        execute_command = "chmod +x {{ .Path }}; {{ .Vars }} sudo -E bash {{ .Path }}"
+        script          = "install.sh"
+        override        = {
+            "gcp" = {
+                environment_vars = [
+                    "SRC_CLI_VERSION=${var.src_cli_version}",
+                    "VERSION=${var.version}",
+                    "PLATFORM_TYPE=gcp"
+                ]
+            },
+            "aws" = {
+                environment_vars = [
+                    "SRC_CLI_VERSION=${var.src_cli_version}",
+                    "VERSION=${var.version}",
+                    "PLATFORM_TYPE=aws"
+                ]
+            }
+        }
+    }
 
     post-processor "amazon-ami-management" {
-        #        only       = ["amazon-ebs.aws"]
+        only       = ["amazon-ebs.aws"]
         access_key = var.aws_access_key
         secret_key = var.aws_secret_key
         regions    = ["us-west-2"]

@@ -18,31 +18,31 @@ export IMAGE="${EXECUTOR_FIRECRACKER_IMAGE}"
 # Capture src cli version before we reconfigure the go environment.
 SRC_CLI_VERSION="$(go run ./internal/cmd/src-cli-version/main.go)"
 
-## Environment for building linux binaries
-#export GO111MODULE=on
-#export GOARCH=amd64
-#export GOOS=linux
-#export CGO_ENABLED=0
+# Environment for building linux binaries
+export GO111MODULE=on
+export GOARCH=amd64
+export GOOS=linux
+export CGO_ENABLED=0
 export VERSION
-#
-#echo "--- go build"
-#pushd ./enterprise/cmd/executor 1>/dev/null
-#pkg="github.com/sourcegraph/sourcegraph/enterprise/cmd/executor"
-#bin_name="$OUTPUT/$(basename $pkg)"
-#go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$bin_name" "$pkg"
-#popd 1>/dev/null
-#
-#echo "--- build executor-vm image"
-#pushd ./docker-images/executor-vm 1>/dev/null
-#./build.sh
-#popd 1>/dev/null
-#
-#echo "--- export executor-vm image"
-#docker save --output "${OUTPUT}/executor-vm.tar" "${EXECUTOR_FIRECRACKER_IMAGE}"
-#
-## Fetch the e2e builder service account so we can spawn a packer VM.
-#echo "--- gcp secret"
-#gcloud secrets versions access latest --secret=e2e-builder-sa-key --quiet --project=sourcegraph-ci >"$OUTPUT/builder-sa-key.json"
+
+echo "--- go build"
+pushd ./enterprise/cmd/executor 1>/dev/null
+pkg="github.com/sourcegraph/sourcegraph/enterprise/cmd/executor"
+bin_name="$OUTPUT/$(basename $pkg)"
+go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$bin_name" "$pkg"
+popd 1>/dev/null
+
+echo "--- build executor-vm image"
+pushd ./docker-images/executor-vm 1>/dev/null
+./build.sh
+popd 1>/dev/null
+
+echo "--- export executor-vm image"
+docker save --output "${OUTPUT}/executor-vm.tar" "${EXECUTOR_FIRECRACKER_IMAGE}"
+
+# Fetch the e2e builder service account so we can spawn a packer VM.
+echo "--- gcp secret"
+gcloud secrets versions access latest --secret=e2e-builder-sa-key --quiet --project=sourcegraph-ci >"$OUTPUT/builder-sa-key.json"
 
 echo "--- packer build"
 # Copy files into workspace.
