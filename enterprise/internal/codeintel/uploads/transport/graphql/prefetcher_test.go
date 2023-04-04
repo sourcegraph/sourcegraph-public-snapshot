@@ -1,4 +1,4 @@
-package sharedresolvers
+package graphql
 
 import (
 	"context"
@@ -7,12 +7,11 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
-	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 )
 
 func TestPrefetcherUploads(t *testing.T) {
 	mockUploadResolver := NewMockUploadsService()
-	prefetcher := NewPrefetcher(mockUploadResolver)
+	prefetcher := newPrefetcher(mockUploadResolver)
 
 	uploads := map[int]shared.Upload{
 		1: {ID: 1},
@@ -82,7 +81,7 @@ func TestPrefetcherUploads(t *testing.T) {
 }
 
 func TestPrefetcherIndexes(t *testing.T) {
-	indexes := map[int]uploadsshared.Index{
+	indexes := map[int]shared.Index{
 		1: {ID: 1},
 		2: {ID: 2},
 		3: {ID: 3},
@@ -91,18 +90,18 @@ func TestPrefetcherIndexes(t *testing.T) {
 	}
 
 	mockUploadResolver := NewMockUploadsService()
-	mockUploadResolver.GetIndexesByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...int) ([]uploadsshared.Index, error) {
-		matching := make([]uploadsshared.Index, 0, len(ids))
+	mockUploadResolver.GetIndexesByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...int) ([]shared.Index, error) {
+		matching := make([]shared.Index, 0, len(ids))
 		for _, id := range ids {
 			matching = append(matching, indexes[id])
 		}
 
 		return matching, nil
 	})
-	prefetcher := NewPrefetcher(mockUploadResolver)
+	prefetcher := newPrefetcher(mockUploadResolver)
 
 	// We do a conversion inside the function that I cannot reproduct inside the mock.
-	expectedIndex := uploadsshared.Index{ID: 1}
+	expectedIndex := shared.Index{ID: 1}
 
 	// Bare fetch
 	if index, exists, err := prefetcher.GetIndexByID(context.Background(), 1); err != nil {
@@ -132,8 +131,8 @@ func TestPrefetcherIndexes(t *testing.T) {
 	prefetcher.MarkIndex(4)
 	prefetcher.MarkIndex(6) // unknown id
 
-	mockUploadResolver.GetIndexesByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...int) ([]uploadsshared.Index, error) {
-		matching := make([]uploadsshared.Index, 0, len(ids))
+	mockUploadResolver.GetIndexesByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...int) ([]shared.Index, error) {
+		matching := make([]shared.Index, 0, len(ids))
 		for _, id := range ids {
 			matching = append(matching, indexes[id])
 		}

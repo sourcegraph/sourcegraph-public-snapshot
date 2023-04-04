@@ -2,6 +2,8 @@ package graphql
 
 import (
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -18,8 +20,8 @@ type rootResolver struct {
 	operations              *operations
 	siteAdminChecker        sharedresolvers.SiteAdminChecker
 	repoStore               database.RepoStore
-	prefetcherFactory       *sharedresolvers.PrefetcherFactory
-	locationResolverFactory *sharedresolvers.CachedLocationResolverFactory
+	prefetcherFactory       *graphql.PrefetcherFactory
+	locationResolverFactory *gitresolvers.CachedLocationResolverFactory
 }
 
 func NewRootResolver(
@@ -30,8 +32,8 @@ func NewRootResolver(
 	gitserverClient gitserver.Client,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
-	prefetcherFactory *sharedresolvers.PrefetcherFactory,
-	locationResolverFactory *sharedresolvers.CachedLocationResolverFactory,
+	prefetcherFactory *graphql.PrefetcherFactory,
+	locationResolverFactory *gitresolvers.CachedLocationResolverFactory,
 ) resolverstubs.AutoindexingServiceResolver {
 	return &rootResolver{
 		autoindexSvc:            autoindexSvc,

@@ -1,4 +1,4 @@
-package sharedresolvers
+package gitresolvers
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/database"

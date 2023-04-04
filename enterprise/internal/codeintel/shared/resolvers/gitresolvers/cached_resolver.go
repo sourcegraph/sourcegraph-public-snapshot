@@ -1,9 +1,9 @@
-package sharedresolvers
+package gitresolvers
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/dataloader"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -21,24 +21,25 @@ import (
 // locations (but does not batch or pre-fetch). Location resolvers generally have a small set of paths
 // with large multiplicity, so the savings here can be significant.
 type CachedLocationResolver struct {
-	repositoryCache *DoubleLockedCache[api.RepoID, cachedRepositoryResolver]
+	repositoryCache *dataloader.DoubleLockedCache[api.RepoID, cachedRepositoryResolver]
 }
 
 type cachedRepositoryResolver struct {
 	repositoryResolver resolverstubs.RepositoryResolver
-	commitCache        *DoubleLockedCache[string, cachedCommitResolver]
+	commitCache        *dataloader.DoubleLockedCache[string, cachedCommitResolver]
 }
 
 type cachedCommitResolver struct {
 	commitResolver resolverstubs.GitCommitResolver
-	dirCache       *DoubleLockedCache[string, *cachedGitTreeEntryResolver]
-	pathCache      *DoubleLockedCache[string, *cachedGitTreeEntryResolver]
+	dirCache       *dataloader.DoubleLockedCache[string, *cachedGitTreeEntryResolver]
+	pathCache      *dataloader.DoubleLockedCache[string, *cachedGitTreeEntryResolver]
 }
 
 type cachedGitTreeEntryResolver struct {
 	treeEntryResolver resolverstubs.GitTreeEntryResolver
 }
 
+// DoubleLockedCache[K, V] requires V to conform to Identifier[K]
 func (r cachedRepositoryResolver) RecordID() api.RepoID { return r.repositoryResolver.RepoID() }
 func (r cachedCommitResolver) RecordID() string         { return string(r.commitResolver.OID()) }
 func (r *cachedGitTreeEntryResolver) RecordID() string  { return r.treeEntryResolver.Path() }
@@ -48,7 +49,7 @@ func newCachedLocationResolver(
 	gitserverClient gitserver.Client,
 ) *CachedLocationResolver {
 	resolveRepo := func(ctx context.Context, repoID api.RepoID) (resolverstubs.RepositoryResolver, error) {
-		resolver, err := gitresolvers.NewRepositoryFromID(ctx, repoStore, int(repoID))
+		resolver, err := NewRepositoryFromID(ctx, repoStore, int(repoID))
 		if errcode.IsNotFound(err) {
 			return nil, nil
 		}
@@ -65,12 +66,12 @@ func newCachedLocationResolver(
 			return nil, err
 		}
 
-		commitResolver := gitresolvers.NewGitCommitResolver(repositoryResolver, commitID, commit)
+		commitResolver := NewGitCommitResolver(repositoryResolver, commitID, commit)
 		return commitResolver, nil
 	}
 
 	resolvePath := func(commitResolver resolverstubs.GitCommitResolver, path string, isDir bool) *cachedGitTreeEntryResolver {
-		return &cachedGitTreeEntryResolver{gitresolvers.NewGitTreeEntryResolver(commitResolver, path, isDir)}
+		return &cachedGitTreeEntryResolver{NewGitTreeEntryResolver(commitResolver, path, isDir)}
 	}
 
 	resolveRepositoryCached := func(ctx context.Context, repoID api.RepoID) (*cachedRepositoryResolver, error) {
@@ -87,10 +88,10 @@ func newCachedLocationResolver(
 
 			return &cachedCommitResolver{
 				commitResolver: commitResolver,
-				dirCache: NewDoubleLockedCache(MultiFactoryFromFactoryFunc(func(ctx context.Context, path string) (*cachedGitTreeEntryResolver, error) {
+				dirCache: dataloader.NewDoubleLockedCache(dataloader.NewMultiFactoryFromFactoryFunc(func(ctx context.Context, path string) (*cachedGitTreeEntryResolver, error) {
 					return resolvePath(commitResolver, path, true), nil
 				})),
-				pathCache: NewDoubleLockedCache(MultiFactoryFromFactoryFunc(func(ctx context.Context, path string) (*cachedGitTreeEntryResolver, error) {
+				pathCache: dataloader.NewDoubleLockedCache(dataloader.NewMultiFactoryFromFactoryFunc(func(ctx context.Context, path string) (*cachedGitTreeEntryResolver, error) {
 					return resolvePath(commitResolver, path, false), nil
 				})),
 			}, nil
@@ -98,12 +99,12 @@ func newCachedLocationResolver(
 
 		return &cachedRepositoryResolver{
 			repositoryResolver: repositoryResolver,
-			commitCache:        NewDoubleLockedCache(MultiFactoryFromFallibleFactoryFunc(resolveCommitCached)),
+			commitCache:        dataloader.NewDoubleLockedCache(dataloader.NewMultiFactoryFromFallibleFactoryFunc(resolveCommitCached)),
 		}, nil
 	}
 
 	return &CachedLocationResolver{
-		repositoryCache: NewDoubleLockedCache(MultiFactoryFromFallibleFactoryFunc(resolveRepositoryCached)),
+		repositoryCache: dataloader.NewDoubleLockedCache(dataloader.NewMultiFactoryFromFallibleFactoryFunc(resolveRepositoryCached)),
 	}
 }
 

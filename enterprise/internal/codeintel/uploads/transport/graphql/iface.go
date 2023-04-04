@@ -5,7 +5,6 @@ import (
 	"time"
 
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -13,8 +12,8 @@ import (
 )
 
 type UploadsService interface {
-	sharedresolvers.UploadsService
-
+	GetIndexesByIDs(ctx context.Context, ids ...int) (_ []shared.Index, err error)
+	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []shared.Upload, err error)
 	GetIndexes(ctx context.Context, opts uploadshared.GetIndexesOptions) (_ []uploadsshared.Index, _ int, err error)
 	GetUploads(ctx context.Context, opts uploadshared.GetUploadsOptions) (uploads []shared.Upload, totalCount int, err error)
 	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []shared.UploadLog, err error)
