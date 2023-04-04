@@ -7,7 +7,6 @@
     "outDir": "out",
     "jsx": "react-jsx",
     "declaration": true,
-    "types": ["./src/typings.d.ts"],
   },
   "include": ["**/*", ".*"],
   "exclude": ["out", "dist"],
