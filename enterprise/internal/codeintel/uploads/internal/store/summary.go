@@ -159,6 +159,20 @@ WHERE u.id IN (
 ORDER BY u.root, u.indexer
 `
 
+const sanitizedIndexerExpression = `
+(
+    split_part(
+        split_part(
+            CASE
+                -- Strip sourcegraph/ prefix if it exists
+                WHEN strpos(indexer, 'sourcegraph/') = 1 THEN substr(indexer, length('sourcegraph/') + 1)
+                ELSE indexer
+            END,
+        '@', 1), -- strip off @sha256:...
+    ':', 1) -- strip off tag
+)
+`
+
 // GetRecentIndexesSummary returns the set of "interesting" indexes for the repository with the given identifier.
 // The return value is a list of indexes grouped by root and indexer. In each group, the set of indexes should
 // include the set of unprocessed records as well as the latest finished record. These values allow users to
@@ -190,6 +204,81 @@ func (s *store) GetRecentIndexesSummary(ctx context.Context, repositoryID int) (
 
 	return groupedIndexes[1:], nil
 }
+
+const recentIndexesSummaryQuery = `
+WITH ranked_completed AS (
+	SELECT
+		u.id,
+		u.root,
+		u.indexer,
+		u.finished_at,
+		RANK() OVER (PARTITION BY root, ` + sanitizedIndexerExpression + ` ORDER BY finished_at DESC) AS rank
+	FROM lsif_indexes u
+	WHERE
+		u.repository_id = %s AND
+		u.state NOT IN ('queued', 'processing', 'deleted')
+),
+latest_indexes AS (
+	SELECT u.id, u.root, u.indexer, u.queued_at
+	FROM lsif_indexes u
+	WHERE
+		u.id IN (
+			SELECT rc.id
+			FROM ranked_completed rc
+			WHERE rc.rank = 1
+		)
+	ORDER BY u.root, u.indexer
+),
+new_indexes AS (
+	SELECT u.id
+	FROM lsif_indexes u
+	WHERE
+		u.repository_id = %s AND
+		u.state IN ('queued', 'processing') AND
+		u.queued_at >= (
+			SELECT lu.queued_at
+			FROM latest_indexes lu
+			WHERE
+				lu.root = u.root AND
+				lu.indexer = u.indexer
+			-- condition passes when latest_indexes is empty
+			UNION SELECT u.queued_at LIMIT 1
+		)
+)
+SELECT
+	u.id,
+	u.commit,
+	u.queued_at,
+	u.state,
+	u.failure_message,
+	u.started_at,
+	u.finished_at,
+	u.process_after,
+	u.num_resets,
+	u.num_failures,
+	u.repository_id,
+	u.repository_name,
+	u.docker_steps,
+	u.root,
+	u.indexer,
+	u.indexer_args,
+	u.outfile,
+	u.execution_logs,
+	s.rank,
+	u.local_steps,
+	` + indexAssociatedUploadIDQueryFragment + `,
+	u.should_reindex,
+	u.requested_envvars
+FROM lsif_indexes_with_repository_name u
+LEFT JOIN (` + indexRankQueryFragment + `) s
+ON u.id = s.id
+WHERE u.id IN (
+	SELECT lu.id FROM latest_indexes lu
+	UNION
+	SELECT nu.id FROM new_indexes nu
+)
+ORDER BY u.root, u.indexer
+`
 
 func (s *store) RepositoryIDsWithErrors(ctx context.Context, offset, limit int) (_ []uploadsshared.RepositoryWithCount, totalCount int, err error) {
 	ctx, _, endObservation := s.operations.repositoryIDsWithErrors.With(ctx, &err, observation.Args{LogFields: []log.Field{}})

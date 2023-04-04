@@ -104,6 +104,10 @@ deleted AS (
 SELECT COUNT(*) FROM deleted
 `
 
+// deletedRepositoryGracePeriod is the minimum allowable duration between a repo deletion
+// and the upload and index records for that repository being deleted.
+const deletedRepositoryGracePeriod = time.Minute * 30
+
 // DeleteUploadsWithoutRepository deletes uploads associated with repositories that were deleted at least
 // DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of uploads
 // that were removed for that repository.
@@ -120,7 +124,7 @@ func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Tim
 	unset, _ := tx.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "upload associated with repository not known to this instance")
 	defer unset(ctx)
 
-	query := sqlf.Sprintf(deleteUploadsWithoutRepositoryQuery, now.UTC(), DeletedRepositoryGracePeriod/time.Second)
+	query := sqlf.Sprintf(deleteUploadsWithoutRepositoryQuery, now.UTC(), deletedRepositoryGracePeriod/time.Second)
 	totalCount, repositories, err := scanCountsWithTotalCount(tx.Query(ctx, query))
 	if err != nil {
 		return 0, 0, err
@@ -359,7 +363,7 @@ func (s *store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Tim
 
 	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
 	// a similar one on this index, but only for uploads that are completed or visible at tip.
-	totalCount, repositories, err := scanCountsAndTotalCount(tx.Query(ctx, sqlf.Sprintf(deleteIndexesWithoutRepositoryQuery, now.UTC(), DeletedRepositoryGracePeriod/time.Second)))
+	totalCount, repositories, err := scanCountsAndTotalCount(tx.Query(ctx, sqlf.Sprintf(deleteIndexesWithoutRepositoryQuery, now.UTC(), deletedRepositoryGracePeriod/time.Second)))
 	if err != nil {
 		return 0, 0, err
 	}
@@ -634,6 +638,21 @@ WHERE u.repository_id = %s AND u.commit = %s
 ORDER BY u.id FOR UPDATE
 `
 
+func scanCount(rows *sql.Rows, queryErr error) (value int, err error) {
+	if queryErr != nil {
+		return 0, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(&value); err != nil {
+			return 0, err
+		}
+	}
+
+	return value, nil
+}
+
 // DeleteSourcedCommits deletes each upload record belonging to the given repository identifier
 // and commit. Uploads are soft deleted. This method returns the count of upload modified.
 //
@@ -700,6 +719,21 @@ SELECT
 	(u.state IN ('uploading', 'queued', 'processing') AND %s - u.uploaded_at <= (%s * '1 second'::interval)) AS protected
 FROM candidate_uploads u
 `
+
+func scanPairOfCounts(rows *sql.Rows, queryErr error) (value1, value2 int, err error) {
+	if queryErr != nil {
+		return 0, 0, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(&value1, &value2); err != nil {
+			return 0, 0, err
+		}
+	}
+
+	return value1, value2, nil
+}
 
 //
 //

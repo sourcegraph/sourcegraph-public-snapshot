@@ -511,8 +511,8 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 	insertUploads(t, db, uploads...)
 
 	t1 := time.Unix(1587396557, 0).UTC()
-	t2 := t1.Add(-DeletedRepositoryGracePeriod + time.Minute)
-	t3 := t1.Add(-DeletedRepositoryGracePeriod - time.Minute)
+	t2 := t1.Add(-deletedRepositoryGracePeriod + time.Minute)
+	t3 := t1.Add(-deletedRepositoryGracePeriod - time.Minute)
 
 	deletions := map[int]time.Time{
 		52: t2, 54: t2, 56: t2, // deleted too recently

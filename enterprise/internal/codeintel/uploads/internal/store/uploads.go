@@ -2,9 +2,14 @@ package store
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 
+	"github.com/jackc/pgtype"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
@@ -13,6 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -119,6 +126,50 @@ FROM %s
 JOIN repo ON repo.id = u.repository_id
 WHERE %s
 `
+
+func scanCompleteUpload(s dbutil.Scanner) (upload shared.Upload, _ error) {
+	var rawUploadedParts []sql.NullInt32
+	if err := s.Scan(
+		&upload.ID,
+		&upload.Commit,
+		&upload.Root,
+		&upload.VisibleAtTip,
+		&upload.UploadedAt,
+		&upload.State,
+		&upload.FailureMessage,
+		&upload.StartedAt,
+		&upload.FinishedAt,
+		&upload.ProcessAfter,
+		&upload.NumResets,
+		&upload.NumFailures,
+		&upload.RepositoryID,
+		&upload.RepositoryName,
+		&upload.Indexer,
+		&dbutil.NullString{S: &upload.IndexerVersion},
+		&upload.NumParts,
+		pq.Array(&rawUploadedParts),
+		&upload.UploadSize,
+		&upload.AssociatedIndexID,
+		&upload.ContentType,
+		&upload.ShouldReindex,
+		&upload.Rank,
+		&upload.UncompressedSize,
+	); err != nil {
+		return upload, err
+	}
+
+	upload.UploadedParts = make([]int, 0, len(rawUploadedParts))
+	for _, uploadedPart := range rawUploadedParts {
+		upload.UploadedParts = append(upload.UploadedParts, int(uploadedPart.Int32))
+	}
+
+	return upload, nil
+}
+
+var scanUploadComplete = basestore.NewSliceScanner(scanCompleteUpload)
+
+// scanFirstUpload scans a slice of uploads from the return value of `*Store.query` and returns the first.
+var scanFirstUpload = basestore.NewFirstScanner(scanCompleteUpload)
 
 // GetUploadByID returns an upload by its identifier and boolean flag indicating its existence.
 func (s *store) GetUploadByID(ctx context.Context, id int) (_ shared.Upload, _ bool, err error) {
@@ -408,6 +459,39 @@ func (s *store) GetVisibleUploadsMatchingMonikers(ctx context.Context, repositor
 	return PackageReferenceScannerFromRows(rows), totalCount, nil
 }
 
+const referenceIDsBaseQuery = `
+FROM lsif_references r
+LEFT JOIN lsif_dumps u ON u.id = r.dump_id
+JOIN repo ON repo.id = u.repository_id
+WHERE
+	(r.scheme, r.manager, r.name, r.version) IN (%s) AND
+	r.dump_id IN (SELECT * FROM visible_uploads) AND
+	%s -- authz conds
+`
+
+const referenceIDsCTEDefinitions = `
+WITH
+visible_uploads AS (
+	(%s)
+	UNION
+	(SELECT uvt.upload_id FROM lsif_uploads_visible_at_tip uvt WHERE uvt.repository_id != %s AND uvt.is_default_branch)
+)
+`
+
+const referenceIDsQuery = referenceIDsCTEDefinitions + `
+SELECT r.dump_id, r.scheme, r.manager, r.name, r.version
+` + referenceIDsBaseQuery + `
+ORDER BY dump_id
+LIMIT %s OFFSET %s
+`
+
+const referenceIDsCountQuery = referenceIDsCTEDefinitions + `
+SELECT COUNT(distinct r.dump_id)
+` + referenceIDsBaseQuery
+
+// definitionDumpsLimit is the maximum number of records that can be returned from DefinitionDumps.
+var definitionDumpsLimit, _ = strconv.ParseInt(env.Get("PRECISE_CODE_INTEL_DEFINITION_DUMPS_LIMIT", "100", "The maximum number of dumps that can define the same package."), 10, 64)
+
 // GetDumpsWithDefinitionsForMonikers returns the set of dumps that define at least one of the given monikers.
 func (s *store) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []shared.Dump, err error) {
 	ctx, trace, endObservation := s.operations.getDumpsWithDefinitionsForMonikers.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -430,7 +514,7 @@ func (s *store) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers
 		return nil, err
 	}
 
-	query := sqlf.Sprintf(definitionDumpsQuery, sqlf.Join(qs, ", "), authzConds, DefinitionDumpsLimit)
+	query := sqlf.Sprintf(definitionDumpsQuery, sqlf.Join(qs, ", "), authzConds, definitionDumpsLimit)
 	dumps, err := scanDumps(s.db.Query(ctx, query))
 	if err != nil {
 		return nil, err
@@ -488,6 +572,31 @@ FROM lsif_dumps_with_repository_name u
 WHERE u.id IN (SELECT id FROM canonical_uploads)
 `
 
+// scanDumps scans a slice of dumps from the return value of `*Store.query`.
+func scanDump(s dbutil.Scanner) (dump shared.Dump, err error) {
+	return dump, s.Scan(
+		&dump.ID,
+		&dump.Commit,
+		&dump.Root,
+		&dump.VisibleAtTip,
+		&dump.UploadedAt,
+		&dump.State,
+		&dump.FailureMessage,
+		&dump.StartedAt,
+		&dump.FinishedAt,
+		&dump.ProcessAfter,
+		&dump.NumResets,
+		&dump.NumFailures,
+		&dump.RepositoryID,
+		&dump.RepositoryName,
+		&dump.Indexer,
+		&dbutil.NullString{S: &dump.IndexerVersion},
+		&dump.AssociatedIndexID,
+	)
+}
+
+var scanDumps = basestore.NewSliceScanner(scanDump)
+
 // GetAuditLogsForUpload returns all the audit logs for the given upload ID in order of entry
 // from oldest to newest, according to the auto-incremented internal sequence field.
 func (s *store) GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []shared.UploadLog, err error) {
@@ -520,6 +629,38 @@ JOIN repo ON repo.id = u.repository_id
 WHERE u.upload_id = %s AND %s
 ORDER BY u.sequence
 `
+
+func scanUploadAuditLog(s dbutil.Scanner) (log shared.UploadLog, _ error) {
+	hstores := pgtype.HstoreArray{}
+	err := s.Scan(
+		&log.LogTimestamp,
+		&log.RecordDeletedAt,
+		&log.UploadID,
+		&log.Commit,
+		&log.Root,
+		&log.RepositoryID,
+		&log.UploadedAt,
+		&log.Indexer,
+		&log.IndexerVersion,
+		&log.UploadSize,
+		&log.AssociatedIndexID,
+		&hstores,
+		&log.Reason,
+		&log.Operation,
+	)
+
+	for _, hstore := range hstores.Elements {
+		m := make(map[string]*string)
+		if err := hstore.AssignTo(&m); err != nil {
+			return log, err
+		}
+		log.TransitionColumns = append(log.TransitionColumns, m)
+	}
+
+	return log, err
+}
+
+var scanUploadAuditLogs = basestore.NewSliceScanner(scanUploadAuditLog)
 
 // DeleteUploads deletes uploads by filter criteria. The associated repositories will be marked as dirty
 // so that their commit graphs will be updated in the background.
@@ -796,6 +937,11 @@ func buildDeleteConditions(opts shared.DeleteUploadsOptions) []*sqlf.Query {
 	return conds
 }
 
+type cteDefinition struct {
+	name       string
+	definition *sqlf.Query
+}
+
 func buildGetConditionsAndCte(opts shared.GetUploadsOptions) (*sqlf.Query, []*sqlf.Query, []cteDefinition) {
 	conds := make([]*sqlf.Query, 0, 13)
 
@@ -930,6 +1076,76 @@ func buildGetConditionsAndCte(opts shared.GetUploadsOptions) (*sqlf.Query, []*sq
 	return sourceTableExpr, conds, cteDefinitions
 }
 
+const rankedDependencyCandidateCTEQuery = `
+SELECT
+	p.dump_id as pkg_id,
+	r.dump_id as ref_id,
+	-- Rank each upload providing the same package from the same directory
+	-- within a repository by commit date. We'll choose the oldest commit
+	-- date as the canonical choice and ignore the uploads for younger
+	-- commits providing the same package.
+	` + packageRankingQueryFragment + ` AS rank
+FROM lsif_uploads u
+JOIN lsif_packages p ON p.dump_id = u.id
+JOIN lsif_references r ON
+	r.scheme = p.scheme AND
+	r.manager = p.manager AND
+	r.name = p.name AND
+	r.version = p.version AND
+	r.dump_id != p.dump_id
+WHERE
+	-- Don't match deleted uploads
+	u.state = 'completed' AND
+	%s
+`
+
+const rankedDependentCandidateCTEQuery = `
+SELECT
+	p.dump_id AS pkg_id,
+	p.scheme AS scheme,
+	p.manager AS manager,
+	p.name AS name,
+	p.version AS version,
+	-- Rank each upload providing the same package from the same directory
+	-- within a repository by commit date. We'll choose the oldest commit
+	-- date as the canonical choice and ignore the uploads for younger
+	-- commits providing the same package.
+	` + packageRankingQueryFragment + ` AS rank
+FROM lsif_uploads u
+JOIN lsif_packages p ON p.dump_id = u.id
+WHERE
+	-- Don't match deleted uploads
+	u.state = 'completed' AND
+	%s
+`
+
+const deletedUploadsFromAuditLogsCTEQuery = `
+SELECT
+	DISTINCT ON(s.upload_id) s.upload_id AS id, au.commit, au.root,
+	au.uploaded_at, 'deleted' AS state,
+	snapshot->'failure_message' AS failure_message,
+	(snapshot->'started_at')::timestamptz AS started_at,
+	(snapshot->'finished_at')::timestamptz AS finished_at,
+	(snapshot->'process_after')::timestamptz AS process_after,
+	COALESCE((snapshot->'num_resets')::integer, -1) AS num_resets,
+	COALESCE((snapshot->'num_failures')::integer, -1) AS num_failures,
+	au.repository_id,
+	au.indexer, au.indexer_version,
+	COALESCE((snapshot->'num_parts')::integer, -1) AS num_parts,
+	NULL::integer[] as uploaded_parts,
+	au.upload_size, au.associated_index_id, au.content_type,
+	false AS should_reindex, -- TODO
+	COALESCE((snapshot->'expired')::boolean, false) AS expired,
+	NULL::bigint AS uncompressed_size
+FROM (
+	SELECT upload_id, snapshot_transition_columns(transition_columns ORDER BY sequence ASC) AS snapshot
+	FROM lsif_uploads_audit_logs
+	WHERE record_deleted_at IS NOT NULL
+	GROUP BY upload_id
+) AS s
+JOIN lsif_uploads_audit_logs au ON au.upload_id = s.upload_id
+`
+
 func buildGetUploadsLogFields(opts shared.GetUploadsOptions) []log.Field {
 	return []log.Field{
 		log.Int("repositoryID", opts.RepositoryID),
@@ -968,4 +1184,24 @@ func buildCTEPrefix(cteDefinitions []cteDefinition) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf("WITH\n%s", sqlf.Join(cteQueries, ",\n"))
+}
+
+//
+//
+
+func monikersToString(vs []precise.QualifiedMonikerData) string {
+	strs := make([]string, 0, len(vs))
+	for _, v := range vs {
+		strs = append(strs, fmt.Sprintf("%s:%s:%s:%s:%s", v.Kind, v.Scheme, v.Manager, v.Identifier, v.Version))
+	}
+
+	return strings.Join(strs, ", ")
+}
+
+func nilTimeToString(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+
+	return t.String()
 }

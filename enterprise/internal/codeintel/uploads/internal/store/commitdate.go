@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -90,3 +91,14 @@ GROUP BY u.repository_id, r.name, u.commit
 ORDER BY repository_id, commit
 LIMIT %s
 `
+
+//
+//
+
+type backfillIncompleteError struct {
+	repositoryID int
+}
+
+func (e backfillIncompleteError) Error() string {
+	return fmt.Sprintf("repository %d has not yet completed its backfill of commit dates", e.repositoryID)
+}

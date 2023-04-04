@@ -14,6 +14,8 @@ import (
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -139,6 +141,47 @@ WHERE
 	repo.blocked IS NULL AND
 	%s
 `
+
+// scanIndexes scans a slice of indexes from the return value of `*Store.query`.
+var scanIndexes = basestore.NewSliceScanner(scanIndex)
+
+// scanFirstIndex scans a slice of indexes from the return value of `*Store.query` and returns the first.
+var scanFirstIndex = basestore.NewFirstScanner(scanIndex)
+
+func scanIndex(s dbutil.Scanner) (index uploadsshared.Index, err error) {
+	var executionLogs []executor.ExecutionLogEntry
+	if err := s.Scan(
+		&index.ID,
+		&index.Commit,
+		&index.QueuedAt,
+		&index.State,
+		&index.FailureMessage,
+		&index.StartedAt,
+		&index.FinishedAt,
+		&index.ProcessAfter,
+		&index.NumResets,
+		&index.NumFailures,
+		&index.RepositoryID,
+		&index.RepositoryName,
+		pq.Array(&index.DockerSteps),
+		&index.Root,
+		&index.Indexer,
+		pq.Array(&index.IndexerArgs),
+		&index.Outfile,
+		pq.Array(&executionLogs),
+		&index.Rank,
+		pq.Array(&index.LocalSteps),
+		&index.AssociatedUploadID,
+		&index.ShouldReindex,
+		pq.Array(&index.RequestedEnvVars),
+	); err != nil {
+		return index, err
+	}
+
+	index.ExecutionLogs = append(index.ExecutionLogs, executionLogs...)
+
+	return index, nil
+}
 
 // GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
 func (s *store) GetIndexByID(ctx context.Context, id int) (_ uploadsshared.Index, _ bool, err error) {
