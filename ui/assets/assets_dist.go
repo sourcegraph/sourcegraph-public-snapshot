@@ -21,13 +21,12 @@ func init() {
 	// If we do detect a dist folder when running this code, we immediately substitute the root to that dist folder.
 	//
 	// Therefore, this code works with both the traditionnal build approach and when built with Bazel.
-	if fs.ValidPath("dist") {
+	if _, err := assetsFS.ReadDir("dist"); err == nil {
 		var err error
 		afs, err = fs.Sub(assetsFS, "dist")
 		if err != nil {
 			panic("incorrect embed")
 		}
 	}
-
 	Assets = http.FS(afs)
 }
