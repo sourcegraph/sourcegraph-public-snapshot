@@ -19,13 +19,14 @@ The next step is to create a temporary Firecracker VM for debugging purposes.
 > NOTE: if the host VM is provisioned with the [Sourcegraph terraform modules](./deploy_executors_terraform), the VMs may be configured to stop automatically. Refer to [Disabling the auto-deletion of Executor VMs](#disabling-the-auto-deletion-of-executor-vms) for information to prevent this.
 
 Run one of the following commands `executor test-vm` to generate a test firecracker VM:
-  * ```shell
-    executor test-vm
-    ````
-  * ```shell
-    # Optionally provide a repo to clone into the VMs workspace, to verify that cloning works properly as well.
-    executor test-vm [--repo=github.com/sourcegraph/sourcegraph --revision=main]
-    ```
+```shell
+# Test if a firecracker VM can be started
+executor test-vm
+
+# Test if a firecracker VM can be started and if a repository can be cloned into the VM's workspace
+executor test-vm [--repo=github.com/sourcegraph/sourcegraph --revision=main]
+```
+
 The command will output a line like:
 ```
 Success! Connect to the VM using
@@ -98,7 +99,11 @@ curl http://localhost:5000/v2/_catalog
 ### Registry is mounted in the file system
 Verify that the registry is mounted under the expected path in the file system by running:
 ```shell
-ls /mnt/registry/docker/registry/v2/repositories/sourcegraph 
+# This directory should always be mounted
+ls /mnt/registry
+   
+# If jobs have been processed, the following path should exist
+ls /mnt/registry/docker/registry/v2/repositories/<public repository name>
 ```
 
 ## Connecting to cloud provider executor instances
@@ -117,6 +122,8 @@ Then, using the name of an instance, run
 # use an identity-aware proxy tunnel with --tunnel-through-iap
 gcloud compute ssh ${INSTANCE_NAME}
 ```
+    
+Alternatively, you may navigate to the compute instance in the GCP web console, where you will be able to connect with SSH in-browser.
 
 ### AWS
 In order to connect to an EC2 instance using SSH, you must have [specified a key pair](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html) when the instance was launched. If you have not done so, you can connect to your instance through the web console instead.  
