@@ -5,7 +5,7 @@
     "sourceRoot": "src",
     "outDir": "out",
     "jsx": "react-jsx",
-    "types": ["./src/typings.d.ts"],
+    "types": ["./src/globals.d.ts"],
   },
   "include": ["src", "vite.config.ts", "package.json", ".eslintrc.js", "jest.config.js"],
   "exclude": ["out", "dist"],
