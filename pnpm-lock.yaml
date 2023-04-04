@@ -112,6 +112,7 @@ importers:
       '@storybook/manager-webpack5': ^6.5.14
       '@storybook/react': ^6.5.14
       '@storybook/theming': ^6.5.14
+      '@tauri-apps/api': ^1.2.0
       '@tauri-apps/cli': ^1.2.3
       '@terminus-term/to-string-loader': ^1.1.7-beta.1
       '@testing-library/dom': ^8.13.0
@@ -450,6 +451,7 @@ importers:
       '@sentry/browser': 7.8.1
       '@sourcegraph/extension-api-classes': 1.1.0_sohmsbidf4ixb2vnv3mpdkpiau
       '@storybook/addon-controls': 6.5.14_zivmixh3gtpk7iajc6ftfjv25q
+      '@tauri-apps/api': 1.2.0
       '@testing-library/react': 13.4.0_ef5jwxihqo6n7gxfmzogljlgcm
       '@visx/annotation': 2.10.0_ef5jwxihqo6n7gxfmzogljlgcm
       '@visx/axis': 2.11.1_react@18.1.0
@@ -8344,6 +8346,11 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       defer-to-connect: 2.0.1
+
+  /@tauri-apps/api/1.2.0:
+    resolution: {integrity: sha512-lsI54KI6HGf7VImuf/T9pnoejfgkNoXveP14pVV7XarrQ46rOejIVJLFqHI9sRReJMGdh2YuCoI3cc/yCWCsrw==}
+    engines: {node: '>= 14.6.0', npm: '>= 6.6.0', yarn: '>= 1.19.1'}
+    dev: false
 
   /@tauri-apps/cli-darwin-arm64/1.2.3:
     resolution: {integrity: sha512-phJN3fN8FtZZwqXg08bcxfq1+X1JSDglLvRxOxB7VWPq+O5SuB8uLyssjJsu+PIhyZZnIhTGdjhzLSFhSXfLsw==}
