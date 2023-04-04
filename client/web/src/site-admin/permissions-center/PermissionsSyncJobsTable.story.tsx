@@ -185,8 +185,8 @@ function getSyncJobs(): PermissionsSyncJob[] {
                 subject,
                 reason,
                 state === PermissionsSyncJobState.COMPLETED && index > 10,
-                index % 2 == 0 ? index + 10 : 0,
-                index % 2 == 0 ? index + 5 : 0
+                index % 4 === 0 ? 0 : index + 10,
+                index % 4 === 0 ? 0 : index + 5
             )
         )
     }
