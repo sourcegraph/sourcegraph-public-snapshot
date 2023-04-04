@@ -6,7 +6,7 @@ USER root
 COPY cmd/symbols/ctags-install-alpine.sh /ctags-install-alpine.sh
 RUN /ctags-install-alpine.sh
 
-FROM golang:1.19.6-alpine@sha256:f2e0acaf7c628cd819b73541d7c1ea8f888d51edb0a58935a3c46a084fa953fa AS symbols-build
+FROM golang:1.19.7-alpine@sha256:04065e607052705ede1ac6308ce56aec4715b0fafb1f0c2f4c2333aab9d84442 AS symbols-build
 # hadolint ignore=DL3002
 USER root
 
