@@ -15,6 +15,7 @@ import (
 	sentinelgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/lsifuploadstore"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
 	uploadgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 	uploadshttp "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/http"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -50,8 +51,8 @@ func Init(
 
 	repoStore := db.Repos()
 	siteAdminChecker := sharedresolvers.NewSiteAdminChecker(db)
-	locationResolverFactory := sharedresolvers.NewCachedLocationResolverFactory(repoStore, codeIntelServices.GitserverClient)
-	prefetcherFactory := sharedresolvers.NewPrefetcherFactory(codeIntelServices.UploadsService)
+	locationResolverFactory := gitresolvers.NewCachedLocationResolverFactory(repoStore, codeIntelServices.GitserverClient)
+	prefetcherFactory := uploadgraphql.NewPrefetcherFactory(codeIntelServices.UploadsService)
 
 	autoindexingRootResolver := autoindexinggraphql.NewRootResolver(
 		scopedContext("autoindexing"),
