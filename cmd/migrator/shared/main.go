@@ -48,9 +48,10 @@ func NewRunnerWithSchemas(observationCtx *observation.Context, logger log.Logger
 // DefaultSchemaFactories is a list of schema factories to be used in
 // non-exceptional cases.
 var DefaultSchemaFactories = []cliutil.ExpectedSchemaFactory{
+	// cliutil.EmbededSchemaFactory,
+	cliutil.LocalExpectedSchemaFactory,
 	cliutil.GitHubExpectedSchemaFactory,
 	cliutil.GCSExpectedSchemaFactory,
-	cliutil.LocalExpectedSchemaFactory,
 }
 
 func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsingConfAndStoreFactoryFunc) error {
