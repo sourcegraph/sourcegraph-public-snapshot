@@ -23,7 +23,9 @@ go_library(
         "//enterprise/internal/codeintel/codenav",
         "//enterprise/internal/codeintel/codenav/shared",
         "//enterprise/internal/codeintel/shared/resolvers",
+        "//enterprise/internal/codeintel/shared/resolvers/gitresolvers",
         "//enterprise/internal/codeintel/uploads/shared",
+        "//enterprise/internal/codeintel/uploads/transport/graphql",
         "//internal/api",
         "//internal/authz",
         "//internal/codeintel/resolvers",
@@ -49,7 +51,7 @@ go_test(
     deps = [
         "//enterprise/internal/codeintel/codenav",
         "//enterprise/internal/codeintel/codenav/shared",
-        "//enterprise/internal/codeintel/shared/resolvers",
+        "//enterprise/internal/codeintel/shared/resolvers/gitresolvers",
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/api",
         "//internal/codeintel/resolvers",
