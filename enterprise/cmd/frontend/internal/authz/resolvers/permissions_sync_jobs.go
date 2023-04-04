@@ -261,7 +261,7 @@ func (p *permissionsSyncJobResolver) PartialSuccess() bool {
 }
 
 func (p *permissionsSyncJobResolver) PlaceInQueue() *int32 {
-	return p.job.QueueRank
+	return p.job.PlaceInQueue
 }
 
 type codeHostStateResolver struct {

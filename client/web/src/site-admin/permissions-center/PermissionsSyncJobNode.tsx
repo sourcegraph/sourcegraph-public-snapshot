@@ -116,7 +116,7 @@ export const PermissionsSyncJobStatusBadge: React.FunctionComponent<PermissionsS
             tooltip={cancellationReason ?? failureMessage ?? warningMessage ?? undefined}
             variant={partialSuccess ? 'warning' : JOB_STATE_METADATA_MAPPING[state].badgeVariant}
         >
-            {partialSuccess ? 'PARTIAL' : state} {state === PermissionsSyncJobState.QUEUED ? `#${job.queueRank}` : ''}
+            {partialSuccess ? 'PARTIAL' : state} {job.placeInQueue ? `#${job.placeInQueue}` : ''}
         </Badge>
     )
 }
