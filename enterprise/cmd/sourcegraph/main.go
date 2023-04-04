@@ -17,6 +17,7 @@ import (
 	precise_code_intel_worker_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/shared"
 	repoupdater_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/shared"
 	symbols_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/weaviate"
 	worker_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared"
 )
 
@@ -34,6 +35,7 @@ var services = []service.Service{
 	executor_singlebinary.Service,
 	servegit.Service,
 	embeddings_shared.Service,
+	weaviate.Service,
 }
 
 func main() {

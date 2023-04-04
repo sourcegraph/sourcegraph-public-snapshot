@@ -179,6 +179,12 @@ func Init(logger log.Logger) {
 			setDefaultEnv(logger, "CTAGS_COMMAND", ctagsPath)
 		}
 	}
+
+	if haveDocker {
+		weaviatePath := filepath.Join(cacheDir, "weaviate-dev")
+		writeFile(weaviatePath, []byte(weaviateScript), 0700)
+		setDefaultEnv(logger, "WEAVIATE_PATH", weaviatePath)
+	}
 }
 
 func printStatusCheckError(title, description string, details ...string) {
@@ -236,6 +242,19 @@ exec docker run --rm -i \
     --name=universal-ctags-$$ \
     --entrypoint /usr/local/bin/universal-ctags \
     slimsag/ctags:latest@sha256:dd21503a3ae51524ab96edd5c0d0b8326d4baaf99b4238dfe8ec0232050af3c7 "$@"
+`
+
+const weaviateScript = `#!/usr/bin/env bash
+
+# This script is a wrapper around weaviate.
+
+exec docker run --rm -i \
+    -a stdin -a stdout -a stderr \
+    --user guest \
+    --name=weaviate-$$ \
+	-p 8181:8181 \
+    -v ~/.sourcegraph-weaviate:/var/lib/weaviate \
+    shengl/weaviate:latest "$@"
 `
 
 // setDefaultEnv will set the environment variable if it is not set.
