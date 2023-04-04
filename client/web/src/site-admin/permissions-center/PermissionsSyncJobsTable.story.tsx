@@ -287,5 +287,6 @@ function createSyncJobMock(
               ]
             : [],
         partialSuccess: partial,
+        placeInQueue: 1,
     }
 }
