@@ -20,6 +20,7 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     allExpanded: true,
     onExpandAllResultsToggle: noop,
     onSaveQueryClick: noop,
+    onExportCsvClick: noop,
     stats: <div />,
     telemetryService: NOOP_TELEMETRY_SERVICE,
     patternType: SearchPatternType.standard,
