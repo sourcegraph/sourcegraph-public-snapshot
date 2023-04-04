@@ -211,7 +211,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
             codeHostMessage = 'Indexing repositories...'
             iconProps = { as: CloudSyncIconRefresh }
         } else if (data.statusMessages?.some(({ __typename: type }) => type === 'NoRepositoriesDetected')) {
-            codeHostMessage = 'No repositories detected'
+            codeHostMessage = 'No repositories'
             iconProps = { as: CloudInfoIconRefresh }
         } else {
             codeHostMessage = 'Repositories up to date'
