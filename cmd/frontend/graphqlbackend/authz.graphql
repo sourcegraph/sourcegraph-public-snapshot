@@ -756,9 +756,9 @@ type PermissionsSyncJob implements Node {
     """
     partialSuccess: Boolean!
     """
-    Rank of the permissions syncing job in processing queue. Rank if 0 if the job is not queued.
+    Rank of the permissions syncing job in processing queue.
     """
-    queueRank: Int!
+    placeInQueue: Int
 }
 
 """

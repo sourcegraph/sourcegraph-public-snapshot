@@ -477,7 +477,7 @@ type ListPermissionSyncJobOpts struct {
 	NotNullProcessAfter bool
 	NotCanceled         bool
 	PartialSuccess      bool
-	WithQueueRank       bool
+	WithPlaceInQueue    bool
 
 	// SearchType and Query are related to text search for sync jobs.
 	SearchType PermissionsSyncSearchType
@@ -608,8 +608,8 @@ func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSy
 	}
 
 	columns := sqlf.Join(PermissionSyncJobColumns, ", ")
-	if opts.WithQueueRank {
-		columns = sqlf.Sprintf("%s, CASE WHEN queue_ranks.rank IS NOT NULL THEN queue_ranks.rank ELSE 0 END AS queue_rank", columns)
+	if opts.WithPlaceInQueue {
+		columns = sqlf.Sprintf("%s, queue_ranks.rank AS queue_rank", columns)
 		joinClause = sqlf.Sprintf(`
 			%s
 			LEFT JOIN (
@@ -638,15 +638,12 @@ func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSy
 	var syncJobs []*PermissionSyncJob
 	for rows.Next() {
 		var job PermissionSyncJob
-		if opts.WithQueueRank {
-			if err := scanPermissionSyncJobWithQueueRank(&job, rows); err != nil {
+		if opts.WithPlaceInQueue {
+			if err := scanPermissionSyncJobWithPlaceInQueue(&job, rows); err != nil {
 				return nil, err
 			}
-		} else {
-			if err := scanPermissionSyncJob(&job, rows); err != nil {
-				return nil, err
-			}
-
+		} else if err := scanPermissionSyncJob(&job, rows); err != nil {
+			return nil, err
 		}
 		syncJobs = append(syncJobs, &job)
 	}
@@ -775,7 +772,7 @@ type PermissionSyncJob struct {
 	PermissionsFound   int
 	CodeHostStates     []PermissionSyncCodeHostState
 	IsPartialSuccess   bool
-	QueueRank          int32
+	PlaceInQueue       *int32
 }
 
 func (j *PermissionSyncJob) RecordID() int { return j.ID }
@@ -864,7 +861,7 @@ func scanPermissionSyncJob(job *PermissionSyncJob, s dbutil.Scanner) error {
 	return nil
 }
 
-func scanPermissionSyncJobWithQueueRank(job *PermissionSyncJob, s dbutil.Scanner) error {
+func scanPermissionSyncJobWithPlaceInQueue(job *PermissionSyncJob, s dbutil.Scanner) error {
 	var executionLogs []executor.ExecutionLogEntry
 	var codeHostStates []PermissionSyncCodeHostState
 
@@ -898,7 +895,7 @@ func scanPermissionSyncJobWithQueueRank(job *PermissionSyncJob, s dbutil.Scanner
 		&job.PermissionsFound,
 		pq.Array(&codeHostStates),
 		&job.IsPartialSuccess,
-		&job.QueueRank,
+		&job.PlaceInQueue,
 	); err != nil {
 		return err
 	}
