@@ -1,5 +1,5 @@
 :root {
-    --chat-bubble-border-radius: 16px;
+    --chat-bubble-border-radius: 6px;
 }
 
 .inner-container {
@@ -18,7 +18,7 @@
 
 .bubble-row {
     display: flex;
-    padding: 1rem;
+    padding: .3rem 1rem .3rem 1rem;
 }
 
 .human-bubble-row {
@@ -68,9 +68,9 @@
 
 .bubble-footer {
     display: flex;
-    margin-top: 0.5rem;
     align-content: center;
     justify-content: space-between;
+    font-size: 0.63rem;
 }
 
 .human-bubble-footer {
@@ -78,7 +78,7 @@
 }
 
 .bubble-footer-timestamp {
-    margin-top: 0.5rem;
+    margin-top: 0.1rem;
     align-self: center;
 }
 

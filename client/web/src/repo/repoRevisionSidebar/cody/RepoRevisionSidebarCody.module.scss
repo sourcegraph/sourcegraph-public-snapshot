@@ -1,12 +1,13 @@
 :root {
-    --human-bubble-color: #565eb9;
-    --human-text-color: #e1e1e1;
-    --bot-bubble-color: #dddddd;
-    --bot-text-color: #222222;
+    --human-bubble-color: --body-bg;
+    --human-text-color: --dark-text;
+    --bot-bubble-color: linear-gradient(white, white) padding-box,
+              linear-gradient(130deg, #00CBEC, #A112FF) border-box;
+    --bot-text-color: --dark-text
 }
 
 .container {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     padding-top: 1rem;
     flex-grow: 1;
 }
@@ -23,14 +24,16 @@
     color: var(--code-background);
 }
 
+.bot-bubble-content {
+    background: var(--bot-bubble-color);
+    color: var(--bot-text-color);
+    border: 1px solid transparent;
+ }
+
 .human-bubble-content {
+    border: solid 1px var(--border-color-2);
     background-color: var(--human-bubble-color);
     color: var(--human-text-color);
-}
-
-.bot-bubble-content {
-    background-color: var(--bot-bubble-color);
-    color: var(--bot-text-color);
 }
 
 .bubble-loader-dot {
