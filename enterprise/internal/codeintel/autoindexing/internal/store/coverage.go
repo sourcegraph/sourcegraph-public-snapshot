@@ -15,6 +15,50 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+func (s *store) TopRepositoriesToConfigure(ctx context.Context, limit int) (_ []uploadsshared.RepositoryWithCount, err error) {
+	ctx, _, endObservation := s.operations.topRepositoriesToConfigure.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("limit", limit),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	repositories, err := basestore.NewSliceScanner(func(s dbutil.Scanner) (rc uploadsshared.RepositoryWithCount, _ error) {
+		err := s.Scan(&rc.RepositoryID, &rc.Count)
+		return rc, err
+	})(s.db.Query(ctx, sqlf.Sprintf(topRepositoriesToConfigureQuery, pq.Array(eventNames), eventLogsWindow/time.Hour, limit)))
+	if err != nil {
+		return nil, err
+	}
+
+	return repositories, nil
+}
+
+var eventNames = []string{
+	"codeintel.searchDefinitions.xrepo",
+	"codeintel.searchDefinitions",
+	"codeintel.searchHover",
+	"codeintel.searchReferences.xrepo",
+	"codeintel.searchReferences",
+}
+
+// about one month
+const eventLogsWindow = time.Hour * 24 * 30
+
+const topRepositoriesToConfigureQuery = `
+SELECT
+	r.id,
+	COUNT(*) as num_events
+FROM event_logs e
+JOIN repo r ON r.id = (e.argument->'repositoryId')::integer
+WHERE
+	e.name = ANY(%s) AND
+	e.timestamp >= NOW() - (%s * '1 hour'::interval) AND
+	r.deleted_at IS NULL AND
+	r.blocked IS NULL
+GROUP BY r.id
+ORDER BY num_events DESC, id
+LIMIT %s
+`
+
 func (s *store) RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) (_ []uploadsshared.RepositoryWithAvailableIndexers, totalCount int, err error) {
 	ctx, _, endObservation := s.operations.repositoryIDsWithConfiguration.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	defer endObservation(1, observation.Args{})
@@ -45,48 +89,24 @@ WHERE
 ORDER BY num_events DESC LIMIT %s OFFSET %s
 `
 
-// about one month
-const eventLogsWindow = time.Hour * 24 * 30
-
-func (s *store) TopRepositoriesToConfigure(ctx context.Context, limit int) (_ []uploadsshared.RepositoryWithCount, err error) {
-	ctx, _, endObservation := s.operations.topRepositoriesToConfigure.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("limit", limit),
+// GetLastIndexScanForRepository returns the last timestamp, if any, that the repository with the given
+// identifier was considered for auto-indexing scheduling.
+func (s *store) GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error) {
+	ctx, _, endObservation := s.operations.getLastIndexScanForRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	repositories, err := basestore.NewSliceScanner(func(s dbutil.Scanner) (rc uploadsshared.RepositoryWithCount, _ error) {
-		err := s.Scan(&rc.RepositoryID, &rc.Count)
-		return rc, err
-	})(s.db.Query(ctx, sqlf.Sprintf(topRepositoriesToConfigureQuery, pq.Array(eventNames), eventLogsWindow/time.Hour, limit)))
-	if err != nil {
+	t, ok, err := basestore.ScanFirstTime(s.db.Query(ctx, sqlf.Sprintf(lastIndexScanForRepositoryQuery, repositoryID)))
+	if !ok {
 		return nil, err
 	}
 
-	return repositories, nil
+	return &t, nil
 }
 
-var eventNames = []string{
-	"codeintel.searchDefinitions.xrepo",
-	"codeintel.searchDefinitions",
-	"codeintel.searchHover",
-	"codeintel.searchReferences.xrepo",
-	"codeintel.searchReferences",
-}
-
-const topRepositoriesToConfigureQuery = `
-SELECT
-	r.id,
-	COUNT(*) as num_events
-FROM event_logs e
-JOIN repo r ON r.id = (e.argument->'repositoryId')::integer
-WHERE
-	e.name = ANY(%s) AND
-	e.timestamp >= NOW() - (%s * '1 hour'::interval) AND
-	r.deleted_at IS NULL AND
-	r.blocked IS NULL
-GROUP BY r.id
-ORDER BY num_events DESC, id
-LIMIT %s
+const lastIndexScanForRepositoryQuery = `
+SELECT last_index_scan_at FROM lsif_last_index_scan WHERE repository_id = %s
 `
 
 func (s *store) SetConfigurationSummary(ctx context.Context, repositoryID int, numEvents int, availableIndexers map[string]uploadsshared.AvailableIndexer) (err error) {

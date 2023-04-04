@@ -6,9 +6,11 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -164,3 +166,50 @@ WHERE
 	p.indexing_enabled AND
 	gr.clone_status = 'cloned'
 `
+
+// GetQueuedRepoRev selects a batch of repository and revisions to be processed by the auto-indexing
+// scheduler. If in a transaction, the seleted records will remain locked until the enclosing transaction
+// has been committed or rolled back.
+func (s *store) GetQueuedRepoRev(ctx context.Context, batchSize int) (_ []RepoRev, err error) {
+	ctx, _, endObservation := s.operations.getQueuedRepoRev.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("batchSize", batchSize),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return ScanRepoRevs(s.db.Query(ctx, sqlf.Sprintf(getQueuedRepoRevQuery, batchSize)))
+}
+
+const getQueuedRepoRevQuery = `
+SELECT id, repository_id, rev
+FROM codeintel_autoindex_queue
+WHERE processed_at IS NULL
+ORDER BY queued_at ASC
+FOR UPDATE SKIP LOCKED
+LIMIT %s
+`
+
+// MarkRepoRevsAsProcessed sets processed_at for each matching record in codeintel_autoindex_queue.
+func (s *store) MarkRepoRevsAsProcessed(ctx context.Context, ids []int) (err error) {
+	ctx, _, endObservation := s.operations.markRepoRevsAsProcessed.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numIDs", len(ids)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return s.db.Exec(ctx, sqlf.Sprintf(markRepoRevsAsProcessedQuery, pq.Array(ids)))
+}
+
+const markRepoRevsAsProcessedQuery = `
+UPDATE codeintel_autoindex_queue
+SET processed_at = NOW()
+WHERE id = ANY(%s)
+`
+
+//
+//
+
+var ScanRepoRevs = basestore.NewSliceScanner(scanRepoRev)
+
+func scanRepoRev(s dbutil.Scanner) (rr RepoRev, err error) {
+	err = s.Scan(&rr.ID, &rr.RepositoryID, &rr.Rev)
+	return rr, err
+}

@@ -47,6 +47,12 @@ type Store interface {
 	QueueRepoRev(ctx context.Context, repositoryID int, commit string) error
 }
 
+type RepoRev struct {
+	ID           int
+	RepositoryID int
+	Rev          string
+}
+
 type store struct {
 	db         *basestore.Store
 	logger     logger.Logger

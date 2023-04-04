@@ -4,15 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
-
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestGetIndexConfigurationByRepositoryID(t *testing.T) {
