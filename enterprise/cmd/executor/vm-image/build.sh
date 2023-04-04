@@ -53,9 +53,6 @@ cp install.sh "$OUTPUT"
 cp aws_regions.json "$OUTPUT"
 popd 1>/dev/null
 
-# for testing purposes
-export EXECUTOR_IS_TAGGED_RELEASE=true
-
 export PKR_VAR_name
 PKR_VAR_name="${IMAGE_FAMILY}-${BUILDKITE_BUILD_NUMBER}"
 export PKR_VAR_image_family="${IMAGE_FAMILY}"
