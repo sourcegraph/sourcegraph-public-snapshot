@@ -17,21 +17,29 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/ui/assets",
     visibility = ["//visibility:public"],
     deps = ["//lib/errors"],
-    embedsrcs = ["copy_bundle_dist"],
 )
 
 filegroup(
     name = "assets_dist",
     srcs = select({
-        "//:bundle_dist_oss": ["//client/web:bundle", "//ui/assets/img"],
-        "//:bundle_dist_enterprise": ["//client/web:bundle-enterprise", "//ui/assets/img"],
+        "//:bundle_dist_oss": [
+            "//client/web:bundle",
+            "//ui/assets/img",
+        ],
+        "//:bundle_dist_enterprise": [
+            "//client/web:bundle-enterprise",
+            "//ui/assets/img",
+        ],
         "//conditions:default": [],
     }),
 )
 
 copy_to_directory(
     name = "copy_bundle_dist",
-    srcs = ["//ui/assets:assets_dist", "//:CHANGELOG.md"],
+    srcs = [
+        "//:CHANGELOG.md",
+        "//ui/assets:assets_dist",
+    ],
     out = "dist",
     replace_prefixes = {
         "client/web/bundle": "",

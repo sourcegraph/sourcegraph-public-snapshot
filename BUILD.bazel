@@ -246,4 +246,3 @@ config_setting(
 # Used for when copy_to_directory might reference an empty filegroup
 # under certain conditions. See //ui/assets.
 exports_files(["CHANGELOG.md"])
-
