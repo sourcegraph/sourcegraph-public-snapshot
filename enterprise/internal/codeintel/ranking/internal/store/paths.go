@@ -104,7 +104,7 @@ func (s *store) VacuumStaleInitialPaths(ctx context.Context, graphKey string) (
 	numStalePathRecordsDeleted int,
 	err error,
 ) {
-	ctx, _, endObservation := s.operations.vacuumStalePaths.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	ctx, _, endObservation := s.operations.vacuumStaleInitialPaths.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
 	defer endObservation(1, observation.Args{})
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(
