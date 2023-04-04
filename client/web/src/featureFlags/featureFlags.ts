@@ -19,7 +19,6 @@ export type FeatureFlagName =
     | 'accessible-symbol-tree'
     | 'accessible-file-tree-always-load-ancestors'
     | 'search-ownership'
-    | 'cody'
     | 'search-ranking'
     | 'blob-page-switch-areas-shortcuts'
     | 'app-connect-dotcom'
