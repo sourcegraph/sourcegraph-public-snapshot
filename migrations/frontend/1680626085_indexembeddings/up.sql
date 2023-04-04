@@ -1,0 +1,7 @@
+CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE IF NOT EXISTS repo_embeddings (
+    id SERIAL PRIMARY KEY,
+    repo_id INTEGER NOT NULL REFERENCES repo(id) ON DELETE CASCADE,
+    embedding vector(1536) NOT NULL
+); --  PARTITION BY HASH (repo_id)?

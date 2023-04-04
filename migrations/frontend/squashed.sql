@@ -22,6 +22,10 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 COMMENT ON EXTENSION pgcrypto IS 'cryptographic functions';
 
+CREATE EXTENSION IF NOT EXISTS vector;
+
+COMMENT ON EXTENSION vector IS 'vector data type and ivfflat access method';
+
 CREATE TYPE audit_log_operation AS ENUM (
     'create',
     'modify',
@@ -3749,6 +3753,22 @@ CREATE SEQUENCE repo_embedding_jobs_id_seq
 
 ALTER SEQUENCE repo_embedding_jobs_id_seq OWNED BY repo_embedding_jobs.id;
 
+CREATE TABLE repo_embeddings (
+    id integer NOT NULL,
+    repo_id integer NOT NULL,
+    embedding vector(1536) NOT NULL
+);
+
+CREATE SEQUENCE repo_embeddings_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE repo_embeddings_id_seq OWNED BY repo_embeddings.id;
+
 CREATE SEQUENCE repo_id_seq
     START WITH 1
     INCREMENT BY 1
@@ -4526,6 +4546,8 @@ ALTER TABLE ONLY repo ALTER COLUMN id SET DEFAULT nextval('repo_id_seq'::regclas
 
 ALTER TABLE ONLY repo_embedding_jobs ALTER COLUMN id SET DEFAULT nextval('repo_embedding_jobs_id_seq'::regclass);
 
+ALTER TABLE ONLY repo_embeddings ALTER COLUMN id SET DEFAULT nextval('repo_embeddings_id_seq'::regclass);
+
 ALTER TABLE ONLY roles ALTER COLUMN id SET DEFAULT nextval('roles_id_seq'::regclass);
 
 ALTER TABLE ONLY saved_searches ALTER COLUMN id SET DEFAULT nextval('saved_searches_id_seq'::regclass);
@@ -4917,6 +4939,9 @@ ALTER TABLE ONLY registry_extensions
 
 ALTER TABLE ONLY repo_embedding_jobs
     ADD CONSTRAINT repo_embedding_jobs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY repo_embeddings
+    ADD CONSTRAINT repo_embeddings_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY repo_kvps
     ADD CONSTRAINT repo_kvps_pkey PRIMARY KEY (repo_id, key) INCLUDE (value);
@@ -5947,6 +5972,9 @@ ALTER TABLE ONLY registry_extensions
 
 ALTER TABLE ONLY registry_extensions
     ADD CONSTRAINT registry_extensions_publisher_user_id_fkey FOREIGN KEY (publisher_user_id) REFERENCES users(id);
+
+ALTER TABLE ONLY repo_embeddings
+    ADD CONSTRAINT repo_embeddings_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY repo_kvps
     ADD CONSTRAINT repo_kvps_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
