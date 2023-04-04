@@ -32,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -1025,15 +1026,21 @@ func (c *clientImplementor) LsFiles(ctx context.Context, checker authz.SubRepoPe
 // ListFiles returns a list of root-relative file paths matching the given
 // pattern in a particular commit of a repository.
 func (c *clientImplementor) ListFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp) (_ []string, err error) {
-	cmd := c.gitCommand(repo, "ls-tree", "--name-only", "-r", string(commit), "--")
+	cmd := c.gitCommand(repo, "ls-tree", "-z", "--name-only", "-r", string(commit), "--")
 
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	files := strings.Split(string(out), "\x00")
+	// Drop trailing empty string
+	if len(files) > 0 && files[len(files)-1] == "" {
+		files = files[:len(files)-1]
+	}
+
 	var matching []string
-	for _, path := range strings.Split(string(out), "\n") {
+	for _, path := range files {
 		if pattern.MatchString(path) {
 			matching = append(matching, path)
 		}
@@ -1893,7 +1900,7 @@ func (c *clientImplementor) FirstEverCommit(ctx context.Context, checker authz.S
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", args, out))
 	}
 	lines := bytes.TrimSpace(out)
-	tokens := bytes.Split(lines, []byte("\n"))
+	tokens := bytes.SplitN(lines, []byte("\n"), 2)
 	if len(tokens) == 0 {
 		return nil, errors.New("FirstEverCommit returned no revisions")
 	}
@@ -2251,12 +2258,13 @@ var refPrefixes = map[string]gitdomain.RefType{
 // - %(HEAD) is `*` if the branch is the default branch (and whitesace otherwise)
 // - %(creatordate) is the ISO-formatted date the object was created
 func parseRefDescriptions(out []byte) (map[string][]gitdomain.RefDescription, error) {
-	lines := bytes.Split(out, []byte("\n"))
-	refDescriptions := make(map[string][]gitdomain.RefDescription, len(lines))
+	refDescriptions := make(map[string][]gitdomain.RefDescription, bytes.Count(out, []byte("\n")))
+
+	lr := byteutils.NewLineReader(out)
 
 lineLoop:
-	for _, line := range lines {
-		line = bytes.TrimSpace(line)
+	for lr.Scan() {
+		line := bytes.TrimSpace(lr.Line())
 		if len(line) == 0 {
 			continue
 		}

@@ -31,28 +31,32 @@ func (c *Config) Load() {
 	c.ServeConfig.Load()
 }
 
-type svc struct{}
+type svc struct {
+	srvReady chan (any)
+	srv      *Serve
+}
 
-func (s svc) Name() string {
+func (s *svc) Name() string {
 	return "servegit"
 }
 
-func (s svc) Configure() (env.Config, []debugserver.Endpoint) {
+func (s *svc) Configure() (env.Config, []debugserver.Endpoint) {
 	c := &Config{}
 	c.Load()
 	return c, nil
 }
 
-func (s svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, configI env.Config) (err error) {
+func (s *svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, configI env.Config) (err error) {
 	config := configI.(*Config)
 
 	// Start servegit which walks Root to find repositories and exposes
 	// them over HTTP for Sourcegraph's syncer to discover and clone.
-	srv := &Serve{
+	s.srv = &Serve{
 		ServeConfig: config.ServeConfig,
 		Logger:      observationCtx.Logger,
 	}
-	if err := srv.Start(); err != nil {
+	close(s.srvReady)
+	if err := s.srv.Start(); err != nil {
 		return errors.Wrap(err, "failed to start servegit server which discovers local repositories")
 	}
 
@@ -65,11 +69,24 @@ func (s svc) Start(ctx context.Context, observationCtx *observation.Context, rea
 	// connects to it.
 	//
 	// Note: src.Addr is updated to reflect the actual listening address.
-	if err := ensureExtSVC(observationCtx, "http://"+srv.Addr, config.CWDRoot); err != nil {
+	if err := ensureExtSVC(observationCtx, "http://"+s.srv.Addr, config.CWDRoot); err != nil {
 		return errors.Wrap(err, "failed to create external service which imports local repositories")
 	}
 
 	return nil
 }
 
-var Service service.Service = svc{}
+func (s *svc) Repos(ctx context.Context, root string) ([]Repo, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case <-s.srvReady:
+	}
+
+	return s.srv.Repos(root)
+}
+
+var Service = &svc{
+	srvReady: make(chan any),
+}
+var _ service.Service = Service

@@ -67,8 +67,6 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         <p>
           There was a network error retrieving search results. Check your Internet connection and try again.
         </p>
-        
-
       </div>
     </div>
     <div
@@ -130,8 +128,6 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         <p>
           Search timed out
         </p>
-        
-
       </div>
     </div>
     <div
@@ -193,8 +189,6 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         <p>
           10k forked repositories excluded
         </p>
-        
-
       </div>
     </div>
     <div
@@ -256,8 +250,6 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         <p>
           60k archived repositories excluded
         </p>
-        
-
       </div>
     </div>
     <div
@@ -323,8 +315,6 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           </code>
            in your query.
         </p>
-        
-
       </div>
     </div>
     <div

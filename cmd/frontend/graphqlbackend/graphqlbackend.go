@@ -45,6 +45,7 @@ var (
 	}, []string{"type", "field", "error", "source", "request_name"})
 )
 
+// Note: we have both pointer and value receivers on this type, and we are fine with that.
 type requestTracer struct {
 	DB     database.DB
 	tracer *otel.Tracer
@@ -423,6 +424,7 @@ func NewSchema(
 	gitserverClient gitserver.Client,
 	enterpriseJobs jobutil.EnterpriseJobs,
 	optional OptionalResolver,
+	graphqlOpts ...graphql.SchemaOpt,
 ) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db, gitserverClient, enterpriseJobs)
 	schemas := []string{mainSchema, outboundWebhooksSchema}
@@ -569,9 +571,7 @@ func NewSchema(
 	}
 
 	logger := log.Scoped("GraphQL", "general GraphQL logging")
-	return graphql.ParseSchema(
-		strings.Join(schemas, "\n"),
-		resolver,
+	opts := []graphql.SchemaOpt{
 		graphql.Tracer(&requestTracer{
 			DB: db,
 			tracer: &otel.Tracer{
@@ -580,7 +580,12 @@ func NewSchema(
 			logger: logger,
 		}),
 		graphql.UseStringDescriptions(),
-	)
+	}
+	opts = append(opts, graphqlOpts...)
+	return graphql.ParseSchema(
+		strings.Join(schemas, "\n"),
+		resolver,
+		opts...)
 }
 
 // schemaResolver handles all GraphQL queries for Sourcegraph. To do this, it
@@ -728,6 +733,8 @@ var EnterpriseResolvers = struct {
 	ownResolver                 OwnResolver
 }{}
 
+// Root returns a new schemaResolver.
+//
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
 	return newSchemaResolver(r.db, r.gitserverClient, r.enterpriseSearchJobs)

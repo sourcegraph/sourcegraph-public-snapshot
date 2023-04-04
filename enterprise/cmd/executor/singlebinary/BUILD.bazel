@@ -11,8 +11,6 @@ go_library(
     deps = [
         "//enterprise/cmd/executor/internal/config",
         "//enterprise/cmd/executor/internal/run",
-        "//internal/conf/confdefaults",
-        "//internal/conf/deploy",
         "//internal/debugserver",
         "//internal/env",
         "//internal/observation",

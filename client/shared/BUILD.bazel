@@ -347,7 +347,6 @@ ts_project(
         "//:node_modules/@types/node",
         "//:node_modules/@types/puppeteer",
         "//:node_modules/@types/react",
-        "//:node_modules/axe-core",  #keep
         "//:node_modules/classnames",
         "//:node_modules/comlink",
         "//:node_modules/core-js",

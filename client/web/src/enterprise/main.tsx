@@ -35,3 +35,9 @@ window.addEventListener('DOMContentLoaded', async () => {
         logger.error('Failed to initialize the app shell', error)
     }
 })
+
+if (process.env.DEV_WEB_BUILDER === 'esbuild' && process.env.NODE_ENV === 'development') {
+    new EventSource('/.assets/esbuild').addEventListener('change', () => {
+        location.reload()
+    })
+}

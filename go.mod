@@ -114,8 +114,8 @@ require (
 	github.com/qustavo/sqlhooks/v2 v2.1.0
 	github.com/rafaeljusto/redigomock v2.4.0+incompatible
 	github.com/rjeczalik/notify v0.9.3
-	github.com/russellhaering/gosaml2 v0.9.0
-	github.com/russellhaering/goxmldsig v1.2.0
+	github.com/russellhaering/gosaml2 v0.9.1
+	github.com/russellhaering/goxmldsig v1.3.0
 	github.com/schollz/progressbar/v3 v3.8.5
 	github.com/segmentio/fasthash v1.0.3
 	github.com/segmentio/ksuid v1.0.4
@@ -133,7 +133,7 @@ require (
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
 	github.com/sourcegraph/log v0.0.0-20230203201409-49ac5ad3f2ce
 	github.com/sourcegraph/run v0.12.0
-	github.com/sourcegraph/scip v0.2.4-0.20221213205653-aa0e511dcfef
+	github.com/sourcegraph/scip v0.2.4-0.20230403145725-e720fb88e6fd
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20230124150142-7833ec00539f
 	github.com/stretchr/testify v1.8.2
@@ -294,7 +294,7 @@ replace (
 )
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20230315153951-06c1bce6400a
+	github.com/sourcegraph/zoekt v0.0.0-20230403151201-0cb60676ea92
 	github.com/stretchr/objx v0.5.0 // indirect
 )
 
@@ -408,7 +408,7 @@ require (
 	github.com/jhump/protocompile v0.0.0-20220216033700-d705409f108f // indirect
 	github.com/jhump/protoreflect v1.12.1-0.20220417024638-438db461d753 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
-	github.com/jonboulle/clockwork v0.2.2 // indirect
+	github.com/jonboulle/clockwork v0.3.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/karlseguin/typed v1.1.8 // indirect

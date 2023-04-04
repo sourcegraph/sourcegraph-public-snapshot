@@ -38,6 +38,10 @@ Additional `BUILD.bazel` files may exist throughout subdirectories and is encour
 
 All client tests (of all types such as jest and mocha) can be invoked by `bazel test //client/...` or individual tests can be specified such as `bazel test //client/common:test` or `bazel test //client/web/src/end-to-end:e2e`. Jest tests can be debugged using `bazel run --config=debug //client/common:test`.
 
+### Notes
+
+Currently, it's impossible to use features that Babel will transpile, creating helper methods inside Puppeteer `driver.page.evaluate` calls. E.g., the `for-of` syntax transpiled by Babel creates a helper in the module's top-level scope and uses it in the `evaluate` call. But since the contents of the `evaluate` call are passed to the `eval` function inside Puppeteer, it doesn't have the reference to the created helper and fails in the runtime. This is caused by the fact that we uniformly transform all TS files to JS using Babel in Bazel. We will develop an approach that would allow skipping the Babel transpilation step for files executed only in the node environment.
+
 ## Bundling
 
 The primary `client/web` bundle targets are:

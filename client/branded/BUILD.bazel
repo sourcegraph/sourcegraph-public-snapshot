@@ -164,16 +164,17 @@ ts_project(
         "//:node_modules/@mdi/js",
         "//:node_modules/@reach/visually-hidden",
         "//:node_modules/@types/classnames",
+        "//:node_modules/@types/dompurify",
         "//:node_modules/@types/history",  #keep
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/node",
         "//:node_modules/@types/react",
         "//:node_modules/@types/react-dom",
-        "//:node_modules/@types/sanitize-html",
         "//:node_modules/classnames",
         "//:node_modules/comlink",  #keep
         "//:node_modules/copy-to-clipboard",
         "//:node_modules/date-fns",
+        "//:node_modules/dompurify",
         "//:node_modules/fzf",
         "//:node_modules/history",  #keep
         "//:node_modules/lodash",
@@ -184,7 +185,6 @@ ts_project(
         "//:node_modules/react-sticky-box",
         "//:node_modules/react-visibility-sensor",
         "//:node_modules/rxjs",
-        "//:node_modules/sanitize-html",
         "//:node_modules/ts-key-enum",
         "//:node_modules/use-resize-observer",
         "//client/shared:shared_lib",  #keep

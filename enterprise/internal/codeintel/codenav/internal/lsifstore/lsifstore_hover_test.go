@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 )
 
 func TestDatabaseHover(t *testing.T) {
@@ -16,7 +16,7 @@ func TestDatabaseHover(t *testing.T) {
 		path            string
 		line, character int
 		expectedText    string
-		expectedRange   types.Range
+		expectedRange   shared.Range
 	}{
 		{
 			// `export async function queryLSIF<P extends { query: string; uri: string }, R>(`

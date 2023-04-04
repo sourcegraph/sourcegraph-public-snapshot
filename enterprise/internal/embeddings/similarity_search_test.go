@@ -2,6 +2,7 @@ package embeddings
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"testing"
 
@@ -46,7 +47,7 @@ var ranks = [][]int{
 
 func TestSimilaritySearch(t *testing.T) {
 	numRows, numQueries, columnDimension := 16, 3, 3
-	index := EmbeddingIndex[RepoEmbeddingRowMetadata]{
+	index := EmbeddingIndex{
 		Embeddings:      embeddings,
 		ColumnDimension: columnDimension,
 		RowMetadata:     []RepoEmbeddingRowMetadata{},
@@ -56,10 +57,10 @@ func TestSimilaritySearch(t *testing.T) {
 		index.RowMetadata = append(index.RowMetadata, RepoEmbeddingRowMetadata{FileName: fmt.Sprintf("%d", i)})
 	}
 
-	getExpectedResults := func(queryRanks []int) []*RepoEmbeddingRowMetadata {
-		results := make([]*RepoEmbeddingRowMetadata, len(queryRanks))
+	getExpectedResults := func(queryRanks []int) []EmbeddingSearchResult {
+		results := make([]EmbeddingSearchResult, len(queryRanks))
 		for idx, rank := range queryRanks {
-			results[rank] = &index.RowMetadata[idx]
+			results[rank].RepoEmbeddingRowMetadata = index.RowMetadata[idx]
 		}
 		return results
 	}
@@ -69,7 +70,7 @@ func TestSimilaritySearch(t *testing.T) {
 			for q := 0; q < numQueries; q++ {
 				t.Run(fmt.Sprintf("find nearest neighbors query=%d numResults=%d numWorkers=%d", q, numResults, numWorkers), func(t *testing.T) {
 					query := queries[q*columnDimension : (q+1)*columnDimension]
-					results := index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: 0})
+					results := index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: 0}, false)
 					expectedResults := getExpectedResults(ranks[q])
 					require.Equal(t, expectedResults[:min(numResults, len(expectedResults))], results)
 				})
@@ -140,7 +141,7 @@ func BenchmarkSimilaritySearch(b *testing.B) {
 	numRows := 1_000_000
 	numResults := 100
 	columnDimension := 1536
-	index := &EmbeddingIndex[RepoEmbeddingRowMetadata]{
+	index := &EmbeddingIndex{
 		Embeddings:      getRandomEmbeddings(prng, numRows*columnDimension),
 		ColumnDimension: columnDimension,
 		RowMetadata:     make([]RepoEmbeddingRowMetadata, numRows),
@@ -152,8 +153,35 @@ func BenchmarkSimilaritySearch(b *testing.B) {
 	for _, numWorkers := range []int{1, 2, 4, 8, 16} {
 		b.Run(fmt.Sprintf("numWorkers=%d", numWorkers), func(b *testing.B) {
 			for n := 0; n < b.N; n++ {
-				_ = index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers})
+				_ = index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers}, false)
 			}
 		})
+	}
+}
+
+func TestScore(t *testing.T) {
+	var ranks []float32
+	for i := 1; i < len(embeddings); i++ {
+		ranks = append(ranks, float32(i))
+	}
+
+	columnDimension := 3
+	index := &EmbeddingIndex{
+		Embeddings:      embeddings,
+		ColumnDimension: columnDimension,
+		Ranks:           ranks,
+	}
+	// embeddings[0] = 0.5061, 0.6595, 0.5558
+	// queries[0:3] = 0.4227, 0.4874, 0.7641
+	score, debugInfo := index.score(queries[0:columnDimension], 0, true)
+
+	// Check that the score is correct
+	expectedScore := scoreSimilarityWeight*((0.5061*0.4227)+(0.6595*0.4874)+(0.5558*0.7641)) + scoreFileRankWeight*(1.0/32.0)
+	if math.Abs(float64(score-expectedScore)) > 0.0001 {
+		t.Fatalf("Expected score %.4f, but got %.4f", expectedScore, score)
+	}
+
+	if debugInfo == "" {
+		t.Fatal("Expected a non-empty debug string")
 	}
 }

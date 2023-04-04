@@ -14,6 +14,7 @@ import {
 
 export const createTreeEntriesResult = (url: string, toplevelFiles: string[]): TreeEntriesResult => ({
     repository: {
+        id: `$repo-id-${url}`,
         commit: {
             tree: {
                 isRoot: true,

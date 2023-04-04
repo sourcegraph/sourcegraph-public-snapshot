@@ -25,7 +25,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -166,13 +165,12 @@ const reposStatsName = "repos-stats.json"
 // 3. Remove stale lock files.
 // 4. Ensure correct git attributes
 // 5. Ensure gc.auto=0 or unset depending on gitGCMode
-// 6. Scrub remote URLs
-// 7. Perform garbage collection
-// 8. Re-clone repos after a while. (simulate git gc)
-// 9. Remove repos based on disk pressure.
-// 10. Perform sg-maintenance
-// 11. Git prune
-// 12. Only during first run: Set sizes of repos which don't have it in a database.
+// 6. Perform garbage collection
+// 7. Re-clone repos after a while. (simulate git gc)
+// 8. Remove repos based on disk pressure.
+// 9. Perform sg-maintenance
+// 10. Git prune
+// 11. Set sizes of repos
 func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitserverAddresses) {
 	janitorRunning.Set(1)
 	janitorStart := time.Now()
@@ -293,14 +291,6 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 
 	ensureAutoGC := func(dir GitDir) (done bool, err error) {
 		return false, gitSetAutoGC(dir)
-	}
-
-	scrubRemoteURL := func(dir GitDir) (done bool, err error) {
-		cmd := exec.Command("git", "remote", "remove", "origin")
-		dir.Set(cmd)
-		// ignore error since we fail if the remote has already been scrubbed.
-		_ = cmd.Run()
-		return false, nil
 	}
 
 	maybeReclone := func(dir GitDir) (done bool, err error) {
@@ -461,9 +451,6 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 		{"remove stale locks", removeStaleLocks},
 		// We always want to have the same git attributes file at info/attributes.
 		{"ensure git attributes", ensureGitAttributes},
-		// 2021-03-01 (tomas,keegan) we used to store an authenticated remote URL on
-		// disk. We no longer need it so we can scrub it.
-		{"scrub remote URL", scrubRemoteURL},
 		// Enable or disable background garbage collection depending on
 		// gitGCMode. The purpose is to avoid repository corruption which can
 		// happen if several git-gc operations are running at the same time.
@@ -595,28 +582,8 @@ func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]i
 	logger.Debug("directory sizes calculated during file system walk",
 		log.Int("repoToSize", reposNumber))
 
-	// repos number is limited in order not to overwhelm the database with massive batch updates
-	// of every single row of `gitserver_repos` table. This will lead to eventual consistency of
-	// repo sizes in the database, but this is totally acceptable.
-	if reposNumber > 10000 {
-		reposNumber = 10000
-	}
-
-	// getting repo IDs for given repo names
-	foundRepos, err := s.fetchRepos(ctx, repoToSize, reposNumber)
-	if err != nil {
-		return err
-	}
-
-	reposToUpdate := make(map[api.RepoID]int64)
-	for _, repo := range foundRepos {
-		if size, exists := repoToSize[repo.Name]; exists {
-			reposToUpdate[repo.ID] = size
-		}
-	}
-
 	// updating repos
-	updatedRepos, err := s.DB.GitserverRepos().UpdateRepoSizes(ctx, s.Hostname, reposToUpdate)
+	updatedRepos, err := s.DB.GitserverRepos().UpdateRepoSizes(ctx, s.Hostname, repoToSize)
 	if err != nil {
 		return err
 	}
@@ -625,30 +592,6 @@ func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]i
 	}
 
 	return nil
-}
-
-// fetchRepos returns up to count random repos found by names (i.e. keys) in repoToSize map
-func (s *Server) fetchRepos(ctx context.Context, repoToSize map[api.RepoName]int64, count int) ([]types.MinimalRepo, error) {
-	reposToUpdateNames := make([]string, count)
-	idx := 0
-	// random nature of map traversal yields a different subset of repos every time this function is called
-	for repoName := range repoToSize {
-		if idx >= count {
-			break
-		}
-		reposToUpdateNames[idx] = string(repoName)
-		idx++
-	}
-
-	foundRepos, err := s.DB.Repos().ListMinimalRepos(ctx, database.ReposListOptions{
-		Names:          reposToUpdateNames,
-		LimitOffset:    &database.LimitOffset{Limit: count},
-		IncludeBlocked: true,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return foundRepos, nil
 }
 
 // DiskSizer gets information about disk size and free space.

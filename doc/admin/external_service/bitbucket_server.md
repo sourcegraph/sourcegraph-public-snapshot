@@ -105,7 +105,7 @@ By installing the [Bitbucket Server plugin](../../../integration/bitbucket_serve
 
 ### Fast permission syncing
 
-With the [Sourcegraph Bitbucket Server](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) you can enable fast permission syncing:
+With the [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) you can enable fast permission syncing:
 
 1. Connect Bitbucket Server / Bitbucket Data Center to Sourcegraph (_see instructions above_).
 1. Follow the [instructions to set up repository permissions](#repository-permissions) with Bitbucket Server / Bitbucket Data Center.
@@ -136,14 +136,7 @@ Sourcegraph will mark repositories as archived if they have the `archived` label
 
 ## Internal rate limits
 
-Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to Bitbucket Server / Bitbucket Data Center. 
-
-If enabled, the default rate is set at 28,800 per hour (8 per second) which can be configured via the `requestsPerHour` field (see below):
-
-- For Sourcegraph <=3.38, if rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
-- For Sourcegraph >=3.39, rate limiting should be enabled and configured for each individual code host connection.
-
-**NOTE** Internal rate limiting is only currently applied when synchronising changesets in [batch changes](../../batch_changes/index.md), repository permissions and repository metadata from code hosts.
+See [Internal rate limits](./rate_limits.md#internal-rate-limits).
 
 ## Configuration
 

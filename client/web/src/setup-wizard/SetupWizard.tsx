@@ -24,13 +24,9 @@ const CORE_STEPS: StepConfiguration[] = [
         name: 'Add remote repositories',
         path: '/setup/remote-repositories',
         component: RemoteRepositoriesStep,
-    },
-    {
-        id: 'sync-repositories',
-        name: 'Sync repositories',
-        path: '/setup/sync-repositories',
-        nextURL: '/search',
-        component: SyncRepositoriesStep,
+        // If user clicked next button in setup remote repositories
+        // this mean that setup was completed, and they're ready to go
+        // to app UI. See https://github.com/sourcegraph/sourcegraph/issues/50122
         onNext: (client: ApolloClient<{}>) => {
             // Mutate initial needsRepositoryConfiguration value
             // in order to avoid loop in Layout page redirection logic
@@ -44,6 +40,13 @@ const CORE_STEPS: StepConfiguration[] = [
                 () => {}
             )
         },
+    },
+    {
+        id: 'sync-repositories',
+        name: 'Sync repositories',
+        path: '/setup/sync-repositories',
+        nextURL: '/search',
+        component: SyncRepositoriesStep,
     },
 ]
 

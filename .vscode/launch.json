@@ -14,12 +14,12 @@
       "runtimeExecutable": "${execPath}",
       "preLaunchTask": "Build cody",
       "args": [
-        "--extensionDevelopmentPath=${workspaceRoot}/client/cody/vscode-codegen",
+        "--extensionDevelopmentPath=${workspaceRoot}/client/cody",
         "--disable-extension=hpargecruos.kodj",
-        "--disable-extension=sourcegraph.cody"
+        "--disable-extension=sourcegraph.cody-ai"
       ],
       "sourceMaps": true,
-      "outFiles": ["${workspaceRoot}/client/cody/vscode-codegen/dist/*.js"],
+      "outFiles": ["${workspaceRoot}/client/cody/dist/*.js"],
       "env": {
         "NODE_ENV": "development"
       }

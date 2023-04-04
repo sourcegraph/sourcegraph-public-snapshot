@@ -104,7 +104,6 @@ type CurrentUser struct {
 	URL                 string     `json:"url"`
 	SettingsURL         string     `json:"settingsURL"`
 	ViewerCanAdminister bool       `json:"viewerCanAdminister"`
-	Tags                []string   `json:"tags"`
 	TosAccepted         bool       `json:"tosAccepted"`
 	Searchable          bool       `json:"searchable"`
 
@@ -166,6 +165,8 @@ type JSContext struct {
 	AuthPasswordPolicy    authPasswordPolicy `json:"authPasswordPolicy"`
 
 	AuthProviders []authProviderInfo `json:"authProviders"`
+
+	AuthAccessRequest *schema.AuthAccessRequest `json:"authAccessRequest"`
 
 	Branding *schema.Branding `json:"branding"`
 
@@ -343,6 +344,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		AuthProviders: authProviders,
 
+		AuthAccessRequest: conf.Get().AuthAccessRequest,
+
 		Branding: globals.Branding(),
 
 		BatchChangesEnabled:                enterprise.BatchChangesEnabledForUser(ctx, db) == nil,
@@ -391,17 +394,13 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		return nil
 	}
 
-	userResolver := graphqlbackend.NewUserResolver(db, user)
+	userResolver := graphqlbackend.NewUserResolver(ctx, db, user)
 
-	siteAdmin, err := userResolver.SiteAdmin(ctx)
+	siteAdmin, err := userResolver.SiteAdmin()
 	if err != nil {
 		return nil
 	}
-	canAdminister, err := userResolver.ViewerCanAdminister(ctx)
-	if err != nil {
-		return nil
-	}
-	tags, err := userResolver.Tags(ctx)
+	canAdminister, err := userResolver.ViewerCanAdminister()
 	if err != nil {
 		return nil
 	}
@@ -424,7 +423,6 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		Searchable:          userResolver.Searchable(ctx),
 		SettingsURL:         derefString(userResolver.SettingsURL()),
 		SiteAdmin:           siteAdmin,
-		Tags:                tags,
 		TosAccepted:         userResolver.TosAccepted(ctx),
 		URL:                 userResolver.URL(),
 		Username:            userResolver.Username(),
@@ -446,7 +444,7 @@ func resolveUserPermissions(ctx context.Context, userResolver *graphqlbackend.Us
 		Nodes:           []Permission{},
 	}
 
-	permissionResolver, err := userResolver.Permissions(ctx)
+	permissionResolver, err := userResolver.Permissions()
 	if err != nil {
 		return connection
 	}

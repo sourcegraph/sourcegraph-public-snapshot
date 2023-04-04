@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/grafana/regexp"
 	godiff "github.com/sourcegraph/go-diff/diff"
 
 	"github.com/google/go-cmp/cmp"
@@ -655,6 +656,17 @@ func TestLsFiles(t *testing.T) {
 	client := NewClient()
 	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) ([]string, error) {
 		return client.LsFiles(ctx, checker, repo, "HEAD")
+	})
+}
+
+func TestListFiles(t *testing.T) {
+	// TODO this test doesn't actually exercise recursive listing or the
+	// pattern regex. But better than nothing.
+	ClientMocks.LocalGitserver = true
+	defer ResetClientMocks()
+	client := NewClient()
+	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) ([]string, error) {
+		return client.ListFiles(ctx, checker, repo, "HEAD", regexp.MustCompile(""))
 	})
 }
 

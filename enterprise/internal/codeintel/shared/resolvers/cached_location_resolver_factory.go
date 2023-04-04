@@ -20,5 +20,5 @@ func NewCachedLocationResolverFactory(cloneURLToRepoName CloneURLToRepoNameFunc,
 }
 
 func (f *CachedLocationResolverFactory) Create() *CachedLocationResolver {
-	return NewCachedLocationResolver(f.cloneURLToRepoName, f.repoStore, f.gitserverClient)
+	return newCachedLocationResolver(f.cloneURLToRepoName, f.repoStore, f.gitserverClient)
 }

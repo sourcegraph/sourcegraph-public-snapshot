@@ -44,7 +44,6 @@ export type SourcegraphContextCurrentUser = Pick<
     | 'avatarURL'
     | 'displayName'
     | 'siteAdmin'
-    | 'tags'
     | 'url'
     | 'settingsURL'
     | 'viewerCanAdminister'
@@ -227,6 +226,8 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
         /** Require at least an upper and a lowercase character password */
         requireUpperandLowerCase?: boolean
     }
+
+    authAccessRequest?: SiteConfiguration['auth.accessRequest']
 
     /** Custom branding for the homepage and search icon. */
     branding?: {

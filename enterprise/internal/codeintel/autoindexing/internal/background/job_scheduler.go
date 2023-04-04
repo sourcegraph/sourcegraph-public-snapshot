@@ -29,11 +29,12 @@ type IndexSchedulerConfig struct {
 }
 
 type indexSchedulerJob struct {
-	uploadSvc     UploadService
-	policiesSvc   PoliciesService
-	policyMatcher PolicyMatcher
-	indexEnqueuer IndexEnqueuer
-	repoStore     database.RepoStore
+	uploadSvc       UploadService
+	autoindexingSvc AutoIndexingService
+	policiesSvc     PoliciesService
+	policyMatcher   PolicyMatcher
+	indexEnqueuer   IndexEnqueuer
+	repoStore       database.RepoStore
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -41,6 +42,7 @@ var m = new(metrics.SingletonREDMetrics)
 func NewScheduler(
 	observationCtx *observation.Context,
 	uploadSvc UploadService,
+	autoindexingSvc AutoIndexingService,
 	policiesSvc PoliciesService,
 	policyMatcher PolicyMatcher,
 	indexEnqueuer IndexEnqueuer,
@@ -49,11 +51,12 @@ func NewScheduler(
 	config IndexSchedulerConfig,
 ) goroutine.BackgroundRoutine {
 	job := indexSchedulerJob{
-		uploadSvc:     uploadSvc,
-		policiesSvc:   policiesSvc,
-		policyMatcher: policyMatcher,
-		indexEnqueuer: indexEnqueuer,
-		repoStore:     repoStore,
+		uploadSvc:       uploadSvc,
+		autoindexingSvc: autoindexingSvc,
+		policiesSvc:     policiesSvc,
+		policyMatcher:   policyMatcher,
+		indexEnqueuer:   indexEnqueuer,
+		repoStore:       repoStore,
 	}
 
 	redMetrics := m.Get(func() *metrics.REDMetrics {
@@ -106,7 +109,7 @@ func (b indexSchedulerJob) handleScheduler(
 	// set should contain repositories that have yet to be updated, or that have been updated least recently.
 	// This allows us to update every repository reliably, even if it takes a long time to process through
 	// the backlog.
-	repositories, err := b.uploadSvc.GetRepositoriesForIndexScan(
+	repositories, err := b.autoindexingSvc.GetRepositoriesForIndexScan(
 		ctx,
 		"lsif_last_index_scan",
 		"last_index_scan_at",

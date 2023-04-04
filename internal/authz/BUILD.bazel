@@ -18,6 +18,7 @@ go_library(
         "//cmd/frontend/envvar",
         "//internal/actor",
         "//internal/api",
+        "//internal/collections",
         "//internal/extsvc",
         "//internal/trace",
         "//internal/types",
@@ -25,8 +26,6 @@ go_library(
         "@com_github_opentracing_opentracing_go//log",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
-        "@org_golang_x_exp//maps",
-        "@org_golang_x_exp//slices",
     ],
 )
 

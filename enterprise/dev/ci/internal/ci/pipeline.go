@@ -61,7 +61,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// missing regressions being introduced in a PR.
 	authorEmail := os.Getenv("BUILDKITE_BUILD_AUTHOR_EMAIL")
 	if strings.HasSuffix(authorEmail, "@aspect.dev") {
-		c.MessageFlags.ForceBazel = true
+		c.MessageFlags.NoBazel = false
 	}
 
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
@@ -123,7 +123,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// TODO: (@umpox, @valerybugakov) Figure out if we can reliably enable this in PRs.
 			ClientLintOnlyChangedFiles: false,
 			CreateBundleSizeDiff:       true,
-			ForceBazel:                 c.MessageFlags.ForceBazel,
+			ForceBazel:                 !c.MessageFlags.NoBazel,
 		}))
 
 		// At this stage, we don't break builds because of a Bazel failure.
@@ -188,6 +188,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addVsceTests,
 			wait,
 			addVsceReleaseSteps)
+
+	case runtype.CodyReleaseBranch:
+		// If this is the Cody VS Code extension release branch, run the Cody tests and release
+		ops = operations.NewSet(
+			addClientLintersForAllFiles,
+			addCodyExtensionTests,
+			wait,
+			addCodyReleaseSteps)
 
 	case runtype.BextNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and

@@ -1102,7 +1102,6 @@ Yarn,rxjs,6.6.7,Apache 2.0,https://github.com/ReactiveX/RxJS,Approved
 Yarn,safe-buffer,5.1.2,MIT,https://github.com/feross/safe-buffer,Approved
 Yarn,safe-buffer,5.2.1,MIT,https://github.com/feross/safe-buffer,Approved
 Yarn,safer-buffer,2.1.2,MIT,https://github.com/ChALkeR,Approved
-Yarn,sanitize-html,2.3.3,MIT,"",Approved
 Yarn,scheduler,0.22.0,MIT,https://reactjs.org/,Approved
 Yarn,schema-utils,2.7.0,MIT,https://github.com/webpack/schema-utils,Approved
 Yarn,schema-utils,3.1.0,MIT,https://github.com/webpack/schema-utils,Approved

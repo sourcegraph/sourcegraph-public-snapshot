@@ -1,0 +1,57 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//dev:defs.bzl", "jest_test", "npm_package", "ts_project")
+
+# gazelle:js_ignore_imports **/*.css
+
+npm_link_all_packages(name = "node_modules")
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+        "//client/cody-shared:tsconfig",
+    ],
+)
+
+filegroup(
+    name = "cody-ui_styles",
+    srcs = glob(["**/*.css"]),
+)
+
+ts_project(
+    name = "cody-ui_lib",
+    srcs = [
+        "src/Chat.tsx",
+        "src/Terms.tsx",
+        "src/Tips.tsx",
+        "src/chat/CodeBlocks.tsx",
+        "src/chat/ContextFiles.tsx",
+        "src/globals.d.ts",
+        "src/index.ts",
+        "src/typings.d.ts",
+        "src/utils/icons.tsx",
+    ],
+    data = [
+        ":cody-ui_styles",
+    ],
+    tsconfig = ":tsconfig",
+    # TODO(bazel): "#keep"s required for type-only imports
+    deps = [
+        ":node_modules/@sourcegraph/cody-shared",
+        "//:node_modules/@types/classnames",
+        "//:node_modules/@types/react",
+        "//:node_modules/classnames",
+        "//:node_modules/react",
+    ],
+)
+
+npm_package(
+    name = "cody-ui_pkg",
+    srcs = [
+        "package.json",
+        ":cody-ui_lib",
+    ],
+)
