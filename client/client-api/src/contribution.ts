@@ -138,10 +138,15 @@ export interface ActionContributionClientCommandOpen extends ActionContribution 
     command: 'open'
 
     /**
-     * The arguments for the `open` client command. The first array element is a URL, which is opened by the client
-     * using the default URL handler.
+     * The arguments for the `open` client command, which can either have one or two elements.
+     *
+     * - The first array element is always a string with the destination URL,
+     *   which populates the `href` attribute of the link.
+     * - When defined, the second array element is an `(event: Event) => void`
+     *   handler that fires `onSelect`. The handler is responsible for triggering
+     *   `event.preventDefault()`, if necessary.
      */
-    commandArguments: [TemplateExpression]
+    commandArguments: [TemplateExpression] | [TemplateExpression, TemplateExpression]
 }
 
 /**

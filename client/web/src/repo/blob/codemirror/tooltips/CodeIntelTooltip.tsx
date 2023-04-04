@@ -98,7 +98,15 @@ export class CodeIntelTooltip implements Tooltip {
                     title: 'Go to definition',
                     disabledTitle: noDefinitionFound ? 'No definition found' : 'You are at the definition',
                     command: definition.url ? 'open' : 'invokeFunction-new',
-                    commandArguments: [definition.url ? definition.url : () => definition.asyncHandler()],
+                    commandArguments: definition.url
+                        ? [
+                              definition.url,
+                              (event: Event) => {
+                                  event.preventDefault()
+                                  definition.asyncHandler()
+                              },
+                          ]
+                        : [() => definition.asyncHandler()],
                 },
             },
             {

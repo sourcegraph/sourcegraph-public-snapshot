@@ -360,6 +360,11 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
             }
         }
 
+        const onSelect = onSelectCallbackForClientCommandOpen(action)
+        if (onSelect) {
+            onSelect(event)
+        }
+
         if (urlForClientCommandOpen(action, this.props.location.hash)) {
             if (event.currentTarget.tagName === 'A' && event.currentTarget.hasAttribute('href')) {
                 // Do not execute the command. The <LinkOrButton>'s default event handler will do what we want (which
@@ -398,6 +403,19 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
         ((this.props.disabledDuringExecution || this.props.showLoadingSpinnerDuringExecution) &&
             this.state.actionOrError === LOADING) ||
         this.props.disabledWhen
+}
+
+type OnSelectHandler = (event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => void
+export function onSelectCallbackForClientCommandOpen(
+    action: Pick<Evaluated<ActionContribution>, 'command' | 'commandArguments'>
+): OnSelectHandler | undefined {
+    if (action.command === 'open' && action.commandArguments && action.commandArguments.length > 1) {
+        const onSelect = action.commandArguments[1]
+        if (typeof onSelect === 'function') {
+            return onSelect as OnSelectHandler
+        }
+    }
+    return undefined
 }
 
 export function urlForClientCommandOpen(
