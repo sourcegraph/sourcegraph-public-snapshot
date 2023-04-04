@@ -28,7 +28,7 @@ import {
     maintenanceGroupUpdatesItemLabel,
     maintenanceGroupTracingItemLabel,
 } from './sidebaritems'
-import { SiteAdminSidebar, SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
+import { SiteAdminSidebar, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 import styles from './SiteAdminArea.module.scss'
 
