@@ -6,9 +6,16 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 )
+
+type dockerWorkspace struct {
+	path            string
+	scriptFilenames []string
+	workspaceDir    string
+	logger          command.Logger
+}
 
 // NewDockerWorkspace creates a new workspace for docker-based execution. A path on
 // the host will be used to set up the workspace, clone the repo and put script files.
@@ -16,18 +23,18 @@ func NewDockerWorkspace(
 	ctx context.Context,
 	filesStore FilesStore,
 	job types.Job,
-	commandRunner command.Runner,
+	cmd command.Command,
 	logger command.Logger,
 	cloneOpts CloneOptions,
 	operations *command.Operations,
 ) (Workspace, error) {
-	workspaceDir, err := MakeTempDirectory("workspace-" + strconv.Itoa(job.ID))
+	workspaceDir, err := makeTemporaryDirectory("workspace-" + strconv.Itoa(job.ID))
 	if err != nil {
 		return nil, err
 	}
 
 	if job.RepositoryName != "" {
-		if err := cloneRepo(ctx, workspaceDir, job, commandRunner, cloneOpts, operations); err != nil {
+		if err = cloneRepo(ctx, workspaceDir, job, cmd, logger, cloneOpts, operations); err != nil {
 			_ = os.RemoveAll(workspaceDir)
 			return nil, err
 		}
@@ -47,11 +54,15 @@ func NewDockerWorkspace(
 	}, nil
 }
 
-type dockerWorkspace struct {
-	path            string
-	scriptFilenames []string
-	workspaceDir    string
-	logger          command.Logger
+func makeTemporaryDirectory(prefix string) (string, error) {
+	if tempdir := os.Getenv("TMPDIR"); tempdir != "" {
+		if err := os.MkdirAll(tempdir, os.ModePerm); err != nil {
+			return "", err
+		}
+		return os.MkdirTemp(tempdir, prefix+"-*")
+	}
+
+	return os.MkdirTemp("", prefix+"-*")
 }
 
 func (w dockerWorkspace) Path() string {
@@ -63,7 +74,7 @@ func (w dockerWorkspace) ScriptFilenames() []string {
 }
 
 func (w dockerWorkspace) Remove(ctx context.Context, keepWorkspace bool) {
-	handle := w.logger.Log("teardown.fs", nil)
+	handle := w.logger.LogEntry("teardown.fs", nil)
 	defer func() {
 		// We always finish this with exit code 0 even if it errored, because workspace
 		// cleanup doesn't fail the execution job. We can deal with it separately.
