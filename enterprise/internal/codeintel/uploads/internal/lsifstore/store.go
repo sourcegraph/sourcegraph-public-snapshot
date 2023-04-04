@@ -26,7 +26,7 @@ type LsifStore interface {
 	DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int) (err error)
 	DeleteUnreferencedDocuments(ctx context.Context, batchSize int, maxAge time.Duration, now time.Time) (numScanned, numDeleted int, err error)
 
-	// Scan/export data
+	// Scan/export document data
 	InsertDefinitionsAndReferencesForDocument(ctx context.Context, upload shared.ExportedUpload, rankingGraphKey string, rankingBatchSize int, f func(ctx context.Context, upload shared.ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error) (err error)
 }
 

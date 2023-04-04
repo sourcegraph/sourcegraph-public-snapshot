@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// TODO - move
 type ProcessedSCIPData struct {
 	Metadata          ProcessedMetadata
 	Documents         <-chan ProcessedSCIPDocument
