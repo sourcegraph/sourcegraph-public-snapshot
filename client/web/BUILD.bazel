@@ -1953,6 +1953,7 @@ ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
             "NODE_ENV": "production" if prod else "development",
         },
         output_dir = True,
+        visibility = ["//ui/assets:__subpackages__"],
         webpack_config = "webpack.bazel.config.js",
         deps = WEBPACK_CONFIG_DEPS,
     )
@@ -1978,7 +1979,7 @@ webpack_web_app(
         "INTEGRATION_TESTS": "true",
     },
     output_dir = True,
-    visibility = ["//client/web:__subpackages__"],
+    visibility = ["//visibility:public"],
     webpack_config = "webpack.bazel.config.js",
     deps = WEBPACK_CONFIG_DEPS,
 )

@@ -1,14 +1,48 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 
 go_library(
     name = "assets",
     srcs = [
         "assets_dev.go",
+        # Build constraints (go tags) will disambiguate which one to pick
+        "assets_dist.go",  #keep
         "doc.go",
         "load_manifest_dev.go",
+        # Build constraints (go tags) will disambiguate which one to pick
+        "load_manifest_dist.go",  #keep
         "manifest.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/ui/assets",
     visibility = ["//visibility:public"],
     deps = ["//lib/errors"],
+)
+
+filegroup(
+    name = "assets_dist",
+    srcs = select({
+        "//:bundle_dist_oss": [
+            "//client/web:bundle",
+            "//ui/assets/img",
+        ],
+        "//:bundle_dist_enterprise": [
+            "//client/web:bundle-enterprise",
+            "//ui/assets/img",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+copy_to_directory(
+    name = "copy_bundle_dist",
+    srcs = [
+        "//:CHANGELOG.md",
+        "//ui/assets:assets_dist",
+    ],
+    out = "dist",
+    replace_prefixes = {
+        "client/web/bundle": "",
+        "client/web/bundle-enterprise": "",
+    },
 )
