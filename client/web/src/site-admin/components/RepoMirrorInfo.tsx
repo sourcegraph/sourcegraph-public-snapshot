@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { Text, Tooltip } from '@sourcegraph/wildcard'
+import { Code, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { MirrorRepositoryInfoFields } from '../../graphql-operations'
 import { prettyBytesBigint } from '../../util/prettyBytesBigint'
@@ -35,7 +35,14 @@ export const RepoMirrorInfo: React.FunctionComponent<
                                 </Tooltip>
                             </>
                         )}
-                        {mirrorInfo.cloneInProgress && <> {mirrorInfo.cloneProgress || ''}</>}
+                        {mirrorInfo.cloneInProgress ? (
+                            <>
+                                {' '}
+                                <Code>{mirrorInfo.cloneProgress}</Code>
+                            </>
+                        ) : (
+                            ''
+                        )}
                     </>
                 )}
             </small>

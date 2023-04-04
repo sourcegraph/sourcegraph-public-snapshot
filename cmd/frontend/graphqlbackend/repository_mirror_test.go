@@ -41,10 +41,10 @@ func TestCheckMirrorRepositoryConnection(t *testing.T) {
 			}
 			return nil
 		}
-		defer func() {
+		t.Cleanup(func() {
 			backend.Mocks = backend.MockServices{}
 			gitserver.MockIsRepoCloneable = nil
-		}()
+		})
 
 		RunTests(t, []*Test{
 			{
@@ -85,10 +85,10 @@ func TestCheckMirrorRepositoryConnection(t *testing.T) {
 			}
 			return nil
 		}
-		defer func() {
+		t.Cleanup(func() {
 			backend.Mocks = backend.MockServices{}
 			gitserver.MockIsRepoCloneable = nil
-		}()
+		})
 
 		RunTests(t, []*Test{
 			{
@@ -204,9 +204,9 @@ func TestCheckMirrorRepositoryRemoteURL(t *testing.T) {
 					Sources:   map[string]*types.SourceInfo{"1": {CloneURL: tc.repoURL}},
 				}, nil
 			}
-			defer func() {
+			t.Cleanup(func() {
 				backend.Mocks = backend.MockServices{}
-			}()
+			})
 
 			RunTests(t, []*Test{
 				{
@@ -259,9 +259,9 @@ func TestRepositoryMirrorInfoCloneProgressCallsGitserver(t *testing.T) {
 			Sources:   map[string]*types.SourceInfo{"1": {}},
 		}, nil
 	}
-	defer func() {
+	t.Cleanup(func() {
 		backend.Mocks = backend.MockServices{}
-	}()
+	})
 
 	RunTest(t, &Test{
 		Schema: mustParseGraphQLSchemaWithClient(t, db, &fakeGitserverClient{}),
@@ -312,9 +312,9 @@ func TestRepositoryMirrorInfoCloneProgressFetchedFromDatabase(t *testing.T) {
 			Sources:   map[string]*types.SourceInfo{"1": {}},
 		}, nil
 	}
-	defer func() {
+	t.Cleanup(func() {
 		backend.Mocks = backend.MockServices{}
-	}()
+	})
 
 	ctx := featureflag.WithFlags(context.Background(), db.FeatureFlags())
 
