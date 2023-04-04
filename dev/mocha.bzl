@@ -53,6 +53,8 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, use_xvfb 
     args = [
         "--config",
         "$(location //:mocha_config)",
+        "--parallel",
+        "--jobs 16",
         "$(location :%s)/**/*.test.js" % bundle_name,
     ] + args
 
@@ -77,8 +79,10 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, use_xvfb 
         "KEEP_BROWSER": "false",
         "DEVTOOLS": "false",
         "BROWSER": "chrome",
-        "WINDOW_WIDTH": "1920",
-        "WINDOW_HEIGHT": "1080",
+        "WINDOW_WIDTH": "1280",
+        "WINDOW_HEIGHT": "1024",
+        # Enable findDom on CodeMirror
+        "INTEGRATION_TESTS": "true",
 
         # Puppeteer config
         "DISPLAY": ":99",
