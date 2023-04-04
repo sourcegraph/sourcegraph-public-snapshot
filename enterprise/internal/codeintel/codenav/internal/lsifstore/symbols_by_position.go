@@ -3,18 +3,16 @@ package lsifstore
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // GetMonikersByPosition returns all monikers attached ranges containing the given position. If multiple
@@ -109,6 +107,44 @@ WHERE
 LIMIT 1
 `
 
+// GetPackageInformation returns package information data by identifier.
+func (s *store) GetPackageInformation(ctx context.Context, bundleID int, path, packageInformationID string) (_ precise.PackageInformationData, _ bool, err error) {
+	_, _, endObservation := s.operations.getPackageInformation.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+		log.String("path", path),
+		log.String("packageInformationID", packageInformationID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if strings.HasPrefix(packageInformationID, "scip:") {
+		packageInfo := strings.Split(packageInformationID, ":")
+		if len(packageInfo) != 4 {
+			return precise.PackageInformationData{}, false, errors.Newf("invalid package information ID %q", packageInformationID)
+		}
+
+		manager, err := base64.RawStdEncoding.DecodeString(packageInfo[1])
+		if err != nil {
+			return precise.PackageInformationData{}, false, err
+		}
+		name, err := base64.RawStdEncoding.DecodeString(packageInfo[2])
+		if err != nil {
+			return precise.PackageInformationData{}, false, err
+		}
+		version, err := base64.RawStdEncoding.DecodeString(packageInfo[3])
+		if err != nil {
+			return precise.PackageInformationData{}, false, err
+		}
+
+		return precise.PackageInformationData{
+			Manager: string(manager),
+			Name:    string(name),
+			Version: string(version),
+		}, true, nil
+	}
+
+	return precise.PackageInformationData{}, false, nil
+}
+
 func symbolNameToQualifiedMoniker(symbolName, kind string) (precise.MonikerData, error) {
 	parsedSymbol, err := scip.ParseSymbol(symbolName)
 	if err != nil {
@@ -129,102 +165,4 @@ func symbolNameToQualifiedMoniker(symbolName, kind string) (precise.MonikerData,
 			base64.RawStdEncoding.EncodeToString([]byte(parsedSymbol.Package.Version)),
 		}, ":")),
 	}, nil
-}
-
-// GetBulkMonikerLocations returns the locations (within one of the given uploads) with an attached moniker
-// whose scheme+identifier matches one of the given monikers. This method also returns the size of the
-// complete result set to aid in pagination.
-func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error) {
-	ctx, trace, endObservation := s.operations.getBulkMonikerResults.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("tableName", tableName),
-		log.Int("numUploadIDs", len(uploadIDs)),
-		log.String("uploadIDs", intsToString(uploadIDs)),
-		log.Int("numMonikers", len(monikers)),
-		log.String("monikers", monikersToString(monikers)),
-		log.Int("limit", limit),
-		log.Int("offset", offset),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	if len(uploadIDs) == 0 || len(monikers) == 0 {
-		return nil, 0, nil
-	}
-
-	symbolNames := make([]string, 0, len(monikers))
-	for _, arg := range monikers {
-		symbolNames = append(symbolNames, arg.Identifier)
-	}
-
-	query := sqlf.Sprintf(
-		bulkMonikerResultsQuery,
-		pq.Array(symbolNames),
-		pq.Array(uploadIDs),
-		sqlf.Sprintf(fmt.Sprintf("%s_ranges", strings.TrimSuffix(tableName, "s"))),
-	)
-
-	locationData, err := s.scanQualifiedMonikerLocations(s.db.Query(ctx, query))
-	if err != nil {
-		return nil, 0, err
-	}
-
-	totalCount = 0
-	for _, monikerLocations := range locationData {
-		totalCount += len(monikerLocations.Locations)
-	}
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("numDumps", len(locationData)),
-		attribute.Int("totalCount", totalCount))
-
-	max := totalCount
-	if totalCount > limit {
-		max = limit
-	}
-
-	locations := make([]shared.Location, 0, max)
-outer:
-	for _, monikerLocations := range locationData {
-		for _, row := range monikerLocations.Locations {
-			offset--
-			if offset >= 0 {
-				continue
-			}
-
-			locations = append(locations, shared.Location{
-				DumpID: monikerLocations.DumpID,
-				Path:   row.URI,
-				Range:  newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
-			})
-
-			if len(locations) >= limit {
-				break outer
-			}
-		}
-	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int("numLocations", len(locations)))
-
-	return locations, totalCount, nil
-}
-
-const bulkMonikerResultsQuery = `
-WITH RECURSIVE
-` + symbolIDsCTEs + `
-SELECT
-	ss.upload_id,
-	'scip',
-	msn.symbol_name,
-	%s,
-	document_path
-FROM matching_symbol_names msn
-JOIN codeintel_scip_symbols ss ON ss.upload_id = msn.upload_id AND ss.symbol_id = msn.id
-JOIN codeintel_scip_document_lookup dl ON dl.id = ss.document_lookup_id
-ORDER BY ss.upload_id, msn.symbol_name
-`
-
-func monikersToString(vs []precise.MonikerData) string {
-	strs := make([]string, 0, len(vs))
-	for _, v := range vs {
-		strs = append(strs, fmt.Sprintf("%s:%s:%s", v.Kind, v.Scheme, v.Identifier))
-	}
-
-	return strings.Join(strs, ", ")
 }
