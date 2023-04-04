@@ -1,4 +1,4 @@
-import { memo, RefObject, useCallback, useLayoutEffect, useRef, useState } from 'react'
+import { memo, RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { isEqual } from 'lodash'
 import { Layout, Layouts } from 'react-grid-layout'
@@ -13,11 +13,16 @@ import { SmartInsight } from './components/SmartInsight'
 import { ViewGrid } from './components/view-grid/ViewGrid'
 import { insightLayoutGenerator } from './utils/grid-layout-generator'
 
+export interface GridApi {
+    resetGridLayout: () => void
+}
+
 interface SmartInsightsViewGridProps extends TelemetryProps {
     id: string
     insights: Insight[]
     persistSizeAndOrder?: boolean
     className?: string
+    onGridCreate?: (dashboardApi: GridApi) => void
 }
 
 /**
@@ -25,7 +30,7 @@ interface SmartInsightsViewGridProps extends TelemetryProps {
  * the insights settings (settings cascade subjects).
  */
 export const SmartInsightsViewGrid = memo<SmartInsightsViewGridProps>(function SmartInsightsViewGrid(props) {
-    const { id, insights, persistSizeAndOrder = true, telemetryService, className } = props
+    const { id, insights, persistSizeAndOrder = true, telemetryService, className, onGridCreate } = props
 
     // eslint-disable-next-line no-restricted-syntax
     const [localStorageLayouts, setLocalStorageLayouts] = useLocalStorage<Layouts | null>(
@@ -43,6 +48,17 @@ export const SmartInsightsViewGrid = memo<SmartInsightsViewGridProps>(function S
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [insights])
+
+    useEffect(() => {
+        onGridCreate?.({
+            resetGridLayout: () => {
+                // Reset local storage layout cache
+                setLocalStorageLayouts(null)
+                // Reset runtime calculated layout
+                setLayouts(insightLayoutGenerator(insights, null))
+            },
+        })
+    }, [insights, setLocalStorageLayouts, onGridCreate])
 
     const handleDragStart = useCallback(
         (item: Layout) => {
