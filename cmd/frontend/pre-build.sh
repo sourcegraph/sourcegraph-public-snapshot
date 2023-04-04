@@ -2,7 +2,7 @@
 set -ex
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
-if [[ "$DOCKER_BAZEL" == "true" ]]; then
+if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
   exit 0
 fi
 

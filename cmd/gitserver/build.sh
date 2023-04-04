@@ -14,7 +14,8 @@ trap cleanup EXIT
 
 cp -a ./cmd/gitserver/p4-fusion-install-alpine.sh "$OUTPUT"
 
-if [[ "$DOCKER_BAZEL" == "true" ]]; then
+if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
+  echo "running bazel"
 
   bazel build //cmd/gitserver \
     --stamp \
@@ -32,6 +33,7 @@ if [[ "$DOCKER_BAZEL" == "true" ]]; then
   exit $?
 fi
 
+  echo "NOT running bazel"
 # Environment for building linux binaries
 export GO111MODULE=on
 export GOARCH=amd64
