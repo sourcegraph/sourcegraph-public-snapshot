@@ -14,6 +14,96 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
+// ReferencesForUpload returns the set of import monikers attached to the given upload identifier.
+func (s *store) ReferencesForUpload(ctx context.Context, uploadID int) (_ shared.PackageReferenceScanner, err error) {
+	ctx, _, endObservation := s.operations.referencesForUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("uploadID", uploadID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(referencesForUploadQuery, uploadID))
+	if err != nil {
+		return nil, err
+	}
+
+	return PackageReferenceScannerFromRows(rows), nil
+}
+
+const referencesForUploadQuery = `
+SELECT r.dump_id, r.scheme, r.manager, r.name, r.version
+FROM lsif_references r
+WHERE dump_id = %s
+ORDER BY r.scheme, r.manager, r.name, r.version
+`
+
+// UpdatePackages upserts package data tied to the given upload.
+func (s *store) UpdatePackages(ctx context.Context, dumpID int, packages []precise.Package) (err error) {
+	ctx, _, endObservation := s.operations.updatePackages.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numPackages", len(packages)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if len(packages) == 0 {
+		return nil
+	}
+
+	tx, err := s.db.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	// Create temporary table symmetric to lsif_packages without the dump id
+	if err := tx.Exec(ctx, sqlf.Sprintf(updatePackagesTemporaryTableQuery)); err != nil {
+		return err
+	}
+
+	// Bulk insert all the unique column values into the temporary table
+	if err := batch.InsertValues(
+		ctx,
+		tx.Handle(),
+		"t_lsif_packages",
+		batch.MaxNumPostgresParameters,
+		[]string{"scheme", "manager", "name", "version"},
+		loadPackagesChannel(packages),
+	); err != nil {
+		return err
+	}
+
+	// Insert the values from the temporary table into the target table. We select a
+	// parameterized dump id here since it is the same for all rows in this operation.
+	return tx.Exec(ctx, sqlf.Sprintf(updatePackagesInsertQuery, dumpID))
+}
+
+const updatePackagesTemporaryTableQuery = `
+CREATE TEMPORARY TABLE t_lsif_packages (
+	scheme text NOT NULL,
+	manager text NOT NULL,
+	name text NOT NULL,
+	version text NOT NULL
+) ON COMMIT DROP
+`
+
+const updatePackagesInsertQuery = `
+INSERT INTO lsif_packages (dump_id, scheme, manager, name, version)
+SELECT %s, source.scheme, source.manager, source.name, source.version
+FROM t_lsif_packages source
+`
+
+func loadPackagesChannel(packages []precise.Package) <-chan []any {
+	ch := make(chan []any, len(packages))
+
+	go func() {
+		defer close(ch)
+
+		for _, p := range packages {
+			ch <- []any{p.Scheme, p.Manager, p.Name, p.Version}
+		}
+	}()
+
+	return ch
+}
+
 // UpdatePackageReferences inserts reference data tied to the given upload.
 func (s *store) UpdatePackageReferences(ctx context.Context, dumpID int, references []precise.PackageReference) (err error) {
 	ctx, _, endObservation := s.operations.updatePackageReferences.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -82,27 +172,8 @@ func loadReferencesChannel(references []precise.PackageReference) <-chan []any {
 	return ch
 }
 
-// ReferencesForUpload returns the set of import monikers attached to the given upload identifier.
-func (s *store) ReferencesForUpload(ctx context.Context, uploadID int) (_ shared.PackageReferenceScanner, err error) {
-	ctx, _, endObservation := s.operations.referencesForUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("uploadID", uploadID),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	rows, err := s.db.Query(ctx, sqlf.Sprintf(referencesForUploadQuery, uploadID))
-	if err != nil {
-		return nil, err
-	}
-
-	return PackageReferenceScannerFromRows(rows), nil
-}
-
-const referencesForUploadQuery = `
-SELECT r.dump_id, r.scheme, r.manager, r.name, r.version
-FROM lsif_references r
-WHERE dump_id = %s
-ORDER BY r.scheme, r.manager, r.name, r.version
-`
+//
+//
 
 type rowScanner struct {
 	rows *sql.Rows
