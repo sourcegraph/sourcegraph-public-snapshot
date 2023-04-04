@@ -207,7 +207,10 @@ func (s BitbucketServerSource) UpdateChangeset(ctx context.Context, c *Changeset
 		Title:         c.Title,
 		Description:   c.Body,
 		Version:       pr.Version,
-		Reviewers:     pr.Reviewers,
+		// The endpoint for updating a bitbucket pullrequest is a PUT endpoint which means if a field isn't provided
+		// it'll override it's value to it's empty value. We always want to retain the reviewers assigned to a pull
+		// request when updating a pull request.
+		Reviewers: pr.Reviewers,
 	}
 	update.ToRef.ID = c.BaseRef
 	update.ToRef.Repository.Slug = pr.ToRef.Repository.Slug
