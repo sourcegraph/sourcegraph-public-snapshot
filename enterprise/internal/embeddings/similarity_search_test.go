@@ -70,7 +70,7 @@ func TestSimilaritySearch(t *testing.T) {
 			for q := 0; q < numQueries; q++ {
 				t.Run(fmt.Sprintf("find nearest neighbors query=%d numResults=%d numWorkers=%d", q, numResults, numWorkers), func(t *testing.T) {
 					query := queries[q*columnDimension : (q+1)*columnDimension]
-					results := index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: 0}, SearchOpts{})
+					results := index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: 0}, SearchOptions{})
 					expectedResults := getExpectedResults(ranks[q])
 					require.Equal(t, expectedResults[:min(numResults, len(expectedResults))], results)
 				})
@@ -153,7 +153,7 @@ func BenchmarkSimilaritySearch(b *testing.B) {
 	for _, numWorkers := range []int{1, 2, 4, 8, 16} {
 		b.Run(fmt.Sprintf("numWorkers=%d", numWorkers), func(b *testing.B) {
 			for n := 0; n < b.N; n++ {
-				_ = index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers}, SearchOpts{})
+				_ = index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers}, SearchOptions{})
 			}
 		})
 	}
@@ -173,7 +173,7 @@ func TestScore(t *testing.T) {
 	}
 	// embeddings[0] = 0.5061, 0.6595, 0.5558
 	// queries[0:3] = 0.4227, 0.4874, 0.7641
-	score, debugInfo := index.score(queries[0:columnDimension], 0, SearchOpts{Debug: true, UseDocumentRanks: true})
+	score, debugInfo := index.score(queries[0:columnDimension], 0, SearchOptions{Debug: true, UseDocumentRanks: true})
 
 	// Check that the score is correct
 	expectedScore := scoreSimilarityWeight*((0.5061*0.4227)+(0.6595*0.4874)+(0.5558*0.7641)) + scoreFileRankWeight*(1.0/32.0)

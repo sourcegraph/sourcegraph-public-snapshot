@@ -35,7 +35,7 @@ func searchRepoEmbeddingIndex(
 		return nil, errors.Wrap(err, "getting query embedding")
 	}
 
-	opts := embeddings.SearchOpts{
+	opts := embeddings.SearchOptions{
 		Debug:            params.Debug,
 		UseDocumentRanks: params.UseDocumentRanks,
 	}
@@ -63,7 +63,7 @@ func searchEmbeddingIndex(
 	readFile readFileFn,
 	query []float32,
 	nResults int,
-	opts embeddings.SearchOpts,
+	opts embeddings.SearchOptions,
 ) []embeddings.EmbeddingSearchResult {
 	numWorkers := runtime.GOMAXPROCS(0)
 	rows := index.SimilaritySearch(query, nResults, embeddings.WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT}, opts)

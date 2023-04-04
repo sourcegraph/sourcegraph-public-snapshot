@@ -83,7 +83,7 @@ type WorkerOptions struct {
 
 // SimilaritySearch finds the `nResults` most similar rows to a query vector. It uses the cosine similarity metric.
 // IMPORTANT: The vectors in the embedding index have to be normalized for similarity search to work correctly.
-func (index *EmbeddingIndex) SimilaritySearch(query []float32, numResults int, workerOptions WorkerOptions, opts SearchOpts) []EmbeddingSearchResult {
+func (index *EmbeddingIndex) SimilaritySearch(query []float32, numResults int, workerOptions WorkerOptions, opts SearchOptions) []EmbeddingSearchResult {
 	if numResults == 0 {
 		return []EmbeddingSearchResult{}
 	}
@@ -136,7 +136,7 @@ func (index *EmbeddingIndex) SimilaritySearch(query []float32, numResults int, w
 	return results
 }
 
-func (index *EmbeddingIndex) partialSimilaritySearch(query []float32, numResults int, partialRows partialRows, opts SearchOpts) *nearestNeighborsHeap {
+func (index *EmbeddingIndex) partialSimilaritySearch(query []float32, numResults int, partialRows partialRows, opts SearchOptions) *nearestNeighborsHeap {
 	nRows := partialRows.end - partialRows.start
 	if nRows <= 0 {
 		return nil
@@ -167,7 +167,7 @@ const (
 	scoreSimilarityWeight float32 = 2.0 / 3.0
 )
 
-func (index *EmbeddingIndex) score(query []float32, i int, opts SearchOpts) (score float32, debugInfo string) {
+func (index *EmbeddingIndex) score(query []float32, i int, opts SearchOptions) (score float32, debugInfo string) {
 	addScore := func(what string, s float32) {
 		score += s
 		if opts.Debug {
@@ -224,7 +224,7 @@ func max(a, b int) int {
 	return b
 }
 
-type SearchOpts struct {
+type SearchOptions struct {
 	Debug            bool
 	UseDocumentRanks bool
 }
