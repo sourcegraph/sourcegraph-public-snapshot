@@ -40,6 +40,11 @@ EOF
   /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:"${CLOUDWATCH_CONFIG_FILE_PATH}"
 }
 
+function install_azure_agent() {
+  # TODO
+  true
+}
+
 ## Install Docker
 function install_docker() {
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
@@ -209,11 +214,26 @@ function cleanup() {
   rm -rf /var/cache/*
   rm -rf /var/lib/apt/lists/*
   history -c
+
+  if [ "${PLATFORM_TYPE}" == "azure" ]; then
+    /usr/sbin/waagent -force -deprovision+user && export HISTSIZE=0 && sync
+  fi
+}
+
+function apt_full_update() {
+  # Lists need to be rebuilt on Azure's Ubuntu 20.04-LTS image
+  apt-get clean
+  rm -rf /var/lib/apt/lists/*
+  apt-get clean
+  apt-get update
 }
 
 # Prerequisites
 if [ "${PLATFORM_TYPE}" == "gcp" ]; then
   install_ops_agent
+elif [ "${PLATFORM_TYPE}" == "azure" ]; then
+  apt_full_update
+  install_azure_agent
 else
   install_cloudwatch_agent
 fi
