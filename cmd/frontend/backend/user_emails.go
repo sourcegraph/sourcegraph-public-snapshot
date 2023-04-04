@@ -78,22 +78,17 @@ func (e *userEmails) Add(ctx context.Context, userID int32, email string) error 
 		code = &tmp
 	}
 
-	// Another user may have already verified this email address. If so, do not send another
-	// verification email (it would be pointless and also be an abuse vector). Do not tell the
-	// user that another user has already verified it, to avoid needlessly leaking the existence
-	// of emails.
-	var emailAlreadyExistsAndIsVerified bool
 	if _, err := e.db.Users().GetByVerifiedEmail(ctx, email); err != nil && !errcode.IsNotFound(err) {
 		return err
 	} else if err == nil {
-		emailAlreadyExistsAndIsVerified = true
+		return errors.New("a user with this email already exists")
 	}
 
 	if err := e.db.UserEmails().Add(ctx, userID, email, code); err != nil {
 		return err
 	}
 
-	if conf.EmailVerificationRequired() && !emailAlreadyExistsAndIsVerified {
+	if conf.EmailVerificationRequired() {
 		usr, err := e.db.Users().GetByID(ctx, userID)
 		if err != nil {
 			return err

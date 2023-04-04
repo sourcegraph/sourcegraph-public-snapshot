@@ -6,8 +6,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
@@ -15,7 +15,6 @@ import (
 
 func TestStencil(t *testing.T) {
 	// Set up mocks
-	mockStore := NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
@@ -23,13 +22,13 @@ func TestStencil(t *testing.T) {
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockStore, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
 	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
-	uploads := []types.Dump{
+	uploads := []uploadsshared.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -37,22 +36,22 @@ func TestStencil(t *testing.T) {
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
 
-	expectedRanges := []types.Range{
-		{Start: types.Position{Line: 10, Character: 20}, End: types.Position{Line: 10, Character: 30}},
-		{Start: types.Position{Line: 11, Character: 20}, End: types.Position{Line: 11, Character: 30}},
-		{Start: types.Position{Line: 12, Character: 20}, End: types.Position{Line: 12, Character: 30}},
-		{Start: types.Position{Line: 13, Character: 20}, End: types.Position{Line: 13, Character: 30}},
-		{Start: types.Position{Line: 14, Character: 20}, End: types.Position{Line: 14, Character: 30}},
-		{Start: types.Position{Line: 15, Character: 20}, End: types.Position{Line: 15, Character: 30}},
-		{Start: types.Position{Line: 16, Character: 20}, End: types.Position{Line: 16, Character: 30}},
-		{Start: types.Position{Line: 17, Character: 20}, End: types.Position{Line: 17, Character: 30}},
-		{Start: types.Position{Line: 18, Character: 20}, End: types.Position{Line: 18, Character: 30}},
-		{Start: types.Position{Line: 19, Character: 20}, End: types.Position{Line: 19, Character: 30}},
+	expectedRanges := []shared.Range{
+		{Start: shared.Position{Line: 10, Character: 20}, End: shared.Position{Line: 10, Character: 30}},
+		{Start: shared.Position{Line: 11, Character: 20}, End: shared.Position{Line: 11, Character: 30}},
+		{Start: shared.Position{Line: 12, Character: 20}, End: shared.Position{Line: 12, Character: 30}},
+		{Start: shared.Position{Line: 13, Character: 20}, End: shared.Position{Line: 13, Character: 30}},
+		{Start: shared.Position{Line: 14, Character: 20}, End: shared.Position{Line: 14, Character: 30}},
+		{Start: shared.Position{Line: 15, Character: 20}, End: shared.Position{Line: 15, Character: 30}},
+		{Start: shared.Position{Line: 16, Character: 20}, End: shared.Position{Line: 16, Character: 30}},
+		{Start: shared.Position{Line: 17, Character: 20}, End: shared.Position{Line: 17, Character: 30}},
+		{Start: shared.Position{Line: 18, Character: 20}, End: shared.Position{Line: 18, Character: 30}},
+		{Start: shared.Position{Line: 19, Character: 20}, End: shared.Position{Line: 19, Character: 30}},
 	}
 	mockLsifStore.GetStencilFunc.PushReturn(nil, nil)
 	mockLsifStore.GetStencilFunc.PushReturn(expectedRanges, nil)
 
-	mockRequest := shared.RequestArgs{
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -72,7 +71,6 @@ func TestStencil(t *testing.T) {
 
 func TestStencilWithDuplicateRanges(t *testing.T) {
 	// Set up mocks
-	mockStore := NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
@@ -80,13 +78,13 @@ func TestStencilWithDuplicateRanges(t *testing.T) {
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockStore, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
 	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
-	uploads := []types.Dump{
+	uploads := []uploadsshared.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -94,24 +92,24 @@ func TestStencilWithDuplicateRanges(t *testing.T) {
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
 
-	expectedRanges := []types.Range{
-		{Start: types.Position{Line: 10, Character: 20}, End: types.Position{Line: 10, Character: 30}},
-		{Start: types.Position{Line: 11, Character: 20}, End: types.Position{Line: 11, Character: 30}},
-		{Start: types.Position{Line: 12, Character: 20}, End: types.Position{Line: 12, Character: 30}},
-		{Start: types.Position{Line: 13, Character: 20}, End: types.Position{Line: 13, Character: 30}},
-		{Start: types.Position{Line: 14, Character: 20}, End: types.Position{Line: 14, Character: 30}},
-		{Start: types.Position{Line: 15, Character: 20}, End: types.Position{Line: 15, Character: 30}},
-		{Start: types.Position{Line: 16, Character: 20}, End: types.Position{Line: 16, Character: 30}},
-		{Start: types.Position{Line: 17, Character: 20}, End: types.Position{Line: 17, Character: 30}},
-		{Start: types.Position{Line: 18, Character: 20}, End: types.Position{Line: 18, Character: 30}},
-		{Start: types.Position{Line: 19, Character: 20}, End: types.Position{Line: 19, Character: 30}},
+	expectedRanges := []shared.Range{
+		{Start: shared.Position{Line: 10, Character: 20}, End: shared.Position{Line: 10, Character: 30}},
+		{Start: shared.Position{Line: 11, Character: 20}, End: shared.Position{Line: 11, Character: 30}},
+		{Start: shared.Position{Line: 12, Character: 20}, End: shared.Position{Line: 12, Character: 30}},
+		{Start: shared.Position{Line: 13, Character: 20}, End: shared.Position{Line: 13, Character: 30}},
+		{Start: shared.Position{Line: 14, Character: 20}, End: shared.Position{Line: 14, Character: 30}},
+		{Start: shared.Position{Line: 15, Character: 20}, End: shared.Position{Line: 15, Character: 30}},
+		{Start: shared.Position{Line: 16, Character: 20}, End: shared.Position{Line: 16, Character: 30}},
+		{Start: shared.Position{Line: 17, Character: 20}, End: shared.Position{Line: 17, Character: 30}},
+		{Start: shared.Position{Line: 18, Character: 20}, End: shared.Position{Line: 18, Character: 30}},
+		{Start: shared.Position{Line: 19, Character: 20}, End: shared.Position{Line: 19, Character: 30}},
 	}
 	mockLsifStore.GetStencilFunc.PushReturn(nil, nil)
 
 	// Duplicate the ranges to test that we dedupe them
 	mockLsifStore.GetStencilFunc.PushReturn(append(expectedRanges, expectedRanges...), nil)
 
-	mockRequest := shared.RequestArgs{
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,

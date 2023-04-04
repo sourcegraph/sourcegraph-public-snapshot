@@ -10,7 +10,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-if [[ "$DOCKER_BAZEL" == "true" ]]; then
+if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
 
   bazel build //cmd/github-proxy \
     --stamp \

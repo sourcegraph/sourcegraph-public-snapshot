@@ -42,7 +42,6 @@ func TestAddExternalService(t *testing.T) {
 		users := database.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 		users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-		users.TagsFunc.SetDefaultReturn(map[string]bool{}, nil)
 
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)

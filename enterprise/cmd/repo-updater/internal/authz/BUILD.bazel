@@ -15,6 +15,7 @@ go_library(
         "//enterprise/internal/database",
         "//internal/api",
         "//internal/authz",
+        "//internal/collections",
         "//internal/conf",
         "//internal/database",
         "//internal/database/basestore",

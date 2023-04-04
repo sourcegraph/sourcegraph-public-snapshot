@@ -53,6 +53,11 @@ interface RemoveChatHistoryWebviewMessage {
     command: 'removeHistory'
 }
 
+interface OpenFileWebviewMessage {
+    command: 'openFile'
+    filePath: string
+}
+
 type WebviewMessage =
     | IntializedWebviewMessage
     | ResetWebviewMessage
@@ -61,3 +66,4 @@ type WebviewMessage =
     | SubmitWebviewMessage
     | ExecuteRecipeWebviewMessage
     | RemoveChatHistoryWebviewMessage
+    | OpenFileWebviewMessage

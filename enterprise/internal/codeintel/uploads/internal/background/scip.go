@@ -9,9 +9,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -54,7 +53,7 @@ func correlateSCIP(
 		defer close(documents)
 
 		packageSet := map[precise.Package]bool{}
-		for _, document := range codeinteltypes.SortDocuments(codeinteltypes.FlattenDocuments(index.Documents)) {
+		for _, document := range scip.SortDocuments(scip.FlattenDocuments(index.Documents)) {
 			if _, ok := ignorePaths[document.RelativePath]; ok {
 				continue
 			}
@@ -264,7 +263,7 @@ func canonicalizeDocument(document *scip.Document, externalSymbolsByName map[str
 	injectExternalSymbols(document, externalSymbolsByName)
 
 	// Order the remaining fields deterministically
-	_ = types.CanonicalizeDocument(document)
+	_ = scip.CanonicalizeDocument(document)
 }
 
 // injectExternalSymbols adds symbol information objects from the external symbols into the document
@@ -349,7 +348,7 @@ func packageFromSymbol(symbolName string) (precise.Package, bool) {
 func writeSCIPData(
 	ctx context.Context,
 	lsifStore lsifstore.LsifStore,
-	upload codeinteltypes.Upload,
+	upload shared.Upload,
 	correlatedSCIPData lsifstore.ProcessedSCIPData,
 	trace observation.TraceLogger,
 ) (err error) {

@@ -4,7 +4,6 @@ import { IntentDetector } from '../../intent-detector'
 import { MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { getShortTimestamp } from '../../timestamp'
-import { renderMarkdown } from '../markdown'
 import { Interaction } from '../transcript/interaction'
 
 import {
@@ -56,9 +55,7 @@ export class GenerateDocstring implements Recipe {
             docStart = '// '
         }
 
-        const displayText = renderMarkdown(
-            `Generate documentation for the following code:\n\`\`\`\n${selection.selectedText}\n\`\`\``
-        )
+        const displayText = `Generate documentation for the following code:\n\`\`\`\n${selection.selectedText}\n\`\`\``
 
         const assistantResponsePrefix = `Here is the generated documentation:\n\`\`\`${extension}\n${docStart}`
         return new Interaction(

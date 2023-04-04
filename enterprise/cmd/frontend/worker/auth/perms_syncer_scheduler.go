@@ -172,13 +172,13 @@ func getSchedule(ctx context.Context, store edb.PermsStore) (*schedule, error) {
 
 	userLimit, repoLimit := oldestUserPermissionsBatchSize(), oldestRepoPermissionsBatchSize()
 
-	usersWithOldestPerms, err := scheduleUsersWithOldestPerms(ctx, store, userLimit, syncUserBackoff())
+	usersWithOldestPerms, err := scheduleUsersWithOldestPerms(ctx, store, userLimit, SyncUserBackoff())
 	if err != nil {
 		return nil, errors.Wrap(err, "load users with oldest permissions")
 	}
 	schedule.Users = append(schedule.Users, usersWithOldestPerms...)
 
-	reposWithOldestPerms, err := scheduleReposWithOldestPerms(ctx, store, repoLimit, syncRepoBackoff())
+	reposWithOldestPerms, err := scheduleReposWithOldestPerms(ctx, store, repoLimit, SyncRepoBackoff())
 	if err != nil {
 		return nil, errors.Wrap(err, "scan repositories with oldest permissions")
 	}
@@ -283,7 +283,7 @@ func oldestRepoPermissionsBatchSize() int {
 
 var zeroBackoffDuringTest = false
 
-func syncUserBackoff() time.Duration {
+func SyncUserBackoff() time.Duration {
 	if zeroBackoffDuringTest {
 		return time.Duration(0)
 	}
@@ -295,7 +295,7 @@ func syncUserBackoff() time.Duration {
 	return time.Duration(seconds) * time.Second
 }
 
-func syncRepoBackoff() time.Duration {
+func SyncRepoBackoff() time.Duration {
 	if zeroBackoffDuringTest {
 		return time.Duration(0)
 	}

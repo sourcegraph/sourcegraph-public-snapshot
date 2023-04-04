@@ -1,0 +1,35 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.header {
+    background-color: Canvas;
+    position: sticky;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: solid 1px ButtonBorder;
+    padding: 0.75rem 1rem;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 1.25rem;
+    fill: currentColor;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.main {
+    padding-top: 0.75rem;
+    background-color: black;
+    flex: 1;
+}
+
+.alert {
+    margin: 0 1rem;
+}

@@ -65,6 +65,8 @@ func (m gitlabAuthzProviderParams) FetchRepoPerms(context.Context, *extsvc.Repos
 	panic("should never be called")
 }
 
+var errPermissionsUserMappingConflict = errors.New("The explicit permissions API (site configuration `permissions.userMapping`) cannot be enabled when bitbucketServer authorization provider is in use. Blocking access to all repositories until the conflict is resolved.")
+
 func TestAuthzProvidersFromConfig(t *testing.T) {
 	t.Cleanup(licensing.TestingSkipFeatureChecks())
 	gitlab.NewOAuthProvider = func(op gitlab.OAuthProviderOp) authz.Provider {
@@ -401,7 +403,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 
 		// For Sourcegraph authz provider
 		{
-			description: "Conflicted configuration between Sourcegraph and GitLab authz provider",
+			description: "Explicit permissions can be enabled alongside synced permissions",
 			cfg: conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
 					PermissionsUserMapping: &schema.PermissionsUserMapping{
@@ -417,40 +419,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 							Url:          "https://gitlab.mine",
 						},
 					}},
-				},
-			},
-			gitlabConnections: []*schema.GitLabConnection{
-				{
-					Authorization: &schema.GitLabAuthorization{
-						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
-					},
-					Url:   "https://gitlab.mine",
-					Token: "asdf",
-				},
-			},
-			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when \"gitlab\" authorization providers are in use. Blocking access to all repositories until the conflict is resolved."},
-		},
-		{
-			description: "No conflict if unified perms is ON",
-			cfg: conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					PermissionsUserMapping: &schema.PermissionsUserMapping{
-						Enabled: true,
-						BindID:  "email",
-					},
-					AuthProviders: []schema.AuthProviders{{
-						Gitlab: &schema.GitLabAuthProvider{
-							ClientID:     "clientID",
-							ClientSecret: "clientSecret",
-							DisplayName:  "GitLab",
-							Type:         extsvc.TypeGitLab,
-							Url:          "https://gitlab.mine",
-						},
-					}},
-					ExperimentalFeatures: &schema.ExperimentalFeatures{
-						UnifiedPermissions: true,
-					},
 				},
 			},
 			gitlabConnections: []*schema.GitLabConnection{
@@ -472,37 +440,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 					},
 				},
 			),
-		},
-		{
-			description: "Conflicted configuration between Sourcegraph and Bitbucket Server authz provider",
-			cfg: conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					PermissionsUserMapping: &schema.PermissionsUserMapping{
-						Enabled: true,
-						BindID:  "email",
-					},
-				},
-			},
-			bitbucketServerConnections: []*schema.BitbucketServerConnection{
-				{
-					Authorization: &schema.BitbucketServerAuthorization{
-						IdentityProvider: schema.BitbucketServerIdentityProvider{
-							Username: &schema.BitbucketServerUsernameIdentity{
-								Type: "username",
-							},
-						},
-						Oauth: schema.BitbucketServerOAuth{
-							ConsumerKey: "sourcegraph",
-							SigningKey:  bogusKey,
-						},
-					},
-					Url:      "https://bitbucketserver.mycorp.org",
-					Username: "admin",
-					Token:    "secret-token",
-				},
-			},
-			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when \"bitbucketServer\" authorization providers are in use. Blocking access to all repositories until the conflict is resolved."},
 		},
 	}
 
@@ -847,15 +784,6 @@ func mockExplicitPermissions(enabled bool) func() {
 	}
 }
 
-func mockUnifiedPermsConfig(val bool) {
-	cfg := &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		ExperimentalFeatures: &schema.ExperimentalFeatures{
-			UnifiedPermissions: val,
-		},
-	}}
-	conf.Mock(cfg)
-}
-
 func TestPermissionSyncingDisabled(t *testing.T) {
 	authz.SetProviders(true, []authz.Provider{&mockProvider{}})
 	cleanupLicense := licensing.MockCheckFeatureError("")
@@ -874,20 +802,8 @@ func TestPermissionSyncingDisabled(t *testing.T) {
 		assert.True(t, PermissionSyncingDisabled())
 	})
 
-	t.Run("permissions user mapping enabled and unified permissions disabled", func(t *testing.T) {
+	t.Run("permissions user mapping enabled", func(t *testing.T) {
 		cleanup := mockExplicitPermissions(true)
-		mockUnifiedPermsConfig(false)
-		t.Cleanup(func() {
-			cleanup()
-			conf.Mock(nil)
-		})
-
-		assert.True(t, PermissionSyncingDisabled())
-	})
-
-	t.Run("permissions user mapping enabled and unified permissions enabled", func(t *testing.T) {
-		cleanup := mockExplicitPermissions(true)
-		mockUnifiedPermsConfig(true)
 		t.Cleanup(func() {
 			cleanup()
 			conf.Mock(nil)

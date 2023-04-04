@@ -2,30 +2,31 @@
 
 Sourcegraph is currently migrating to Bazel as its build system and this page is targeted for early adopters which are helping the [#job-fair-bazel](https://sourcegraph.slack.com/archives/C03LUEB7TJS) team to test their work.
 
-## Early adopters
+## 📅 Timeline
 
-If you are an early adopter, you can already get some benefits from Bazel, while we gradually roll it out.
+- 2023-04-03 Bazel steps are required to pass on all PR builds.
+  - Run `bazel run :update-gazelle-repos` if you changed the `go.mod`.
+  - Run `bazel configure` after making all your changes in the PR and commit the updated/added `BUILD.bazel` 
+  - Add `[no-bazel]` in your commit description if you want to bypass Bazel.
+- 2023-04-06 Bazel steps are required to pass on main.
+  - Run `bazel run :update-gazelle-repos` if you changed the `go.mod`.
+  - Run `bazel configure` after making all your changes in the PR and commit the updated/added `BUILD.bazel` 
+  - Add `[no-bazel]` in your commit description if you want to bypass Bazel.
+- 2023-04-10 You cannot opt out of Bazel anymore
 
-:bulb: Please note that this is only applicable in PRs. For the `main` branch we need to ensure we use the same build steps for everyone until Bazel is fully rolled out.
+The above timeline affects the following CI jobs: 
 
-- Before pushing, ensure your changes are refected in the build files (those `BUILD.bazel` files):
-  - If you changed anything to the `go.mod` file, you need to run:
-    - `bazel run :update-gazelle-repos`
-  - Run `bazel configure` to ensure the build files are also properly updated.
-- Run your tests locally, with `bazel test //[PATH]/...` where `PATH` refers to the package containing your changes.
-  - If you changed things in too many places, you can always run `bazel test //...` which will test everything (or reused cached results if applicable).
-- Include the updated build files in your commit! They are relevant to that commit after all.
-- When commiting, add the `[force-bazel]` message flag in the description of your commit (not in the commit title, but in the description - it's nicer this way).
-  - If you commit again, remember to add that message flag again. Only the last commit is checked to determine if we want Bazel on that PR.
-- Push your changes as usual.
-- When browsing the CI (you can use `sg ci status --web` you'll see a `Bazel` set of jobs running both your tests and build.
+- Go unit tests.
+- Client unit tests (Jest).
+  - with the exception of Cody, which has not been ported yet to build with Bazel.
 
-You may find the build and tests to be slow, either locally or in CI. This is because to be efficient, Bazel cache needs to be warm. So inevitably, as early adopters, that will be less the case
-than when more teammates will be using Bazel.
+Other jobs will follow-up shortly, but as long as you're following instructions mentioned in that doc (TL;DR run `bazel configure`) this won't change anything for you.
 
-:warning: It's highly probable that the build files you updated will include changes that you were not responsible for. This is because not everyone is updating buildfiles. Just commit them anyway and move on. This will be get better over time.
+You may find the build and tests to be slow at first, either locally or in CI. This is because to be efficient, Bazel cache needs to be warm. 
 
-:warning: If you find your tests to be passing normally with `go test` and on a normal CI build, but not when Bazel is enabled, please check the [FAQ](#faq) below. If you can't solve the problem, just reach us out on [#job-fair-bazel](https://sourcegraph.slack.com/archives/C03LUEB7TJS).
+- ➡️  [Cheat sheet](#bazel-cheat-sheet)
+- ➡️  [FAQ](#faq)
+- 📽️ [Bazel Status Update](https://go/bazel-status)
 
 ## Why do we need a build system?
 
@@ -181,9 +182,11 @@ Gazelle and the frontend: see [Bazel for Web bundle](./bazel_web.md).
 
 > For early adopters only.
 
-First you need to have `bazel` installed obviously, but also `iBazel` which will watch your files and rebuild if needed.
+First you need to have `bazel` installed obviously, but also `iBazel` which will watch your files and rebuild if needed. We use a tool called `bazelisk` (which is also part of Bazel) to manage the version of `bazel`. It inspects a bunch of files to determine what `bazel` version to use for your repo.
 
-- `brew install bazel`
+If you want the setup automated run `sg setup`, otherwise you can install it manually by executing the following commands:
+
+- `brew install bazelisk`
 - `brew install ibazel`
 
 Then instead of running `sg start oss` you can use the `bazel` variant instead.

@@ -1,4 +1,4 @@
-@import url(./utils/highlight.css);
+@import '@sourcegraph/cody-ui/src/index.css';
 @import '@vscode/codicons/dist/codicon';
 
 :root {

@@ -31,7 +31,7 @@ type cachedRepositoryResolver struct {
 }
 
 type cachedCommitResolver struct {
-	commitResolver *GitCommitResolver
+	commitResolver *gitCommitResolver
 	dirCache       *DoubleLockedCache[string, *GitTreeEntryResolver]
 	pathCache      *DoubleLockedCache[string, *GitTreeEntryResolver]
 }
@@ -40,7 +40,7 @@ func (r *GitTreeEntryResolver) RecordID() string        { return r.stat.Name() }
 func (r cachedRepositoryResolver) RecordID() api.RepoID { return r.repositoryResolver.repo.ID }
 func (r cachedCommitResolver) RecordID() string         { return string(r.commitResolver.oid) }
 
-func NewCachedLocationResolver(
+func newCachedLocationResolver(
 	cloneURLToRepoName CloneURLToRepoNameFunc,
 	repoStore database.RepoStore,
 	gitserverClient gitserver.Client,
@@ -55,10 +55,10 @@ func NewCachedLocationResolver(
 			return nil, err
 		}
 
-		return NewRepositoryResolver(repo), nil
+		return newRepositoryResolver(repo), nil
 	}
 
-	resolveCommit := func(ctx context.Context, repositoryResolver *RepositoryResolver, commit string) (*GitCommitResolver, error) {
+	resolveCommit := func(ctx context.Context, repositoryResolver *RepositoryResolver, commit string) (*gitCommitResolver, error) {
 		commitID, err := gitserverClient.ResolveRevision(ctx, repositoryResolver.repo.Name, commit, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 		if err != nil {
 			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
@@ -67,13 +67,13 @@ func NewCachedLocationResolver(
 			return nil, err
 		}
 
-		commitResolver := NewGitCommitResolver(repositoryResolver, commitID)
+		commitResolver := newGitCommitResolver(repositoryResolver, commitID)
 		commitResolver.inputRev = &commit
 		return commitResolver, nil
 	}
 
-	resolvePath := func(commitResolver *GitCommitResolver, path string, isDir bool) *GitTreeEntryResolver {
-		return NewGitTreeEntryResolver(cloneURLToRepoName, commitResolver, CreateFileInfo(path, isDir))
+	resolvePath := func(commitResolver *gitCommitResolver, path string, isDir bool) *GitTreeEntryResolver {
+		return newGitTreeEntryResolver(cloneURLToRepoName, commitResolver, createFileInfo(path, isDir))
 	}
 
 	resolveRepositoryCached := func(ctx context.Context, repoID api.RepoID) (*cachedRepositoryResolver, error) {
@@ -121,7 +121,7 @@ func (r *CachedLocationResolver) Repository(ctx context.Context, id api.RepoID) 
 }
 
 // Commit resolves (once) the given repository and commit. May return nil if the repository or commit is unknown.
-func (r *CachedLocationResolver) Commit(ctx context.Context, id api.RepoID, commit string) (*GitCommitResolver, error) {
+func (r *CachedLocationResolver) Commit(ctx context.Context, id api.RepoID, commit string) (*gitCommitResolver, error) {
 	repositoryWrapper, ok, err := r.repositoryCache.GetOrLoad(ctx, id)
 	if err != nil || !ok {
 		return nil, err
@@ -162,7 +162,7 @@ type fileInfo struct {
 	isDir bool
 }
 
-func CreateFileInfo(path string, isDir bool) fs.FileInfo {
+func createFileInfo(path string, isDir bool) fs.FileInfo {
 	return fileInfo{path: path, isDir: isDir}
 }
 

@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -223,31 +222,16 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			verify := func(t *testing.T) {
-				t.Helper()
+			p, err := s.store.LoadUserPermissions(ctx, user.ID)
+			require.NoError(t, err)
 
-				p, err := s.store.LoadUserPermissions(ctx, user.ID)
-				require.NoError(t, err)
-
-				gotIDs := make([]int32, len(p))
-				for i, perm := range p {
-					gotIDs[i] = perm.RepoID
-				}
-				slices.Sort(gotIDs)
-
-				equal(t, "p.IDs", test.expectRepoIDs, gotIDs)
+			gotIDs := make([]int32, len(p))
+			for i, perm := range p {
+				gotIDs[i] = perm.RepoID
 			}
+			slices.Sort(gotIDs)
 
-			t.Run("works with legacy perms tables", func(t *testing.T) {
-				verify(t)
-			})
-
-			t.Run("works with unified perms tables", func(t *testing.T) {
-				// verify that it also works with unified permissions
-				mockUnifiedPermsConfig(true)
-				t.Cleanup(func() { conf.Mock(nil) })
-				verify(t)
-			})
+			equal(t, "p.IDs", test.expectRepoIDs, gotIDs)
 		})
 	}
 }
@@ -351,14 +335,6 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 				if _, err := s.store.SetRepoPerms(ctx, update.repoID, userIDs, authz.SourceAPI); err != nil {
 					t.Fatal(err)
 				}
-				_, err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
-					RepoID:  update.repoID,
-					Perm:    authz.Read,
-					UserIDs: toMapset(update.userIDs...),
-				})
-				if err != nil {
-					t.Fatal(err)
-				}
 			}
 
 			repos, err := s.AuthorizedRepos(ctx, test.args)
@@ -390,13 +366,6 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 
 	// Set both effective and pending permissions for a user
 	if _, err = s.store.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: user.ID}, []int32{int32(repo.ID)}, authz.SourceAPI); err != nil {
-		t.Fatal(err)
-	}
-	if _, err = s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
-		RepoID:  int32(repo.ID),
-		Perm:    authz.Read,
-		UserIDs: toMapset(user.ID),
-	}); err != nil {
 		t.Fatal(err)
 	}
 

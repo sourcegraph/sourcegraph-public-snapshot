@@ -2,11 +2,15 @@ package shared
 
 import (
 	"context"
+	"os"
 	"runtime"
 	"strings"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type readFileFn func(ctx context.Context, repoName api.RepoName, revision api.CommitID, fileName string) ([]byte, error)
@@ -15,29 +19,34 @@ type getQueryEmbeddingFn func(query string) ([]float32, error)
 
 func searchRepoEmbeddingIndex(
 	ctx context.Context,
+	logger log.Logger,
 	params embeddings.EmbeddingsSearchParameters,
 	readFile readFileFn,
 	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
 	getQueryEmbedding getQueryEmbeddingFn,
-	debug bool,
 ) (*embeddings.EmbeddingSearchResults, error) {
 	embeddingIndex, err := getRepoEmbeddingIndex(ctx, params.RepoName)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getting repo embedding index")
 	}
 
 	embeddedQuery, err := getQueryEmbedding(params.Query)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getting query embedding")
+	}
+
+	opts := embeddings.SearchOptions{
+		Debug:            params.Debug,
+		UseDocumentRanks: params.UseDocumentRanks,
 	}
 
 	var codeResults, textResults []embeddings.EmbeddingSearchResult
 	if params.CodeResultsCount > 0 && len(embeddingIndex.CodeIndex.Embeddings) > 0 {
-		codeResults = searchEmbeddingIndex(ctx, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.CodeIndex, readFile, embeddedQuery, params.CodeResultsCount, debug)
+		codeResults = searchEmbeddingIndex(ctx, logger, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.CodeIndex, readFile, embeddedQuery, params.CodeResultsCount, opts)
 	}
 
 	if params.TextResultsCount > 0 && len(embeddingIndex.TextIndex.Embeddings) > 0 {
-		textResults = searchEmbeddingIndex(ctx, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.TextIndex, readFile, embeddedQuery, params.TextResultsCount, debug)
+		textResults = searchEmbeddingIndex(ctx, logger, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.TextIndex, readFile, embeddedQuery, params.TextResultsCount, opts)
 	}
 
 	return &embeddings.EmbeddingSearchResults{CodeResults: codeResults, TextResults: textResults}, nil
@@ -47,21 +56,25 @@ const SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT = 1000
 
 func searchEmbeddingIndex(
 	ctx context.Context,
+	logger log.Logger,
 	repoName api.RepoName,
 	revision api.CommitID,
 	index *embeddings.EmbeddingIndex,
 	readFile readFileFn,
 	query []float32,
 	nResults int,
-	debug bool,
+	opts embeddings.SearchOptions,
 ) []embeddings.EmbeddingSearchResult {
 	numWorkers := runtime.GOMAXPROCS(0)
-	rows := index.SimilaritySearch(query, nResults, embeddings.WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT}, debug)
+	rows := index.SimilaritySearch(query, nResults, embeddings.WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT}, opts)
 
 	// Hydrate content
 	for idx, row := range rows {
 		fileContent, err := readFile(ctx, repoName, revision, row.FileName)
 		if err != nil {
+			if !os.IsNotExist(err) {
+				logger.Error("error reading file", log.String("repoName", string(repoName)), log.String("revision", string(revision)), log.String("fileName", row.FileName), log.Error(err))
+			}
 			continue
 		}
 		lines := strings.Split(string(fileContent), "\n")

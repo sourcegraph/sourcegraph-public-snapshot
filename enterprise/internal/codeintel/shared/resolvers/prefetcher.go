@@ -3,7 +3,8 @@ package sharedresolvers
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 )
 
 // Prefetcher is a batch query utility and cache used to reduce the amount of database
@@ -11,8 +12,8 @@ import (
 // is shared by all sibling resolvers resulting from an upload or index connection, as
 // well as index records resulting from an upload resolver (and vice versa).
 type Prefetcher struct {
-	uploadLoader *DataLoader[int, types.Upload]
-	indexLoader  *DataLoader[int, types.Index]
+	uploadLoader *DataLoader[int, shared.Upload]
+	indexLoader  *DataLoader[int, uploadsshared.Index]
 }
 
 type PrefetcherFactory struct {
@@ -32,10 +33,10 @@ func (f *PrefetcherFactory) Create() *Prefetcher {
 // NewPrefetcher returns a prefetcher with an empty cache.
 func NewPrefetcher(uploadSvc UploadsService) *Prefetcher {
 	return &Prefetcher{
-		uploadLoader: NewDataLoader[int, types.Upload](DataLoaderBackingServiceFunc[int, types.Upload](func(ctx context.Context, ids ...int) ([]types.Upload, error) {
+		uploadLoader: NewDataLoader[int, shared.Upload](DataLoaderBackingServiceFunc[int, shared.Upload](func(ctx context.Context, ids ...int) ([]shared.Upload, error) {
 			return uploadSvc.GetUploadsByIDs(ctx, ids...)
 		})),
-		indexLoader: NewDataLoader[int, types.Index](DataLoaderBackingServiceFunc[int, types.Index](func(ctx context.Context, ids ...int) ([]types.Index, error) {
+		indexLoader: NewDataLoader[int, uploadsshared.Index](DataLoaderBackingServiceFunc[int, uploadsshared.Index](func(ctx context.Context, ids ...int) ([]uploadsshared.Index, error) {
 			return uploadSvc.GetIndexesByIDs(ctx, ids...)
 		})),
 	}
@@ -52,7 +53,7 @@ func (p *Prefetcher) MarkUpload(id int) {
 // the given identifier will be added to the current batch of identifiers constructed
 // via calls to MarkUpload. All uploads will in the current batch are requested at once
 // and the upload with the given identifier is returned from that result set.
-func (p *Prefetcher) GetUploadByID(ctx context.Context, id int) (types.Upload, bool, error) {
+func (p *Prefetcher) GetUploadByID(ctx context.Context, id int) (shared.Upload, bool, error) {
 	return p.uploadLoader.GetByID(ctx, id)
 }
 
@@ -67,6 +68,6 @@ func (p *Prefetcher) MarkIndex(id int) {
 // the given identifier will be added to the current batch of identifiers constructed
 // via calls to MarkIndex. All indexes will in the current batch are requested at once
 // and the index with the given identifier is returned from that result set.
-func (p *Prefetcher) GetIndexByID(ctx context.Context, id int) (types.Index, bool, error) {
+func (p *Prefetcher) GetIndexByID(ctx context.Context, id int) (uploadsshared.Index, bool, error) {
 	return p.indexLoader.GetByID(ctx, id)
 }

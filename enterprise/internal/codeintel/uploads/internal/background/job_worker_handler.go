@@ -15,9 +15,9 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -38,13 +38,13 @@ func NewUploadProcessorWorker(
 	lsifStore lsifstore.LsifStore,
 	gitserverClient gitserver.Client,
 	repoStore RepoStore,
-	workerStore dbworkerstore.Store[codeinteltypes.Upload],
+	workerStore dbworkerstore.Store[uploadsshared.Upload],
 	uploadStore uploadstore.Store,
 	workerConcurrency int,
 	workerBudget int64,
 	workerPollInterval time.Duration,
 	maximumRuntimePerJob time.Duration,
-) *workerutil.Worker[codeinteltypes.Upload] {
+) *workerutil.Worker[uploadsshared.Upload] {
 	rootContext := actor.WithInternalActor(context.Background())
 
 	handler := NewUploadProcessorHandler(
@@ -76,7 +76,7 @@ type handler struct {
 	lsifStore       lsifstore.LsifStore
 	gitserverClient gitserver.Client
 	repoStore       RepoStore
-	workerStore     dbworkerstore.Store[codeinteltypes.Upload]
+	workerStore     dbworkerstore.Store[uploadsshared.Upload]
 	uploadStore     uploadstore.Store
 	handleOp        *observation.Operation
 	budgetRemaining int64
@@ -85,9 +85,9 @@ type handler struct {
 }
 
 var (
-	_ workerutil.Handler[codeinteltypes.Upload]   = &handler{}
-	_ workerutil.WithPreDequeue                   = &handler{}
-	_ workerutil.WithHooks[codeinteltypes.Upload] = &handler{}
+	_ workerutil.Handler[uploadsshared.Upload]   = &handler{}
+	_ workerutil.WithPreDequeue                  = &handler{}
+	_ workerutil.WithHooks[uploadsshared.Upload] = &handler{}
 )
 
 func NewUploadProcessorHandler(
@@ -96,10 +96,10 @@ func NewUploadProcessorHandler(
 	lsifStore lsifstore.LsifStore,
 	gitserverClient gitserver.Client,
 	repoStore RepoStore,
-	workerStore dbworkerstore.Store[codeinteltypes.Upload],
+	workerStore dbworkerstore.Store[uploadsshared.Upload],
 	uploadStore uploadstore.Store,
 	budgetMax int64,
-) workerutil.Handler[codeinteltypes.Upload] {
+) workerutil.Handler[uploadsshared.Upload] {
 	operations := newWorkerOperations(observationCtx)
 
 	return &handler{
@@ -116,7 +116,7 @@ func NewUploadProcessorHandler(
 	}
 }
 
-func (h *handler) Handle(ctx context.Context, logger log.Logger, upload codeinteltypes.Upload) (err error) {
+func (h *handler) Handle(ctx context.Context, logger log.Logger, upload uploadsshared.Upload) (err error) {
 	var requeued bool
 
 	ctx, otLogger, endObservation := h.handleOp.With(ctx, &err, observation.Args{})
@@ -147,7 +147,7 @@ func (h *handler) PreDequeue(_ context.Context, _ log.Logger) (bool, any, error)
 	return true, []*sqlf.Query{sqlf.Sprintf("(upload_size IS NULL OR upload_size <= %s)", budgetRemaining)}, nil
 }
 
-func (h *handler) PreHandle(_ context.Context, _ log.Logger, upload codeinteltypes.Upload) {
+func (h *handler) PreHandle(_ context.Context, _ log.Logger, upload uploadsshared.Upload) {
 	uncompressedSize := h.getUploadSize(upload.UncompressedSize)
 	h.uploadSizeGauge.Add(float64(uncompressedSize))
 
@@ -155,7 +155,7 @@ func (h *handler) PreHandle(_ context.Context, _ log.Logger, upload codeinteltyp
 	atomic.AddInt64(&h.budgetRemaining, -gzipSize)
 }
 
-func (h *handler) PostHandle(_ context.Context, _ log.Logger, upload codeinteltypes.Upload) {
+func (h *handler) PostHandle(_ context.Context, _ log.Logger, upload uploadsshared.Upload) {
 	uncompressedSize := h.getUploadSize(upload.UncompressedSize)
 	h.uploadSizeGauge.Sub(float64(uncompressedSize))
 
@@ -171,7 +171,7 @@ func (h *handler) getUploadSize(field *int64) int64 {
 	return 0
 }
 
-func createLogFields(upload codeinteltypes.Upload) []otlog.Field {
+func createLogFields(upload uploadsshared.Upload) []otlog.Field {
 	fields := []otlog.Field{
 		otlog.Int("uploadID", upload.ID),
 		otlog.Int("repositoryID", upload.RepositoryID),
@@ -220,7 +220,7 @@ func (c *handler) defaultBranchContains(ctx context.Context, repo api.RepoName, 
 
 // HandleRawUpload converts a raw upload into a dump within the given transaction context. Returns true if the
 // upload record was requeued and false otherwise.
-func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload codeinteltypes.Upload, uploadStore uploadstore.Store, trace observation.TraceLogger) (requeued bool, err error) {
+func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload uploadsshared.Upload, uploadStore uploadstore.Store, trace observation.TraceLogger) (requeued bool, err error) {
 	repo, err := h.repoStore.Get(ctx, api.RepoID(upload.RepositoryID))
 	if err != nil {
 		return false, errors.Wrap(err, "Repos.Get")
@@ -367,7 +367,7 @@ const requeueDelay = time.Minute
 // cloning or if the commit does not exist, then the upload will be requeued and this function returns a true
 // valued flag. Otherwise, the repo does not exist or there is an unexpected infrastructure error, which we'll
 // fail on.
-func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, gitserverClient gitserver.Client, workerStore dbworkerstore.Store[codeinteltypes.Upload], upload codeinteltypes.Upload, repo *types.Repo) (requeued bool, _ error) {
+func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, gitserverClient gitserver.Client, workerStore dbworkerstore.Store[uploadsshared.Upload], upload uploadsshared.Upload, repo *types.Repo) (requeued bool, _ error) {
 	_, err := gitserverClient.ResolveRevision(ctx, repo.Name, upload.Commit, gitserver.ResolveRevisionOptions{})
 	if err == nil {
 		// commit is resolvable

@@ -48,7 +48,7 @@ export const TeamHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                             </Alert>
                         )}
 
-                        <nav className="d-flex align-items-end justify-content-between" aria-label="Org">
+                        <nav className="d-flex align-items-end justify-content-between">
                             <ul className="nav nav-tabs w-100">
                                 <li className="nav-item">
                                     <NavLink to={url} className="nav-link" end={true}>

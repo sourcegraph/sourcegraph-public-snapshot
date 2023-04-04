@@ -23,14 +23,14 @@ func marshalDefaultSettingsGQLID(defaultSettingsID string) graphql.ID {
 
 func (r *defaultSettingsResolver) ID() graphql.ID { return marshalDefaultSettingsGQLID(r.gqlID) }
 
-func (r *defaultSettingsResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
+func (r *defaultSettingsResolver) LatestSettings(_ context.Context) (*settingsResolver, error) {
 	settings := &api.Settings{Subject: api.SettingsSubject{Default: true}, Contents: `{"experimentalFeatures": {}}`}
 	return &settingsResolver{r.db, &settingsSubject{defaultSettings: r}, settings, nil}, nil
 }
 
 func (r *defaultSettingsResolver) SettingsURL() *string { return nil }
 
-func (r *defaultSettingsResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
+func (r *defaultSettingsResolver) ViewerCanAdminister(_ context.Context) (bool, error) {
 	return false, nil
 }
 

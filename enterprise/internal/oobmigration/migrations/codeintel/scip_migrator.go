@@ -19,6 +19,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/trie"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -379,7 +380,7 @@ func processDocument(
 		return rangeIDs
 	}
 
-	scipDocument := types.CanonicalizeDocument(scip.ConvertLSIFDocument(
+	scipDocument := ogscip.CanonicalizeDocument(scip.ConvertLSIFDocument(
 		uploadID,
 		targetRangeFetcher,
 		indexerName,
@@ -679,9 +680,9 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 	}
 
 	symbolNameMap := map[string]struct{}{}
-	invertedRangeIndexes := make([][]types.InvertedRangeIndex, 0, len(documents))
+	invertedRangeIndexes := make([][]shared.InvertedRangeIndex, 0, len(documents))
 	for _, document := range documents {
-		index := types.ExtractSymbolIndexes(document.scipDocument)
+		index := shared.ExtractSymbolIndexes(document.scipDocument)
 		invertedRangeIndexes = append(invertedRangeIndexes, index)
 
 		for _, invertedRange := range index {

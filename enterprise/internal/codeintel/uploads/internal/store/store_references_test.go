@@ -7,7 +7,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -22,7 +21,7 @@ func TestUpdatePackageReferences(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	// for foreign key relation
-	insertUploads(t, db, types.Upload{ID: 42})
+	insertUploads(t, db, shared.Upload{ID: 42})
 
 	if err := store.UpdatePackageReferences(context.Background(), 42, []precise.PackageReference{
 		{Package: precise.Package{Scheme: "s0", Name: "n0", Version: "v0"}},
@@ -54,11 +53,11 @@ func TestReferencesForUpload(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
-		types.Upload{ID: 1, Commit: makeCommit(2), Root: "sub1/"},
-		types.Upload{ID: 2, Commit: makeCommit(3), Root: "sub2/"},
-		types.Upload{ID: 3, Commit: makeCommit(4), Root: "sub3/"},
-		types.Upload{ID: 4, Commit: makeCommit(3), Root: "sub4/"},
-		types.Upload{ID: 5, Commit: makeCommit(2), Root: "sub5/"},
+		shared.Upload{ID: 1, Commit: makeCommit(2), Root: "sub1/"},
+		shared.Upload{ID: 2, Commit: makeCommit(3), Root: "sub2/"},
+		shared.Upload{ID: 3, Commit: makeCommit(4), Root: "sub3/"},
+		shared.Upload{ID: 4, Commit: makeCommit(3), Root: "sub4/"},
+		shared.Upload{ID: 5, Commit: makeCommit(2), Root: "sub5/"},
 	)
 
 	insertPackageReferences(t, store, []shared.PackageReference{

@@ -24,6 +24,8 @@ NON_BUNDLED = [
 NON_BUNDLED_DEPS = [
     "//:node_modules/jsonc-parser",
     "//:node_modules/puppeteer",
+    "//:node_modules/axe-core",
+    "//client/web:node_modules/@sourcegraph/build-config",
 ]
 
 def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, use_xvfb = False, **kwargs):
@@ -35,7 +37,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, use_xvfb 
         testonly = True,
         entry_points = tests,
         platform = "node",
-        target = "node12",
+        target = "esnext",
         output_dir = True,
         external = NON_BUNDLED,
         sourcemap = "linked",
@@ -73,7 +75,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, use_xvfb 
         "SOURCEGRAPH_SUDO_TOKEN": "fake-sg-token",
         "NO_CLEANUP": "false",
         "KEEP_BROWSER": "false",
-        "DEVTOOLS": "true",
+        "DEVTOOLS": "false",
         "BROWSER": "chrome",
         "WINDOW_WIDTH": "1920",
         "WINDOW_HEIGHT": "1080",
@@ -87,7 +89,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, use_xvfb 
     bin.mocha_test(
         name = mocha_name,
         args = args,
-        data = data + deps + args_data + NON_BUNDLED_DEPS,
+        data = data + args_data + NON_BUNDLED_DEPS,
         env = env,
         **kwargs
     )

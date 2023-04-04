@@ -2,11 +2,13 @@ package store
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -92,7 +94,7 @@ func (s *store) ReferencesForUpload(ctx context.Context, uploadID int) (_ shared
 		return nil, err
 	}
 
-	return shared.PackageReferenceScannerFromRows(rows), nil
+	return PackageReferenceScannerFromRows(rows), nil
 }
 
 const referencesForUploadQuery = `
@@ -101,3 +103,63 @@ FROM lsif_references r
 WHERE dump_id = %s
 ORDER BY r.scheme, r.manager, r.name, r.version
 `
+
+type rowScanner struct {
+	rows *sql.Rows
+}
+
+// packageReferenceScannerFromRows creates a PackageReferenceScanner that feeds the given values.
+func PackageReferenceScannerFromRows(rows *sql.Rows) shared.PackageReferenceScanner {
+	return &rowScanner{
+		rows: rows,
+	}
+}
+
+// Next reads the next package reference value from the database cursor.
+func (s *rowScanner) Next() (reference shared.PackageReference, _ bool, _ error) {
+	if !s.rows.Next() {
+		return shared.PackageReference{}, false, nil
+	}
+
+	if err := s.rows.Scan(
+		&reference.DumpID,
+		&reference.Scheme,
+		&reference.Manager,
+		&reference.Name,
+		&reference.Version,
+	); err != nil {
+		return shared.PackageReference{}, false, err
+	}
+
+	return reference, true, nil
+}
+
+// Close the underlying row object.
+func (s *rowScanner) Close() error {
+	return basestore.CloseRows(s.rows, nil)
+}
+
+type sliceScanner struct {
+	references []shared.PackageReference
+}
+
+// PackageReferenceScannerFromSlice creates a PackageReferenceScanner that feeds the given values.
+func PackageReferenceScannerFromSlice(references ...shared.PackageReference) shared.PackageReferenceScanner {
+	return &sliceScanner{
+		references: references,
+	}
+}
+
+func (s *sliceScanner) Next() (shared.PackageReference, bool, error) {
+	if len(s.references) == 0 {
+		return shared.PackageReference{}, false, nil
+	}
+
+	next := s.references[0]
+	s.references = s.references[1:]
+	return next, true, nil
+}
+
+func (s *sliceScanner) Close() error {
+	return nil
+}
