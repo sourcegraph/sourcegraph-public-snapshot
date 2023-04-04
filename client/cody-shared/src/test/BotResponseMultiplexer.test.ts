@@ -1,6 +1,6 @@
 import assert from 'assert'
 
-import { BotResponseMultiplexer } from '../../chat/BotResponseMultiplexer'
+import { BotResponseMultiplexer } from '../chat/BotResponseMultiplexer'
 
 function promise<T>(): [(value: T) => void, Promise<T>] {
     let resolver
