@@ -141,10 +141,11 @@ export interface ActionContributionClientCommandOpen extends ActionContribution 
      * The arguments for the `open` client command, which can either have one or two elements.
      *
      * - The first array element is always a string with the destination URL,
-     *   which populates the `href` attribute of the link.
-     * - When defined, the second array element is an `(event: Event) => void`
-     *   handler that fires `onSelect`. The handler is responsible for triggering
-     *   `event.preventDefault()`, if necessary.
+     * which populates the `href` attribute of the link.
+     * - When defined, the second array element is an `(event: MouseEvent<HTMLElement> | KeyboardEvent<HTMlElement>) => boolean`
+     * handler that fires `onSelect`. The handler is responsible for handling low-level details like whether
+     * the user is holding down modifier keys, or if `event.preventDefault()` should be triggered. The handler
+     * can return `false` to fallback to the default event handler.
      */
     commandArguments: [TemplateExpression] | [TemplateExpression, TemplateExpression]
 }

@@ -1,3 +1,5 @@
+import { KeyboardEvent, MouseEvent } from 'react'
+
 import { EditorView, Tooltip, TooltipView } from '@codemirror/view'
 import { concat, from, Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -101,9 +103,23 @@ export class CodeIntelTooltip implements Tooltip {
                     commandArguments: definition.url
                         ? [
                               definition.url,
-                              (event: Event) => {
-                                  event.preventDefault()
-                                  definition.asyncHandler()
+                              (event: MouseEvent<HTMLElement> | KeyboardEvent<HTMLElement>): boolean => {
+                                  if (isRegularEvent(event)) {
+                                      // "regular events" are basic clicks with the main button or keyboard
+                                      // events without modifier keys.
+                                      // We treat these the same way as Cmd-Click on the token itself.
+                                      event.preventDefault()
+                                      definition.asyncHandler().then(
+                                          () => {},
+                                          () => {}
+                                      )
+                                      return true
+                                  }
+                                  // Don't override `onSelect` unless it's a regular event with modifier keys
+                                  // or with non-main buttons.
+                                  // We do this to fallback to the browser's default behavior for links, for example to allow
+                                  // the user to open the definition in a new browser tab.
+                                  return false
                               },
                           ]
                         : [() => definition.asyncHandler()],
@@ -161,4 +177,12 @@ export class CodeIntelTooltip implements Tooltip {
             },
         }
     }
+}
+
+// Returns true if this event is "regular", meaning the user is not holding down
+// modifier keys or clicking with a non-main button.
+function isRegularEvent(event: MouseEvent<HTMLElement> | KeyboardEvent<HTMLElement>): boolean {
+    const mouseEvent = event as MouseEvent
+    const isMainButton = mouseEvent?.button === 0 || mouseEvent?.button === undefined
+    return isMainButton && !event.metaKey && !event.shiftKey && !event.ctrlKey
 }

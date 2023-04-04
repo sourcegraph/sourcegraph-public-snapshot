@@ -361,8 +361,9 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
         }
 
         const onSelect = onSelectCallbackForClientCommandOpen(action)
-        if (onSelect) {
-            onSelect(event)
+        if (onSelect?.(event)) {
+            emitDidExecute()
+            return
         }
 
         if (urlForClientCommandOpen(action, this.props.location.hash)) {
@@ -405,7 +406,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
         this.props.disabledWhen
 }
 
-type OnSelectHandler = (event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => void
+type OnSelectHandler = (event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => boolean
 export function onSelectCallbackForClientCommandOpen(
     action: Pick<Evaluated<ActionContribution>, 'command' | 'commandArguments'>
 ): OnSelectHandler | undefined {
