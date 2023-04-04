@@ -19,6 +19,10 @@ variable "image_family" {
     type = string
 }
 
+variable "tagged_release" {
+    type = bool
+}
+
 variable "name" {
     type = string
 }
@@ -48,6 +52,10 @@ variable "aws_regions" {
         condition     = length(var.aws_regions) > 0
         error_message = "Must set at least 1 AWS region."
     }
+}
+
+locals {
+    aws_ami_management_identifier = var.tagged_release ? {} : { Amazon_AMI_Management_Identifier = var.image_family }
 }
 
 source "googlecompute" "gcp" {
@@ -95,14 +103,13 @@ source "amazon-ebs" "aws" {
 
     shutdown_behavior = "terminate"
     ami_regions       = var.aws_regions
-    tags              = {
+    tags              = merge({
         Name                             = var.name
         OS_Version                       = "Ubuntu"
         Release                          = "Latest"
         Base_AMI_Name                    = "{{ .SourceAMIName }}"
         Extra                            = "{{ .SourceAMITags.TagName }}"
-        Amazon_AMI_Management_Identifier = var.image_family
-    }
+    }, local.aws_ami_management_identifier)
 }
 
 build {
