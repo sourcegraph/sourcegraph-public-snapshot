@@ -68,3 +68,8 @@
   targets:
     # opentelemetry collector
     - host.docker.internal:8888
+- labels:
+    job: embeddings
+  targets:
+    # embeddings
+    - 127.0.0.1:6099

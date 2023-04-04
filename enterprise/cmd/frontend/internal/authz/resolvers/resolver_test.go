@@ -2595,3 +2595,78 @@ func mustParseTime(v string) time.Time {
 func intPtr(v int) *int              { return &v }
 func timePtr(v time.Time) *time.Time { return &v }
 func stringPtr(v string) *string     { return &v }
+
+func TestResolver_PermissionsSyncingStats(t *testing.T) {
+	t.Run("authenticated as non-admin", func(t *testing.T) {
+		user := &types.User{ID: 42}
+
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)
+		users.GetByIDFunc.SetDefaultReturn(user, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user.ID})
+		_, err := (&Resolver{db: db}).PermissionsSyncingStats(ctx)
+		if want := auth.ErrMustBeSiteAdmin; err != want {
+			t.Errorf("err: want %q but got %v", want, err)
+		}
+	})
+
+	t.Run("successfully query all permissionsSyncingStats", func(t *testing.T) {
+		user := &types.User{ID: 42, SiteAdmin: true}
+
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)
+		users.GetByIDFunc.SetDefaultReturn(user, nil)
+
+		permissionSyncJobStore := database.NewMockPermissionSyncJobStore()
+		permissionSyncJobStore.CountFunc.SetDefaultReturn(2, nil)
+		permissionSyncJobStore.CountUsersWithFailingSyncJobFunc.SetDefaultReturn(3, nil)
+		permissionSyncJobStore.CountReposWithFailingSyncJobFunc.SetDefaultReturn(4, nil)
+
+		perms := edb.NewStrictMockPermsStore()
+		perms.CountUsersWithNoPermsFunc.SetDefaultReturn(5, nil)
+		perms.CountReposWithNoPermsFunc.SetDefaultReturn(6, nil)
+		perms.CountUsersWithStalePermsFunc.SetDefaultReturn(7, nil)
+		perms.CountReposWithStalePermsFunc.SetDefaultReturn(8, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
+		db.PermsFunc.SetDefaultReturn(perms)
+
+		gqlTests := []*graphqlbackend.Test{{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: `
+				query {
+					permissionsSyncingStats {
+						queueSize
+						usersWithLatestJobFailing
+						reposWithLatestJobFailing
+						usersWithNoPermissions
+						reposWithNoPermissions
+						usersWithStalePermissions
+						reposWithStalePermissions
+					}
+				}
+						`,
+			ExpectedResult: `
+				{
+					"permissionsSyncingStats": {
+						"queueSize": 2,
+						"usersWithLatestJobFailing": 3,
+						"reposWithLatestJobFailing": 4,
+						"usersWithNoPermissions": 5,
+						"reposWithNoPermissions": 6,
+						"usersWithStalePermissions": 7,
+						"reposWithStalePermissions": 8
+					}
+				}
+						`,
+		}}
+
+		graphqlbackend.RunTests(t, gqlTests)
+	})
+}

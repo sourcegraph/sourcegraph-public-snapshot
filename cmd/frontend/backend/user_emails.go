@@ -313,16 +313,16 @@ func (e *userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, id int32, c
 var updateAccountEmailTemplate = txemail.MustValidate(txtypes.Templates{
 	Subject: `Update to your Sourcegraph account ({{.Host}})`,
 	Text: `
-Somebody (likely you) {{.Change}} for the user {{.Username}} on Sourcegraph ({{.Host}}).
+Hi there! Somebody (likely you) {{.Change}} for the user {{.Username}} on Sourcegraph ({{.Host}}).
 
-If this was not you please change your password immediately.
+If this was you, carry on, and thanks for using Sourcegraph! Otherwise, please change your password immediately.
 `,
 	HTML: `
 <p>
-Somebody (likely you) <strong>{{.Change}}</strong> for the user <strong>{{.Username}}</strong> on Sourcegraph ({{.Host}}).
+Hi there! Somebody (likely you) {{.Change}} for the user {{.Username}} on Sourcegraph ({{.Host}}).
 </p>
 
-<p><strong>If this was not you please change your password immediately.</strong></p>
+<p>If this was you, carry on, and thanks for using Sourcegraph! Otherwise, please change your password immediately.</p>
 `,
 })
 

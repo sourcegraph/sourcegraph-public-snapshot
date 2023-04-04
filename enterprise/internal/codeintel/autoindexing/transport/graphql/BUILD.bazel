@@ -16,6 +16,7 @@ go_library(
         "//enterprise/internal/codeintel/autoindexing/internal/inference",
         "//enterprise/internal/codeintel/autoindexing/shared",
         "//enterprise/internal/codeintel/shared/resolvers",
+        "//enterprise/internal/codeintel/shared/resolvers/gitresolvers",
         "//enterprise/internal/codeintel/uploads/shared",
         "//enterprise/internal/codeintel/uploads/transport/graphql",
         "//internal/api",

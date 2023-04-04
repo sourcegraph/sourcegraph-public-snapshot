@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/ranges"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -92,7 +92,7 @@ func (s *store) scanSingleQualifiedMonikerLocationsObject(rows *sql.Rows) (Quali
 		return QualifiedMonikerLocations{}, err
 	}
 
-	ranges, err := types.DecodeRanges(scipPayload)
+	ranges, err := ranges.DecodeRanges(scipPayload)
 	if err != nil {
 		return QualifiedMonikerLocations{}, err
 	}
