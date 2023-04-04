@@ -170,7 +170,7 @@ func TestStatusMessages(t *testing.T) {
 			gitserverFailure: map[string]bool{"foobar": true},
 			res: []StatusMessage{
 				{
-					NoRepositoriesDetected: &NoRepositoriesDetected{
+					SyncError: &SyncError{
 						Message: "1 repository failed last attempt to sync content from code host",
 					},
 				},
@@ -181,7 +181,7 @@ func TestStatusMessages(t *testing.T) {
 			cloneStatus: map[string]types.CloneStatus{},
 			res: []StatusMessage{
 				{
-					SyncError: &SyncError{
+					NoRepositoriesDetected: &NoRepositoriesDetected{
 						Message: "No repositories have been added to Sourcegraph.",
 					},
 				},
