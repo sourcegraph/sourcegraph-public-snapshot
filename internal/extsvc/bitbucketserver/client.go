@@ -474,9 +474,10 @@ type UpdatePullRequestInput struct {
 	PullRequestID string `json:"-"`
 	Version       int    `json:"version"`
 
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	ToRef       Ref    `json:"toRef"`
+	Title       string     `json:"title"`
+	Description string     `json:"description"`
+	ToRef       Ref        `json:"toRef"`
+	Reviewers   []Reviewer `json:"reviewers"`
 }
 
 func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInput) (*PullRequest, error) {
