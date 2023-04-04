@@ -6,7 +6,7 @@
     "sourceRoot": "src",
     "outDir": "out",
     "jsx": "react-jsx",
-    "types": ["./webviews/globals.d.ts", "jest"],
+    "types": ["jest"],
   },
   "include": [
     "src",
