@@ -1,7 +1,7 @@
 :root {
-    --human-bubble-color: --body-bg;
+    --human-bubble-color: var(--input-bg);
     --human-text-color: --dark-text;
-    --bot-bubble-color: linear-gradient(white, white) padding-box,
+    --bot-bubble-color: linear-gradient(var(--input-bg), var(--input-bg)) padding-box,
               linear-gradient(130deg, #00CBEC, #A112FF) border-box;
     --bot-text-color: --dark-text
 }
