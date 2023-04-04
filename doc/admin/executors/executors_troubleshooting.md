@@ -103,7 +103,7 @@ Verify that the registry is mounted under the expected path in the file system b
 ls /mnt/registry
    
 # If jobs have been processed, the following path should exist
-ls /mnt/registry/docker/registry/v2/repositories/sourcegraph
+ls /mnt/registry/docker/registry/v2/repositories/<public repository name>
 ```
 
 ## Connecting to cloud provider executor instances
