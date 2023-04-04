@@ -84,6 +84,7 @@ ts_project(
         "sign-in.test.ts",
     ],
     tsconfig = ":tsconfig",
+    usePresetEnv = False,
     deps = [
         ":integration",
         "//:node_modules/@types/lodash",
