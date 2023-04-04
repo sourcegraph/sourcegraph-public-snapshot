@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React, { useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -87,49 +87,25 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         'sourcegraph-operator-site-admin-hide-maintenance'
     )
 
-    const adminSideBarGroups = React.useMemo(
+    const adminSideBarGroups = useMemo(
         () =>
-            props.sideBarGroups.reduce((groups, group) => {
-                // DO NOT RETURN early in this function when reducing
-                // curr is used to modify the current group in place, use cases:
-                // - override the group with another one
-                // - modify the items in the group
-                // - assign null to curr to skip adding the group
-                let curr = group
-
-                // we default to hide o11y items if we are still trying to load external accounts
-                // as long as the 'sourcegraph-operator-site-admin-hide-maintenance' is enabled
-                // this is okay since such flag is only enabled on Cloud
-                // for customer admin, those items are always invisble
-                // for sourcegraph operator, they may notice some flickering during loading
-                // this is okay as long as we do not impact customer admin experience
-                if (isSourcegraphOperatorSiteAdminHideMaintenance) {
-                    if (isExternalAccountsLoading) {
-                        if (curr.header?.label === maintenanceGroupHeaderLabel) {
-                            curr = {
-                                ...curr,
-                                items: curr.items.filter(
-                                    item => !sourcegraphOperatorSiteAdminMaintenanceBlockItems.has(item.label)
-                                ),
-                            }
-                        }
-                    } else if (!externalAccounts.some(account => account.serviceType === 'sourcegraph-operator')) {
-                            if (curr.header?.label === maintenanceGroupHeaderLabel) {
-                                curr = {
-                                    ...curr,
-                                    items: curr.items.filter(
-                                        item => !sourcegraphOperatorSiteAdminMaintenanceBlockItems.has(item.label)
-                                    ),
-                                }
-                            }
-                        }
+            props.sideBarGroups.map(group => {
+                if (
+                    !isSourcegraphOperatorSiteAdminHideMaintenance ||
+                    group.header?.label !== maintenanceGroupHeaderLabel ||
+                    (!isExternalAccountsLoading &&
+                        externalAccounts.some(account => account.serviceType === 'sourcegraph-operator'))
+                ) {
+                    return group
                 }
 
-                if (curr === null) {
-                    return groups
+                return {
+                    ...group,
+                    items: group.items.filter(
+                        item => !sourcegraphOperatorSiteAdminMaintenanceBlockItems.has(item.label)
+                    ),
                 }
-                return [...groups, curr]
-            }, [] as SiteAdminSideBarGroup[]),
+            }),
         [
             props.sideBarGroups,
             isSourcegraphOperatorSiteAdminHideMaintenance,
