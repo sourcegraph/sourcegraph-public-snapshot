@@ -128,7 +128,7 @@ var flattenMatches = func(ms []shared.VulnerabilityMatch) []shared.Vulnerability
 }
 
 func (s *store) GetVulnerabilityMatchesSummaryCount(ctx context.Context) (counts shared.GetVulnerabilityMatchesSummaryCounts, err error) {
-	ctx, _, endObservation := s.operations.getVulnerabilityMatchesSummaryCounts.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.getVulnerabilityMatchesSummaryCount.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	row := s.db.QueryRow(ctx, sqlf.Sprintf(getVulnerabilityMatchesSummaryCounts))
