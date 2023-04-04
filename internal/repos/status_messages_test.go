@@ -160,6 +160,18 @@ func TestStatusMessages(t *testing.T) {
 			},
 		},
 		{
+			name:       "site-admin: no repos detected",
+			repos:      []*types.Repo{},
+			sourcerErr: nil,
+			res: []StatusMessage{
+				{
+					NoRepositoriesDetected: &NoRepositoriesDetected{
+						Message: "No repositories have been added to Sourcegraph.",
+					},
+				},
+			},
+		},
+		{
 			name:  "site-admin: one repo failed to sync",
 			repos: []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
 			cloneStatus: map[string]types.CloneStatus{
@@ -170,19 +182,8 @@ func TestStatusMessages(t *testing.T) {
 			gitserverFailure: map[string]bool{"foobar": true},
 			res: []StatusMessage{
 				{
-					NoRepositoriesDetected: &NoRepositoriesDetected{
-						Message: "1 repository failed last attempt to sync content from code host",
-					},
-				},
-			},
-		},
-		{
-			name:        "site-admin: no repos detected",
-			cloneStatus: map[string]types.CloneStatus{},
-			res: []StatusMessage{
-				{
 					SyncError: &SyncError{
-						Message: "No repositories have been added to Sourcegraph.",
+						Message: "1 repository failed last attempt to sync content from code host",
 					},
 				},
 			},
