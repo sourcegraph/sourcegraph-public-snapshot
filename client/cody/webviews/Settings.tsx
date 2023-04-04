@@ -1,8 +1,8 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
-import './Settings.css'
+import { View } from './NavBar'
 
-import { View } from './utils/types'
+import './Settings.css'
 
 interface SettingsProps {
     onLogout: () => void

@@ -31,6 +31,8 @@ ts_config(
         "//client/build-config:tsconfig",
         "//client/client-api:tsconfig",
         "//client/codeintellify:tsconfig",
+        "//client/cody-shared:tsconfig",
+        "//client/cody-ui:tsconfig",
         "//client/common:tsconfig",
         "//client/extension-api-types:tsconfig",
         "//client/http-client:tsconfig",
@@ -1243,6 +1245,7 @@ ts_project(
         "src/repo/repoContainerRoutes.tsx",
         "src/repo/repoHeaderActionButtons.tsx",
         "src/repo/repoRevisionContainerRoutes.tsx",
+        "src/repo/repoRevisionSidebar/cody/RepoRevisionSidebarCody.tsx",
         "src/repo/settings/RepoSettingsArea.tsx",
         "src/repo/settings/RepoSettingsIndexPage.tsx",
         "src/repo/settings/RepoSettingsMirrorPage.tsx",
@@ -1592,6 +1595,8 @@ ts_project(
         ":node_modules/@sourcegraph/branded",
         ":node_modules/@sourcegraph/client-api",  #keep
         ":node_modules/@sourcegraph/codeintellify",
+        ":node_modules/@sourcegraph/cody-shared",
+        ":node_modules/@sourcegraph/cody-ui",
         ":node_modules/@sourcegraph/common",
         ":node_modules/@sourcegraph/extension-api-types",  #keep
         ":node_modules/@sourcegraph/http-client",
@@ -1816,6 +1821,7 @@ ts_project(
         "src/user/index.test.ts",
         "src/user/settings/profile/UserSettingsProfilePage.test.tsx",
         "src/user/settings/research/ProductResearch.test.tsx",
+        "src/util/checkRequestAccessAllowed.test.ts",
         "src/util/codeStatsUtils.test.ts",
         "src/util/getReactElements.test.tsx",
         "src/util/prettyBytesBigint.test.ts",

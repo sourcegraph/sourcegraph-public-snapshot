@@ -98,7 +98,7 @@ func (r *PersonResolver) User(ctx context.Context) (*UserResolver, error) {
 	if user == nil || err != nil {
 		return nil, err
 	}
-	return NewUserResolver(r.db, user), nil
+	return NewUserResolver(ctx, r.db, user), nil
 }
 
 func (r *PersonResolver) OwnerField() string {

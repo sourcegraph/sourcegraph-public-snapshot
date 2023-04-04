@@ -9,10 +9,11 @@ package graphql
 import (
 	"context"
 	"sync"
+	"time"
 
 	codenav "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
-	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
-	types "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	shared1 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
+	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 )
 
 // MockAutoIndexingService is a mock implementation of the
@@ -209,42 +210,42 @@ type MockCodeNavService struct {
 func NewMockCodeNavService() *MockCodeNavService {
 	return &MockCodeNavService{
 		GetClosestDumpsForBlobFunc: &CodeNavServiceGetClosestDumpsForBlobFunc{
-			defaultHook: func(context.Context, int, string, string, bool, string) (r0 []types.Dump, r1 error) {
+			defaultHook: func(context.Context, int, string, string, bool, string) (r0 []shared.Dump, r1 error) {
 				return
 			},
 		},
 		GetDefinitionsFunc: &CodeNavServiceGetDefinitionsFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (r0 []types.UploadLocation, r1 error) {
+			defaultHook: func(context.Context, codenav.RequestArgs, codenav.RequestState) (r0 []shared1.UploadLocation, r1 error) {
 				return
 			},
 		},
 		GetDiagnosticsFunc: &CodeNavServiceGetDiagnosticsFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (r0 []shared.DiagnosticAtUpload, r1 int, r2 error) {
+			defaultHook: func(context.Context, codenav.RequestArgs, codenav.RequestState) (r0 []codenav.DiagnosticAtUpload, r1 int, r2 error) {
 				return
 			},
 		},
 		GetHoverFunc: &CodeNavServiceGetHoverFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (r0 string, r1 types.Range, r2 bool, r3 error) {
+			defaultHook: func(context.Context, codenav.RequestArgs, codenav.RequestState) (r0 string, r1 shared1.Range, r2 bool, r3 error) {
 				return
 			},
 		},
 		GetImplementationsFunc: &CodeNavServiceGetImplementationsFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState, shared.ImplementationsCursor) (r0 []types.UploadLocation, r1 shared.ImplementationsCursor, r2 error) {
+			defaultHook: func(context.Context, codenav.RequestArgs, codenav.RequestState, codenav.ImplementationsCursor) (r0 []shared1.UploadLocation, r1 codenav.ImplementationsCursor, r2 error) {
 				return
 			},
 		},
 		GetRangesFunc: &CodeNavServiceGetRangesFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) (r0 []shared.AdjustedCodeIntelligenceRange, r1 error) {
+			defaultHook: func(context.Context, codenav.RequestArgs, codenav.RequestState, int, int) (r0 []codenav.AdjustedCodeIntelligenceRange, r1 error) {
 				return
 			},
 		},
 		GetReferencesFunc: &CodeNavServiceGetReferencesFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState, shared.ReferencesCursor) (r0 []types.UploadLocation, r1 shared.ReferencesCursor, r2 error) {
+			defaultHook: func(context.Context, codenav.RequestArgs, codenav.RequestState, codenav.ReferencesCursor) (r0 []shared1.UploadLocation, r1 codenav.ReferencesCursor, r2 error) {
 				return
 			},
 		},
 		GetStencilFunc: &CodeNavServiceGetStencilFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (r0 []types.Range, r1 error) {
+			defaultHook: func(context.Context, codenav.RequestArgs, codenav.RequestState) (r0 []shared1.Range, r1 error) {
 				return
 			},
 		},
@@ -256,42 +257,42 @@ func NewMockCodeNavService() *MockCodeNavService {
 func NewStrictMockCodeNavService() *MockCodeNavService {
 	return &MockCodeNavService{
 		GetClosestDumpsForBlobFunc: &CodeNavServiceGetClosestDumpsForBlobFunc{
-			defaultHook: func(context.Context, int, string, string, bool, string) ([]types.Dump, error) {
+			defaultHook: func(context.Context, int, string, string, bool, string) ([]shared.Dump, error) {
 				panic("unexpected invocation of MockCodeNavService.GetClosestDumpsForBlob")
 			},
 		},
 		GetDefinitionsFunc: &CodeNavServiceGetDefinitionsFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) ([]types.UploadLocation, error) {
+			defaultHook: func(context.Context, codenav.RequestArgs, codenav.RequestState) ([]shared1.UploadLocation, error) {
 				panic("unexpected invocation of MockCodeNavService.GetDefinitions")
 			},
 		},
 		GetDiagnosticsFunc: &CodeNavServiceGetDiagnosticsFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error) {
+			defaultHook: func(context.Context, codenav.RequestArgs, codenav.RequestState) ([]codenav.DiagnosticAtUpload, int, error) {
 				panic("unexpected invocation of MockCodeNavService.GetDiagnostics")
 			},
 		},
 		GetHoverFunc: &CodeNavServiceGetHoverFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) (string, types.Range, bool, error) {
+			defaultHook: func(context.Context, codenav.RequestArgs, codenav.RequestState) (string, shared1.Range, bool, error) {
 				panic("unexpected invocation of MockCodeNavService.GetHover")
 			},
 		},
 		GetImplementationsFunc: &CodeNavServiceGetImplementationsFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState, shared.ImplementationsCursor) ([]types.UploadLocation, shared.ImplementationsCursor, error) {
+			defaultHook: func(context.Context, codenav.RequestArgs, codenav.RequestState, codenav.ImplementationsCursor) ([]shared1.UploadLocation, codenav.ImplementationsCursor, error) {
 				panic("unexpected invocation of MockCodeNavService.GetImplementations")
 			},
 		},
 		GetRangesFunc: &CodeNavServiceGetRangesFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
+			defaultHook: func(context.Context, codenav.RequestArgs, codenav.RequestState, int, int) ([]codenav.AdjustedCodeIntelligenceRange, error) {
 				panic("unexpected invocation of MockCodeNavService.GetRanges")
 			},
 		},
 		GetReferencesFunc: &CodeNavServiceGetReferencesFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState, shared.ReferencesCursor) ([]types.UploadLocation, shared.ReferencesCursor, error) {
+			defaultHook: func(context.Context, codenav.RequestArgs, codenav.RequestState, codenav.ReferencesCursor) ([]shared1.UploadLocation, codenav.ReferencesCursor, error) {
 				panic("unexpected invocation of MockCodeNavService.GetReferences")
 			},
 		},
 		GetStencilFunc: &CodeNavServiceGetStencilFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, codenav.RequestState) ([]types.Range, error) {
+			defaultHook: func(context.Context, codenav.RequestArgs, codenav.RequestState) ([]shared1.Range, error) {
 				panic("unexpected invocation of MockCodeNavService.GetStencil")
 			},
 		},
@@ -334,15 +335,15 @@ func NewMockCodeNavServiceFrom(i CodeNavService) *MockCodeNavService {
 // GetClosestDumpsForBlob method of the parent MockCodeNavService instance
 // is invoked.
 type CodeNavServiceGetClosestDumpsForBlobFunc struct {
-	defaultHook func(context.Context, int, string, string, bool, string) ([]types.Dump, error)
-	hooks       []func(context.Context, int, string, string, bool, string) ([]types.Dump, error)
+	defaultHook func(context.Context, int, string, string, bool, string) ([]shared.Dump, error)
+	hooks       []func(context.Context, int, string, string, bool, string) ([]shared.Dump, error)
 	history     []CodeNavServiceGetClosestDumpsForBlobFuncCall
 	mutex       sync.Mutex
 }
 
 // GetClosestDumpsForBlob delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockCodeNavService) GetClosestDumpsForBlob(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 string) ([]types.Dump, error) {
+func (m *MockCodeNavService) GetClosestDumpsForBlob(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 string) ([]shared.Dump, error) {
 	r0, r1 := m.GetClosestDumpsForBlobFunc.nextHook()(v0, v1, v2, v3, v4, v5)
 	m.GetClosestDumpsForBlobFunc.appendCall(CodeNavServiceGetClosestDumpsForBlobFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
 	return r0, r1
@@ -351,7 +352,7 @@ func (m *MockCodeNavService) GetClosestDumpsForBlob(v0 context.Context, v1 int, 
 // SetDefaultHook sets function that is called when the
 // GetClosestDumpsForBlob method of the parent MockCodeNavService instance
 // is invoked and the hook queue is empty.
-func (f *CodeNavServiceGetClosestDumpsForBlobFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, string) ([]types.Dump, error)) {
+func (f *CodeNavServiceGetClosestDumpsForBlobFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, string) ([]shared.Dump, error)) {
 	f.defaultHook = hook
 }
 
@@ -360,7 +361,7 @@ func (f *CodeNavServiceGetClosestDumpsForBlobFunc) SetDefaultHook(hook func(cont
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *CodeNavServiceGetClosestDumpsForBlobFunc) PushHook(hook func(context.Context, int, string, string, bool, string) ([]types.Dump, error)) {
+func (f *CodeNavServiceGetClosestDumpsForBlobFunc) PushHook(hook func(context.Context, int, string, string, bool, string) ([]shared.Dump, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -368,20 +369,20 @@ func (f *CodeNavServiceGetClosestDumpsForBlobFunc) PushHook(hook func(context.Co
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *CodeNavServiceGetClosestDumpsForBlobFunc) SetDefaultReturn(r0 []types.Dump, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string, string, bool, string) ([]types.Dump, error) {
+func (f *CodeNavServiceGetClosestDumpsForBlobFunc) SetDefaultReturn(r0 []shared.Dump, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, string, bool, string) ([]shared.Dump, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *CodeNavServiceGetClosestDumpsForBlobFunc) PushReturn(r0 []types.Dump, r1 error) {
-	f.PushHook(func(context.Context, int, string, string, bool, string) ([]types.Dump, error) {
+func (f *CodeNavServiceGetClosestDumpsForBlobFunc) PushReturn(r0 []shared.Dump, r1 error) {
+	f.PushHook(func(context.Context, int, string, string, bool, string) ([]shared.Dump, error) {
 		return r0, r1
 	})
 }
 
-func (f *CodeNavServiceGetClosestDumpsForBlobFunc) nextHook() func(context.Context, int, string, string, bool, string) ([]types.Dump, error) {
+func (f *CodeNavServiceGetClosestDumpsForBlobFunc) nextHook() func(context.Context, int, string, string, bool, string) ([]shared.Dump, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -436,7 +437,7 @@ type CodeNavServiceGetClosestDumpsForBlobFuncCall struct {
 	Arg5 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.Dump
+	Result0 []shared.Dump
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -458,15 +459,15 @@ func (c CodeNavServiceGetClosestDumpsForBlobFuncCall) Results() []interface{} {
 // GetDefinitions method of the parent MockCodeNavService instance is
 // invoked.
 type CodeNavServiceGetDefinitionsFunc struct {
-	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]types.UploadLocation, error)
-	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState) ([]types.UploadLocation, error)
+	defaultHook func(context.Context, codenav.RequestArgs, codenav.RequestState) ([]shared1.UploadLocation, error)
+	hooks       []func(context.Context, codenav.RequestArgs, codenav.RequestState) ([]shared1.UploadLocation, error)
 	history     []CodeNavServiceGetDefinitionsFuncCall
 	mutex       sync.Mutex
 }
 
 // GetDefinitions delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockCodeNavService) GetDefinitions(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState) ([]types.UploadLocation, error) {
+func (m *MockCodeNavService) GetDefinitions(v0 context.Context, v1 codenav.RequestArgs, v2 codenav.RequestState) ([]shared1.UploadLocation, error) {
 	r0, r1 := m.GetDefinitionsFunc.nextHook()(v0, v1, v2)
 	m.GetDefinitionsFunc.appendCall(CodeNavServiceGetDefinitionsFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -475,7 +476,7 @@ func (m *MockCodeNavService) GetDefinitions(v0 context.Context, v1 shared.Reques
 // SetDefaultHook sets function that is called when the GetDefinitions
 // method of the parent MockCodeNavService instance is invoked and the hook
 // queue is empty.
-func (f *CodeNavServiceGetDefinitionsFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]types.UploadLocation, error)) {
+func (f *CodeNavServiceGetDefinitionsFunc) SetDefaultHook(hook func(context.Context, codenav.RequestArgs, codenav.RequestState) ([]shared1.UploadLocation, error)) {
 	f.defaultHook = hook
 }
 
@@ -483,7 +484,7 @@ func (f *CodeNavServiceGetDefinitionsFunc) SetDefaultHook(hook func(context.Cont
 // GetDefinitions method of the parent MockCodeNavService instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *CodeNavServiceGetDefinitionsFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]types.UploadLocation, error)) {
+func (f *CodeNavServiceGetDefinitionsFunc) PushHook(hook func(context.Context, codenav.RequestArgs, codenav.RequestState) ([]shared1.UploadLocation, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -491,20 +492,20 @@ func (f *CodeNavServiceGetDefinitionsFunc) PushHook(hook func(context.Context, s
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *CodeNavServiceGetDefinitionsFunc) SetDefaultReturn(r0 []types.UploadLocation, r1 error) {
-	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]types.UploadLocation, error) {
+func (f *CodeNavServiceGetDefinitionsFunc) SetDefaultReturn(r0 []shared1.UploadLocation, r1 error) {
+	f.SetDefaultHook(func(context.Context, codenav.RequestArgs, codenav.RequestState) ([]shared1.UploadLocation, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *CodeNavServiceGetDefinitionsFunc) PushReturn(r0 []types.UploadLocation, r1 error) {
-	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]types.UploadLocation, error) {
+func (f *CodeNavServiceGetDefinitionsFunc) PushReturn(r0 []shared1.UploadLocation, r1 error) {
+	f.PushHook(func(context.Context, codenav.RequestArgs, codenav.RequestState) ([]shared1.UploadLocation, error) {
 		return r0, r1
 	})
 }
 
-func (f *CodeNavServiceGetDefinitionsFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState) ([]types.UploadLocation, error) {
+func (f *CodeNavServiceGetDefinitionsFunc) nextHook() func(context.Context, codenav.RequestArgs, codenav.RequestState) ([]shared1.UploadLocation, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -542,13 +543,13 @@ type CodeNavServiceGetDefinitionsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 shared.RequestArgs
+	Arg1 codenav.RequestArgs
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 codenav.RequestState
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.UploadLocation
+	Result0 []shared1.UploadLocation
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -570,15 +571,15 @@ func (c CodeNavServiceGetDefinitionsFuncCall) Results() []interface{} {
 // GetDiagnostics method of the parent MockCodeNavService instance is
 // invoked.
 type CodeNavServiceGetDiagnosticsFunc struct {
-	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error)
-	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error)
+	defaultHook func(context.Context, codenav.RequestArgs, codenav.RequestState) ([]codenav.DiagnosticAtUpload, int, error)
+	hooks       []func(context.Context, codenav.RequestArgs, codenav.RequestState) ([]codenav.DiagnosticAtUpload, int, error)
 	history     []CodeNavServiceGetDiagnosticsFuncCall
 	mutex       sync.Mutex
 }
 
 // GetDiagnostics delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockCodeNavService) GetDiagnostics(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error) {
+func (m *MockCodeNavService) GetDiagnostics(v0 context.Context, v1 codenav.RequestArgs, v2 codenav.RequestState) ([]codenav.DiagnosticAtUpload, int, error) {
 	r0, r1, r2 := m.GetDiagnosticsFunc.nextHook()(v0, v1, v2)
 	m.GetDiagnosticsFunc.appendCall(CodeNavServiceGetDiagnosticsFuncCall{v0, v1, v2, r0, r1, r2})
 	return r0, r1, r2
@@ -587,7 +588,7 @@ func (m *MockCodeNavService) GetDiagnostics(v0 context.Context, v1 shared.Reques
 // SetDefaultHook sets function that is called when the GetDiagnostics
 // method of the parent MockCodeNavService instance is invoked and the hook
 // queue is empty.
-func (f *CodeNavServiceGetDiagnosticsFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error)) {
+func (f *CodeNavServiceGetDiagnosticsFunc) SetDefaultHook(hook func(context.Context, codenav.RequestArgs, codenav.RequestState) ([]codenav.DiagnosticAtUpload, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -595,7 +596,7 @@ func (f *CodeNavServiceGetDiagnosticsFunc) SetDefaultHook(hook func(context.Cont
 // GetDiagnostics method of the parent MockCodeNavService instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *CodeNavServiceGetDiagnosticsFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error)) {
+func (f *CodeNavServiceGetDiagnosticsFunc) PushHook(hook func(context.Context, codenav.RequestArgs, codenav.RequestState) ([]codenav.DiagnosticAtUpload, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -603,20 +604,20 @@ func (f *CodeNavServiceGetDiagnosticsFunc) PushHook(hook func(context.Context, s
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *CodeNavServiceGetDiagnosticsFunc) SetDefaultReturn(r0 []shared.DiagnosticAtUpload, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error) {
+func (f *CodeNavServiceGetDiagnosticsFunc) SetDefaultReturn(r0 []codenav.DiagnosticAtUpload, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, codenav.RequestArgs, codenav.RequestState) ([]codenav.DiagnosticAtUpload, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *CodeNavServiceGetDiagnosticsFunc) PushReturn(r0 []shared.DiagnosticAtUpload, r1 int, r2 error) {
-	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error) {
+func (f *CodeNavServiceGetDiagnosticsFunc) PushReturn(r0 []codenav.DiagnosticAtUpload, r1 int, r2 error) {
+	f.PushHook(func(context.Context, codenav.RequestArgs, codenav.RequestState) ([]codenav.DiagnosticAtUpload, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *CodeNavServiceGetDiagnosticsFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState) ([]shared.DiagnosticAtUpload, int, error) {
+func (f *CodeNavServiceGetDiagnosticsFunc) nextHook() func(context.Context, codenav.RequestArgs, codenav.RequestState) ([]codenav.DiagnosticAtUpload, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -654,13 +655,13 @@ type CodeNavServiceGetDiagnosticsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 shared.RequestArgs
+	Arg1 codenav.RequestArgs
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 codenav.RequestState
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared.DiagnosticAtUpload
+	Result0 []codenav.DiagnosticAtUpload
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 int
@@ -684,15 +685,15 @@ func (c CodeNavServiceGetDiagnosticsFuncCall) Results() []interface{} {
 // CodeNavServiceGetHoverFunc describes the behavior when the GetHover
 // method of the parent MockCodeNavService instance is invoked.
 type CodeNavServiceGetHoverFunc struct {
-	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState) (string, types.Range, bool, error)
-	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState) (string, types.Range, bool, error)
+	defaultHook func(context.Context, codenav.RequestArgs, codenav.RequestState) (string, shared1.Range, bool, error)
+	hooks       []func(context.Context, codenav.RequestArgs, codenav.RequestState) (string, shared1.Range, bool, error)
 	history     []CodeNavServiceGetHoverFuncCall
 	mutex       sync.Mutex
 }
 
 // GetHover delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockCodeNavService) GetHover(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState) (string, types.Range, bool, error) {
+func (m *MockCodeNavService) GetHover(v0 context.Context, v1 codenav.RequestArgs, v2 codenav.RequestState) (string, shared1.Range, bool, error) {
 	r0, r1, r2, r3 := m.GetHoverFunc.nextHook()(v0, v1, v2)
 	m.GetHoverFunc.appendCall(CodeNavServiceGetHoverFuncCall{v0, v1, v2, r0, r1, r2, r3})
 	return r0, r1, r2, r3
@@ -701,7 +702,7 @@ func (m *MockCodeNavService) GetHover(v0 context.Context, v1 shared.RequestArgs,
 // SetDefaultHook sets function that is called when the GetHover method of
 // the parent MockCodeNavService instance is invoked and the hook queue is
 // empty.
-func (f *CodeNavServiceGetHoverFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) (string, types.Range, bool, error)) {
+func (f *CodeNavServiceGetHoverFunc) SetDefaultHook(hook func(context.Context, codenav.RequestArgs, codenav.RequestState) (string, shared1.Range, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -709,7 +710,7 @@ func (f *CodeNavServiceGetHoverFunc) SetDefaultHook(hook func(context.Context, s
 // GetHover method of the parent MockCodeNavService instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *CodeNavServiceGetHoverFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) (string, types.Range, bool, error)) {
+func (f *CodeNavServiceGetHoverFunc) PushHook(hook func(context.Context, codenav.RequestArgs, codenav.RequestState) (string, shared1.Range, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -717,20 +718,20 @@ func (f *CodeNavServiceGetHoverFunc) PushHook(hook func(context.Context, shared.
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *CodeNavServiceGetHoverFunc) SetDefaultReturn(r0 string, r1 types.Range, r2 bool, r3 error) {
-	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState) (string, types.Range, bool, error) {
+func (f *CodeNavServiceGetHoverFunc) SetDefaultReturn(r0 string, r1 shared1.Range, r2 bool, r3 error) {
+	f.SetDefaultHook(func(context.Context, codenav.RequestArgs, codenav.RequestState) (string, shared1.Range, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *CodeNavServiceGetHoverFunc) PushReturn(r0 string, r1 types.Range, r2 bool, r3 error) {
-	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState) (string, types.Range, bool, error) {
+func (f *CodeNavServiceGetHoverFunc) PushReturn(r0 string, r1 shared1.Range, r2 bool, r3 error) {
+	f.PushHook(func(context.Context, codenav.RequestArgs, codenav.RequestState) (string, shared1.Range, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
 
-func (f *CodeNavServiceGetHoverFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState) (string, types.Range, bool, error) {
+func (f *CodeNavServiceGetHoverFunc) nextHook() func(context.Context, codenav.RequestArgs, codenav.RequestState) (string, shared1.Range, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -768,7 +769,7 @@ type CodeNavServiceGetHoverFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 shared.RequestArgs
+	Arg1 codenav.RequestArgs
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 codenav.RequestState
@@ -777,7 +778,7 @@ type CodeNavServiceGetHoverFuncCall struct {
 	Result0 string
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 types.Range
+	Result1 shared1.Range
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
 	Result2 bool
@@ -802,15 +803,15 @@ func (c CodeNavServiceGetHoverFuncCall) Results() []interface{} {
 // GetImplementations method of the parent MockCodeNavService instance is
 // invoked.
 type CodeNavServiceGetImplementationsFunc struct {
-	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState, shared.ImplementationsCursor) ([]types.UploadLocation, shared.ImplementationsCursor, error)
-	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState, shared.ImplementationsCursor) ([]types.UploadLocation, shared.ImplementationsCursor, error)
+	defaultHook func(context.Context, codenav.RequestArgs, codenav.RequestState, codenav.ImplementationsCursor) ([]shared1.UploadLocation, codenav.ImplementationsCursor, error)
+	hooks       []func(context.Context, codenav.RequestArgs, codenav.RequestState, codenav.ImplementationsCursor) ([]shared1.UploadLocation, codenav.ImplementationsCursor, error)
 	history     []CodeNavServiceGetImplementationsFuncCall
 	mutex       sync.Mutex
 }
 
 // GetImplementations delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockCodeNavService) GetImplementations(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState, v3 shared.ImplementationsCursor) ([]types.UploadLocation, shared.ImplementationsCursor, error) {
+func (m *MockCodeNavService) GetImplementations(v0 context.Context, v1 codenav.RequestArgs, v2 codenav.RequestState, v3 codenav.ImplementationsCursor) ([]shared1.UploadLocation, codenav.ImplementationsCursor, error) {
 	r0, r1, r2 := m.GetImplementationsFunc.nextHook()(v0, v1, v2, v3)
 	m.GetImplementationsFunc.appendCall(CodeNavServiceGetImplementationsFuncCall{v0, v1, v2, v3, r0, r1, r2})
 	return r0, r1, r2
@@ -819,7 +820,7 @@ func (m *MockCodeNavService) GetImplementations(v0 context.Context, v1 shared.Re
 // SetDefaultHook sets function that is called when the GetImplementations
 // method of the parent MockCodeNavService instance is invoked and the hook
 // queue is empty.
-func (f *CodeNavServiceGetImplementationsFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState, shared.ImplementationsCursor) ([]types.UploadLocation, shared.ImplementationsCursor, error)) {
+func (f *CodeNavServiceGetImplementationsFunc) SetDefaultHook(hook func(context.Context, codenav.RequestArgs, codenav.RequestState, codenav.ImplementationsCursor) ([]shared1.UploadLocation, codenav.ImplementationsCursor, error)) {
 	f.defaultHook = hook
 }
 
@@ -828,7 +829,7 @@ func (f *CodeNavServiceGetImplementationsFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *CodeNavServiceGetImplementationsFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState, shared.ImplementationsCursor) ([]types.UploadLocation, shared.ImplementationsCursor, error)) {
+func (f *CodeNavServiceGetImplementationsFunc) PushHook(hook func(context.Context, codenav.RequestArgs, codenav.RequestState, codenav.ImplementationsCursor) ([]shared1.UploadLocation, codenav.ImplementationsCursor, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -836,20 +837,20 @@ func (f *CodeNavServiceGetImplementationsFunc) PushHook(hook func(context.Contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *CodeNavServiceGetImplementationsFunc) SetDefaultReturn(r0 []types.UploadLocation, r1 shared.ImplementationsCursor, r2 error) {
-	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState, shared.ImplementationsCursor) ([]types.UploadLocation, shared.ImplementationsCursor, error) {
+func (f *CodeNavServiceGetImplementationsFunc) SetDefaultReturn(r0 []shared1.UploadLocation, r1 codenav.ImplementationsCursor, r2 error) {
+	f.SetDefaultHook(func(context.Context, codenav.RequestArgs, codenav.RequestState, codenav.ImplementationsCursor) ([]shared1.UploadLocation, codenav.ImplementationsCursor, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *CodeNavServiceGetImplementationsFunc) PushReturn(r0 []types.UploadLocation, r1 shared.ImplementationsCursor, r2 error) {
-	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState, shared.ImplementationsCursor) ([]types.UploadLocation, shared.ImplementationsCursor, error) {
+func (f *CodeNavServiceGetImplementationsFunc) PushReturn(r0 []shared1.UploadLocation, r1 codenav.ImplementationsCursor, r2 error) {
+	f.PushHook(func(context.Context, codenav.RequestArgs, codenav.RequestState, codenav.ImplementationsCursor) ([]shared1.UploadLocation, codenav.ImplementationsCursor, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *CodeNavServiceGetImplementationsFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState, shared.ImplementationsCursor) ([]types.UploadLocation, shared.ImplementationsCursor, error) {
+func (f *CodeNavServiceGetImplementationsFunc) nextHook() func(context.Context, codenav.RequestArgs, codenav.RequestState, codenav.ImplementationsCursor) ([]shared1.UploadLocation, codenav.ImplementationsCursor, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -888,19 +889,19 @@ type CodeNavServiceGetImplementationsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 shared.RequestArgs
+	Arg1 codenav.RequestArgs
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 codenav.RequestState
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 shared.ImplementationsCursor
+	Arg3 codenav.ImplementationsCursor
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.UploadLocation
+	Result0 []shared1.UploadLocation
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 shared.ImplementationsCursor
+	Result1 codenav.ImplementationsCursor
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
 	Result2 error
@@ -921,15 +922,15 @@ func (c CodeNavServiceGetImplementationsFuncCall) Results() []interface{} {
 // CodeNavServiceGetRangesFunc describes the behavior when the GetRanges
 // method of the parent MockCodeNavService instance is invoked.
 type CodeNavServiceGetRangesFunc struct {
-	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)
-	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)
+	defaultHook func(context.Context, codenav.RequestArgs, codenav.RequestState, int, int) ([]codenav.AdjustedCodeIntelligenceRange, error)
+	hooks       []func(context.Context, codenav.RequestArgs, codenav.RequestState, int, int) ([]codenav.AdjustedCodeIntelligenceRange, error)
 	history     []CodeNavServiceGetRangesFuncCall
 	mutex       sync.Mutex
 }
 
 // GetRanges delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockCodeNavService) GetRanges(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState, v3 int, v4 int) ([]shared.AdjustedCodeIntelligenceRange, error) {
+func (m *MockCodeNavService) GetRanges(v0 context.Context, v1 codenav.RequestArgs, v2 codenav.RequestState, v3 int, v4 int) ([]codenav.AdjustedCodeIntelligenceRange, error) {
 	r0, r1 := m.GetRangesFunc.nextHook()(v0, v1, v2, v3, v4)
 	m.GetRangesFunc.appendCall(CodeNavServiceGetRangesFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
@@ -938,7 +939,7 @@ func (m *MockCodeNavService) GetRanges(v0 context.Context, v1 shared.RequestArgs
 // SetDefaultHook sets function that is called when the GetRanges method of
 // the parent MockCodeNavService instance is invoked and the hook queue is
 // empty.
-func (f *CodeNavServiceGetRangesFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)) {
+func (f *CodeNavServiceGetRangesFunc) SetDefaultHook(hook func(context.Context, codenav.RequestArgs, codenav.RequestState, int, int) ([]codenav.AdjustedCodeIntelligenceRange, error)) {
 	f.defaultHook = hook
 }
 
@@ -946,7 +947,7 @@ func (f *CodeNavServiceGetRangesFunc) SetDefaultHook(hook func(context.Context, 
 // GetRanges method of the parent MockCodeNavService instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *CodeNavServiceGetRangesFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)) {
+func (f *CodeNavServiceGetRangesFunc) PushHook(hook func(context.Context, codenav.RequestArgs, codenav.RequestState, int, int) ([]codenav.AdjustedCodeIntelligenceRange, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -954,20 +955,20 @@ func (f *CodeNavServiceGetRangesFunc) PushHook(hook func(context.Context, shared
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *CodeNavServiceGetRangesFunc) SetDefaultReturn(r0 []shared.AdjustedCodeIntelligenceRange, r1 error) {
-	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
+func (f *CodeNavServiceGetRangesFunc) SetDefaultReturn(r0 []codenav.AdjustedCodeIntelligenceRange, r1 error) {
+	f.SetDefaultHook(func(context.Context, codenav.RequestArgs, codenav.RequestState, int, int) ([]codenav.AdjustedCodeIntelligenceRange, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *CodeNavServiceGetRangesFunc) PushReturn(r0 []shared.AdjustedCodeIntelligenceRange, r1 error) {
-	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
+func (f *CodeNavServiceGetRangesFunc) PushReturn(r0 []codenav.AdjustedCodeIntelligenceRange, r1 error) {
+	f.PushHook(func(context.Context, codenav.RequestArgs, codenav.RequestState, int, int) ([]codenav.AdjustedCodeIntelligenceRange, error) {
 		return r0, r1
 	})
 }
 
-func (f *CodeNavServiceGetRangesFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
+func (f *CodeNavServiceGetRangesFunc) nextHook() func(context.Context, codenav.RequestArgs, codenav.RequestState, int, int) ([]codenav.AdjustedCodeIntelligenceRange, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1005,7 +1006,7 @@ type CodeNavServiceGetRangesFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 shared.RequestArgs
+	Arg1 codenav.RequestArgs
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 codenav.RequestState
@@ -1017,7 +1018,7 @@ type CodeNavServiceGetRangesFuncCall struct {
 	Arg4 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared.AdjustedCodeIntelligenceRange
+	Result0 []codenav.AdjustedCodeIntelligenceRange
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -1039,15 +1040,15 @@ func (c CodeNavServiceGetRangesFuncCall) Results() []interface{} {
 // GetReferences method of the parent MockCodeNavService instance is
 // invoked.
 type CodeNavServiceGetReferencesFunc struct {
-	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState, shared.ReferencesCursor) ([]types.UploadLocation, shared.ReferencesCursor, error)
-	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState, shared.ReferencesCursor) ([]types.UploadLocation, shared.ReferencesCursor, error)
+	defaultHook func(context.Context, codenav.RequestArgs, codenav.RequestState, codenav.ReferencesCursor) ([]shared1.UploadLocation, codenav.ReferencesCursor, error)
+	hooks       []func(context.Context, codenav.RequestArgs, codenav.RequestState, codenav.ReferencesCursor) ([]shared1.UploadLocation, codenav.ReferencesCursor, error)
 	history     []CodeNavServiceGetReferencesFuncCall
 	mutex       sync.Mutex
 }
 
 // GetReferences delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockCodeNavService) GetReferences(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState, v3 shared.ReferencesCursor) ([]types.UploadLocation, shared.ReferencesCursor, error) {
+func (m *MockCodeNavService) GetReferences(v0 context.Context, v1 codenav.RequestArgs, v2 codenav.RequestState, v3 codenav.ReferencesCursor) ([]shared1.UploadLocation, codenav.ReferencesCursor, error) {
 	r0, r1, r2 := m.GetReferencesFunc.nextHook()(v0, v1, v2, v3)
 	m.GetReferencesFunc.appendCall(CodeNavServiceGetReferencesFuncCall{v0, v1, v2, v3, r0, r1, r2})
 	return r0, r1, r2
@@ -1056,7 +1057,7 @@ func (m *MockCodeNavService) GetReferences(v0 context.Context, v1 shared.Request
 // SetDefaultHook sets function that is called when the GetReferences method
 // of the parent MockCodeNavService instance is invoked and the hook queue
 // is empty.
-func (f *CodeNavServiceGetReferencesFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState, shared.ReferencesCursor) ([]types.UploadLocation, shared.ReferencesCursor, error)) {
+func (f *CodeNavServiceGetReferencesFunc) SetDefaultHook(hook func(context.Context, codenav.RequestArgs, codenav.RequestState, codenav.ReferencesCursor) ([]shared1.UploadLocation, codenav.ReferencesCursor, error)) {
 	f.defaultHook = hook
 }
 
@@ -1064,7 +1065,7 @@ func (f *CodeNavServiceGetReferencesFunc) SetDefaultHook(hook func(context.Conte
 // GetReferences method of the parent MockCodeNavService instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *CodeNavServiceGetReferencesFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState, shared.ReferencesCursor) ([]types.UploadLocation, shared.ReferencesCursor, error)) {
+func (f *CodeNavServiceGetReferencesFunc) PushHook(hook func(context.Context, codenav.RequestArgs, codenav.RequestState, codenav.ReferencesCursor) ([]shared1.UploadLocation, codenav.ReferencesCursor, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1072,20 +1073,20 @@ func (f *CodeNavServiceGetReferencesFunc) PushHook(hook func(context.Context, sh
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *CodeNavServiceGetReferencesFunc) SetDefaultReturn(r0 []types.UploadLocation, r1 shared.ReferencesCursor, r2 error) {
-	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState, shared.ReferencesCursor) ([]types.UploadLocation, shared.ReferencesCursor, error) {
+func (f *CodeNavServiceGetReferencesFunc) SetDefaultReturn(r0 []shared1.UploadLocation, r1 codenav.ReferencesCursor, r2 error) {
+	f.SetDefaultHook(func(context.Context, codenav.RequestArgs, codenav.RequestState, codenav.ReferencesCursor) ([]shared1.UploadLocation, codenav.ReferencesCursor, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *CodeNavServiceGetReferencesFunc) PushReturn(r0 []types.UploadLocation, r1 shared.ReferencesCursor, r2 error) {
-	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState, shared.ReferencesCursor) ([]types.UploadLocation, shared.ReferencesCursor, error) {
+func (f *CodeNavServiceGetReferencesFunc) PushReturn(r0 []shared1.UploadLocation, r1 codenav.ReferencesCursor, r2 error) {
+	f.PushHook(func(context.Context, codenav.RequestArgs, codenav.RequestState, codenav.ReferencesCursor) ([]shared1.UploadLocation, codenav.ReferencesCursor, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *CodeNavServiceGetReferencesFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState, shared.ReferencesCursor) ([]types.UploadLocation, shared.ReferencesCursor, error) {
+func (f *CodeNavServiceGetReferencesFunc) nextHook() func(context.Context, codenav.RequestArgs, codenav.RequestState, codenav.ReferencesCursor) ([]shared1.UploadLocation, codenav.ReferencesCursor, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1123,19 +1124,19 @@ type CodeNavServiceGetReferencesFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 shared.RequestArgs
+	Arg1 codenav.RequestArgs
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 codenav.RequestState
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 shared.ReferencesCursor
+	Arg3 codenav.ReferencesCursor
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.UploadLocation
+	Result0 []shared1.UploadLocation
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 shared.ReferencesCursor
+	Result1 codenav.ReferencesCursor
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
 	Result2 error
@@ -1156,15 +1157,15 @@ func (c CodeNavServiceGetReferencesFuncCall) Results() []interface{} {
 // CodeNavServiceGetStencilFunc describes the behavior when the GetStencil
 // method of the parent MockCodeNavService instance is invoked.
 type CodeNavServiceGetStencilFunc struct {
-	defaultHook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]types.Range, error)
-	hooks       []func(context.Context, shared.RequestArgs, codenav.RequestState) ([]types.Range, error)
+	defaultHook func(context.Context, codenav.RequestArgs, codenav.RequestState) ([]shared1.Range, error)
+	hooks       []func(context.Context, codenav.RequestArgs, codenav.RequestState) ([]shared1.Range, error)
 	history     []CodeNavServiceGetStencilFuncCall
 	mutex       sync.Mutex
 }
 
 // GetStencil delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockCodeNavService) GetStencil(v0 context.Context, v1 shared.RequestArgs, v2 codenav.RequestState) ([]types.Range, error) {
+func (m *MockCodeNavService) GetStencil(v0 context.Context, v1 codenav.RequestArgs, v2 codenav.RequestState) ([]shared1.Range, error) {
 	r0, r1 := m.GetStencilFunc.nextHook()(v0, v1, v2)
 	m.GetStencilFunc.appendCall(CodeNavServiceGetStencilFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -1173,7 +1174,7 @@ func (m *MockCodeNavService) GetStencil(v0 context.Context, v1 shared.RequestArg
 // SetDefaultHook sets function that is called when the GetStencil method of
 // the parent MockCodeNavService instance is invoked and the hook queue is
 // empty.
-func (f *CodeNavServiceGetStencilFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]types.Range, error)) {
+func (f *CodeNavServiceGetStencilFunc) SetDefaultHook(hook func(context.Context, codenav.RequestArgs, codenav.RequestState) ([]shared1.Range, error)) {
 	f.defaultHook = hook
 }
 
@@ -1181,7 +1182,7 @@ func (f *CodeNavServiceGetStencilFunc) SetDefaultHook(hook func(context.Context,
 // GetStencil method of the parent MockCodeNavService instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *CodeNavServiceGetStencilFunc) PushHook(hook func(context.Context, shared.RequestArgs, codenav.RequestState) ([]types.Range, error)) {
+func (f *CodeNavServiceGetStencilFunc) PushHook(hook func(context.Context, codenav.RequestArgs, codenav.RequestState) ([]shared1.Range, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1189,20 +1190,20 @@ func (f *CodeNavServiceGetStencilFunc) PushHook(hook func(context.Context, share
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *CodeNavServiceGetStencilFunc) SetDefaultReturn(r0 []types.Range, r1 error) {
-	f.SetDefaultHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]types.Range, error) {
+func (f *CodeNavServiceGetStencilFunc) SetDefaultReturn(r0 []shared1.Range, r1 error) {
+	f.SetDefaultHook(func(context.Context, codenav.RequestArgs, codenav.RequestState) ([]shared1.Range, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *CodeNavServiceGetStencilFunc) PushReturn(r0 []types.Range, r1 error) {
-	f.PushHook(func(context.Context, shared.RequestArgs, codenav.RequestState) ([]types.Range, error) {
+func (f *CodeNavServiceGetStencilFunc) PushReturn(r0 []shared1.Range, r1 error) {
+	f.PushHook(func(context.Context, codenav.RequestArgs, codenav.RequestState) ([]shared1.Range, error) {
 		return r0, r1
 	})
 }
 
-func (f *CodeNavServiceGetStencilFunc) nextHook() func(context.Context, shared.RequestArgs, codenav.RequestState) ([]types.Range, error) {
+func (f *CodeNavServiceGetStencilFunc) nextHook() func(context.Context, codenav.RequestArgs, codenav.RequestState) ([]shared1.Range, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1240,13 +1241,13 @@ type CodeNavServiceGetStencilFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 shared.RequestArgs
+	Arg1 codenav.RequestArgs
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 codenav.RequestState
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.Range
+	Result0 []shared1.Range
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -1269,25 +1270,187 @@ func (c CodeNavServiceGetStencilFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/transport/graphql)
 // used for unit testing.
 type MockUploadsService struct {
+	// DeleteIndexByIDFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteIndexByID.
+	DeleteIndexByIDFunc *UploadsServiceDeleteIndexByIDFunc
+	// DeleteIndexesFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteIndexes.
+	DeleteIndexesFunc *UploadsServiceDeleteIndexesFunc
+	// DeleteUploadByIDFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteUploadByID.
+	DeleteUploadByIDFunc *UploadsServiceDeleteUploadByIDFunc
+	// DeleteUploadsFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteUploads.
+	DeleteUploadsFunc *UploadsServiceDeleteUploadsFunc
+	// GetAuditLogsForUploadFunc is an instance of a mock function object
+	// controlling the behavior of the method GetAuditLogsForUpload.
+	GetAuditLogsForUploadFunc *UploadsServiceGetAuditLogsForUploadFunc
+	// GetCommitGraphMetadataFunc is an instance of a mock function object
+	// controlling the behavior of the method GetCommitGraphMetadata.
+	GetCommitGraphMetadataFunc *UploadsServiceGetCommitGraphMetadataFunc
+	// GetIndexByIDFunc is an instance of a mock function object controlling
+	// the behavior of the method GetIndexByID.
+	GetIndexByIDFunc *UploadsServiceGetIndexByIDFunc
+	// GetIndexersFunc is an instance of a mock function object controlling
+	// the behavior of the method GetIndexers.
+	GetIndexersFunc *UploadsServiceGetIndexersFunc
+	// GetIndexesFunc is an instance of a mock function object controlling
+	// the behavior of the method GetIndexes.
+	GetIndexesFunc *UploadsServiceGetIndexesFunc
 	// GetIndexesByIDsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetIndexesByIDs.
 	GetIndexesByIDsFunc *UploadsServiceGetIndexesByIDsFunc
+	// GetLastUploadRetentionScanForRepositoryFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// GetLastUploadRetentionScanForRepository.
+	GetLastUploadRetentionScanForRepositoryFunc *UploadsServiceGetLastUploadRetentionScanForRepositoryFunc
+	// GetRecentIndexesSummaryFunc is an instance of a mock function object
+	// controlling the behavior of the method GetRecentIndexesSummary.
+	GetRecentIndexesSummaryFunc *UploadsServiceGetRecentIndexesSummaryFunc
+	// GetRecentUploadsSummaryFunc is an instance of a mock function object
+	// controlling the behavior of the method GetRecentUploadsSummary.
+	GetRecentUploadsSummaryFunc *UploadsServiceGetRecentUploadsSummaryFunc
+	// GetUploadByIDFunc is an instance of a mock function object
+	// controlling the behavior of the method GetUploadByID.
+	GetUploadByIDFunc *UploadsServiceGetUploadByIDFunc
+	// GetUploadsFunc is an instance of a mock function object controlling
+	// the behavior of the method GetUploads.
+	GetUploadsFunc *UploadsServiceGetUploadsFunc
 	// GetUploadsByIDsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetUploadsByIDs.
 	GetUploadsByIDsFunc *UploadsServiceGetUploadsByIDsFunc
+	// NumRepositoriesWithCodeIntelligenceFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// NumRepositoriesWithCodeIntelligence.
+	NumRepositoriesWithCodeIntelligenceFunc *UploadsServiceNumRepositoriesWithCodeIntelligenceFunc
+	// ReindexIndexByIDFunc is an instance of a mock function object
+	// controlling the behavior of the method ReindexIndexByID.
+	ReindexIndexByIDFunc *UploadsServiceReindexIndexByIDFunc
+	// ReindexIndexesFunc is an instance of a mock function object
+	// controlling the behavior of the method ReindexIndexes.
+	ReindexIndexesFunc *UploadsServiceReindexIndexesFunc
+	// ReindexUploadByIDFunc is an instance of a mock function object
+	// controlling the behavior of the method ReindexUploadByID.
+	ReindexUploadByIDFunc *UploadsServiceReindexUploadByIDFunc
+	// ReindexUploadsFunc is an instance of a mock function object
+	// controlling the behavior of the method ReindexUploads.
+	ReindexUploadsFunc *UploadsServiceReindexUploadsFunc
+	// RepositoryIDsWithErrorsFunc is an instance of a mock function object
+	// controlling the behavior of the method RepositoryIDsWithErrors.
+	RepositoryIDsWithErrorsFunc *UploadsServiceRepositoryIDsWithErrorsFunc
 }
 
 // NewMockUploadsService creates a new mock of the UploadsService interface.
 // All methods return zero values for all results, unless overwritten.
 func NewMockUploadsService() *MockUploadsService {
 	return &MockUploadsService{
+		DeleteIndexByIDFunc: &UploadsServiceDeleteIndexByIDFunc{
+			defaultHook: func(context.Context, int) (r0 bool, r1 error) {
+				return
+			},
+		},
+		DeleteIndexesFunc: &UploadsServiceDeleteIndexesFunc{
+			defaultHook: func(context.Context, shared.DeleteIndexesOptions) (r0 error) {
+				return
+			},
+		},
+		DeleteUploadByIDFunc: &UploadsServiceDeleteUploadByIDFunc{
+			defaultHook: func(context.Context, int) (r0 bool, r1 error) {
+				return
+			},
+		},
+		DeleteUploadsFunc: &UploadsServiceDeleteUploadsFunc{
+			defaultHook: func(context.Context, shared.DeleteUploadsOptions) (r0 error) {
+				return
+			},
+		},
+		GetAuditLogsForUploadFunc: &UploadsServiceGetAuditLogsForUploadFunc{
+			defaultHook: func(context.Context, int) (r0 []shared.UploadLog, r1 error) {
+				return
+			},
+		},
+		GetCommitGraphMetadataFunc: &UploadsServiceGetCommitGraphMetadataFunc{
+			defaultHook: func(context.Context, int) (r0 bool, r1 *time.Time, r2 error) {
+				return
+			},
+		},
+		GetIndexByIDFunc: &UploadsServiceGetIndexByIDFunc{
+			defaultHook: func(context.Context, int) (r0 shared.Index, r1 bool, r2 error) {
+				return
+			},
+		},
+		GetIndexersFunc: &UploadsServiceGetIndexersFunc{
+			defaultHook: func(context.Context, shared.GetIndexersOptions) (r0 []string, r1 error) {
+				return
+			},
+		},
+		GetIndexesFunc: &UploadsServiceGetIndexesFunc{
+			defaultHook: func(context.Context, shared.GetIndexesOptions) (r0 []shared.Index, r1 int, r2 error) {
+				return
+			},
+		},
 		GetIndexesByIDsFunc: &UploadsServiceGetIndexesByIDsFunc{
-			defaultHook: func(context.Context, ...int) (r0 []types.Index, r1 error) {
+			defaultHook: func(context.Context, ...int) (r0 []shared.Index, r1 error) {
+				return
+			},
+		},
+		GetLastUploadRetentionScanForRepositoryFunc: &UploadsServiceGetLastUploadRetentionScanForRepositoryFunc{
+			defaultHook: func(context.Context, int) (r0 *time.Time, r1 error) {
+				return
+			},
+		},
+		GetRecentIndexesSummaryFunc: &UploadsServiceGetRecentIndexesSummaryFunc{
+			defaultHook: func(context.Context, int) (r0 []shared.IndexesWithRepositoryNamespace, r1 error) {
+				return
+			},
+		},
+		GetRecentUploadsSummaryFunc: &UploadsServiceGetRecentUploadsSummaryFunc{
+			defaultHook: func(context.Context, int) (r0 []shared.UploadsWithRepositoryNamespace, r1 error) {
+				return
+			},
+		},
+		GetUploadByIDFunc: &UploadsServiceGetUploadByIDFunc{
+			defaultHook: func(context.Context, int) (r0 shared.Upload, r1 bool, r2 error) {
+				return
+			},
+		},
+		GetUploadsFunc: &UploadsServiceGetUploadsFunc{
+			defaultHook: func(context.Context, shared.GetUploadsOptions) (r0 []shared.Upload, r1 int, r2 error) {
 				return
 			},
 		},
 		GetUploadsByIDsFunc: &UploadsServiceGetUploadsByIDsFunc{
-			defaultHook: func(context.Context, ...int) (r0 []types.Upload, r1 error) {
+			defaultHook: func(context.Context, ...int) (r0 []shared.Upload, r1 error) {
+				return
+			},
+		},
+		NumRepositoriesWithCodeIntelligenceFunc: &UploadsServiceNumRepositoriesWithCodeIntelligenceFunc{
+			defaultHook: func(context.Context) (r0 int, r1 error) {
+				return
+			},
+		},
+		ReindexIndexByIDFunc: &UploadsServiceReindexIndexByIDFunc{
+			defaultHook: func(context.Context, int) (r0 error) {
+				return
+			},
+		},
+		ReindexIndexesFunc: &UploadsServiceReindexIndexesFunc{
+			defaultHook: func(context.Context, shared.ReindexIndexesOptions) (r0 error) {
+				return
+			},
+		},
+		ReindexUploadByIDFunc: &UploadsServiceReindexUploadByIDFunc{
+			defaultHook: func(context.Context, int) (r0 error) {
+				return
+			},
+		},
+		ReindexUploadsFunc: &UploadsServiceReindexUploadsFunc{
+			defaultHook: func(context.Context, shared.ReindexUploadsOptions) (r0 error) {
+				return
+			},
+		},
+		RepositoryIDsWithErrorsFunc: &UploadsServiceRepositoryIDsWithErrorsFunc{
+			defaultHook: func(context.Context, int, int) (r0 []shared.RepositoryWithCount, r1 int, r2 error) {
 				return
 			},
 		},
@@ -1298,14 +1461,114 @@ func NewMockUploadsService() *MockUploadsService {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockUploadsService() *MockUploadsService {
 	return &MockUploadsService{
+		DeleteIndexByIDFunc: &UploadsServiceDeleteIndexByIDFunc{
+			defaultHook: func(context.Context, int) (bool, error) {
+				panic("unexpected invocation of MockUploadsService.DeleteIndexByID")
+			},
+		},
+		DeleteIndexesFunc: &UploadsServiceDeleteIndexesFunc{
+			defaultHook: func(context.Context, shared.DeleteIndexesOptions) error {
+				panic("unexpected invocation of MockUploadsService.DeleteIndexes")
+			},
+		},
+		DeleteUploadByIDFunc: &UploadsServiceDeleteUploadByIDFunc{
+			defaultHook: func(context.Context, int) (bool, error) {
+				panic("unexpected invocation of MockUploadsService.DeleteUploadByID")
+			},
+		},
+		DeleteUploadsFunc: &UploadsServiceDeleteUploadsFunc{
+			defaultHook: func(context.Context, shared.DeleteUploadsOptions) error {
+				panic("unexpected invocation of MockUploadsService.DeleteUploads")
+			},
+		},
+		GetAuditLogsForUploadFunc: &UploadsServiceGetAuditLogsForUploadFunc{
+			defaultHook: func(context.Context, int) ([]shared.UploadLog, error) {
+				panic("unexpected invocation of MockUploadsService.GetAuditLogsForUpload")
+			},
+		},
+		GetCommitGraphMetadataFunc: &UploadsServiceGetCommitGraphMetadataFunc{
+			defaultHook: func(context.Context, int) (bool, *time.Time, error) {
+				panic("unexpected invocation of MockUploadsService.GetCommitGraphMetadata")
+			},
+		},
+		GetIndexByIDFunc: &UploadsServiceGetIndexByIDFunc{
+			defaultHook: func(context.Context, int) (shared.Index, bool, error) {
+				panic("unexpected invocation of MockUploadsService.GetIndexByID")
+			},
+		},
+		GetIndexersFunc: &UploadsServiceGetIndexersFunc{
+			defaultHook: func(context.Context, shared.GetIndexersOptions) ([]string, error) {
+				panic("unexpected invocation of MockUploadsService.GetIndexers")
+			},
+		},
+		GetIndexesFunc: &UploadsServiceGetIndexesFunc{
+			defaultHook: func(context.Context, shared.GetIndexesOptions) ([]shared.Index, int, error) {
+				panic("unexpected invocation of MockUploadsService.GetIndexes")
+			},
+		},
 		GetIndexesByIDsFunc: &UploadsServiceGetIndexesByIDsFunc{
-			defaultHook: func(context.Context, ...int) ([]types.Index, error) {
+			defaultHook: func(context.Context, ...int) ([]shared.Index, error) {
 				panic("unexpected invocation of MockUploadsService.GetIndexesByIDs")
 			},
 		},
+		GetLastUploadRetentionScanForRepositoryFunc: &UploadsServiceGetLastUploadRetentionScanForRepositoryFunc{
+			defaultHook: func(context.Context, int) (*time.Time, error) {
+				panic("unexpected invocation of MockUploadsService.GetLastUploadRetentionScanForRepository")
+			},
+		},
+		GetRecentIndexesSummaryFunc: &UploadsServiceGetRecentIndexesSummaryFunc{
+			defaultHook: func(context.Context, int) ([]shared.IndexesWithRepositoryNamespace, error) {
+				panic("unexpected invocation of MockUploadsService.GetRecentIndexesSummary")
+			},
+		},
+		GetRecentUploadsSummaryFunc: &UploadsServiceGetRecentUploadsSummaryFunc{
+			defaultHook: func(context.Context, int) ([]shared.UploadsWithRepositoryNamespace, error) {
+				panic("unexpected invocation of MockUploadsService.GetRecentUploadsSummary")
+			},
+		},
+		GetUploadByIDFunc: &UploadsServiceGetUploadByIDFunc{
+			defaultHook: func(context.Context, int) (shared.Upload, bool, error) {
+				panic("unexpected invocation of MockUploadsService.GetUploadByID")
+			},
+		},
+		GetUploadsFunc: &UploadsServiceGetUploadsFunc{
+			defaultHook: func(context.Context, shared.GetUploadsOptions) ([]shared.Upload, int, error) {
+				panic("unexpected invocation of MockUploadsService.GetUploads")
+			},
+		},
 		GetUploadsByIDsFunc: &UploadsServiceGetUploadsByIDsFunc{
-			defaultHook: func(context.Context, ...int) ([]types.Upload, error) {
+			defaultHook: func(context.Context, ...int) ([]shared.Upload, error) {
 				panic("unexpected invocation of MockUploadsService.GetUploadsByIDs")
+			},
+		},
+		NumRepositoriesWithCodeIntelligenceFunc: &UploadsServiceNumRepositoriesWithCodeIntelligenceFunc{
+			defaultHook: func(context.Context) (int, error) {
+				panic("unexpected invocation of MockUploadsService.NumRepositoriesWithCodeIntelligence")
+			},
+		},
+		ReindexIndexByIDFunc: &UploadsServiceReindexIndexByIDFunc{
+			defaultHook: func(context.Context, int) error {
+				panic("unexpected invocation of MockUploadsService.ReindexIndexByID")
+			},
+		},
+		ReindexIndexesFunc: &UploadsServiceReindexIndexesFunc{
+			defaultHook: func(context.Context, shared.ReindexIndexesOptions) error {
+				panic("unexpected invocation of MockUploadsService.ReindexIndexes")
+			},
+		},
+		ReindexUploadByIDFunc: &UploadsServiceReindexUploadByIDFunc{
+			defaultHook: func(context.Context, int) error {
+				panic("unexpected invocation of MockUploadsService.ReindexUploadByID")
+			},
+		},
+		ReindexUploadsFunc: &UploadsServiceReindexUploadsFunc{
+			defaultHook: func(context.Context, shared.ReindexUploadsOptions) error {
+				panic("unexpected invocation of MockUploadsService.ReindexUploads")
+			},
+		},
+		RepositoryIDsWithErrorsFunc: &UploadsServiceRepositoryIDsWithErrorsFunc{
+			defaultHook: func(context.Context, int, int) ([]shared.RepositoryWithCount, int, error) {
+				panic("unexpected invocation of MockUploadsService.RepositoryIDsWithErrors")
 			},
 		},
 	}
@@ -1316,28 +1579,1076 @@ func NewStrictMockUploadsService() *MockUploadsService {
 // overwritten.
 func NewMockUploadsServiceFrom(i UploadsService) *MockUploadsService {
 	return &MockUploadsService{
+		DeleteIndexByIDFunc: &UploadsServiceDeleteIndexByIDFunc{
+			defaultHook: i.DeleteIndexByID,
+		},
+		DeleteIndexesFunc: &UploadsServiceDeleteIndexesFunc{
+			defaultHook: i.DeleteIndexes,
+		},
+		DeleteUploadByIDFunc: &UploadsServiceDeleteUploadByIDFunc{
+			defaultHook: i.DeleteUploadByID,
+		},
+		DeleteUploadsFunc: &UploadsServiceDeleteUploadsFunc{
+			defaultHook: i.DeleteUploads,
+		},
+		GetAuditLogsForUploadFunc: &UploadsServiceGetAuditLogsForUploadFunc{
+			defaultHook: i.GetAuditLogsForUpload,
+		},
+		GetCommitGraphMetadataFunc: &UploadsServiceGetCommitGraphMetadataFunc{
+			defaultHook: i.GetCommitGraphMetadata,
+		},
+		GetIndexByIDFunc: &UploadsServiceGetIndexByIDFunc{
+			defaultHook: i.GetIndexByID,
+		},
+		GetIndexersFunc: &UploadsServiceGetIndexersFunc{
+			defaultHook: i.GetIndexers,
+		},
+		GetIndexesFunc: &UploadsServiceGetIndexesFunc{
+			defaultHook: i.GetIndexes,
+		},
 		GetIndexesByIDsFunc: &UploadsServiceGetIndexesByIDsFunc{
 			defaultHook: i.GetIndexesByIDs,
+		},
+		GetLastUploadRetentionScanForRepositoryFunc: &UploadsServiceGetLastUploadRetentionScanForRepositoryFunc{
+			defaultHook: i.GetLastUploadRetentionScanForRepository,
+		},
+		GetRecentIndexesSummaryFunc: &UploadsServiceGetRecentIndexesSummaryFunc{
+			defaultHook: i.GetRecentIndexesSummary,
+		},
+		GetRecentUploadsSummaryFunc: &UploadsServiceGetRecentUploadsSummaryFunc{
+			defaultHook: i.GetRecentUploadsSummary,
+		},
+		GetUploadByIDFunc: &UploadsServiceGetUploadByIDFunc{
+			defaultHook: i.GetUploadByID,
+		},
+		GetUploadsFunc: &UploadsServiceGetUploadsFunc{
+			defaultHook: i.GetUploads,
 		},
 		GetUploadsByIDsFunc: &UploadsServiceGetUploadsByIDsFunc{
 			defaultHook: i.GetUploadsByIDs,
 		},
+		NumRepositoriesWithCodeIntelligenceFunc: &UploadsServiceNumRepositoriesWithCodeIntelligenceFunc{
+			defaultHook: i.NumRepositoriesWithCodeIntelligence,
+		},
+		ReindexIndexByIDFunc: &UploadsServiceReindexIndexByIDFunc{
+			defaultHook: i.ReindexIndexByID,
+		},
+		ReindexIndexesFunc: &UploadsServiceReindexIndexesFunc{
+			defaultHook: i.ReindexIndexes,
+		},
+		ReindexUploadByIDFunc: &UploadsServiceReindexUploadByIDFunc{
+			defaultHook: i.ReindexUploadByID,
+		},
+		ReindexUploadsFunc: &UploadsServiceReindexUploadsFunc{
+			defaultHook: i.ReindexUploads,
+		},
+		RepositoryIDsWithErrorsFunc: &UploadsServiceRepositoryIDsWithErrorsFunc{
+			defaultHook: i.RepositoryIDsWithErrors,
+		},
 	}
+}
+
+// UploadsServiceDeleteIndexByIDFunc describes the behavior when the
+// DeleteIndexByID method of the parent MockUploadsService instance is
+// invoked.
+type UploadsServiceDeleteIndexByIDFunc struct {
+	defaultHook func(context.Context, int) (bool, error)
+	hooks       []func(context.Context, int) (bool, error)
+	history     []UploadsServiceDeleteIndexByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteIndexByID delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUploadsService) DeleteIndexByID(v0 context.Context, v1 int) (bool, error) {
+	r0, r1 := m.DeleteIndexByIDFunc.nextHook()(v0, v1)
+	m.DeleteIndexByIDFunc.appendCall(UploadsServiceDeleteIndexByIDFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the DeleteIndexByID
+// method of the parent MockUploadsService instance is invoked and the hook
+// queue is empty.
+func (f *UploadsServiceDeleteIndexByIDFunc) SetDefaultHook(hook func(context.Context, int) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteIndexByID method of the parent MockUploadsService instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *UploadsServiceDeleteIndexByIDFunc) PushHook(hook func(context.Context, int) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceDeleteIndexByIDFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceDeleteIndexByIDFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, int) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *UploadsServiceDeleteIndexByIDFunc) nextHook() func(context.Context, int) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceDeleteIndexByIDFunc) appendCall(r0 UploadsServiceDeleteIndexByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadsServiceDeleteIndexByIDFuncCall
+// objects describing the invocations of this function.
+func (f *UploadsServiceDeleteIndexByIDFunc) History() []UploadsServiceDeleteIndexByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceDeleteIndexByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceDeleteIndexByIDFuncCall is an object that describes an
+// invocation of method DeleteIndexByID on an instance of
+// MockUploadsService.
+type UploadsServiceDeleteIndexByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServiceDeleteIndexByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceDeleteIndexByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// UploadsServiceDeleteIndexesFunc describes the behavior when the
+// DeleteIndexes method of the parent MockUploadsService instance is
+// invoked.
+type UploadsServiceDeleteIndexesFunc struct {
+	defaultHook func(context.Context, shared.DeleteIndexesOptions) error
+	hooks       []func(context.Context, shared.DeleteIndexesOptions) error
+	history     []UploadsServiceDeleteIndexesFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteIndexes delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockUploadsService) DeleteIndexes(v0 context.Context, v1 shared.DeleteIndexesOptions) error {
+	r0 := m.DeleteIndexesFunc.nextHook()(v0, v1)
+	m.DeleteIndexesFunc.appendCall(UploadsServiceDeleteIndexesFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DeleteIndexes method
+// of the parent MockUploadsService instance is invoked and the hook queue
+// is empty.
+func (f *UploadsServiceDeleteIndexesFunc) SetDefaultHook(hook func(context.Context, shared.DeleteIndexesOptions) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteIndexes method of the parent MockUploadsService instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *UploadsServiceDeleteIndexesFunc) PushHook(hook func(context.Context, shared.DeleteIndexesOptions) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceDeleteIndexesFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, shared.DeleteIndexesOptions) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceDeleteIndexesFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, shared.DeleteIndexesOptions) error {
+		return r0
+	})
+}
+
+func (f *UploadsServiceDeleteIndexesFunc) nextHook() func(context.Context, shared.DeleteIndexesOptions) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceDeleteIndexesFunc) appendCall(r0 UploadsServiceDeleteIndexesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadsServiceDeleteIndexesFuncCall objects
+// describing the invocations of this function.
+func (f *UploadsServiceDeleteIndexesFunc) History() []UploadsServiceDeleteIndexesFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceDeleteIndexesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceDeleteIndexesFuncCall is an object that describes an
+// invocation of method DeleteIndexes on an instance of MockUploadsService.
+type UploadsServiceDeleteIndexesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.DeleteIndexesOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServiceDeleteIndexesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceDeleteIndexesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// UploadsServiceDeleteUploadByIDFunc describes the behavior when the
+// DeleteUploadByID method of the parent MockUploadsService instance is
+// invoked.
+type UploadsServiceDeleteUploadByIDFunc struct {
+	defaultHook func(context.Context, int) (bool, error)
+	hooks       []func(context.Context, int) (bool, error)
+	history     []UploadsServiceDeleteUploadByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteUploadByID delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUploadsService) DeleteUploadByID(v0 context.Context, v1 int) (bool, error) {
+	r0, r1 := m.DeleteUploadByIDFunc.nextHook()(v0, v1)
+	m.DeleteUploadByIDFunc.appendCall(UploadsServiceDeleteUploadByIDFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the DeleteUploadByID
+// method of the parent MockUploadsService instance is invoked and the hook
+// queue is empty.
+func (f *UploadsServiceDeleteUploadByIDFunc) SetDefaultHook(hook func(context.Context, int) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteUploadByID method of the parent MockUploadsService instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *UploadsServiceDeleteUploadByIDFunc) PushHook(hook func(context.Context, int) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceDeleteUploadByIDFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceDeleteUploadByIDFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, int) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *UploadsServiceDeleteUploadByIDFunc) nextHook() func(context.Context, int) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceDeleteUploadByIDFunc) appendCall(r0 UploadsServiceDeleteUploadByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadsServiceDeleteUploadByIDFuncCall
+// objects describing the invocations of this function.
+func (f *UploadsServiceDeleteUploadByIDFunc) History() []UploadsServiceDeleteUploadByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceDeleteUploadByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceDeleteUploadByIDFuncCall is an object that describes an
+// invocation of method DeleteUploadByID on an instance of
+// MockUploadsService.
+type UploadsServiceDeleteUploadByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServiceDeleteUploadByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceDeleteUploadByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// UploadsServiceDeleteUploadsFunc describes the behavior when the
+// DeleteUploads method of the parent MockUploadsService instance is
+// invoked.
+type UploadsServiceDeleteUploadsFunc struct {
+	defaultHook func(context.Context, shared.DeleteUploadsOptions) error
+	hooks       []func(context.Context, shared.DeleteUploadsOptions) error
+	history     []UploadsServiceDeleteUploadsFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteUploads delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockUploadsService) DeleteUploads(v0 context.Context, v1 shared.DeleteUploadsOptions) error {
+	r0 := m.DeleteUploadsFunc.nextHook()(v0, v1)
+	m.DeleteUploadsFunc.appendCall(UploadsServiceDeleteUploadsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DeleteUploads method
+// of the parent MockUploadsService instance is invoked and the hook queue
+// is empty.
+func (f *UploadsServiceDeleteUploadsFunc) SetDefaultHook(hook func(context.Context, shared.DeleteUploadsOptions) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteUploads method of the parent MockUploadsService instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *UploadsServiceDeleteUploadsFunc) PushHook(hook func(context.Context, shared.DeleteUploadsOptions) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceDeleteUploadsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, shared.DeleteUploadsOptions) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceDeleteUploadsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, shared.DeleteUploadsOptions) error {
+		return r0
+	})
+}
+
+func (f *UploadsServiceDeleteUploadsFunc) nextHook() func(context.Context, shared.DeleteUploadsOptions) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceDeleteUploadsFunc) appendCall(r0 UploadsServiceDeleteUploadsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadsServiceDeleteUploadsFuncCall objects
+// describing the invocations of this function.
+func (f *UploadsServiceDeleteUploadsFunc) History() []UploadsServiceDeleteUploadsFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceDeleteUploadsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceDeleteUploadsFuncCall is an object that describes an
+// invocation of method DeleteUploads on an instance of MockUploadsService.
+type UploadsServiceDeleteUploadsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.DeleteUploadsOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServiceDeleteUploadsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceDeleteUploadsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// UploadsServiceGetAuditLogsForUploadFunc describes the behavior when the
+// GetAuditLogsForUpload method of the parent MockUploadsService instance is
+// invoked.
+type UploadsServiceGetAuditLogsForUploadFunc struct {
+	defaultHook func(context.Context, int) ([]shared.UploadLog, error)
+	hooks       []func(context.Context, int) ([]shared.UploadLog, error)
+	history     []UploadsServiceGetAuditLogsForUploadFuncCall
+	mutex       sync.Mutex
+}
+
+// GetAuditLogsForUpload delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockUploadsService) GetAuditLogsForUpload(v0 context.Context, v1 int) ([]shared.UploadLog, error) {
+	r0, r1 := m.GetAuditLogsForUploadFunc.nextHook()(v0, v1)
+	m.GetAuditLogsForUploadFunc.appendCall(UploadsServiceGetAuditLogsForUploadFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetAuditLogsForUpload method of the parent MockUploadsService instance is
+// invoked and the hook queue is empty.
+func (f *UploadsServiceGetAuditLogsForUploadFunc) SetDefaultHook(hook func(context.Context, int) ([]shared.UploadLog, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetAuditLogsForUpload method of the parent MockUploadsService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UploadsServiceGetAuditLogsForUploadFunc) PushHook(hook func(context.Context, int) ([]shared.UploadLog, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceGetAuditLogsForUploadFunc) SetDefaultReturn(r0 []shared.UploadLog, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]shared.UploadLog, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceGetAuditLogsForUploadFunc) PushReturn(r0 []shared.UploadLog, r1 error) {
+	f.PushHook(func(context.Context, int) ([]shared.UploadLog, error) {
+		return r0, r1
+	})
+}
+
+func (f *UploadsServiceGetAuditLogsForUploadFunc) nextHook() func(context.Context, int) ([]shared.UploadLog, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceGetAuditLogsForUploadFunc) appendCall(r0 UploadsServiceGetAuditLogsForUploadFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadsServiceGetAuditLogsForUploadFuncCall
+// objects describing the invocations of this function.
+func (f *UploadsServiceGetAuditLogsForUploadFunc) History() []UploadsServiceGetAuditLogsForUploadFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceGetAuditLogsForUploadFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceGetAuditLogsForUploadFuncCall is an object that describes
+// an invocation of method GetAuditLogsForUpload on an instance of
+// MockUploadsService.
+type UploadsServiceGetAuditLogsForUploadFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.UploadLog
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServiceGetAuditLogsForUploadFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceGetAuditLogsForUploadFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// UploadsServiceGetCommitGraphMetadataFunc describes the behavior when the
+// GetCommitGraphMetadata method of the parent MockUploadsService instance
+// is invoked.
+type UploadsServiceGetCommitGraphMetadataFunc struct {
+	defaultHook func(context.Context, int) (bool, *time.Time, error)
+	hooks       []func(context.Context, int) (bool, *time.Time, error)
+	history     []UploadsServiceGetCommitGraphMetadataFuncCall
+	mutex       sync.Mutex
+}
+
+// GetCommitGraphMetadata delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockUploadsService) GetCommitGraphMetadata(v0 context.Context, v1 int) (bool, *time.Time, error) {
+	r0, r1, r2 := m.GetCommitGraphMetadataFunc.nextHook()(v0, v1)
+	m.GetCommitGraphMetadataFunc.appendCall(UploadsServiceGetCommitGraphMetadataFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// GetCommitGraphMetadata method of the parent MockUploadsService instance
+// is invoked and the hook queue is empty.
+func (f *UploadsServiceGetCommitGraphMetadataFunc) SetDefaultHook(hook func(context.Context, int) (bool, *time.Time, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetCommitGraphMetadata method of the parent MockUploadsService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UploadsServiceGetCommitGraphMetadataFunc) PushHook(hook func(context.Context, int) (bool, *time.Time, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceGetCommitGraphMetadataFunc) SetDefaultReturn(r0 bool, r1 *time.Time, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (bool, *time.Time, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceGetCommitGraphMetadataFunc) PushReturn(r0 bool, r1 *time.Time, r2 error) {
+	f.PushHook(func(context.Context, int) (bool, *time.Time, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *UploadsServiceGetCommitGraphMetadataFunc) nextHook() func(context.Context, int) (bool, *time.Time, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceGetCommitGraphMetadataFunc) appendCall(r0 UploadsServiceGetCommitGraphMetadataFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// UploadsServiceGetCommitGraphMetadataFuncCall objects describing the
+// invocations of this function.
+func (f *UploadsServiceGetCommitGraphMetadataFunc) History() []UploadsServiceGetCommitGraphMetadataFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceGetCommitGraphMetadataFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceGetCommitGraphMetadataFuncCall is an object that describes
+// an invocation of method GetCommitGraphMetadata on an instance of
+// MockUploadsService.
+type UploadsServiceGetCommitGraphMetadataFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 *time.Time
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServiceGetCommitGraphMetadataFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceGetCommitGraphMetadataFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// UploadsServiceGetIndexByIDFunc describes the behavior when the
+// GetIndexByID method of the parent MockUploadsService instance is invoked.
+type UploadsServiceGetIndexByIDFunc struct {
+	defaultHook func(context.Context, int) (shared.Index, bool, error)
+	hooks       []func(context.Context, int) (shared.Index, bool, error)
+	history     []UploadsServiceGetIndexByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// GetIndexByID delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockUploadsService) GetIndexByID(v0 context.Context, v1 int) (shared.Index, bool, error) {
+	r0, r1, r2 := m.GetIndexByIDFunc.nextHook()(v0, v1)
+	m.GetIndexByIDFunc.appendCall(UploadsServiceGetIndexByIDFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the GetIndexByID method
+// of the parent MockUploadsService instance is invoked and the hook queue
+// is empty.
+func (f *UploadsServiceGetIndexByIDFunc) SetDefaultHook(hook func(context.Context, int) (shared.Index, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetIndexByID method of the parent MockUploadsService instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *UploadsServiceGetIndexByIDFunc) PushHook(hook func(context.Context, int) (shared.Index, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceGetIndexByIDFunc) SetDefaultReturn(r0 shared.Index, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (shared.Index, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceGetIndexByIDFunc) PushReturn(r0 shared.Index, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (shared.Index, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *UploadsServiceGetIndexByIDFunc) nextHook() func(context.Context, int) (shared.Index, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceGetIndexByIDFunc) appendCall(r0 UploadsServiceGetIndexByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadsServiceGetIndexByIDFuncCall objects
+// describing the invocations of this function.
+func (f *UploadsServiceGetIndexByIDFunc) History() []UploadsServiceGetIndexByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceGetIndexByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceGetIndexByIDFuncCall is an object that describes an
+// invocation of method GetIndexByID on an instance of MockUploadsService.
+type UploadsServiceGetIndexByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 shared.Index
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServiceGetIndexByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceGetIndexByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// UploadsServiceGetIndexersFunc describes the behavior when the GetIndexers
+// method of the parent MockUploadsService instance is invoked.
+type UploadsServiceGetIndexersFunc struct {
+	defaultHook func(context.Context, shared.GetIndexersOptions) ([]string, error)
+	hooks       []func(context.Context, shared.GetIndexersOptions) ([]string, error)
+	history     []UploadsServiceGetIndexersFuncCall
+	mutex       sync.Mutex
+}
+
+// GetIndexers delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockUploadsService) GetIndexers(v0 context.Context, v1 shared.GetIndexersOptions) ([]string, error) {
+	r0, r1 := m.GetIndexersFunc.nextHook()(v0, v1)
+	m.GetIndexersFunc.appendCall(UploadsServiceGetIndexersFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetIndexers method
+// of the parent MockUploadsService instance is invoked and the hook queue
+// is empty.
+func (f *UploadsServiceGetIndexersFunc) SetDefaultHook(hook func(context.Context, shared.GetIndexersOptions) ([]string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetIndexers method of the parent MockUploadsService instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *UploadsServiceGetIndexersFunc) PushHook(hook func(context.Context, shared.GetIndexersOptions) ([]string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceGetIndexersFunc) SetDefaultReturn(r0 []string, r1 error) {
+	f.SetDefaultHook(func(context.Context, shared.GetIndexersOptions) ([]string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceGetIndexersFunc) PushReturn(r0 []string, r1 error) {
+	f.PushHook(func(context.Context, shared.GetIndexersOptions) ([]string, error) {
+		return r0, r1
+	})
+}
+
+func (f *UploadsServiceGetIndexersFunc) nextHook() func(context.Context, shared.GetIndexersOptions) ([]string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceGetIndexersFunc) appendCall(r0 UploadsServiceGetIndexersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadsServiceGetIndexersFuncCall objects
+// describing the invocations of this function.
+func (f *UploadsServiceGetIndexersFunc) History() []UploadsServiceGetIndexersFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceGetIndexersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceGetIndexersFuncCall is an object that describes an
+// invocation of method GetIndexers on an instance of MockUploadsService.
+type UploadsServiceGetIndexersFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.GetIndexersOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServiceGetIndexersFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceGetIndexersFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// UploadsServiceGetIndexesFunc describes the behavior when the GetIndexes
+// method of the parent MockUploadsService instance is invoked.
+type UploadsServiceGetIndexesFunc struct {
+	defaultHook func(context.Context, shared.GetIndexesOptions) ([]shared.Index, int, error)
+	hooks       []func(context.Context, shared.GetIndexesOptions) ([]shared.Index, int, error)
+	history     []UploadsServiceGetIndexesFuncCall
+	mutex       sync.Mutex
+}
+
+// GetIndexes delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockUploadsService) GetIndexes(v0 context.Context, v1 shared.GetIndexesOptions) ([]shared.Index, int, error) {
+	r0, r1, r2 := m.GetIndexesFunc.nextHook()(v0, v1)
+	m.GetIndexesFunc.appendCall(UploadsServiceGetIndexesFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the GetIndexes method of
+// the parent MockUploadsService instance is invoked and the hook queue is
+// empty.
+func (f *UploadsServiceGetIndexesFunc) SetDefaultHook(hook func(context.Context, shared.GetIndexesOptions) ([]shared.Index, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetIndexes method of the parent MockUploadsService instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *UploadsServiceGetIndexesFunc) PushHook(hook func(context.Context, shared.GetIndexesOptions) ([]shared.Index, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceGetIndexesFunc) SetDefaultReturn(r0 []shared.Index, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, shared.GetIndexesOptions) ([]shared.Index, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceGetIndexesFunc) PushReturn(r0 []shared.Index, r1 int, r2 error) {
+	f.PushHook(func(context.Context, shared.GetIndexesOptions) ([]shared.Index, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *UploadsServiceGetIndexesFunc) nextHook() func(context.Context, shared.GetIndexesOptions) ([]shared.Index, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceGetIndexesFunc) appendCall(r0 UploadsServiceGetIndexesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadsServiceGetIndexesFuncCall objects
+// describing the invocations of this function.
+func (f *UploadsServiceGetIndexesFunc) History() []UploadsServiceGetIndexesFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceGetIndexesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceGetIndexesFuncCall is an object that describes an
+// invocation of method GetIndexes on an instance of MockUploadsService.
+type UploadsServiceGetIndexesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.GetIndexesOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.Index
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServiceGetIndexesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceGetIndexesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // UploadsServiceGetIndexesByIDsFunc describes the behavior when the
 // GetIndexesByIDs method of the parent MockUploadsService instance is
 // invoked.
 type UploadsServiceGetIndexesByIDsFunc struct {
-	defaultHook func(context.Context, ...int) ([]types.Index, error)
-	hooks       []func(context.Context, ...int) ([]types.Index, error)
+	defaultHook func(context.Context, ...int) ([]shared.Index, error)
+	hooks       []func(context.Context, ...int) ([]shared.Index, error)
 	history     []UploadsServiceGetIndexesByIDsFuncCall
 	mutex       sync.Mutex
 }
 
 // GetIndexesByIDs delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockUploadsService) GetIndexesByIDs(v0 context.Context, v1 ...int) ([]types.Index, error) {
+func (m *MockUploadsService) GetIndexesByIDs(v0 context.Context, v1 ...int) ([]shared.Index, error) {
 	r0, r1 := m.GetIndexesByIDsFunc.nextHook()(v0, v1...)
 	m.GetIndexesByIDsFunc.appendCall(UploadsServiceGetIndexesByIDsFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -1346,7 +2657,7 @@ func (m *MockUploadsService) GetIndexesByIDs(v0 context.Context, v1 ...int) ([]t
 // SetDefaultHook sets function that is called when the GetIndexesByIDs
 // method of the parent MockUploadsService instance is invoked and the hook
 // queue is empty.
-func (f *UploadsServiceGetIndexesByIDsFunc) SetDefaultHook(hook func(context.Context, ...int) ([]types.Index, error)) {
+func (f *UploadsServiceGetIndexesByIDsFunc) SetDefaultHook(hook func(context.Context, ...int) ([]shared.Index, error)) {
 	f.defaultHook = hook
 }
 
@@ -1354,7 +2665,7 @@ func (f *UploadsServiceGetIndexesByIDsFunc) SetDefaultHook(hook func(context.Con
 // GetIndexesByIDs method of the parent MockUploadsService instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *UploadsServiceGetIndexesByIDsFunc) PushHook(hook func(context.Context, ...int) ([]types.Index, error)) {
+func (f *UploadsServiceGetIndexesByIDsFunc) PushHook(hook func(context.Context, ...int) ([]shared.Index, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1362,20 +2673,20 @@ func (f *UploadsServiceGetIndexesByIDsFunc) PushHook(hook func(context.Context, 
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *UploadsServiceGetIndexesByIDsFunc) SetDefaultReturn(r0 []types.Index, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...int) ([]types.Index, error) {
+func (f *UploadsServiceGetIndexesByIDsFunc) SetDefaultReturn(r0 []shared.Index, r1 error) {
+	f.SetDefaultHook(func(context.Context, ...int) ([]shared.Index, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadsServiceGetIndexesByIDsFunc) PushReturn(r0 []types.Index, r1 error) {
-	f.PushHook(func(context.Context, ...int) ([]types.Index, error) {
+func (f *UploadsServiceGetIndexesByIDsFunc) PushReturn(r0 []shared.Index, r1 error) {
+	f.PushHook(func(context.Context, ...int) ([]shared.Index, error) {
 		return r0, r1
 	})
 }
 
-func (f *UploadsServiceGetIndexesByIDsFunc) nextHook() func(context.Context, ...int) ([]types.Index, error) {
+func (f *UploadsServiceGetIndexesByIDsFunc) nextHook() func(context.Context, ...int) ([]shared.Index, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1417,7 +2728,7 @@ type UploadsServiceGetIndexesByIDsFuncCall struct {
 	Arg1 []int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.Index
+	Result0 []shared.Index
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -1442,19 +2753,580 @@ func (c UploadsServiceGetIndexesByIDsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// UploadsServiceGetLastUploadRetentionScanForRepositoryFunc describes the
+// behavior when the GetLastUploadRetentionScanForRepository method of the
+// parent MockUploadsService instance is invoked.
+type UploadsServiceGetLastUploadRetentionScanForRepositoryFunc struct {
+	defaultHook func(context.Context, int) (*time.Time, error)
+	hooks       []func(context.Context, int) (*time.Time, error)
+	history     []UploadsServiceGetLastUploadRetentionScanForRepositoryFuncCall
+	mutex       sync.Mutex
+}
+
+// GetLastUploadRetentionScanForRepository delegates to the next hook
+// function in the queue and stores the parameter and result values of this
+// invocation.
+func (m *MockUploadsService) GetLastUploadRetentionScanForRepository(v0 context.Context, v1 int) (*time.Time, error) {
+	r0, r1 := m.GetLastUploadRetentionScanForRepositoryFunc.nextHook()(v0, v1)
+	m.GetLastUploadRetentionScanForRepositoryFunc.appendCall(UploadsServiceGetLastUploadRetentionScanForRepositoryFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetLastUploadRetentionScanForRepository method of the parent
+// MockUploadsService instance is invoked and the hook queue is empty.
+func (f *UploadsServiceGetLastUploadRetentionScanForRepositoryFunc) SetDefaultHook(hook func(context.Context, int) (*time.Time, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetLastUploadRetentionScanForRepository method of the parent
+// MockUploadsService instance invokes the hook at the front of the queue
+// and discards it. After the queue is empty, the default hook function is
+// invoked for any future action.
+func (f *UploadsServiceGetLastUploadRetentionScanForRepositoryFunc) PushHook(hook func(context.Context, int) (*time.Time, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceGetLastUploadRetentionScanForRepositoryFunc) SetDefaultReturn(r0 *time.Time, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (*time.Time, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceGetLastUploadRetentionScanForRepositoryFunc) PushReturn(r0 *time.Time, r1 error) {
+	f.PushHook(func(context.Context, int) (*time.Time, error) {
+		return r0, r1
+	})
+}
+
+func (f *UploadsServiceGetLastUploadRetentionScanForRepositoryFunc) nextHook() func(context.Context, int) (*time.Time, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceGetLastUploadRetentionScanForRepositoryFunc) appendCall(r0 UploadsServiceGetLastUploadRetentionScanForRepositoryFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// UploadsServiceGetLastUploadRetentionScanForRepositoryFuncCall objects
+// describing the invocations of this function.
+func (f *UploadsServiceGetLastUploadRetentionScanForRepositoryFunc) History() []UploadsServiceGetLastUploadRetentionScanForRepositoryFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceGetLastUploadRetentionScanForRepositoryFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceGetLastUploadRetentionScanForRepositoryFuncCall is an
+// object that describes an invocation of method
+// GetLastUploadRetentionScanForRepository on an instance of
+// MockUploadsService.
+type UploadsServiceGetLastUploadRetentionScanForRepositoryFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *time.Time
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServiceGetLastUploadRetentionScanForRepositoryFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceGetLastUploadRetentionScanForRepositoryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// UploadsServiceGetRecentIndexesSummaryFunc describes the behavior when the
+// GetRecentIndexesSummary method of the parent MockUploadsService instance
+// is invoked.
+type UploadsServiceGetRecentIndexesSummaryFunc struct {
+	defaultHook func(context.Context, int) ([]shared.IndexesWithRepositoryNamespace, error)
+	hooks       []func(context.Context, int) ([]shared.IndexesWithRepositoryNamespace, error)
+	history     []UploadsServiceGetRecentIndexesSummaryFuncCall
+	mutex       sync.Mutex
+}
+
+// GetRecentIndexesSummary delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockUploadsService) GetRecentIndexesSummary(v0 context.Context, v1 int) ([]shared.IndexesWithRepositoryNamespace, error) {
+	r0, r1 := m.GetRecentIndexesSummaryFunc.nextHook()(v0, v1)
+	m.GetRecentIndexesSummaryFunc.appendCall(UploadsServiceGetRecentIndexesSummaryFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetRecentIndexesSummary method of the parent MockUploadsService instance
+// is invoked and the hook queue is empty.
+func (f *UploadsServiceGetRecentIndexesSummaryFunc) SetDefaultHook(hook func(context.Context, int) ([]shared.IndexesWithRepositoryNamespace, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetRecentIndexesSummary method of the parent MockUploadsService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UploadsServiceGetRecentIndexesSummaryFunc) PushHook(hook func(context.Context, int) ([]shared.IndexesWithRepositoryNamespace, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceGetRecentIndexesSummaryFunc) SetDefaultReturn(r0 []shared.IndexesWithRepositoryNamespace, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]shared.IndexesWithRepositoryNamespace, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceGetRecentIndexesSummaryFunc) PushReturn(r0 []shared.IndexesWithRepositoryNamespace, r1 error) {
+	f.PushHook(func(context.Context, int) ([]shared.IndexesWithRepositoryNamespace, error) {
+		return r0, r1
+	})
+}
+
+func (f *UploadsServiceGetRecentIndexesSummaryFunc) nextHook() func(context.Context, int) ([]shared.IndexesWithRepositoryNamespace, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceGetRecentIndexesSummaryFunc) appendCall(r0 UploadsServiceGetRecentIndexesSummaryFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// UploadsServiceGetRecentIndexesSummaryFuncCall objects describing the
+// invocations of this function.
+func (f *UploadsServiceGetRecentIndexesSummaryFunc) History() []UploadsServiceGetRecentIndexesSummaryFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceGetRecentIndexesSummaryFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceGetRecentIndexesSummaryFuncCall is an object that describes
+// an invocation of method GetRecentIndexesSummary on an instance of
+// MockUploadsService.
+type UploadsServiceGetRecentIndexesSummaryFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.IndexesWithRepositoryNamespace
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServiceGetRecentIndexesSummaryFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceGetRecentIndexesSummaryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// UploadsServiceGetRecentUploadsSummaryFunc describes the behavior when the
+// GetRecentUploadsSummary method of the parent MockUploadsService instance
+// is invoked.
+type UploadsServiceGetRecentUploadsSummaryFunc struct {
+	defaultHook func(context.Context, int) ([]shared.UploadsWithRepositoryNamespace, error)
+	hooks       []func(context.Context, int) ([]shared.UploadsWithRepositoryNamespace, error)
+	history     []UploadsServiceGetRecentUploadsSummaryFuncCall
+	mutex       sync.Mutex
+}
+
+// GetRecentUploadsSummary delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockUploadsService) GetRecentUploadsSummary(v0 context.Context, v1 int) ([]shared.UploadsWithRepositoryNamespace, error) {
+	r0, r1 := m.GetRecentUploadsSummaryFunc.nextHook()(v0, v1)
+	m.GetRecentUploadsSummaryFunc.appendCall(UploadsServiceGetRecentUploadsSummaryFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetRecentUploadsSummary method of the parent MockUploadsService instance
+// is invoked and the hook queue is empty.
+func (f *UploadsServiceGetRecentUploadsSummaryFunc) SetDefaultHook(hook func(context.Context, int) ([]shared.UploadsWithRepositoryNamespace, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetRecentUploadsSummary method of the parent MockUploadsService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UploadsServiceGetRecentUploadsSummaryFunc) PushHook(hook func(context.Context, int) ([]shared.UploadsWithRepositoryNamespace, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceGetRecentUploadsSummaryFunc) SetDefaultReturn(r0 []shared.UploadsWithRepositoryNamespace, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]shared.UploadsWithRepositoryNamespace, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceGetRecentUploadsSummaryFunc) PushReturn(r0 []shared.UploadsWithRepositoryNamespace, r1 error) {
+	f.PushHook(func(context.Context, int) ([]shared.UploadsWithRepositoryNamespace, error) {
+		return r0, r1
+	})
+}
+
+func (f *UploadsServiceGetRecentUploadsSummaryFunc) nextHook() func(context.Context, int) ([]shared.UploadsWithRepositoryNamespace, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceGetRecentUploadsSummaryFunc) appendCall(r0 UploadsServiceGetRecentUploadsSummaryFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// UploadsServiceGetRecentUploadsSummaryFuncCall objects describing the
+// invocations of this function.
+func (f *UploadsServiceGetRecentUploadsSummaryFunc) History() []UploadsServiceGetRecentUploadsSummaryFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceGetRecentUploadsSummaryFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceGetRecentUploadsSummaryFuncCall is an object that describes
+// an invocation of method GetRecentUploadsSummary on an instance of
+// MockUploadsService.
+type UploadsServiceGetRecentUploadsSummaryFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.UploadsWithRepositoryNamespace
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServiceGetRecentUploadsSummaryFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceGetRecentUploadsSummaryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// UploadsServiceGetUploadByIDFunc describes the behavior when the
+// GetUploadByID method of the parent MockUploadsService instance is
+// invoked.
+type UploadsServiceGetUploadByIDFunc struct {
+	defaultHook func(context.Context, int) (shared.Upload, bool, error)
+	hooks       []func(context.Context, int) (shared.Upload, bool, error)
+	history     []UploadsServiceGetUploadByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// GetUploadByID delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockUploadsService) GetUploadByID(v0 context.Context, v1 int) (shared.Upload, bool, error) {
+	r0, r1, r2 := m.GetUploadByIDFunc.nextHook()(v0, v1)
+	m.GetUploadByIDFunc.appendCall(UploadsServiceGetUploadByIDFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the GetUploadByID method
+// of the parent MockUploadsService instance is invoked and the hook queue
+// is empty.
+func (f *UploadsServiceGetUploadByIDFunc) SetDefaultHook(hook func(context.Context, int) (shared.Upload, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetUploadByID method of the parent MockUploadsService instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *UploadsServiceGetUploadByIDFunc) PushHook(hook func(context.Context, int) (shared.Upload, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceGetUploadByIDFunc) SetDefaultReturn(r0 shared.Upload, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (shared.Upload, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceGetUploadByIDFunc) PushReturn(r0 shared.Upload, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (shared.Upload, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *UploadsServiceGetUploadByIDFunc) nextHook() func(context.Context, int) (shared.Upload, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceGetUploadByIDFunc) appendCall(r0 UploadsServiceGetUploadByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadsServiceGetUploadByIDFuncCall objects
+// describing the invocations of this function.
+func (f *UploadsServiceGetUploadByIDFunc) History() []UploadsServiceGetUploadByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceGetUploadByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceGetUploadByIDFuncCall is an object that describes an
+// invocation of method GetUploadByID on an instance of MockUploadsService.
+type UploadsServiceGetUploadByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 shared.Upload
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServiceGetUploadByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceGetUploadByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// UploadsServiceGetUploadsFunc describes the behavior when the GetUploads
+// method of the parent MockUploadsService instance is invoked.
+type UploadsServiceGetUploadsFunc struct {
+	defaultHook func(context.Context, shared.GetUploadsOptions) ([]shared.Upload, int, error)
+	hooks       []func(context.Context, shared.GetUploadsOptions) ([]shared.Upload, int, error)
+	history     []UploadsServiceGetUploadsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetUploads delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockUploadsService) GetUploads(v0 context.Context, v1 shared.GetUploadsOptions) ([]shared.Upload, int, error) {
+	r0, r1, r2 := m.GetUploadsFunc.nextHook()(v0, v1)
+	m.GetUploadsFunc.appendCall(UploadsServiceGetUploadsFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the GetUploads method of
+// the parent MockUploadsService instance is invoked and the hook queue is
+// empty.
+func (f *UploadsServiceGetUploadsFunc) SetDefaultHook(hook func(context.Context, shared.GetUploadsOptions) ([]shared.Upload, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetUploads method of the parent MockUploadsService instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *UploadsServiceGetUploadsFunc) PushHook(hook func(context.Context, shared.GetUploadsOptions) ([]shared.Upload, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceGetUploadsFunc) SetDefaultReturn(r0 []shared.Upload, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, shared.GetUploadsOptions) ([]shared.Upload, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceGetUploadsFunc) PushReturn(r0 []shared.Upload, r1 int, r2 error) {
+	f.PushHook(func(context.Context, shared.GetUploadsOptions) ([]shared.Upload, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *UploadsServiceGetUploadsFunc) nextHook() func(context.Context, shared.GetUploadsOptions) ([]shared.Upload, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceGetUploadsFunc) appendCall(r0 UploadsServiceGetUploadsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadsServiceGetUploadsFuncCall objects
+// describing the invocations of this function.
+func (f *UploadsServiceGetUploadsFunc) History() []UploadsServiceGetUploadsFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceGetUploadsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceGetUploadsFuncCall is an object that describes an
+// invocation of method GetUploads on an instance of MockUploadsService.
+type UploadsServiceGetUploadsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.GetUploadsOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.Upload
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServiceGetUploadsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceGetUploadsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
 // UploadsServiceGetUploadsByIDsFunc describes the behavior when the
 // GetUploadsByIDs method of the parent MockUploadsService instance is
 // invoked.
 type UploadsServiceGetUploadsByIDsFunc struct {
-	defaultHook func(context.Context, ...int) ([]types.Upload, error)
-	hooks       []func(context.Context, ...int) ([]types.Upload, error)
+	defaultHook func(context.Context, ...int) ([]shared.Upload, error)
+	hooks       []func(context.Context, ...int) ([]shared.Upload, error)
 	history     []UploadsServiceGetUploadsByIDsFuncCall
 	mutex       sync.Mutex
 }
 
 // GetUploadsByIDs delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockUploadsService) GetUploadsByIDs(v0 context.Context, v1 ...int) ([]types.Upload, error) {
+func (m *MockUploadsService) GetUploadsByIDs(v0 context.Context, v1 ...int) ([]shared.Upload, error) {
 	r0, r1 := m.GetUploadsByIDsFunc.nextHook()(v0, v1...)
 	m.GetUploadsByIDsFunc.appendCall(UploadsServiceGetUploadsByIDsFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -1463,7 +3335,7 @@ func (m *MockUploadsService) GetUploadsByIDs(v0 context.Context, v1 ...int) ([]t
 // SetDefaultHook sets function that is called when the GetUploadsByIDs
 // method of the parent MockUploadsService instance is invoked and the hook
 // queue is empty.
-func (f *UploadsServiceGetUploadsByIDsFunc) SetDefaultHook(hook func(context.Context, ...int) ([]types.Upload, error)) {
+func (f *UploadsServiceGetUploadsByIDsFunc) SetDefaultHook(hook func(context.Context, ...int) ([]shared.Upload, error)) {
 	f.defaultHook = hook
 }
 
@@ -1471,7 +3343,7 @@ func (f *UploadsServiceGetUploadsByIDsFunc) SetDefaultHook(hook func(context.Con
 // GetUploadsByIDs method of the parent MockUploadsService instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *UploadsServiceGetUploadsByIDsFunc) PushHook(hook func(context.Context, ...int) ([]types.Upload, error)) {
+func (f *UploadsServiceGetUploadsByIDsFunc) PushHook(hook func(context.Context, ...int) ([]shared.Upload, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1479,20 +3351,20 @@ func (f *UploadsServiceGetUploadsByIDsFunc) PushHook(hook func(context.Context, 
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *UploadsServiceGetUploadsByIDsFunc) SetDefaultReturn(r0 []types.Upload, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...int) ([]types.Upload, error) {
+func (f *UploadsServiceGetUploadsByIDsFunc) SetDefaultReturn(r0 []shared.Upload, r1 error) {
+	f.SetDefaultHook(func(context.Context, ...int) ([]shared.Upload, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadsServiceGetUploadsByIDsFunc) PushReturn(r0 []types.Upload, r1 error) {
-	f.PushHook(func(context.Context, ...int) ([]types.Upload, error) {
+func (f *UploadsServiceGetUploadsByIDsFunc) PushReturn(r0 []shared.Upload, r1 error) {
+	f.PushHook(func(context.Context, ...int) ([]shared.Upload, error) {
 		return r0, r1
 	})
 }
 
-func (f *UploadsServiceGetUploadsByIDsFunc) nextHook() func(context.Context, ...int) ([]types.Upload, error) {
+func (f *UploadsServiceGetUploadsByIDsFunc) nextHook() func(context.Context, ...int) ([]shared.Upload, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1534,7 +3406,7 @@ type UploadsServiceGetUploadsByIDsFuncCall struct {
 	Arg1 []int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.Upload
+	Result0 []shared.Upload
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -1557,4 +3429,659 @@ func (c UploadsServiceGetUploadsByIDsFuncCall) Args() []interface{} {
 // invocation.
 func (c UploadsServiceGetUploadsByIDsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// UploadsServiceNumRepositoriesWithCodeIntelligenceFunc describes the
+// behavior when the NumRepositoriesWithCodeIntelligence method of the
+// parent MockUploadsService instance is invoked.
+type UploadsServiceNumRepositoriesWithCodeIntelligenceFunc struct {
+	defaultHook func(context.Context) (int, error)
+	hooks       []func(context.Context) (int, error)
+	history     []UploadsServiceNumRepositoriesWithCodeIntelligenceFuncCall
+	mutex       sync.Mutex
+}
+
+// NumRepositoriesWithCodeIntelligence delegates to the next hook function
+// in the queue and stores the parameter and result values of this
+// invocation.
+func (m *MockUploadsService) NumRepositoriesWithCodeIntelligence(v0 context.Context) (int, error) {
+	r0, r1 := m.NumRepositoriesWithCodeIntelligenceFunc.nextHook()(v0)
+	m.NumRepositoriesWithCodeIntelligenceFunc.appendCall(UploadsServiceNumRepositoriesWithCodeIntelligenceFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// NumRepositoriesWithCodeIntelligence method of the parent
+// MockUploadsService instance is invoked and the hook queue is empty.
+func (f *UploadsServiceNumRepositoriesWithCodeIntelligenceFunc) SetDefaultHook(hook func(context.Context) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// NumRepositoriesWithCodeIntelligence method of the parent
+// MockUploadsService instance invokes the hook at the front of the queue
+// and discards it. After the queue is empty, the default hook function is
+// invoked for any future action.
+func (f *UploadsServiceNumRepositoriesWithCodeIntelligenceFunc) PushHook(hook func(context.Context) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceNumRepositoriesWithCodeIntelligenceFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceNumRepositoriesWithCodeIntelligenceFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *UploadsServiceNumRepositoriesWithCodeIntelligenceFunc) nextHook() func(context.Context) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceNumRepositoriesWithCodeIntelligenceFunc) appendCall(r0 UploadsServiceNumRepositoriesWithCodeIntelligenceFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// UploadsServiceNumRepositoriesWithCodeIntelligenceFuncCall objects
+// describing the invocations of this function.
+func (f *UploadsServiceNumRepositoriesWithCodeIntelligenceFunc) History() []UploadsServiceNumRepositoriesWithCodeIntelligenceFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceNumRepositoriesWithCodeIntelligenceFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceNumRepositoriesWithCodeIntelligenceFuncCall is an object
+// that describes an invocation of method
+// NumRepositoriesWithCodeIntelligence on an instance of MockUploadsService.
+type UploadsServiceNumRepositoriesWithCodeIntelligenceFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServiceNumRepositoriesWithCodeIntelligenceFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceNumRepositoriesWithCodeIntelligenceFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// UploadsServiceReindexIndexByIDFunc describes the behavior when the
+// ReindexIndexByID method of the parent MockUploadsService instance is
+// invoked.
+type UploadsServiceReindexIndexByIDFunc struct {
+	defaultHook func(context.Context, int) error
+	hooks       []func(context.Context, int) error
+	history     []UploadsServiceReindexIndexByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// ReindexIndexByID delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUploadsService) ReindexIndexByID(v0 context.Context, v1 int) error {
+	r0 := m.ReindexIndexByIDFunc.nextHook()(v0, v1)
+	m.ReindexIndexByIDFunc.appendCall(UploadsServiceReindexIndexByIDFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ReindexIndexByID
+// method of the parent MockUploadsService instance is invoked and the hook
+// queue is empty.
+func (f *UploadsServiceReindexIndexByIDFunc) SetDefaultHook(hook func(context.Context, int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ReindexIndexByID method of the parent MockUploadsService instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *UploadsServiceReindexIndexByIDFunc) PushHook(hook func(context.Context, int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceReindexIndexByIDFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceReindexIndexByIDFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+func (f *UploadsServiceReindexIndexByIDFunc) nextHook() func(context.Context, int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceReindexIndexByIDFunc) appendCall(r0 UploadsServiceReindexIndexByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadsServiceReindexIndexByIDFuncCall
+// objects describing the invocations of this function.
+func (f *UploadsServiceReindexIndexByIDFunc) History() []UploadsServiceReindexIndexByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceReindexIndexByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceReindexIndexByIDFuncCall is an object that describes an
+// invocation of method ReindexIndexByID on an instance of
+// MockUploadsService.
+type UploadsServiceReindexIndexByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServiceReindexIndexByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceReindexIndexByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// UploadsServiceReindexIndexesFunc describes the behavior when the
+// ReindexIndexes method of the parent MockUploadsService instance is
+// invoked.
+type UploadsServiceReindexIndexesFunc struct {
+	defaultHook func(context.Context, shared.ReindexIndexesOptions) error
+	hooks       []func(context.Context, shared.ReindexIndexesOptions) error
+	history     []UploadsServiceReindexIndexesFuncCall
+	mutex       sync.Mutex
+}
+
+// ReindexIndexes delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUploadsService) ReindexIndexes(v0 context.Context, v1 shared.ReindexIndexesOptions) error {
+	r0 := m.ReindexIndexesFunc.nextHook()(v0, v1)
+	m.ReindexIndexesFunc.appendCall(UploadsServiceReindexIndexesFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ReindexIndexes
+// method of the parent MockUploadsService instance is invoked and the hook
+// queue is empty.
+func (f *UploadsServiceReindexIndexesFunc) SetDefaultHook(hook func(context.Context, shared.ReindexIndexesOptions) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ReindexIndexes method of the parent MockUploadsService instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *UploadsServiceReindexIndexesFunc) PushHook(hook func(context.Context, shared.ReindexIndexesOptions) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceReindexIndexesFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, shared.ReindexIndexesOptions) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceReindexIndexesFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, shared.ReindexIndexesOptions) error {
+		return r0
+	})
+}
+
+func (f *UploadsServiceReindexIndexesFunc) nextHook() func(context.Context, shared.ReindexIndexesOptions) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceReindexIndexesFunc) appendCall(r0 UploadsServiceReindexIndexesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadsServiceReindexIndexesFuncCall
+// objects describing the invocations of this function.
+func (f *UploadsServiceReindexIndexesFunc) History() []UploadsServiceReindexIndexesFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceReindexIndexesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceReindexIndexesFuncCall is an object that describes an
+// invocation of method ReindexIndexes on an instance of MockUploadsService.
+type UploadsServiceReindexIndexesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.ReindexIndexesOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServiceReindexIndexesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceReindexIndexesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// UploadsServiceReindexUploadByIDFunc describes the behavior when the
+// ReindexUploadByID method of the parent MockUploadsService instance is
+// invoked.
+type UploadsServiceReindexUploadByIDFunc struct {
+	defaultHook func(context.Context, int) error
+	hooks       []func(context.Context, int) error
+	history     []UploadsServiceReindexUploadByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// ReindexUploadByID delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUploadsService) ReindexUploadByID(v0 context.Context, v1 int) error {
+	r0 := m.ReindexUploadByIDFunc.nextHook()(v0, v1)
+	m.ReindexUploadByIDFunc.appendCall(UploadsServiceReindexUploadByIDFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ReindexUploadByID
+// method of the parent MockUploadsService instance is invoked and the hook
+// queue is empty.
+func (f *UploadsServiceReindexUploadByIDFunc) SetDefaultHook(hook func(context.Context, int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ReindexUploadByID method of the parent MockUploadsService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UploadsServiceReindexUploadByIDFunc) PushHook(hook func(context.Context, int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceReindexUploadByIDFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceReindexUploadByIDFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+func (f *UploadsServiceReindexUploadByIDFunc) nextHook() func(context.Context, int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceReindexUploadByIDFunc) appendCall(r0 UploadsServiceReindexUploadByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadsServiceReindexUploadByIDFuncCall
+// objects describing the invocations of this function.
+func (f *UploadsServiceReindexUploadByIDFunc) History() []UploadsServiceReindexUploadByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceReindexUploadByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceReindexUploadByIDFuncCall is an object that describes an
+// invocation of method ReindexUploadByID on an instance of
+// MockUploadsService.
+type UploadsServiceReindexUploadByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServiceReindexUploadByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceReindexUploadByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// UploadsServiceReindexUploadsFunc describes the behavior when the
+// ReindexUploads method of the parent MockUploadsService instance is
+// invoked.
+type UploadsServiceReindexUploadsFunc struct {
+	defaultHook func(context.Context, shared.ReindexUploadsOptions) error
+	hooks       []func(context.Context, shared.ReindexUploadsOptions) error
+	history     []UploadsServiceReindexUploadsFuncCall
+	mutex       sync.Mutex
+}
+
+// ReindexUploads delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUploadsService) ReindexUploads(v0 context.Context, v1 shared.ReindexUploadsOptions) error {
+	r0 := m.ReindexUploadsFunc.nextHook()(v0, v1)
+	m.ReindexUploadsFunc.appendCall(UploadsServiceReindexUploadsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ReindexUploads
+// method of the parent MockUploadsService instance is invoked and the hook
+// queue is empty.
+func (f *UploadsServiceReindexUploadsFunc) SetDefaultHook(hook func(context.Context, shared.ReindexUploadsOptions) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ReindexUploads method of the parent MockUploadsService instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *UploadsServiceReindexUploadsFunc) PushHook(hook func(context.Context, shared.ReindexUploadsOptions) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceReindexUploadsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, shared.ReindexUploadsOptions) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceReindexUploadsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, shared.ReindexUploadsOptions) error {
+		return r0
+	})
+}
+
+func (f *UploadsServiceReindexUploadsFunc) nextHook() func(context.Context, shared.ReindexUploadsOptions) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceReindexUploadsFunc) appendCall(r0 UploadsServiceReindexUploadsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadsServiceReindexUploadsFuncCall
+// objects describing the invocations of this function.
+func (f *UploadsServiceReindexUploadsFunc) History() []UploadsServiceReindexUploadsFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceReindexUploadsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceReindexUploadsFuncCall is an object that describes an
+// invocation of method ReindexUploads on an instance of MockUploadsService.
+type UploadsServiceReindexUploadsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.ReindexUploadsOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServiceReindexUploadsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceReindexUploadsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// UploadsServiceRepositoryIDsWithErrorsFunc describes the behavior when the
+// RepositoryIDsWithErrors method of the parent MockUploadsService instance
+// is invoked.
+type UploadsServiceRepositoryIDsWithErrorsFunc struct {
+	defaultHook func(context.Context, int, int) ([]shared.RepositoryWithCount, int, error)
+	hooks       []func(context.Context, int, int) ([]shared.RepositoryWithCount, int, error)
+	history     []UploadsServiceRepositoryIDsWithErrorsFuncCall
+	mutex       sync.Mutex
+}
+
+// RepositoryIDsWithErrors delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockUploadsService) RepositoryIDsWithErrors(v0 context.Context, v1 int, v2 int) ([]shared.RepositoryWithCount, int, error) {
+	r0, r1, r2 := m.RepositoryIDsWithErrorsFunc.nextHook()(v0, v1, v2)
+	m.RepositoryIDsWithErrorsFunc.appendCall(UploadsServiceRepositoryIDsWithErrorsFuncCall{v0, v1, v2, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// RepositoryIDsWithErrors method of the parent MockUploadsService instance
+// is invoked and the hook queue is empty.
+func (f *UploadsServiceRepositoryIDsWithErrorsFunc) SetDefaultHook(hook func(context.Context, int, int) ([]shared.RepositoryWithCount, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepositoryIDsWithErrors method of the parent MockUploadsService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UploadsServiceRepositoryIDsWithErrorsFunc) PushHook(hook func(context.Context, int, int) ([]shared.RepositoryWithCount, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceRepositoryIDsWithErrorsFunc) SetDefaultReturn(r0 []shared.RepositoryWithCount, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, int, int) ([]shared.RepositoryWithCount, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceRepositoryIDsWithErrorsFunc) PushReturn(r0 []shared.RepositoryWithCount, r1 int, r2 error) {
+	f.PushHook(func(context.Context, int, int) ([]shared.RepositoryWithCount, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *UploadsServiceRepositoryIDsWithErrorsFunc) nextHook() func(context.Context, int, int) ([]shared.RepositoryWithCount, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceRepositoryIDsWithErrorsFunc) appendCall(r0 UploadsServiceRepositoryIDsWithErrorsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// UploadsServiceRepositoryIDsWithErrorsFuncCall objects describing the
+// invocations of this function.
+func (f *UploadsServiceRepositoryIDsWithErrorsFunc) History() []UploadsServiceRepositoryIDsWithErrorsFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceRepositoryIDsWithErrorsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceRepositoryIDsWithErrorsFuncCall is an object that describes
+// an invocation of method RepositoryIDsWithErrors on an instance of
+// MockUploadsService.
+type UploadsServiceRepositoryIDsWithErrorsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.RepositoryWithCount
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServiceRepositoryIDsWithErrorsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceRepositoryIDsWithErrorsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }

@@ -428,8 +428,7 @@ func (c *Client) symbolInfoGRPC(ctx context.Context, args types.RepoCommitPathPo
 		return nil, err
 	}
 
-	response := protoResponse.ToInternal()
-	return &response, nil
+	return protoResponse.ToInternal(), nil
 }
 
 func (c *Client) symbolInfoJSON(ctx context.Context, args types.RepoCommitPathPoint) (result *types.SymbolInfo, err error) {

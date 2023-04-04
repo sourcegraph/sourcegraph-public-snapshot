@@ -218,7 +218,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                     className="p-2"
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiSecurity} className="mr-1" />
-                                    View Permissions
+                                    Permissions
                                 </MenuItem>
                                 <MenuItem
                                     as={Button}

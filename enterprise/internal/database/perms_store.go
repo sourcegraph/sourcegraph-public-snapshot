@@ -159,14 +159,14 @@ type PermsStore interface {
 	// CountReposWithNoPerms returns the count of private repositories with no
 	// permissions found in the database.
 	CountReposWithNoPerms(ctx context.Context) (int, error)
-	// CountUsersWithOldestPerms returns the count of users who have the least
+	// CountUsersWithStalePerms returns the count of users who have the least
 	// recent synced permissions in the database and capped. If a user's permissions
 	// have been recently synced, based on "age" they are ignored.
-	CountUsersWithOldestPerms(ctx context.Context, age time.Duration) (int, error)
-	// CountReposWithOldestPerms returns the count of repositories that have the least
+	CountUsersWithStalePerms(ctx context.Context, age time.Duration) (int, error)
+	// CountReposWithStalePerms returns the count of repositories that have the least
 	// recent synced permissions in the database. If a repo's permissions have been recently
 	// synced, based on "age" they are ignored.
-	CountReposWithOldestPerms(ctx context.Context, age time.Duration) (int, error)
+	CountReposWithStalePerms(ctx context.Context, age time.Duration) (int, error)
 	// Metrics returns calculated metrics values by querying the database. The
 	// "staleDur" argument indicates how long ago was the last update to be
 	// considered as stale.
@@ -1453,21 +1453,21 @@ AND expired_at IS NULL
 	return userIDs, nil
 }
 
+// NOTE(naman): `countUsersWithNoPermsQuery` is different from `userIDsWithNoPermsQuery`
+// as it only considers user_repo_permissions table to filter out users with permissions.
+// Whereas the `userIDsWithNoPermsQuery` also filter out users who has any record of previous
+// permissions sync job.
 const countUsersWithNoPermsQuery = `
-WITH rp AS (
-	-- Filter out users with permissions
-	SELECT DISTINCT user_id FROM user_repo_permissions
-	UNION
-	-- Filter out users with completed sync jobs
-	SELECT DISTINCT user_id FROM permission_sync_jobs WHERE user_id IS NOT NULL
-)
+-- Filter out users with permissions
+WITH users_having_permissions AS (SELECT DISTINCT user_id FROM user_repo_permissions)
+
 SELECT COUNT(users.id)
 FROM users
-LEFT OUTER JOIN rp ON rp.user_id = users.id
+	LEFT OUTER JOIN users_having_permissions ON users_having_permissions.user_id = users.id
 WHERE
 	users.deleted_at IS NULL
-AND %s
-AND rp.user_id IS NULL
+	AND %s
+	AND users_having_permissions.user_id IS NULL
 `
 
 func (s *permsStore) CountUsersWithNoPerms(ctx context.Context) (int, error) {
@@ -1483,21 +1483,21 @@ func (s *permsStore) CountUsersWithNoPerms(ctx context.Context) (int, error) {
 	return basestore.ScanInt(s.QueryRow(ctx, q))
 }
 
+// NOTE(naman): `countReposWithNoPermsQuery` is different from `repoIDsWithNoPermsQuery`
+// as it only considers user_repo_permissions table to filter out users with permissions.
+// Whereas the `repoIDsWithNoPermsQuery` also filter out users who has any record of previous
+// permissions sync job.
 const countReposWithNoPermsQuery = `
-WITH rp AS (
-	-- Filter out repos with permissions
-	SELECT DISTINCT perms.repo_id FROM user_repo_permissions AS perms
-	UNION
-	-- Filter out repos with sync jobs
-	SELECT DISTINCT syncs.repository_id AS repo_id FROM permission_sync_jobs AS syncs
-		WHERE syncs.repository_id IS NOT NULL
-)
-SELECT COUNT(r.id)
-FROM repo AS r
-LEFT OUTER JOIN rp ON rp.repo_id = r.id
-WHERE r.deleted_at IS NULL
-AND r.private = TRUE
-AND rp.repo_id IS NULL
+-- Filter out repos with permissions
+WITH repos_with_permissions AS (SELECT DISTINCT repo_id FROM user_repo_permissions)
+
+SELECT COUNT(repo.id)
+FROM repo
+	LEFT OUTER JOIN repos_with_permissions ON repos_with_permissions.repo_id = repo.id
+WHERE 
+	repo.deleted_at IS NULL 
+	AND repo.private = TRUE
+	AND repos_with_permissions.repo_id IS NULL
 `
 
 func (s *permsStore) CountReposWithNoPerms(ctx context.Context) (int, error) {
@@ -1505,7 +1505,7 @@ func (s *permsStore) CountReposWithNoPerms(ctx context.Context) (int, error) {
 	return basestore.ScanInt(s.QueryRow(ctx, sqlf.Sprintf(query)))
 }
 
-const countUsersWithOldestPermsQuery = `
+const countUsersWithStalePermsQuery = `
 WITH us AS (
 	SELECT DISTINCT ON(user_id) user_id, finished_at FROM permission_sync_jobs
 	INNER JOIN users ON users.id = user_id AND users.deleted_at IS NULL
@@ -1516,15 +1516,15 @@ SELECT COUNT(user_id) FROM us
 WHERE %s
 `
 
-// CountUsersWithOldestPerms lists the users with the oldest synced perms, limited
+// CountUsersWithStalePerms lists the users with the oldest synced perms, limited
 // to limit. If age is non-zero, users that have synced within "age" since now
 // will be filtered out.
-func (s *permsStore) CountUsersWithOldestPerms(ctx context.Context, age time.Duration) (int, error) {
-	q := sqlf.Sprintf(countUsersWithOldestPermsQuery, s.getCutoffClause(age))
+func (s *permsStore) CountUsersWithStalePerms(ctx context.Context, age time.Duration) (int, error) {
+	q := sqlf.Sprintf(countUsersWithStalePermsQuery, s.getCutoffClause(age))
 	return basestore.ScanInt(s.QueryRow(ctx, q))
 }
 
-const countReposWithOldestPermsQuery = `
+const countReposWithStalePermsQuery = `
 WITH us AS (
 	SELECT DISTINCT ON(repository_id) repository_id, finished_at FROM permission_sync_jobs
 	INNER JOIN repo ON repo.id = repository_id AND repo.deleted_at IS NULL
@@ -1535,12 +1535,15 @@ SELECT COUNT(repository_id) FROM us
 WHERE %s
 `
 
-func (s *permsStore) CountReposWithOldestPerms(ctx context.Context, age time.Duration) (int, error) {
-	q := sqlf.Sprintf(countReposWithOldestPermsQuery, s.getCutoffClause(age))
+func (s *permsStore) CountReposWithStalePerms(ctx context.Context, age time.Duration) (int, error) {
+	q := sqlf.Sprintf(countReposWithStalePermsQuery, s.getCutoffClause(age))
 	return basestore.ScanInt(s.QueryRow(ctx, q))
 }
 
-const usersWithNoPermsQuery = `
+// NOTE(naman): we filter out users with any kind of sync job present
+// and not only a completed job because even if the present job failed,
+// the user will be re-scheduled as part of `userIDsWithOldestPerms`.
+const userIDsWithNoPermsQuery = `
 WITH rp AS (
 	-- Filter out users with permissions
 	SELECT DISTINCT user_id FROM user_repo_permissions
@@ -1565,12 +1568,15 @@ func (s *permsStore) UserIDsWithNoPerms(ctx context.Context) ([]int32, error) {
 		filterSiteAdmins = sqlf.Sprintf("TRUE")
 	}
 
-	query := usersWithNoPermsQuery
+	query := userIDsWithNoPermsQuery
 
 	q := sqlf.Sprintf(query, filterSiteAdmins)
 	return basestore.ScanInt32s(s.Query(ctx, q))
 }
 
+// NOTE(naman): we filter out repos with any kind of sync job present
+// and not only a completed job because even if the present job failed,
+// the repo will be re-scheduled as part of `repoIDsWithOldestPerms`.
 const repoIDsWithNoPermsQuery = `
 WITH rp AS (
 	-- Filter out repos with permissions
@@ -1601,13 +1607,13 @@ func (s *permsStore) getCutoffClause(age time.Duration) *sqlf.Query {
 }
 
 const usersWithOldestPermsQuery = `
-WITH us AS (
+WITH user_sync_jobs AS (
 	SELECT DISTINCT ON(user_id) user_id, finished_at FROM permission_sync_jobs
 	INNER JOIN users ON users.id = user_id AND users.deleted_at IS NULL
 		WHERE user_id IS NOT NULL
 	ORDER BY user_id ASC, finished_at DESC
 )
-SELECT user_id, finished_at FROM us
+SELECT user_id, finished_at FROM user_sync_jobs
 WHERE %s
 LIMIT %d;
 `
@@ -1621,13 +1627,13 @@ func (s *permsStore) UserIDsWithOldestPerms(ctx context.Context, limit int, age 
 }
 
 const reposWithOldestPermsQuery = `
-WITH us AS (
+WITH repo_sync_jobs AS (
 	SELECT DISTINCT ON(repository_id) repository_id, finished_at FROM permission_sync_jobs
 	INNER JOIN repo ON repo.id = repository_id AND repo.deleted_at IS NULL
 		WHERE repository_id IS NOT NULL
 	ORDER BY repository_id ASC, finished_at DESC
 )
-SELECT repository_id, finished_at FROM us
+SELECT repository_id, finished_at FROM repo_sync_jobs
 WHERE %s
 LIMIT %d;
 `

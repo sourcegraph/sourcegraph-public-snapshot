@@ -6,7 +6,7 @@ import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatMessage, ChatHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
@@ -16,17 +16,18 @@ import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/source
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { version as packageVersion } from '../../package.json'
-import { ChatHistory } from '../../webviews/utils/types'
 import { LocalStorage } from '../command/LocalStorageProvider'
-import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../command/secret-storage'
 import { updateConfiguration } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
+import { logEvent } from '../event-logger'
 import { configureExternalServices } from '../external-services'
 import { getRgPath } from '../rg'
+import { sanitizeServerEndpoint } from '../sanitize'
+import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../secret-storage'
 import { TestSupport } from '../test-support'
 
 async function isValidLogin(serverEndpoint: string, accessToken: string): Promise<boolean> {
-    const client = new SourcegraphGraphQLAPIClient(serverEndpoint, accessToken)
+    const client = new SourcegraphGraphQLAPIClient(sanitizeServerEndpoint(serverEndpoint), accessToken)
     const userId = await client.getCurrentUserId()
     return !isError(userId)
 }
@@ -45,6 +46,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     constructor(
         private extensionPath: string,
         private codebase: string,
+        private serverEndpoint: string,
         private transcript: Transcript,
         private chat: ChatClient,
         private intentDetector: IntentDetector,
@@ -88,6 +90,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         return new ChatViewProvider(
             extensionPath,
             codebase,
+            serverEndpoint,
             new Transcript(),
             chatClient,
             intentDetector,
@@ -125,13 +128,22 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 const isValid = await isValidLogin(message.serverEndpoint, message.accessToken)
                 if (isValid) {
                     await updateConfiguration('serverEndpoint', message.serverEndpoint)
-                    await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
+                    logEvent(
+                        'CodyVSCodeExtension:login:clicked',
+                        { serverEndpoint: this.serverEndpoint },
+                        { serverEndpoint: this.serverEndpoint }
+                    )
                 }
                 this.sendLogin(isValid)
                 break
             }
             case 'removeToken':
                 await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
+                logEvent(
+                    'CodyVSCodeExtension:codyDeleteAccessToken:clicked',
+                    { serverEndpoint: this.serverEndpoint },
+                    { serverEndpoint: this.serverEndpoint }
+                )
                 break
             case 'removeHistory':
                 await this.localStorage.removeChatHistory()
@@ -163,6 +175,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     private async acceptTOS(version: string): Promise<void> {
         this.tosVersion = version
         await vscode.commands.executeCommand('cody.accept-tos', version)
+        logEvent(
+            'CodyVSCodeExtension:acceptTerms:clicked',
+            { serverEndpoint: this.serverEndpoint },
+            { serverEndpoint: this.serverEndpoint }
+        )
     }
 
     private createNewChatID(): void {
@@ -229,6 +246,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
         const prompt = await this.transcript.toPrompt(getPreamble(this.codebase))
         this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
+
+        logEvent(
+            `CodyVSCodeExtension:recipe:${recipe.getID()}:executed`,
+            { serverEndpoint: this.serverEndpoint },
+            { serverEndpoint: this.serverEndpoint }
+        )
     }
 
     private onBotMessageChange(text: string): void {
@@ -354,6 +377,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 )
 
                 this.codebase = codebase
+                this.serverEndpoint = serverEndpoint
                 this.intentDetector = intentDetector
                 this.codebaseContext = codebaseContext
                 this.chat = chatClient
@@ -361,6 +385,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 const action = await vscode.window.showInformationMessage(
                     'Cody configuration has been updated.',
                     'Reload Window'
+                )
+
+                logEvent(
+                    'CodyVSCodeExtension:updateEndpoint:clicked',
+                    { serverEndpoint: this.serverEndpoint },
+                    { serverEndpoint: this.serverEndpoint }
                 )
                 if (action === 'Reload Window') {
                     await vscode.commands.executeCommand('workbench.action.reloadWindow')

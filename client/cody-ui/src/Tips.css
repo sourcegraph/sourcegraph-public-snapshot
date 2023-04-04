@@ -1,0 +1,17 @@
+.tips-container {
+    padding: 1rem;
+    padding-top: 0;
+}
+
+.tips-container ul {
+    padding-inline-start: 1rem;
+}
+
+.tips-container li {
+    line-height: 1.5rem;
+}
+
+.code-block {
+    padding: 1em;
+    white-space: break-spaces;
+}

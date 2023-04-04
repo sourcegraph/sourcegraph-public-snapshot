@@ -90,7 +90,7 @@ const DEFAULT_FILTERS = {
     query: '',
     partial: '',
 }
-const PERMISSIONS_SYNC_JOBS_POLL_INTERVAL = 5000
+const PERMISSIONS_SYNC_JOBS_POLL_INTERVAL = 2000
 
 interface Props extends TelemetryProps {
     minimal?: boolean

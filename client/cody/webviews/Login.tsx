@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { TextFieldType } from '@vscode/webview-ui-toolkit/dist/text-field'
 import { VSCodeTextField, VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
-import { Terms } from './About'
+import { Terms } from '@sourcegraph/cody-ui/src/Terms'
 
 import './Login.css'
 
@@ -50,7 +50,17 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                     </div>
                 ) : (
                     <div className="container-getting-started">
-                        <Terms setTermsAccepted={setTermsAccepted} />
+                        <Terms
+                            acceptTermsButton={
+                                <VSCodeButton
+                                    className="accept-button"
+                                    type="button"
+                                    onClick={() => setTermsAccepted(true)}
+                                >
+                                    I Accept
+                                </VSCodeButton>
+                            }
+                        />
                     </div>
                 )}
             </div>

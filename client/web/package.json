@@ -42,6 +42,8 @@
     "@sourcegraph/branded": "workspace:*",
     "@sourcegraph/client-api": "workspace:*",
     "@sourcegraph/codeintellify": "workspace:*",
+    "@sourcegraph/cody-shared": "workspace:*",
+    "@sourcegraph/cody-ui": "workspace:*",
     "@sourcegraph/common": "workspace:*",
     "@sourcegraph/http-client": "workspace:*",
     "@sourcegraph/observability-client": "workspace:*",

@@ -6,8 +6,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -24,7 +23,7 @@ const StalledIndexMaxAge = time.Second * 25
 // "queued" on its next reset.
 const IndexMaxNumResets = 3
 
-var IndexWorkerStoreOptions = dbworkerstore.Options[types.Index]{
+var IndexWorkerStoreOptions = dbworkerstore.Options[uploadsshared.Index]{
 	Name:              "codeintel_index",
 	TableName:         "lsif_indexes",
 	ViewName:          "lsif_indexes_with_repository_name u",
@@ -61,7 +60,7 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf(`u.requested_envvars`),
 }
 
-func scanIndex(s dbutil.Scanner) (index types.Index, err error) {
+func scanIndex(s dbutil.Scanner) (index uploadsshared.Index, err error) {
 	var executionLogs []executor.ExecutionLogEntry
 	if err := s.Scan(
 		&index.ID,
@@ -108,7 +107,7 @@ const StalledDependencySyncingJobMaxAge = time.Second * 25
 // moved into "errored" rather than "queued" on its next reset.
 const DependencySyncingJobMaxNumResets = 3
 
-var DependencySyncingJobWorkerStoreOptions = dbworkerstore.Options[shared.DependencySyncingJob]{
+var DependencySyncingJobWorkerStoreOptions = dbworkerstore.Options[dependencySyncingJob]{
 	Name:              "codeintel_dependency_syncing",
 	TableName:         "lsif_dependency_syncing_jobs",
 	ColumnExpressions: dependencySyncingJobColumns,
@@ -130,7 +129,7 @@ var dependencySyncingJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("lsif_dependency_syncing_jobs.upload_id"),
 }
 
-func scanDependencySyncingJob(s dbutil.Scanner) (job shared.DependencySyncingJob, err error) {
+func scanDependencySyncingJob(s dbutil.Scanner) (job dependencySyncingJob, err error) {
 	return job, s.Scan(
 		&job.ID,
 		&job.State,
@@ -156,7 +155,7 @@ const StalledDependencyIndexingJobMaxAge = time.Second * 25
 // moved into "errored" rather than "queued" on its next reset.
 const DependencyIndexingJobMaxNumResets = 3
 
-var DependencyIndexingJobWorkerStoreOptions = dbworkerstore.Options[shared.DependencyIndexingJob]{
+var DependencyIndexingJobWorkerStoreOptions = dbworkerstore.Options[dependencyIndexingJob]{
 	Name:              "codeintel_dependency_indexing",
 	TableName:         "lsif_dependency_indexing_jobs",
 	ColumnExpressions: dependencyIndexingJobColumns,
@@ -180,7 +179,7 @@ var dependencyIndexingJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("lsif_dependency_indexing_jobs.external_service_sync"),
 }
 
-func scanDependencyIndexingJob(s dbutil.Scanner) (job shared.DependencyIndexingJob, err error) {
+func scanDependencyIndexingJob(s dbutil.Scanner) (job dependencyIndexingJob, err error) {
 	return job, s.Scan(
 		&job.ID,
 		&job.State,
