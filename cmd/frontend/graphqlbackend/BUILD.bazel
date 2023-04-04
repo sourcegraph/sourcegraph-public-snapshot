@@ -288,6 +288,7 @@ go_library(
         "//internal/usagestats",
         "//internal/users",
         "//internal/version",
+        "//internal/version/upgradestore",
         "//internal/webhooks/outbound",
         "//lib/batches",
         "//lib/errors",

@@ -9,8 +9,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -86,7 +86,7 @@ func TestCorrelateSCIP(t *testing.T) {
 			t.Errorf("unexpected paths (-want +got):\n%s", diff)
 		}
 
-		if diff := cmp.Diff(testedInvertedRangeIndex, codeinteltypes.ExtractSymbolIndexes(documentMap["template/src/util/graphql.ts"].Document)); diff != "" {
+		if diff := cmp.Diff(testedInvertedRangeIndex, shared.ExtractSymbolIndexes(documentMap["template/src/util/graphql.ts"].Document)); diff != "" {
 			t.Errorf("unexpected inverted symbols (-want +got):\n%s", diff)
 		}
 	}
@@ -158,7 +158,7 @@ func TestCorrelateSCIP(t *testing.T) {
 	}
 }
 
-var testedInvertedRangeIndex = []codeinteltypes.InvertedRangeIndex{
+var testedInvertedRangeIndex = []shared.InvertedRangeIndex{
 	{
 		SymbolName:      "scip-typescript npm js-base64 3.7.1 `base64.d.ts`/",
 		ReferenceRanges: []int32{0, 27, 0, 38},

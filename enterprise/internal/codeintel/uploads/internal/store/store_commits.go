@@ -11,7 +11,6 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -64,7 +63,7 @@ func (s *store) ProcessSourcedCommits(
 // order to determine which records in the database are unreachable by normal query
 // paths and clean up that occupied (but useless) space. The output is of this method is
 // ordered by repository ID then by commit.
-func (s *store) GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error) {
+func (s *store) GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []SourcedCommits, err error) {
 	ctx, trace, endObservation := s.operations.getStaleSourcedCommits.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 

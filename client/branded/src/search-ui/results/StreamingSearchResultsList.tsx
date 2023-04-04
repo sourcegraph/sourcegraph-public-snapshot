@@ -19,7 +19,6 @@ import {
 } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { CommitSearchResult } from '../components/CommitSearchResult'
 import { FileContentSearchResult } from '../components/FileContentSearchResult'
@@ -116,7 +115,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
     const location = useLocation()
     const [rootRef, setRootRef] = useState<HTMLElement | null>(null)
-    const [rickrolld] = useLocalStorage('rickrolld', false)
 
     const renderResult = useCallback(
         (result: SearchMatch, index: number): JSX.Element => {
@@ -261,7 +259,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 className={classNames('mt-2 mb-0', styles.list)}
                 itemsToShow={itemsToShow}
                 onShowMoreItems={handleBottomHit}
-                items={results?.results ? addRickRollItem(results.results, rickrolld) : []}
+                items={results?.results || []}
                 itemProps={undefined}
                 itemKey={itemKey}
                 renderItem={renderResult}
@@ -295,27 +293,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             )}
         </>
     )
-}
-
-// To be removed on April 2nd
-function addRickRollItem(results: SearchMatch[], rickrolld: boolean): SearchMatch[] {
-    const isS2OrLocalhost =
-        window.location.host === 'sourcegraph.sourcegraph.com' || window.location.host === 'sourcegraph.test:3443'
-    const isAprilFirst = new Date().getMonth() === 3 && new Date().getDate() === 1
-    if (!isS2OrLocalhost || !isAprilFirst || rickrolld) {
-        return results
-    }
-
-    return [
-        {
-            type: 'content',
-            path: 'pathclient/weird-error-hmmm.tsx',
-            repository: 'sourcegraph/sourcegraph',
-            repoStars: 55000,
-            chunkMatches: [],
-        },
-        ...results,
-    ]
 }
 
 function itemKey(item: SearchMatch): string {

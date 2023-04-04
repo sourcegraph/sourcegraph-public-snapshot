@@ -3738,8 +3738,8 @@ def go_dependencies():
         name = "com_github_jonboulle_clockwork",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/jonboulle/clockwork",
-        sum = "h1:UOGuzwb1PwsrDAObMuhUnj0p5ULPj8V/xJ7Kx9qUBdQ=",
-        version = "v0.2.2",
+        sum = "h1:9BSCMi8C+0qdApAp4auwX0RkLGUjs956h0EkuQymUhg=",
+        version = "v0.3.0",
     )
     go_repository(
         name = "com_github_jordan_wright_email",
@@ -5336,15 +5336,15 @@ def go_dependencies():
         name = "com_github_russellhaering_gosaml2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/russellhaering/gosaml2",
-        sum = "h1:CNMnH42z/GirrKjdmNrSS6bAAs47F9bPdl4PfRmVOIk=",
-        version = "v0.9.0",
+        sum = "h1:H/whrl8NuSoxyW46Ww5lKPskm+5K+qYLw9afqJ/Zef0=",
+        version = "v0.9.1",
     )
     go_repository(
         name = "com_github_russellhaering_goxmldsig",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/russellhaering/goxmldsig",
-        sum = "h1:Y6GTTc9Un5hCxSzVz4UIWQ/zuVwDvzJk80guqzwx6Vg=",
-        version = "v1.2.0",
+        sum = "h1:DllIWUgMy0cRUMfGiASiYEa35nsieyD3cigIwLonTPM=",
+        version = "v1.3.0",
     )
 
     go_repository(
@@ -5723,16 +5723,16 @@ def go_dependencies():
         ],
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/scip",
-        sum = "h1:fWPxLkDObzzKTGe9vb6wpzK0FYkwcfSxmxUBvAOc8aw=",
-        version = "v0.2.4-0.20221213205653-aa0e511dcfef",
+        sum = "h1:nl0JdCmCkQYTM1gQWbDJkdaiXyoZiluUzJbyeBDGFe0=",
+        version = "v0.2.4-0.20230403145725-e720fb88e6fd",
     )
 
     go_repository(
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:QFwEbH3rG9OP9EkCuAywj8U3uzFOaf0r5CSskr5s/ac=",
-        version = "v0.0.0-20230315153951-06c1bce6400a",
+        sum = "h1:dZN5lUWLL4I3jkxQG9SAtF+Ufv92JnQhNiGoXJfRHjU=",
+        version = "v0.0.0-20230328081101-02541e61dd57",
     )
 
     go_repository(

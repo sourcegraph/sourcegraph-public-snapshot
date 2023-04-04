@@ -153,6 +153,11 @@ To perform a multi-version upgrade on a Sourcegraph instance running on Kubernet
    - Stateful sets (e.g., `kubectl scale sts <name> --replicas=0`):
       - gitserver
       - indexed-search
+> Here's an example command to scale down all the required deployments & stateful sets at once
+```
+kubectl scale deployment precise-code-intel-worker repo-updater searcher sourcegraph-frontend sourcegraph-frontend-internal symbols worker --replicas=0
+kubectl scale sts gitserver indexed-search
+```
 1. **If upgrading from 3.26 or before to 3.27 or later**, the `pgsql` and `codeintel-db` databases must be upgraded from Postgres 11 to Postgres 12. If this step is not performed, then the following upgrade procedure will fail fast (and leave all existing data untouched).
    - If using an external database, follow the [upgrading external PostgreSQL instances](../../postgres.md#upgrading-external-postgresql-instances) guide.
    - Otherwise, perform the following steps from the [upgrading internal Postgres instances](../../postgres.md#upgrading-internal-postgresql-instances) guide:

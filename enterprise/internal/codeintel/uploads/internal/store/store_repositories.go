@@ -5,12 +5,11 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	autoindexingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -171,41 +170,6 @@ SELECT EXTRACT(EPOCH FROM NOW() - ldr.set_dirty_at)::integer AS age
 // ErrUnknownRepository occurs when a repository does not exist.
 var ErrUnknownRepository = errors.New("unknown repository")
 
-// RepoName returns the name for the repo with the given identifier.
-func (s *store) RepoName(ctx context.Context, repositoryID int) (_ string, err error) {
-	ctx, _, endObservation := s.operations.repoName.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	name, exists, err := basestore.ScanFirstString(s.db.Query(ctx, sqlf.Sprintf(repoNameQuery, repositoryID)))
-	if err != nil {
-		return "", err
-	}
-	if !exists {
-		return "", ErrUnknownRepository
-	}
-	return name, nil
-}
-
-const repoNameQuery = `
-SELECT name FROM repo WHERE id = %s
-`
-
-// RepoNames returns a map from repository id to names.
-func (s *store) RepoNames(ctx context.Context, repositoryIDs ...int) (_ map[int]string, err error) {
-	ctx, _, endObservation := s.operations.repoName.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("numRepositories", len(repositoryIDs)),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	return scanRepoNames(s.db.Query(ctx, sqlf.Sprintf(repoNamesQuery, pq.Array(repositoryIDs))))
-}
-
-const repoNamesQuery = `
-SELECT id, name FROM repo WHERE id = ANY(%s)
-`
-
 // HasRepository determines if there is LSIF data for the given repository.
 func (s *store) HasRepository(ctx context.Context, repositoryID int) (_ bool, err error) {
 	ctx, _, endObservation := s.operations.hasRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -248,14 +212,14 @@ WHERE
 	r.blocked IS NULL
 `
 
-func (s *store) RepositoryIDsWithErrors(ctx context.Context, offset, limit int) (_ []autoindexingshared.RepositoryWithCount, totalCount int, err error) {
+func (s *store) RepositoryIDsWithErrors(ctx context.Context, offset, limit int) (_ []uploadsshared.RepositoryWithCount, totalCount int, err error) {
 	ctx, _, endObservation := s.operations.repositoryIDsWithErrors.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	defer endObservation(1, observation.Args{})
 
 	return scanRepositoryWithCounts(s.db.Query(ctx, sqlf.Sprintf(repositoriesWithErrorsQuery, limit, offset)))
 }
 
-var scanRepositoryWithCounts = basestore.NewSliceWithCountScanner(func(s dbutil.Scanner) (rc autoindexingshared.RepositoryWithCount, count int, _ error) {
+var scanRepositoryWithCounts = basestore.NewSliceWithCountScanner(func(s dbutil.Scanner) (rc uploadsshared.RepositoryWithCount, count int, _ error) {
 	err := s.Scan(&rc.RepositoryID, &rc.Count, &count)
 	return rc, count, err
 })

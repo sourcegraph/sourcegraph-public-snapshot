@@ -7,57 +7,58 @@ import (
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// Store provides the interface for autoindexing storage.
 type Store interface {
-	// Transactions
 	Transact(ctx context.Context) (Store, error)
 	Done(err error) error
 
-	// Indexes
-	InsertIndexes(ctx context.Context, indexes []types.Index) (_ []types.Index, err error)
+	// Inference configuration
+	GetInferenceScript(ctx context.Context) (string, error)
+	SetInferenceScript(ctx context.Context, script string) error
 
-	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
-	IsQueued(ctx context.Context, repositoryID int, commit string) (_ bool, err error)
-	IsQueuedRootIndexer(ctx context.Context, repositoryID int, commit string, root string, indexer string) (_ bool, err error)
-	QueueRepoRev(ctx context.Context, repositoryID int, commit string) error
+	// Repository configuration
+	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (shared.IndexConfiguration, bool, error)
+	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) error
+
+	// Coverage summaries
+	TopRepositoriesToConfigure(ctx context.Context, limit int) ([]uploadsshared.RepositoryWithCount, error)
+	RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) ([]uploadsshared.RepositoryWithAvailableIndexers, int, error)
+	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
+	SetConfigurationSummary(ctx context.Context, repositoryID int, numEvents int, availableIndexers map[string]uploadsshared.AvailableIndexer) error
+	TruncateConfigurationSummary(ctx context.Context, numRecordsToRetain int) error
+
+	// Scheduler
+	GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) ([]int, error)
 	GetQueuedRepoRev(ctx context.Context, batchSize int) ([]RepoRev, error)
 	MarkRepoRevsAsProcessed(ctx context.Context, ids []int) error
 
-	// Index configurations
-	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error)
-	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) (err error)
-	GetInferenceScript(ctx context.Context) (script string, err error)
-	SetInferenceScript(ctx context.Context, script string) (err error)
+	// Enqueuer
+	IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error)
+	IsQueuedRootIndexer(ctx context.Context, repositoryID int, commit string, root string, indexer string) (bool, error)
+	InsertIndexes(ctx context.Context, indexes []uploadsshared.Index) ([]uploadsshared.Index, error)
 
-	// Language support
-	GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error)
-	SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error)
-
-	GetRepoName(ctx context.Context, repositoryID int) (_ string, err error)
-
-	RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) (_ []shared.RepositoryWithAvailableIndexers, totalCount int, err error)
-	TopRepositoriesToConfigure(ctx context.Context, limit int) ([]shared.RepositoryWithCount, error)
-	SetConfigurationSummary(ctx context.Context, repositoryID int, numEvents int, availableIndexers map[string]shared.AvailableIndexer) (err error)
-	TruncateConfigurationSummary(ctx context.Context, numRecordsToRetain int) error
-
-	GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error)
-	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error)
+	// Dependency indexing
+	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (int, error)
+	QueueRepoRev(ctx context.Context, repositoryID int, commit string) error
 }
 
-// store manages the autoindexing store.
+type RepoRev struct {
+	ID           int
+	RepositoryID int
+	Rev          string
+}
+
 type store struct {
 	db         *basestore.Store
 	logger     logger.Logger
 	operations *operations
 }
 
-// New returns a new autoindexing store.
 func New(observationCtx *observation.Context, db database.DB) Store {
 	return &store{
 		db:         basestore.NewWithHandle(db.Handle()),

@@ -17,6 +17,7 @@ go_library(
         "//cmd/frontend/globals",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",
+        "//enterprise/cmd/frontend/worker/auth",
         "//enterprise/internal/database",
         "//enterprise/internal/licensing",
         "//internal/actor",

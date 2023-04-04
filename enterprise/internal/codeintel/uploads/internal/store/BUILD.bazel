@@ -25,8 +25,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/codeintel/autoindexing/shared",
-        "//enterprise/internal/codeintel/shared/types",
         "//enterprise/internal/codeintel/uploads/internal/commitgraph",
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/database",
@@ -77,8 +75,6 @@ go_test(
     ],
     deps = [
         "//cmd/frontend/globals",
-        "//enterprise/internal/codeintel/autoindexing/shared",
-        "//enterprise/internal/codeintel/shared/types",
         "//enterprise/internal/codeintel/uploads/internal/commitgraph",
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/database",
@@ -88,7 +84,6 @@ go_test(
         "//internal/executor",
         "//internal/gitserver/gitdomain",
         "//internal/observation",
-        "//internal/timeutil",
         "//lib/codeintel/precise",
         "//lib/errors",
         "//schema",

@@ -165,13 +165,12 @@ const reposStatsName = "repos-stats.json"
 // 3. Remove stale lock files.
 // 4. Ensure correct git attributes
 // 5. Ensure gc.auto=0 or unset depending on gitGCMode
-// 6. Scrub remote URLs
-// 7. Perform garbage collection
-// 8. Re-clone repos after a while. (simulate git gc)
-// 9. Remove repos based on disk pressure.
-// 10. Perform sg-maintenance
-// 11. Git prune
-// 12. Only during first run: Set sizes of repos which don't have it in a database.
+// 6. Perform garbage collection
+// 7. Re-clone repos after a while. (simulate git gc)
+// 8. Remove repos based on disk pressure.
+// 9. Perform sg-maintenance
+// 10. Git prune
+// 11. Set sizes of repos
 func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitserverAddresses) {
 	janitorRunning.Set(1)
 	janitorStart := time.Now()
@@ -292,14 +291,6 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 
 	ensureAutoGC := func(dir GitDir) (done bool, err error) {
 		return false, gitSetAutoGC(dir)
-	}
-
-	scrubRemoteURL := func(dir GitDir) (done bool, err error) {
-		cmd := exec.Command("git", "remote", "remove", "origin")
-		dir.Set(cmd)
-		// ignore error since we fail if the remote has already been scrubbed.
-		_ = cmd.Run()
-		return false, nil
 	}
 
 	maybeReclone := func(dir GitDir) (done bool, err error) {
@@ -460,9 +451,6 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 		{"remove stale locks", removeStaleLocks},
 		// We always want to have the same git attributes file at info/attributes.
 		{"ensure git attributes", ensureGitAttributes},
-		// 2021-03-01 (tomas,keegan) we used to store an authenticated remote URL on
-		// disk. We no longer need it so we can scrub it.
-		{"scrub remote URL", scrubRemoteURL},
 		// Enable or disable background garbage collection depending on
 		// gitGCMode. The purpose is to avoid repository corruption which can
 		// happen if several git-gc operations are running at the same time.

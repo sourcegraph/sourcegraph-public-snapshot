@@ -12,6 +12,7 @@ import (
 	"time"
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
+	shared1 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/shared"
 	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	conftypes "github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -69,9 +70,6 @@ type MockStore struct {
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *StoreTransactFunc
-	// UpdatedAfterFunc is an instance of a mock function object controlling
-	// the behavior of the method UpdatedAfter.
-	UpdatedAfterFunc *StoreUpdatedAfterFunc
 	// VacuumAbandonedDefinitionsFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// VacuumAbandonedDefinitions.
@@ -131,7 +129,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		InsertDefinitionsForRankingFunc: &StoreInsertDefinitionsForRankingFunc{
-			defaultHook: func(context.Context, string, chan shared.RankingDefinitions) (r0 error) {
+			defaultHook: func(context.Context, string, chan shared1.RankingDefinitions) (r0 error) {
 				return
 			},
 		},
@@ -172,11 +170,6 @@ func NewMockStore() *MockStore {
 		},
 		TransactFunc: &StoreTransactFunc{
 			defaultHook: func(context.Context) (r0 store.Store, r1 error) {
-				return
-			},
-		},
-		UpdatedAfterFunc: &StoreUpdatedAfterFunc{
-			defaultHook: func(context.Context, time.Time) (r0 []api.RepoName, r1 error) {
 				return
 			},
 		},
@@ -253,7 +246,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		InsertDefinitionsForRankingFunc: &StoreInsertDefinitionsForRankingFunc{
-			defaultHook: func(context.Context, string, chan shared.RankingDefinitions) error {
+			defaultHook: func(context.Context, string, chan shared1.RankingDefinitions) error {
 				panic("unexpected invocation of MockStore.InsertDefinitionsForRanking")
 			},
 		},
@@ -295,11 +288,6 @@ func NewStrictMockStore() *MockStore {
 		TransactFunc: &StoreTransactFunc{
 			defaultHook: func(context.Context) (store.Store, error) {
 				panic("unexpected invocation of MockStore.Transact")
-			},
-		},
-		UpdatedAfterFunc: &StoreUpdatedAfterFunc{
-			defaultHook: func(context.Context, time.Time) ([]api.RepoName, error) {
-				panic("unexpected invocation of MockStore.UpdatedAfter")
 			},
 		},
 		VacuumAbandonedDefinitionsFunc: &StoreVacuumAbandonedDefinitionsFunc{
@@ -390,9 +378,6 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		TransactFunc: &StoreTransactFunc{
 			defaultHook: i.Transact,
-		},
-		UpdatedAfterFunc: &StoreUpdatedAfterFunc{
-			defaultHook: i.UpdatedAfter,
 		},
 		VacuumAbandonedDefinitionsFunc: &StoreVacuumAbandonedDefinitionsFunc{
 			defaultHook: i.VacuumAbandonedDefinitions,
@@ -966,15 +951,15 @@ func (c StoreGetUploadsForRankingFuncCall) Results() []interface{} {
 // InsertDefinitionsForRanking method of the parent MockStore instance is
 // invoked.
 type StoreInsertDefinitionsForRankingFunc struct {
-	defaultHook func(context.Context, string, chan shared.RankingDefinitions) error
-	hooks       []func(context.Context, string, chan shared.RankingDefinitions) error
+	defaultHook func(context.Context, string, chan shared1.RankingDefinitions) error
+	hooks       []func(context.Context, string, chan shared1.RankingDefinitions) error
 	history     []StoreInsertDefinitionsForRankingFuncCall
 	mutex       sync.Mutex
 }
 
 // InsertDefinitionsForRanking delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockStore) InsertDefinitionsForRanking(v0 context.Context, v1 string, v2 chan shared.RankingDefinitions) error {
+func (m *MockStore) InsertDefinitionsForRanking(v0 context.Context, v1 string, v2 chan shared1.RankingDefinitions) error {
 	r0 := m.InsertDefinitionsForRankingFunc.nextHook()(v0, v1, v2)
 	m.InsertDefinitionsForRankingFunc.appendCall(StoreInsertDefinitionsForRankingFuncCall{v0, v1, v2, r0})
 	return r0
@@ -983,7 +968,7 @@ func (m *MockStore) InsertDefinitionsForRanking(v0 context.Context, v1 string, v
 // SetDefaultHook sets function that is called when the
 // InsertDefinitionsForRanking method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreInsertDefinitionsForRankingFunc) SetDefaultHook(hook func(context.Context, string, chan shared.RankingDefinitions) error) {
+func (f *StoreInsertDefinitionsForRankingFunc) SetDefaultHook(hook func(context.Context, string, chan shared1.RankingDefinitions) error) {
 	f.defaultHook = hook
 }
 
@@ -992,7 +977,7 @@ func (f *StoreInsertDefinitionsForRankingFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *StoreInsertDefinitionsForRankingFunc) PushHook(hook func(context.Context, string, chan shared.RankingDefinitions) error) {
+func (f *StoreInsertDefinitionsForRankingFunc) PushHook(hook func(context.Context, string, chan shared1.RankingDefinitions) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1001,19 +986,19 @@ func (f *StoreInsertDefinitionsForRankingFunc) PushHook(hook func(context.Contex
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreInsertDefinitionsForRankingFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, chan shared.RankingDefinitions) error {
+	f.SetDefaultHook(func(context.Context, string, chan shared1.RankingDefinitions) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreInsertDefinitionsForRankingFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, chan shared.RankingDefinitions) error {
+	f.PushHook(func(context.Context, string, chan shared1.RankingDefinitions) error {
 		return r0
 	})
 }
 
-func (f *StoreInsertDefinitionsForRankingFunc) nextHook() func(context.Context, string, chan shared.RankingDefinitions) error {
+func (f *StoreInsertDefinitionsForRankingFunc) nextHook() func(context.Context, string, chan shared1.RankingDefinitions) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1055,7 +1040,7 @@ type StoreInsertDefinitionsForRankingFuncCall struct {
 	Arg1 string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 chan shared.RankingDefinitions
+	Arg2 chan shared1.RankingDefinitions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -1973,113 +1958,6 @@ func (c StoreTransactFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreTransactFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// StoreUpdatedAfterFunc describes the behavior when the UpdatedAfter method
-// of the parent MockStore instance is invoked.
-type StoreUpdatedAfterFunc struct {
-	defaultHook func(context.Context, time.Time) ([]api.RepoName, error)
-	hooks       []func(context.Context, time.Time) ([]api.RepoName, error)
-	history     []StoreUpdatedAfterFuncCall
-	mutex       sync.Mutex
-}
-
-// UpdatedAfter delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockStore) UpdatedAfter(v0 context.Context, v1 time.Time) ([]api.RepoName, error) {
-	r0, r1 := m.UpdatedAfterFunc.nextHook()(v0, v1)
-	m.UpdatedAfterFunc.appendCall(StoreUpdatedAfterFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the UpdatedAfter method
-// of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreUpdatedAfterFunc) SetDefaultHook(hook func(context.Context, time.Time) ([]api.RepoName, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// UpdatedAfter method of the parent MockStore instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *StoreUpdatedAfterFunc) PushHook(hook func(context.Context, time.Time) ([]api.RepoName, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreUpdatedAfterFunc) SetDefaultReturn(r0 []api.RepoName, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Time) ([]api.RepoName, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreUpdatedAfterFunc) PushReturn(r0 []api.RepoName, r1 error) {
-	f.PushHook(func(context.Context, time.Time) ([]api.RepoName, error) {
-		return r0, r1
-	})
-}
-
-func (f *StoreUpdatedAfterFunc) nextHook() func(context.Context, time.Time) ([]api.RepoName, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreUpdatedAfterFunc) appendCall(r0 StoreUpdatedAfterFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreUpdatedAfterFuncCall objects
-// describing the invocations of this function.
-func (f *StoreUpdatedAfterFunc) History() []StoreUpdatedAfterFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreUpdatedAfterFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreUpdatedAfterFuncCall is an object that describes an invocation of
-// method UpdatedAfter on an instance of MockStore.
-type StoreUpdatedAfterFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 time.Time
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []api.RepoName
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreUpdatedAfterFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreUpdatedAfterFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

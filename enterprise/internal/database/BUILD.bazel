@@ -59,7 +59,6 @@ go_library(
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
         "@org_golang_google_protobuf//proto",
-        "@org_golang_x_exp//maps",
     ],
 )
 

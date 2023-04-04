@@ -32,12 +32,12 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 	}
 
 	// 🚨 SECURITY: Do not assume user email is verified on creation if email delivery is
-	// enabled and we are allowed to reset passwords (which will become the primary
+	// enabled, and we are allowed to reset passwords (which will become the primary
 	// mechanism for verifying this newly created email).
 	needsEmailVerification := email != "" &&
 		conf.CanSendEmail() &&
 		userpasswd.ResetPasswordEnabled()
-	// For backwards-compatibility, allow this behaviour to be confiugred based
+	// For backwards-compatibility, allow this behaviour to be configured based
 	// on the VerifiedEmail argument. If not provided, or set to true, we
 	// forcibly mark the email as not needing verification.
 	if args.VerifiedEmail == nil || *args.VerifiedEmail {
@@ -107,7 +107,9 @@ type createUserResult struct {
 	emailVerified bool
 }
 
-func (r *createUserResult) User() *UserResolver { return NewUserResolver(r.db, r.user) }
+func (r *createUserResult) User(ctx context.Context) *UserResolver {
+	return NewUserResolver(ctx, r.db, r.user)
+}
 
 // ResetPasswordURL modifies the DB when it generates reset URLs, which is somewhat
 // counterintuitive for a "value" type from an implementation POV. Its behavior is

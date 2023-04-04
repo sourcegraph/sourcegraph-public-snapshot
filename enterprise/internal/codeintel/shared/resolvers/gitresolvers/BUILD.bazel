@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "gitresolvers",
+    srcs = [
+        "cached_resolver.go",
+        "cached_resolver_factory.go",
+        "commit.go",
+        "external_repo.go",
+        "repo.go",
+        "tree_entry.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//enterprise/internal/codeintel/shared/resolvers/dataloader",
+        "//internal/api",
+        "//internal/authz",
+        "//internal/codeintel/resolvers",
+        "//internal/database",
+        "//internal/errcode",
+        "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_graph_gophers_graphql_go//relay",
+    ],
+)
+
+go_test(
+    name = "gitresolvers_test",
+    srcs = ["cached_resolver_test.go"],
+    embed = [":gitresolvers"],
+    deps = [
+        "//internal/api",
+        "//internal/codeintel/resolvers",
+        "//internal/database",
+        "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_derision_test_go_mockgen//testutil/require",
+    ],
+)
