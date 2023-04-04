@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gitresolvers",
+    srcs = [
+        "commit.go",
+        "external_repo.go",
+        "repo.go",
+        "tree_entry.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/authz",
+        "//internal/codeintel/resolvers",
+        "//internal/database",
+        "//internal/gitserver",
+        "//internal/types",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_graph_gophers_graphql_go//relay",
+    ],
+)

@@ -401,7 +401,7 @@ func TestResolveLocations(t *testing.T) {
 		return api.CommitID(spec), nil
 	})
 
-	factory := sharedresolvers.NewCachedLocationResolverFactory(nil, repos, gsClient)
+	factory := sharedresolvers.NewCachedLocationResolverFactory(repos, gsClient)
 	locationResolver := factory.Create()
 
 	r1 := shared.Range{Start: shared.Position{Line: 11, Character: 12}, End: shared.Position{Line: 13, Character: 14}}

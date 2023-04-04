@@ -9,7 +9,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -39,7 +39,7 @@ func (r *rootResolver) PreviewRepositoryFilter(ctx context.Context, args *resolv
 
 	resv := make([]resolverstubs.RepositoryResolver, 0, len(ids))
 	for _, id := range ids {
-		res, err := sharedresolvers.NewRepositoryFromID(ctx, r.repoStore, id)
+		res, err := gitresolvers.NewRepositoryFromID(ctx, r.repoStore, id)
 		if err != nil {
 			return nil, err
 		}
