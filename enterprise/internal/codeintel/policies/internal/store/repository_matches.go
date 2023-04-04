@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
@@ -15,6 +15,71 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
+// GetRepoIDsByGlobPatterns returns a page of repository identifiers and a total count of repositories matching
+// one of the given patterns.
+func (s *store) GetRepoIDsByGlobPatterns(ctx context.Context, patterns []string, limit, offset int) (_ []int, _ int, err error) {
+	ctx, _, endObservation := s.operations.getRepoIDsByGlobPatterns.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.String("patterns", strings.Join(patterns, ", ")),
+		otlog.Int("limit", limit),
+		otlog.Int("offset", offset),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if len(patterns) == 0 {
+		return nil, 0, nil
+	}
+
+	conds := make([]*sqlf.Query, 0, len(patterns))
+	for _, pattern := range patterns {
+		conds = append(conds, sqlf.Sprintf("lower(name) LIKE %s", makeWildcardPattern(pattern)))
+	}
+
+	tx, err := s.db.Transact(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, tx))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	totalCount, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(repoIDsByGlobPatternsCountQuery, sqlf.Join(conds, "OR"), authzConds)))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	ids, err := basestore.ScanInts(tx.Query(ctx, sqlf.Sprintf(repoIDsByGlobPatternsQuery, sqlf.Join(conds, "OR"), authzConds, limit, offset)))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return ids, totalCount, nil
+}
+
+const repoIDsByGlobPatternsCountQuery = `
+SELECT COUNT(*)
+FROM repo
+WHERE
+	(%s) AND
+	deleted_at IS NULL AND
+	blocked IS NULL AND
+	(%s)
+`
+
+const repoIDsByGlobPatternsQuery = `
+SELECT id
+FROM repo
+WHERE
+	(%s) AND
+	deleted_at IS NULL AND
+	blocked IS NULL AND
+	(%s)
+ORDER BY stars DESC NULLS LAST, id
+LIMIT %s OFFSET %s
+`
+
 // UpdateReposMatchingPatterns updates the values of the repository pattern lookup table for the
 // given configuration policy identifier. Each repository matching one of the given patterns will
 // be associated with the target configuration policy. If the patterns list is empty, the lookup
@@ -22,9 +87,9 @@ import (
 // matches exceeds the given limit (if supplied), then only top ranked repositories by star count
 // will be associated to the policy in the database and the remainder will be dropped.
 func (s *store) UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error) {
-	ctx, _, endObservation := s.operations.updateReposMatchingPatterns.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("pattern", strings.Join(patterns, ",")),
-		log.Int("policyID", policyID),
+	ctx, _, endObservation := s.operations.updateReposMatchingPatterns.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.String("pattern", strings.Join(patterns, ",")),
+		otlog.Int("policyID", policyID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -105,81 +170,6 @@ SELECT
 func makeWildcardPattern(pattern string) string {
 	return strings.ToLower(strings.ReplaceAll(pattern, "*", "%"))
 }
-
-// RepoCount returns the total number of policy-selectable repos.
-func (s *store) RepoCount(ctx context.Context) (_ int, err error) {
-	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(`SELECT SUM(total) FROM repo_statistics`)))
-	if err != nil {
-		return 0, err
-	}
-
-	return count, nil
-}
-
-// GetRepoIDsByGlobPatterns returns a page of repository identifiers and a total count of repositories matching
-// one of the given patterns.
-func (s *store) GetRepoIDsByGlobPatterns(ctx context.Context, patterns []string, limit, offset int) (_ []int, _ int, err error) {
-	ctx, _, endObservation := s.operations.getRepoIDsByGlobPatterns.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("patterns", strings.Join(patterns, ", ")),
-		log.Int("limit", limit),
-		log.Int("offset", offset),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	if len(patterns) == 0 {
-		return nil, 0, nil
-	}
-
-	conds := make([]*sqlf.Query, 0, len(patterns))
-	for _, pattern := range patterns {
-		conds = append(conds, sqlf.Sprintf("lower(name) LIKE %s", makeWildcardPattern(pattern)))
-	}
-
-	tx, err := s.db.Transact(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, tx))
-	if err != nil {
-		return nil, 0, err
-	}
-
-	totalCount, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(repoIDsByGlobPatternsCountQuery, sqlf.Join(conds, "OR"), authzConds)))
-	if err != nil {
-		return nil, 0, err
-	}
-
-	ids, err := basestore.ScanInts(tx.Query(ctx, sqlf.Sprintf(repoIDsByGlobPatternsQuery, sqlf.Join(conds, "OR"), authzConds, limit, offset)))
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return ids, totalCount, nil
-}
-
-const repoIDsByGlobPatternsCountQuery = `
-SELECT COUNT(*)
-FROM repo
-WHERE
-	(%s) AND
-	deleted_at IS NULL AND
-	blocked IS NULL AND
-	(%s)
-`
-
-const repoIDsByGlobPatternsQuery = `
-SELECT id
-FROM repo
-WHERE
-	(%s) AND
-	deleted_at IS NULL AND
-	blocked IS NULL AND
-	(%s)
-ORDER BY stars DESC NULLS LAST, id
-LIMIT %s OFFSET %s
-`
 
 // SelectPoliciesForRepositoryMembershipUpdate returns a slice of configuration policies that should be considered
 // for repository membership updates. Configuration policies are returned in the order of least recently updated.
