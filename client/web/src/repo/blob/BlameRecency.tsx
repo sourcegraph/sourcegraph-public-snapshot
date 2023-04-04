@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 
 import subYears from 'date-fns/subYears'
 
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
+
 // We use an exponential scale to get more diverse colors for more recent changes.
 //
 // The values are sampled from the following function:
@@ -25,11 +27,9 @@ const LIGHT_COLORS = COLORS.slice(0).reverse()
 const ONE_YEAR_AGO = subYears(Date.now(), 1).getTime()
 const THREE_YEARS_AGO = subYears(Date.now(), 3).getTime()
 
-export function useBlameRecencyColor(
-    commit: Date | undefined,
-    firstCommitDate: Date | undefined,
-    isLightTheme: boolean
-): string {
+export function useBlameRecencyColor(commit: Date | undefined, firstCommitDate: Date | undefined): string {
+    const isLightTheme = useIsLightTheme()
+
     return useMemo(() => {
         const colors = isLightTheme ? LIGHT_COLORS : COLORS
 

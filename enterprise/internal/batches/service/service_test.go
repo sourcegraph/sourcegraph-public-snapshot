@@ -10,11 +10,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	stesting "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/testing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -388,10 +389,11 @@ func TestService(t *testing.T) {
 			AttachedTo:    []int64{batchChange.ID},
 
 			// The important fields:
-			ReconcilerState: btypes.ReconcilerStateQueued,
-			NumResets:       0,
-			NumFailures:     0,
-			FailureMessage:  nil,
+			ReconcilerState:        btypes.ReconcilerStateQueued,
+			NumResets:              0,
+			NumFailures:            0,
+			FailureMessage:         nil,
+			PreviousFailureMessage: strPtr(bt.FailedChangesetFailureMessage),
 		})
 
 		// rs[0] is filtered out
@@ -581,7 +583,7 @@ func TestService(t *testing.T) {
 
 	t.Run("CreateChangesetSpec", func(t *testing.T) {
 		repo := rs[0]
-		rawSpec := bt.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo.ID), "d34db33f")
+		rawSpec := bt.NewRawChangesetSpecGitBranch(relay.MarshalID("Repository", repo.ID), "d34db33f")
 
 		t.Run("success", func(t *testing.T) {
 			spec, err := svc.CreateChangesetSpec(ctx, rawSpec, admin.ID)
@@ -661,6 +663,86 @@ index e5af166..d44c3fc 100644
 			if !errcode.IsNotFound(err) {
 				t.Fatalf("expected not-found error but got %v", err)
 			}
+		})
+	})
+
+	t.Run("CreateChangesetSpecs", func(t *testing.T) {
+		rawSpec := bt.NewRawChangesetSpecGitBranch(relay.MarshalID("Repository", rs[0].ID), "d34db33f")
+
+		t.Run("success", func(t *testing.T) {
+			specs, err := svc.CreateChangesetSpecs(ctx, []string{rawSpec}, admin.ID)
+			require.NoError(t, err)
+
+			assert.Len(t, specs, 1)
+
+			for _, spec := range specs {
+				assert.NotZero(t, spec.ID)
+
+				want := &btypes.ChangesetSpec{
+					ID:   6,
+					Type: btypes.ChangesetSpecTypeBranch,
+					Diff: []byte(`diff --git INSTALL.md INSTALL.md
+index e5af166..d44c3fc 100644
+--- INSTALL.md
++++ INSTALL.md
+@@ -3,10 +3,10 @@
+ Line 1
+ Line 2
+ Line 3
+-Line 4
++This is cool: Line 4
+ Line 5
+ Line 6
+-Line 7
+-Line 8
++Another Line 7
++Foobar Line 8
+ Line 9
+ Line 10
+`),
+					DiffStatAdded:     3,
+					DiffStatDeleted:   3,
+					BaseRepoID:        1,
+					UserID:            1,
+					BaseRev:           "d34db33f",
+					BaseRef:           "refs/heads/master",
+					HeadRef:           "refs/heads/my-branch",
+					Title:             "the title",
+					Body:              "the body of the PR",
+					Published:         batcheslib.PublishedValue{Val: false},
+					CommitMessage:     "git commit message\n\nand some more content in a second paragraph.",
+					CommitAuthorName:  "Mary McButtons",
+					CommitAuthorEmail: "mary@example.com",
+				}
+
+				if diff := cmp.Diff(want, spec, cmpopts.IgnoreFields(btypes.ChangesetSpec{}, "CreatedAt", "UpdatedAt", "RandID")); diff != "" {
+					t.Fatalf("wrong spec fields (-want +got):\n%s", diff)
+				}
+
+				wantDiffStat := *bt.ChangesetSpecDiffStat
+				if diff := cmp.Diff(wantDiffStat, spec.DiffStat()); diff != "" {
+					t.Fatalf("wrong diff stat (-want +got):\n%s", diff)
+				}
+			}
+		})
+
+		t.Run("invalid raw spec", func(t *testing.T) {
+			invalidRaw := `{"externalComputer": "beepboop"}`
+			_, err := svc.CreateChangesetSpecs(ctx, []string{invalidRaw}, admin.ID)
+			assert.Error(t, err)
+			assert.Equal(
+				t,
+				"4 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* baseRepository is required\n\t* externalID is required\n\t* Additional property externalComputer is not allowed",
+				err.Error(),
+			)
+		})
+
+		t.Run("missing repository permissions", func(t *testing.T) {
+			bt.MockRepoPermissions(t, db, user.ID, rs[1].ID, rs[2].ID, rs[3].ID)
+
+			_, err := svc.CreateChangesetSpecs(userCtx, []string{rawSpec}, admin.ID)
+			assert.Error(t, err)
+			assert.True(t, errcode.IsNotFound(err))
 		})
 	})
 
@@ -1774,7 +1856,7 @@ changesetTemplate:
 				BatchChange:     batchChange.ID,
 			})
 
-			assert.Equal(t, "must be authenticated as the authorized user or site admin", err.Error())
+			assert.Equal(t, auth.ErrMustBeSiteAdminOrSameUser.Error(), err.Error())
 		})
 
 		t.Run("success - without batch change ID", func(t *testing.T) {
@@ -2138,14 +2220,14 @@ changesetTemplate:
 		})
 
 		t.Run("batch spec associated with draft batch change", func(t *testing.T) {
-			batchChange := testDraftBatchChange(admin.ID)
-			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
 				t.Fatal(err)
 			}
 
-			spec := testBatchSpec(admin.ID)
-			spec.BatchChangeID = batchChange.ID
-			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+			// Associate with draft batch change
+			batchChange := testDraftBatchChange(spec.UserID, spec)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
 				t.Fatal(err)
 			}
 
@@ -2437,14 +2519,14 @@ changesetTemplate:
 		})
 
 		t.Run("batch spec associated with draft batch change", func(t *testing.T) {
-			batchChange := testDraftBatchChange(admin.ID)
-			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
 				t.Fatal(err)
 			}
 
-			spec := testBatchSpec(admin.ID)
-			spec.BatchChangeID = batchChange.ID
-			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+			// Associate with draft batch change
+			batchChange := testDraftBatchChange(spec.UserID, spec)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
 				t.Fatal(err)
 			}
 
@@ -3040,8 +3122,8 @@ func testBatchChange(user int32, spec *btypes.BatchSpec) *btypes.BatchChange {
 	return c
 }
 
-func testDraftBatchChange(user int32) *btypes.BatchChange {
-	bc := testBatchChange(user, &btypes.BatchSpec{})
+func testDraftBatchChange(user int32, spec *btypes.BatchSpec) *btypes.BatchChange {
+	bc := testBatchChange(user, spec)
 	bc.LastAppliedAt = time.Time{}
 	bc.CreatorID = 0
 	bc.LastApplierID = 0
@@ -3100,3 +3182,5 @@ func assertNoAuthError(t *testing.T, err error) {
 		t.Fatalf("got auth error")
 	}
 }
+
+func strPtr(s string) *string { return &s }

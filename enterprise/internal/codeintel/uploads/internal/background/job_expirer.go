@@ -4,11 +4,12 @@ import (
 	"context"
 	"time"
 
-	policiesEnterprise "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -27,6 +28,7 @@ type ExpirerConfig struct {
 func NewUploadExpirer(
 	observationCtx *observation.Context,
 	store store.Store,
+	repoStore database.RepoStore,
 	policySvc PolicyService,
 	policyMatcher PolicyMatcher,
 	interval time.Duration,
@@ -34,6 +36,7 @@ func NewUploadExpirer(
 ) goroutine.BackgroundRoutine {
 	expirer := &expirer{
 		store:         store,
+		repoStore:     repoStore,
 		policySvc:     policySvc,
 		policyMatcher: policyMatcher,
 	}
@@ -49,6 +52,7 @@ func NewUploadExpirer(
 
 type expirer struct {
 	store         store.Store
+	repoStore     database.RepoStore
 	policySvc     PolicyService
 	policyMatcher PolicyMatcher
 }
@@ -146,11 +150,17 @@ func (s *expirer) handleRepository(ctx context.Context, repositoryID int, cfg Ex
 
 // buildCommitMap will iterate the complete set of configuration policies that apply to a particular
 // repository and build a map from commits to the policies that apply to them.
-func (s *expirer) buildCommitMap(ctx context.Context, repositoryID int, cfg ExpirerConfig, now time.Time) (map[string][]policiesEnterprise.PolicyMatch, error) {
+func (s *expirer) buildCommitMap(ctx context.Context, repositoryID int, cfg ExpirerConfig, now time.Time) (map[string][]policies.PolicyMatch, error) {
 	var (
 		offset   int
-		policies []types.ConfigurationPolicy
+		policies []policiesshared.ConfigurationPolicy
 	)
+
+	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
+	if err != nil {
+		return nil, err
+	}
+	repoName := repo.Name
 
 	for {
 		// Retrieve the complete set of configuration policies that affect data retention for this repository
@@ -173,13 +183,13 @@ func (s *expirer) buildCommitMap(ctx context.Context, repositoryID int, cfg Expi
 	}
 
 	// Get the set of commits within this repository that match a data retention policy
-	return s.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, policies, now)
+	return s.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, repoName, policies, now)
 }
 
 func (s *expirer) handleUploads(
 	ctx context.Context,
-	commitMap map[string][]policiesEnterprise.PolicyMatch,
-	uploads []types.Upload,
+	commitMap map[string][]policies.PolicyMatch,
+	uploads []shared.Upload,
 	cfg ExpirerConfig,
 	metrics *ExpirationMetrics,
 	now time.Time,
@@ -234,8 +244,8 @@ func (s *expirer) handleUploads(
 
 func (s *expirer) isUploadProtectedByPolicy(
 	ctx context.Context,
-	commitMap map[string][]policiesEnterprise.PolicyMatch,
-	upload types.Upload,
+	commitMap map[string][]policies.PolicyMatch,
+	upload shared.Upload,
 	cfg ExpirerConfig,
 	metrics *ExpirationMetrics,
 	now time.Time,

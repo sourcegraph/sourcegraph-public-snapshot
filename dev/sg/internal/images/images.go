@@ -118,11 +118,11 @@ func UpdateHelm(path string, creds credentials.Credentials, pinTag string) error
 		return errors.Wrapf(err, "couldn't unmarshal %s", valuesFilePath)
 	}
 
-	var images []string
-	extraImages(values, &images)
+	var imgs []string
+	extraImages(values, &imgs)
 
 	valuesFileString := string(valuesFile)
-	for _, img := range images {
+	for _, img := range imgs {
 		var updatedImg string
 		updatedImg, err = getUpdatedImage(img, creds, pinTag)
 		if err != nil {
@@ -461,7 +461,7 @@ type ParsedMainBranchImageTag struct {
 }
 
 // ParseMainBranchImageTag creates MainTag structs for tags created by
-// images.MainBranchImageTag.
+// images.BranchImageTag with a branch of "main".
 func ParseMainBranchImageTag(t string) (*ParsedMainBranchImageTag, error) {
 	s := ParsedMainBranchImageTag{}
 	t = strings.TrimSpace(t)

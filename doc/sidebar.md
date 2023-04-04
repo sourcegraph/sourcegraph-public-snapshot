@@ -10,7 +10,9 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
 
 -->
 
-- [Getting started](index.md)
+- [Home](index.md)
+- [Getting started](getting-started/index.md)
+- [Tutorials](tutorials/index.md)
 - [Code search](code_search/index.md)
   - [Tutorials](code_search/tutorials/index.md)
   - [How-to guides](code_search/how-to/index.md)
@@ -53,8 +55,11 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Configuration](admin/config/index.md)
   - [Code hosts](admin/external_service/index.md)
   - [User authentication](admin/auth/index.md)
+  - [Access control](admin/access_control/index.md)
+  - [Repository permissions](admin/permissions/index.md)
   - [Observability](admin/observability/index.md)
   - [Analytics](admin/analytics.md)
+  - [Executors](admin/executors/index.md)
   - [FAQ](admin/faq.md)
   - [Troubleshooting](admin/troubleshooting.md)
   - [How-to guides](admin/how-to/index.md)
@@ -66,6 +71,10 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Background information](dev/background-information/index.md)
   - [Contributing](dev/contributing.md)
 - [Dotcom](dotcom/index.md)
+- [App (experimental)](app/index.md)
+- [Cody (experimental)](cody/index.md)
+  - [FAQ](cody/faq.md)
+- [Own (experimental)](own/index.md)
 - <br/>
 - [★ Search query syntax](code_search/reference/queries.md)
 - [★ Sourcegraph API](api/index.md)

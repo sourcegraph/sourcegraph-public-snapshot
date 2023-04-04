@@ -18,7 +18,7 @@ var clearRedisCache = ff.ClearEvaluatedFlagFromCache
 type FeatureFlagStore interface {
 	basestore.ShareableStore
 	With(basestore.ShareableStore) FeatureFlagStore
-	Transact(context.Context) (FeatureFlagStore, error)
+	WithTransact(context.Context, func(FeatureFlagStore) error) error
 	CreateFeatureFlag(context.Context, *ff.FeatureFlag) (*ff.FeatureFlag, error)
 	UpdateFeatureFlag(context.Context, *ff.FeatureFlag) (*ff.FeatureFlag, error)
 	DeleteFeatureFlag(context.Context, string) error
@@ -51,9 +51,10 @@ func (f *featureFlagStore) With(other basestore.ShareableStore) FeatureFlagStore
 	return &featureFlagStore{Store: f.Store.With(other)}
 }
 
-func (f *featureFlagStore) Transact(ctx context.Context) (FeatureFlagStore, error) {
-	txBase, err := f.Store.Transact(ctx)
-	return &featureFlagStore{Store: txBase}, err
+func (f *featureFlagStore) WithTransact(ctx context.Context, fn func(FeatureFlagStore) error) error {
+	return f.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return fn(&featureFlagStore{Store: tx})
+	})
 }
 
 func (f *featureFlagStore) CreateFeatureFlag(ctx context.Context, flag *ff.FeatureFlag) (*ff.FeatureFlag, error) {
@@ -564,14 +565,14 @@ func (f *featureFlagStore) GetUserFlags(ctx context.Context, userID int32) (map[
 
 	res := make(map[string]bool)
 	for rows.Next() {
-		ff, override, err := scanFeatureFlagAndOverride(rows)
+		flag, override, err := scanFeatureFlagAndOverride(rows)
 		if err != nil {
 			return nil, err
 		}
 		if override != nil {
-			res[ff.Name] = *override
+			res[flag.Name] = *override
 		} else {
-			res[ff.Name] = ff.EvaluateForUser(userID)
+			res[flag.Name] = flag.EvaluateForUser(userID)
 		}
 	}
 	return res, rows.Err()
@@ -585,8 +586,8 @@ func (f *featureFlagStore) GetAnonymousUserFlags(ctx context.Context, anonymousU
 	}
 
 	res := make(map[string]bool, len(flags))
-	for _, ff := range flags {
-		res[ff.Name] = ff.EvaluateForAnonymousUser(anonymousUID)
+	for _, flag := range flags {
+		res[flag.Name] = flag.EvaluateForAnonymousUser(anonymousUID)
 	}
 
 	return res, nil
@@ -599,9 +600,9 @@ func (f *featureFlagStore) GetGlobalFeatureFlags(ctx context.Context) (map[strin
 	}
 
 	res := make(map[string]bool, len(flags))
-	for _, ff := range flags {
-		if val, ok := ff.EvaluateGlobal(); ok {
-			res[ff.Name] = val
+	for _, flag := range flags {
+		if val, ok := flag.EvaluateGlobal(); ok {
+			res[flag.Name] = val
 		}
 	}
 

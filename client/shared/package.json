@@ -15,7 +15,8 @@
   "devDependencies": {
     "@sourcegraph/testing": "workspace:*",
     "@sourcegraph/build-config": "workspace:*",
-    "@sourcegraph/extension-api-types": "workspace:*"
+    "@sourcegraph/extension-api-types": "workspace:*",
+    "sourcegraph": "workspace:*"
   },
   "dependencies": {
     "@sourcegraph/wildcard": "workspace:*",
@@ -23,8 +24,7 @@
     "@sourcegraph/common": "workspace:*",
     "@sourcegraph/client-api": "workspace:*",
     "@sourcegraph/template-parser": "workspace:*",
-    "@sourcegraph/codeintellify": "workspace:*",
-    "@sourcegraph/browser": "workspace:*"
+    "@sourcegraph/codeintellify": "workspace:*"
   },
   "sideEffects": true
 }

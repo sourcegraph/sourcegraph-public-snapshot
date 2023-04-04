@@ -1,17 +1,13 @@
 import React, { useEffect, useRef } from 'react'
 
-import { action } from '@storybook/addon-actions'
 import { Args, useMemo } from '@storybook/addons'
 import { Meta, Story } from '@storybook/react'
 
-import { Position } from '@sourcegraph/wildcard'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../components/WebStory'
-import { ThemePreference } from '../theme'
 
 import { UserNavItem, UserNavItemProps } from './UserNavItem'
-
-const onThemePreferenceChange = action('onThemePreferenceChange')
 
 const config: Meta = {
     title: 'web/nav/UserNavItem',
@@ -27,7 +23,7 @@ const config: Meta = {
         },
     },
     argTypes: {
-        showDotComMarketing: {
+        isSourcegraphDotCom: {
             control: { type: 'boolean' },
             defaultValue: true,
         },
@@ -70,15 +66,13 @@ const authenticatedUser: UserNavItemProps['authenticatedUser'] = {
 }
 
 const commonProps = (props: Args): UserNavItemProps => ({
-    themePreference: ThemePreference.Light,
-    isLightTheme: true,
-    onThemePreferenceChange,
-    showDotComMarketing: props.showDotComMarketing,
-    codeHostIntegrationMessaging: props.codeHostIntegrationMessaging,
     authenticatedUser,
-    position: Position.bottomStart,
+    isSourcegraphDotCom: props.isSourcegraphDotCom,
+    isSourcegraphApp: false,
+    codeHostIntegrationMessaging: props.codeHostIntegrationMessaging,
     showKeyboardShortcutsHelp: () => undefined,
     showFeedbackModal: () => undefined,
+    telemetryService: NOOP_TELEMETRY_SERVICE,
 })
 
 const OpenByDefaultWrapper: React.FunctionComponent<{
@@ -99,14 +93,7 @@ export const SiteAdmin: Story = args => {
         <OpenByDefaultWrapper>
             {({ menuButtonRef }) => (
                 <WebStory>
-                    {webProps => (
-                        <UserNavItem
-                            {...props}
-                            {...webProps}
-                            menuButtonRef={menuButtonRef}
-                            themePreference={webProps.isLightTheme ? ThemePreference.Light : ThemePreference.Dark}
-                        />
-                    )}
+                    {webProps => <UserNavItem {...props} {...webProps} menuButtonRef={menuButtonRef} />}
                 </WebStory>
             )}
         </OpenByDefaultWrapper>

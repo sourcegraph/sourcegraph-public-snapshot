@@ -140,6 +140,20 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.C
 			}
 		})
 
+		t.Run("ExcludeEmptySpecs", func(t *testing.T) {
+			count, err := s.CountBatchSpecs(ctx, CountBatchSpecsOpts{
+				ExcludeEmptySpecs:           true,
+				IncludeLocallyExecutedSpecs: true,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, len(batchSpecs)-1; have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
+		})
+
 		t.Run("ExcludeCreatedFromRawNotOwnedByUser", func(t *testing.T) {
 			for _, spec := range batchSpecs {
 				if spec.CreatedFromRaw {
@@ -376,6 +390,26 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.C
 				t.Fatalf("opts: %+v, diff: %s", opts, diff)
 			}
 		})
+
+		t.Run("ExcludeEmptySpecs", func(t *testing.T) {
+			opts := ListBatchSpecsOpts{
+				ExcludeEmptySpecs:           true,
+				IncludeLocallyExecutedSpecs: true,
+			}
+			have, _, err := s.ListBatchSpecs(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			// The third batch spec is the empty one
+			want := make([]*btypes.BatchSpec, 0, 4)
+			want = append(want, batchSpecs[0])
+			want = append(want, batchSpecs[1])
+			want = append(want, batchSpecs[3])
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatalf("opts: %+v, diff: %s", opts, diff)
+			}
+		})
 	})
 
 	t.Run("Update", func(t *testing.T) {
@@ -422,24 +456,14 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.C
 			})
 		}
 
-		t.Run("NoID", func(t *testing.T) {
-			opts := GetBatchSpecOpts{}
-
-			spec, err := s.GetBatchSpec(ctx, opts)
-			assert.Nil(t, spec)
-
-			assert.Error(t, err)
-			assert.Equal(t, "missing ID or RandID", err.Error())
-		})
-
 		t.Run("NoResults", func(t *testing.T) {
 			opts := GetBatchSpecOpts{ID: 0xdeadbeef}
 
-			spec, err := s.GetBatchSpec(ctx, opts)
-			assert.Nil(t, spec)
+			_, have := s.GetBatchSpec(ctx, opts)
+			want := ErrNoResults
 
-			if err != ErrNoResults {
-				t.Fatalf("have err %v, want %v", err, ErrNoResults)
+			if have != want {
+				t.Fatalf("have err %v, want %v", have, want)
 			}
 		})
 

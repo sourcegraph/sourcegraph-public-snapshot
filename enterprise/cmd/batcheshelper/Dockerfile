@@ -3,7 +3,7 @@
 # file, please don't be scared to make it more pleasant / remove hadolint
 # ignores.
 
-FROM sourcegraph/alpine-3.14:190630_2022-12-22_6988b6221a72@sha256:782f094e3a6397a5f57305efac7b3f0e8c992eece31c98f93c1a518cc6c876e5
+FROM sourcegraph/alpine-3.14:211375_2023-04-02_5.0-05ccd1762636@sha256:cd5089e0b0f7e5a5cd18996f5acd23cfa2bde33f6b7ffb9ace47f552941f0be2
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -15,8 +15,8 @@ LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
 RUN apk add --no-cache \
-    # We require git 2.38+ because we need a fix for this vulnerability to be included:
-    # https://github.blog/2022-04-12-git-security-vulnerability-announced/
-    'git>=2.38.1' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.17/main
+    # Minimal version requirement to address vulnerabilities
+    # https://github.blog/2023-02-14-git-security-vulnerabilities-announced-3/
+    'git>=2.39.2-r0' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main
 
 COPY batcheshelper /usr/local/bin/

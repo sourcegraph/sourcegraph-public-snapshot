@@ -1,14 +1,11 @@
 import { render } from '@testing-library/react'
-import { createMemoryHistory } from 'history'
-import { Router } from 'react-router-dom'
-import { CompatRouter } from 'react-router-dom-v5-compat'
+import { MemoryRouter } from 'react-router-dom'
 
 import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
 
 import { DiffHunk } from './DiffHunk'
 
 describe('DiffHunk', () => {
-    const history = createMemoryHistory()
     const hunk: FileDiffHunkFields = {
         oldRange: { startLine: 159, lines: 7 },
         oldNoNewlineAt: false,
@@ -56,15 +53,13 @@ describe('DiffHunk', () => {
     it('renders a unified diff view for the given diff hunk', () => {
         expect(
             render(
-                <Router history={history}>
-                    <CompatRouter>
-                        <table>
-                            <tbody>
-                                <DiffHunk hunk={hunk} lineNumbers={true} fileDiffAnchor="anchor_" />
-                            </tbody>
-                        </table>
-                    </CompatRouter>
-                </Router>
+                <MemoryRouter>
+                    <table>
+                        <tbody>
+                            <DiffHunk hunk={hunk} lineNumbers={true} fileDiffAnchor="anchor_" />
+                        </tbody>
+                    </table>
+                </MemoryRouter>
             ).asFragment()
         ).toMatchSnapshot()
     })

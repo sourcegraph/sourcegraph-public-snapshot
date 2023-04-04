@@ -7,7 +7,7 @@ import (
 
 // CodeIntelAggregatedEvent represents the total events and unique users within
 // the current week for a single event. The events are split again by language id
-// code intel action (e.g. defintions, references, hovers), and the code intel
+// code intel action (e.g. definitions, references, hovers), and the code intel
 // data source (e.g. precise, search).
 type CodeIntelAggregatedEvent struct {
 	Name        string

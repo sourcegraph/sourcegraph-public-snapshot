@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "upload_lib",
+    srcs = [
+        "main.go",
+        "state.go",
+        "upload.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/codeintel-qa/cmd/upload",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//dev/codeintel-qa/internal",
+        "//lib/errors",
+    ],
+)
+
+go_binary(
+    name = "upload",
+    embed = [":upload_lib"],
+    visibility = ["//visibility:public"],
+)

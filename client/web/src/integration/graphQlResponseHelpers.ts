@@ -7,12 +7,14 @@ import {
     ExternalServiceKind,
     FileExternalLinksResult,
     FileNamesResult,
+    FileTreeEntriesResult,
     RepoChangesetsStatsResult,
     ResolveRepoRevResult,
 } from '../graphql-operations'
 
 export const createTreeEntriesResult = (url: string, toplevelFiles: string[]): TreeEntriesResult => ({
     repository: {
+        id: `$repo-id-${url}`,
         commit: {
             tree: {
                 isRoot: true,
@@ -30,6 +32,9 @@ export const createTreeEntriesResult = (url: string, toplevelFiles: string[]): T
     },
 })
 
+export const createFileTreeEntriesResult = (url: string, toplevelFiles: string[]): FileTreeEntriesResult =>
+    createTreeEntriesResult(url, toplevelFiles)
+
 export const createBlobContentResult = (
     content: string,
     html: string = `<div style="color:red">${content}<div>`,
@@ -41,6 +46,7 @@ export const createBlobContentResult = (
                 __typename: 'VirtualFile',
                 content,
                 richHTML: '',
+                totalLines: content.split('\n').length,
                 highlight: {
                     aborted: false,
                     html,
@@ -95,6 +101,7 @@ export const createResolveRepoRevisionResult = (treeUrl: string, oid = '1'.repea
             oid,
             tree: { url: '/' + treeUrl },
         },
+        isFork: false,
     },
 })
 
@@ -122,6 +129,7 @@ export const createResolveCloningRepoRevisionResult = (
             cloned: false,
         },
         commit: null,
+        isFork: false,
     },
     errors: [
         {

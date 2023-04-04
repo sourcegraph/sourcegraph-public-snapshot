@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "migrator_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/migrator",
+    visibility = ["//visibility:private"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
+    deps = [
+        "//cmd/migrator/shared",
+        "//internal/env",
+        "//internal/version",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_binary(
+    name = "migrator",
+    embed = [":migrator_lib"],
+    visibility = ["//visibility:public"],
+)

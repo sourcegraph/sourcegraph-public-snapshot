@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "golang",
+    srcs = ["golang.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/golang",
+    visibility = ["//dev/sg:__subpackages__"],
+    deps = [
+        "//dev/sg/internal/generate",
+        "//dev/sg/internal/std",
+        "//dev/sg/root",
+        "//lib/errors",
+        "//lib/output",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_sourcegraph_conc//pool",
+        "@com_github_sourcegraph_run//:run",
+    ],
+)

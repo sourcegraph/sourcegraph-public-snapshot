@@ -50,17 +50,17 @@ func NewProvider(cli *bitbucketserver.Client, urn string, pluginPerm bool) *Prov
 
 // ValidateConnection validates that the Provider has access to the Bitbucket Server API
 // with the OAuth credentials it was configured with.
-func (p *Provider) ValidateConnection(ctx context.Context) []string {
+func (p *Provider) ValidateConnection(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	username, err := p.client.Username()
 	if err != nil {
-		return []string{err.Error()}
+		return err
 	}
 
 	if _, err := p.client.UserPermissions(ctx, username); err != nil {
-		return []string{err.Error()}
+		return err
 	}
 
 	return nil

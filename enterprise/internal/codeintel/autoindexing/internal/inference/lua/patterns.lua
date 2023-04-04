@@ -2,38 +2,42 @@ local patterns = require "internal_patterns"
 
 local M = {}
 
-local quote = function(pattern)
-  -- regexp meta chars: `| { }`
-  -- regexp AND lua meta chars: ` . + * ? ( ) [ ] ^ $` (escaped with %)
-  return string.gsub(pattern, "([|{}%.%+%*%?%(%)%[%]%^%$])", "\\%1")
+local new_pattern = function(glob, pathspecs)
+    return patterns.backdoor(glob, pathspecs)
 end
 
-local new_pattern = function(prefix, pattern, suffix)
-  return patterns.backdoor(prefix .. quote(pattern) .. suffix)
-end
-
+-- glob:     /BUILD.bazel
+-- pathspec:  BUILD.bazel
 M.new_path_literal = function(pattern)
-  return new_pattern("^", pattern, "$")
+    return new_pattern("/" .. pattern, {pattern})
 end
 
+-- glob:       web/
+-- pathspec:   web/* (root)
+-- pathspec: */web/* (non-root)
 M.new_path_segment = function(pattern)
-  return new_pattern("(^|/)", pattern, "(/|$)")
+    return new_pattern(pattern .. "/", {pattern .. "/*", "*/" .. pattern .. "/*"})
 end
 
+-- glob:       gen.go
+-- pathspec:   gen.go (root)
+-- pathspec: */gen.go (non-root)
 M.new_path_basename = function(pattern)
-  return new_pattern("(^|/)", pattern, "$")
+    return new_pattern(pattern, {pattern, "*/" .. pattern})
 end
 
+-- glob:     *.md
+-- pathspec: *.md
 M.new_path_extension = function(pattern)
-  return new_pattern("(^|/)[^/]+.", pattern, "$")
+    return new_pattern("*." .. pattern, {"*." .. pattern})
 end
 
 M.new_path_combine = function(pattern)
-  return patterns.path_combine(pattern)
+    return patterns.path_combine(pattern)
 end
 
 M.new_path_exclude = function(pattern)
-  return patterns.path_exclude(pattern)
+    return patterns.path_exclude(pattern)
 end
 
 return M

@@ -1,12 +1,8 @@
 import { FC, useMemo } from 'react'
 
-import {
-    CodeInsightCreationMode,
-    CodeInsightsCreationActions,
-    createDefaultEditSeries,
-    FORM_ERROR,
-    SubmissionErrors,
-} from '../../../../components'
+import { FORM_ERROR, SubmissionErrors } from '@sourcegraph/wildcard'
+
+import { CodeInsightCreationMode, CodeInsightsCreationActions, createDefaultEditSeries } from '../../../../components'
 import { ComputeInsight, MinimalComputeInsightData } from '../../../../core'
 import { ComputeInsightCreationContent } from '../../creation/compute/components/ComputeInsightCreationContent'
 import { CreateComputeInsightFormFields } from '../../creation/compute/types'
@@ -26,7 +22,7 @@ export const EditComputeInsight: FC<EditComputeInsightProps> = props => {
     const insightFormValues = useMemo<CreateComputeInsightFormFields>(
         () => ({
             title: insight.title,
-            repositories: insight.repositories.join(', '),
+            repositories: insight.repositories,
             series: insight.series.map(line => createDefaultEditSeries({ ...line, valid: true })),
             dashboardReferenceCount: insight.dashboardReferenceCount,
             groupBy: insight.groupBy,

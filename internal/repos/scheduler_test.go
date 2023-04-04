@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -1409,8 +1409,8 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			configuredLimiter = func() *mutablelimiter.Limiter {
-				return mutablelimiter.New(test.gitMaxConcurrentClones)
+			configuredLimiter = func() *limiter.MutableLimiter {
+				return limiter.NewMutable(test.gitMaxConcurrentClones)
 			}
 			defer func() {
 				configuredLimiter = nil
@@ -1424,7 +1424,7 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 			// intentionally don't close the channel so any further receives just block
 
 			contexts := make(chan context.Context, expectedRequestCount)
-			requestRepoUpdate = func(ctx context.Context, db database.DB, repo configuredRepo, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
+			requestRepoUpdate = func(ctx context.Context, repo configuredRepo, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
 				select {
 				case mock := <-mockRequestRepoUpdates:
 					if !reflect.DeepEqual(mock.repo, repo) {

@@ -6,24 +6,28 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-
 	"github.com/sourcegraph/log"
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
+	authworker "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/worker/auth"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -32,15 +36,9 @@ import (
 var errDisabledSourcegraphDotCom = errors.New("not enabled on sourcegraph.com")
 
 type Resolver struct {
-	logger            log.Logger
-	db                edb.EnterpriseDB
-	repoupdaterClient interface {
-		SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error
-	}
-	syncJobsRecords interface {
-		Get(timestamp time.Time) (*syncjobs.Status, error)
-		GetAll(ctx context.Context, first int) ([]syncjobs.Status, error)
-	}
+	logger log.Logger
+	db     edb.EnterpriseDB
+	ossDB  database.DB
 }
 
 // checkLicense returns a user-facing error if the provided feature is not purchased
@@ -58,12 +56,11 @@ func (r *Resolver) checkLicense(feature licensing.Feature) error {
 	return nil
 }
 
-func NewResolver(observationCtx *observation.Context, db database.DB, clock func() time.Time) graphqlbackend.AuthzResolver {
+func NewResolver(observationCtx *observation.Context, db database.DB) graphqlbackend.AuthzResolver {
 	return &Resolver{
-		logger:            observationCtx.Logger.Scoped("authz.Resolver", ""),
-		db:                edb.NewEnterpriseDB(db),
-		repoupdaterClient: repoupdater.DefaultClient,
-		syncJobsRecords:   syncjobs.NewRecordsReader(),
+		logger: observationCtx.Logger.Scoped("authz.Resolver", ""),
+		db:     edb.NewEnterpriseDB(db),
+		ossDB:  db,
 	}
 }
 
@@ -107,15 +104,19 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		}
 	}
 
-	userIDs := make(map[int32]struct{}, len(mapping))
-	for _, id := range mapping {
-		userIDs[id] = struct{}{}
-	}
+	userIDs := collections.NewSet(maps.Values(mapping)...)
 
 	p := &authz.RepoPermissions{
 		RepoID:  int32(repoID),
 		Perm:    authz.Read, // Note: We currently only support read for repository permissions.
 		UserIDs: userIDs,
+	}
+
+	perms := make([]authz.UserIDWithExternalAccountID, 0, len(userIDs))
+	for userID := range userIDs {
+		perms = append(perms, authz.UserIDWithExternalAccountID{
+			UserID: userID,
+		})
 	}
 
 	txs, err := r.db.Perms().Transact(ctx)
@@ -130,8 +131,8 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		AccountIDs:  pendingBindIDs,
 	}
 
-	if err = txs.SetRepoPermissions(ctx, p); err != nil {
-		return nil, errors.Wrap(err, "set repository permissions")
+	if _, err = txs.SetRepoPerms(ctx, p.RepoID, perms, authz.SourceAPI); err != nil {
+		return nil, errors.Wrap(err, "set user repo permissions")
 	} else if err = txs.SetRepoPendingPermissions(ctx, accounts, p); err != nil {
 		return nil, errors.Wrap(err, "set repository pending permissions")
 	}
@@ -173,8 +174,9 @@ func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only site admins can query repository permissions.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	// 🚨 SECURITY: Only site admins can trigger repository permissions syncs.
+	err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
+	if err != nil {
 		return nil, err
 	}
 
@@ -183,12 +185,9 @@ func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *
 		return nil, err
 	}
 
-	err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
-		RepoIDs: []api.RepoID{repoID},
-	})
-	if err != nil {
-		return nil, err
-	}
+	req := protocol.PermsSyncRequest{RepoIDs: []api.RepoID{repoID}, Reason: database.ReasonManualRepoSync, TriggeredByUserID: actor.FromContext(ctx).UID}
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, req)
+
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
@@ -197,26 +196,23 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only site admins can query repository permissions.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-
 	userID, err := graphqlbackend.UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
 	}
 
-	req := protocol.PermsSyncRequest{
-		UserIDs: []int32{userID},
+	// 🚨 SECURITY: User can trigger permission sync for themselves, site admins for any user.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		return nil, err
 	}
+
+	req := protocol.PermsSyncRequest{UserIDs: []int32{userID}, Reason: database.ReasonManualUserSync, TriggeredByUserID: actor.FromContext(ctx).UID}
 	if args.Options != nil && args.Options.InvalidateCaches != nil && *args.Options.InvalidateCaches {
 		req.Options.InvalidateCaches = true
 	}
 
-	if err := r.repoupdaterClient.SchedulePermsSync(ctx, req); err != nil {
-		return nil, err
-	}
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, req)
+
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
@@ -238,79 +234,77 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 		return nil, err
 	}
 
-	ossDB, err := r.db.Transact(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "start transaction")
-	}
-	defer func() { err = ossDB.Done(err) }()
-	db := edb.NewEnterpriseDB(ossDB)
+	err = r.db.WithTransact(ctx, func(tx database.DB) error {
+		db := edb.NewEnterpriseDB(tx)
 
-	// Make sure the repo ID is valid.
-	if _, err = db.Repos().Get(ctx, repoID); err != nil {
-		return nil, err
-	}
-
-	bindIDs := make([]string, 0, len(args.UserPermissions))
-	for _, up := range args.UserPermissions {
-		bindIDs = append(bindIDs, up.BindID)
-	}
-
-	mapping, err := r.db.Perms().MapUsers(ctx, bindIDs, globals.PermissionsUserMapping())
-	if err != nil {
-		return nil, err
-	}
-
-	for _, perm := range args.UserPermissions {
-		if (perm.PathIncludes == nil || perm.PathExcludes == nil) && perm.Paths == nil {
-			return nil, errors.New("either both pathIncludes and pathExcludes needs to be set, or paths needs to be set")
-		}
-	}
-
-	for _, perm := range args.UserPermissions {
-		userID, ok := mapping[perm.BindID]
-		if !ok {
-			return nil, errors.Errorf("user %q not found", perm.BindID)
+		// Make sure the repo ID is valid.
+		if _, err = db.Repos().Get(ctx, repoID); err != nil {
+			return err
 		}
 
-		var paths []string
-		if perm.Paths == nil {
-			paths = make([]string, 0, len(*perm.PathIncludes)+len(*perm.PathExcludes))
-			for _, include := range *perm.PathIncludes {
-				if !strings.HasPrefix(include, "/") { // ensure leading slash
-					include = "/" + include
-				}
-				paths = append(paths, include)
+		bindIDs := make([]string, 0, len(args.UserPermissions))
+		for _, up := range args.UserPermissions {
+			bindIDs = append(bindIDs, up.BindID)
+		}
+
+		mapping, err := r.db.Perms().MapUsers(ctx, bindIDs, globals.PermissionsUserMapping())
+		if err != nil {
+			return err
+		}
+
+		for _, perm := range args.UserPermissions {
+			if (perm.PathIncludes == nil || perm.PathExcludes == nil) && perm.Paths == nil {
+				return errors.New("either both pathIncludes and pathExcludes needs to be set, or paths needs to be set")
 			}
-			for _, exclude := range *perm.PathExcludes {
-				if !strings.HasPrefix(exclude, "/") { // ensure leading slash
-					exclude = "/" + exclude
-				}
-				paths = append(paths, "-"+exclude) // excludes start with a minus (-)
+		}
+
+		for _, perm := range args.UserPermissions {
+			userID, ok := mapping[perm.BindID]
+			if !ok {
+				return errors.Errorf("user %q not found", perm.BindID)
 			}
-		} else {
-			paths = make([]string, 0, len(*perm.Paths))
-			for _, path := range *perm.Paths {
-				if strings.HasPrefix(path, "-") {
-					if !strings.HasPrefix(path, "-/") {
-						path = "-/" + strings.TrimPrefix(path, "-")
+
+			var paths []string
+			if perm.Paths == nil {
+				paths = make([]string, 0, len(*perm.PathIncludes)+len(*perm.PathExcludes))
+				for _, include := range *perm.PathIncludes {
+					if !strings.HasPrefix(include, "/") { // ensure leading slash
+						include = "/" + include
 					}
-				} else {
-					if !strings.HasPrefix(path, "/") {
-						path = "/" + path
-					}
+					paths = append(paths, include)
 				}
-				paths = append(paths, path)
+				for _, exclude := range *perm.PathExcludes {
+					if !strings.HasPrefix(exclude, "/") { // ensure leading slash
+						exclude = "/" + exclude
+					}
+					paths = append(paths, "-"+exclude) // excludes start with a minus (-)
+				}
+			} else {
+				paths = make([]string, 0, len(*perm.Paths))
+				for _, path := range *perm.Paths {
+					if strings.HasPrefix(path, "-") {
+						if !strings.HasPrefix(path, "-/") {
+							path = "-/" + strings.TrimPrefix(path, "-")
+						}
+					} else {
+						if !strings.HasPrefix(path, "/") {
+							path = "/" + path
+						}
+					}
+					paths = append(paths, path)
+				}
+			}
+
+			if err := db.SubRepoPerms().Upsert(ctx, userID, repoID, authz.SubRepoPermissions{
+				Paths: paths,
+			}); err != nil {
+				return errors.Wrap(err, "upserting sub-repo permissions")
 			}
 		}
+		return nil
+	})
 
-		if err := db.SubRepoPerms().Upsert(ctx, userID, repoID, authz.SubRepoPermissions{
-			Paths: paths,
-		}); err != nil {
-			return nil, errors.Wrap(err, "upserting sub-repo permissions")
-		}
-	}
-
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &graphqlbackend.EmptyResponse{}, err
 }
 
 func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
@@ -358,6 +352,38 @@ func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+func (r *Resolver) CancelPermissionsSyncJob(ctx context.Context, args *graphqlbackend.CancelPermissionsSyncJobArgs) (graphqlbackend.CancelPermissionsSyncJobResultMessage, error) {
+	if err := r.checkLicense(licensing.FeatureACLs); err != nil {
+		return graphqlbackend.CancelPermissionsSyncJobResultMessageError, err
+	}
+
+	// 🚨 SECURITY: Only site admins can cancel permissions sync jobs.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return graphqlbackend.CancelPermissionsSyncJobResultMessageError, err
+	}
+
+	syncJobID, err := unmarshalPermissionsSyncJobID(args.Job)
+	if err != nil {
+		return graphqlbackend.CancelPermissionsSyncJobResultMessageError, err
+	}
+
+	reason := ""
+	if args.Reason != nil {
+		reason = *args.Reason
+	}
+
+	err = r.db.PermissionSyncJobs().CancelQueuedJob(ctx, reason, syncJobID)
+	// We shouldn't return an error when the job is already processing or not found
+	// by ID (might already be cleaned up).
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return graphqlbackend.CancelPermissionsSyncJobResultMessageNotFound, nil
+		}
+		return graphqlbackend.CancelPermissionsSyncJobResultMessageError, err
+	}
+	return graphqlbackend.CancelPermissionsSyncJobResultMessageSuccess, nil
+}
+
 func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphqlbackend.AuthorizedRepoArgs) (graphqlbackend.RepositoryConnectionResolver, error) {
 	if envvar.SourcegraphDotComMode() {
 		return nil, errDisabledSourcegraphDotCom
@@ -389,13 +415,16 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 
 	var ids []int32
 	if user != nil {
-		p := &authz.UserPermissions{
-			UserID: user.ID,
-			Perm:   authz.Read, // Note: We currently only support read for repository permissions.
-			Type:   authz.PermRepos,
+		var perms []authz.Permission
+		perms, err = r.db.Perms().LoadUserPermissions(ctx, user.ID)
+		if err != nil {
+			return nil, err
 		}
-		err = r.db.Perms().LoadUserPermissions(ctx, p)
-		ids = p.GenerateSortedIDsSlice()
+		ids = make([]int32, len(perms))
+		for i, perm := range perms {
+			ids[i] = perm.RepoID
+		}
+		slices.Sort(ids)
 	} else {
 		p := &authz.UserPendingPermissions{
 			ServiceType: authz.SourcegraphServiceType,
@@ -405,14 +434,15 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 			Type:        authz.PermRepos,
 		}
 		err = r.db.Perms().LoadUserPendingPermissions(ctx, p)
-		ids = p.GenerateSortedIDsSlice()
-	}
-	if err != nil && err != authz.ErrPermsNotFound {
-		return nil, err
-	}
-	// If no row is found, we return an empty list to the consumer.
-	if err == authz.ErrPermsNotFound {
-		ids = []int32{}
+		if err != nil && err != authz.ErrPermsNotFound {
+			return nil, err
+		}
+		// If no row is found, we return an empty list to the consumer.
+		if err == authz.ErrPermsNotFound {
+			ids = []int32{}
+		} else {
+			ids = p.GenerateSortedIDsSlice()
+		}
 	}
 
 	return &repositoryConnectionResolver{
@@ -447,22 +477,19 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 		return nil, err
 	}
 
-	p := &authz.RepoPermissions{
-		RepoID: int32(repoID),
-		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
-	}
-	err = r.db.Perms().LoadRepoPermissions(ctx, p)
-	if err != nil && err != authz.ErrPermsNotFound {
+	p, err := r.db.Perms().LoadRepoPermissions(ctx, int32(repoID))
+	if err != nil {
 		return nil, err
 	}
-	// If no row is found, we return an empty list to the consumer.
-	if err == authz.ErrPermsNotFound {
-		p.UserIDs = map[int32]struct{}{}
+	ids := make([]int32, len(p))
+	for i, perm := range p {
+		ids[i] = perm.UserID
 	}
+	slices.Sort(ids)
 
 	return &userConnectionResolver{
 		db:    r.db,
-		ids:   p.GenerateSortedIDsSlice(),
+		ids:   ids,
 		first: args.First,
 		after: args.After,
 	}, nil
@@ -534,32 +561,6 @@ func getOrDefault[T any](ptr *T) T {
 	}
 }
 
-type permissionsInfoResolver struct {
-	perms        authz.Perms
-	syncedAt     time.Time
-	updatedAt    time.Time
-	unrestricted bool
-}
-
-func (r *permissionsInfoResolver) Permissions() []string {
-	return strings.Split(strings.ToUpper(r.perms.String()), ",")
-}
-
-func (r *permissionsInfoResolver) SyncedAt() *gqlutil.DateTime {
-	if r.syncedAt.IsZero() {
-		return nil
-	}
-	return &gqlutil.DateTime{Time: r.syncedAt}
-}
-
-func (r *permissionsInfoResolver) UpdatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.updatedAt}
-}
-
-func (r *permissionsInfoResolver) Unrestricted() bool {
-	return r.unrestricted
-}
-
 func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID) (graphqlbackend.PermissionsInfoResolver, error) {
 	// 🚨 SECURITY: Only site admins can query repository permissions.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
@@ -575,96 +576,168 @@ func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID)
 		return nil, err
 	}
 
-	p := &authz.RepoPermissions{
-		RepoID: int32(repoID),
-		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
-	}
-	err = r.db.Perms().LoadRepoPermissions(ctx, p)
-	if err != nil && err != authz.ErrPermsNotFound {
+	p, err := r.db.Perms().LoadRepoPermissions(ctx, int32(repoID))
+	if err != nil {
 		return nil, err
 	}
+	// If there's exactly 1 item and the user ID is 0, it means the repository is unrestricted.
+	unrestricted := (len(p) == 1 && p[0].UserID == 0)
 
-	if err == authz.ErrPermsNotFound {
-		return nil, nil // It is acceptable to have no permissions information, i.e. nullable.
+	// get max updated_at time from the permissions
+	updatedAt := time.Time{}
+	for _, permission := range p {
+		if permission.UpdatedAt.After(updatedAt) {
+			updatedAt = permission.UpdatedAt
+		}
+	}
+
+	// get sync time from the sync jobs table
+	latestSyncJob, err := r.db.PermissionSyncJobs().GetLatestFinishedSyncJob(ctx, database.ListPermissionSyncJobOpts{
+		RepoID:      int(repoID),
+		NotCanceled: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	syncedAt := time.Time{}
+	if latestSyncJob != nil {
+		syncedAt = latestSyncJob.FinishedAt
 	}
 
 	return &permissionsInfoResolver{
-		perms:        p.Perm,
-		syncedAt:     p.SyncedAt,
-		updatedAt:    p.UpdatedAt,
-		unrestricted: p.Unrestricted,
+		db:           r.db,
+		ossDB:        r.ossDB,
+		repoID:       repoID,
+		perms:        authz.Read,
+		syncedAt:     syncedAt,
+		updatedAt:    updatedAt,
+		unrestricted: unrestricted,
 	}, nil
 }
 
 func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (graphqlbackend.PermissionsInfoResolver, error) {
-	// 🚨 SECURITY: Only site admins can query user permissions.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-
 	userID, err := graphqlbackend.UnmarshalUserID(id)
 	if err != nil {
 		return nil, err
 	}
+
+	// 🚨 SECURITY: User can query own permissions, site admins all user permissions.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		return nil, err
+	}
+
 	// Make sure the user ID is valid and not soft-deleted.
 	if _, err = r.db.Users().GetByID(ctx, userID); err != nil {
 		return nil, err
 	}
 
-	p := &authz.UserPermissions{
-		UserID: userID,
-		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
-		Type:   authz.PermRepos,
-	}
-	err = r.db.Perms().LoadUserPermissions(ctx, p)
-	if err != nil && err != authz.ErrPermsNotFound {
-		return nil, err
-	}
-
-	if err == authz.ErrPermsNotFound {
-		return nil, nil // It is acceptable to have no permissions information, i.e. nullable.
-	}
-
-	return &permissionsInfoResolver{
-		perms:     p.Perm,
-		syncedAt:  p.SyncedAt,
-		updatedAt: p.UpdatedAt,
-	}, nil
-}
-
-func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args *graphqlbackend.PermissionsSyncJobsArgs) (graphqlbackend.PermissionsSyncJobsConnection, error) {
-	// 🚨 SECURITY: Only site admins can query sync jobs records.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-
-	if args.First == 0 {
-		return nil, errors.Newf("expected non-zero 'first', got %d", args.First)
-	}
-
-	records, err := r.syncJobsRecords.GetAll(ctx, int(args.First))
+	perms, err := r.db.Perms().LoadUserPermissions(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	jobs := &permissionsSyncJobsConnection{
-		jobs: make([]graphqlbackend.PermissionsSyncJobResolver, 0, len(records)),
-	}
-	for _, j := range records {
-		// If status is not provided, add all - otherwise, check if the job's status
-		// matches the argument status.
-		if args.Status == nil {
-			jobs.jobs = append(jobs.jobs, permissionsSyncJobResolver{j})
-		} else if j.Status == *args.Status {
-			jobs.jobs = append(jobs.jobs, permissionsSyncJobResolver{j})
+	// get max updated_at time from the permissions
+	updatedAt := time.Time{}
+	for _, p := range perms {
+		if p.UpdatedAt.After(updatedAt) {
+			updatedAt = p.UpdatedAt
 		}
 	}
 
-	return jobs, nil
+	// get sync time from the sync jobs table
+	latestSyncJob, err := r.db.PermissionSyncJobs().GetLatestFinishedSyncJob(ctx, database.ListPermissionSyncJobOpts{
+		UserID:      int(userID),
+		NotCanceled: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	syncedAt := time.Time{}
+	if latestSyncJob != nil {
+		syncedAt = latestSyncJob.FinishedAt
+	}
+
+	return &permissionsInfoResolver{
+		db:        r.db,
+		ossDB:     r.ossDB,
+		userID:    userID,
+		perms:     authz.Read,
+		syncedAt:  syncedAt,
+		updatedAt: updatedAt,
+	}, nil
 }
 
-func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
-	return map[string]graphqlbackend.NodeByIDFunc{
-		permissionsSyncJobKind: getPermissionsSyncJobByIDFunc(r),
+func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args graphqlbackend.ListPermissionsSyncJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionsSyncJobResolver], error) {
+	// 🚨 SECURITY: Only site admins can query sync jobs records or the users themselves.
+	if args.UserID != nil {
+		userID, err := graphqlbackend.UnmarshalUserID(*args.UserID)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+			return nil, err
+		}
+	} else if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
 	}
+
+	return NewPermissionsSyncJobsResolver(r.db, args)
+}
+
+func (r *Resolver) PermissionsSyncingStats(ctx context.Context) (graphqlbackend.PermissionsSyncingStatsResolver, error) {
+	stats := permissionsSyncingStats{
+		db:    r.db,
+		ossDB: r.ossDB,
+	}
+
+	// 🚨 SECURITY: Only site admins can query permissions syncing stats.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return stats, err
+	}
+
+	return stats, nil
+}
+
+type permissionsSyncingStats struct {
+	db    edb.EnterpriseDB
+	ossDB database.DB
+}
+
+func (s permissionsSyncingStats) QueueSize(ctx context.Context) (int32, error) {
+	count, err := s.ossDB.PermissionSyncJobs().Count(ctx, database.ListPermissionSyncJobOpts{State: database.PermissionsSyncJobStateQueued})
+
+	return int32(count), err
+}
+
+func (s permissionsSyncingStats) UsersWithLatestJobFailing(ctx context.Context) (int32, error) {
+	return s.ossDB.PermissionSyncJobs().CountUsersWithFailingSyncJob(ctx)
+}
+
+func (s permissionsSyncingStats) ReposWithLatestJobFailing(ctx context.Context) (int32, error) {
+	return s.ossDB.PermissionSyncJobs().CountReposWithFailingSyncJob(ctx)
+}
+
+func (s permissionsSyncingStats) UsersWithNoPermissions(ctx context.Context) (int32, error) {
+	count, err := s.db.Perms().CountUsersWithNoPerms(ctx)
+
+	return int32(count), err
+}
+
+func (s permissionsSyncingStats) ReposWithNoPermissions(ctx context.Context) (int32, error) {
+	count, err := s.db.Perms().CountReposWithNoPerms(ctx)
+
+	return int32(count), err
+}
+
+func (s permissionsSyncingStats) UsersWithStalePermissions(ctx context.Context) (int32, error) {
+	count, err := s.db.Perms().CountUsersWithStalePerms(ctx, authworker.SyncUserBackoff())
+
+	return int32(count), err
+}
+
+func (s permissionsSyncingStats) ReposWithStalePermissions(ctx context.Context) (int32, error) {
+	count, err := s.db.Perms().CountReposWithStalePerms(ctx, authworker.SyncRepoBackoff())
+
+	return int32(count), err
 }

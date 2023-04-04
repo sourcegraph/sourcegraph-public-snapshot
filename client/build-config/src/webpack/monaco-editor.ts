@@ -30,8 +30,8 @@ export const MONACO_LANGUAGES_AND_FEATURES: Required<
     customLanguages: [
         {
             label: 'yaml',
-            entry: 'monaco-yaml/lib/esm/monaco.contribution',
-            worker: { id: 'vs/language/yaml/yamlWorker', entry: 'monaco-yaml/lib/esm/yaml.worker' },
+            entry: require.resolve('monaco-yaml/lib/esm/monaco.contribution'),
+            worker: { id: 'vs/language/yaml/yamlWorker', entry: require.resolve('monaco-yaml/lib/esm/yaml.worker') },
         },
     ],
     features: [

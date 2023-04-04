@@ -9,27 +9,27 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/users"
+	sgusers "github.com/sourcegraph/sourcegraph/internal/users"
 )
 
-func (s *siteResolver) Users(ctx context.Context, args *struct {
+func (r *siteResolver) Users(ctx context.Context, args *struct {
 	Query        *string
 	SiteAdmin    *bool
 	Username     *string
 	Email        *string
-	CreatedAt    *users.UsersStatsDateTimeRange
-	LastActiveAt *users.UsersStatsDateTimeRange
-	DeletedAt    *users.UsersStatsDateTimeRange
-	EventsCount  *users.UsersStatsNumberRange
+	CreatedAt    *sgusers.UsersStatsDateTimeRange
+	LastActiveAt *sgusers.UsersStatsDateTimeRange
+	DeletedAt    *sgusers.UsersStatsDateTimeRange
+	EventsCount  *sgusers.UsersStatsNumberRange
 },
 ) (*siteUsersResolver, error) {
 	// 🚨 SECURITY: Only site admins can see users.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, s.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
 	return &siteUsersResolver{
-		&users.UsersStats{DB: s.db, Filters: users.UsersStatsFilters{
+		&sgusers.UsersStats{DB: r.db, Filters: sgusers.UsersStatsFilters{
 			Query:        args.Query,
 			SiteAdmin:    args.SiteAdmin,
 			Username:     args.Username,
@@ -43,7 +43,7 @@ func (s *siteResolver) Users(ctx context.Context, args *struct {
 }
 
 type siteUsersResolver struct {
-	userStats *users.UsersStats
+	userStats *sgusers.UsersStats
 }
 
 func (s *siteUsersResolver) TotalCount(ctx context.Context) (float64, error) {
@@ -57,7 +57,7 @@ func (s *siteUsersResolver) Nodes(ctx context.Context, args *struct {
 	Offset     *int32
 },
 ) ([]*siteUserResolver, error) {
-	users, err := s.userStats.ListUsers(ctx, &users.UsersStatsListUsersFilters{OrderBy: args.OrderBy, Descending: args.Descending, Limit: args.Limit, Offset: args.Offset})
+	users, err := s.userStats.ListUsers(ctx, &sgusers.UsersStatsListUsersFilters{OrderBy: args.OrderBy, Descending: args.Descending, Limit: args.Limit, Offset: args.Offset})
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func (s *siteUsersResolver) Nodes(ctx context.Context, args *struct {
 }
 
 type siteUserResolver struct {
-	user         *users.UserStatItem
+	user         *sgusers.UserStatItem
 	lockoutStore userpasswd.LockoutStore
 }
 
@@ -105,6 +105,8 @@ func (s *siteUserResolver) DeletedAt(ctx context.Context) *string {
 }
 
 func (s *siteUserResolver) SiteAdmin(ctx context.Context) bool { return s.user.SiteAdmin }
+
+func (s *siteUserResolver) SCIMControlled() bool { return s.user.SCIMControlled }
 
 func (s *siteUserResolver) EventsCount(ctx context.Context) float64 { return s.user.EventsCount }
 

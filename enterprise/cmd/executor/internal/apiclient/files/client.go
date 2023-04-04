@@ -10,6 +10,8 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -20,6 +22,9 @@ type Client struct {
 	logger     log.Logger
 	operations *operations
 }
+
+// Compile time validation.
+var _ workspace.FilesStore = &Client{}
 
 // New creates a new Client based on the provided Options.
 func New(observationCtx *observation.Context, options apiclient.BaseClientOptions) (*Client, error) {
@@ -34,14 +39,14 @@ func New(observationCtx *observation.Context, options apiclient.BaseClientOption
 	}, nil
 }
 
-func (c *Client) Exists(ctx context.Context, bucket string, key string) (exists bool, err error) {
+func (c *Client) Exists(ctx context.Context, job types.Job, bucket string, key string) (exists bool, err error) {
 	ctx, _, endObservation := c.operations.exists.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("bucket", bucket),
 		otlog.String("key", key),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.client.NewRequest(http.MethodHead, fmt.Sprintf("%s/%s", bucket, key), nil)
+	req, err := c.client.NewRequest(job.ID, job.Token, http.MethodHead, fmt.Sprintf("%s/%s", bucket, key), nil)
 	if err != nil {
 		return false, err
 	}
@@ -58,14 +63,14 @@ func (c *Client) Exists(ctx context.Context, bucket string, key string) (exists 
 	return true, nil
 }
 
-func (c *Client) Get(ctx context.Context, bucket string, key string) (content io.ReadCloser, err error) {
+func (c *Client) Get(ctx context.Context, job types.Job, bucket string, key string) (content io.ReadCloser, err error) {
 	ctx, _, endObservation := c.operations.get.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("bucket", bucket),
 		otlog.String("key", key),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.client.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", bucket, key), nil)
+	req, err := c.client.NewRequest(job.ID, job.Token, http.MethodGet, fmt.Sprintf("%s/%s", bucket, key), nil)
 	if err != nil {
 		return nil, err
 	}

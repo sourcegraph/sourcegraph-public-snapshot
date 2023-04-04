@@ -3,16 +3,15 @@ package app
 import (
 	"net/http"
 
-	"github.com/NYTimes/gziphandler"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/accessrequest"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -56,6 +55,7 @@ func NewHandler(db database.DB, logger log.Logger, githubAppSetupHandler http.Ha
 	lockoutStore := userpasswd.NewLockoutStoreFromConf(conf.AuthLockout())
 
 	r.Get(router.SignUp).Handler(trace.Route(userpasswd.HandleSignUp(logger, db)))
+	r.Get(router.RequestAccess).Handler(trace.Route(accessrequest.HandleRequestAccess(logger, db)))
 	r.Get(router.SiteInit).Handler(trace.Route(userpasswd.HandleSiteInit(logger, db)))
 	r.Get(router.SignIn).Handler(trace.Route(userpasswd.HandleSignIn(logger, db, lockoutStore)))
 	r.Get(router.SignOut).Handler(trace.Route(serveSignOutHandler(db)))
@@ -66,8 +66,6 @@ func NewHandler(db database.DB, logger log.Logger, githubAppSetupHandler http.Ha
 	r.Get(router.VerifyEmail).Handler(trace.Route(serveVerifyEmail(db)))
 
 	r.Get(router.CheckUsernameTaken).Handler(trace.Route(userpasswd.HandleCheckUsernameTaken(logger, db)))
-
-	r.Get(router.RegistryExtensionBundle).Handler(trace.Route(gziphandler.GzipHandler(registry.HandleRegistryExtensionBundle(db))))
 
 	// Usage statistics ZIP download
 	r.Get(router.UsageStatsDownload).Handler(trace.Route(usageStatsArchiveHandler(db)))

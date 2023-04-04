@@ -92,6 +92,7 @@ PROTECTED_FILES=(
   ./dev/ci/go-test.sh
   ./dev/ci/go-backcompat
   ./dev/ci/asdf-install.sh
+  ./internal/database/migration/definition/read.go
 )
 
 # Rewrite the current migrations into a temporary folder that we can force

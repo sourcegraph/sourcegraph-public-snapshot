@@ -1,0 +1,66 @@
+@import 'paraiso-dark-theme';
+
+#spectaql #page #sidebar .sidebar-top-container{
+    display: none;
+}
+ /* #spectaql #page #sidebar {
+    display: none;
+} */
+
+#spectaql #docs #mobile-navbar {
+    display: none;
+}
+
+#spectaql #content h1.doc-heading {
+    font-size: 44px;
+}
+
+#spectaql #content h2.operation-heading code{
+    padding: 0;
+}
+
+#spectaql code.hljs {
+    background: none;
+    font-size: 100%;
+}
+
+#page #index {
+    display: none;
+}
+
+#spectaql #sidebar {
+    border: 1px solid #ccc;
+    max-height: calc(100vh - 4*1rem);
+    position: fixed;
+    right: 10px;
+    top: calc(2*1rem);
+    width: 20%;
+    overflow-y: scroll;
+
+
+}
+
+#spectaql #nav h4.nav-group-title {
+    display: none;
+}
+
+#spectaql #nav h5.nav-group-section-title {
+    margin-top: 0px;
+    margin-bottom: 5px;
+    font-size: medium;
+}
+
+#spectaql #nav ul.nav-group-items ul.nav-group-section-items {
+    padding-inline-start: 15px;
+}
+
+#spectaql #page #docs {
+    position: relative;
+    width: 80%;
+}
+
+@media only screen and (max-device-width: 480px) {
+    #spectaql #sidebar {
+        display: none;
+    }
+}

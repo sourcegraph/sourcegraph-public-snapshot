@@ -6,5 +6,9 @@
   "scripts": {
     "release": "ts-node --transpile-only ./src/main.ts",
     "lint:js": "eslint --cache 'src/**/*.[jt]s?(x)'"
+  },
+  "dependencies": {
+    "@types/luxon": "^3.2.0",
+    "luxon": "^3.2.1"
   }
 }

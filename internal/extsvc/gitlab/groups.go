@@ -19,7 +19,7 @@ func (c *Client) ListGroups(ctx context.Context, page int) (groups []*Group, has
 		return MockListGroups(ctx, page)
 	}
 
-	url := fmt.Sprintf("groups?per_page=100&page=%d", page)
+	url := fmt.Sprintf("groups?per_page=100&page=%d&min_access_level=10", page)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, false, err

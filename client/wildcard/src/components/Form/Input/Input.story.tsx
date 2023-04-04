@@ -4,7 +4,7 @@ import { Meta } from '@storybook/react'
 
 import { BrandedStory } from '../../../stories/BrandedStory'
 
-import { Input } from './Input'
+import { Input, InputDescription, InputElement, InputErrorMessage, InputStatus, Label } from './Input'
 
 const Story: Meta = {
     title: 'wildcard/Input',
@@ -81,6 +81,25 @@ export const Simple = () => {
                 placeholder="testing this one"
                 variant="small"
             />
+
+            <section>
+                <Label htmlFor="customInput">Custom label layout</Label>
+                <InputElement
+                    id="customInput"
+                    placeholder="Field with custom label layout"
+                    status={InputStatus.error}
+                />
+                <InputErrorMessage message="Input custom error message" className="mt-2" />
+                <InputDescription className="mt-2">
+                    <ul>
+                        <li>Hint: you can use regular expressions within each of the available filters</li>
+                        <li>
+                            Datapoints will be automatically backfilled using the list of repositories resulting from
+                            today’s search. Future data points will use the list refreshed for every snapshot.
+                        </li>
+                    </ul>
+                </InputDescription>
+            </section>
         </>
     )
 }

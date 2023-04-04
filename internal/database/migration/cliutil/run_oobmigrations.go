@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
+	oobmigrations "github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -25,7 +25,7 @@ func RunOutOfBandMigrations(
 	commandName string,
 	runnerFactory RunnerFactory,
 	outFactory OutputFactory,
-	registerMigratorsWithStore func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
+	registerMigratorsWithStore func(storeFactory oobmigrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
 ) *cli.Command {
 	idsFlag := &cli.IntSliceFlag{
 		Name:     "id",

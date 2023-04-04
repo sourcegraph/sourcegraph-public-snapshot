@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 
 import { useMutation, gql } from '@sourcegraph/http-client'
 import { Button, LoadingSpinner, Label, Text, Form } from '@sourcegraph/wildcard'
@@ -38,7 +38,7 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
     authenticatedUser,
     score,
 }) => {
-    const history = useHistory<SurveyFormLocationState>()
+    const navigate = useNavigate()
     const [email, setEmail] = useState('')
     const [validationError, setValidationError] = useState<Error | null>(null)
     const [otherUseCase, setOtherUseCase] = useState<string>('')
@@ -46,14 +46,18 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
 
     const [submitSurvey, response] = useMutation<SubmitSurveyResult, SubmitSurveyVariables>(SUBMIT_SURVEY, {
         onCompleted: () => {
-            history.push({
-                pathname: '/survey/thanks',
-                state: {
-                    // Mutation is only submitted when score is defined
-                    score: score!,
-                    feedback: better,
+            navigate(
+                {
+                    pathname: '/survey/thanks',
                 },
-            })
+                {
+                    state: {
+                        // Mutation is only submitted when score is defined
+                        score: score!,
+                        feedback: better,
+                    },
+                }
+            )
         },
     })
 
@@ -62,7 +66,7 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
             setValidationError(null)
         }
 
-        history.push(`/survey/${newScore}`)
+        navigate(`/survey/${newScore}`)
     }
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {

@@ -244,7 +244,7 @@ func (c *Client) GetProjectByKey(ctx context.Context, key string) (*Project, err
 
 // CreateRepo creates a repo within the given project with the given name.
 func (c *Client) CreateRepo(ctx context.Context, p *Project, repoName string) (*Repo, error) {
-	url := c.url(fmt.Sprintf("/rest/api/latest/projects/%s/repos", p.Key))
+	endpointUrl := c.url(fmt.Sprintf("/rest/api/latest/projects/%s/repos", p.Key))
 
 	rawRepoData, err := json.Marshal(struct {
 		Name  string         `json:"name"`
@@ -260,7 +260,7 @@ func (c *Client) CreateRepo(ctx context.Context, p *Project, repoName string) (*
 		return nil, err
 	}
 
-	respData, err := c.post(ctx, url, rawRepoData)
+	respData, err := c.post(ctx, endpointUrl, rawRepoData)
 	if err != nil {
 		return nil, err
 	}
@@ -282,7 +282,7 @@ func (c *Client) CreateRepo(ctx context.Context, p *Project, repoName string) (*
 // authenticated user. Therefore, it is strongly recommended, that if you want to create a project to use the
 // BasicAuth client.
 func (c *Client) CreateProject(ctx context.Context, p *Project) (*Project, error) {
-	url := c.url("/rest/api/latest/projects")
+	endpointUrl := c.url("/rest/api/latest/projects")
 
 	rawProjectData, err := json.Marshal(struct {
 		Key       string         `json:"key"`
@@ -297,7 +297,7 @@ func (c *Client) CreateProject(ctx context.Context, p *Project) (*Project, error
 		return nil, err
 	}
 
-	respData, err := c.post(ctx, url, rawProjectData)
+	respData, err := c.post(ctx, endpointUrl, rawProjectData)
 	if err != nil {
 		return nil, err
 	}
@@ -313,8 +313,8 @@ func (c *Client) CreateProject(ctx context.Context, p *Project) (*Project, error
 
 func (c *Client) ListProjects(ctx context.Context) ([]*Project, error) {
 	var err error
-	url := c.url("/rest/api/latest/projects")
-	all, err := getAll[*Project](ctx, c, url)
+	endpointUrl := c.url("/rest/api/latest/projects")
+	all, err := getAll[*Project](ctx, c, endpointUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -343,8 +343,8 @@ func extractResults[T any](items []getResult[T]) ([]T, error) {
 
 func (c *Client) ListReposForProject(ctx context.Context, project *Project, page int, perPage int) ([]*Repo, int, error) {
 	repos := make([]*Repo, 0)
-	url := c.url(fmt.Sprintf("/rest/api/latest/projects/%s/repos", project.Key))
-	resp, err := c.getPaged(ctx, url, page, perPage)
+	endpointUrl := c.url(fmt.Sprintf("/rest/api/latest/projects/%s/repos", project.Key))
+	resp, err := c.getPaged(ctx, endpointUrl, page, perPage)
 	if err != nil {
 		return nil, 0, err
 	}

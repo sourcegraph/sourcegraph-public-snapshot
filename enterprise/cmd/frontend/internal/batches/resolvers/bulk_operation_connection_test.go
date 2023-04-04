@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -36,7 +37,7 @@ func TestBulkOperationConnectionResolver(t *testing.T) {
 
 	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test", userID, 0)
 	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test", userID, batchSpec.ID)
-	batchChangeAPIID := marshalBatchChangeID(batchChange.ID)
+	batchChangeAPIID := bgql.MarshalBatchChangeID(batchChange.ID)
 	repos, _ := bt.CreateTestRepos(t, ctx, db, 3)
 	changeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:             repos[0].ID,

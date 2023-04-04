@@ -8,21 +8,18 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
-	codeintelgitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-var client = codeintelgitserver.New(&observation.TestContext, database.NewMockDB())
-
 func TestGetTargetCommitPathFromSourcePath(t *testing.T) {
+	client := gitserver.NewMockClient()
+
 	args := &requestArgs{
 		repo:   &sgtypes.Repo{ID: 50},
 		commit: "deadbeef1",
@@ -43,7 +40,7 @@ func TestGetTargetCommitPathFromSourcePath(t *testing.T) {
 }
 
 func TestGetTargetCommitPositionFromSourcePosition(t *testing.T) {
-	gitserverClient := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
+	client := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
 		expectedArgs := []string{"diff", "deadbeef1", "deadbeef2", "--", "/foo/bar.go"}
 		if diff := cmp.Diff(expectedArgs, args); diff != "" {
 			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
@@ -52,9 +49,7 @@ func TestGetTargetCommitPositionFromSourcePosition(t *testing.T) {
 		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	})
 
-	client = codeintelgitserver.NewWithGitserverClient(&observation.TestContext, database.NewMockDB(), gitserverClient)
-
-	posIn := types.Position{Line: 302, Character: 15}
+	posIn := shared.Position{Line: 302, Character: 15}
 
 	args := &requestArgs{
 		repo:   &sgtypes.Repo{ID: 50},
@@ -74,20 +69,18 @@ func TestGetTargetCommitPositionFromSourcePosition(t *testing.T) {
 		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
 	}
 
-	expectedPos := types.Position{Line: 294, Character: 15}
+	expectedPos := shared.Position{Line: 294, Character: 15}
 	if diff := cmp.Diff(expectedPos, posOut); diff != "" {
 		t.Errorf("unexpected position (-want +got):\n%s", diff)
 	}
 }
 
 func TestGetTargetCommitPositionFromSourcePositionEmptyDiff(t *testing.T) {
-	gitserverClient := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
+	client := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
 		return io.NopCloser(bytes.NewReader(nil)), nil
 	})
 
-	client = codeintelgitserver.NewWithGitserverClient(&observation.TestContext, database.NewMockDB(), gitserverClient)
-
-	posIn := types.Position{Line: 10, Character: 15}
+	posIn := shared.Position{Line: 10, Character: 15}
 
 	args := &requestArgs{
 		repo:   &sgtypes.Repo{ID: 50},
@@ -112,7 +105,7 @@ func TestGetTargetCommitPositionFromSourcePositionEmptyDiff(t *testing.T) {
 }
 
 func TestGetTargetCommitPositionFromSourcePositionReverse(t *testing.T) {
-	gitserverClient := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
+	client := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
 		expectedArgs := []string{"diff", "deadbeef2", "deadbeef1", "--", "/foo/bar.go"}
 		if diff := cmp.Diff(expectedArgs, args); diff != "" {
 			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
@@ -121,9 +114,7 @@ func TestGetTargetCommitPositionFromSourcePositionReverse(t *testing.T) {
 		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	})
 
-	client = codeintelgitserver.NewWithGitserverClient(&observation.TestContext, database.NewMockDB(), gitserverClient)
-
-	posIn := types.Position{Line: 302, Character: 15}
+	posIn := shared.Position{Line: 302, Character: 15}
 
 	args := &requestArgs{
 		repo:   &sgtypes.Repo{ID: 50},
@@ -143,14 +134,14 @@ func TestGetTargetCommitPositionFromSourcePositionReverse(t *testing.T) {
 		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
 	}
 
-	expectedPos := types.Position{Line: 294, Character: 15}
+	expectedPos := shared.Position{Line: 294, Character: 15}
 	if diff := cmp.Diff(expectedPos, posOut); diff != "" {
 		t.Errorf("unexpected position (-want +got):\n%s", diff)
 	}
 }
 
 func TestGetTargetCommitRangeFromSourceRange(t *testing.T) {
-	gitserverClient := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
+	client := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
 		expectedArgs := []string{"diff", "deadbeef1", "deadbeef2", "--", "/foo/bar.go"}
 		if diff := cmp.Diff(expectedArgs, args); diff != "" {
 			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
@@ -159,11 +150,9 @@ func TestGetTargetCommitRangeFromSourceRange(t *testing.T) {
 		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	})
 
-	client = codeintelgitserver.NewWithGitserverClient(&observation.TestContext, database.NewMockDB(), gitserverClient)
-
-	rIn := types.Range{
-		Start: types.Position{Line: 302, Character: 15},
-		End:   types.Position{Line: 305, Character: 20},
+	rIn := shared.Range{
+		Start: shared.Position{Line: 302, Character: 15},
+		End:   shared.Position{Line: 305, Character: 20},
 	}
 
 	args := &requestArgs{
@@ -184,9 +173,9 @@ func TestGetTargetCommitRangeFromSourceRange(t *testing.T) {
 		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
 	}
 
-	expectedRange := types.Range{
-		Start: types.Position{Line: 294, Character: 15},
-		End:   types.Position{Line: 297, Character: 20},
+	expectedRange := shared.Range{
+		Start: shared.Position{Line: 294, Character: 15},
+		End:   shared.Position{Line: 297, Character: 20},
 	}
 	if diff := cmp.Diff(expectedRange, rOut); diff != "" {
 		t.Errorf("unexpected position (-want +got):\n%s", diff)
@@ -194,15 +183,13 @@ func TestGetTargetCommitRangeFromSourceRange(t *testing.T) {
 }
 
 func TestGetTargetCommitRangeFromSourceRangeEmptyDiff(t *testing.T) {
-	gitserverClient := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
+	client := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
 		return io.NopCloser(bytes.NewReader([]byte(nil))), nil
 	})
 
-	client = codeintelgitserver.NewWithGitserverClient(&observation.TestContext, database.NewMockDB(), gitserverClient)
-
-	rIn := types.Range{
-		Start: types.Position{Line: 302, Character: 15},
-		End:   types.Position{Line: 305, Character: 20},
+	rIn := shared.Range{
+		Start: shared.Position{Line: 302, Character: 15},
+		End:   shared.Position{Line: 305, Character: 20},
 	}
 
 	args := &requestArgs{
@@ -228,7 +215,7 @@ func TestGetTargetCommitRangeFromSourceRangeEmptyDiff(t *testing.T) {
 }
 
 func TestGetTargetCommitRangeFromSourceRangeReverse(t *testing.T) {
-	gitserverClient := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
+	client := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
 		expectedArgs := []string{"diff", "deadbeef2", "deadbeef1", "--", "/foo/bar.go"}
 		if diff := cmp.Diff(expectedArgs, args); diff != "" {
 			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
@@ -237,11 +224,9 @@ func TestGetTargetCommitRangeFromSourceRangeReverse(t *testing.T) {
 		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	})
 
-	client = codeintelgitserver.NewWithGitserverClient(&observation.TestContext, database.NewMockDB(), gitserverClient)
-
-	rIn := types.Range{
-		Start: types.Position{Line: 302, Character: 15},
-		End:   types.Position{Line: 305, Character: 20},
+	rIn := shared.Range{
+		Start: shared.Position{Line: 302, Character: 15},
+		End:   shared.Position{Line: 305, Character: 20},
 	}
 
 	args := &requestArgs{
@@ -262,9 +247,9 @@ func TestGetTargetCommitRangeFromSourceRangeReverse(t *testing.T) {
 		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
 	}
 
-	expectedRange := types.Range{
-		Start: types.Position{Line: 294, Character: 15},
-		End:   types.Position{Line: 297, Character: 20},
+	expectedRange := shared.Range{
+		Start: shared.Position{Line: 294, Character: 15},
+		End:   shared.Position{Line: 297, Character: 20},
 	}
 	if diff := cmp.Diff(expectedRange, rOut); diff != "" {
 		t.Errorf("unexpected position (-want +got):\n%s", diff)
@@ -389,13 +374,13 @@ func TestRawGetTargetCommitPositionFromSourcePosition(t *testing.T) {
 		name := fmt.Sprintf("%s : %s", testCase.diffName, testCase.description)
 
 		t.Run(name, func(t *testing.T) {
-			diff, err := diff.NewFileDiffReader(bytes.NewReader([]byte(testCase.diff))).Read()
+			diff, err := godiff.NewFileDiffReader(bytes.NewReader([]byte(testCase.diff))).Read()
 			if err != nil {
 				t.Fatalf("unexpected error reading file diff: %s", err)
 			}
 			hunks := diff.Hunks
 
-			pos := types.Position{
+			pos := shared.Position{
 				Line:      testCase.line - 1, // 1-index -> 0-index
 				Character: 10,
 			}

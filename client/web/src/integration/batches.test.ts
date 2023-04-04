@@ -57,7 +57,10 @@ const batchChangeListNode: ListBatchChange & { __typename: 'BatchChange' } = {
     },
 
     currentSpec: {
+        __typename: 'BatchSpec',
         id: 'test-spec',
+        state: BatchSpecState.COMPLETED,
+        applyURL: '/fake-apply-url',
     },
     batchSpecs: {
         nodes: [
@@ -321,7 +324,11 @@ function mockCommonGraphQLResponses(
                 avatarURL: '',
                 viewerCanAdminister: true,
                 builtinAuth: true,
-                tags: [],
+                createdAt: '2020-04-10T21:11:42Z',
+                roles: {
+                    __typename: 'RoleConnection',
+                    nodes: [],
+                },
             },
         }),
         UserSettingsAreaUserProfile: () => ({
@@ -338,10 +345,14 @@ function mockCommonGraphQLResponses(
                 siteAdmin: true,
                 builtinAuth: true,
                 createdAt: '2020-04-10T21:11:42Z',
-                emails: [{ email: 'alice@example.com', verified: true }],
+                emails: [{ email: 'alice@example.com', verified: true, isPrimary: true }],
                 organizations: { nodes: [] },
                 permissionsInfo: null,
-                tags: [],
+                scimControlled: false,
+                roles: {
+                    __typename: 'RoleConnection',
+                    nodes: [],
+                },
             },
         }),
         BatchChangeByNamespace: () => ({
@@ -354,10 +365,12 @@ function mockCommonGraphQLResponses(
                     deleted: 1,
                     merged: 3,
                     open: 8,
-                    total: 19,
+                    total: 37,
                     archived: 18,
                     unpublished: 3,
                     draft: 2,
+                    isCompleted: false,
+                    percentComplete: 27,
                 },
                 state: BatchChangeState.OPEN,
                 closedAt: null,

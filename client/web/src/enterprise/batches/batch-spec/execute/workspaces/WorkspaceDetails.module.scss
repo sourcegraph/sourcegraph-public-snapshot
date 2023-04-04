@@ -92,27 +92,19 @@
     }
 }
 
-.step-tabs {
-    [data-reach-tab],
-    [data-reach-tab]:hover,
-    [data-reach-tab][data-selected] {
-        :global(.text-content) {
-            display: inline-flex;
-            align-items: center;
-            flex-direction: column;
-            justify-content: center;
+.step-output-show-more-btn {
+    margin: 0;
+    color: var(--white);
+    text-align: left;
+    padding-left: calc(var(--spacer) * 1) !important;
+    text-decoration: underline;
+    width: fit-content;
 
-            // ::after used here for avoids the CLS when the font-weight change (see: https://css-tricks.com/bold-on-hover-without-the-layout-shift/)
-            &::after {
-                content: attr(data-tab-content);
-                height: 0;
-                text-transform: capitalize;
-                visibility: hidden; // a11y: avoid detection for voice over
-                overflow: hidden;
-                user-select: none;
-                pointer-events: none;
-                font-weight: 700;
-            }
-        }
+    &:hover {
+        color: var(--gray-05);
     }
+}
+
+.step-output-container {
+    background-color: var(--gray-10);
 }

@@ -18,7 +18,7 @@ type Operations struct {
 }
 
 func NewOperations(observationCtx *observation.Context, prefix string) *Operations {
-	metrics := metrics.NewREDMetrics(
+	redMetrics := metrics.NewREDMetrics(
 		observationCtx.Registerer,
 		fmt.Sprintf("%s_uploadhandler", prefix),
 		metrics.WithLabels("op"),
@@ -29,7 +29,7 @@ func NewOperations(observationCtx *observation.Context, prefix string) *Operatio
 		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("%s.uploadhandler.%s", prefix, name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           redMetrics,
 			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
 				var errno syscall.Errno
 				if errors.As(err, &errno) && errno == syscall.ECONNREFUSED {

@@ -81,13 +81,13 @@ const authUser: AuthenticatedUser = {
             { id: '1', settingsURL: '#', name: 'BETA', displayName: 'Beta Inc' },
         ] as OrgAreaOrganizationFields[],
     },
-    tags: [],
     viewerCanAdminister: true,
     databaseID: 0,
     tosAccepted: true,
     searchable: true,
     emails: [{ email: 'alice@sourcegraph.com', isPrimary: true, verified: true }],
     latestSettings: null,
+    permissions: { nodes: [] },
 }
 
 const deleteSearchContext = sinon.fake(() => NEVER)

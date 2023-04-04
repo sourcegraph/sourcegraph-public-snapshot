@@ -1,8 +1,8 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "module": "esnext",
+    "module": "commonjs",
     "sourceRoot": "src",
     "baseUrl": ".",
     "paths": {
@@ -14,13 +14,29 @@
   "include": ["**/*", ".*", "./src/**/*.json"],
   "exclude": ["../../node_modules", "./node_modules", "./out"],
   "references": [
-    { "path": "../shared" },
-    { "path": "../storybook" },
-    { "path": "../common" },
-    { "path": "../http-client" },
-    { "path": "../codeintellify" },
-    { "path": "../client-api" },
-    { "path": "../observability-client" },
-    { "path": "../wildcard" },
+    {
+      "path": "../client-api",
+    },
+    {
+      "path": "../codeintellify",
+    },
+    {
+      "path": "../common",
+    },
+    {
+      "path": "../extension-api-types",
+    },
+    {
+      "path": "../observability-client",
+    },
+    {
+      "path": "../shared",
+    },
+    {
+      "path": "../testing",
+    },
+    {
+      "path": "../wildcard",
+    },
   ],
 }

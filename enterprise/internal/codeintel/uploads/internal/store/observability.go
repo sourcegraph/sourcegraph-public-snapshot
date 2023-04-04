@@ -12,13 +12,16 @@ type operations struct {
 	list *observation.Operation
 
 	// Commits
-	getStaleSourcedCommits    *observation.Operation
-	deleteSourcedCommits      *observation.Operation
-	updateSourcedCommits      *observation.Operation
-	getCommitsVisibleToUpload *observation.Operation
-	getOldestCommitDate       *observation.Operation
-	getCommitGraphMetadata    *observation.Operation
-	hasCommit                 *observation.Operation
+	getStaleSourcedCommits              *observation.Operation
+	deleteSourcedCommits                *observation.Operation
+	updateSourcedCommits                *observation.Operation
+	getCommitsVisibleToUpload           *observation.Operation
+	getOldestCommitDate                 *observation.Operation
+	getCommitGraphMetadata              *observation.Operation
+	hasCommit                           *observation.Operation
+	repositoryIDsWithErrors             *observation.Operation
+	numRepositoriesWithCodeIntelligence *observation.Operation
+	getRecentIndexesSummary             *observation.Operation
 
 	// Repositories
 	getRepositoriesForIndexScan             *observation.Operation
@@ -33,6 +36,7 @@ type operations struct {
 	hasRepository                           *observation.Operation
 
 	// Uploads
+	getIndexers                          *observation.Operation
 	getUploads                           *observation.Operation
 	getUploadByID                        *observation.Operation
 	getUploadsByIDs                      *observation.Operation
@@ -76,12 +80,26 @@ type operations struct {
 
 	// Dependencies
 	insertDependencySyncingJob *observation.Operation
+
+	reindexUploads                 *observation.Operation
+	reindexUploadByID              *observation.Operation
+	deleteIndexesWithoutRepository *observation.Operation
+
+	getIndexes                 *observation.Operation
+	getIndexByID               *observation.Operation
+	getIndexesByIDs            *observation.Operation
+	deleteIndexByID            *observation.Operation
+	deleteIndexes              *observation.Operation
+	reindexIndexByID           *observation.Operation
+	reindexIndexes             *observation.Operation
+	processStaleSourcedCommits *observation.Operation
+	expireFailedRecords        *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
 
 func newOperations(observationCtx *observation.Context) *operations {
-	metrics := m.Get(func() *metrics.REDMetrics {
+	redMetrics := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
 			observationCtx.Registerer,
 			"codeintel_uploads_store",
@@ -94,7 +112,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.uploads.store.%s", name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           redMetrics,
 		})
 	}
 
@@ -124,6 +142,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		hasRepository:                           op("HasRepository"),
 
 		// Uploads
+		getIndexers:                          op("GetIndexers"),
 		getUploads:                           op("GetUploads"),
 		getUploadByID:                        op("GetUploadByID"),
 		getUploadsByIDs:                      op("GetUploadsByIDs"),
@@ -168,5 +187,22 @@ func newOperations(observationCtx *observation.Context) *operations {
 
 		// Dependencies
 		insertDependencySyncingJob: op("InsertDependencySyncingJob"),
+
+		reindexUploads:                 op("ReindexUploads"),
+		reindexUploadByID:              op("ReindexUploadByID"),
+		deleteIndexesWithoutRepository: op("DeleteIndexesWithoutRepository"),
+
+		getIndexes:                          op("GetIndexes"),
+		getIndexByID:                        op("GetIndexByID"),
+		getIndexesByIDs:                     op("GetIndexesByIDs"),
+		deleteIndexByID:                     op("DeleteIndexByID"),
+		deleteIndexes:                       op("DeleteIndexes"),
+		reindexIndexByID:                    op("ReindexIndexByID"),
+		reindexIndexes:                      op("ReindexIndexes"),
+		processStaleSourcedCommits:          op("ProcessStaleSourcedCommits"),
+		expireFailedRecords:                 op("ExpireFailedRecords"),
+		repositoryIDsWithErrors:             op("RepositoryIDsWithErrors"),
+		numRepositoriesWithCodeIntelligence: op("NumRepositoriesWithCodeIntelligence"),
+		getRecentIndexesSummary:             op("GetRecentIndexesSummary"),
 	}
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -48,9 +47,9 @@ type gitserverClient struct {
 	operations  *operations
 }
 
-func NewClient(observationCtx *observation.Context, db database.DB) GitserverClient {
+func NewClient(observationCtx *observation.Context) GitserverClient {
 	return &gitserverClient{
-		innerClient: gitserver.NewClient(db),
+		innerClient: gitserver.NewClient(),
 		operations:  newOperations(observationCtx),
 	}
 }
@@ -104,12 +103,12 @@ func (c *gitserverClient) ReadFile(ctx context.Context, repoCommitPath types.Rep
 	return data, nil
 }
 
-func (g *gitserverClient) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
-	return g.innerClient.LogReverseEach(ctx, repo, commit, n, onLogEntry)
+func (c *gitserverClient) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
+	return c.innerClient.LogReverseEach(ctx, repo, commit, n, onLogEntry)
 }
 
-func (g *gitserverClient) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
-	return g.innerClient.RevList(ctx, repo, commit, onCommit)
+func (c *gitserverClient) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	return c.innerClient.RevList(ctx, repo, commit, onCommit)
 }
 
 var NUL = []byte{0}

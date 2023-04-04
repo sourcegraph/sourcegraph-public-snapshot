@@ -44,13 +44,14 @@ func Init(
 	bstore := store.New(db, observationCtx, keyring.Default().BatchChangesCredentialKey)
 
 	// Register enterprise services.
-	gitserverClient := gitserver.NewClient(db)
+	gitserverClient := gitserver.NewClient()
 	logger := sglog.Scoped("Batches", "batch changes webhooks")
 	enterpriseServices.BatchChangesResolver = resolvers.New(bstore, gitserverClient)
 	enterpriseServices.BatchesGitHubWebhook = webhooks.NewGitHubWebhook(bstore, gitserverClient, logger)
 	enterpriseServices.BatchesBitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(bstore, gitserverClient, logger)
 	enterpriseServices.BatchesBitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(bstore, gitserverClient, logger)
 	enterpriseServices.BatchesGitLabWebhook = webhooks.NewGitLabWebhook(bstore, gitserverClient, logger)
+	enterpriseServices.BatchesAzureDevOpsWebhook = webhooks.NewAzureDevOpsWebhook(bstore, gitserverClient, logger)
 
 	operations := httpapi.NewOperations(observationCtx)
 	fileHandler := httpapi.NewFileHandler(db, bstore, operations)

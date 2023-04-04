@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	uploads "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/http/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -35,7 +35,7 @@ func TestHandleEnqueueAuth(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	repoStore := backend.NewRepos(logger, db, gitserver.NewClient(db))
+	repoStore := backend.NewRepos(logger, db, gitserver.NewMockClient())
 	mockDBStore := NewMockDBStore[uploads.UploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 

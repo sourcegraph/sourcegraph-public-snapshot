@@ -167,6 +167,39 @@ type EventCommitMatch struct {
 
 func (e *EventCommitMatch) eventMatch() {}
 
+type EventPersonMatch struct {
+	// Type is always PersonMatchType. Included here for marshalling.
+	Type MatchType `json:"type"`
+
+	Handle string `json:"handle"`
+	Email  string `json:"email"`
+
+	// User will not be set if no user was matched.
+	User *UserMetadata `json:"user,omitempty"`
+}
+
+type UserMetadata struct {
+	Username    string `json:"username"`
+	DisplayName string `json:"displayName"`
+	AvatarURL   string `json:"avatarURL"`
+}
+
+func (e *EventPersonMatch) eventMatch() {}
+
+type EventTeamMatch struct {
+	// Type is always TeamMatchType. Included here for marshalling.
+	Type MatchType `json:"type"`
+
+	Handle string `json:"handle"`
+	Email  string `json:"email"`
+
+	// The following are a subset of types.Team fields.
+	Name        string `json:"name"`
+	DisplayName string `json:"displayName"`
+}
+
+func (e *EventTeamMatch) eventMatch() {}
+
 // EventFilter is a suggestion for a search filter. Currently has a 1-1
 // correspondance with the SearchFilter graphql type.
 type EventFilter struct {
@@ -212,6 +245,8 @@ const (
 	SymbolMatchType
 	CommitMatchType
 	PathMatchType
+	PersonMatchType
+	TeamMatchType
 )
 
 func (t MatchType) MarshalJSON() ([]byte, error) {
@@ -226,6 +261,10 @@ func (t MatchType) MarshalJSON() ([]byte, error) {
 		return []byte(`"commit"`), nil
 	case PathMatchType:
 		return []byte(`"path"`), nil
+	case PersonMatchType:
+		return []byte(`"person"`), nil
+	case TeamMatchType:
+		return []byte(`"team"`), nil
 	default:
 		return nil, errors.Errorf("unknown MatchType: %d", t)
 	}
@@ -242,6 +281,10 @@ func (t *MatchType) UnmarshalJSON(b []byte) error {
 		*t = CommitMatchType
 	} else if bytes.Equal(b, []byte(`"path"`)) {
 		*t = PathMatchType
+	} else if bytes.Equal(b, []byte(`"person"`)) {
+		*t = PersonMatchType
+	} else if bytes.Equal(b, []byte(`"team"`)) {
+		*t = TeamMatchType
 	} else {
 		return errors.Errorf("unknown MatchType: %s", b)
 	}

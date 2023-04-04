@@ -1,14 +1,14 @@
 import React, { useMemo } from 'react'
 
 import { mapValues, values } from 'lodash'
-import { RouteComponentProps } from 'react-router'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, useObservable, Alert, Link, H2, Text } from '@sourcegraph/wildcard'
 
 import awsCodeCommitJSON from '../../../../schema/aws_codecommit.schema.json'
+import azureDevOpsJSON from '../../../../schema/azuredevops.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../schema/bitbucket_cloud.schema.json'
 import bitbucketServerSchemaJSON from '../../../../schema/bitbucket_server.schema.json'
 import gerritSchemaJSON from '../../../../schema/gerrit.schema.json'
@@ -43,6 +43,7 @@ interface JSONSchema {
 
 const externalServices: Record<ExternalServiceKind, JSONSchema> = {
     AWSCODECOMMIT: awsCodeCommitJSON,
+    AZUREDEVOPS: azureDevOpsJSON,
     BITBUCKETCLOUD: bitbucketCloudSchemaJSON,
     BITBUCKETSERVER: bitbucketServerSchemaJSON,
     GERRIT: gerritSchemaJSON,
@@ -108,13 +109,15 @@ const allConfigSchema = {
         .reduce((allDefinitions, definitions) => ({ ...allDefinitions, ...definitions }), {}),
 }
 
-interface Props extends RouteComponentProps, ThemeProps, TelemetryProps {}
+interface Props extends TelemetryProps {
+    isSourcegraphApp: boolean
+}
 
 export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    isLightTheme,
     telemetryService,
-    history,
+    isSourcegraphApp,
 }) => {
+    const isLightTheme = useIsLightTheme()
     const allConfig = useObservable(useMemo(fetchAllConfigAndSettings, []))
     return (
         <div>
@@ -124,7 +127,11 @@ export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChil
                 <Link
                     target="_blank"
                     rel="noopener noreferrer"
-                    to="https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title="
+                    to={
+                        isSourcegraphApp
+                            ? 'https://github.com/sourcegraph/app/issues/new?assignees=&labels=&template=bug_report.md&title='
+                            : 'https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title='
+                    }
                 >
                     Create an issue on the public issue tracker
                 </Link>
@@ -150,7 +157,6 @@ export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChil
                     canEdit={false}
                     height={800}
                     isLightTheme={isLightTheme}
-                    history={history}
                     readOnly={true}
                     telemetryService={telemetryService}
                 />

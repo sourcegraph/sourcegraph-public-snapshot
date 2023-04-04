@@ -13,6 +13,9 @@ interface TimestampProps {
     /** Omit the "about". */
     noAbout?: boolean
 
+    /** Omit the "ago". */
+    noAgo?: boolean
+
     /** Function that returns the current time (for stability in visual tests). */
     now?: () => Date
 
@@ -43,22 +46,23 @@ const RERENDER_INTERVAL_MSEC = 7000
 export const Timestamp: React.FunctionComponent<React.PropsWithChildren<TimestampProps>> = ({
     date,
     noAbout = false,
+    noAgo = false,
     strict = false,
     now = Date.now,
     preferAbsolute = false,
     timestampFormat,
     utc = false,
 }) => {
-    const [label, setLabel] = useState<string>(calculateLabel(date, now, strict, noAbout))
+    const [label, setLabel] = useState<string>(calculateLabel(date, now, strict, noAbout, noAgo))
     useEffect(() => {
         const intervalHandle = window.setInterval(
-            () => setLabel(calculateLabel(date, now, strict, noAbout)),
+            () => setLabel(calculateLabel(date, now, strict, noAbout, noAgo)),
             RERENDER_INTERVAL_MSEC
         )
         return () => {
             window.clearInterval(intervalHandle)
         }
-    }, [date, noAbout, now, strict])
+    }, [date, noAbout, noAgo, now, strict])
 
     const tooltip = useMemo(() => {
         let parsedDate = typeof date === 'string' ? parseISO(date) : new Date(date)
@@ -81,16 +85,17 @@ function calculateLabel(
     date: string | Date | number,
     now: () => Date | number,
     strict: boolean,
-    noAbout: boolean
+    noAbout: boolean,
+    noAgo: boolean
 ): string {
     let label: string
     if (strict) {
         label = formatDistanceStrict(typeof date === 'string' ? parseISO(date) : date, now(), {
-            addSuffix: true,
+            addSuffix: !noAgo,
         })
     } else {
         label = formatDistance(typeof date === 'string' ? parseISO(date) : date, now(), {
-            addSuffix: true,
+            addSuffix: !noAgo,
             includeSeconds: true,
         })
     }

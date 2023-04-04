@@ -1,0 +1,8 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "observability",
+    srcs = ["parse_observation.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api/observability",
+    visibility = ["//cmd/symbols:__subpackages__"],
+)

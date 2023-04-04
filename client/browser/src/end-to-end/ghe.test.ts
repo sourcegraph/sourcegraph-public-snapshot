@@ -79,6 +79,7 @@ describe.skip('Sourcegraph browser extension on GitHub Enterprise', () => {
         getDriver: () => driver,
         url: `${GHE_BASE_URL}/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go`,
         repoName: `${REPO_PREFIX}/sourcegraph/jsonrpc2`,
+        commitID: '4fb7cd90793ee6ab445f466b900e6bffb9b63d78',
         sourcegraphBaseUrl,
         getLineSelector: lineNumber => `#LC${lineNumber}`,
         goToDefinitionURL: new URL(

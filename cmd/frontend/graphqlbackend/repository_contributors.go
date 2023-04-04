@@ -22,27 +22,22 @@ type repositoryContributorsArgs struct {
 func (r *RepositoryResolver) Contributors(args *struct {
 	repositoryContributorsArgs
 	graphqlutil.ConnectionResolverArgs
-}) (*graphqlutil.ConnectionResolver[repositoryContributorResolver], error) {
-	connectionArgs := &graphqlutil.ConnectionResolverArgs{
-		First:  args.First,
-		Last:   args.Last,
-		After:  args.After,
-		Before: args.Before,
-	}
+}) (*graphqlutil.ConnectionResolver[*repositoryContributorResolver], error) {
 	connectionStore := &repositoryContributorConnectionStore{
-		db:             r.db,
-		args:           &args.repositoryContributorsArgs,
-		connectionArgs: connectionArgs,
-		repo:           r,
+		db:   r.db,
+		args: &args.repositoryContributorsArgs,
+		repo: r,
 	}
 	reverse := false
-	return graphqlutil.NewConnectionResolver[repositoryContributorResolver](connectionStore, connectionArgs, &graphqlutil.ConnectionResolverOptions{Reverse: &reverse})
+	connectionOptions := graphqlutil.ConnectionResolverOptions{
+		Reverse: &reverse,
+	}
+	return graphqlutil.NewConnectionResolver[*repositoryContributorResolver](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
 }
 
 type repositoryContributorConnectionStore struct {
-	db             database.DB
-	args           *repositoryContributorsArgs
-	connectionArgs *graphqlutil.ConnectionResolverArgs
+	db   database.DB
+	args *repositoryContributorsArgs
 
 	repo *RepositoryResolver
 
@@ -52,17 +47,13 @@ type repositoryContributorConnectionStore struct {
 	err     error
 }
 
-func (s *repositoryContributorConnectionStore) MarshalCursor(node *repositoryContributorResolver) (*string, error) {
+func (s *repositoryContributorConnectionStore) MarshalCursor(node *repositoryContributorResolver, _ database.OrderBy) (*string, error) {
 	position := strconv.Itoa(node.index)
 	return &position, nil
 }
 
-func (s *repositoryContributorConnectionStore) UnmarshalCursor(cursor string) (*int, error) {
-	position, err := strconv.Atoi(cursor)
-	if err != nil {
-		return nil, err
-	}
-	return &position, nil
+func (s *repositoryContributorConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+	return &cursor, nil
 }
 
 func (s *repositoryContributorConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
@@ -101,7 +92,7 @@ func (s *repositoryContributorConnectionStore) ComputeNodes(ctx context.Context,
 
 func (s *repositoryContributorConnectionStore) compute(ctx context.Context) ([]*gitdomain.ContributorCount, error) {
 	s.once.Do(func() {
-		client := gitserver.NewClient(s.db)
+		client := gitserver.NewClient()
 		var opt gitserver.ContributorOptions
 		if s.args.RevisionRange != nil {
 			opt.Range = *s.args.RevisionRange
@@ -123,13 +114,21 @@ func OffsetBasedCursorSlice[T any](nodes []T, args *database.PaginationArgs) ([]
 	totalFloat := float64(len(nodes))
 	if args.First != nil {
 		if args.After != nil {
-			start = int(math.Min(float64(*args.After)+1, totalFloat))
+			after, err := strconv.Atoi(*args.After)
+			if err != nil {
+				return nil, 0, err
+			}
+			start = int(math.Min(float64(after)+1, totalFloat))
 		}
 		end = int(math.Min(float64(start+*args.First), totalFloat))
 	} else if args.Last != nil {
 		end = int(totalFloat)
 		if args.Before != nil {
-			end = int(math.Max(float64(*args.Before), 0))
+			before, err := strconv.Atoi(*args.Before)
+			if err != nil {
+				return nil, 0, err
+			}
+			end = int(math.Max(float64(before), 0))
 		}
 		start = int(math.Max(float64(end-*args.Last), 0))
 	} else {

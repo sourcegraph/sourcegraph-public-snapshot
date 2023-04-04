@@ -284,12 +284,21 @@ func (r *RepositoryResolver) Language(ctx context.Context) (string, error) {
 
 func (r *RepositoryResolver) Enabled() bool { return true }
 
+// CreatedAt is deprecated and will be removed in a future release.
 // No clients that we know of read this field. Additionally on performance profiles
 // the marshalling of timestamps is significant in our postgres client. So we
 // deprecate the fields and return fake data for created_at.
 // https://github.com/sourcegraph/sourcegraph/pull/4668
 func (r *RepositoryResolver) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: time.Now()}
+}
+
+func (r *RepositoryResolver) RawCreatedAt() string {
+	if r.innerRepo == nil {
+		return ""
+	}
+
+	return r.innerRepo.CreatedAt.Format(time.RFC3339)
 }
 
 func (r *RepositoryResolver) UpdatedAt() *gqlutil.DateTime {
@@ -328,7 +337,7 @@ func (r *RepositoryResolver) Label() (Markdown, error) {
 }
 
 func (r *RepositoryResolver) Detail() Markdown {
-	return Markdown("Repository match")
+	return "Repository match"
 }
 
 func (r *RepositoryResolver) Matches() []*searchResultMatchResolver {
@@ -386,20 +395,6 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	return r.err
 }
 
-func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *resolverstubs.LSIFUploadsQueryArgs) (resolverstubs.LSIFUploadConnectionResolver, error) {
-	return EnterpriseResolvers.codeIntelResolver.LSIFUploadsByRepo(ctx, &resolverstubs.LSIFRepositoryUploadsQueryArgs{
-		LSIFUploadsQueryArgs: args,
-		RepositoryID:         r.ID(),
-	})
-}
-
-func (r *RepositoryResolver) LSIFIndexes(ctx context.Context, args *resolverstubs.LSIFIndexesQueryArgs) (resolverstubs.LSIFIndexConnectionResolver, error) {
-	return EnterpriseResolvers.codeIntelResolver.LSIFIndexesByRepo(ctx, &resolverstubs.LSIFRepositoryIndexesQueryArgs{
-		LSIFIndexesQueryArgs: args,
-		RepositoryID:         r.ID(),
-	})
-}
-
 func (r *RepositoryResolver) IndexConfiguration(ctx context.Context) (resolverstubs.IndexConfigurationResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.IndexConfiguration(ctx, r.ID())
 }
@@ -412,7 +407,7 @@ func (r *RepositoryResolver) CodeIntelSummary(ctx context.Context) (resolverstub
 	return EnterpriseResolvers.codeIntelResolver.RepositorySummary(ctx, r.ID())
 }
 
-func (r *RepositoryResolver) PreviewGitObjectFilter(ctx context.Context, args *resolverstubs.PreviewGitObjectFilterArgs) ([]resolverstubs.GitObjectFilterPreviewResolver, error) {
+func (r *RepositoryResolver) PreviewGitObjectFilter(ctx context.Context, args *resolverstubs.PreviewGitObjectFilterArgs) (resolverstubs.GitObjectFilterPreviewResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.PreviewGitObjectFilter(ctx, r.ID(), args)
 }
 
@@ -700,4 +695,8 @@ func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct
 	}
 
 	return &EmptyResponse{}, r.db.RepoKVPs().Delete(ctx, repoID, args.Key)
+}
+
+func (r *RepositoryResolver) IngestedCodeowners(ctx context.Context) (CodeownersIngestedFileResolver, error) {
+	return EnterpriseResolvers.ownResolver.RepoIngestedCodeowners(ctx, r.IDInt32())
 }

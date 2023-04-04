@@ -1,8 +1,6 @@
 package database
 
 import (
-	"database/sql"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -15,7 +13,7 @@ type EncryptionConfig struct {
 	KeyIDFieldName      string
 	EncryptedFieldNames []string
 	UpdateAsBytes       bool
-	Scan                func(*sql.Rows, error) (map[int]Encrypted, error)
+	Scan                func(basestore.Rows, error) (map[int]Encrypted, error)
 	Key                 func() encryption.Key
 	Limit               int
 }
@@ -27,6 +25,7 @@ var EncryptionConfigs = []EncryptionConfig{
 	batchChangesSiteCredentialsEncryptionConfig,
 	webhooklogsEncryptionConfig,
 	executorSecretsEncryptionConfig,
+	outboundWebhooksEncryptionConfig,
 }
 
 var externalServicesEncryptionConfig = EncryptionConfig{
@@ -89,6 +88,16 @@ var executorSecretsEncryptionConfig = EncryptionConfig{
 	UpdateAsBytes:       true,
 	Scan:                basestore.NewMapScanner(scanEncryptedBytea),
 	Key:                 func() encryption.Key { return keyring.Default().ExecutorSecretKey },
+	Limit:               5,
+}
+
+var outboundWebhooksEncryptionConfig = EncryptionConfig{
+	TableName:           "outbound_webhooks",
+	IDFieldName:         "id",
+	KeyIDFieldName:      "encryption_key_id",
+	EncryptedFieldNames: []string{"url", "secret"},
+	Scan:                basestore.NewMapScanner(scanEncryptedStringPair),
+	Key:                 func() encryption.Key { return keyring.Default().OutboundWebhookKey },
 	Limit:               5,
 }
 

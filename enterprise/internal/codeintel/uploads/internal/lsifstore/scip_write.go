@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/trie"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -159,8 +160,10 @@ type bufferedDocument struct {
 	payloadHash  []byte
 }
 
-const DocumentsBatchSize = 256
-const MaxBatchPayloadSum = 1024 * 1024 * 32
+const (
+	DocumentsBatchSize = 256
+	MaxBatchPayloadSum = 1024 * 1024 * 32
+)
 
 func (s *scipWriter) InsertDocument(ctx context.Context, path string, scipDocument *scip.Document) error {
 	if s.batchPayloadSum >= MaxBatchPayloadSum {
@@ -174,7 +177,7 @@ func (s *scipWriter) InsertDocument(ctx context.Context, path string, scipDocume
 		return err
 	}
 
-	compressedPayload, err := compressor.compress(bytes.NewReader(payload))
+	compressedPayload, err := shared.Compressor.Compress(bytes.NewReader(payload))
 	if err != nil {
 		return err
 	}
@@ -227,8 +230,13 @@ func (s *scipWriter) flush(ctx context.Context) error {
 	}
 	if len(documentIDs) != len(documents) {
 		hashes := make([][]byte, 0, len(documents))
+		hashSet := make(map[string]struct{}, len(documents))
 		for _, document := range documents {
-			hashes = append(hashes, document.payloadHash)
+			key := hex.EncodeToString(document.payloadHash)
+			if _, ok := hashSet[key]; !ok {
+				hashSet[key] = struct{}{}
+				hashes = append(hashes, document.payloadHash)
+			}
 		}
 		idsByHash, err := scanIDsByHash(s.db.Query(ctx, sqlf.Sprintf(scipWriterWriteFetchDocumentsQuery, pq.Array(hashes))))
 		if err != nil {
@@ -238,7 +246,7 @@ func (s *scipWriter) flush(ctx context.Context) error {
 		for _, document := range documents {
 			documentIDs = append(documentIDs, idsByHash[hex.EncodeToString(document.payloadHash)])
 		}
-		if len(idsByHash) != len(documents) {
+		if len(idsByHash) != len(hashes) {
 			return errors.New("unexpected number of document records inserted/retrieved")
 		}
 	}
@@ -273,9 +281,9 @@ func (s *scipWriter) flush(ctx context.Context) error {
 	}
 
 	symbolNameMap := map[string]struct{}{}
-	invertedRangeIndexes := make([][]types.InvertedRangeIndex, 0, len(documents))
+	invertedRangeIndexes := make([][]shared.InvertedRangeIndex, 0, len(documents))
 	for _, document := range documents {
-		index := types.ExtractSymbolIndexes(document.scipDocument)
+		index := shared.ExtractSymbolIndexes(document.scipDocument)
 		invertedRangeIndexes = append(invertedRangeIndexes, index)
 
 		for _, invertedRange := range index {

@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 )
 
 // prepareWorkspace creates and returns a temporary directory in which acts the workspace
@@ -15,7 +15,7 @@ import (
 func (h *handler) prepareWorkspace(
 	ctx context.Context,
 	commandRunner command.Runner,
-	job executor.Job,
+	job types.Job,
 	commandLogger command.Logger,
 ) (workspace.Workspace, error) {
 	if h.options.FirecrackerOptions.Enabled {
@@ -28,6 +28,7 @@ func (h *handler) prepareWorkspace(
 			commandRunner,
 			commandLogger,
 			workspace.CloneOptions{
+				ExecutorName:   h.options.WorkerOptions.WorkerHostname,
 				EndpointURL:    h.options.QueueOptions.BaseClientOptions.EndpointOptions.URL,
 				GitServicePath: h.options.GitServicePath,
 				ExecutorToken:  h.options.QueueOptions.BaseClientOptions.EndpointOptions.Token,
@@ -43,6 +44,7 @@ func (h *handler) prepareWorkspace(
 		commandRunner,
 		commandLogger,
 		workspace.CloneOptions{
+			ExecutorName:   h.options.WorkerOptions.WorkerHostname,
 			EndpointURL:    h.options.QueueOptions.BaseClientOptions.EndpointOptions.URL,
 			GitServicePath: h.options.GitServicePath,
 			ExecutorToken:  h.options.QueueOptions.BaseClientOptions.EndpointOptions.Token,

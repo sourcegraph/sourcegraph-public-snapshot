@@ -30,6 +30,7 @@ func NewReconcilerWorker(
 
 	options := workerutil.WorkerOptions{
 		Name:              "batches_reconciler_worker",
+		Description:       "changeset reconciler that publishes, modifies and closes changesets on the code host",
 		NumHandlers:       5,
 		Interval:          5 * time.Second,
 		HeartbeatInterval: 15 * time.Second,

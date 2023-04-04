@@ -2,13 +2,11 @@ import React, { useCallback, useEffect, useState } from 'react'
 
 import { mdiCheck } from '@mdi/js'
 import * as jsonc from 'jsonc-parser'
-import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { delay, mergeMap, startWith, tap } from 'rxjs/operators'
 
 import { SearchContextRepositoryRevisionsFields } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, useEventObservable, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
@@ -75,7 +73,8 @@ const actions: {
     },
 ]
 
-export interface SearchContextRepositoriesFormAreaProps extends ThemeProps, TelemetryProps {
+export interface SearchContextRepositoriesFormAreaProps extends TelemetryProps {
+    isLightTheme: boolean
     repositories: SearchContextRepositoryRevisionsFields[] | undefined
     validateRepositories: () => Observable<Error[]>
     onChange: (config: string, isInitialValue?: boolean) => void
@@ -129,7 +128,6 @@ export const SearchContextRepositoriesFormArea: React.FunctionComponent<
         []
     )
 
-    const history = useHistory()
     return (
         <div data-testid="repositories-config-area">
             <DynamicallyImportedMonacoSettingsEditor
@@ -140,7 +138,6 @@ export const SearchContextRepositoriesFormArea: React.FunctionComponent<
                 onChange={onChange}
                 height={300}
                 isLightTheme={isLightTheme}
-                history={history}
                 telemetryService={telemetryService}
                 blockNavigationIfDirty={false}
             />

@@ -20,11 +20,11 @@ import (
 )
 
 func NewKey(ctx context.Context, keyConfig schema.AWSKMSEncryptionKey) (encryption.Key, error) {
-	config, err := config.LoadDefaultConfig(ctx, awsConfigOptsForKeyConfig(keyConfig)...)
+	defaultConfig, err := config.LoadDefaultConfig(ctx, awsConfigOptsForKeyConfig(keyConfig)...)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading config for aws KMS")
 	}
-	return newKey(ctx, keyConfig, config)
+	return newKey(ctx, keyConfig, defaultConfig)
 }
 
 func newKey(ctx context.Context, keyConfig schema.AWSKMSEncryptionKey, config aws.Config) (encryption.Key, error) {

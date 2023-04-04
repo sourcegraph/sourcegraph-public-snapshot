@@ -11,18 +11,59 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
+
+func (s *store) ProcessSourcedCommits(
+	ctx context.Context,
+	minimumTimeSinceLastCheck time.Duration,
+	commitResolverMaximumCommitLag time.Duration,
+	limit int,
+	f func(ctx context.Context, repositoryID int, repositoryName, commit string) (bool, error),
+	now time.Time,
+) (_, _ int, err error) {
+	sourcedUploads, err := s.GetStaleSourcedCommits(ctx, minimumTimeSinceLastCheck, limit, now)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	numDeleted := 0
+	numCommits := 0
+	for _, sc := range sourcedUploads {
+		for _, commit := range sc.Commits {
+			numCommits++
+
+			shouldDelete, err := f(ctx, sc.RepositoryID, sc.RepositoryName, commit)
+			if err != nil {
+				return 0, 0, err
+			}
+
+			if shouldDelete {
+				_, uploadsDeleted, err := s.DeleteSourcedCommits(ctx, sc.RepositoryID, commit, commitResolverMaximumCommitLag, now)
+				if err != nil {
+					return 0, 0, err
+				}
+
+				numDeleted += uploadsDeleted
+			}
+
+			if _, err := s.UpdateSourcedCommits(ctx, sc.RepositoryID, commit, now); err != nil {
+				return 0, 0, err
+			}
+		}
+	}
+
+	return numCommits, numDeleted, nil
+}
 
 // GetStaleSourcedCommits returns a set of commits attached to repositories that have been
 // least recently checked for resolvability via gitserver. We do this periodically in
 // order to determine which records in the database are unreachable by normal query
 // paths and clean up that occupied (but useless) space. The output is of this method is
 // ordered by repository ID then by commit.
-func (s *store) GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error) {
+func (s *store) GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []SourcedCommits, err error) {
 	ctx, trace, endObservation := s.operations.getStaleSourcedCommits.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 

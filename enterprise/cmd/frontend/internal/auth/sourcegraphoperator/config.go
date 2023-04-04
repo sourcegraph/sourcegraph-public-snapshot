@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/openidconnect"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	osssourcegraphoperator "github.com/sourcegraph/sourcegraph/internal/auth/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
@@ -29,6 +30,7 @@ func GetOIDCProvider(id string) *openidconnect.Provider {
 	return nil
 }
 
+// Init registers Sourcegraph Operator handlers and providers.
 func Init() {
 	cloudSiteConfig := cloud.SiteConfig()
 	if !cloudSiteConfig.SourcegraphOperatorAuthProviderEnabled() {
@@ -45,6 +47,9 @@ func Init() {
 		}
 	}()
 	providers.Update(auth.SourcegraphOperatorProviderType, []providers.Provider{p})
+
+	// Register enterprise handler implementation in OSS
+	osssourcegraphoperator.RegisterAddSourcegraphOperatorExternalAccountHandler(addSourcegraphOperatorExternalAccount)
 }
 
 func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {

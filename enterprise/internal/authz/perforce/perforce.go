@@ -15,7 +15,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -63,7 +62,7 @@ type p4Execer interface {
 // host, user and password to talk to a Perforce Server that is the source of
 // truth for permissions. It assumes emails of Sourcegraph accounts match 1-1
 // with emails of Perforce Server users.
-func NewProvider(logger log.Logger, urn, host, user, password string, depots []extsvc.RepoID, db database.DB) *Provider {
+func NewProvider(logger log.Logger, urn, host, user, password string, depots []extsvc.RepoID) *Provider {
 	baseURL, _ := url.Parse(host)
 	return &Provider{
 		logger:             logger,
@@ -73,7 +72,7 @@ func NewProvider(logger log.Logger, urn, host, user, password string, depots []e
 		host:               host,
 		user:               user,
 		password:           password,
-		p4Execer:           gitserver.NewClient(db),
+		p4Execer:           gitserver.NewClient(),
 		cachedGroupMembers: make(map[string][]string),
 	}
 }
@@ -378,7 +377,7 @@ func (p *Provider) URN() string {
 	return p.urn
 }
 
-func (p *Provider) ValidateConnection(ctx context.Context) (problems []string) {
+func (p *Provider) ValidateConnection(ctx context.Context) error {
 	// Validate the user has "super" access with "-u" option, see https://www.perforce.com/perforce/r12.1/manuals/cmdref/protects.html
 	rc, _, err := p.p4Execer.P4Exec(ctx, p.host, p.user, p.password, "protects", "-u", p.user)
 	if err == nil {
@@ -387,9 +386,9 @@ func (p *Provider) ValidateConnection(ctx context.Context) (problems []string) {
 	}
 
 	if strings.Contains(err.Error(), "You don't have permission for this operation.") {
-		return []string{"the user does not have super access"}
+		return errors.New("the user does not have super access")
 	}
-	return []string{"validate user access level: " + err.Error()}
+	return errors.Wrap(err, "invalid user access level")
 }
 
 func scanEmail(s *bufio.Scanner) (string, string, bool) {

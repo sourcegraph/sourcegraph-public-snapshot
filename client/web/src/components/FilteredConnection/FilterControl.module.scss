@@ -1,7 +1,16 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .filter-control {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 1rem;
-    max-width: 60%;
+    gap: 0.5rem;
+
+    @media (--sm-breakpoint-up) {
+        max-width: 60%;
+    }
+    @media (--sm-breakpoint-down) {
+        flex-direction: column;
+        align-items: start;
+    }
 }

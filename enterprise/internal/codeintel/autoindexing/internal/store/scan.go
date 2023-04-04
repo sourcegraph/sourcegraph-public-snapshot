@@ -9,10 +9,10 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 )
 
 // scanIndexes scans a slice of indexes from the return value of `*Store.query`.
@@ -21,8 +21,8 @@ var scanIndexes = basestore.NewSliceScanner(scanIndex)
 // scanFirstIndex scans a slice of indexes from the return value of `*Store.query` and returns the first.
 var scanFirstIndex = basestore.NewFirstScanner(scanIndex)
 
-func scanIndex(s dbutil.Scanner) (index types.Index, err error) {
-	var executionLogs []workerutil.ExecutionLogEntry
+func scanIndex(s dbutil.Scanner) (index uploadsshared.Index, err error) {
+	var executionLogs []executor.ExecutionLogEntry
 	if err := s.Scan(
 		&index.ID,
 		&index.Commit,
@@ -77,46 +77,6 @@ func scanIndexConfiguration(s dbutil.Scanner) (indexConfiguration shared.IndexCo
 	)
 }
 
-var scanIndexesWithCount = basestore.NewSliceWithCountScanner(scanIndexWithCount)
-
-// scanIndexes scans a slice of indexes from the return value of `*Store.query`.
-func scanIndexWithCount(s dbutil.Scanner) (index types.Index, count int, err error) {
-	var executionLogs []workerutil.ExecutionLogEntry
-
-	if err := s.Scan(
-		&index.ID,
-		&index.Commit,
-		&index.QueuedAt,
-		&index.State,
-		&index.FailureMessage,
-		&index.StartedAt,
-		&index.FinishedAt,
-		&index.ProcessAfter,
-		&index.NumResets,
-		&index.NumFailures,
-		&index.RepositoryID,
-		&index.RepositoryName,
-		pq.Array(&index.DockerSteps),
-		&index.Root,
-		&index.Indexer,
-		pq.Array(&index.IndexerArgs),
-		&index.Outfile,
-		pq.Array(&executionLogs),
-		&index.Rank,
-		pq.Array(&index.LocalSteps),
-		&index.AssociatedUploadID,
-		&index.ShouldReindex,
-		pq.Array(&index.RequestedEnvVars),
-		&count,
-	); err != nil {
-		return index, 0, err
-	}
-
-	index.ExecutionLogs = append(index.ExecutionLogs, executionLogs...)
-
-	return index, count, nil
-}
-
 // scanCounts scans pairs of id/counts from the return value of `*Store.query`.
 func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 	if queryErr != nil {
@@ -138,16 +98,42 @@ func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 	return visibilities, nil
 }
 
+func scanCountsAndTotalCount(rows *sql.Rows, queryErr error) (totalCount int, _ map[int]int, err error) {
+	if queryErr != nil {
+		return 0, nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	visibilities := map[int]int{}
+	for rows.Next() {
+		var id int
+		var count int
+		if err := rows.Scan(&totalCount, &id, &count); err != nil {
+			return 0, nil, err
+		}
+
+		visibilities[id] = count
+	}
+
+	return totalCount, visibilities, nil
+}
+
+type sourcedCommits struct {
+	RepositoryID   int
+	RepositoryName string
+	Commits        []string
+}
+
 // scanSourcedCommits scans triples of repository ids/repository names/commits from the
 // return value of `*Store.query`. The output of this function is ordered by repository
 // identifier, then by commit.
-func scanSourcedCommits(rows *sql.Rows, queryErr error) (_ []shared.SourcedCommits, err error) {
+func scanSourcedCommits(rows *sql.Rows, queryErr error) (_ []sourcedCommits, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	sourcedCommitsMap := map[int]shared.SourcedCommits{}
+	sourcedCommitsMap := map[int]sourcedCommits{}
 	for rows.Next() {
 		var repositoryID int
 		var repositoryName string
@@ -156,14 +142,14 @@ func scanSourcedCommits(rows *sql.Rows, queryErr error) (_ []shared.SourcedCommi
 			return nil, err
 		}
 
-		sourcedCommitsMap[repositoryID] = shared.SourcedCommits{
+		sourcedCommitsMap[repositoryID] = sourcedCommits{
 			RepositoryID:   repositoryID,
 			RepositoryName: repositoryName,
 			Commits:        append(sourcedCommitsMap[repositoryID].Commits, commit),
 		}
 	}
 
-	flattened := make([]shared.SourcedCommits, 0, len(sourcedCommitsMap))
+	flattened := make([]sourcedCommits, 0, len(sourcedCommitsMap))
 	for _, sourcedCommits := range sourcedCommitsMap {
 		sort.Strings(sourcedCommits.Commits)
 		flattened = append(flattened, sourcedCommits)

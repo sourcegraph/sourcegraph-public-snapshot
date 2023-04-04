@@ -1,6 +1,6 @@
 import { FC, HTMLAttributes } from 'react'
 
-import { useDeepMemo, Text, Series, useDebounce, ErrorAlert } from '@sourcegraph/wildcard'
+import { useDeepMemo, Series, useDebounce, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { useSeriesToggle } from '../../../../../insights/utils/use-series-toggle'
 import {
@@ -13,10 +13,10 @@ import {
     LivePreviewBlurBackdrop,
     LivePreviewBanner,
     LivePreviewLegend,
-    getSanitizedRepositories,
+    getSanitizedRepositoryScope,
     SERIES_MOCK_CHART,
 } from '../../../components'
-import { useLivePreviewSeriesInsight, LivePreviewStatus } from '../../../core/hooks/live-preview-insight'
+import { useLivePreviewSeriesInsight, LivePreviewStatus } from '../../../core'
 
 import { getSanitizedCaptureQuery } from './capture-group/utils/capture-group-insight-sanitizer'
 import { InsightStep } from './search-insight'
@@ -30,20 +30,22 @@ export interface LivePreviewSeries {
 
 interface LineChartLivePreviewProps extends HTMLAttributes<HTMLElement> {
     disabled: boolean
-    repositories: string
+    repositories: string[]
+    repoQuery: string | undefined
+    repoMode: string
     stepValue: string
     step: InsightStep
-    isAllReposMode: boolean
     series: LivePreviewSeries[]
 }
 
 export const LineChartLivePreview: FC<LineChartLivePreviewProps> = props => {
-    const { disabled, repositories, stepValue, step, series, isAllReposMode, ...attributes } = props
+    const { disabled, repositories, repoQuery, repoMode, stepValue, step, series, ...attributes } = props
     const seriesToggleState = useSeriesToggle()
 
     const settings = useDebounce(
         useDeepMemo({
-            repositories: getSanitizedRepositories(repositories),
+            disabled,
+            repoScope: getSanitizedRepositoryScope(repositories, repoQuery, repoMode),
             step: { [step]: stepValue },
             series: series.map(srs => {
                 const sanitizer = srs.generatedFromCaptureGroup
@@ -62,7 +64,10 @@ export const LineChartLivePreview: FC<LineChartLivePreviewProps> = props => {
     )
 
     const { state, refetch } = useLivePreviewSeriesInsight({
-        skip: disabled,
+        // If disabled goes from true to false then cancel live preview series fetching
+        // immediately, when it goes from false to true wait a little *use debounced
+        // value only when run preview search
+        skip: disabled || settings.disabled,
         ...settings,
     })
 
@@ -70,11 +75,11 @@ export const LineChartLivePreview: FC<LineChartLivePreviewProps> = props => {
         <aside {...attributes}>
             <LivePreviewUpdateButton disabled={disabled} onClick={refetch} />
 
-            <LivePreviewCard>
+            <LivePreviewCard className="flex-1">
                 {state.status === LivePreviewStatus.Loading ? (
                     <LivePreviewLoading>Loading code insight</LivePreviewLoading>
                 ) : state.status === LivePreviewStatus.Error ? (
-                    <ErrorAlert error={state.error} />
+                    <ErrorAlert error={state.error} className="m-0" />
                 ) : (
                     <LivePreviewChart>
                         {parent =>
@@ -99,9 +104,8 @@ export const LineChartLivePreview: FC<LineChartLivePreviewProps> = props => {
                                         series={SERIES_MOCK_CHART as Series<unknown>[]}
                                     />
                                     <LivePreviewBanner>
-                                        {isAllReposMode
-                                            ? 'Live previews are currently not available for insights running over all repositories.'
-                                            : 'The chart preview will be shown here once you have filled out the repositories and series fields.'}
+                                        The chart preview will be shown here once you have filled out the repositories
+                                        and series fields.
                                     </LivePreviewBanner>
                                 </>
                             )
@@ -113,12 +117,6 @@ export const LineChartLivePreview: FC<LineChartLivePreviewProps> = props => {
                     <LivePreviewLegend series={state.data as Series<unknown>[]} />
                 )}
             </LivePreviewCard>
-
-            {isAllReposMode && (
-                <Text className="mt-2">
-                    Previews are only displayed if you individually list up to 50 repositories.
-                </Text>
-            )}
         </aside>
     )
 }

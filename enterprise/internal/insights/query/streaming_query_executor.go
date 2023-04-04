@@ -28,7 +28,6 @@ type StreamingQueryExecutor struct {
 func NewStreamingExecutor(postgres database.DB, clock func() time.Time) *StreamingQueryExecutor {
 	return &StreamingQueryExecutor{
 		previewExecutor: previewExecutor{
-			db:        postgres,
 			repoStore: postgres.Repos(),
 			filter:    &compression.NoopFilter{},
 			clock:     clock,
@@ -48,12 +47,12 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 	}
 	c.logger.Debug("Generated repoIds", log.String("repoids", fmt.Sprintf("%v", repoIds)))
 
-	frames := timeseries.BuildSampleTimes(7, interval, c.clock().Truncate(time.Minute))
+	sampleTimes := timeseries.BuildSampleTimes(7, interval, c.clock().Truncate(time.Minute))
 	points := timeCounts{}
 	timeDataPoints := []TimeDataPoint{}
 
 	for _, repository := range repositories {
-		firstCommit, err := gitserver.GitFirstEverCommit(ctx, c.db, api.RepoName(repository))
+		firstCommit, err := gitserver.GitFirstEverCommit(ctx, api.RepoName(repository))
 		if err != nil {
 			if errors.Is(err, gitserver.EmptyRepoErr) {
 				continue
@@ -62,7 +61,7 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 			}
 		}
 		// uncompressed plan for now, because there is some complication between the way compressed plans are generated and needing to resolve revhashes
-		plan := c.filter.Filter(ctx, frames, api.RepoName(repository))
+		plan := c.filter.Filter(ctx, sampleTimes, api.RepoName(repository))
 
 		// we need to perform the pivot from time -> {label, count} to label -> {time, count}
 		for _, execution := range plan.Executions {
@@ -73,7 +72,7 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 				// since we are using uncompressed plans (to avoid this problem and others) right now, each execution is standalone
 				continue
 			}
-			commits, err := gitserver.NewGitCommitClient(c.db).RecentCommits(ctx, api.RepoName(repository), execution.RecordingTime, "")
+			commits, err := gitserver.NewGitCommitClient().RecentCommits(ctx, api.RepoName(repository), execution.RecordingTime, "")
 			if err != nil {
 				return nil, errors.Wrap(err, "git.Commits")
 			} else if len(commits) < 1 {

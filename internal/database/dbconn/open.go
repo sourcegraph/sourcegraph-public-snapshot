@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -13,10 +14,12 @@ import (
 	"github.com/XSAM/otelsql"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/stdlib"
+	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/qustavo/sqlhooks/v2"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -138,6 +141,32 @@ func (d *extendedDriver) Open(str string) (driver.Conn, error) {
 	if _, ok := d.Driver.(*sqlhooks.Driver); !ok {
 		return nil, errors.New("sql driver is not a sqlhooks.Driver")
 	}
+
+	if pgConnectionUpdater != "" {
+		// Driver.Open() is called during after we first attempt to connect to the database
+		// during startup time in `dbconn.open()`, where the manager will persist the config internally,
+		// and also call the underlying pgx RegisterConnConfig() to register the config to pgx driver.
+		// Therefore, this should never be nil.
+		//
+		// We do not need this code path unless connection updater is enabled.
+		cfg := manager.getConfig(str)
+		if cfg == nil {
+			return nil, errors.Newf("no config found %q", str)
+		}
+
+		u, ok := connectionUpdaters[pgConnectionUpdater]
+		if !ok {
+			return nil, errors.Errorf("unknown connection updater %q", pgConnectionUpdater)
+		}
+		if u.ShouldUpdate(cfg) {
+			config, err := u.Update(cfg.Copy())
+			if err != nil {
+				return nil, errors.Wrapf(err, "update connection %q", str)
+			}
+			str = manager.registerConfig(config)
+		}
+	}
+
 	c, err := d.Driver.Open(str)
 	if err != nil {
 		return nil, err
@@ -218,10 +247,14 @@ var registerOnce sync.Once
 
 func open(cfg *pgx.ConnConfig) (*sql.DB, error) {
 	registerOnce.Do(registerPostgresProxy)
+	// this function is called once during startup time, and we register the db config
+	// to our own manager, and manager will also register the config to pgx driver by
+	// calling the underlying stdlib.RegisterConnConfig().
+	name := manager.registerConfig(cfg)
 
 	db, err := otelsql.Open(
 		"postgres-proxy",
-		stdlib.RegisterConnConfig(cfg),
+		name,
 		otelsql.WithTracerProvider(otel.GetTracerProvider()),
 		otelsql.WithSQLCommenter(true),
 		otelsql.WithSpanOptions(otelsql.SpanOptions{
@@ -229,14 +262,8 @@ func open(cfg *pgx.ConnConfig) (*sql.DB, error) {
 			OmitConnPrepare:      true,
 			OmitRows:             true,
 			OmitConnectorConnect: true,
-			ArgumentOptions: otelsql.ArgumentOptions{
-				EnableAttributes: true,
-				Skip: func(ctx context.Context, query string, args []any) bool {
-					// Do not decorate span with args as attributes if that's a bulk insertion
-					// or if we have too many args (it's unreadable anyway).
-					return isBulkInsertion(ctx) || len(args) > 24
-				}},
 		}),
+		otelsql.WithAttributesGetter(argsAsAttributes),
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "postgresql open")
@@ -274,4 +301,97 @@ func isDatabaseLikelyStartingUp(err error) bool {
 	}
 
 	return false
+}
+
+const argsAttributesValueLimit = 100
+
+// argsAsAttributes generates a set of OpenTelemetry trace attributes that represent the
+// argument values used in a query.
+func argsAsAttributes(ctx context.Context, _ otelsql.Method, _ string, args []driver.NamedValue) []attribute.KeyValue {
+	// Do not decorate span with args as attributes if that's a bulk insertion
+	// or if we have too many args (it's unreadable anyway).
+	if isBulkInsertion(ctx) || len(args) > 24 {
+		return []attribute.KeyValue{attribute.Bool("db.args.skipped", true)}
+	}
+
+	attrs := make([]attribute.KeyValue, len(args))
+	for i, arg := range args {
+		key := "db.args.$" + strconv.Itoa(arg.Ordinal)
+
+		// Value is a value that drivers must be able to handle.
+		// It is either nil, a type handled by a database driver's NamedValueChecker
+		// interface, or an instance of one of these types:
+		//
+		//	int64
+		//	float64
+		//	bool
+		//	[]byte
+		//	string
+		//	time.Time
+		switch v := arg.Value.(type) {
+		case nil:
+			attrs[i] = attribute.String(key, "nil")
+		case int64:
+			attrs[i] = attribute.Int64(key, v)
+		case float64:
+			attrs[i] = attribute.Float64(key, v)
+		case bool:
+			attrs[i] = attribute.Bool(key, v)
+		case []byte:
+			attrs[i] = attribute.String(key, truncateStringValue(string(v)))
+		case string:
+			attrs[i] = attribute.String(key, truncateStringValue(v))
+		case time.Time:
+			attrs[i] = attribute.String(key, v.String())
+
+		// pq.Array types
+		case *pq.BoolArray:
+			attrs[i] = attribute.BoolSlice(key, truncateSliceValue([]bool(*v)))
+		case *pq.Float64Array:
+			attrs[i] = attribute.Float64Slice(key, truncateSliceValue([]float64(*v)))
+		case *pq.Float32Array:
+			vals := truncateSliceValue([]float32(*v))
+			floats := make([]float64, len(vals))
+			for i, v := range vals {
+				floats[i] = float64(v)
+			}
+			attrs[i] = attribute.Float64Slice(key, floats)
+		case *pq.Int64Array:
+			attrs[i] = attribute.Int64Slice(key, truncateSliceValue([]int64(*v)))
+		case *pq.Int32Array:
+			vals := truncateSliceValue([]int32(*v))
+			ints := make([]int, len(vals))
+			for i, v := range vals {
+				ints[i] = int(v)
+			}
+			attrs[i] = attribute.IntSlice(key, ints)
+		case *pq.StringArray:
+			attrs[i] = attribute.StringSlice(key, truncateSliceValue([]string(*v)))
+		case *pq.ByteaArray:
+			vals := truncateSliceValue([][]byte(*v))
+			strings := make([]string, len(vals))
+			for i, v := range vals {
+				strings[i] = string(v)
+			}
+			attrs[i] = attribute.StringSlice(key, strings)
+
+		default: // in case we miss anything
+			attrs[i] = attribute.String(key, fmt.Sprintf("%v", v))
+		}
+	}
+	return attrs
+}
+
+func truncateStringValue(v string) string {
+	if len(v) > argsAttributesValueLimit {
+		return v[:argsAttributesValueLimit]
+	}
+	return v
+}
+
+func truncateSliceValue[T any](s []T) []T {
+	if len(s) > argsAttributesValueLimit {
+		return s[:argsAttributesValueLimit]
+	}
+	return s
 }

@@ -223,7 +223,7 @@ func Compute(ctx context.Context, checker authz.SubRepoPermissionChecker, repoNa
 		First:           limitOrDefault(first) + 1, // add 1 so we can determine PageInfo.hasNextPage
 		Repo:            repoName.Name,
 		IncludePatterns: includePatternsSlice,
-		Timeout:         int(serverTimeout.Seconds()),
+		Timeout:         serverTimeout,
 	}
 	if query != nil {
 		searchArgs.Query = *query

@@ -28,8 +28,7 @@ const {
   getStatoscopePlugin,
 } = require('@sourcegraph/build-config')
 
-const { IS_PRODUCTION, IS_DEVELOPMENT, ENVIRONMENT_CONFIG } = require('./dev/utils')
-const { getHTMLWebpackPlugins } = require('./dev/webpack/get-html-webpack-plugins')
+const { IS_PRODUCTION, IS_DEVELOPMENT, ENVIRONMENT_CONFIG, writeIndexHTMLPlugin } = require('./dev/utils')
 const { isHotReloadEnabled } = require('./src/integration/environment')
 
 const {
@@ -74,8 +73,6 @@ const hotLoadablePaths = ['branded', 'shared', 'web', 'wildcard'].map(workspace 
 const enterpriseDirectory = path.resolve(__dirname, 'src', 'enterprise')
 const styleLoader = IS_DEVELOPMENT ? 'style-loader' : MiniCssExtractPlugin.loader
 
-const extensionHostWorker = /main\.worker\.ts$/
-
 // Used to ensure that we include all initial chunks into the Webpack manifest.
 const initialChunkNames = {
   react: 'react',
@@ -103,7 +100,7 @@ const config = {
     IS_PERSISTENT_CACHE_ENABLED &&
     getCacheConfig({ invalidateCacheFiles: [path.resolve(__dirname, 'babel.config.js')] }),
   optimization: {
-    minimize: IS_PRODUCTION,
+    minimize: IS_PRODUCTION && !INTEGRATION_TESTS,
     minimizer: [getTerserPlugin(), new CssMinimizerWebpackPlugin()],
     splitChunks: {
       cacheGroups: {
@@ -150,7 +147,9 @@ const config = {
     globalObject: 'self',
     pathinfo: false,
   },
-  devtool: IS_PRODUCTION ? 'source-map' : WEBPACK_DEVELOPMENT_DEVTOOL,
+  // Inline source maps for integration tests to preserve readable stack traces.
+  // See related issue here: https://github.com/puppeteer/puppeteer/issues/985
+  devtool: IS_PRODUCTION ? (INTEGRATION_TESTS ? 'inline-source-map' : 'source-map') : WEBPACK_DEVELOPMENT_DEVTOOL,
   plugins: [
     new webpack.DefinePlugin({
       'process.env': mapValues(RUNTIME_ENV_VARIABLES, JSON.stringify),
@@ -164,15 +163,17 @@ const config = {
           : 'styles/[name].bundle.css',
     }),
     getMonacoWebpackPlugin(),
-    !WEBPACK_SERVE_INDEX &&
-      new WebpackManifestPlugin({
-        writeToFileEmit: true,
-        fileName: 'webpack.manifest.json',
-        // Only output files that are required to run the application.
-        filter: ({ isInitial, name }) =>
-          isInitial || Object.values(initialChunkNames).some(initialChunkName => name?.includes(initialChunkName)),
-      }),
-    ...(WEBPACK_SERVE_INDEX ? getHTMLWebpackPlugins() : []),
+    new WebpackManifestPlugin({
+      writeToFileEmit: true,
+      fileName: 'webpack.manifest.json',
+      seed: {
+        environment: NODE_ENV,
+      },
+      // Only output files that are required to run the application.
+      filter: ({ isInitial, name }) =>
+        isInitial || Object.values(initialChunkNames).some(initialChunkName => name?.includes(initialChunkName)),
+    }),
+    ...(WEBPACK_SERVE_INDEX && IS_PRODUCTION ? [writeIndexHTMLPlugin] : []),
     WEBPACK_BUNDLE_ANALYZER && getStatoscopePlugin(WEBPACK_STATS_NAME),
     isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
     IS_PRODUCTION &&
@@ -237,6 +238,7 @@ const config = {
       path: require.resolve('path-browserify'),
       punycode: require.resolve('punycode'),
       util: require.resolve('util'),
+      events: require.resolve('events'),
     },
     alias: {
       // react-visibility-sensor's main field points to a UMD bundle instead of ESM
@@ -251,7 +253,6 @@ const config = {
       {
         test: /\.[jt]sx?$/,
         include: hotLoadablePaths,
-        exclude: extensionHostWorker,
         use: [
           {
             loader: 'babel-loader',
@@ -264,7 +265,7 @@ const config = {
       },
       {
         test: /\.[jt]sx?$/,
-        exclude: [...hotLoadablePaths, extensionHostWorker],
+        exclude: hotLoadablePaths,
         use: [getBabelLoader()],
       },
       {
@@ -278,12 +279,19 @@ const config = {
         exclude: /\.module\.(sass|scss)$/,
         use: getCSSLoaders(styleLoader, getBasicCSSLoader()),
       },
+      {
+        test: /\.css$/,
+        include: [path.resolve(__dirname, '../cody-ui')],
+        exclude: /\.module\.css$/,
+        use: getCSSLoaders(styleLoader, getBasicCSSLoader()),
+      },
+      {
+        test: /\.module\.css$/,
+        include: [path.resolve(__dirname, '../cody-ui')],
+        use: getCSSLoaders(styleLoader, getCSSModulesLoader({ sourceMap: IS_DEVELOPMENT })),
+      },
       getMonacoCSSRule(),
       getMonacoTTFRule(),
-      {
-        test: extensionHostWorker,
-        use: [{ loader: 'worker-loader', options: { inline: 'no-fallback' } }, getBabelLoader()],
-      },
       { test: /\.ya?ml$/, type: 'asset/source' },
       { test: /\.(png|woff2)$/, type: 'asset/resource' },
     ],

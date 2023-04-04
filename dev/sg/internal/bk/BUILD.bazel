@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "bk",
+    srcs = [
+        "bk.go",
+        "logs.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/bk",
+    visibility = ["//dev/sg:__subpackages__"],
+    deps = [
+        "//dev/sg/internal/secrets",
+        "//dev/sg/internal/std",
+        "//lib/errors",
+        "//lib/output",
+        "@com_github_buildkite_go_buildkite_v3//buildkite",
+        "@com_github_grafana_regexp//:regexp",
+    ],
+)

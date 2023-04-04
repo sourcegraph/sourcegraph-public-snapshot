@@ -1,33 +1,11 @@
 name: Accessibility issue
-description: Create an issue that is automatically attached to the WCAG 2.1 AA Tracking Issue
+description: Report problems and unexpected behavior related to accessibility.
 title: '[Accessibility]: '
 labels:
 - 'accessibility'
 - 'wcag/2.1'
 - 'wcag/2.1/fixing'
 body:
-  - type: markdown
-    attributes:
-      value: |
-        Thanks for your contribution to the accessibility of Sourcegraph!
-  - type: dropdown
-    id: audit-type
-    attributes:
-      label: Audit type
-      description: What type of audit does this issue relate to?
-      options:
-        - Keyboard navigation
-        - Screen reader navigation
-        - Mobile device navigation
-        - ARC Toolkit
-        - General/Other
-    validations:
-      required: true
-  - type: input
-    id: user-journey-issue
-    attributes:
-      label: User journey audit issue
-      description: If this issue is related to a specific GH issue for auditing an individual user journey, please provide a link to the issue here.
   - type: textarea
     id: problem-description
     attributes:
@@ -49,23 +27,3 @@ body:
       description: Provide any notes, screenshots, and/or additional context here.
     validations:
       required: false
-  - type: checkboxes
-    id: labels
-    attributes:
-      label: Assigning labels
-      options:
-      - label: Please give this issue an estimate by applying a label like `estimate/Xd`, where X is the estimated number of days it will take to complete.
-      - label: If this issue is specific to a specific Sourcegraph product, please assign the appropriate team label to this issue.
-      - label: If this issue will require input from designers in order to complete, please assign the label `needs-design`.
-      - label: If you are confident that this issue should be fixed by GitStart, please assign the label `gitstart`.
-  - type: dropdown
-    id: owner
-    attributes:
-      label: Owner
-      description: To ensure we have a clear owner for fixing this issue, please select a following option.
-      options:
-      - This issue will be fixed by my team, I have assigned a relevant member to it, or I will do so in the near future.
-      - This issue will be fixed by GitStart. I have assigned the label 'gitstart' and added the assignee 'gitstart-sourcegraph'.
-      - I'm unsure who should work on this issue or if it needs more clarification. I will let the Frontend Platform team triage this.
-    validations:
-      required: true

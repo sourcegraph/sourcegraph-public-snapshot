@@ -10,20 +10,17 @@ import (
 	stores "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func init() {
-	scipMigratorUploadBatchSize = 1
-	scipMigratorDocumentBatchSize = 4
-	scipMigratorResultChunkDefaultCacheSize = 16
+	scipMigratorUploadReaderBatchSize = 1
+	scipMigratorDocumentReaderBatchSize = 4
+	scipMigratorResultChunkReaderCacheSize = 16
 }
 
 func TestSCIPMigrator(t *testing.T) {
 	logger := logtest.Scoped(t)
-	// TODO - use the AtRev constructor after this has been deprecated
-	rawDB := dbtest.NewDB(logger, t)
-	// rawDB := dbtest.NewDBAtRev(logger, t, "4.3.0")
+	rawDB := lastDBWithLSIF(logger, t)
 	db := database.NewDB(logger, rawDB)
 	codeIntelDB := stores.NewCodeIntelDB(logger, rawDB)
 	store := basestore.NewWithHandle(db.Handle())

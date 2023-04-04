@@ -1,6 +1,6 @@
 import { isMacPlatform } from '@sourcegraph/common'
 
-import { Key, ModifierKey } from './keys'
+import { Key, MODIFIER_KEYS, ModifierKey } from './keys'
 
 const ON_MATCH_DELAY = 500
 
@@ -73,6 +73,10 @@ export class ShortcutManager {
                 return false
             }
 
+            if (!held && isAnyModifierKeyHeld(event)) {
+                return false
+            }
+
             const partiallyMatching = arraysMatch(this.keysPressed, ordered.slice(0, this.keysPressed.length))
 
             if (node) {
@@ -114,6 +118,10 @@ function isModifierHeld(held: Exclude<Data['held'], undefined>, event: KeyboardE
     // calling it here makes the code easier to test
     const modKey = getModKey()
     return held.every(key => event.getModifierState(key === 'Mod' ? modKey : key))
+}
+
+function isAnyModifierKeyHeld(event: KeyboardEvent): boolean {
+    return MODIFIER_KEYS.some(key => event.getModifierState(key))
 }
 
 /**

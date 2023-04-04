@@ -14,7 +14,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -37,8 +36,6 @@ type migratorAndOption struct {
 	Migrator
 	migratorOptions
 }
-
-var _ goroutine.BackgroundRoutine = &Runner{}
 
 func NewRunnerWithDB(observationCtx *observation.Context, db database.DB, refreshInterval time.Duration) *Runner {
 	return NewRunner(observationCtx, NewStoreWithDB(db), refreshInterval)
@@ -198,8 +195,16 @@ func (r *Runner) UpdateDirection(ctx context.Context, ids []int, applyReverse bo
 
 // Start runs registered migrators on a loop until they complete. This method will periodically
 // re-read from the database in order to refresh its current view of the migrations.
-func (r *Runner) Start() {
-	r.StartPartial(nil)
+func (r *Runner) Start(currentVersion Version) {
+	r.startInternal(func(migration Migration) bool {
+		if CompareVersions(currentVersion, migration.Introduced) == VersionOrderBefore {
+			// current version before migration introduction
+			return false
+		}
+
+		// migration not yet deprecated or current version is before deprecated version
+		return migration.Deprecated == nil || CompareVersions(currentVersion, *migration.Deprecated) == VersionOrderBefore
+	})
 }
 
 // StartPartial runs registered migrators matching one of the given identifiers on a loop until
@@ -207,31 +212,38 @@ func (r *Runner) Start() {
 // current view of the migrations. When the given set of identifiers is empty, all migrations in
 // the database with a registered migrator will be considered active.
 func (r *Runner) StartPartial(ids []int) {
+	idMap := make(map[int]struct{}, len(ids))
+	for _, id := range ids {
+		idMap[id] = struct{}{}
+	}
+
+	r.startInternal(func(m Migration) bool {
+		_, ok := idMap[m.ID]
+		return ok
+	})
+}
+
+func (r *Runner) startInternal(shouldRunMigration func(m Migration) bool) {
 	defer close(r.finished)
 
 	ctx := r.ctx
 	var wg sync.WaitGroup
 	migrationProcesses := map[int]chan Migration{}
 
-	idMap := make(map[int]struct{}, len(ids))
-	for _, id := range ids {
-		idMap[id] = struct{}{}
-	}
-
 	// Periodically read the complete set of out-of-band migrations from the database
 	for migrations := range r.listMigrations(ctx) {
 		for i := range migrations {
-			id := migrations[i].ID
-			migrator, ok := r.migrators[id]
+			migration := migrations[i]
+			migrator, ok := r.migrators[migration.ID]
 			if !ok {
 				continue
 			}
-			if _, ok := idMap[id]; !ok && len(ids) != 0 {
+			if !shouldRunMigration(migration) {
 				continue
 			}
 
 			// Ensure we have a migration routine running for this migration
-			r.ensureProcessorIsRunning(&wg, migrationProcesses, id, func(ch <-chan Migration) {
+			r.ensureProcessorIsRunning(&wg, migrationProcesses, migration.ID, func(ch <-chan Migration) {
 				runMigrator(ctx, r.store, migrator.Migrator, ch, migrator.migratorOptions, r.logger, r.operations)
 			})
 
@@ -248,9 +260,9 @@ func (r *Runner) StartPartial(ids []int) {
 		loop:
 			for {
 				select {
-				case migrationProcesses[id] <- migrations[i]:
+				case migrationProcesses[migration.ID] <- migrations[i]:
 					break loop
-				case <-migrationProcesses[id]:
+				case <-migrationProcesses[migration.ID]:
 				}
 			}
 		}
@@ -280,12 +292,12 @@ func (r *Runner) listMigrations(ctx context.Context) <-chan []Migration {
 				if !errors.Is(err, ctx.Err()) {
 					r.logger.Error("Failed to list out-of-band migrations", log.Error(err))
 				}
-			}
-
-			select {
-			case ch <- migrations:
-			case <-ctx.Done():
-				return
+			} else {
+				select {
+				case ch <- migrations:
+				case <-ctx.Done():
+					return
+				}
 			}
 
 			select {

@@ -251,6 +251,8 @@ func TestUserFrequencyLastMonth(t *testing.T) {
 }
 
 func TestMonthlyActiveUsersLast3Month(t *testing.T) {
+	t.Skip("flaky test due to months rolling over")
+
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))

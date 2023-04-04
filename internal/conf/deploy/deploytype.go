@@ -11,12 +11,20 @@ const (
 	PureDocker    = "pure-docker"
 	Dev           = "dev"
 	Helm          = "helm"
+	Kustomize     = "kustomize"
+	App           = "app"
+	K3s           = "k3s"
 )
 
 var mock string
 
+var forceType string // force a deploy type (can be injected with `go build -ldflags "-X ..."`)
+
 // Type tells the deployment type.
 func Type() string {
+	if forceType != "" {
+		return forceType
+	}
 	if mock != "" {
 		return mock
 	}
@@ -37,7 +45,7 @@ func Mock(val string) {
 func IsDeployTypeKubernetes(deployType string) bool {
 	switch deployType {
 	// includes older Kubernetes aliases for backwards compatibility
-	case "k8s", "cluster", Kubernetes, Helm:
+	case "k8s", "cluster", Kubernetes, Helm, Kustomize, K3s:
 		return true
 	}
 
@@ -62,6 +70,11 @@ func IsDeployTypeSingleDockerContainer(deployType string) bool {
 	return deployType == SingleDocker
 }
 
+// IsDeployTypeSingleProgram tells if the given deployment type is a single Go program.
+func IsDeployTypeApp(deployType string) bool {
+	return deployType == App
+}
+
 // IsDev tells if the given deployment type is "dev".
 func IsDev(deployType string) bool {
 	return deployType == Dev
@@ -74,5 +87,34 @@ func IsValidDeployType(deployType string) bool {
 		IsDeployTypeDockerCompose(deployType) ||
 		IsDeployTypePureDocker(deployType) ||
 		IsDeployTypeSingleDockerContainer(deployType) ||
-		IsDev(deployType)
+		IsDev(deployType) ||
+		IsDeployTypeApp(deployType)
+}
+
+// IsApp tells if the running deployment is a Sourcegraph App deployment.
+//
+// Sourcegraph App is always a single-binary, but not all single-binary deployments are
+// a Sourcegraph app.
+//
+// In the future, all Sourcegraph deployments will be a single-binary. For example gitserver will
+// be `sourcegraph --as=gitserver` or similar. Use IsSingleBinary() for code that should always
+// run in a single-binary setting, and use IsApp() for code that should only run as part of the
+// Sourcegraph desktop app.
+func IsApp() bool {
+	return Type() == App
+}
+
+// IsSingleBinary tells if the running deployment is a single-binary or not.
+//
+// Sourcegraph App is always a single-binary, but not all single-binary deployments are
+// a Sourcegraph app.
+//
+// In the future, all Sourcegraph deployments will be a single-binary. For example gitserver will
+// be `sourcegraph --as=gitserver` or similar. Use IsSingleBinary() for code that should always
+// run in a single-binary setting, and use IsApp() for code that should only run as part of the
+// Sourcegraph desktop app.
+func IsSingleBinary() bool {
+	// TODO(single-binary): check in the future if this is any single-binary deployment, not just
+	// app.
+	return Type() == App
 }

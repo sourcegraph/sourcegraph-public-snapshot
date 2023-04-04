@@ -8,6 +8,7 @@ import { createAggregateError, ErrorLike } from '@sourcegraph/common'
 import { Range as ExtensionRange, Position as ExtensionPosition } from '@sourcegraph/extension-api-types'
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
+import { Position as ScipPosition } from '@sourcegraph/shared/src/codeintel/scip'
 import { searchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
@@ -17,6 +18,8 @@ import { CODE_INTEL_SEARCH_QUERY, LOCAL_CODE_INTEL_QUERY } from '../../codeintel
 import { SettingsGetter } from '../../codeintel/settings'
 import { isDefined } from '../../codeintel/util/helpers'
 import { CodeIntelSearch2Variables } from '../../graphql-operations'
+import { syntaxHighlight } from '../../repo/blob/codemirror/highlight'
+import { getBlobEditView } from '../../repo/blob/use-blob-store'
 
 import {
     definitionQuery,
@@ -34,6 +37,7 @@ type LocationHandler = (locations: Location[]) => void
 interface UseSearchBasedCodeIntelResult {
     fetch: (onReferences: LocationHandler, onDefinitions: LocationHandler) => void
     fetchReferences: (onReferences: LocationHandler) => void
+    fetchDefinitions: (onDefinitions: LocationHandler) => void
     loading: boolean
     error?: ErrorLike
 }
@@ -81,11 +85,10 @@ export const useSearchBasedCodeIntel = (options: UseSearchBasedCodeIntelOptions)
         [options]
     )
 
-    const fetch = useCallback(
-        (onReferences: LocationHandler, onDefinitions: LocationHandler) => {
-            fetchReferences(onReferences)
-
+    const fetchDefinitions = useCallback(
+        (onDefinitions: LocationHandler) => {
             setLoadingDefinitions(true)
+
             searchBasedDefinitions(options)
                 .then(definitions => {
                     onDefinitions(definitions)
@@ -96,13 +99,22 @@ export const useSearchBasedCodeIntel = (options: UseSearchBasedCodeIntelOptions)
                     setLoadingDefinitions(false)
                 })
         },
-        [options, fetchReferences]
+        [options]
+    )
+
+    const fetch = useCallback(
+        (onReferences: LocationHandler, onDefinitions: LocationHandler) => {
+            fetchReferences(onReferences)
+            fetchDefinitions(onDefinitions)
+        },
+        [fetchReferences, fetchDefinitions]
     )
 
     const errors = [definitionsError, referencesError].filter(isDefined)
     return {
         fetch,
         fetchReferences,
+        fetchDefinitions,
         loading: loadingReferences || loadingDefinitions,
         error: createAggregateError(errors),
     }
@@ -122,6 +134,38 @@ export async function searchBasedReferences({
     getSetting,
     filter,
 }: UseSearchBasedCodeIntelOptions): Promise<Location[]> {
+    const view = getBlobEditView()
+    if (view !== null) {
+        const occurrences = view.state.facet(syntaxHighlight).occurrences
+        for (const occurrence of occurrences) {
+            if (
+                occurrence.symbol?.startsWith('local ') &&
+                occurrence.range.contains(new ScipPosition(position.line, position.character))
+            ) {
+                return occurrences
+                    .filter(reference => reference.symbol === occurrence.symbol)
+                    .map(reference => ({
+                        repo,
+                        file: path,
+                        content: fileContent,
+                        commitID: commit,
+                        range: reference.range,
+                        url: toPrettyBlobURL({
+                            filePath: path,
+                            revision: commit,
+                            repoName: repo,
+                            commitID: commit,
+                            position: {
+                                line: reference.range.start.line + 1,
+                                character: reference.range.start.character + 1,
+                            },
+                        }),
+                        lines: split(fileContent),
+                        precise: false,
+                    }))
+            }
+        }
+    }
     const filterReferences = (results: Location[]): Location[] =>
         filter ? results.filter(location => location.file.includes(filter)) : results
 

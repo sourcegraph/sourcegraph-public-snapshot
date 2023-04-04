@@ -10,9 +10,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+type ExternalAccountData struct {
+	IDToken    *oidc.IDToken  `json:"idToken"`
+	UserInfo   *oidc.UserInfo `json:"userInfo"`
+	UserClaims *userClaims    `json:"userClaims"`
+}
 
 // getOrCreateUser gets or creates a user account based on the OpenID Connect token. It returns the
 // authenticated actor if successful; otherwise it returns a friendly error message (safeErrMsg)
@@ -56,11 +63,7 @@ func getOrCreateUser(ctx context.Context, db database.DB, p *Provider, idToken *
 			errors.Wrap(err, "normalize username")
 	}
 
-	serialized, err := json.Marshal(struct {
-		IDToken    *oidc.IDToken  `json:"idToken"`
-		UserInfo   *oidc.UserInfo `json:"userInfo"`
-		UserClaims *userClaims    `json:"userClaims"`
-	}{
+	serialized, err := json.Marshal(ExternalAccountData{
 		IDToken:    idToken,
 		UserInfo:   userInfo,
 		UserClaims: claims,
@@ -93,4 +96,42 @@ func getOrCreateUser(ctx context.Context, db database.DB, p *Provider, idToken *
 		return nil, safeErrMsg, err
 	}
 	return actor.FromUser(userID), "", nil
+}
+
+// GetExternalAccountData returns the deserialized JSON blob from user external accounts table
+func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (val *ExternalAccountData, err error) {
+	if data.Data != nil {
+		val, err = encryption.DecryptJSON[ExternalAccountData](ctx, data.Data)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return val, nil
+}
+
+func GetPublicExternalAccountData(ctx context.Context, accountData *extsvc.AccountData) (*extsvc.PublicAccountData, error) {
+	data, err := GetExternalAccountData(ctx, accountData)
+	if err != nil {
+		return nil, err
+	}
+
+	login := data.UserClaims.PreferredUsername
+	if login == "" {
+		login = data.UserInfo.Email
+	}
+	displayName := data.UserClaims.GivenName
+	if displayName == "" {
+		if data.UserClaims.Name == "" {
+			displayName = data.UserClaims.Name
+		} else {
+			displayName = login
+		}
+	}
+
+	return &extsvc.PublicAccountData{
+		Login:       &login,
+		DisplayName: &displayName,
+		URL:         &data.UserInfo.Profile,
+	}, nil
 }

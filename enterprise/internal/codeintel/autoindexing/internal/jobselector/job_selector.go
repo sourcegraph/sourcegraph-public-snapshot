@@ -7,31 +7,34 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type JobSelector struct {
 	store           store.Store
-	uploadSvc       UploadService
+	repoStore       database.RepoStore
 	inferenceSvc    InferenceService
-	gitserverClient GitserverClient
+	gitserverClient gitserver.Client
 	logger          log.Logger
 }
 
 func NewJobSelector(
 	store store.Store,
-	uploadSvc UploadService,
+	repoStore database.RepoStore,
 	inferenceSvc InferenceService,
-	gitserverClient GitserverClient,
+	gitserverClient gitserver.Client,
 	logger log.Logger,
 ) *JobSelector {
 	return &JobSelector{
 		store:           store,
-		uploadSvc:       uploadSvc,
+		repoStore:       repoStore,
 		inferenceSvc:    inferenceSvc,
 		gitserverClient: gitserverClient,
 		logger:          logger,
@@ -44,8 +47,8 @@ var (
 )
 
 // InferIndexJobsFromRepositoryStructure collects the result of InferIndexJobs over all registered recognizers.
-func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]config.IndexJob, error) {
-	repoName, err := s.uploadSvc.GetRepoName(ctx, repositoryID)
+func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) ([]config.IndexJob, error) {
+	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
 	if err != nil {
 		return nil, err
 	}
@@ -57,8 +60,11 @@ func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context,
 	if script == "" {
 		script = overrideScript
 	}
+	if localOverrideScript != "" {
+		script = localOverrideScript
+	}
 
-	indexes, err := s.inferenceSvc.InferIndexJobs(ctx, api.RepoName(repoName), commit, script)
+	indexes, err := s.inferenceSvc.InferIndexJobs(ctx, repo.Name, commit, script)
 	if err != nil {
 		return nil, err
 	}
@@ -72,13 +78,8 @@ func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context,
 }
 
 // inferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobHints over all registered recognizers.
-func (s *JobSelector) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error) {
-	repoName, err := s.uploadSvc.GetRepoName(ctx, repositoryID)
-	if err != nil {
-		return nil, err
-	}
-
-	indexes, err := s.inferenceSvc.InferIndexJobHints(ctx, api.RepoName(repoName), commit, overrideScript)
+func (s *JobSelector) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, repoName api.RepoName, commit string) ([]config.IndexJobHint, error) {
+	indexes, err := s.inferenceSvc.InferIndexJobHints(ctx, repoName, commit, overrideScript)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +87,7 @@ func (s *JobSelector) InferIndexJobHintsFromRepositoryStructure(ctx context.Cont
 	return indexes, nil
 }
 
-type configurationFactoryFunc func(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]types.Index, bool, error)
+type configurationFactoryFunc func(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]uploadsshared.Index, bool, error)
 
 // GetIndexRecords determines the set of index records that should be enqueued for the given commit.
 // For each repository, we look for index configuration in the following order:
@@ -95,7 +96,7 @@ type configurationFactoryFunc func(ctx context.Context, repositoryID int, commit
 //   - in the database
 //   - committed to `sourcegraph.yaml` in the repository
 //   - inferred from the repository structure
-func (s *JobSelector) GetIndexRecords(ctx context.Context, repositoryID int, commit, configuration string, bypassLimit bool) ([]types.Index, error) {
+func (s *JobSelector) GetIndexRecords(ctx context.Context, repositoryID int, commit, configuration string, bypassLimit bool) ([]uploadsshared.Index, error) {
 	fns := []configurationFactoryFunc{
 		makeExplicitConfigurationFactory(configuration),
 		s.getIndexRecordsFromConfigurationInDatabase,
@@ -119,7 +120,7 @@ func (s *JobSelector) GetIndexRecords(ctx context.Context, repositoryID int, com
 // flag is returned.
 func makeExplicitConfigurationFactory(configuration string) configurationFactoryFunc {
 	logger := log.Scoped("explicitConfigurationFactory", "")
-	return func(ctx context.Context, repositoryID int, commit string, _ bool) ([]types.Index, bool, error) {
+	return func(ctx context.Context, repositoryID int, commit string, _ bool) ([]uploadsshared.Index, bool, error) {
 		if configuration == "" {
 			return nil, false, nil
 		}
@@ -139,7 +140,7 @@ func makeExplicitConfigurationFactory(configuration string) configurationFactory
 
 // getIndexRecordsFromConfigurationInDatabase returns a set of index jobs configured via the UI for
 // the given repository. If no jobs are configured via the UI then a false valued flag is returned.
-func (s *JobSelector) getIndexRecordsFromConfigurationInDatabase(ctx context.Context, repositoryID int, commit string, _ bool) ([]types.Index, bool, error) {
+func (s *JobSelector) getIndexRecordsFromConfigurationInDatabase(ctx context.Context, repositoryID int, commit string, _ bool) ([]uploadsshared.Index, bool, error) {
 	indexConfigurationRecord, ok, err := s.store.GetIndexConfigurationByRepositoryID(ctx, repositoryID)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "dbstore.GetIndexConfigurationByRepositoryID")
@@ -163,18 +164,19 @@ func (s *JobSelector) getIndexRecordsFromConfigurationInDatabase(ctx context.Con
 // getIndexRecordsFromConfigurationInRepository returns a set of index jobs configured via a committed
 // configuration file at the given commit. If no jobs are configured within the repository then a false
 // valued flag is returned.
-func (s *JobSelector) getIndexRecordsFromConfigurationInRepository(ctx context.Context, repositoryID int, commit string, _ bool) ([]types.Index, bool, error) {
-	isConfigured, err := s.gitserverClient.FileExists(ctx, repositoryID, commit, "sourcegraph.yaml")
+func (s *JobSelector) getIndexRecordsFromConfigurationInRepository(ctx context.Context, repositoryID int, commit string, _ bool) ([]uploadsshared.Index, bool, error) {
+	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
 	if err != nil {
-		return nil, false, errors.Wrap(err, "gitserver.FileExists")
-	}
-	if !isConfigured {
-		return nil, false, nil
+		return nil, false, err
 	}
 
-	content, err := s.gitserverClient.RawContents(ctx, repositoryID, commit, "sourcegraph.yaml")
+	content, err := s.gitserverClient.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, api.CommitID(commit), "sourcegraph.yaml")
 	if err != nil {
-		return nil, false, errors.Wrap(err, "gitserver.RawContents")
+		if os.IsNotExist(err) {
+			return nil, false, nil
+		}
+
+		return nil, false, err
 	}
 
 	indexConfiguration, err := config.UnmarshalYAML(content)
@@ -192,8 +194,8 @@ func (s *JobSelector) getIndexRecordsFromConfigurationInRepository(ctx context.C
 // inferIndexRecordsFromRepositoryStructure looks at the repository contents at the given commit and
 // determines a set of index jobs that are likely to succeed. If no jobs could be inferred then a
 // false valued flag is returned.
-func (s *JobSelector) inferIndexRecordsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]types.Index, bool, error) {
-	indexJobs, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, bypassLimit)
+func (s *JobSelector) inferIndexRecordsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]uploadsshared.Index, bool, error) {
+	indexJobs, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, "", bypassLimit)
 	if err != nil || len(indexJobs) == 0 {
 		return nil, false, err
 	}
@@ -203,34 +205,28 @@ func (s *JobSelector) inferIndexRecordsFromRepositoryStructure(ctx context.Conte
 
 // convertIndexConfiguration converts an index configuration object into a set of index records to be
 // inserted into the database.
-func convertIndexConfiguration(repositoryID int, commit string, indexConfiguration config.IndexConfiguration) (indexes []types.Index) {
+func convertIndexConfiguration(repositoryID int, commit string, indexConfiguration config.IndexConfiguration) (indexes []uploadsshared.Index) {
 	for _, indexJob := range indexConfiguration.IndexJobs {
-		var dockerSteps []types.DockerStep
-		for _, dockerStep := range indexConfiguration.SharedSteps {
-			dockerSteps = append(dockerSteps, types.DockerStep{
-				Root:     dockerStep.Root,
-				Image:    dockerStep.Image,
-				Commands: dockerStep.Commands,
-			})
-		}
+		var dockerSteps []uploadsshared.DockerStep
 		for _, dockerStep := range indexJob.Steps {
-			dockerSteps = append(dockerSteps, types.DockerStep{
+			dockerSteps = append(dockerSteps, uploadsshared.DockerStep{
 				Root:     dockerStep.Root,
 				Image:    dockerStep.Image,
 				Commands: dockerStep.Commands,
 			})
 		}
 
-		indexes = append(indexes, types.Index{
-			Commit:       commit,
-			RepositoryID: repositoryID,
-			State:        "queued",
-			DockerSteps:  dockerSteps,
-			LocalSteps:   indexJob.LocalSteps,
-			Root:         indexJob.Root,
-			Indexer:      indexJob.Indexer,
-			IndexerArgs:  indexJob.IndexerArgs,
-			Outfile:      indexJob.Outfile,
+		indexes = append(indexes, uploadsshared.Index{
+			Commit:           commit,
+			RepositoryID:     repositoryID,
+			State:            "queued",
+			DockerSteps:      dockerSteps,
+			LocalSteps:       indexJob.LocalSteps,
+			Root:             indexJob.Root,
+			Indexer:          indexJob.Indexer,
+			IndexerArgs:      indexJob.IndexerArgs,
+			Outfile:          indexJob.Outfile,
+			RequestedEnvVars: indexJob.RequestedEnvVars,
 		})
 	}
 
@@ -239,18 +235,18 @@ func convertIndexConfiguration(repositoryID int, commit string, indexConfigurati
 
 // convertInferredConfiguration converts a set of index jobs into a set of index records to be inserted
 // into the database.
-func convertInferredConfiguration(repositoryID int, commit string, indexJobs []config.IndexJob) (indexes []types.Index) {
+func convertInferredConfiguration(repositoryID int, commit string, indexJobs []config.IndexJob) (indexes []uploadsshared.Index) {
 	for _, indexJob := range indexJobs {
-		var dockerSteps []types.DockerStep
+		var dockerSteps []uploadsshared.DockerStep
 		for _, dockerStep := range indexJob.Steps {
-			dockerSteps = append(dockerSteps, types.DockerStep{
+			dockerSteps = append(dockerSteps, uploadsshared.DockerStep{
 				Root:     dockerStep.Root,
 				Image:    dockerStep.Image,
 				Commands: dockerStep.Commands,
 			})
 		}
 
-		indexes = append(indexes, types.Index{
+		indexes = append(indexes, uploadsshared.Index{
 			RepositoryID:     repositoryID,
 			Commit:           commit,
 			State:            "queued",

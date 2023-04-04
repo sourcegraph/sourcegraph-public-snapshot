@@ -11,6 +11,7 @@ export interface PersistableQueryResult {
     text: string
     url?: string
     symbolKind?: SymbolKind
+    symbolName?: string
     stars?: number
     repoName?: string
     filePath?: string

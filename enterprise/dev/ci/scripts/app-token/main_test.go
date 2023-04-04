@@ -63,6 +63,10 @@ func newTestGitHubClient(ctx context.Context, t *testing.T) (ghc *github.Client,
 }
 
 func TestGetInstallAccessToken(t *testing.T) {
+	// We cannot perform external network requests in Bazel tests, it breaks the sandbox.
+	if os.Getenv("BAZEL_TEST") == "1" {
+		t.Skip("Skipping due to network request")
+	}
 	ctx := context.Background()
 
 	ghc, stop := newTestGitHubClient(ctx, t)

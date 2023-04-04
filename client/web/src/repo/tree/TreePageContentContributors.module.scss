@@ -3,6 +3,13 @@
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
+    border-left: 0;
+    border-right: 0;
+    border-top: 0;
+
+    &:last-child {
+        border-bottom: 0;
+    }
 
     :global(.badge) {
         cursor: default;

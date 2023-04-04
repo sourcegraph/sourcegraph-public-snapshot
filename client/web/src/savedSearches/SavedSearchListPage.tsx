@@ -3,7 +3,7 @@ import * as React from 'react'
 import { mdiMessageTextOutline, mdiCog, mdiDelete, mdiPlus } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import { RouteComponentProps, useLocation } from 'react-router'
+import { useLocation } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, mapTo, switchMap } from 'rxjs/operators'
 import { useCallbackRef } from 'use-callback-ref'
@@ -33,7 +33,7 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import styles from './SavedSearchListPage.module.scss'
 
-interface NodeProps extends RouteComponentProps, SearchPatternTypeProps {
+interface NodeProps extends SearchPatternTypeProps {
     savedSearch: SavedSearchFields
     onDelete: () => void
     linkRef: React.MutableRefObject<HTMLAnchorElement | null> | null
@@ -95,7 +95,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                     <Tooltip content="Saved search settings">
                         <Button
                             className="test-edit-saved-search-button"
-                            to={`${this.props.match.path}/${this.props.savedSearch.id}`}
+                            to={this.props.savedSearch.id}
                             variant="secondary"
                             size="sm"
                             as={Link}
@@ -132,7 +132,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
     }
 }
 
-interface Props extends RouteComponentProps, NamespaceProps {}
+interface Props extends NamespaceProps {}
 
 export const SavedSearchListPage: React.FunctionComponent<Props> = props => {
     React.useEffect(() => {
@@ -152,14 +152,8 @@ export const SavedSearchListPage: React.FunctionComponent<Props> = props => {
     return (
         <div className={styles.savedSearchListPage} data-testid="saved-searches-list-page">
             <PageHeader
-                description="Manage notifications and alerts for specific search queries."
                 actions={
-                    <Button
-                        to={`${props.match.path}/add`}
-                        className="test-add-saved-search-button"
-                        variant="primary"
-                        as={Link}
-                    >
+                    <Button to="add" className="test-add-saved-search-button" variant="primary" as={Link}>
                         <Icon aria-hidden={true} svgPath={mdiPlus} /> Add saved search
                     </Button>
                 }
@@ -172,7 +166,7 @@ export const SavedSearchListPage: React.FunctionComponent<Props> = props => {
             </PageHeader>
             <SavedSearchListPageContent
                 {...props}
-                onDelete={() => refetch()}
+                onDelete={refetch}
                 savedSearches={connection?.nodes || []}
                 error={error}
                 loading={loading}
@@ -196,7 +190,7 @@ const SavedSearchListPageContent: React.FunctionComponent<React.PropsWithChildre
     loading,
     ...props
 }) => {
-    const location = useLocation<{ description?: string }>()
+    const location = useLocation()
     const searchPatternType = useNavbarQueryState(state => state.searchPatternType)
     const callbackReference = useCallbackRef<HTMLAnchorElement>(null, ref => ref?.focus())
 

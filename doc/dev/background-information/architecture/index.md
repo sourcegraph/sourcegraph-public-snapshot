@@ -31,7 +31,7 @@ If you want to learn more about how repositories are synchronized, read [Life of
 
 Repository permissions are by default being mirrored from code hosts to Sourcegraph, it builds the foundation of Sourcegraph authorization for repositories to ensure users see consistent content as on code hosts. Currently, the background permissions syncer resides in the [repo-updater](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/repo-updater/README.md).
 
-If you want to learn more about how repository permissions are synchronized in the background, read [Background permissions syncing](../../../admin/repo/permissions.md#background-permissions-syncing).
+If you want to learn more about how repository permissions are synchronized in the background, read about [permission syncing](../../../admin/permissions/syncing.md).
 
 ## Settings cascade
 

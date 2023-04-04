@@ -29,15 +29,16 @@ func OtelCollector() *monitoring.Dashboard {
 							NoAlert:     true,
 							Interpretation: `
 								Shows the rate of spans accepted by the configured reveiver
-								
+
 								A Trace is a collection of spans and a span represents a unit of work or operation. Spans are the building blocks of Traces.
 								The spans have only been accepted by the receiver, which means they still have to move through the configured pipeline to be exported.
 								For more information on tracing and configuration of a OpenTelemetry receiver see https://opentelemetry.io/docs/collector/configuration/#receivers.
-								
+
 								See the Exporters section see spans that have made it through the pipeline and are exported.
-								
+
 								Depending the configured processors, received spans might be dropped and not exported. For more information on configuring processors see
-								https://opentelemetry.io/docs/collector/configuration/#processors.`,
+								https://opentelemetry.io/docs/collector/configuration/#processors.
+							`,
 						},
 						{
 							Name:        "otel_span_refused",
@@ -49,11 +50,12 @@ func OtelCollector() *monitoring.Dashboard {
 							NextSteps:   "Check logs of the collector and configuration of the receiver",
 							Interpretation: `
 								Shows the amount of spans that have been refused by a receiver.
-								
+
 								A Trace is a collection of spans. A Span represents a unit of work or operation. Spans are the building blocks of Traces.
-								
+
  								Spans can be rejected either due to a misconfigured receiver or receiving spans in the wrong format. The log of the collector will have more information on why a span was rejected.
-								For more information on tracing and configuration of a OpenTelemetry receiver see https://opentelemetry.io/docs/collector/configuration/#receivers.`,
+								For more information on tracing and configuration of a OpenTelemetry receiver see https://opentelemetry.io/docs/collector/configuration/#receivers.
+							`,
 						},
 					},
 				},
@@ -72,11 +74,12 @@ func OtelCollector() *monitoring.Dashboard {
 							NoAlert:     true,
 							Interpretation: `
 								Shows the rate of spans being sent by the exporter
-								
+
 								A Trace is a collection of spans. A Span represents a unit of work or operation. Spans are the building blocks of Traces.
 								The rate of spans here indicates spans that have made it through the configured pipeline and have been sent to the configured export destination.
-								
-								For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.`,
+
+								For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.
+							`,
 						},
 						{
 							Name:        "otel_span_export_failures",
@@ -88,8 +91,9 @@ func OtelCollector() *monitoring.Dashboard {
 							NextSteps:   "Check the configuration of the exporter and if the service being exported is up",
 							Interpretation: `
 								Shows the rate of spans failed to be sent by the configured reveiver. A number higher than 0 for a long period can indicate a problem with the exporter configuration or with the service that is being exported too
-								
-								For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.`,
+
+								For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.
+							`,
 						},
 					},
 				},
@@ -100,24 +104,22 @@ func OtelCollector() *monitoring.Dashboard {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "otel_cpu_usage",
-							Description: "cpu usage of the collector",
-							Panel:       monitoring.Panel().Unit(monitoring.Seconds).LegendFormat("{{job}}"),
-							Owner:       monitoring.ObservableOwnerDevOps,
-							Query:       "sum by (job) (rate(otelcol_process_cpu_seconds{job=~\"^.*\"}[1m]))",
-							NoAlert:     true,
-							Interpretation: `
-								Shows the cpu usage of the OpenTelemetry collector`,
+							Name:           "otel_cpu_usage",
+							Description:    "cpu usage of the collector",
+							Panel:          monitoring.Panel().Unit(monitoring.Seconds).LegendFormat("{{job}}"),
+							Owner:          monitoring.ObservableOwnerDevOps,
+							Query:          "sum by (job) (rate(otelcol_process_cpu_seconds{job=~\"^.*\"}[1m]))",
+							NoAlert:        true,
+							Interpretation: `Shows CPU usage as reported by the OpenTelemetry collector.`,
 						},
 						{
-							Name:        "otel_memory_resident_set_size",
-							Description: "memory allocated to the otel collector",
-							Panel:       monitoring.Panel().Unit(monitoring.Bytes).LegendFormat("{{job}}"),
-							Owner:       monitoring.ObservableOwnerDevOps,
-							Query:       "sum by (job) (rate(otelcol_process_memory_rss{job=~\"^.*\"}[1m]))",
-							NoAlert:     true,
-							Interpretation: `
-								Shows the memory Resident Set Size (RSS) allocated to the OpenTelemetry collector`,
+							Name:           "otel_memory_resident_set_size",
+							Description:    "memory allocated to the otel collector",
+							Panel:          monitoring.Panel().Unit(monitoring.Bytes).LegendFormat("{{job}}"),
+							Owner:          monitoring.ObservableOwnerDevOps,
+							Query:          "sum by (job) (rate(otelcol_process_memory_rss{job=~\"^.*\"}[1m]))",
+							NoAlert:        true,
+							Interpretation: `Shows the allocated memory Resident Set Size (RSS) as reported by the OpenTelemetry collector.`,
 						},
 						{
 							Name:        "otel_memory_usage",
@@ -128,12 +130,13 @@ func OtelCollector() *monitoring.Dashboard {
 							NoAlert:     true,
 							Interpretation: `
 								Shows how much memory is being used by the otel collector.
-								
+
 								* High memory usage might indicate thad the configured pipeline is keeping a lot of spans in memory for processing
 								* Spans failing to be sent and the exporter is configured to retry
 								* A high batch count by using a batch processor
-								
-								For more information on configuring processors for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#processors.`,
+
+								For more information on configuring processors for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#processors.
+							`,
 						},
 					},
 				},

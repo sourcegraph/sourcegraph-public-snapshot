@@ -1,6 +1,8 @@
+"GraphQL generation rule"
+
 load("@aspect_rules_js//js:defs.bzl", "js_run_binary")
 
-def generate_graphql_operations(name, interface_name, srcs, out):
+def generate_graphql_operations(name, interface_name, srcs, out, **kwargs):
     """Generate a graphql operations Typescript interface.
 
     Args:
@@ -12,6 +14,7 @@ def generate_graphql_operations(name, interface_name, srcs, out):
             produced in or copied to the Bazel output tree, so it's recommended to use js_library
             with a glob pattern equivalent to the one in generateGraphQlOperations.js.
         out: Name of the typescript file to output.
+        **kwargs: general args
     """
     js_run_binary(
         name = name,
@@ -23,4 +26,5 @@ def generate_graphql_operations(name, interface_name, srcs, out):
         ],
         chdir = native.package_name(),
         tool = "//client/shared/dev:generate_graphql_operations",
+        **kwargs
     )

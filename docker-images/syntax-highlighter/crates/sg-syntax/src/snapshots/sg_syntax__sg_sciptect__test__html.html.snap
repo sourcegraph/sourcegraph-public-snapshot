@@ -1,0 +1,206 @@
+---
+source: crates/sg-syntax/src/sg_sciptect.rs
+assertion_line: 616
+expression: "snapshot_sciptect_documents(&document, &contents)"
+---
+  <!DOCTYPE html>
+//^^ PunctuationBracket punctuation.definition.tag.begin.html
+//  ^^^^^^^ Keyword keyword.declaration.doctype.html
+//         ^ Identifier constant.language.doctype.html
+//          ^^^^ IdentifierBuiltin constant.language.doctype.html
+//              ^ PunctuationBracket punctuation.definition.tag.end.html
+  <html lang="en">
+//^ PunctuationBracket punctuation.definition.tag.begin.html
+// ^^^^ Identifier entity.name.tag.structure.any.html
+//     ^^^^^^^^^^ Identifier punctuation.definition.tag.end.html
+//      ^^^^ TagAttribute entity.other.attribute-name.html
+//          ^ PunctuationBracket punctuation.separator.key-value.html
+//           ^^^^ StringLiteral string.quoted.double.html
+//               ^ PunctuationBracket punctuation.definition.tag.end.html
+  <head>
+//^ PunctuationBracket punctuation.definition.tag.begin.html
+// ^^^^ Identifier entity.name.tag.structure.any.html
+//     ^ PunctuationBracket punctuation.definition.tag.end.html
+    <title>Sourcegraph</title>
+//  ^ PunctuationBracket punctuation.definition.tag.begin.html
+//   ^^^^^ Identifier entity.name.tag.inline.any.html
+//        ^ PunctuationBracket punctuation.definition.tag.end.html
+//                    ^^ PunctuationBracket punctuation.definition.tag.begin.html
+//                      ^^^^^ Identifier entity.name.tag.inline.any.html
+//                           ^ PunctuationBracket punctuation.definition.tag.end.html
+    <link href="/dist/style.css" rel="stylesheet" />
+//  ^ PunctuationBracket punctuation.definition.tag.begin.html
+//   ^^^^ Identifier entity.name.tag.inline.any.html
+//       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier punctuation.definition.tag.end.html
+//        ^^^^ TagAttribute entity.other.attribute-name.html
+//            ^ PunctuationBracket punctuation.separator.key-value.html
+//             ^^^^^^^^^^^^^^^^^ StringLiteral string.quoted.double.html
+//                               ^^^ TagAttribute entity.other.attribute-name.html
+//                                  ^ PunctuationBracket punctuation.separator.key-value.html
+//                                   ^^^^^^^^^^^^ StringLiteral string.quoted.double.html
+//                                                ^^ PunctuationBracket punctuation.definition.tag.end.html
+    <link href="/dist/search.css" rel="stylesheet" />
+//  ^ PunctuationBracket punctuation.definition.tag.begin.html
+//   ^^^^ Identifier entity.name.tag.inline.any.html
+//       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier punctuation.definition.tag.end.html
+//        ^^^^ TagAttribute entity.other.attribute-name.html
+//            ^ PunctuationBracket punctuation.separator.key-value.html
+//             ^^^^^^^^^^^^^^^^^^ StringLiteral string.quoted.double.html
+//                                ^^^ TagAttribute entity.other.attribute-name.html
+//                                   ^ PunctuationBracket punctuation.separator.key-value.html
+//                                    ^^^^^^^^^^^^ StringLiteral string.quoted.double.html
+//                                                 ^^ PunctuationBracket punctuation.definition.tag.end.html
+    <meta charset="utf-8" />
+//  ^ PunctuationBracket punctuation.definition.tag.begin.html
+//   ^^^^ Identifier entity.name.tag.inline.any.html
+//       ^^^^^^^^^^^^^^^^^ Identifier punctuation.definition.tag.end.html
+//        ^^^^^^^ TagAttribute entity.other.attribute-name.html
+//               ^ PunctuationBracket punctuation.separator.key-value.html
+//                ^^^^^^^ StringLiteral string.quoted.double.html
+//                        ^^ PunctuationBracket punctuation.definition.tag.end.html
+  </head>
+//^^ PunctuationBracket punctuation.definition.tag.begin.html
+//  ^^^^ Identifier entity.name.tag.structure.any.html
+//      ^ PunctuationBracket punctuation.definition.tag.end.html
+  <body>
+//^ PunctuationBracket punctuation.definition.tag.begin.html
+// ^^^^ Identifier entity.name.tag.structure.any.html
+//     ^ PunctuationBracket punctuation.definition.tag.end.html
+      <!-- This is a comment -->
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment comment.block.html
+      <style>
+//    ^ PunctuationBracket punctuation.definition.tag.begin.html
+//     ^^^^^ Identifier entity.name.tag.style.html
+//          ^ PunctuationBracket punctuation.definition.tag.end.html
+  /*
+//^^ Comment 11:0..13:3 comment.block.css
+   * Positions
+   */
+  .center,
+//^ PunctuationBracket punctuation.definition.entity.css
+// ^^^^^^ Identifier entity.other.attribute-name.class.css
+//       ^ PunctuationBracket punctuation.separator.sequence.css
+  .top-third {
+//^ PunctuationBracket punctuation.definition.entity.css
+// ^^^^^^^^^ Identifier entity.other.attribute-name.class.css
+//           ^ PunctuationBracket punctuation.section.property-list.css
+      transform: translate(-50%, -50%);
+//    ^^^^^^^^^ IdentifierType support.type.property-name.css
+//             ^ PunctuationBracket punctuation.separator.key-value.css
+//               ^^^^^^^^^ IdentifierFunction support.function.transform.css
+//                        ^ PunctuationBracket punctuation.definition.group.begin.css
+//                         ^^^ NumericLiteral keyword.other.unit.css
+//                            ^ Keyword keyword.other.unit.css
+//                             ^ PunctuationBracket punctuation.separator.sequence.css
+//                               ^^^ NumericLiteral keyword.other.unit.css
+//                                  ^ Keyword keyword.other.unit.css
+//                                   ^ PunctuationBracket punctuation.definition.group.end.css
+//                                    ^ PunctuationDelimiter punctuation.terminator.rule.css
+      position: absolute;
+//    ^^^^^^^^ IdentifierType support.type.property-name.css
+//            ^ PunctuationBracket punctuation.separator.key-value.css
+//                      ^ PunctuationDelimiter punctuation.terminator.rule.css
+      top: 50%;
+//    ^^^ IdentifierType support.type.property-name.css
+//       ^ PunctuationBracket punctuation.separator.key-value.css
+//         ^^ NumericLiteral keyword.other.unit.css
+//           ^ Keyword keyword.other.unit.css
+//            ^ PunctuationDelimiter punctuation.terminator.rule.css
+      margin: 0;
+//    ^^^^^^ IdentifierType support.type.property-name.css
+//          ^ PunctuationBracket punctuation.separator.key-value.css
+//            ^ NumericLiteral constant.numeric.integer.decimal.css
+//             ^ PunctuationDelimiter punctuation.terminator.rule.css
+      left: 50%;
+//    ^^^^ IdentifierType support.type.property-name.css
+//        ^ PunctuationBracket punctuation.separator.key-value.css
+//          ^^ NumericLiteral keyword.other.unit.css
+//            ^ Keyword keyword.other.unit.css
+//             ^ PunctuationDelimiter punctuation.terminator.rule.css
+  }
+//^ PunctuationBracket punctuation.section.property-list.css
+  
+      </style>
+//    ^^ PunctuationBracket punctuation.definition.tag.begin.html
+//      ^^^^^ Identifier entity.name.tag.style.html
+//           ^ PunctuationBracket punctuation.definition.tag.end.html
+      <script>
+//    ^ PunctuationBracket punctuation.definition.tag.begin.html
+//     ^^^^^^ Identifier entity.name.tag.script.html
+//           ^ PunctuationBracket punctuation.definition.tag.end.html
+          function globalFunction(y) {
+//        ^^^^^^^^ Keyword storage.type.function.js
+//                 ^^^^^^^^^^^^^^ IdentifierFunction entity.name.function.js
+//                               ^ PunctuationBracket punctuation.section.group.begin.js
+//                                ^ Identifier variable.parameter.function.js
+//                                 ^ PunctuationBracket punctuation.section.group.end.js
+//                                   ^ PunctuationBracket punctuation.section.block.begin.js
+              console.log(y);
+//            ^^^^^^^ IdentifierType support.type.object.console.js
+//                   ^ PunctuationBracket punctuation.accessor.js
+//                    ^^^ IdentifierFunction support.function.console.js
+//                       ^ PunctuationBracket punctuation.section.group.begin.js
+//                        ^ Identifier variable.other.readwrite.js
+//                         ^ PunctuationBracket punctuation.section.group.end.js
+//                          ^ PunctuationDelimiter punctuation.terminator.statement.js
+          }
+//        ^ PunctuationBracket punctuation.section.block.end.js
+      </script>
+//    ^^ PunctuationBracket punctuation.definition.tag.begin.html
+//      ^^^^^^ Identifier entity.name.tag.script.html
+//            ^ PunctuationBracket punctuation.definition.tag.end.html
+  <div id="main" data-modal-target onclick="function x(y) {console.log(y)}"></div>
+//^ PunctuationBracket punctuation.definition.tag.begin.html
+// ^^^ Identifier entity.name.tag.block.any.html
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier punctuation.definition.tag.end.html
+//     ^^ TagAttribute entity.other.attribute-name.id.html
+//       ^ PunctuationBracket punctuation.separator.key-value.html
+//        ^ StringLiteral string.quoted.double.html
+//         ^^^^^ StringLiteral string.quoted.double.html
+//               ^^^^^^^^^^^^^^^^^ TagAttribute entity.other.attribute-name.html
+//                                 ^^^^^^^ TagAttribute entity.other.attribute-name.event.html
+//                                        ^ PunctuationBracket punctuation.separator.key-value.html
+//                                         ^ StringLiteral string.quoted.double
+//                                          ^^^^^^^^ Keyword storage.type.function.js
+//                                                   ^ IdentifierFunction entity.name.function.js
+//                                                    ^ PunctuationBracket punctuation.section.group.begin.js
+//                                                     ^ Identifier variable.parameter.function.js
+//                                                      ^ PunctuationBracket punctuation.section.group.end.js
+//                                                        ^ PunctuationBracket punctuation.section.block.begin.js
+//                                                         ^^^^^^^ IdentifierType support.type.object.console.js
+//                                                                ^ PunctuationBracket punctuation.accessor.js
+//                                                                 ^^^ IdentifierFunction support.function.console.js
+//                                                                    ^ PunctuationBracket punctuation.section.group.begin.js
+//                                                                     ^ Identifier variable.other.readwrite.js
+//                                                                      ^ PunctuationBracket punctuation.section.group.end.js
+//                                                                       ^ PunctuationBracket punctuation.section.block.end.js
+//                                                                        ^ StringLiteral string.quoted.double
+//                                                                         ^ PunctuationBracket punctuation.definition.tag.end.html
+//                                                                          ^^ PunctuationBracket punctuation.definition.tag.begin.html
+//                                                                            ^^^ Identifier entity.name.tag.block.any.html
+//                                                                               ^ PunctuationBracket punctuation.definition.tag.end.html
+  <script type="module" src="/dist/search.js"></script>
+//^ PunctuationBracket punctuation.definition.tag.begin.html
+// ^^^^^^ Identifier entity.name.tag.script.html
+//       ^^^^^ Identifier meta.tag.script.begin.html
+//        ^^^^ TagAttribute entity.other.attribute-name.html
+//            ^ PunctuationBracket punctuation.separator.key-value.html
+//            ^ Identifier meta.tag.script.begin.html
+//             ^^^^^^^^ StringLiteral string.quoted.double.html
+//             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier punctuation.definition.tag.end.html
+//                      ^^^ TagAttribute entity.other.attribute-name.html
+//                         ^ PunctuationBracket punctuation.separator.key-value.html
+//                          ^^^^^^^^^^^^^^^^^ StringLiteral string.quoted.double.html
+//                                           ^ PunctuationBracket punctuation.definition.tag.end.html
+//                                            ^^ PunctuationBracket punctuation.definition.tag.begin.html
+//                                              ^^^^^^ Identifier entity.name.tag.script.html
+//                                                    ^ PunctuationBracket punctuation.definition.tag.end.html
+  </body>
+//^^ PunctuationBracket punctuation.definition.tag.begin.html
+//  ^^^^ Identifier entity.name.tag.structure.any.html
+//      ^ PunctuationBracket punctuation.definition.tag.end.html
+  </html>
+//^^ PunctuationBracket punctuation.definition.tag.begin.html
+//  ^^^^ Identifier entity.name.tag.structure.any.html
+//      ^ PunctuationBracket punctuation.definition.tag.end.html
+

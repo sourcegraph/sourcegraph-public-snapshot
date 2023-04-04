@@ -293,52 +293,69 @@ func (s GithubSource) MergeChangeset(ctx context.Context, c *Changeset, squash b
 	return c.Changeset.SetMetadata(pr)
 }
 
-// GetNamespaceFork returns a repo pointing to a fork of the given repo in
-// the given namespace, ensuring that the fork exists and is a fork of the
-// target repo.
-func (s GithubSource) GetNamespaceFork(ctx context.Context, targetRepo *types.Repo, namespace string) (*types.Repo, error) {
-	return githubGetUserFork(ctx, targetRepo, s.client, &namespace)
+func (GithubSource) IsPushResponseArchived(s string) bool {
+	return strings.Contains(s, "This repository was archived so it is read-only.")
 }
 
-// GetUserFork returns a repo pointing to a fork of the given repo in the
-// currently authenticated user's namespace.
-func (s GithubSource) GetUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error) {
-	// The implementation is separated here so we can mock the GitHub client.
-	return githubGetUserFork(ctx, targetRepo, s.client, nil)
+func (s GithubSource) GetFork(ctx context.Context, targetRepo *types.Repo, namespace, n *string) (*types.Repo, error) {
+	return getGitHubForkInternal(ctx, targetRepo, s.client, namespace, n)
 }
 
 type githubClientFork interface {
 	Fork(context.Context, string, string, *string, string) (*github.Repository, error)
+	GetRepo(context.Context, string, string) (*github.Repository, error)
 }
 
-func githubGetUserFork(ctx context.Context, targetRepo *types.Repo, client githubClientFork, namespace *string) (*types.Repo, error) {
-	targetMeta, ok := targetRepo.Metadata.(*github.Repository)
-	if !ok || targetMeta == nil {
-		return nil, errors.New("target repo is not a GitHub repo")
+func getGitHubForkInternal(ctx context.Context, targetRepo *types.Repo, client githubClientFork, namespace, n *string) (*types.Repo, error) {
+	if namespace != nil && n != nil {
+		// Even though we can technically use a single call to `client.Fork` to get or
+		// create the fork, it only succeeds if the fork belongs in the currently
+		// authenticated user's namespace or if the fork belongs to an organization
+		// namespace. So in case the PAT we're using has changed since the last time we
+		// tried to get a fork for this repo and it was previously created under a
+		// different user's namespace, we'll first separately check if the fork exists.
+		if fork, err := client.GetRepo(ctx, *namespace, *n); err == nil && fork != nil {
+			return checkAndCopyGitHubRepo(targetRepo, fork)
+		}
 	}
 
-	owner, name, err := github.SplitRepositoryNameWithOwner(targetMeta.NameWithOwner)
+	tr := targetRepo.Metadata.(*github.Repository)
+
+	targetNamespace, targetName, err := github.SplitRepositoryNameWithOwner(tr.NameWithOwner)
 	if err != nil {
-		return nil, errors.New("parsing repo name")
+		return nil, errors.New("getting target repo namespace")
 	}
 
-	forkName := owner + "-" + name
+	var name string
+	if n != nil {
+		name = *n
+	} else {
+		name = DefaultForkName(targetNamespace, targetName)
+	}
 
-	fork, err := client.Fork(ctx, owner, name, namespace, forkName)
+	// `client.Fork` automatically uses the currently authenticated user's namespace if
+	// none is provided.
+	fork, err := client.Fork(ctx, targetNamespace, targetName, namespace, name)
 	if err != nil {
-		return nil, errors.Wrap(err, "forking repository")
+		return nil, errors.Wrap(err, "fetching fork or forking repository")
 	}
 
-	// Now we make a copy of the target repo, but with its sources and metadata updated to
+	return checkAndCopyGitHubRepo(targetRepo, fork)
+}
+
+func checkAndCopyGitHubRepo(targetRepo *types.Repo, fork *github.Repository) (*types.Repo, error) {
+	tr := targetRepo.Metadata.(*github.Repository)
+
+	if !fork.IsFork {
+		return nil, errors.New("repo is not a fork")
+	}
+
+	// Now we make a copy of targetRepo, but with its sources and metadata updated to
 	// point to the fork
-	forkRepo, err := CopyRepoAsFork(targetRepo, fork, targetMeta.NameWithOwner, fork.NameWithOwner)
+	forkRepo, err := CopyRepoAsFork(targetRepo, fork, tr.NameWithOwner, fork.NameWithOwner)
 	if err != nil {
-		return nil, errors.Wrap(err, "updating target repo sources")
+		return nil, errors.Wrap(err, "updating target repo sources and metadata")
 	}
 
 	return forkRepo, nil
-}
-
-func (GithubSource) IsPushResponseArchived(s string) bool {
-	return strings.Contains(s, "This repository was archived so it is read-only.")
 }

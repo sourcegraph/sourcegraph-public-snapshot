@@ -1,0 +1,5 @@
+configure:
+  languages:
+    javascript: true
+    go: true
+    protobuf: true

@@ -1,0 +1,45 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.alert-wrapper {
+    margin-top: 1rem;
+    overflow-y: auto;
+    max-height: 25rem;
+}
+
+.badge-wrapper {
+    min-width: 90px;
+}
+
+.alert-content {
+    white-space: break-spaces;
+}
+
+.cloned {
+    background-color: var(--success) !important;
+    color: var(--white) !important;
+}
+
+.queued {
+    background-color: transparent !important;
+    border: 1px solid var(--text-muted);
+    color: var(--text-muted) !important;
+}
+
+.failed {
+    background-color: var(--warning) !important;
+    color: var(--white) !important;
+}
+
+.error-content {
+    max-width: 600px;
+}
+
+.alert-overflow {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.repo-icon {
+    min-height: 16px;
+    min-width: 16px;
+}

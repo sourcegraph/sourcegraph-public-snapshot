@@ -1,0 +1,1924 @@
+[
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk1NTc5Nzc=",
+    "DatabaseID": 557977,
+    "NameWithOwner": "socketio/socket.io-client",
+    "Description": "Realtime application framework (client)",
+    "URL": "https://github.com/socketio/socket.io-client",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "browser"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "javascript"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "nodejs"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "socket-io"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "websocket"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10098,
+    "ForkCount": 3106
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxMjA1MjYzMA==",
+    "DatabaseID": 12052630,
+    "NameWithOwner": "Zulko/moviepy",
+    "Description": "Video editing with Python",
+    "URL": "https://github.com/Zulko/moviepy",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "python"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "video"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "gif"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "animation"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "video-editing"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "video-processing"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "hacktoberfest"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10091,
+    "ForkCount": 1335
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxMzYyMjE4OQ==",
+    "DatabaseID": 13622189,
+    "NameWithOwner": "tariqbuilds/linux-dash",
+    "Description": "A beautiful web dashboard for Linux",
+    "URL": "https://github.com/tariqbuilds/linux-dash",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "linux"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "dashboard"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "monitoring"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "server"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "web"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "ui"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "linux-dash"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10088,
+    "ForkCount": 1245
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk3MTc4MTU1",
+    "DatabaseID": 7178155,
+    "NameWithOwner": "svgdotjs/svg.js",
+    "Description": "The lightweight library for manipulating and animating SVG",
+    "URL": "https://github.com/svgdotjs/svg.js",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "svg"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "javascript"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "svgjs"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "animation"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10082,
+    "ForkCount": 1062
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkyNDk1Njc3Mg==",
+    "DatabaseID": 24956772,
+    "NameWithOwner": "Hammerspoon/hammerspoon",
+    "Description": "Staggeringly powerful macOS desktop automation with Lua",
+    "URL": "https://github.com/Hammerspoon/hammerspoon",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "macos"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "objective-c"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "lua"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "hammerspoon"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "osx"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "automation"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "mjolnir"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "irc"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10079,
+    "ForkCount": 527
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxNTQzNQ==",
+    "DatabaseID": 15435,
+    "NameWithOwner": "Shopify/liquid",
+    "Description": "Liquid markup language. Safe, customer facing template language for flexible web apps. ",
+    "URL": "https://github.com/Shopify/liquid",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": []
+    },
+    "StargazerCount": 10059,
+    "ForkCount": 1309
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk3OTYxOTkx",
+    "DatabaseID": 7961991,
+    "NameWithOwner": "square/javapoet",
+    "Description": "A Java API for generating .java source files.",
+    "URL": "https://github.com/square/javapoet",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": []
+    },
+    "StargazerCount": 10054,
+    "ForkCount": 1304
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk2NDA1MzQ=",
+    "DatabaseID": 640534,
+    "NameWithOwner": "sympy/sympy",
+    "Description": "A computer algebra system written in pure Python",
+    "URL": "https://github.com/sympy/sympy",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "python"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "math"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "computer-algebra"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "science"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "hacktoberfest"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10052,
+    "ForkCount": 3848
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkyOTA1MDMzOA==",
+    "DatabaseID": 29050338,
+    "NameWithOwner": "mementum/backtrader",
+    "Description": "Python Backtesting library for trading strategies",
+    "URL": "https://github.com/mementum/backtrader",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "python"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "trading"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "backtesting"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "metaclass"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10044,
+    "ForkCount": 3135
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkyODM1MTEx",
+    "DatabaseID": 2835111,
+    "NameWithOwner": "pyinstaller/pyinstaller",
+    "Description": "Freeze (package) Python programs into stand-alone executables",
+    "URL": "https://github.com/pyinstaller/pyinstaller",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "python"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "python-3"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "bundle"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "package"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "pyinstaller"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "python-to-exe"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "py2exe"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "py2app"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10034,
+    "ForkCount": 1857
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxNzE0MTYw",
+    "DatabaseID": 1714160,
+    "NameWithOwner": "NaturalNode/natural",
+    "Description": "general natural language facilities for node",
+    "URL": "https://github.com/NaturalNode/natural",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": []
+    },
+    "StargazerCount": 10029,
+    "ForkCount": 874
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk0MDMwNTc0",
+    "DatabaseID": 4030574,
+    "NameWithOwner": "ksky521/nodeppt",
+    "Description": "This is probably the best web presentation tool so far!",
+    "URL": "https://github.com/ksky521/nodeppt",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "presentation"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "ppt"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "webslide"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "markdown-it"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "posthtml"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "animation"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "slides"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "slideshow"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "keynote"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "markdown"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "html5"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "css3"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "javascript"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "javascript-library"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "webpack"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "html-presentation"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10026,
+    "ForkCount": 2102
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxODY5NjI1Nw==",
+    "DatabaseID": 18696257,
+    "NameWithOwner": "qrohlf/trianglify",
+    "Description": "Algorithmically generated triangle art",
+    "URL": "https://github.com/qrohlf/trianglify",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": []
+    },
+    "StargazerCount": 10021,
+    "ForkCount": 719
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxMDIzMDM2OQ==",
+    "DatabaseID": 10230369,
+    "NameWithOwner": "google/auto",
+    "Description": "A collection of source code generators for Java.",
+    "URL": "https://github.com/google/auto",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": []
+    },
+    "StargazerCount": 10017,
+    "ForkCount": 1180
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkyNjk5OTM1",
+    "DatabaseID": 2699935,
+    "NameWithOwner": "squizlabs/PHP_CodeSniffer",
+    "Description": "PHP_CodeSniffer tokenizes PHP files and detects violations of a defined set of coding standards.",
+    "URL": "https://github.com/squizlabs/PHP_CodeSniffer",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "php"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "coding-standards"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "automation"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "cli"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "qa"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "static-analysis"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10014,
+    "ForkCount": 1504
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkzNTAyMTIw",
+    "DatabaseID": 3502120,
+    "NameWithOwner": "scottjehl/picturefill",
+    "Description": "A responsive image polyfill for \u003cpicture\u003e, srcset, sizes, and more",
+    "URL": "https://github.com/scottjehl/picturefill",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": true,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": []
+    },
+    "StargazerCount": 10008,
+    "ForkCount": 1120
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxNTE5Nzc4MTg=",
+    "DatabaseID": 151977818,
+    "NameWithOwner": "felangel/bloc",
+    "Description": "A predictable state management library that helps implement the BLoC design pattern",
+    "URL": "https://github.com/felangel/bloc",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "flutter"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "dart"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "dartlang"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "flutter-package"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "bloc"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "dart-web"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "dart-library"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "state-management"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "library"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "angulardart"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "concurrency"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10097,
+    "ForkCount": 3110
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxNTk1NDA0NDA=",
+    "DatabaseID": 159540440,
+    "NameWithOwner": "google/wire",
+    "Description": "Compile-time Dependency Injection for Go",
+    "URL": "https://github.com/google/wire",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "go"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "golang"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "dependency-injection"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "codegen"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "initialization"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10008,
+    "ForkCount": 550
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxNzUzOTg1OTQ=",
+    "DatabaseID": 175398594,
+    "NameWithOwner": "sindresorhus/type-fest",
+    "Description": "A collection of essential TypeScript types",
+    "URL": "https://github.com/sindresorhus/type-fest",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "typescript-definitions"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "typescript"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "types"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "utilities"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "npm-package"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10061,
+    "ForkCount": 374
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk4NjEzMjgzMg==",
+    "DatabaseID": 86132832,
+    "NameWithOwner": "learnbyexample/Command-line-text-processing",
+    "Description": ":zap: From finding text to search and replace, from sorting to beautifying text and more :art:",
+    "URL": "https://github.com/learnbyexample/Command-line-text-processing",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": true,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "command-line"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "linux"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "text-processing"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "ebook"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "sed"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "grep"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "perl"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "awk"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "ruby"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "regex"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10055,
+    "ForkCount": 722
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk3MDAzODQzNw==",
+    "DatabaseID": 70038437,
+    "NameWithOwner": "vnotex/vnote",
+    "Description": "A pleasant note-taking platform.",
+    "URL": "https://github.com/vnotex/vnote",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "vnote"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "vim"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "markdown"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "note-taking"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "note"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "editor"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "uml"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "mathjax"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10032,
+    "ForkCount": 1055
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk3NTg5MDk2Mg==",
+    "DatabaseID": 75890962,
+    "NameWithOwner": "bailicangdu/vue2-happyfri",
+    "Description": "vue2 + vue-router + vuex  入门项目",
+    "URL": "https://github.com/bailicangdu/vue2-happyfri",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "vue"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10026,
+    "ForkCount": 2878
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxMDIyMjI5Mjc=",
+    "DatabaseID": 102222927,
+    "NameWithOwner": "hmemcpy/milewski-ctfp-pdf",
+    "Description": "Bartosz Milewski's 'Category Theory for Programmers' unofficial PDF and LaTeX source",
+    "URL": "https://github.com/hmemcpy/milewski-ctfp-pdf",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "haskell"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "category-theory"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "functional-programming"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "pdf"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "latex"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "cpp"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "scala"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "ocaml"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10026,
+    "ForkCount": 527
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxMjY0ODY3MDE=",
+    "DatabaseID": 126486701,
+    "NameWithOwner": "Unity-Technologies/UnityCsReference",
+    "Description": "Unity C# reference source code.",
+    "URL": "https://github.com/Unity-Technologies/UnityCsReference",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": []
+    },
+    "StargazerCount": 10019,
+    "ForkCount": 2243
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxMjE0NzAzODM=",
+    "DatabaseID": 121470383,
+    "NameWithOwner": "solana-labs/solana",
+    "Description": "Web-Scale Blockchain for fast, secure, scalable, decentralized apps and marketplaces.",
+    "URL": "https://github.com/solana-labs/solana",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "ledger"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "blockchain"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "solana"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "performance-blockchain"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "rustc"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "bitcoin"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "rust"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10016,
+    "ForkCount": 2763
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxMjM4MDc3Mjk=",
+    "DatabaseID": 123807729,
+    "NameWithOwner": "jaakkopasanen/AutoEq",
+    "Description": "Automatic headphone equalization from frequency responses",
+    "URL": "https://github.com/jaakkopasanen/AutoEq",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": []
+    },
+    "StargazerCount": 10013,
+    "ForkCount": 2331
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxNDI0MjI3Mzk=",
+    "DatabaseID": 142422739,
+    "NameWithOwner": "google/dopamine",
+    "Description": "Dopamine is a research framework for fast prototyping of reinforcement learning algorithms. ",
+    "URL": "https://github.com/google/dopamine",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "rl"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "ml"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "ai"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "google"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "tensorflow"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10012,
+    "ForkCount": 1340
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkzNjk2MDMyMQ==",
+    "DatabaseID": 36960321,
+    "NameWithOwner": "opencontainers/runc",
+    "Description": "CLI tool for spawning and running containers according to the OCI specification",
+    "URL": "https://github.com/opencontainers/runc",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "containers"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "docker"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "oci"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10007,
+    "ForkCount": 1898
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxNDg4OTI4ODQ=",
+    "DatabaseID": 148892884,
+    "NameWithOwner": "vueComponent/ant-design-vue-pro",
+    "Description": "👨🏻‍💻👩🏻‍💻 Use Ant Design Vue like a Pro!   (vue2)",
+    "URL": "https://github.com/vueComponent/ant-design-vue-pro",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "antd"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "vue"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "vuex"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "admin"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "dashboard"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "css"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "antd-pro"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "ant-design"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "vue-admin"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10006,
+    "ForkCount": 2995
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk0NjYxMTg4OQ==",
+    "DatabaseID": 46611889,
+    "NameWithOwner": "ttroy50/cmake-examples",
+    "Description": "Useful CMake Examples",
+    "URL": "https://github.com/ttroy50/cmake-examples",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "cmake"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "cpp"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "tutorial"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "clang"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "cppcheck"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "static-analysis"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "clang-format"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "unit-testing"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "google-test"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "catch"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "boost"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "cpack"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "ctest"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10000,
+    "ForkCount": 2235
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxOTkzMjg3NTQ=",
+    "DatabaseID": 199328754,
+    "NameWithOwner": "cmiscm/leonsans",
+    "Description": "Leon Sans is a geometric sans-serif typeface made with code in 2019 by Jongmin Kim.",
+    "URL": "https://github.com/cmiscm/leonsans",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": []
+    },
+    "StargazerCount": 10086,
+    "ForkCount": 529
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxODIwMzQ3NDg=",
+    "DatabaseID": 182034748,
+    "NameWithOwner": "MSWorkers/support.996.ICU",
+    "Description": "Microsoft and GitHub Workers Support 996.ICU",
+    "URL": "https://github.com/MSWorkers/support.996.ICU",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": []
+    },
+    "StargazerCount": 10057,
+    "ForkCount": 661
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkzNTE0MzIzOTc=",
+    "DatabaseID": 351432397,
+    "NameWithOwner": "microsoft/Swin-Transformer",
+    "Description": "This is an official implementation for \"Swin Transformer: Hierarchical Vision Transformer using Shifted Windows\".",
+    "URL": "https://github.com/microsoft/Swin-Transformer",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "swin-transformer"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "image-classification"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "object-detection"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "semantic-segmentation"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "imagenet"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "mscoco"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "ade20k"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "mask-rcnn"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10054,
+    "ForkCount": 1671
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxNzk0OTI4NjE=",
+    "DatabaseID": 179492861,
+    "NameWithOwner": "encode/httpx",
+    "Description": "A next generation HTTP client for Python. 🦋",
+    "URL": "https://github.com/encode/httpx",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "python"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "http"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "trio"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "asyncio"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10044,
+    "ForkCount": 663
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkyNTA3NjEyNDY=",
+    "DatabaseID": 250761246,
+    "NameWithOwner": "aristocratos/bashtop",
+    "Description": "Linux/OSX/FreeBSD resource monitor",
+    "URL": "https://github.com/aristocratos/bashtop",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": []
+    },
+    "StargazerCount": 10036,
+    "ForkCount": 531
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkyODM0MTAxMDI=",
+    "DatabaseID": 283410102,
+    "NameWithOwner": "sogou/workflow",
+    "Description": "C++ Parallel Computing and Asynchronous Networking Engine",
+    "URL": "https://github.com/sogou/workflow",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "tasking"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "http"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "redis"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "mysql"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "kafka"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "asychronous"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "embedded"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "parallel"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10026,
+    "ForkCount": 1967
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkyNDMxODE3MzU=",
+    "DatabaseID": 243181735,
+    "NameWithOwner": "amusi/CVPR2022-Papers-with-Code",
+    "Description": "CVPR 2022 论文和开源项目合集",
+    "URL": "https://github.com/amusi/CVPR2022-Papers-with-Code",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "cvpr"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "cvpr2020"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "computer-vision"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "deep-learning"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "machine-learning"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "object-detection"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "image-segmentation"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "paper"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "image-processing"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "visual-tracking"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "python"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "cvpr2021"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "semantic-segmentation"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "cvpr2022"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "transformer"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "transformers"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10021,
+    "ForkCount": 1968
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkyMjcwMTk3MTU=",
+    "DatabaseID": 227019715,
+    "NameWithOwner": "Loyalsoldier/v2ray-rules-dat",
+    "Description": "🦄 🎃 👻 V2Ray 路由规则文件加强版，可代替 V2Ray 官方 geoip.dat 和 geosite.dat，兼容 Shadowsocks-windows、Xray-core、Trojan-Go 和 leaf。Enhanced edition of V2Ray rules dat files, compatible with Xray-core, Shadowsocks-windows, Trojan-Go and leaf.",
+    "URL": "https://github.com/Loyalsoldier/v2ray-rules-dat",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "v2ray"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "geoip"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "geosite"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "routing"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "gfw"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "gfwlist"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "chinalist"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "adblock"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "greatfire-analyzer"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "dnsmasq"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "adguard"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "trojan-go"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "shadowsocks"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "xray"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "anticensorship"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "trojan"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "proxy"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "easylist"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "ssr"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "ss"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10013,
+    "ForkCount": 1069
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkyOTIwMTQyMjk=",
+    "DatabaseID": 292014229,
+    "NameWithOwner": "zellij-org/zellij",
+    "Description": "A terminal workspace with batteries included",
+    "URL": "https://github.com/zellij-org/zellij",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "workspace"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "terminal"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "multiplexer"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "hacktoberfest"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10010,
+    "ForkCount": 307
+   },
+   "Error": ""
+  }
+ ]

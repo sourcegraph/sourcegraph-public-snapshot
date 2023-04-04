@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -25,7 +25,7 @@ func TestQueryExecution_ToRecording(t *testing.T) {
 		exec.SharedRecordings = append(exec.SharedRecordings, bTime.Add(time.Hour*24))
 
 		got := exec.ToRecording("series1", "repoName1", 1, 5.0)
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 
 	t.Run("test to recording without dependents", func(t *testing.T) {
@@ -34,42 +34,48 @@ func TestQueryExecution_ToRecording(t *testing.T) {
 		exec.Revision = "asdf1234"
 
 		got := exec.ToRecording("series1", "repoName1", 1, 5.0)
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 }
 
 func Test_GitserverFilter(t *testing.T) {
 
 	tests := []struct {
+		name              string
 		want              autogold.Value
 		fakeCommitFetcher fakeCommitFetcher
 		times             []time.Time
 	}{
 		{
-			want:              autogold.Want("no compression all times have a distinct commit", `{"Executions":[{"Revision":"1","RecordingTime":"2021-01-01T00:00:00Z","SharedRecordings":null},{"Revision":"2","RecordingTime":"2021-02-01T00:00:00Z","SharedRecordings":null},{"Revision":"3","RecordingTime":"2021-03-01T00:00:00Z","SharedRecordings":null},{"Revision":"4","RecordingTime":"2021-04-01T00:00:00Z","SharedRecordings":null}],"RecordCount":4}`),
+			name:              "no compression all times have a distinct commit",
+			want:              autogold.Expect(`{"Executions":[{"Revision":"1","RecordingTime":"2021-01-01T00:00:00Z","SharedRecordings":null},{"Revision":"2","RecordingTime":"2021-02-01T00:00:00Z","SharedRecordings":null},{"Revision":"3","RecordingTime":"2021-03-01T00:00:00Z","SharedRecordings":null},{"Revision":"4","RecordingTime":"2021-04-01T00:00:00Z","SharedRecordings":null}],"RecordCount":4}`),
 			fakeCommitFetcher: buildFakeFetcher("1", "2", "3", "4"),
 		},
 		{
-			want:              autogold.Want("compress inner values with 2 executions", `{"Executions":[{"Revision":"1","RecordingTime":"2021-01-01T00:00:00Z","SharedRecordings":["2021-02-01T00:00:00Z","2021-03-01T00:00:00Z"]},{"Revision":"2","RecordingTime":"2021-04-01T00:00:00Z","SharedRecordings":null}],"RecordCount":2}`),
+			name:              "compress inner values with 2 executions",
+			want:              autogold.Expect(`{"Executions":[{"Revision":"1","RecordingTime":"2021-01-01T00:00:00Z","SharedRecordings":["2021-02-01T00:00:00Z","2021-03-01T00:00:00Z"]},{"Revision":"2","RecordingTime":"2021-04-01T00:00:00Z","SharedRecordings":null}],"RecordCount":2}`),
 			fakeCommitFetcher: buildFakeFetcher("1", "1", "1", "2"),
 		},
 		{
-			want:              autogold.Want("all values compressed", `{"Executions":[{"Revision":"1","RecordingTime":"2021-01-01T00:00:00Z","SharedRecordings":["2021-02-01T00:00:00Z","2021-03-01T00:00:00Z","2021-04-01T00:00:00Z"]}],"RecordCount":1}`),
+			name:              "all values compressed",
+			want:              autogold.Expect(`{"Executions":[{"Revision":"1","RecordingTime":"2021-01-01T00:00:00Z","SharedRecordings":["2021-02-01T00:00:00Z","2021-03-01T00:00:00Z","2021-04-01T00:00:00Z"]}],"RecordCount":1}`),
 			fakeCommitFetcher: buildFakeFetcher("1", "1", "1", "1"),
 		},
 		{
-			want:              autogold.Want("no compression with one error", `{"Executions":[{"Revision":"1","RecordingTime":"2021-01-01T00:00:00Z","SharedRecordings":null},{"Revision":"2","RecordingTime":"2021-02-01T00:00:00Z","SharedRecordings":null},{"Revision":"","RecordingTime":"2021-03-01T00:00:00Z","SharedRecordings":null},{"Revision":"4","RecordingTime":"2021-04-01T00:00:00Z","SharedRecordings":null}],"RecordCount":4}`),
+			name:              "no compression with one error",
+			want:              autogold.Expect(`{"Executions":[{"Revision":"1","RecordingTime":"2021-01-01T00:00:00Z","SharedRecordings":null},{"Revision":"2","RecordingTime":"2021-02-01T00:00:00Z","SharedRecordings":null},{"Revision":"","RecordingTime":"2021-03-01T00:00:00Z","SharedRecordings":null},{"Revision":"4","RecordingTime":"2021-04-01T00:00:00Z","SharedRecordings":null}],"RecordCount":4}`),
 			fakeCommitFetcher: buildFakeFetcher("1", "2", errors.New("asdf"), "4"),
 		},
 		{
-			want:              autogold.Want("no commits return for any points", `{"Executions":[{"Revision":"","RecordingTime":"2021-01-01T00:00:00Z","SharedRecordings":null},{"Revision":"","RecordingTime":"2021-02-01T00:00:00Z","SharedRecordings":null}],"RecordCount":2}`),
+			name:              "no commits return for any points",
+			want:              autogold.Expect(`{"Executions":[{"Revision":"","RecordingTime":"2021-01-01T00:00:00Z","SharedRecordings":null},{"Revision":"","RecordingTime":"2021-02-01T00:00:00Z","SharedRecordings":null}],"RecordCount":2}`),
 			fakeCommitFetcher: buildFakeFetcher(),
 			times: []time.Time{time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
 				time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)},
 		},
 	}
 	for _, test := range tests {
-		t.Run(test.want.Name(), func(t *testing.T) {
+		t.Run(test.name, func(t *testing.T) {
 			filter := gitserverFilter{commitFetcher: test.fakeCommitFetcher, logger: logtest.Scoped(t)}
 			if test.times == nil {
 				test.times = test.fakeCommitFetcher.toTimes()

@@ -8,27 +8,16 @@ import (
 )
 
 type operations struct {
-	// Configurations
-	getConfigurationPolicies      *observation.Operation
-	getConfigurationPoliciesByID  *observation.Operation
-	createConfigurationPolicy     *observation.Operation
-	updateConfigurationPolicy     *observation.Operation
-	deleteConfigurationPolicyByID *observation.Operation
-
-	// Retention Policy
+	updateConfigurationPolicy  *observation.Operation
 	getRetentionPolicyOverview *observation.Operation
-
-	// Repository
-	getPreviewRepositoryFilter                  *observation.Operation
-	getPreviewGitObjectFilter                   *observation.Operation
-	selectPoliciesForRepositoryMembershipUpdate *observation.Operation
-	updateReposMatchingPatterns                 *observation.Operation
+	getPreviewRepositoryFilter *observation.Operation
+	getPreviewGitObjectFilter  *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
 
 func newOperations(observationCtx *observation.Context) *operations {
-	metrics := m.Get(func() *metrics.REDMetrics {
+	redMetrics := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
 			observationCtx.Registerer,
 			"codeintel_policies",
@@ -41,25 +30,14 @@ func newOperations(observationCtx *observation.Context) *operations {
 		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.policies.%s", name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           redMetrics,
 		})
 	}
 
 	return &operations{
-		// Configurations
-		getConfigurationPolicies:      op("GetConfigurationPolicies"),
-		getConfigurationPoliciesByID:  op("GetConfigurationPoliciesByID"),
-		createConfigurationPolicy:     op("CreateConfigurationPolicy"),
-		updateConfigurationPolicy:     op("UpdateConfigurationPolicy"),
-		deleteConfigurationPolicyByID: op("DeleteConfigurationPolicyByID"),
-
-		// Retention
+		updateConfigurationPolicy:  op("UpdateConfigurationPolicy"),
 		getRetentionPolicyOverview: op("GetRetentionPolicyOverview"),
-
-		// Repository
-		getPreviewRepositoryFilter:                  op("GetPreviewRepositoryFilter"),
-		getPreviewGitObjectFilter:                   op("GetPreviewGitObjectFilter"),
-		selectPoliciesForRepositoryMembershipUpdate: op("SelectPoliciesForRepositoryMembershipUpdate"),
-		updateReposMatchingPatterns:                 op("UpdateReposMatchingPatterns"),
+		getPreviewRepositoryFilter: op("GetPreviewRepositoryFilter"),
+		getPreviewGitObjectFilter:  op("GetPreviewGitObjectFilter"),
 	}
 }

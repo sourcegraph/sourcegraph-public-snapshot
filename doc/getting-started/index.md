@@ -76,11 +76,7 @@ Sourcegraph code search is fast, works across all your repositories at any commi
 - [Search contexts to search across a set of repositories at specific revisions](../code_search/explanations/features.md#search-contexts)
 - [Saved search monitoring](../code_monitoring/index.md)
 
-Read the [code search documentation](../code_search/index.md) to learn more and discover the full feature set. Here are both written and video resources to help you get started:
-- [Search cheat sheet and syntax guide](https://learn.sourcegraph.com/how-to-search-code-with-sourcegraph-a-cheat-sheet)
-- [Literal search examples](https://learn.sourcegraph.com/how-to-search-code-with-sourcegraph-using-literal-patterns)
-- [Regex search examples](https://learn.sourcegraph.com/how-to-search-with-sourcegraph-using-regular-expression-patterns)
-- [Structural search examples](https://learn.sourcegraph.com/how-to-search-with-sourcegraph-using-structural-patterns)
+Read the [code search documentation](../code_search/index.md) to learn more and discover the full feature set. Here's a video to help you get started:
 - [How to Search commits and diffs with Sourcegraph](https://youtu.be/w-RrDz9hyGI)
 
 ---
@@ -126,7 +122,7 @@ _Note: Enterprise Feature_
 
 Automate changes to your codebase. Reduce effort, reduce errors and enable developers to focus on high value work.
 
-Read the [batch changes documentation](../batch_changes/index.md) to learn more, including useful how-to guides. Want a video tutorial? Check out this batch change tutorial](https://www.youtube.com/watch?v=eOmiyXIWTCw)
+Read the [batch changes documentation](../batch_changes/index.md) to learn more, including useful how-to guides. Want a video tutorial? Check out this [batch change tutorial](https://www.youtube.com/watch?v=eOmiyXIWTCw)
 
 ---
 

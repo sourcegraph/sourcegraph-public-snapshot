@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -37,6 +38,10 @@ type batchChangeResolver struct {
 	namespace     graphqlbackend.NamespaceResolver
 	namespaceErr  error
 
+	batchSpecOnce sync.Once
+	batchSpec     *btypes.BatchSpec
+	batchSpecErr  error
+
 	canAdministerOnce sync.Once
 	canAdminister     bool
 	canAdministerErr  error
@@ -44,17 +49,13 @@ type batchChangeResolver struct {
 
 const batchChangeIDKind = "BatchChange"
 
-func marshalBatchChangeID(id int64) graphql.ID {
-	return relay.MarshalID(batchChangeIDKind, id)
-}
-
 func unmarshalBatchChangeID(id graphql.ID) (batchChangeID int64, err error) {
 	err = relay.UnmarshalSpec(id, &batchChangeID)
 	return
 }
 
 func (r *batchChangeResolver) ID() graphql.ID {
-	return marshalBatchChangeID(r.batchChange.ID)
+	return bgql.MarshalBatchChangeID(r.batchChange.ID)
 }
 
 func (r *batchChangeResolver) Name() string {
@@ -69,16 +70,16 @@ func (r *batchChangeResolver) Description() *string {
 }
 
 func (r *batchChangeResolver) State() string {
-	var state btypes.BatchChangeState
+	var batchChangeState btypes.BatchChangeState
 	if r.batchChange.Closed() {
-		state = btypes.BatchChangeStateClosed
+		batchChangeState = btypes.BatchChangeStateClosed
 	} else if r.batchChange.IsDraft() {
-		state = btypes.BatchChangeStateDraft
+		batchChangeState = btypes.BatchChangeStateDraft
 	} else {
-		state = btypes.BatchChangeStateOpen
+		batchChangeState = btypes.BatchChangeStateOpen
 	}
 
-	return state.ToGraphQL()
+	return batchChangeState.ToGraphQL()
 }
 
 func (r *batchChangeResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
@@ -152,6 +153,16 @@ func (r *batchChangeResolver) computeNamespace(ctx context.Context) (graphqlback
 	})
 
 	return r.namespace, r.namespaceErr
+}
+
+func (r *batchChangeResolver) computeBatchSpec(ctx context.Context) (*btypes.BatchSpec, error) {
+	r.batchSpecOnce.Do(func() {
+		r.batchSpec, r.batchSpecErr = r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
+			ID: r.batchChange.BatchSpecID,
+		})
+	})
+
+	return r.batchSpec, r.batchSpecErr
 }
 
 func (r *batchChangeResolver) CreatedAt() gqlutil.DateTime {
@@ -264,17 +275,9 @@ func (r *batchChangeResolver) DiffStat(ctx context.Context) (*graphqlbackend.Dif
 }
 
 func (r *batchChangeResolver) CurrentSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
-	if r.batchChange.BatchSpecID == 0 {
-		return nil, nil
-	}
-
-	batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
-		ID: r.batchChange.BatchSpecID,
-	})
+	batchSpec, err := r.computeBatchSpec(ctx)
 	if err != nil {
-		if err == store.ErrNoResults {
-			return nil, nil
-		}
+		// This spec should always exist, so fail hard on not found errors as well.
 		return nil, err
 	}
 
@@ -331,6 +334,10 @@ func (r *batchChangeResolver) BatchSpecs(
 
 	if args.IncludeLocallyExecutedSpecs != nil {
 		opts.IncludeLocallyExecutedSpecs = *args.IncludeLocallyExecutedSpecs
+	}
+
+	if args.ExcludeEmptySpecs != nil {
+		opts.ExcludeEmptySpecs = *args.ExcludeEmptySpecs
 	}
 
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {

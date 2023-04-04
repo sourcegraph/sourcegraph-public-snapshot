@@ -37,7 +37,7 @@ type ShareLinkModalProps = ModalProps & {
 export const ShareLinkModal: FC<ShareLinkModalProps> = props => {
     const { insight, isOpen, onDismiss, ...attributes } = props
 
-    const shareableUrl = `${window.location.origin}/insights/insight/${insight.id}`
+    const shareableUrl = `${window.location.origin}/insights/${insight.id}`
     const copyButtonReference = useRef<HTMLButtonElement>(null)
     const [copyURL, isCopied] = useCopyURLHandler()
 

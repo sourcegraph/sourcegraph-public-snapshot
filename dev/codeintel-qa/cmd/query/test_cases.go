@@ -10,15 +10,21 @@ type Location struct {
 }
 
 const (
-	repo_etcd  = "github.com/sourcegraph-testing/etcd"
-	repo_tidb  = "github.com/sourcegraph-testing/tidb"
-	repo_titan = "github.com/sourcegraph-testing/titan"
-	repo_zap   = "github.com/sourcegraph-testing/zap"
+	repo_etcd            = "github.com/sourcegraph-testing/etcd"
+	repo_tidb            = "github.com/sourcegraph-testing/tidb"
+	repo_titan           = "github.com/sourcegraph-testing/titan"
+	repo_zap             = "github.com/sourcegraph-testing/zap"
+	repo_nacelle         = "github.com/sourcegraph-testing/nacelle"
+	repo_nacelle_config  = "github.com/sourcegraph-testing/nacelle-config"
+	repo_nacelle_service = "github.com/sourcegraph-testing/nacelle-service"
+	repo_extensions      = "github.com/sourcegraph/code-intel-extensions"
 
 	commit_2aa9fa2 = "2aa9fa25da83bdfff756c36a91442edc9a84576c"
+	commit_4d4864d = "4d4864d3b5b046fe12154f3aae7a86a04690c4ae"
 	commit_9aab491 = "9aab49176993f9dc0ed2fcb9ef7e5125518e8b98"
 	commit_a6015e1 = "a6015e13fab9b744d96085308ce4e8f11bad1996"
 	commit_ad78480 = "ad7848014a051dbe3fcd6a4cff2c7befdd16d5a8"
+	commit_c66e756 = "c66e756d3d68a1e19048c3f7515ba42a7e793767"
 	commit_f8307e3 = "f8307e394c512b4263fc0cd67ccf9fd46f1ad9a5"
 )
 
@@ -36,6 +42,10 @@ const (
 // All the test cases for those repos find definitions and references for
 // the symbol `zap.String`, a global function defined in fields.go in both
 // versions.
+//
+// go-nacelle release tags:
+//  - `v5.0.0` for `nacelle-config at commit `4d4864d`, and
+//  - `v5.0.0` for `nacelle-service` at commit `0652f30`.
 
 var testCases = []struct {
 	Definition Location   // Symbol definition
@@ -1677,6 +1687,112 @@ var testCases = []struct {
 			{Repo: repo_zap, Rev: commit_a6015e1, Path: "zaptest/observer/observer_test.go", Line: 125, Character: 32},
 			{Repo: repo_zap, Rev: commit_a6015e1, Path: "zaptest/observer/observer_test.go", Line: 129, Character: 32},
 			{Repo: repo_zap, Rev: commit_a6015e1, Path: "zaptest/observer/observer_test.go", Line: 170, Character: 34},
+		},
+	},
+	{
+		Definition: Location{
+			Repo:      repo_nacelle_config,
+			Rev:       commit_4d4864d,
+			Path:      "sourcer.go",
+			Line:      6,
+			Character: 5,
+		},
+		References: []Location{
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "config.go", Line: 31, Character: 12},
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "config.go", Line: 37, Character: 23},
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "directory_sourcer.go", Line: 11, Character: 10},
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "directory_sourcer.go", Line: 14, Character: 6},
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "directory_sourcer.go", Line: 19, Character: 107},
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "directory_sourcer.go", Line: 33, Character: 99},
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "directory_sourcer.go", Line: 55, Character: 41},
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "directory_sourcer.go", Line: 72, Character: 15},
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "env_sourcer.go", Line: 13, Character: 6},
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "env_sourcer.go", Line: 23, Character: 34},
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "file_sourcer.go", Line: 20, Character: 6},
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "file_sourcer.go", Line: 33, Character: 98},
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "file_sourcer.go", Line: 47, Character: 90},
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "file_sourcer.go", Line: 113, Character: 41},
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "file_sourcer.go", Line: 118, Character: 41},
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "flag_sourcer.go", Line: 12, Character: 6},
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "flag_sourcer.go", Line: 16, Character: 54},
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "glob_sourcer.go", Line: 6, Character: 89},
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "glob_sourcer.go", Line: 9, Character: 15},
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "multi_sourcer.go", Line: 7, Character: 12},
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "multi_sourcer.go", Line: 11, Character: 6},
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "multi_sourcer.go", Line: 15, Character: 33},
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "multi_sourcer.go", Line: 15, Character: 42},
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "test_env_sourcer.go", Line: 10, Character: 6},
+			{Repo: repo_nacelle_config, Rev: commit_4d4864d, Path: "test_env_sourcer.go", Line: 14, Character: 49},
+		},
+	},
+	{
+		Definition: Location{
+			Repo:      repo_extensions,
+			Rev:       commit_c66e756,
+			Path:      "template/src/util/graphql.ts",
+			Line:      16,
+			Character: 12,
+		},
+		References: []Location{
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/api.ts", Character: 9},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/api.ts", Line: 23, Character: 18},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/definition-hover.test.ts", Line: 5, Character: 9},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/definition-hover.test.ts", Line: 13, Character: 41},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/definition-hover.test.ts", Line: 46, Character: 41},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/definition-hover.test.ts", Line: 68, Character: 41},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/definition-hover.test.ts", Line: 91, Character: 41},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/definition-hover.ts", Line: 4, Character: 41},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/definition-hover.ts", Line: 81, Character: 18},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/implementations.ts", Line: 3, Character: 41},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/implementations.ts", Line: 75, Character: 18},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/implementations.ts", Line: 92, Character: 18},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/locations.ts", Line: 2, Character: 41},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/locations.ts", Line: 43, Character: 18},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/locations.ts", Line: 54, Character: 18},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/providers.test.ts", Line: 5, Character: 9},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/providers.test.ts", Line: 33, Character: 45},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/providers.test.ts", Line: 76, Character: 45},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/providers.test.ts", Line: 113, Character: 45},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/providers.test.ts", Line: 126, Character: 45},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/providers.test.ts", Line: 175, Character: 45},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/providers.test.ts", Line: 205, Character: 45},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/providers.test.ts", Line: 221, Character: 27},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/providers.test.ts", Line: 222, Character: 27},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/providers.test.ts", Line: 224, Character: 45},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/providers.test.ts", Line: 270, Character: 45},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/providers.test.ts", Line: 303, Character: 45},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/providers.test.ts", Line: 334, Character: 45},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/providers.test.ts", Line: 358, Character: 45},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/providers.ts", Line: 7, Character: 41},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/providers.ts", Line: 46, Character: 18},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/providers.ts", Line: 108, Character: 18},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/providers.ts", Line: 152, Character: 18},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/providers.ts", Line: 207, Character: 18},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/providers.ts", Line: 262, Character: 18},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/ranges.test.ts", Line: 5, Character: 9},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/ranges.test.ts", Line: 33, Character: 41},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/ranges.test.ts", Line: 67, Character: 42},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/ranges.test.ts", Line: 78, Character: 42},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/ranges.test.ts", Line: 189, Character: 41},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/ranges.test.ts", Line: 249, Character: 41},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/ranges.ts", Line: 3, Character: 41},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/ranges.ts", Line: 63, Character: 18},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/ranges.ts", Line: 139, Character: 18},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/ranges.ts", Line: 268, Character: 44},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/ranges.ts", Line: 365, Character: 18},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/references.test.ts", Line: 5, Character: 9},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/references.test.ts", Line: 24, Character: 41},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/references.test.ts", Line: 47, Character: 41},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/references.test.ts", Line: 56, Character: 23},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/references.test.ts", Line: 57, Character: 23},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/references.test.ts", Line: 59, Character: 41},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/references.test.ts", Line: 102, Character: 41},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/references.ts", Line: 3, Character: 41},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/references.ts", Line: 75, Character: 18},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/references.ts", Line: 87, Character: 18},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/stencil.ts", Line: 4, Character: 9},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/stencil.ts", Line: 11, Character: 18},
+			{Repo: repo_extensions, Rev: commit_c66e756, Path: "template/src/lsif/stencil.ts", Line: 47, Character: 18},
 		},
 	},
 }

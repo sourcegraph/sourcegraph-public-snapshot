@@ -65,6 +65,7 @@ var (
 		router.Favicon:            {},
 		router.Logout:             {},
 		router.SignUp:             {},
+		router.RequestAccess:      {},
 		router.SiteInit:           {},
 		router.SignIn:             {},
 		router.SignOut:            {},
@@ -79,6 +80,7 @@ var (
 		uirouter.RouteSignUp:             {},
 		uirouter.RoutePasswordReset:      {},
 		uirouter.RoutePingFromSelfHosted: {},
+		uirouter.RouteRequestAccess:      {},
 	}
 	// Some routes return non-standard HTTP responses when a user is not
 	// signed in.
@@ -141,6 +143,11 @@ func AllowAnonymousRequest(req *http.Request) bool {
 
 	// Permission is checked by a shared token
 	if strings.HasPrefix(req.URL.Path, "/.executors") {
+		return true
+	}
+
+	// Permission is checked by a shared token for SCIM
+	if strings.HasPrefix(req.URL.Path, "/.api/scim/v2") {
 		return true
 	}
 

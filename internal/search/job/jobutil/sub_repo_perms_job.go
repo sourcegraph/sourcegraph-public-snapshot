@@ -115,10 +115,11 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 				}
 			}
 		case *result.RepoMatch:
-			// Repo filtering is taking care of by our usual repo filtering logic
+			// Repo filtering is taken care of by our usual repo filtering logic
 			filtered = append(filtered, m)
+			// Owner matches are found after the sub-repo permissions filtering, hence why we don't have
+			// an OwnerMatch case here.
 		}
-
 	}
 
 	if errs == nil {

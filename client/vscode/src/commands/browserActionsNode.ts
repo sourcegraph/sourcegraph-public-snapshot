@@ -2,6 +2,7 @@ import vscode, { env } from 'vscode'
 
 import { getSourcegraphFileUrl, repoInfo } from './git-helpers'
 import { generateSourcegraphBlobLink } from './initialize'
+
 /**
  * Open active file in the browser on the configured Sourcegraph instance.
  */

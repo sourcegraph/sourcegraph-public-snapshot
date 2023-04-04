@@ -142,7 +142,6 @@ func Worker() *monitoring.Dashboard {
 			shared.CodeIntelligence.NewCommitGraphProcessorGroup(containerName),
 			shared.CodeIntelligence.NewDependencyIndexQueueGroup(containerName),
 			shared.CodeIntelligence.NewDependencyIndexProcessorGroup(containerName),
-			shared.CodeIntelligence.NewJanitorGroup(containerName),
 			shared.CodeIntelligence.NewIndexSchedulerGroup(containerName),
 			shared.CodeIntelligence.NewDBStoreGroup(containerName),
 			shared.CodeIntelligence.NewLSIFStoreGroup(containerName),
@@ -158,6 +157,7 @@ func Worker() *monitoring.Dashboard {
 			// This is for the resetter only here, the queue is running in the frontend
 			// through executorqueue.
 			shared.Batches.NewWorkspaceExecutionDBWorkerStoreGroup(containerName),
+			shared.Batches.NewExecutorQueueGroup(),
 
 			// src_codeintel_background_upload_resets_total
 			// src_codeintel_background_upload_reset_failures_total

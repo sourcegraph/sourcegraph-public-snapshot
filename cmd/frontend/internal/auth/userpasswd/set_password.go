@@ -16,17 +16,7 @@ import (
 //
 // If the primary user's email is not verified, a special version of the reset link is
 // emailed that also verifies the email.
-func HandleSetPasswordEmail(ctx context.Context, db database.DB, id int32) (string, error) {
-	email, verified, err := db.UserEmails().GetPrimaryEmail(ctx, id)
-	if err != nil {
-		return "", errors.Wrap(err, "get user primary email")
-	}
-
-	usr, err := db.Users().GetByID(ctx, id)
-	if err != nil {
-		return "", errors.Wrap(err, "get user by ID")
-	}
-
+func HandleSetPasswordEmail(ctx context.Context, db database.DB, id int32, username, email string, emailVerified bool) (string, error) {
 	resetURL, err := backend.MakePasswordResetURL(ctx, db, id)
 	if err == database.ErrPasswordResetRateLimit {
 		return "", err
@@ -37,7 +27,7 @@ func HandleSetPasswordEmail(ctx context.Context, db database.DB, id int32) (stri
 	shareableResetURL := globals.ExternalURL().ResolveReference(resetURL).String()
 	emailedResetURL := shareableResetURL
 
-	if !verified {
+	if !emailVerified {
 		newURL, err := AttachEmailVerificationToPasswordReset(ctx, db.UserEmails(), *resetURL, id, email)
 		if err != nil {
 			return shareableResetURL, errors.Wrap(err, "attach email verification")
@@ -54,8 +44,8 @@ func HandleSetPasswordEmail(ctx context.Context, db database.DB, id int32) (stri
 	if err := txemail.Send(ctx, "password_set", txemail.Message{
 		To:       []string{email},
 		Template: emailTemplate,
-		Data: passwordEmailTemplateData{
-			Username: usr.Username,
+		Data: SetPasswordEmailTemplateData{
+			Username: username,
 			URL:      emailedResetURL,
 			Host:     globals.ExternalURL().Host,
 		},

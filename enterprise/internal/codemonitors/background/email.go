@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -205,19 +205,13 @@ type DisplayResult struct {
 	Content    string
 }
 
-func toDisplayResult(result *result.CommitMatch, externalURL *url.URL) *DisplayResult {
+func toDisplayResult(result *searchresult.CommitMatch, externalURL *url.URL) *DisplayResult {
 	resultType := "Message"
 	if result.DiffPreview != nil {
 		resultType = "Diff"
 	}
 
-	var content string
-	if result.DiffPreview != nil {
-		content = truncateString(result.DiffPreview.Content, 10)
-	} else {
-		content = truncateString(result.MessagePreview.Content, 10)
-	}
-
+	content := truncateMatchContent(result)
 	return &DisplayResult{
 		ResultType: resultType,
 		CommitURL:  getCommitURL(externalURL, string(result.Repo.Name), string(result.Commit.ID), utmSourceEmail),

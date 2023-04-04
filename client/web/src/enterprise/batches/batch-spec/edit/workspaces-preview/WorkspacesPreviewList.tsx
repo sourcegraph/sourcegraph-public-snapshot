@@ -11,6 +11,7 @@ import {
     ShowMoreButton,
 } from '../../../../../components/FilteredConnection/ui'
 import {
+    BatchSpecWorkspacesPreviewResult,
     PreviewHiddenBatchSpecWorkspaceFields,
     PreviewVisibleBatchSpecWorkspaceFields,
 } from '../../../../../graphql-operations'
@@ -21,6 +22,7 @@ import { WorkspacesPreviewListItem } from './WorkspacesPreviewListItem'
 interface WorkspacesPreviewListProps {
     /** The current workspaces preview connection result used to render the list. */
     workspacesConnection: UseShowMorePaginationResult<
+        BatchSpecWorkspacesPreviewResult,
         PreviewHiddenBatchSpecWorkspaceFields | PreviewVisibleBatchSpecWorkspaceFields
     >
     /**

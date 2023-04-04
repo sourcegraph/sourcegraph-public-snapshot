@@ -1,0 +1,26 @@
+# Use repo caching for building and testing.
+# Article: https://buildkite.com/blog/how-bazel-built-its-ci-system-on-top-of-buildkite
+# Docs: https://bazel.build/reference/command-line-reference#flag--repository_cache
+build --repository_cache=/home/buildkite/repocache-sourcegraph
+
+# Use Disk caching for building and testing.
+# Article: https://buildkite.com/blog/how-bazel-built-its-ci-system-on-top-of-buildkite
+# Docs: https://bazel.build/reference/command-line-reference#flag--disk_cache
+build --disk_cache=/home/buildkite/diskcache
+
+# We need /usr/local/bin
+# TODO(DevX) we should be narrower here.
+build --test_env=PATH
+
+# Needed for DB in CI
+build --test_env=PGUSER
+build --test_env=PGSSLMODE
+build --test_env=PGDATABASE
+
+# Allow tests to understand they're running in CI, which forces dbtest to drop database even in case of failures.
+# TODO(JH) we should instead wipe all templates after a job finishes.
+build --test_env=CI
+
+# Ensure we're not exhausting database connections.
+build --test_env=GOMAXPROCS=10
+build --test_env=TESTDB_MAXOPENCONNS=15

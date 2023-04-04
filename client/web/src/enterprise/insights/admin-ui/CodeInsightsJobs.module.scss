@@ -1,0 +1,55 @@
+.root {
+    padding: 1rem;
+}
+
+.header {
+    display: grid;
+    gap: 0.5rem;
+    margin-top: -1rem;
+    padding-top: 1rem;
+    grid-template-columns: minmax(15rem, 30%) auto;
+    grid-template-areas:
+        'actions actions'
+        'filters filters'
+        'orderBy search';
+
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--color-bg-1);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.actions {
+    grid-area: actions;
+}
+
+.status-filter {
+    min-width: 50%;
+    grid-area: filters;
+    justify-self: start;
+}
+
+.order-by {
+    grid-area: orderBy;
+}
+
+.search {
+    grid-area: search;
+}
+
+.insight-jobs {
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.insight-jobs-message {
+    display: flex;
+    align-items: center;
+    color: var(--text-muted);
+    gap: 0.25rem;
+}

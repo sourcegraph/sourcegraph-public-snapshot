@@ -1,0 +1,32 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/users?limit=1
+    method: GET
+  response:
+    body: '{"errors":[{"context":null,"message":"You are not permitted to access this
+      resource","exceptionName":"com.atlassian.bitbucket.AuthorisationException"}]}'
+    headers:
+      Cache-Control:
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Fri, 03 Feb 2023 19:48:28 GMT
+      Server:
+      - Caddy
+      Vary:
+      - x-ausername,x-auserid,cookie,accept-encoding
+      X-Arequestid:
+      - '@ILDZGBx1188x13024884x1'
+      X-Content-Type-Options:
+      - nosniff
+    status: 401 Unauthorized
+    code: 401
+    duration: ""

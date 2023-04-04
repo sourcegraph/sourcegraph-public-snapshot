@@ -28,7 +28,7 @@ type Operations struct {
 }
 
 func NewOperations(observationCtx *observation.Context) *Operations {
-	metrics := metrics.NewREDMetrics(
+	redMetrics := metrics.NewREDMetrics(
 		observationCtx.Registerer,
 		"apiworker_command",
 		metrics.WithLabels("op"),
@@ -39,7 +39,7 @@ func NewOperations(observationCtx *observation.Context) *Operations {
 		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("apiworker.%s", opName),
 			MetricLabelValues: []string{opName},
-			Metrics:           metrics,
+			Metrics:           redMetrics,
 		})
 	}
 
@@ -47,13 +47,17 @@ func NewOperations(observationCtx *observation.Context) *Operations {
 		Name: "src_executor_run_lock_wait_total",
 		Help: "The number of milliseconds spent waiting for the run lock.",
 	})
-	observationCtx.Registerer.MustRegister(runLockWaitTotal)
+	// TODO(sqs): TODO(single-binary): We use IgnoreDuplicate here to allow running 2 executor instances in
+	// the same process, but ideally we shouldn't need IgnoreDuplicate as that is a bit of a hack.
+	runLockWaitTotal = metrics.MustRegisterIgnoreDuplicate(observationCtx.Registerer, runLockWaitTotal)
 
 	runLockHeldTotal := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_executor_run_lock_held_total",
 		Help: "The number of milliseconds spent holding the run lock.",
 	})
-	observationCtx.Registerer.MustRegister(runLockHeldTotal)
+	// TODO(sqs): TODO(single-binary): We use IgnoreDuplicate here to allow running 2 executor instances in
+	// the same process, but ideally we shouldn't need IgnoreDuplicate as that is a bit of a hack.
+	runLockHeldTotal = metrics.MustRegisterIgnoreDuplicate(observationCtx.Registerer, runLockHeldTotal)
 
 	return &Operations{
 		SetupGitInit:                 op("setup.git.init"),

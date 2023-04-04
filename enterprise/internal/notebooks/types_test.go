@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 )
 
 func TestNotebookBlockMarshalling(t *testing.T) {
@@ -19,15 +19,15 @@ func TestNotebookBlockMarshalling(t *testing.T) {
 	}{
 		{
 			block: NotebookBlock{ID: "id1", Type: NotebookQueryBlockType, QueryInput: &queryBlockInput},
-			want:  autogold.Want("marshals query block", `{"id":"id1","type":"query","queryInput":{"text":"repo:a b"}}`),
+			want:  autogold.Expect(`{"id":"id1","type":"query","queryInput":{"text":"repo:a b"}}`),
 		},
 		{
 			block: NotebookBlock{ID: "id1", Type: NotebookMarkdownBlockType, MarkdownInput: &markdownBlockInput},
-			want:  autogold.Want("marshals markdown block", `{"id":"id1","type":"md","markdownInput":{"text":"# Title"}}`),
+			want:  autogold.Expect(`{"id":"id1","type":"md","markdownInput":{"text":"# Title"}}`),
 		},
 		{
 			block: NotebookBlock{ID: "id1", Type: NotebookFileBlockType, FileInput: &fileBlockInput},
-			want:  autogold.Want("marshals file block", `{"id":"id1","type":"file","fileInput":{"repositoryName":"sourcegraph/sourcegraph","filePath":"a/b.ts","revision":"main","lineRange":{"startLine":1,"endLine":10}}}`),
+			want:  autogold.Expect(`{"id":"id1","type":"file","fileInput":{"repositoryName":"sourcegraph/sourcegraph","filePath":"a/b.ts","revision":"main","lineRange":{"startLine":1,"endLine":10}}}`),
 		},
 	}
 
@@ -52,15 +52,15 @@ func TestNotebookBlockUnmarshalling(t *testing.T) {
 	}{
 		{
 			json: `{"id":"id1","type":"query","queryInput":{"text":"repo:a b"}}`,
-			want: autogold.Want("marshals query block", NotebookBlock{ID: "id1", Type: NotebookQueryBlockType, QueryInput: &queryBlockInput}),
+			want: autogold.Expect(NotebookBlock{ID: "id1", Type: NotebookQueryBlockType, QueryInput: &queryBlockInput}),
 		},
 		{
 			json: `{"id":"id1","type":"md","markdownInput":{"text":"# Title"}}`,
-			want: autogold.Want("marshals markdown block", NotebookBlock{ID: "id1", Type: NotebookMarkdownBlockType, MarkdownInput: &markdownBlockInput}),
+			want: autogold.Expect(NotebookBlock{ID: "id1", Type: NotebookMarkdownBlockType, MarkdownInput: &markdownBlockInput}),
 		},
 		{
 			json: `{"id":"id1","type":"file","fileInput":{"repositoryName":"sourcegraph/sourcegraph","filePath":"a/b.ts","revision":"main","lineRange":{"startLine":1,"endLine":10}}}`,
-			want: autogold.Want("marshals file block", NotebookBlock{ID: "id1", Type: NotebookFileBlockType, FileInput: &fileBlockInput}),
+			want: autogold.Expect(NotebookBlock{ID: "id1", Type: NotebookFileBlockType, FileInput: &fileBlockInput}),
 		},
 	}
 

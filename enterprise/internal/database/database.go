@@ -18,6 +18,7 @@ type EnterpriseDB interface {
 	CodeMonitors() CodeMonitorStore
 	Perms() PermsStore
 	SubRepoPerms() SubRepoPermsStore
+	Codeowners() CodeownersStore
 }
 
 func NewEnterpriseDB(db database.DB) EnterpriseDB {
@@ -40,11 +41,15 @@ func (edb *enterpriseDB) CodeMonitors() CodeMonitorStore {
 }
 
 func (edb *enterpriseDB) Perms() PermsStore {
-	return &permsStore{Store: basestore.NewWithHandle(edb.Handle()), clock: time.Now}
+	return &permsStore{Store: basestore.NewWithHandle(edb.Handle()), clock: time.Now, ossDB: edb.DB}
 }
 
 func (edb *enterpriseDB) SubRepoPerms() SubRepoPermsStore {
 	return SubRepoPermsWith(basestore.NewWithHandle(edb.Handle()))
+}
+
+func (edb *enterpriseDB) Codeowners() CodeownersStore {
+	return CodeownersWith(basestore.NewWithHandle(edb.Handle()))
 }
 
 type InsightsDB interface {

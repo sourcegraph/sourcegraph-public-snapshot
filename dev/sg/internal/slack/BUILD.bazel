@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "slack",
+    srcs = ["slack.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/slack",
+    visibility = ["//dev/sg:__subpackages__"],
+    deps = [
+        "//dev/sg/internal/secrets",
+        "//dev/sg/internal/std",
+        "//lib/errors",
+        "@com_github_slack_go_slack//:slack",
+    ],
+)

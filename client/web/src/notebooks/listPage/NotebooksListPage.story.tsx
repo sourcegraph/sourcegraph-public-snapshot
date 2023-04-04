@@ -71,6 +71,7 @@ export const Default: Story = () => (
                 {...props}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 authenticatedUser={null}
+                isSourcegraphApp={false}
                 fetchNotebooks={fetchNotebooks}
             />
         )}

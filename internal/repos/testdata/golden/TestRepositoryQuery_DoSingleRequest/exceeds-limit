@@ -1,0 +1,493 @@
+[
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkyMDExODgxMjI=",
+    "DatabaseID": 201188122,
+    "NameWithOwner": "rocksdanister/lively",
+    "Description": "Free and open-source software that allows users to set animated desktop wallpapers and screensavers powered by WinUI 3.",
+    "URL": "https://github.com/rocksdanister/lively",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "rainmeter"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "desktop"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "wallpaper"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "widgets"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "desktop-wallpaper"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "wallpaper-engine"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "wallpaperengine"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "live-wallpaper"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "windows-app"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "dynamic-wallpaper"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "dynamic-desktop"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "wallpaper-changer"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "wallpaper-app"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "screensavers"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "windows-10"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "csharp"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "wallpapers"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "fluent"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "windows-11"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "winui"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10100,
+    "ForkCount": 816
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxNTQzNQ==",
+    "DatabaseID": 15435,
+    "NameWithOwner": "Shopify/liquid",
+    "Description": "Liquid markup language. Safe, customer facing template language for flexible web apps. ",
+    "URL": "https://github.com/Shopify/liquid",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": []
+    },
+    "StargazerCount": 10098,
+    "ForkCount": 1316
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxMjY0ODY3MDE=",
+    "DatabaseID": 126486701,
+    "NameWithOwner": "Unity-Technologies/UnityCsReference",
+    "Description": "Unity C# reference source code.",
+    "URL": "https://github.com/Unity-Technologies/UnityCsReference",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": []
+    },
+    "StargazerCount": 10094,
+    "ForkCount": 2261
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxMzYyMjE4OQ==",
+    "DatabaseID": 13622189,
+    "NameWithOwner": "tariqbuilds/linux-dash",
+    "Description": "A beautiful web dashboard for Linux",
+    "URL": "https://github.com/tariqbuilds/linux-dash",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "linux"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "dashboard"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "monitoring"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "server"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "web"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "ui"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "linux-dash"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10093,
+    "ForkCount": 1243
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkzNjUyNjM4NDM=",
+    "DatabaseID": 365263843,
+    "NameWithOwner": "denoland/fresh",
+    "Description": "The next-gen web framework.",
+    "URL": "https://github.com/denoland/fresh",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "deno"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "fresh"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "typescript"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "preact"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "javascript"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10093,
+    "ForkCount": 430
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk3OTYxOTkx",
+    "DatabaseID": 7961991,
+    "NameWithOwner": "square/javapoet",
+    "Description": "A Java API for generating .java source files.",
+    "URL": "https://github.com/square/javapoet",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": []
+    },
+    "StargazerCount": 10087,
+    "ForkCount": 1307
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxOTkzMjg3NTQ=",
+    "DatabaseID": 199328754,
+    "NameWithOwner": "cmiscm/leonsans",
+    "Description": "Leon Sans is a geometric sans-serif typeface made with code in 2019 by Jongmin Kim.",
+    "URL": "https://github.com/cmiscm/leonsans",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": []
+    },
+    "StargazerCount": 10085,
+    "ForkCount": 531
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxMjE0NzAzODM=",
+    "DatabaseID": 121470383,
+    "NameWithOwner": "solana-labs/solana",
+    "Description": "Web-Scale Blockchain for fast, secure, scalable, decentralized apps and marketplaces.",
+    "URL": "https://github.com/solana-labs/solana",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "ledger"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "blockchain"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "solana"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "performance-blockchain"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "rustc"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "bitcoin"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "rust"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10081,
+    "ForkCount": 2783
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkyODM1MTEx",
+    "DatabaseID": 2835111,
+    "NameWithOwner": "pyinstaller/pyinstaller",
+    "Description": "Freeze (package) Python programs into stand-alone executables",
+    "URL": "https://github.com/pyinstaller/pyinstaller",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "python"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "python-3"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "bundle"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "package"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "pyinstaller"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "python-to-exe"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "py2exe"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "py2app"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10075,
+    "ForkCount": 1859
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk3MDAzODQzNw==",
+    "DatabaseID": 70038437,
+    "NameWithOwner": "vnotex/vnote",
+    "Description": "A pleasant note-taking platform.",
+    "URL": "https://github.com/vnotex/vnote",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "vnote"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "vim"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "markdown"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "note-taking"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "note"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "editor"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "uml"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "mathjax"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10075,
+    "ForkCount": 1058
+   },
+   "Error": ""
+  }
+ ]

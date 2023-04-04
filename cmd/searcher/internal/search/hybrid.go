@@ -15,7 +15,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -167,9 +166,6 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 	opts := (&zoektutil.Options{
 		NumRepos:       1,
 		FileMatchLimit: int32(p.Limit),
-		Features: search.Features{
-			Ranking: true,
-		},
 	}).ToSearch(ctx)
 	if deadline, ok := ctx.Deadline(); ok {
 		opts.MaxWallTime = time.Until(deadline) - 100*time.Millisecond
@@ -310,14 +306,6 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 	}
 
 	return zoektquery.Simplify(zoektquery.NewAnd(parts...)), nil
-}
-
-func zoektIgnorePaths(paths []string) zoektquery.Q {
-	if len(paths) == 0 {
-		return &zoektquery.Const{Value: true}
-	}
-
-	return &zoektquery.Not{Child: zoektquery.NewFileNameSet(paths...)}
 }
 
 // zoektIndexedCommit returns the default indexed commit for a repository.

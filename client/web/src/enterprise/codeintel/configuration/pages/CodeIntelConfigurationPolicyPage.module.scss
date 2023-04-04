@@ -1,0 +1,26 @@
+.input {
+    width: 50%;
+    margin-bottom: 0;
+}
+
+.toggle-container {
+    font-weight: 400;
+    display: flex;
+    align-items: center;
+}
+
+.toggle {
+    flex-shrink: 0;
+    margin-right: 1rem;
+}
+
+.list {
+    max-height: 15rem;
+    overflow-y: auto;
+}
+
+.loading {
+    align-self: center;
+    justify-self: start;
+    margin: 0 0 0 0.5rem;
+}

@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "typestest",
+    srcs = ["typestest.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/types/typestest",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/extsvc",
+        "//internal/extsvc/awscodecommit",
+        "//internal/extsvc/bitbucketserver",
+        "//internal/extsvc/github",
+        "//internal/extsvc/gitlab",
+        "//internal/extsvc/gitolite",
+        "//internal/timeutil",
+        "//internal/types",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
+    ],
+)

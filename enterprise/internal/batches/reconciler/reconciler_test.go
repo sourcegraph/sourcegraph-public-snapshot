@@ -8,11 +8,10 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	stesting "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/testing"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	bstore "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -31,7 +30,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	store := store.New(db, &observation.TestContext, nil)
+	store := bstore.New(db, &observation.TestContext, nil)
 
 	admin := bt.CreateTestUser(t, db, true)
 
@@ -44,8 +43,8 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	})
 	defer state.Unmock()
 
-	internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
-	defer func() { internalClient = internalapi.Client }()
+	btypes.MockInternalClientExternalURL("https://sourcegraph.test")
+	t.Cleanup(btypes.ResetInternalClient)
 
 	githubPR := buildGithubPR(time.Now(), btypes.ChangesetExternalStateOpen)
 	githubHeadRef := gitdomain.EnsureRefPrefix(githubPR.HeadRefName)
@@ -157,7 +156,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 				sourcer:           sourcer,
 				store:             store,
 			}
-			err := rec.process(ctx, logger, store, changeset)
+			_, err := rec.process(ctx, logger, store, changeset)
 			if err != nil {
 				t.Fatalf("reconciler process failed: %s", err)
 			}

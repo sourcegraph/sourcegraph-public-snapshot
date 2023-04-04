@@ -30,33 +30,6 @@ Foreign-key constraints:
 
 ```
 
-# Table "public.commit_index"
-```
-    Column    |            Type             | Collation | Nullable |      Default      
---------------+-----------------------------+-----------+----------+-------------------
- committed_at | timestamp with time zone    |           | not null | 
- repo_id      | integer                     |           | not null | 
- commit_bytea | bytea                       |           | not null | 
- indexed_at   | timestamp without time zone |           |          | CURRENT_TIMESTAMP
- debug_field  | text                        |           |          | 
-Indexes:
-    "commit_index_pkey" PRIMARY KEY, btree (committed_at, repo_id, commit_bytea)
-    "commit_index_repo_id_idx" btree (repo_id, committed_at)
-
-```
-
-# Table "public.commit_index_metadata"
-```
-     Column      |           Type           | Collation | Nullable |                      Default                       
------------------+--------------------------+-----------+----------+----------------------------------------------------
- repo_id         | integer                  |           | not null | 
- enabled         | boolean                  |           | not null | true
- last_indexed_at | timestamp with time zone |           | not null | '1900-01-01 00:00:00+00'::timestamp with time zone
-Indexes:
-    "commit_index_metadata_pkey" PRIMARY KEY, btree (repo_id)
-
-```
-
 # Table "public.dashboard"
 ```
        Column       |            Type             | Collation | Nullable |                Default                
@@ -137,34 +110,6 @@ Foreign-key constraints:
 
 ```
 
-# Table "public.insight_dirty_queries"
-```
-      Column       |            Type             | Collation | Nullable |                      Default                      
--------------------+-----------------------------+-----------+----------+---------------------------------------------------
- id                | integer                     |           | not null | nextval('insight_dirty_queries_id_seq'::regclass)
- insight_series_id | integer                     |           |          | 
- query             | text                        |           | not null | 
- dirty_at          | timestamp without time zone |           | not null | CURRENT_TIMESTAMP
- reason            | text                        |           | not null | 
- for_time          | timestamp without time zone |           | not null | 
-Indexes:
-    "insight_dirty_queries_pkey" PRIMARY KEY, btree (id)
-    "insight_dirty_queries_insight_series_id_fk_idx" btree (insight_series_id)
-Foreign-key constraints:
-    "insight_dirty_queries_insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE
-
-```
-
-Stores queries that were unsuccessful or otherwise flagged as incomplete or incorrect.
-
-**dirty_at**: Timestamp when this query was marked dirty.
-
-**for_time**: Timestamp for which the original data point was recorded or intended to be recorded.
-
-**query**: Sourcegraph query string that was executed.
-
-**reason**: Human readable string indicating the reason the query was marked dirty.
-
 # Table "public.insight_series"
 ```
             Column             |            Type             | Collation | Nullable |                  Default                   
@@ -198,7 +143,6 @@ Indexes:
     "insight_series_deleted_at_idx" btree (deleted_at)
     "insight_series_next_recording_after_idx" btree (next_recording_after)
 Referenced by:
-    TABLE "insight_dirty_queries" CONSTRAINT "insight_dirty_queries_insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE
     TABLE "insight_series_backfill" CONSTRAINT "insight_series_backfill_series_id_fk" FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE
     TABLE "archived_insight_series_recording_times" CONSTRAINT "insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE
     TABLE "insight_series_recording_times" CONSTRAINT "insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE
@@ -298,6 +242,7 @@ Foreign-key constraints:
  series_sort_mode                  | series_sort_mode_enum      |           |          | 
  series_sort_direction             | series_sort_direction_enum |           |          | 
  series_limit                      | integer                    |           |          | 
+ series_num_samples                | integer                    |           |          | 
 Indexes:
     "insight_view_pkey" PRIMARY KEY, btree (id)
     "insight_view_unique_id_unique_idx" UNIQUE, btree (unique_id)

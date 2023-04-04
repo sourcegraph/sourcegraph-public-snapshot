@@ -1,15 +1,7 @@
 import { proxy } from 'comlink'
 import { castArray, isEqual } from 'lodash'
-import { combineLatest, concat, from, Observable, of, Subscribable, throwError } from 'rxjs'
-import {
-    catchError,
-    debounceTime,
-    defaultIfEmpty,
-    distinctUntilChanged,
-    map,
-    mergeMap,
-    switchMap,
-} from 'rxjs/operators'
+import { combineLatest, concat, Observable, of, Subscribable, throwError } from 'rxjs'
+import { catchError, debounceTime, defaultIfEmpty, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { ProviderResult } from 'sourcegraph'
 
 import {
@@ -36,8 +28,6 @@ import { Context } from '@sourcegraph/template-parser'
 import type {
     ReferenceContext,
     DocumentSelector,
-    NotificationType as LegacyNotificationType,
-    Progress,
     DirectoryViewContext,
     View,
     PanelView,
@@ -49,7 +39,7 @@ import { FlatExtensionHostAPI } from '../contract'
 import { ExtensionViewer, ViewerId, ViewerWithPartialModel } from '../viewerTypes'
 
 import { ExtensionCodeEditor } from './api/codeEditor'
-import { providerResultToObservable, ProxySubscribable, proxySubscribable } from './api/common'
+import { providerResultToObservable, proxySubscribable } from './api/common'
 import { computeContext, ContributionScope } from './api/context/context'
 import {
     evaluateContributions,
@@ -129,29 +119,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
             state.searchContext = context
             state.searchContextChanges.next(context)
         },
-
-        // Search
-        transformSearchQuery: query =>
-            // TODO (simon) I don't enjoy the dark arts below
-            // we return observable because of potential deferred addition of transformers
-            // in this case we need to reissue the transformation and emit the resulting value
-            // we probably won't need an Observable if we somehow coordinate with extensions activation
-            proxySubscribable(
-                state.queryTransformers.pipe(
-                    switchMap(transformers =>
-                        transformers.reduce(
-                            (currentQuery: Observable<string>, transformer) =>
-                                currentQuery.pipe(
-                                    mergeMap(query => {
-                                        const result = transformer.transformQuery(query)
-                                        return result instanceof Promise ? from(result) : of(result)
-                                    })
-                                ),
-                            of(query)
-                        )
-                    )
-                )
-            ),
 
         // Language
         getHover: (textParameters: TextDocumentPositionParameters) => {
@@ -400,10 +367,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                     distinctUntilChanged(isEqual)
                 )
             ),
-
-        // Notifications
-        getPlainNotifications: () => proxySubscribable(state.plainNotifications.asObservable()),
-        getProgressNotifications: () => proxySubscribable(state.progressNotifications.asObservable()),
 
         // Views
         getPanelViews: () =>
@@ -678,59 +641,12 @@ export interface PanelViewData extends Omit<PanelView, 'unsubscribe'> {
     id: string
 }
 
-/**
- * A notification message to display to the user.
- */
-export type ExtensionNotification = PlainNotification | ProgressNotification
-
-interface BaseNotification {
-    /** The message of the notification. */
-    message?: string
-
-    /**
-     * The type of the message.
-     */
-    type: LegacyNotificationType
-
-    /** The source of the notification.  */
-    source?: string
-}
-
-export interface PlainNotification extends BaseNotification {}
-
-export interface ProgressNotification {
-    // Put all base notification properties in a nested object because
-    // ProgressNotifications are proxied, so it's better to clone this
-    // notification object than to wait for all property access promises
-    // to resolve
-    baseNotification: BaseNotification
-
-    /**
-     * Progress updates to show in this notification (progress bar and status messages).
-     * If this Observable errors, the notification will be changed to an error type.
-     */
-    progress: ProxySubscribable<Progress>
-}
-
 export interface ViewProviderResult {
     /** The ID of the view provider. */
     id: string
 
     /** The result returned by the provider. */
     view: View | undefined | ErrorLike
-}
-
-/**
- * The type of a notification.
- * This is needed because if sourcegraph.NotificationType enum values are referenced,
- * the `sourcegraph` module import at the top of the file is emitted in the generated code.
- */
-export const NotificationType: typeof LegacyNotificationType = {
-    Error: 1,
-    Warning: 2,
-    Info: 3,
-    Log: 4,
-    Success: 5,
 }
 
 // Contributions

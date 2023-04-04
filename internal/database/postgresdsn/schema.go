@@ -28,8 +28,8 @@ func DSNsBySchema(schemaNames []string) (map[string]string, error) {
 
 func RawDSNsBySchema(schemaNames []string, getenv func(string) string) map[string]string {
 	username := ""
-	if user, err := user.Current(); err == nil {
-		username = user.Username
+	if currentUser, err := user.Current(); err == nil {
+		username = currentUser.Username
 	}
 
 	dsns := make(map[string]string, len(schemaNames))

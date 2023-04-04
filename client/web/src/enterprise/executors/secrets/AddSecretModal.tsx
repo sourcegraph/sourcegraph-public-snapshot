@@ -89,7 +89,7 @@ export const AddSecretModal: React.FunctionComponent<React.PropsWithChildren<Add
                                 Must be uppercase characters, digits and underscores only. Must start with an uppercase
                                 character.{' '}
                                 <Link
-                                    to="/help/admin/deploy_executors#using-private-registries"
+                                    to="/help/admin/executors/deploy_executors#using-private-registries"
                                     rel="noopener"
                                     target="_blank"
                                 >

@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store/author"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -220,6 +221,11 @@ func (r *batchSpecWorkspaceCreator) process(
 	usedCacheEntries := []int64{}
 	changesetsByWorkspace := make(map[*btypes.BatchSpecWorkspace][]*btypes.ChangesetSpec)
 
+	changesetAuthor, err := author.GetChangesetAuthorForUser(ctx, database.UsersWith(r.logger, r.store), spec.UserID)
+	if err != nil {
+		return err
+	}
+
 	// Check for an existing cache entry for each of the workspaces.
 	for _, workspace := range cacheKeyWorkspaces {
 		for _, ck := range workspace.stepCacheKeys {
@@ -275,7 +281,7 @@ func (r *batchSpecWorkspaceCreator) process(
 
 		workspace.dbWorkspace.CachedResultFound = true
 
-		rawSpecs, err := cache.ChangesetSpecsFromCache(spec.Spec, workspace.repo, *res.Value, workspace.dbWorkspace.Path, true)
+		rawSpecs, err := cache.ChangesetSpecsFromCache(spec.Spec, workspace.repo, *res.Value, workspace.dbWorkspace.Path, true, changesetAuthor)
 		if err != nil {
 			return err
 		}
@@ -346,32 +352,29 @@ func (r *remoteFileMetadataRetriever) Get(steps []batcheslib.Step) ([]cache.Moun
 	var mountsMetadata []cache.MountMetadata
 	for _, step := range steps {
 		for _, stepMount := range step.Mount {
-			metadata, err := getMountMetadata(r.mounts, stepMount.Path)
-			if err != nil {
-				return nil, err
+			dir, file := filepath.Split(stepMount.Path)
+			dir = strings.TrimSuffix(dir, string(filepath.Separator))
+			dir = strings.TrimPrefix(dir, fmt.Sprintf(".%s", string(filepath.Separator)))
+
+			mountPath := filepath.Join(dir, file)
+			var metadata cache.MountMetadata
+			for _, mount := range r.mounts {
+				if filepath.Join(mount.Path, mount.FileName) == mountPath {
+					metadata = cache.MountMetadata{Path: mountPath, Size: mount.Size, Modified: mount.ModifiedAt}
+				}
 			}
-			mountsMetadata = append(mountsMetadata, metadata)
+			if metadata.Path != "" {
+				mountsMetadata = append(mountsMetadata, metadata)
+			} else {
+				// It is probably a directory
+				for _, mount := range r.mounts {
+					mountsMetadata = append(mountsMetadata, cache.MountMetadata{Path: filepath.Join(mount.Path, mount.FileName), Size: mount.Size, Modified: mount.ModifiedAt})
+				}
+			}
+
 		}
 	}
 	return mountsMetadata, nil
-}
-
-func getMountMetadata(mounts []*btypes.BatchSpecWorkspaceFile, path string) (metadata cache.MountMetadata, err error) {
-	dir, file := filepath.Split(path)
-	dir = strings.TrimSuffix(dir, string(filepath.Separator))
-	dir = strings.TrimPrefix(dir, fmt.Sprintf(".%s", string(filepath.Separator)))
-	mountPath := filepath.Join(dir, file)
-
-	for _, mount := range mounts {
-		if filepath.Join(mount.Path, mount.FileName) == mountPath {
-			return cache.MountMetadata{
-				Path:     mountPath,
-				Size:     mount.Size,
-				Modified: mount.ModifiedAt,
-			}, nil
-		}
-	}
-	return metadata, errors.New("could not find a matching mount entry")
 }
 
 func changesetSpecsForImports(ctx context.Context, s *store.Store, importChangesets []batcheslib.ImportChangeset, batchSpecID int64, userID int32) ([]*btypes.ChangesetSpec, error) {

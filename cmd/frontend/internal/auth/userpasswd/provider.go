@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -29,4 +31,8 @@ func (p provider) CachedInfo() *providers.Info {
 	return &providers.Info{
 		DisplayName: "Builtin username-password authentication",
 	}
+}
+
+func (p provider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
+	return nil, errors.Errorf("not an external account, cannot provide external account info")
 }

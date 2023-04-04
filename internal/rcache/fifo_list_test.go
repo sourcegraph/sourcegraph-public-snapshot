@@ -36,6 +36,18 @@ func Test_FIFOList_All_OK(t *testing.T) {
 			inserts: bytes("a1", "a2"),
 			want:    bytes("a2", "a1"),
 		},
+		{
+			key:     "d",
+			size:    0,
+			inserts: bytes("a1", "a2", "a3"),
+			want:    bytes(),
+		},
+		{
+			key:     "f",
+			size:    -1,
+			inserts: bytes("a1", "a2", "a3"),
+			want:    bytes(),
+		},
 	}
 
 	for _, c := range cases {
@@ -102,11 +114,27 @@ func Test_FIFOList_Slice_OK(t *testing.T) {
 			to:      2,
 		},
 		{
+			key:     "d",
+			size:    0,
+			inserts: bytes("a1", "a2", "a3"),
+			want:    bytes(),
+			from:    0,
+			to:      -1,
+		},
+		{
 			key:     "e",
 			size:    3,
 			inserts: bytes("a1", "a2", "a3", "a4", "a5", "a6"),
 			want:    bytes("a4"),
 			from:    2,
+			to:      -1,
+		},
+		{
+			key:     "f",
+			size:    -1,
+			inserts: bytes("a1", "a2", "a3"),
+			want:    bytes(),
+			from:    0,
 			to:      -1,
 		},
 	}
@@ -127,6 +155,41 @@ func Test_FIFOList_Slice_OK(t *testing.T) {
 				t.Errorf("Expected %v, but got %v", _str(c.want...), _str(got...))
 			}
 		})
+	}
+}
+
+func Test_NewFIFOListDynamic(t *testing.T) {
+	maxSize := 3
+	r := NewFIFOListDynamic("a", func() int { return maxSize })
+	for i := 0; i < 10; i++ {
+		err := r.Insert([]byte("a"))
+		if err != nil {
+			t.Errorf("expected no error, got %q", err)
+		}
+	}
+
+	got, err := r.Slice(context.Background(), 0, -1)
+	if err != nil {
+		t.Errorf("expected no error, got %q", err)
+	}
+	if want := bytes("a", "a", "a"); !reflect.DeepEqual(want, got) {
+		t.Errorf("expected %v, but got %v", _str(want...), _str(got...))
+	}
+
+	maxSize = 2
+	for i := 0; i < 10; i++ {
+		err := r.Insert([]byte("b"))
+		if err != nil {
+			t.Errorf("expected no error, got %q", err)
+		}
+	}
+
+	got, err = r.Slice(context.Background(), 0, -1)
+	if err != nil {
+		t.Errorf("expected no error, got %q", err)
+	}
+	if want := bytes("b", "b"); !reflect.DeepEqual(want, got) {
+		t.Errorf("expected %v, but got %v", _str(want...), _str(got...))
 	}
 }
 

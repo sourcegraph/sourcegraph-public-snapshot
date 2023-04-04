@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 )
 
 func TestDatabaseHover(t *testing.T) {
@@ -16,19 +16,8 @@ func TestDatabaseHover(t *testing.T) {
 		path            string
 		line, character int
 		expectedText    string
-		expectedRange   types.Range
+		expectedRange   shared.Range
 	}{
-		{
-			// `\tcontents, err := findContents(pkgs, p, f, obj)`
-			//                     ^^^^^^^^^^^^
-
-			name:     "lsif",
-			uploadID: testLSIFUploadID,
-			path:     "internal/index/indexer.go",
-			line:     628, character: 20,
-			expectedText:  "```go\nfunc findContents(pkgs []*Package, p *Package, f *File, obj Object) ([]MarkedString, error)\n```\n\n---\n\nfindContents returns contents used as hover info for given object.",
-			expectedRange: newRange(628, 18, 628, 30),
-		},
 		{
 			// `export async function queryLSIF<P extends { query: string; uri: string }, R>(`
 			//                        ^^^^^^^^^

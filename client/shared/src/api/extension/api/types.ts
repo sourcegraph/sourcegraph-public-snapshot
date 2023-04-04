@@ -47,7 +47,6 @@ export function fromHover(hover: sourcegraph.Badged<sourcegraph.Hover>): sourceg
     return {
         contents: hover.contents,
         range: fromRange(hover.range),
-        alerts: hover.alerts,
         aggregableBadges: hover.aggregableBadges,
     }
 }

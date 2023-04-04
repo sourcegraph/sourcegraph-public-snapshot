@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-import { useHistory, useLocation } from 'react-router'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 import { getUrlQuery, GetUrlQueryParameters } from '../utils'
 
@@ -20,7 +20,7 @@ export const useShowMorePaginationUrl = ({
     visibleResultCount,
 }: UseShowMorePaginationURLParameters): void => {
     const location = useLocation()
-    const history = useHistory()
+    const navigate = useNavigate()
     const searchFragment = getUrlQuery({
         first,
         visibleResultCount,
@@ -29,10 +29,13 @@ export const useShowMorePaginationUrl = ({
 
     useEffect(() => {
         if (enabled && searchFragment && location.search !== `?${searchFragment}`) {
-            history.replace({
-                search: searchFragment,
-                hash: location.hash,
-            })
+            navigate(
+                {
+                    search: searchFragment,
+                    hash: location.hash,
+                },
+                { replace: true }
+            )
         }
-    }, [enabled, history, location.hash, location.search, searchFragment])
+    }, [enabled, navigate, location.hash, location.search, searchFragment])
 }

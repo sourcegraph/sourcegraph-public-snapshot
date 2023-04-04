@@ -186,6 +186,7 @@ type CountBatchSpecsOpts struct {
 
 	ExcludeCreatedFromRawNotOwnedByUser int32
 	IncludeLocallyExecutedSpecs         bool
+	ExcludeEmptySpecs                   bool
 }
 
 // CountBatchSpecs returns the number of code mods in the database.
@@ -229,6 +230,11 @@ ON
 		preds = append(preds, sqlf.Sprintf("batch_specs.created_from_raw IS TRUE"))
 	}
 
+	if opts.ExcludeEmptySpecs {
+		// An empty batch spec's YAML only contains the name, so we filter to batch specs that have at least one key other than "name"
+		preds = append(preds, sqlf.Sprintf("(EXISTS (SELECT * FROM jsonb_object_keys(batch_specs.spec) AS t (k) WHERE t.k NOT LIKE 'name'))"))
+	}
+
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
@@ -255,10 +261,6 @@ func (s *Store) GetBatchSpec(ctx context.Context, opts GetBatchSpecOpts) (spec *
 		log.String("randID", opts.RandID),
 	}})
 	defer endObservation(1, observation.Args{})
-
-	if opts.ID == 0 && opts.RandID == "" {
-		return nil, errors.New("missing ID or RandID")
-	}
 
 	q := getBatchSpecQuery(&opts)
 
@@ -385,6 +387,7 @@ type ListBatchSpecsOpts struct {
 
 	ExcludeCreatedFromRawNotOwnedByUser int32
 	IncludeLocallyExecutedSpecs         bool
+	ExcludeEmptySpecs                   bool
 }
 
 // ListBatchSpecs lists BatchSpecs with the given filters.
@@ -442,6 +445,11 @@ ON
 
 	if !opts.IncludeLocallyExecutedSpecs {
 		preds = append(preds, sqlf.Sprintf("batch_specs.created_from_raw IS TRUE"))
+	}
+
+	if opts.ExcludeEmptySpecs {
+		// An empty batch spec's YAML only contains the name, so we filter to batch specs that have at least one key other than "name"
+		preds = append(preds, sqlf.Sprintf("(EXISTS (SELECT * FROM jsonb_object_keys(batch_specs.spec) AS t (k) WHERE t.k NOT LIKE 'name'))"))
 	}
 
 	if opts.NewestFirst {

@@ -17,11 +17,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
-
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -32,6 +30,51 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestGetIndexers(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+	ctx := context.Background()
+
+	insertUploads(t, db,
+		shared.Upload{ID: 1, Indexer: "scip-typescript"},
+		shared.Upload{ID: 2, Indexer: "scip-typescript"},
+		shared.Upload{ID: 3, Indexer: "scip-typescript"},
+		shared.Upload{ID: 4, Indexer: "scip-typescript"},
+		shared.Upload{ID: 5, Indexer: "scip-typescript"},
+		shared.Upload{ID: 6, Indexer: "lsif-ocaml", RepositoryID: 51},
+		shared.Upload{ID: 7, Indexer: "lsif-ocaml", RepositoryID: 51},
+		shared.Upload{ID: 8, Indexer: "third-party/scip-python@sha256:deadbeefdeadbeefdeadbeef", RepositoryID: 51},
+	)
+
+	// Global
+	indexers, err := store.GetIndexers(ctx, shared.GetIndexersOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error getting indexers: %s", err)
+	}
+	expectedIndexers := []string{
+		"lsif-ocaml",
+		"scip-typescript",
+		"third-party/scip-python@sha256:deadbeefdeadbeefdeadbeef",
+	}
+	if diff := cmp.Diff(expectedIndexers, indexers); diff != "" {
+		t.Errorf("unexpected indexers (-want +got):\n%s", diff)
+	}
+
+	// Repo-specific
+	indexers, err = store.GetIndexers(ctx, shared.GetIndexersOptions{RepositoryID: 51})
+	if err != nil {
+		t.Fatalf("unexpected error getting indexers: %s", err)
+	}
+	expectedIndexers = []string{
+		"lsif-ocaml",
+		"third-party/scip-python@sha256:deadbeefdeadbeefdeadbeef",
+	}
+	if diff := cmp.Diff(expectedIndexers, indexers); diff != "" {
+		t.Errorf("unexpected indexers (-want +got):\n%s", diff)
+	}
+}
 
 func TestGetUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
@@ -53,33 +96,33 @@ func TestGetUploads(t *testing.T) {
 	failureMessage := "unlucky 333"
 
 	insertUploads(t, db,
-		types.Upload{ID: 1, Commit: makeCommit(3331), UploadedAt: t1, Root: "sub1/", State: "queued"},
-		types.Upload{ID: 2, UploadedAt: t2, FinishedAt: &t1, State: "errored", FailureMessage: &failureMessage, Indexer: "scip-typescript"},
-		types.Upload{ID: 3, Commit: makeCommit(3333), UploadedAt: t3, Root: "sub2/", State: "queued"},
-		types.Upload{ID: 4, UploadedAt: t4, State: "queued", RepositoryID: 51, RepositoryName: "foo bar x"},
-		types.Upload{ID: 5, Commit: makeCommit(3333), UploadedAt: t5, Root: "sub1/", State: "processing", Indexer: "scip-typescript"},
-		types.Upload{ID: 6, UploadedAt: t6, Root: "sub2/", State: "processing", RepositoryID: 52, RepositoryName: "foo bar y"},
-		types.Upload{ID: 7, UploadedAt: t7, FinishedAt: &t4, Root: "sub1/", Indexer: "scip-typescript"},
-		types.Upload{ID: 8, UploadedAt: t8, FinishedAt: &t4, Indexer: "scip-typescript"},
-		types.Upload{ID: 9, UploadedAt: t9, State: "queued"},
-		types.Upload{ID: 10, UploadedAt: t10, FinishedAt: &t6, Root: "sub1/", Indexer: "scip-typescript"},
-		types.Upload{ID: 11, UploadedAt: t11, FinishedAt: &t6, Root: "sub1/", Indexer: "scip-typescript"},
+		shared.Upload{ID: 1, Commit: makeCommit(3331), UploadedAt: t1, Root: "sub1/", State: "queued"},
+		shared.Upload{ID: 2, UploadedAt: t2, FinishedAt: &t1, State: "errored", FailureMessage: &failureMessage, Indexer: "scip-typescript"},
+		shared.Upload{ID: 3, Commit: makeCommit(3333), UploadedAt: t3, Root: "sub2/", State: "queued"},
+		shared.Upload{ID: 4, UploadedAt: t4, State: "queued", RepositoryID: 51, RepositoryName: "foo bar x"},
+		shared.Upload{ID: 5, Commit: makeCommit(3333), UploadedAt: t5, Root: "sub1/", State: "processing", Indexer: "scip-typescript"},
+		shared.Upload{ID: 6, UploadedAt: t6, Root: "sub2/", State: "processing", RepositoryID: 52, RepositoryName: "foo bar y"},
+		shared.Upload{ID: 7, UploadedAt: t7, FinishedAt: &t4, Root: "sub1/", Indexer: "scip-typescript"},
+		shared.Upload{ID: 8, UploadedAt: t8, FinishedAt: &t4, Indexer: "lsif-typescript"},
+		shared.Upload{ID: 9, UploadedAt: t9, State: "queued"},
+		shared.Upload{ID: 10, UploadedAt: t10, FinishedAt: &t6, Root: "sub1/", Indexer: "lsif-ocaml"},
+		shared.Upload{ID: 11, UploadedAt: t11, FinishedAt: &t6, Root: "sub1/", Indexer: "scip-typescript"},
 
 		// Deleted duplicates
-		types.Upload{ID: 12, Commit: makeCommit(3331), UploadedAt: t1, FinishedAt: &t1, Root: "sub1/", State: "deleted"},
-		types.Upload{ID: 13, UploadedAt: t2, FinishedAt: &t1, State: "deleted", FailureMessage: &failureMessage, Indexer: "scip-typescript"},
-		types.Upload{ID: 14, Commit: makeCommit(3333), UploadedAt: t3, FinishedAt: &t2, Root: "sub2/", State: "deleted"},
+		shared.Upload{ID: 12, Commit: makeCommit(3331), UploadedAt: t1, FinishedAt: &t1, Root: "sub1/", State: "deleted"},
+		shared.Upload{ID: 13, UploadedAt: t2, FinishedAt: &t1, State: "deleted", FailureMessage: &failureMessage, Indexer: "scip-typescript"},
+		shared.Upload{ID: 14, Commit: makeCommit(3333), UploadedAt: t3, FinishedAt: &t2, Root: "sub2/", State: "deleted"},
 
 		// deleted repo
-		types.Upload{ID: 15, Commit: makeCommit(3334), UploadedAt: t4, State: "deleted", RepositoryID: 53, RepositoryName: "DELETED-barfoo"},
+		shared.Upload{ID: 15, Commit: makeCommit(3334), UploadedAt: t4, State: "deleted", RepositoryID: 53, RepositoryName: "DELETED-barfoo"},
 
 		// to-be hard deleted
-		types.Upload{ID: 16, Commit: makeCommit(3333), UploadedAt: t4, FinishedAt: &t3, State: "deleted"},
-		types.Upload{ID: 17, Commit: makeCommit(3334), UploadedAt: t4, FinishedAt: &t5, State: "deleting"},
+		shared.Upload{ID: 16, Commit: makeCommit(3333), UploadedAt: t4, FinishedAt: &t3, State: "deleted"},
+		shared.Upload{ID: 17, Commit: makeCommit(3334), UploadedAt: t4, FinishedAt: &t5, State: "deleting"},
 	)
 	insertVisibleAtTip(t, db, 50, 2, 5, 7, 8)
 
-	updateUploads(t, db, types.Upload{
+	updateUploads(t, db, shared.Upload{
 		ID: 17, State: "deleted",
 	})
 
@@ -111,10 +154,12 @@ func TestGetUploads(t *testing.T) {
 	type testCase struct {
 		repositoryID        int
 		state               string
+		states              []string
 		term                string
 		visibleAtTip        bool
 		dependencyOf        int
 		dependentOf         int
+		indexerNames        []string
 		uploadedBefore      *time.Time
 		uploadedAfter       *time.Time
 		inCommitGraph       bool
@@ -128,13 +173,13 @@ func TestGetUploads(t *testing.T) {
 		{oldestFirst: true, expectedIDs: []int{11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1}},
 		{repositoryID: 50, expectedIDs: []int{1, 2, 3, 5, 7, 8, 9, 10, 11}},
 		{state: "completed", expectedIDs: []int{7, 8, 10, 11}},
-		{term: "sub", expectedIDs: []int{1, 3, 5, 6, 7, 10, 11}},     // searches root
-		{term: "003", expectedIDs: []int{1, 3, 5}},                   // searches commits
-		{term: "333", expectedIDs: []int{1, 2, 3, 5}},                // searches commits and failure message
-		{term: "typescript", expectedIDs: []int{2, 5, 7, 8, 10, 11}}, // searches indexer
-		{term: "QuEuEd", expectedIDs: []int{1, 3, 4, 9}},             // searches text status
-		{term: "bAr", expectedIDs: []int{4, 6}},                      // search repo names
-		{state: "failed", expectedIDs: []int{2}},                     // treats errored/failed states equivalently
+		{term: "sub", expectedIDs: []int{1, 3, 5, 6, 7, 10, 11}}, // searches root
+		{term: "003", expectedIDs: []int{1, 3, 5}},               // searches commits
+		{term: "333", expectedIDs: []int{1, 2, 3, 5}},            // searches commits and failure message
+		{term: "typescript", expectedIDs: []int{2, 5, 7, 8, 11}}, // searches indexer
+		{term: "QuEuEd", expectedIDs: []int{1, 3, 4, 9}},         // searches text status
+		{term: "bAr", expectedIDs: []int{4, 6}},                  // search repo names
+		{state: "failed", expectedIDs: []int{2}},                 // treats errored/failed states equivalently
 		{visibleAtTip: true, expectedIDs: []int{2, 5, 7, 8}},
 		{uploadedBefore: &t5, expectedIDs: []int{6, 7, 8, 9, 10, 11}},
 		{uploadedAfter: &t4, expectedIDs: []int{1, 2, 3}},
@@ -147,19 +192,23 @@ func TestGetUploads(t *testing.T) {
 		{dependentOf: 10, expectedIDs: []int{}},
 		{dependencyOf: 11, expectedIDs: []int{8}},
 		{dependentOf: 11, expectedIDs: []int{}},
+		{indexerNames: []string{"typescript", "ocaml"}, expectedIDs: []int{2, 5, 7, 8, 10, 11}}, // search indexer names (only)
 		{allowDeletedRepo: true, state: "deleted", expectedIDs: []int{12, 13, 14, 15}},
 		{allowDeletedRepo: true, state: "deleted", alllowDeletedUpload: true, expectedIDs: []int{12, 13, 14, 15, 16, 17}},
+		{states: []string{"completed", "failed"}, expectedIDs: []int{2, 7, 8, 10, 11}},
 	}
 
 	runTest := func(testCase testCase, lo, hi int) (errors int) {
 		name := fmt.Sprintf(
-			"repositoryID=%d|state='%s'|term='%s'|visibleAtTip=%v|dependencyOf=%d|dependentOf=%d|offset=%d",
+			"repositoryID=%d|state='%s'|states='%s',term='%s'|visibleAtTip=%v|dependencyOf=%d|dependentOf=%d|indexersNames=%v|offset=%d",
 			testCase.repositoryID,
 			testCase.state,
+			strings.Join(testCase.states, ","),
 			testCase.term,
 			testCase.visibleAtTip,
 			testCase.dependencyOf,
 			testCase.dependentOf,
+			testCase.indexerNames,
 			lo,
 		)
 
@@ -167,10 +216,12 @@ func TestGetUploads(t *testing.T) {
 			uploads, totalCount, err := store.GetUploads(ctx, shared.GetUploadsOptions{
 				RepositoryID:       testCase.repositoryID,
 				State:              testCase.state,
+				States:             testCase.states,
 				Term:               testCase.term,
 				VisibleAtTip:       testCase.visibleAtTip,
 				DependencyOf:       testCase.dependencyOf,
 				DependentOf:        testCase.dependentOf,
+				IndexerNames:       testCase.indexerNames,
 				UploadedBefore:     testCase.uploadedBefore,
 				UploadedAfter:      testCase.uploadedAfter,
 				InCommitGraph:      testCase.inCommitGraph,
@@ -252,7 +303,7 @@ func TestGetUploadByID(t *testing.T) {
 
 	uploadedAt := time.Unix(1587396557, 0).UTC()
 	startedAt := uploadedAt.Add(time.Minute)
-	expected := types.Upload{
+	expected := shared.Upload{
 		ID:             1,
 		Commit:         makeCommit(1),
 		Root:           "sub/",
@@ -314,7 +365,7 @@ func TestGetUploadByIDDeleted(t *testing.T) {
 
 	uploadedAt := time.Unix(1587396557, 0).UTC()
 	startedAt := uploadedAt.Add(time.Minute)
-	expected := types.Upload{
+	expected := shared.Upload{
 		ID:             1,
 		Commit:         makeCommit(1),
 		Root:           "sub/",
@@ -356,13 +407,13 @@ func TestGetQueuedUploadRank(t *testing.T) {
 	t7 := t1.Add(+time.Minute * 5)
 
 	insertUploads(t, db,
-		types.Upload{ID: 1, UploadedAt: t1, State: "queued"},
-		types.Upload{ID: 2, UploadedAt: t2, State: "queued"},
-		types.Upload{ID: 3, UploadedAt: t3, State: "queued"},
-		types.Upload{ID: 4, UploadedAt: t4, State: "queued"},
-		types.Upload{ID: 5, UploadedAt: t5, State: "queued"},
-		types.Upload{ID: 6, UploadedAt: t6, State: "processing"},
-		types.Upload{ID: 7, UploadedAt: t1, State: "queued", ProcessAfter: &t7},
+		shared.Upload{ID: 1, UploadedAt: t1, State: "queued"},
+		shared.Upload{ID: 2, UploadedAt: t2, State: "queued"},
+		shared.Upload{ID: 3, UploadedAt: t3, State: "queued"},
+		shared.Upload{ID: 4, UploadedAt: t4, State: "queued"},
+		shared.Upload{ID: 5, UploadedAt: t5, State: "queued"},
+		shared.Upload{ID: 6, UploadedAt: t6, State: "processing"},
+		shared.Upload{ID: 7, UploadedAt: t1, State: "queued", ProcessAfter: &t7},
 	)
 
 	if upload, _, _ := store.GetUploadByID(context.Background(), 1); upload.Rank == nil || *upload.Rank != 1 {
@@ -399,16 +450,16 @@ func TestGetUploadsByIDs(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
-		types.Upload{ID: 1},
-		types.Upload{ID: 2},
-		types.Upload{ID: 3},
-		types.Upload{ID: 4},
-		types.Upload{ID: 5},
-		types.Upload{ID: 6},
-		types.Upload{ID: 7},
-		types.Upload{ID: 8},
-		types.Upload{ID: 9},
-		types.Upload{ID: 10},
+		shared.Upload{ID: 1},
+		shared.Upload{ID: 2},
+		shared.Upload{ID: 3},
+		shared.Upload{ID: 4},
+		shared.Upload{ID: 5},
+		shared.Upload{ID: 6},
+		shared.Upload{ID: 7},
+		shared.Upload{ID: 8},
+		shared.Upload{ID: 9},
+		shared.Upload{ID: 10},
 	)
 
 	t.Run("fetch", func(t *testing.T) {
@@ -451,10 +502,10 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	var uploads []types.Upload
+	var uploads []shared.Upload
 	for i := 0; i < 25; i++ {
 		for j := 0; j < 10+i; j++ {
-			uploads = append(uploads, types.Upload{ID: len(uploads) + 1, RepositoryID: 50 + i})
+			uploads = append(uploads, shared.Upload{ID: len(uploads) + 1, RepositoryID: 50 + i})
 		}
 	}
 	insertUploads(t, db, uploads...)
@@ -476,18 +527,12 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 		}
 	}
 
-	deletedCounts, err := store.DeleteUploadsWithoutRepository(context.Background(), t1)
+	_, count, err := store.DeleteUploadsWithoutRepository(context.Background(), t1)
 	if err != nil {
 		t.Fatalf("unexpected error deleting uploads: %s", err)
 	}
-
-	expected := map[int]int{
-		61: 21,
-		63: 23,
-		65: 25,
-	}
-	if diff := cmp.Diff(expected, deletedCounts); diff != "" {
-		t.Errorf("unexpected deletedCounts (-want +got):\n%s", diff)
+	if expected := 21 + 23 + 25; count != expected {
+		t.Fatalf("unexpected count. want=%d have=%d", expected, count)
 	}
 
 	var uploadIDs []int
@@ -506,13 +551,8 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 			}
 		}
 
-		expected := 0
-		for _, deletedCount := range deletedCounts {
-			expected += deletedCount
-		}
-
-		if deletedStates != expected {
-			t.Errorf("unexpected number of deleted records. want=%d have=%d", expected, deletedStates)
+		if deletedStates != count {
+			t.Errorf("unexpected number of deleted records. want=%d have=%d", count, deletedStates)
 		}
 	}
 }
@@ -537,7 +577,7 @@ func TestRecentUploadsSummary(t *testing.T) {
 	r1 := 1
 	r2 := 2
 
-	addDefaults := func(upload types.Upload) types.Upload {
+	addDefaults := func(upload shared.Upload) shared.Upload {
 		upload.Commit = makeCommit(upload.ID)
 		upload.RepositoryID = 50
 		upload.RepositoryName = "n-50"
@@ -546,17 +586,17 @@ func TestRecentUploadsSummary(t *testing.T) {
 		return upload
 	}
 
-	uploads := []types.Upload{
-		addDefaults(types.Upload{ID: 150, UploadedAt: t0, Root: "r1", Indexer: "i1", State: "queued", Rank: &r2}), // visible (group 1)
-		addDefaults(types.Upload{ID: 151, UploadedAt: t1, Root: "r1", Indexer: "i1", State: "queued", Rank: &r1}), // visible (group 1)
-		addDefaults(types.Upload{ID: 152, FinishedAt: &t2, Root: "r1", Indexer: "i1", State: "errored"}),          // visible (group 1)
-		addDefaults(types.Upload{ID: 153, FinishedAt: &t3, Root: "r1", Indexer: "i2", State: "completed"}),        // visible (group 2)
-		addDefaults(types.Upload{ID: 154, FinishedAt: &t4, Root: "r2", Indexer: "i1", State: "completed"}),        // visible (group 3)
-		addDefaults(types.Upload{ID: 155, FinishedAt: &t5, Root: "r2", Indexer: "i1", State: "errored"}),          // shadowed
-		addDefaults(types.Upload{ID: 156, FinishedAt: &t6, Root: "r2", Indexer: "i2", State: "completed"}),        // visible (group 4)
-		addDefaults(types.Upload{ID: 157, FinishedAt: &t7, Root: "r2", Indexer: "i2", State: "errored"}),          // shadowed
-		addDefaults(types.Upload{ID: 158, FinishedAt: &t8, Root: "r2", Indexer: "i2", State: "errored"}),          // shadowed
-		addDefaults(types.Upload{ID: 159, FinishedAt: &t9, Root: "r2", Indexer: "i2", State: "errored"}),          // shadowed
+	uploads := []shared.Upload{
+		addDefaults(shared.Upload{ID: 150, UploadedAt: t0, Root: "r1", Indexer: "i1", State: "queued", Rank: &r2}), // visible (group 1)
+		addDefaults(shared.Upload{ID: 151, UploadedAt: t1, Root: "r1", Indexer: "i1", State: "queued", Rank: &r1}), // visible (group 1)
+		addDefaults(shared.Upload{ID: 152, FinishedAt: &t2, Root: "r1", Indexer: "i1", State: "errored"}),          // visible (group 1)
+		addDefaults(shared.Upload{ID: 153, FinishedAt: &t3, Root: "r1", Indexer: "i2", State: "completed"}),        // visible (group 2)
+		addDefaults(shared.Upload{ID: 154, FinishedAt: &t4, Root: "r2", Indexer: "i1", State: "completed"}),        // visible (group 3)
+		addDefaults(shared.Upload{ID: 155, FinishedAt: &t5, Root: "r2", Indexer: "i1", State: "errored"}),          // shadowed
+		addDefaults(shared.Upload{ID: 156, FinishedAt: &t6, Root: "r2", Indexer: "i2", State: "completed"}),        // visible (group 4)
+		addDefaults(shared.Upload{ID: 157, FinishedAt: &t7, Root: "r2", Indexer: "i2", State: "errored"}),          // shadowed
+		addDefaults(shared.Upload{ID: 158, FinishedAt: &t8, Root: "r2", Indexer: "i2", State: "errored"}),          // shadowed
+		addDefaults(shared.Upload{ID: 159, FinishedAt: &t9, Root: "r2", Indexer: "i2", State: "errored"}),          // shadowed
 	}
 	insertUploads(t, db, uploads...)
 
@@ -566,10 +606,10 @@ func TestRecentUploadsSummary(t *testing.T) {
 	}
 
 	expected := []shared.UploadsWithRepositoryNamespace{
-		{Root: "r1", Indexer: "i1", Uploads: []types.Upload{uploads[0], uploads[1], uploads[2]}},
-		{Root: "r1", Indexer: "i2", Uploads: []types.Upload{uploads[3]}},
-		{Root: "r2", Indexer: "i1", Uploads: []types.Upload{uploads[4]}},
-		{Root: "r2", Indexer: "i2", Uploads: []types.Upload{uploads[6]}},
+		{Root: "r1", Indexer: "i1", Uploads: []shared.Upload{uploads[0], uploads[1], uploads[2]}},
+		{Root: "r1", Indexer: "i2", Uploads: []shared.Upload{uploads[3]}},
+		{Root: "r2", Indexer: "i1", Uploads: []shared.Upload{uploads[4]}},
+		{Root: "r2", Indexer: "i2", Uploads: []shared.Upload{uploads[6]}},
 	}
 	if diff := cmp.Diff(expected, summary); diff != "" {
 		t.Errorf("unexpected upload summary (-want +got):\n%s", diff)
@@ -588,14 +628,14 @@ func TestDeleteUploadsStuckUploading(t *testing.T) {
 	t5 := t1.Add(time.Minute * 4)
 
 	insertUploads(t, db,
-		types.Upload{ID: 1, Commit: makeCommit(1111), UploadedAt: t1, State: "queued"},    // not uploading
-		types.Upload{ID: 2, Commit: makeCommit(1112), UploadedAt: t2, State: "uploading"}, // deleted
-		types.Upload{ID: 3, Commit: makeCommit(1113), UploadedAt: t3, State: "uploading"}, // deleted
-		types.Upload{ID: 4, Commit: makeCommit(1114), UploadedAt: t4, State: "completed"}, // old, not uploading
-		types.Upload{ID: 5, Commit: makeCommit(1115), UploadedAt: t5, State: "uploading"}, // old
+		shared.Upload{ID: 1, Commit: makeCommit(1111), UploadedAt: t1, State: "queued"},    // not uploading
+		shared.Upload{ID: 2, Commit: makeCommit(1112), UploadedAt: t2, State: "uploading"}, // deleted
+		shared.Upload{ID: 3, Commit: makeCommit(1113), UploadedAt: t3, State: "uploading"}, // deleted
+		shared.Upload{ID: 4, Commit: makeCommit(1114), UploadedAt: t4, State: "completed"}, // old, not uploading
+		shared.Upload{ID: 5, Commit: makeCommit(1115), UploadedAt: t5, State: "uploading"}, // old
 	)
 
-	count, err := store.DeleteUploadsStuckUploading(context.Background(), t1.Add(time.Minute*3))
+	_, count, err := store.DeleteUploadsStuckUploading(context.Background(), t1.Add(time.Minute*3))
 	if err != nil {
 		t.Fatalf("unexpected error deleting uploads stuck uploading: %s", err)
 	}
@@ -636,15 +676,15 @@ func TestDeleteUploads(t *testing.T) {
 	t5 := t1.Add(time.Minute * 4)
 
 	insertUploads(t, db,
-		types.Upload{ID: 1, Commit: makeCommit(1111), UploadedAt: t1, State: "queued"},    // will not be deleted
-		types.Upload{ID: 2, Commit: makeCommit(1112), UploadedAt: t2, State: "uploading"}, // will be deleted
-		types.Upload{ID: 3, Commit: makeCommit(1113), UploadedAt: t3, State: "uploading"}, // will be deleted
-		types.Upload{ID: 4, Commit: makeCommit(1114), UploadedAt: t4, State: "completed"}, // will not be deleted
-		types.Upload{ID: 5, Commit: makeCommit(1115), UploadedAt: t5, State: "uploading"}, // will be deleted
+		shared.Upload{ID: 1, Commit: makeCommit(1111), UploadedAt: t1, State: "queued"},    // will not be deleted
+		shared.Upload{ID: 2, Commit: makeCommit(1112), UploadedAt: t2, State: "uploading"}, // will be deleted
+		shared.Upload{ID: 3, Commit: makeCommit(1113), UploadedAt: t3, State: "uploading"}, // will be deleted
+		shared.Upload{ID: 4, Commit: makeCommit(1114), UploadedAt: t4, State: "completed"}, // will not be deleted
+		shared.Upload{ID: 5, Commit: makeCommit(1115), UploadedAt: t5, State: "uploading"}, // will be deleted
 	)
 
 	err := store.DeleteUploads(context.Background(), shared.DeleteUploadsOptions{
-		State:        "uploading",
+		States:       []string{"uploading"},
 		Term:         "",
 		VisibleAtTip: false,
 	})
@@ -673,16 +713,57 @@ func TestDeleteUploads(t *testing.T) {
 	}
 }
 
+func TestDeleteUploadsWithIndexerKey(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	// note: queued so we delete, not go to deleting state first (makes assertion simpler)
+	insertUploads(t, db, shared.Upload{ID: 1, State: "queued", Indexer: "sourcegraph/scip-go@sha256:123456"})
+	insertUploads(t, db, shared.Upload{ID: 2, State: "queued", Indexer: "sourcegraph/scip-go"})
+	insertUploads(t, db, shared.Upload{ID: 3, State: "queued", Indexer: "sourcegraph/scip-typescript"})
+	insertUploads(t, db, shared.Upload{ID: 4, State: "queued", Indexer: "sourcegraph/scip-typescript"})
+
+	err := store.DeleteUploads(context.Background(), shared.DeleteUploadsOptions{
+		IndexerNames: []string{"scip-go"},
+		Term:         "",
+		VisibleAtTip: false,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error deleting uploads: %s", err)
+	}
+
+	uploads, totalCount, err := store.GetUploads(context.Background(), shared.GetUploadsOptions{Limit: 5})
+	if err != nil {
+		t.Fatalf("unexpected error getting uploads: %s", err)
+	}
+
+	var ids []int
+	for _, upload := range uploads {
+		ids = append(ids, upload.ID)
+	}
+	sort.Ints(ids)
+
+	expectedIDs := []int{3, 4}
+
+	if totalCount != len(expectedIDs) {
+		t.Errorf("unexpected total count. want=%d have=%d", len(expectedIDs), totalCount)
+	}
+	if diff := cmp.Diff(expectedIDs, ids); diff != "" {
+		t.Errorf("unexpected upload ids (-want +got):\n%s", diff)
+	}
+}
+
 func TestHardDeleteUploadsByIDs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
-		types.Upload{ID: 51, State: "deleting"},
-		types.Upload{ID: 52, State: "completed"},
-		types.Upload{ID: 53, State: "queued"},
-		types.Upload{ID: 54, State: "completed"},
+		shared.Upload{ID: 51, State: "deleting"},
+		shared.Upload{ID: 52, State: "completed"},
+		shared.Upload{ID: 53, State: "queued"},
+		shared.Upload{ID: 54, State: "completed"},
 	)
 
 	if err := store.HardDeleteUploadsByIDs(context.Background(), 51); err != nil {
@@ -709,19 +790,19 @@ func TestSourcedCommitsWithoutCommittedAt(t *testing.T) {
 	now := time.Unix(1587396557, 0).UTC()
 
 	insertUploads(t, db,
-		types.Upload{ID: 1, RepositoryID: 50, Commit: makeCommit(1), State: "completed"},
-		types.Upload{ID: 2, RepositoryID: 50, Commit: makeCommit(1), State: "completed", Root: "sub/"},
-		types.Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4), State: "completed"},
-		types.Upload{ID: 4, RepositoryID: 51, Commit: makeCommit(5), State: "completed"},
-		types.Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7), State: "completed"},
-		types.Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(8), State: "completed"},
+		shared.Upload{ID: 1, RepositoryID: 50, Commit: makeCommit(1), State: "completed"},
+		shared.Upload{ID: 2, RepositoryID: 50, Commit: makeCommit(1), State: "completed", Root: "sub/"},
+		shared.Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4), State: "completed"},
+		shared.Upload{ID: 4, RepositoryID: 51, Commit: makeCommit(5), State: "completed"},
+		shared.Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7), State: "completed"},
+		shared.Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(8), State: "completed"},
 	)
 
 	sourcedCommits, err := store.SourcedCommitsWithoutCommittedAt(context.Background(), 5)
 	if err != nil {
 		t.Fatalf("unexpected error getting stale sourced commits: %s", err)
 	}
-	expectedCommits := []shared.SourcedCommits{
+	expectedCommits := []SourcedCommits{
 		{RepositoryID: 50, RepositoryName: "n-50", Commits: []string{makeCommit(1)}},
 		{RepositoryID: 51, RepositoryName: "n-51", Commits: []string{makeCommit(4), makeCommit(5)}},
 		{RepositoryID: 52, RepositoryName: "n-52", Commits: []string{makeCommit(7), makeCommit(8)}},
@@ -742,7 +823,7 @@ func TestSourcedCommitsWithoutCommittedAt(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error getting stale sourced commits: %s", err)
 	}
-	expectedCommits = []shared.SourcedCommits{
+	expectedCommits = []SourcedCommits{
 		{RepositoryID: 51, RepositoryName: "n-51", Commits: []string{makeCommit(5)}},
 		{RepositoryID: 52, RepositoryName: "n-52", Commits: []string{makeCommit(7), makeCommit(8)}},
 	}
@@ -757,13 +838,13 @@ func TestSoftDeleteExpiredUploads(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
-		types.Upload{ID: 50, RepositoryID: 100, State: "completed"},
-		types.Upload{ID: 51, RepositoryID: 101, State: "completed"},
-		types.Upload{ID: 52, RepositoryID: 102, State: "completed"},
-		types.Upload{ID: 53, RepositoryID: 102, State: "completed"}, // referenced by 51, 52, 54, 55, 56
-		types.Upload{ID: 54, RepositoryID: 103, State: "completed"}, // referenced by 52
-		types.Upload{ID: 55, RepositoryID: 103, State: "completed"}, // referenced by 51
-		types.Upload{ID: 56, RepositoryID: 103, State: "completed"}, // referenced by 52, 53
+		shared.Upload{ID: 50, RepositoryID: 100, State: "completed"},
+		shared.Upload{ID: 51, RepositoryID: 101, State: "completed"},
+		shared.Upload{ID: 52, RepositoryID: 102, State: "completed"},
+		shared.Upload{ID: 53, RepositoryID: 102, State: "completed"}, // referenced by 51, 52, 54, 55, 56
+		shared.Upload{ID: 54, RepositoryID: 103, State: "completed"}, // referenced by 52
+		shared.Upload{ID: 55, RepositoryID: 103, State: "completed"}, // referenced by 51
+		shared.Upload{ID: 56, RepositoryID: 103, State: "completed"}, // referenced by 52, 53
 	)
 	insertPackages(t, store, []shared.Package{
 		{DumpID: 53, Scheme: "test", Name: "p1", Version: "1.2.3"},
@@ -791,7 +872,7 @@ func TestSoftDeleteExpiredUploads(t *testing.T) {
 		t.Fatalf("unexpected error marking uploads as expired: %s", err)
 	}
 
-	if count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
+	if _, count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 2 {
 		t.Fatalf("unexpected number of uploads deleted: want=%d have=%d", 2, count)
@@ -814,14 +895,14 @@ func TestSoftDeleteExpiredUploads(t *testing.T) {
 	}
 
 	// Ensure repository was marked as dirty
-	repositoryIDs, err := store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
 	}
 
 	var keys []int
-	for repositoryID := range repositoryIDs {
-		keys = append(keys, repositoryID)
+	for _, dirtyRepository := range dirtyRepositories {
+		keys = append(keys, dirtyRepository.RepositoryID)
 	}
 	sort.Ints(keys)
 
@@ -853,17 +934,17 @@ func TestSoftDeleteExpiredUploadsViaTraversal(t *testing.T) {
 	// and each upload is _reachable_ from a non-expired upload.
 
 	insertUploads(t, db,
-		types.Upload{ID: 100, RepositoryID: 50, State: "completed"}, // Referenced by 104
-		types.Upload{ID: 101, RepositoryID: 51, State: "completed"}, // Referenced by 100, 104
-		types.Upload{ID: 102, RepositoryID: 52, State: "completed"}, // Referenced by 101
-		types.Upload{ID: 103, RepositoryID: 53, State: "completed"}, // Referenced by 102
-		types.Upload{ID: 104, RepositoryID: 54, State: "completed"}, // Referenced by 103, 105
-		types.Upload{ID: 105, RepositoryID: 55, State: "completed"}, // Referenced by 106
-		types.Upload{ID: 106, RepositoryID: 56, State: "completed"}, // Referenced by 105
+		shared.Upload{ID: 100, RepositoryID: 50, State: "completed"}, // Referenced by 104
+		shared.Upload{ID: 101, RepositoryID: 51, State: "completed"}, // Referenced by 100, 104
+		shared.Upload{ID: 102, RepositoryID: 52, State: "completed"}, // Referenced by 101
+		shared.Upload{ID: 103, RepositoryID: 53, State: "completed"}, // Referenced by 102
+		shared.Upload{ID: 104, RepositoryID: 54, State: "completed"}, // Referenced by 103, 105
+		shared.Upload{ID: 105, RepositoryID: 55, State: "completed"}, // Referenced by 106
+		shared.Upload{ID: 106, RepositoryID: 56, State: "completed"}, // Referenced by 105
 
 		// Another component
-		types.Upload{ID: 107, RepositoryID: 57, State: "completed"}, // Referenced by 108
-		types.Upload{ID: 108, RepositoryID: 58, State: "completed"}, // Referenced by 107
+		shared.Upload{ID: 107, RepositoryID: 57, State: "completed"}, // Referenced by 108
+		shared.Upload{ID: 108, RepositoryID: 58, State: "completed"}, // Referenced by 107
 	)
 	insertPackages(t, store, []shared.Package{
 		{DumpID: 100, Scheme: "test", Name: "p1", Version: "1.2.3"},
@@ -902,20 +983,20 @@ func TestSoftDeleteExpiredUploadsViaTraversal(t *testing.T) {
 	if err := store.UpdateUploadRetention(context.Background(), []int{}, []int{100, 101, 102, 103, 104, 106, 107}); err != nil {
 		t.Fatalf("unexpected error marking uploads as expired: %s", err)
 	}
-	if count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
+	if _, count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 0 {
 		t.Fatalf("unexpected number of uploads deleted via refcount: want=%d have=%d", 0, count)
 	}
 	for i := 0; i < 9; i++ {
 		// Initially null last_traversal_scan_at values; run once for each upload (overkill)
-		if count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
+		if _, count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
 			t.Fatalf("unexpected error soft deleting uploads: %s", err)
 		} else if count != 0 {
 			t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 0, count)
 		}
 	}
-	if count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
+	if _, count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 0 {
 		t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 0, count)
@@ -929,19 +1010,19 @@ func TestSoftDeleteExpiredUploadsViaTraversal(t *testing.T) {
 	if _, err := db.ExecContext(context.Background(), "UPDATE lsif_uploads SET last_traversal_scan_at = NULL"); err != nil {
 		t.Fatalf("unexpected error clearing last_traversal_scan_at: %s", err)
 	}
-	if count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
+	if _, count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 0 {
 		t.Fatalf("unexpected number of uploads deleted via refcount: want=%d have=%d", 0, count)
 	}
 	// First connected component (rooted with upload 100)
-	if count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
+	if _, count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 7 {
 		t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 7, count)
 	}
 	// Second connected component (rooted with upload 107)
-	if count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
+	if _, count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 0 {
 		t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 0, count)
@@ -966,14 +1047,14 @@ func TestSoftDeleteExpiredUploadsViaTraversal(t *testing.T) {
 	}
 
 	// Ensure repository was marked as dirty
-	repositoryIDs, err := store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
 	}
 
 	var keys []int
-	for repositoryID := range repositoryIDs {
-		keys = append(keys, repositoryID)
+	for _, dirtyRepository := range dirtyRepositories {
+		keys = append(keys, dirtyRepository.RepositoryID)
 	}
 	sort.Ints(keys)
 
@@ -986,12 +1067,12 @@ func TestSoftDeleteExpiredUploadsViaTraversal(t *testing.T) {
 	if err := store.UpdateUploadRetention(context.Background(), []int{}, []int{107, 108}); err != nil {
 		t.Fatalf("unexpected error marking uploads as expired: %s", err)
 	}
-	if count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
+	if _, count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 0 {
 		t.Fatalf("unexpected number of uploads deleted via refcount: want=%d have=%d", 0, count)
 	}
-	if count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
+	if _, count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 2 {
 		t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 2, count)
@@ -1015,7 +1096,7 @@ func TestDeleteUploadByID(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
-		types.Upload{ID: 1, RepositoryID: 50},
+		shared.Upload{ID: 1, RepositoryID: 50},
 	)
 
 	if found, err := store.DeleteUploadByID(context.Background(), 1); err != nil {
@@ -1031,14 +1112,14 @@ func TestDeleteUploadByID(t *testing.T) {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
 
-	repositoryIDs, err := store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
 	}
 
 	var keys []int
-	for repositoryID := range repositoryIDs {
-		keys = append(keys, repositoryID)
+	for _, dirtyRepository := range dirtyRepositories {
+		keys = append(keys, dirtyRepository.RepositoryID)
 	}
 	sort.Ints(keys)
 
@@ -1053,7 +1134,7 @@ func TestDeleteUploadByIDNotCompleted(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
-		types.Upload{ID: 1, RepositoryID: 50, State: "uploading"},
+		shared.Upload{ID: 1, RepositoryID: 50, State: "uploading"},
 	)
 
 	if found, err := store.DeleteUploadByID(context.Background(), 1); err != nil {
@@ -1069,14 +1150,14 @@ func TestDeleteUploadByIDNotCompleted(t *testing.T) {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
 
-	repositoryIDs, err := store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
 	}
 
 	var keys []int
-	for repositoryID := range repositoryIDs {
-		keys = append(keys, repositoryID)
+	for _, dirtyRepository := range dirtyRepositories {
+		keys = append(keys, dirtyRepository.RepositoryID)
 	}
 	sort.Ints(keys)
 
@@ -1108,7 +1189,7 @@ func TestUpdateUploadsVisibleToCommits(t *testing.T) {
 	//       |              |           |
 	//       +-- [3] -- 4 --+           +--- 8
 
-	uploads := []types.Upload{
+	uploads := []shared.Upload{
 		{ID: 1, Commit: makeCommit(1)},
 		{ID: 2, Commit: makeCommit(3)},
 		{ID: 3, Commit: makeCommit(7)},
@@ -1169,7 +1250,7 @@ func TestUpdateUploadsVisibleToCommitsAlternateCommitGraph(t *testing.T) {
 	//              |
 	//              +-- 7 -- 8
 
-	uploads := []types.Upload{
+	uploads := []shared.Upload{
 		{ID: 1, Commit: makeCommit(2)},
 	}
 	insertUploads(t, db, uploads...)
@@ -1218,7 +1299,7 @@ func TestUpdateUploadsVisibleToCommitsDistinctRoots(t *testing.T) {
 	//
 	// 1 -- [2]
 
-	uploads := []types.Upload{
+	uploads := []shared.Upload{
 		{ID: 1, Commit: makeCommit(2), Root: "root1/"},
 		{ID: 2, Commit: makeCommit(2), Root: "root2/"},
 	}
@@ -1277,7 +1358,7 @@ func TestUpdateUploadsVisibleToCommitsOverlappingRoots(t *testing.T) {
 	// | 8        | 5      | root2/  | lsif-go | (overwrites root2/ at commit 2)
 	// | 9        | 6      | root1/  | lsif-go | (overwrites root1/ at commit 2)
 
-	uploads := []types.Upload{
+	uploads := []shared.Upload{
 		{ID: 1, Commit: makeCommit(1), Indexer: "lsif-go", Root: "root3/"},
 		{ID: 2, Commit: makeCommit(1), Indexer: "scip-python", Root: "root4/"},
 		{ID: 3, Commit: makeCommit(2), Indexer: "lsif-go", Root: "root1/"},
@@ -1336,7 +1417,7 @@ func TestUpdateUploadsVisibleToCommitsIndexerName(t *testing.T) {
 	//
 	// [1] -- [2] -- [3] -- [4] -- 5
 
-	uploads := []types.Upload{
+	uploads := []shared.Upload{
 		{ID: 1, Commit: makeCommit(1), Root: "root1/", Indexer: "idx1"},
 		{ID: 2, Commit: makeCommit(2), Root: "root2/", Indexer: "idx1"},
 		{ID: 3, Commit: makeCommit(3), Root: "root3/", Indexer: "idx1"},
@@ -1388,7 +1469,7 @@ func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	uploads := []types.Upload{
+	uploads := []shared.Upload{
 		{ID: 1, Commit: makeCommit(1)},
 		{ID: 2, Commit: makeCommit(2)},
 		{ID: 3, Commit: makeCommit(3)},
@@ -1418,11 +1499,11 @@ func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 2, now); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
-	repositoryIDs, err := store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
 	}
-	if len(repositoryIDs) == 0 {
+	if len(dirtyRepositories) == 0 {
 		t.Errorf("did not expect repository to be unmarked")
 	}
 
@@ -1430,11 +1511,11 @@ func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 3, now); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
-	repositoryIDs, err = store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err = store.GetDirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
 	}
-	if len(repositoryIDs) != 0 {
+	if len(dirtyRepositories) != 0 {
 		t.Errorf("expected repository to be unmarked")
 	}
 
@@ -1455,7 +1536,7 @@ func TestCalculateVisibleUploadsResetsDirtyFlagTransactionTimestamp(t *testing.T
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	uploads := []types.Upload{
+	uploads := []shared.Upload{
 		{ID: 1, Commit: makeCommit(1)},
 		{ID: 2, Commit: makeCommit(2)},
 		{ID: 3, Commit: makeCommit(3)},
@@ -1505,7 +1586,7 @@ func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
 	// 09: tip of branch feat1
 	// 12: tip of branch feat2
 
-	uploads := []types.Upload{
+	uploads := []shared.Upload{
 		{ID: 1, Commit: makeCommit(1)},
 		{ID: 2, Commit: makeCommit(3)},
 		{ID: 3, Commit: makeCommit(6)},
@@ -1598,7 +1679,7 @@ func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfigurati
 	// 09: tip of branch feat1
 	// 12: tip of branch feat2
 
-	uploads := []types.Upload{
+	uploads := []shared.Upload{
 		{ID: 1, Commit: makeCommit(1)},
 		{ID: 2, Commit: makeCommit(3)},
 		{ID: 3, Commit: makeCommit(6)},
@@ -1694,11 +1775,11 @@ func TestGetVisibleUploadsMatchingMonikers(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
-		types.Upload{ID: 1, Commit: makeCommit(2), Root: "sub1/"},
-		types.Upload{ID: 2, Commit: makeCommit(3), Root: "sub2/"},
-		types.Upload{ID: 3, Commit: makeCommit(4), Root: "sub3/"},
-		types.Upload{ID: 4, Commit: makeCommit(3), Root: "sub4/"},
-		types.Upload{ID: 5, Commit: makeCommit(2), Root: "sub5/"},
+		shared.Upload{ID: 1, Commit: makeCommit(2), Root: "sub1/"},
+		shared.Upload{ID: 2, Commit: makeCommit(3), Root: "sub2/"},
+		shared.Upload{ID: 3, Commit: makeCommit(4), Root: "sub3/"},
+		shared.Upload{ID: 4, Commit: makeCommit(3), Root: "sub4/"},
+		shared.Upload{ID: 5, Commit: makeCommit(2), Root: "sub5/"},
 	)
 
 	insertNearestUploads(t, db, 50, map[string][]commitgraph.UploadMeta{
@@ -1857,9 +1938,9 @@ func TestInsertUploadUploading(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertRepo(t, db, 50, "")
+	insertRepo(t, db, 50, "", false)
 
-	id, err := store.InsertUpload(context.Background(), types.Upload{
+	id, err := store.InsertUpload(context.Background(), shared.Upload{
 		Commit:       makeCommit(1),
 		Root:         "sub/",
 		State:        "uploading",
@@ -1871,7 +1952,7 @@ func TestInsertUploadUploading(t *testing.T) {
 		t.Fatalf("unexpected error enqueueing upload: %s", err)
 	}
 
-	expected := types.Upload{
+	expected := shared.Upload{
 		ID:             id,
 		Commit:         makeCommit(1),
 		Root:           "sub/",
@@ -1907,9 +1988,9 @@ func TestInsertUploadQueued(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertRepo(t, db, 50, "")
+	insertRepo(t, db, 50, "", false)
 
-	id, err := store.InsertUpload(context.Background(), types.Upload{
+	id, err := store.InsertUpload(context.Background(), shared.Upload{
 		Commit:        makeCommit(1),
 		Root:          "sub/",
 		State:         "queued",
@@ -1923,7 +2004,7 @@ func TestInsertUploadQueued(t *testing.T) {
 	}
 
 	rank := 1
-	expected := types.Upload{
+	expected := shared.Upload{
 		ID:             id,
 		Commit:         makeCommit(1),
 		Root:           "sub/",
@@ -1960,10 +2041,10 @@ func TestInsertUploadWithAssociatedIndexID(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertRepo(t, db, 50, "")
+	insertRepo(t, db, 50, "", false)
 
 	associatedIndexIDArg := 42
-	id, err := store.InsertUpload(context.Background(), types.Upload{
+	id, err := store.InsertUpload(context.Background(), shared.Upload{
 		Commit:            makeCommit(1),
 		Root:              "sub/",
 		State:             "queued",
@@ -1979,7 +2060,7 @@ func TestInsertUploadWithAssociatedIndexID(t *testing.T) {
 
 	rank := 1
 	associatedIndexIDResult := 42
-	expected := types.Upload{
+	expected := shared.Upload{
 		ID:                id,
 		Commit:            makeCommit(1),
 		Root:              "sub/",
@@ -2017,7 +2098,7 @@ func TestAddUploadPart(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertUploads(t, db, types.Upload{ID: 1, State: "uploading"})
+	insertUploads(t, db, shared.Upload{ID: 1, State: "uploading"})
 
 	for _, part := range []int{1, 5, 2, 3, 2, 2, 1, 6} {
 		if err := store.AddUploadPart(context.Background(), 1, part); err != nil {
@@ -2041,7 +2122,7 @@ func TestMarkQueued(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertUploads(t, db, types.Upload{ID: 1, State: "uploading"})
+	insertUploads(t, db, shared.Upload{ID: 1, State: "uploading"})
 
 	uploadSize := int64(300)
 	if err := store.MarkQueued(context.Background(), 1, &uploadSize); err != nil {
@@ -2068,7 +2149,7 @@ func TestMarkQueuedNoSize(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertUploads(t, db, types.Upload{ID: 1, State: "uploading"})
+	insertUploads(t, db, shared.Upload{ID: 1, State: "uploading"})
 
 	if err := store.MarkQueued(context.Background(), 1, nil); err != nil {
 		t.Fatalf("unexpected error marking upload as queued: %s", err)
@@ -2090,7 +2171,7 @@ func TestMarkFailed(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	insertUploads(t, db, types.Upload{ID: 1, State: "uploading"})
+	insertUploads(t, db, shared.Upload{ID: 1, State: "uploading"})
 
 	failureReason := "didn't like it"
 	if err := store.MarkFailed(context.Background(), 1, failureReason); err != nil {
@@ -2216,7 +2297,7 @@ func getUploadsVisibleAtTip(t testing.TB, db database.DB, repositoryID int) []in
 	return ids
 }
 
-func assertCommitsVisibleFromUploads(t *testing.T, store Store, uploads []types.Upload, expectedVisibleUploads map[string][]int) {
+func assertCommitsVisibleFromUploads(t *testing.T, store Store, uploads []shared.Upload, expectedVisibleUploads map[string][]int) {
 	expectedVisibleCommits := map[int][]string{}
 	for commit, uploadIDs := range expectedVisibleUploads {
 		for _, uploadID := range uploadIDs {
@@ -2303,7 +2384,7 @@ func readBenchmarkCommitGraph() (*gitdomain.CommitGraph, error) {
 	return gitdomain.ParseCommitGraph(strings.Split(string(contents), "\n")), nil
 }
 
-func readBenchmarkCommitGraphView() ([]types.Upload, error) {
+func readBenchmarkCommitGraphView() ([]shared.Upload, error) {
 	contents, err := readBenchmarkFile("../../../../codeintel/commitgraph/testdata/customer1/uploads.csv.gz")
 	if err != nil {
 		return nil, err
@@ -2311,7 +2392,7 @@ func readBenchmarkCommitGraphView() ([]types.Upload, error) {
 
 	reader := csv.NewReader(bytes.NewReader(contents))
 
-	var uploads []types.Upload
+	var uploads []shared.Upload
 	for {
 		record, err := reader.Read()
 		if err != nil {
@@ -2327,7 +2408,7 @@ func readBenchmarkCommitGraphView() ([]types.Upload, error) {
 			return nil, err
 		}
 
-		uploads = append(uploads, types.Upload{
+		uploads = append(uploads, shared.Upload{
 			ID:           id,
 			RepositoryID: 50,
 			Commit:       record[1],

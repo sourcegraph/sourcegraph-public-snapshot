@@ -11,6 +11,7 @@ var diffsWithLinters = []Diff{
 	SVG,
 	Client,
 	Shell,
+	Protobuf,
 }
 
 // GetTargets evaluates the lint targets to run over the given CI diff.

@@ -6,13 +6,12 @@ import (
 	"path/filepath"
 	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
 	"strings"
-	"sync"
 	"time"
 
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
-	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -97,41 +96,48 @@ func zoektSearch(ctx context.Context, client zoekt.Streamer, args *search.TextPa
 		return err
 	}
 
-	tarInputEventC := make(chan comby.TarInputEvent)
-	wg := sync.WaitGroup{}
-	defer wg.Wait()
-
 	var extensionHint string
 	if len(args.IncludePatterns) > 0 {
 		// Remove anchor that's added by autocomplete
 		extensionHint = strings.TrimSuffix(filepath.Ext(args.IncludePatterns[0]), "$")
 	}
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		err := structuralSearch(ctx, comby.Tar{TarInputEventC: tarInputEventC}, all, extensionHint, args.Pattern, args.CombyRule, args.Languages, repo, sender)
-		if err != nil {
-			log.NamedError("structural search error", err)
-		}
-	}()
+	pool := pool.New().WithErrors()
+	tarInputEventC := make(chan comby.TarInputEvent)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
-	err = client.StreamSearch(ctx, q, searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-		for _, file := range event.Files {
-			hdr := tar.Header{
-				Name: file.FileName,
-				Mode: 0600,
-				Size: int64(len(file.Content)),
-			}
-			tarInput := comby.TarInputEvent{
-				Header:  hdr,
-				Content: file.Content,
-			}
-			tarInputEventC <- tarInput
-		}
-	}))
-	close(tarInputEventC)
+	pool.Go(func() error {
+		// Cancel the context on completion so that the writer doesn't
+		// block indefinitely if this stops reading.
+		defer cancel()
+		return structuralSearch(ctx, comby.Tar{TarInputEventC: tarInputEventC}, all, extensionHint, args.Pattern, args.CombyRule, args.Languages, repo, sender)
+	})
 
+	pool.Go(func() error {
+		defer close(tarInputEventC)
+
+		return client.StreamSearch(ctx, q, searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+			for _, file := range event.Files {
+				hdr := tar.Header{
+					Name: file.FileName,
+					Mode: 0600,
+					Size: int64(len(file.Content)),
+				}
+				tarInput := comby.TarInputEvent{
+					Header:  hdr,
+					Content: file.Content,
+				}
+				select {
+				case tarInputEventC <- tarInput:
+				case <-ctx.Done():
+					return
+				}
+			}
+		}))
+	})
+
+	err = pool.Wait()
 	if err != nil {
 		return err
 	}

@@ -19,7 +19,7 @@ Sourcegraph code search helps developers perform these tasks more quickly and ef
 ## Recommended
 
 <div>
-  <a class="cloud-cta" href="https://signup.sourcegraph.com" target="_blank" rel="noopener noreferrer">
+  <a class="cloud-cta" href="https://about.sourcegraph.com/get-started?t=enterprise" target="_blank" rel="noopener noreferrer">
     <div class="cloud-cta-copy">
       <h2>Get Sourcegraph on your code.</h2>
       <h3>A single-tenant instance managed by Sourcegraph.</h3>
@@ -77,7 +77,6 @@ Sourcegraph code search helps developers perform these tasks more quickly and ef
 - [Using and creating search contexts](how-to/search_contexts.md)
 - [Exhaustive search](how-to/exhaustive.md)
 - [How to create a search context with the GraphQL API](how-to/create_search_context_graphql.md)
-- [How to convert repository groups to search contexts](how-to/convert_repository_groups_to_search_contexts.md)
 
 
 ## [Tutorials](tutorials/index.md)

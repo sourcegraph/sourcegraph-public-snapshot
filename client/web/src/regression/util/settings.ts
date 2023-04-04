@@ -4,6 +4,7 @@ import { SettingsEdit } from '../../graphql-operations'
 
 import { getUser } from './api'
 import { GraphQLClient } from './GraphQlClient'
+
 /**
  * Applies an edit to the user settings for the given username.
  */

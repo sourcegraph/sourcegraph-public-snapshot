@@ -17,6 +17,7 @@ type operations struct {
 	// Indexes
 	insertIndex                    *observation.Operation
 	indexesInserted                prometheus.Counter
+	getRepositoriesForIndexScan    *observation.Operation
 	getIndexes                     *observation.Operation
 	getIndexByID                   *observation.Operation
 	getIndexesByIDs                *observation.Operation
@@ -43,6 +44,14 @@ type operations struct {
 
 	insertDependencyIndexingJob *observation.Operation
 	expireFailedRecords         *observation.Operation
+
+	getRepoName                         *observation.Operation
+	numRepositoriesWithCodeIntelligence *observation.Operation
+	repositoryIDsWithErrors             *observation.Operation
+	repositoryIDsWithConfiguration      *observation.Operation
+	topRepositoriesToConfigure          *observation.Operation
+	setConfigurationSummary             *observation.Operation
+	truncateConfigurationSummary        *observation.Operation
 }
 
 var (
@@ -111,5 +120,14 @@ func newOperations(observationCtx *observation.Context) *operations {
 
 		insertDependencyIndexingJob: op("InsertDependencyIndexingJob"),
 		expireFailedRecords:         op("ExpireFailedRecords"),
+
+		getRepoName:                         op("GetRepoName"),
+		numRepositoriesWithCodeIntelligence: op("NumRepositoriesWithCodeIntelligence"),
+		repositoryIDsWithErrors:             op("RepositoryIDsWithErrors"),
+		repositoryIDsWithConfiguration:      op("RepositoryIDsWithConfiguration"),
+		topRepositoriesToConfigure:          op("TopRepositoriesToConfigure"),
+		setConfigurationSummary:             op("SetConfigurationSummary"),
+		truncateConfigurationSummary:        op("TruncateConfigurationSummary"),
+		getRepositoriesForIndexScan:         op("GetRepositoriesForIndexScan"),
 	}
 }

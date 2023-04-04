@@ -1,12 +1,10 @@
 import React, { useCallback } from 'react'
 
-import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { fileDiffFields, diffStatFields } from '../../backend/diff'
 import { requestGraphQL } from '../../backend/graphql'
@@ -83,7 +81,7 @@ export function queryRepositoryComparisonFileDiffs(args: {
     )
 }
 
-interface RepositoryCompareDiffPageProps extends RepositoryCompareAreaPageProps, RouteComponentProps<{}>, ThemeProps {
+interface RepositoryCompareDiffPageProps extends RepositoryCompareAreaPageProps {
     /** The base of the comparison. */
     base: { repoName: string; repoID: Scalars['ID']; revision: string | null; commitID: string }
 
@@ -124,8 +122,6 @@ export const RepositoryCompareDiffPage: React.FunctionComponent<RepositoryCompar
                 hideSearch={true}
                 noSummaryIfAllNodesVisible={true}
                 withCenteredSummary={true}
-                history={props.history}
-                location={props.location}
                 cursorPaging={true}
             />
         </div>

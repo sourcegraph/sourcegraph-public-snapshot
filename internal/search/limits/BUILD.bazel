@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "limits",
+    srcs = ["limits.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/search/limits",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf",
+        "//schema",
+    ],
+)

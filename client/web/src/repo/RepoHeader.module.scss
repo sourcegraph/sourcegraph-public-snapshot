@@ -21,6 +21,10 @@
     }
 }
 
+.action-list {
+    gap: 0.625rem;
+}
+
 .action-list-item:not(:empty) {
     /* Have a small gap between buttons so they are visually distinct when pressed */
     /* stylelint-disable-next-line declaration-property-unit-allowed-list */

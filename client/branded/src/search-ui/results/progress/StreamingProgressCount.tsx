@@ -9,6 +9,7 @@ import { Progress } from '@sourcegraph/shared/src/search/stream'
 import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'
+import { limitHit } from './utils'
 
 import styles from './StreamingProgressCount.module.scss'
 
@@ -24,9 +25,6 @@ const abbreviateNumber = (number: number): string => {
     }
     return (number / 1e9).toFixed(1) + 'b'
 }
-
-export const limitHit = (progress: Progress): boolean =>
-    progress.skipped.some(skipped => skipped.reason.indexOf('-limit') > 0)
 
 export const getProgressText = (progress: Progress): { visibleText: string; readText: string } => {
     const contentWithoutTimeUnit =

@@ -1,5 +1,4 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import * as H from 'history'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -16,7 +15,7 @@ import { SiteAdminWebhooksPage } from './SiteAdminWebhooksPage'
 const decorator: DecoratorFn = Story => <Story />
 
 const config: Meta = {
-    title: 'web/src/site-admin/SiteAdminWebhooksPage',
+    title: 'web/site-admin/webhooks/incoming/SiteAdminWebhooksPage',
     decorators: [decorator],
 }
 
@@ -66,12 +65,7 @@ export const NoWebhooksFound: Story = () => (
                     ])
                 }
             >
-                <SiteAdminWebhooksPage
-                    match={{} as any}
-                    history={H.createMemoryHistory()}
-                    location={{} as any}
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                />
+                <SiteAdminWebhooksPage telemetryService={NOOP_TELEMETRY_SERVICE} />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -175,12 +169,7 @@ export const FiveWebhooksFound: Story = () => (
                     ])
                 }
             >
-                <SiteAdminWebhooksPage
-                    match={{} as any}
-                    history={H.createMemoryHistory()}
-                    location={{} as any}
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                />
+                <SiteAdminWebhooksPage telemetryService={NOOP_TELEMETRY_SERVICE} />
             </MockedTestProvider>
         )}
     </WebStory>

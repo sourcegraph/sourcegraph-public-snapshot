@@ -7,7 +7,7 @@ import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
 
 import { ActionContribution, Evaluated } from '@sourcegraph/client-api'
-import { asError, ErrorLike, isErrorLike, isExternalLink, logger } from '@sourcegraph/common'
+import { asError, ErrorLike, isExternalLink, logger } from '@sourcegraph/common'
 import {
     LoadingSpinner,
     Button,
@@ -92,20 +92,6 @@ export interface ActionItemProps extends ActionItemAction, ActionItemComponentPr
      */
     showLoadingSpinnerDuringExecution?: boolean
 
-    /**
-     * Whether to show the error (if any) from executing the command inline on this component and NOT in the global
-     * notifications UI component.
-     *
-     * This inline error display behavior is intended for actions that are scoped to a particular component. If the
-     * error were displayed in the global notifications UI component, it might not be clear which of the many
-     * possible scopes the error applies to.
-     *
-     * For example, the hover actions ("Go to definition", "Find references", etc.) use showInlineError == true
-     * because those actions are scoped to a specific token in a file. The command palette uses showInlineError ==
-     * false because it is a global UI component (and because showing tooltips on menu items would look strange).
-     */
-    showInlineError?: boolean
-
     /** Instead of showing the icon and/or title, show this element. */
     title?: JSX.Element | null
 
@@ -146,7 +132,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
                     mergeMap(parameters =>
                         from(
                             this.props.extensionsController
-                                ? this.props.extensionsController.executeCommand(parameters, this.props.showInlineError)
+                                ? this.props.extensionsController.executeCommand(parameters)
                                 : Promise.reject(
                                       new Error(
                                           'ActionItems commands other than open and invokeFunction-new are deprecated'
@@ -278,14 +264,9 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
             tabIndex: this.props.tabIndex,
         }
 
-        const tooltipOrErrorMessage =
-            this.props.showInlineError && isErrorLike(this.state.actionOrError)
-                ? `Error: ${this.state.actionOrError.message}`
-                : tooltip
-
         if (!to) {
             return (
-                <Tooltip content={tooltipOrErrorMessage}>
+                <Tooltip content={tooltip}>
                     <Button
                         {...sharedProps}
                         {...buttonLinkProps}
@@ -299,7 +280,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
                         onClick={this.runAction}
                         data-action-item-pressed={pressed}
                         aria-pressed={pressed}
-                        aria-label={tooltipOrErrorMessage}
+                        aria-label={tooltip}
                     >
                         {content}{' '}
                         {showLoadingSpinner && (
@@ -313,7 +294,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
         }
 
         return (
-            <Tooltip content={tooltipOrErrorMessage}>
+            <Tooltip content={tooltip}>
                 <span>
                     <ButtonLink
                         data-content={this.props.dataContent}
@@ -375,12 +356,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
 
         const emitDidExecute = (): void => {
             if (this.props.onDidExecute) {
-                // Defer calling onRun until after the URL has been opened. If we call it immediately, then in
-                // CommandList it immediately updates the (most-recent-first) ordering of the ActionItems, and
-                // the URL actually changes underneath us before the URL is opened. There is no harm to
-                // deferring this call; onRun's documentation allows this.
-                const onDidExecute = this.props.onDidExecute
-                setTimeout(() => onDidExecute(action.id))
+                this.props.onDidExecute(action.id)
             }
         }
 

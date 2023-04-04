@@ -21,59 +21,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
-	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
-	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/profiler"
-	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
-	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const addr = ":3188"
 
-func Main() {
-	config := &Config{}
-	config.Load()
-
-	env.Lock()
-	env.HandleHelpFlag()
-	logging.Init() //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
-	liblog := log.Init(log.Resource{
-		Name:       env.MyName,
-		Version:    version.Version(),
-		InstanceID: hostname.Get(),
-	})
-	defer liblog.Sync()
+func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config Config) error {
+	logger := observationCtx.Logger
 
 	// Initialize tracing/metrics
-	logger := log.Scoped("codeintel-worker", "The precise-code-intel-worker service converts LSIF upload file into Postgres data.")
-	observationCtx := observation.NewContext(logger, observation.Honeycomb(&honey.Dataset{
+	observationCtx = observation.NewContext(logger, observation.Honeycomb(&honey.Dataset{
 		Name: "codeintel-worker",
 	}))
 
-	conf.Init()
-	go conf.Watch(liblog.Update(conf.GetLogSinks))
-	tracer.Init(logger.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
-	profiler.Init()
-
-	if err := config.Validate(); err != nil {
-		logger.Error("Failed for load config", log.Error(err))
-	}
-
-	// Start debug server
-	ready := make(chan struct{})
-	go debugserver.NewServerRoutine(ready).Start()
-
-	if err := keyring.Init(context.Background()); err != nil {
-		logger.Fatal("Failed to intialise keyring", log.Error(err))
+	if err := keyring.Init(ctx); err != nil {
+		return errors.Wrap(err, "initializing keyring")
 	}
 
 	// Connect to databases
@@ -83,13 +52,13 @@ func Main() {
 	// Migrations may take a while, but after they're done we'll immediately
 	// spin up a server and can accept traffic. Inform external clients we'll
 	// be ready for traffic.
-	close(ready)
+	ready()
 
 	// Initialize sub-repo permissions client
 	var err error
 	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(edb.NewEnterpriseDB(db).SubRepoPerms())
 	if err != nil {
-		logger.Fatal("Failed to create sub-repo client", log.Error(err))
+		return errors.Wrap(err, "creating sub-repo client")
 	}
 
 	services, err := codeintel.NewServices(codeintel.ServiceDependencies{
@@ -98,16 +67,16 @@ func Main() {
 		ObservationCtx: observationCtx,
 	})
 	if err != nil {
-		logger.Fatal("Failed to create codeintel services", log.Error(err))
+		return errors.Wrap(err, "creating codeintel services")
 	}
 
 	// Initialize stores
-	uploadStore, err := lsifuploadstore.New(context.Background(), observationCtx, config.LSIFUploadStoreConfig)
+	uploadStore, err := lsifuploadstore.New(ctx, observationCtx, config.LSIFUploadStoreConfig)
 	if err != nil {
-		logger.Fatal("Failed to create upload store", log.Error(err))
+		return errors.Wrap(err, "creating upload store")
 	}
-	if err := initializeUploadStore(context.Background(), uploadStore); err != nil {
-		logger.Fatal("Failed to initialize upload store", log.Error(err))
+	if err := initializeUploadStore(ctx, uploadStore); err != nil {
+		return errors.Wrap(err, "initializing upload store")
 	}
 
 	// Initialize worker
@@ -130,7 +99,9 @@ func Main() {
 	})
 
 	// Go!
-	goroutine.MonitorBackgroundRoutines(context.Background(), worker, server)
+	goroutine.MonitorBackgroundRoutines(ctx, worker, server)
+
+	return nil
 }
 
 func mustInitializeDB(observationCtx *observation.Context) *sql.DB {

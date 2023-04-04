@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -30,6 +29,8 @@ import (
 	"github.com/boj/redistore"
 	"github.com/gorilla/sessions"
 )
+
+const SignOutCookie = "sg-signout"
 
 var (
 	sessionStore     sessions.Store
@@ -106,17 +107,30 @@ func (st *sessionsStore) setSecureOptions(s *sessions.Session) {
 
 // NewRedisStore creates a new session store backed by Redis.
 func NewRedisStore(secureCookie func() bool) sessions.Store {
-	rstore, err := redistore.NewRediStoreWithPool(redispool.Store, []byte(sessionCookieKey))
-	if err != nil {
-		waitForRedis(rstore)
+	var store sessions.Store
+	var options *sessions.Options
+
+	if pool, ok := redispool.Store.Pool(); ok {
+		rstore, err := redistore.NewRediStoreWithPool(pool, []byte(sessionCookieKey))
+		if err != nil {
+			waitForRedis(rstore)
+		}
+		store = rstore
+		options = rstore.Options
+	} else {
+		// Redis is not available, we fallback to storing state in cookies.
+		// TODO(keegan) ask why we can't just always use this.
+		cstore := sessions.NewCookieStore([]byte(sessionCookieKey))
+		store = cstore
+		options = cstore.Options
 	}
 
-	rstore.Options.Path = "/"
-	rstore.Options.HttpOnly = true
+	options.Path = "/"
+	options.HttpOnly = true
 
-	setSessionSecureOptions(rstore.Options, secureCookie())
+	setSessionSecureOptions(options, secureCookie())
 	return &sessionsStore{
-		Store:  rstore,
+		Store:  store,
 		secure: secureCookie,
 	}
 }
@@ -241,13 +255,30 @@ func SetActor(w http.ResponseWriter, r *http.Request, actor *actor.Actor, expiry
 				expiryPeriod = defaultExpiryPeriod
 			}
 		}
-		auth.RemoveSignOutCookieIfSet(r, w)
+		RemoveSignOutCookieIfSet(r, w)
 
 		value = &sessionInfo{Actor: actor, ExpiryPeriod: expiryPeriod, LastActive: time.Now(), UserCreatedAt: userCreatedAt}
 	}
 	return SetData(w, r, "actor", value)
 }
 
+// RemoveSignOutCookieIfSet removes the sign-out cookie if it is set.
+func RemoveSignOutCookieIfSet(r *http.Request, w http.ResponseWriter) {
+	if HasSignOutCookie(r) {
+		http.SetCookie(w, &http.Cookie{Name: SignOutCookie, Value: "", MaxAge: -1})
+	}
+}
+
+// HasSignOutCookie returns true if the given request has a sign-out cookie.
+func HasSignOutCookie(r *http.Request) bool {
+	ck, err := r.Cookie(SignOutCookie)
+	if err != nil {
+		return false
+	}
+	return ck != nil
+}
+
+// hasSessionCookie returns true if the given request has a session cookie.
 func hasSessionCookie(r *http.Request) bool {
 	c, _ := r.Cookie(cookieName)
 	return c != nil
@@ -289,7 +320,7 @@ func InvalidateSessionCurrentUser(w http.ResponseWriter, r *http.Request, db dat
 	return deleteSession(w, r)
 }
 
-// Bulk "InvalidateSessionsByID" action.
+// InvalidateSessionsByIDs is a bulk action.
 func InvalidateSessionsByIDs(ctx context.Context, db database.DB, ids []int32) error {
 	return db.Users().InvalidateSessionsByIDs(ctx, ids)
 }

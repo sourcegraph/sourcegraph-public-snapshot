@@ -1,0 +1,108 @@
+{
+  "ID": 0,
+  "Name": "",
+  "URI": "",
+  "Description": "",
+  "Fork": false,
+  "Archived": false,
+  "Private": false,
+  "CreatedAt": "0001-01-01T00:00:00Z",
+  "UpdatedAt": "0001-01-01T00:00:00Z",
+  "DeletedAt": "0001-01-01T00:00:00Z",
+  "ExternalRepo": {
+   "ID": "",
+   "ServiceType": "",
+   "ServiceID": ""
+  },
+  "Sources": {
+   "extsvc:bitbucketcloud:1": {
+    "ID": "extsvc:bitbucketcloud:1",
+    "CloneURL": "https://bitbucket.sgdev.org/~milton/bat-vcr-fork-test-repo-not-forked"
+   }
+  },
+  "Metadata": {
+   "slug": "bat-vcr-fork-test-repo-not-forked",
+   "id": 216977,
+   "name": "BAT-vcr-fork-test-repo-not-forked",
+   "description": "This repo is intended to be used for recording batch changes VCR tests",
+   "scmId": "git",
+   "state": "AVAILABLE",
+   "statusMessage": "Available",
+   "forkable": true,
+   "origin": {
+    "slug": "vcr-fork-test-repo-not-forked",
+    "id": 216974,
+    "name": "vcr-fork-test-repo-not-forked",
+    "description": "This repo is intended to be used for recording batch changes VCR tests",
+    "scmId": "git",
+    "state": "AVAILABLE",
+    "statusMessage": "Available",
+    "forkable": true,
+    "origin": null,
+    "project": {
+     "key": "BAT",
+     "id": 183,
+     "name": "batch-changes-testing",
+     "public": false,
+     "type": "NORMAL",
+     "links": {
+      "self": [
+       {
+        "href": "https://bitbucket.sgdev.org/projects/BAT"
+       }
+      ]
+     }
+    },
+    "public": false,
+    "links": {
+     "clone": [
+      {
+       "href": "https://bitbucket.sgdev.org/scm/bat/vcr-fork-test-repo-not-forked.git",
+       "name": "http"
+      },
+      {
+       "href": "ssh://git@bitbucket.sgdev.org:7999/bat/vcr-fork-test-repo-not-forked.git",
+       "name": "ssh"
+      }
+     ],
+     "self": [
+      {
+       "href": "https://bitbucket.sgdev.org/projects/BAT/repos/vcr-fork-test-repo-not-forked/browse"
+      }
+     ]
+    }
+   },
+   "project": {
+    "key": "~MILTON",
+    "id": 2,
+    "name": "milton woof",
+    "public": false,
+    "type": "PERSONAL",
+    "links": {
+     "self": [
+      {
+       "href": "https://bitbucket.sgdev.org/users/milton"
+      }
+     ]
+    }
+   },
+   "public": false,
+   "links": {
+    "clone": [
+     {
+      "href": "https://bitbucket.sgdev.org/scm/~milton/bat-vcr-fork-test-repo-not-forked.git",
+      "name": "http"
+     },
+     {
+      "href": "ssh://git@bitbucket.sgdev.org:7999/~milton/bat-vcr-fork-test-repo-not-forked.git",
+      "name": "ssh"
+     }
+    ],
+    "self": [
+     {
+      "href": "https://bitbucket.sgdev.org/users/milton/repos/bat-vcr-fork-test-repo-not-forked/browse"
+     }
+    ]
+   }
+  }
+ }

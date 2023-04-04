@@ -8,7 +8,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -106,6 +106,16 @@ func makeWildcardPattern(pattern string) string {
 	return strings.ToLower(strings.ReplaceAll(pattern, "*", "%"))
 }
 
+// RepoCount returns the total number of policy-selectable repos.
+func (s *store) RepoCount(ctx context.Context) (_ int, err error) {
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(`SELECT SUM(total) FROM repo_statistics`)))
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
 // GetRepoIDsByGlobPatterns returns a page of repository identifiers and a total count of repositories matching
 // one of the given patterns.
 func (s *store) GetRepoIDsByGlobPatterns(ctx context.Context, patterns []string, limit, offset int) (_ []int, _ int, err error) {
@@ -173,7 +183,7 @@ LIMIT %s OFFSET %s
 
 // SelectPoliciesForRepositoryMembershipUpdate returns a slice of configuration policies that should be considered
 // for repository membership updates. Configuration policies are returned in the order of least recently updated.
-func (s *store) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []types.ConfigurationPolicy, err error) {
+func (s *store) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []shared.ConfigurationPolicy, err error) {
 	ctx, trace, endObservation := s.operations.selectPoliciesForRepositoryMembershipUpdate.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 

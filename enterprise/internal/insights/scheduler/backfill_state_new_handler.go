@@ -67,6 +67,7 @@ func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*worke
 
 	worker := dbworker.NewWorker(ctx, workerStore, workerutil.Handler[*BaseJob](&task), workerutil.WorkerOptions{
 		Name:              name,
+		Description:       "determines the repos for a code insight and an approximate cost of the backfill",
 		NumHandlers:       1,
 		Interval:          5 * time.Second,
 		HeartbeatInterval: 15 * time.Second,
@@ -95,7 +96,7 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, job 
 	defer func() { err = tx.Done(err) }()
 
 	// load backfill and series
-	backfill, err := tx.loadBackfill(ctx, job.backfillId)
+	backfill, err := tx.LoadBackfill(ctx, job.backfillId)
 	if err != nil {
 		return errors.Wrap(err, "loadBackfill")
 	}
@@ -133,7 +134,7 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, job 
 		return errors.Wrap(err, "backfill.SetScope")
 	}
 
-	frames := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
+	sampleTimes := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
 		Value: series.SampleIntervalValue,
 	}, series.CreatedAt.Truncate(time.Minute))
@@ -141,7 +142,7 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, job 
 	if err := h.timeseriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{
 		{
 			InsightSeriesID: series.ID,
-			RecordingTimes:  timeseries.MakeRecordingsFromFrames(frames, false),
+			RecordingTimes:  timeseries.MakeRecordingsFromTimes(sampleTimes, false),
 		},
 	}); err != nil {
 		return errors.Wrap(err, "NewBackfillHandler.SetInsightSeriesRecordingTimes")
@@ -170,11 +171,11 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, job 
 
 func parseQuery(series types.InsightSeries) (query.Plan, error) {
 	if series.GeneratedFromCaptureGroups {
-		query, err := compute.Parse(series.Query)
+		seriesQuery, err := compute.Parse(series.Query)
 		if err != nil {
 			return nil, errors.Wrap(err, "compute.Parse")
 		}
-		searchQuery, err := query.ToSearchQuery()
+		searchQuery, err := seriesQuery.ToSearchQuery()
 		if err != nil {
 			return nil, errors.Wrap(err, "ToSearchQuery")
 		}

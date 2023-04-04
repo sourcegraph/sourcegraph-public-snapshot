@@ -1,0 +1,35 @@
+---
+source: crates/sg-syntax/src/sg_sciptect.rs
+assertion_line: 616
+expression: "snapshot_sciptect_documents(&document, &contents)"
+---
+  #include <stdbool.h>
+//^^^^^^^^ Keyword keyword.control.import.include.c
+//        ^ IdentifierNamespace string.quoted.other.lt-gt.include.c
+//         ^^^^^^^^^^^ StringLiteral string.quoted.other.lt-gt.include.c
+  
+  int main() {
+//^^^ IdentifierType storage.type.c
+//    ^^^^ IdentifierFunction entity.name.function.c
+//        ^ PunctuationBracket punctuation.section.group.begin.c
+//         ^ PunctuationBracket punctuation.section.group.end.c
+//           ^ PunctuationBracket punctuation.section.block.begin.c
+    // Single line comment
+//  ^^^^^^^^^^^^^^^^^^^^^^ Comment comment.line.double-slash.c
+    int x = 1;
+//  ^^^ IdentifierType storage.type.c
+//        ^ IdentifierOperator keyword.operator.assignment.c
+//          ^ NumericLiteral storage.type.numeric.c
+//           ^ PunctuationDelimiter punctuation.terminator.c
+  
+    /*
+//  ^^ Comment 6:2..8:5 comment.block.c
+     *Multi Line
+     */
+  
+    return x;
+//  ^^^^^^ Keyword keyword.control.flow.return.c
+//          ^ PunctuationDelimiter punctuation.terminator.c
+  }
+//^ PunctuationBracket punctuation.section.block.end.c
+

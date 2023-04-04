@@ -13,7 +13,7 @@ type Plan string
 // HasFeature returns whether the plan has the given feature.
 // If the target is a pointer, the plan's feature configuration will be
 // set to the target.
-func (p Plan) HasFeature(target Feature) bool {
+func (p Plan) HasFeature(target Feature, isExpired bool) bool {
 	if target == nil {
 		panic("licensing: target cannot be nil")
 	}
@@ -23,12 +23,23 @@ func (p Plan) HasFeature(target Feature) bool {
 		panic("licensing: target cannot be a nil pointer")
 	}
 
-	for _, f := range planFeatures[p] {
-		if target.FeatureName() == f.FeatureName() {
-			if val.Kind() == reflect.Ptr {
-				val.Elem().Set(reflect.ValueOf(f).Elem())
+	if isExpired {
+		for _, f := range planDetails[p].ExpiredFeatures {
+			if target.FeatureName() == f.FeatureName() {
+				if val.Kind() == reflect.Ptr {
+					val.Elem().Set(reflect.ValueOf(f).Elem())
+				}
+				return true
 			}
-			return true
+		}
+	} else {
+		for _, f := range planDetails[p].Features {
+			if target.FeatureName() == f.FeatureName() {
+				if val.Kind() == reflect.Ptr {
+					val.Elem().Set(reflect.ValueOf(f).Elem())
+				}
+				return true
+			}
 		}
 	}
 	return false
@@ -41,12 +52,16 @@ func (p Plan) tag() string { return planTagPrefix + string(p) }
 
 // isKnown reports whether the plan is a known plan.
 func (p Plan) isKnown() bool {
-	for _, plan := range allPlans {
+	for _, plan := range AllPlans {
 		if p == plan {
 			return true
 		}
 	}
 	return false
+}
+
+func (p Plan) IsFree() bool {
+	return p == PlanFree0 || p == PlanFree1
 }
 
 // Plan is the pricing plan of the license.

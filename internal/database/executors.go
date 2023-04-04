@@ -14,8 +14,7 @@ import (
 
 type ExecutorStore interface {
 	basestore.ShareableStore
-	Transact(context.Context) (ExecutorStore, error)
-	Done(error) error
+	WithTransact(context.Context, func(ExecutorStore) error) error
 	Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)
 	With(basestore.ShareableStore) ExecutorStore
 
@@ -45,7 +44,7 @@ type ExecutorStore interface {
 	// the Sourcegraph instance in at least the given duration.
 	DeleteInactiveHeartbeats(ctx context.Context, minAge time.Duration) error
 
-	// ExecutorByHostname returns an executor resolver for the given hostname, or
+	// GetByHostname returns an executor resolver for the given hostname, or
 	// nil when there is no executor record matching the given hostname.
 	//
 	// 🚨 SECURITY: This always returns nil for non-site admins.
@@ -72,9 +71,10 @@ func ExecutorsWith(other basestore.ShareableStore) ExecutorStore {
 	}
 }
 
-func (s *executorStore) Transact(ctx context.Context) (ExecutorStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &executorStore{Store: txBase}, err
+func (s *executorStore) WithTransact(ctx context.Context, f func(ExecutorStore) error) error {
+	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&executorStore{Store: tx})
+	})
 }
 
 func (s *executorStore) With(other basestore.ShareableStore) ExecutorStore {

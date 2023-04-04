@@ -2,10 +2,12 @@ package codeintel
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -16,7 +18,8 @@ import (
 
 func TestMigratorRemovesBoundsWithoutData(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	rawDB := lastDBWithLSIF(logger, t)
+	db := database.NewDB(logger, rawDB)
 	store := basestore.NewWithHandle(db.Handle())
 	driver := &testMigrationDriver{}
 	migrator := newMigrator(store, driver, migratorOptions{
@@ -143,4 +146,8 @@ func (m *testMigrationDriver) MigrateRowDown(scanner dbutil.Scanner) ([]any, err
 	}
 
 	return []any{a, b - c}, nil
+}
+
+func lastDBWithLSIF(logger log.Logger, t *testing.T) *sql.DB {
+	return dbtest.NewDBAtRev(logger, t, "4.5.0")
 }

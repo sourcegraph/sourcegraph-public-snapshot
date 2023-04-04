@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -29,7 +29,7 @@ func TestMiddleware(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	handler := middleware(db)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		actor := actor.FromContext(r.Context())
+		actor := sgactor.FromContext(r.Context())
 		if actor.IsAuthenticated() {
 			fmt.Fprintf(w, "user %v", actor.UID)
 		} else {
@@ -61,7 +61,7 @@ func TestMiddleware(t *testing.T) {
 	t.Run("not sent, actor present", func(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
-		req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 123}))
+		req = req.WithContext(sgactor.WithActor(context.Background(), &sgactor.Actor{UID: 123}))
 		handler.ServeHTTP(rr, req)
 		if got, want := rr.Body.String(), "user 123"; got != want {
 			t.Errorf("got %q, want %q", got, want)
@@ -94,7 +94,7 @@ func TestMiddleware(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set(headerName, "alice")
-		req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 123}))
+		req = req.WithContext(sgactor.WithActor(context.Background(), &sgactor.Actor{UID: 123}))
 		handler.ServeHTTP(rr, req)
 		if got, want := rr.Body.String(), "user 123"; got != want {
 			t.Errorf("got %q, want %q", got, want)
@@ -200,7 +200,7 @@ func TestMiddleware_stripPrefix(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	handler := middleware(db)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		actor := actor.FromContext(r.Context())
+		actor := sgactor.FromContext(r.Context())
 		if actor.IsAuthenticated() {
 			fmt.Fprintf(w, "user %v", actor.UID)
 		} else {

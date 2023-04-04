@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "loadtest_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/loadtest",
+    visibility = ["//visibility:private"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
+    deps = [
+        "//internal/env",
+        "//lib/errors",
+        "@com_github_inconshreveable_log15//:log15",
+    ],
+)
+
+go_binary(
+    name = "loadtest",
+    embed = [":loadtest_lib"],
+    visibility = ["//visibility:public"],
+)

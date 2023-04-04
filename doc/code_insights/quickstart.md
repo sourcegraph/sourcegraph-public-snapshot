@@ -47,11 +47,15 @@ Your other options are to:
 * [create a "Detect and track" insight](explanations/automatically_generated_data_series.md) to automatically generate your data series according to capture group matching (3.35+).
 * [create a language-based insight](language_insight_quickstart.md) to show you language breakdown in your repositories.
 
-### 4. Once on the form fields page, enter the repositories you want to search or check "all repositories"
+### 4. Select the repositories you want to search
 
-If you want an insight running over a specific amount of repositories, enter the repositories in the repository URL format, like `github.com/sourcegraph/sourcegraph`. Separate multiple repositories with a comma. The form field will validate that you've entered the repository correctly.
+If you want an insight running over a specific amount of repositories, enter the repositories in the repository URL format, like `github.com/sourcegraph/sourcegraph`. 
+Separate multiple repositories with a comma. The form field will validate that you've entered the repository correctly.
 
 If you want to run an insight over all repositories, instead check the box to do so (available in Sourcegraph 3.31.1 and later). If you otherwise want to exclude specific repositories, you can do so after creating the insight by using filters (step 10). 
+
+From Sourcegraph 4.5 you are able to define the repositories you want your insight to run over using a Sourcegraph search query. [Read the reference to learn more](references/repository_scope.md).
+
 
 ### 5. Define a data series to track the incidence of `TODO`
 

@@ -6,17 +6,18 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/markdown"
+	"github.com/sourcegraph/sourcegraph/internal/markdown"
 )
 
 type FileResolver interface {
 	Path() string
 	Name() string
 	IsDirectory() bool
-	Content(ctx context.Context) (string, error)
+	Content(ctx context.Context, args *GitTreeContentPageArgs) (string, error)
 	ByteSize(ctx context.Context) (int32, error)
+	TotalLines(ctx context.Context) (int32, error)
 	Binary(ctx context.Context) (bool, error)
-	RichHTML(ctx context.Context) (string, error)
+	RichHTML(ctx context.Context, args *GitTreeContentPageArgs) (string, error)
 	URL(ctx context.Context) (string, error)
 	CanonicalURL() string
 	ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error)
@@ -28,13 +29,13 @@ type FileResolver interface {
 }
 
 func richHTML(content, ext string) (string, error) {
-	switch ext {
+	switch strings.ToLower(ext) {
 	case ".md", ".mdown", ".markdown", ".markdn":
 		break
 	default:
 		return "", nil
 	}
-	return markdown.Render(content), nil
+	return markdown.Render(content)
 }
 
 type markdownOptions struct {
@@ -44,7 +45,7 @@ type markdownOptions struct {
 func (*schemaResolver) RenderMarkdown(args *struct {
 	Markdown string
 	Options  *markdownOptions
-}) string {
+}) (string, error) {
 	return markdown.Render(args.Markdown)
 }
 

@@ -2,6 +2,8 @@ package query
 
 import (
 	"strings"
+
+	"github.com/grafana/regexp"
 )
 
 // RevisionSpecifier represents either a revspec or a ref glob. At most one
@@ -50,8 +52,9 @@ func (r1 RevisionSpecifier) HasRefGlob() bool {
 }
 
 type ParsedRepoFilter struct {
-	Repo string
-	Revs []RevisionSpecifier
+	Repo      string
+	RepoRegex *regexp.Regexp // A case-insensitive regex matching the Repo pattern
+	Revs      []RevisionSpecifier
 }
 
 func (p ParsedRepoFilter) String() string {
@@ -76,6 +79,8 @@ func (p ParsedRepoFilter) String() string {
 // valid revspec or ref itself; see `man git-check-ref-format`). The '@' and revs
 // may be omitted to refer to the default branch.
 //
+// Returns an error if the repo pattern is not a valid regular expression.
+//
 // For example:
 //
 //   - 'foo' refers to the 'foo' repo at the default branch
@@ -85,7 +90,10 @@ func (p ParsedRepoFilter) String() string {
 //   - 'foo@*bar' refers to the 'foo' repo and all refs matching the glob 'bar/*',
 //     because git interprets the ref glob 'bar' as being 'bar/*' (see `man git-log`
 //     section on the --glob flag)
-func ParseRepositoryRevisions(repoAndOptionalRev string) ParsedRepoFilter {
+func ParseRepositoryRevisions(repoAndOptionalRev string) (ParsedRepoFilter, error) {
+	var repo string
+	var revs []RevisionSpecifier
+
 	i := strings.Index(repoAndOptionalRev, "@")
 	if i == -1 {
 		// return an empty slice to indicate that there's no revisions; callers
@@ -93,21 +101,30 @@ func ParseRepositoryRevisions(repoAndOptionalRev string) ParsedRepoFilter {
 		// cases where two repo specs both match the same repository, and only one
 		// specifies a revspec, which normally implies "master" but in that case
 		// really means "didn't specify"
-		return ParsedRepoFilter{Repo: repoAndOptionalRev, Revs: []RevisionSpecifier{}}
+		repo = repoAndOptionalRev
+		revs = []RevisionSpecifier{}
+	} else {
+		repo = repoAndOptionalRev[:i]
+		for _, part := range strings.Split(repoAndOptionalRev[i+1:], ":") {
+			if part == "" {
+				continue
+			}
+			revs = append(revs, parseRev(part))
+		}
+		if len(revs) == 0 {
+			revs = []RevisionSpecifier{{RevSpec: ""}} // default branch
+		}
 	}
 
-	repo := repoAndOptionalRev[:i]
-	var revs []RevisionSpecifier
-	for _, part := range strings.Split(repoAndOptionalRev[i+1:], ":") {
-		if part == "" {
-			continue
-		}
-		revs = append(revs, parseRev(part))
+	// Repo filters don't currently support case sensitivity, so we use a
+	// case-insensitive regex here to match as widely as possible during
+	// highlighting and other post-processing.
+	repoRegex, err := regexp.Compile("(?i)" + repo)
+	if err != nil {
+		return ParsedRepoFilter{}, err
 	}
-	if len(revs) == 0 {
-		revs = []RevisionSpecifier{{RevSpec: ""}} // default branch
-	}
-	return ParsedRepoFilter{Repo: repo, Revs: revs}
+
+	return ParsedRepoFilter{Repo: repo, RepoRegex: repoRegex, Revs: revs}, nil
 }
 
 func parseRev(spec string) RevisionSpecifier {

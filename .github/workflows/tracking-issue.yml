@@ -32,4 +32,4 @@ jobs:
     steps:
       - uses: docker://sourcegraph/tracking-issue:latest
         env:
-          GITHUB_TOKEN: ${{ secrets.TRACKING_ISSUE_SYNCER_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TRACKING_ISSUE_SYNCER_TOKEN_DEVX_BOT }}

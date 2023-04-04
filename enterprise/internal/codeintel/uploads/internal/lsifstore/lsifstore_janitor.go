@@ -11,19 +11,31 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func (s *store) DeleteUnreferencedDocuments(ctx context.Context, batchSize int, maxAge time.Duration, now time.Time) (count int, err error) {
+func (s *store) DeleteUnreferencedDocuments(ctx context.Context, batchSize int, maxAge time.Duration, now time.Time) (_, _ int, err error) {
 	ctx, _, endObservation := s.operations.idsWithMeta.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("maxAge", maxAge.String()),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	count, _, err = basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(
 		deleteUnreferencedDocumentsQuery,
 		now,
 		maxAge/time.Second,
 		batchSize,
-	)))
-	return count, err
+	))
+	if err != nil {
+		return 0, 0, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	var c1, c2 int
+	for rows.Next() {
+		if err := rows.Scan(&c1, &c2); err != nil {
+			return 0, 0, err
+		}
+	}
+
+	return c1, c2, nil
 }
 
 const deleteUnreferencedDocumentsQuery = `
@@ -54,5 +66,7 @@ deleted_candidates AS (
 	WHERE id IN (SELECT id FROM candidates)
 	RETURNING id
 )
-SELECT COUNT(*) FROM deleted_documents
+SELECT
+	(SELECT COUNT(*) FROM candidates),
+	(SELECT COUNT(*) FROM deleted_documents)
 `

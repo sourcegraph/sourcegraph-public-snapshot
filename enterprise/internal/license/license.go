@@ -40,10 +40,9 @@ func (l Info) IsExpired() bool {
 	return l.ExpiresAt.Before(time.Now())
 }
 
-// IsExpiredWithGracePeriod reports whether the license has expired, adding a grace period of 3 days
-// after the license's expiration.
-func (l Info) IsExpiredWithGracePeriod() bool {
-	return l.ExpiresAt.Add(3 * 24 * time.Hour).Before(time.Now())
+// IsExpiringSoon reports whether the license will expire within the next 7 days.
+func (l Info) IsExpiringSoon() bool {
+	return l.ExpiresAt.Add(-7 * 24 * time.Hour).Before(time.Now())
 }
 
 // HasTag reports whether tag is in l's list of tags.

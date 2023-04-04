@@ -301,6 +301,7 @@ type SearchInsight struct {
 	Repos         []string
 	IntervalUnit  string
 	IntervalValue int32
+	NumSamples    int32
 }
 
 func (c *Client) UpdateSearchInsight(insightViewID string, input map[string]any) (SearchInsight, error) {
@@ -328,6 +329,9 @@ func (c *Client) UpdateSearchInsight(insightViewID string, input map[string]any)
 					  unit
 					  value
 					}
+				  }
+				  defaultSeriesDisplayOptions {
+					numSamples
 				  }
 				}
 			}
@@ -361,6 +365,9 @@ func (c *Client) UpdateSearchInsight(insightViewID string, input map[string]any)
 							Color    string `json:"Color"`
 						} `json:"SeriesPresentation"`
 					} `json:"Presentation"`
+					DefaultSeriesDisplayOptions struct {
+						NumSamples int32 `json:"NumSamples"`
+					} `json:"DefaultSeriesDisplayOptions"`
 				} `json:"View"`
 			} `json:"updateLineChartSearchInsight"`
 		} `json:"data"`
@@ -378,6 +385,7 @@ func (c *Client) UpdateSearchInsight(insightViewID string, input map[string]any)
 		SeriesId:      singleSeries[0].SeriesId,
 		Label:         singleSeries[0].Label,
 		Color:         singleSeries[0].Color,
+		NumSamples:    resp.Data.UpdateLineChartSearchInsight.View.DefaultSeriesDisplayOptions.NumSamples,
 	}, nil
 }
 

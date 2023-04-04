@@ -2,10 +2,9 @@ import { ChangeEvent, FocusEventHandler, forwardRef } from 'react'
 
 import classNames from 'classnames'
 
-import { getInputStatus, Input } from '@sourcegraph/wildcard'
+import { getInputStatus, Input, FormGroup } from '@sourcegraph/wildcard'
 
 import { InsightStep } from '../../../pages/insights/creation/search-insight'
-import { FormGroup } from '../../form/form-group/FormGroup'
 import { FormRadioInput } from '../../form/form-radio-input/FormRadioInput'
 
 import { getDescriptionText } from './get-interval-descrtiption-text/get-interval-description-text'

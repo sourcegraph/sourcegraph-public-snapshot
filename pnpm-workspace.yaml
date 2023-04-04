@@ -1,3 +1,4 @@
 packages:
   - 'client/*'
+  - 'schema'
   - 'dev/release'

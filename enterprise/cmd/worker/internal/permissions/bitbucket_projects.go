@@ -306,6 +306,11 @@ func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Cont
 		UserIDs: userIDs,
 	}
 
+	perms := make([]authz.UserIDWithExternalAccountID, 0, len(userIDs))
+	for userID := range userIDs {
+		perms = append(perms, authz.UserIDWithExternalAccountID{UserID: userID})
+	}
+
 	txs, err := h.db.Perms().Transact(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to start transaction")
@@ -325,9 +330,8 @@ func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Cont
 	}
 
 	// set repo permissions (and user permissions)
-	err = txs.SetRepoPermissions(ctx, &p)
-	if err != nil {
-		return errors.Wrapf(err, "failed to set repo permissions for repo %d", repoID)
+	if _, err = txs.SetRepoPerms(ctx, int32(repoID), perms, authz.SourceAPI); err != nil {
+		return errors.Wrapf(err, "failed to set user repo permissions for repo %d and users %v", repoID, perms)
 	}
 
 	// set pending permissions
@@ -357,6 +361,7 @@ func newBitbucketProjectPermissionsWorker(ctx context.Context, observationCtx *o
 
 	options := workerutil.WorkerOptions{
 		Name:              "explicit_permissions_bitbucket_projects_jobs_worker",
+		Description:       "syncs Bitbucket Projects via Explicit Permissions API",
 		NumHandlers:       cfg.WorkerConcurrency,
 		Interval:          cfg.WorkerPollInterval,
 		HeartbeatInterval: 15 * time.Second,
@@ -428,16 +433,16 @@ func newMetricsForBitbucketProjectPermissionsQueries(logger log.Logger) bitbucke
 	})
 	observationCtx.Registerer.MustRegister(resets)
 
-	errors := prometheus.NewCounter(prometheus.CounterOpts{
+	errorCounter := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_explicit_permissions_bitbucket_project_query_errors_total",
 		Help: "The number of errors that occur during job.",
 	})
-	observationCtx.Registerer.MustRegister(errors)
+	observationCtx.Registerer.MustRegister(errorCounter)
 
 	return bitbucketProjectPermissionsMetrics{
 		workerMetrics: workerutil.NewMetrics(observationCtx, "explicit_permissions_bitbucket_project_queries"),
 		resets:        resets,
 		resetFailures: resetFailures,
-		errors:        errors,
+		errors:        errorCounter,
 	}
 }

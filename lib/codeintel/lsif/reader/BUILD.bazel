@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "reader",
+    srcs = [
+        "context.go",
+        "errors.go",
+        "reader.go",
+        "stasher.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/reader",
+    visibility = ["//visibility:public"],
+    deps = ["//lib/codeintel/lsif/protocol/reader"],
+)

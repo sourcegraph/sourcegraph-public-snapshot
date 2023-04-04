@@ -28,7 +28,6 @@ type CaptureGroupExecutor struct {
 func NewCaptureGroupExecutor(postgres database.DB, clock func() time.Time) *CaptureGroupExecutor {
 	return &CaptureGroupExecutor{
 		previewExecutor: previewExecutor{
-			db:        postgres,
 			repoStore: postgres.Repos(),
 			// filter:    compression.NewHistoricalFilter(true, clock().Add(time.Hour*24*365*-1), insightsDb),
 			filter: &compression.NoopFilter{},
@@ -65,12 +64,11 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 	}
 	c.logger.Debug("Generated repoIds", log.String("repoids", fmt.Sprintf("%v", repoIds)))
 
-	// frames := timeseries.BuildFrames(7, interval, c.clock())
-	frames := timeseries.BuildSampleTimes(7, interval, c.clock())
+	sampleTimes := timeseries.BuildSampleTimes(7, interval, c.clock())
 	pivoted := make(map[string]timeCounts)
 
 	for _, repository := range repositories {
-		firstCommit, err := gitserver.GitFirstEverCommit(ctx, c.db, api.RepoName(repository))
+		firstCommit, err := gitserver.GitFirstEverCommit(ctx, api.RepoName(repository))
 		if err != nil {
 			if errors.Is(err, gitserver.EmptyRepoErr) {
 				continue
@@ -79,7 +77,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 			}
 		}
 		// uncompressed plan for now, because there is some complication between the way compressed plans are generated and needing to resolve revhashes
-		plan := c.filter.Filter(ctx, frames, api.RepoName(repository))
+		plan := c.filter.Filter(ctx, sampleTimes, api.RepoName(repository))
 
 		// we need to perform the pivot from time -> {label, count} to label -> {time, count}
 		for _, execution := range plan.Executions {
@@ -90,7 +88,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 				// since we are using uncompressed plans (to avoid this problem and others) right now, each execution is standalone
 				continue
 			}
-			commits, err := gitserver.NewGitCommitClient(c.db).RecentCommits(ctx, api.RepoName(repository), execution.RecordingTime, "")
+			commits, err := gitserver.NewGitCommitClient().RecentCommits(ctx, api.RepoName(repository), execution.RecordingTime, "")
 			if err != nil {
 				return nil, errors.Wrap(err, "git.Commits")
 			} else if len(commits) < 1 {

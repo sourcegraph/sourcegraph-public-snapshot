@@ -5,11 +5,14 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewCommittedAtBackfiller(store store.Store, gitserverClient GitserverClient, interval time.Duration, batchSize int) goroutine.BackgroundRoutine {
+func NewCommittedAtBackfiller(store store.Store, gitserverClient gitserver.Client, interval time.Duration, batchSize int) goroutine.BackgroundRoutine {
 	backfiller := &backfiller{
 		store:           store,
 		gitserverClient: gitserverClient,
@@ -28,7 +31,7 @@ func NewCommittedAtBackfiller(store store.Store, gitserverClient GitserverClient
 type backfiller struct {
 	batchSize       int
 	store           store.Store
-	gitserverClient GitserverClient
+	gitserverClient gitserver.Client
 }
 
 // BackfillCommittedAtBatch calculates the committed_at value for a batch of upload records that do not have
@@ -47,7 +50,7 @@ func (s *backfiller) BackfillCommittedAtBatch(ctx context.Context, batchSize int
 
 	for _, sourcedCommits := range batch {
 		for _, commit := range sourcedCommits.Commits {
-			commitDateString, err := s.getCommitDate(ctx, sourcedCommits.RepositoryID, commit)
+			commitDateString, err := s.getCommitDate(ctx, sourcedCommits.RepositoryName, commit)
 			if err != nil {
 				return err
 			}
@@ -67,8 +70,9 @@ func (s *backfiller) BackfillCommittedAtBatch(ctx context.Context, batchSize int
 	return nil
 }
 
-func (s *backfiller) getCommitDate(ctx context.Context, repositoryID int, commit string) (string, error) {
-	_, commitDate, revisionExists, err := s.gitserverClient.CommitDate(ctx, repositoryID, commit)
+func (s *backfiller) getCommitDate(ctx context.Context, repositoryName, commit string) (string, error) {
+	repo := api.RepoName(repositoryName)
+	_, commitDate, revisionExists, err := s.gitserverClient.CommitDate(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit))
 	if err != nil {
 		return "", errors.Wrap(err, "gitserver.CommitDate")
 	}

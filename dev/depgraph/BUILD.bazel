@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "depgraph_lib",
+    srcs = [
+        "lint.go",
+        "main.go",
+        "root.go",
+        "summary.go",
+        "trace.go",
+        "trace_internal.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/depgraph",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//dev/depgraph/internal/graph",
+        "//dev/depgraph/internal/lints",
+        "//dev/depgraph/internal/visualization",
+        "//lib/errors",
+        "@com_github_peterbourgon_ff_v3//ffcli",
+        "@com_github_sourcegraph_run//:run",
+    ],
+)
+
+go_binary(
+    name = "depgraph",
+    embed = [":depgraph_lib"],
+    visibility = ["//visibility:public"],
+)

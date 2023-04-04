@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -16,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/packagefilters"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -26,14 +26,14 @@ import (
 // NewDependencySyncScheduler returns a new worker instance that processes
 // records from lsif_dependency_syncing_jobs.
 func NewDependencySyncScheduler(
-	dependencySyncStore dbworkerstore.Store[shared.DependencySyncingJob],
+	dependencySyncStore dbworkerstore.Store[dependencySyncingJob],
 	uploadSvc UploadService,
 	depsSvc DependenciesService,
 	store store.Store,
 	externalServiceStore ExternalServiceStore,
 	metrics workerutil.WorkerObservability,
 	pollInterval time.Duration,
-) *workerutil.Worker[shared.DependencySyncingJob] {
+) *workerutil.Worker[dependencySyncingJob] {
 	rootContext := actor.WithInternalActor(context.Background())
 	handler := &dependencySyncSchedulerHandler{
 		uploadsSvc:  uploadSvc,
@@ -43,8 +43,9 @@ func NewDependencySyncScheduler(
 		extsvcStore: externalServiceStore,
 	}
 
-	return dbworker.NewWorker[shared.DependencySyncingJob](rootContext, dependencySyncStore, handler, workerutil.WorkerOptions{
+	return dbworker.NewWorker[dependencySyncingJob](rootContext, dependencySyncStore, handler, workerutil.WorkerOptions{
 		Name:              "precise_code_intel_dependency_sync_scheduler_worker",
+		Description:       "reads dependency package references from code-intel uploads to be synced to the instance",
 		NumHandlers:       1,
 		Interval:          pollInterval,
 		HeartbeatInterval: 1 * time.Second,
@@ -56,7 +57,7 @@ type dependencySyncSchedulerHandler struct {
 	uploadsSvc  UploadService
 	depsSvc     DependenciesService
 	store       store.Store
-	workerStore dbworkerstore.Store[shared.DependencySyncingJob]
+	workerStore dbworkerstore.Store[dependencySyncingJob]
 	extsvcStore ExternalServiceStore
 }
 
@@ -71,7 +72,7 @@ var schemeToExternalService = map[string]string{
 	dependencies.RubyPackagesScheme:   extsvc.KindRubyPackages,
 }
 
-func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.Logger, job shared.DependencySyncingJob) error {
+func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.Logger, job dependencySyncingJob) error {
 	if !autoIndexingEnabled() {
 		return nil
 	}
@@ -87,11 +88,24 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 	}()
 
 	var (
-		kinds                      = map[string]struct{}{}
-		oldDependencyReposInserted int
-		newDependencyReposInserted int
-		errs                       []error
+		instant             = time.Now()
+		kinds               = map[string]struct{}{}
+		oldDepReposInserted int
+		newDepReposInserted int
+		newVersionsInserted int
+		oldVersionsInserted int
+		errs                []error
 	)
+
+	pkgFilters, _, err := h.depsSvc.ListPackageRepoFilters(ctx, dependencies.ListPackageRepoRefFiltersOpts{})
+	if err != nil {
+		return errors.Wrap(err, "error listing package repo filters")
+	}
+
+	packageFilters, err := packagefilters.NewFilterLists(pkgFilters)
+	if err != nil {
+		return err
+	}
 
 	for {
 		packageReference, exists, err := scanner.Next()
@@ -124,13 +138,21 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 			continue
 		}
 
-		new, err := h.insertDependencyRepo(ctx, pkg)
+		newRepo, newVersion, err := h.insertPackageRepoRef(ctx, pkg, packageFilters, instant)
 		if err != nil {
 			errs = append(errs, err)
-		} else if new {
-			newDependencyReposInserted++
+			continue
+		}
+
+		if newRepo {
+			newDepReposInserted++
 		} else {
-			oldDependencyReposInserted++
+			oldDepReposInserted++
+		}
+		if newVersion {
+			newVersionsInserted++
+		} else {
+			oldVersionsInserted++
 		}
 	}
 
@@ -154,8 +176,11 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 			log.Int("upload", job.UploadID),
 			log.Int("numExtSvc", len(externalServices)),
 			log.Strings("schemaKinds", kindsArray),
-			log.Int("newRepos", newDependencyReposInserted),
-			log.Int("existingInserts", oldDependencyReposInserted))
+			log.Int("newRepos", newDepReposInserted),
+			log.Int("existingRepos", oldDepReposInserted),
+			log.Int("newVersions", newVersionsInserted),
+			log.Int("existingVersions", oldVersionsInserted),
+		)
 
 		for _, externalService := range externalServices {
 			externalService.NextSyncAt = nextSync
@@ -194,7 +219,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 }
 
 // newPackage constructs a precise.Package from the given shared.Package,
-// applying any normalization or necessary transformations that lsif uploads
+// applying any normalization or necessary transformations that LSIF/SCIP uploads
 // require for internal consistency.
 func newPackage(pkg uploadsshared.Package) (*precise.Package, error) {
 	p := precise.Package{
@@ -208,10 +233,11 @@ func newPackage(pkg uploadsshared.Package) (*precise.Package, error) {
 	case dependencies.JVMPackagesScheme:
 		p.Name = strings.TrimPrefix(p.Name, "maven/")
 		p.Name = strings.ReplaceAll(p.Name, "/", ":")
-	case dependencies.NpmPackagesScheme:
+	case dependencies.NpmPackagesScheme, "scip-typescript":
 		if _, err := reposource.ParseNpmPackageFromPackageSyntax(reposource.PackageName(p.Name)); err != nil {
 			return nil, err
 		}
+		p.Scheme = dependencies.NpmPackagesScheme
 	case "scip-python":
 		// Override scip-python scheme so that we are able to autoindex
 		// index.scip created by scip-python
@@ -221,18 +247,24 @@ func newPackage(pkg uploadsshared.Package) (*precise.Package, error) {
 	return &p, nil
 }
 
-func (h *dependencySyncSchedulerHandler) insertDependencyRepo(ctx context.Context, pkg precise.Package) (new bool, err error) {
-	inserted, err := h.depsSvc.UpsertDependencyRepos(ctx, []dependencies.Repo{
+func (h *dependencySyncSchedulerHandler) insertPackageRepoRef(ctx context.Context, pkg precise.Package, filters packagefilters.PackageFilters, instant time.Time) (newRepos, newVersions bool, err error) {
+	insertedRepos, insertedVersions, err := h.depsSvc.InsertPackageRepoRefs(ctx, []dependencies.MinimalPackageRepoRef{
 		{
-			Name:    reposource.PackageName(pkg.Name),
-			Scheme:  pkg.Scheme,
-			Version: pkg.Version,
+			Name:          reposource.PackageName(pkg.Name),
+			Scheme:        pkg.Scheme,
+			Blocked:       !packagefilters.IsPackageAllowed(pkg.Scheme, reposource.PackageName(pkg.Name), filters),
+			LastCheckedAt: &instant,
+			Versions: []dependencies.MinimalPackageRepoRefVersion{{
+				Version:       pkg.Version,
+				Blocked:       !packagefilters.IsVersionedPackageAllowed(pkg.Scheme, reposource.PackageName(pkg.Name), pkg.Version, filters),
+				LastCheckedAt: &instant,
+			}},
 		},
 	})
 	if err != nil {
-		return false, errors.Wrap(err, "dbstore.InsertCloneableDependencyRepos")
+		return false, false, errors.Wrap(err, "dbstore.InsertCloneableDependencyRepos")
 	}
-	return len(inserted) != 0, nil
+	return len(insertedRepos) != 0, len(insertedVersions) != 0, nil
 }
 
 // shouldIndexDependencies returns true if the given upload should undergo dependency

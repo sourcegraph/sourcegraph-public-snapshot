@@ -11,7 +11,7 @@ import (
 
 	"github.com/sourcegraph/run"
 
-	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
+	depgraph "github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -40,7 +40,7 @@ func summary(ctx context.Context, args []string) error {
 		return err
 	}
 
-	graph, err := graph.Load(root)
+	graph, err := depgraph.Load(root)
 	if err != nil {
 		return err
 	}
@@ -146,7 +146,7 @@ outer:
 }
 
 // isMain returns true if the given package declares "main" in the given package name map.
-func isMain(graph *graph.DependencyGraph, pkg string) bool {
+func isMain(graph *depgraph.DependencyGraph, pkg string) bool {
 	for _, name := range graph.PackageNames[pkg] {
 		if name == "main" {
 			return true

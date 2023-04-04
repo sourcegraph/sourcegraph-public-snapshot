@@ -12,7 +12,6 @@ export const mockUser: AuthenticatedUser = {
     username: 'username',
     siteAdmin: true,
     databaseID: 0,
-    tags: [],
     url: '',
     avatarURL: '',
     displayName: 'display name',
@@ -27,6 +26,7 @@ export const mockUser: AuthenticatedUser = {
     searchable: true,
     emails: [{ email: 'user@me.com', isPrimary: true, verified: true }],
     latestSettings: null,
+    permissions: { nodes: [] },
 }
 
 export const mockCodeMonitorFields: CodeMonitorFields = {

@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react'
 
 import { mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiOpenInNew } from '@mdi/js'
-import { useLocation } from 'react-router'
+import { useLocation } from 'react-router-dom'
 import { animated, useSpring } from 'react-spring'
 
 import { Button, useLocalStorage, H3, H4, Icon, Link, Text, VIEWPORT_XL } from '@sourcegraph/wildcard'

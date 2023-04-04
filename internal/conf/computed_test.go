@@ -270,6 +270,58 @@ mtfypOsa1bKhEL84nZ/ivEbBriRGjP2kyDDv3RX4WBk=
 	}
 }
 
+func TestIsAccessRequestEnabled(t *testing.T) {
+	falseVal, trueVal := false, true
+	tests := []struct {
+		name string
+		sc   *Unified
+		want bool
+	}{
+		{
+			name: "not set should return default true",
+			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{}},
+			want: true,
+		},
+		{
+			name: "parent object set should return default true",
+			sc: &Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					AuthAccessRequest: &schema.AuthAccessRequest{},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "explicitly set enabled=true should return true",
+			sc: &Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					AuthAccessRequest: &schema.AuthAccessRequest{Enabled: &trueVal},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "explicitly set enabled=false should return false",
+			sc: &Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					AuthAccessRequest: &schema.AuthAccessRequest{
+						Enabled: &falseVal,
+					},
+				},
+			},
+			want: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			Mock(test.sc)
+			have := IsAccessRequestEnabled()
+			assert.Equal(t, test.want, have)
+		})
+	}
+}
+
 func setenv(t *testing.T, keyval string) func() {
 	t.Helper()
 

@@ -10,6 +10,8 @@ describe('Timestamp', () => {
 
     test('noAbout', () => expect(render(<Timestamp date="2006-01-02" noAbout={true} />).asFragment()).toMatchSnapshot())
 
+    test('noAgo', () => expect(render(<Timestamp date="2006-01-02" noAgo={true} />).asFragment()).toMatchSnapshot())
+
     test('absolute time with formatting', () =>
         expect(
             render(

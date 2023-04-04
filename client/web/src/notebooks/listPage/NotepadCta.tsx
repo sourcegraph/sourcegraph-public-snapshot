@@ -1,9 +1,9 @@
 import React from 'react'
 
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { ProductStatusBadge, Button, H3, Text } from '@sourcegraph/wildcard'
 
 import { NotepadIcon } from '../../search/Notepad'
-import { useTheme, ThemePreference } from '../../theme'
 
 export const NOTEPAD_CTA_ID = 'notepad-cta'
 
@@ -17,7 +17,7 @@ export const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<Notepad
     onCancel,
 }) => {
     const assetsRoot = window.context?.assetsRoot || ''
-    const isLightTheme = useTheme().enhancedThemePreference === ThemePreference.Light
+    const isLightTheme = useIsLightTheme()
 
     return (
         <div>

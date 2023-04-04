@@ -53,15 +53,15 @@ func FileOrDir(ctx context.Context, db database.DB, client gitserver.Client, rep
 	}
 
 	if link != nil {
-		var url string
+		var urlStr string
 		if isDir {
-			url = link.Tree
+			urlStr = link.Tree
 		} else {
-			url = link.Blob
+			urlStr = link.Blob
 		}
-		if url != "" {
-			url = strings.NewReplacer("{rev}", rev, "{path}", path).Replace(url)
-			links = append(links, NewResolver(url, serviceType))
+		if urlStr != "" {
+			urlStr = strings.NewReplacer("{rev}", rev, "{path}", path).Replace(urlStr)
+			links = append(links, NewResolver(urlStr, serviceType))
 		}
 	}
 

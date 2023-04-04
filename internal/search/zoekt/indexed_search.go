@@ -185,11 +185,11 @@ func PartitionRepos(
 ) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions, err error) {
 	// Fallback to Unindexed if the query contains valid ref-globs.
 	if containsRefGlobs {
-		return nil, repos, nil
+		return &IndexedRepoRevs{}, repos, nil
 	}
 	// Fallback to Unindexed if index:no
 	if useIndex == query.No {
-		return nil, repos, nil
+		return &IndexedRepoRevs{}, repos, nil
 	}
 
 	tr, ctx := trace.New(ctx, "PartitionRepos", string(typ))
@@ -199,9 +199,9 @@ func PartitionRepos(
 	}()
 
 	// Only include indexes with symbol information if a symbol request.
-	var filter func(repo *zoekt.MinimalRepoListEntry) bool
+	var filterFunc func(repo *zoekt.MinimalRepoListEntry) bool
 	if typ == search.SymbolRequest {
-		filter = func(repo *zoekt.MinimalRepoListEntry) bool {
+		filterFunc = func(repo *zoekt.MinimalRepoListEntry) bool {
 			return repo.HasSymbols
 		}
 	}
@@ -220,7 +220,7 @@ func PartitionRepos(
 			logger.Warn("zoektIndexedRepos failed", log.Error(err))
 		}
 
-		return nil, repos, ctx.Err()
+		return &IndexedRepoRevs{}, repos, ctx.Err()
 	}
 
 	// Note: We do not need to handle list.Crashes since we will fallback to
@@ -229,7 +229,7 @@ func PartitionRepos(
 	tr.SetAttributes(attribute.Int("all_indexed_set.size", len(list.Minimal))) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 
 	// Split based on indexed vs unindexed
-	indexed, unindexed = zoektIndexedRepos(list.Minimal, repos, filter) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+	indexed, unindexed = zoektIndexedRepos(list.Minimal, repos, filterFunc) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 
 	tr.SetAttributes(
 		attribute.Int("indexed.size", len(indexed.RepoRevs)),

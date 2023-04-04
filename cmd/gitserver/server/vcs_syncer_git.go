@@ -6,7 +6,10 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -47,7 +50,7 @@ func (s *GitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) err
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "git", args...)
-	out, err := runWith(ctx, cmd, true, nil)
+	out, err := runWith(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), true, nil)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
@@ -81,8 +84,8 @@ func (s *GitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tm
 func (s *GitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir, revspec string) error {
 	cmd, configRemoteOpts := s.fetchCommand(ctx, remoteURL)
 	dir.Set(cmd)
-	if output, err := runWith(ctx, cmd, configRemoteOpts, nil); err != nil {
-		return errors.Wrapf(&GitCommandError{Err: err, Output: newURLRedactor(remoteURL).redact(string(output))}, "failed to update")
+	if output, err := runWith(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), configRemoteOpts, nil); err != nil {
+		return &GitCommandError{Err: err, Output: newURLRedactor(remoteURL).redact(string(output))}
 	}
 	return nil
 }
@@ -101,9 +104,6 @@ func (s *GitRepoSyncer) fetchCommand(ctx context.Context, remoteURL *vcs.URL) (c
 		cmd = refspecOverridesFetchCmd(ctx, remoteURL)
 	} else {
 		cmd = exec.CommandContext(ctx, "git", "fetch",
-			// We already have janitor jobs that run git gc. We disable git gc here to avoid
-			// a possible corruption of repositories by competing gc processes.
-			"--no-auto-gc",
 			"--progress", "--prune", remoteURL.String(),
 			// Normal git refs
 			"+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*",

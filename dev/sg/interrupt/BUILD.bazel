@@ -1,0 +1,8 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "interrupt",
+    srcs = ["interrupt.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/interrupt",
+    visibility = ["//visibility:public"],
+)

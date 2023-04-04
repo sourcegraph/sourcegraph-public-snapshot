@@ -49,6 +49,8 @@ func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *type
 		return NewGithubSource(ctx, logger.Scoped("GithubSource", "GitHub repo source"), externalServicesStore, svc, cf)
 	case extsvc.KindGitLab:
 		return NewGitLabSource(ctx, logger.Scoped("GitLabSource", "GitLab repo source"), svc, cf)
+	case extsvc.KindAzureDevOps:
+		return NewAzureDevOpsSource(ctx, logger.Scoped("AzureDevOpsSource", "GitLab repo source"), svc, cf)
 	case extsvc.KindGerrit:
 		return NewGerritSource(ctx, svc, cf)
 	case extsvc.KindBitbucketServer:
@@ -217,6 +219,36 @@ func listAll(ctx context.Context, src Source) ([]*types.Repo, error) {
 
 	go func() {
 		src.ListRepos(ctx, results)
+		close(results)
+	}()
+
+	var (
+		repos []*types.Repo
+		errs  error
+	)
+
+	for res := range results {
+		if res.Err != nil {
+			for _, extSvc := range res.Source.ExternalServices() {
+				errs = errors.Append(errs, &SourceError{Err: res.Err, ExtSvc: extSvc})
+			}
+			continue
+		}
+		repos = append(repos, res.Repo)
+	}
+
+	return repos, errs
+}
+
+// searchRepositories calls SearchRepositories on the given DiscoverableSource and collects the SourceResults
+// the Source sends over a channel into a slice of *types.Repo and a single error
+func searchRepositories(ctx context.Context, src DiscoverableSource, query string, first int, excludeRepos []string) ([]*types.Repo, error) {
+	results := make(chan SourceResult)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	go func() {
+		src.SearchRepositories(ctx, query, first, excludeRepos, results)
 		close(results)
 	}()
 

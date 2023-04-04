@@ -37,8 +37,8 @@ interactions:
       20) {\n    nodes {\n      id\n      status\n      conclusion\n      checkRuns(last:
       20) {\n        nodes {\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
       prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
-      repo on Repository {\n  id\n  owner {\n    login\n  }\n}\n\nfragment pr on PullRequest
-      {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
+      repo on Repository {\n  id\n  name\n  owner {\n    login\n  }\n}\n\nfragment
+      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
       {\n    ...actor\n  }\n  baseRepository {\n    ...repo\n  }\n  headRepository
       {\n    ...repo\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
       100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
@@ -55,13 +55,17 @@ interactions:
     headers:
       Accept:
       - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"createPullRequest":{"pullRequest":null}},"errors":[{"type":"UNPROCESSABLE","path":["createPullRequest"],"locations":[{"line":314,"column":3}],"message":"A
-      pull request already exists for sourcegraph:always-open-pr."}]}'
+    body: '{"data":{"createPullRequest":{"pullRequest":null}},"errors":[{"type":"UNPROCESSABLE","path":["createPullRequest"],"locations":[{"line":315,"column":3}],"message":"A
+      pull request already exists for sourcegraph:always-open-pr."}],"extensions":{"warnings":[{"type":"DEPRECATION","message":"The
+      id MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM= is deprecated. Update your cache to use
+      the next_global_id from the data payload.","data":{"legacy_global_id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","next_global_id":"R_kgDODS5xeQ"},"link":"https://docs.github.com"}]}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -75,7 +79,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 30 Dec 2021 22:57:43 GMT
+      - Fri, 03 Feb 2023 20:10:25 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -84,8 +88,6 @@ interactions:
       - max-age=31536000; includeSubdomains; preload
       Vary:
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - repo
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
@@ -93,14 +95,11 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - B984:627A:17801E5:32F84A0:61CE3967
-      X-Oauth-Scopes:
-      - read:discussion, read:org, read:packages, read:public_key, read:repo_hook,
-        read:user, repo, workflow
+      - DC2D:33CA:E97753:F1E35D:63DD6A31
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "160"
+      - "84"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -142,8 +141,8 @@ interactions:
       20) {\n    nodes {\n      id\n      status\n      conclusion\n      checkRuns(last:
       20) {\n        nodes {\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
       prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
-      repo on Repository {\n  id\n  owner {\n    login\n  }\n}\n\nfragment pr on PullRequest
-      {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
+      repo on Repository {\n  id\n  name\n  owner {\n    login\n  }\n}\n\nfragment
+      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
       {\n    ...actor\n  }\n  baseRepository {\n    ...repo\n  }\n  headRepository
       {\n    ...repo\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
       100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
@@ -160,6 +159,8 @@ interactions:
     headers:
       Accept:
       - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/graphql
@@ -167,7 +168,7 @@ interactions:
   response:
     body: '{"data":{"repository":{"pullRequests":{"nodes":[{"id":"MDExOlB1bGxSZXF1ZXN0MzM5NzUyNDQy","title":"This
       is a test PR that is always open (keep it open!)","body":"Feel free to ignore
-      this. This is a test PR that is always open.","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/1","number":1,"createdAt":"2019-11-12T06:40:21Z","updatedAt":"2019-12-05T07:09:31Z","headRefOid":"37406e7dfa4466b80d1da183d6477aac16b1e58c","baseRefOid":"c75943274b322ffef2230df8f8049de84ddf12c1","headRefName":"always-open-pr","baseRefName":"master","isDraft":false,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff&v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"baseRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","owner":{"login":"sourcegraph"}},"headRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","owner":{"login":"sourcegraph"}},"participants":{"nodes":[{"avatarUrl":"https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff&v=4","login":"mrnugget","url":"https://github.com/mrnugget"},{"avatarUrl":"https://avatars.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"37406e7dfa4466b80d1da183d6477aac16b1e58c","status":null,"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMDY0MTAzODA=","status":"COMPLETED","conclusion":"STALE","checkRuns":{"nodes":[]}},{"id":"MDEwOkNoZWNrU3VpdGUzMDY0MTAzODM=","status":"COMPLETED","conclusion":"STALE","checkRuns":{"nodes":[]}}]},"committedDate":"2019-11-12T06:39:23Z"}}]},"timelineItems":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpPPAAABbtTkb_gBqjI4NTY3MzIyNjI="},"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"9d04a0d8733dafbb5d75e594a9ec525c49dfc975","message":"Add
+      this. This is a test PR that is always open.","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/1","number":1,"createdAt":"2019-11-12T06:40:21Z","updatedAt":"2019-12-05T07:09:31Z","headRefOid":"37406e7dfa4466b80d1da183d6477aac16b1e58c","baseRefOid":"c75943274b322ffef2230df8f8049de84ddf12c1","headRefName":"always-open-pr","baseRefName":"master","isDraft":false,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff&v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"baseRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"headRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"participants":{"nodes":[{"avatarUrl":"https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff&v=4","login":"mrnugget","url":"https://github.com/mrnugget"},{"avatarUrl":"https://avatars.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"37406e7dfa4466b80d1da183d6477aac16b1e58c","status":null,"checkSuites":{"nodes":[]},"committedDate":"2019-11-12T06:39:23Z"}}]},"timelineItems":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpPPAAABbtTkb_gBqjI4NTY3MzIyNjI="},"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"9d04a0d8733dafbb5d75e594a9ec525c49dfc975","message":"Add
       another file","messageHeadline":"Add another file","committedDate":"2019-11-12T06:38:55Z","pushedDate":"2019-11-12T06:39:00Z","url":"https://github.com/sourcegraph/automation-testing/commit/9d04a0d8733dafbb5d75e594a9ec525c49dfc975","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1185253?v=4","email":"mrnugget@gmail.com","name":"Thorsten
       Ball","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff&v=4","login":"mrnugget","url":"https://github.com/mrnugget"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"37406e7dfa4466b80d1da183d6477aac16b1e58c","message":"Test
       commit to always have a open PR","messageHeadline":"Test commit to always have
@@ -188,7 +189,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 30 Dec 2021 22:57:44 GMT
+      - Fri, 03 Feb 2023 20:10:26 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -197,8 +198,6 @@ interactions:
       - max-age=31536000; includeSubdomains; preload
       Vary:
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - repo
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
@@ -206,14 +205,11 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - B984:627A:17801FB:32F84C9:61CE3967
-      X-Oauth-Scopes:
-      - read:discussion, read:org, read:packages, read:public_key, read:repo_hook,
-        read:user, repo, workflow
+      - DC2D:33CA:E977E2:F1E3FA:63DD6A31
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "163"
+      - "87"
       X-Xss-Protection:
       - "0"
     status: 200 OK

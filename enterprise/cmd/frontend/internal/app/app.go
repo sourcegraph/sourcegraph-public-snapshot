@@ -72,16 +72,6 @@ func Init(
 	return nil
 }
 
-func checkIfOrgCanInstallGitHubApp(ctx context.Context, db database.DB, orgID int32) error {
-	enabled, err := db.FeatureFlags().GetOrgFeatureFlag(ctx, orgID, "github-app-cloud")
-	if err != nil {
-		return err
-	} else if !enabled {
-		return errors.New("Sourcegraph Cloud GitHub App setup is not enabled for the organization")
-	}
-	return nil
-}
-
 type githubClient interface {
 	GetAppInstallation(ctx context.Context, installationID int64) (*gogithub.Installation, error)
 }

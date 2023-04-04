@@ -5,11 +5,8 @@ import { noop } from 'lodash'
 
 import { LazyQueryInput } from '@sourcegraph/branded'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { QueryChangeSource } from '@sourcegraph/shared/src/search'
+import { QueryState } from '@sourcegraph/shared/src/search'
 import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
-
-import { useExperimentalFeatures } from '../../../../../stores'
-import { useTheme, ThemePreference } from '../../../../../theme'
 
 import styles from './MonacoField.module.scss'
 
@@ -43,15 +40,15 @@ export const MonacoFocusContainer = forwardRef((props, reference) => {
 }) as ForwardReferenceComponent<'div'>
 
 export interface MonacoFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'onBlur'> {
-    value: string
+    queryState: QueryState
     patternType?: SearchPatternType
     onBlur?: () => void
-    onChange?: (value: string) => void
+    onChange?: (value: QueryState) => void
 }
 
 export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props, reference) => {
     const {
-        value,
+        queryState,
         className,
         onChange = noop,
         onBlur = noop,
@@ -60,6 +57,9 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
         placeholder,
         patternType = SearchPatternType.regexp,
         'aria-labelledby': ariaLabelledby,
+        'aria-invalid': ariaInvalid,
+        'aria-busy': ariaBusy,
+        tabIndex = 0,
     } = props
 
     const { renderedWithinFocusContainer } = useContext(MonacoFieldContext)
@@ -71,22 +71,20 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
     // @ts-ignore
     useImperativeHandle(reference, () => null)
 
-    const { enhancedThemePreference } = useTheme()
-    const applySuggestionsOnEnter =
-        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
     const monacoOptions = useMemo(() => ({ readOnly: disabled }), [disabled])
 
     return (
         <LazyQueryInput
             ariaLabelledby={ariaLabelledby}
-            queryState={{ query: value, changeSource: QueryChangeSource.userInput }}
-            isLightTheme={enhancedThemePreference === ThemePreference.Light}
+            ariaInvalid={ariaInvalid?.toString()}
+            ariaBusy={ariaBusy?.toString()}
+            queryState={queryState}
             isSourcegraphDotCom={false}
             preventNewLine={false}
-            onChange={({ query }) => onChange(query)}
+            interpretComments={true}
+            onChange={onChange}
             patternType={patternType}
             caseSensitive={false}
-            globbing={true}
             placeholder={placeholder}
             className={classNames(className, styles.monacoField, 'form-control', 'with-invalid-icon', {
                 [styles.focusContainer]: !renderedWithinFocusContainer,
@@ -95,7 +93,8 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
             editorOptions={monacoOptions}
             autoFocus={autoFocus}
             onBlur={onBlur}
-            applySuggestionsOnEnter={applySuggestionsOnEnter}
+            applySuggestionsOnEnter={false}
+            tabIndex={tabIndex}
         />
     )
 })

@@ -4,6 +4,7 @@
   "project_id": 16606088,
   "source_project_id": 16606088,
   "SourceProjectNamespace": "",
+  "SourceProjectName": "",
   "title": "a8n: Allow filtering campaigns based on their state",
   "description": "",
   "state": "opened",

@@ -1,4 +1,4 @@
-import { useLocation } from 'react-router'
+import { useLocation } from 'react-router-dom'
 
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 

@@ -73,11 +73,11 @@ func parseSiteConfig(conf *conf.Unified) (*config, error) {
 	if c.Github.Uri != "" {
 		config.urn = c.Github.Uri
 	}
-	url, err := url.Parse(config.urn)
+	configUrl, err := url.Parse(config.urn)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing GitHub URL from configuration")
 	}
-	config.api, _ = github.APIRoot(url)
+	config.api, _ = github.APIRoot(configUrl)
 
 	if c.Github.Repository != nil {
 		if c.Github.Repository.Owner != "" {

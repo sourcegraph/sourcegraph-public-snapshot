@@ -7,9 +7,8 @@ import { Omit } from 'utility-types'
 
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { LineOrPositionOrRange } from '@sourcegraph/common'
-import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { observeSystemIsLightTheme } from '@sourcegraph/shared/src/deprecated-theme-utils'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { observeSystemIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import {
     FileSpec,
@@ -27,15 +26,12 @@ import { getPlatformName } from '../../util/context'
 import { querySelectorAllOrSelf, querySelectorOrSelf } from '../../util/dom'
 import { CodeHost, MountGetter } from '../shared/codeHost'
 import { CodeView, toCodeViewResolver } from '../shared/codeViews'
-import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
-import { NativeTooltip } from '../shared/nativeTooltips'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../shared/util/selections'
 import { ViewResolver } from '../shared/views'
 
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './domFunctions'
-import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './fileInfo'
-import { getFileContainers, parseURL, getFilePath, getSelectorFor } from './util'
+import { getFileContainers, parseURL, getSelectorFor } from './util'
 
 import styles from './codeHost.module.scss'
 
@@ -320,20 +316,7 @@ export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLE
     return mount
 }
 
-const nativeTooltipResolver: ViewResolver<NativeTooltip> = {
-    selector: '.js-tagsearch-popover',
-    resolveView: element => ({ element }),
-}
-
 const iconClassName = classNames(styles.icon, 'v-align-text-bottom')
-
-const notificationClassNames = {
-    [NotificationType.Log]: 'flash',
-    [NotificationType.Success]: 'flash flash-success',
-    [NotificationType.Info]: 'flash',
-    [NotificationType.Warning]: 'flash flash-warn',
-    [NotificationType.Error]: 'flash flash-error',
-}
 
 const searchEnhancement: GithubCodeHost['searchEnhancement'] = {
     searchViewResolver: {
@@ -682,7 +665,6 @@ export const githubCodeHost: GithubCodeHost = {
     searchEnhancement,
     enhanceSearchPage,
     codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
-    nativeTooltipResolvers: [nativeTooltipResolver],
     routeChange: mutations =>
         mutations.pipe(
             map(() => {
@@ -691,7 +673,7 @@ export const githubCodeHost: GithubCodeHost = {
                 // repository file tree navigation
                 const pageType = pathname.slice(1).split('/')[2]
                 if (pageType === 'blob' || pageType === 'tree') {
-                    return pathname.endsWith(getFilePath()) ? pathname : undefined
+                    return pathname.endsWith(resolveFileInfo().blob.filePath) ? pathname : undefined
                 }
 
                 // search results page filters being applied
@@ -728,24 +710,6 @@ export const githubCodeHost: GithubCodeHost = {
         iconClassName,
     },
     check: checkIsGitHub,
-    getCommandPaletteMount,
-    notificationClassNames,
-    commandPaletteClassProps: {
-        buttonClassName: 'Header-link d-flex flex-items-baseline',
-        popoverClassName: classNames('Box', styles.commandPalettePopover),
-        formClassName: 'p-1',
-        inputClassName: 'form-control input-sm header-search-input jump-to-field-active',
-        listClassName: 'p-0 m-0 js-navigation-container jump-to-suggestions-results-container',
-        selectedListItemClassName: 'navigation-focus',
-        listItemClassName:
-            'd-flex flex-justify-start flex-items-center p-0 f5 navigation-item js-navigation-item js-jump-to-scoped-search',
-        actionItemClassName: classNames(
-            styles.commandPaletteActionItem,
-            'no-underline d-flex flex-auto flex-items-center jump-to-suggestions-path p-2'
-        ),
-        noResultsClassName: 'd-flex flex-auto flex-items-center jump-to-suggestions-path p-2',
-        iconClassName,
-    },
     codeViewToolbarClassProps: {
         className: styles.codeViewToolbar,
         listItemClass: classNames(styles.codeViewToolbarItem, 'BtnGroup'),
@@ -759,7 +723,6 @@ export const githubCodeHost: GithubCodeHost = {
         actionItemPressedClassName: 'active',
         closeButtonClassName: 'btn-octicon p-0 hover-overlay__close-button--github',
         badgeClassName: classNames('label', styles.hoverOverlayBadge),
-        getAlertClassName: createNotificationClassNameGetter(notificationClassNames, 'flash-full'),
         iconClassName,
     },
     urlToFile: (sourcegraphURL, target, context) => {

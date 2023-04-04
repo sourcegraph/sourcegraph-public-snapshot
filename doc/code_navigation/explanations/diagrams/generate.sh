@@ -10,12 +10,11 @@ declare mermaid_diagrams=(
 )
 
 # Install mermaid util
-pnpm
-mermaid="../../../../node_modules/.bin/mmdc"
+pnpm install
 
 # Generate mermaid diagrams
 for diagram in "${mermaid_diagrams[@]}"; do
-  "${mermaid}" -i "${diagram}.mermaid" -o "${diagram}.svg"
+  pnpm mmdc -i "$(pwd)/${diagram}.mermaid" -o "$(pwd)/${diagram}.svg"
 
   # Make the generated id deterministic so CI won't see superflouous changes
   sed -i '' "s/mermaid-[0-9]\{1,\}/mermaid-${diagram}/g" "${diagram}.svg"

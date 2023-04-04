@@ -16,12 +16,14 @@
   },
   "BaseRepository": {
    "ID": "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+   "Name": "automation-testing",
    "Owner": {
     "Login": "sourcegraph"
    }
   },
   "HeadRepository": {
    "ID": "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+   "Name": "automation-testing",
    "Owner": {
     "Login": "sourcegraph"
    }
@@ -69,6 +71,28 @@
       "URL": "https://github.com/LawnGnome"
      },
      "CreatedAt": "2021-12-30T22:53:14Z"
+    }
+   },
+   {
+    "Type": "ConvertToDraftEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466\u0026v=4",
+      "Login": "courier-new",
+      "URL": "https://github.com/courier-new"
+     },
+     "CreatedAt": "2023-02-07T08:38:12Z"
+    }
+   },
+   {
+    "Type": "ReadyForReviewEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/63290851?v=4",
+      "Login": "sourcegraph-vcr",
+      "URL": "https://github.com/sourcegraph-vcr"
+     },
+     "CreatedAt": "2023-02-07T08:39:23Z"
     }
    }
   ],
@@ -119,5 +143,5 @@
   },
   "IsDraft": false,
   "CreatedAt": "2021-12-30T22:43:31Z",
-  "UpdatedAt": "2021-12-30T22:53:13Z"
+  "UpdatedAt": "2023-02-07T08:39:23Z"
  }

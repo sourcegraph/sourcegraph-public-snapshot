@@ -14,6 +14,7 @@ import (
 	"syscall"
 
 	"github.com/sourcegraph/log"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -168,35 +169,37 @@ type RemoteGitCommand struct {
 	stdin          []byte
 	noTimeout      bool
 	exitStatus     int
-	execFn         func(ctx context.Context, repo api.RepoName, op string, payload any) (resp *http.Response, err error)
+	execer         execer
+}
+
+type execer interface {
+	httpPost(ctx context.Context, repo api.RepoName, op string, payload any) (resp *http.Response, err error)
+	AddrForRepo(repo api.RepoName) string
+	ConnForRepo(repo api.RepoName) (*grpc.ClientConn, error)
 }
 
 // DividedOutput runs the command and returns its standard output and standard error.
 func (c *RemoteGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, error) {
-	rc, trailer, err := c.sendExec(ctx)
+	rc, err := c.sendExec(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
+	defer rc.Close()
 
 	stdout, err := io.ReadAll(rc)
 	if err != nil {
+		if v := (&CommandStatusError{}); errors.As(err, &v) {
+			c.exitStatus = int(v.StatusCode)
+			if v.Message != "" {
+				return stdout, []byte(v.Stderr), errors.New(v.Message)
+			} else {
+				return stdout, []byte(v.Stderr), v
+			}
+		}
 		return nil, nil, errors.Wrap(err, "reading exec output")
 	}
-	if err := rc.Close(); err != nil {
-		return nil, nil, errors.Wrap(err, "closing exec reader")
-	}
 
-	c.exitStatus, err = strconv.Atoi(trailer.Get("X-Exec-Exit-Status"))
-	if err != nil {
-		return nil, nil, err
-	}
-
-	stderr := []byte(trailer.Get("X-Exec-Stderr"))
-	if errorMsg := trailer.Get("X-Exec-Error"); errorMsg != "" {
-		return stdout, stderr, errors.New(errorMsg)
-	}
-
-	return stdout, stderr, nil
+	return stdout, nil, nil
 }
 
 // Output runs the command and returns its standard output.
@@ -233,15 +236,7 @@ func (c *RemoteGitCommand) String() string { return fmt.Sprintf("%q", c.args) }
 // non-zero return value, Read returns a non io.EOF error. Do not pass in a
 // started command.
 func (c *RemoteGitCommand) StdoutReader(ctx context.Context) (io.ReadCloser, error) {
-	rc, trailer, err := c.sendExec(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return &cmdReader{
-		rc:      rc,
-		trailer: trailer,
-	}, nil
+	return c.sendExec(ctx)
 }
 
 type cmdReader struct {
@@ -252,17 +247,32 @@ type cmdReader struct {
 func (c *cmdReader) Read(p []byte) (int, error) {
 	n, err := c.rc.Read(p)
 	if err == io.EOF {
+		statusCode, err := strconv.Atoi(c.trailer.Get("X-Exec-Exit-Status"))
+		if err != nil {
+			return n, errors.Wrap(err, "failed to parse exit status code")
+		}
+
+		errorMessage := c.trailer.Get("X-Exec-Error")
+
+		// did the command exit cleanly?
+		if statusCode == 0 && errorMessage == "" {
+			// yes - propagate io.EOF
+
+			return n, io.EOF
+		}
+
+		// no - report it
+
 		stderr := c.trailer.Get("X-Exec-Stderr")
-		if len(stderr) > 100 {
-			stderr = stderr[:100] + "... (truncated)"
+		err = &CommandStatusError{
+			Stderr:     stderr,
+			StatusCode: int32(statusCode),
+			Message:    errorMessage,
 		}
-		if errorMsg := c.trailer.Get("X-Exec-Error"); errorMsg != "" {
-			return 0, errors.Errorf("%s (stderr: %q)", errorMsg, stderr)
-		}
-		if exitStatus := c.trailer.Get("X-Exec-Exit-Status"); exitStatus != "0" {
-			return 0, errors.Errorf("non-zero exit status: %s (stderr: %q)", exitStatus, stderr)
-		}
+
+		return n, err
 	}
+
 	return n, err
 }
 

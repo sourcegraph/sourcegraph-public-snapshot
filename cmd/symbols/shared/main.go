@@ -9,10 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/getsentry/sentry-go"
-
 	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api"
@@ -23,58 +20,36 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
-	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
-	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/profiler"
+	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/tracer"
-	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var sanityCheck, _ = strconv.ParseBool(env.Get("SANITY_CHECK", "false", "check that go-sqlite3 works then exit 0 if it's ok or 1 if not"))
 
 var (
 	baseConfig              = env.BaseConfig{}
-	RepositoryFetcherConfig = types.LoadRepositoryFetcherConfig(baseConfig)
-	CtagsConfig             = types.LoadCtagsConfig(baseConfig)
+	RepositoryFetcherConfig types.RepositoryFetcherConfig
+	CtagsConfig             types.CtagsConfig
 )
 
 const addr = ":3184"
 
 type SetupFunc func(observationCtx *observation.Context, db database.DB, gitserverClient gitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error)
 
-func Main(setup SetupFunc) {
-	// Initialization
-	env.HandleHelpFlag()
-	logging.Init() //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
-	liblog := log.Init(log.Resource{
-		Name:       env.MyName,
-		Version:    version.Version(),
-		InstanceID: hostname.Get(),
-	}, log.NewSentrySinkWith(
-		log.SentrySink{
-			ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
-		},
-	)) // Experimental: DevX is observing how sampling affects the errors signal
-	defer liblog.Sync()
-
-	conf.Init()
-	go conf.Watch(liblog.Update(conf.GetLogSinks))
-	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
-	profiler.Init()
+func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, setup SetupFunc) error {
+	logger := observationCtx.Logger
 
 	routines := []goroutine.BackgroundRoutine{}
 
 	// Initialize tracing/metrics
-	logger := log.Scoped("service", "the symbols service")
-	observationCtx := observation.NewContext(logger, observation.Honeycomb(&honey.Dataset{
+	observationCtx = observation.NewContext(logger, observation.Honeycomb(&honey.Dataset{
 		Name:       "codeintel-symbols",
 		SampleRate: 20,
 	}))
@@ -100,20 +75,17 @@ func Main(setup SetupFunc) {
 	db := database.NewDB(logger, sqlDB)
 
 	// Run setup
-	gitserverClient := gitserver.NewClient(observationCtx, db)
+	gitserverClient := gitserver.NewClient(observationCtx)
 	repositoryFetcher := fetcher.NewRepositoryFetcher(observationCtx, gitserverClient, RepositoryFetcherConfig.MaxTotalPathsLength, int64(RepositoryFetcherConfig.MaxFileSizeKb)*1000)
 	searchFunc, handleStatus, newRoutines, ctagsBinary, err := setup(observationCtx, db, gitserverClient, repositoryFetcher)
 	if err != nil {
-		logger.Fatal("Failed to set up", log.Error(err))
+		return errors.Wrap(err, "failed to set up")
 	}
 	routines = append(routines, newRoutines...)
 
-	// Start debug server
-	ready := make(chan struct{})
-	go debugserver.NewServerRoutine(ready).Start()
-
 	// Create HTTP server
 	handler := api.NewHandler(searchFunc, gitserverClient.ReadFile, handleStatus, ctagsBinary)
+
 	handler = handlePanic(logger, handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
@@ -126,8 +98,10 @@ func Main(setup SetupFunc) {
 	routines = append(routines, server)
 
 	// Mark health server as ready and go!
-	close(ready)
-	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
+	ready()
+	goroutine.MonitorBackgroundRoutines(ctx, routines...)
+
+	return nil
 }
 
 func mustInitializeFrontendDB(observationCtx *observation.Context) *sql.DB {

@@ -48,7 +48,7 @@ func TestExtensionsUsageStatistics(t *testing.T) {
 	}
 
 	oneFloat := float64(1)
-	oneAndAHalfFloat := float64(1.5)
+	oneAndAHalfFloat := 1.5
 	oneInt := int32(1)
 	twoInt := int32(2)
 

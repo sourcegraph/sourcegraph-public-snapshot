@@ -1,9 +1,75 @@
 [
   {
    "ID": 0,
+   "Name": "bitbucket.sgdev.org/SOURCEGRAPH/empty-repo-1",
+   "URI": "bitbucket.sgdev.org/SOURCEGRAPH/empty-repo-1",
+   "Description": "This repo is fast to clone and is intended to be used for e2e tests",
+   "Fork": false,
+   "Archived": false,
+   "Private": true,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "10193",
+    "ServiceType": "bitbucketServer",
+    "ServiceID": "https://bitbucket.sgdev.org/"
+   },
+   "Sources": {
+    "extsvc:bitbucketserver:1": {
+     "ID": "extsvc:bitbucketserver:1",
+     "CloneURL": "https://bitbucket.sgdev.org/scm/sourcegraph/empty-repo-1.git"
+    }
+   },
+   "Metadata": {
+    "slug": "empty-repo-1",
+    "id": 10193,
+    "name": "empty-repo-1",
+    "description": "This repo is fast to clone and is intended to be used for e2e tests",
+    "scmId": "git",
+    "state": "AVAILABLE",
+    "statusMessage": "Available",
+    "forkable": true,
+    "origin": null,
+    "project": {
+     "key": "SOURCEGRAPH",
+     "id": 28,
+     "name": "Sourcegraph e2e testing",
+     "public": false,
+     "type": "NORMAL",
+     "links": {
+      "self": [
+       {
+        "href": "https://bitbucket.sgdev.org/projects/SOURCEGRAPH"
+       }
+      ]
+     }
+    },
+    "public": false,
+    "links": {
+     "clone": [
+      {
+       "href": "ssh://git@bitbucket.sgdev.org:7999/sourcegraph/empty-repo-1.git",
+       "name": "ssh"
+      },
+      {
+       "href": "https://bitbucket.sgdev.org/scm/sourcegraph/empty-repo-1.git",
+       "name": "http"
+      }
+     ],
+     "self": [
+      {
+       "href": "https://bitbucket.sgdev.org/projects/SOURCEGRAPH/repos/empty-repo-1/browse"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "ID": 0,
    "Name": "bitbucket.sgdev.org/SOURCEGRAPH/jsonrpc2",
    "URI": "bitbucket.sgdev.org/SOURCEGRAPH/jsonrpc2",
-   "Description": "jsonrpc2",
+   "Description": "",
    "Fork": false,
    "Archived": false,
    "Private": true,
@@ -25,6 +91,7 @@
     "slug": "jsonrpc2",
     "id": 10066,
     "name": "jsonrpc2",
+    "description": "",
     "scmId": "git",
     "state": "AVAILABLE",
     "statusMessage": "Available",

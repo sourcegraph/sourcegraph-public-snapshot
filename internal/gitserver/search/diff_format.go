@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/go-diff/diff"
 
+	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -76,8 +77,12 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]MatchedFileDiff) (s
 			loc.Line++
 			loc.Column = 0
 
-			lines := bytes.Split(hunk.Body, []byte("\n"))
-			for lineIdx, line := range lines {
+			lr := byteutils.NewLineReader(hunk.Body)
+			lineIdx := -1
+			for lr.Scan() {
+				line := lr.Line()
+				lineIdx++
+
 				if len(line) == 0 {
 					continue
 				}

@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "_examples_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/output/_examples",
+    visibility = ["//visibility:private"],
+    deps = ["//lib/output"],
+)
+
+go_binary(
+    name = "_examples",
+    embed = [":_examples_lib"],
+    visibility = ["//visibility:public"],
+)

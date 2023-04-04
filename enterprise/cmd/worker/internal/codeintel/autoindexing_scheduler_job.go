@@ -7,8 +7,7 @@ import (
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing"
-	policies "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -30,7 +29,7 @@ func (j *autoindexingScheduler) Config() []env.Config {
 	}
 }
 
-func (j *autoindexingScheduler) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *autoindexingScheduler) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err
@@ -41,13 +40,19 @@ func (j *autoindexingScheduler) Routines(startupCtx context.Context, observation
 		return nil, err
 	}
 
-	gitserverClient := gitserver.New(observationCtx, db)
+	matcher := policies.NewMatcher(
+		services.GitserverClient,
+		policies.IndexingExtractor,
+		false,
+		true,
+	)
 
 	return autoindexing.NewIndexSchedulers(
 		observationCtx,
 		services.UploadsService,
 		services.PoliciesService,
-		policies.NewMatcher(gitserverClient, policies.IndexingExtractor, false, true),
+		matcher,
 		services.AutoIndexingService,
+		db.Repos(),
 	), nil
 }

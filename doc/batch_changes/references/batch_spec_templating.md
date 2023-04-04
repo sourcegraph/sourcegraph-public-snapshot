@@ -103,7 +103,7 @@ They are evaluated before the execution of each entry in `steps`, except for the
 
 ### `changesetTemplate` context
 
-> NOTE: Templating in `changsetTemplate` is only supported in Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later.
+<span class="badge badge-note">Sourcegraph 3.24+<span>
 
 The following template variables are available in the fields under `changesetTemplate`.
 

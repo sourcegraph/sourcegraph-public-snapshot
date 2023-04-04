@@ -9,7 +9,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -29,9 +29,10 @@ const (
 	SecurityEventNameSignInFailed    SecurityEventName = "SignInFailed"
 	SecurityEventNameSignInSucceeded SecurityEventName = "SignInSucceeded"
 
-	SecurityEventNameAccountCreated SecurityEventName = "AccountCreated"
-	SecurityEventNameAccountDeleted SecurityEventName = "AccountDeleted"
-	SecurityEventNameAccountNuked   SecurityEventName = "AccountNuked"
+	SecurityEventNameAccountCreated  SecurityEventName = "AccountCreated"
+	SecurityEventNameAccountDeleted  SecurityEventName = "AccountDeleted"
+	SecurityEventNameAccountModified SecurityEventName = "AccountModified"
+	SecurityEventNameAccountNuked    SecurityEventName = "AccountNuked"
 
 	SecurityEventNamPasswordResetRequested SecurityEventName = "PasswordResetRequested"
 	SecurityEventNamPasswordRandomized     SecurityEventName = "PasswordRandomized"
@@ -56,6 +57,12 @@ const (
 
 	SecurityEventGitLabAuthSucceeded SecurityEventName = "GitLabAuthSucceeded"
 	SecurityEventGitLabAuthFailed    SecurityEventName = "GitLabAuthFailed"
+
+	SecurityEventBitbucketCloudAuthSucceeded SecurityEventName = "BitbucketCloudAuthSucceeded"
+	SecurityEventBitbucketCloudAuthFailed    SecurityEventName = "BitbucketCloudAuthFailed"
+
+	SecurityEventAzureDevOpsAuthSucceeded SecurityEventName = "AzureDevOpsAuthSucceeded"
+	SecurityEventAzureDevOpsAuthFailed    SecurityEventName = "AzureDevOpsAuthFailed"
 
 	SecurityEventOIDCLoginSucceeded SecurityEventName = "SecurityEventOIDCLoginSucceeded"
 	SecurityEventOIDCLoginFailed    SecurityEventName = "SecurityEventOIDCLoginFailed"
@@ -112,7 +119,7 @@ func (s *securityEventLogsStore) Insert(ctx context.Context, event *SecurityEven
 }
 
 func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*SecurityEvent) error {
-	actor := actor.FromContext(ctx)
+	actor := sgactor.FromContext(ctx)
 	vals := make([]*sqlf.Query, len(events))
 	for index, event := range events {
 		// Add an attribution for Sourcegraph operator to be distinguished in our analytics pipelines

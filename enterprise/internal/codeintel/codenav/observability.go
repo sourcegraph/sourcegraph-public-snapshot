@@ -19,14 +19,13 @@ type operations struct {
 	getDefinitions         *observation.Operation
 	getRanges              *observation.Operation
 	getStencil             *observation.Operation
-	getDumpsByIDs          *observation.Operation
 	getClosestDumpsForBlob *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
 
 func newOperations(observationCtx *observation.Context) *operations {
-	metrics := m.Get(func() *metrics.REDMetrics {
+	redMetrics := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
 			observationCtx.Registerer,
 			"codeintel_codenav",
@@ -39,7 +38,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.codenav.%s", name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           redMetrics,
 		})
 	}
 
@@ -51,7 +50,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getDefinitions:         op("getDefinitions"),
 		getRanges:              op("getRanges"),
 		getStencil:             op("getStencil"),
-		getDumpsByIDs:          op("GetDumpsByIDs"),
 		getClosestDumpsForBlob: op("GetClosestDumpsForBlob"),
 	}
 }

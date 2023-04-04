@@ -15,6 +15,9 @@ export const USERS_MANAGEMENT_SUMMARY = gql`
                 totalCount
             }
         }
+        pendingAccessRequests: accessRequests(status: PENDING) {
+            totalCount
+        }
     }
 `
 
@@ -52,6 +55,7 @@ export const USERS_MANAGEMENT_USERS_LIST = gql`
                     lastActiveAt
                     deletedAt
                     locked
+                    scimControlled
                 }
             }
         }
@@ -77,6 +81,14 @@ export const DELETE_USERS = gql`
 export const DELETE_USERS_FOREVER = gql`
     mutation DeleteUsersForever($userIDs: [ID!]!) {
         deleteUsers(users: $userIDs, hard: true) {
+            alwaysNil
+        }
+    }
+`
+
+export const RECOVER_USERS = gql`
+    mutation RecoverUsers($userIDs: [ID!]!) {
+        recoverUsers(userIDs: $userIDs) {
             alwaysNil
         }
     }

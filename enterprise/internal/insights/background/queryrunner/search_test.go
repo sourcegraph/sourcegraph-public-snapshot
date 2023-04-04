@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
@@ -52,7 +52,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			t.Error(err)
 		}
 		stringified := stringify(recordings)
-		autogold.Want("compute stream job with no dependencies", []string{
+		autogold.Expect([]string{
 			"github.com/sourcegraph/sourcegraph 11 2021-12-01 00:00:00 +0000 UTC 1.14 1.000000",
 			"github.com/sourcegraph/sourcegraph 11 2021-12-01 00:00:00 +0000 UTC 1.15 3.000000",
 		}).Equal(t, stringified)
@@ -196,7 +196,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			t.Error(err)
 		}
 		stringified := stringify(recordings)
-		autogold.Want("compute stream job with no dependencies multirepo", []string{
+		autogold.Expect([]string{
 			"github.com/sourcegraph/handbook 5 2021-12-01 00:00:00 +0000 UTC 1.18 2.000000",
 			"github.com/sourcegraph/handbook 5 2021-12-01 00:00:00 +0000 UTC 1.20 1.000000",
 			"github.com/sourcegraph/sourcegraph 11 2021-12-01 00:00:00 +0000 UTC 1.11 3.000000",
@@ -235,7 +235,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			t.Error(err)
 		}
 		stringified := stringify(recordings)
-		autogold.Want("compute stream job with dependencies", []string{
+		autogold.Expect([]string{
 			"github.com/sourcegraph/sourcegraph 11 2021-08-01 00:00:00 +0000 UTC 1.11 3.000000",
 			"github.com/sourcegraph/sourcegraph 11 2021-08-01 00:00:00 +0000 UTC 1.18 1.000000",
 			"github.com/sourcegraph/sourcegraph 11 2021-08-01 00:00:00 +0000 UTC 1.33 6.000000",
@@ -394,7 +394,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 		// Bearing in mind search series points don't store any values apart from count as the
 		// value is the query. This translates into an empty space.
 		stringified := stringify(recordings)
-		autogold.Want("search stream job with no dependencies", []string{
+		autogold.Expect([]string{
 			"github.com/sourcegraph/sourcegraph 11 2021-12-01 00:00:00 +0000 UTC  5.000000",
 		}).Equal(t, stringified)
 	})
@@ -528,7 +528,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 			t.Error(err)
 		}
 		stringified := stringify(recordings)
-		autogold.Want("search stream job with no dependencies multirepo", []string{
+		autogold.Expect([]string{
 			"github.com/sourcegraph/handbook 5 2021-12-01 00:00:00 +0000 UTC  20.000000",
 			"github.com/sourcegraph/sourcegraph 11 2021-12-01 00:00:00 +0000 UTC  5.000000",
 		}).Equal(t, stringified)
@@ -562,7 +562,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 			t.Error(err)
 		}
 		stringified := stringify(recordings)
-		autogold.Want("search stream job with dependencies", []string{
+		autogold.Expect([]string{
 			"github.com/sourcegraph/sourcegraph 11 2021-08-01 00:00:00 +0000 UTC  5.000000",
 			"github.com/sourcegraph/sourcegraph 11 2021-09-01 00:00:00 +0000 UTC  5.000000",
 			"github.com/sourcegraph/sourcegraph 11 2021-10-01 00:00:00 +0000 UTC  5.000000",
@@ -713,6 +713,7 @@ func TestFilterRecordsingsByRepo(t *testing.T) {
 		DependentFrames: nil,
 	}
 	testCases := []struct {
+		name       string
 		job        SearchJob
 		series     types.InsightSeries
 		repoList   []*dbtypes.Repo
@@ -720,11 +721,12 @@ func TestFilterRecordsingsByRepo(t *testing.T) {
 		want       autogold.Value
 	}{
 		{
+			name:       "AllReposEmptySlice",
 			job:        testJob,
 			series:     types.InsightSeries{Repositories: []string{}},
 			repoList:   allRepos,
 			recordings: recordings,
-			want: autogold.Want("AllReposEmptySlice", []string{
+			want: autogold.Expect([]string{
 				" 0 0001-01-01 00:00:00 +0000 UTC  10.000000",
 				"repo1 1 0001-01-01 00:00:00 +0000 UTC  0.000000",
 				"repo1 1 0001-01-01 00:00:00 +0000 UTC  0.000000",
@@ -737,11 +739,12 @@ func TestFilterRecordsingsByRepo(t *testing.T) {
 			}),
 		},
 		{
+			name:       "AllReposNil",
 			job:        testJob,
 			series:     types.InsightSeries{Repositories: nil},
 			repoList:   allRepos,
 			recordings: recordings,
-			want: autogold.Want("AllReposNil", []string{
+			want: autogold.Expect([]string{
 				" 0 0001-01-01 00:00:00 +0000 UTC  10.000000",
 				"repo1 1 0001-01-01 00:00:00 +0000 UTC  0.000000",
 				"repo1 1 0001-01-01 00:00:00 +0000 UTC  0.000000",
@@ -754,11 +757,12 @@ func TestFilterRecordsingsByRepo(t *testing.T) {
 			}),
 		},
 		{
+			name:       "OddRepos",
 			job:        testJob,
 			series:     types.InsightSeries{Repositories: []string{string(repo1.Name), string(repo3.Name)}},
 			repoList:   oddRepos,
 			recordings: recordings,
-			want: autogold.Want("OddRepos", []string{
+			want: autogold.Expect([]string{
 				"repo1 1 0001-01-01 00:00:00 +0000 UTC  0.000000",
 				"repo1 1 0001-01-01 00:00:00 +0000 UTC  0.000000",
 				"repo3 3 0001-01-01 00:00:00 +0000 UTC  0.000000",
@@ -766,18 +770,19 @@ func TestFilterRecordsingsByRepo(t *testing.T) {
 			}),
 		},
 		{
+			name:       "Repo4NotFound",
 			job:        testJob,
 			series:     types.InsightSeries{Repositories: []string{string(repo2.Name), string(repo4.Name)}},
 			repoList:   []*dbtypes.Repo{repo2},
 			recordings: recordings,
-			want: autogold.Want("Repo4NotFound", []string{
+			want: autogold.Expect([]string{
 				"repo2 2 0001-01-01 00:00:00 +0000 UTC  0.000000",
 				"repo2 2 0001-01-01 00:00:00 +0000 UTC  0.000000",
 			}),
 		},
 	}
 	for _, tc := range testCases {
-		t.Run(tc.want.Name(), func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			mockRepoStore := database.NewMockRepoStore()
 			mockRepoStore.ListFunc.SetDefaultReturn(tc.repoList, nil)
 

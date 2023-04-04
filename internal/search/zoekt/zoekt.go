@@ -10,9 +10,9 @@ import (
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
-	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -99,90 +99,45 @@ func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
 		ChunkMatches: true,
 	}
 
+	// If we're searching repos, ignore the other options and only check one file per repo
+	if o.Selector.Root() == filter.Repository {
+		searchOpts.ShardRepoMaxMatchCount = 1
+		return searchOpts
+	}
+
 	if o.Features.Debug {
 		searchOpts.DebugScore = true
 	}
 
 	if o.Features.Ranking {
-		limit := int(o.FileMatchLimit)
+		// This enables our stream based ranking, where we wait a certain amount
+		// of time to collect results before ranking.
+		searchOpts.FlushWallTime = conf.SearchFlushWallTime()
 
-		// Tell each zoekt replica to not send back more than limit results.
-		searchOpts.MaxDocDisplayCount = limit
-
-		// These are reasonable default amounts of work to do per shard and
-		// replica respectively.
-		searchOpts.ShardMaxMatchCount = 10_000
-		searchOpts.TotalMaxMatchCount = 100_000
-
-		// If we are searching for large limits, raise the amount of work we
-		// are willing to do per shard and zoekt replica respectively.
-		if limit > searchOpts.ShardMaxMatchCount {
-			searchOpts.ShardMaxMatchCount = limit
-		}
-		if limit > searchOpts.TotalMaxMatchCount {
-			searchOpts.TotalMaxMatchCount = limit
-		}
-
-		// This enables our stream based ranking were we wait upto 500ms to
-		// collect results before ranking.
-		searchOpts.FlushWallTime = 500 * time.Millisecond
-
-		// This enables the use of PageRank scores if they are available.
+		// This enables the use of document ranks in scoring, if they are available.
 		searchOpts.UseDocumentRanks = true
-
-		// This damps the impact of document ranks on the final ranking.
-		searchOpts.RanksDampingFactor = 0.5
-
-		return searchOpts
+		searchOpts.DocumentRanksWeight = conf.SearchDocumentRanksWeight()
 	}
 
-	if userProbablyWantsToWaitLonger := o.FileMatchLimit > limits.DefaultMaxSearchResults; userProbablyWantsToWaitLonger {
-		searchOpts.MaxWallTime *= time.Duration(3 * float64(o.FileMatchLimit) / float64(limits.DefaultMaxSearchResults))
-	}
+	// These are reasonable default amounts of work to do per shard and
+	// replica respectively.
+	searchOpts.ShardMaxMatchCount = 10_000
+	searchOpts.TotalMaxMatchCount = 100_000
 
-	if o.Selector.Root() == filter.Repository {
-		searchOpts.ShardRepoMaxMatchCount = 1
-	} else {
-		k := o.resultCountFactor()
-		searchOpts.ShardMaxMatchCount = 100 * k
-		searchOpts.TotalMaxMatchCount = 100 * k
-		// Ask for 2000 more results so we have results to populate
-		// RepoStatusLimitHit.
-		searchOpts.MaxDocDisplayCount = int(o.FileMatchLimit) + 2000
+	// Tell each zoekt replica to not send back more than limit results.
+	limit := int(o.FileMatchLimit)
+	searchOpts.MaxDocDisplayCount = limit
+
+	// If we are searching for large limits, raise the amount of work we
+	// are willing to do per shard and zoekt replica respectively.
+	if limit > searchOpts.ShardMaxMatchCount {
+		searchOpts.ShardMaxMatchCount = limit
+	}
+	if limit > searchOpts.TotalMaxMatchCount {
+		searchOpts.TotalMaxMatchCount = limit
 	}
 
 	return searchOpts
-}
-
-func (o *Options) resultCountFactor() (k int) {
-	if o.GlobalSearch {
-		// for globalSearch, numRepos = 0, but effectively we are searching over all
-		// indexed repos, hence k should be 1
-		k = 1
-	} else {
-		// If we're only searching a small number of repositories, return more
-		// comprehensive results. This is arbitrary.
-		switch {
-		case o.NumRepos <= 5:
-			k = 100
-		case o.NumRepos <= 10:
-			k = 10
-		case o.NumRepos <= 25:
-			k = 8
-		case o.NumRepos <= 50:
-			k = 5
-		case o.NumRepos <= 100:
-			k = 3
-		case o.NumRepos <= 500:
-			k = 2
-		default:
-			k = 1
-		}
-	}
-	if o.FileMatchLimit > limits.DefaultMaxSearchResults {
-		k = int(float64(k) * 3 * float64(o.FileMatchLimit) / float64(limits.DefaultMaxSearchResults))
-	}
-	return k
 }
 
 // repoRevFunc is a function which maps repository names returned from Zoekt

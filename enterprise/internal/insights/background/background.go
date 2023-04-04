@@ -47,6 +47,8 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 	// Create a base store to be used for storing worker state. We store this in the main app Postgres
 	// DB, not the insights DB (which we use only for storing insights data.)
 	workerBaseStore := basestore.NewWithHandle(mainAppDB.Handle())
+	// Create an insights-DB backed store for retention jobs which live in the insights DB.
+	workerInsightsBaseStore := basestore.NewWithHandle(insightsDB.Handle())
 
 	// Create basic metrics for recording information about background jobs.
 	observationCtx := observation.NewContext(logger.Scoped("background", "insights background jobs"))
@@ -56,17 +58,15 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 	// The query runner worker is started in a separate routine so it can benefit from horizontal scaling.
 	routines := []goroutine.BackgroundRoutine{
 		// Discovers and enqueues insights work.
-		newInsightEnqueuer(ctx, observationCtx, workerBaseStore, insightsMetadataStore),
+		newInsightEnqueuer(ctx, observationCtx, workerBaseStore, insightsMetadataStore, logger.Scoped("background-insight-enqueuer", "")),
 		// Enqueues series to be picked up by the retention worker.
-		newRetentionEnqueuer(ctx, workerBaseStore, insightsMetadataStore),
+		newRetentionEnqueuer(ctx, workerInsightsBaseStore, insightsMetadataStore),
 		// Emits backend pings based on insights data.
 		pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB),
 		// Cleans up soft-deleted insight series.
 		NewInsightsDataPrunerJob(ctx, mainAppDB, insightsDB),
 		// Checks for Code Insights license and freezes insights if necessary.
 		NewLicenseCheckJob(ctx, mainAppDB, insightsDB),
-		// Stamps backfill completion time.
-		NewBackfillCompletedCheckJob(ctx, mainAppDB, insightsDB),
 	}
 
 	// Register the background goroutine which discovers historical gaps in data and enqueues
@@ -76,12 +76,12 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 		searchRateLimiter := limiter.SearchQueryRate()
 		historicRateLimiter := limiter.HistoricalWorkRate()
 		backfillConfig := pipeline.BackfillerConfig{
-			CompressionPlan:         compression.NewGitserverFilter(mainAppDB, logger),
+			CompressionPlan:         compression.NewGitserverFilter(logger),
 			SearchHandlers:          queryrunner.GetSearchHandlers(),
 			InsightStore:            insightsStore,
-			CommitClient:            gitserver.NewGitCommitClient(mainAppDB),
+			CommitClient:            gitserver.NewGitCommitClient(),
 			SearchPlanWorkerLimit:   1,
-			SearchRunnerWorkerLimit: 5, // TODO: move these to settings
+			SearchRunnerWorkerLimit: 1, // TODO: this can scale with the number of searcher endpoints
 			SearchRateLimiter:       searchRateLimiter,
 			HistoricRateLimiter:     historicRateLimiter,
 		}

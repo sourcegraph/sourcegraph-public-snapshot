@@ -178,9 +178,9 @@ func toZoektPattern(
 }
 
 func mapSlice(values []string, f func(string) string) []string {
-	result := make([]string, len(values))
+	out := make([]string, len(values))
 	for i, v := range values {
-		result[i] = f(v)
+		out[i] = f(v)
 	}
-	return result
+	return out
 }

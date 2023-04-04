@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	a "github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -90,7 +90,7 @@ func TestNewGitHubAppSetupHandler(t *testing.T) {
 		assert.Equal(t, `Invalid setup action "incorrect"`, resp.Body.String())
 	})
 
-	ctx := a.WithActor(req.Context(), &a.Actor{UID: 1})
+	ctx := sgactor.WithActor(req.Context(), &sgactor.Actor{UID: 1})
 	req = req.WithContext(ctx)
 
 	t.Run("create new", func(t *testing.T) {

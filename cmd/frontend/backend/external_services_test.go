@@ -153,7 +153,7 @@ func makeBitbucketServerRepo() *types.Repo {
 		Slug: "jsonrpc2",
 		Project: &bitbucketserver.Project{
 			Key:  "SOURCEGRAPH",
-			Name: "SOURCEGRAPH",
+			Name: "Sourcegraph e2e testing",
 		},
 	}
 

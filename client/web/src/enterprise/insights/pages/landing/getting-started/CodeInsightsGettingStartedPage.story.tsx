@@ -1,13 +1,15 @@
+import { MockedResponse } from '@apollo/client/testing'
 import { Meta } from '@storybook/react'
-import { of } from 'rxjs'
 
+import { getDocumentNode } from '@sourcegraph/http-client'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../../components/WebStory'
-import { CodeInsightsBackendStoryMock } from '../../../CodeInsightsBackendStoryMock'
-import { CodeInsightsGqlBackend } from '../../../core'
+import { GetExampleRepositoryResult } from '../../../../../graphql-operations'
 
 import { CodeInsightsGettingStartedPage } from './CodeInsightsGettingStartedPage'
+import { GET_EXAMPLE_REPOSITORY } from './components/dynamic-code-insight-example/DynamicCodeInsightExample'
 
 const config: Meta = {
     title: 'web/insights/getting-started/CodeInsightsGettingStartedPage',
@@ -22,15 +24,26 @@ const config: Meta = {
 
 export default config
 
-const codeInsightsBackend: Partial<CodeInsightsGqlBackend> = {
-    // This repo doesn't actually exist, and the story shows an error `Request to
-    // http://localhost:9001/.api/graphql?BulkRepositoriesSearch failed with 404 Not Found`. But it
-    // still lets you see most of the page.
-    getFirstExampleRepository: () => of('myrepo'),
+const FirstExampleRepositoryMock: MockedResponse<GetExampleRepositoryResult> = {
+    request: { query: getDocumentNode(GET_EXAMPLE_REPOSITORY) },
+    result: {
+        data: {
+            firstRepo: {
+                results: {
+                    repositories: [{ name: 'github.com/first-repo-url' }],
+                },
+            },
+            todoRepo: {
+                results: {
+                    repositories: [],
+                },
+            },
+        },
+    },
 }
 
 export const CodeInsightsGettingStartedPageStory = () => (
-    <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
+    <MockedTestProvider mocks={[FirstExampleRepositoryMock]}>
         <CodeInsightsGettingStartedPage telemetryService={NOOP_TELEMETRY_SERVICE} />
-    </CodeInsightsBackendStoryMock>
+    </MockedTestProvider>
 )

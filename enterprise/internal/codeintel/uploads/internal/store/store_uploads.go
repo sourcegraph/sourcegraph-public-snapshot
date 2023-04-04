@@ -14,7 +14,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -27,8 +26,44 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func (s *store) GetIndexers(ctx context.Context, opts shared.GetIndexersOptions) (_ []string, err error) {
+	ctx, _, endObservation := s.operations.getIndexers.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", opts.RepositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	var conds []*sqlf.Query
+	if opts.RepositoryID != 0 {
+		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
+	}
+
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
+	if err != nil {
+		return nil, err
+	}
+	conds = append(conds, authzConds)
+
+	return basestore.ScanStrings(s.db.Query(ctx, sqlf.Sprintf(getIndexersQuery, sqlf.Join(conds, "AND"))))
+}
+
+const getIndexersQuery = `
+WITH
+combined_indexers AS (
+	SELECT u.indexer, u.repository_id FROM lsif_uploads u
+	UNION
+	SELECT u.indexer, u.repository_id FROM lsif_indexes u
+)
+SELECT DISTINCT u.indexer
+FROM combined_indexers u
+JOIN repo ON repo.id = u.repository_id
+WHERE
+	%s AND
+	repo.deleted_at IS NULL AND
+	repo.blocked IS NULL
+`
+
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
-func (s *store) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error) {
+func (s *store) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []shared.Upload, totalCount int, err error) {
 	ctx, trace, endObservation := s.operations.getUploads.With(ctx, &err, observation.Args{LogFields: buildGetUploadsLogFields(opts)})
 	defer endObservation(1, observation.Args{})
 
@@ -46,8 +81,14 @@ func (s *store) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (
 		orderExpression = sqlf.Sprintf("uploaded_at DESC, id")
 	}
 
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer func() { err = tx.Done(err) }()
+
 	query := sqlf.Sprintf(
-		getUploadsQuery,
+		getUploadsSelectQuery,
 		buildCTEPrefix(cte),
 		tableExpr,
 		sqlf.Join(conds, " AND "),
@@ -55,18 +96,31 @@ func (s *store) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (
 		opts.Limit,
 		opts.Offset,
 	)
-	uploads, totalCount, err = scanUploadsWithCount(s.db.Query(ctx, query))
+	uploads, err = scanUploadComplete(tx.db.Query(ctx, query))
+	if err != nil {
+		return nil, 0, err
+	}
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numUploads", len(uploads)))
+
+	countQuery := sqlf.Sprintf(
+		getUploadsCountQuery,
+		buildCTEPrefix(cte),
+		tableExpr,
+		sqlf.Join(conds, " AND "),
+	)
+	totalCount, _, err = basestore.ScanFirstInt(tx.db.Query(ctx, countQuery))
 	if err != nil {
 		return nil, 0, err
 	}
 	trace.AddEvent("TODO Domain Owner",
 		attribute.Int("totalCount", totalCount),
-		attribute.Int("numUploads", len(uploads)))
+	)
 
 	return uploads, totalCount, nil
 }
 
-const getUploadsQuery = `
+const getUploadsSelectQuery = `
 %s -- Dynamic CTE definitions for use in the WHERE clause
 SELECT
 	u.id,
@@ -90,14 +144,24 @@ SELECT
 	u.upload_size,
 	u.associated_index_id,
 	u.content_type,
+	u.should_reindex,
 	s.rank,
-	u.uncompressed_size,
-	COUNT(*) OVER() AS count
+	u.uncompressed_size
 FROM %s
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE %s ORDER BY %s LIMIT %d OFFSET %d
+WHERE %s
+ORDER BY %s
+LIMIT %d OFFSET %d
+`
+
+const getUploadsCountQuery = `
+%s -- Dynamic CTE definitions for use in the WHERE clause
+SELECT COUNT(*) AS count
+FROM %s
+JOIN repo ON repo.id = u.repository_id
+WHERE %s
 `
 
 const uploadRankQueryFragment = `
@@ -113,7 +177,14 @@ FROM lsif_uploads_with_repository_name r
 WHERE r.state = 'queued'
 `
 
-const visibleAtTipSubselectQuery = `SELECT 1 FROM lsif_uploads_visible_at_tip uvt WHERE uvt.repository_id = u.repository_id AND uvt.upload_id = u.id`
+const visibleAtTipSubselectQuery = `
+SELECT 1
+FROM lsif_uploads_visible_at_tip uvt
+WHERE
+	uvt.repository_id = u.repository_id AND
+	uvt.upload_id = u.id AND
+	uvt.is_default_branch
+`
 
 const deletedUploadsFromAuditLogsCTEQuery = `
 SELECT
@@ -130,6 +201,7 @@ SELECT
 	COALESCE((snapshot->'num_parts')::integer, -1) AS num_parts,
 	NULL::integer[] as uploaded_parts,
 	au.upload_size, au.associated_index_id, au.content_type,
+	false AS should_reindex, -- TODO
 	COALESCE((snapshot->'expired')::boolean, false) AS expired,
 	NULL::bigint AS uncompressed_size
 FROM (
@@ -203,13 +275,13 @@ WHERE
 `
 
 // GetUploadByID returns an upload by its identifier and boolean flag indicating its existence.
-func (s *store) GetUploadByID(ctx context.Context, id int) (_ types.Upload, _ bool, err error) {
+func (s *store) GetUploadByID(ctx context.Context, id int) (_ shared.Upload, _ bool, err error) {
 	ctx, _, endObservation := s.operations.getUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{log.Int("id", id)}})
 	defer endObservation(1, observation.Args{})
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
 	if err != nil {
-		return types.Upload{}, false, err
+		return shared.Upload{}, false, err
 	}
 
 	return scanFirstUpload(s.db.Query(ctx, sqlf.Sprintf(getUploadByIDQuery, id, authzConds)))
@@ -238,6 +310,7 @@ SELECT
 	u.upload_size,
 	u.associated_index_id,
 	u.content_type,
+	u.should_reindex,
 	s.rank,
 	u.uncompressed_size
 FROM lsif_uploads u
@@ -247,7 +320,7 @@ JOIN repo ON repo.id = u.repository_id
 WHERE repo.deleted_at IS NULL AND u.state != 'deleted' AND u.id = %s AND %s
 `
 
-func (s *store) getUploadsByIDs(ctx context.Context, allowDeleted bool, ids ...int) (_ []types.Upload, err error) {
+func (s *store) getUploadsByIDs(ctx context.Context, allowDeleted bool, ids ...int) (_ []shared.Upload, err error) {
 	ctx, _, endObservation := s.operations.getUploadsByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("ids", intsToString(ids)),
 	}})
@@ -277,11 +350,11 @@ func (s *store) getUploadsByIDs(ctx context.Context, allowDeleted bool, ids ...i
 
 // GetUploadsByIDs returns an upload for each of the given identifiers. Not all given ids will necessarily
 // have a corresponding element in the returned list.
-func (s *store) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error) {
+func (s *store) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []shared.Upload, err error) {
 	return s.getUploadsByIDs(ctx, false, ids...)
 }
 
-func (s *store) GetUploadsByIDsAllowDeleted(ctx context.Context, ids ...int) (_ []types.Upload, err error) {
+func (s *store) GetUploadsByIDsAllowDeleted(ctx context.Context, ids ...int) (_ []shared.Upload, err error) {
 	return s.getUploadsByIDs(ctx, true, ids...)
 }
 
@@ -308,6 +381,7 @@ SELECT
 	u.upload_size,
 	u.associated_index_id,
 	u.content_type,
+	u.should_reindex,
 	s.rank,
 	u.uncompressed_size
 FROM lsif_uploads u
@@ -356,7 +430,7 @@ WITH ranked_completed AS (
 		u.root,
 		u.indexer,
 		u.finished_at,
-		RANK() OVER (PARTITION BY root, indexer ORDER BY finished_at DESC) AS rank
+		RANK() OVER (PARTITION BY root, ` + sanitizedIndexerExpression + ` ORDER BY finished_at DESC) AS rank
 	FROM lsif_uploads u
 	WHERE
 		u.repository_id = %s AND
@@ -411,6 +485,7 @@ SELECT
 	u.upload_size,
 	u.associated_index_id,
 	u.content_type,
+	u.should_reindex,
 	s.rank,
 	u.uncompressed_size
 FROM lsif_uploads_with_repository_name u
@@ -451,13 +526,13 @@ const DeletedRepositoryGracePeriod = time.Minute * 30
 // DeleteUploadsWithoutRepository deletes uploads associated with repositories that were deleted at least
 // DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of uploads
 // that were removed for that repository.
-func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
+func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_, _ int, err error) {
 	ctx, trace, endObservation := s.operations.deleteUploadsWithoutRepository.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	tx, err := s.db.Transact(ctx)
 	if err != nil {
-		return nil, err
+		return 0, 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
@@ -465,9 +540,9 @@ func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Tim
 	defer unset(ctx)
 
 	query := sqlf.Sprintf(deleteUploadsWithoutRepositoryQuery, now.UTC(), DeletedRepositoryGracePeriod/time.Second)
-	repositories, err := scanCounts(tx.Query(ctx, query))
+	totalCount, repositories, err := scanCountsWithTotalCount(tx.Query(ctx, query))
 	if err != nil {
-		return nil, err
+		return 0, 0, err
 	}
 
 	count := 0
@@ -478,7 +553,7 @@ func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Tim
 		attribute.Int("count", count),
 		attribute.Int("numRepositories", len(repositories)))
 
-	return repositories, nil
+	return totalCount, count, nil
 }
 
 const deleteUploadsWithoutRepositoryQuery = `
@@ -487,7 +562,9 @@ candidates AS (
 	SELECT u.id
 	FROM repo r
 	JOIN lsif_uploads u ON u.repository_id = r.id
-	WHERE %s - r.deleted_at >= %s * interval '1 second'
+	WHERE
+		%s - r.deleted_at >= %s * interval '1 second' OR
+		r.blocked IS NOT NULL
 
 	-- Lock these rows in a deterministic order so that we don't
 	-- deadlock with other processes updating the lsif_uploads table.
@@ -503,11 +580,11 @@ deleted AS (
 	WHERE u.id IN (SELECT id FROM candidates)
 	RETURNING u.id, u.repository_id
 )
-SELECT d.repository_id, COUNT(*) FROM deleted d GROUP BY d.repository_id
+SELECT (SELECT COUNT(*) FROM candidates), d.repository_id, COUNT(*) FROM deleted d GROUP BY d.repository_id
 `
 
 // DeleteUploadsStuckUploading soft deletes any upload record that has been uploading since the given time.
-func (s *store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error) {
+func (s *store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_, _ int, err error) {
 	ctx, trace, endObservation := s.operations.deleteUploadsStuckUploading.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("uploadedBefore", uploadedBefore.Format(time.RFC3339)), // TODO - should be a duration
 	}})
@@ -519,11 +596,11 @@ func (s *store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore 
 	query := sqlf.Sprintf(deleteUploadsStuckUploadingQuery, uploadedBefore)
 	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, query))
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	trace.AddEvent("TODO Domain Owner", attribute.Int("count", count))
 
-	return count, nil
+	return count, count, nil
 }
 
 const deleteUploadsStuckUploadingQuery = `
@@ -549,29 +626,30 @@ SELECT COUNT(*) FROM deleted
 // SoftDeleteExpiredUploads marks upload records that are both expired and have no references
 // as deleted. The associated repositories will be marked as dirty so that their commit graphs
 // are updated in the near future.
-func (s *store) SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (count int, err error) {
+func (s *store) SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (_, _ int, err error) {
 	ctx, trace, endObservation := s.operations.softDeleteExpiredUploads.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	tx, err := s.db.Transact(ctx)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
 	// Just in case
 	if os.Getenv("DEBUG_PRECISE_CODE_INTEL_SOFT_DELETE_BAIL_OUT") != "" {
 		s.logger.Warn("Soft deletion is currently disabled")
-		return 0, nil
+		return 0, 0, nil
 	}
 
 	unset, _ := tx.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "soft-deleting expired uploads")
 	defer unset(ctx)
-	repositories, err := scanCounts(tx.Query(ctx, sqlf.Sprintf(softDeleteExpiredUploadsQuery, batchSize)))
+	scannedCount, repositories, err := scanCountsWithTotalCount(tx.Query(ctx, sqlf.Sprintf(softDeleteExpiredUploadsQuery, batchSize)))
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 
+	count := 0
 	for _, numUpdated := range repositories {
 		count += numUpdated
 	}
@@ -581,11 +659,11 @@ func (s *store) SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (co
 
 	for repositoryID := range repositories {
 		if err := s.setRepositoryAsDirtyWithTx(ctx, repositoryID, tx); err != nil {
-			return 0, err
+			return 0, 0, err
 		}
 	}
 
-	return count, nil
+	return scannedCount, count, nil
 }
 
 const softDeleteExpiredUploadsQuery = `
@@ -710,7 +788,7 @@ updated AS (
 )
 
 -- Return the repositories which were affected so we can recalculate the commit graph
-SELECT u.repository_id, COUNT(*) FROM updated u WHERE u.state = 'deleting' GROUP BY u.repository_id
+SELECT (SELECT COUNT(*) FROM expired_uploads), u.repository_id, COUNT(*) FROM updated u WHERE u.state = 'deleting' GROUP BY u.repository_id
 `
 
 // SoftDeleteExpiredUploadsViaTraversal selects an expired upload and uses that as the starting
@@ -719,27 +797,28 @@ SELECT u.repository_id, COUNT(*) FROM updated u WHERE u.state = 'deleting' GROUP
 // found during the traversal are accessible by some "live" upload and must be retained.
 //
 // We set a last-checked timestamp to attempt to round-robin this graph traversal.
-func (s *store) SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, traversalLimit int) (count int, err error) {
+func (s *store) SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, traversalLimit int) (_, _ int, err error) {
 	ctx, trace, endObservation := s.operations.softDeleteExpiredUploadsViaTraversal.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	tx, err := s.db.Transact(ctx)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
 	unset, _ := tx.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "soft-deleting expired uploads")
 	defer unset(ctx)
-	repositories, err := scanCounts(tx.Query(ctx, sqlf.Sprintf(
+	scannedCount, repositories, err := scanCountsWithTotalCount(tx.Query(ctx, sqlf.Sprintf(
 		softDeleteExpiredUploadsViaTraversalQuery,
 		traversalLimit,
 		traversalLimit,
 	)))
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 
+	count := 0
 	for _, numUpdated := range repositories {
 		count += numUpdated
 	}
@@ -749,11 +828,11 @@ func (s *store) SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, traver
 
 	for repositoryID := range repositories {
 		if err := s.setRepositoryAsDirtyWithTx(ctx, repositoryID, tx); err != nil {
-			return 0, err
+			return 0, 0, err
 		}
 	}
 
-	return count, nil
+	return scannedCount, count, nil
 }
 
 const softDeleteExpiredUploadsViaTraversalQuery = `
@@ -882,7 +961,7 @@ updated AS (
 )
 
 -- Return the repositories which were affected so we can recalculate the commit graph
-SELECT u.repository_id, COUNT(*) FROM updated u WHERE u.state = 'deleting' GROUP BY u.repository_id
+SELECT (SELECT COUNT(*) FROM candidates), u.repository_id, COUNT(*) FROM updated u WHERE u.state = 'deleting' GROUP BY u.repository_id
 `
 
 // HardDeleteUploadsByIDs deletes the upload record with the given identifier.
@@ -916,13 +995,23 @@ func (s *store) HardDeleteUploadsByIDs(ctx context.Context, ids ...int) (err err
 }
 
 const hardDeleteUploadsByIDsQuery = `
-WITH locked_uploads AS (
-	SELECT u.id
+WITH
+locked_uploads AS (
+	SELECT u.id, u.associated_index_id
 	FROM lsif_uploads u
 	WHERE u.id IN (%s)
 	ORDER BY u.id FOR UPDATE
+),
+delete_uploads AS (
+	DELETE FROM lsif_uploads WHERE id IN (SELECT id FROM locked_uploads)
+),
+locked_indexes AS (
+	SELECT u.id
+	FROM lsif_indexes U
+	WHERE u.id IN (SELECT associated_index_id FROM locked_uploads)
+	ORDER BY u.id FOR UPDATE
 )
-DELETE FROM lsif_uploads WHERE id IN (SELECT id FROM locked_uploads)
+DELETE FROM lsif_indexes WHERE id IN (SELECT id FROM locked_indexes)
 `
 
 // DeleteUploadByID deletes an upload by its identifier. This method returns a true-valued flag if a record
@@ -1068,18 +1157,18 @@ UPDATE lsif_uploads SET %s WHERE id IN (%s)
 
 // SourcedCommitsWithoutCommittedAt returns the repository and commits of uploads that do not have an
 // associated commit date value.
-func (s *store) SourcedCommitsWithoutCommittedAt(ctx context.Context, batchSize int) (_ []shared.SourcedCommits, err error) {
+func (s *store) SourcedCommitsWithoutCommittedAt(ctx context.Context, batchSize int) (_ []SourcedCommits, err error) {
 	ctx, _, endObservation := s.operations.sourcedCommitsWithoutCommittedAt.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("batchSize", batchSize),
 	}})
 	defer func() { endObservation(1, observation.Args{}) }()
 
-	batch, err := scanSourcedCommits(s.db.Query(ctx, sqlf.Sprintf(sourcedCommitsWithoutCommittedAtQuery, batchSize)))
+	batchOfCommits, err := scanSourcedCommits(s.db.Query(ctx, sqlf.Sprintf(sourcedCommitsWithoutCommittedAtQuery, batchSize)))
 	if err != nil {
 		return nil, err
 	}
 
-	return batch, nil
+	return batchOfCommits, nil
 }
 
 const sourcedCommitsWithoutCommittedAtQuery = `
@@ -1093,7 +1182,7 @@ ORDER BY repository_id, commit
 LIMIT %s
 `
 
-// UpdateCommittedAt tupdates the committed_at column for upload matching the given repository and commit.
+// UpdateCommittedAt updates the committed_at column for upload matching the given repository and commit.
 func (s *store) UpdateCommittedAt(ctx context.Context, repositoryID int, commit, commitDateString string) (err error) {
 	ctx, _, endObservation := s.operations.updateCommittedAt.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
@@ -1302,9 +1391,11 @@ func (s *store) GetUploadIDsWithReferences(
 		filtered[packageReference.DumpID] = struct{}{}
 	}
 
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("uploadIDsWithReferences.numFiltered", len(filtered)),
-		attribute.Int("uploadIDsWithReferences.numRecordsScanned", recordsScanned))
+	if trace != nil {
+		trace.AddEvent("TODO Domain Owner",
+			attribute.Int("uploadIDsWithReferences.numFiltered", len(filtered)),
+			attribute.Int("uploadIDsWithReferences.numRecordsScanned", recordsScanned))
+	}
 
 	flattened := make([]int, 0, len(filtered))
 	for k := range filtered {
@@ -1334,7 +1425,7 @@ func (s *store) GetVisibleUploadsMatchingMonikers(ctx context.Context, repositor
 	defer endObservation(1, observation.Args{})
 
 	if len(monikers) == 0 {
-		return shared.PackageReferenceScannerFromSlice(), 0, nil
+		return PackageReferenceScannerFromSlice(), 0, nil
 	}
 
 	qs := make([]*sqlf.Query, 0, len(monikers))
@@ -1362,7 +1453,7 @@ func (s *store) GetVisibleUploadsMatchingMonikers(ctx context.Context, repositor
 		return nil, 0, err
 	}
 
-	return shared.PackageReferenceScannerFromRows(rows), totalCount, nil
+	return PackageReferenceScannerFromRows(rows), totalCount, nil
 }
 
 const referenceIDsCTEDefinitions = `
@@ -1826,7 +1917,7 @@ CREATE TEMPORARY TABLE t_lsif_uploads_visible_at_tip (
 `
 
 // InsertUpload inserts a new upload and returns its identifier.
-func (s *store) InsertUpload(ctx context.Context, upload types.Upload) (id int, err error) {
+func (s *store) InsertUpload(ctx context.Context, upload shared.Upload) (id int, err error) {
 	ctx, _, endObservation := s.operations.insertUpload.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
@@ -1978,7 +2069,10 @@ func buildGetConditionsAndCte(opts shared.GetUploadsOptions) (*sqlf.Query, []*sq
 		conds = append(conds, makeSearchCondition(opts.Term))
 	}
 	if opts.State != "" {
-		conds = append(conds, makeStateCondition(opts.State))
+		opts.States = append(opts.States, opts.State)
+	}
+	if len(opts.States) > 0 {
+		conds = append(conds, makeStateCondition(opts.States))
 	} else if !allowDeletedUploads {
 		conds = append(conds, sqlf.Sprintf("u.state != 'deleted'"))
 	}
@@ -2026,6 +2120,15 @@ func buildGetConditionsAndCte(opts shared.GetUploadsOptions) (*sqlf.Query, []*sq
 		)`, opts.DependentOf))
 	}
 
+	if len(opts.IndexerNames) != 0 {
+		var indexerConds []*sqlf.Query
+		for _, indexerName := range opts.IndexerNames {
+			indexerConds = append(indexerConds, sqlf.Sprintf("u.indexer ILIKE %s", "%"+indexerName+"%"))
+		}
+
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(indexerConds, " OR ")))
+	}
+
 	sourceTableExpr := sqlf.Sprintf("lsif_uploads u")
 	if allowDeletedUploads {
 		cteDefinitions = append(cteDefinitions, cteDefinition{
@@ -2054,6 +2157,7 @@ func buildGetConditionsAndCte(opts shared.GetUploadsOptions) (*sqlf.Query, []*sq
 				upload_size,
 				associated_index_id,
 				content_type,
+				should_reindex,
 				expired,
 				uncompressed_size
 			FROM lsif_uploads
@@ -2081,6 +2185,8 @@ func buildGetConditionsAndCte(opts shared.GetUploadsOptions) (*sqlf.Query, []*sq
 	if !opts.AllowDeletedRepo {
 		conds = append(conds, sqlf.Sprintf("repo.deleted_at IS NULL"))
 	}
+	// Never show uploads for deleted repos
+	conds = append(conds, sqlf.Sprintf("repo.blocked IS NULL"))
 
 	return sourceTableExpr, conds, cteDefinitions
 }
@@ -2095,11 +2201,19 @@ func buildDeleteConditions(opts shared.DeleteUploadsOptions) []*sqlf.Query {
 	if opts.Term != "" {
 		conds = append(conds, makeSearchCondition(opts.Term))
 	}
-	if opts.State != "" {
-		conds = append(conds, makeStateCondition(opts.State))
+	if len(opts.States) > 0 {
+		conds = append(conds, makeStateCondition(opts.States))
 	}
 	if opts.VisibleAtTip {
 		conds = append(conds, sqlf.Sprintf("EXISTS ("+visibleAtTipSubselectQuery+")"))
+	}
+	if len(opts.IndexerNames) != 0 {
+		var indexerConds []*sqlf.Query
+		for _, indexerName := range opts.IndexerNames {
+			indexerConds = append(indexerConds, sqlf.Sprintf("u.indexer ILIKE %s", "%"+indexerName+"%"))
+		}
+
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(indexerConds, " OR ")))
 	}
 
 	return conds
@@ -2126,21 +2240,29 @@ func makeSearchCondition(term string) *sqlf.Query {
 }
 
 // makeStateCondition returns a disjunction of clauses comparing the upload against the target state.
-func makeStateCondition(state string) *sqlf.Query {
-	states := make([]string, 0, 2)
-	if state == "errored" || state == "failed" {
-		// Treat errored and failed states as equivalent
-		states = append(states, "errored", "failed")
-	} else {
-		states = append(states, state)
-	}
-
-	queries := make([]*sqlf.Query, 0, len(states))
+func makeStateCondition(states []string) *sqlf.Query {
+	stateMap := make(map[string]struct{}, 2)
 	for _, state := range states {
-		queries = append(queries, sqlf.Sprintf("u.state = %s", state))
+		// Treat errored and failed states as equivalent
+		if state == "errored" || state == "failed" {
+			stateMap["errored"] = struct{}{}
+			stateMap["failed"] = struct{}{}
+		} else {
+			stateMap[state] = struct{}{}
+		}
 	}
 
-	return sqlf.Sprintf("(%s)", sqlf.Join(queries, " OR "))
+	orderedStates := make([]string, 0, len(stateMap))
+	for state := range stateMap {
+		orderedStates = append(orderedStates, state)
+	}
+	sort.Strings(orderedStates)
+
+	if len(orderedStates) == 1 {
+		return sqlf.Sprintf("u.state = %s", orderedStates[0])
+	}
+
+	return sqlf.Sprintf("u.state = ANY(%s)", pq.Array(orderedStates))
 }
 
 func buildCTEPrefix(cteDefinitions []cteDefinition) *sqlf.Query {
@@ -2177,7 +2299,7 @@ func buildGetUploadsLogFields(opts shared.GetUploadsOptions) []log.Field {
 
 func buildDeleteUploadsLogFields(opts shared.DeleteUploadsOptions) []log.Field {
 	return []log.Field{
-		log.String("state", opts.State),
+		log.String("states", strings.Join(opts.States, ",")),
 		log.String("term", opts.Term),
 		log.Bool("visibleAtTip", opts.VisibleAtTip),
 	}

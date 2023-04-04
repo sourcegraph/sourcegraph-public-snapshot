@@ -1,4 +1,4 @@
-@import '../../wildcard/src/global-styles/colors';
+@import 'wildcard/src/global-styles/colors';
 
 :root {
     --border-color: rgba(0, 0, 0, 0.125);
@@ -23,11 +23,11 @@
     }
 }
 
-@import '../../wildcard/src/global-styles/functions.scss';
-@import '../../wildcard/src/global-styles/variables.scss';
-@import '../../wildcard/src/global-styles/mixins.scss';
-@import '../../wildcard/src/global-styles/utilities/text';
-@import '../../wildcard/src/global-styles/utilities/screenreaders';
-@import '../../wildcard/src/global-styles/icons';
+@import 'wildcard/src/global-styles/functions';
+@import 'wildcard/src/global-styles/variables';
+@import 'wildcard/src/global-styles/mixins';
+@import 'wildcard/src/global-styles/utilities/text';
+@import 'wildcard/src/global-styles/utilities/screenreaders';
+@import 'wildcard/src/global-styles/icons';
 @import './highlight';
 @import './shared';

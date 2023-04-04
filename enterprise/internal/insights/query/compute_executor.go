@@ -23,7 +23,6 @@ type ComputeExecutor struct {
 func NewComputeExecutor(postgres database.DB, clock func() time.Time) *ComputeExecutor {
 	executor := ComputeExecutor{
 		previewExecutor: previewExecutor{
-			db:        postgres,
 			repoStore: postgres.Repos(),
 			filter:    &compression.NoopFilter{},
 			clock:     clock,

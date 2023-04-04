@@ -1,0 +1,55 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "store",
+    srcs = [
+        "describe.go",
+        "describe_scan.go",
+        "observability.go",
+        "store.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/migration/store",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database/basestore",
+        "//internal/database/dbutil",
+        "//internal/database/locker",
+        "//internal/database/migration/definition",
+        "//internal/database/migration/schemas",
+        "//internal/database/migration/shared",
+        "//internal/metrics",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_jackc_pgconn//:pgconn",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_lib_pq//:pq",
+        "@com_github_opentracing_opentracing_go//log",
+    ],
+)
+
+go_test(
+    name = "store_test",
+    srcs = [
+        "describe_test.go",
+        "store_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":store"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
+    deps = [
+        "//internal/database/basestore",
+        "//internal/database/dbtest",
+        "//internal/database/dbutil",
+        "//internal/database/migration/definition",
+        "//internal/database/migration/shared",
+        "//internal/observation",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_log//logtest",
+        "@org_golang_x_sync//errgroup",
+    ],
+)

@@ -1,10 +1,10 @@
 package zoekt
 
 import (
-	"sort"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -134,24 +134,19 @@ func Test_toZoektPattern(t *testing.T) {
 		return zoektQuery.String()
 	}
 
-	autogold.Want("basic string",
-		`substr:"a"`).
+	autogold.Expect(`substr:"a"`).
 		Equal(t, test(`a`, query.SearchTypeLiteral, search.TextRequest))
 
-	autogold.Want("basic and-expression",
-		`(or (and substr:"a" substr:"b" (not substr:"c")) substr:"d")`).
+	autogold.Expect(`(or (and substr:"a" substr:"b" (not substr:"c")) substr:"d")`).
 		Equal(t, test(`a and b and not c or d`, query.SearchTypeLiteral, search.TextRequest))
 
-	autogold.Want("quoted string in literal escapes quotes (regexp meta and string escaping)",
-		`substr:"\"func main() {\\n\""`).
+	autogold.Expect(`substr:"\"func main() {\\n\""`).
 		Equal(t, test(`"func main() {\n"`, query.SearchTypeLiteral, search.TextRequest))
 
-	autogold.Want("quoted string in regexp interpreted as string (regexp meta escaped)",
-		`substr:"func main() {\n"`).
+	autogold.Expect(`substr:"func main() {\n"`).
 		Equal(t, test(`"func main() {\n"`, query.SearchTypeRegex, search.TextRequest))
 
-	autogold.Want("zoekt symbol nodes are atoms",
-		`(and sym:substr:"foo" (not sym:substr:"bar"))`).
+	autogold.Expect(`(and sym:substr:"foo" (not sym:substr:"bar"))`).
 		Equal(t, test(`type:symbol (foo and not bar)`, query.SearchTypeLiteral, search.SymbolRequest))
 }
 
@@ -159,17 +154,17 @@ func queryEqual(a, b zoekt.Q) bool {
 	sortChildren := func(q zoekt.Q) zoekt.Q {
 		switch s := q.(type) {
 		case *zoekt.And:
-			sort.Slice(s.Children, func(i, j int) bool {
-				return s.Children[i].String() < s.Children[j].String()
-			})
+			slices.SortFunc(s.Children, zoektQStringLess)
 		case *zoekt.Or:
-			sort.Slice(s.Children, func(i, j int) bool {
-				return s.Children[i].String() < s.Children[j].String()
-			})
+			slices.SortFunc(s.Children, zoektQStringLess)
 		}
 		return q
 	}
 	return zoekt.Map(a, sortChildren).String() == zoekt.Map(b, sortChildren).String()
+}
+
+func zoektQStringLess(a, b zoekt.Q) bool {
+	return a.String() < b.String()
 }
 
 func computeResultTypes(types []string, b query.Basic, searchType query.SearchType) result.Types {

@@ -3,16 +3,18 @@ package authz
 import (
 	"context"
 	"fmt"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/azuredevops"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/gerrit"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/perforce"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -57,9 +59,12 @@ func ProvidersFromConfig(
 
 	opt := database.ExternalServicesListOptions{
 		Kinds: []string{
+			extsvc.KindAzureDevOps,
+			extsvc.KindBitbucketCloud,
+			extsvc.KindBitbucketServer,
+			extsvc.KindGerrit,
 			extsvc.KindGitHub,
 			extsvc.KindGitLab,
-			extsvc.KindBitbucketServer,
 			extsvc.KindPerforce,
 		},
 		LimitOffset: &database.LimitOffset{
@@ -72,6 +77,9 @@ func ProvidersFromConfig(
 		gitLabConns          []*types.GitLabConnection
 		bitbucketServerConns []*types.BitbucketServerConnection
 		perforceConns        []*types.PerforceConnection
+		bitbucketCloudConns  []*types.BitbucketCloudConnection
+		gerritConns          []*types.GerritConnection
+		azuredevopsConns     []*types.AzureDevOpsConnection
 	)
 	for {
 		svcs, err := store.List(ctx, opt)
@@ -96,6 +104,26 @@ func ProvidersFromConfig(
 			}
 
 			switch c := cfg.(type) {
+			case *schema.AzureDevOpsConnection:
+				azuredevopsConns = append(azuredevopsConns, &types.AzureDevOpsConnection{
+					URN:                   svc.URN(),
+					AzureDevOpsConnection: c,
+				})
+			case *schema.BitbucketCloudConnection:
+				bitbucketCloudConns = append(bitbucketCloudConns, &types.BitbucketCloudConnection{
+					URN:                      svc.URN(),
+					BitbucketCloudConnection: c,
+				})
+			case *schema.BitbucketServerConnection:
+				bitbucketServerConns = append(bitbucketServerConns, &types.BitbucketServerConnection{
+					URN:                       svc.URN(),
+					BitbucketServerConnection: c,
+				})
+			case *schema.GerritConnection:
+				gerritConns = append(gerritConns, &types.GerritConnection{
+					URN:              svc.URN(),
+					GerritConnection: c,
+				})
 			case *schema.GitHubConnection:
 				gitHubConns = append(gitHubConns,
 					&github.ExternalConnection{
@@ -110,11 +138,6 @@ func ProvidersFromConfig(
 				gitLabConns = append(gitLabConns, &types.GitLabConnection{
 					URN:              svc.URN(),
 					GitLabConnection: c,
-				})
-			case *schema.BitbucketServerConnection:
-				bitbucketServerConns = append(bitbucketServerConns, &types.BitbucketServerConnection{
-					URN:                       svc.URN(),
-					BitbucketServerConnection: c,
 				})
 			case *schema.PerforceConnection:
 				perforceConns = append(perforceConns, &types.PerforceConnection{
@@ -132,61 +155,21 @@ func ProvidersFromConfig(
 		}
 	}
 
-	if len(gitHubConns) > 0 {
-		enableGithubInternalRepoVisibility := false
-		ef := cfg.SiteConfig().ExperimentalFeatures
-		if ef != nil {
-			enableGithubInternalRepoVisibility = ef.EnableGithubInternalRepoVisibility
-		}
-
-		ghProviders, ghProblems, ghWarnings, ghInvalidConnections := github.NewAuthzProviders(db, gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility)
-		providers = append(providers, ghProviders...)
-		seriousProblems = append(seriousProblems, ghProblems...)
-		warnings = append(warnings, ghWarnings...)
-		invalidConnections = append(invalidConnections, ghInvalidConnections...)
+	enableGithubInternalRepoVisibility := false
+	ef := cfg.SiteConfig().ExperimentalFeatures
+	if ef != nil {
+		enableGithubInternalRepoVisibility = ef.EnableGithubInternalRepoVisibility
 	}
 
-	if len(gitLabConns) > 0 {
-		glProviders, glProblems, glWarnings, glInvalidConnections := gitlab.NewAuthzProviders(db, cfg.SiteConfig(), gitLabConns)
-		providers = append(providers, glProviders...)
-		seriousProblems = append(seriousProblems, glProblems...)
-		warnings = append(warnings, glWarnings...)
-		invalidConnections = append(invalidConnections, glInvalidConnections...)
-	}
+	initResult := github.NewAuthzProviders(db, gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility)
+	initResult.Append(gitlab.NewAuthzProviders(db, cfg.SiteConfig(), gitLabConns))
+	initResult.Append(bitbucketserver.NewAuthzProviders(bitbucketServerConns))
+	initResult.Append(perforce.NewAuthzProviders(perforceConns))
+	initResult.Append(bitbucketcloud.NewAuthzProviders(db, bitbucketCloudConns, cfg.SiteConfig().AuthProviders))
+	initResult.Append(gerrit.NewAuthzProviders(gerritConns, cfg.SiteConfig().AuthProviders))
+	initResult.Append(azuredevops.NewAuthzProviders(db, azuredevopsConns))
 
-	if len(bitbucketServerConns) > 0 {
-		bbsProviders, bbsProblems, bbsWarnings, bbsInvalidConnections := bitbucketserver.NewAuthzProviders(bitbucketServerConns)
-		providers = append(providers, bbsProviders...)
-		seriousProblems = append(seriousProblems, bbsProblems...)
-		warnings = append(warnings, bbsWarnings...)
-		invalidConnections = append(invalidConnections, bbsInvalidConnections...)
-	}
-
-	if len(perforceConns) > 0 {
-		pfProviders, pfProblems, pfWarnings, pfInvalidConnections := perforce.NewAuthzProviders(perforceConns, db)
-		providers = append(providers, pfProviders...)
-		seriousProblems = append(seriousProblems, pfProblems...)
-		warnings = append(warnings, pfWarnings...)
-		invalidConnections = append(invalidConnections, pfInvalidConnections...)
-	}
-
-	// 🚨 SECURITY: Warn the admin when both code host authz provider and the permissions user mapping are configured.
-	if cfg.SiteConfig().PermissionsUserMapping != nil &&
-		cfg.SiteConfig().PermissionsUserMapping.Enabled {
-		allowAccessByDefault = false
-		if len(providers) > 0 {
-			serviceTypes := make([]string, len(providers))
-			for i := range providers {
-				serviceTypes[i] = strconv.Quote(providers[i].ServiceType())
-			}
-			msg := fmt.Sprintf(
-				"The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when %s authorization providers are in use. Blocking access to all repositories until the conflict is resolved.",
-				strings.Join(serviceTypes, ", "))
-			seriousProblems = append(seriousProblems, msg)
-		}
-	}
-
-	return allowAccessByDefault, providers, seriousProblems, warnings, invalidConnections
+	return allowAccessByDefault, initResult.Providers, initResult.Problems, initResult.Warnings, initResult.InvalidConnections
 }
 
 func RefreshInterval() time.Duration {
@@ -195,4 +178,16 @@ func RefreshInterval() time.Duration {
 		return 5 * time.Second
 	}
 	return time.Duration(interval) * time.Second
+}
+
+// PermissionSyncingDisabled returns true if the background permissions syncing is not enabled.
+// It is not enabled if:
+//   - There are no code host connections with authorization or enforcePermissions enabled
+//   - Not purchased with the current license
+//   - `disableAutoCodeHostSyncs` site setting is set to true
+func PermissionSyncingDisabled() bool {
+	_, p := authz.GetProviders()
+	return len(p) == 0 ||
+		licensing.Check(licensing.FeatureACLs) != nil ||
+		conf.Get().DisableAutoCodeHostSyncs
 }

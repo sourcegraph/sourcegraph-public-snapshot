@@ -25,8 +25,6 @@ public class SourcegraphProjectService implements PersistentStateComponent<Sourc
     @Nullable
     public String remoteUrlReplacements;
     @Nullable
-    public Boolean isGlobbingEnabled; // This needs to be a Boolean rather than a primitive: we need the "null" state
-    @Nullable
     public String lastSearchQuery;
     public boolean lastSearchCaseSensitive;
     @Nullable
@@ -70,11 +68,6 @@ public class SourcegraphProjectService implements PersistentStateComponent<Sourc
     }
 
     @Nullable
-    public Boolean isGlobbingEnabled() {
-        return this.isGlobbingEnabled;
-    }
-
-    @Nullable
     public Search getLastSearch() {
         if (lastSearchQuery == null) {
             return null;
@@ -97,7 +90,6 @@ public class SourcegraphProjectService implements PersistentStateComponent<Sourc
         this.customRequestHeaders = settings.customRequestHeaders;
         this.defaultBranch = settings.defaultBranch;
         this.remoteUrlReplacements = settings.remoteUrlReplacements;
-        this.isGlobbingEnabled = settings.isGlobbingEnabled;
         this.lastSearchQuery = settings.lastSearchQuery != null ? settings.lastSearchQuery : "";
         this.lastSearchCaseSensitive = settings.lastSearchCaseSensitive;
         this.lastSearchPatternType = settings.lastSearchPatternType != null ? settings.lastSearchPatternType : "literal";

@@ -45,6 +45,7 @@ export const Default: Story = () => (
                 context={context}
                 showEmailForm={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                isSourcegraphDotCom={true}
             />
         )}
     </WebStory>
@@ -60,6 +61,7 @@ export const EmailForm: Story = () => (
                 context={context}
                 showEmailForm={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                isSourcegraphDotCom={true}
             />
         )}
     </WebStory>
@@ -75,6 +77,7 @@ export const InvalidSource: Story = () => (
                 context={context}
                 showEmailForm={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                isSourcegraphDotCom={true}
             />
         )}
     </WebStory>
@@ -90,6 +93,7 @@ export const OptimizationSignup: Story = () => (
                 context={context}
                 showEmailForm={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                isSourcegraphDotCom={true}
             />
         )}
     </WebStory>

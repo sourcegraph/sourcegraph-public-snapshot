@@ -1,0 +1,79 @@
+---
+version: 1
+interactions:
+- request:
+    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tviewerPermission\n\tstargazerCount\n\tforkCount\n\trepositoryTopics(first:100)
+      {\n\t\tnodes {\n\t\t\ttopic {\n\t\t\t\tname\n\t\t\t}\n\t\t}\n\t}\n}\n\t\nquery($query:
+      String!, $type: SearchType!, $after: String, $first: Int!) {\n\tsearch(query:
+      $query, type: $type, after: $after, first: $first) {\n\t\trepositoryCount\n\t\tpageInfo
+      { hasNextPage,  endCursor }\n\t\tnodes { ... on Repository { ...RepositoryFields
+      } }\n\t}\n}","variables":{"first":10,"query":"stars:10000..10100","type":"REPOSITORY"}}'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/graphql
+    method: POST
+  response:
+    body: '{"data":{"search":{"repositoryCount":38,"pageInfo":{"hasNextPage":true,"endCursor":"Y3Vyc29yOjEw"},"nodes":[{"id":"MDEwOlJlcG9zaXRvcnkyMDExODgxMjI=","databaseId":201188122,"nameWithOwner":"rocksdanister/lively","description":"Free
+      and open-source software that allows users to set animated desktop wallpapers
+      and screensavers powered by WinUI 3.","url":"https://github.com/rocksdanister/lively","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10100,"forkCount":816,"repositoryTopics":{"nodes":[{"topic":{"name":"rainmeter"}},{"topic":{"name":"desktop"}},{"topic":{"name":"wallpaper"}},{"topic":{"name":"widgets"}},{"topic":{"name":"desktop-wallpaper"}},{"topic":{"name":"wallpaper-engine"}},{"topic":{"name":"wallpaperengine"}},{"topic":{"name":"live-wallpaper"}},{"topic":{"name":"windows-app"}},{"topic":{"name":"dynamic-wallpaper"}},{"topic":{"name":"dynamic-desktop"}},{"topic":{"name":"wallpaper-changer"}},{"topic":{"name":"wallpaper-app"}},{"topic":{"name":"screensavers"}},{"topic":{"name":"windows-10"}},{"topic":{"name":"csharp"}},{"topic":{"name":"wallpapers"}},{"topic":{"name":"fluent"}},{"topic":{"name":"windows-11"}},{"topic":{"name":"winui"}}]}},{"id":"MDEwOlJlcG9zaXRvcnkxNTQzNQ==","databaseId":15435,"nameWithOwner":"Shopify/liquid","description":"Liquid
+      markup language. Safe, customer facing template language for flexible web apps.
+      ","url":"https://github.com/Shopify/liquid","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10098,"forkCount":1316,"repositoryTopics":{"nodes":[]}},{"id":"MDEwOlJlcG9zaXRvcnkxMjY0ODY3MDE=","databaseId":126486701,"nameWithOwner":"Unity-Technologies/UnityCsReference","description":"Unity
+      C# reference source code.","url":"https://github.com/Unity-Technologies/UnityCsReference","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10094,"forkCount":2261,"repositoryTopics":{"nodes":[]}},{"id":"MDEwOlJlcG9zaXRvcnkxMzYyMjE4OQ==","databaseId":13622189,"nameWithOwner":"tariqbuilds/linux-dash","description":"A
+      beautiful web dashboard for Linux","url":"https://github.com/tariqbuilds/linux-dash","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10093,"forkCount":1243,"repositoryTopics":{"nodes":[{"topic":{"name":"linux"}},{"topic":{"name":"dashboard"}},{"topic":{"name":"monitoring"}},{"topic":{"name":"server"}},{"topic":{"name":"web"}},{"topic":{"name":"ui"}},{"topic":{"name":"linux-dash"}}]}},{"id":"MDEwOlJlcG9zaXRvcnkzNjUyNjM4NDM=","databaseId":365263843,"nameWithOwner":"denoland/fresh","description":"The
+      next-gen web framework.","url":"https://github.com/denoland/fresh","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10093,"forkCount":430,"repositoryTopics":{"nodes":[{"topic":{"name":"deno"}},{"topic":{"name":"fresh"}},{"topic":{"name":"typescript"}},{"topic":{"name":"preact"}},{"topic":{"name":"javascript"}}]}},{"id":"MDEwOlJlcG9zaXRvcnk3OTYxOTkx","databaseId":7961991,"nameWithOwner":"square/javapoet","description":"A
+      Java API for generating .java source files.","url":"https://github.com/square/javapoet","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10087,"forkCount":1307,"repositoryTopics":{"nodes":[]}},{"id":"MDEwOlJlcG9zaXRvcnkxOTkzMjg3NTQ=","databaseId":199328754,"nameWithOwner":"cmiscm/leonsans","description":"Leon
+      Sans is a geometric sans-serif typeface made with code in 2019 by Jongmin Kim.","url":"https://github.com/cmiscm/leonsans","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10085,"forkCount":531,"repositoryTopics":{"nodes":[]}},{"id":"MDEwOlJlcG9zaXRvcnkxMjE0NzAzODM=","databaseId":121470383,"nameWithOwner":"solana-labs/solana","description":"Web-Scale
+      Blockchain for fast, secure, scalable, decentralized apps and marketplaces.","url":"https://github.com/solana-labs/solana","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10081,"forkCount":2783,"repositoryTopics":{"nodes":[{"topic":{"name":"ledger"}},{"topic":{"name":"blockchain"}},{"topic":{"name":"solana"}},{"topic":{"name":"performance-blockchain"}},{"topic":{"name":"rustc"}},{"topic":{"name":"bitcoin"}},{"topic":{"name":"rust"}}]}},{"id":"MDEwOlJlcG9zaXRvcnkyODM1MTEx","databaseId":2835111,"nameWithOwner":"pyinstaller/pyinstaller","description":"Freeze
+      (package) Python programs into stand-alone executables","url":"https://github.com/pyinstaller/pyinstaller","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10075,"forkCount":1859,"repositoryTopics":{"nodes":[{"topic":{"name":"python"}},{"topic":{"name":"python-3"}},{"topic":{"name":"bundle"}},{"topic":{"name":"package"}},{"topic":{"name":"pyinstaller"}},{"topic":{"name":"python-to-exe"}},{"topic":{"name":"py2exe"}},{"topic":{"name":"py2app"}}]}},{"id":"MDEwOlJlcG9zaXRvcnk3MDAzODQzNw==","databaseId":70038437,"nameWithOwner":"vnotex/vnote","description":"A
+      pleasant note-taking platform.","url":"https://github.com/vnotex/vnote","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10075,"forkCount":1058,"repositoryTopics":{"nodes":[{"topic":{"name":"vnote"}},{"topic":{"name":"vim"}},{"topic":{"name":"markdown"}},{"topic":{"name":"note-taking"}},{"topic":{"name":"note"}},{"topic":{"name":"editor"}},{"topic":{"name":"uml"}},{"topic":{"name":"mathjax"}}]}}]}}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 03 Mar 2023 17:19:33 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v4; param=antiope-preview; format=json
+      X-Github-Request-Id:
+      - 2541:770A:17B961A:30D612D:64022C24
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4991"
+      X-Ratelimit-Reset:
+      - "1677864296"
+      X-Ratelimit-Resource:
+      - graphql
+      X-Ratelimit-Used:
+      - "9"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""

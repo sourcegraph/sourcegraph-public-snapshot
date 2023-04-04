@@ -78,7 +78,7 @@ func TestGetCommits(t *testing.T) {
 			nil,
 		}
 
-		commits, err := gitserver.NewTestClient(http.DefaultClient, db, GitserverAddresses).GetCommits(ctx, nil, repoCommits, true)
+		commits, err := gitserver.NewTestClient(http.DefaultClient, GitserverAddresses).GetCommits(ctx, nil, repoCommits, true)
 		if err != nil {
 			t.Fatalf("unexpected error calling getCommits: %s", err)
 		}
@@ -109,7 +109,7 @@ func mustParseDate(s string, t *testing.T) *time.Time {
 }
 
 func TestHead(t *testing.T) {
-	client := gitserver.NewTestClient(http.DefaultClient, database.NewMockDB(), GitserverAddresses)
+	client := gitserver.NewTestClient(http.DefaultClient, GitserverAddresses)
 	t.Run("basic", func(t *testing.T) {
 		gitCommands := []string{
 			"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",

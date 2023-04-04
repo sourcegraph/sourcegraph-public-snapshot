@@ -1,7 +1,23 @@
+.label {
+    width: 100%;
+}
+
 .input-loading {
     padding-right: 2rem;
 }
 
 .loader-input {
     display: flex;
+}
+
+.description-block {
+    // Compensate visual list padding in order to
+    // adjust list points with other element vertical
+    // rhythm
+    margin: 0 0 0 0.25rem;
+
+    ul {
+        margin: 0;
+        padding-left: 1rem;
+    }
 }

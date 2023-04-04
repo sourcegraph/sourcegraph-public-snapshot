@@ -115,13 +115,13 @@ func TestRepo(t *testing.T) {
 				t.Errorf("%q: got vars == %v, want %v", test.path, m.Vars, test.wantVars)
 			}
 
-			url, err := m.Route.URLPath(pairs(m.Vars)...)
+			urlPath, err := m.Route.URLPath(pairs(m.Vars)...)
 			if err != nil {
 				t.Errorf("%q: URLPath: %s", test.path, err)
 				continue
 			}
-			if url.Path != test.path {
-				t.Errorf("%q: got path == %q, want %q", test.path, url.Path, test.path)
+			if urlPath.Path != test.path {
+				t.Errorf("%q: got path == %q, want %q", test.path, urlPath.Path, test.path)
 			}
 		}
 	}
@@ -153,13 +153,13 @@ func TestRev(t *testing.T) {
 				t.Errorf("%q: got vars == %v, want %v", test.path, m.Vars, test.wantVars)
 			}
 
-			url, err := m.Route.URLPath(pairs(m.Vars)...)
+			urlPath, err := m.Route.URLPath(pairs(m.Vars)...)
 			if err != nil {
 				t.Errorf("%q: URLPath: %s", test.path, err)
 				continue
 			}
-			if url.Path != test.path {
-				t.Errorf("%q: got path == %q, want %q", test.path, url.Path, test.path)
+			if urlPath.Path != test.path {
+				t.Errorf("%q: got path == %q, want %q", test.path, urlPath.Path, test.path)
 			}
 		}
 	}

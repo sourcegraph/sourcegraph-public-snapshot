@@ -34,11 +34,11 @@ func (r *GitTreeEntryResolver) Symbol(ctx context.Context, args *struct {
 	Line      int32
 	Character int32
 }) (*symbolResolver, error) {
-	symbol, err := symbol.GetMatchAtLineCharacter(ctx, authz.DefaultSubRepoPermsChecker, r.commit.repoResolver.RepoMatch.RepoName(), api.CommitID(r.commit.oid), r.Path(), int(args.Line), int(args.Character))
-	if err != nil || symbol == nil {
+	symbolMatch, err := symbol.GetMatchAtLineCharacter(ctx, authz.DefaultSubRepoPermsChecker, r.commit.repoResolver.RepoMatch.RepoName(), api.CommitID(r.commit.oid), r.Path(), int(args.Line), int(args.Character))
+	if err != nil || symbolMatch == nil {
 		return nil, err
 	}
-	return &symbolResolver{r.db, r.commit, symbol}, nil
+	return &symbolResolver{r.db, r.commit, symbolMatch}, nil
 }
 
 func (r *GitCommitResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
@@ -52,10 +52,10 @@ func (r *GitCommitResolver) Symbols(ctx context.Context, args *symbolsArgs) (*sy
 	}, nil
 }
 
-func symbolResultsToResolvers(db database.DB, commit *GitCommitResolver, symbols []*result.SymbolMatch) []symbolResolver {
-	symbolResolvers := make([]symbolResolver, 0, len(symbols))
-	for _, symbol := range symbols {
-		symbolResolvers = append(symbolResolvers, toSymbolResolver(db, commit, symbol))
+func symbolResultsToResolvers(db database.DB, commit *GitCommitResolver, symbolMatches []*result.SymbolMatch) []symbolResolver {
+	symbolResolvers := make([]symbolResolver, 0, len(symbolMatches))
+	for _, symbolMatch := range symbolMatches {
+		symbolResolvers = append(symbolResolvers, toSymbolResolver(db, commit, symbolMatch))
 	}
 	return symbolResolvers
 }
@@ -120,8 +120,12 @@ func (r symbolResolver) Language() string { return r.Symbol.Language }
 func (r symbolResolver) Location() *locationResolver {
 	stat := CreateFileInfo(r.Symbol.Path, false)
 	sr := r.Symbol.Range()
+	opts := GitTreeEntryResolverOpts{
+		commit: r.commit,
+		stat:   stat,
+	}
 	return &locationResolver{
-		resource: NewGitTreeEntryResolver(r.db, gitserver.NewClient(r.db), r.commit, stat),
+		resource: NewGitTreeEntryResolver(r.db, gitserver.NewClient(), opts),
 		lspRange: &sr,
 	}
 }

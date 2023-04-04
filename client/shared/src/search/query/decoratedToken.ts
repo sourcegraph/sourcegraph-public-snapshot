@@ -165,6 +165,7 @@ export interface MetaSelector extends BaseMetaToken {
 export enum MetaSelectorKind {
     Repo = 'repo',
     File = 'file',
+    FileOwners = 'file.owners',
     Content = 'content',
     Symbol = 'symbol',
     Commit = 'commit',
@@ -1006,7 +1007,9 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
             break
         }
         case 'has.tag':
+        case 'has.owner':
         case 'has.key':
+        case 'has.topic':
             return [
                 {
                     type: 'literal',
@@ -1200,7 +1203,7 @@ export const toCSSClassName = (token: DecoratedToken): string => {
     }
 }
 
-interface Decoration {
+export interface Decoration {
     value: string
     key: number
     className: string

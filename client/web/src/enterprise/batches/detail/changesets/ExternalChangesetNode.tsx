@@ -3,7 +3,6 @@ import React, { useState, useCallback, useEffect } from 'react'
 import { mdiChevronDown, mdiChevronUp, mdiSync } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import * as H from 'history'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
@@ -33,8 +32,6 @@ export interface ExternalChangesetNodeProps {
         onSelect: (id: string) => void
         isSelected: (id: string) => boolean
     }
-    history: H.History
-    location: H.Location
     /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
     /** For testing only. */
@@ -45,8 +42,6 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
     node: initialNode,
     viewerCanAdminister,
     selectable,
-    history,
-    location,
     queryExternalChangesetWithFileDiffs,
     expandByDefault,
 }) => {
@@ -212,8 +207,6 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                         <ChangesetError node={node} />
                         <ChangesetFileDiff
                             changesetID={node.id}
-                            history={history}
-                            location={location}
                             repositoryID={node.repository.id}
                             repositoryName={node.repository.name}
                             queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}

@@ -1,33 +1,27 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { FC, useEffect, useState, useCallback } from 'react'
 
-import * as H from 'history'
-import { Redirect } from 'react-router'
+import { mdiCog } from '@mdi/js'
+import { Navigate, useParams } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, H2, Container, ErrorAlert } from '@sourcegraph/wildcard'
+import { Container, ErrorAlert, PageHeader, Icon, ButtonLink } from '@sourcegraph/wildcard'
 
 import {
     ExternalServiceFields,
-    Scalars,
     AddExternalServiceInput,
     ExternalServiceResult,
     ExternalServiceVariables,
 } from '../../graphql-operations'
+import { CreatedByAndUpdatedByInfoByline } from '../Byline/CreatedByAndUpdatedByInfoByline'
 import { PageTitle } from '../PageTitle'
 
 import { useUpdateExternalService, FETCH_EXTERNAL_SERVICE } from './backend'
-import { ExternalServiceCard } from './ExternalServiceCard'
 import { ExternalServiceForm } from './ExternalServiceForm'
 import { resolveExternalServiceCategory } from './externalServices'
 import { ExternalServiceWebhook } from './ExternalServiceWebhook'
 
 interface Props extends TelemetryProps {
-    externalServiceID: Scalars['ID']
-    isLightTheme: boolean
-    history: H.History
-    routingPrefix: string
-
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
 
@@ -38,16 +32,14 @@ interface Props extends TelemetryProps {
 const getExternalService = (queryResult?: ExternalServiceResult): ExternalServiceFields | null =>
     queryResult?.node?.__typename === 'ExternalService' ? queryResult.node : null
 
-export const ExternalServiceEditPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    externalServiceID,
-    history,
-    routingPrefix,
-    isLightTheme,
+export const ExternalServiceEditPage: FC<Props> = ({
     telemetryService,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
     autoFocusForm,
 }) => {
+    const { externalServiceID } = useParams()
+
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalService')
     }, [telemetryService])
@@ -57,7 +49,7 @@ export const ExternalServiceEditPage: React.FunctionComponent<React.PropsWithChi
     const { error: fetchError, loading: fetchLoading } = useQuery<ExternalServiceResult, ExternalServiceVariables>(
         FETCH_EXTERNAL_SERVICE,
         {
-            variables: { id: externalServiceID },
+            variables: { id: externalServiceID! },
             notifyOnNetworkStatusChange: false,
             fetchPolicy: 'no-cache',
             onCompleted: result => {
@@ -113,7 +105,7 @@ export const ExternalServiceEditPage: React.FunctionComponent<React.PropsWithChi
     const combinedLoading = fetchLoading || updateExternalServiceLoading
 
     if (updated && !combinedLoading && externalService?.warning === null) {
-        return <Redirect to={`${routingPrefix}/external-services/${externalService.id}`} />
+        return <Navigate to={`/site-admin/external-services/${externalService.id}`} replace={true} />
     }
 
     return (
@@ -123,19 +115,50 @@ export const ExternalServiceEditPage: React.FunctionComponent<React.PropsWithChi
             ) : (
                 <PageTitle title="Code host" />
             )}
-            <H2>Update code host connection {combinedLoading && <LoadingSpinner inline={true} />}</H2>
             {combinedError !== undefined && !combinedLoading && <ErrorAlert className="mb-3" error={combinedError} />}
 
             {externalService && (
                 <Container className="mb-3">
-                    {externalServiceCategory && (
-                        <div className="mb-3">
-                            <ExternalServiceCard {...externalServiceCategory} />
-                        </div>
-                    )}
+                    <PageHeader
+                        path={[
+                            { icon: mdiCog },
+                            { to: '/site-admin/external-services', text: 'Code hosts' },
+                            {
+                                to: `/site-admin/external-services/${externalService.id}`,
+                                text: (
+                                    <>
+                                        {externalServiceCategory && (
+                                            <Icon
+                                                inline={true}
+                                                as={externalServiceCategory.icon}
+                                                aria-label="Code host logo"
+                                                className="mr-2"
+                                            />
+                                        )}
+                                        {externalService.displayName}
+                                    </>
+                                ),
+                            },
+                        ]}
+                        byline={
+                            <CreatedByAndUpdatedByInfoByline
+                                createdAt={externalService.createdAt}
+                                updatedAt={externalService.updatedAt}
+                                noAuthor={true}
+                            />
+                        }
+                        className="mb-3"
+                        headingElement="h2"
+                        actions={
+                            <ButtonLink to={`/site-admin/external-services/${externalServiceID}`} variant="secondary">
+                                Cancel
+                            </ButtonLink>
+                        }
+                    />
                     {externalServiceCategory && (
                         <ExternalServiceForm
                             input={{ ...externalService }}
+                            externalServiceID={externalServiceID}
                             editorActions={externalServiceCategory.editorActions}
                             jsonSchema={externalServiceCategory.jsonSchema}
                             error={updateExternalServiceError}
@@ -144,8 +167,6 @@ export const ExternalServiceEditPage: React.FunctionComponent<React.PropsWithChi
                             loading={combinedLoading}
                             onSubmit={onSubmit}
                             onChange={onChange}
-                            history={history}
-                            isLightTheme={isLightTheme}
                             telemetryService={telemetryService}
                             autoFocus={autoFocusForm}
                             externalServicesFromFile={externalServicesFromFile}

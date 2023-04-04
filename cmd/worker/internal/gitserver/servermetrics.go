@@ -28,7 +28,7 @@ func (j *metricsJob) Config() []env.Config {
 	return nil
 }
 
-func (j *metricsJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *metricsJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err

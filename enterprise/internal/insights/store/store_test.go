@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 
@@ -40,7 +40,7 @@ func TestSeriesPoints(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("SeriesPoints", []SeriesPoint{}).Equal(t, points)
+	autogold.Expect([]SeriesPoint{}).Equal(t, points)
 
 	// Insert some fake data.
 	_, err = insightsDB.ExecContext(context.Background(), `
@@ -66,7 +66,7 @@ SELECT time,
 		t.Fatal(err)
 	}
 
-	time := func(s string) *time.Time {
+	parseTime := func(s string) *time.Time {
 		v, err := time.Parse(time.RFC3339, s)
 		if err != nil {
 			t.Fatal(err)
@@ -81,19 +81,19 @@ SELECT time,
 			t.Fatal(err)
 		}
 		t.Log(points)
-		autogold.Want("SeriesPoints(2).len", int(16)).Equal(t, len(points))
+		autogold.Expect(16).Equal(t, len(points))
 	})
 
 	t.Run("subset of data", func(t *testing.T) {
 		// Confirm we can get a subset of data points.
 		points, err = store.SeriesPoints(ctx, SeriesPointsOpts{
-			From: time("2020-03-01T00:00:00Z"),
-			To:   time("2020-06-01T00:00:00Z"),
+			From: parseTime("2020-03-01T00:00:00Z"),
+			To:   parseTime("2020-06-01T00:00:00Z"),
 		})
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("SeriesPoints(3).len", int(0)).Equal(t, len(points))
+		autogold.Expect(0).Equal(t, len(points))
 	})
 
 	t.Run("latest 3 points", func(t *testing.T) {
@@ -104,7 +104,7 @@ SELECT time,
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("SeriesPoints(4).len", int(3)).Equal(t, len(points))
+		autogold.Expect(3).Equal(t, len(points))
 	})
 
 	t.Run("include list", func(t *testing.T) {
@@ -196,7 +196,7 @@ func TestCountData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("first", int(0)).Equal(t, numDataPoints)
+	autogold.Expect(0).Equal(t, numDataPoints)
 
 	// How many data points on 03-01?
 	numDataPoints, err = store.CountData(ctx, CountDataOpts{
@@ -206,7 +206,7 @@ func TestCountData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("second", int(1)).Equal(t, numDataPoints)
+	autogold.Expect(1).Equal(t, numDataPoints)
 
 	// How many data points from 03-01 to 03-04?
 	numDataPoints, err = store.CountData(ctx, CountDataOpts{
@@ -216,7 +216,7 @@ func TestCountData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("third", int(5)).Equal(t, numDataPoints)
+	autogold.Expect(5).Equal(t, numDataPoints)
 }
 
 func TestRecordSeriesPoints(t *testing.T) {
@@ -311,7 +311,7 @@ func TestRecordSeriesPoints(t *testing.T) {
 		}
 		return s
 	}
-	autogold.Want("wanted points = gotten points", stringify(want)).Equal(t, stringify(points))
+	autogold.Expect(stringify(want)).Equal(t, stringify(points))
 }
 
 func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {
@@ -527,14 +527,14 @@ func TestDeleteSnapshots(t *testing.T) {
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("unexpected count of series points after deleting snapshots (want/got): %v", diff)
 	}
-	autogold.Equal(t, points, autogold.ExportedOnly())
+	autogold.ExpectFile(t, points, autogold.ExportedOnly())
 
 	gotRecordingTimes, err := store.GetInsightSeriesRecordingTimes(ctx, 1, SeriesPointsOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	wantRecordingTimes := types.InsightSeriesRecordingTimes{InsightSeriesID: 1, RecordingTimes: []types.RecordingTime{{Timestamp: current.Add(time.Hour)}}}
-	autogold.Want("snapshot recording time should have been deleted", gotRecordingTimes).Equal(t, wantRecordingTimes)
+	autogold.Expect(gotRecordingTimes).Equal(t, wantRecordingTimes)
 }
 
 func TestValues(t *testing.T) {
@@ -744,6 +744,7 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 	afterNow := now.AddDate(0, 0, 1)
 
 	testCases := []struct {
+		name     string
 		insert   *types.InsightSeriesRecordingTimes
 		getFor   int
 		getFrom  *time.Time
@@ -752,43 +753,50 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 		want     autogold.Value
 	}{
 		{
+			name:   "get all recording times for series1",
 			getFor: 1,
-			want:   autogold.Want("get all recording times for series1", stringifyTimes(series1Times)),
+			want:   autogold.Expect(stringifyTimes(series1Times)),
 		},
 		{
+			name:   "duplicates are not inserted",
 			insert: &types.InsightSeriesRecordingTimes{InsightSeriesID: 1, RecordingTimes: makeRecordings([]time.Time{now}, true)},
 			getFor: 1,
-			want:   autogold.Want("duplicates are not inserted", stringifyTimes(series1Times)),
+			want:   autogold.Expect(stringifyTimes(series1Times)),
 		},
 		{
+			name:   "UTC is always used",
 			insert: &types.InsightSeriesRecordingTimes{InsightSeriesID: 2, RecordingTimes: makeRecordings([]time.Time{now.Local()}, true)},
 			getFor: 2,
-			want:   autogold.Want("UTC is always used", stringifyTimes(series2Times)),
+			want:   autogold.Expect(stringifyTimes(series2Times)),
 		},
 		{
+			name:    "gets subset of series 2 recording times",
 			getFor:  2,
 			getFrom: &now,
-			want:    autogold.Want("gets subset of series 2 recording times", stringifyTimes(series2Times[:2])),
+			want:    autogold.Expect(stringifyTimes(series2Times[:2])),
 		},
 		{
+			name:   "gets subset of series 1 recording times",
 			getFor: 1,
 			getTo:  &now,
-			want:   autogold.Want("gets subset of series 1 recording times", stringifyTimes(series1Times[:1])),
+			want:   autogold.Expect(stringifyTimes(series1Times[:1])),
 		},
 		{
+			name:    "gets subset from and to",
 			getFor:  2,
 			getFrom: &oldTime,
 			getTo:   &afterNow,
-			want:    autogold.Want("gets subset from and to", stringifyTimes(append(series2Times[:1], series2Times[2]))),
+			want:    autogold.Expect(stringifyTimes(append(series2Times[:1], series2Times[2]))),
 		},
 		{
+			name:     "gets all times after",
 			getFor:   1,
 			getAfter: &now,
-			want:     autogold.Want("gets all times after", stringifyTimes(series1Times[1:])),
+			want:     autogold.Expect(stringifyTimes(series1Times[1:])),
 		},
 	}
 	for _, tc := range testCases {
-		t.Run(tc.want.Name(), func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			if tc.insert != nil {
 				if err := timeseriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{*tc.insert}); err != nil {
 					t.Fatal(err)
@@ -838,37 +846,42 @@ func Test_coalesceZeroValues(t *testing.T) {
 	}
 
 	testCases := []struct {
+		name           string
 		points         map[string]*SeriesPoint
 		recordingTimes []time.Time
 		captureValues  map[string]struct{}
 		want           autogold.Value
 	}{
 		{
+			"empty returns empty",
 			nil,
 			nil,
 			nil,
-			autogold.Want("empty returns empty", []string{}),
+			autogold.Expect([]string{}),
 		},
 		{
+			"empty recording times returns empty",
 			map[string]*SeriesPoint{
 				"2020-01-01 00:00:00 +0000 UTC": {"seriesID", testTime, 12, nil},
 			},
 			[]time.Time{},
 			map[string]struct{}{"": {}},
-			autogold.Want("empty recording times returns empty", []string{}),
+			autogold.Expect([]string{}),
 		},
 		{
+			"augment one data point",
 			map[string]*SeriesPoint{
 				"2020-01-01 00:00:00 +0000 UTC": {"seriesID", testTime, 1, nil},
 			},
 			generateTimes(2),
 			map[string]struct{}{"": {}},
-			autogold.Want("augment one data point", []string{
+			autogold.Expect([]string{
 				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Value: 1}`,
 				`SeriesPoint{Time: "2020-01-02 00:00:00 +0000 UTC", Value: 0}`,
 			}),
 		},
 		{
+			"augment capture data points",
 			map[string]*SeriesPoint{
 				"2020-01-01 00:00:00 +0000 UTCone":   {"1", testTime, 1, capture("one")},
 				"2020-01-01 00:00:00 +0000 UTCtwo":   {"1", testTime, 2, capture("two")},
@@ -877,7 +890,7 @@ func Test_coalesceZeroValues(t *testing.T) {
 			},
 			generateTimes(2),
 			map[string]struct{}{"one": {}, "two": {}, "three": {}},
-			autogold.Want("augment capture data points", []string{
+			autogold.Expect([]string{
 				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Capture: "one", Value: 1}`,
 				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Capture: "three", Value: 3}`,
 				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Capture: "two", Value: 2}`,
@@ -887,13 +900,14 @@ func Test_coalesceZeroValues(t *testing.T) {
 			}),
 		},
 		{
+			"augment data point in the past",
 			map[string]*SeriesPoint{
 				"2020-01-01 00:00:00 +0000 UTC": {"1", testTime, 11, nil},
 				"2020-01-02 00:00:00 +0000 UTC": {"1", testTime.AddDate(0, 0, 1), 22, nil},
 			},
 			append([]time.Time{testTime.AddDate(0, 0, -1)}, generateTimes(2)...),
 			map[string]struct{}{"": {}},
-			autogold.Want("augment data point in the past", []string{
+			autogold.Expect([]string{
 				`SeriesPoint{Time: "2019-12-31 00:00:00 +0000 UTC", Value: 0}`,
 				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Value: 11}`,
 				`SeriesPoint{Time: "2020-01-02 00:00:00 +0000 UTC", Value: 22}`,
@@ -901,7 +915,7 @@ func Test_coalesceZeroValues(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		t.Run(tc.want.Name(), func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			got := coalesceZeroValues("1", tc.points, tc.captureValues, makeRecordingTimes(tc.recordingTimes))
 			tc.want.Equal(t, stringify(got))
 		})
@@ -969,7 +983,202 @@ func TestGetOffsetNRecordingTime(t *testing.T) {
 	})
 }
 
-func setupSeries(ctx context.Context, tx *InsightStore, t *testing.T) {
+func TestGetAllDataForInsightViewId(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
+
+	permissionStore := NewMockInsightPermissionStore()
+	// no repo restrictions by default
+	permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn(nil, nil)
+
+	insightStore := NewInsightStore(insightsDB)
+	seriesStore := New(insightsDB, permissionStore)
+
+	// insert all view and series metadata
+	view, err := insightStore.CreateView(ctx, types.InsightView{
+		Title:            "my view",
+		Description:      "my view description",
+		UniqueID:         "1",
+		PresentationType: types.Line,
+	}, []InsightViewGrant{GlobalGrant()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	series := setupSeries(ctx, insightStore, t)
+	if series.SeriesID != "series1" {
+		t.Fatal("series setup is incorrect, series id should be series1")
+	}
+
+	err = insightStore.AttachSeriesToView(ctx, series, view, types.InsightViewSeriesMetadata{
+		Label:  "label",
+		Stroke: "blue",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	recordingTimes := types.InsightSeriesRecordingTimes{InsightSeriesID: series.ID}
+	newTime := time.Now().Truncate(time.Hour)
+	for i := 1; i <= 2; i++ {
+		newTime = newTime.Add(time.Hour).UTC()
+		recordingTimes.RecordingTimes = append(recordingTimes.RecordingTimes, types.RecordingTime{
+			Snapshot: false, Timestamp: newTime,
+		})
+	}
+	if err := seriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{recordingTimes}); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("empty entries for no series points data", func(t *testing.T) {
+		got, err := seriesStore.GetAllDataForInsightViewID(ctx, ExportOpts{InsightViewUniqueID: view.UniqueID})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != len(recordingTimes.RecordingTimes) {
+			t.Fatalf("expected %d got %d series points for export", len(recordingTimes.RecordingTimes), len(got))
+		}
+		for i, rt := range recordingTimes.RecordingTimes {
+			autogold.Expect(view.Title).Equal(t, got[i].InsightViewTitle)
+			autogold.Expect(series.Query).Equal(t, got[i].SeriesQuery)
+			autogold.Expect("label").Equal(t, got[i].SeriesLabel)
+			autogold.Expect(0).Equal(t, got[i].Value)
+			autogold.Expect(rt.Timestamp).Equal(t, got[i].RecordingTime.UTC())
+			autogold.Expect(true).Equal(t, got[i].RepoName == nil && got[i].Capture == nil)
+		}
+	})
+
+	// insert series point data
+	_, err = insightsDB.ExecContext(context.Background(), `
+INSERT INTO repo_names(name) VALUES ('github.com/gorilla/mux-original');
+SELECT setseed(0.5);
+INSERT INTO series_points(
+	time,
+	series_id,
+	value,
+	repo_id,
+	repo_name_id,
+	original_repo_name_id
+)
+SELECT recording_time,
+    'series1',
+    11,
+    1111,
+    (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-original'),
+    (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-original')
+	FROM insight_series_recording_times WHERE insight_series_id = 1;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("only live data", func(t *testing.T) {
+		got, err := seriesStore.GetAllDataForInsightViewID(ctx, ExportOpts{InsightViewUniqueID: view.UniqueID})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != len(recordingTimes.RecordingTimes) {
+			t.Errorf("expected %d got %d series points for export", len(recordingTimes.RecordingTimes), len(got))
+		}
+		for _, sp := range got {
+			repo := "github.com/gorilla/mux-original"
+			var capture *string
+			autogold.Expect(view.Title).Equal(t, sp.InsightViewTitle)
+			autogold.Expect(series.Query).Equal(t, sp.SeriesQuery)
+			autogold.Expect("label").Equal(t, sp.SeriesLabel)
+			autogold.Expect(11).Equal(t, sp.Value)
+			autogold.Expect(&repo).Equal(t, sp.RepoName)
+			autogold.Expect(capture).Equal(t, sp.Capture)
+		}
+	})
+	t.Run("respects repo permissions", func(t *testing.T) {
+		permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn([]api.RepoID{1111}, nil)
+		defer func() {
+			// cleanup
+			permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn(nil, nil)
+		}()
+		got, err := seriesStore.GetAllDataForInsightViewID(ctx, ExportOpts{InsightViewUniqueID: view.UniqueID})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 0 {
+			t.Errorf("expected 0 results due to repo permissions, got %d", len(got))
+		}
+	})
+	t.Run("respects include repo filter", func(t *testing.T) {
+		// insert more series point data
+		_, err = insightsDB.ExecContext(context.Background(), `
+INSERT INTO repo_names(name) VALUES ('github.com/sourcegraph/sourcegraph');
+SELECT setseed(0.5);
+INSERT INTO series_points(
+	time,
+	series_id,
+	value,
+	repo_id,
+	repo_name_id,
+	original_repo_name_id
+)
+SELECT recording_time,
+    'series1',
+    22,
+    2222,
+    (SELECT id FROM repo_names WHERE name = 'github.com/sourcegraph/sourcegraph'),
+    (SELECT id FROM repo_names WHERE name = 'github.com/sourcegraph/sourcegraph')
+	FROM insight_series_recording_times WHERE insight_series_id = 1;
+`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() {
+			insightsDB.ExecContext(context.Background(), `DELETE FROM series_points WHERE repo_id = 2222`)
+		}()
+		got, err := seriesStore.GetAllDataForInsightViewID(ctx, ExportOpts{InsightViewUniqueID: view.UniqueID, ExcludeRepoRegex: []string{"gorilla"}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 2 {
+			t.Errorf("expected 2 got %d series points for export", len(got))
+		}
+		for _, sp := range got {
+			repo := "github.com/sourcegraph/sourcegraph"
+			var capture *string
+			autogold.Expect(view.Title).Equal(t, sp.InsightViewTitle)
+			autogold.Expect(series.Query).Equal(t, sp.SeriesQuery)
+			autogold.Expect("label").Equal(t, sp.SeriesLabel)
+			autogold.Expect(22).Equal(t, sp.Value)
+			autogold.Expect(&repo).Equal(t, sp.RepoName)
+			autogold.Expect(capture).Equal(t, sp.Capture)
+		}
+	})
+	t.Run("respects exclude repo filter", func(t *testing.T) {
+		got, err := seriesStore.GetAllDataForInsightViewID(ctx, ExportOpts{InsightViewUniqueID: view.UniqueID, ExcludeRepoRegex: []string{"mux-original"}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 0 {
+			t.Errorf("expected 0 results due to filtering, got %d", len(got))
+		}
+	})
+	t.Run("adds empty entry for no series points data", func(t *testing.T) {
+		// add new recording time
+		extraTime := newTime.Add(time.Hour).UTC()
+		newRecordingTime := types.InsightSeriesRecordingTimes{InsightSeriesID: series.ID, RecordingTimes: []types.RecordingTime{
+			{Timestamp: extraTime},
+		}}
+		if err := seriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{newRecordingTime}); err != nil {
+			t.Fatal(err)
+		}
+		got, err := seriesStore.GetAllDataForInsightViewID(ctx, ExportOpts{InsightViewUniqueID: view.UniqueID})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != len(recordingTimes.RecordingTimes)+1 {
+			t.Fatalf("expected %d got %d series points for export", len(recordingTimes.RecordingTimes)+1, len(got))
+		}
+	})
+}
+
+func setupSeries(ctx context.Context, tx *InsightStore, t *testing.T) types.InsightSeries {
 	now := time.Now()
 	series := types.InsightSeries{
 		SeriesID:           "series1",
@@ -990,4 +1199,5 @@ func setupSeries(ctx context.Context, tx *InsightStore, t *testing.T) {
 	if got.ID != 1 {
 		t.Errorf("expected first series to have id 1")
 	}
+	return got
 }

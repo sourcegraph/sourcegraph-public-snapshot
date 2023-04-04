@@ -13,9 +13,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -23,14 +24,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewDependencyIndexingScheduler returns a new worker instance that processes
 // records from lsif_dependency_indexing_jobs.
 func NewDependencyIndexingScheduler(
-	dependencyIndexingStore dbworkerstore.Store[shared.DependencyIndexingJob],
+	dependencyIndexingStore dbworkerstore.Store[dependencyIndexingJob],
 	uploadSvc UploadService,
 	repoStore ReposStore,
 	externalServiceStore ExternalServiceStore,
@@ -40,7 +40,7 @@ func NewDependencyIndexingScheduler(
 	metrics workerutil.WorkerObservability,
 	pollInterval time.Duration,
 	numHandlers int,
-) *workerutil.Worker[shared.DependencyIndexingJob] {
+) *workerutil.Worker[dependencyIndexingJob] {
 	rootContext := actor.WithInternalActor(context.Background())
 
 	handler := &dependencyIndexingSchedulerHandler{
@@ -53,8 +53,9 @@ func NewDependencyIndexingScheduler(
 		repoUpdater:        repoUpdater,
 	}
 
-	return dbworker.NewWorker[shared.DependencyIndexingJob](rootContext, dependencyIndexingStore, handler, workerutil.WorkerOptions{
+	return dbworker.NewWorker[dependencyIndexingJob](rootContext, dependencyIndexingStore, handler, workerutil.WorkerOptions{
 		Name:              "precise_code_intel_dependency_indexing_scheduler_worker",
+		Description:       "queues code-intel auto-indexing jobs for dependency packages",
 		NumHandlers:       numHandlers,
 		Interval:          pollInterval,
 		Metrics:           metrics,
@@ -68,7 +69,7 @@ type dependencyIndexingSchedulerHandler struct {
 	indexEnqueuer      IndexEnqueuer
 	extsvcStore        ExternalServiceStore
 	gitserverRepoStore GitserverRepoStore
-	workerStore        dbworkerstore.Store[shared.DependencyIndexingJob]
+	workerStore        dbworkerstore.Store[dependencyIndexingJob]
 	repoUpdater        RepoUpdaterClient
 }
 
@@ -77,13 +78,13 @@ const requeueBackoff = time.Second * 30
 // default is false aka index scheduler is enabled
 var disableIndexScheduler, _ = strconv.ParseBool(os.Getenv("CODEINTEL_DEPENDENCY_INDEX_SCHEDULER_DISABLED"))
 
-var _ workerutil.Handler[shared.DependencyIndexingJob] = &dependencyIndexingSchedulerHandler{}
+var _ workerutil.Handler[dependencyIndexingJob] = &dependencyIndexingSchedulerHandler{}
 
 // Handle iterates all import monikers associated with a given upload that has
 // recently completed processing. Each moniker is interpreted according to its
 // scheme to determine the dependent repository and commit. A set of indexing
 // jobs are enqueued for each repository and commit pair.
-func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger log.Logger, job shared.DependencyIndexingJob) error {
+func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger log.Logger, job dependencyIndexingJob) error {
 	if !autoIndexingEnabled() || disableIndexScheduler {
 		return nil
 	}
@@ -124,7 +125,6 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 		}
 	}
 
-	var errs []error
 	scanner, err := h.uploadsSvc.ReferencesForUpload(ctx, job.UploadID)
 	if err != nil {
 		return errors.Wrap(err, "dbstore.ReferencesForUpload")
@@ -135,7 +135,7 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 		}
 	}()
 
-	repoToPackages := make(map[api.RepoName][]precise.Package)
+	repoToPackages := make(map[api.RepoName][]dependencies.MinimialVersionedPackageRepo)
 	var repoNames []api.RepoName
 	for {
 		packageReference, exists, err := scanner.Next()
@@ -146,11 +146,10 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 			break
 		}
 
-		pkg := precise.Package{
-			Scheme:  packageReference.Package.Scheme,
-			Manager: packageReference.Package.Manager,
-			Name:    packageReference.Package.Name,
-			Version: packageReference.Package.Version,
+		pkg := dependencies.MinimialVersionedPackageRepo{
+			Scheme:  packageReference.Scheme,
+			Name:    reposource.PackageName(packageReference.Name),
+			Version: packageReference.Version,
 		}
 
 		repoName, _, ok := inference.InferRepositoryAndRevision(pkg)
@@ -159,6 +158,11 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 		}
 		repoToPackages[repoName] = append(repoToPackages[repoName], pkg)
 		repoNames = append(repoNames, repoName)
+	}
+
+	// No dependencies found, we can return early.
+	if len(repoNames) == 0 {
+		return nil
 	}
 
 	// if this job is not associated with an external service kind that was just synced, then we need to guarantee
@@ -214,9 +218,10 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 		}
 	}
 
+	var errs []error
 	for _, pkgs := range repoToPackages {
 		for _, pkg := range pkgs {
-			if err := h.indexEnqueuer.QueueIndexesForPackage(ctx, pkg); err != nil {
+			if err := h.indexEnqueuer.QueueIndexesForPackage(ctx, pkg, true); err != nil {
 				errs = append(errs, errors.Wrap(err, "enqueuer.QueueIndexesForPackage"))
 			}
 		}

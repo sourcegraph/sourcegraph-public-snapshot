@@ -88,7 +88,7 @@ const Template: Story<{
     isClosed?: boolean
 }> = ({ url, supersedingBatchSpec, currentBatchSpec, viewerCanAdminister, isClosed }) => {
     const batchChange: BatchChangeFields = useMemo(() => {
-        const currentSpec = currentBatchSpec ?? MOCK_BATCH_CHANGE.currentSpec!
+        const currentSpec = currentBatchSpec ?? MOCK_BATCH_CHANGE.currentSpec
 
         return {
             ...MOCK_BATCH_CHANGE,
@@ -138,14 +138,13 @@ const Template: Story<{
     ])
 
     return (
-        <WebStory initialEntries={[url]}>
+        <WebStory path="/users/:username/batch-changes/:batchChangeName" initialEntries={[url]}>
             {props => (
                 <MockedTestProvider link={mocks}>
                     <BatchChangeDetailsPage
                         {...props}
                         authenticatedUser={authenticatedUser}
                         namespaceID="namespace123"
-                        batchChangeName="awesome-batch-change"
                         queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                         deleteBatchChange={deleteBatchChange}
                         queryAllChangesetIDs={queryAllChangesetIDs}
@@ -216,7 +215,7 @@ export const UnpublishableBatchSpec = Template.bind({})
 UnpublishableBatchSpec.args = {
     url: '/users/alice/batch-changes/awesome-batch-change',
     currentBatchSpec: {
-        ...MOCK_BATCH_CHANGE.currentSpec!,
+        ...MOCK_BATCH_CHANGE.currentSpec,
         viewerBatchChangesCodeHosts: {
             __typename: 'BatchChangesCodeHostConnection',
             totalCount: 1,
@@ -257,14 +256,13 @@ export const EmptyChangesets: Story = args => {
     ])
 
     return (
-        <WebStory>
+        <WebStory path="/:batchChangeName" initialEntries={['/awesome-batch-change']}>
             {props => (
                 <MockedTestProvider link={mocks}>
                     <BatchChangeDetailsPage
                         {...props}
                         authenticatedUser={authenticatedUser}
                         namespaceID="namespace123"
-                        batchChangeName="awesome-batch-change"
                         queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                         deleteBatchChange={deleteBatchChange}
                         settingsCascade={EMPTY_SETTINGS_CASCADE}

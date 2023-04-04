@@ -2,7 +2,6 @@ import { useMemo } from 'react'
 
 import { useLocation } from 'react-router-dom'
 
-import { isErrorLike } from '@sourcegraph/common'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { CreateInsightFormFields } from '../types'
@@ -12,7 +11,6 @@ import { useURLQueryInsight } from './use-url-query-insight/use-url-query-insigh
 
 export interface UseInitialValuesResult {
     initialValues: Partial<CreateInsightFormFields>
-    loading: boolean
     setLocalStorageFormValues: (values: CreateInsightFormFields | undefined) => void
 }
 
@@ -21,7 +19,7 @@ export function useSearchInsightInitialValues(): UseInitialValuesResult {
 
     // Search insight creation UI form can take values from URL query param in order
     // to support 1-click creation insight flow for the search result page.
-    const { hasQueryInsight, data: urlQueryInsightValues } = useURLQueryInsight(search)
+    const initialValuesFromURLParam = useURLQueryInsight(search)
 
     const urlParsedInsightValues = useMemo(() => decodeSearchInsightUrl(search), [search])
 
@@ -32,15 +30,14 @@ export function useSearchInsightInitialValues(): UseInitialValuesResult {
     // render creation UI form.
     // eslint-disable-next-line no-restricted-syntax
     const [localStorageFormValues, setLocalStorageFormValues] = useLocalStorage<CreateInsightFormFields | undefined>(
-        'insights.search-insight-creation-ui',
+        'insights.search-insight-creation-ui-v2',
         undefined
     )
 
     // [1] "query" query parameter has a higher priority
-    if (hasQueryInsight) {
+    if (initialValuesFromURLParam) {
         return {
-            initialValues: !isErrorLike(urlQueryInsightValues) ? urlQueryInsightValues ?? {} : {},
-            loading: urlQueryInsightValues === undefined,
+            initialValues: initialValuesFromURLParam,
             setLocalStorageFormValues,
         }
     }
@@ -49,7 +46,6 @@ export function useSearchInsightInitialValues(): UseInitialValuesResult {
     if (urlParsedInsightValues) {
         return {
             initialValues: urlParsedInsightValues,
-            loading: false,
             setLocalStorageFormValues,
         }
     }
@@ -57,7 +53,6 @@ export function useSearchInsightInitialValues(): UseInitialValuesResult {
     // [3] Fallback on localstorage saved insight values
     return {
         initialValues: localStorageFormValues ?? {},
-        loading: false,
         setLocalStorageFormValues,
     }
 }

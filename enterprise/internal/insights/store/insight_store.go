@@ -47,6 +47,7 @@ func (s *InsightStore) Transact(ctx context.Context) (*InsightStore, error) {
 type InsightQueryArgs struct {
 	UniqueIDs   []string
 	UniqueID    string
+	ExcludeIDs  []string
 	UserID      []int
 	OrgID       []int
 	DashboardID int
@@ -54,6 +55,7 @@ type InsightQueryArgs struct {
 	After    string
 	Limit    int
 	IsFrozen *bool
+	Find     string
 
 	// This field will disable user level authorization checks on the insight views. This should only be used
 	// when fetching insights from a container that also has authorization checks, such as a dashboard.
@@ -104,6 +106,13 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 		}
 		preds = append(preds, sqlf.Sprintf("iv.unique_id IN (%s)", sqlf.Join(elems, ",")))
 	}
+	if len(args.ExcludeIDs) > 0 {
+		exclusions := make([]*sqlf.Query, 0, len(args.UniqueIDs))
+		for _, id := range args.ExcludeIDs {
+			exclusions = append(exclusions, sqlf.Sprintf("%s", id))
+		}
+		preds = append(preds, sqlf.Sprintf("iv.unique_id NOT IN (%s)", sqlf.Join(exclusions, ",")))
+	}
 	if len(args.UniqueID) > 0 {
 		preds = append(preds, sqlf.Sprintf("iv.unique_id = %s", args.UniqueID))
 	}
@@ -119,6 +128,9 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 		} else {
 			preds = append(preds, sqlf.Sprintf("iv.is_frozen = FALSE"))
 		}
+	}
+	if args.Find != "" {
+		preds = append(preds, sqlf.Sprintf("(iv.title ILIKE %s OR ivs.label ILIKE %s)", "%"+args.Find+"%", "%"+args.Find+"%"))
 	}
 
 	limit := sqlf.Sprintf("")
@@ -250,6 +262,7 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 			SeriesOptions: types.SeriesDisplayOptions{
 				SortOptions: sortOptions,
 				Limit:       seriesSet[0].SeriesLimit,
+				NumSamples:  seriesSet[0].SeriesNumSamples,
 			},
 		})
 	}
@@ -341,8 +354,8 @@ func (s *InsightStore) GetScopedSearchSeriesNeedBackfill(ctx context.Context) ([
 	return scanDataSeries(s.Query(ctx, q))
 }
 
-// CompleteJustInTimeConversionAttempt Is a special purpose func to convert a Just In Time search insight
-// to a scoped backfilled serach insight
+// CompleteJustInTimeConversionAttempt is a special purpose func to convert a Just In Time search insight
+// to a scoped backfilled search insight
 func (s *InsightStore) CompleteJustInTimeConversionAttempt(ctx context.Context, series types.InsightSeries) error {
 	interval := timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
@@ -470,6 +483,7 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			&temp.SeriesSortMode,
 			&temp.SeriesSortDirection,
 			&temp.SeriesLimit,
+			&temp.SeriesNumSamples,
 			&temp.GroupBy,
 			&temp.BackfillAttempts,
 			&temp.SupportsAugmentation,
@@ -603,6 +617,7 @@ func (s *InsightStore) UpdateView(ctx context.Context, view types.InsightView) (
 		view.SeriesSortMode,
 		view.SeriesSortDirection,
 		view.SeriesLimit,
+		view.SeriesNumSamples,
 		view.UniqueID,
 	))
 	var id int
@@ -946,7 +961,7 @@ returning id;`
 const updateInsightViewSql = `
 UPDATE insight_view SET title = %s, description = %s, default_filter_include_repo_regex = %s, default_filter_exclude_repo_regex = %s,
 default_filter_search_contexts = %s, other_threshold = %s, presentation_type = %s, series_sort_mode = %s, series_sort_direction = %s,
-series_limit = %s
+series_limit = %s, series_num_samples = %s
 WHERE unique_id = %s
 RETURNING id;`
 
@@ -964,8 +979,8 @@ i.id, i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorde
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
 iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
-default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, i.group_by, i.backfill_attempts,
-i.supports_augmentation, i.repository_criteria
+default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, iv.series_num_samples,
+i.group_by, i.backfill_attempts, i.supports_augmentation, i.repository_criteria
 FROM (%s) iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
@@ -979,8 +994,8 @@ i.id, i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorde
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
 iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
-default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, i.group_by, i.backfill_attempts,
-i.supports_augmentation, i.repository_criteria
+default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, iv.series_num_samples,
+i.group_by, i.backfill_attempts, i.supports_augmentation, i.repository_criteria
 FROM dashboard_insight_view as dbiv
 		 JOIN insight_view iv ON iv.id = dbiv.insight_view_id
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
@@ -1020,8 +1035,8 @@ SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description,
        i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
        i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
 	   iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
-	   default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, i.group_by, i.backfill_attempts,
-	   i.supports_augmentation, i.repository_criteria
+	   default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, iv.series_num_samples,
+	   i.group_by, i.backfill_attempts, i.supports_augmentation, i.repository_criteria
 
 FROM insight_view iv
 JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id

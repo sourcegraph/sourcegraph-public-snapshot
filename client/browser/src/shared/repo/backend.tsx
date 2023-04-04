@@ -235,7 +235,7 @@ export const fetchBlobContentLines = memoizeObservable(
                     throw createAggregateError(errors)
                 }
                 const { repository } = data
-                if (!repository || !repository.commit || !repository.commit.file || !repository.commit.file.content) {
+                if (!repository?.commit?.file?.content) {
                     return []
                 }
                 return repository.commit.file.content.split('\n')

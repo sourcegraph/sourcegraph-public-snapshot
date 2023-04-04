@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/rewirer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
@@ -106,7 +108,17 @@ func (s *Service) ApplyBatchChange(
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = tx.Done(err) }()
+	defer func() {
+		err = tx.Done(err)
+		// We only enqueue the webhook after the transaction succeeds. If it fails and all
+		// the DB changes are rolled back, the batch change will still be in whatever
+		// state it was before ApplyBatchChange was called. This ensures we only send a
+		// webhook when the batch change is *actually* applied, and ensures the batch
+		// change payload in the webhook is up-to-date as well.
+		if err == nil && batchChange.ID != 0 {
+			s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeApply, bgql.MarshalBatchChangeID(batchChange.ID))
+		}
+	}()
 
 	l := locker.NewWith(tx, "batches_apply")
 	locked, err := l.LockInTransaction(ctx, int32(batchChange.ID), false)
@@ -145,7 +157,7 @@ func (s *Service) ApplyBatchChange(
 	}
 
 	// And execute the mapping.
-	changesets, err := rewirer.New(mappings, batchChange.ID).Rewire()
+	newChangesets, updatedChangesets, err := rewirer.New(mappings, batchChange.ID).Rewire()
 	if err != nil {
 		return nil, err
 	}
@@ -156,13 +168,26 @@ func (s *Service) ApplyBatchChange(
 		return nil, err
 	}
 
-	// Upsert all changesets.
-	for _, changeset := range changesets {
+	for _, changeset := range newChangesets {
 		if state := opts.PublicationStates.get(changeset.CurrentSpecID); state != nil {
 			changeset.UiPublicationState = state
 		}
+	}
 
-		if err := tx.UpsertChangeset(ctx, changeset); err != nil {
+	for _, changeset := range updatedChangesets {
+		if state := opts.PublicationStates.get(changeset.CurrentSpecID); state != nil {
+			changeset.UiPublicationState = state
+		}
+	}
+
+	if len(newChangesets) > 0 {
+		if err = tx.CreateChangeset(ctx, newChangesets...); err != nil {
+			return nil, err
+		}
+	}
+
+	if len(updatedChangesets) > 0 {
+		if err = tx.UpdateChangesetsForApply(ctx, updatedChangesets); err != nil {
 			return nil, err
 		}
 	}

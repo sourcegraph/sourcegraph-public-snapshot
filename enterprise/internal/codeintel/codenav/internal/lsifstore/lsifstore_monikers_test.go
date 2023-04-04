@@ -20,24 +20,6 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 		expected  [][]precise.MonikerData
 	}{
 		{
-			name:     "lsif",
-			uploadID: testLSIFUploadID,
-			// `func NewMetaData(id, root string, info ToolInfo) *MetaData {`
-			//       ^^^^^^^^^^^
-			path: "protocol/protocol.go",
-			line: 92, character: 10,
-			expected: [][]precise.MonikerData{
-				{
-					{
-						Kind:                 "export",
-						Scheme:               "gomod",
-						Identifier:           "github.com/sourcegraph/lsif-go/protocol:NewMetaData",
-						PackageInformationID: "114",
-					},
-				},
-			},
-		},
-		{
 			name:     "scip",
 			uploadID: testSCIPUploadID,
 			// `    const enabled = sourcegraph.configuration.get().get('codeIntel.lsif') ?? true`
@@ -74,7 +56,7 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 
 func TestGetBulkMonikerLocations(t *testing.T) {
 	tableName := "references"
-	uploadIDs := []int{testLSIFUploadID, testSCIPUploadID}
+	uploadIDs := []int{testSCIPUploadID}
 	monikers := []precise.MonikerData{
 		{
 			Scheme:     "gomod",
@@ -92,15 +74,11 @@ func TestGetBulkMonikerLocations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error querying bulk moniker locations: %s", err)
 	}
-	if totalCount != 11 {
-		t.Fatalf("unexpected total count: want=%d have=%d\n", 11, totalCount)
+	if expected := 9; totalCount != expected {
+		t.Fatalf("unexpected total count: want=%d have=%d\n", expected, totalCount)
 	}
 
 	expectedLocations := []shared.Location{
-		// LSIF results
-		{DumpID: testLSIFUploadID, Path: "protocol/protocol.go", Range: newRange(260, 1, 260, 7)},
-		{DumpID: testLSIFUploadID, Path: "protocol/protocol.go", Range: newRange(266, 2, 266, 8)},
-
 		// SCIP results
 		{DumpID: testSCIPUploadID, Path: "template/src/providers.ts", Range: newRange(10, 9, 10, 16)},
 		{DumpID: testSCIPUploadID, Path: "template/src/providers.ts", Range: newRange(186, 43, 186, 50)},

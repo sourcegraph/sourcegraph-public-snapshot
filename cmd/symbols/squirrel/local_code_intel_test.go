@@ -2,7 +2,6 @@ package squirrel
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strings"
 	"testing"
@@ -387,7 +386,7 @@ func getLocalCodeIntel(t *testing.T, path types.RepoCommitPath, contents string)
 	squirrel := New(readFile, nil)
 	defer squirrel.Close()
 
-	payload, err := squirrel.localCodeIntel(context.Background(), path)
+	payload, err := squirrel.LocalCodeIntel(context.Background(), path)
 	fatalIfError(t, err)
 
 	return payload
@@ -512,22 +511,6 @@ func sortAnnotations(annotations []annotation) {
 			return len(tagsi) < len(tagsj)
 		}
 	})
-}
-
-func printRowColumnKind(annotations []annotation) string {
-	sortAnnotations(annotations)
-
-	lines := []string{}
-	for _, annotation := range annotations {
-		lines = append(lines, fmt.Sprintf(
-			"%d:%d %s",
-			annotation.repoCommitPathPoint.Row,
-			annotation.repoCommitPathPoint.Column,
-			annotation.tags,
-		))
-	}
-
-	return strings.Join(lines, "\n")
 }
 
 var compareAnnotations = cmp.Comparer(func(a, b annotation) bool {

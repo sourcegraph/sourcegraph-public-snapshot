@@ -57,10 +57,10 @@ export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps
                 <div className={styles.rightTop}>
                     <H4>Resources</H4>
                     <ul className={styles.linksList}>
-                        <Link to="https://docs.sourcegraph.com/batch_changes/explanations/server_side">
+                        <Link to="/help/batch_changes/explanations/server_side">
                             <li>Running batch changes server-side</li>
                         </Link>
-                        <Link to="https://docs.sourcegraph.com/admin/executors">
+                        <Link to="/help/admin/executors">
                             <li>Deploying executors</li>
                         </Link>
                     </ul>

@@ -60,7 +60,7 @@ in [core/types/insights/index.ts](https://sourcegraph.com/github.com/sourcegraph
 ## Insight configuration storing
 
 To be able to fetch data for an insight, we need to store some insight configuration (input data), such as
-data series config - line color, search query string, the title of data series.
+data series config—line color, search query string, the title of data series.
 
 We use the setting cascade to store these insight configurations. For example, Search based insight configuration looks
 something like this

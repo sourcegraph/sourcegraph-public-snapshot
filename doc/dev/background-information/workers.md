@@ -110,7 +110,7 @@ If the table has different column names than described above, they can be remapp
 
 ### Retries
 
-If the handle hook returns a retryable error, the the worker will update the job's state _errored_ and not _failed_ if the same job can be reprocessed in the future.
+If the handle hook returns a retryable error, the worker will update the job's state _errored_ and not _failed_ if the same job can be reprocessed in the future.
 
 Retries are disabled by default, and can be enabled by setting the `MaxNumRetries` and `RetryAfter` options on the database-backed store. These options control the number of secondary processing attempts and the delay between attempts, respectively. Once a record hits the maximum number of retries, the worker will (permanently) move it to the state _failed_ on the next unsuccessful attempt.
 
@@ -129,9 +129,9 @@ To handle this case, register a [resetter](https://sourcegraph.com/github.com/so
 
 This behavior can be controlled by setting the `StalledMaxAge` and `MaxNumResets` options on the database-backed store instance, which control the maximum grace period setting a record to _processing_ and locking it and number of times a record can be reset (to avoid poison messages from indefinitely crashing workers), respectively. Once a record hits the maximum number of resets, the resetter will move it from state _processing_ to _failed_ with a canned failure message.
 
-### Cancelation
+### Cancellation
 
-Cancelation of jobs in the database-backend store can be achieved in two ways:
+Cancellation of jobs in the database-backend store can be achieved in two ways:
 
 1. By removing the job record from the database. The worker will eventually notice that the record doesn't exist anymore and will stop execution.
 1. By setting `cancel` to `TRUE` on the record. If `CancelInterval` is set on the worker store, it will check for records to be canceled. These will ultimately end up in state `'canceled'`. This can be used to keep the record while still being able to cancel workloads.

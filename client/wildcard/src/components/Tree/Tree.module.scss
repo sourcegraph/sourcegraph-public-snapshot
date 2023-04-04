@@ -1,0 +1,102 @@
+.file-tree:global(.tree) {
+    list-style: none;
+    margin: 0;
+    padding: 0.125rem;
+}
+.file-tree :global(.tree-node),
+.file-tree :global(.tree-node-group) {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.file-tree :global(.tree-branch-wrapper),
+.file-tree :global(.tree-node__leaf) {
+    outline: none;
+}
+
+.file-tree :global(.tree-node__branch) {
+    display: block;
+}
+
+.file-tree :global(.tree-node) {
+    cursor: pointer;
+}
+
+.node {
+    padding: 0;
+    margin-right: 0.25rem;
+    border-radius: 0.25rem;
+    color: var(--text-muted);
+    user-select: none;
+    display: flex;
+    align-items: center;
+
+    // Hairline margin top to avoid the awkward touching when one node is
+    // focused and the one next to it is hovered
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
+    margin-top: 1px;
+
+    &.selected,
+    &:hover {
+        background-color: var(--color-bg-2);
+        color: var(--body-color);
+    }
+
+    .collapse-icon:hover {
+        background-color: var(--color-bg-3);
+        color: var(--body-color);
+    }
+
+    .collapse-icon {
+        min-height: 1.75rem;
+        min-width: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-top-left-radius: 0.25rem;
+        border-bottom-left-radius: 0.25rem;
+    }
+
+    .content {
+        padding: 0.25rem;
+        padding-right: 0;
+        min-height: 1.75rem;
+        align-items: center;
+        border-radius: 0.25rem;
+        flex-grow: 1;
+    }
+
+    .content-in-branch {
+        padding-left: 0;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+
+    .collapse-icon,
+    .collapse-icon > * {
+        flex-shrink: 0;
+    }
+
+    a {
+        color: var(--body-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+// We render the focus outline in the node instead of the surrounding list
+// element
+:global(.tree-branch-wrapper):global(.focus-visible) {
+    box-shadow: none;
+}
+:global(.focus-visible) > .node {
+    outline: 0.125rem solid var(--primary-2);
+}
+
+.icon {
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+}

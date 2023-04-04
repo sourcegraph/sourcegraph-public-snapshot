@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -117,7 +118,7 @@ type savedSearchesArgs struct {
 	Namespace graphql.ID
 }
 
-func (r *schemaResolver) SavedSearches(ctx context.Context, args savedSearchesArgs) (*graphqlutil.ConnectionResolver[savedSearchResolver], error) {
+func (r *schemaResolver) SavedSearches(ctx context.Context, args savedSearchesArgs) (*graphqlutil.ConnectionResolver[*savedSearchResolver], error) {
 	var userID, orgID int32
 	if err := UnmarshalNamespaceID(args.Namespace, &userID, &orgID); err != nil {
 		return nil, err
@@ -141,7 +142,7 @@ func (r *schemaResolver) SavedSearches(ctx context.Context, args savedSearchesAr
 		orgID:  &orgID,
 	}
 
-	return graphqlutil.NewConnectionResolver[savedSearchResolver](connectionStore, &args.ConnectionResolverArgs, nil)
+	return graphqlutil.NewConnectionResolver[*savedSearchResolver](connectionStore, &args.ConnectionResolverArgs, nil)
 }
 
 type savedSearchesConnectionStore struct {
@@ -150,19 +151,19 @@ type savedSearchesConnectionStore struct {
 	orgID  *int32
 }
 
-func (s *savedSearchesConnectionStore) MarshalCursor(node *savedSearchResolver) (*string, error) {
+func (s *savedSearchesConnectionStore) MarshalCursor(node *savedSearchResolver, _ database.OrderBy) (*string, error) {
 	cursor := string(node.ID())
 
 	return &cursor, nil
 }
 
-func (s *savedSearchesConnectionStore) UnmarshalCursor(cursor string) (*int, error) {
+func (s *savedSearchesConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
 	nodeID, err := unmarshalSavedSearchID(graphql.ID(cursor))
 	if err != nil {
 		return nil, err
 	}
 
-	id := int(nodeID)
+	id := strconv.Itoa(int(nodeID))
 
 	return &id, nil
 }

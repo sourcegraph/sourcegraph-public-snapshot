@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect } from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
@@ -6,12 +6,12 @@ import classNames from 'classnames'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
-import { Container, Icon, Link, H2, H3, Text } from '@sourcegraph/wildcard'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
+import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
+import { Container, Icon, Link, H2, H3, Text, useReducedMotion } from '@sourcegraph/wildcard'
 
-import { CloudCtaBanner } from '../../components/CloudCtaBanner'
+import { CallToActionBanner } from '../../components/CallToActionBanner'
 import { EnterprisePageRoutes } from '../../routes.constants'
-import { useTheme, ThemePreference } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import styles from './NotebooksGettingStartedTab.module.scss'
@@ -60,17 +60,23 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
 
     const [, setHasSeenGettingStartedTab] = useTemporarySetting('search.notebooks.gettingStartedTabSeen', false)
     const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false
+    const isSourcegraphApp: boolean = window.context?.sourcegraphAppMode || false
 
     useEffect(() => {
         setHasSeenGettingStartedTab(true)
     }, [setHasSeenGettingStartedTab])
 
-    const videoAutoplayAttributes = useMemo(() => {
-        const canAutoplay = window.matchMedia('(prefers-reduced-motion: no-preference)').matches
-        return canAutoplay ? { autoPlay: true, loop: true, controls: false } : { controls: true }
-    }, [])
+    const canAutoplay = !useReducedMotion()
+    const videoAutoplayAttributes = canAutoplay ? { autoPlay: true, loop: true, controls: false } : { controls: true }
 
-    const isLightTheme = useTheme().enhancedThemePreference === ThemePreference.Light
+    const isLightTheme = useIsLightTheme()
+
+    const wrapOutboundLink = (url: string): string => {
+        if (isSourcegraphApp) {
+            return addSourcegraphAppOutboundUrlParameters(url)
+        }
+        return url
+    }
 
     return (
         <>
@@ -126,20 +132,18 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
             </Container>
 
             {isSourcegraphDotCom && (
-                <CloudCtaBanner variant="filled">
+                <CallToActionBanner variant="filled">
                     To create Notebooks across your team's private repositories,{' '}
                     <Link
-                        to={buildCloudTrialURL(authenticatedUser, 'notebooks')}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        to="https://about.sourcegraph.com"
                         onClick={() =>
-                            eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NotebooksGettingStarted' })
+                            eventLogger.log('ClickedOnEnterpriseCTA', { location: 'NotebooksGettingStarted' })
                         }
                     >
-                        try Sourcegraph Cloud
+                        get Sourcegraph Enterprise
                     </Link>
                     .
-                </CloudCtaBanner>
+                </CallToActionBanner>
             )}
 
             <H3>Example notebooks</H3>
@@ -149,7 +153,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                         <Link
                             target="_blank"
                             rel="noopener noreferrer"
-                            to="https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MQ=="
+                            to={wrapOutboundLink('https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MQ==')}
                         >
                             Find Log4J dependencies <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                         </Link>
@@ -161,7 +165,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                         <Link
                             target="_blank"
                             rel="noopener noreferrer"
-                            to="https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MTM="
+                            to={wrapOutboundLink('https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MTM=')}
                         >
                             Learn Sourcegraph / Find code across all of your repositories{' '}
                             <Icon aria-hidden={true} svgPath={mdiOpenInNew} />

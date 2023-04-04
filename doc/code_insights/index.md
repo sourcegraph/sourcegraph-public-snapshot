@@ -57,6 +57,7 @@ Code Insights is based on our universal code search, making it precise and confi
 - [Current limitations of Code Insights](explanations/current_limitations_of_code_insights.md)
 - [Search-screen search results aggregations](explanations/search_results_aggregations.md)
 - [Viewing code insights](explanations/viewing_code_insights.md)
+- [Data retention](explanations/data_retention.md)
 
 ## [How-tos](how-tos/index.md)
 
@@ -72,4 +73,5 @@ Code Insights is based on our universal code search, making it precise and confi
 - [Licensing and limited access](references/license.md)
 - [Managing code insights with the API](../api/graphql/managing-code-insights-with-api.md)
 - [Requirements](references/requirements.md)
+- [Code Insight repository scope](references/repository_scope.md)
 

@@ -192,7 +192,7 @@ export const visitorsTasks: TourTaskType[] = [
                 label: 'Get free trial',
                 action: {
                     type: 'new-tab-link',
-                    value: 'https://signup.sourcegraph.com',
+                    value: 'https://about.sourcegraph.com',
                 },
                 // This is done to mimic user creating an account, and signed in there is a different tour
                 completeAfterEvents: ['non-existing-event'],
@@ -286,7 +286,7 @@ export const visitorsTasksWithNotebookExtraTask: TourTaskType = {
             action: {
                 type: 'new-tab-link',
                 variant: 'button-primary',
-                value: 'https://signup.sourcegraph.com',
+                value: 'https://about.sourcegraph.com/get-started?t=enterprise',
             },
             // This is done to mimic user creating an account, and signed in there is a different tour
             completeAfterEvents: ['non-existing-event'],

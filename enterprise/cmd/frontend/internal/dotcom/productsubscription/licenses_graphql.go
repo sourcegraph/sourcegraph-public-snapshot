@@ -8,8 +8,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
@@ -21,9 +19,8 @@ import (
 
 // productLicense implements the GraphQL type ProductLicense.
 type productLicense struct {
-	logger log.Logger
-	db     database.DB
-	v      *dbLicense
+	db database.DB
+	v  *dbLicense
 }
 
 // ProductLicenseByID looks up and returns the ProductLicense with the given GraphQL ID. If no such

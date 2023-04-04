@@ -4,7 +4,7 @@ Some teams require Sourcegraph configuration to be stored in version control as 
 UI.
 
 As of Sourcegraph v3.4+, this is possible for [site configuration](site_config.md)
-, [code host configuration](../external_service/index.md), and global settings. As of Sourcegraph v3.34+, Sourcegraph
+, [code host configuration](../external_service/index.md), and [global settings](settings). As of Sourcegraph v3.34+, Sourcegraph
 supports merging multiple site config files.
 
 ## Benefits
@@ -27,7 +27,7 @@ Loading configuration in this manner has two significant drawbacks:
 
 ## Site configuration
 
-Set `SITE_CONFIG_FILE=site.json` on:
+Set `SITE_CONFIG_FILE=site.json` and mount the config on:
 
 - [Docker Compose](../deploy/docker-compose/index.md) and [Kubernetes](../deploy/kubernetes/index.md): all `frontend`
   containers
@@ -50,7 +50,7 @@ This will merge both files. Sourcegraph will need access both files.
 
 ## Code host configuration
 
-Set `EXTSVC_CONFIG_FILE=extsvc.json` on:
+Set `EXTSVC_CONFIG_FILE=extsvc.json` and mount the config on:
 
 - [Docker Compose](../deploy/docker-compose/index.md) and [Kubernetes](../deploy/kubernetes/index.md): all `frontend`
   containers
@@ -96,7 +96,7 @@ If you want to _allow_ edits to be made through the web UI (which will be overwr
 
 ## Global settings
 
-Set `GLOBAL_SETTINGS_FILE=global-settings.json` on:
+Set `GLOBAL_SETTINGS_FILE=global-settings.json` and mount the config on:
 
 - [Docker Compose](../deploy/docker-compose/index.md) and [Kubernetes](../deploy/kubernetes/index.md): all `frontend` containers
 - [Single-container](../deploy/docker-single-container/index.md): the `sourcegraph/server` container

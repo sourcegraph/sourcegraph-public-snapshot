@@ -3,7 +3,7 @@ package aggregation
 import (
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 )
 
 func TestAddAggregate(t *testing.T) {
@@ -122,7 +122,7 @@ func TestAddAggregate(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.have.Add(tc.value, tc.count)
-			autogold.Want(tc.name, tc.want).Equal(t, tc.have)
+			autogold.Expect(tc.want).Equal(t, tc.have)
 		})
 	}
 }
@@ -162,7 +162,7 @@ func TestFindSmallestAggregate(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			got := tc.have.findSmallestAggregate()
-			autogold.Want("smallest result should match", tc.want).Equal(t, got)
+			autogold.Expect(tc.want).Equal(t, got)
 		})
 	}
 }
@@ -192,8 +192,8 @@ func TestSortAggregate(t *testing.T) {
 	a.Add("sg/3", 1)
 	a.Add("sg/will-eject", 1)
 
-	autogold.Want("other result count should be 9", int32(9)).Equal(t, a.OtherCount.ResultCount)
-	autogold.Want("other group count should be 2", int32(2)).Equal(t, a.OtherCount.GroupCount)
+	autogold.Expect(int32(9)).Equal(t, a.OtherCount.ResultCount)
+	autogold.Expect(int32(2)).Equal(t, a.OtherCount.GroupCount)
 
 	want := []*Aggregate{
 		{"sg/5", 60},
@@ -202,5 +202,5 @@ func TestSortAggregate(t *testing.T) {
 		{"sg/will-eject", 13},
 		{"sg/3", 9},
 	}
-	autogold.Want("SortAggregate should return DESC sorted list", want).Equal(t, a.SortAggregate())
+	autogold.Expect(want).Equal(t, a.SortAggregate())
 }

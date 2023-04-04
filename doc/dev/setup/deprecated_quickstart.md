@@ -290,7 +290,7 @@ It needs to be cloned into the same folder as `sourcegraph/sourcegraph`, so they
 
 #### Option A: Docker for Mac
 
-This is the easy way - just launch Docker.app and wait for it to finish loading.
+This is the easy way—just launch Docker.app and wait for it to finish loading.
 
 #### Option B: docker-machine
 

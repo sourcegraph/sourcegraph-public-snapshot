@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/codeintel-qa/internal"
@@ -54,15 +53,7 @@ func mainErr(ctx context.Context) error {
 		return err
 	}
 
-	if err := clearAllIndexes(ctx); err != nil {
-		if !strings.Contains(err.Error(), "not enabled") {
-			return err
-		}
-
-		fmt.Printf("[%5s] %s Auto-indexing is not enabled on this instance\n", internal.TimeSince(start), internal.EmojiProblem)
-	}
-
-	if err := clearAllUploads(ctx); err != nil {
+	if err := clearAllPreciseIndexes(ctx); err != nil {
 		return err
 	}
 

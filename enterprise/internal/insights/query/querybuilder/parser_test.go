@@ -263,6 +263,18 @@ func TestIsValidScopeQuery(t *testing.T) {
 			query: "repo:has.file(path:README)",
 			valid: true,
 		},
+		{
+			name:   "invalid query with rev filter",
+			query:  "repo:sourcegraph rev:mybranch",
+			reason: containsDisallowedRevision,
+			valid:  false,
+		},
+		{
+			name:   "invalid query with specified on repo filter",
+			query:  `repo:^github\.com/sourcegraph/sourcegraph$@v4.0.0`,
+			reason: containsDisallowedRevision,
+			valid:  false,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {

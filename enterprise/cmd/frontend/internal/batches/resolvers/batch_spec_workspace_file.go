@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -50,6 +51,9 @@ func createVirtualFile(content []byte, path string) graphqlbackend.FileResolver 
 	fileInfo := graphqlbackend.CreateFileInfo(path, false)
 	return graphqlbackend.NewVirtualFileResolver(fileInfo, func(ctx context.Context) (string, error) {
 		return string(content), nil
+	}, graphqlbackend.VirtualFileResolverOptions{
+		// TODO: Add URL to file in webapp.
+		URL: "",
 	})
 }
 
@@ -84,7 +88,7 @@ func (r *batchSpecWorkspaceFileResolver) IsDirectory() bool {
 	return false
 }
 
-func (r *batchSpecWorkspaceFileResolver) Content(ctx context.Context) (string, error) {
+func (r *batchSpecWorkspaceFileResolver) Content(ctx context.Context, args *graphqlbackend.GitTreeContentPageArgs) (string, error) {
 	return "", errors.New("not implemented")
 }
 
@@ -92,12 +96,21 @@ func (r *batchSpecWorkspaceFileResolver) ByteSize(ctx context.Context) (int32, e
 	return int32(r.file.Size), nil
 }
 
+func (r *batchSpecWorkspaceFileResolver) TotalLines(ctx context.Context) (int32, error) {
+	// If it is a binary, return 0
+	binary, err := r.Binary(ctx)
+	if err != nil || binary {
+		return 0, err
+	}
+	return int32(len(strings.Split(string(r.file.Content), "\n"))), nil
+}
+
 func (r *batchSpecWorkspaceFileResolver) Binary(ctx context.Context) (bool, error) {
 	vfr := r.createVirtualFile(r.file.Content, r.file.Path)
 	return vfr.Binary(ctx)
 }
 
-func (r *batchSpecWorkspaceFileResolver) RichHTML(ctx context.Context) (string, error) {
+func (r *batchSpecWorkspaceFileResolver) RichHTML(ctx context.Context, args *graphqlbackend.GitTreeContentPageArgs) (string, error) {
 	return "", errors.New("not implemented")
 }
 

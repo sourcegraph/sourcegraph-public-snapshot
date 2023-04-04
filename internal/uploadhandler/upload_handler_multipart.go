@@ -99,12 +99,6 @@ func (h *UploadHandler[T]) handleEnqueueMultipartFinalize(ctx context.Context, u
 		return nil, http.StatusBadRequest, errors.Errorf("upload is missing %d parts", uploadState.numParts-len(uploadState.uploadedParts))
 	}
 
-	tx, err := h.dbStore.Transact(ctx)
-	if err != nil {
-		return nil, http.StatusInternalServerError, err
-	}
-	defer func() { err = tx.Done(err) }()
-
 	sources := make([]string, 0, uploadState.numParts)
 	for partNumber := 0; partNumber < uploadState.numParts; partNumber++ {
 		sources = append(sources, fmt.Sprintf("upload-%d.%d.lsif.gz", uploadState.uploadID, partNumber))
@@ -115,12 +109,12 @@ func (h *UploadHandler[T]) handleEnqueueMultipartFinalize(ctx context.Context, u
 
 	size, err := h.uploadStore.Compose(ctx, fmt.Sprintf("upload-%d.lsif.gz", uploadState.uploadID), sources...)
 	if err != nil {
-		h.markUploadAsFailed(context.Background(), tx, uploadState.uploadID, err)
+		h.markUploadAsFailed(context.Background(), h.dbStore, uploadState.uploadID, err)
 		return nil, http.StatusInternalServerError, err
 	}
 	trace.AddEvent("TODO Domain Owner", attribute.Int("composedObjectSize", int(size)))
 
-	if err := tx.MarkQueued(ctx, uploadState.uploadID, &size); err != nil {
+	if err := h.dbStore.MarkQueued(ctx, uploadState.uploadID, &size); err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
 

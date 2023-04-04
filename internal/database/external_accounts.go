@@ -11,6 +11,8 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/types"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -51,7 +53,7 @@ type UserExternalAccountsStore interface {
 	//
 	// It creates a new user and associates it with the specified external account. If the user to
 	// create already exists, it returns an error.
-	CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUserID int32, err error)
+	CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUser *types.User, err error)
 
 	// Delete will soft delete all accounts matching the options combined using AND.
 	// If options are all zero values then it does nothing.
@@ -75,6 +77,12 @@ type UserExternalAccountsStore interface {
 	// found, it updates the account's data and returns the user. It NEVER creates a user; you must call
 	// CreateUserAndSave for that.
 	LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error)
+
+	// UpsertSCIMData updates the external account data for the given user's SCIM account.
+	// It looks up the existing user based on its ID, then sets its account ID and data.
+	// Account ID is the same as the external ID for SCIM.
+	// If the external account does not exist, it creates a new one.
+	UpsertSCIMData(ctx context.Context, userID int32, accountID string, data extsvc.AccountData) (err error)
 
 	// TouchExpired sets the given user external accounts to be expired now.
 	TouchExpired(ctx context.Context, ids ...int32) error
@@ -129,18 +137,9 @@ func (s *userExternalAccountsStore) Get(ctx context.Context, id int32) (*extsvc.
 }
 
 func (s *userExternalAccountsStore) LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error) {
-	var encryptedAuthData, encryptedAccountData, keyID string
-	if data.AuthData != nil {
-		encryptedAuthData, keyID, err = data.AuthData.Encrypt(ctx, s.getEncryptionKey())
-		if err != nil {
-			return 0, err
-		}
-	}
-	if data.Data != nil {
-		encryptedAccountData, keyID, err = data.Data.Encrypt(ctx, s.getEncryptionKey())
-		if err != nil {
-			return 0, err
-		}
+	encryptedAuthData, encryptedAccountData, keyID, err := s.encryptData(ctx, data)
+	if err != nil {
+		return 0, err
 	}
 
 	err = s.Handle().QueryRowContext(ctx, `
@@ -163,6 +162,45 @@ RETURNING user_id
 		err = userExternalAccountNotFoundError{[]any{spec}}
 	}
 	return userID, err
+}
+
+func (s *userExternalAccountsStore) UpsertSCIMData(ctx context.Context, userID int32, accountID string, data extsvc.AccountData) (err error) {
+	encryptedAuthData, encryptedAccountData, keyID, err := s.encryptData(ctx, data)
+	if err != nil {
+		return
+	}
+
+	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
+UPDATE user_external_accounts
+SET
+	account_id = %s,
+	auth_data = %s,
+	account_data = %s,
+	encryption_key_id = %s,
+	updated_at = now(),
+	expired_at = NULL
+WHERE
+	user_id = %s
+AND service_type = %s
+AND service_id = %s
+AND deleted_at IS NULL
+`, accountID, encryptedAuthData, encryptedAccountData, keyID, userID, "scim", "scim"))
+	if err != nil {
+		return
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return
+	}
+
+	if rowsAffected == 0 {
+		return s.Insert(ctx, userID, extsvc.AccountSpec{ServiceType: "scim", ServiceID: "scim", AccountID: accountID}, data)
+	}
+
+	// This logs an audit event for account changes but only if they are initiated via SCIM
+	logAccountModifiedEvent(ctx, NewDBWith(s.logger, s), userID, "scim")
+
+	return
 }
 
 func (s *userExternalAccountsStore) AssociateUserAndSave(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error) {
@@ -248,44 +286,49 @@ AND deleted_at IS NULL
 	return nil
 }
 
-func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUserID int32, err error) {
+func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUser *types.User, err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	createdUser, err := UsersWith(s.logger, tx).CreateInTransaction(ctx, newUser, &spec)
+	createdUser, err = UsersWith(s.logger, tx).CreateInTransaction(ctx, newUser, &spec)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	err = tx.Insert(ctx, createdUser.ID, spec, data)
 	if err == nil {
 		logAccountCreatedEvent(ctx, NewDBWith(s.logger, s), createdUser, spec.ServiceType)
 	}
-	return createdUser.ID, err
+	return createdUser, err
 }
 
 func (s *userExternalAccountsStore) Insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error) {
-	var encryptedAuthData, encryptedAccountData, keyID string
-	if data.AuthData != nil {
-		encryptedAuthData, keyID, err = data.AuthData.Encrypt(ctx, s.getEncryptionKey())
-		if err != nil {
-			return err
-		}
-	}
-	if data.Data != nil {
-		encryptedAccountData, keyID, err = data.Data.Encrypt(ctx, s.getEncryptionKey())
-		if err != nil {
-			return err
-		}
+	encryptedAuthData, encryptedAccountData, keyID, err := s.encryptData(ctx, data)
+	if err != nil {
+		return
 	}
 
 	return s.Exec(ctx, sqlf.Sprintf(`
 INSERT INTO user_external_accounts (user_id, service_type, service_id, client_id, account_id, auth_data, account_data, encryption_key_id)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 `, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, encryptedAuthData, encryptedAccountData, keyID))
+}
+
+// encryptData encrypts the given account data and returns the encrypted data and key ID.
+func (s *userExternalAccountsStore) encryptData(ctx context.Context, accountData extsvc.AccountData) (eAuthData string, eData string, keyID string, err error) {
+	if accountData.AuthData != nil {
+		eAuthData, keyID, err = accountData.AuthData.Encrypt(ctx, s.getEncryptionKey())
+		if err != nil {
+			return
+		}
+	}
+	if accountData.Data != nil {
+		eData, keyID, err = accountData.Data.Encrypt(ctx, s.getEncryptionKey())
+	}
+	return
 }
 
 func (s *userExternalAccountsStore) TouchExpired(ctx context.Context, ids ...int32) error {

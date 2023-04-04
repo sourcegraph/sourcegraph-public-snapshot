@@ -7,6 +7,7 @@ const { generate } = require('@graphql-codegen/cli')
 const ROOT_FOLDER = path.resolve(__dirname, '../../../')
 
 const WEB_FOLDER = path.resolve(ROOT_FOLDER, './client/web')
+const SVELTEKIT_FOLDER = path.resolve(ROOT_FOLDER, './client/web-sveltekit')
 const BROWSER_FOLDER = path.resolve(ROOT_FOLDER, './client/browser')
 const SHARED_FOLDER = path.resolve(ROOT_FOLDER, './client/shared')
 const VSCODE_FOLDER = path.resolve(ROOT_FOLDER, './client/vscode')
@@ -18,12 +19,14 @@ const SHARED_DOCUMENTS_GLOB = [`${SHARED_FOLDER}/src/**/*.{ts,tsx}`]
 const WEB_DOCUMENTS_GLOB = [
   `${WEB_FOLDER}/src/**/*.{ts,tsx}`,
   `${WEB_FOLDER}/src/regression/**/*.*`,
-  `!${WEB_FOLDER}/src/end-to-end/**/*.*`,
+  `!${WEB_FOLDER}/src/end-to-end/**/*.*`, // TODO(bazel): can remove when non-bazel dropped
 ]
+
+const SVELTEKIT_DOCUMENTS_GLOB = [`${SVELTEKIT_FOLDER}/src/lib/**/*.ts`]
 
 const BROWSER_DOCUMENTS_GLOB = [
   `${BROWSER_FOLDER}/src/**/*.{ts,tsx}`,
-  `!${BROWSER_FOLDER}/src/end-to-end/**/*.*`,
+  `!${BROWSER_FOLDER}/src/end-to-end/**/*.*`, // TODO(bazel): can remove when non-bazel dropped
   '!**/*.d.ts',
 ]
 
@@ -37,6 +40,7 @@ const GLOBS = {
   SharedGraphQlOperations: SHARED_DOCUMENTS_GLOB,
   VSCodeGraphQlOperations: VSCODE_DOCUMENTS_GLOB,
   WebGraphQlOperations: WEB_DOCUMENTS_GLOB,
+  SvelteKitGraphQlOperations: SVELTEKIT_DOCUMENTS_GLOB,
 }
 
 const EXTRA_PLUGINS = {
@@ -48,6 +52,7 @@ const ALL_DOCUMENTS_GLOB = [
   ...new Set([
     ...SHARED_DOCUMENTS_GLOB,
     ...WEB_DOCUMENTS_GLOB,
+    ...SVELTEKIT_DOCUMENTS_GLOB,
     ...BROWSER_DOCUMENTS_GLOB,
     ...VSCODE_DOCUMENTS_GLOB,
     ...JETBRAINS_DOCUMENTS_GLOB,
@@ -75,6 +80,10 @@ async function generateGraphQlOperations() {
       {
         interfaceNameForOperations: 'WebGraphQlOperations',
         outputPath: path.join(WEB_FOLDER, './src/graphql-operations.ts'),
+      },
+      {
+        interfaceNameForOperations: 'SvelteKitGraphQlOperations',
+        outputPath: path.join(SVELTEKIT_FOLDER, './src/lib/graphql-operations.ts'),
       },
       {
         interfaceNameForOperations: 'SharedGraphQlOperations',

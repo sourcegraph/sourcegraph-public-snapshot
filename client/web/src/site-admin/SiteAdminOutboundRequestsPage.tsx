@@ -4,7 +4,6 @@ import { mdiChevronDown } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
-import { RouteComponentProps } from 'react-router'
 import { of } from 'rxjs'
 import { delay, map } from 'rxjs/operators'
 
@@ -15,6 +14,7 @@ import {
     Button,
     Code,
     Container,
+    ErrorAlert,
     Icon,
     Link,
     LoadingSpinner,
@@ -25,7 +25,6 @@ import {
     Position,
     Text,
     Tooltip,
-    ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import {
@@ -41,7 +40,7 @@ import { parseProductReference } from './SiteAdminFeatureFlagsPage'
 
 import styles from './SiteAdminOutboundRequestsPage.module.scss'
 
-export interface SiteAdminOutboundRequestsPageProps extends RouteComponentProps, TelemetryProps {}
+export interface SiteAdminOutboundRequestsPageProps extends TelemetryProps {}
 
 export type OutboundRequest = OutboundRequestsResult['outboundRequests']['nodes'][0]
 
@@ -75,7 +74,7 @@ const filters: FilteredConnectionFilter[] = [
 
 export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminOutboundRequestsPageProps>
-> = ({ history, telemetryService }) => {
+> = ({ telemetryService }) => {
     const [items, setItems] = useState<OutboundRequest[]>([])
 
     useEffect(() => {
@@ -90,6 +89,15 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
         variables: { after: lastId },
         pollInterval: OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL_MS,
     })
+    const [polling, setPolling] = useState(true)
+    const togglePolling = useCallback(() => {
+        if (polling) {
+            stopPolling()
+        } else {
+            startPolling(OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL_MS)
+        }
+        setPolling(!polling)
+    }, [polling, startPolling, stopPolling])
 
     useEffect(() => {
         if (data?.outboundRequests?.nodes?.length && (!lastId || data?.outboundRequests.nodes[0].id > lastId)) {
@@ -138,6 +146,9 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
     return (
         <div className="site-admin-outbound-requests-page">
             <PageTitle title="Outbound requests - Admin" />
+            <Button variant="secondary" onClick={togglePolling} className="float-right">
+                {polling ? 'Pause updating' : 'Resume updating'}
+            </Button>
             <PageHeader
                 path={[{ text: 'Outbound requests' }]}
                 headingElement="h2"
@@ -145,7 +156,7 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
                     <>
                         This is the log of recent external requests sent by the Sourcegraph instance. Handy for seeing
                         what's happening between Sourcegraph and other services.{' '}
-                        <strong>The list updates every five seconds.</strong>
+                        {polling ? <strong>The list updates every five seconds.</strong> : null}
                     </>
                 }
                 className="mb-3"
@@ -164,8 +175,6 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
                         queryConnection={queryOutboundRequests}
                         nodeComponent={OutboundRequestNode}
                         filters={filters}
-                        history={history}
-                        location={history.location}
                     />
                 ) : (
                     <>

@@ -63,14 +63,14 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *database
 
 	// A list of permissions to be granted, by username, email and/or external accounts.
 	// Plus one because we'll have at least one more username or verified email address.
-	perms := make([]*authz.UserPendingPermissions, 0, len(extAccounts)+1)
+	perms := make([]*authz.UserGrantPermissions, 0, len(extAccounts)+1)
 	for _, acct := range extAccounts {
-		perms = append(perms, &authz.UserPendingPermissions{
-			ServiceType: acct.ServiceType,
-			ServiceID:   acct.ServiceID,
-			BindID:      acct.AccountID,
-			Perm:        args.Perm,
-			Type:        args.Type,
+		perms = append(perms, &authz.UserGrantPermissions{
+			UserID:                args.UserID,
+			UserExternalAccountID: acct.ID,
+			ServiceType:           acct.ServiceType,
+			ServiceID:             acct.ServiceID,
+			AccountID:             acct.AccountID,
 		})
 	}
 
@@ -87,12 +87,11 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *database
 			return errors.Wrap(err, "list verified emails")
 		}
 		for i := range emails {
-			perms = append(perms, &authz.UserPendingPermissions{
+			perms = append(perms, &authz.UserGrantPermissions{
+				UserID:      args.UserID,
 				ServiceType: authz.SourcegraphServiceType,
 				ServiceID:   authz.SourcegraphServiceID,
-				BindID:      emails[i].Email,
-				Perm:        args.Perm,
-				Type:        args.Type,
+				AccountID:   emails[i].Email,
 			})
 		}
 
@@ -101,12 +100,11 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *database
 		if err != nil {
 			return errors.Wrap(err, "get user")
 		}
-		perms = append(perms, &authz.UserPendingPermissions{
+		perms = append(perms, &authz.UserGrantPermissions{
+			UserID:      args.UserID,
 			ServiceType: authz.SourcegraphServiceType,
 			ServiceID:   authz.SourcegraphServiceID,
-			BindID:      user.Username,
-			Perm:        args.Perm,
-			Type:        args.Type,
+			AccountID:   user.Username,
 		})
 
 	default:
@@ -120,7 +118,7 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *database
 	defer func() { err = txs.Done(err) }()
 
 	for _, p := range perms {
-		err = txs.GrantPendingPermissions(ctx, args.UserID, p)
+		err = txs.GrantPendingPermissions(ctx, p)
 		if err != nil {
 			return errors.Wrap(err, "grant pending permissions")
 		}
@@ -136,22 +134,22 @@ func (s *authzStore) AuthorizedRepos(ctx context.Context, args *database.Authori
 		return args.Repos, nil
 	}
 
-	p := &authz.UserPermissions{
-		UserID: args.UserID,
-		Perm:   args.Perm,
-		Type:   args.Type,
-	}
-	if err := s.store.LoadUserPermissions(ctx, p); err != nil {
-		if err == authz.ErrPermsNotFound {
-			return []*types.Repo{}, nil
-		}
+	p, err := s.store.LoadUserPermissions(ctx, args.UserID)
+	if err != nil {
 		return nil, err
 	}
 
-	perms := p.AuthorizedRepos(args.Repos)
-	filtered := make([]*types.Repo, len(perms))
-	for i, r := range perms {
-		filtered[i] = r.Repo
+	idsMap := make(map[int32]*types.Repo)
+	for _, r := range args.Repos {
+		idsMap[int32(r.ID)] = r
+	}
+
+	filtered := []*types.Repo{}
+	for _, r := range p {
+		// add repo to filtered if the repo is in user permissions
+		if _, ok := idsMap[r.RepoID]; ok {
+			filtered = append(filtered, idsMap[r.RepoID])
+		}
 	}
 	return filtered, nil
 }

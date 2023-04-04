@@ -63,7 +63,7 @@ func TestDeleteUnreferencedDocuments(t *testing.T) {
 	}
 
 	// Check too soon
-	count, err := store.DeleteUnreferencedDocuments(context.Background(), 20, time.Minute, time.Now())
+	_, count, err := store.DeleteUnreferencedDocuments(context.Background(), 20, time.Minute, time.Now())
 	if err != nil {
 		t.Fatalf("unexpected error deleting unreferenced documents: %s", err)
 	}
@@ -76,7 +76,7 @@ func TestDeleteUnreferencedDocuments(t *testing.T) {
 
 	totalCount := 0
 	for i := 0; i < 10; i++ {
-		count, err = store.DeleteUnreferencedDocuments(context.Background(), 20, time.Minute, time.Now().Add(time.Minute*5))
+		_, count, err = store.DeleteUnreferencedDocuments(context.Background(), 20, time.Minute, time.Now().Add(time.Minute*5))
 		if err != nil {
 			t.Fatalf("unexpected error deleting unreferenced documents: %s", err)
 		}
@@ -87,7 +87,7 @@ func TestDeleteUnreferencedDocuments(t *testing.T) {
 	}
 
 	// Assert no more records should be available for processing
-	count, err = store.DeleteUnreferencedDocuments(context.Background(), 20, time.Minute, time.Now())
+	_, count, err = store.DeleteUnreferencedDocuments(context.Background(), 20, time.Minute, time.Now())
 	if err != nil {
 		t.Fatalf("unexpected error deleting unreferenced documents: %s", err)
 	}

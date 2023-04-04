@@ -1,0 +1,29 @@
+--- math/fp448/BUILD.bazel	2023-01-30 16:49:16
++++ math/fp448/BUILD.bazel	2023-01-30 16:54:17
+@@ -1,4 +1,4 @@
+-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
++load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_source", "go_test")
+
+ go_library(
+     name = "fp448",
+@@ -22,6 +22,14 @@
+     }),
+ )
+
++go_source(
++    name ="headers",
++    srcs = [
++        "fp_amd64.h"
++    ],
++    visibility = ["//visibility:public"],
++)
++
+ alias(
+     name = "go_default_library",
+     actual = ":fp448",
+@@ -40,3 +48,4 @@
+         "//internal/test",
+     ],
+ )
++
+

@@ -52,12 +52,12 @@ func (r *bulkOperationResolver) Progress() float64 {
 }
 
 func (r *bulkOperationResolver) Errors(ctx context.Context) ([]graphqlbackend.ChangesetJobErrorResolver, error) {
-	errors, err := r.store.ListBulkOperationErrors(ctx, store.ListBulkOperationErrorsOpts{BulkOperationID: r.bulkOperation.ID})
+	boErrors, err := r.store.ListBulkOperationErrors(ctx, store.ListBulkOperationErrorsOpts{BulkOperationID: r.bulkOperation.ID})
 	if err != nil {
 		return nil, err
 	}
 
-	changesetIDs := uniqueChangesetIDsForBulkOperationErrors(errors)
+	changesetIDs := uniqueChangesetIDsForBulkOperationErrors(boErrors)
 
 	changesetsByID := map[int64]*btypes.Changeset{}
 	reposByID := map[api.RepoID]*types.Repo{}
@@ -78,8 +78,8 @@ func (r *bulkOperationResolver) Errors(ctx context.Context) ([]graphqlbackend.Ch
 		}
 	}
 
-	res := make([]graphqlbackend.ChangesetJobErrorResolver, 0, len(errors))
-	for _, e := range errors {
+	res := make([]graphqlbackend.ChangesetJobErrorResolver, 0, len(boErrors))
+	for _, e := range boErrors {
 		ch := changesetsByID[e.ChangesetID]
 		repo, accessible := reposByID[ch.RepoID]
 		resolver := &changesetJobErrorResolver{store: r.store, gitserverClient: r.gitserverClient, changeset: ch, repo: repo}

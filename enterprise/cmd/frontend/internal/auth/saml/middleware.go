@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -52,7 +52,7 @@ func authHandler(db database.DB, w http.ResponseWriter, r *http.Request, next ht
 	}
 
 	// If the actor is authenticated and not performing a SAML operation, then proceed to next.
-	if actor.FromContext(r.Context()).IsAuthenticated() {
+	if sgactor.FromContext(r.Context()).IsAuthenticated() {
 		next.ServeHTTP(w, r)
 		return
 	}
@@ -148,7 +148,7 @@ func samlSPHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) 
 				http.Error(w, "Error authorizing SAML-authenticated user. The user does not belong to one of the configured groups.", http.StatusForbidden)
 				return
 			}
-			allowSignup := (p.config.AllowSignup == nil || *p.config.AllowSignup)
+			allowSignup := p.config.AllowSignup == nil || *p.config.AllowSignup
 			actor, safeErrMsg, err := getOrCreateUser(r.Context(), db, allowSignup, info)
 			if err != nil {
 				log15.Error("Error looking up SAML-authenticated user.", "err", err, "userErr", safeErrMsg)

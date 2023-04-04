@@ -6,10 +6,10 @@ import (
 	"testing"
 	"testing/quick"
 
+	"github.com/sourcegraph/conc/pool"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 func TestLimitedStream(t *testing.T) {
@@ -131,14 +131,14 @@ func TestLimitedStream(t *testing.T) {
 				mux.Unlock()
 			})
 
-			g := group.New()
+			p := pool.New()
 			for _, input := range inputs {
 				input := input
-				g.Go(func() {
+				p.Go(func() {
 					s.Send(input)
 				})
 			}
-			g.Wait()
+			p.Wait()
 
 			outputSize := 0
 			for _, outputMatch := range outputMatches {

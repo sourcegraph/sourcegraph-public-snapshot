@@ -14,13 +14,14 @@ export function testSingleFilePage({
     url,
     sourcegraphBaseUrl,
     repoName,
+    commitID,
     getLineSelector,
     goToDefinitionURL,
 }: {
     /** Called to get the driver */
     getDriver: () => Driver
 
-    /** The URL to sourcegraph/jsonrpc2 call_opt.go at commit 4fb7cd90793ee6ab445f466b900e6bffb9b63d78 on the code host */
+    /** The URL to sourcegraph/jsonrpc2 call_opt.go at commit {@link commitID} on the code host */
     url: string
 
     /** The base URL of the sourcegraph instance */
@@ -28,6 +29,9 @@ export function testSingleFilePage({
 
     /** The repo name of sourcgraph/jsonrpc2 on the Sourcegraph instance */
     repoName: string
+
+    /** The full commit SHA of sourcegraph/jsonrpc2 call_opt.go on the code host */
+    commitID: string
 
     /** The CSS selector for a line (with or without line number part) in the code view */
     getLineSelector: (lineNumber: number) => string
@@ -58,9 +62,7 @@ export function testSingleFilePage({
                                 '[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]'
                             )?.href
                     ),
-                    new URL(
-                        `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go`
-                    ).href
+                    new URL(`${sourcegraphBaseUrl}/${repoName}@${commitID}/-/blob/call_opt.go`).href
                 )
             })
         })
@@ -94,8 +96,7 @@ export function testSingleFilePage({
                     await getDriver().page.evaluate(
                         () => document.querySelector<HTMLAnchorElement>('.test-tooltip-go-to-definition')?.href
                     ),
-                    goToDefinitionURL ||
-                        `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go#L5:6`
+                    goToDefinitionURL || `${sourcegraphBaseUrl}/${repoName}@${commitID}/-/blob/call_opt.go#L5:6`
                 )
             })
         })

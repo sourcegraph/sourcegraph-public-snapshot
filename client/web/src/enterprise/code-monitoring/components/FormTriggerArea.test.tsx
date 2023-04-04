@@ -115,7 +115,6 @@ describe('FormTriggerArea', () => {
                     onQueryChange={sinon.spy()}
                     setTriggerCompleted={sinon.spy()}
                     startExpanded={false}
-                    isLightTheme={true}
                     isSourcegraphDotCom={testCase.isSourcegraphDotCom}
                 />
             )
@@ -168,7 +167,6 @@ describe('FormTriggerArea', () => {
                 onQueryChange={onQueryChange}
                 setTriggerCompleted={sinon.spy()}
                 startExpanded={false}
-                isLightTheme={true}
                 isSourcegraphDotCom={false}
             />
         )
@@ -187,7 +185,6 @@ describe('FormTriggerArea', () => {
                 onQueryChange={onQueryChange}
                 setTriggerCompleted={sinon.spy()}
                 startExpanded={false}
-                isLightTheme={true}
                 isSourcegraphDotCom={false}
             />
         )

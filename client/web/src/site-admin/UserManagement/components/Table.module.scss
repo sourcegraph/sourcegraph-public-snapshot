@@ -12,14 +12,18 @@
 
 .header {
     display: flex;
+    height: 1.75rem;
     align-items: flex-start;
 
     &.align-right {
         justify-content: end;
     }
 
+    &.align-center {
+        justify-content: center;
+    }
+
     &.sortable {
-        height: 1.75rem;
         cursor: pointer;
         justify-content: space-between;
     }
@@ -67,6 +71,14 @@
 
 .cell {
     padding: 0.5rem;
+
+    &.align-left {
+        padding-left: 0;
+    }
+
+    &.align-right {
+        padding-right: 0;
+    }
 
     &.selection {
         text-align: center;

@@ -7,7 +7,7 @@ import (
 
 type Goreman struct{}
 
-// rpc: restart all (stop all, then start all)
+// RestartAll restarts all processes (stop all, then start all).
 func (Goreman) RestartAll(args struct{}, ret *string) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -16,7 +16,7 @@ func (Goreman) RestartAll(args struct{}, ret *string) (err error) {
 	}()
 
 	// Stop and start the processes. We do this with an artificially
-	// incremented wg, so that the server does not shutdown when stopProcs
+	// incremented wg, so that the server does not shut down when stopProcs
 	// completes (the server shuts down when all processes are stopped).
 	//
 	// Note that we do not invoke waitProcs, as the original waitProcs
@@ -29,7 +29,7 @@ func (Goreman) RestartAll(args struct{}, ret *string) (err error) {
 	return nil
 }
 
-// start rpc server.
+// startServer starts the RPC server.
 func startServer(addr string) error {
 	if err := rpc.Register(Goreman{}); err != nil {
 		return err

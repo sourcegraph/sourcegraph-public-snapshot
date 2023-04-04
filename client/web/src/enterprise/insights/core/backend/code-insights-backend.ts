@@ -59,14 +59,4 @@ export interface CodeInsightsBackend {
     deleteInsight: (insightId: string) => Observable<unknown>
 
     removeInsightFromDashboard: (input: RemoveInsightFromDashboardInput) => Observable<unknown>
-
-    /**
-     * Used for the dynamic insight example on the insights landing page.
-     * Attempts to return a repository that contains the string "TODO"
-     * If a repository is not found it then returns the first repository it finds.
-     *
-     * Under the hood this is calling the search API with "select:repo TODO count:1"
-     * or "select:repo count:1" if no repository is found with the string "TODO"
-     */
-    getFirstExampleRepository: () => Observable<string>
 }

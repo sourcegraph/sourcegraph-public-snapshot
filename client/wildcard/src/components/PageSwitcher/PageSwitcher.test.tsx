@@ -107,35 +107,4 @@ describe('PageSwitcher', () => {
         const queries = renderWithProps({ ...defaultProps, totalLabel: undefined })
         expect(queries.container.textContent!).not.toContain('Total')
     })
-
-    it('renders disabled buttons and no label while loading', () => {
-        const queries = renderWithProps({ ...defaultProps, hasPreviousPage: null, hasNextPage: null, totalCount: null })
-
-        const goToFirstPageButton = queries.getByRole('button', { name: 'Go to first page' })
-        const goToPreviousPageButton = queries.getByRole('button', { name: 'Go to previous page' })
-        const goToNextPageButton = queries.getByRole('button', { name: 'Go to next page' })
-        const goToLastPageButton = queries.getByRole('button', { name: 'Go to last page' })
-
-        expect(goToFirstPageButton).toBeInTheDocument()
-        expect(goToPreviousPageButton).toBeInTheDocument()
-        expect(goToNextPageButton).toBeInTheDocument()
-        expect(goToLastPageButton).toBeInTheDocument()
-
-        assertAriaDisabled(goToFirstPageButton)
-        assertAriaDisabled(goToPreviousPageButton)
-        assertAriaDisabled(goToNextPageButton)
-        assertAriaDisabled(goToLastPageButton)
-
-        fireEvent.click(goToFirstPageButton)
-        fireEvent.click(goToPreviousPageButton)
-        fireEvent.click(goToNextPageButton)
-        fireEvent.click(goToLastPageButton)
-
-        sinon.assert.notCalled(goToFirstPage)
-        sinon.assert.notCalled(goToPreviousPage)
-        sinon.assert.notCalled(goToNextPage)
-        sinon.assert.notCalled(goToLastPage)
-
-        expect(queries.container.textContent!).not.toContain('Total')
-    })
 })

@@ -1,0 +1,13 @@
+.container {
+    border: 0;
+    padding: 0.5rem 0;
+
+    + .container {
+        border-top: 1px solid var(--border-color);
+    }
+}
+
+.avatar {
+    min-height: 2.25rem;
+    min-width: 2.25rem;
+}

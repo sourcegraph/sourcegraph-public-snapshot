@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
     "module": "commonjs",
@@ -11,6 +11,16 @@
       "*": ["../common/src/types/*"],
     },
   },
-  "references": [{ "path": "../template-parser" }],
+  "references": [
+    {
+      "path": "../extension-api",
+    },
+    {
+      "path": "../extension-api-types",
+    },
+    {
+      "path": "../template-parser",
+    },
+  ],
   "include": ["./src/**/*", "./*.ts"],
 }

@@ -31,7 +31,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
@@ -46,8 +45,8 @@ type commitFetcher interface {
 	RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error)
 }
 
-func NewGitserverFilter(db database.DB, logger log.Logger) DataFrameFilter {
-	return &gitserverFilter{commitFetcher: gitserver.NewGitCommitClient(db), logger: logger}
+func NewGitserverFilter(logger log.Logger) DataFrameFilter {
+	return &gitserverFilter{commitFetcher: gitserver.NewGitCommitClient(), logger: logger}
 }
 
 type gitserverFilter struct {
@@ -131,10 +130,10 @@ func (n *NoopFilter) Filter(ctx context.Context, sampleTimes []time.Time, name a
 
 // uncompressedPlan returns a query plan that is completely uncompressed given an initial set of seed frames.
 // This is primarily useful when there are scenarios in which compression cannot be used.
-func uncompressedPlan(frames []time.Time) BackfillPlan {
-	executions := make([]QueryExecution, 0, len(frames))
-	for _, frame := range frames {
-		executions = append(executions, QueryExecution{RecordingTime: frame})
+func uncompressedPlan(sampleTimes []time.Time) BackfillPlan {
+	executions := make([]QueryExecution, 0, len(sampleTimes))
+	for _, sampleTime := range sampleTimes {
+		executions = append(executions, QueryExecution{RecordingTime: sampleTime})
 	}
 
 	return BackfillPlan{

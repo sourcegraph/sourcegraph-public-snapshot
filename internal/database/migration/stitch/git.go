@@ -26,10 +26,15 @@ func readMigrationDirectoryFilenames(schemaName, dir, rev string) ([]string, err
 		return nil, err
 	}
 
+	// First we will try to look up using the version tag. This should succeed for
+	// historical releases that are already tagged. If we don't find the tag we will
+	// fallback below to a branch name matching the release branch.
 	cmd := exec.Command("git", "show", fmt.Sprintf("%s:%s", rev, pathForSchemaAtRev))
 	cmd.Dir = dir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
+		// Here we will try the release branch fallback. This should be encountered for future versions, in other words
+		// we are updating the max supported version to something that isn't yet tagged.
 		if branch, ok := tagRevToBranch(rev); ok && strings.Contains(string(out), "fatal: invalid object name") {
 			cmd := exec.Command("git", "show", fmt.Sprintf("origin/%s:%s", branch, pathForSchemaAtRev))
 			cmd.Dir = dir

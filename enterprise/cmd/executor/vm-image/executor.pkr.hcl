@@ -68,7 +68,7 @@ source "googlecompute" "gcp" {
 
 source "amazon-ebs" "aws" {
     ami_name = var.name
-    ami_description = "Convenience image to run Sourcegraph executors. See github.com/sourcegraph/terraform-google-executors for how to use it."
+    ami_description = "Convenience image to run Sourcegraph executors. See github.com/sourcegraph/terraform-aws-executors for how to use it."
     ssh_username = "ubuntu"
     instance_type = "t3.micro"
     source_ami_filter {

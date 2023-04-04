@@ -1,12 +1,11 @@
-import * as React from 'react'
+import React, { FC } from 'react'
 
-import { RouteComponentProps } from 'react-router'
+import { useLocation, useNavigate, NavigateFunction, Location } from 'react-router-dom'
 import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -16,9 +15,11 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import { SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
 
-interface Props extends RouteComponentProps, NamespaceProps, ThemeProps {
+interface Props extends NamespaceProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
+    location: Location
+    navigate: NavigateFunction
 }
 
 const LOADING = 'loading' as const
@@ -27,7 +28,14 @@ interface State {
     createdOrError: undefined | typeof LOADING | true | ErrorLike
 }
 
-export class SavedSearchCreateForm extends React.Component<Props, State> {
+export const SavedSearchCreateForm: FC<Omit<Props, 'location' | 'navigate'>> = props => {
+    const location = useLocation()
+    const navigate = useNavigate()
+
+    return <InnerSavedSearchCreateForm {...props} location={location} navigate={navigate} />
+}
+
+class InnerSavedSearchCreateForm extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
         this.state = {
@@ -63,8 +71,7 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
                     if (createdOrError === true) {
                         eventLogger.log('SavedSearchCreated')
                         screenReaderAnnounce(`Saved ${queryDescription} search`)
-                        this.props.history.push({
-                            pathname: `${this.props.namespace.url}/searches`,
+                        this.props.navigate(`${this.props.namespace.url}/searches`, {
                             state: { description: queryDescription },
                         })
                     }

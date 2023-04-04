@@ -3,7 +3,7 @@ import fs from 'fs'
 import { CachedInputFileSystem, ResolverFactory } from 'enhanced-resolve'
 import * as esbuild from 'esbuild'
 
-import { NODE_MODULES_PATH } from '../paths'
+import { NODE_MODULES_PATH, WORKSPACE_NODE_MODULES_PATHS } from '../paths'
 
 interface Resolutions {
     [fromModule: string]: string
@@ -22,7 +22,7 @@ export const packageResolutionPlugin = (resolutions: Resolutions): esbuild.Plugi
             fileSystem: new CachedInputFileSystem(fs, 4000),
             extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
             symlinks: true, // Resolve workspace symlinks
-            modules: [NODE_MODULES_PATH],
+            modules: [NODE_MODULES_PATH, ...WORKSPACE_NODE_MODULES_PATHS],
             unsafeCache: true,
         })
 

@@ -61,7 +61,7 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 
 			numUploadsCompleted := 0
 			for _, uploadState := range data.uploadStates {
-				if uploadState.state == "ERRORED" {
+				if uploadState.state == "PROCESSING_ERRORED" {
 					return errors.Newf("failed to process (%s)", uploadState.failure)
 				}
 
@@ -78,10 +78,10 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 					if oldState != "COMPLETED" {
 						fmt.Printf("[%5s] %s Finished processing index %s for %s@%s\n", internal.TimeSince(start), internal.EmojiSuccess, uploadState.upload.id, repoName, uploadState.upload.commit[:7])
 					}
-				} else if uploadState.state != "QUEUED" && uploadState.state != "PROCESSING" {
+				} else if uploadState.state != "QUEUED_FOR_PROCESSING" && uploadState.state != "PROCESSING" {
 					var payload struct {
 						Data struct {
-							LsifUploads struct {
+							PreciseIndexes struct {
 								Nodes []struct {
 									ID        string
 									AuditLogs auditLogs
@@ -90,7 +90,7 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 						}
 					}
 
-					if err := internal.GraphQLClient().GraphQL(internal.SourcegraphAccessToken, uploadsQueryFragment, nil, &payload); err != nil {
+					if err := internal.GraphQLClient().GraphQL(internal.SourcegraphAccessToken, preciseIndexesQueryFragment, nil, &payload); err != nil {
 						return errors.Newf("unexpected state '%s' for %s@%s - ID %s\nAudit Logs:\n%s", uploadState.state, uploadState.upload.repoName, uploadState.upload.commit[:7], &uploadState.upload.id, errors.Wrap(err, "error getting audit logs"))
 					}
 
@@ -103,7 +103,7 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 					fmt.Println("SEARCHING FOR ID", uploadState.upload.id)
 
 					var logs auditLogs
-					for _, upload := range payload.Data.LsifUploads.Nodes {
+					for _, upload := range payload.Data.PreciseIndexes.Nodes {
 						if upload.ID == uploadState.upload.id {
 							logs = upload.AuditLogs
 							break
@@ -247,16 +247,16 @@ const repositoryQueryFragment = `
 
 const uploadQueryFragment = `
 	u%d: node(id: "%s") {
-		... on LSIFUpload {
+		... on PreciseIndex {
 			state
 			failure
 		}
 	}
 `
 
-const uploadsQueryFragment = `
-	query CodeIntelQA_UploadsList {
-		lsifUploads(includeDeleted: true) {
+const preciseIndexesQueryFragment = `
+	query CodeIntelQA_PreciseIndexes {
+		preciseIndexes(includeDeleted: true) {
 			nodes {
 				id
 				auditLogs {

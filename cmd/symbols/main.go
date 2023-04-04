@@ -3,9 +3,10 @@
 package main
 
 import (
+	"github.com/sourcegraph/sourcegraph/cmd/sourcegraph-oss/osscmd"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/shared"
 )
 
 func main() {
-	shared.Main(shared.SetupSqlite)
+	osscmd.DeprecatedSingleServiceMainOSS(shared.Service)
 }

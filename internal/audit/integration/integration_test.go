@@ -2,6 +2,7 @@ package integration
 
 import (
 	"context"
+	"os"
 	"strings"
 	"testing"
 
@@ -10,6 +11,10 @@ import (
 )
 
 func TestIntegration(t *testing.T) {
+	if os.Getenv("BAZEL_TEST") == "1" {
+		t.Skip("Don't run test due to running commands in bazel sandbox.")
+	}
+
 	// audit logs are logged under INFO severity
 	t.Setenv("SRC_LOG_LEVEL", "info")
 

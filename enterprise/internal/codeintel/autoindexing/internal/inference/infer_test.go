@@ -3,18 +3,18 @@ package inference
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 )
 
 func TestInferRepositoryAndRevision(t *testing.T) {
 	t.Run("Go", func(t *testing.T) {
 		testCases := []struct {
-			pkg      precise.Package
+			pkg      dependencies.MinimialVersionedPackageRepo
 			repoName string
 			revision string
 		}{
 			{
-				pkg: precise.Package{
+				pkg: dependencies.MinimialVersionedPackageRepo{
 					Scheme:  "gomod",
 					Name:    "https://github.com/sourcegraph/sourcegraph",
 					Version: "v2.3.2",
@@ -23,7 +23,7 @@ func TestInferRepositoryAndRevision(t *testing.T) {
 				revision: "v2.3.2",
 			},
 			{
-				pkg: precise.Package{
+				pkg: dependencies.MinimialVersionedPackageRepo{
 					Scheme:  "gomod",
 					Name:    "https://github.com/aws/aws-sdk-go-v2/credentials",
 					Version: "v0.1.0",
@@ -32,7 +32,7 @@ func TestInferRepositoryAndRevision(t *testing.T) {
 				revision: "v0.1.0",
 			},
 			{
-				pkg: precise.Package{
+				pkg: dependencies.MinimialVersionedPackageRepo{
 					Scheme:  "gomod",
 					Name:    "https://github.com/sourcegraph/sourcegraph",
 					Version: "v0.0.0-de0123456789",
@@ -41,7 +41,7 @@ func TestInferRepositoryAndRevision(t *testing.T) {
 				revision: "de0123456789",
 			},
 			{
-				pkg: precise.Package{
+				pkg: dependencies.MinimialVersionedPackageRepo{
 					Scheme:  "npm",
 					Name:    "mypackage",
 					Version: "1.0.0",
@@ -50,7 +50,7 @@ func TestInferRepositoryAndRevision(t *testing.T) {
 				revision: "v1.0.0",
 			},
 			{
-				pkg: precise.Package{
+				pkg: dependencies.MinimialVersionedPackageRepo{
 					Scheme:  "npm",
 					Name:    "@myscope/mypackage",
 					Version: "1.0.0",

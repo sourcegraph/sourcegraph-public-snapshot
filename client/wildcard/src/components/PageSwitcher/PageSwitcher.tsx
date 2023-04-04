@@ -22,6 +22,7 @@ export interface PageSwitcherProps {
     goToPreviousPage: () => Promise<void>
     goToFirstPage: () => Promise<void>
     goToLastPage: () => Promise<void>
+    onClick?: () => void
     className?: string
 }
 
@@ -43,12 +44,14 @@ export const PageSwitcher: React.FunctionComponent<React.PropsWithChildren<PageS
         goToLastPage,
         hasPreviousPage,
         hasNextPage,
+        onClick,
     } = props
 
     const [isLoadingPage, setIsLoadingPage] = React.useState(false)
     function withLoadingPage<T>(func: () => Promise<T>): () => Promise<void> {
         return async () => {
             try {
+                onClick?.()
                 setIsLoadingPage(true)
                 await func()
             } finally {
@@ -59,6 +62,10 @@ export const PageSwitcher: React.FunctionComponent<React.PropsWithChildren<PageS
 
     const isPreviousPageDisabled = isLoadingPage || (hasPreviousPage !== null ? !hasPreviousPage : true)
     const isNextPageDisabled = isLoadingPage || (hasNextPage !== null ? !hasNextPage : true)
+
+    if (isPreviousPageDisabled && isNextPageDisabled && !isLoadingPage) {
+        return null
+    }
 
     return (
         <nav className={className} aria-label="pagination">
@@ -128,7 +135,7 @@ export const PageSwitcher: React.FunctionComponent<React.PropsWithChildren<PageS
             </ul>
             {totalCount !== null && totalLabel !== undefined ? (
                 <div className={styles.label}>
-                    <Text className="text-muted" size="small">
+                    <Text className="text-muted mb-0" size="small">
                         Total{' '}
                         <Text weight="bold" as="strong">
                             {totalLabel}

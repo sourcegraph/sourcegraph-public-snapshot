@@ -1,11 +1,10 @@
 import React from 'react'
 
-import { MemoryRouter, MemoryRouterProps } from 'react-router'
-import { CompatRouter } from 'react-router-dom-v5-compat'
+import { MemoryRouter, MemoryRouterProps } from 'react-router-dom'
 
-import { WildcardThemeContext } from '../hooks/useWildcardTheme'
+import { WildcardThemeContext } from '../hooks'
 
-import { usePrependStyles, useTheme } from './hooks'
+import { usePrependStyles, useStorybookTheme } from './hooks'
 
 import brandedStyles from '../global-styles/index.scss'
 
@@ -27,15 +26,13 @@ export const BrandedStory: React.FunctionComponent<BrandedProps> = ({
     styles = brandedStyles,
     ...memoryRouterProps
 }) => {
-    const isLightTheme = useTheme()
+    const isLightTheme = useStorybookTheme()
     usePrependStyles('branded-story-styles', styles)
 
     return (
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
             <MemoryRouter {...memoryRouterProps}>
-                <CompatRouter>
-                    <Children isLightTheme={isLightTheme} />
-                </CompatRouter>
+                <Children isLightTheme={isLightTheme} />
             </MemoryRouter>
         </WildcardThemeContext.Provider>
     )

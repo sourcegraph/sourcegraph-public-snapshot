@@ -12,7 +12,7 @@ import (
 
 type RepoKVPStore interface {
 	basestore.ShareableStore
-	Transact(context.Context) (RepoKVPStore, error)
+	WithTransact(context.Context, func(RepoKVPStore) error) error
 	With(basestore.ShareableStore) RepoKVPStore
 	Get(context.Context, api.RepoID, string) (KeyValuePair, error)
 	List(context.Context, api.RepoID) ([]KeyValuePair, error)
@@ -27,9 +27,10 @@ type repoKVPStore struct {
 
 var _ RepoKVPStore = (*repoKVPStore)(nil)
 
-func (s *repoKVPStore) Transact(ctx context.Context) (RepoKVPStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &repoKVPStore{Store: txBase}, err
+func (s *repoKVPStore) WithTransact(ctx context.Context, f func(RepoKVPStore) error) error {
+	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&repoKVPStore{Store: tx})
+	})
 }
 
 func (s *repoKVPStore) With(other basestore.ShareableStore) RepoKVPStore {

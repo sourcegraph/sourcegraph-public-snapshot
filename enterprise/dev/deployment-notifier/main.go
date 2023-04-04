@@ -7,9 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/google/go-github/v41/github"
 	"github.com/honeycombio/libhoney-go"
@@ -19,7 +17,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/dev/okay"
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -37,12 +34,11 @@ type Flags struct {
 
 func (f *Flags) Parse() {
 	flag.StringVar(&f.GitHubToken, "github.token", os.Getenv("GITHUB_TOKEN"), "mandatory github token")
-	flag.StringVar(&f.Environment, "environment", "", "Environment being deployed")
+	flag.StringVar(&f.Environment, "environment", "production", "Environment being deployed")
 	flag.BoolVar(&f.DryRun, "dry", false, "Pretend to post notifications, printing to stdout instead")
 	flag.StringVar(&f.SlackToken, "slack.token", "", "mandatory slack api token")
 	flag.StringVar(&f.SlackAnnounceWebhook, "slack.webhook", "", "Slack Webhook URL to post the results on")
 	flag.StringVar(&f.HoneycombToken, "honeycomb.token", "", "mandatory honeycomb api token")
-	flag.StringVar(&f.OkayHQToken, "okayhq.token", "", "mandatory okayhq api token")
 	flag.Parse()
 }
 
@@ -57,7 +53,7 @@ func main() {
 	flags := &Flags{}
 	flags.Parse()
 	if flags.Environment == "" {
-		logger.Fatal("-environment must be specified: preprod or production.")
+		logger.Fatal("-environment must be specified. 'production' is the only valid option")
 	}
 
 	ghc := github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(
@@ -106,12 +102,6 @@ func main() {
 		if err != nil {
 			logger.Fatal("failed to generate a trace", log.Error(err))
 		}
-	}
-
-	// Metrics, if token is empty, metrics will be logged at DEBUG level
-	err = reportDeploymentMetrics(report, flags.OkayHQToken, flags.DryRun)
-	if err != nil {
-		logger.Fatal("failed to generate metrics", log.Error(err))
 	}
 
 	// Notifcations
@@ -167,50 +157,6 @@ func getRevision() (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(output)), nil
-}
-
-func reportDeploymentMetrics(report *DeploymentReport, token string, dryRun bool) error {
-	if dryRun {
-		return nil
-	}
-
-	deployTime, err := time.Parse(time.RFC822Z, report.DeployedAt)
-	if err != nil {
-		return errors.Wrap(err, "r.DeployedAt")
-	}
-
-	okayCli := okay.NewClient(http.DefaultClient, token)
-
-	for _, pr := range report.PullRequests {
-		elapsed := deployTime.Sub(pr.GetMergedAt())
-		event := okay.Event{
-			Name:        "deployment",
-			Timestamp:   deployTime,
-			GitHubLogin: pr.GetUser().GetLogin(),
-			UniqueKey:   []string{"unique_key"},
-			OkayURL:     pr.GetHTMLURL(),
-			Properties: map[string]string{
-				"environment":           report.Environment,
-				"pull_request.number":   strconv.Itoa(pr.GetNumber()),
-				"pull_request.title":    pr.GetTitle(),
-				"pull_request.revision": pr.GetMergeCommitSHA(),
-				"unique_key":            fmt.Sprintf("%s,%d,%s", report.Environment, pr.GetNumber(), strings.Join(report.Services, ",")),
-			},
-			Metrics: map[string]okay.Metric{
-				"elapsed": {
-					Type:  "durationMs",
-					Value: float64(elapsed / time.Millisecond),
-				},
-			},
-			Labels: report.Services,
-		}
-
-		err := okayCli.Push(&event)
-		if err != nil {
-			return err
-		}
-	}
-	return okayCli.Flush()
 }
 
 func reportDeployTrace(report *DeploymentReport, token string, dryRun bool) (string, error) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"runtime/debug"
 	"sort"
 	"strconv"
 	"testing"
@@ -19,13 +20,19 @@ import (
 )
 
 func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
-	return mustParseGraphQLSchemaWithClient(t, db, gitserver.NewClient(db))
+	return mustParseGraphQLSchemaWithClient(t, db, gitserver.NewClient())
 }
 
 func mustParseGraphQLSchemaWithClient(t *testing.T, db database.DB, gitserverClient gitserver.Client) *graphql.Schema {
 	t.Helper()
 
-	parsedSchema, parseSchemaErr := NewSchema(db, gitserverClient, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	parsedSchema, parseSchemaErr := NewSchema(
+		db,
+		gitserverClient,
+		nil,
+		OptionalResolver{},
+		graphql.PanicHandler(printStackTrace{&gqlerrors.DefaultPanicHandler{}}),
+	)
 	if parseSchemaErr != nil {
 		t.Fatal(parseSchemaErr)
 	}
@@ -132,4 +139,14 @@ func sortErrors(errs []*gqlerrors.QueryError) {
 	sort.Slice(errs, func(i, j int) bool {
 		return fmt.Sprintf("%s", errs[i].Path) < fmt.Sprintf("%s", errs[j].Path)
 	})
+}
+
+// printStackTrace wraps panic recovery from given Handler and prints the stack trace.
+type printStackTrace struct {
+	Handler gqlerrors.PanicHandler
+}
+
+func (t printStackTrace) MakePanicError(ctx context.Context, value interface{}) *gqlerrors.QueryError {
+	debug.PrintStack()
+	return t.Handler.MakePanicError(ctx, value)
 }

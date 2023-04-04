@@ -10,7 +10,11 @@ import (
 // Types that are returned by Bitbucket Cloud calls.
 
 type Account struct {
-	Links         Links         `json:"links"`
+	Links Links `json:"links"`
+	// BitBucket cloud no longer exposes username in its API, favoring account_id instead.
+	// This field should be removed and updated in the places where it is currently
+	// depended upon.
+	// https://developer.atlassian.com/cloud/bitbucket/bitbucket-api-changes-gdpr/#removal-of-usernames-from-user-referencing-apis
 	Username      string        `json:"username"`
 	Nickname      string        `json:"nickname"`
 	AccountStatus AccountStatus `json:"account_status"`
@@ -194,6 +198,7 @@ type Repo struct {
 	IsPrivate   bool       `json:"is_private"`
 	Links       RepoLinks  `json:"links"`
 	ForkPolicy  ForkPolicy `json:"fork_policy"`
+	Owner       *Account   `json:"owner"`
 }
 
 func (r *Repo) Namespace() (string, error) {
@@ -201,13 +206,12 @@ func (r *Repo) Namespace() (string, error) {
 	// cases (for example, embedded in pull requests), but we always have the
 	// full name, so let's parse the namespace out of that.
 
-	// TODO: replace with strings.Cut() once we upgrade to Go 1.18.
-	parts := strings.SplitN(r.FullName, "/", 2)
-	if len(parts) < 2 {
+	namespace, _, found := strings.Cut(r.FullName, "/")
+	if !found {
 		return "", errors.New("cannot split namespace from repo name")
 	}
 
-	return parts[0], nil
+	return namespace, nil
 }
 
 type ForkPolicy string

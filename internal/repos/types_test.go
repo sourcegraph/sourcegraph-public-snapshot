@@ -88,7 +88,7 @@ func TestSyncRateLimiters(t *testing.T) {
 		require.NoError(t, err)
 
 		gh := reg.Get(svcs[0].URN())
-		assert.Equal(t, rate.Limit(5000.0/3600.0), gh.Limit())
+		assert.Equal(t, rate.Inf, gh.Limit())
 
 		gl := reg.Get(svcs[1].URN())
 		assert.Equal(t, rate.Limit(10.0/3600.0), gl.Limit())
@@ -117,7 +117,7 @@ func TestSyncRateLimiters(t *testing.T) {
 		require.NoError(t, err)
 
 		gh := reg.Get(svcs[0].URN())
-		assert.Equal(t, rate.Limit(5000.0/3600.0), gh.Limit())
+		assert.Equal(t, rate.Inf, gh.Limit())
 
 		// GitLab should have the infinite
 		gl := reg.Get(svcs[1].URN())

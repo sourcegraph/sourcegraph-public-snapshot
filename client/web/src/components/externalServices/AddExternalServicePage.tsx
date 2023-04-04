@@ -1,13 +1,13 @@
-import React, { useEffect, useCallback, useState } from 'react'
+import { FC, useEffect, useCallback, useState } from 'react'
 
-import * as H from 'history'
+import { useApolloClient } from '@apollo/client'
+import { useNavigate } from 'react-router-dom'
 
 import { asError, isErrorLike, logger, renderMarkdown } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Alert, Container, H2, H3, H4, Markdown } from '@sourcegraph/wildcard'
 
-import { ExternalServiceFields, Scalars, AddExternalServiceInput } from '../../graphql-operations'
+import { ExternalServiceFields, AddExternalServiceInput } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
 import { PageTitle } from '../PageTitle'
 
@@ -16,11 +16,8 @@ import { ExternalServiceCard } from './ExternalServiceCard'
 import { ExternalServiceForm } from './ExternalServiceForm'
 import { AddExternalServiceOptions } from './externalServices'
 
-interface Props extends ThemeProps, TelemetryProps {
-    history: H.History
+interface Props extends TelemetryProps {
     externalService: AddExternalServiceOptions
-    routingPrefix: string
-    userID?: Scalars['ID']
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
 
@@ -31,19 +28,16 @@ interface Props extends ThemeProps, TelemetryProps {
 /**
  * Page for adding a single external service.
  */
-export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+export const AddExternalServicePage: FC<Props> = ({
     externalService,
-    history,
-    isLightTheme,
-    routingPrefix,
     telemetryService,
-    userID,
     autoFocusForm,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
 }) => {
     const [config, setConfig] = useState(externalService.defaultConfig)
     const [displayName, setDisplayName] = useState(externalService.defaultDisplayName)
+    const navigate = useNavigate()
 
     useEffect(() => {
         telemetryService.logPageView('AddExternalService')
@@ -85,15 +79,15 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
         [getExternalServiceInput, telemetryService]
     )
 
+    const client = useApolloClient()
     useEffect(() => {
         if (createdExternalService && !isErrorLike(createdExternalService)) {
             // Refresh site flags so that global site alerts
             // reflect the latest configuration.
-            // eslint-disable-next-line rxjs/no-ignored-subscription
-            refreshSiteFlags().subscribe({ error: error => logger.error(error) })
-            history.push(`${routingPrefix}/external-services/${createdExternalService.id}`)
+            refreshSiteFlags(client).catch((error: Error) => logger.error(error))
+            navigate(`/site-admin/external-services/${createdExternalService.id}`)
         }
-    }, [createdExternalService, routingPrefix, history])
+    }, [client, createdExternalService, navigate])
 
     return (
         <>
@@ -107,7 +101,7 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
                                 {...externalService}
                                 title={createdExternalService.displayName}
                                 shortDescription="Update this external service configuration to manage repository mirroring."
-                                to={`${routingPrefix}/external-services/${createdExternalService.id}/edit`}
+                                to={`/site-admin/external-services/${createdExternalService.id}/edit`}
                             />
                         </div>
                         <Alert variant="warning">
@@ -123,8 +117,6 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
                         <H3>Instructions:</H3>
                         <div className="mb-4">{externalService.instructions}</div>
                         <ExternalServiceForm
-                            history={history}
-                            isLightTheme={isLightTheme}
                             telemetryService={telemetryService}
                             error={isErrorLike(isCreating) ? isCreating : undefined}
                             input={getExternalServiceInput()}

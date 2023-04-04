@@ -1,0 +1,28 @@
+.radio-group {
+    display: grid;
+    column-gap: 0.5rem;
+    grid-template-rows: min-content auto;
+    grid-template-columns: min-content auto;
+    grid-template-areas:
+        'input label'
+        'input content';
+
+    &-input {
+        grid-area: input;
+        align-self: center;
+        grid-row-start: 1;
+        grid-row-end: 2;
+        margin: 0;
+    }
+
+    &-label {
+        grid-area: label;
+        display: flex;
+        margin: 0;
+    }
+
+    &-content {
+        grid-area: content;
+        margin-top: 0.5rem;
+    }
+}

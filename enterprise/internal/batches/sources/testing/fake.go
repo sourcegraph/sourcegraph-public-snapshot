@@ -211,8 +211,6 @@ func (s *FakeChangesetSource) UpdateChangeset(ctx context.Context, c *sources.Ch
 	return c.SetMetadata(s.FakeMetadata)
 }
 
-var fakeNotImplemented = errors.New("not implemented in FakeChangesetSource")
-
 func (s *FakeChangesetSource) ExternalServices() types.ExternalServices {
 	s.ExternalServicesCalled = true
 

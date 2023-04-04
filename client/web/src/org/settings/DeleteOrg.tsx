@@ -1,14 +1,12 @@
 import React, { useCallback, useState } from 'react'
 
-import { RouteComponentProps } from 'react-router-dom'
-
 import { Button, Container, H3, Text } from '@sourcegraph/wildcard'
 
 import { OrgAreaRouteContext } from '../area/OrgArea'
 
 import { DeleteOrgModal } from './DeleteOrgModal'
 
-interface DeleteOrgProps extends OrgAreaRouteContext, RouteComponentProps<{}> {}
+interface DeleteOrgProps extends OrgAreaRouteContext {}
 
 /**
  * Deletes an organization.

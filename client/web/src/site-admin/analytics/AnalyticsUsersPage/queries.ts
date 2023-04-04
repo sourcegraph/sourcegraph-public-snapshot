@@ -37,5 +37,8 @@ export const USERS_STATISTICS = gql`
         users {
             totalCount
         }
+        pendingAccessRequests: accessRequests(status: PENDING) {
+            totalCount
+        }
     }
 `

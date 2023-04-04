@@ -355,6 +355,11 @@ type ExternalChangeset implements Node & Changeset {
     ): BatchChangeConnection!
 
     """
+    The batch change that "owns" this changeset: If this is null, it is imported/tracked by a batch change.
+    """
+    ownedByBatchChange: ID
+
+    """
     The events belonging to this changeset.
     """
     events(first: Int = 50, after: String): ChangesetEventConnection!
@@ -392,8 +397,15 @@ type ExternalChangeset implements Node & Changeset {
     body: String
 
     """
-    The author of the changeset, or null if the data hasn't been synced from the code host yet,
-    or the changeset has not yet been published.
+    The author of the changeset, or null if the data is unavailable or hasn't been synced
+    from the code host yet.
+
+    Note that author is not fully supported by some code host APIs:
+    * GitHub - only author.name
+    * GitLab - only author.name
+    * Bitbucket Server - author is not always available
+    * Bitbucket Cloud - author is never available
+    * Azure DevOps - author is always available
     """
     author: Person
 
@@ -418,9 +430,15 @@ type ExternalChangeset implements Node & Changeset {
     host).
     """
     forkNamespace: String
+    """
+    If the changeset was opened from a fork, this is the name of the fork repository.
+    """
+    forkName: String
 
     """
     The review state of this changeset. This is only set once the changeset is published on the code host.
+
+    Note: The COMMENTED and DISMISSED review states are not yet implemented.
     """
     reviewState: ChangesetReviewState
 
@@ -514,6 +532,14 @@ type ChangesetsStats {
     The count of all changesets.
     """
     total: Int!
+    """
+    If true, then all changesets are either merged or closed. This indicates that the batch change is completed.
+    """
+    isCompleted: Boolean!
+    """
+    The count of changesets that are complete (i.e in a merged or closed state) and not archived or deleted.
+    """
+    percentComplete: Int!
 }
 
 """
@@ -1283,6 +1309,26 @@ extend type Mutation {
     ): ChangesetSpec!
 
     """
+    FOR INTERNAL USE ONLY.
+
+    Upload multiple changeset specs that will be used in a future update to a batch change. The changeset specs
+    are stored and can be referenced by their ID in the applyBatchChange mutation. Just uploading the
+    changeset specs does not result in changes to the batch change or any of its changesets; you need
+    to call applyBatchChange to use it.
+
+    The returned ChangesetSpecs is immutable and expires after a certain period of time (if not
+    used in a call to applyBatchChange), which can be queried on ChangesetSpec.expiresAt.
+    """
+    createChangesetSpecs(
+        """
+        The raw changeset specs (as JSON). See
+        https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/changeset_spec.schema.json
+        for the JSON Schema that describes the structure of this input.
+        """
+        changesetSpecs: [String!]!
+    ): [ChangesetSpec!]!
+
+    """
     Enqueue the given changeset for high-priority syncing.
     """
     syncChangeset(changeset: ID!): EmptyResponse!
@@ -1852,7 +1898,7 @@ extend type Query {
         """
         Exclude the empty batch specs that are initially created and applied to draft batch changes.
         """
-        excludeEmptySpecs: Boolean @deprecated(reason: "No longer required, as these specs don't exist anymore")
+        excludeEmptySpecs: Boolean
     ): BatchSpecConnection!
 
     """
@@ -2465,8 +2511,8 @@ type BatchSpecWorkspaceStep {
         """
         Return the log lines after N lines.
         """
-        after: Int
-    ): [String!]
+        after: String
+    ): BatchSpecWorkspaceStepOutputLineConnection!
 
     """
     The time when the step started processing. Null, if not yet started.
@@ -2502,6 +2548,26 @@ type BatchSpecWorkspaceStep {
     The generated diff from this step. Null, if not yet finished.
     """
     diff: PreviewRepositoryComparison
+}
+
+"""
+A list of Output lines from a Batch spec workspace.
+"""
+type BatchSpecWorkspaceStepOutputLineConnection {
+    """
+    The total number of output lines in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+
+    """
+    A list of output lines.
+    """
+    nodes: [String!]!
 }
 
 """
@@ -2579,7 +2645,6 @@ type BatchChange implements Node {
     """
     The user who last updated the batch change by applying a spec to this batch change.
     If the batch change hasn't been updated, the lastApplier is the initialApplier, or null if the user was deleted.
-    Also null, if the batch change is a draft.
     """
     lastApplier: User
 
@@ -2640,6 +2705,8 @@ type BatchChange implements Node {
         onlyClosable: Boolean
         """
         Only include changesets with the given review state.
+
+        Note: The COMMENTED and DISMISSED review states are not yet implemented.
         """
         reviewState: ChangesetReviewState
         """
@@ -2690,9 +2757,10 @@ type BatchChange implements Node {
     diffStat: DiffStat!
 
     """
-    The last batch spec applied to this batch change, or null if the batch change has never had a spec applied. (ie. is draft)
+    The last batch spec applied to this batch change, or an "empty" spec if the batch
+    change has never had a spec applied.
     """
-    currentSpec: BatchSpec
+    currentSpec: BatchSpec!
 
     """
     The bulk operations that have been run over this batch change.
@@ -2734,7 +2802,7 @@ type BatchChange implements Node {
         """
         Exclude the empty batch specs that are initially created and applied to draft batch changes.
         """
-        excludeEmptySpecs: Boolean @deprecated(reason: "No longer required, as these specs don't exist anymore")
+        excludeEmptySpecs: Boolean
     ): BatchSpecConnection!
 }
 
@@ -3516,11 +3584,24 @@ type BatchSpecWorkspaceFile implements File2 & Node {
     """
     The content of this file.
     """
-    content: String!
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     The file size in bytes.
     """
     byteSize: Int!
+    """
+    Total line count for the Blob. Returns 0 for binary files.
+    """
+    totalLines: Int!
     """
     Whether or not it is binary.
     """
@@ -3530,7 +3611,16 @@ type BatchSpecWorkspaceFile implements File2 & Node {
     rich file type.
     This HTML string is already escaped and thus is always safe to render.
     """
-    richHTML: String!
+    richHTML(
+        """
+        Return richHTML content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return richHTML content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     The URL to this file (using the input revision specifier, which may not be immutable).
     """
@@ -3561,5 +3651,15 @@ type BatchSpecWorkspaceFile implements File2 & Node {
         Specifies which format/highlighting technique to use.
         """
         format: HighlightResponseFormat = HTML_HIGHLIGHT
+        """
+        Return highlight content starting at line "startLine". A value <= 0 will be the start of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        startLine: Int
+        """
+        Return highlight content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        endLine: Int
     ): HighlightedFile!
 }

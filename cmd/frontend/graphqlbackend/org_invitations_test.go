@@ -12,9 +12,13 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/graph-gophers/graphql-go/errors"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	stderrors "github.com/sourcegraph/sourcegraph/lib/errors"
@@ -581,6 +585,12 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 		orgID := int32(1)
 		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientUserID: 2}, nil)
 
+		called := false
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {
+			called = true
+		}
+		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
+
 		RunTests(t, []*Test{
 			{
 				Schema:  mustParseGraphQLSchema(t, db),
@@ -613,12 +623,21 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 		if len(memberCalls) > 0 {
 			t.Fatalf("db.OrgMembers.Create should not have been called, but got %d calls", len(memberCalls))
 		}
+		if called {
+			t.Fatal("permission sync scheduled, but should not have been")
+		}
 	})
 
 	t.Run("User is able to accept a user invitation", func(t *testing.T) {
 		invitationID := int64(2)
 		orgID := int32(2)
 		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientUserID: 2}, nil)
+
+		called := false
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {
+			called = true
+		}
+		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
 
 		RunTests(t, []*Test{
 			{
@@ -652,6 +671,10 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 		lastMemberCall := memberCalls[len(memberCalls)-1]
 		if lastMemberCall.Arg1 != orgID || lastMemberCall.Arg2 != 2 {
 			t.Fatalf("db.OrgMembers.Create was not called with right args: %v", lastMemberCall.Args())
+		}
+
+		if !called {
+			t.Fatal("expected permission sync to be scheduled, but was not")
 		}
 	})
 
@@ -665,6 +688,12 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 		userEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{{Email: email, UserID: 2}}, nil)
 		db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
+		called := false
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {
+			called = true
+		}
+		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
+
 		RunTests(t, []*Test{
 			{
 				Schema:  mustParseGraphQLSchema(t, db),
@@ -698,6 +727,10 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 		if lastMemberCall.Arg1 != orgID || lastMemberCall.Arg2 != 2 {
 			t.Fatalf("db.OrgMembers.Create was not called with right args: %v", lastMemberCall.Args())
 		}
+
+		if !called {
+			t.Fatal("expected permission sync to be scheduled, but was not")
+		}
 	})
 
 	t.Run("Fails if email on the invitation does not match user email", func(t *testing.T) {
@@ -709,6 +742,12 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 		userEmails := database.NewMockUserEmailsStore()
 		userEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{{Email: "something@else.invalid", UserID: 2}}, nil)
 		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+
+		called := false
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {
+			called = true
+		}
+		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
 
 		RunTests(t, []*Test{
 			{
@@ -734,6 +773,10 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 				},
 			},
 		})
+
+		if called {
+			t.Fatal("permission sync scheduled, but should not have been")
+		}
 	})
 }
 

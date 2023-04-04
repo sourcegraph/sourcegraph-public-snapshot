@@ -3,12 +3,9 @@ package main // import "github.com/sourcegraph/sourcegraph/cmd/gitserver"
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/shared"
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/cmd/sourcegraph-oss/osscmd"
 )
 
 func main() {
-	env.Lock()
-	env.HandleHelpFlag()
-
-	shared.Main(nil)
+	osscmd.DeprecatedSingleServiceMainOSS(shared.Service)
 }

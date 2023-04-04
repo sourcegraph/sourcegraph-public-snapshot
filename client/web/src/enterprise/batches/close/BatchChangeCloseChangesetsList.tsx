@@ -1,6 +1,5 @@
 import React, { useCallback } from 'react'
 
-import * as H from 'history'
 import { repeatWhen, delay } from 'rxjs/operators'
 
 import { ErrorLike } from '@sourcegraph/common'
@@ -25,8 +24,6 @@ import styles from './BatchChangeCloseChangesetsList.module.scss'
 interface Props {
     batchChangeID: Scalars['ID']
     viewerCanAdminister: boolean
-    history: H.History
-    location: H.Location
     willClose: boolean
     onUpdate?: (
         connection?: (BatchChangeChangesetsResult['node'] & { __typename: 'BatchChange' })['changesets'] | ErrorLike
@@ -44,8 +41,6 @@ interface Props {
 export const BatchChangeCloseChangesetsList: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     batchChangeID,
     viewerCanAdminister,
-    history,
-    location,
     willClose,
     onUpdate,
     queryChangesets = _queryChangesets,
@@ -80,8 +75,6 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<React.Props
                     nodeComponent={ChangesetCloseNode}
                     nodeComponentProps={{
                         viewerCanAdminister,
-                        history,
-                        location,
                         queryExternalChangesetWithFileDiffs,
                         willClose,
                     }}
@@ -90,8 +83,6 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<React.Props
                     defaultFirst={15}
                     noun="open changeset"
                     pluralNoun="open changesets"
-                    history={history}
-                    location={location}
                     useURLQuery={true}
                     listClassName={styles.batchChangeCloseChangesetsListGrid}
                     headComponent={

@@ -8,15 +8,12 @@ import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMi
 import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
 import { blobPropsFacet } from '..'
-import { showDocumentHighlights } from '../document-highlights'
 
-export const documentHighlightCache = StateField.define<Map<Occurrence, Promise<DocumentHighlight[]>>>({
+const documentHighlightCache = StateField.define<Map<Occurrence, Promise<DocumentHighlight[]>>>({
     create: () => new Map(),
     update: value => value,
 })
-const [documentHighlightsField, , setDocumentHighlights] = createUpdateableField<DocumentHighlight[]>([], field =>
-    showDocumentHighlights.from(field)
-)
+export const [documentHighlightsField, , setDocumentHighlights] = createUpdateableField<DocumentHighlight[]>([])
 
 async function getDocumentHighlights(view: EditorView, occurrence: Occurrence): Promise<DocumentHighlight[]> {
     const cache = view.state.field(documentHighlightCache)
@@ -27,12 +24,10 @@ async function getDocumentHighlights(view: EditorView, occurrence: Occurrence): 
     const blobProps = view.state.facet(blobPropsFacet)
 
     const api = await getOrCreateCodeIntelAPI(blobProps.platformContext)
-    const promise = api
-        .getDocumentHighlights({
-            textDocument: { uri: toURIWithPath(blobProps.blobInfo) },
-            position: occurrence.range.start,
-        })
-        .toPromise()
+    const promise = api.getDocumentHighlights({
+        textDocument: { uri: toURIWithPath(blobProps.blobInfo) },
+        position: occurrence.range.start,
+    })
     cache.set(occurrence, promise)
     return promise
 }
@@ -40,6 +35,19 @@ export function showDocumentHighlightsForOccurrence(view: EditorView, occurrence
     getDocumentHighlights(view, occurrence).then(
         result => view.dispatch({ effects: setDocumentHighlights.of(result) }),
         () => {}
+    )
+}
+
+export function findByOccurrence(
+    highlights: DocumentHighlight[],
+    occurrence: Occurrence
+): DocumentHighlight | undefined {
+    return highlights.find(
+        highlight =>
+            occurrence.range.start.line === highlight.range.start.line &&
+            occurrence.range.start.character === highlight.range.start.character &&
+            occurrence.range.end.line === highlight.range.end.line &&
+            occurrence.range.end.character === highlight.range.end.character
     )
 }
 

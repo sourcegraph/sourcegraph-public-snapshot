@@ -2,8 +2,7 @@ import React, { useEffect, useRef, useState, forwardRef } from 'react'
 
 import { mdiChevronDown, mdiChevronUp, mdiMenu } from '@mdi/js'
 import classNames from 'classnames'
-import H from 'history'
-import { LinkProps, NavLink as RouterLink } from 'react-router-dom'
+import { LinkProps, NavLink as RouterNavLink } from 'react-router-dom'
 
 import { Button, Link, Icon, H1, ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
@@ -33,7 +32,7 @@ interface NavActionsProps {
     className?: string
 }
 
-export interface NavLinkProps extends NavItemProps, Pick<LinkProps<H.LocationState>, 'to'> {
+export interface NavLinkProps extends NavItemProps, Pick<LinkProps, 'to'> {
     external?: boolean
     className?: string
     variant?: 'compact'
@@ -63,9 +62,9 @@ export const NavBar = forwardRef(
     ({ children, logo }, reference): JSX.Element => (
         <nav aria-label="Main" className={navBarStyles.navbar} ref={reference}>
             <H1 className={navBarStyles.logo}>
-                <RouterLink className="d-flex align-items-center" to={PageRoutes.Search}>
+                <RouterNavLink className="d-flex align-items-center" to={PageRoutes.Search}>
                     {logo}
-                </RouterLink>
+                </RouterNavLink>
             </H1>
             <hr className={navBarStyles.divider} aria-hidden={true} />
             {children}
@@ -154,8 +153,11 @@ export const NavLink: React.FunctionComponent<React.PropsWithChildren<NavLinkPro
     }
 
     return (
-        <RouterLink to={to} className={navItemStyles.link} activeClassName={navItemStyles.active}>
+        <RouterNavLink
+            to={to}
+            className={({ isActive }) => classNames(navItemStyles.link, isActive && navItemStyles.active)}
+        >
             {content}
-        </RouterLink>
+        </RouterNavLink>
     )
 }

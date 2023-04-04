@@ -104,7 +104,7 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
         class="font-weight-bold"
         href="https://example.com/bobyang"
       >
-        bYang
+        Bob Yang
       </a>
        
       <span
@@ -153,7 +153,7 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
         class="font-weight-bold"
         href="https://example.com/bobyang"
       >
-        bYang
+        Bob Yang
       </a>
        
       <span

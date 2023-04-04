@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -34,8 +34,8 @@ func TestSelect(t *testing.T) {
 				return strings.Join(values, ", ")
 			}
 
-			autogold.Want("filter any symbol", "a():func, b():function, var c:variable").Equal(t, test("symbol"))
-			autogold.Want("filter symbol kind variable", "var c:variable").Equal(t, test("symbol.variable"))
+			autogold.Expect("a():func, b():function, var c:variable").Equal(t, test("symbol"))
+			autogold.Expect("var c:variable").Equal(t, test("symbol.variable"))
 		})
 
 		t.Run("path match", func(t *testing.T) {

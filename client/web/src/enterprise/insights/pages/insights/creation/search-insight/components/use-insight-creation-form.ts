@@ -1,19 +1,16 @@
+import { QueryState } from '@sourcegraph/shared/src/search'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { FormInstance, FormChangeEvent, SubmissionErrors, useField, useFieldAPI, useForm } from '@sourcegraph/wildcard'
+
 import {
-    useField,
-    useFieldAPI,
-    Form,
-    FormChangeEvent,
-    SubmissionErrors,
-    useForm,
-    EditableDataSeries,
-    insightTitleValidator,
-    insightRepositoriesValidator,
-    insightRepositoriesAsyncValidator,
-    insightStepValueValidator,
-    insightSeriesValidator,
     createDefaultEditSeries,
+    EditableDataSeries,
+    insightSeriesValidator,
+    insightStepValueValidator,
+    insightTitleValidator,
+    useRepoFields,
 } from '../../../../../components'
-import { CreateInsightFormFields, InsightStep } from '../types'
+import { CreateInsightFormFields, InsightStep, RepoMode } from '../types'
 
 export const INITIAL_INSIGHT_VALUES: CreateInsightFormFields = {
     // If user opens the creation form to create insight
@@ -23,8 +20,9 @@ export const INITIAL_INSIGHT_VALUES: CreateInsightFormFields = {
     step: 'months',
     stepValue: '2',
     title: '',
-    repositories: '',
-    allRepos: false,
+    repositories: [],
+    repoMode: 'search-query',
+    repoQuery: { query: '' },
     dashboardReferenceCount: 0,
 }
 
@@ -36,13 +34,14 @@ export interface UseInsightCreationFormProps {
 }
 
 export interface InsightCreationForm {
-    form: Form<CreateInsightFormFields>
+    form: FormInstance<CreateInsightFormFields>
     title: useFieldAPI<string>
-    repositories: useFieldAPI<string>
+    repositories: useFieldAPI<string[]>
+    repoQuery: useFieldAPI<QueryState>
+    repoMode: useFieldAPI<RepoMode>
     series: useFieldAPI<EditableDataSeries[]>
     step: useFieldAPI<InsightStep>
     stepValue: useFieldAPI<string>
-    allReposMode: useFieldAPI<boolean>
 }
 
 /**
@@ -52,44 +51,27 @@ export interface InsightCreationForm {
 export function useInsightCreationForm(props: UseInsightCreationFormProps): InsightCreationForm {
     const { touched, initialValue = {}, onSubmit, onChange } = props
 
+    const repoFieldVariation = useExperimentalFeatures(features => features.codeInsightsRepoUI)
+    const isSearchQueryORUrlsList = repoFieldVariation === 'search-query-or-strict-list'
+
+    // Enforce "search-query" initial value if we're in the single search query UI mode
+    const initialValues = isSearchQueryORUrlsList
+        ? { ...INITIAL_INSIGHT_VALUES, ...initialValue }
+        : { ...INITIAL_INSIGHT_VALUES, ...initialValue, repoMode: 'search-query' as const }
+
     const form = useForm<CreateInsightFormFields>({
-        initialValues: {
-            ...INITIAL_INSIGHT_VALUES,
-            ...initialValue,
-        },
+        initialValues,
+        touched,
         onSubmit,
         onChange,
-        touched,
     })
 
-    const allReposMode = useField({
-        name: 'allRepos',
-        formApi: form.formAPI,
-        onChange: (checked: boolean) => {
-            // Reset form values in case if All repos mode was activated
-            if (checked) {
-                repositories.input.onChange('')
-            }
-        },
-    })
-
-    const isAllReposMode = allReposMode.input.value
+    const { repoMode, repoQuery, repositories } = useRepoFields({ formApi: form.formAPI })
 
     const title = useField({
         name: 'title',
         formApi: form.formAPI,
         validators: { sync: insightTitleValidator },
-    })
-
-    const repositories = useField({
-        name: 'repositories',
-        formApi: form.formAPI,
-        validators: {
-            // Turn off any validations for the repositories' field in we are in all repos mode
-            sync: !isAllReposMode ? insightRepositoriesValidator : undefined,
-            async: !isAllReposMode ? insightRepositoriesAsyncValidator : undefined,
-        },
-        disabled: isAllReposMode,
     })
 
     const series = useField({
@@ -102,22 +84,21 @@ export function useInsightCreationForm(props: UseInsightCreationFormProps): Insi
         name: 'step',
         formApi: form.formAPI,
     })
+
     const stepValue = useField({
         name: 'stepValue',
         formApi: form.formAPI,
-        validators: {
-            // Turn off any validations if we are in all repos mode
-            sync: !isAllReposMode ? insightStepValueValidator : undefined,
-        },
+        validators: { sync: insightStepValueValidator },
     })
 
     return {
         form,
         title,
         repositories,
+        repoQuery,
+        repoMode,
         series,
         step,
         stepValue,
-        allReposMode,
     }
 }

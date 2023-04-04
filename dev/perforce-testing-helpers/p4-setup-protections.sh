@@ -70,12 +70,12 @@ my_chronic() {
 export -f my_chronic
 
 # ensure that user is logged into the Perforce server
-if ! p4 ping &>/dev/null; then
+if ! p4 login -s &>/dev/null; then
   handbook_link="https://handbook.sourcegraph.com/departments/ce-support/support/process/p4-enablement/#generate-a-session-ticket"
   address="${P4USER}:${P4PORT}"
 
   cat <<END
-'p4 ping' command failed. This indicates that you might not be logged into '$address'.
+'p4 login -s' command failed. This indicates that you might not be logged into '$address'.
 Try using 'p4 -u ${P4USER} login -a' to generate a session ticket.
 See '${handbook_link}' for more information.
 END

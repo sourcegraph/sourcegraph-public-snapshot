@@ -1,4 +1,4 @@
-# Configure email sending / SMTP server
+# SMTP and email delivery
 
 Sourcegraph uses an SMTP server of your choosing to send emails for:
 
@@ -8,6 +8,22 @@ Sourcegraph uses an SMTP server of your choosing to send emails for:
 - For [`builtin` authentication](../auth/index.md#builtin-password-authentication), password resets and email verification
 
 > NOTE: Sourcegraph Cloud customers can take advantage of mananged SMTP servers - [learn more](../../cloud/index.md#managed-smtp).
+
+## User email verification
+
+Many emails delivered from a Sourcegraph instance to a user requires that the user's primary email address be verified.
+This helps prevent Sourcegraph from sending product emails to invalid or inactive email addresses.
+
+Users that create accounts through an external [authentication provider](../auth/index.md), such as GitHub or SAML, will automatically have verified email addresses from the external provider.
+
+When SMTP is configured, users that sign up through [`builtin` authentication](../auth/index.md#builtin-password-authentication) will have the emails they sign up with marked as unverified.
+To verify their email address, the user can do one of the following:
+
+- Click the "set password" link they receive in their email
+- In the "Emails" tab of their account, click "Send verification email"
+- Ask a site admin to verify their email manually through the "Emails" tab of their account, or through the `setUserEmailVerified` GraphQL mutation
+
+Users with emails [created by the site admin](../auth/index.md#creating-builtin-authentication-users) through the `/site-admin/users/new` UI will have the same behaviour as the above. Users created directly through GraphQL or the `src` CLI assume that the email provided is verified.
 
 ## Configuring Sourcegraph to send email via Amazon AWS / SES
 

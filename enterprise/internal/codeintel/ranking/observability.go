@@ -8,13 +8,13 @@ import (
 )
 
 type operations struct {
-	getRepoRank       *observation.Operation
-	getDocumentRanks  *observation.Operation
-	indexRepositories *observation.Operation
-	indexRepository   *observation.Operation
+	getRepoRank      *observation.Operation
+	getDocumentRanks *observation.Operation
 }
 
-var m = new(metrics.SingletonREDMetrics)
+var (
+	m = new(metrics.SingletonREDMetrics)
+)
 
 func newOperations(observationCtx *observation.Context) *operations {
 	m := m.Get(func() *metrics.REDMetrics {
@@ -35,9 +35,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		getRepoRank:       op("GetRepoRank"),
-		getDocumentRanks:  op("GetDocumentRanks"),
-		indexRepositories: op("IndexRepositories"),
-		indexRepository:   op("indexRepository"),
+		getRepoRank:      op("GetRepoRank"),
+		getDocumentRanks: op("GetDocumentRanks"),
 	}
 }

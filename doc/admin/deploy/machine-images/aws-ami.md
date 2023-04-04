@@ -85,7 +85,7 @@ We suggest using an AWS Application Load Balancer (ALB) to manage HTTPS connecti
 Open the [AWS Certificate Manager console](https://console.aws.amazon.com/acm) to **Request a certificate**:
 
 - **Domain names**: Fully qualified domain name: your domain
-- **Select validation method**: DNS validation - recommended
+- **Select validation method**: DNS validation—recommended
  
 After the certificate has been created, you will need to attach the `CNAME name` and `CNAME values` to your DNS.
 
@@ -188,8 +188,7 @@ Please take time to review the following before proceeding with the upgrades:
 9. On the `Attach volume` page:
   - **Instance**: select the new Sourcegraph AMI instance
   - **Device name**: /dev/sdb
-
-10\. **Reboot** the new instance
+10. **Reboot** the new instance
 
 You can terminate the stopped Sourcegraph AMI instance once you have confirmed the new instance is up and running.
 

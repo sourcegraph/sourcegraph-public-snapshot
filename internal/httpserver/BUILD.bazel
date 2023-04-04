@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "httpserver",
+    srcs = [
+        "handler.go",
+        "listener.go",
+        "server.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/httpserver",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/env",
+        "//internal/goroutine",
+        "@com_github_gorilla_mux//:mux",
+        "@com_github_inconshreveable_log15//:log15",
+    ],
+)

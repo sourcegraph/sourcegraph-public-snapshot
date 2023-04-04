@@ -24,7 +24,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 	})
 	observationCtx.Registerer.MustRegister(batchLogSemaphoreWait)
 
-	metrics := metrics.NewREDMetrics(
+	redMetrics := metrics.NewREDMetrics(
 		observationCtx.Registerer,
 		"gitserver_api",
 		metrics.WithLabels("op"),
@@ -35,7 +35,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("gitserver.api.%s", name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           redMetrics,
 		})
 	}
 

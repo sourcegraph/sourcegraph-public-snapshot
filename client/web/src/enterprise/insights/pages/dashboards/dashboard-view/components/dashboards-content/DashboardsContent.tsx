@@ -3,7 +3,7 @@ import { FC, useEffect, useState } from 'react'
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import ViewDashboardOutlineIcon from 'mdi-react/ViewDashboardOutlineIcon'
-import { useHistory } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -26,12 +26,13 @@ import styles from './DashboardsContent.module.scss'
 export interface DashboardsContentProps extends TelemetryProps {
     currentDashboard: CustomInsightDashboard | undefined
     dashboards: CustomInsightDashboard[]
+    isSourcegraphApp: boolean
 }
 
 export const DashboardsContent: FC<DashboardsContentProps> = props => {
-    const { currentDashboard, dashboards, telemetryService } = props
+    const { currentDashboard, dashboards, telemetryService, isSourcegraphApp } = props
 
-    const history = useHistory()
+    const navigate = useNavigate()
     const [, setLasVisitedDashboard] = useTemporarySetting('insights.lastVisitedDashboardId', null)
     const { dashboard: dashboardPermission, licensed } = useUiFeatures()
 
@@ -43,13 +44,13 @@ export const DashboardsContent: FC<DashboardsContentProps> = props => {
     useEffect(() => setLasVisitedDashboard(currentDashboard?.id ?? null), [currentDashboard, setLasVisitedDashboard])
 
     const handleDashboardSelect = (dashboard: CustomInsightDashboard): void =>
-        history.push(`/insights/dashboards/${dashboard.id}`)
+        navigate(`/insights/dashboards/${dashboard.id}`)
 
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {
             case DashboardMenuAction.Configure: {
                 if (currentDashboard) {
-                    history.push(`/insights/dashboards/${currentDashboard.id}/edit`)
+                    navigate(`/insights/dashboards/${currentDashboard.id}/edit`)
                 }
                 return
             }
@@ -97,7 +98,7 @@ export const DashboardsContent: FC<DashboardsContentProps> = props => {
                 </Tooltip>
             </DashboardHeader>
 
-            {!licensed && (
+            {!licensed && !isSourcegraphApp && (
                 <LimitedAccessLabel
                     className={classNames(styles.limitedAccessLabel)}
                     message="Unlock Code Insights for full access to custom dashboards"

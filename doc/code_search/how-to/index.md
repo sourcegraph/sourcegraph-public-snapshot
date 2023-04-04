@@ -6,4 +6,4 @@
 - [Using and creating search contexts](search_contexts.md)
 - [Exhaustive search](exhaustive.md)
 - [How to create a search context with the GraphQL API](create_search_context_graphql.md)
-- [How to convert repository groups to search contexts](convert_repository_groups_to_search_contexts.md)
+

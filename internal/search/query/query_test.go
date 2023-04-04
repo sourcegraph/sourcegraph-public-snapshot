@@ -3,7 +3,7 @@ package query
 import (
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 )
 
 func TestPipelineStructural(t *testing.T) {
@@ -12,7 +12,7 @@ func TestPipelineStructural(t *testing.T) {
 		return pipelinePlan.ToQ().String()
 	}
 
-	autogold.Want("contains(...) spans newlines", `"repo:contains.path(\nfoo\n)"`).Equal(t, test("repo:contains.path(\nfoo\n)"))
+	autogold.Expect(`"repo:contains.path(\nfoo\n)"`).Equal(t, test("repo:contains.path(\nfoo\n)"))
 }
 
 func TestSubstituteSearchContexts(t *testing.T) {
@@ -33,14 +33,14 @@ func TestSubstituteSearchContexts(t *testing.T) {
 	}
 
 	t.Run("failing case", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test("context:go-deps (r:protobuf OR r:PROTOBUF) select:repo", false)))
+		autogold.ExpectFile(t, autogold.Raw(test("context:go-deps (r:protobuf OR r:PROTOBUF) select:repo", false)))
 	})
 
 	t.Run("basic case", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test("context:gordo scamaz", false)))
+		autogold.ExpectFile(t, autogold.Raw(test("context:gordo scamaz", false)))
 	})
 
 	t.Run("preserve predicate label", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test("context:gordo repo:contains.path(gordo)", true)))
+		autogold.ExpectFile(t, autogold.Raw(test("context:gordo repo:contains.path(gordo)", true)))
 	})
 }

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	regexp "github.com/grafana/regexp"
+	"github.com/grafana/regexp"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"

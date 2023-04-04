@@ -2,10 +2,10 @@ import { FC, ReactNode } from 'react'
 
 import classNames from 'classnames'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, useFieldAPI } from '@sourcegraph/wildcard'
 
 import { useUiFeatures } from '../../../hooks'
-import { LimitedAccessLabel, useFieldAPI } from '../../index'
+import { LimitedAccessLabel } from '../../index'
 
 import { FormSeriesInput } from './components/form-series-input/FormSeriesInput'
 import { SeriesCard } from './components/series-card/SeriesCard'
@@ -16,7 +16,8 @@ import styles from './FormSeries.module.scss'
 
 export interface FormSeriesProps {
     seriesField: useFieldAPI<EditableDataSeries[]>
-    repositories: string
+    repositories: string[]
+    repoQuery: string | null
     showValidationErrorsOnMount: boolean
 
     /**
@@ -39,6 +40,7 @@ export const FormSeries: FC<FormSeriesProps> = props => {
     const {
         seriesField,
         showValidationErrorsOnMount,
+        repoQuery,
         repositories,
         queryFieldDescription,
         hasAddNewSeriesButton = true,
@@ -58,6 +60,7 @@ export const FormSeries: FC<FormSeriesProps> = props => {
                         index={index + 1}
                         cancel={series.length > 1}
                         autofocus={line.autofocus}
+                        repoQuery={repoQuery}
                         repositories={repositories}
                         queryFieldDescription={queryFieldDescription}
                         className={classNames('p-3', styles.formSeriesItem)}

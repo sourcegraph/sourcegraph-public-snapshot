@@ -1,3 +1,7 @@
+import FileMatchChildrenStyles from './FileMatchChildren.module.scss'
+import SearchResultStyles from './SearchResult.module.scss'
+import SymbolSearchResultStyles from './SymbolSearchResult.module.scss'
+
 export * from './CodeExcerpt'
 export * from './CodeHostIcon'
 export * from './CommitSearchResult'
@@ -15,7 +19,4 @@ export * from './SearchResultStar'
 export * from './SyntaxHighlightedSearchQuery'
 export * from './codeLinkNavigation'
 
-import FileMatchChildrenStyles from './FileMatchChildren.module.scss'
-import SearchResultStyles from './SearchResult.module.scss'
-import SymbolSearchResultStyles from './SymbolSearchResult.module.scss'
 export { SearchResultStyles, FileMatchChildrenStyles, SymbolSearchResultStyles }

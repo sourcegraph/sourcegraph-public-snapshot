@@ -3,6 +3,7 @@ package shared
 import (
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -13,6 +14,8 @@ import (
 type Config struct {
 	env.BaseConfig
 	names []string
+
+	Jobs map[string]job.Job
 
 	JobAllowlist []string
 	JobBlocklist []string

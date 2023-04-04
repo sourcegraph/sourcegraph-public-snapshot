@@ -71,7 +71,13 @@ describe('Backend insight drill down filters', () => {
                 GetSearchContextByName: () => ({
                     searchContexts: {
                         __typename: 'SearchContextConnection',
-                        nodes: [{ __typename: 'SearchContext', spec: '@sourcegraph/sourcegraph' }],
+                        nodes: [
+                            {
+                                __typename: 'SearchContext',
+                                spec: '@sourcegraph/sourcegraph',
+                                query: 'repo:github.com/sourcegraph/sourcegraph',
+                            },
+                        ],
                     },
                 }),
 
@@ -124,7 +130,8 @@ describe('Backend insight drill down filters', () => {
                 excludeRepoRegex: 'github.com/sourcegraph/sourcegraph',
             },
             seriesDisplayOptions: {
-                limit: 20,
+                limit: null,
+                numSamples: null,
                 sortOptions: {
                     direction: 'DESC',
                     mode: 'RESULT_COUNT',
@@ -136,7 +143,7 @@ describe('Backend insight drill down filters', () => {
     it('should create a new insight with predefined filters via drill-down flow insight creation', async () => {
         const insightWithFilters: InsightViewNode = {
             ...createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated', id: 'view_1' }),
-            appliedFilters: {
+            defaultFilters: {
                 __typename: 'InsightViewFilters',
                 searchContexts: [],
                 includeRepoRegex: '',
@@ -225,7 +232,8 @@ describe('Backend insight drill down filters', () => {
                     searchContexts: [''],
                 },
                 seriesDisplayOptions: {
-                    limit: 20,
+                    limit: null,
+                    numSamples: null,
                     sortOptions: {
                         direction: 'DESC',
                         mode: 'RESULT_COUNT',

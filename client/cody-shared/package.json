@@ -1,0 +1,23 @@
+{
+  "private": true,
+  "name": "@sourcegraph/cody-shared",
+  "version": "0.0.1",
+  "description": "Cody shared library",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/sourcegraph.git",
+    "directory": "client/cody-shared"
+  },
+  "main": "src/index.ts",
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -b",
+    "lint": "pnpm run lint:js",
+    "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@sourcegraph/common": "workspace:*"
+  }
+}

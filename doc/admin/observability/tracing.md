@@ -9,7 +9,7 @@ There are currently three modes:
 
 `"selective"` is the recommended default, because collecting traces on all requests can be quite memory- and network-intensive.
 If you have a large Sourcegraph instance (e.g,. more than 10k repositories), turn this on with caution.
-Note that the policies above are implemented at an application level - to sample all traces, please configure your tracing backend directly.
+Note that the policies above are implemented at an application level—to sample all traces, please configure your tracing backend directly.
 
 We support the following tracing backend types:
 
@@ -84,7 +84,7 @@ There are two ways to export traces to Jaeger:
 1. **Recommended:** Configuring the [OpenTelemetry Collector](opentelemetry.md) (`"type": "opentelemetry"` in `observability.tracing`) to [send traces to a Jaeger instance](opentelemetry.md#jaeger).
 2. Using the legacy `"type": "jaeger"` configuration in `observability.tracing` to send spans directly to Jaeger.
 
-We strongly recommend using option 1 to use Jaeger, which is supported via opt-in mechanisms for each of our core deployment methods - to learn more, refer to the [Jaeger exporter documentation](opentelemetry.md#jaeger).
+We strongly recommend using option 1 to use Jaeger, which is supported via opt-in mechanisms for each of our core deployment methods—to learn more, refer to the [Jaeger exporter documentation](opentelemetry.md#jaeger).
 
 To use option 2 instead, which enables behaviour similar to how Sourcegraph exported traces before Sourcegraph 4.0, [Jaeger client environment variables](https://github.com/jaegertracing/jaeger-client-go#environment-variables) must be set on all services for traces to export to Jaeger correctly using `"observability.tracing": { "type": "jaeger" }`.
 

@@ -47,7 +47,7 @@ If you have not yet set up a Sourcegraph server, you can also test out the API o
 
 ### Documentation
 
-Sourcegraph's GraphQL API documentation is available directly in the API console itself. To access the documentation, click **Docs** on the right-hand side of the API console page.
+Sourcegraph's GraphQL API documentation is available on the [API Docs](api-docs.md) page, as well as directly in the API console itself. To access the documentation, click **Docs** on the right-hand side of the API console page.
 
 ### Search
 
@@ -75,7 +75,7 @@ A command line interface to Sourcegraph's API is available. Today, it is roughly
 - Pipe multi-line GraphQL queries into it easily.
 - Get any API query written using the CLI as a `curl` command using the `src api -get-curl` flag.
 
-To learn more, see [github.com/sourcegraph/src-cli](https://github.com/sourcegraph/src-cli)
+To learn more, see [sourcegraph/src-cli](https://sourcegraph.com/github.com/sourcegraph/src-cli)
 
 ### Using the API via curl
 

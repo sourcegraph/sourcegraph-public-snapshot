@@ -12,7 +12,7 @@ import (
 	"github.com/slack-go/slack"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -49,12 +49,8 @@ func slackPayload(args actionArgs) *slack.WebhookMessage {
 				result.Repo.Name,
 				result.Commit.ID.Short(),
 			)))
-			var contentRaw string
-			if result.DiffPreview != nil {
-				contentRaw = truncateString(result.DiffPreview.Content, 10)
-			} else {
-				contentRaw = truncateString(result.MessagePreview.Content, 10)
-			}
+
+			contentRaw := truncateMatchContent(result)
 			blocks = append(blocks, newMarkdownSection(formatCodeBlock(contentRaw)))
 		}
 		if truncatedCount > 0 {
@@ -85,18 +81,50 @@ func formatCodeBlock(s string) string {
 	return fmt.Sprintf("```%s```", strings.ReplaceAll(s, "```", "\\`\\`\\`"))
 }
 
-func truncateString(input string, lines int) string {
-	splitLines := strings.SplitAfter(input, "\n")
-	if len(splitLines) > lines {
-		splitLines = splitLines[:lines]
+// truncateMatchContent truncates the match to at most 10 lines, and also
+// truncates lines once the content length exceeds 2500 bytes.
+//
+// We limit the bytes to ensure we don't hit Slack's max block size of 3000
+// characters. To be conservative, we truncate to 2500 bytes. We also limit
+// the number of lines to 10 to ensure the content is easy to read.
+func truncateMatchContent(result *searchresult.CommitMatch) string {
+	const maxBytes = 2500
+	const maxLines = 10
+
+	var matchedString *searchresult.MatchedString
+	switch {
+	case result.DiffPreview != nil:
+		matchedString = result.DiffPreview
+	case result.MessagePreview != nil:
+		matchedString = result.MessagePreview
+	default:
+		panic("exactly one of DiffPreview or MessagePreview must be set")
+	}
+
+	splitLines := strings.SplitAfter(matchedString.Content, "\n")
+	limit := len(splitLines)
+	if limit > maxLines {
+		limit = maxLines
+	}
+
+	chars, index := 0, 0
+	for ; index < limit; index++ {
+		chars += len(splitLines[index])
+		if chars > maxBytes {
+			break
+		}
+	}
+
+	if len(splitLines) > index {
+		splitLines = splitLines[:index]
 		splitLines = append(splitLines, "...\n")
 	}
 	return strings.Join(splitLines, "")
 }
 
-func truncateResults(results []*result.CommitMatch, maxResults int) (_ []*result.CommitMatch, totalCount, truncatedCount int) {
+func truncateResults(results []*searchresult.CommitMatch, maxResults int) (_ []*searchresult.CommitMatch, totalCount, truncatedCount int) {
 	// Convert to type result.Matches
-	matches := make(result.Matches, len(results))
+	matches := make(searchresult.Matches, len(results))
 	for i, res := range results {
 		matches[i] = res
 	}
@@ -106,9 +134,9 @@ func truncateResults(results []*result.CommitMatch, maxResults int) (_ []*result
 	outputCount := matches.ResultCount()
 
 	// Convert back type []*result.CommitMatch
-	output := make([]*result.CommitMatch, len(matches))
+	output := make([]*searchresult.CommitMatch, len(matches))
 	for i, match := range matches {
-		output[i] = match.(*result.CommitMatch)
+		output[i] = match.(*searchresult.CommitMatch)
 	}
 
 	return output, totalCount, totalCount - outputCount

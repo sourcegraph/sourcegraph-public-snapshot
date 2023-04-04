@@ -12,7 +12,7 @@ type IssueContext struct {
 	pullRequests   []*PullRequest
 }
 
-// NewIssueContext creates  anew issue context with the given visible issues, tracking
+// NewIssueContext creates a new issue context with the given visible issues, tracking
 // issues, and pull requests.
 func NewIssueContext(trackingIssue *Issue, trackingIssues []*Issue, issues []*Issue, pullRequests []*PullRequest) IssueContext {
 	return IssueContext{

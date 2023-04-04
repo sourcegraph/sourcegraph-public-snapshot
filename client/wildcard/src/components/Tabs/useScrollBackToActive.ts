@@ -2,7 +2,7 @@ import React from 'react'
 
 import { debounce } from 'lodash'
 
-import { useMatchMedia } from '../../hooks'
+import { useReducedMotion } from '../../hooks'
 
 import { useTabsState } from './context'
 
@@ -12,7 +12,7 @@ export function useScrollBackToActive<T extends HTMLElement>(
     containerReference: React.MutableRefObject<T | null>
 ): void {
     const { activeIndex } = useTabsState()
-    const isReducedMotion = useMatchMedia('(prefers-reduced-motion: reduce)')
+    const isReducedMotion = useReducedMotion()
 
     const scrollBack = React.useMemo(
         () =>

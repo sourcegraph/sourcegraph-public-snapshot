@@ -1,7 +1,7 @@
 import { Meta, Story, DecoratorFn } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
-import { BatchChangeState } from '../../../graphql-operations'
+import { BatchChangeState, ChangesetsStatsFields } from '../../../graphql-operations'
 
 import { BatchChangeStatsCard } from './BatchChangeStatsCard'
 
@@ -14,104 +14,269 @@ const config: Meta = {
 
 export default config
 
-export const Draft: Story = () => (
-    <WebStory>
-        {props => (
-            <BatchChangeStatsCard
-                {...props}
-                batchChange={{
-                    changesetsStats: {
-                        __typename: 'ChangesetsStats',
-                        deleted: 0,
-                        closed: 0,
-                        merged: 0,
-                        draft: 0,
-                        open: 0,
-                        archived: 0,
-                        total: 0,
-                        unpublished: 0,
-                    },
-                    diffStat: { added: 0, deleted: 0, __typename: 'DiffStat' },
-                    state: BatchChangeState.DRAFT,
-                }}
-            />
-        )}
-    </WebStory>
-)
+type MockStatsArgs = Omit<ChangesetsStatsFields, 'percentComplete' | '__typename' | 'isCompleted' | 'total'>
 
-export const Open: Story = () => (
-    <WebStory>
-        {props => (
-            <BatchChangeStatsCard
-                {...props}
-                batchChange={{
-                    changesetsStats: {
-                        __typename: 'ChangesetsStats',
-                        closed: 10,
-                        deleted: 10,
-                        merged: 10,
-                        draft: 5,
-                        open: 10,
-                        total: 100,
-                        archived: 18,
-                        unpublished: 55,
-                    },
-                    diffStat: { added: 3000, deleted: 3000, __typename: 'DiffStat' },
-                    state: BatchChangeState.OPEN,
-                }}
-            />
-        )}
-    </WebStory>
-)
+// The methods (calculateIsCompleted & calculatePercentComplete) below are implemented on the backend,
+// we are duplicating the logic here to make them available for Storybook.
+const calculateIsCompleted = <T extends MockStatsArgs>(stats: T, total: number): boolean => {
+    if (total === 0) {
+        return false
+    }
+    return stats.closed + stats.merged === total - stats.deleted - stats.archived
+}
 
-export const OpenAndComplete: Story = () => (
-    <WebStory>
-        {props => (
-            <BatchChangeStatsCard
-                {...props}
-                batchChange={{
-                    changesetsStats: {
-                        __typename: 'ChangesetsStats',
-                        deleted: 10,
-                        closed: 10,
-                        merged: 80,
-                        draft: 0,
-                        open: 0,
-                        archived: 18,
-                        total: 100,
-                        unpublished: 0,
-                    },
-                    diffStat: { added: 3000, deleted: 3000, __typename: 'DiffStat' },
-                    state: BatchChangeState.OPEN,
-                }}
-            />
-        )}
-    </WebStory>
-)
+const calculatePercentComplete = <T extends MockStatsArgs>(stats: T, total: number): number => {
+    if (total === 0) {
+        return 0
+    }
+    return ((stats.closed + stats.merged) / (total - stats.deleted - stats.archived)) * 100
+}
+
+const calculateTotal = <T extends MockStatsArgs>(stats: T): number =>
+    stats.closed + stats.deleted + stats.merged + stats.draft + stats.open + stats.archived + stats.unpublished
+
+export const Draft: Story<MockStatsArgs> = args => {
+    const total = calculateTotal(args)
+    return (
+        <WebStory>
+            {props => (
+                <BatchChangeStatsCard
+                    {...props}
+                    batchChange={{
+                        changesetsStats: {
+                            __typename: 'ChangesetsStats',
+                            deleted: args.deleted,
+                            closed: args.closed,
+                            merged: args.merged,
+                            draft: args.draft,
+                            open: args.open,
+                            archived: args.archived,
+                            total,
+                            unpublished: args.unpublished,
+                            isCompleted: calculateIsCompleted(args, total),
+                            percentComplete: calculatePercentComplete(args, total),
+                        },
+                        diffStat: { added: 0, deleted: 0, __typename: 'DiffStat' },
+                        state: BatchChangeState.DRAFT,
+                    }}
+                />
+            )}
+        </WebStory>
+    )
+}
+
+Draft.argTypes = {
+    closed: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    deleted: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    merged: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    draft: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    open: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    archived: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    unpublished: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+}
+
+export const Open: Story<MockStatsArgs> = args => {
+    const total = calculateTotal(args)
+    return (
+        <WebStory>
+            {props => (
+                <BatchChangeStatsCard
+                    {...props}
+                    batchChange={{
+                        changesetsStats: {
+                            __typename: 'ChangesetsStats',
+                            closed: args.closed,
+                            deleted: args.deleted,
+                            merged: args.merged,
+                            draft: args.draft,
+                            open: args.open,
+                            total,
+                            archived: args.archived,
+                            unpublished: args.unpublished,
+                            isCompleted: calculateIsCompleted(args, total),
+                            percentComplete: calculatePercentComplete(args, total),
+                        },
+                        diffStat: { added: 3000, deleted: 3000, __typename: 'DiffStat' },
+                        state: BatchChangeState.OPEN,
+                    }}
+                />
+            )}
+        </WebStory>
+    )
+}
+
+Open.argTypes = {
+    closed: {
+        control: { type: 'number' },
+        defaultValue: 10,
+    },
+    deleted: {
+        control: { type: 'number' },
+        defaultValue: 10,
+    },
+    merged: {
+        control: { type: 'number' },
+        defaultValue: 10,
+    },
+    draft: {
+        control: { type: 'number' },
+        defaultValue: 5,
+    },
+    open: {
+        control: { type: 'number' },
+        defaultValue: 10,
+    },
+    archived: {
+        control: { type: 'number' },
+        defaultValue: 18,
+    },
+    unpublished: {
+        control: { type: 'number' },
+        defaultValue: 55,
+    },
+}
+
+export const OpenAndComplete: Story<MockStatsArgs> = args => {
+    const total = calculateTotal(args)
+    return (
+        <WebStory>
+            {props => (
+                <BatchChangeStatsCard
+                    {...props}
+                    batchChange={{
+                        changesetsStats: {
+                            __typename: 'ChangesetsStats',
+                            deleted: args.deleted,
+                            closed: args.closed,
+                            merged: args.merged,
+                            draft: args.draft,
+                            open: args.open,
+                            archived: args.archived,
+                            total,
+                            unpublished: args.unpublished,
+                            isCompleted: calculateIsCompleted(args, total),
+                            percentComplete: calculatePercentComplete(args, total),
+                        },
+                        diffStat: { added: 3000, deleted: 3000, __typename: 'DiffStat' },
+                        state: BatchChangeState.OPEN,
+                    }}
+                />
+            )}
+        </WebStory>
+    )
+}
+
+OpenAndComplete.argTypes = {
+    closed: {
+        control: { type: 'number' },
+        defaultValue: 10,
+    },
+    deleted: {
+        control: { type: 'number' },
+        defaultValue: 10,
+    },
+    merged: {
+        control: { type: 'number' },
+        defaultValue: 80,
+    },
+    draft: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    open: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    archived: {
+        control: { type: 'number' },
+        defaultValue: 18,
+    },
+    unpublished: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+}
 
 OpenAndComplete.storyName = 'open and complete'
 
-export const Closed: Story = () => (
-    <WebStory>
-        {props => (
-            <BatchChangeStatsCard
-                {...props}
-                batchChange={{
-                    changesetsStats: {
-                        __typename: 'ChangesetsStats',
-                        closed: 10,
-                        deleted: 10,
-                        merged: 10,
-                        draft: 0,
-                        open: 10,
-                        archived: 18,
-                        total: 100,
-                        unpublished: 60,
-                    },
-                    diffStat: { added: 3000, deleted: 3000, __typename: 'DiffStat' },
-                    state: BatchChangeState.CLOSED,
-                }}
-            />
-        )}
-    </WebStory>
-)
+export const Closed: Story<MockStatsArgs> = args => {
+    const total = calculateTotal(args)
+    return (
+        <WebStory>
+            {props => (
+                <BatchChangeStatsCard
+                    {...props}
+                    batchChange={{
+                        changesetsStats: {
+                            __typename: 'ChangesetsStats',
+                            deleted: args.deleted,
+                            closed: args.closed,
+                            merged: args.merged,
+                            draft: args.draft,
+                            open: args.open,
+                            archived: args.archived,
+                            total,
+                            unpublished: args.unpublished,
+                            isCompleted: calculateIsCompleted(args, total),
+                            percentComplete: calculatePercentComplete(args, total),
+                        },
+                        diffStat: { added: 3000, deleted: 3000, __typename: 'DiffStat' },
+                        state: BatchChangeState.CLOSED,
+                    }}
+                />
+            )}
+        </WebStory>
+    )
+}
+
+Closed.argTypes = {
+    closed: {
+        control: { type: 'number' },
+        defaultValue: 10,
+    },
+    deleted: {
+        control: { type: 'number' },
+        defaultValue: 10,
+    },
+    merged: {
+        control: { type: 'number' },
+        defaultValue: 10,
+    },
+    draft: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    open: {
+        control: { type: 'number' },
+        defaultValue: 10,
+    },
+    archived: {
+        control: { type: 'number' },
+        defaultValue: 18,
+    },
+    unpublished: {
+        control: { type: 'number' },
+        defaultValue: 60,
+    },
+}

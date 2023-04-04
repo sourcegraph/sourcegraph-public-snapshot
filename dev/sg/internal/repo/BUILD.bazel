@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "repo",
+    srcs = [
+        "commit.go",
+        "repo.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/repo",
+    visibility = ["//dev/sg:__subpackages__"],
+    deps = [
+        "//dev/sg/internal/run",
+        "//dev/sg/root",
+        "//lib/errors",
+        "@com_github_sourcegraph_go_diff//diff",
+        "@com_github_sourcegraph_run//:run",
+    ],
+)

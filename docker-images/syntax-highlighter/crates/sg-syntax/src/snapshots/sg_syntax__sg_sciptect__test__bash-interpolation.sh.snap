@@ -1,0 +1,18 @@
+---
+source: crates/sg-syntax/src/sg_sciptect.rs
+assertion_line: 616
+expression: "snapshot_sciptect_documents(&document, &contents)"
+---
+  #!/bin/sh
+// ^^^^^^^^ Comment comment.line.number-sign.shell
+  
+  export RUNTIME_IMAGE="sourcegraph/ignite:${IGNITE_VERSION}"
+//^^^^^^ Keyword storage.modifier.shell
+//       ^^^^^^^^^^^^^ Identifier variable.other.readwrite.assignment.shell
+//                    ^ IdentifierOperator keyword.operator.assignment.shell
+//                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral string.quoted.double.shell
+//                                         ^ PunctuationBracket punctuation.definition.variable.shell
+//                                          ^ PunctuationBracket punctuation.section.expansion.parameter.begin.shell
+//                                           ^^^^^^^^^^^^^^ Identifier variable.other.readwrite.shell
+//                                                         ^ PunctuationBracket punctuation.section.expansion.parameter.end.shell
+

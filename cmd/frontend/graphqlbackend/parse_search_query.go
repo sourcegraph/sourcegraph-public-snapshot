@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -16,17 +17,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// Refer to SearchQueryOutputPhase in GQL definitions.
 const (
-	// cf. SearchQueryOutputPhase in GQL definitions.
 	ParseTree = "PARSE_TREE"
 	JobTree   = "JOB_TREE"
+)
 
-	// cf. SearchQueryOutputFormat in GQL definitions.
+// Refer to SearchQueryOutputFormat in GQL definitions.
+const (
 	Json    = "JSON"
 	Sexp    = "SEXP"
 	Mermaid = "MERMAID"
+)
 
-	// cf. SearchQueryOutputVerbosity in GQL definitions.
+// Refer to SearchQueryOutputVerbosity in GQL definitions.
+const (
 	Minimal = "MINIMAL"
 	Basic   = "BASIC"
 	Maximal = "MAXIMAL"
@@ -57,7 +62,7 @@ func (r *schemaResolver) ParseSearchQuery(ctx context.Context, args *args) (stri
 	case ParseTree:
 		return outputParseTree(searchType, args)
 	case JobTree:
-		return outputJobTree(ctx, searchType, args, r.db, r.logger)
+		return outputJobTree(ctx, searchType, args, r.db, r.enterpriseSearchJobs, r.logger)
 	}
 	return "", nil
 }
@@ -83,6 +88,7 @@ func outputJobTree(
 	searchType query.SearchType,
 	args *args,
 	db database.DB,
+	enterpriseJobs jobutil.EnterpriseJobs,
 	logger log.Logger,
 ) (string, error) {
 	plan, err := query.Pipeline(query.Init(args.Query, searchType))
@@ -102,7 +108,7 @@ func outputJobTree(
 		Features:            client.ToFeatures(featureflag.FromContext(ctx), logger),
 		OnSourcegraphDotCom: envvar.SourcegraphDotComMode(),
 	}
-	j, err := jobutil.NewPlanJob(inputs, plan)
+	j, err := jobutil.NewPlanJob(inputs, plan, enterpriseJobs)
 	if err != nil {
 		return "", err
 	}

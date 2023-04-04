@@ -37,8 +37,8 @@ interactions:
       20) {\n    nodes {\n      id\n      status\n      conclusion\n      checkRuns(last:
       20) {\n        nodes {\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
       prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
-      repo on Repository {\n  id\n  owner {\n    login\n  }\n}\n\nfragment pr on PullRequest
-      {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
+      repo on Repository {\n  id\n  name\n  owner {\n    login\n  }\n}\n\nfragment
+      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
       {\n    ...actor\n  }\n  baseRepository {\n    ...repo\n  }\n  headRepository
       {\n    ...repo\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
       100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
@@ -55,12 +55,14 @@ interactions:
     headers:
       Accept:
       - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"createPullRequest":null},"errors":[{"type":"UNPROCESSABLE","path":["createPullRequest"],"locations":[{"line":314,"column":3}],"message":"Repository
+    body: '{"data":{"createPullRequest":null},"errors":[{"type":"UNPROCESSABLE","path":["createPullRequest"],"locations":[{"line":315,"column":3}],"message":"Repository
       was archived so is read-only"}]}'
     headers:
       Access-Control-Allow-Origin:
@@ -75,7 +77,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 11 Jul 2022 17:24:04 GMT
+      - Tue, 07 Feb 2023 07:47:45 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -91,13 +93,13 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - E412:6E2C:2EF38B:59B8DC:62CC5CB4
+      - 1463:5E1F:CE2192:D229D9:63E2021F
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
       - "4969"
       X-Ratelimit-Reset:
-      - "1657560270"
+      - "1675759612"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:

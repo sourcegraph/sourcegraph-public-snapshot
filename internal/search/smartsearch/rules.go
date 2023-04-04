@@ -139,7 +139,6 @@ func regexpPatterns(b query.Basic) *query.Basic {
 				syntax.OpNoMatch,
 				syntax.OpEmptyMatch,
 				syntax.OpLiteral,
-				syntax.OpCapture,
 				syntax.OpConcat:
 				count += countMetaSyntax(r.Sub)
 			case
@@ -171,6 +170,18 @@ func regexpPatterns(b query.Basic) *query.Basic {
 					count += countMetaSyntax(r.Sub) + 2
 				default:
 					count += countMetaSyntax(r.Sub) + 1
+				}
+			case
+				// capture groups over an alternate like (a|b)
+				// are weighted one. All other capture groups
+				// are weighted zero on their own because parens
+				// are very common in code.
+				syntax.OpCapture:
+				switch r.Sub[0].Op {
+				case syntax.OpAlternate:
+					count += countMetaSyntax(r.Sub) + 1
+				default:
+					count += countMetaSyntax(r.Sub)
 				}
 			}
 		}

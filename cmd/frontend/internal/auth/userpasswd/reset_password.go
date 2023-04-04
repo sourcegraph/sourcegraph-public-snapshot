@@ -29,7 +29,7 @@ func SendResetPasswordURLEmail(ctx context.Context, email, username string, rese
 	return txemail.Send(ctx, "password_reset", txemail.Message{
 		To:       []string{email},
 		Template: emailTemplate,
-		Data: passwordEmailTemplateData{
+		Data: SetPasswordEmailTemplateData{
 			Username: username,
 			URL:      globals.ExternalURL().ResolveReference(resetURL).String(),
 			Host:     globals.ExternalURL().Host,

@@ -3,7 +3,7 @@ import { distinctUntilChanged, switchMap, take, toArray } from 'rxjs/operators'
 
 import { Selection } from '@sourcegraph/extension-api-classes'
 
-import { assertToJSON, integrationTestContext } from './testHelpers'
+import { assertToJSON, integrationTestContext } from '../../testing/testHelpers'
 
 describe('CodeEditor (integration)', () => {
     describe('selection', () => {

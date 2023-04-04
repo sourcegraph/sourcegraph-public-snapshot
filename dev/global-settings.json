@@ -4,13 +4,11 @@
     "batchChangesExecution": true,
     "showMultilineSearchConsole": true,
     "codeMonitoring": true,
-    "codeIntelRepositoryBadge": { "enabled": true },
     "enableLazyBlobSyntaxHighlighting": true,
     "enableLazyFileResultSyntaxHighlighting": true,
     "enableSearchFilePrefetch": true,
     "enableSidebarFilePrefetch": true
   },
-  "codeIntel.referencesPanel": "tree-view",
   "search.repositoryGroups": {
     "test": ["github.com/gorilla/mux", "github.com/gorilla/pat"]
   }

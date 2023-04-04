@@ -5,7 +5,6 @@ import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, Icon, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
@@ -17,12 +16,13 @@ import { SignUpArguments, SignUpForm } from './SignUpForm'
 import styles from './VsCodeSignUpPage.module.scss'
 
 export const ShowEmailFormQueryParameter = 'showEmail'
-interface Props extends ThemeProps, TelemetryProps {
+interface Props extends TelemetryProps {
     source: string | null
     showEmailForm: boolean
     /** Called to perform the signup on the server. */
     onSignUp: (args: SignUpArguments) => Promise<void>
-    context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures' | 'authMinPasswordLength'>
+    context: Pick<SourcegraphContext, 'authProviders' | 'authMinPasswordLength'>
+    isLightTheme: boolean
 }
 
 const VSCodeIcon: React.FC = () => (
@@ -74,7 +74,6 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<P
                 authProviders: [],
                 sourcegraphDotComMode: true,
                 authMinPasswordLength: context.authMinPasswordLength,
-                experimentalFeatures: context.experimentalFeatures,
             }}
             buttonLabel="Sign up"
             experimental={true}

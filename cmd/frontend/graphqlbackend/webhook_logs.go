@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// webhookLogArgs are the arguments common to the two queries that provide
+// WebhookLogsArgs are the arguments common to the two queries that provide
 // access to webhook logs: the webhookLogs method on the top level query, and on
 // the ExternalService type.
 type WebhookLogsArgs struct {
@@ -158,10 +158,10 @@ func (r *WebhookLogConnectionResolver) Nodes(ctx context.Context) ([]*webhookLog
 
 	nodes := make([]*webhookLogResolver, len(logs))
 	db := database.NewDBWith(r.logger, r.store)
-	for i, log := range logs {
+	for i, l := range logs {
 		nodes[i] = &webhookLogResolver{
 			db:  db,
-			log: log,
+			log: l,
 		}
 	}
 
@@ -230,12 +230,12 @@ func webhookLogByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*web
 		return nil, err
 	}
 
-	log, err := db.WebhookLogs(keyring.Default().WebhookLogKey).GetByID(ctx, id)
+	l, err := db.WebhookLogs(keyring.Default().WebhookLogKey).GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	return &webhookLogResolver{db: db, log: log}, nil
+	return &webhookLogResolver{db: db, log: l}, nil
 }
 
 func (r *webhookLogResolver) ID() graphql.ID {

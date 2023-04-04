@@ -74,14 +74,17 @@
     color: var(--white) !important;
 }
 
+.text-inherit {
+    color: inherit !important;
+}
+
 @each $color, $value in $theme-colors {
     .text-#{$color} {
         color: $value !important;
     }
 
-    a.text-#{$color} {
-        &:hover,
-        &:focus {
+    a.text-#{$color}:hover {
+        .theme-light & {
             color: darken($value, 15%) !important;
         }
     }

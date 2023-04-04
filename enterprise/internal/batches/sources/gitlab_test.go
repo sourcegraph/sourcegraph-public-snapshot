@@ -1285,6 +1285,167 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 	})
 }
 
+func TestGitlabSource_GetFork(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("failures", func(t *testing.T) {
+		for name, tc := range map[string]struct {
+			targetRepo *types.Repo
+			client     gitlabClientFork
+		}{
+			"invalid PathWithNamespace": {
+				targetRepo: &types.Repo{
+					Metadata: &gitlab.Project{
+						ProjectCommon: gitlab.ProjectCommon{
+							PathWithNamespace: "foo",
+						},
+					},
+				},
+				client: nil,
+			},
+			"client error": {
+				targetRepo: &types.Repo{
+					Metadata: &gitlab.Project{
+						ProjectCommon: gitlab.ProjectCommon{
+							PathWithNamespace: "foo/bar",
+						},
+					},
+				},
+				client: &mockGitlabClientFork{err: errors.New("hello!")},
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				fork, err := getGitLabForkInternal(ctx, tc.targetRepo, tc.client, nil, nil)
+				assert.Nil(t, fork)
+				assert.NotNil(t, err)
+			})
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		org := "org"
+		user := "user"
+		urn := extsvc.URN(extsvc.KindGitLab, 1)
+
+		for name, tc := range map[string]struct {
+			targetRepo    *types.Repo
+			forkRepo      *gitlab.Project
+			namespace     *string
+			wantNamespace string
+			name          *string
+			wantName      string
+			client        gitlabClientFork
+		}{
+			"no namespace": {
+				targetRepo: &types.Repo{
+					Metadata: &gitlab.Project{
+						ProjectCommon: gitlab.ProjectCommon{
+							ID:                1,
+							PathWithNamespace: "foo/bar",
+						},
+					},
+					Sources: map[string]*types.SourceInfo{
+						urn: {
+							ID:       urn,
+							CloneURL: "https://gitlab.com/foo/bar",
+						},
+					},
+				},
+				forkRepo: &gitlab.Project{
+					ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
+					ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: user + "/user-bar"}},
+				namespace:     nil,
+				wantNamespace: user,
+				wantName:      user + "-bar",
+				client: &mockGitlabClientFork{fork: &gitlab.Project{ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
+					ProjectCommon: gitlab.ProjectCommon{ID: 2, PathWithNamespace: user + "/user-bar"}}},
+			},
+			"with namespace": {
+				targetRepo: &types.Repo{
+					Metadata: &gitlab.Project{
+						ProjectCommon: gitlab.ProjectCommon{
+							ID:                1,
+							PathWithNamespace: "foo/bar",
+						},
+					},
+					Sources: map[string]*types.SourceInfo{
+						urn: {
+							ID:       urn,
+							CloneURL: "https://gitlab.com/foo/bar",
+						},
+					},
+				},
+				forkRepo: &gitlab.Project{
+					ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
+					ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: org + "/" + org + "-bar"}},
+				namespace:     &org,
+				wantNamespace: org,
+				wantName:      org + "-bar",
+				client: &mockGitlabClientFork{
+					fork: &gitlab.Project{
+						ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
+						ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: org + "/" + org + "-bar"}},
+					wantOrg: &org,
+				},
+			},
+			"with namespace and name": {
+				targetRepo: &types.Repo{
+					Metadata: &gitlab.Project{
+						ProjectCommon: gitlab.ProjectCommon{
+							ID:                1,
+							PathWithNamespace: "foo/bar",
+						},
+					},
+					Sources: map[string]*types.SourceInfo{
+						urn: {
+							ID:       urn,
+							CloneURL: "https://gitlab.com/foo/bar",
+						},
+					},
+				},
+				forkRepo: &gitlab.Project{
+					ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
+					ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: org + "/custom-bar"}},
+				namespace:     &org,
+				wantNamespace: org,
+				name:          strPtr("custom-bar"),
+				wantName:      "custom-bar",
+				client: &mockGitlabClientFork{
+					fork: &gitlab.Project{
+						ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
+						ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: org + "/custom-bar"}},
+					wantOrg: &org,
+				},
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				fork, err := getGitLabForkInternal(ctx, tc.targetRepo, tc.client, tc.namespace, tc.name)
+				assert.Nil(t, err)
+				assert.NotNil(t, fork)
+				assert.NotEqual(t, fork, tc.targetRepo)
+				assert.Equal(t, tc.forkRepo, fork.Metadata)
+				assert.Equal(t, fork.Sources[urn].CloneURL, "https://gitlab.com/"+tc.wantNamespace+"/"+tc.wantName)
+			})
+		}
+	})
+}
+
+type mockGitlabClientFork struct {
+	wantOrg *string
+	fork    *gitlab.Project
+	err     error
+}
+
+var _ gitlabClientFork = &mockGitlabClientFork{}
+
+func (mock *mockGitlabClientFork) ForkProject(ctx context.Context, project *gitlab.Project, namespace *string, name string) (*gitlab.Project, error) {
+	if (mock.wantOrg == nil && namespace != nil) || (mock.wantOrg != nil && namespace == nil) || (mock.wantOrg != nil && namespace != nil && *mock.wantOrg != *namespace) {
+		return nil, errors.Newf("unexpected organisation: have=%v want=%v", namespace, mock.wantOrg)
+	}
+
+	return mock.fork, mock.err
+}
+
 func TestDecorateMergeRequestData(t *testing.T) {
 	ctx := context.Background()
 
@@ -1309,24 +1470,26 @@ func TestDecorateMergeRequestData(t *testing.T) {
 
 	src := createSource(t)
 
-	// https://gitlab.com/sourcegraph/src-cli/-/merge_requests/1
-	forked, err := src.client.GetMergeRequest(ctx, newGitLabProject(16606399), 1)
+	// https://gitlab.com/sourcegraph/src-cli/-/merge_requests/6
+	forked, err := src.client.GetMergeRequest(ctx, newGitLabProject(16606399), 6)
 	assert.Nil(t, err)
 
-	// https://gitlab.com/sourcegraph/sourcegraph/-/merge_requests/2
-	unforked, err := src.client.GetMergeRequest(ctx, newGitLabProject(16606088), 2)
+	// https://gitlab.com/sourcegraph/sourcegraph/-/merge_requests/1
+	unforked, err := src.client.GetMergeRequest(ctx, newGitLabProject(16606088), 1)
 	assert.Nil(t, err)
 
 	t.Run("fork", func(t *testing.T) {
 		err := createSource(t).decorateMergeRequestData(ctx, newGitLabProject(int(forked.ProjectID)), forked)
 		assert.Nil(t, err)
-		assert.Equal(t, "LawnGnome", forked.SourceProjectNamespace)
+		assert.Equal(t, "courier-new", forked.SourceProjectNamespace)
+		assert.Equal(t, "src-cli-forked", forked.SourceProjectName)
 	})
 
 	t.Run("not a fork", func(t *testing.T) {
 		err := createSource(t).decorateMergeRequestData(ctx, newGitLabProject(int(unforked.ProjectID)), unforked)
 		assert.Nil(t, err)
 		assert.Equal(t, "", unforked.SourceProjectNamespace)
+		assert.Equal(t, "", unforked.SourceProjectName)
 	})
 }
 

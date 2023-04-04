@@ -8,10 +8,11 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	policiesEnterprise "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
@@ -21,12 +22,14 @@ func TestUploadExpirer(t *testing.T) {
 	uploadSvc := setupMockUploadService(now)
 	policySvc := setupMockPolicyService()
 	policyMatcher := testUploadExpirerMockPolicyMatcher()
+	repoStore := defaultMockRepoStore()
 	expirationMetrics := NewExpirationMetrics(&observation.TestContext)
 
 	uploadExpirer := &expirer{
 		store:         uploadSvc,
 		policySvc:     policySvc,
 		policyMatcher: policyMatcher,
+		repoStore:     repoStore,
 	}
 
 	if err := uploadExpirer.HandleExpiredUploadsBatch(context.Background(), expirationMetrics, ExpirerConfig{
@@ -67,7 +70,7 @@ func TestUploadExpirer(t *testing.T) {
 	}
 	for _, call := range calls {
 		var policyIDs []int
-		for _, policy := range call.Arg2 {
+		for _, policy := range call.Arg3 {
 			policyIDs = append(policyIDs, policy.ID)
 		}
 		sort.Ints(policyIDs)
@@ -85,7 +88,7 @@ func TestUploadExpirer(t *testing.T) {
 }
 
 func setupMockPolicyService() *MockPolicyService {
-	policies := []types.ConfigurationPolicy{
+	policies := []policiesshared.ConfigurationPolicy{
 		{ID: 1, RepositoryID: nil},
 		{ID: 2, RepositoryID: intPtr(53)},
 		{ID: 3, RepositoryID: nil},
@@ -93,7 +96,7 @@ func setupMockPolicyService() *MockPolicyService {
 		{ID: 5, RepositoryID: intPtr(50)},
 	}
 
-	getConfigurationPolicies := func(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) (filtered []types.ConfigurationPolicy, _ int, _ error) {
+	getConfigurationPolicies := func(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) (filtered []policiesshared.ConfigurationPolicy, _ int, _ error) {
 		for _, policy := range policies {
 			if policy.RepositoryID == nil || *policy.RepositoryID == opts.RepositoryID {
 				filtered = append(filtered, policy)
@@ -110,7 +113,7 @@ func setupMockPolicyService() *MockPolicyService {
 }
 
 func setupMockUploadService(now time.Time) *MockStore {
-	uploads := []types.Upload{
+	uploads := []shared.Upload{
 		{ID: 11, State: "completed", RepositoryID: 50, Commit: "deadbeef01", UploadedAt: daysAgo(now, 1)}, // repo 50
 		{ID: 12, State: "completed", RepositoryID: 50, Commit: "deadbeef02", UploadedAt: daysAgo(now, 2)},
 		{ID: 13, State: "completed", RepositoryID: 50, Commit: "deadbeef03", UploadedAt: daysAgo(now, 3)},
@@ -156,8 +159,8 @@ func setupMockUploadService(now time.Time) *MockStore {
 		return scannedIDs, nil
 	}
 
-	getUploads := func(ctx context.Context, opts uploadsshared.GetUploadsOptions) ([]types.Upload, int, error) {
-		var filtered []types.Upload
+	getUploads := func(ctx context.Context, opts uploadsshared.GetUploadsOptions) ([]shared.Upload, int, error) {
+		var filtered []shared.Upload
 		for _, upload := range uploads {
 			if upload.RepositoryID != opts.RepositoryID {
 				continue
@@ -214,7 +217,7 @@ func setupMockUploadService(now time.Time) *MockStore {
 }
 
 func testUploadExpirerMockPolicyMatcher() *MockPolicyMatcher {
-	policyMatches := map[int]map[string][]policiesEnterprise.PolicyMatch{
+	policyMatches := map[int]map[string][]policies.PolicyMatch{
 		50: {
 			"deadbeef01": {{PolicyDuration: days(1)}}, // 1 = 1
 			"deadbeef02": {{PolicyDuration: days(9)}}, // 9 > 2 (protected)
@@ -246,7 +249,7 @@ func testUploadExpirerMockPolicyMatcher() *MockPolicyMatcher {
 		},
 	}
 
-	commitsDescribedByPolicy := func(ctx context.Context, repositoryID int, policies []types.ConfigurationPolicy, now time.Time, _ ...string) (map[string][]policiesEnterprise.PolicyMatch, error) {
+	commitsDescribedByPolicy := func(ctx context.Context, repositoryID int, repoName api.RepoName, policies []policiesshared.ConfigurationPolicy, now time.Time, _ ...string) (map[string][]policies.PolicyMatch, error) {
 		return policyMatches[repositoryID], nil
 	}
 

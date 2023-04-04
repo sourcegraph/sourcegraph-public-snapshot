@@ -7,15 +7,19 @@ import (
 	"sync"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
+	"gopkg.in/yaml.v2"
 
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/webhooks"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -26,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -157,7 +162,7 @@ type CreateEmptyBatchChangeOpts struct {
 	Name string
 }
 
-// CreateEmptyBatchChange creates a new batch change without an applied spec. It enforces
+// CreateEmptyBatchChange creates a new batch change with an empty batch spec. It enforces
 // namespace permissions of the caller and validates that the combination of name +
 // namespace is unique.
 func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBatchChangeOpts) (batchChange *btypes.BatchChange, err error) {
@@ -168,30 +173,61 @@ func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBa
 		return nil, err
 	}
 
-	// The combination of name + namespace must be unique.
-	// TODO: Should name be case-insensitive unique? i.e. should "foo" and "Foo"
-	// be considered unique?
-	batchChange, err = s.store.GetBatchChange(ctx, store.GetBatchChangeOpts{
+	// Construct and parse the batch spec YAML of just the provided name to validate the
+	// pattern of the name is okay
+	rawSpec, err := yaml.Marshal(struct {
+		Name string `yaml:"name"`
+	}{Name: opts.Name})
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling name")
+	}
+	// TODO: Should name require a minimum length?
+	spec, err := batcheslib.ParseBatchSpec(rawSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	actor := sgactor.FromContext(ctx)
+	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
+
+	batchSpec := &btypes.BatchSpec{
+		RawSpec:         string(rawSpec),
+		Spec:            spec,
 		NamespaceUserID: opts.NamespaceUserID,
 		NamespaceOrgID:  opts.NamespaceOrgID,
-		Name:            opts.Name,
-	})
-	if err != nil && err != store.ErrNoResults {
+		UserID:          actor.UID,
+		CreatedFromRaw:  true,
+	}
+
+	// The combination of name + namespace must be unique
+	// TODO: Should name be case-insensitive unique? i.e. should "foo" and "Foo"
+	// be considered unique?
+	batchChange, err = s.GetBatchChangeMatchingBatchSpec(ctx, batchSpec)
+	if err != nil {
 		return nil, err
-	} else if batchChange != nil {
+	}
+	if batchChange != nil {
 		return nil, ErrNameNotUnique
 	}
 
-	actor := actor.FromContext(ctx)
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if err := tx.CreateBatchSpec(ctx, batchSpec); err != nil {
+		return nil, err
+	}
 
 	batchChange = &btypes.BatchChange{
 		Name:            opts.Name,
 		NamespaceUserID: opts.NamespaceUserID,
 		NamespaceOrgID:  opts.NamespaceOrgID,
+		BatchSpecID:     batchSpec.ID,
 		CreatorID:       actor.UID,
-		// Note: No batch spec id, meaning it's a draft batch change.
 	}
-	if err := s.store.CreateBatchChange(ctx, batchChange); err != nil {
+	if err := tx.CreateBatchChange(ctx, batchChange); err != nil {
 		return nil, err
 	}
 
@@ -216,17 +252,56 @@ func (s *Service) UpsertEmptyBatchChange(ctx context.Context, opts UpsertEmptyBa
 		return nil, err
 	}
 
+	// Construct and parse the batch spec YAML of just the provided name to validate the
+	// pattern of the name is okay
+	rawSpec, err := yaml.Marshal(struct {
+		Name string `yaml:"name"`
+	}{Name: opts.Name})
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling name")
+	}
+
+	spec, err := batcheslib.ParseBatchSpec(rawSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = template.ValidateBatchSpecTemplate(string(rawSpec))
+	if err != nil {
+		return nil, err
+	}
+
+	actor := sgactor.FromContext(ctx)
 	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
-	actor := actor.FromContext(ctx)
+
+	batchSpec := &btypes.BatchSpec{
+		RawSpec:         string(rawSpec),
+		Spec:            spec,
+		NamespaceUserID: opts.NamespaceUserID,
+		NamespaceOrgID:  opts.NamespaceOrgID,
+		UserID:          actor.UID,
+		CreatedFromRaw:  true,
+	}
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if err := tx.CreateBatchSpec(ctx, batchSpec); err != nil {
+		return nil, err
+	}
 
 	batchChange := &btypes.BatchChange{
 		Name:            opts.Name,
 		NamespaceUserID: opts.NamespaceUserID,
 		NamespaceOrgID:  opts.NamespaceOrgID,
+		BatchSpecID:     batchSpec.ID,
 		CreatorID:       actor.UID,
 	}
 
-	err = s.store.UpsertBatchChange(ctx, batchChange)
+	err = tx.UpsertBatchChange(ctx, batchChange)
 
 	if err != nil {
 		return nil, err
@@ -265,7 +340,7 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 	}
 	spec.NamespaceOrgID = opts.NamespaceOrgID
 	spec.NamespaceUserID = opts.NamespaceUserID
-	a := actor.FromContext(ctx)
+	a := sgactor.FromContext(ctx)
 	spec.UserID = a.UID
 
 	if len(opts.ChangesetSpecRandIDs) == 0 {
@@ -358,7 +433,7 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 	spec.NamespaceOrgID = opts.NamespaceOrgID
 	spec.NamespaceUserID = opts.NamespaceUserID
 	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
-	a := actor.FromContext(ctx)
+	a := sgactor.FromContext(ctx)
 	spec.UserID = a.UID
 
 	spec.BatchChangeID = opts.BatchChange
@@ -653,7 +728,7 @@ func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpec
 	spec.NamespaceOrgID = opts.NamespaceOrgID
 	spec.NamespaceUserID = opts.NamespaceUserID
 	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
-	a := actor.FromContext(ctx)
+	a := sgactor.FromContext(ctx)
 	spec.UserID = a.UID
 
 	// Start transaction.
@@ -734,6 +809,32 @@ func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userI
 	}
 
 	return spec, s.store.CreateChangesetSpec(ctx, spec)
+}
+
+// CreateChangesetSpecs validates the given raw spec inputs and creates the ChangesetSpecs.
+func (s *Service) CreateChangesetSpecs(ctx context.Context, rawSpecs []string, userID int32) (specs []*btypes.ChangesetSpec, err error) {
+	ctx, _, endObservation := s.operations.createChangesetSpec.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	specs = make([]*btypes.ChangesetSpec, len(rawSpecs))
+
+	for i, rawSpec := range rawSpecs {
+		spec, err := btypes.NewChangesetSpecFromRaw(rawSpec)
+		if err != nil {
+			return nil, err
+		}
+
+		// 🚨 SECURITY: We use database.Repos.Get to check whether the user has access to
+		// the repository or not.
+		if _, err = s.store.Repos().Get(ctx, spec.BaseRepoID); err != nil {
+			return nil, err
+		}
+
+		spec.UserID = userID
+		specs[i] = spec
+	}
+
+	return specs, s.store.CreateChangesetSpec(ctx, specs...)
 }
 
 // changesetSpecNotFoundErr is returned by CreateBatchSpec if a
@@ -893,7 +994,16 @@ func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangeset
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = tx.Done(err) }()
+	defer func() {
+		err = tx.Done(err)
+		// We only enqueue the webhook after the transaction succeeds. If it fails and all
+		// the DB changes are rolled back, the batch change will still be open. This
+		// ensures we only send a webhook when the batch change is *actually* closed, and
+		// ensures the batch change payload in the webhook is up-to-date as well.
+		if err != nil {
+			s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeClose, bgql.MarshalBatchChangeID(batchChange.ID))
+		}
+	}()
 
 	batchChange.ClosedAt = s.clock()
 	if err := tx.UpdateBatchChange(ctx, batchChange); err != nil {
@@ -931,6 +1041,9 @@ func (s *Service) DeleteBatchChange(ctx context.Context, id int64) (err error) {
 		return err
 	}
 
+	// We enqueue this webhook before actually deleting the batch change, so that the
+	// payload contains the last state of the batch change before it was hard-deleted.
+	s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeDelete, bgql.MarshalBatchChangeID(batchChange.ID))
 	return s.store.DeleteBatchChange(ctx, id)
 }
 
@@ -1197,7 +1310,7 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 	}
 	defer func() { err = tx.Done(err) }()
 
-	userID := actor.FromContext(ctx).UID
+	userID := sgactor.FromContext(ctx).UID
 	changesetJobs := make([]*btypes.ChangesetJob, 0, len(cs))
 	for _, changeset := range cs {
 		changesetJobs = append(changesetJobs, &btypes.ChangesetJob{
@@ -1603,4 +1716,8 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 	}
 
 	return availableBulkOperations, nil
+}
+
+func (s *Service) enqueueBatchChangeWebhook(ctx context.Context, eventType string, id graphql.ID) {
+	webhooks.EnqueueBatchChange(ctx, s.logger, s.store, eventType, id)
 }

@@ -1,32 +1,22 @@
 import React from 'react'
 
-import { createLocation, createMemoryHistory } from 'history'
-
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
-import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import { NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
-
-import { ThemePreference } from '../theme'
 
 import { GlobalNavbar } from './GlobalNavbar'
 
 jest.mock('../search/input/SearchNavbarItem', () => ({ SearchNavbarItem: 'SearchNavbarItem' }))
 jest.mock('../components/branding/BrandLogo', () => ({ BrandLogo: 'BrandLogo' }))
 
-const history = createMemoryHistory()
 const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     authenticatedUser: null,
-    extensionsController,
-    location: createLocation('/'),
-    history,
     isSourcegraphDotCom: false,
-    onThemePreferenceChange: () => undefined,
-    isLightTheme: true,
-    themePreference: ThemePreference.Light,
+    isSourcegraphApp: false,
     platformContext: {} as any,
     settingsCascade: NOOP_SETTINGS_CASCADE,
     batchChangesEnabled: false,
@@ -36,7 +26,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     showSearchBox: true,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
-    globbing: false,
     branding: undefined,
     routes: [],
     searchContextsEnabled: true,
@@ -46,20 +35,11 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     setFuzzyFinderIsVisible: () => undefined,
     notebooksEnabled: true,
     codeMonitoringEnabled: true,
+    ownEnabled: true,
     showFeedbackModal: () => undefined,
 }
 
 describe('GlobalNavbar', () => {
-    const origContext = window.context
-    beforeEach(() => {
-        window.context = {
-            enableLegacyExtensions: false,
-        } as any
-    })
-    afterEach(() => {
-        window.context = origContext
-    })
-
     test('default', () => {
         const { asFragment } = renderWithBrandedContext(
             <MockedTestProvider>

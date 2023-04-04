@@ -160,8 +160,8 @@ func TestComparePosition(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		if cmp := ComparePosition(left, testCase.line, testCase.character); cmp != testCase.expected {
-			t.Errorf("unexpected comparisonPosition result for %d:%d. want=%d have=%d", testCase.line, testCase.character, testCase.expected, cmp)
+		if cmpResult := ComparePosition(left, testCase.line, testCase.character); cmpResult != testCase.expected {
+			t.Errorf("unexpected comparisonPosition result for %d:%d. want=%d have=%d", testCase.line, testCase.character, testCase.expected, cmpResult)
 		}
 	}
 }

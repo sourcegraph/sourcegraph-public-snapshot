@@ -39,12 +39,12 @@ func FetchStatusMessages(ctx context.Context, db database.DB) ([]StatusMessage, 
 		return messages, nil
 	}
 
-	for id, failure := range externalServiceSyncErrors {
-		if failure != "" {
+	for _, syncError := range externalServiceSyncErrors {
+		if syncError.Message != "" {
 			messages = append(messages, StatusMessage{
 				ExternalServiceSyncError: &ExternalServiceSyncError{
-					Message:           failure,
-					ExternalServiceId: id,
+					Message:           syncError.Message,
+					ExternalServiceId: syncError.ServiceID,
 				},
 			})
 		}

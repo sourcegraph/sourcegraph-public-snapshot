@@ -53,24 +53,22 @@ stdenv.mkDerivation rec {
     (
       if hostPlatform.isMacOS then
         if hostPlatform.isAarch64 then
-          fetchzip
-            {
+          fetchzip {
               name = "helix-core-api";
               url = "https://cdist2.perforce.com/perforce/r22.2/bin.macosx12arm64/p4api-openssl1.1.1.tgz";
-              hash = "sha256:19p7addx904hxk661jip697d5bnmzq0fmb8kbs6sbqaxhpxd8g22";
+              hash = "sha256-YO7p24PuedTn2pVq/roF2u5zqS6byaG9N2gCbGVrpv0=";
             }
         else
           fetchzip {
             name = "helix-core-api";
             url = "https://cdist2.perforce.com/perforce/r22.2/bin.macosx12x86_64/p4api-openssl1.1.1.tgz";
-            hash = "sha256:175i4x7ljfkf2hsjs78pjmv293z4ydsrh56dkrybyzrm66rgs9gk";
+            hash = "sha256-gaYvQOX8nvMIMHENHB0+uklyLcmeXT5gjGGcVC9TTtE=";
           }
       else if hostPlatform.isLinux then
-        fetchzip
-          {
+        fetchzip {
             name = "helix-core-api";
             url = "https://cdist2.perforce.com/perforce/r22.2/bin.linux26x86_64/p4api-glibc2.3-openssl1.1.1.tgz";
-            hash = "sha256:09v0ga98pabjy4k6h04hw7li8zgzgi5w76l3lg4fd1p10py0hyv2";
+            hash = "sha256-JkWG4ImrTzN0UuSMelG8zsH7YRlL1mXs9lpB5GptUb4=";
           }
       else throw "unsupported platform ${stdenv.targetPlatform.parsed.kernel.name}"
     )

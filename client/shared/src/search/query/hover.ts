@@ -146,6 +146,8 @@ const toSelectorHover = (token: MetaSelector): string => {
             return 'Select and display distinct repository paths from search results.'
         case MetaSelectorKind.File:
             return 'Select and display distinct file paths from search results.'
+        case MetaSelectorKind.FileOwners:
+            return 'Select and display distinct code owners from search results.'
         case MetaSelectorKind.Content:
             return 'Select and display only results matching content inside files.'
         case MetaSelectorKind.Commit:
@@ -167,6 +169,8 @@ const toPredicateHover = (token: MetaPredicate): string => {
         case 'contains.content':
         case 'has.content':
             return `**Built-in predicate**. Search only inside repositories that contain **file content** matching the regular expression \`${parameters}\`.`
+        case 'has.topic':
+            return `**Built-in predicate**. Search only inside repositories that have the github topic \`${parameters}\`.`
         case 'contains.commit.after':
         case 'has.commit.after':
             return `**Built-in predicate**. Search only inside repositories that have been committed to since \`${parameters}\`.`
@@ -178,6 +182,8 @@ const toPredicateHover = (token: MetaPredicate): string => {
             return '**Built-in predicate**. Search only inside repositories that are associated with the given key:value pair'
         case 'has.key':
             return '**Built-in predicate**. Search only inside repositories that are associated with the given key, regardless of its value'
+        case 'has.owner':
+            return '**Built-in predicate**. Search only inside files that are owned by the given person or team'
     }
     return ''
 }

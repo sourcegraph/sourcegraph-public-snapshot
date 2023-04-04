@@ -50,7 +50,7 @@ func (t *telemetryJob) Config() []env.Config {
 	return nil
 }
 
-func (t *telemetryJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (t *telemetryJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	if !isEnabled() {
 		return nil, nil
 	}
@@ -321,6 +321,7 @@ func sendEvents(ctx context.Context, events []*database.Event, config topicConfi
 	if err != nil {
 		return errors.Wrap(err, "pubsub.NewClient")
 	}
+	defer client.Close()
 
 	var toSend []*bigQueryEvent
 	for _, event := range events {

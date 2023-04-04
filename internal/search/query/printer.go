@@ -207,17 +207,17 @@ func nodesToJSON(q Q) []any {
 }
 
 func ToJSON(q Q) (string, error) {
-	json, err := json.Marshal(nodesToJSON(q))
+	j, err := json.Marshal(nodesToJSON(q))
 	if err != nil {
 		return "", err
 	}
-	return string(json), nil
+	return string(j), nil
 }
 
 func PrettyJSON(q Q) (string, error) {
-	json, err := json.MarshalIndent(nodesToJSON(q), "", "  ")
+	j, err := json.MarshalIndent(nodesToJSON(q), "", "  ")
 	if err != nil {
 		return "", err
 	}
-	return string(json), nil
+	return string(j), nil
 }

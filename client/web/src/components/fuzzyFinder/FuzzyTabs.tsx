@@ -5,6 +5,7 @@ import * as H from 'history'
 
 import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import { useTheme } from '@sourcegraph/shared/src/theme'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useSessionStorage } from '@sourcegraph/wildcard'
 
@@ -13,9 +14,9 @@ import { parseBrowserRepoURL } from '../../util/url'
 import { Keybindings, plaintextKeybindings } from '../KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { UserHistory } from '../useUserHistory'
 
-import { createActionsFSM, FuzzyActionProps, getAllFuzzyActions } from './FuzzyActions'
+import { createActionsFSM, getAllFuzzyActions } from './FuzzyActions'
 import { FuzzyFiles, FuzzyRepoFiles } from './FuzzyFiles'
-import { getFuzzyFinderFeatureFlags } from './FuzzyFinderFeatureFlag'
+import { useFuzzyFinderFeatureFlags } from './FuzzyFinderFeatureFlag'
 import { FuzzyFSM } from './FuzzyFsm'
 import { FuzzyRepoRevision } from './FuzzyRepoRevision'
 import { FuzzyRepos } from './FuzzyRepos'
@@ -208,7 +209,7 @@ export function defaultFuzzyState(): FuzzyState {
         },
     }
 }
-export interface FuzzyTabsProps extends FuzzyActionProps {
+export interface FuzzyTabsProps {
     settingsCascade: SettingsCascadeOrError<Settings>
     isRepositoryRelatedPage: boolean
     location: H.Location
@@ -220,7 +221,6 @@ export interface FuzzyTabsProps extends FuzzyActionProps {
 
 export function useFuzzyState(props: FuzzyTabsProps): FuzzyState {
     const {
-        themeState,
         isVisible,
         location: { pathname, search, hash },
         isRepositoryRelatedPage,
@@ -252,7 +252,7 @@ export function useFuzzyState(props: FuzzyTabsProps): FuzzyState {
     repoRevisionRef.current = repoRevision
 
     const { fuzzyFinderAll, fuzzyFinderActions, fuzzyFinderRepositories, fuzzyFinderSymbols } =
-        getFuzzyFinderFeatureFlags(props.settingsCascade.final)
+        useFuzzyFinderFeatureFlags()
 
     const [activeTab, setActiveTab] = useState<FuzzyTabKey>('all')
 
@@ -297,11 +297,12 @@ export function useFuzzyState(props: FuzzyTabsProps): FuzzyState {
         [revision, repoName]
     )
 
+    const { theme, setThemeSetting } = useTheme()
     // Actions
     const actions = useMemo<FuzzyTabFSM>(() => {
-        const fsm = createActionsFSM(getAllFuzzyActions({ themeState }))
+        const fsm = createActionsFSM(getAllFuzzyActions({ theme, setThemeSetting }))
         return new FuzzyTabFSM('actions', 'always', () => fsm)
-    }, [themeState])
+    }, [theme, setThemeSetting])
 
     // Repos
     const repos = useMemo<FuzzyTabFSM>(() => {

@@ -12,8 +12,7 @@ import (
 	"github.com/c2h5oh/datasize"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -24,8 +23,8 @@ import (
 // VM can mount this loopback device. This prevents host file system access.
 func NewFirecrackerWorkspace(
 	ctx context.Context,
-	filesStore store.FilesStore,
-	job executor.Job,
+	filesStore FilesStore,
+	job types.Job,
 	diskSpace string,
 	keepWorkspace bool,
 	commandRunner command.Runner,
@@ -148,7 +147,7 @@ func setupLoopDevice(
 	}()
 
 	// Create a temp file to hold the block device on disk.
-	loopFile, err := MakeTempFile("workspace-loop-" + strconv.Itoa(jobID))
+	loopFile, err := MakeLoopFile("workspace-loop-" + strconv.Itoa(jobID))
 	if err != nil {
 		return "", "", "", err
 	}
@@ -222,7 +221,7 @@ func detachLoopDevice(ctx context.Context, blockDevice string, handle command.Lo
 // mountLoopDevice takes a path to a loop device (/dev/loopX) and mounts it at a
 // random temporary mount point. The mount point is returned.
 func mountLoopDevice(ctx context.Context, blockDevice string, handle command.LogEntry) (string, error) {
-	tmpMountDir, err := MakeTempDirectory("workspace-mountpoints")
+	tmpMountDir, err := MakeMountDirectory("workspace-mountpoints")
 	if err != nil {
 		return "", err
 	}

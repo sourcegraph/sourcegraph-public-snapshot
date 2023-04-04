@@ -12,7 +12,6 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { QueryState, SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/shared/src/search'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { Search } from '../jetbrains-icons/Search'
 
@@ -22,7 +21,6 @@ import styles from './JetBrainsSearchBox.module.scss'
 
 export interface JetBrainsSearchBoxProps
     extends Omit<JetBrainsTogglesProps, 'navbarSearchQuery' | 'submitSearch' | 'clearSearch'>,
-        ThemeProps,
         SearchContextInputProps,
         TelemetryProps,
         PlatformContextProps<'requestGraphQL'> {
@@ -42,9 +40,6 @@ export interface JetBrainsSearchBoxProps
     autoFocus?: boolean
     className?: string
     containerClassName?: string
-
-    /** Whether globbing is enabled for filters. */
-    globbing: boolean
 
     /** Whether comments are parsed and highlighted */
     interpretComments?: boolean
@@ -122,8 +117,6 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                         autoFocus={props.autoFocus}
                         caseSensitive={props.caseSensitive}
                         fetchStreamSuggestions={props.fetchStreamSuggestions}
-                        globbing={props.globbing}
-                        isLightTheme={props.isLightTheme}
                         isSourcegraphDotCom={props.isSourcegraphDotCom}
                         onChange={props.onChange}
                         onSubmit={props.onSubmit}

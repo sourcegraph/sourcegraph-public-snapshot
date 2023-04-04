@@ -92,7 +92,7 @@ export interface SearchQueryState {
      * Note that this won't update `queryState` directly.
      */
     submitSearch: (
-        parameters: Omit<SubmitSearchParameters, 'query' | 'caseSensitive' | 'patternType'>,
+        parameters: Omit<SubmitSearchParameters, 'query' | 'caseSensitive' | 'patternType'> & { query?: string },
         updates?: QueryUpdate[]
     ) => void
 }

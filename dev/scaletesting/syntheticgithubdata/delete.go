@@ -6,9 +6,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/google/go-github/v41/github"
-
-	"github.com/sourcegraph/sourcegraph/lib/group"
+	"github.com/sourcegraph/conc/pool"
 )
 
 // delete removes users and teams (and team memberships as a side effect) from the GitHub instance.
@@ -94,7 +92,7 @@ func delete(ctx context.Context, cfg config) {
 		}
 	}
 
-	g := group.New().WithMaxConcurrency(1000)
+	p := pool.New().WithMaxGoroutines(1000)
 
 	// delete users from instance
 	usersToDelete := len(localUsers) - cfg.userCount
@@ -103,7 +101,7 @@ func delete(ctx context.Context, cfg config) {
 		if i%100 == 0 {
 			writeInfo(out, "Deleted %d out of %d users", i, usersToDelete)
 		}
-		g.Go(func() {
+		p.Go(func() {
 			currentUser.executeDelete(ctx)
 		})
 	}
@@ -114,11 +112,11 @@ func delete(ctx context.Context, cfg config) {
 		if i%100 == 0 {
 			writeInfo(out, "Deleted %d out of %d teams", i, teamsToDelete)
 		}
-		g.Go(func() {
+		p.Go(func() {
 			currentTeam.executeDelete(ctx)
 		})
 	}
-	g.Wait()
+	p.Wait()
 
 	//for _, t := range localTeams {
 	//	currentTeam := t
@@ -187,24 +185,4 @@ func (u *user) executeDelete(ctx context.Context) {
 	}
 
 	writeSuccess(out, "Deleted user %s", u.Login)
-}
-
-// executeDeleteMemberships deletes the memberships for a given team.
-func (t *team) executeDeleteMemberships(ctx context.Context) {
-	teamMembers, _, err := gh.Teams.ListTeamMembersBySlug(ctx, t.Org, t.Name, &github.TeamListTeamMembersOptions{
-		Role:        "member",
-		ListOptions: github.ListOptions{PerPage: 100},
-	})
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	writeInfo(out, "Deleting %d memberships for team %s", len(teamMembers), t.Name)
-	for _, member := range teamMembers {
-		_, err = gh.Teams.RemoveTeamMembershipBySlug(ctx, t.Org, t.Name, *member.Login)
-		if err != nil {
-			log.Printf("Failed to remove membership from team %s for user %s: %s", t.Name, *member.Login, err)
-		}
-	}
 }

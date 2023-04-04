@@ -26,8 +26,9 @@ type Account struct {
 	UserID      int32
 	AccountSpec // ServiceType, ServiceID, ClientID, AccountID
 	AccountData // AuthData, Data
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	PublicAccountData
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // AccountSpec specifies a user external account by its external identifier (i.e., by the
@@ -45,6 +46,15 @@ type AccountSpec struct {
 type AccountData struct {
 	AuthData *EncryptableData
 	Data     *EncryptableData
+}
+
+// PublicAccountData contains a few fields from the AccountData.Data mentioned above.
+// We only expose publicly available fields in this struct.
+// See the GraphQL API's corresponding fields for documentation.
+type PublicAccountData struct {
+	DisplayName *string `json:"displayName,omitempty"`
+	Login       *string `json:"login,omitempty"`
+	URL         *string `json:"url,omitempty"`
 }
 
 type EncryptableData = encryption.JSONEncryptable[any]
@@ -128,6 +138,8 @@ const (
 	KindRubyPackages    = "RUBYPACKAGES"
 	KindNpmPackages     = "NPMPACKAGES"
 	KindPagure          = "PAGURE"
+	KindAzureDevOps     = "AZUREDEVOPS"
+	KindSCIM            = "SCIM"
 	KindOther           = "OTHER"
 )
 
@@ -172,6 +184,9 @@ const (
 
 	// TypePagure is the (api.ExternalRepoSpec).ServiceType value for Pagure projects.
 	TypePagure = "pagure"
+
+	// TypeAzureDevOps is the (api.ExternalRepoSpec).ServiceType value for ADO projects.
+	TypeAzureDevOps = "azuredevops"
 
 	// TypeNpmPackages is the (api.ExternalRepoSpec).ServiceType value for Npm packages (JavaScript/TypeScript ecosystem libraries).
 	TypeNpmPackages = "npmPackages"
@@ -228,6 +243,8 @@ func KindToType(kind string) string {
 		return TypeGoModules
 	case KindPagure:
 		return TypePagure
+	case KindAzureDevOps:
+		return TypeAzureDevOps
 	case KindOther:
 		return TypeOther
 	default:
@@ -271,6 +288,8 @@ func TypeToKind(t string) string {
 		return KindGoPackages
 	case TypePagure:
 		return KindPagure
+	case TypeAzureDevOps:
+		return KindAzureDevOps
 	case TypeOther:
 		return KindOther
 	default:
@@ -326,6 +345,8 @@ func ParseServiceType(s string) (string, bool) {
 		return TypeRubyPackages, true
 	case TypePagure:
 		return TypePagure, true
+	case TypeAzureDevOps:
+		return TypeAzureDevOps, true
 	case TypeOther:
 		return TypeOther, true
 	default:
@@ -367,6 +388,8 @@ func ParseServiceKind(s string) (string, bool) {
 		return KindRubyPackages, true
 	case KindPagure:
 		return KindPagure, true
+	case KindAzureDevOps:
+		return KindAzureDevOps, true
 	case KindOther:
 		return KindOther, true
 	default:
@@ -381,6 +404,7 @@ var supportsRepoExclusion = map[string]bool{
 	KindGitHub:          true,
 	KindGitLab:          true,
 	KindGitolite:        true,
+	KindAzureDevOps:     true,
 }
 
 // SupportsRepoExclusion returns true when given external service kind supports
@@ -433,6 +457,8 @@ func getConfigPrototype(kind string) (any, error) {
 	switch strings.ToUpper(kind) {
 	case KindAWSCodeCommit:
 		return &schema.AWSCodeCommitConnection{}, nil
+	case KindAzureDevOps:
+		return &schema.AzureDevOpsConnection{}, nil
 	case KindBitbucketServer:
 		return &schema.BitbucketServerConnection{}, nil
 	case KindBitbucketCloud:
@@ -528,6 +554,8 @@ func extractToken(parsed any, kind string) (string, error) {
 		return c.Token, nil
 	case *schema.GitLabConnection:
 		return c.Token, nil
+	case *schema.AzureDevOpsConnection:
+		return c.Token, nil
 	case *schema.BitbucketServerConnection:
 		return c.Token, nil
 	case *schema.PhabricatorConnection:
@@ -572,21 +600,20 @@ func ExtractRateLimit(config, kind string) (rate.Limit, error) {
 // GetLimitFromConfig gets RateLimitConfig from an already parsed config schema.
 func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
 	// Rate limit config can be in a few states:
-	// 1. Not defined: We fall back to default specified in code.
+	// 1. Not defined: Some infinite, some limited, depending on code host.
 	// 2. Defined and enabled: We use their defined limit.
 	// 3. Defined and disabled: We use an infinite limiter.
 
 	var limit rate.Limit
 	switch c := config.(type) {
 	case *schema.GitLabConnection:
-		// 10/s is the default enforced by GitLab on their end
-		limit = rate.Limit(10)
+		limit = rate.Inf
 		if c != nil && c.RateLimit != nil {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.GitHubConnection:
-		// 5000 per hour is the default enforced by GitHub on their end
-		limit = rate.Limit(5000.0 / 3600.0)
+		// Use an infinite rate limiter. GitHub has an external rate limiter we obey.
+		limit = rate.Inf
 		if c != nil && c.RateLimit != nil {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
@@ -608,7 +635,7 @@ func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
 		}
 	case *schema.JVMPackagesConnection:
 		limit = rate.Limit(2)
-		if c != nil && c.Maven != nil && c.Maven.RateLimit != nil {
+		if c != nil && c.Maven.RateLimit != nil {
 			limit = limitOrInf(c.Maven.RateLimit.Enabled, c.Maven.RateLimit.RequestsPerHour)
 		}
 	case *schema.PagureConnection:
@@ -701,6 +728,11 @@ type OtherRepoMetadata struct {
 	// RelativePath is relative to ServiceID which is usually the host URL.
 	// Joining them gives you the clone url.
 	RelativePath string
+
+	// AbsFilePath is an optional field which is the absolute path to the
+	// repository on the src git-serve server. Notably this is only
+	// implemented for Sourcegraph App's implementation of src git-serve.
+	AbsFilePath string
 }
 
 func UniqueEncryptableCodeHostIdentifier(ctx context.Context, kind string, config *EncryptableConfig) (string, error) {
@@ -739,6 +771,8 @@ func uniqueCodeHostIdentifier(kind string, cfg any) (string, error) {
 	case *schema.GitLabConnection:
 		rawURL = c.Url
 	case *schema.GitHubConnection:
+		rawURL = c.Url
+	case *schema.AzureDevOpsConnection:
 		rawURL = c.Url
 	case *schema.BitbucketServerConnection:
 		rawURL = c.Url

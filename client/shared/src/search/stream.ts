@@ -29,7 +29,7 @@ export type SearchEvent =
     | { type: 'error'; data: ErrorLike }
     | { type: 'done'; data: {} }
 
-export type SearchMatch = ContentMatch | RepositoryMatch | CommitMatch | SymbolMatch | PathMatch
+export type SearchMatch = ContentMatch | RepositoryMatch | CommitMatch | SymbolMatch | PathMatch | OwnerMatch
 
 export interface PathMatch {
     type: 'path'
@@ -155,6 +155,32 @@ export interface RepositoryMatch {
     descriptionMatches?: Range[]
 }
 
+export type OwnerMatch = PersonMatch | TeamMatch
+
+export interface BaseOwnerMatch {
+    handle?: string
+    email?: string
+}
+
+export interface PersonMatch extends BaseOwnerMatch {
+    type: 'person'
+    handle?: string
+    email?: string
+    user?: {
+        username: string
+        displayName?: string
+        avatarURL?: string
+    }
+}
+
+export interface TeamMatch extends BaseOwnerMatch {
+    type: 'team'
+    name: string
+    displayName?: string
+    handle?: string
+    email?: string
+}
+
 /**
  * An aggregate type representing a progress update.
  * Should be replaced when a new ones come in.
@@ -240,7 +266,8 @@ export interface Filter {
     kind: 'file' | 'repo' | 'lang' | 'utility'
 }
 
-export type AlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'
+export type SmartSearchAlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'
+export type AlertKind = SmartSearchAlertKind | 'unowned-results'
 
 interface Alert {
     title: string
@@ -569,6 +596,29 @@ export function getCommitMatchUrl(commitMatch: CommitMatch): string {
     return '/' + encodeURI(commitMatch.repository) + '/-/commit/' + commitMatch.oid
 }
 
+export function getOwnerMatchUrl(ownerMatch: OwnerMatch, ignoreUnknownPerson: boolean = false): string {
+    if (ownerMatch.type === 'person' && ownerMatch.user) {
+        return '/users/' + encodeURI(ownerMatch.user.username)
+    }
+    if (ownerMatch.type === 'team') {
+        return '/teams/' + encodeURI(ownerMatch.name)
+    }
+    if (ownerMatch.email) {
+        return `mailto:${ownerMatch.email}`
+    }
+
+    if (ignoreUnknownPerson) {
+        return ''
+    }
+    // Unknown person with only a handle.
+    // We can't ignore this person and return an empty string, we
+    // need some unique dummy data here because this is used
+    // as the key in the virtual list. We can't use the index.
+    // In the future we may be able to link to the
+    // person's profile page in the external code host.
+    return '/unknown-person/' + encodeURI(ownerMatch.handle || 'unknown')
+}
+
 export function getMatchUrl(match: SearchMatch): string {
     switch (match.type) {
         case 'path':
@@ -579,6 +629,9 @@ export function getMatchUrl(match: SearchMatch): string {
             return getCommitMatchUrl(match)
         case 'repo':
             return getRepoMatchUrl(match)
+        case 'person':
+        case 'team':
+            return getOwnerMatchUrl(match)
     }
 }
 

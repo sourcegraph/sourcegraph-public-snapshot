@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
@@ -24,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 type BackfillRequest struct {
@@ -34,8 +34,7 @@ type BackfillRequest struct {
 }
 
 type requestContext struct {
-	backfillRequest    *BackfillRequest
-	compressionSavings float64
+	backfillRequest *BackfillRequest
 }
 
 type Backfiller interface {
@@ -128,8 +127,8 @@ var compressionSavingsMetric = promauto.NewHistogramVec(prometheus.HistogramOpts
 
 func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compressionPlan compression.DataFrameFilter, searchJobWorkerLimit int, rateLimit *ratelimit.InstrumentedLimiter) SearchJobGenerator {
 	return func(ctx context.Context, reqContext requestContext) (*requestContext, []*queryrunner.SearchJob, error) {
-		numberOfFrames := len(reqContext.backfillRequest.SampleTimes)
-		jobs := make([]*queryrunner.SearchJob, 0, numberOfFrames)
+		numberOfSamples := len(reqContext.backfillRequest.SampleTimes)
+		jobs := make([]*queryrunner.SearchJob, 0, numberOfSamples)
 		if reqContext.backfillRequest == nil {
 			return &reqContext, jobs, errors.New("backfill request provided")
 		}
@@ -149,10 +148,15 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 
 			return &reqContext, jobs, err
 		}
+		// Rate limit starting compression
+		err = rateLimit.Wait(ctx)
+		if err != nil {
+			return &reqContext, jobs, err
+		}
 		searchPlan := compressionPlan.Filter(ctx, req.SampleTimes, req.Repo.Name)
-		var ratio float64 = 1.0
-		if numberOfFrames > 0 {
-			ratio = (float64(len(searchPlan.Executions)) / float64(numberOfFrames))
+		ratio := 1.0
+		if numberOfSamples > 0 {
+			ratio = float64(len(searchPlan.Executions)) / float64(numberOfSamples)
 		}
 		compressionSavingsMetric.
 			With(prometheus.Labels{"preempted": "false"}).
@@ -161,15 +165,11 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 
 		groupContext, groupCancel := context.WithCancel(ctx)
 		defer groupCancel()
-		g := group.New().WithContext(groupContext).WithMaxConcurrency(searchJobWorkerLimit).WithCancelOnError()
+		p := pool.New().WithContext(groupContext).WithMaxGoroutines(searchJobWorkerLimit).WithCancelOnError()
 		for i := len(searchPlan.Executions) - 1; i >= 0; i-- {
 			execution := searchPlan.Executions[i]
-			g.Go(func(ctx context.Context) error {
+			p.Go(func(ctx context.Context) error {
 				// Build historical data for this unique timeframe+repo+series.
-				err := rateLimit.Wait(ctx)
-				if err != nil {
-					return errors.Wrap(err, "limiter.Wait")
-				}
 				err, job, _ := buildJob(ctx, &buildSeriesContext{
 					execution:       execution,
 					repoName:        req.Repo.Name,
@@ -186,7 +186,7 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 				return err
 			})
 		}
-		err = g.Wait()
+		err = p.Wait()
 		if err != nil {
 			jobs = nil
 		}
@@ -293,10 +293,10 @@ func makeRunSearchFunc(searchHandlers map[types.GenerationMethod]queryrunner.Ins
 		mu := &sync.Mutex{}
 		groupContext, groupCancel := context.WithCancel(ctx)
 		defer groupCancel()
-		g := group.New().WithContext(groupContext).WithMaxConcurrency(searchWorkerLimit).WithCancelOnError()
+		p := pool.New().WithContext(groupContext).WithMaxGoroutines(searchWorkerLimit).WithCancelOnError()
 		for i := 0; i < len(jobs); i++ {
 			job := jobs[i]
-			g.Go(func(ctx context.Context) error {
+			p.Go(func(ctx context.Context) error {
 				h := searchHandlers[series.GenerationMethod]
 				err := rateLimiter.Wait(ctx)
 				if err != nil {
@@ -312,7 +312,7 @@ func makeRunSearchFunc(searchHandlers map[types.GenerationMethod]queryrunner.Ins
 				return nil
 			})
 		}
-		err := g.Wait()
+		err := p.Wait()
 		// don't return any points if they don't all succeed
 		if err != nil {
 			points = nil

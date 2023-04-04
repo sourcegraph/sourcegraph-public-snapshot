@@ -702,8 +702,8 @@ func sortDiagnostics(s []precise.DiagnosticData) {
 
 func sortDocumentIDRangeIDs(s []precise.DocumentIDRangeID) {
 	sort.Slice(s, func(i, j int) bool {
-		if cmp := strings.Compare(string(s[i].DocumentID), string(s[j].DocumentID)); cmp != 0 {
-			return cmp < 0
+		if compareResult := strings.Compare(string(s[i].DocumentID), string(s[j].DocumentID)); compareResult != 0 {
+			return compareResult < 0
 		} else {
 			return strings.Compare(string(s[i].RangeID), string(s[j].RangeID)) < 0
 		}
@@ -712,10 +712,10 @@ func sortDocumentIDRangeIDs(s []precise.DocumentIDRangeID) {
 
 func sortMonikerLocations(monikerLocations []precise.MonikerLocations) {
 	sort.Slice(monikerLocations, func(i, j int) bool {
-		if cmp := strings.Compare(monikerLocations[i].Scheme, monikerLocations[j].Scheme); cmp != 0 {
-			return cmp < 0
-		} else if cmp := strings.Compare(monikerLocations[i].Identifier, monikerLocations[j].Identifier); cmp != 0 {
-			return cmp < 0
+		if compareResult := strings.Compare(monikerLocations[i].Scheme, monikerLocations[j].Scheme); compareResult != 0 {
+			return compareResult < 0
+		} else if compareResult := strings.Compare(monikerLocations[i].Identifier, monikerLocations[j].Identifier); compareResult != 0 {
+			return compareResult < 0
 		}
 		return false
 	})
@@ -727,8 +727,8 @@ func sortMonikerLocations(monikerLocations []precise.MonikerLocations) {
 
 func sortLocations(locations []precise.LocationData) {
 	sort.Slice(locations, func(i, j int) bool {
-		if cmp := strings.Compare(locations[i].URI, locations[j].URI); cmp != 0 {
-			return cmp < 0
+		if compareResult := strings.Compare(locations[i].URI, locations[j].URI); compareResult != 0 {
+			return compareResult < 0
 		}
 
 		return locations[i].StartLine < locations[j].StartLine

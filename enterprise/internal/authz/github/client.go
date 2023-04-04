@@ -25,7 +25,7 @@ func canViewOrgRepos(org *github.OrgDetailsAndMembership) bool {
 
 // client defines the set of GitHub API client methods used by the authz provider.
 type client interface {
-	ListAffiliatedRepositories(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.RepositoryAffiliation) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
+	ListAffiliatedRepositories(ctx context.Context, visibility github.Visibility, page int, perPage int, affiliations ...github.RepositoryAffiliation) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
 	ListOrgRepositories(ctx context.Context, org string, page int, repoType string) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
 	ListTeamRepositories(ctx context.Context, org, team string, page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
 
@@ -42,6 +42,7 @@ type client interface {
 
 	GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, error)
 	WithAuthenticator(auther auth.Authenticator) client
+	SetWaitForRateLimit(wait bool)
 }
 
 var _ client = (*ClientAdapter)(nil)

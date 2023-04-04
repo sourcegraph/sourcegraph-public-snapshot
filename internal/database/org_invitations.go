@@ -58,7 +58,7 @@ func NewOrgInvitationExpiredErr(id int64) OrgInvitationExpiredErr {
 type OrgInvitationStore interface {
 	basestore.ShareableStore
 	With(basestore.ShareableStore) OrgInvitationStore
-	Transact(context.Context) (OrgInvitationStore, error)
+	WithTransact(context.Context, func(OrgInvitationStore) error) error
 	Create(ctx context.Context, orgID, senderUserID, recipientUserID int32, email string, expiryTime time.Time) (*OrgInvitation, error)
 	GetByID(context.Context, int64) (*OrgInvitation, error)
 	GetPending(ctx context.Context, orgID, recipientUserID int32) (*OrgInvitation, error)
@@ -85,9 +85,10 @@ func (s *orgInvitationStore) With(other basestore.ShareableStore) OrgInvitationS
 	return &orgInvitationStore{Store: s.Store.With(other)}
 }
 
-func (s *orgInvitationStore) Transact(ctx context.Context) (OrgInvitationStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &orgInvitationStore{Store: txBase}, err
+func (s *orgInvitationStore) WithTransact(ctx context.Context, f func(OrgInvitationStore) error) error {
+	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&orgInvitationStore{Store: tx})
+	})
 }
 
 // OrgInvitationNotFoundError occurs when an org invitation is not found.

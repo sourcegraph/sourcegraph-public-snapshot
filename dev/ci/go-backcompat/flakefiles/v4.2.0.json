@@ -53,25 +53,5 @@
     "path": "enterprise/internal/batches/syncer",
     "prefix": "SyncerRun/Sync_due_but_reenqueued_when_namespace_deleted",
     "reason": "Test expectation is too narrow and is broken by new logging code"
-  },
-  {
-    "path": "enterprise/cmd/frontend/internal/batches/webhooks",
-    "prefix": "TestWebhooksIntegration",
-    "reason": "Test was having incomplete data, fails now that constraints are in place"
-  },
-  {
-    "path": "enterprise/cmd/frontend/internal/batches/resolvers",
-    "prefix": "TestChangesetApplyPreviewResolverWithPublicationStates",
-    "reason": "Test was having incomplete data, fails now that constraints are in place"
-  },
-  {
-    "path": "enterprise/cmd/frontend/internal/batches/resolvers",
-    "prefix": "TestChangesetCountsOverTimeIntegration",
-    "reason": "Test was having incomplete data, fails now that constraints are in place"
-  },
-  {
-    "path": "enterprise/cmd/frontend/internal/batches/resolvers",
-    "prefix": "TestRepositoryPermissions",
-    "reason": "Test was having incomplete data, fails now that constraints are in place"
   }
 ]

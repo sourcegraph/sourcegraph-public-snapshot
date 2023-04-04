@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { mdiGithub, mdiGitlab } from '@mdi/js'
+import { mdiBitbucket, mdiGithub, mdiGitlab } from '@mdi/js'
 import classNames from 'classnames'
 import cookies from 'js-cookie'
 import { Observable, of } from 'rxjs'
@@ -44,11 +44,7 @@ interface SignUpFormProps {
     buttonLabel?: string
     context: Pick<
         SourcegraphContext,
-        | 'authProviders'
-        | 'sourcegraphDotComMode'
-        | 'experimentalFeatures'
-        | 'authPasswordPolicy'
-        | 'authMinPasswordLength'
+        'authProviders' | 'sourcegraphDotComMode' | 'authPasswordPolicy' | 'authMinPasswordLength'
     >
 
     // For use in ExperimentalSignUpPage. Modifies styling and removes terms of service.
@@ -256,6 +252,8 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                                         <Icon aria-hidden={true} svgPath={mdiGithub} />
                                     ) : provider.serviceType === 'gitlab' ? (
                                         <Icon aria-hidden={true} svgPath={mdiGitlab} />
+                                    ) : provider.serviceType === 'bitbucketCloud' ? (
+                                        <Icon aria-hidden={true} svPath={mdiBitbucket} />
                                     ) : null}{' '}
                                     Continue with {provider.displayName}
                                 </Button>

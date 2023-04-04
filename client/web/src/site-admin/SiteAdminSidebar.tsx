@@ -13,6 +13,7 @@ import styles from './SiteAdminSidebar.module.scss'
 
 export interface SiteAdminSideBarGroupContext extends BatchChangesProps {
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 }
 
 export interface SiteAdminSideBarGroup extends NavGroupDescriptor<SiteAdminSideBarGroupContext> {}
@@ -21,6 +22,7 @@ export type SiteAdminSideBarGroups = readonly SiteAdminSideBarGroup[]
 
 export interface SiteAdminSidebarProps extends BatchChangesProps {
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
     /** The items for the side bar, by group */
     groups: SiteAdminSideBarGroups
     className?: string
@@ -56,15 +58,15 @@ export const SiteAdminSidebar: React.FunctionComponent<React.PropsWithChildren<S
                                         openByDefault={true}
                                     >
                                         {items.map(
-                                            ({ label, to, source = 'client', condition = () => true }) =>
+                                            ({ label, to, source = 'client', exact, condition = () => true }) =>
                                                 condition(props) && (
                                                     <SidebarNavItem
                                                         to={to}
-                                                        exact={true}
                                                         key={label}
                                                         source={source}
                                                         className={styles.navItem}
                                                         onClick={collapseMobileSidebar}
+                                                        exact={exact}
                                                     >
                                                         {label}
                                                     </SidebarNavItem>

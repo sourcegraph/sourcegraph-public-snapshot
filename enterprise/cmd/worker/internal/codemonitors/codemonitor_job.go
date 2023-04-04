@@ -7,6 +7,7 @@ import (
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -26,11 +27,11 @@ func (j *codeMonitorJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (j *codeMonitorJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *codeMonitorJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return background.NewBackgroundJobs(observationCtx, edb.NewEnterpriseDB(db)), nil
+	return background.NewBackgroundJobs(observationCtx, edb.NewEnterpriseDB(db), search.NewEnterpriseSearchJobs()), nil
 }

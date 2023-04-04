@@ -5,7 +5,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 )
 
-type passwordEmailTemplateData struct {
+type SetPasswordEmailTemplateData struct {
 	Username string
 	URL      string
 	Host     string

@@ -27,11 +27,11 @@ func (j *commitGraphUpdaterJob) Config() []env.Config {
 	}
 }
 
-func (j *commitGraphUpdaterJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *commitGraphUpdaterJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return uploads.NewCommitGraphUpdater(services.UploadsService), nil
+	return uploads.NewCommitGraphUpdater(services.UploadsService, services.GitserverClient), nil
 }

@@ -119,7 +119,7 @@ export const BatchSpecContextProvider = <BatchSpecFields extends MinimalBatchSpe
     const { currentSpec } = batchChange
 
     // TODO: This should probably just be a field on GraphQL.
-    const isBatchSpecApplied = useMemo(() => currentSpec?.id === batchSpec.id, [currentSpec, batchSpec.id])
+    const isBatchSpecApplied = useMemo(() => currentSpec.id === batchSpec.id, [currentSpec.id, batchSpec.id])
 
     const editor = useBatchSpecCode(batchSpec.originalInput, batchChange.name)
     const { handleCodeChange, isValid, isServerStale: isServerBatchSpecYAMLStale } = editor

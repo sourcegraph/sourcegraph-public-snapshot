@@ -52,11 +52,17 @@ type V3Client struct {
 	// httpClient is the HTTP client used to make requests to the GitHub API.
 	httpClient httpcli.Doer
 
-	// rateLimitMonitor is the API rate limit monitor.
-	rateLimitMonitor *ratelimit.Monitor
+	// externalRateLimiter is the external API rate limit monitor.
+	externalRateLimiter *ratelimit.Monitor
 
-	// rateLimit is our self-imposed rate limiter
-	rateLimit *ratelimit.InstrumentedLimiter
+	// internalRateLimiter is our self-imposed rate limiter
+	internalRateLimiter *ratelimit.InstrumentedLimiter
+
+	// waitForRateLimit determines whether or not the client will wait and retry a request if external rate limits are encountered
+	waitForRateLimit bool
+
+	// maxRateLimitRetries determines how many times we retry requests due to rate limits
+	maxRateLimitRetries int
 
 	// resource specifies which API this client is intended for.
 	// One of 'rest' or 'search'.
@@ -115,14 +121,16 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 				log.String("urn", urn),
 				log.String("resource", resource),
 			),
-		urn:              urn,
-		apiURL:           apiURL,
-		githubDotCom:     urlIsGitHubDotCom(apiURL),
-		auth:             a,
-		httpClient:       cli,
-		rateLimit:        rl,
-		rateLimitMonitor: rlm,
-		resource:         resource,
+		urn:                 urn,
+		apiURL:              apiURL,
+		githubDotCom:        urlIsGitHubDotCom(apiURL),
+		auth:                a,
+		httpClient:          cli,
+		internalRateLimiter: rl,
+		externalRateLimiter: rlm,
+		resource:            resource,
+		waitForRateLimit:    true,
+		maxRateLimitRetries: 2,
 	}
 }
 
@@ -133,9 +141,15 @@ func (c *V3Client) WithAuthenticator(a auth.Authenticator) *V3Client {
 	return newV3Client(c.log, c.urn, c.apiURL, a, c.resource, c.httpClient)
 }
 
-// RateLimitMonitor exposes the rate limit monitor.
-func (c *V3Client) RateLimitMonitor() *ratelimit.Monitor {
-	return c.rateLimitMonitor
+// SetWaitForRateLimit sets whether the client should respond to external rate
+// limits by waiting and retrying a request.
+func (c *V3Client) SetWaitForRateLimit(wait bool) {
+	c.waitForRateLimit = wait
+}
+
+// ExternalRateLimiter exposes the rate limit monitor.
+func (c *V3Client) ExternalRateLimiter() *ratelimit.Monitor {
+	return c.externalRateLimiter
 }
 
 func (c *V3Client) get(ctx context.Context, requestURI string, result any) (*httpResponseState, error) {
@@ -192,7 +206,7 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 		req.Header.Add("Accept", "application/vnd.github.nebula-preview+json")
 	}
 
-	err := c.rateLimit.Wait(ctx)
+	err := c.internalRateLimiter.Wait(ctx)
 	if err != nil {
 		// We don't want to return a misleading rate limit exceeded error if the error is coming
 		// from the context.
@@ -204,7 +218,53 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 		return nil, errInternalRateLimitExceeded
 	}
 
-	return doRequest(ctx, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
+	if c.waitForRateLimit {
+		c.externalRateLimiter.WaitForRateLimit(ctx, 1) // We don't care whether we waited or not, this is a preventative measure.
+	}
+
+	var reqBody []byte
+	if req.Body != nil {
+		reqBody, err = io.ReadAll(req.Body)
+		if err != nil {
+			return nil, err
+		}
+	}
+	req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
+	var resp *httpResponseState
+	resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, result)
+
+	apiError := &APIError{}
+	numRetries := 0
+	// We retry only if waitForRateLimit is set, and until:
+	// 1. We've exceeded the number of retries
+	// 2. The error returned is not a rate limit error
+	// 3. We succeed
+	for c.waitForRateLimit && err != nil && numRetries < c.maxRateLimitRetries &&
+		errors.As(err, &apiError) && apiError.Code == http.StatusForbidden {
+		// Because GitHub responds with http.StatusForbidden when a rate limit is hit, we cannot
+		// say with absolute certainty that a rate limit was hit. It might have been an honest
+		// http.StatusForbidden. So we use the externalRateLimiter's WaitForRateLimit function
+		// to calculate the amount of time we need to wait before retrying the request.
+		// If that calculated time is zero or in the past, we have to assume that the
+		// rate limiting information we have is old and no longer relevant.
+		//
+		// There is an extremely unlikely edge case where we will falsely not retry a request.
+		// If a request is rejected because we have no more rate limit tokens, but the token reset
+		// time is just around the corner (like 1 second from now), and for some reason the time
+		// between reading the headers and doing this "should we retry" check is greater than
+		// that time, the rate limit information we will have will look like old information and
+		// we won't retry the request.
+		if c.externalRateLimiter.WaitForRateLimit(ctx, 1) {
+			req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
+			resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, result)
+			numRetries++
+		} else {
+			// We did not wait because of rate limiting, so we break the loop
+			break
+		}
+	}
+
+	return resp, err
 }
 
 // APIError is an error type returned by Client when the GitHub API responds with
@@ -565,13 +625,13 @@ func (c *V3Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64
 // page is the page of results to return, and is 1-indexed (so the first call should be
 // for page 1).
 // visibility and affiliations are filters for which repositories should be returned.
-func (c *V3Client) ListAffiliatedRepositories(ctx context.Context, visibility Visibility, page int, affiliations ...RepositoryAffiliation) (
+func (c *V3Client) ListAffiliatedRepositories(ctx context.Context, visibility Visibility, page int, perPage int, affiliations ...RepositoryAffiliation) (
 	repos []*Repository,
 	hasNextPage bool,
 	rateLimitCost int,
 	err error,
 ) {
-	path := fmt.Sprintf("user/repos?sort=created&visibility=%s&page=%d&per_page=100", visibility, page)
+	path := fmt.Sprintf("user/repos?sort=created&visibility=%s&page=%d&per_page=%d", visibility, page, perPage)
 	if len(affiliations) > 0 {
 		affilationsStrings := make([]string, 0, len(affiliations))
 		for _, affiliation := range affiliations {
@@ -707,6 +767,15 @@ func (c *V3Client) listRepositories(ctx context.Context, requestURI string) ([]*
 	return repos, respState.hasNextPage(), nil
 }
 
+func (c *V3Client) GetRepo(ctx context.Context, owner, repo string) (*Repository, error) {
+	var restRepo restRepository
+	if _, err := c.get(ctx, "repos/"+owner+"/"+repo, &restRepo); err != nil {
+		return nil, err
+	}
+
+	return convertRestRepo(restRepo), nil
+}
+
 // Fork forks the given repository. If org is given, then the repository will
 // be forked into that organisation, otherwise the repository is forked into
 // the authenticated user's account.
@@ -788,7 +857,7 @@ type Config struct {
 // Cloud API docs: https://docs.github.com/en/enterprise-cloud@latest/rest/webhooks/repos#create-a-repository-webhook
 // Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#create-a-repository-webhook
 func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetHost, secret string) (int, error) {
-	url, err := webhookURLBuilder(repoName)
+	hooksUrl, err := webhookURLBuilder(repoName)
 	if err != nil {
 		return 0, err
 	}
@@ -808,7 +877,7 @@ func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetHost, 
 	}
 
 	var result WebhookPayload
-	resp, err := c.post(ctx, url, payload, &result)
+	resp, err := c.post(ctx, hooksUrl, payload, &result)
 	if err != nil {
 		return 0, err
 	}
@@ -825,13 +894,13 @@ func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetHost, 
 // Cloud API docs: https://docs.github.com/en/enterprise-cloud@latest/rest/webhooks/repos#list-repository-webhooks
 // Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#list-repository-webhooks
 func (c *V3Client) ListSyncWebhooks(ctx context.Context, repoName string) ([]WebhookPayload, error) {
-	url, err := webhookURLBuilder(repoName)
+	hooksUrl, err := webhookURLBuilder(repoName)
 	if err != nil {
 		return nil, err
 	}
 
 	var results []WebhookPayload
-	resp, err := c.get(ctx, url, &results)
+	resp, err := c.get(ctx, hooksUrl, &results)
 	if err != nil {
 		return nil, err
 	}
@@ -866,12 +935,12 @@ func (c *V3Client) FindSyncWebhook(ctx context.Context, repoName string) (*Webho
 // Cloud API docs: https://docs.github.com/en/enterprise-cloud@latest/rest/webhooks/repos#delete-a-repository-webhook
 // Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#delete-a-repository-webhook
 func (c *V3Client) DeleteSyncWebhook(ctx context.Context, repoName string, hookID int) (bool, error) {
-	url, err := webhookURLBuilderWithID(repoName, hookID)
+	hookUrl, err := webhookURLBuilderWithID(repoName, hookID)
 	if err != nil {
 		return false, err
 	}
 
-	resp, err := c.delete(ctx, url)
+	resp, err := c.delete(ctx, hookUrl)
 	if err != nil && err != io.EOF {
 		return false, err
 	}

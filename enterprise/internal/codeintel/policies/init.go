@@ -2,8 +2,9 @@ package policies
 
 import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/background"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/store"
+	policiesstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -12,23 +13,17 @@ func NewService(
 	observationCtx *observation.Context,
 	db database.DB,
 	uploadSvc UploadService,
-	gitserver GitserverClient,
+	gitserverClient gitserver.Client,
 ) *Service {
-	store := store.New(scopedContext("store", observationCtx), db)
+	store := policiesstore.New(scopedContext("store", observationCtx), db)
 
 	return newService(
 		observationCtx,
 		store,
+		db.Repos(),
 		uploadSvc,
-		gitserver,
+		gitserverClient,
 	)
-}
-
-type serviceDependencies struct {
-	db             database.DB
-	uploadSvc      UploadService
-	gitserver      GitserverClient
-	observationCtx *observation.Context
 }
 
 func scopedContext(component string, parent *observation.Context) *observation.Context {

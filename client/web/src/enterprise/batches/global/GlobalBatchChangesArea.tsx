@@ -1,17 +1,16 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { RouteComponentProps, Switch, Route } from 'react-router'
+import { Routes, Route } from 'react-router-dom'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
-import { HeroPage } from '../../../components/HeroPage'
+import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_SOURCEGRAPH_COM } from '../../../batches/utils'
+import { NotFoundPage } from '../../../components/HeroPage'
 import type { BatchChangeClosePageProps } from '../close/BatchChangeClosePage'
 import type { CreateBatchChangePageProps } from '../create/CreateBatchChangePage'
 import type { BatchChangeDetailsPageProps } from '../detail/BatchChangeDetailsPage'
@@ -44,54 +43,68 @@ const BatchChangeClosePage = lazyComponent<BatchChangeClosePageProps, 'BatchChan
     'BatchChangeClosePage'
 )
 
-interface Props extends RouteComponentProps, ThemeProps, TelemetryProps, SettingsCascadeProps {
+interface Props extends TelemetryProps, SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 }
 
 /**
  * The global batch changes area.
  */
 export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    match,
-    location,
     authenticatedUser,
     isSourcegraphDotCom,
+    isSourcegraphApp,
     ...props
-}) => (
-    <div className="w-100">
-        <Switch>
-            <Route path={match.url} exact={true}>
-                <BatchChangeListPage
-                    headingElement="h1"
-                    canCreate={Boolean(authenticatedUser) && !isSourcegraphDotCom}
-                    authenticatedUser={authenticatedUser}
-                    isSourcegraphDotCom={isSourcegraphDotCom}
-                    {...props}
-                    location={location}
+}) => {
+    const canCreate: true | string = useMemo(() => {
+        if (isSourcegraphDotCom) {
+            return NO_ACCESS_SOURCEGRAPH_COM
+        }
+        if (!canWriteBatchChanges(authenticatedUser)) {
+            return NO_ACCESS_BATCH_CHANGES_WRITE
+        }
+        return true
+    }, [isSourcegraphDotCom, authenticatedUser])
+
+    return (
+        <div className="w-100">
+            <Routes>
+                <Route
+                    path=""
+                    element={
+                        <BatchChangeListPage
+                            headingElement="h1"
+                            canCreate={canCreate}
+                            authenticatedUser={authenticatedUser}
+                            isSourcegraphDotCom={isSourcegraphDotCom}
+                            isSourcegraphApp={isSourcegraphApp}
+                            {...props}
+                        />
+                    }
                 />
-            </Route>
-            {!isSourcegraphDotCom && (
-                <Route path={`${match.url}/create`} exact={true}>
-                    <AuthenticatedCreateBatchChangePage
-                        {...props}
-                        headingElement="h1"
-                        authenticatedUser={authenticatedUser}
+                {!isSourcegraphDotCom && canCreate === true && (
+                    <Route
+                        path="create"
+                        element={
+                            <AuthenticatedCreateBatchChangePage
+                                {...props}
+                                headingElement="h1"
+                                authenticatedUser={authenticatedUser}
+                            />
+                        }
                     />
-                </Route>
-            )}
-            <Route component={NotFoundPage} key="hardcoded-key" />
-        </Switch>
-    </div>
-)
+                )}
+                <Route path="*" element={<NotFoundPage pageType="batch changes" />} key="hardcoded-key" />
+            </Routes>
+        </div>
+    )
+}
 
 const AuthenticatedCreateBatchChangePage = withAuthenticatedUser<
     CreateBatchChangePageProps & { authenticatedUser: AuthenticatedUser }
 >(props => <CreateBatchChangePage {...props} authenticatedUser={props.authenticatedUser} />)
-
-const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
-)
 
 export interface NamespaceBatchChangesAreaProps extends Props {
     namespaceID: Scalars['ID']
@@ -99,61 +112,17 @@ export interface NamespaceBatchChangesAreaProps extends Props {
 
 export const NamespaceBatchChangesArea = withAuthenticatedUser<
     NamespaceBatchChangesAreaProps & { authenticatedUser: AuthenticatedUser }
->(({ match, namespaceID, ...outerProps }) => (
+>(props => (
     <div className="pb-3">
-        <Switch>
+        <Routes>
+            <Route path="apply/:batchSpecID" element={<BatchChangePreviewPage {...props} />} />
+            <Route path=":batchChangeName/close" element={<BatchChangeClosePage {...props} />} />
             <Route
-                path={`${match.url}/apply/:specID`}
-                render={({ match, ...props }: RouteComponentProps<{ specID: string }>) => (
-                    <BatchChangePreviewPage {...outerProps} {...props} batchSpecID={match.params.specID} />
-                )}
+                path=":batchChangeName/executions"
+                element={<BatchChangeDetailsPage {...props} initialTab={TabName.Executions} />}
             />
-            <Route
-                path={`${match.url}/:batchChangeName/close`}
-                render={({ match, ...props }: RouteComponentProps<{ batchChangeName: string }>) => (
-                    <BatchChangeClosePage
-                        {...outerProps}
-                        {...props}
-                        namespaceID={namespaceID}
-                        batchChangeName={match.params.batchChangeName}
-                    />
-                )}
-            />
-            <Route
-                path={`${match.url}/:batchChangeName/executions`}
-                render={({ match, ...props }: RouteComponentProps<{ batchChangeName: string }>) => (
-                    <BatchChangeDetailsPage
-                        {...outerProps}
-                        {...props}
-                        namespaceID={namespaceID}
-                        batchChangeName={match.params.batchChangeName}
-                        initialTab={TabName.Executions}
-                    />
-                )}
-            />
-            <Route
-                path={`${match.url}/:batchChangeName`}
-                render={({ match, ...props }: RouteComponentProps<{ batchChangeName: string }>) => (
-                    <BatchChangeDetailsPage
-                        {...outerProps}
-                        {...props}
-                        namespaceID={namespaceID}
-                        batchChangeName={match.params.batchChangeName}
-                    />
-                )}
-            />
-            <Route
-                path={match.url}
-                render={props => (
-                    <NamespaceBatchChangeListPage
-                        headingElement="h2"
-                        {...props}
-                        {...outerProps}
-                        namespaceID={namespaceID}
-                    />
-                )}
-                exact={true}
-            />
-        </Switch>
+            <Route path=":batchChangeName" element={<BatchChangeDetailsPage {...props} />} />
+            <Route path="" element={<NamespaceBatchChangeListPage headingElement="h2" {...props} />} />
+        </Routes>
     </div>
 ))

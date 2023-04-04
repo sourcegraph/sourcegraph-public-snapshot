@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
@@ -39,7 +38,7 @@ func testHinter(t *testing.T, testCase hinterTestCase) {
 
 		jobHints, err := service.InferIndexJobHints(
 			context.Background(),
-			api.RepoName("github.com/test/test"),
+			"github.com/test/test",
 			"HEAD",
 			"",
 		)

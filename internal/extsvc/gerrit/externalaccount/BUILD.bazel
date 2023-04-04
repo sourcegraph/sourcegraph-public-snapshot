@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "externalaccount",
+    srcs = ["externalaccount.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit/externalaccount",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database",
+        "//internal/extsvc",
+        "//internal/extsvc/gerrit",
+    ],
+)

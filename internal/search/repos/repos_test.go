@@ -40,7 +40,11 @@ func TestMain(m *testing.M) {
 func toParsedRepoFilters(repoRevs ...string) []query.ParsedRepoFilter {
 	repoFilters := make([]query.ParsedRepoFilter, len(repoRevs))
 	for i, r := range repoRevs {
-		repoFilters[i] = query.ParseRepositoryRevisions(r)
+		parsedFilter, err := query.ParseRepositoryRevisions(r)
+		if err != nil {
+			panic(errors.Errorf("unexpected error parsing repo filter %s", r))
+		}
+		repoFilters[i] = parsedFilter
 	}
 	return repoFilters
 }
@@ -226,29 +230,11 @@ func TestSearchRevspecs(t *testing.T) {
 			matched:  []query.RevisionSpecifier{{RevSpec: "b"}, {RevSpec: "c"}},
 			clashing: nil,
 		},
-		{
-			descr:    "invalid regexp",
-			specs:    []string{"*o@a:b"},
-			repo:     "foo",
-			err:      errors.Errorf("%s", "bad request: in findPatternRevs: error parsing regexp: missing argument to repetition operator: `*`"),
-			matched:  nil,
-			clashing: nil,
-		},
 	}
 	for _, test := range tests {
 		t.Run(test.descr, func(t *testing.T) {
 			repoRevs := toParsedRepoFilters(test.specs...)
-			_, pats, err := findPatternRevs(repoRevs)
-			if err != nil {
-				if test.err == nil {
-					t.Errorf("unexpected error: '%s'", err)
-				}
-				if test.err != nil && err.Error() != test.err.Error() {
-					t.Errorf("incorrect error: got '%s', expected '%s'", err, test.err)
-				}
-				// don't try to use the pattern list if we got an error
-				return
-			}
+			_, pats := findPatternRevs(repoRevs)
 			if test.err != nil {
 				t.Errorf("missing expected error: wanted '%s'", test.err.Error())
 			}
@@ -266,7 +252,7 @@ func TestSearchRevspecs(t *testing.T) {
 func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
 	b.Run("2 conflicting", func(b *testing.B) {
 		repoRevs := toParsedRepoFilters(".*o@123456", "foo@234567")
-		_, pats, _ := findPatternRevs(repoRevs)
+		_, pats := findPatternRevs(repoRevs)
 		for i := 0; i < b.N; i++ {
 			_, _ = getRevsForMatchedRepo("foo", pats)
 		}
@@ -274,7 +260,7 @@ func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
 
 	b.Run("multiple overlapping", func(b *testing.B) {
 		repoRevs := toParsedRepoFilters(".*o@a:b:c:d", "foo@b:c:d:e", "foo@c:d:e:f")
-		_, pats, _ := findPatternRevs(repoRevs)
+		_, pats := findPatternRevs(repoRevs)
 		for i := 0; i < b.N; i++ {
 			_, _ = getRevsForMatchedRepo("foo", pats)
 		}
@@ -488,6 +474,7 @@ func TestRepoHasFileContent(t *testing.T) {
 	repoB := types.MinimalRepo{ID: 2, Name: "example.com/2"}
 	repoC := types.MinimalRepo{ID: 3, Name: "example.com/3"}
 	repoD := types.MinimalRepo{ID: 4, Name: "example.com/4"}
+	repoE := types.MinimalRepo{ID: 5, Name: "example.com/5"}
 
 	mkHead := func(repo types.MinimalRepo) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{
@@ -498,11 +485,19 @@ func TestRepoHasFileContent(t *testing.T) {
 
 	repos := database.NewMockRepoStore()
 	repos.ListMinimalReposFunc.SetDefaultHook(func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error) {
-		return []types.MinimalRepo{repoA, repoB, repoC, repoD}, nil
+		return []types.MinimalRepo{repoA, repoB, repoC, repoD, repoE}, nil
 	})
 
 	db := database.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
+
+	mockGitserver := gitserver.NewMockClient()
+	mockGitserver.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, name api.RepoName, _ string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+		if name == repoE.Name {
+			return "", &gitdomain.RevisionNotFoundError{}
+		}
+		return "", nil
+	})
 
 	unindexedCorpus := map[string]map[string]map[string]struct{}{
 		string(repoC.Name): {
@@ -549,6 +544,7 @@ func TestRepoHasFileContent(t *testing.T) {
 			mkHead(repoB),
 			mkHead(repoC),
 			mkHead(repoD),
+			mkHead(repoE),
 		},
 	}, {
 		name: "bad path",
@@ -580,6 +576,17 @@ func TestRepoHasFileContent(t *testing.T) {
 		matchingRepos: nil,
 		expected: []*search.RepositoryRevisions{
 			mkHead(repoC),
+		},
+	}, {
+		name: "one negated unindexed path",
+		filters: []query.RepoHasFileContentArgs{{
+			Path:    "pathC",
+			Negated: true,
+		}},
+		matchingRepos: nil,
+		expected: []*search.RepositoryRevisions{
+			mkHead(repoD),
+			mkHead(repoE),
 		},
 	}, {
 		name: "path but no content",
@@ -620,7 +627,7 @@ func TestRepoHasFileContent(t *testing.T) {
 				Minimal: tc.matchingRepos,
 			}, nil)
 
-			res := NewResolver(logtest.Scoped(t), db, gitserver.NewMockClient(), endpoint.Static("test"), mockZoekt)
+			res := NewResolver(logtest.Scoped(t), db, mockGitserver, endpoint.Static("test"), mockZoekt)
 			resolved, err := res.Resolve(context.Background(), search.RepoOptions{
 				RepoFilters:    toParsedRepoFilters(".*"),
 				HasFileContent: tc.filters,

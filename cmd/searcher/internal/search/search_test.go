@@ -592,11 +592,11 @@ func newStore(t *testing.T, files map[string]struct {
 
 // fetchTimeoutForCI gives a large timeout for CI. CI can be very busy, so we
 // give a large timeout instead of giving bad signal on PRs.
-func fetchTimeoutForCI(t *testing.T) string {
+func fetchTimeoutForCI(t *testing.T) time.Duration {
 	if deadline, ok := t.Deadline(); ok {
-		return (time.Until(deadline) / 2).String()
+		return time.Until(deadline) / 2
 	}
-	return (500 * time.Millisecond).String()
+	return 500 * time.Millisecond
 }
 
 func toString(m []protocol.FileMatch) string {

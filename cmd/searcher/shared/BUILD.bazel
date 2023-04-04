@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "shared",
+    srcs = [
+        "debug.go",
+        "service.go",
+        "shared.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/searcher/shared",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/searcher/internal/search",
+        "//internal/actor",
+        "//internal/api",
+        "//internal/conf",
+        "//internal/debugserver",
+        "//internal/env",
+        "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
+        "//internal/goroutine",
+        "//internal/grpc",
+        "//internal/grpc/defaults",
+        "//internal/instrumentation",
+        "//internal/observation",
+        "//internal/search",
+        "//internal/searcher/v1:searcher",
+        "//internal/service",
+        "//internal/trace",
+        "//lib/errors",
+        "@com_github_keegancsmith_tmpfriend//:tmpfriend",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_sync//errgroup",
+    ],
+)

@@ -67,6 +67,18 @@ func TestComputeRunType(t *testing.T) {
 		},
 		want: VsceReleaseBranch,
 	}, {
+		name: "app release",
+		args: args{
+			branch: "app/release",
+		},
+		want: AppRelease,
+	}, {
+		name: "app release insiders",
+		args: args{
+			branch: "app/insiders",
+		},
+		want: AppInsiders,
+	}, {
 		name: "release nightly",
 		args: args{
 			branch: "main",

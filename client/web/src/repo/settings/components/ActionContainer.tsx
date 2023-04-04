@@ -1,7 +1,6 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 
 import { asError } from '@sourcegraph/common'
 import { Button, ButtonProps, H4, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
@@ -43,7 +42,6 @@ interface Props {
     flashText?: string
 
     run: () => Promise<void>
-    history: H.History
 }
 
 interface State {

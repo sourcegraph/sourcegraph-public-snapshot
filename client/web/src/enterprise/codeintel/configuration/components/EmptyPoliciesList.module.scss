@@ -1,0 +1,28 @@
+.text {
+    margin: 0 auto;
+    width: 50%;
+    display: block;
+}
+
+.content,
+.content-expanded {
+    width: 75%;
+    margin: 1.5rem 0 1rem;
+    display: grid;
+}
+
+.content {
+    grid-template-columns: 1fr [docs];
+    border-top: 1px solid var(--border-color);
+}
+
+.content-expanded {
+    grid-template-columns: 1fr [docs] min-content [divider] 1fr [cta];
+}
+
+.divider {
+    border-right: 1px solid var(--border-color);
+    height: 100%;
+    align-self: center;
+    margin: 0 0.5rem;
+}

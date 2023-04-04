@@ -6,9 +6,10 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 )
 
-func NewBackgroundJobs(observationCtx *observation.Context, db edb.EnterpriseDB) []goroutine.BackgroundRoutine {
+func NewBackgroundJobs(observationCtx *observation.Context, db edb.EnterpriseDB, enterpriseJobs jobutil.EnterpriseJobs) []goroutine.BackgroundRoutine {
 	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("BackgroundJobs", "code monitors background jobs"), observationCtx)
 
 	codeMonitorsStore := db.CodeMonitors()
@@ -22,7 +23,7 @@ func NewBackgroundJobs(observationCtx *observation.Context, db edb.EnterpriseDB)
 	return []goroutine.BackgroundRoutine{
 		newTriggerQueryEnqueuer(ctx, codeMonitorsStore),
 		newTriggerJobsLogDeleter(ctx, codeMonitorsStore),
-		newTriggerQueryRunner(ctx, scopedContext("TriggerQueryRunner", observationCtx), db, triggerMetrics),
+		newTriggerQueryRunner(ctx, scopedContext("TriggerQueryRunner", observationCtx), db, enterpriseJobs, triggerMetrics),
 		newTriggerQueryResetter(ctx, scopedContext("TriggerQueryResetter", observationCtx), codeMonitorsStore, triggerMetrics),
 		newActionRunner(ctx, scopedContext("ActionRunner", observationCtx), codeMonitorsStore, actionMetrics),
 		newActionJobResetter(ctx, scopedContext("ActionJobResetter", observationCtx), codeMonitorsStore, actionMetrics),

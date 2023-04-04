@@ -1,9 +1,9 @@
 import { FC, useContext, useMemo } from 'react'
 
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
-import { useExperimentalFeatures } from '../../../../../../../../../stores'
 import { SmartInsightsViewGrid, InsightContext } from '../../../../../../../components'
 import { CodeInsightsBackendContext, CustomInsightDashboard } from '../../../../../../../core'
 import { EmptyCustomDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
@@ -18,7 +18,7 @@ export const DashboardInsights: FC<DashboardInsightsProps> = props => {
     const { telemetryService, currentDashboard, className, onAddInsightRequest } = props
 
     const { getInsights } = useContext(CodeInsightsBackendContext)
-    const { codeInsightsCompute = false } = useExperimentalFeatures()
+    const codeInsightsCompute = useExperimentalFeatures(settings => settings.codeInsightsCompute ?? false)
 
     const insights = useObservable(
         useMemo(

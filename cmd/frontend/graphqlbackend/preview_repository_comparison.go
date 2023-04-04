@@ -128,7 +128,10 @@ func fileDiffConnectionCompute(patch []byte) func(ctx context.Context, args *Fil
 
 func previewNewFile(db database.DB, r *FileDiffResolver) FileResolver {
 	fileStat := CreateFileInfo(r.FileDiff.NewName, false)
-	return NewVirtualFileResolver(fileStat, fileDiffVirtualFileContent(r))
+	return NewVirtualFileResolver(fileStat, fileDiffVirtualFileContent(r), VirtualFileResolverOptions{
+		// TODO: Add view in webapp to render full preview files.
+		URL: "",
+	})
 }
 
 func fileDiffVirtualFileContent(r *FileDiffResolver) FileContentFunc {
@@ -142,7 +145,7 @@ func fileDiffVirtualFileContent(r *FileDiffResolver) FileContentFunc {
 			var oldContent string
 			if oldFile := r.OldFile(); oldFile != nil {
 				var err error
-				oldContent, err = r.OldFile().Content(ctx)
+				oldContent, err = r.OldFile().Content(ctx, &GitTreeContentPageArgs{})
 				if err != nil {
 					return
 				}

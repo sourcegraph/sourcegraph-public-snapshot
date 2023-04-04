@@ -31,19 +31,17 @@ func TestProvider_ValidateConnection(t *testing.T) {
 	}
 
 	for _, tc := range []struct {
-		name     string
-		client   func(*bitbucketserver.Client)
-		problems []string
+		name    string
+		client  func(*bitbucketserver.Client)
+		wantErr string
 	}{
 		{
 			name: "no-problems-when-authenticated-as-admin",
 		},
 		{
-			name:   "problems-when-authenticated-as-non-admin",
-			client: func(c *bitbucketserver.Client) { c.Auth = &auth.BasicAuth{} },
-			problems: []string{
-				`Bitbucket API HTTP error: code=401 url="${INSTANCEURL}/rest/api/1.0/admin/permissions/users?filter=" body="{\"errors\":[{\"context\":null,\"message\":\"You are not permitted to access this resource\",\"exceptionName\":\"com.atlassian.bitbucket.AuthorisationException\"}]}"`,
-			},
+			name:    "problems-when-authenticated-as-non-admin",
+			client:  func(c *bitbucketserver.Client) { c.Auth = &auth.BasicAuth{} },
+			wantErr: `Bitbucket API HTTP error: code=401 url="${INSTANCEURL}/rest/api/1.0/admin/permissions/users?filter=" body="{\"errors\":[{\"context\":null,\"message\":\"You are not permitted to access this resource\",\"exceptionName\":\"com.atlassian.bitbucket.AuthorisationException\"}]}"`,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -55,13 +53,19 @@ func TestProvider_ValidateConnection(t *testing.T) {
 				tc.client(p.client)
 			}
 
-			for i := range tc.problems {
-				tc.problems[i] = strings.ReplaceAll(tc.problems[i], "${INSTANCEURL}", instanceURL)
-			}
+			tc.wantErr = strings.ReplaceAll(tc.wantErr, "${INSTANCEURL}", instanceURL)
 
-			problems := p.ValidateConnection(context.Background())
-			if have, want := problems, tc.problems; !reflect.DeepEqual(have, want) {
-				t.Error(cmp.Diff(have, want))
+			err := p.ValidateConnection(context.Background())
+			if tc.wantErr == "" && err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+			if tc.wantErr != "" {
+				if err == nil {
+					t.Fatal("expected error, but got none")
+				}
+				if have, want := err.Error(), tc.wantErr; !reflect.DeepEqual(have, want) {
+					t.Error(cmp.Diff(have, want))
+				}
 			}
 		})
 	}

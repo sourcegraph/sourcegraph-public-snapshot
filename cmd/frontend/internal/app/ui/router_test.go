@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -26,7 +27,7 @@ func init() {
 }
 
 func TestRouter(t *testing.T) {
-	InitRouter(database.NewMockDB())
+	InitRouter(database.NewMockDB(), jobutil.NewUnimplementedEnterpriseJobs())
 	router := Router()
 	tests := []struct {
 		path      string
@@ -146,6 +147,13 @@ func TestRouter(t *testing.T) {
 			wantVars:  map[string]string{},
 		},
 
+		// request-access
+		{
+			path:      "/request-access",
+			wantRoute: uirouter.RouteRequestAccess,
+			wantVars:  map[string]string{},
+		},
+
 		// settings
 		{
 			path:      "/settings",
@@ -211,7 +219,7 @@ func TestRouter(t *testing.T) {
 }
 
 func TestRouter_RootPath(t *testing.T) {
-	InitRouter(database.NewMockDB())
+	InitRouter(database.NewMockDB(), jobutil.NewUnimplementedEnterpriseJobs())
 	router := Router()
 
 	tests := []struct {

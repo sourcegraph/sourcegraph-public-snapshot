@@ -7,14 +7,13 @@ import (
 	"github.com/jackc/pgtype"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-func scanCompleteUpload(s dbutil.Scanner) (upload types.Upload, _ error) {
+func scanCompleteUpload(s dbutil.Scanner) (upload shared.Upload, _ error) {
 	var rawUploadedParts []sql.NullInt32
 	if err := s.Scan(
 		&upload.ID,
@@ -38,6 +37,7 @@ func scanCompleteUpload(s dbutil.Scanner) (upload types.Upload, _ error) {
 		&upload.UploadSize,
 		&upload.AssociatedIndexID,
 		&upload.ContentType,
+		&upload.ShouldReindex,
 		&upload.Rank,
 		&upload.UncompressedSize,
 	); err != nil {
@@ -57,51 +57,9 @@ var scanUploadComplete = basestore.NewSliceScanner(scanCompleteUpload)
 // scanFirstUpload scans a slice of uploads from the return value of `*Store.query` and returns the first.
 var scanFirstUpload = basestore.NewFirstScanner(scanCompleteUpload)
 
-var scanUploadsWithCount = basestore.NewSliceWithCountScanner(scanUploadWithCount)
-
-func scanUploadWithCount(s dbutil.Scanner) (upload types.Upload, count int, err error) {
-	var rawUploadedParts []sql.NullInt32
-	if err = s.Scan(
-		&upload.ID,
-		&upload.Commit,
-		&upload.Root,
-		&upload.VisibleAtTip,
-		&upload.UploadedAt,
-		&upload.State,
-		&upload.FailureMessage,
-		&upload.StartedAt,
-		&upload.FinishedAt,
-		&upload.ProcessAfter,
-		&upload.NumResets,
-		&upload.NumFailures,
-		&upload.RepositoryID,
-		&upload.RepositoryName,
-		&upload.Indexer,
-		&dbutil.NullString{S: &upload.IndexerVersion},
-		&upload.NumParts,
-		pq.Array(&rawUploadedParts),
-		&upload.UploadSize,
-		&upload.AssociatedIndexID,
-		&upload.ContentType,
-		&upload.Rank,
-		&upload.UncompressedSize,
-		&count,
-	); err != nil {
-		return upload, 0, err
-	}
-
-	upload.UploadedParts = make([]int, 0, len(rawUploadedParts))
-	for _, uploadedPart := range rawUploadedParts {
-		upload.UploadedParts = append(upload.UploadedParts, int(uploadedPart.Int32))
-	}
-
-	return upload, count, nil
-}
-
-// scanCounts scans pairs of id/counts from the return value of `*Store.query`.
-func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
+func scanCountsWithTotalCount(rows *sql.Rows, queryErr error) (totalCount int, _ map[int]int, err error) {
 	if queryErr != nil {
-		return nil, queryErr
+		return 0, nil, queryErr
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
@@ -109,18 +67,18 @@ func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 	for rows.Next() {
 		var id int
 		var count int
-		if err := rows.Scan(&id, &count); err != nil {
-			return nil, err
+		if err := rows.Scan(&totalCount, &id, &count); err != nil {
+			return 0, nil, err
 		}
 
 		visibilities[id] = count
 	}
 
-	return visibilities, nil
+	return totalCount, visibilities, nil
 }
 
 // scanDumps scans a slice of dumps from the return value of `*Store.query`.
-func scanDump(s dbutil.Scanner) (dump types.Dump, err error) {
+func scanDump(s dbutil.Scanner) (dump shared.Dump, err error) {
 	return dump, s.Scan(
 		&dump.ID,
 		&dump.Commit,
@@ -147,13 +105,13 @@ var scanDumps = basestore.NewSliceScanner(scanDump)
 // scanSourcedCommits scans triples of repository ids/repository names/commits from the
 // return value of `*Store.query`. The output of this function is ordered by repository
 // identifier, then by commit.
-func scanSourcedCommits(rows *sql.Rows, queryErr error) (_ []shared.SourcedCommits, err error) {
+func scanSourcedCommits(rows *sql.Rows, queryErr error) (_ []SourcedCommits, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	sourcedCommitsMap := map[int]shared.SourcedCommits{}
+	sourcedCommitsMap := map[int]SourcedCommits{}
 	for rows.Next() {
 		var repositoryID int
 		var repositoryName string
@@ -162,14 +120,14 @@ func scanSourcedCommits(rows *sql.Rows, queryErr error) (_ []shared.SourcedCommi
 			return nil, err
 		}
 
-		sourcedCommitsMap[repositoryID] = shared.SourcedCommits{
+		sourcedCommitsMap[repositoryID] = SourcedCommits{
 			RepositoryID:   repositoryID,
 			RepositoryName: repositoryName,
 			Commits:        append(sourcedCommitsMap[repositoryID].Commits, commit),
 		}
 	}
 
-	flattened := make([]shared.SourcedCommits, 0, len(sourcedCommitsMap))
+	flattened := make([]SourcedCommits, 0, len(sourcedCommitsMap))
 	for _, sourcedCommits := range sourcedCommitsMap {
 		sort.Strings(sourcedCommits.Commits)
 		flattened = append(flattened, sourcedCommits)
@@ -277,7 +235,7 @@ func scanRepoNames(rows *sql.Rows, queryErr error) (_ map[int]string, err error)
 	return names, nil
 }
 
-func scanUploadAuditLog(s dbutil.Scanner) (log types.UploadLog, _ error) {
+func scanUploadAuditLog(s dbutil.Scanner) (log shared.UploadLog, _ error) {
 	hstores := pgtype.HstoreArray{}
 	err := s.Scan(
 		&log.LogTimestamp,

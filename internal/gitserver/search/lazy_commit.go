@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
@@ -18,7 +18,7 @@ type LazyCommit struct {
 	*RawCommit
 
 	// diff is the parsed output from the diff fetcher, cached here for performance
-	diff        []*diff.FileDiff
+	diff        []*godiff.FileDiff
 	diffFetcher *DiffFetcher
 
 	// LowerBuf is a re-usable buffer for doing case-transformations on the fields of LazyCommit
@@ -49,7 +49,7 @@ func (l *LazyCommit) RawDiff() ([]byte, error) {
 }
 
 // Diff fetches the diff, then parses it with go-diff, caching the result
-func (l *LazyCommit) Diff() ([]*diff.FileDiff, error) {
+func (l *LazyCommit) Diff() ([]*godiff.FileDiff, error) {
 	if l.diff != nil {
 		return l.diff, nil
 	}
@@ -59,7 +59,7 @@ func (l *LazyCommit) Diff() ([]*diff.FileDiff, error) {
 		return nil, err
 	}
 
-	r := diff.NewMultiFileDiffReader(bytes.NewReader(rawDiff))
+	r := godiff.NewMultiFileDiffReader(bytes.NewReader(rawDiff))
 	diff, err := r.ReadAllFiles()
 	if err != nil {
 		return nil, err

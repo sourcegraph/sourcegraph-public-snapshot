@@ -7,9 +7,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
-	codeintelgitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -17,21 +18,20 @@ import (
 
 func TestHover(t *testing.T) {
 	// Set up mocks
-	mockStore := NewMockStore()
+	mockRepoStore := defaultMockRepoStore()
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
-	mockGitserverClient := NewMockGitserverClient()
-	mockGitServer := codeintelgitserver.New(&observation.TestContext, database.NewMockDB())
+	mockGitserverClient := gitserver.NewMockClient()
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}
-	mockRequestState.SetLocalCommitCache(mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &sgtypes.Repo{ID: 42}, mockCommit, mockPath, hunkCache)
-	uploads := []types.Dump{
+	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
+	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, mockPath, hunkCache)
+	uploads := []uploadsshared.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -39,14 +39,14 @@ func TestHover(t *testing.T) {
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
 
-	expectedRange := types.Range{
-		Start: types.Position{Line: 10, Character: 10},
-		End:   types.Position{Line: 15, Character: 25},
+	expectedRange := shared.Range{
+		Start: shared.Position{Line: 10, Character: 10},
+		End:   shared.Position{Line: 15, Character: 25},
 	}
-	mockLsifStore.GetHoverFunc.PushReturn("", types.Range{}, false, nil)
+	mockLsifStore.GetHoverFunc.PushReturn("", shared.Range{}, false, nil)
 	mockLsifStore.GetHoverFunc.PushReturn("doctext", expectedRange, true, nil)
 
-	mockRequest := shared.RequestArgs{
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -72,38 +72,37 @@ func TestHover(t *testing.T) {
 
 func TestHoverRemote(t *testing.T) {
 	// Set up mocks
-	mockStore := NewMockStore()
+	mockRepoStore := defaultMockRepoStore()
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
-	mockGitserverClient := NewMockGitserverClient()
-	mockGitServer := codeintelgitserver.New(&observation.TestContext, database.NewMockDB())
+	mockGitserverClient := gitserver.NewMockClient()
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}
-	mockRequestState.SetLocalCommitCache(mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &sgtypes.Repo{ID: 42}, mockCommit, mockPath, hunkCache)
-	uploads := []types.Dump{
+	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
+	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, mockPath, hunkCache)
+	uploads := []uploadsshared.Dump{
 		{ID: 50, Commit: "deadbeef"},
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
 
-	expectedRange := types.Range{
-		Start: types.Position{Line: 10, Character: 10},
-		End:   types.Position{Line: 15, Character: 25},
+	expectedRange := shared.Range{
+		Start: shared.Position{Line: 10, Character: 10},
+		End:   shared.Position{Line: 15, Character: 25},
 	}
 	mockLsifStore.GetHoverFunc.PushReturn("", expectedRange, true, nil)
 
-	remoteRange := types.Range{
-		Start: types.Position{Line: 30, Character: 30},
-		End:   types.Position{Line: 35, Character: 45},
+	remoteRange := shared.Range{
+		Start: shared.Position{Line: 30, Character: 30},
+		End:   shared.Position{Line: 35, Character: 45},
 	}
 	mockLsifStore.GetHoverFunc.PushReturn("doctext", remoteRange, true, nil)
 
-	uploadsWithDefinitions := []types.Dump{
+	uploadsWithDefinitions := []uploadsshared.Dump{
 		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
@@ -137,14 +136,14 @@ func TestHoverRemote(t *testing.T) {
 	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(locations, 0, nil)
 	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(locations, len(locations), nil)
 
-	mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, rcs []codeintelgitserver.RepositoryCommit) (exists []bool, _ error) {
+	mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, _ authz.SubRepoPermissionChecker, rcs []api.RepoCommit) (exists []bool, _ error) {
 		for range rcs {
 			exists = append(exists, true)
 		}
 		return
 	})
 
-	mockRequest := shared.RequestArgs{
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,

@@ -1,54 +1,45 @@
 import React, { useMemo, useState } from 'react'
 
-import { mdiChevronDoubleUp, mdiChevronDoubleDown } from '@mdi/js'
+import { mdiChevronDoubleDown, mdiChevronDoubleUp } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
 
-import { ContributableMenu } from '@sourcegraph/client-api'
-import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
-import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SearchPatternTypeProps, CaseSensitivityProps } from '@sourcegraph/shared/src/search'
+import { CaseSensitivityProps, SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
-import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
-import { Button, Icon, Link } from '@sourcegraph/wildcard'
+import { Button, Icon, Label } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { CloudCtaBanner } from '../../components/CloudCtaBanner'
-import { eventLogger } from '../../tracking/eventLogger'
+import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_SOURCEGRAPH_COM } from '../../batches/utils'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 
 import {
+    CreateAction,
+    getBatchChangeCreateAction,
     getCodeMonitoringCreateAction,
     getInsightsCreateAction,
     getSearchContextCreateAction,
-    getBatchChangeCreateAction,
-    CreateAction,
 } from './createActions'
 import { SearchActionsMenu } from './SearchActionsMenu'
 
 import styles from './SearchResultsInfoBar.module.scss'
 
 export interface SearchResultsInfoBarProps
-    extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
-        TelemetryProps,
+    extends TelemetryProps,
         PlatformContextProps<'settings' | 'sourcegraphURL'>,
         SearchPatternTypeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'> {
-    history: H.History
     /** The currently authenticated user or null */
-    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'displayName' | 'emails'> | null
+    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'displayName' | 'emails' | 'permissions'> | null
 
-    /**
-     * Whether the code insights feature flag is enabled.
-     */
     enableCodeInsights?: boolean
     enableCodeMonitoring: boolean
 
     /** The search query and results */
     query?: string
+    options: StreamSearchOptions
     results?: AggregateStreamingSearchResults
 
     batchChangesEnabled?: boolean
@@ -62,8 +53,6 @@ export interface SearchResultsInfoBarProps
     // Saved queries
     onSaveQueryClick: () => void
 
-    location: H.Location
-
     className?: string
 
     stats: JSX.Element
@@ -74,6 +63,9 @@ export interface SearchResultsInfoBarProps
     setSidebarCollapsed: (collapsed: boolean) => void
 
     isSourcegraphDotCom: boolean
+
+    isRankingEnabled: boolean
+    setRankingEnabled: (enabled: boolean) => void
 }
 
 /**
@@ -93,43 +85,38 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         [globalTypeFilter]
     )
 
-    const canCreateBatchChangeFromQuery = useMemo(
-        () => globalTypeFilter !== 'diff' && globalTypeFilter !== 'commit',
-        [globalTypeFilter]
-    )
+    const canCreateBatchChanges: boolean | string = useMemo(() => {
+        if (globalTypeFilter === 'diff' || globalTypeFilter === 'commit') {
+            return 'Batch changes cannot be created from searches with type:diff or type:commit'
+        }
+        if (props.isSourcegraphDotCom) {
+            return NO_ACCESS_SOURCEGRAPH_COM
+        }
+        if (!props.batchChangesEnabled || !props.batchChangesExecutionEnabled) {
+            return false
+        }
+        if (!canWriteBatchChanges(props.authenticatedUser)) {
+            return NO_ACCESS_BATCH_CHANGES_WRITE
+        }
+        return true
+    }, [
+        globalTypeFilter,
+        props.isSourcegraphDotCom,
+        props.batchChangesEnabled,
+        props.batchChangesExecutionEnabled,
+        props.authenticatedUser,
+    ])
 
     // When adding a new create action check and update the $collapse-breakpoint in CreateActions.module.scss.
     // The collapse breakpoint indicates at which window size we hide the buttons and show the collapsed menu instead.
     const createActions = useMemo(
         () =>
             [
-                getBatchChangeCreateAction(
-                    props.query,
-                    props.patternType,
-                    Boolean(
-                        props.batchChangesEnabled &&
-                            props.batchChangesExecutionEnabled &&
-                            props.authenticatedUser &&
-                            canCreateBatchChangeFromQuery
-                    )
-                ),
+                getBatchChangeCreateAction(props.query, props.patternType, canCreateBatchChanges),
                 getSearchContextCreateAction(props.query, props.authenticatedUser),
-                getInsightsCreateAction(
-                    props.query,
-                    props.patternType,
-                    props.authenticatedUser,
-                    props.enableCodeInsights
-                ),
+                getInsightsCreateAction(props.query, props.patternType, window.context?.codeInsightsEnabled),
             ].filter((button): button is CreateAction => button !== null),
-        [
-            props.authenticatedUser,
-            props.enableCodeInsights,
-            props.patternType,
-            props.query,
-            props.batchChangesEnabled,
-            props.batchChangesExecutionEnabled,
-            canCreateBatchChangeFromQuery,
-        ]
+        [props.authenticatedUser, props.patternType, props.query, canCreateBatchChanges]
     )
 
     // The create code monitor action is separated from the rest of the actions, because we use the
@@ -137,15 +124,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<
     const createCodeMonitorAction = useMemo(
         () => getCodeMonitoringCreateAction(props.query, props.patternType, props.enableCodeMonitoring),
         [props.enableCodeMonitoring, props.patternType, props.query]
-    )
-
-    const extraContext = useMemo(
-        () => ({
-            searchQuery: props.query || null,
-            patternType: props.patternType,
-            caseSensitive: props.caseSensitive,
-        }),
-        [props.query, props.patternType, props.caseSensitive]
     )
 
     // Show/hide mobile filters menu
@@ -156,7 +134,8 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         props.onShowMobileFiltersChanged?.(newShowFilters)
     }
 
-    const { extensionsController } = props
+    // Show/hide ranking toggle
+    const [rankingEnabled] = useFeatureFlag('search-ranking')
 
     return (
         <aside
@@ -168,57 +147,23 @@ export const SearchResultsInfoBar: React.FunctionComponent<
             <div className={styles.row}>
                 {props.stats}
 
-                {props.isSourcegraphDotCom && (
-                    <CloudCtaBanner className="mb-0" variant="outlined">
-                        To search across your private repositories,{' '}
-                        <Link
-                            to={buildCloudTrialURL(props.authenticatedUser)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'SearchResults' })}
-                        >
-                            try Sourcegraph Cloud
-                        </Link>
-                        .
-                    </CloudCtaBanner>
-                )}
-
                 <div className={styles.expander} />
 
+                {rankingEnabled && (
+                    <Label className={styles.toggle}>
+                        Intelligent ranking{' '}
+                        <Toggle
+                            value={props.isRankingEnabled}
+                            onToggle={() => props.setRankingEnabled(!props.isRankingEnabled)}
+                            title="Enable Ranking"
+                            className="mr-2"
+                        />
+                    </Label>
+                )}
                 <ul className="nav align-items-center">
-                    {extensionsController !== null && window.context.enableLegacyExtensions ? (
-                        <ActionsContainer
-                            {...props}
-                            extensionsController={extensionsController}
-                            extraContext={extraContext}
-                            menu={ContributableMenu.SearchResultsToolbar}
-                        >
-                            {actionItems => (
-                                <>
-                                    {actionItems.map(actionItem => (
-                                        <ActionItem
-                                            {...props}
-                                            {...actionItem}
-                                            extensionsController={extensionsController}
-                                            key={actionItem.action.id}
-                                            showLoadingSpinnerDuringExecution={false}
-                                            className="mr-2 text-decoration-none"
-                                            actionItemStyleProps={{
-                                                actionItemVariant: 'secondary',
-                                                actionItemSize: 'sm',
-                                                actionItemOutline: true,
-                                            }}
-                                        />
-                                    ))}
-                                </>
-                            )}
-                        </ActionsContainer>
-                    ) : null}
-
-                    <li className={styles.divider} aria-hidden="true" />
-
                     <SearchActionsMenu
                         query={props.query}
+                        options={props.options}
                         patternType={props.patternType}
                         sourcegraphURL={props.platformContext.sourcegraphURL}
                         authenticatedUser={props.authenticatedUser}
@@ -229,6 +174,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                         allExpanded={props.allExpanded}
                         onExpandAllResultsToggle={props.onExpandAllResultsToggle}
                         onSaveQueryClick={props.onSaveQueryClick}
+                        telemetryService={props.telemetryService}
                     />
                 </ul>
 

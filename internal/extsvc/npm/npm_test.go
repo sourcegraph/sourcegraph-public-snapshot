@@ -34,10 +34,7 @@ func newTestHTTPClient(t *testing.T) (client *HTTPClient, stop func()) {
 	t.Helper()
 	recorderFactory, stop := httptestutil.NewRecorderFactory(t, *updateRecordings, t.Name())
 
-	doer, err := recorderFactory.Doer()
-	require.Nil(t, err)
-
-	client = NewHTTPClient("urn", "https://registry.npmjs.org", "", doer)
+	client, _ = NewHTTPClient("urn", "https://registry.npmjs.org", "", recorderFactory)
 	return client, stop
 }
 
@@ -76,7 +73,7 @@ func TestCredentials(t *testing.T) {
 	defer server.Close()
 
 	ctx := context.Background()
-	client := NewHTTPClient("urn", server.URL, credentials, httpcli.ExternalDoer)
+	client, _ := NewHTTPClient("urn", server.URL, credentials, httpcli.ExternalClientFactory)
 
 	presentDep, err := reposource.ParseNpmVersionedPackage("left-pad@1.3.0")
 	require.NoError(t, err)

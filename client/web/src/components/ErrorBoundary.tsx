@@ -1,10 +1,11 @@
-import React from 'react'
+import React, { useEffect, useMemo } from 'react'
 
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ReloadIcon from 'mdi-react/ReloadIcon'
+import { isRouteErrorResponse, useRouteError } from 'react-router-dom'
 
-import { asError } from '@sourcegraph/common'
+import { asError, logger } from '@sourcegraph/common'
 import { Button, Code, Text } from '@sourcegraph/wildcard'
 
 import { isWebpackChunkError } from '../monitoring'
@@ -74,55 +75,96 @@ export class ErrorBoundary extends React.PureComponent<React.PropsWithChildren<P
 
     public render(): React.ReactNode | null {
         if (this.state.error !== undefined) {
-            if (isWebpackChunkError(this.state.error)) {
-                // "Loading chunk 123 failed" means that the JavaScript assets that correspond to the deploy
-                // version currently running are no longer available, likely because a redeploy occurred after the
-                // user initially loaded this page.
-                return (
-                    <HeroPage
-                        icon={ReloadIcon}
-                        title="Reload required"
-                        subtitle={
-                            <div className="container">
-                                <Text>A new version of Sourcegraph is available.</Text>
-                                <Button onClick={this.onReloadClick} variant="primary">
-                                    Reload to update
-                                </Button>
-                            </div>
-                        }
-                    />
-                )
-            }
-
-            if (this.props.render) {
-                return this.props.render(this.state.error)
-            }
-
             return (
-                <HeroPage
-                    icon={AlertCircleIcon}
-                    title="Error"
+                <ErrorBoundaryMessage
+                    error={this.state.error}
+                    extraContext={this.props.extraContext}
+                    render={this.props.render}
                     className={this.props.className}
-                    subtitle={
-                        <div className="container">
-                            <Text>
-                                Sourcegraph encountered an unexpected error. If reloading the page doesn't fix it,
-                                contact your site admin or Sourcegraph support.
-                            </Text>
-                            <Text>
-                                <Code className="text-wrap">{this.state.error.message}</Code>
-                            </Text>
-                            {this.props.extraContext}
-                        </div>
-                    }
                 />
             )
         }
 
         return this.props.children
     }
+}
 
-    private onReloadClick: React.MouseEventHandler<HTMLElement> = () => {
-        window.location.reload() // hard page reload
+/**
+ * A React component that can be used within a react router errorElement callback. It extracts the
+ * route error and displays it nicely on the page.
+ */
+export const RouteError: React.FC = () => {
+    const routeError = useRouteError()
+    const error = useMemo(() => {
+        if (isRouteErrorResponse(routeError)) {
+            return new Error(routeError.data ? routeError.data : `${routeError.status} ${routeError.statusText}`)
+        }
+        return asError(routeError)
+    }, [routeError])
+    useEffect(() => {
+        logger.error(error)
+        if (typeof Sentry !== 'undefined') {
+            Sentry.captureException(error)
+        }
+    }, [error])
+    return <ErrorBoundaryMessage error={error} />
+}
+
+interface ErrorBoundaryMessageProps {
+    error: Error
+    // Extra context to aid with debugging
+    extraContext?: JSX.Element
+    // Custom render logic in place of <HeroPage>
+    render?: (error: Error) => JSX.Element
+    // className to pass to <HeroPage>
+    className?: string
+}
+const ErrorBoundaryMessage: React.FC<ErrorBoundaryMessageProps> = ({ error, extraContext, render, className }) => {
+    if (isWebpackChunkError(error)) {
+        // "Loading chunk 123 failed" means that the JavaScript assets that correspond to the deploy
+        // version currently running are no longer available, likely because a redeploy occurred after the
+        // user initially loaded this page.
+        return (
+            <HeroPage
+                icon={ReloadIcon}
+                title="Reload required"
+                subtitle={
+                    <div className="container">
+                        <Text>A new version of Sourcegraph is available.</Text>
+                        <Button onClick={hardReload} variant="primary">
+                            Reload to update
+                        </Button>
+                    </div>
+                }
+            />
+        )
     }
+
+    if (render) {
+        return render(error)
+    }
+
+    return (
+        <HeroPage
+            icon={AlertCircleIcon}
+            title="Error"
+            className={className}
+            subtitle={
+                <div className="container">
+                    <Text>
+                        Sourcegraph encountered an unexpected error. If reloading the page doesn't fix it, contact your
+                        site admin or Sourcegraph support.
+                    </Text>
+                    <Text>
+                        <Code className="text-wrap">{error.message}</Code>
+                    </Text>
+                    {extraContext}
+                </div>
+            }
+        />
+    )
+}
+
+function hardReload(): void {
+    window.location.reload()
 }

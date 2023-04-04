@@ -47,5 +47,5 @@ func weekdayToBit(day time.Weekday) weekdaySet {
 	// should be stable, since it's documented, but we're obviously in trouble
 	// should that ever change! (There is a sanity check for this in the unit
 	// tests.)
-	return weekdaySet(int8(1) << int(day))
+	return weekdaySet(int8(1) << day)
 }

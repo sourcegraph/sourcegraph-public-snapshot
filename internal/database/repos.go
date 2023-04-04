@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
@@ -543,6 +544,8 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = new(github.Repository)
 	case extsvc.TypeGitLab:
 		r.Metadata = new(gitlab.Project)
+	case extsvc.TypeAzureDevOps:
+		r.Metadata = new(azuredevops.Repository)
 	case extsvc.TypeGerrit:
 		r.Metadata = new(gerrit.Project)
 	case extsvc.TypeBitbucketServer:
@@ -610,6 +613,9 @@ type ReposListOptions struct {
 
 	// A set of filters to select only repos with a given set of key-value pairs.
 	KVPFilters []RepoKVPFilter
+
+	// A set of filters to select only repos with the given set of topics
+	TopicFilters []RepoTopicFilter
 
 	// CaseSensitivePatterns determines if IncludePatterns and ExcludePattern are treated
 	// with case sensitivity or not.
@@ -706,6 +712,10 @@ type ReposListOptions struct {
 	// last_error value in the gitserver_repos table.
 	FailedFetch bool
 
+	// OnlyCorrupted, if true, will filter to only repos where corruption has been detected.
+	// A repository is corrupt in the gitserver_repos table if it has a non-null value in gitserver_repos.corrupted_at
+	OnlyCorrupted bool
+
 	// MinLastChanged finds repository metadata or data that has changed since
 	// MinLastChanged. It filters against repos.UpdatedAt,
 	// gitserver.LastChanged and searchcontexts.UpdatedAt.
@@ -735,6 +745,9 @@ type ReposListOptions struct {
 	// and if it doesn't end up being used this is wasted compute.
 	ExcludeSources bool
 
+	// cursor-based pagination args
+	PaginationArgs *PaginationArgs
+
 	*LimitOffset
 }
 
@@ -747,6 +760,13 @@ type RepoKVPFilter struct {
 	// If IgnoreValue is true, this filter will select only repos that
 	// have the given key, regardless of its value
 	KeyOnly bool
+}
+
+type RepoTopicFilter struct {
+	Topic string
+	// If negated is true, this filter will select only repos
+	// that do _not_ have the associated topic
+	Negated bool
 }
 
 type RepoListOrderBy []RepoListSort
@@ -863,6 +883,8 @@ func (s *repoStore) ListMinimalRepos(ctx context.Context, opt ReposListOptions) 
 	preallocSize := 128
 	if opt.LimitOffset != nil {
 		preallocSize = opt.Limit
+	} else if len(opt.IDs) > 0 {
+		preallocSize = len(opt.IDs)
 	}
 	if preallocSize > 4096 {
 		preallocSize = 4096
@@ -903,8 +925,6 @@ func (s *repoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 		return err
 	}
 
-	tr.LogFields(trace.SQL(q)) //nolint:staticcheck // TODO when updating observation package
-
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		if e, ok := err.(*net.OpError); ok && e.Timeout() {
@@ -925,6 +945,19 @@ func (s *repoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 
 func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListOptions) (*sqlf.Query, error) {
 	var ctes, joins, where []*sqlf.Query
+
+	querySuffix := sqlf.Sprintf("%s %s", opt.OrderBy.SQL(), opt.LimitOffset.SQL())
+
+	if opt.PaginationArgs != nil {
+		p := opt.PaginationArgs.SQL()
+
+		if p.Where != nil {
+			where = append(where, p.Where)
+		}
+
+		querySuffix = p.AppendOrderToQuery(&sqlf.Query{})
+		querySuffix = p.AppendLimitToQuery(querySuffix)
+	}
 
 	// Cursor-based pagination requires parsing a handful of extra fields, which
 	// may result in additional query conditions.
@@ -1041,6 +1074,11 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 	if opt.FailedFetch {
 		where = append(where, sqlf.Sprintf("gr.last_error IS NOT NULL"))
 	}
+
+	if opt.OnlyCorrupted {
+		where = append(where, sqlf.Sprintf("gr.corrupted_at IS NOT NULL"))
+	}
+
 	if !opt.MinLastChanged.IsZero() {
 		conds := []*sqlf.Query{
 			sqlf.Sprintf("EXISTS (SELECT 1 FROM gitserver_repos gr WHERE gr.repo_id = repo.id AND gr.last_changed >= %s)", opt.MinLastChanged),
@@ -1105,8 +1143,8 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 		where = append(where, sqlf.Sprintf("external_service_repos.org_id = %d", opt.OrgID))
 	}
 
-	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || opt.joinGitserverRepos ||
-		opt.CloneStatus != types.CloneStatusUnknown || containsSizeField(opt.OrderBy) {
+	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || opt.OnlyCorrupted || opt.joinGitserverRepos ||
+		opt.CloneStatus != types.CloneStatusUnknown || containsSizeField(opt.OrderBy) || (opt.PaginationArgs != nil && containsOrderBySizeField(opt.PaginationArgs.OrderBy)) {
 		joins = append(joins, sqlf.Sprintf("JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
 	}
 	if opt.OnlyIndexed || opt.NoIndexed {
@@ -1139,6 +1177,29 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 		where = append(where, sqlf.Join(ands, "AND"))
 	}
 
+	if len(opt.TopicFilters) > 0 {
+		var ands []*sqlf.Query
+		for _, filter := range opt.TopicFilters {
+			// This condition checks that the requested topics are contained in
+			// the repo's metadata. This is designed to work with the
+			// idx_repo_github_topics index.
+			//
+			// We use the unusual `jsonb_build_array` and `jsonb_build_object`
+			// syntax instead of JSONB literals so that we can use SQL
+			// variables for the user-provided topic names (don't want SQL
+			// injections here).
+			cond := `external_service_type = 'github' AND metadata->'RepositoryTopics'->'Nodes' @> jsonb_build_array(jsonb_build_object('Topic', jsonb_build_object('Name', %s::text)))`
+			if filter.Negated {
+				// Use Coalesce in case the JSON access evaluates to NULL.
+				// Since negating a NULL evaluates to NULL, we want to
+				// explicitly treat NULLs as false first
+				cond = `NOT COALESCE(` + cond + `, false)`
+			}
+			ands = append(ands, sqlf.Sprintf(cond, filter.Topic))
+		}
+		where = append(where, sqlf.Join(ands, "AND"))
+	}
+
 	baseConds := sqlf.Sprintf("TRUE")
 	if !opt.IncludeDeleted {
 		baseConds = sqlf.Sprintf("repo.deleted_at IS NULL")
@@ -1162,8 +1223,6 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 	if len(ctes) > 0 {
 		queryPrefix = sqlf.Sprintf("WITH %s", sqlf.Join(ctes, ",\n"))
 	}
-
-	querySuffix := sqlf.Sprintf("%s %s", opt.OrderBy.SQL(), opt.LimitOffset.SQL())
 
 	columns := repoColumns
 	if !opt.ExcludeSources {
@@ -1195,6 +1254,15 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 func containsSizeField(orderBy RepoListOrderBy) bool {
 	for _, field := range orderBy {
 		if field.Field == RepoListSize {
+			return true
+		}
+	}
+	return false
+}
+
+func containsOrderBySizeField(orderBy OrderBy) bool {
+	for _, field := range orderBy {
+		if field.Field == string(RepoListSize) {
 			return true
 		}
 	}
@@ -1564,10 +1632,9 @@ WITH repo_ids AS (
 UPDATE repo
 SET
   name = soft_deleted_repository_name(name),
-  deleted_at = transaction_timestamp()
+  deleted_at = COALESCE(deleted_at, transaction_timestamp())
 FROM repo_ids
-WHERE deleted_at IS NULL
-AND repo.id = repo_ids.id::int
+WHERE repo.id = repo_ids.id::int
 `
 
 const getFirstRepoNamesByCloneURLQueryFmtstr = `

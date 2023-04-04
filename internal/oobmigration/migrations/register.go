@@ -13,11 +13,11 @@ import (
 )
 
 func RegisterOSSMigrators(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
-	keyring := keyring.Default()
+	defaultKeyring := keyring.Default()
 
 	return registerOSSMigrators(runner, false, migratorDependencies{
 		store:   basestore.NewWithHandle(db.Handle()),
-		keyring: &keyring,
+		keyring: &defaultKeyring,
 	})
 }
 
@@ -54,6 +54,7 @@ type migratorDependencies struct {
 func registerOSSMigrators(runner *oobmigration.Runner, noDelay bool, deps migratorDependencies) error {
 	return RegisterAll(runner, noDelay, []TaggedMigrator{
 		batches.NewExternalServiceWebhookMigratorWithDB(deps.store, deps.keyring.ExternalServiceKey, 50),
+		batches.NewUserRoleAssignmentMigrator(deps.store, 250),
 	})
 }
 

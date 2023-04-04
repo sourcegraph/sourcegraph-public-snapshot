@@ -31,7 +31,7 @@ func (j *updater) Config() []env.Config {
 	return nil
 }
 
-func (j *updater) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *updater) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err

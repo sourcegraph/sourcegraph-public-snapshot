@@ -28,8 +28,10 @@ trap cleanup EXIT
 # prepare dependencies
 go mod tidy
 go mod vendor # go mod download does not work with license_finder
+echo "Running pnpm install with retry"
 ./dev/ci/pnpm-install-with-retry.sh
 
+echo "Running various license_finder things"
 # report license_finder configuration
 license_finder permitted_licenses list
 license_finder restricted_licenses list

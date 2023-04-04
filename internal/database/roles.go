@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -13,23 +14,32 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// errCannotCreateRole is the error returned when a role cannot be inserted
+// into the database due to a constraint.
+type errCannotCreateRole struct {
+	code string
+}
+
+const errorCodeRoleNameExists = "err_name_exists"
+
+func (err errCannotCreateRole) Error() string {
+	return fmt.Sprintf("cannot create role: %v", err.code)
+}
+
+func (err errCannotCreateRole) Code() string {
+	return err.code
+}
+
 var roleColumns = []*sqlf.Query{
 	sqlf.Sprintf("roles.id"),
 	sqlf.Sprintf("roles.name"),
-	sqlf.Sprintf("roles.readonly"),
+	sqlf.Sprintf("roles.system"),
 	sqlf.Sprintf("roles.created_at"),
-	sqlf.Sprintf("roles.deleted_at"),
-}
-
-var permissionColumnsForRole = []*sqlf.Query{
-	sqlf.Sprintf("permissions.id AS permission_id"),
-	sqlf.Sprintf("permissions.action"),
-	sqlf.Sprintf("permissions.namespace"),
 }
 
 var roleInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("name"),
-	sqlf.Sprintf("readonly"),
+	sqlf.Sprintf("system"),
 }
 
 type RoleStore interface {
@@ -38,11 +48,12 @@ type RoleStore interface {
 	// Count counts all roles in the database.
 	Count(ctx context.Context, opts RolesListOptions) (int, error)
 	// Create inserts the given role into the database.
-	Create(ctx context.Context, name string, readonly bool) (*types.Role, error)
+	Create(ctx context.Context, name string, isSystemRole bool) (*types.Role, error)
 	// Delete removes an existing role from the database.
 	Delete(ctx context.Context, opts DeleteRoleOpts) error
-	// GetByID returns the role matching the given ID, or RoleNotFoundErr if no such record exists.
-	GetByID(ctx context.Context, opts GetRoleOpts) (*types.Role, error)
+	// Get returns the role matching the given ID or name provided. If no such role exists,
+	// a RoleNotFoundErr is returned.
+	Get(ctx context.Context, opts GetRoleOpts) (*types.Role, error)
 	// List returns all roles matching the given options.
 	List(ctx context.Context, opts RolesListOptions) ([]*types.Role, error)
 	// Update updates an existing role in the database.
@@ -54,7 +65,8 @@ func RolesWith(other basestore.ShareableStore) RoleStore {
 }
 
 type RoleOpts struct {
-	ID int32
+	ID   int32
+	Name string
 }
 
 type (
@@ -63,7 +75,10 @@ type (
 )
 
 type RolesListOptions struct {
-	*LimitOffset
+	PaginationArgs *PaginationArgs
+
+	System bool
+	UserID int32
 }
 
 type RoleNotFoundErr struct {
@@ -90,17 +105,28 @@ WHERE %s
 LIMIT 1;
 `
 
-func (r *roleStore) GetByID(ctx context.Context, opts GetRoleOpts) (*types.Role, error) {
-	if opts.ID <= 0 {
-		return nil, errors.New("missing id from sql query")
+func (r *roleStore) Get(ctx context.Context, opts GetRoleOpts) (*types.Role, error) {
+	if opts.ID == 0 && opts.Name == "" {
+		return nil, errors.New("missing id or name")
 	}
 
-	whereClause := sqlf.Sprintf("id = %s AND deleted_at IS NULL", opts.ID)
+	var conds []*sqlf.Query
+	if opts.ID != 0 {
+		conds = append(conds, sqlf.Sprintf("id = %s", opts.ID))
+	}
+
+	if opts.Name != "" {
+		conds = append(conds, sqlf.Sprintf("name = %s", opts.Name))
+	}
+
+	if len(conds) == 0 {
+		conds = append(conds, sqlf.Sprintf("TRUE"))
+	}
 
 	q := sqlf.Sprintf(
 		getRoleFmtStr,
 		sqlf.Join(roleColumns, ", "),
-		whereClause,
+		sqlf.Join(conds, " AND "),
 	)
 
 	role, err := scanRole(r.QueryRow(ctx, q))
@@ -119,9 +145,8 @@ func scanRole(sc dbutil.Scanner) (*types.Role, error) {
 	if err := sc.Scan(
 		&role.ID,
 		&role.Name,
-		&role.ReadOnly,
+		&role.System,
 		&role.CreatedAt,
-		&dbutil.NullTime{Time: &role.DeletedAt},
 	); err != nil {
 		return nil, err
 	}
@@ -129,15 +154,8 @@ func scanRole(sc dbutil.Scanner) (*types.Role, error) {
 	return &role, nil
 }
 
-const roleListQueryFmtstr = `
-SELECT
-	%s
-FROM roles
-WHERE %s
-`
-
 func (r *roleStore) List(ctx context.Context, opts RolesListOptions) ([]*types.Role, error) {
-	roles := make([]*types.Role, 0, 20)
+	var roles []*types.Role
 
 	scanFunc := func(rows *sql.Rows) error {
 		role, err := scanRole(rows)
@@ -152,16 +170,31 @@ func (r *roleStore) List(ctx context.Context, opts RolesListOptions) ([]*types.R
 	return roles, err
 }
 
+const roleListQueryFmtstr = `
+SELECT %s FROM roles
+%s
+WHERE %s
+`
+
 func (r *roleStore) list(ctx context.Context, opts RolesListOptions, selects *sqlf.Query, scanRole func(rows *sql.Rows) error) error {
-	var whereClause = sqlf.Sprintf("deleted_at IS NULL")
+	conds, joins := r.computeConditionsAndJoins(opts)
 
-	q := sqlf.Sprintf(roleListQueryFmtstr, selects, whereClause)
-
-	if opts.LimitOffset != nil {
-		q = sqlf.Sprintf("%s\n%s", q, opts.LimitOffset.SQL())
+	queryArgs := opts.PaginationArgs.SQL()
+	if queryArgs.Where != nil {
+		conds = append(conds, queryArgs.Where)
 	}
 
-	rows, err := r.Query(ctx, q)
+	query := sqlf.Sprintf(
+		roleListQueryFmtstr,
+		selects,
+		joins,
+		sqlf.Join(conds, " AND "),
+	)
+
+	query = queryArgs.AppendOrderToQuery(query)
+	query = queryArgs.AppendLimitToQuery(query)
+
+	rows, err := r.Query(ctx, query)
 	if err != nil {
 		return errors.Wrap(err, "error running query")
 	}
@@ -175,6 +208,26 @@ func (r *roleStore) list(ctx context.Context, opts RolesListOptions, selects *sq
 	return rows.Err()
 }
 
+func (r *roleStore) computeConditionsAndJoins(opts RolesListOptions) ([]*sqlf.Query, *sqlf.Query) {
+	var conds []*sqlf.Query
+	var joins = sqlf.Sprintf("")
+
+	if opts.System {
+		conds = append(conds, sqlf.Sprintf("system IS TRUE"))
+	}
+
+	if opts.UserID != 0 {
+		conds = append(conds, sqlf.Sprintf("user_roles.user_id = %s", opts.UserID))
+		joins = sqlf.Sprintf("INNER JOIN user_roles ON user_roles.role_id = roles.id")
+	}
+
+	if len(conds) == 0 {
+		conds = append(conds, sqlf.Sprintf("TRUE"))
+	}
+
+	return conds, joins
+}
+
 const roleCreateQueryFmtStr = `
 INSERT INTO
 	roles (%s)
@@ -186,30 +239,44 @@ INSERT INTO
 
 `
 
-func (r *roleStore) Create(ctx context.Context, name string, readonly bool) (_ *types.Role, err error) {
+func (r *roleStore) Create(ctx context.Context, name string, isSystemRole bool) (_ *types.Role, err error) {
 	q := sqlf.Sprintf(
 		roleCreateQueryFmtStr,
 		sqlf.Join(roleInsertColumns, ", "),
 		name,
-		readonly,
+		isSystemRole,
 		// Returning
 		sqlf.Join(roleColumns, ", "),
 	)
 
 	role, err := scanRole(r.QueryRow(ctx, q))
 	if err != nil {
+		var e *pgconn.PgError
+		if errors.As(err, &e) && e.ConstraintName == "unique_role_name" {
+			return nil, errCannotCreateRole{errorCodeRoleNameExists}
+		}
 		return nil, errors.Wrap(err, "scanning role")
 	}
 
 	return role, nil
 }
 
+const roleCountQueryFmtstr = `
+SELECT COUNT(1) FROM roles
+%s
+WHERE %s
+`
+
 func (r *roleStore) Count(ctx context.Context, opts RolesListOptions) (c int, err error) {
-	opts.LimitOffset = nil
-	err = r.list(ctx, opts, sqlf.Sprintf("COUNT(1)"), func(rows *sql.Rows) error {
-		return rows.Scan(&c)
-	})
-	return c, err
+	conds, joins := r.computeConditionsAndJoins(opts)
+
+	query := sqlf.Sprintf(
+		roleCountQueryFmtstr,
+		joins,
+		sqlf.Join(conds, " AND "),
+	)
+	count, _, err := basestore.ScanFirstInt(r.Query(ctx, query))
+	return count, err
 }
 
 const roleUpdateQueryFmtstr = `
@@ -217,7 +284,7 @@ UPDATE roles
 SET
     name = %s
 WHERE
-	id = %s
+	id = %s AND NOT system
 RETURNING
 	%s
 `
@@ -236,10 +303,8 @@ func (r *roleStore) Update(ctx context.Context, role *types.Role) (*types.Role, 
 }
 
 const roleDeleteQueryFmtStr = `
-UPDATE roles
-SET
-	deleted_at = NOW()
-WHERE id = %s AND NOT readonly
+DELETE FROM roles
+WHERE id = %s AND NOT system
 `
 
 func (r *roleStore) Delete(ctx context.Context, opts DeleteRoleOpts) error {
@@ -247,7 +312,7 @@ func (r *roleStore) Delete(ctx context.Context, opts DeleteRoleOpts) error {
 		return errors.New("missing id from sql query")
 	}
 
-	// We don't allow deletion of readonly roles such as DEFAULT & SITE_ADMINISTRATOR
+	// We don't allow deletion of system roles such as USER & SITE_ADMINISTRATOR
 	q := sqlf.Sprintf(roleDeleteQueryFmtStr, opts.ID)
 	result, err := r.ExecResult(ctx, q)
 	if err != nil {

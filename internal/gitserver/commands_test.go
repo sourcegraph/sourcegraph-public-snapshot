@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -16,7 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/go-diff/diff"
+	"github.com/grafana/regexp"
+	godiff "github.com/sourcegraph/go-diff/diff"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -95,7 +94,6 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{
 		UID: 1,
 	})
-	db := database.NewMockDB()
 
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
@@ -106,13 +104,13 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 		label               string
 		extraGitCommands    []string
 		expectedDiffFiles   []string
-		expectedFileStat    *diff.Stat
+		expectedFileStat    *godiff.Stat
 		rangeOverAllCommits bool
 	}{
 		{
 			label:               "adding files",
 			expectedDiffFiles:   []string{"file1", "file3", "file3.3"},
-			expectedFileStat:    &diff.Stat{Added: 3},
+			expectedFileStat:    &godiff.Stat{Added: 3},
 			rangeOverAllCommits: true,
 		},
 		{
@@ -123,7 +121,7 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 				makeGitCommit("rename", 7),
 			},
 			expectedDiffFiles: []string{"file_can_access"},
-			expectedFileStat:  &diff.Stat{Added: 1},
+			expectedFileStat:  &godiff.Stat{Added: 1},
 		},
 		{
 			label: "file modified",
@@ -135,7 +133,7 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 				makeGitCommit("edit_files", 7),
 			},
 			expectedDiffFiles: []string{"file1"}, // file2 is updated but user doesn't have access
-			expectedFileStat:  &diff.Stat{Changed: 1},
+			expectedFileStat:  &godiff.Stat{Changed: 1},
 		},
 		{
 			label: "diff for commit w/ no access returns empty result",
@@ -145,13 +143,13 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 				makeGitCommit("no_access", 7),
 			},
 			expectedDiffFiles: []string{},
-			expectedFileStat:  &diff.Stat{},
+			expectedFileStat:  &godiff.Stat{},
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.label, func(t *testing.T) {
 			repo := MakeGitRepository(t, append(cmds, tc.extraGitCommands...)...)
-			c := NewClient(db)
+			c := NewClient()
 			commits, err := c.Commits(ctx, nil, repo, CommitsOptions{})
 			if err != nil {
 				t.Fatalf("err fetching commits: %s", err)
@@ -168,7 +166,7 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 			}
 			defer iter.Close()
 
-			stat := &diff.Stat{}
+			stat := &godiff.Stat{}
 			fileNames := make([]string, 0, 3)
 			for {
 				file, err := iter.Next()
@@ -180,10 +178,10 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 
 				fileNames = append(fileNames, file.NewName)
 
-				fs := file.Stat()
-				stat.Added += fs.Added
-				stat.Changed += fs.Changed
-				stat.Deleted += fs.Deleted
+				fileStat := file.Stat()
+				stat.Added += fileStat.Added
+				stat.Changed += fileStat.Changed
+				stat.Deleted += fileStat.Deleted
 			}
 			if diff := cmp.Diff(fileNames, tc.expectedDiffFiles); diff != "" {
 				t.Fatal(diff)
@@ -197,7 +195,6 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 
 func TestDiff(t *testing.T) {
 	ctx := context.Background()
-	db := database.NewMockDB()
 
 	t.Run("invalid bases", func(t *testing.T) {
 		for _, input := range []string{
@@ -206,7 +203,7 @@ func TestDiff(t *testing.T) {
 			".foo",
 		} {
 			t.Run("invalid base: "+input, func(t *testing.T) {
-				i, err := NewClient(db).Diff(ctx, nil, DiffOptions{Base: input})
+				i, err := NewClient().Diff(ctx, nil, DiffOptions{Base: input})
 				if i != nil {
 					t.Errorf("unexpected non-nil iterator: %+v", i)
 				}
@@ -457,7 +454,7 @@ func TestRepository_BlameFile(t *testing.T) {
 		},
 	}
 
-	client := NewClient(database.NewMockDB())
+	client := NewClient()
 	for label, test := range tests {
 		newestCommitID, err := client.ResolveRevision(ctx, test.repo, string(test.opt.NewestCommit), ResolveRevisionOptions{})
 		if err != nil {
@@ -499,7 +496,7 @@ func runBlameFileTest(ctx context.Context, t *testing.T, repo api.RepoName, path
 	checker authz.SubRepoPermissionChecker, label string, wantHunks []*Hunk,
 ) {
 	t.Helper()
-	hunks, err := NewClient(database.NewMockDB()).BlameFile(ctx, checker, repo, path, opt)
+	hunks, err := NewClient().BlameFile(ctx, checker, repo, path, opt)
 	if err != nil {
 		t.Errorf("%s: BlameFile(%s, %+v): %s", label, path, opt, err)
 		return
@@ -544,7 +541,7 @@ func TestRepository_ResolveBranch(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := NewClient(database.NewMockDB()).ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
+		commitID, err := NewClient().ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -576,7 +573,7 @@ func TestRepository_ResolveBranch_error(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := NewClient(database.NewMockDB()).ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
+		commitID, err := NewClient().ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
 		if !test.wantErr(err) {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -609,7 +606,7 @@ func TestRepository_ResolveTag(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := NewClient(database.NewMockDB()).ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
+		commitID, err := NewClient().ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -641,7 +638,7 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := NewClient(database.NewMockDB()).ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
+		commitID, err := NewClient().ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
 		if !test.wantErr(err) {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -656,9 +653,20 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 func TestLsFiles(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
-	client := NewClient(database.NewMockDB())
+	client := NewClient()
 	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) ([]string, error) {
 		return client.LsFiles(ctx, checker, repo, "HEAD")
+	})
+}
+
+func TestListFiles(t *testing.T) {
+	// TODO this test doesn't actually exercise recursive listing or the
+	// pattern regex. But better than nothing.
+	ClientMocks.LocalGitserver = true
+	defer ResetClientMocks()
+	client := NewClient()
+	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) ([]string, error) {
+		return client.ListFiles(ctx, checker, repo, "HEAD", regexp.MustCompile(""))
 	})
 }
 
@@ -798,7 +806,7 @@ func TestCleanDirectoriesForLsTree(t *testing.T) {
 func TestListDirectoryChildren(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
-	client := NewClient(database.NewMockDB())
+	client := NewClient()
 	gitCommands := []string{
 		"mkdir -p dir{1..3}/sub{1..3}",
 		"touch dir1/sub1/file",
@@ -885,7 +893,7 @@ func TestListTags(t *testing.T) {
 		{Name: "t3", CommitID: "afeafc4a918c144329807df307e68899e6b65018", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 	}
 
-	client := NewClient(database.NewMockDB())
+	client := NewClient()
 	tags, err := client.ListTags(context.Background(), repo)
 	require.Nil(t, err)
 
@@ -946,8 +954,7 @@ func TestMerger_MergeBase(t *testing.T) {
 	defer ResetClientMocks()
 
 	ctx := context.Background()
-	db := database.NewMockDB()
-	client := NewClient(db)
+	client := NewClient()
 
 	// TODO(sqs): implement for hg
 	// TODO(sqs): make a more complex test case
@@ -1015,7 +1022,6 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
 
-	db := database.NewMockDB()
 	gitCommands := []string{
 		"touch file1",
 		"mkdir dir1",
@@ -1035,7 +1041,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 	dir := InitGitRepository(t, gitCommands...)
 	repo := api.RepoName(filepath.Base(dir))
 
-	client := NewClient(db)
+	client := NewClient()
 
 	commitID := api.CommitID(ComputeCommitHash(dir, true))
 
@@ -1112,7 +1118,6 @@ func TestStat(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
 
-	db := database.NewMockDB()
 	gitCommands := []string{
 		"mkdir dir1",
 		"touch dir1/file1",
@@ -1122,7 +1127,7 @@ func TestStat(t *testing.T) {
 
 	dir := InitGitRepository(t, gitCommands...)
 	repo := api.RepoName(filepath.Base(dir))
-	client := NewClient(db)
+	client := NewClient()
 
 	commitID := api.CommitID(ComputeCommitHash(dir, true))
 
@@ -1186,7 +1191,6 @@ func TestRepository_GetCommit(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
-	db := database.NewMockDB()
 	gitCommands := []string{
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m bar --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
@@ -1203,7 +1207,7 @@ func TestRepository_GetCommit(t *testing.T) {
 		revisionNotFoundError bool
 	}
 
-	client := NewClient(db)
+	client := NewClient()
 	runGetCommitTests := func(checker authz.SubRepoPermissionChecker, tests map[string]testCase) {
 		for label, test := range tests {
 			t.Run(label, func(t *testing.T) {
@@ -1303,8 +1307,6 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 		UID: 1,
 	})
 
-	db := database.NewMockDB()
-
 	testCases := []struct {
 		label                 string
 		commitDates           []string
@@ -1374,7 +1376,7 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 		},
 	}
 
-	client := NewClient(db)
+	client := NewClient()
 	t.Run("basic", func(t *testing.T) {
 		for _, tc := range testCases {
 			t.Run(tc.label, func(t *testing.T) {
@@ -1432,8 +1434,6 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 		UID: 1,
 	})
 
-	db := database.NewMockDB()
-
 	testCases := []struct {
 		commitDates []string
 		want        string
@@ -1455,7 +1455,7 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 			want: "2007-01-02T15:04:05Z",
 		},
 	}
-	client := NewClient(db)
+	client := NewClient()
 	t.Run("basic", func(t *testing.T) {
 		for _, tc := range testCases {
 			gitCommands := make([]string, len(tc.commitDates))
@@ -1535,8 +1535,7 @@ func TestCommitExists(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
-	db := database.NewMockDB()
-	client := NewClient(db)
+	client := NewClient()
 	testCommitExists := func(label string, gitCommands []string, commitID, nonExistentCommitID api.CommitID, checker authz.SubRepoPermissionChecker) {
 		t.Run(label, func(t *testing.T) {
 			repo := MakeGitRepository(t, gitCommands...)
@@ -1613,7 +1612,7 @@ func TestRepository_Commits(t *testing.T) {
 			wantTotal:   2,
 		},
 	}
-	client := NewClient(database.NewMockDB())
+	client := NewClient()
 	runCommitsTests := func(checker authz.SubRepoPermissionChecker) {
 		for label, test := range tests {
 			t.Run(label, func(t *testing.T) {
@@ -1705,7 +1704,7 @@ func TestCommits_SubRepoPerms(t *testing.T) {
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
 			checker := getTestSubRepoPermsChecker(test.noAccessPaths...)
-			commits, err := NewClient(database.NewMockDB()).Commits(ctx, checker, repo, test.opt)
+			commits, err := NewClient().Commits(ctx, checker, repo, test.opt)
 			if err != nil {
 				t.Errorf("%s: Commits(): %s", label, err)
 				return
@@ -1797,7 +1796,7 @@ func TestCommits_SubRepoPerms_ReturnNCommits(t *testing.T) {
 		},
 	}
 
-	client := NewClient(database.NewMockDB())
+	client := NewClient()
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
 			checker := getTestSubRepoPermsChecker(test.noAccessPaths...)
@@ -1894,7 +1893,7 @@ func TestRepository_Commits_options(t *testing.T) {
 			repo := MakeGitRepository(t)
 			before := ""
 			after := time.Date(2022, 11, 11, 12, 10, 0, 4, time.UTC).Format(time.RFC3339)
-			_, err := NewClient(database.NewMockDB()).Commits(ctx, checker, repo, CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after, Before: before})
+			_, err := NewClient().Commits(ctx, checker, repo, CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after, Before: before})
 			if err == nil {
 				t.Error("expected error, got nil")
 			}
@@ -2189,7 +2188,7 @@ func TestFilterRefDescriptions(t *testing.T) { // KEEP
 	}
 
 	checker := getTestSubRepoPermsChecker("file3")
-	client := NewClient(database.NewMockDB()).(*clientImplementor)
+	client := NewClient().(*clientImplementor)
 	filtered := client.filterRefDescriptions(ctx, repo, refDescriptions, checker)
 	expectedRefDescriptions := map[string][]gitdomain.RefDescription{
 		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": {},
@@ -2207,8 +2206,7 @@ func TestRefDescriptions(t *testing.T) { // KEEP
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
-	db := database.NewMockDB()
-	client := NewClient(db)
+	client := NewClient()
 	gitCommands := append(getGitCommandsWithFiles("file1", "file2"), "git checkout -b my-other-branch")
 	gitCommands = append(gitCommands, getGitCommandsWithFiles("file1-b2", "file2-b2")...)
 	gitCommands = append(gitCommands, "git checkout -b my-branch-no-access")
@@ -2256,8 +2254,7 @@ func TestCommitsUniqueToBranch(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
-	db := database.NewMockDB()
-	client := NewClient(db)
+	client := NewClient()
 	gitCommands := append([]string{"git checkout -b my-branch"}, getGitCommandsWithFiles("file1", "file2")...)
 	gitCommands = append(gitCommands, getGitCommandsWithFiles("file3", "file-with-no-access")...)
 	repo := MakeGitRepository(t, gitCommands...)
@@ -2301,8 +2298,7 @@ func TestCommitDate(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
-	db := database.NewMockDB()
-	client := NewClient(db)
+	client := NewClient()
 	gitCommands := getGitCommandsWithFiles("file1", "file2")
 	repo := MakeGitRepository(t, gitCommands...)
 
@@ -2336,8 +2332,7 @@ func TestCommitDate(t *testing.T) {
 
 func testCommits(ctx context.Context, label string, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, wantCommits []*gitdomain.Commit, t *testing.T) {
 	t.Helper()
-	db := database.NewMockDB()
-	client := NewClient(db).(*clientImplementor)
+	client := NewClient().(*clientImplementor)
 	commits, err := client.Commits(ctx, checker, repo, opt)
 	if err != nil {
 		t.Errorf("%s: Commits(): %s", label, err)
@@ -2471,7 +2466,7 @@ func TestArchiveReaderForRepoWithSubRepoPermissions(t *testing.T) {
 		Treeish:   commitID,
 		Pathspecs: []gitdomain.Pathspec{"."},
 	}
-	client := NewClient(database.NewMockDB())
+	client := NewClient()
 	if _, err := client.ArchiveReader(context.Background(), checker, repo.Name, opts); err == nil {
 		t.Error("Error should not be null because ArchiveReader is invoked for a repo with sub-repo permissions")
 	}
@@ -2506,7 +2501,7 @@ func TestArchiveReaderForRepoWithoutSubRepoPermissions(t *testing.T) {
 		Treeish:   commitID,
 		Pathspecs: []gitdomain.Pathspec{"."},
 	}
-	client := NewClient(database.NewMockDB())
+	client := NewClient()
 	readCloser, err := client.ArchiveReader(context.Background(), checker, repo.Name, opts)
 	if err != nil {
 		t.Error("Error should not be thrown because ArchiveReader is invoked for a repo without sub-repo permissions")
@@ -2518,7 +2513,6 @@ func TestArchiveReaderForRepoWithoutSubRepoPermissions(t *testing.T) {
 }
 
 func TestRead(t *testing.T) {
-	db := database.NewMockDB()
 	const wantData = "abcd\n"
 	repo := MakeGitRepository(t,
 		"echo abcd > file1",
@@ -2558,7 +2552,7 @@ func TestRead(t *testing.T) {
 		},
 	}
 
-	client := NewClient(db)
+	client := NewClient()
 	ClientMocks.LocalGitserver = true
 	t.Cleanup(func() {
 		ResetClientMocks()
@@ -2638,7 +2632,7 @@ func TestRead(t *testing.T) {
 func runNewFileReaderTest(ctx context.Context, t *testing.T, repo api.RepoName, commitID api.CommitID, file string,
 	checker authz.SubRepoPermissionChecker, checkFn func(*testing.T, error, []byte)) {
 	t.Helper()
-	rc, err := NewClient(database.NewMockDB()).NewFileReader(ctx, checker, repo, commitID, file)
+	rc, err := NewClient().NewFileReader(ctx, checker, repo, commitID, file)
 	if err != nil {
 		checkFn(t, err, nil)
 		return
@@ -2704,7 +2698,7 @@ func TestRepository_Branches_MergedInto(t *testing.T) {
 	repo := MakeGitRepository(t, gitCommands...)
 	wantBranches := gitBranches
 	for branch, mergedInto := range wantBranches {
-		branches, err := NewClient(database.NewMockDB()).ListBranches(context.Background(), repo, BranchesOptions{MergedInto: branch})
+		branches, err := NewClient().ListBranches(context.Background(), repo, BranchesOptions{MergedInto: branch})
 		require.Nil(t, err)
 		if diff := cmp.Diff(mergedInto, branches); diff != "" {
 			t.Fatalf("branch mismatch (-want +got):\n%s", diff)
@@ -2735,7 +2729,7 @@ func TestRepository_Branches_ContainsCommit(t *testing.T) {
 	repo := MakeGitRepository(t, gitCommands...)
 	commitToWantBranches := gitWantBranches
 	for commit, wantBranches := range commitToWantBranches {
-		branches, err := NewClient(database.NewMockDB()).ListBranches(context.Background(), repo, BranchesOptions{ContainsCommit: commit})
+		branches, err := NewClient().ListBranches(context.Background(), repo, BranchesOptions{ContainsCommit: commit})
 		require.Nil(t, err)
 
 		sort.Sort(gitdomain.Branches(branches))
@@ -2817,7 +2811,7 @@ func testBranches(t *testing.T, gitCommands []string, wantBranches []*gitdomain.
 	t.Helper()
 
 	repo := MakeGitRepository(t, gitCommands...)
-	gotBranches, err := NewClient(database.NewMockDB()).ListBranches(context.Background(), repo, options)
+	gotBranches, err := NewClient().ListBranches(context.Background(), repo, options)
 	require.Nil(t, err)
 
 	sort.Sort(gitdomain.Branches(wantBranches))
@@ -2834,93 +2828,6 @@ func usePermissionsForFilePermissionsFunc(m *authz.MockSubRepoPermissionChecker)
 			return m.Permissions(ctx, userID, authz.RepoContent{Repo: repo, Path: path})
 		}, nil
 	})
-}
-
-func TestLFSSmudge(t *testing.T) {
-	t.Skip("Failing, see https://github.com/sourcegraph/sourcegraph/issues/43473")
-
-	// TODO enforce on CI once CI has git-lfs
-	if _, err := exec.LookPath("git-lfs"); err != nil {
-		t.Skip("git-lfs not installed")
-	}
-
-	ctx := context.Background()
-	ClientMocks.LocalGitserver = true
-	t.Cleanup(func() {
-		ResetClientMocks()
-	})
-
-	files := map[string]string{
-		"in-lfs.txt":       "I am in LFS\n",
-		"in-git-small.txt": "I am small and in git\n",
-		"in-git-large.txt": strings.Repeat("I am large and in git\n", 10),
-	}
-
-	var gitCmds []string
-	for path, content := range files {
-		gitCmds = append(gitCmds, fmt.Sprintf(`echo -n -e %q > %s`, content, path))
-	}
-	gitCmds = append(gitCmds,
-		`git lfs install --local`,
-		`git lfs track in-lfs.txt`,
-		`git add .`,
-		`git commit -m "lfs"`,
-	)
-
-	// We ensure we test against a bare repo because a lot of LFS stuff only
-	// seems to work under the assumption of a working copy.
-	repo := MakeBareGitRepository(t, gitCmds...)
-
-	c := NewClient(database.NewMockDB())
-	head, err := c.ResolveRevision(ctx, repo, "HEAD", ResolveRevisionOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Check that LFSSmudge always returns the file contents
-	for path, content := range files {
-		r, err := c.LFSSmudge(ctx, nil, repo, head, path)
-		if err != nil {
-			t.Fatalf("failed to run lfs-smudge on %q: %v", path, err)
-		}
-		b, err := io.ReadAll(r)
-		if err != nil {
-			t.Fatalf("failed to read output of lfs-smudge on %q: %v", path, err)
-		}
-		if err := r.Close(); err != nil {
-			t.Fatalf("failed to close reader for lfs-smudge on %q: %v", path, err)
-		}
-		if d := cmp.Diff(content, string(b)); d != "" {
-			t.Fatalf("unexpected LFS content for %q (-want, +got):\n%s", path, d)
-		}
-	}
-
-	// Make sure we correctly added contents to git instead of LFS
-	for path, content := range files {
-		if path == "in-lfs.txt" {
-			continue
-		}
-		b, err := c.ReadFile(ctx, nil, repo, head, path)
-		if err != nil {
-			t.Fatalf("failed to read file %q: %v", path, err)
-		}
-		if d := cmp.Diff(content, string(b)); d != "" {
-			t.Fatalf("unexpected LFS content for %q (-want, +got):\n%s", path, d)
-		}
-	}
-
-	// Check that we have a pointer for LFS in git.
-	want := `version https://git-lfs.github.com/spec/v1
-oid sha256:6779da4a4fc9920a86eeb6f7a01062513dbbcc8f221028c7345993884e89a508
-size 12
-`
-	b, err := c.ReadFile(ctx, nil, repo, head, "in-lfs.txt")
-	if err != nil {
-		t.Fatalf("failed to read file in-lfs.txt: %v", err)
-	}
-	if d := cmp.Diff(want, string(b)); d != "" {
-		t.Fatalf("unexpected LFS pointer (-want, +got):\n%s", d)
-	}
 }
 
 // testGitBlameOutput is produced by running
@@ -3232,7 +3139,7 @@ func TestStreamBlameFile(t *testing.T) {
 		checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
 			return authz.None, nil
 		})
-		hr, err := streamBlameFileCmd(ctx, checker, api.RepoName("foobar"), "README.md", nil, func(_ []string) GitCommand { return nil })
+		hr, err := streamBlameFileCmd(ctx, checker, "foobar", "README.md", nil, func(_ []string) GitCommand { return nil })
 		if hr != nil {
 			t.Fatalf("expected nil HunkReader")
 		}
@@ -3248,18 +3155,18 @@ func TestStreamBlameFile(t *testing.T) {
 func TestBlameHunkReader(t *testing.T) {
 	t.Run("OK matching hunks", func(t *testing.T) {
 		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental))
-		reader := newBlameHunkReader(context.Background(), rc)
+		reader := newBlameHunkReader(rc)
+		defer reader.Close()
 
 		hunks := []*Hunk{}
 		for {
-			hunk, done, err := reader.Read()
-			if err != nil {
+			hunk, err := reader.Read()
+			if errors.Is(err, io.EOF) {
+				break
+			} else if err != nil {
 				t.Fatalf("blameHunkReader.Read failed: %s", err)
 			}
-			if done {
-				break
-			}
-			hunks = append(hunks, hunk...)
+			hunks = append(hunks, hunk)
 		}
 
 		sortFn := func(x []*Hunk) func(i, j int) bool {
@@ -3287,15 +3194,15 @@ func TestBlameHunkReader(t *testing.T) {
 
 	t.Run("OK parsing hunks", func(t *testing.T) {
 		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental2))
-		reader := newBlameHunkReader(context.Background(), rc)
+		reader := newBlameHunkReader(rc)
+		defer reader.Close()
 
 		for {
-			_, done, err := reader.Read()
-			if err != nil {
-				t.Fatalf("blameHunkReader.Read failed: %s", err)
-			}
-			if done {
+			_, err := reader.Read()
+			if errors.Is(err, io.EOF) {
 				break
+			} else if err != nil {
+				t.Fatalf("blameHunkReader.Read failed: %s", err)
 			}
 		}
 	})

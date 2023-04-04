@@ -11,10 +11,12 @@ import (
 
 	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 	"go.opentelemetry.io/otel/attribute"
+	"golang.org/x/exp/slices"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -36,7 +38,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
@@ -122,10 +123,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 	}()
 
 	excludePatterns := op.MinusRepoFilters
-	includePatterns, includePatternRevs, errs := findPatternRevs(op.RepoFilters)
-	if errs != nil {
-		return Resolved{}, errs
-	}
+	includePatterns, includePatternRevs := findPatternRevs(op.RepoFilters)
 
 	limit := op.Limit
 	if limit == 0 {
@@ -147,12 +145,21 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		})
 	}
 
+	topicFilters := make([]database.RepoTopicFilter, 0, len(op.HasTopics))
+	for _, filter := range op.HasTopics {
+		topicFilters = append(topicFilters, database.RepoTopicFilter{
+			Topic:   filter.Topic,
+			Negated: filter.Negated,
+		})
+	}
+
 	options := database.ReposListOptions{
 		IncludePatterns:       includePatterns,
 		ExcludePattern:        query.UnionRegExps(excludePatterns),
 		DescriptionPatterns:   op.DescriptionPatterns,
 		CaseSensitivePatterns: op.CaseSensitiveRepoFilters,
 		KVPFilters:            kvpFilters,
+		TopicFilters:          topicFilters,
 		Cursors:               op.Cursors,
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
 		LimitOffset:  &database.LimitOffset{Limit: limit + 1},
@@ -287,14 +294,14 @@ func (r *Resolver) associateReposWithRevs(
 	associated []RepoRevSpecs,
 	missing []RepoRevSpecs,
 ) {
-	g := group.New().WithMaxConcurrency(8)
+	p := pool.New().WithMaxGoroutines(8)
 
 	associatedRevs := make([]RepoRevSpecs, len(repos))
 	revsAreMissing := make([]bool, len(repos))
 
 	for i, repo := range repos {
 		i, repo := i, repo
-		g.Go(func() {
+		p.Go(func() {
 			var (
 				revs      []query.RevisionSpecifier
 				isMissing bool
@@ -322,7 +329,7 @@ func (r *Resolver) associateReposWithRevs(
 		})
 	}
 
-	g.Wait()
+	p.Wait()
 
 	// Sort missing revs to the end, but maintain order otherwise.
 	sort.SliceStable(associatedRevs, func(i, j int) bool {
@@ -356,10 +363,10 @@ func (r *Resolver) normalizeRefs(ctx context.Context, repoRevSpecs []RepoRevSpec
 		}
 	)
 
-	g := group.New().WithContext(ctx).WithMaxConcurrency(128)
+	p := pool.New().WithContext(ctx).WithMaxGoroutines(128)
 	for i, repoRev := range repoRevSpecs {
 		i, repoRev := i, repoRev
-		g.Go(func(ctx context.Context) error {
+		p.Go(func(ctx context.Context) error {
 			expanded, err := r.normalizeRepoRefs(ctx, repoRev.Repo, repoRev.Revs, addMissing)
 			if err != nil {
 				return err
@@ -372,7 +379,7 @@ func (r *Resolver) normalizeRefs(ctx context.Context, repoRevSpecs []RepoRevSpec
 		})
 	}
 
-	if err := g.Wait(); err != nil {
+	if err := p.Wait(); err != nil {
 		return nil, nil, err
 	}
 
@@ -461,7 +468,7 @@ func (r *Resolver) filterHasCommitAfter(
 		return repoRevs, nil
 	}
 
-	g := group.New().WithContext(ctx).WithMaxConcurrency(128)
+	p := pool.New().WithContext(ctx).WithMaxGoroutines(128)
 
 	for _, repoRev := range repoRevs {
 		repoRev := repoRev
@@ -473,7 +480,7 @@ func (r *Resolver) filterHasCommitAfter(
 
 		for _, rev := range allRevs {
 			rev := rev
-			g.Go(func(ctx context.Context) error {
+			p.Go(func(ctx context.Context) error {
 				if hasCommitAfter, err := r.gitserver.HasCommitAfter(ctx, authz.DefaultSubRepoPermsChecker, repoRev.Repo.Name, op.CommitAfter.TimeRef, rev); err != nil {
 					if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
 						// If the revision does not exist or the repo does not exist,
@@ -496,7 +503,7 @@ func (r *Resolver) filterHasCommitAfter(
 		}
 	}
 
-	if err := g.Wait(); err != nil {
+	if err := p.Wait(); err != nil {
 		return nil, err
 	}
 
@@ -600,10 +607,10 @@ func (r *Resolver) filterRepoHasFileContent(
 		}
 	)
 
-	g := group.New().WithContext(ctx).WithMaxConcurrency(16)
+	p := pool.New().WithContext(ctx).WithMaxGoroutines(16)
 
 	{ // Use zoekt for indexed revs
-		g.Go(func(ctx context.Context) error {
+		p.Go(func(ctx context.Context) error {
 			type repoAndRev struct {
 				id  api.RepoID
 				rev string
@@ -647,26 +654,40 @@ func (r *Resolver) filterRepoHasFileContent(
 	}
 
 	{ // Use searcher for unindexed revs
+
+		checkHasMatches := func(ctx context.Context, arg query.RepoHasFileContentArgs, repo types.MinimalRepo, rev string) (bool, error) {
+			commitID, err := r.gitserver.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+			if err != nil {
+				if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, &gitdomain.BadCommitError{}) {
+					return false, err
+				} else if e := (&gitdomain.RevisionNotFoundError{}); errors.As(err, &e) && (rev == "HEAD" || rev == "") {
+					// In the case that we can't find HEAD, that means there are no commits, which means
+					// we can safely say this repo does not have the file being requested.
+					return false, nil
+				}
+
+				// For any other error, add this repo/rev pair to the set of missing repos
+				addMissing(RepoRevSpecs{Repo: repo, Revs: []query.RevisionSpecifier{{RevSpec: rev}}})
+				return false, nil
+			}
+
+			return r.repoHasFileContentAtCommit(ctx, repo, commitID, arg)
+		}
+
 		for _, repoRevs := range unindexed {
 			for _, rev := range repoRevs.Revs {
 				repo, rev := repoRevs.Repo, rev
 
-				g.Go(func(ctx context.Context) error {
+				p.Go(func(ctx context.Context) error {
 					for _, arg := range op.HasFileContent {
-						commitID, err := r.gitserver.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
-						if err != nil {
-							if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, &gitdomain.BadCommitError{}) {
-								return err
-							}
-							addMissing(RepoRevSpecs{Repo: repo, Revs: []query.RevisionSpecifier{{RevSpec: rev}}})
-							return nil
-						}
-
-						foundMatches, err := r.repoHasFileContentAtCommit(ctx, repo, commitID, arg)
+						hasMatches, err := checkHasMatches(ctx, arg, repo, rev)
 						if err != nil {
 							return err
 						}
-						if !foundMatches {
+
+						wantMatches := !arg.Negated
+						if wantMatches != hasMatches {
+							// One of the conditions has failed, so we can return early
 							return nil
 						}
 					}
@@ -679,7 +700,7 @@ func (r *Resolver) filterRepoHasFileContent(
 		}
 	}
 
-	if err := g.Wait(); err != nil {
+	if err := p.Wait(); err != nil {
 		return nil, nil, 0, err
 	}
 
@@ -746,10 +767,7 @@ func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOpt
 	}()
 
 	excludePatterns := op.MinusRepoFilters
-	includePatterns, _, err := findPatternRevs(op.RepoFilters)
-	if err != nil {
-		return ExcludedRepos{}, err
-	}
+	includePatterns, _ := findPatternRevs(op.RepoFilters)
 
 	limit := op.Limit
 	if limit == 0 {
@@ -907,7 +925,7 @@ func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []
 				matched = append(matched, rev)
 			}
 		}
-		sort.Slice(matched, func(i, j int) bool { return matched[i].Less(matched[j]) })
+		slices.SortFunc(matched, query.RevisionSpecifier.Less)
 		return
 	}
 
@@ -916,33 +934,24 @@ func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []
 		clashing = append(clashing, rev)
 	}
 	// ensure that lists are always returned in sorted order.
-	sort.Slice(clashing, func(i, j int) bool { return clashing[i].Less(clashing[j]) })
+	slices.SortFunc(clashing, query.RevisionSpecifier.Less)
 	return
 }
 
 // findPatternRevs separates out each repo filter into its repository name
-// pattern and its revision specs (if any). It validates each repository name
-// pattern and applies some small optimizations.
-func findPatternRevs(includePatterns []query.ParsedRepoFilter) (outputPatterns []string, includePatternRevs []patternRevspec, err error) {
+// pattern and its revision specs (if any). It also applies small optimizations
+// to the repository name.
+func findPatternRevs(includePatterns []query.ParsedRepoFilter) (outputPatterns []string, includePatternRevs []patternRevspec) {
 	outputPatterns = make([]string, 0, len(includePatterns))
 	includePatternRevs = make([]patternRevspec, 0, len(includePatterns))
 
-	for _, includePattern := range includePatterns {
-		repoPattern, revs := includePattern.Repo, includePattern.Revs
-		// Validate pattern now so the error message is more recognizable to the
-		// user
-		if _, err := regexp.Compile(repoPattern); err != nil {
-			return nil, nil, &badRequestError{errors.Wrap(err, "in findPatternRevs")}
-		}
-		repoPattern = optimizeRepoPatternWithHeuristics(repoPattern)
+	for _, pattern := range includePatterns {
+		repo, repoRegex, revs := pattern.Repo, pattern.RepoRegex, pattern.Revs
+		repo = optimizeRepoPatternWithHeuristics(repo)
+		outputPatterns = append(outputPatterns, repo)
 
-		outputPatterns = append(outputPatterns, repoPattern)
 		if len(revs) > 0 {
-			p, err := regexp.Compile("(?i:" + repoPattern + ")")
-			if err != nil {
-				return nil, nil, &badRequestError{err}
-			}
-			patternRev := patternRevspec{includePattern: p, revs: revs}
+			patternRev := patternRevspec{includePattern: repoRegex, revs: revs}
 			includePatternRevs = append(includePatternRevs, patternRev)
 		}
 	}
@@ -957,22 +966,6 @@ func optimizeRepoPatternWithHeuristics(repoPattern string) string {
 	// so that the regexp can be optimized more effectively.
 	repoPattern = strings.ReplaceAll(repoPattern, "github.com", `github\.com`)
 	return repoPattern
-}
-
-type badRequestError struct {
-	err error
-}
-
-func (e *badRequestError) BadRequest() bool {
-	return true
-}
-
-func (e *badRequestError) Error() string {
-	return "bad request: " + e.err.Error()
-}
-
-func (e *badRequestError) Cause() error {
-	return e.err
 }
 
 var ErrNoResolvedRepos = errors.New("no resolved repositories")

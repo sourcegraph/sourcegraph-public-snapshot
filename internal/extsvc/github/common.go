@@ -22,6 +22,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -157,6 +158,7 @@ type Label struct {
 
 type PullRequestRepo struct {
 	ID    string
+	Name  string
 	Owner struct {
 		Login string
 	}
@@ -1379,6 +1381,7 @@ fragment prCommit on PullRequestCommit {
 
 fragment repo on Repository {
   id
+  name
   owner {
     login
   }
@@ -1463,6 +1466,13 @@ func ExternalRepoSpec(repo *Repository, baseURL *url.URL) api.ExternalRepoSpec {
 	}
 }
 
+func githubBaseURLDefault() string {
+	if deploy.IsSingleBinary() {
+		return ""
+	}
+	return "http://github-proxy"
+}
+
 var (
 	gitHubDisable, _ = strconv.ParseBool(env.Get("SRC_GITHUB_DISABLE", "false", "disables communication with GitHub instances. Used to test GitHub service degradation"))
 
@@ -1470,19 +1480,19 @@ var (
 	requestCounter = metrics.NewRequestMeter("github", "Total number of requests sent to the GitHub API.")
 
 	// Get raw proxy URL at service startup, but only get parsed URL at runtime with getGithubProxyURL
-	githubProxyRawURL = env.Get("GITHUB_BASE_URL", "http://github-proxy", "base URL for GitHub.com API (used for github-proxy)")
+	githubProxyRawURL = env.Get("GITHUB_BASE_URL", githubBaseURLDefault(), "base URL for GitHub.com API (used for github-proxy)")
 )
 
 func getGithubProxyURL() (*url.URL, bool) {
 	if githubProxyRawURL == "" {
 		return nil, false
 	}
-	url, err := url.Parse(githubProxyRawURL)
+	parsedUrl, err := url.Parse(githubProxyRawURL)
 	if err != nil {
 		log.Scoped("extsvc.github", "github package").Fatal("Error parsing GITHUB_BASE_URL", log.Error(err))
 		return nil, false
 	}
-	return url, true
+	return parsedUrl, true
 }
 
 // APIRoot returns the root URL of the API using the base URL of the GitHub instance.
@@ -1749,6 +1759,9 @@ type Repository struct {
 	// depending on which token was used to fetch it
 	ViewerPermission string // ADMIN, WRITE, READ, or empty if unknown. Only the graphql api populates this. https://developer.github.com/v4/enum/repositorypermission/
 
+	// a list of topics the repository is tagged with
+	RepositoryTopics RepositoryTopics
+
 	// Metadata retained for ranking
 	StargazerCount int `json:",omitempty"`
 	ForkCount      int `json:",omitempty"`
@@ -1757,6 +1770,18 @@ type Repository struct {
 	// to identify if a repository is public or private or internal.
 	// https://developer.github.com/changes/2019-12-03-internal-visibility-changes/#repository-visibility-fields
 	Visibility Visibility `json:",omitempty"`
+}
+
+type RepositoryTopics struct {
+	Nodes []RepositoryTopic
+}
+
+type RepositoryTopic struct {
+	Topic Topic
+}
+
+type Topic struct {
+	Name string
 }
 
 type restRepositoryPermissions struct {
@@ -1780,6 +1805,7 @@ type restRepository struct {
 	Stars       int                       `json:"stargazers_count"`
 	Forks       int                       `json:"forks_count"`
 	Visibility  string                    `json:"visibility"`
+	Topics      []string                  `json:"topics"`
 }
 
 // getRepositoryFromAPI attempts to fetch a repository from the GitHub API without use of the redis cache.
@@ -1801,6 +1827,10 @@ func (c *V3Client) getRepositoryFromAPI(ctx context.Context, owner, name string)
 // convertRestRepo converts repo information returned by the rest API
 // to a standard format.
 func convertRestRepo(restRepo restRepository) *Repository {
+	topics := make([]RepositoryTopic, 0, len(restRepo.Topics))
+	for _, topic := range restRepo.Topics {
+		topics = append(topics, RepositoryTopic{Topic{Name: topic}})
+	}
 	repo := Repository{
 		ID:               restRepo.ID,
 		DatabaseID:       restRepo.DatabaseID,
@@ -1815,6 +1845,7 @@ func convertRestRepo(restRepo restRepository) *Repository {
 		ViewerPermission: convertRestRepoPermissions(restRepo.Permissions),
 		StargazerCount:   restRepo.Stars,
 		ForkCount:        restRepo.Forks,
+		RepositoryTopics: RepositoryTopics{topics},
 	}
 
 	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility {
@@ -1905,6 +1936,18 @@ func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr 
 	return usr, tok, nil
 }
 
+func GetPublicExternalAccountData(ctx context.Context, data *extsvc.AccountData) (*extsvc.PublicAccountData, error) {
+	d, _, err := GetExternalAccountData(ctx, data)
+	if err != nil {
+		return nil, err
+	}
+	return &extsvc.PublicAccountData{
+		DisplayName: d.Name,
+		Login:       d.Login,
+		URL:         d.URL,
+	}, nil
+}
+
 func SetExternalAccountData(data *extsvc.AccountData, user *github.User, token *oauth2.Token) error {
 	serializedUser, err := json.Marshal(user)
 	if err != nil {
@@ -1934,8 +1977,9 @@ type UserEmail struct {
 }
 
 type Org struct {
-	ID    int    `json:"id,omitempty"`
-	Login string `json:"login,omitempty"`
+	ID     int    `json:"id,omitempty"`
+	Login  string `json:"login,omitempty"`
+	NodeID string `json:"node_id,omitempty"`
 }
 
 // OrgDetails describes the more detailed Org data you can only get from the

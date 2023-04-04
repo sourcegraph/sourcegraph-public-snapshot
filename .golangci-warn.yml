@@ -47,10 +47,3 @@ run:
     - main.go
     # In ./internal/cmd/progress-bot
     - main.go
-    # In ./internal/cmd/resources-report
-    - aws.go
-    - gcp.go
-    - main.go
-    - resource.go
-    - sheets.go
-    - slack.go

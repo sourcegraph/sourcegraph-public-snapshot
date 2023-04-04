@@ -227,11 +227,15 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 			Changeset:     mappingChangeset,
 			Repo:          mappingRepo,
 		}}, batchChange.ID)
-		wantedChangesets, err := changesetRewirer.Rewire()
+		newChangesets, updatedChangesets, err := changesetRewirer.Rewire()
 		if err != nil {
 			r.planErr = err
 			return
 		}
+
+		// For a preview, we do not care if the changesets are new or being updated. When applying the changes, we do
+		// want to differentiate to make life easier.
+		wantedChangesets := append(newChangesets, updatedChangesets...)
 
 		if len(wantedChangesets) != 1 {
 			r.planErr = errors.New("rewirer did not return changeset")

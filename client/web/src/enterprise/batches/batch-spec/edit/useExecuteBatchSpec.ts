@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -29,7 +29,7 @@ export const useExecuteBatchSpec = (batchSpecID?: Scalars['ID'], noCache?: boole
 
     const [executionError, setExecutionError] = useState<Error>()
 
-    const history = useHistory()
+    const navigate = useNavigate()
     const executeBatchSpec = useCallback(() => {
         if (!batchSpecID) {
             return
@@ -43,13 +43,14 @@ export const useExecuteBatchSpec = (batchSpecID?: Scalars['ID'], noCache?: boole
         })
             .then(({ data }) => {
                 if (data?.executeBatchSpec) {
-                    history.replace(
-                        `${data.executeBatchSpec.namespace.url}/batch-changes/${data.executeBatchSpec.description.name}/executions/${data.executeBatchSpec.id}`
+                    navigate(
+                        `${data.executeBatchSpec.namespace.url}/batch-changes/${data.executeBatchSpec.description.name}/executions/${data.executeBatchSpec.id}`,
+                        { replace: true }
                     )
                 }
             })
             .catch(setExecutionError)
-    }, [submitBatchSpec, noCache, history, batchSpecID])
+    }, [submitBatchSpec, noCache, navigate, batchSpecID])
 
     return {
         executeBatchSpec,

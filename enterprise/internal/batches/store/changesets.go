@@ -10,6 +10,9 @@ import (
 	"strings"
 	"time"
 
+	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
+
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
@@ -20,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -30,10 +34,51 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// changesetColumns are used by by the changeset related Store methods and by
+var changesetStringColumns = SQLColumns{
+	"id",
+	"repo_id",
+	"created_at",
+	"updated_at",
+	"metadata",
+	"batch_change_ids",
+	"external_id",
+	"external_service_type",
+	"external_branch",
+	"external_fork_name",
+	"external_fork_namespace",
+	"external_deleted_at",
+	"external_updated_at",
+	"external_state",
+	"external_review_state",
+	"external_check_state",
+	"diff_stat_added",
+	"diff_stat_deleted",
+	"sync_state",
+	"owned_by_batch_change_id",
+	"current_spec_id",
+	"previous_spec_id",
+	"publication_state",
+	"ui_publication_state",
+	"reconciler_state",
+	// computed_state is calculated by a Postgres function called changesets_computed_state_ensure. The value is
+	// determined by the combination of reconciler_state, publication_state, and external_state.
+	"computed_state",
+	"failure_message",
+	"started_at",
+	"finished_at",
+	"process_after",
+	"num_resets",
+	"num_failures",
+	"closing",
+	"syncer_error",
+	"detached_at",
+	"previous_failure_message",
+}
+
+// ChangesetColumns are used by the changeset related Store methods and by
 // workerutil.Worker to load changesets from the database for processing by
 // the reconciler.
-var changesetColumns = []*sqlf.Query{
+var ChangesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.id"),
 	sqlf.Sprintf("changesets.repo_id"),
 	sqlf.Sprintf("changesets.created_at"),
@@ -43,6 +88,7 @@ var changesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.external_id"),
 	sqlf.Sprintf("changesets.external_service_type"),
 	sqlf.Sprintf("changesets.external_branch"),
+	sqlf.Sprintf("changesets.external_fork_name"),
 	sqlf.Sprintf("changesets.external_fork_namespace"),
 	sqlf.Sprintf("changesets.external_deleted_at"),
 	sqlf.Sprintf("changesets.external_updated_at"),
@@ -58,6 +104,8 @@ var changesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.publication_state"),
 	sqlf.Sprintf("changesets.ui_publication_state"),
 	sqlf.Sprintf("changesets.reconciler_state"),
+	// computed_state is calculated by a Postgres function called changesets_computed_state_ensure. The value is
+	// determined by the combination of reconciler_state, publication_state, and external_state.
 	sqlf.Sprintf("changesets.computed_state"),
 	sqlf.Sprintf("changesets.failure_message"),
 	sqlf.Sprintf("changesets.started_at"),
@@ -68,10 +116,11 @@ var changesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.closing"),
 	sqlf.Sprintf("changesets.syncer_error"),
 	sqlf.Sprintf("changesets.detached_at"),
+	sqlf.Sprintf("changesets.previous_failure_message"),
 }
 
 // changesetInsertColumns is the list of changeset columns that are modified in
-// CreateChangeset and UpdateChangeset.
+// Store.UpdateChangeset.
 var changesetInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("repo_id"),
 	sqlf.Sprintf("created_at"),
@@ -82,6 +131,7 @@ var changesetInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("external_id"),
 	sqlf.Sprintf("external_service_type"),
 	sqlf.Sprintf("external_branch"),
+	sqlf.Sprintf("external_fork_name"),
 	sqlf.Sprintf("external_fork_namespace"),
 	sqlf.Sprintf("external_deleted_at"),
 	sqlf.Sprintf("external_updated_at"),
@@ -109,13 +159,16 @@ var changesetInsertColumns = []*sqlf.Query{
 	// the business logic for determining it is in one place and the field is
 	// indexable for searching.
 	sqlf.Sprintf("external_title"),
+	sqlf.Sprintf("previous_failure_message"),
 }
 
-// changesetCodeHostStateInsertColumns XX
+// changesetCodeHostStateInsertColumns are the columns that Store.UpdateChangesetCodeHostState uses to update a changeset
+// with state change on a code host.
 var changesetCodeHostStateInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("updated_at"),
 	sqlf.Sprintf("metadata"),
 	sqlf.Sprintf("external_branch"),
+	sqlf.Sprintf("external_fork_name"),
 	sqlf.Sprintf("external_fork_namespace"),
 	sqlf.Sprintf("external_deleted_at"),
 	sqlf.Sprintf("external_updated_at"),
@@ -132,107 +185,161 @@ var changesetCodeHostStateInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("external_title"),
 }
 
-func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changeset) (*sqlf.Query, error) {
-	metadata, err := jsonbColumn(c.Metadata)
-	if err != nil {
-		return nil, err
-	}
-
-	batchChanges, err := batchChangesColumn(c)
-	if err != nil {
-		return nil, err
-	}
-
-	syncState, err := json.Marshal(c.SyncState)
-	if err != nil {
-		return nil, err
-	}
-
-	// Not being able to find a title is fine, we just have a NULL in the database then.
-	title, _ := c.Title()
-
-	uiPublicationState := uiPublicationStateColumn(c)
-
-	vars := []any{
-		sqlf.Join(changesetInsertColumns, ", "),
-		c.RepoID,
-		c.CreatedAt,
-		c.UpdatedAt,
-		metadata,
-		batchChanges,
-		dbutil.NullTimeColumn(c.DetachedAt),
-		dbutil.NullStringColumn(c.ExternalID),
-		c.ExternalServiceType,
-		dbutil.NullStringColumn(c.ExternalBranch),
-		dbutil.NullStringColumn(c.ExternalForkNamespace),
-		dbutil.NullTimeColumn(c.ExternalDeletedAt),
-		dbutil.NullTimeColumn(c.ExternalUpdatedAt),
-		dbutil.NullStringColumn(string(c.ExternalState)),
-		dbutil.NullStringColumn(string(c.ExternalReviewState)),
-		dbutil.NullStringColumn(string(c.ExternalCheckState)),
-		c.DiffStatAdded,
-		c.DiffStatDeleted,
-		syncState,
-		dbutil.NullInt64Column(c.OwnedByBatchChangeID),
-		dbutil.NullInt64Column(c.CurrentSpecID),
-		dbutil.NullInt64Column(c.PreviousSpecID),
-		c.PublicationState,
-		uiPublicationState,
-		c.ReconcilerState.ToDB(),
-		c.FailureMessage,
-		dbutil.NullTimeColumn(c.StartedAt),
-		dbutil.NullTimeColumn(c.FinishedAt),
-		dbutil.NullTimeColumn(c.ProcessAfter),
-		c.NumResets,
-		c.NumFailures,
-		c.Closing,
-		c.SyncErrorMessage,
-		dbutil.NullStringColumn(title),
-	}
-
-	if includeID {
-		vars = append(vars, c.ID)
-	}
-
-	vars = append(vars, sqlf.Join(changesetColumns, ", "))
-
-	return sqlf.Sprintf(q, vars...), nil
+// changesetInsertStringColumns is the list of column names that are used by Store.CreateChangesets for insertion.
+var changesetInsertStringColumns = []string{
+	"repo_id",
+	"created_at",
+	"updated_at",
+	"metadata",
+	"batch_change_ids",
+	"detached_at",
+	"external_id",
+	"external_service_type",
+	"external_branch",
+	"external_fork_name",
+	"external_fork_namespace",
+	"external_deleted_at",
+	"external_updated_at",
+	"external_state",
+	"external_review_state",
+	"external_check_state",
+	"diff_stat_added",
+	"diff_stat_deleted",
+	"sync_state",
+	"owned_by_batch_change_id",
+	"current_spec_id",
+	"previous_spec_id",
+	"publication_state",
+	"ui_publication_state",
+	"reconciler_state",
+	"failure_message",
+	"started_at",
+	"finished_at",
+	"process_after",
+	"num_resets",
+	"num_failures",
+	"closing",
+	"syncer_error",
+	"external_title",
+	"previous_failure_message",
 }
 
-// UpsertChangeset creates or updates the given Changeset.
-func (s *Store) UpsertChangeset(ctx context.Context, c *btypes.Changeset) error {
-	if c.ID == 0 {
-		return s.CreateChangeset(ctx, c)
-	}
-	return s.UpdateChangeset(ctx, c)
+// temporaryChangesetInsertColumns is the list of column names used by Store.UpdateChangesetsForApply to insert into
+// a temporary table.
+var temporaryChangesetInsertColumns = []string{
+	"id",
+	"batch_change_ids",
+	"detached_at",
+	"diff_stat_added",
+	"diff_stat_deleted",
+	"current_spec_id",
+	"previous_spec_id",
+	"ui_publication_state",
+	"reconciler_state",
+	"failure_message",
+	"num_resets",
+	"num_failures",
+	"closing",
+	"syncer_error",
 }
 
-// CreateChangeset creates the given Changeset.
-func (s *Store) CreateChangeset(ctx context.Context, c *btypes.Changeset) (err error) {
-	ctx, _, endObservation := s.operations.createChangeset.With(ctx, &err, observation.Args{})
+// CreateChangeset creates the given Changesets.
+func (s *Store) CreateChangeset(ctx context.Context, cs ...*btypes.Changeset) (err error) {
+	ctx, _, endObservation := s.operations.createChangeset.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("count", len(cs)),
+	}})
 	defer endObservation(1, observation.Args{})
 
-	if c.CreatedAt.IsZero() {
-		c.CreatedAt = s.now()
+	inserter := func(inserter *batch.Inserter) error {
+		for _, c := range cs {
+			if c.CreatedAt.IsZero() {
+				c.CreatedAt = s.now()
+			}
+
+			if c.UpdatedAt.IsZero() {
+				c.UpdatedAt = c.CreatedAt
+			}
+
+			metadata, err := jsonbColumn(c.Metadata)
+			if err != nil {
+				return err
+			}
+
+			batchChanges, err := batchChangesColumn(c)
+			if err != nil {
+				return err
+			}
+
+			syncState, err := json.Marshal(c.SyncState)
+			if err != nil {
+				return err
+			}
+
+			// Not being able to find a title is fine, we just have a NULL in the database then.
+			title, _ := c.Title()
+
+			uiPublicationState := uiPublicationStateColumn(c)
+
+			if err := inserter.Insert(
+				ctx,
+				c.RepoID,
+				c.CreatedAt,
+				c.UpdatedAt,
+				metadata,
+				batchChanges,
+				dbutil.NullTimeColumn(c.DetachedAt),
+				dbutil.NullStringColumn(c.ExternalID),
+				c.ExternalServiceType,
+				dbutil.NullStringColumn(c.ExternalBranch),
+				dbutil.NullStringColumn(c.ExternalForkName),
+				dbutil.NullStringColumn(c.ExternalForkNamespace),
+				dbutil.NullTimeColumn(c.ExternalDeletedAt),
+				dbutil.NullTimeColumn(c.ExternalUpdatedAt),
+				dbutil.NullStringColumn(string(c.ExternalState)),
+				dbutil.NullStringColumn(string(c.ExternalReviewState)),
+				dbutil.NullStringColumn(string(c.ExternalCheckState)),
+				c.DiffStatAdded,
+				c.DiffStatDeleted,
+				syncState,
+				dbutil.NullInt64Column(c.OwnedByBatchChangeID),
+				dbutil.NullInt64Column(c.CurrentSpecID),
+				dbutil.NullInt64Column(c.PreviousSpecID),
+				c.PublicationState,
+				uiPublicationState,
+				c.ReconcilerState.ToDB(),
+				c.FailureMessage,
+				dbutil.NullTimeColumn(c.StartedAt),
+				dbutil.NullTimeColumn(c.FinishedAt),
+				dbutil.NullTimeColumn(c.ProcessAfter),
+				c.NumResets,
+				c.NumFailures,
+				c.Closing,
+				c.SyncErrorMessage,
+				dbutil.NullStringColumn(title),
+				c.PreviousFailureMessage,
+			); err != nil {
+				return err
+			}
+		}
+		return nil
 	}
 
-	if c.UpdatedAt.IsZero() {
-		c.UpdatedAt = c.CreatedAt
-	}
-
-	q, err := s.changesetWriteQuery(createChangesetQueryFmtstr, false, c)
-	if err != nil {
-		return err
-	}
-
-	return s.query(ctx, q, func(sc dbutil.Scanner) error { return scanChangeset(c, sc) })
+	i := -1
+	return batch.WithInserterWithReturn(
+		ctx,
+		s.Handle(),
+		"changesets",
+		batch.MaxNumPostgresParameters,
+		changesetInsertStringColumns,
+		"",
+		changesetStringColumns,
+		func(rows dbutil.Scanner) error {
+			i++
+			return ScanChangeset(cs[i], rows)
+		},
+		inserter,
+	)
 }
-
-var createChangesetQueryFmtstr = `
-INSERT INTO changesets (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-RETURNING %s
-`
 
 // DeleteChangeset deletes the Changeset with the given ID.
 func (s *Store) DeleteChangeset(ctx context.Context, id int64) (err error) {
@@ -379,7 +486,7 @@ func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (ch *bt
 	q := getChangesetQuery(&opts)
 
 	var c btypes.Changeset
-	err = s.query(ctx, q, func(sc dbutil.Scanner) error { return scanChangeset(&c, sc) })
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error { return ScanChangeset(&c, sc) })
 	if err != nil {
 		return nil, err
 	}
@@ -428,7 +535,7 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		getChangesetsQueryFmtstr,
-		sqlf.Join(changesetColumns, ", "),
+		sqlf.Join(ChangesetColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -450,7 +557,7 @@ func (s *Store) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyn
 	results := make([]*btypes.ChangesetSyncData, 0)
 	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		var h btypes.ChangesetSyncData
-		if err := scanChangesetSyncData(&h, sc); err != nil {
+		if err := ScanChangesetSyncData(&h, sc); err != nil {
 			return err
 		}
 		results = append(results, &h)
@@ -462,7 +569,7 @@ func (s *Store) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyn
 	return results, nil
 }
 
-func scanChangesetSyncData(h *btypes.ChangesetSyncData, s dbutil.Scanner) error {
+func ScanChangesetSyncData(h *btypes.ChangesetSyncData, s dbutil.Scanner) error {
 	return s.Scan(
 		&h.ChangesetID,
 		&h.UpdatedAt,
@@ -543,7 +650,7 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 	cs = make([]*btypes.Changeset, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		var c btypes.Changeset
-		if err = scanChangeset(&c, sc); err != nil {
+		if err = ScanChangeset(&c, sc); err != nil {
 			return err
 		}
 		cs = append(cs, &c)
@@ -651,7 +758,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 
 	return sqlf.Sprintf(
 		listChangesetsQueryFmtstr+opts.LimitOpts.ToDB(),
-		sqlf.Join(changesetColumns, ", "),
+		sqlf.Join(ChangesetColumns, ", "),
 		join,
 		sqlf.Join(preds, "\n AND "),
 	)
@@ -687,6 +794,8 @@ SET
 	reconciler_state = %s,
 	num_resets = 0,
 	num_failures = 0,
+	-- Copy over and reset the previous failure message
+	previous_failure_message = changesets.failure_message,
 	failure_message = NULL,
 	syncer_error = NULL,
 	updated_at = %s
@@ -728,16 +837,192 @@ func (s *Store) UpdateChangeset(ctx context.Context, cs *btypes.Changeset) (err 
 	}
 
 	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
-		return scanChangeset(cs, sc)
+		return ScanChangeset(cs, sc)
 	})
+}
+
+func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changeset) (*sqlf.Query, error) {
+	metadata, err := jsonbColumn(c.Metadata)
+	if err != nil {
+		return nil, err
+	}
+
+	batchChanges, err := batchChangesColumn(c)
+	if err != nil {
+		return nil, err
+	}
+
+	syncState, err := json.Marshal(c.SyncState)
+	if err != nil {
+		return nil, err
+	}
+
+	// Not being able to find a title is fine, we just have a NULL in the database then.
+	title, _ := c.Title()
+
+	uiPublicationState := uiPublicationStateColumn(c)
+
+	vars := []any{
+		sqlf.Join(changesetInsertColumns, ", "),
+		c.RepoID,
+		c.CreatedAt,
+		c.UpdatedAt,
+		metadata,
+		batchChanges,
+		dbutil.NullTimeColumn(c.DetachedAt),
+		dbutil.NullStringColumn(c.ExternalID),
+		c.ExternalServiceType,
+		dbutil.NullStringColumn(c.ExternalBranch),
+		dbutil.NullStringColumn(c.ExternalForkName),
+		dbutil.NullStringColumn(c.ExternalForkNamespace),
+		dbutil.NullTimeColumn(c.ExternalDeletedAt),
+		dbutil.NullTimeColumn(c.ExternalUpdatedAt),
+		dbutil.NullStringColumn(string(c.ExternalState)),
+		dbutil.NullStringColumn(string(c.ExternalReviewState)),
+		dbutil.NullStringColumn(string(c.ExternalCheckState)),
+		c.DiffStatAdded,
+		c.DiffStatDeleted,
+		syncState,
+		dbutil.NullInt64Column(c.OwnedByBatchChangeID),
+		dbutil.NullInt64Column(c.CurrentSpecID),
+		dbutil.NullInt64Column(c.PreviousSpecID),
+		c.PublicationState,
+		uiPublicationState,
+		c.ReconcilerState.ToDB(),
+		c.FailureMessage,
+		dbutil.NullTimeColumn(c.StartedAt),
+		dbutil.NullTimeColumn(c.FinishedAt),
+		dbutil.NullTimeColumn(c.ProcessAfter),
+		c.NumResets,
+		c.NumFailures,
+		c.Closing,
+		c.SyncErrorMessage,
+		dbutil.NullStringColumn(title),
+		c.PreviousFailureMessage,
+	}
+
+	if includeID {
+		vars = append(vars, c.ID)
+	}
+
+	vars = append(vars, sqlf.Join(ChangesetColumns, ", "))
+
+	return sqlf.Sprintf(q, vars...), nil
 }
 
 var updateChangesetQueryFmtstr = `
 UPDATE changesets
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   %s
+`
+
+// UpdateChangesetsForApply updates the provided Changesets.
+//
+// To efficiently insert a batch of updates to the changesets table, we fist insert the provided changesets to a temorary
+// table. The temporary table's columns are only the fields that are updated when applying changesets for a batch change
+// (for efficiency reasons).
+//
+// Once the changesets are in the temporary table, the values are then used to update their "previous" value in the actual
+// changesets table.
+func (s *Store) UpdateChangesetsForApply(ctx context.Context, cs []*btypes.Changeset) (err error) {
+	ctx, _, endObservation := s.operations.updateChangeset.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("count", len(cs)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	// Create the temporary table
+	if err = tx.Exec(ctx, sqlf.Sprintf(updateChangesetsTemporaryTableQuery)); err != nil {
+		return err
+	}
+
+	inserter := func(inserter *batch.Inserter) error {
+		for _, c := range cs {
+			batchChanges, _ := batchChangesColumn(c)
+			if err != nil {
+				return err
+			}
+
+			uiPublicationState := uiPublicationStateColumn(c)
+
+			if err := inserter.Insert(
+				ctx,
+				c.ID,
+				batchChanges,
+				dbutil.NullTimeColumn(c.DetachedAt),
+				c.DiffStatAdded,
+				c.DiffStatDeleted,
+				dbutil.NullInt64Column(c.CurrentSpecID),
+				dbutil.NullInt64Column(c.PreviousSpecID),
+				uiPublicationState,
+				c.ReconcilerState.ToDB(),
+				c.FailureMessage,
+				c.NumResets,
+				c.NumFailures,
+				c.Closing,
+				c.SyncErrorMessage,
+			); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	// Bulk insert all the unique column values into the temporary table
+	if err := batch.WithInserter(
+		ctx,
+		tx.Handle(),
+		"temp_changesets",
+		batch.MaxNumPostgresParameters,
+		temporaryChangesetInsertColumns,
+		inserter,
+	); err != nil {
+		return err
+	}
+
+	// Insert the values from the temporary table into the target table.
+	return tx.Exec(ctx, sqlf.Sprintf(updateChangesetsInsertQuery))
+}
+
+const updateChangesetsTemporaryTableQuery = `
+CREATE TEMPORARY TABLE temp_changesets (
+    id bigint primary key,
+    batch_change_ids jsonb DEFAULT '{}'::jsonb NOT NULL,
+    updated_at timestamp with time zone DEFAULT NOW() NOT NULL,
+    detached_at timestamp with time zone,
+    diff_stat_added integer,
+    diff_stat_deleted integer,
+    current_spec_id bigint,
+    previous_spec_id bigint,
+    ui_publication_state batch_changes_changeset_ui_publication_state,
+    reconciler_state text DEFAULT 'queued'::text,
+    failure_message text,
+	previous_failure_message text,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    closing boolean DEFAULT false NOT NULL,
+    syncer_error text
+) ON COMMIT DROP
+`
+
+const updateChangesetsInsertQuery = `
+UPDATE changesets c SET batch_change_ids = source.batch_change_ids, updated_at = source.updated_at,
+                        detached_at = source.detached_at, diff_stat_added = source.diff_stat_added,
+                        diff_stat_deleted = source.diff_stat_deleted, current_spec_id = source.current_spec_id,
+                        previous_spec_id = source.previous_spec_id, ui_publication_state = source.ui_publication_state,
+                        reconciler_state = source.reconciler_state, failure_message = source.failure_message,
+						previous_failure_message = source.previous_failure_message,
+                        num_resets = source.num_resets, num_failures = source.num_failures, closing = source.closing,
+                        syncer_error = source.syncer_error
+FROM temp_changesets source
+WHERE c.id = source.id
 `
 
 // UpdateChangesetBatchChanges updates only the `batch_changes` & `updated_at`
@@ -778,13 +1063,13 @@ func (s *Store) updateChangesetColumn(ctx context.Context, cs *btypes.Changeset,
 		cs.UpdatedAt,
 		val,
 		cs.ID,
-		sqlf.Join(changesetColumns, ", "),
+		sqlf.Join(ChangesetColumns, ", "),
 	}
 
 	q := sqlf.Sprintf(updateChangesetColumnQueryFmtstr, vars...)
 
 	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
-		return scanChangeset(cs, sc)
+		return ScanChangeset(cs, sc)
 	})
 }
 
@@ -813,7 +1098,7 @@ func (s *Store) UpdateChangesetCodeHostState(ctx context.Context, cs *btypes.Cha
 	}
 
 	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
-		return scanChangeset(cs, sc)
+		return ScanChangeset(cs, sc)
 	})
 }
 
@@ -836,6 +1121,7 @@ func updateChangesetCodeHostStateQuery(c *btypes.Changeset) (*sqlf.Query, error)
 		c.UpdatedAt,
 		metadata,
 		dbutil.NullStringColumn(c.ExternalBranch),
+		dbutil.NullStringColumn(c.ExternalForkName),
 		dbutil.NullStringColumn(c.ExternalForkNamespace),
 		dbutil.NullTimeColumn(c.ExternalDeletedAt),
 		dbutil.NullTimeColumn(c.ExternalUpdatedAt),
@@ -848,7 +1134,7 @@ func updateChangesetCodeHostStateQuery(c *btypes.Changeset) (*sqlf.Query, error)
 		c.SyncErrorMessage,
 		dbutil.NullStringColumn(title),
 		c.ID,
-		sqlf.Join(changesetColumns, ", "),
+		sqlf.Join(ChangesetColumns, ", "),
 	}
 
 	return sqlf.Sprintf(updateChangesetCodeHostStateQueryFmtstr, vars...), nil
@@ -856,7 +1142,7 @@ func updateChangesetCodeHostStateQuery(c *btypes.Changeset) (*sqlf.Query, error)
 
 var updateChangesetCodeHostStateQueryFmtstr = `
 UPDATE changesets
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   %s
@@ -1097,16 +1383,17 @@ func (n jsonBatchChangeChangesetSet) Value() (driver.Value, error) {
 	return *n.Assocs, nil
 }
 
-func scanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
+func ScanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 	var metadata, syncState json.RawMessage
 
 	var (
-		externalState       string
-		externalReviewState string
-		externalCheckState  string
-		failureMessage      string
-		syncErrorMessage    string
-		reconcilerState     string
+		externalState          string
+		externalReviewState    string
+		externalCheckState     string
+		failureMessage         string
+		syncErrorMessage       string
+		reconcilerState        string
+		previousFailureMessage string
 	)
 	err := s.Scan(
 		&t.ID,
@@ -1118,6 +1405,7 @@ func scanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 		&dbutil.NullString{S: &t.ExternalID},
 		&t.ExternalServiceType,
 		&dbutil.NullString{S: &t.ExternalBranch},
+		&dbutil.NullString{S: &t.ExternalForkName},
 		&dbutil.NullString{S: &t.ExternalForkNamespace},
 		&dbutil.NullTime{Time: &t.ExternalDeletedAt},
 		&dbutil.NullTime{Time: &t.ExternalUpdatedAt},
@@ -1143,6 +1431,7 @@ func scanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 		&t.Closing,
 		&dbutil.NullString{S: &syncErrorMessage},
 		&dbutil.NullTime{Time: &t.DetachedAt},
+		&dbutil.NullString{S: &previousFailureMessage},
 	)
 	if err != nil {
 		return errors.Wrap(err, "scanning changeset")
@@ -1153,6 +1442,9 @@ func scanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 	t.ExternalCheckState = btypes.ChangesetCheckState(externalCheckState)
 	if failureMessage != "" {
 		t.FailureMessage = &failureMessage
+	}
+	if previousFailureMessage != "" {
+		t.PreviousFailureMessage = &previousFailureMessage
 	}
 	if syncErrorMessage != "" {
 		t.SyncErrorMessage = &syncErrorMessage
@@ -1170,6 +1462,11 @@ func scanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 		m := new(bbcs.AnnotatedPullRequest)
 		// Ensure the inner PR is initialized, it should never be nil.
 		m.PullRequest = &bitbucketcloud.PullRequest{}
+		t.Metadata = m
+	case extsvc.TypeAzureDevOps:
+		m := new(adobatches.AnnotatedPullRequest)
+		// Ensure the inner PR is initialized, it should never be nil.
+		m.PullRequest = &azuredevops.PullRequest{}
 		t.Metadata = m
 	default:
 		return errors.New("unknown external service type")
@@ -1304,12 +1601,12 @@ func (s *Store) EnqueueNextScheduledChangeset(ctx context.Context) (ch *btypes.C
 		enqueueNextScheduledChangesetFmtstr,
 		btypes.ReconcilerStateScheduled.ToDB(),
 		btypes.ReconcilerStateQueued.ToDB(),
-		sqlf.Join(changesetColumns, ","),
+		sqlf.Join(ChangesetColumns, ","),
 	)
 
 	var c btypes.Changeset
 	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
-		return scanChangeset(&c, sc)
+		return ScanChangeset(&c, sc)
 	})
 	if err != nil {
 		return nil, err
@@ -1403,17 +1700,6 @@ func getChangesetsStatsQuery(batchChangeID int64) *sqlf.Query {
 		archived, archived,
 		archived, archived,
 		archived,
-		sqlf.Join(preds, " AND "),
-	)
-}
-
-func getGlobalChangesetsStatsQuery(repoID int64, authzConds *sqlf.Query) *sqlf.Query {
-	preds := []*sqlf.Query{
-		sqlf.Sprintf("repo.deleted_at IS NULL")}
-	return sqlf.Sprintf(
-		getRepoChangesetsStatsFmtstr,
-		strconv.Itoa(int(repoID)),
-		authzConds,
 		sqlf.Join(preds, " AND "),
 	)
 }

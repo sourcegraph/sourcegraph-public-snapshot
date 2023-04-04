@@ -721,3 +721,66 @@ func TestParseRepoOpts(t *testing.T) {
 		})
 	}
 }
+
+func Test_validateSearchContextQuery(t *testing.T) {
+	cases := []struct {
+		query   string
+		wantErr bool
+	}{{
+		query:   "repo:has(key:value)",
+		wantErr: false,
+	}, {
+		query:   "repo:has.tag(mytag)",
+		wantErr: false,
+	}, {
+		query:   "repo:has.key(mykey)",
+		wantErr: false,
+	}, {
+		query:   "repo:has.topic(mytopic)",
+		wantErr: false,
+	}, {
+		query:   "repo:has.path(mytopic)",
+		wantErr: true,
+	}, {
+		query:   "repo:has.description(mytopic)",
+		wantErr: false,
+	}, {
+		query:   "lang:go",
+		wantErr: false,
+	}, {
+		query:   "fork:yes",
+		wantErr: false,
+	}, {
+		query:   "archived:yes",
+		wantErr: false,
+	}, {
+		query:   "case:yes",
+		wantErr: false,
+	}, {
+		query:   "file:test",
+		wantErr: false,
+	}, {
+		query:   "visibility:public",
+		wantErr: false,
+	}, {
+		query:   "type:commit author:camden",
+		wantErr: true,
+	}, {
+		query:   "type:diff author:camden",
+		wantErr: true,
+	}, {
+		query:   "testpattern",
+		wantErr: true,
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.query, func(t *testing.T) {
+			err := validateSearchContextQuery(tc.query)
+			if tc.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}

@@ -40,7 +40,7 @@ export const StreamingSearchResultFooter: React.FunctionComponent<
                         <br />
                         Learn more about how to search{' '}
                         <Link
-                            to="https://docs.sourcegraph.com/code_search/explanations/features"
+                            to="/help/code_search/explanations/features"
                             rel="noopener noreferrer"
                             target="_blank"
                             onClick={() => telemetryService.log('ClickedOnDocs')}

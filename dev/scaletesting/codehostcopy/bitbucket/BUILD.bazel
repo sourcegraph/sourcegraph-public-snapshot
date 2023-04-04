@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "bitbucket",
+    srcs = [
+        "client.go",
+        "models.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/scaletesting/codehostcopy/bitbucket",
+    visibility = ["//visibility:public"],
+    deps = ["//lib/errors"],
+)

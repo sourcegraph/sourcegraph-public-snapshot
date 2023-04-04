@@ -4,15 +4,13 @@ import (
 	"context"
 	"sync"
 
-	"github.com/graph-gophers/graphql-go"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const DEFAULT_MAX_PAGE_SIZE = 100
+const DefaultMaxPageSize = 100
 
-type ConnectionResolver[N ConnectionNode] struct {
+type ConnectionResolver[N any] struct {
 	store   ConnectionResolverStore[N]
 	args    *ConnectionResolverArgs
 	options *ConnectionResolverOptions
@@ -20,19 +18,15 @@ type ConnectionResolver[N ConnectionNode] struct {
 	once    resolveOnce
 }
 
-type ConnectionNode interface {
-	ID() graphql.ID
-}
-
-type ConnectionResolverStore[N ConnectionNode] interface {
+type ConnectionResolverStore[N any] interface {
 	// ComputeTotal returns the total count of all the items in the connection, independent of pagination arguments.
 	ComputeTotal(context.Context) (*int32, error)
 	// ComputeNodes returns the list of nodes based on the pagination args.
-	ComputeNodes(context.Context, *database.PaginationArgs) ([]*N, error)
+	ComputeNodes(context.Context, *database.PaginationArgs) ([]N, error)
 	// MarshalCursor returns cursor for a node and is called for generating start and end cursors.
-	MarshalCursor(*N) (*string, error)
+	MarshalCursor(N, database.OrderBy) (*string, error)
 	// UnmarshalCursor returns node id from after/before cursor string.
-	UnmarshalCursor(string) (*int, error)
+	UnmarshalCursor(string, database.OrderBy) (*string, error)
 }
 
 type ConnectionResolverArgs struct {
@@ -42,7 +36,7 @@ type ConnectionResolverArgs struct {
 	Before *string
 }
 
-// Limit returns max nodes limit based on resolver arguments
+// Limit returns max nodes limit based on resolver arguments.
 func (a *ConnectionResolverArgs) Limit(options *ConnectionResolverOptions) int {
 	var limit *int32
 
@@ -66,18 +60,27 @@ type ConnectionResolverOptions struct {
 	//
 	// Defaults to `true` when not set.
 	Reverse *bool
+	// Columns to order by.
+	OrderBy database.OrderBy
+	// Order direction.
+	Ascending bool
+
+	// If set to true, the resolver won't throw an error when `first` or `last` isn't provided
+	// in `ConnectionResolverArgs`. Be careful when setting this to true, as this could cause
+	// performance issues when fetching large data.
+	AllowNoLimit bool
 }
 
-// MaxPageSize returns the configured max page limit for the connection
+// MaxPageSizeOrDefault returns the configured max page limit for the connection.
 func (o *ConnectionResolverOptions) MaxPageSizeOrDefault() int {
 	if o.MaxPageSize != nil {
 		return *o.MaxPageSize
 	}
 
-	return DEFAULT_MAX_PAGE_SIZE
+	return DefaultMaxPageSize
 }
 
-// ApplyMaxPageSize return max page size by applying the configured max limit to the first, last arguments
+// ApplyMaxPageSize return max page size by applying the configured max limit to the first, last arguments.
 func (o *ConnectionResolverOptions) ApplyMaxPageSize(limit *int32) int {
 	maxPageSize := o.MaxPageSizeOrDefault()
 
@@ -92,11 +95,11 @@ func (o *ConnectionResolverOptions) ApplyMaxPageSize(limit *int32) int {
 	return maxPageSize
 }
 
-type connectionData[N ConnectionNode] struct {
+type connectionData[N any] struct {
 	total      *int32
 	totalError error
 
-	nodes      []*N
+	nodes      []N
 	nodesError error
 }
 
@@ -110,19 +113,22 @@ func (r *ConnectionResolver[N]) paginationArgs() (*database.PaginationArgs, erro
 		return nil, nil
 	}
 
-	paginationArgs := database.PaginationArgs{}
+	paginationArgs := database.PaginationArgs{
+		OrderBy:   r.options.OrderBy,
+		Ascending: r.options.Ascending,
+	}
 
 	limit := r.pageSize() + 1
 	if r.args.First != nil {
 		paginationArgs.First = &limit
 	} else if r.args.Last != nil {
 		paginationArgs.Last = &limit
-	} else {
+	} else if !r.options.AllowNoLimit {
 		return nil, errors.New("you must provide a `first` or `last` value to properly paginate")
 	}
 
 	if r.args.After != nil {
-		after, err := r.store.UnmarshalCursor(*r.args.After)
+		after, err := r.store.UnmarshalCursor(*r.args.After, r.options.OrderBy)
 		if err != nil {
 			return nil, err
 		}
@@ -131,7 +137,7 @@ func (r *ConnectionResolver[N]) paginationArgs() (*database.PaginationArgs, erro
 	}
 
 	if r.args.Before != nil {
-		before, err := r.store.UnmarshalCursor(*r.args.Before)
+		before, err := r.store.UnmarshalCursor(*r.args.Before, r.options.OrderBy)
 		if err != nil {
 			return nil, err
 		}
@@ -152,15 +158,15 @@ func (r *ConnectionResolver[N]) TotalCount(ctx context.Context) (int32, error) {
 		r.data.total, r.data.totalError = r.store.ComputeTotal(ctx)
 	})
 
-	if r.data.totalError != nil || r.data.total == nil {
-		return 0, r.data.totalError
+	if r.data.total != nil {
+		return *r.data.total, r.data.totalError
 	}
 
-	return *r.data.total, r.data.totalError
+	return 0, r.data.totalError
 }
 
 // Nodes returns value for connection.Nodes and is called by the graphql api.
-func (r *ConnectionResolver[N]) Nodes(ctx context.Context) ([]*N, error) {
+func (r *ConnectionResolver[N]) Nodes(ctx context.Context) ([]N, error) {
 	r.once.nodes.Do(func() {
 		paginationArgs, err := r.paginationArgs()
 		if err != nil {
@@ -214,15 +220,17 @@ func (r *ConnectionResolver[N]) PageInfo(ctx context.Context) (*ConnectionPageIn
 		nodes:             nodes,
 		store:             r.store,
 		args:              r.args,
+		orderBy:           r.options.OrderBy,
 	}, nil
 }
 
-type ConnectionPageInfo[N ConnectionNode] struct {
+type ConnectionPageInfo[N any] struct {
 	pageSize          int
 	fetchedNodesCount int
-	nodes             []*N
+	nodes             []N
 	store             ConnectionResolverStore[N]
 	args              *ConnectionResolverArgs
+	orderBy           database.OrderBy
 }
 
 // HasNextPage returns value for connection.pageInfo.hasNextPage and is called by the graphql api.
@@ -257,7 +265,7 @@ func (p *ConnectionPageInfo[N]) EndCursor() (cursor *string, err error) {
 		return nil, nil
 	}
 
-	cursor, err = p.store.MarshalCursor(p.nodes[len(p.nodes)-1])
+	cursor, err = p.store.MarshalCursor(p.nodes[len(p.nodes)-1], p.orderBy)
 
 	return
 }
@@ -268,19 +276,19 @@ func (p *ConnectionPageInfo[N]) StartCursor() (cursor *string, err error) {
 		return nil, nil
 	}
 
-	cursor, err = p.store.MarshalCursor(p.nodes[0])
+	cursor, err = p.store.MarshalCursor(p.nodes[0], p.orderBy)
 
 	return
 }
 
 // NewConnectionResolver returns a new connection resolver built using the store and connection args.
-func NewConnectionResolver[N ConnectionNode](store ConnectionResolverStore[N], args *ConnectionResolverArgs, options *ConnectionResolverOptions) (*ConnectionResolver[N], error) {
-	if args == nil || (args.First == nil && args.Last == nil) {
-		return nil, errors.New("you must provide a `first` or `last` value to properly paginate")
+func NewConnectionResolver[N any](store ConnectionResolverStore[N], args *ConnectionResolverArgs, options *ConnectionResolverOptions) (*ConnectionResolver[N], error) {
+	if options == nil {
+		options = &ConnectionResolverOptions{OrderBy: database.OrderBy{{Field: "id"}}}
 	}
 
-	if options == nil {
-		options = &ConnectionResolverOptions{}
+	if len(options.OrderBy) == 0 {
+		options.OrderBy = database.OrderBy{{Field: "id"}}
 	}
 
 	return &ConnectionResolver[N]{

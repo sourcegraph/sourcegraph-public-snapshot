@@ -4,7 +4,7 @@ import { searchResultsToFileContent, buildFileName } from './searchResultsExport
 
 describe('searchResultsToFileContent', () => {
     const sourcegraphURL = 'http://localhost:3443'
-    const data: [SearchType | null, SearchMatch[], string][] = [
+    const data: [SearchType | 'owner' | null, SearchMatch[], string][] = [
         [
             null,
             [
@@ -1359,6 +1359,34 @@ describe('searchResultsToFileContent', () => {
             ],
 
             'Match type,Repository,Repository external URL,Date,Author,Subject,oid,Commit URL\ncommit,github.com/EbookFoundation/free-programming-books,http://localhost:3443/github.com/EbookFoundation/free-programming-books,2022-10-30T03:07:11Z,Karen Ketlyn Ferreira Barcelos,"Added two courses R PT_BR (#7415)* Added two courses R PT_BR\r\rHello! I\'m trying to help by adding courses that helped me!\r\r* fix: URL fragments goes in lowercase\r\r* lint: leave 2 blank lines between listings and next heading\r\r* Update courses/free-courses-pt_BR.md\r\rCo-authored-by: David Ordás <3125580+davorpa@users.noreply.github.com>\r\r* Update courses/free-courses-pt_BR.md\r\rCo-authored-by: David Ordás <3125580+davorpa@users.noreply.github.com>\r\rCo-authored-by: David Ordás <3125580+davorpa@users.noreply.github.com>\rCo-authored-by: Eric Hellman <eric@hellman.net>",91cdcd907bbf070b1310f9120b06bb03f481edb6,http://localhost:3443/github.com/EbookFoundation/free-programming-books/-/commit/91cdcd907bbf070b1310f9120b06bb03f481edb6\ncommit,github.com/freeCodeCamp/freeCodeCamp,http://localhost:3443/github.com/freeCodeCamp/freeCodeCamp,2022-07-12T07:13:40Z,Harsh Kashyap,"fix(curriculum): corrected grammar in line 12 of the description section of learn HTML forms.md (#46859)* Update 60fad1cafcde010995e15306.md\r\rHello, \rI have changed the sentence, please have a look.\r\r* Update curriculum/challenges/english/14-responsive-web-design-22/learn-html-forms-by-building-a-registration-form/60fad1cafcde010995e15306.md\r\rThank you, I have committed the changes suggested by you.\r\rCo-authored-by: Jeremy L Thompson <jeremy@jeremylt.org>\r\rCo-authored-by: Jeremy L Thompson <jeremy@jeremylt.org>",3ecc381f95383dfa8314846a5a7d815b359d95d1,http://localhost:3443/github.com/freeCodeCamp/freeCodeCamp/-/commit/3ecc381f95383dfa8314846a5a7d815b359d95d1\ncommit,github.com/EbookFoundation/free-programming-books,http://localhost:3443/github.com/EbookFoundation/free-programming-books,2022-10-07T14:42:09Z,yakirk,"Change link of repojacking vulnerable link (#7723)Hello from Hacktoberfest :)\rThe link to https://raw.githubusercontent.com/teten777/free-ebook-springboot-basic/master/Memulai%20Java%20Enterprise%20dengan%20Spring%20Boot.pdf is vulnerable to repojacking (it redirects to the orignial project that changed name), you should change the link to the current name of the project. if you won\'t change the link, an attacker can open the linked repository and attacks users that trust your links.\rThe new repository name is:\rhttps://raw.githubusercontent.com/teten-nugraha/free-ebook-springboot-basic/master/Memulai%20Java%20Enterprise%20dengan%20Spring%20Boot.pdf",c019ebd5db296ff9fba99a2ebb73ba5d3aa5f854,http://localhost:3443/github.com/EbookFoundation/free-programming-books/-/commit/c019ebd5db296ff9fba99a2ebb73ba5d3aa5f854\ncommit,github.com/EbookFoundation/free-programming-books,http://localhost:3443/github.com/EbookFoundation/free-programming-books,2022-07-21T05:52:57Z,Muhammad Anas,"New Django Course! (#6945)I have added a new course under the Django section. It was undoubtedly a must. It teaches everything from head to toe! From creating a simple **Hello World** site to a fully functional website to deployment! All is here!",a55f727e669f2a6ce694ac5821ff06a15a889328,http://localhost:3443/github.com/EbookFoundation/free-programming-books/-/commit/a55f727e669f2a6ce694ac5821ff06a15a889328\ncommit,github.com/EbookFoundation/free-programming-books,http://localhost:3443/github.com/EbookFoundation/free-programming-books,2020-10-31T20:49:54Z,Diego Mateos,"Added Hello SDL by LazyFoo (#4956)* Addded Hello SDL by LazyFoo\r\r* removed the redundant part of the URL",e364fc5254fedbbdbf179912aa59dfd773519d14,http://localhost:3443/github.com/EbookFoundation/free-programming-books/-/commit/e364fc5254fedbbdbf179912aa59dfd773519d14',
+        ],
+        [
+            'owner',
+            [
+                {
+                    type: 'person',
+                    handle: 'alice',
+                    email: 'alice@example.com',
+                    user: {
+                        username: 'alice',
+                        displayName: 'Alice Example',
+                        avatarURL: 'https://example.com',
+                    },
+                },
+                {
+                    type: 'person',
+                    handle: 'bob',
+                    email: '',
+                },
+                {
+                    type: 'team',
+                    handle: 'example-team',
+                    email: 'example-team@example.com',
+                    name: 'example-team',
+                    displayName: 'Example Team',
+                },
+            ],
+            'Match type,Handle,Email,User or team name,Display name,Profile URL\nperson,alice,alice@example.com,alice,Alice Example,http://localhost:3443/users/alice\nperson,bob,,,,\nteam,example-team,example-team@example.com,example-team,Example Team,http://localhost:3443/teams/example-team',
         ],
     ]
 

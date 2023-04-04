@@ -9,16 +9,16 @@ import {
     QueueAutoIndexJobsForRepoResult,
 } from '../../../../graphql-operations'
 
-import { lsifIndexFieldsFragment } from './types'
+import { preciseIndexFieldsFragment } from './types'
 
 const QUEUE_AUTO_INDEX_JOBS = gql`
     mutation QueueAutoIndexJobsForRepo($id: ID!, $rev: String) {
         queueAutoIndexJobsForRepo(repository: $id, rev: $rev) {
-            ...LsifIndexFields
+            ...PreciseIndexFields
         }
     }
 
-    ${lsifIndexFieldsFragment}
+    ${preciseIndexFieldsFragment}
 `
 
 type EnqueueIndexJobResults = Promise<

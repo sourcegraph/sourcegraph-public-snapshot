@@ -108,9 +108,9 @@ func listSecretExec(ctx *cli.Context) error {
 }
 
 func bashCompleteSecrets() (options []string) {
-	secrets, err := loadSecrets()
+	allSecrets, err := loadSecrets()
 	if err != nil {
 		return nil
 	}
-	return secrets.Keys()
+	return allSecrets.Keys()
 }

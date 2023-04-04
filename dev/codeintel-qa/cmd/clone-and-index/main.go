@@ -80,6 +80,42 @@ var repositoryMeta = []struct {
 			"f8307e394c512b4263fc0cd67ccf9fd46f1ad9a5",
 		},
 	},
+
+	// These repositories have their module names modified and new tags created to refer to each other
+	{
+		org:     "sourcegraph-testing",
+		name:    "nacelle",
+		indexer: "scip-go",
+		revisions: []string{
+			"68d3125fb03d4aec540714577401f9f01adffa8a",
+		},
+	},
+	{
+		org:     "sourcegraph-testing",
+		name:    "nacelle-config",
+		indexer: "scip-go",
+		revisions: []string{
+			"4d4864d3b5b046fe12154f3aae7a86a04690c4ae",
+		},
+	},
+	{
+		org:     "sourcegraph-testing",
+		name:    "nacelle-service",
+		indexer: "scip-go",
+		revisions: []string{
+			"0652f3023c1bc7e7466a487f20bbe4b5e28fdcc7",
+		},
+	},
+
+	// This repository is archived in-practice and as a good candidate for a low-effort scip-typescript test
+	{
+		org:     "sourcegraph",
+		name:    "code-intel-extensions",
+		indexer: "scip-typescript",
+		revisions: []string{
+			"c66e756d3d68a1e19048c3f7515ba42a7e793767",
+		},
+	},
 }
 
 func mainErr(ctx context.Context) error {
@@ -175,7 +211,9 @@ type IndexerPair struct {
 }
 
 var indexFunMap = map[string]IndexerPair{
-	"lsif-go": {"dump", indexGoWithLSIF},
+	"lsif-go":         {"dump", indexGoWithLSIF},
+	"scip-go":         {"scip", indexGoWithSCIP},
+	"scip-typescript": {"scip", indexTypeScriptWithSCIP},
 }
 
 func indexGoWithLSIF(ctx context.Context, reposDir, targetFile, name, revision string) error {
@@ -189,6 +227,31 @@ func indexGoWithLSIF(ctx context.Context, reposDir, targetFile, name, revision s
 		// --repository-root=. is necessary here as the temp dir might be within a strange
 		// nest of symlinks on MacOS, which confuses the repository root detection in lsif-go.
 		if err := run.Bash(ctx, "lsif-go", "--repository-root=.", "-o", targetFile).Dir(repoCopyDir).Run().Wait(); err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
+func indexGoWithSCIP(ctx context.Context, reposDir, targetFile, name, revision string) error {
+	return indexGeneric(ctx, reposDir, targetFile, name, revision, func(repoCopyDir string) error {
+		// --repository-root=. is necessary here as the temp dir might be within a strange
+		// nest of symlinks on MacOS, which confuses the repository root detection in scip-go.
+		if err := run.Bash(ctx, "scip-go", "--repository-root=.", "-o", targetFile).Dir(repoCopyDir).Run().Wait(); err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
+func indexTypeScriptWithSCIP(ctx context.Context, reposDir, targetFile, name, revision string) error {
+	return indexGeneric(ctx, reposDir, targetFile, name, revision, func(repoCopyDir string) error {
+		if err := run.Bash(ctx, "yarn").Dir(repoCopyDir).Run().Wait(); err != nil {
+			return err
+		}
+		if err := run.Bash(ctx, "scip-typescript", "index", "--output", targetFile).Dir(repoCopyDir).Run().Wait(); err != nil {
 			return err
 		}
 

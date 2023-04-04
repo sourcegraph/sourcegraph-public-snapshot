@@ -31,7 +31,6 @@ export function loadingIndicator({ timeout = DEFAULT_TIMEOUT }: { timeout?: numb
                     // The container is used to add some padding between the
                     // document and the spinner
                     this.dom = document.createElement('div')
-                    this.dom.className = 'cm-sg-loading-spinner-container'
                     this.dom.append(spinner)
                     // The element is always takes part in the layout. This makes it
                     // easier to ensure that there is always enough space for the
@@ -45,8 +44,10 @@ export function loadingIndicator({ timeout = DEFAULT_TIMEOUT }: { timeout?: numb
                 }
 
                 public update(update: ViewUpdate): void {
+                    const isBusy = update.view.contentDOM.getAttribute('aria-busy') === 'true'
                     const status = completionStatus(update.state)
-                    if (status === 'pending') {
+
+                    if (status === 'pending' || isBusy) {
                         this.showIndicatorDebounced()
                     } else {
                         this.dom.style.visibility = 'hidden'
@@ -76,10 +77,5 @@ export function loadingIndicator({ timeout = DEFAULT_TIMEOUT }: { timeout?: numb
                     }),
             }
         ),
-        EditorView.baseTheme({
-            'cm-sg-loading-spinner-container': {
-                marginLeft: '0.5rem',
-            },
-        }),
     ]
 }

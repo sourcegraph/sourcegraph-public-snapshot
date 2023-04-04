@@ -3,8 +3,10 @@ package enqueuer
 import (
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type operations struct {
@@ -29,6 +31,12 @@ func newOperations(observationCtx *observation.Context) *operations {
 			Name:              fmt.Sprintf("codeintel.autoindexing.enqueuer.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           m,
+			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+				if errors.As(err, &inference.LimitError{}) {
+					return observation.EmitForNone
+				}
+				return observation.EmitForDefault
+			},
 		})
 	}
 

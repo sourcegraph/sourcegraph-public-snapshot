@@ -4,7 +4,6 @@ set -e
 
 echo "--- pnpm install"
 ./dev/ci/pnpm-install-with-retry.sh
-./dev/ci/pnpm-install-with-retry.sh --filter @sourcegraph/dev-release
 
 echo "--- generate"
 pnpm gulp generate

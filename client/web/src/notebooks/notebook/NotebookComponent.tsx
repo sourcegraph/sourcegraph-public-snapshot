@@ -3,8 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { mdiPlayCircleOutline, mdiDownload, mdiContentCopy } from '@mdi/js'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import { useLocation } from 'react-router'
-import { Redirect } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, delay, startWith, switchMap, tap } from 'rxjs/operators'
 
@@ -12,12 +11,12 @@ import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, useEventObservable, Icon } from '@sourcegraph/wildcard'
 
 import { Block, BlockDirection, BlockInit, BlockInput, BlockType } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { NotebookFields } from '../../graphql-operations'
+import { OwnConfigProps } from '../../own/OwnConfigProps'
 import { EnterprisePageRoutes } from '../../routes.constants'
 import { SearchStreamingProps } from '../../search'
 import { NotebookFileBlock } from '../blocks/file/NotebookFileBlock'
@@ -25,20 +24,18 @@ import { NotebookMarkdownBlock } from '../blocks/markdown/NotebookMarkdownBlock'
 import { NotebookQueryBlock } from '../blocks/query/NotebookQueryBlock'
 import { NotebookSymbolBlock } from '../blocks/symbol/NotebookSymbolBlock'
 
+import { Notebook, CopyNotebookProps } from '.'
 import { NotebookCommandPaletteInput } from './NotebookCommandPaletteInput'
 import { NotebookOutline } from './NotebookOutline'
 import { focusBlockElement, useNotebookEventHandlers } from './useNotebookEventHandlers'
-
-import { Notebook, CopyNotebookProps } from '.'
 
 import styles from './NotebookComponent.module.scss'
 
 export interface NotebookComponentProps
     extends SearchStreamingProps,
-        ThemeProps,
         TelemetryProps,
-        Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded' | 'executedQuery'> {
-    globbing: boolean
+        Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded' | 'executedQuery' | 'enableOwnershipSearch'>,
+        OwnConfigProps {
     isReadOnly?: boolean
     blocks: BlockInit[]
     authenticatedUser: AuthenticatedUser | null
@@ -85,14 +82,13 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         exportedFileName,
         isEmbedded,
         authenticatedUser,
-        isLightTheme,
         telemetryService,
         isSourcegraphDotCom,
         platformContext,
         blocks: initialBlocks,
         fetchHighlightedFileLineRanges,
-        globbing,
         searchContextsEnabled,
+        ownEnabled,
         settingsCascade,
         outlineContainerElement,
     }) => {
@@ -379,7 +375,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                     onAddBlock,
                     onMoveBlock,
                     onDuplicateBlock,
-                    isLightTheme,
                     isReadOnly,
                     isSelected,
                     showMenu: isSelected || !isSomethingElseSelected,
@@ -395,7 +390,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 {...blockProps}
                                 telemetryService={telemetryService}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
-                                globbing={globbing}
                             />
                         )
                     case 'query':
@@ -404,9 +398,9 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 {...block}
                                 {...blockProps}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
-                                globbing={globbing}
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 searchContextsEnabled={searchContextsEnabled}
+                                ownEnabled={ownEnabled}
                                 settingsCascade={settingsCascade}
                                 telemetryService={telemetryService}
                                 platformContext={platformContext}
@@ -419,7 +413,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 {...block}
                                 {...blockProps}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
-                                globbing={globbing}
                                 telemetryService={telemetryService}
                                 platformContext={platformContext}
                             />
@@ -427,6 +420,8 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 }
             },
             [
+                selectedBlockId,
+                blockInserterIndex,
                 onRunBlock,
                 onBlockInputChange,
                 onDeleteBlock,
@@ -434,19 +429,16 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 onAddBlock,
                 onMoveBlock,
                 onDuplicateBlock,
-                isEmbedded,
-                isLightTheme,
                 isReadOnly,
-                selectedBlockId,
+                isEmbedded,
                 telemetryService,
                 isSourcegraphDotCom,
-                globbing,
                 fetchHighlightedFileLineRanges,
                 searchContextsEnabled,
+                ownEnabled,
                 settingsCascade,
                 platformContext,
                 authenticatedUser,
-                blockInserterIndex,
             ]
         )
 
@@ -464,7 +456,9 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         }, [])
 
         if (copiedNotebookOrError && !isErrorLike(copiedNotebookOrError) && copiedNotebookOrError !== LOADING) {
-            return <Redirect to={EnterprisePageRoutes.Notebook.replace(':id', copiedNotebookOrError.id)} />
+            return (
+                <Navigate to={EnterprisePageRoutes.Notebook.replace(':id', copiedNotebookOrError.id)} replace={true} />
+            )
         }
 
         return (

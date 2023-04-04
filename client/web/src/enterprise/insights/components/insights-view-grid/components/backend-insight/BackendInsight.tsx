@@ -1,4 +1,4 @@
-import { forwardRef, HTMLAttributes, useContext, useRef, useState } from 'react'
+import { forwardRef, HTMLAttributes, useContext, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
@@ -8,17 +8,13 @@ import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, useDebounce, useDeepMemo, Text } from '@sourcegraph/wildcard'
 
-import {
-    SeriesDisplayOptionsInput,
-    GetInsightViewResult,
-    GetInsightViewVariables,
-} from '../../../../../../graphql-operations'
+import { GetInsightViewResult, GetInsightViewVariables } from '../../../../../../graphql-operations'
 import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
 import {
     BackendInsight,
-    BackendInsightData,
     CodeInsightsBackendContext,
     InsightFilters,
+    isComputeInsight,
     useSaveInsightAsNewView,
 } from '../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend'
@@ -36,7 +32,6 @@ import {
     DrillDownInsightCreationFormValues,
     BackendInsightChart,
     InsightIncompleteAlert,
-    parseSeriesLimit,
 } from './components'
 
 import styles from './BackendInsight.module.scss'
@@ -65,13 +60,12 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
     // Live valid filters from filter form. They are updated whenever the user is changing
     // filter value in filters fields.
     const [filters, setFilters] = useState<InsightFilters>(originalInsightFilters)
-    const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
 
     const debouncedFilters = useDebounce(useDeepMemo<InsightFilters>(filters), 500)
 
-    const { error, loading, stopPolling, startPolling } = useQuery<GetInsightViewResult, GetInsightViewVariables>(
+    const { data, error, loading, stopPolling, startPolling } = useQuery<GetInsightViewResult, GetInsightViewVariables>(
         GET_INSIGHT_VIEW_GQL,
         {
             skip: !wasEverVisible,
@@ -84,19 +78,28 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                     searchContexts: [debouncedFilters.context],
                 },
                 seriesDisplayOptions: {
-                    limit: parseSeriesLimit(debouncedFilters.seriesDisplayOptions.limit),
+                    numSamples: debouncedFilters.seriesDisplayOptions.numSamples,
+                    limit: debouncedFilters.seriesDisplayOptions.limit,
                     sortOptions: debouncedFilters.seriesDisplayOptions.sortOptions,
                 },
             },
-            onCompleted: data => {
-                // This query requests a list of 1 insight view if there is an error and the insightView
-                // will be null and error is populated
-                const node = data.insightViews.nodes[0]
-
-                seriesToggleState.setSelectedSeriesIds([])
-                setInsightData(isDefined(node) ? createBackendInsightData({ ...insight, filters }, node) : undefined)
-            },
         }
+    )
+
+    const insightData = useMemo(() => {
+        if (!data) {
+            return
+        }
+
+        const node = data.insightViews.nodes[0]
+        return isDefined(node) ? createBackendInsightData({ ...insight, filters }, node) : undefined
+    }, [data, filters, insight])
+
+    // Reset item selection items on every data change
+    useLayoutEffect(
+        () => seriesToggleState.setSelectedSeriesIds([]),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [data, seriesToggleState.setSelectedSeriesIds]
     )
 
     const isFetchingHistoricalData = insightData?.isFetchingHistoricalData
@@ -114,11 +117,7 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
     }
 
     async function handleFilterSave(filters: InsightFilters): Promise<void> {
-        const seriesDisplayOptions: SeriesDisplayOptionsInput = {
-            limit: parseSeriesLimit(filters.seriesDisplayOptions.limit),
-            sortOptions: filters.seriesDisplayOptions.sortOptions,
-        }
-        const insightWithNewFilters = { ...insight, filters, seriesDisplayOptions }
+        const insightWithNewFilters = { ...insight, filters }
 
         await updateInsight({ insightId: insight.id, nextInsightData: insightWithNewFilters }).toPromise()
 
@@ -192,6 +191,9 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                             anchor={cardElementRef}
                             initialFiltersValue={filters}
                             originalFiltersValue={originalInsightFilters}
+                            // It doesn't make sense to have max series per point for compute insights
+                            // because there is always only one point per series
+                            isNumSamplesFilterAvailable={!isComputeInsight(insight)}
                             onFilterChange={setFilters}
                             onFilterSave={handleFilterSave}
                             onInsightCreate={handleInsightFilterCreation}

@@ -1,11 +1,10 @@
 package oauthutil
 
 import (
+	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
+	"io"
 	"net/http"
-	"strings"
 
 	"golang.org/x/oauth2"
 
@@ -30,32 +29,9 @@ type OAuthContext struct {
 	Endpoint Endpoint
 	// Scope specifies optional requested permissions.
 	Scopes []string
-}
 
-type oauthError struct {
-	Err              string `json:"error"`
-	ErrorDescription string `json:"error_description"`
-}
-
-func (e oauthError) Error() string {
-	return fmt.Sprintf("OAuth response error %q description %q", e.Err, e.ErrorDescription)
-}
-
-// getOAuthErrorDetails is a method that only returns OAuth errors.
-// It is intended to be used in the oauth flow, when refreshing an expired token.
-func getOAuthErrorDetails(body []byte) error {
-	var oe oauthError
-	if err := json.Unmarshal(body, &oe); err != nil {
-		// If we failed to unmarshal body with oauth error, it's not oauthError and we should return nil.
-		return nil
-	}
-
-	// https://www.oauth.com/oauth2-servers/access-tokens/access-token-response/
-	// {"error":"invalid_token","error_description":"Token is expired. You can either do re-authorization or token refresh."}
-	if oe.Err == "invalid_token" && strings.Contains(oe.ErrorDescription, "expired") {
-		return &oe
-	}
-	return nil
+	// CustomQueryParams are URL parameters which may be needed by a specific provider that may have a custom OAuth2 implementation.
+	CustomQueryParams map[string]string
 }
 
 // TokenRefresher is a function to refresh and return the new OAuth token.
@@ -79,10 +55,20 @@ func DoRequest(ctx context.Context, logger log.Logger, doer httpcli.Doer, req *h
 		}
 	}
 
-	if err := auther.Authenticate(req); err != nil {
+	var err error
+	if err = auther.Authenticate(req); err != nil {
 		return nil, errors.Wrap(err, "authenticating request")
 	}
 
+	// Store the body first in case we need to retry the request
+	var reqBody []byte
+	if req.Body != nil {
+		reqBody, err = io.ReadAll(req.Body)
+		if err != nil {
+			return nil, err
+		}
+	}
+	req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
 	// Do first request
 	resp, err := doer.Do(req.WithContext(ctx))
 	if err != nil {
@@ -99,6 +85,8 @@ func DoRequest(ctx context.Context, logger log.Logger, doer httpcli.Doer, req *h
 		if err = autherWithRefresh.Authenticate(req); err != nil {
 			return nil, errors.Wrap(err, "authenticating request after token refresh")
 		}
+		// We need to reset the body before retrying the request
+		req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
 		resp, err = doer.Do(req.WithContext(ctx))
 	}
 

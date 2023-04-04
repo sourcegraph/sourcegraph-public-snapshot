@@ -292,7 +292,7 @@ func TestMiddleware(t *testing.T) {
 		}
 	})
 	t.Run("unauthenticated homepage visit, sign-out cookie present -> sg login", func(t *testing.T) {
-		cookie := &http.Cookie{Name: auth.SignoutCookie, Value: "true"}
+		cookie := &http.Cookie{Name: auth.SignOutCookie, Value: "true"}
 
 		resp := doRequest("GET", "http://example.com/", "", []*http.Cookie{cookie}, false, nil)
 		if want := http.StatusOK; resp.StatusCode != want {
@@ -344,7 +344,7 @@ func TestMiddleware(t *testing.T) {
 		if err := idpAuthnReq.Validate(); err != nil {
 			t.Fatal(err)
 		}
-		session := saml.Session{
+		samlSession := saml.Session{
 			ID:         "session-id",
 			CreateTime: time.Now(),
 			ExpireTime: time.Now().Add(24 * time.Hour),
@@ -354,7 +354,7 @@ func TestMiddleware(t *testing.T) {
 			UserName:  "testuser_username",
 			UserEmail: "testuser@email.com",
 		}
-		if err := (saml.DefaultAssertionMaker{}).MakeAssertion(idpAuthnReq, &session); err != nil {
+		if err := (saml.DefaultAssertionMaker{}).MakeAssertion(idpAuthnReq, &samlSession); err != nil {
 			t.Fatal(err)
 		}
 		if err := idpAuthnReq.MakeResponse(); err != nil {

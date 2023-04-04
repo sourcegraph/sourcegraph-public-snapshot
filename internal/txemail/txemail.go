@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"net/mail"
 	"net/smtp"
 	"net/textproto"
 	"strconv"
@@ -28,10 +29,13 @@ var emailSendCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 }, []string{"success", "email_source"})
 
 // render returns the rendered message contents without sending email.
-func render(message Message) (*email.Email, error) {
+func render(fromAddress, fromName string, message Message) (*email.Email, error) {
 	m := email.Email{
-		To:      message.To,
-		From:    conf.Get().EmailAddress,
+		To: message.To,
+		From: (&mail.Address{
+			Name:    fromName,
+			Address: fromAddress,
+		}).String(),
 		Headers: make(textproto.MIMEHeader),
 	}
 	if message.ReplyTo != nil {
@@ -39,9 +43,6 @@ func render(message Message) (*email.Email, error) {
 	}
 	if message.MessageID != nil {
 		m.Headers["Message-ID"] = []string{*message.MessageID}
-	}
-	if message.FromName != "" {
-		m.From = message.FromName
 	}
 	if len(message.References) > 0 {
 		// jordan-wright/email does not support lists, so we must build it ourself.
@@ -86,11 +87,11 @@ func Send(ctx context.Context, source string, message Message) (err error) {
 		return nil
 	}
 
-	conf := conf.Get()
-	if conf.EmailAddress == "" {
+	config := conf.Get()
+	if config.EmailAddress == "" {
 		return errors.New("no \"From\" email address configured (in email.address)")
 	}
-	if conf.EmailSmtp == nil {
+	if config.EmailSmtp == nil {
 		return errors.New("no SMTP server configured (in email.smtp)")
 	}
 
@@ -100,13 +101,13 @@ func Send(ctx context.Context, source string, message Message) (err error) {
 		emailSendCounter.WithLabelValues(strconv.FormatBool(err == nil), source).Inc()
 	}()
 
-	m, err := render(message)
+	m, err := render(config.EmailAddress, config.EmailSenderName, message)
 	if err != nil {
 		return errors.Wrap(err, "render")
 	}
 
 	// Disable Mandrill features, because they make the emails look sketchy.
-	if conf.EmailSmtp.Host == "smtp.mandrillapp.com" {
+	if config.EmailSmtp.Host == "smtp.mandrillapp.com" {
 		// Disable click tracking ("noclicks" could be any string; the docs say that anything will disable click tracking except
 		// those defined at
 		// https://mandrill.zendesk.com/hc/en-us/articles/205582117-How-to-Use-SMTP-Headers-to-Customize-Your-Messages#enable-open-and-click-tracking).
@@ -118,7 +119,7 @@ func Send(ctx context.Context, source string, message Message) (err error) {
 	}
 
 	// Apply header configuration to message
-	for _, header := range conf.EmailSmtp.AdditionalHeaders {
+	for _, header := range config.EmailSmtp.AdditionalHeaders {
 		m.Headers.Add(header.Key, header.Value)
 	}
 
@@ -129,7 +130,7 @@ func Send(ctx context.Context, source string, message Message) (err error) {
 	}
 
 	// Set up client
-	client, err := smtp.Dial(net.JoinHostPort(conf.EmailSmtp.Host, strconv.Itoa(conf.EmailSmtp.Port)))
+	client, err := smtp.Dial(net.JoinHostPort(config.EmailSmtp.Host, strconv.Itoa(config.EmailSmtp.Port)))
 	if err != nil {
 		return errors.Wrap(err, "new SMTP client")
 	}
@@ -138,7 +139,7 @@ func Send(ctx context.Context, source string, message Message) (err error) {
 	// NOTE: Some services (e.g. Google SMTP relay) require to echo desired hostname,
 	// our current email dependency "github.com/jordan-wright/email" has no option
 	// for it and always echoes "localhost" which makes it unusable.
-	heloHostname := conf.EmailSmtp.Domain
+	heloHostname := config.EmailSmtp.Domain
 	if heloHostname == "" {
 		heloHostname = "localhost" // CI:LOCALHOST_OK
 	}
@@ -151,8 +152,8 @@ func Send(ctx context.Context, source string, message Message) (err error) {
 	if ok, _ := client.Extension("STARTTLS"); ok {
 		err = client.StartTLS(
 			&tls.Config{
-				InsecureSkipVerify: conf.EmailSmtp.NoVerifyTLS,
-				ServerName:         conf.EmailSmtp.Host,
+				InsecureSkipVerify: config.EmailSmtp.NoVerifyTLS,
+				ServerName:         config.EmailSmtp.Host,
 			},
 		)
 		if err != nil {
@@ -161,14 +162,14 @@ func Send(ctx context.Context, source string, message Message) (err error) {
 	}
 
 	var smtpAuth smtp.Auth
-	switch conf.EmailSmtp.Authentication {
+	switch config.EmailSmtp.Authentication {
 	case "none": // nothing to do
 	case "PLAIN":
-		smtpAuth = smtp.PlainAuth("", conf.EmailSmtp.Username, conf.EmailSmtp.Password, conf.EmailSmtp.Host)
+		smtpAuth = smtp.PlainAuth("", config.EmailSmtp.Username, config.EmailSmtp.Password, config.EmailSmtp.Host)
 	case "CRAM-MD5":
-		smtpAuth = smtp.CRAMMD5Auth(conf.EmailSmtp.Username, conf.EmailSmtp.Password)
+		smtpAuth = smtp.CRAMMD5Auth(config.EmailSmtp.Username, config.EmailSmtp.Password)
 	default:
-		return errors.Errorf("invalid SMTP authentication type %q", conf.EmailSmtp.Authentication)
+		return errors.Errorf("invalid SMTP authentication type %q", config.EmailSmtp.Authentication)
 	}
 
 	if smtpAuth != nil {
@@ -179,7 +180,7 @@ func Send(ctx context.Context, source string, message Message) (err error) {
 		}
 	}
 
-	err = client.Mail(conf.EmailAddress)
+	err = client.Mail(config.EmailAddress)
 	if err != nil {
 		return errors.Wrap(err, "send MAIL")
 	}

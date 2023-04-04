@@ -1,9 +1,5 @@
 .actions {
     display: flex;
     flex-wrap: wrap;
-}
-
-.action {
-    margin: 0.5rem 0.5rem 0 0;
-    flex: 0 auto;
+    gap: 0.25rem;
 }

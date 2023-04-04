@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -122,7 +123,7 @@ func TestSearchContextsStarDefaultPermissions(t *testing.T) {
 
 	// User not admin, trying to set things for another user
 	graphqlUserID2 := graphqlbackend.MarshalUserID(int32(2))
-	unauthorizedError := "must be authenticated as the authorized user or site admin"
+	unauthorizedError := auth.ErrMustBeSiteAdminOrSameUser.Error()
 
 	_, err = (&Resolver{db: db}).SetDefaultSearchContext(ctx, graphqlbackend.SetDefaultSearchContextArgs{SearchContextID: graphqlSearchContextID, UserID: graphqlUserID2})
 	if err.Error() != unauthorizedError {

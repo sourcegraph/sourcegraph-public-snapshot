@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -31,7 +31,7 @@ func TestRepoIteratorFromQuery(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("expect_equal_repo_scope_query", expectedScopeQuery.String()).Equal(t, executor.ExecuteRepoListFunc.History()[0].Arg1)
+	autogold.Expect(expectedScopeQuery.String()).Equal(t, executor.ExecuteRepoListFunc.History()[0].Arg1)
 
 	var got []types.MinimalRepo
 	err = iterator.ForEach(context.Background(), func(repoName string, id api.RepoID) error {
@@ -42,5 +42,5 @@ func TestRepoIteratorFromQuery(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	autogold.Want("expect_equal_repo_names", mockResponse).Equal(t, got)
+	autogold.Expect(mockResponse).Equal(t, got)
 }

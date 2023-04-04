@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect } from 'react'
 
-import * as H from 'history'
 import { Observable, of } from 'rxjs'
 
 import { LoadingSpinner } from '@sourcegraph/wildcard'
@@ -9,12 +8,15 @@ import { FilteredConnection, FilteredConnectionQueryArguments } from '../../comp
 import { PageTitle } from '../../components/PageTitle'
 import { GitRefType, Scalars, GitRefConnectionFields, GitRefFields, RepositoryFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
-import { GitReferenceNode, queryGitReferences as queryGitReferencesFromBackend } from '../GitReference'
+import {
+    GitReferenceNode,
+    GitReferenceNodeProps,
+    queryGitReferences as queryGitReferencesFromBackend,
+} from '../GitReference'
 
 interface Props {
     repo: RepositoryFields | undefined
-    history: H.History
-    location: H.Location
+    isPackage?: boolean
     queryGitReferences?: (args: {
         repo: Scalars['ID']
         first?: number
@@ -27,8 +29,7 @@ interface Props {
 /** A page that shows all of a repository's tags. */
 export const RepositoryReleasesTagsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     repo,
-    history,
-    location,
+    isPackage,
     queryGitReferences: queryGitReferences = queryGitReferencesFromBackend,
 }) => {
     useEffect(() => {
@@ -52,21 +53,19 @@ export const RepositoryReleasesTagsPage: React.FunctionComponent<React.PropsWith
 
     return (
         <div className="repository-releases-page">
-            <PageTitle title="Tags" />
-            <FilteredConnection<GitRefFields>
+            <PageTitle title={isPackage ? 'Versions' : 'Tags'} />
+            <FilteredConnection<GitRefFields, Partial<GitReferenceNodeProps>>
                 className="my-3"
                 listClassName="list-group list-group-flush test-filtered-tags-connection"
-                noun="tag"
-                pluralNoun="tags"
+                {...(isPackage ? { noun: 'version', pluralNoun: 'versions' } : { noun: 'tag', pluralNoun: 'tags' })}
                 queryConnection={queryTags}
                 nodeComponent={GitReferenceNode}
+                nodeComponentProps={{ isPackageVersion: isPackage }}
                 ariaLabelFunction={(tagDisplayName: string) =>
                     `View this repository using ${tagDisplayName} as the selected revision`
                 }
                 defaultFirst={20}
                 autoFocus={true}
-                history={history}
-                location={location}
             />
         </div>
     )

@@ -2,13 +2,11 @@ package sharedresolvers
 
 import (
 	"context"
-	"sync"
+	"io/fs"
+	"os"
+	"time"
 
-	"github.com/sourcegraph/log"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -18,227 +16,164 @@ import (
 
 // CachedLocationResolver resolves repositories, commits, and git tree entries and caches the resulting
 // resolvers so that the same request does not re-resolve the same repository, commit, or path multiple
-// times during execution. This cache reduces the number duplicate of database and gitserver queries for
-// definition, reference, and diagnostic queries, which return collections of results that often refer
-// to a small set of repositories, commits, and paths with a large multiplicity.
+// times during execution.
 //
-// This resolver maintains a hierarchy of caches as a way to decrease lock contention. Resolution of a
-// repository holds the top-level lock. Resolution of a commit holds a lock associated with the parent
-// repository. Similarly, resolution of a path holds a lock associated with the parent commit.
+// This cache reduces duplicate database and gitserver calls when resolving repositories, commits, or
+// locations (but does not batch or pre-fetch). Location resolvers generally have a small set of paths
+// with large multiplicity, so the savings here can be significant.
 type CachedLocationResolver struct {
-	sync.RWMutex
-	children        map[api.RepoID]*cachedRepositoryResolver
-	db              database.DB
-	gitserverClient gitserver.Client
-	logger          log.Logger
+	repositoryCache *DoubleLockedCache[api.RepoID, cachedRepositoryResolver]
 }
 
 type cachedRepositoryResolver struct {
-	sync.RWMutex
-	resolver *RepositoryResolver
-	children map[string]*cachedCommitResolver
+	repositoryResolver *RepositoryResolver
+	commitCache        *DoubleLockedCache[string, cachedCommitResolver]
 }
 
 type cachedCommitResolver struct {
-	sync.RWMutex
-	resolver *GitCommitResolver
-	children map[string]*GitTreeEntryResolver
+	commitResolver *gitCommitResolver
+	dirCache       *DoubleLockedCache[string, *GitTreeEntryResolver]
+	pathCache      *DoubleLockedCache[string, *GitTreeEntryResolver]
 }
 
-// NewCachedLocationResolver creates a location resolver with an empty cache.
-func NewCachedLocationResolver(db database.DB, gitserverClient gitserver.Client) *CachedLocationResolver {
+func (r *GitTreeEntryResolver) RecordID() string        { return r.stat.Name() }
+func (r cachedRepositoryResolver) RecordID() api.RepoID { return r.repositoryResolver.repo.ID }
+func (r cachedCommitResolver) RecordID() string         { return string(r.commitResolver.oid) }
+
+func newCachedLocationResolver(
+	cloneURLToRepoName CloneURLToRepoNameFunc,
+	repoStore database.RepoStore,
+	gitserverClient gitserver.Client,
+) *CachedLocationResolver {
+	resolveRepo := func(ctx context.Context, repoID api.RepoID) (*RepositoryResolver, error) {
+		repo, err := repoStore.Get(ctx, repoID)
+		if err != nil {
+			if errcode.IsNotFound(err) {
+				return nil, nil
+			}
+
+			return nil, err
+		}
+
+		return newRepositoryResolver(repo), nil
+	}
+
+	resolveCommit := func(ctx context.Context, repositoryResolver *RepositoryResolver, commit string) (*gitCommitResolver, error) {
+		commitID, err := gitserverClient.ResolveRevision(ctx, repositoryResolver.repo.Name, commit, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+		if err != nil {
+			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				return nil, nil
+			}
+			return nil, err
+		}
+
+		commitResolver := newGitCommitResolver(repositoryResolver, commitID)
+		commitResolver.inputRev = &commit
+		return commitResolver, nil
+	}
+
+	resolvePath := func(commitResolver *gitCommitResolver, path string, isDir bool) *GitTreeEntryResolver {
+		return newGitTreeEntryResolver(cloneURLToRepoName, commitResolver, createFileInfo(path, isDir))
+	}
+
+	resolveRepositoryCached := func(ctx context.Context, repoID api.RepoID) (*cachedRepositoryResolver, error) {
+		repositoryResolver, err := resolveRepo(ctx, repoID)
+		if err != nil || repositoryResolver == nil {
+			return nil, err
+		}
+
+		resolveCommitCached := func(ctx context.Context, commit string) (*cachedCommitResolver, error) {
+			commitResolver, err := resolveCommit(ctx, repositoryResolver, commit)
+			if err != nil || commitResolver == nil {
+				return nil, err
+			}
+
+			return &cachedCommitResolver{
+				commitResolver: commitResolver,
+				dirCache: NewDoubleLockedCache(MultiFactoryFromFactoryFunc(func(ctx context.Context, path string) (*GitTreeEntryResolver, error) {
+					return resolvePath(commitResolver, path, true), nil
+				})),
+				pathCache: NewDoubleLockedCache(MultiFactoryFromFactoryFunc(func(ctx context.Context, path string) (*GitTreeEntryResolver, error) {
+					return resolvePath(commitResolver, path, false), nil
+				})),
+			}, nil
+		}
+
+		return &cachedRepositoryResolver{
+			repositoryResolver: repositoryResolver,
+			commitCache:        NewDoubleLockedCache(MultiFactoryFromFallibleFactoryFunc(resolveCommitCached)),
+		}, nil
+	}
+
 	return &CachedLocationResolver{
-		logger:          log.Scoped("CachedLocationResolver", ""),
-		db:              db,
-		gitserverClient: gitserverClient,
-		children:        map[api.RepoID]*cachedRepositoryResolver{},
+		repositoryCache: NewDoubleLockedCache(MultiFactoryFromFallibleFactoryFunc(resolveRepositoryCached)),
 	}
 }
 
-// Repository resolves the repository with the given identifier. This method may return a nil resolver
-// if the repository is not known by gitserver - this happens if there is exists still a bundle for a
-// repo that has since been deleted.
+// Repository resolves (once) the given repository. May return nil if the repository is not available.
 func (r *CachedLocationResolver) Repository(ctx context.Context, id api.RepoID) (*RepositoryResolver, error) {
-	cachedRepositoryResolver, err := r.cachedRepository(ctx, id)
-	if err != nil || cachedRepositoryResolver == nil {
+	repositoryWrapper, ok, err := r.repositoryCache.GetOrLoad(ctx, id)
+	if err != nil || !ok {
 		return nil, err
 	}
-	return cachedRepositoryResolver.resolver, nil
+
+	return repositoryWrapper.repositoryResolver, nil
 }
 
-// Commit resolves the git commit with the given repository identifier and commit hash. This method may
-// return a nil resolver if the commit is not known by gitserver.
-func (r *CachedLocationResolver) Commit(ctx context.Context, id api.RepoID, commit string) (*GitCommitResolver, error) {
-	cachedCommitResolver, err := r.cachedCommit(ctx, id, commit)
-	if err != nil || cachedCommitResolver == nil {
+// Commit resolves (once) the given repository and commit. May return nil if the repository or commit is unknown.
+func (r *CachedLocationResolver) Commit(ctx context.Context, id api.RepoID, commit string) (*gitCommitResolver, error) {
+	repositoryWrapper, ok, err := r.repositoryCache.GetOrLoad(ctx, id)
+	if err != nil || !ok {
 		return nil, err
 	}
-	return cachedCommitResolver.resolver, nil
+
+	commitWrapper, ok, err := repositoryWrapper.commitCache.GetOrLoad(ctx, commit)
+	if err != nil || !ok {
+		return nil, err
+	}
+
+	return commitWrapper.commitResolver, nil
 }
 
-// Path resolves the git tree entry with the given repository identifier, commit hash, and relative path.
-// This method may return a nil resolver if the commit is not known by gitserver.
-func (r *CachedLocationResolver) Path(ctx context.Context, id api.RepoID, commit, path string) (*GitTreeEntryResolver, error) {
-	pathResolver, err := r.cachedPath(ctx, id, commit, path)
-	if err != nil {
+// Path resolves (once) the given repository, commit, and path. May return nil if the repository, commit, or path is unknown.
+func (r *CachedLocationResolver) Path(ctx context.Context, id api.RepoID, commit, path string, isDir bool) (*GitTreeEntryResolver, error) {
+	repositoryWrapper, ok, err := r.repositoryCache.GetOrLoad(ctx, id)
+	if err != nil || !ok {
 		return nil, err
 	}
-	return pathResolver, nil
+
+	commitWrapper, ok, err := repositoryWrapper.commitCache.GetOrLoad(ctx, commit)
+	if err != nil || !ok {
+		return nil, err
+	}
+
+	cache := commitWrapper.pathCache
+	if isDir {
+		cache = commitWrapper.dirCache
+	}
+
+	resolver, _, err := cache.GetOrLoad(ctx, path)
+	return resolver, err
 }
 
-// cachedRepository resolves the repository with the given identifier if the resulting resolver does not
-// already exist in the cache. The cache is tested/populated with double-checked locking, which ensures
-// that the resolver is created exactly once per GraphQL request.
-//
-// See https://en.wikipedia.org/wiki/Double-checked_locking.
-func (r *CachedLocationResolver) cachedRepository(ctx context.Context, id api.RepoID) (*cachedRepositoryResolver, error) {
-	// Fast-path cache check
-	r.RLock()
-	cr, ok := r.children[id]
-	r.RUnlock()
-	if ok {
-		return cr, nil
-	}
-
-	r.Lock()
-	defer r.Unlock()
-
-	// Check again once locked to avoid race
-	if resolver, ok := r.children[id]; ok {
-		return resolver, nil
-	}
-
-	// Resolve new value and store in cache
-	resolver, err := r.resolveRepository(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	// Ensure value written to the cache is nil and not a nil resolver wrapped
-	// in a non-nil cached commit resolver. Otherwise, a subsequent resolution
-	// of a path may result in a nil dereference.
-	var cachedResolver *cachedRepositoryResolver
-	if resolver != nil {
-		cachedResolver = &cachedRepositoryResolver{resolver: resolver, children: map[string]*cachedCommitResolver{}}
-	}
-	r.children[id] = cachedResolver
-	return cachedResolver, nil
+type fileInfo struct {
+	path  string
+	size  int64
+	isDir bool
 }
 
-// cachedCommit resolves the commit with the given repository identifier and commit hash if the resulting
-// resolver does not already exist in the cache. The cache is tested/populated with double-checked locking,
-// which ensures that the resolver is created exactly once per GraphQL request.
-//
-// See https://en.wikipedia.org/wiki/Double-checked_locking.
-func (r *CachedLocationResolver) cachedCommit(ctx context.Context, id api.RepoID, commit string) (*cachedCommitResolver, error) {
-	parentResolver, err := r.cachedRepository(ctx, id)
-	if err != nil || parentResolver == nil {
-		return nil, err
-	}
-
-	// Fast-path cache check
-	parentResolver.RLock()
-	cr, ok := parentResolver.children[commit]
-	parentResolver.RUnlock()
-	if ok {
-		return cr, nil
-	}
-
-	parentResolver.Lock()
-	defer parentResolver.Unlock()
-
-	// Check again once locked to avoid race
-	if resolver, ok := parentResolver.children[commit]; ok {
-		return resolver, nil
-	}
-
-	// Resolve new value and store in cache
-	resolver, err := r.resolveCommit(ctx, parentResolver.resolver, commit)
-	if err != nil {
-		return nil, err
-	}
-	// Ensure value written to the cache is nil and not a nil resolver wrapped
-	// in a non-nil cached commit resolver. Otherwise, a subsequent resolution
-	// of a path may result in a nil dereference.
-	var cachedResolver *cachedCommitResolver
-	if resolver != nil {
-		cachedResolver = &cachedCommitResolver{resolver: resolver, children: map[string]*GitTreeEntryResolver{}}
-	}
-	parentResolver.children[commit] = cachedResolver
-	return cachedResolver, nil
+func createFileInfo(path string, isDir bool) fs.FileInfo {
+	return fileInfo{path: path, isDir: isDir}
 }
 
-// cachedPath resolves the commit with the given repository identifier, commit hash, and relative path
-// if the resulting resolver does not already exist in the cache. The cache is tested/populated with
-// double-checked locking, which ensures that the resolver is created exactly once per GraphQL request.
-//
-// See https://en.wikipedia.org/wiki/Double-checked_locking.
-func (r *CachedLocationResolver) cachedPath(ctx context.Context, id api.RepoID, commit, path string) (*GitTreeEntryResolver, error) {
-	parentResolver, err := r.cachedCommit(ctx, id, commit)
-	if err != nil || parentResolver == nil {
-		return nil, err
+func (f fileInfo) Name() string { return f.path }
+func (f fileInfo) Size() int64  { return f.size }
+func (f fileInfo) IsDir() bool  { return f.isDir }
+func (f fileInfo) Mode() os.FileMode {
+	if f.IsDir() {
+		return os.ModeDir
 	}
-
-	// Fast-path cache check
-	parentResolver.Lock()
-	cr, ok := parentResolver.children[path]
-	parentResolver.Unlock()
-	if ok {
-		return cr, nil
-	}
-
-	parentResolver.Lock()
-	defer parentResolver.Unlock()
-
-	// Check again once locked to avoid race
-	if resolver, ok := parentResolver.children[path]; ok {
-		return resolver, nil
-	}
-
-	// Resolve new value and store in cache
-	resolver := r.resolvePath(parentResolver.resolver, path)
-	parentResolver.children[path] = resolver
-	return resolver, nil
+	return 0
 }
-
-// Repository resolves the repository with the given identifier. This method may return a nil resolver
-// if the repository is not known by gitserver - this happens if there is exists still a bundle for a
-// repo that has since been deleted. This method must be called only when constructing a resolver to
-// populate the cache.
-func (r *CachedLocationResolver) resolveRepository(ctx context.Context, id api.RepoID) (*RepositoryResolver, error) {
-	repo, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).Get(ctx, id)
-	if err != nil {
-		if errcode.IsNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return NewRepositoryResolver(r.db, repo), nil
-}
-
-// Commit resolves the git commit with the given repository resolver and commit hash. This method may
-// return a nil resolver if the commit is not known by gitserver. This method must be called only when
-// constructing a resolver to populate the cache.
-func (r *CachedLocationResolver) resolveCommit(ctx context.Context, repositoryResolver *RepositoryResolver, commit string) (*GitCommitResolver, error) {
-	repo, err := repositoryResolver.Type(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	commitID, err := r.gitserverClient.ResolveRevision(ctx, repo.Name, commit, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
-	if err != nil {
-		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return repositoryResolver.commitFromID(&resolverstubs.RepositoryCommitArgs{Rev: commit}, commitID)
-}
-
-// Path resolves the git tree entry with the given commit resolver and relative path. This method must be
-// called only when constructing a resolver to populate the cache.
-func (r *CachedLocationResolver) resolvePath(commitResolver *GitCommitResolver, path string) *GitTreeEntryResolver {
-	return NewGitTreeEntryResolver(r.db, commitResolver, CreateFileInfo(path, false))
-}
+func (f fileInfo) ModTime() time.Time { return time.Now() }
+func (f fileInfo) Sys() any           { return any(nil) }

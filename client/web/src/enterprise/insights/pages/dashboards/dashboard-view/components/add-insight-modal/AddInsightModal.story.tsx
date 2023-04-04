@@ -7,11 +7,14 @@ import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo/mockedTestProvider'
 
 import { WebStory } from '../../../../../../../components/WebStory'
-import { GetDashboardAccessibleInsightsResult } from '../../../../../../../graphql-operations'
+import {
+    FindInsightsBySearchTermResult,
+    FindInsightsBySearchTermVariables,
+} from '../../../../../../../graphql-operations'
 import { CustomInsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../core'
 
 import { AddInsightModal } from './AddInsightModal'
-import { GET_ACCESSIBLE_INSIGHTS_LIST } from './query'
+import { GET_INSIGHTS_BY_SEARCH_TERM } from './query'
 
 const decorator: DecoratorFn = story => <WebStory>{() => story()}</WebStory>
 
@@ -29,16 +32,21 @@ const dashboard: CustomInsightDashboard = {
     owners: [{ id: '001', title: 'Hieronymus Bosch', type: InsightsDashboardOwnerType.Personal }],
 }
 
-const mockInsights: MockedResponse<GetDashboardAccessibleInsightsResult> = {
+const mockInsights: MockedResponse<FindInsightsBySearchTermResult> = {
     request: {
-        query: getDocumentNode(GET_ACCESSIBLE_INSIGHTS_LIST),
-        variables: { id: '001' },
+        query: getDocumentNode(GET_INSIGHTS_BY_SEARCH_TERM),
+        variables: { search: '', first: 20, after: null } as FindInsightsBySearchTermVariables,
     },
     result: {
         data: {
-            dashboardInsightsIds: { nodes: [{ views: { nodes: [] } }] },
-            accessibleInsights: {
+            insightViews: {
                 __typename: 'InsightViewConnection',
+                totalCount: 5,
+                pageInfo: {
+                    __typename: 'PageInfo',
+                    hasNextPage: false,
+                    endCursor: null,
+                },
                 nodes: [
                     {
                         __typename: 'InsightView',
@@ -47,6 +55,7 @@ const mockInsights: MockedResponse<GetDashboardAccessibleInsightsResult> = {
                             __typename: 'LineChartInsightViewPresentation',
                             title: '[Personal] Migration to new GraphQL TS types',
                         },
+                        dataSeriesDefinitions: [],
                     },
                     {
                         __typename: 'InsightView',
@@ -55,6 +64,7 @@ const mockInsights: MockedResponse<GetDashboardAccessibleInsightsResult> = {
                             __typename: 'LineChartInsightViewPresentation',
                             title: '[Test ORG 1] Migration to new GraphQL TS types [Test ORG 1] Migration to new GraphQL TS types [Test ORG 1] Migration to new GraphQL TS types',
                         },
+                        dataSeriesDefinitions: [],
                     },
                     {
                         __typename: 'InsightView',
@@ -63,6 +73,7 @@ const mockInsights: MockedResponse<GetDashboardAccessibleInsightsResult> = {
                             __typename: 'LineChartInsightViewPresentation',
                             title: '[Test ORG 1] Migration to new GraphQL TS types',
                         },
+                        dataSeriesDefinitions: [],
                     },
                     {
                         __typename: 'InsightView',
@@ -71,6 +82,7 @@ const mockInsights: MockedResponse<GetDashboardAccessibleInsightsResult> = {
                             __typename: 'LineChartInsightViewPresentation',
                             title: '[Test ORG 1] Migration to new GraphQL TS types',
                         },
+                        dataSeriesDefinitions: [],
                     },
                     {
                         __typename: 'InsightView',
@@ -79,6 +91,7 @@ const mockInsights: MockedResponse<GetDashboardAccessibleInsightsResult> = {
                             __typename: 'LineChartInsightViewPresentation',
                             title: '[Test ORG 2] Migration to new GraphQL TS types',
                         },
+                        dataSeriesDefinitions: [],
                     },
                 ],
             },

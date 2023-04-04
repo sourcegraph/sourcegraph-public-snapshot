@@ -682,6 +682,27 @@ test('returns repo:contains.file hovers', () => {
     `)
 })
 
+test('returns repo:has.topic hovers', () => {
+    const input = 'repo:has.topic(topic1)'
+    const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.standard))
+
+    expect(getHoverResult(scannedQuery, new Position(1, 8), editor.createModel(input))).toMatchInlineSnapshot(`
+        {
+          "contents": [
+            {
+              "value": "**Built-in predicate**. Search only inside repositories that have the github topic \`topic1\`."
+            }
+          ],
+          "range": {
+            "startLineNumber": 1,
+            "endLineNumber": 1,
+            "startColumn": 6,
+            "endColumn": 23
+          }
+        }
+    `)
+})
+
 test('returns repo:has.file hovers', () => {
     const input = 'repo:has.file(path:foo)'
     const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.standard))

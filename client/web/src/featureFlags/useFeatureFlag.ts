@@ -1,57 +1,115 @@
-import { useContext, useState } from 'react'
-
 import { logger } from '@sourcegraph/common'
-import { useIsMounted } from '@sourcegraph/wildcard'
+import { getDocumentNode, gql, useQuery } from '@sourcegraph/http-client'
+
+import { EvaluateFeatureFlagResult, EvaluateFeatureFlagVariables } from '../graphql-operations'
 
 import { FeatureFlagName } from './featureFlags'
-import { FeatureFlagsContext } from './FeatureFlagsProvider'
+import { getFeatureFlagOverrideValue } from './lib/feature-flag-local-overrides'
+
+export const EVALUATE_FEATURE_FLAG_QUERY = getDocumentNode(gql`
+    query EvaluateFeatureFlag($flagName: String!) {
+        evaluateFeatureFlag(flagName: $flagName)
+    }
+`)
 
 type FetchStatus = 'initial' | 'loaded' | 'error'
-const MISSING_CLIENT_ERROR =
-    '[useFeatureFlag]: No FeatureFlagClient is configured. All feature flags will default to "false" value.'
+type FlagName = string
+type EvaluateError = unknown
+
+const MINUTE = 60000
+const FEATURE_FLAG_CACHE_TTL = MINUTE * 10
+
+const FLAG_STATES = new Map<FlagName, 'new_value' | 'valid' | 'stale' | 'refetch'>()
 
 /**
- * Returns an evaluated feature flag for the current user
- *
- * @returns [flagValue, fetchStatus, error]
+ * Evaluates the feature flag via GraphQL query and returns the value.
+ * Prioritizes feature flag overrides. It uses the value cached by Apollo
+ * Client if available and not stale. The hook render starts the timeout,
+ * which ensures that we mark the cached value as stale after `cacheTTL`.
+ * If the cache TTL is elapsed on the next render, we refetch the value.
  */
-export function useFeatureFlag(flagName: FeatureFlagName, defaultValue = false): [boolean, FetchStatus, any?] {
-    const isMounted = useIsMounted()
-    const { client } = useContext(FeatureFlagsContext)
-    const [{ value, status, error }, setResult] = useState<{ value: boolean | null; status: FetchStatus; error?: any }>(
+export function useFeatureFlag(
+    flagName: FeatureFlagName,
+    defaultValue = false,
+    /**
+     * Used for tests only
+     */
+    cacheTTL = FEATURE_FLAG_CACHE_TTL,
+    /**
+     * Used for tests only
+     */
+    flagStates = FLAG_STATES
+): [boolean, FetchStatus, EvaluateError?] {
+    const overriddenValue = getFeatureFlagOverrideValue(flagName)
+    const overriddenValueExists = typeof overriddenValue === 'boolean'
+
+    const { data, error, refetch } = useQuery<EvaluateFeatureFlagResult, EvaluateFeatureFlagVariables>(
+        EVALUATE_FEATURE_FLAG_QUERY,
         {
-            status: 'initial',
-            value: defaultValue,
+            variables: { flagName },
+            fetchPolicy: 'cache-first',
+            // When updating the feature flag value with refetch, we want to skip the cache and rely on the network.
+            nextFetchPolicy: 'network-only',
+            skip: overriddenValueExists,
         }
     )
 
-    if (!client) {
-        if (status !== 'error') {
-            logger.warn(MISSING_CLIENT_ERROR)
-            setResult(({ value }) => ({ value, status: 'error', error: new Error(MISSING_CLIENT_ERROR) }))
-        }
-    } else {
-        // We want to `client.get(flagName)` on every render and update the state only
-        // on the value change. We won't be sending an API request on every render
-        // because evaluated feature flags are cached in memory for a short period of time.
-        async function getValue(): Promise<void> {
-            const newValue = await client!.get(flagName)
-
-            if (newValue === value && status !== 'initial') {
-                return
-            }
-
-            if (isMounted()) {
-                setResult({ value: newValue, status: 'loaded' })
-            }
-        }
-
-        getValue().catch(error => {
-            if (isMounted() && status !== 'error') {
-                setResult(({ value }) => ({ value, status: 'error', error }))
-            }
-        })
+    /**
+     * Skip the GraphQL query and return the `overriddenValue` if it exists.
+     */
+    if (overriddenValueExists) {
+        return [overriddenValue, 'loaded']
     }
 
-    return [typeof value === 'boolean' ? value : defaultValue, status, error]
+    if (data) {
+        /**
+         * Flag states are shared between all instances of the React hook, which
+         * eliminates the possibility of race conditions and ensures that each flag
+         * can have only one scheduled refetch call.
+         *
+         * Switch cases are defined in chronological order.
+         */
+        switch (flagStates.get(flagName)) {
+            /**
+             * Upon receiving the new value from the API, we start the timer unique
+             * for the feature flag, marking it as stale after `cacheTTL`.
+             */
+            case undefined:
+            case 'new_value': {
+                flagStates.set(flagName, 'valid')
+                setTimeout(() => flagStates.set(flagName, 'stale'), cacheTTL)
+                break
+            }
+
+            /**
+             * Do nothing. The `setTimeout` is in progress and we can use the cached value for now.
+             */
+            case 'valid':
+                break
+
+            /**
+             * If we have the stale value, initiate the refetch with the `network-only`
+             * strategy. The hook will be re-rendered only if the value has changed after the refetch.
+             * On refetch success, we mark the value as the new one to restart the state cycle.
+             */
+            case 'stale': {
+                flagStates.set(flagName, 'refetch')
+                refetch()
+                    .then(() => flagStates.set(flagName, 'new_value'))
+                    .catch(logger.error)
+                break
+            }
+
+            /**
+             * Do nothing. The `refetch` is in progress and we can use the cached value for now.
+             */
+            case 'refetch':
+                break
+        }
+    }
+
+    const value = data?.evaluateFeatureFlag ?? defaultValue
+    const status = error ? 'error' : data ? 'loaded' : 'initial'
+
+    return [value, status, error?.networkError]
 }

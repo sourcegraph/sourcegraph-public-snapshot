@@ -25,7 +25,7 @@ func NewRubyPackagesSource(ctx context.Context, svc *types.ExternalService, cf *
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 
-	cli, err := cf.Doer()
+	client, err := rubygems.NewClient(svc.URN(), c.Repository, cf)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func NewRubyPackagesSource(ctx context.Context, svc *types.ExternalService, cf *
 		svc:        svc,
 		configDeps: c.Dependencies,
 		scheme:     dependencies.RubyPackagesScheme,
-		src:        &rubyPackagesSource{client: rubygems.NewClient(svc.URN(), c.Repository, cli)},
+		src:        &rubyPackagesSource{client},
 	}, nil
 }
 
@@ -45,12 +45,13 @@ type rubyPackagesSource struct {
 var _ packagesSource = &rubyPackagesSource{}
 
 func (rubyPackagesSource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
-	return reposource.ParseRubyVersionedPackage(dep)
+	return reposource.ParseRubyVersionedPackage(dep), nil
 }
 
 func (rubyPackagesSource) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
-	return reposource.ParseRubyPackageFromName(name)
+	return reposource.ParseRubyPackageFromName(name), nil
 }
+
 func (rubyPackagesSource) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
 	return reposource.ParseRubyPackageFromRepoName(repoName)
 }

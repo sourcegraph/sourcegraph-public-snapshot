@@ -1,4 +1,4 @@
-import { FC, MouseEvent, useEffect, useMemo } from 'react'
+import { FC, MouseEvent, useEffect, useMemo, forwardRef } from 'react'
 
 import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
@@ -94,12 +94,12 @@ interface OptionButtonProps extends ButtonProps {
     active?: boolean
 }
 
-const OptionButton: FC<OptionButtonProps> = props => {
+const OptionButton = forwardRef<HTMLButtonElement, OptionButtonProps>((props, reference) => {
     const { children, active, value, ...attributes } = props
 
     return (
-        <Button {...attributes} variant="secondary" outline={!active} value={value}>
+        <Button ref={reference} {...attributes} variant="secondary" outline={!active} value={value}>
             {children}
         </Button>
     )
-}
+})

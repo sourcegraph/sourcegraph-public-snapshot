@@ -1,0 +1,144 @@
+---
+source: crates/sg-syntax/src/sg_sciptect.rs
+assertion_line: 616
+expression: "snapshot_sciptect_documents(&document, &contents)"
+---
+  package main
+//^^^^^^^ Keyword keyword.other.package.go
+//        ^^^^ Identifier variable.other.go
+  
+  import "fmt"
+//^^^^^^ Keyword keyword.other.import.go
+//       ^^^^^ StringLiteral string.quoted.double.go
+  
+  type Bar struct {
+//^^^^ Keyword storage.type.keyword.type.go
+//     ^^^ IdentifierType entity.name.type.go
+//         ^^^^^^ Keyword storage.type.keyword.struct.go
+//                ^ PunctuationBracket punctuation.section.braces.begin.go
+   z int
+// ^ Identifier variable.other.member.declaration.go
+//   ^^^ IdentifierBuiltinType support.type.builtin.go
+  }
+//^ PunctuationBracket punctuation.section.braces.end.go
+  
+  type Foo struct {
+//^^^^ Keyword storage.type.keyword.type.go
+//     ^^^ IdentifierType entity.name.type.go
+//         ^^^^^^ Keyword storage.type.keyword.struct.go
+//                ^ PunctuationBracket punctuation.section.braces.begin.go
+   x *int
+// ^ Identifier variable.other.member.declaration.go
+//   ^ IdentifierOperator keyword.operator.go
+//    ^^^ IdentifierBuiltinType support.type.builtin.go
+   Y string
+// ^ Identifier variable.other.member.declaration.go
+//   ^^^^^^ IdentifierBuiltinType support.type.builtin.go
+   Bar
+// ^^^ Identifier entity.other.inherited-class.go
+   Bar2 Bar
+// ^^^^ Identifier variable.other.member.declaration.go
+//      ^^^ IdentifierType storage.type.go
+   Bar3 *Bar
+// ^^^^ Identifier variable.other.member.declaration.go
+//      ^ IdentifierOperator keyword.operator.go
+//       ^^^ IdentifierType storage.type.go
+  }
+//^ PunctuationBracket punctuation.section.braces.end.go
+  
+  func main() {
+//^^^^ Keyword storage.type.keyword.function.go
+//     ^^^^ IdentifierFunction entity.name.function.go
+//         ^ PunctuationBracket punctuation.section.parens.begin.go
+//          ^ PunctuationBracket punctuation.section.parens.end.go
+//            ^ PunctuationBracket punctuation.section.braces.begin.go
+   // this is comment
+// ^^^^^^^^^^^^^^^^^^ Comment comment.line.go
+  
+   x := 1234
+// ^ Identifier variable.declaration.go
+//   ^^ IdentifierOperator keyword.operator.assignment.go
+//      ^^^^ NumericLiteral constant.numeric.integer.decimal.go
+   char := '1'
+// ^^^^ Identifier variable.declaration.go
+//      ^^ IdentifierOperator keyword.operator.assignment.go
+//         ^^^ CharacterLiteral constant.character.go
+   aString := "hello\n"
+// ^^^^^^^ Identifier variable.declaration.go
+//         ^^ IdentifierOperator keyword.operator.assignment.go
+//            ^^^^^^ StringLiteral constant.character.escape.go
+//                  ^^ StringLiteralEscape constant.character.escape.go
+//                    ^ StringLiteral string.quoted.double.go
+   bool := true
+// ^^^^ Identifier variable.declaration.go
+//      ^^ IdentifierOperator keyword.operator.assignment.go
+//         ^^^^ IdentifierBuiltin constant.language.go
+   multilineString := `hello
+// ^^^^^^^^^^^^^^^ Identifier variable.declaration.go
+//                 ^^ IdentifierOperator keyword.operator.assignment.go
+//                    ^^^^^^ StringLiteral 23:20..25:16 string.quoted.other.go
+   world
+  this is my poem` + aString
+//                 ^ IdentifierOperator keyword.operator.go
+//                   ^^^^^^^ Identifier variable.other.go
+  
+   var null_was_a_mistake *int
+// ^^^ Keyword storage.type.keyword.var.go
+//     ^^^^^^^^^^^^^^^^^^ Identifier variable.declaration.go
+//                        ^ IdentifierOperator keyword.operator.go
+//                         ^^^ IdentifierBuiltinType support.type.builtin.go
+   null_was_a_mistake = nil
+// ^^^^^^^^^^^^^^^^^^ Identifier variable.other.go
+//                    ^ IdentifierOperator keyword.operator.assignment.go
+//                      ^^^ IdentifierBuiltin constant.language.go
+  
+   foo := &Foo{
+// ^^^ Identifier variable.declaration.go
+//     ^^ IdentifierOperator keyword.operator.assignment.go
+//        ^ IdentifierOperator keyword.operator.go
+//         ^^^ Identifier variable.other.go
+//            ^ PunctuationBracket punctuation.section.braces.begin.go
+    x: &x,
+//  ^ Identifier variable.other.go
+//   ^ PunctuationBracket punctuation.separator.go
+//     ^ IdentifierOperator keyword.operator.go
+//      ^ Identifier variable.other.go
+//       ^ PunctuationBracket punctuation.separator.go
+    Bar: Bar{
+//  ^^^ Identifier variable.other.go
+//     ^ PunctuationBracket punctuation.separator.go
+//       ^^^ Identifier variable.other.go
+//          ^ PunctuationBracket punctuation.section.braces.begin.go
+     z: 43,
+//   ^ Identifier variable.other.go
+//    ^ PunctuationBracket punctuation.separator.go
+//      ^^ NumericLiteral constant.numeric.integer.decimal.go
+//        ^ PunctuationBracket punctuation.separator.go
+    },
+//  ^ PunctuationBracket punctuation.section.braces.end.go
+//   ^ PunctuationBracket punctuation.separator.go
+   }
+// ^ PunctuationBracket punctuation.section.braces.end.go
+  
+   fmt.Println(x, char, aString, bool, null_was_a_mistake, foo, multilineString)
+// ^^^ Identifier variable.other.go
+//    ^ PunctuationBracket punctuation.accessor.dot.go
+//     ^^^^^^^ IdentifierFunction variable.function.go
+//            ^ PunctuationBracket punctuation.section.parens.begin.go
+//             ^ Identifier variable.other.go
+//              ^ PunctuationBracket punctuation.separator.go
+//                ^^^^ Identifier variable.other.go
+//                    ^ PunctuationBracket punctuation.separator.go
+//                      ^^^^^^^ Identifier variable.other.go
+//                             ^ PunctuationBracket punctuation.separator.go
+//                               ^^^^ Identifier variable.other.go
+//                                   ^ PunctuationBracket punctuation.separator.go
+//                                     ^^^^^^^^^^^^^^^^^^ Identifier variable.other.go
+//                                                       ^ PunctuationBracket punctuation.separator.go
+//                                                         ^^^ Identifier variable.other.go
+//                                                            ^ PunctuationBracket punctuation.separator.go
+//                                                              ^^^^^^^^^^^^^^^ Identifier variable.other.go
+//                                                                             ^ PunctuationBracket punctuation.section.parens.end.go
+  }
+//^ PunctuationBracket punctuation.section.braces.end.go
+

@@ -1,6 +1,7 @@
 package bitbucketserver
 
 import (
+	atypes "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -22,20 +23,21 @@ import (
 // to connection issues.
 func NewAuthzProviders(
 	conns []*types.BitbucketServerConnection,
-) (ps []authz.Provider, problems []string, warnings []string, invalidConnections []string) {
+) *atypes.ProviderInitResult {
+	initResults := &atypes.ProviderInitResult{}
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
 		pluginPerm := conf.BitbucketServerPluginPerm() || (c.Plugin != nil && c.Plugin.Permissions == "enabled")
 		p, err := newAuthzProvider(c, pluginPerm)
 		if err != nil {
-			invalidConnections = append(invalidConnections, extsvc.TypeBitbucketServer)
-			problems = append(problems, err.Error())
+			initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeBitbucketServer)
+			initResults.Problems = append(initResults.Problems, err.Error())
 		} else if p != nil {
-			ps = append(ps, p)
+			initResults.Providers = append(initResults.Providers, p)
 		}
 	}
 
-	return ps, problems, warnings, invalidConnections
+	return initResults
 }
 
 func newAuthzProvider(

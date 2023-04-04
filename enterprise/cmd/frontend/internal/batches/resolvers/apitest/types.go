@@ -93,7 +93,6 @@ type BatchChange struct {
 	DiffStat                DiffStat
 	BulkOperations          BulkOperationConnection
 	BatchSpecs              BatchSpecConnection
-	CurrentSpec             *BatchSpec
 }
 
 type BatchChangeConnection struct {
@@ -126,10 +125,13 @@ type ExternalURL struct {
 }
 
 type Changeset struct {
-	Typename           string `json:"__typename"`
-	ID                 string
-	Repository         Repository
+	Typename   string `json:"__typename"`
+	ID         string
+	Repository Repository
+
 	BatchChanges       BatchChangeConnection
+	OwnedByBatchChange *string
+
 	CreatedAt          string
 	UpdatedAt          string
 	NextSyncAt         string
@@ -141,6 +143,7 @@ type Changeset struct {
 	ExternalID         string
 	ExternalURL        ExternalURL
 	ForkNamespace      string
+	ForkName           string
 	ReviewState        string
 	CheckState         string
 	Events             ChangesetEventConnection

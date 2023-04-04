@@ -90,3 +90,49 @@ func (s *FakeSource) GetRepo(ctx context.Context, name string) (*types.Repo, err
 func (s *FakeSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
+
+func (s *FakeDiscoverableSource) ListNamespaces(ctx context.Context, results chan SourceNamespaceResult) {
+	if s.lockChan != nil {
+		s.lockChan <- struct{}{}
+		<-s.lockChan
+	}
+
+	if s.err != nil {
+		results <- SourceNamespaceResult{Source: s, Err: s.err}
+		return
+	}
+
+	for _, n := range s.namespaces {
+		results <- SourceNamespaceResult{Source: s, Namespace: &types.ExternalServiceNamespace{ID: n.ID, Name: n.Name, ExternalID: n.ExternalID}}
+	}
+}
+
+func (s *FakeDiscoverableSource) SearchRepositories(ctx context.Context, query string, first int, excludedRepos []string, results chan SourceResult) {
+	if s.lockChan != nil {
+		s.lockChan <- struct{}{}
+		<-s.lockChan
+	}
+
+	if s.err != nil {
+		results <- SourceResult{Source: s, Err: s.err}
+		return
+	}
+
+	for _, r := range s.repos {
+		results <- SourceResult{Source: s, Repo: r}
+	}
+}
+
+// FakeDiscoverableSource is a fake implementation of DiscoverableSource to be used in tests.
+type FakeDiscoverableSource struct {
+	*FakeSource
+	namespaces []*types.ExternalServiceNamespace
+}
+
+// NewFakeDiscoverableSource returns an instance of FakeDiscoverableSource with the given namespaces.
+func NewFakeDiscoverableSource(fs *FakeSource, connectionErr bool, ns ...*types.ExternalServiceNamespace) *FakeDiscoverableSource {
+	if connectionErr {
+		fs.Unavailable()
+	}
+	return &FakeDiscoverableSource{FakeSource: fs, namespaces: ns}
+}

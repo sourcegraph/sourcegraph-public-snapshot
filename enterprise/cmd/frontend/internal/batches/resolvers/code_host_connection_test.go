@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -72,7 +71,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 					ID:                  string(marshalBatchChangesCredentialID(cred.ID, true)),
 					ExternalServiceKind: extsvc.TypeToKind(cred.ExternalServiceType),
 					ExternalServiceURL:  cred.ExternalServiceID,
-					CreatedAt:           cred.CreatedAt.Format(time.RFC3339),
+					CreatedAt:           marshalDateTime(t, cred.CreatedAt),
 					IsSiteCredential:    true,
 				},
 			},
@@ -182,7 +181,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 					ID:                  string(marshalBatchChangesCredentialID(siteCred.ID, true)),
 					ExternalServiceKind: extsvc.TypeToKind(siteCred.ExternalServiceType),
 					ExternalServiceURL:  siteCred.ExternalServiceID,
-					CreatedAt:           siteCred.CreatedAt.Format(time.RFC3339),
+					CreatedAt:           marshalDateTime(t, siteCred.CreatedAt),
 					IsSiteCredential:    true,
 				},
 			},
@@ -193,7 +192,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 					ID:                  string(marshalBatchChangesCredentialID(userCred.ID, false)),
 					ExternalServiceKind: extsvc.TypeToKind(userCred.ExternalServiceType),
 					ExternalServiceURL:  userCred.ExternalServiceID,
-					CreatedAt:           userCred.CreatedAt.Format(time.RFC3339),
+					CreatedAt:           marshalDateTime(t, userCred.CreatedAt),
 					IsSiteCredential:    false,
 				},
 			},

@@ -10,6 +10,7 @@ import { CommitMatch, getCommitMatchUrl } from '@sourcegraph/shared/src/search/s
 import { Button, Code } from '@sourcegraph/wildcard'
 
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
+
 interface Props extends PlatformContextProps<'requestGraphQL'> {
     result: CommitMatch
     repoName: string

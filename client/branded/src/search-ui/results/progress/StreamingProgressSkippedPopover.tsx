@@ -22,27 +22,9 @@ import {
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 
 import { StreamingProgressProps } from './StreamingProgress'
-import { limitHit } from './StreamingProgressCount'
+import { sortBySeverity, limitHit } from './utils'
 
 import styles from './StreamingProgressSkippedPopover.module.scss'
-
-const severityToNumber = (severity: Skipped['severity']): number => {
-    switch (severity) {
-        case 'error':
-            return 1
-        case 'warn':
-            return 2
-        case 'info':
-            return 3
-    }
-}
-
-const sortBySeverity = (a: Skipped, b: Skipped): number => {
-    const aSev = severityToNumber(a.severity)
-    const bSev = severityToNumber(b.severity)
-
-    return aSev - bSev
-}
 
 const SkippedMessage: React.FunctionComponent<React.PropsWithChildren<{ skipped: Skipped; startOpen: boolean }>> = ({
     skipped,
@@ -136,7 +118,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
         })
     }, [])
 
-    const sortedSkippedItems = progress.skipped.sort(sortBySeverity)
+    const sortedSkippedItems = sortBySeverity(progress.skipped)
 
     return (
         <>

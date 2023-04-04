@@ -18,7 +18,7 @@ export async function build(): Promise<void> {
         rm('-rf', distributionPath)
     }
 
-    await esbuild.build({
+    const ctx = await esbuild.context({
         entryPoints: {
             search: path.resolve(webviewSourcePath, 'search', 'index.tsx'),
             bridgeMock: path.resolve(webviewSourcePath, 'bridge-mock', 'index.ts'),
@@ -50,11 +50,13 @@ export async function build(): Promise<void> {
             '.ttf': 'file',
         },
         assetNames: '[name]',
-        ignoreAnnotations: true,
-        treeShaking: false,
-        watch: !!process.env.WATCH,
         minify: true,
         sourcemap: true,
         outdir: distributionPath,
     })
+    await ctx.rebuild()
+    if (process.env.WATCH) {
+        await ctx.watch()
+    }
+    await ctx.dispose()
 }

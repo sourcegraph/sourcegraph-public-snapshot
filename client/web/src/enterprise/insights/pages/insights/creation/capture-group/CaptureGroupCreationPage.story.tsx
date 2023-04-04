@@ -4,7 +4,7 @@ import { noop } from 'lodash'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../../components/WebStory'
-import { useCodeInsightsState } from '../../../../../../stores'
+import { useCodeInsightsLicenseState } from '../../../../stores'
 
 import { CaptureGroupCreationPage as CaptureGroupCreationPageComponent } from './CaptureGroupCreationPage'
 
@@ -20,7 +20,7 @@ export default {
 } as Meta
 
 export const CaptureGroupCreationPage: Story = () => {
-    useCodeInsightsState.setState({ licensed: true, insightsLimit: null })
+    useCodeInsightsLicenseState.setState({ licensed: true, insightsLimit: null })
 
     return (
         <CaptureGroupCreationPageComponent
@@ -29,6 +29,7 @@ export const CaptureGroupCreationPage: Story = () => {
             onSuccessfulCreation={noop}
             onInsightCreateRequest={() => Promise.resolve()}
             onCancel={noop}
+            isSourcegraphApp={false}
         />
     )
 }

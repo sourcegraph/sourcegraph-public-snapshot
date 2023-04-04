@@ -5,7 +5,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
@@ -201,28 +200,28 @@ func validateSearchContextQuery(contextQuery string) error {
 		case query.FieldRepo:
 			if a.Labels.IsSet(query.IsPredicate) {
 				predName, _ := query.ParseAsPredicate(value)
-				if predName != "has" && predName != "has.tag" && predName != "has.key" {
+				switch predName {
+				case "has", "has.tag", "has.key", "has.topic", "has.description":
+				default:
 					errs = errors.Append(errs,
 						errors.Errorf("unsupported repo field predicate in search context query: %q", value))
-					return
 				}
 				return
 			}
 
-			repoRevs := query.ParseRepositoryRevisions(value)
+			repoRevs, err := query.ParseRepositoryRevisions(value)
+			if err != nil {
+				errs = errors.Append(errs,
+					errors.Errorf("repo field regex %q is invalid: %v", value, err))
+				return
+			}
+
 			for _, rev := range repoRevs.Revs {
 				if rev.HasRefGlob() {
 					errs = errors.Append(errs,
 						errors.Errorf("unsupported rev glob in search context query: %q", value))
 					return
 				}
-			}
-
-			_, err := regexp.Compile(repoRevs.Repo)
-			if err != nil {
-				errs = errors.Append(errs,
-					errors.Errorf("repo field regex %q is invalid: %v", value, err))
-				return
 			}
 
 		case query.FieldFork:

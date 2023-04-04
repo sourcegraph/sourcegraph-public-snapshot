@@ -8,6 +8,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
@@ -43,7 +44,7 @@ type ConfStore interface {
 	//
 	// 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
 	// responsible for ensuring this or that the response never makes it to a user.
-	ListSiteConfigs(context.Context, SiteConfigListOptions) ([]*SiteConfig, error)
+	ListSiteConfigs(context.Context, *PaginationArgs) ([]*SiteConfig, error)
 
 	// GetSiteConfig will return the total count of all configs of type "site".
 	//
@@ -62,29 +63,25 @@ var ErrNewerEdit = errors.New("someone else has already applied a newer edit")
 
 type confStore struct {
 	*basestore.Store
+	logger log.Logger
 }
 
 // SiteConfig contains the contents of a site config along with associated metadata.
 type SiteConfig struct {
-	ID           int32  // the unique ID of this config
-	AuthorUserID int32  // the user id of the author that updated this config
-	Contents     string // the raw JSON content (with comments and trailing commas allowed)
+	ID               int32  // the unique ID of this config
+	AuthorUserID     int32  // the user id of the author that updated this config
+	Contents         string // the raw JSON content (with comments and trailing commas allowed)
+	RedactedContents string // the raw JSON content but with sensitive fields redacted
 
 	CreatedAt time.Time // the date when this config was created
 	UpdatedAt time.Time // the date when this config was updated
-}
-
-type SiteConfigListOptions struct {
-	*LimitOffset
-
-	// Ascending order by default.
-	OrderByDirection OrderByDirection
 }
 
 var siteConfigColumns = []*sqlf.Query{
 	sqlf.Sprintf("critical_and_site_config.id"),
 	sqlf.Sprintf("critical_and_site_config.author_user_id"),
 	sqlf.Sprintf("critical_and_site_config.contents"),
+	sqlf.Sprintf("critical_and_site_config.redacted_contents"),
 	sqlf.Sprintf("critical_and_site_config.created_at"),
 	sqlf.Sprintf("critical_and_site_config.updated_at"),
 }
@@ -98,7 +95,10 @@ func (s *confStore) transact(ctx context.Context) (*confStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &confStore{Store: txBase}, nil
+	return &confStore{
+		Store:  txBase,
+		logger: s.logger,
+	}, nil
 }
 
 func (s *confStore) SiteCreateIfUpToDate(ctx context.Context, lastID *int32, authorUserID int32, contents string, isOverride bool) (_ *SiteConfig, err error) {
@@ -141,46 +141,64 @@ SELECT
 	id,
 	author_user_id,
 	contents,
+	redacted_contents,
 	created_at,
 	updated_at
-FROM critical_and_site_config
-WHERE type = 'site'
-%s
-%s
+FROM (
+	SELECT
+		*,
+		LAG(redacted_contents) OVER (ORDER BY id) AS prev_redacted_contents
+	FROM
+		critical_and_site_config) t
+WHERE
+(%s)
 `
 
-var scanSiteConfigs = basestore.NewSliceScanner(scanSiteConfig)
-
-func scanSiteConfig(s dbutil.Scanner) (*SiteConfig, error) {
-	var c SiteConfig
-	err := s.Scan(
-		&c.ID,
-		&dbutil.NullInt32{N: &c.AuthorUserID},
-		&c.Contents,
-		&c.CreatedAt,
-		&c.UpdatedAt,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &c, nil
-}
-
-func (s *confStore) ListSiteConfigs(ctx context.Context, opt SiteConfigListOptions) ([]*SiteConfig, error) {
-	// Ascending order by default.
-	orderByClause := sqlf.Sprintf("ORDER BY id ASC")
-	if opt.OrderByDirection == DescendingOrderByDirection {
-		orderByClause = sqlf.Sprintf("ORDER BY id DESC")
+func (s *confStore) ListSiteConfigs(ctx context.Context, paginationArgs *PaginationArgs) ([]*SiteConfig, error) {
+	where := []*sqlf.Query{
+		sqlf.Sprintf("(prev_redacted_contents IS NULL OR redacted_contents != prev_redacted_contents)"),
+		sqlf.Sprintf("redacted_contents IS NOT NULL"),
+		sqlf.Sprintf(`type = 'site'`),
 	}
 
-	q := sqlf.Sprintf(listSiteConfigsFmtStr, orderByClause, opt.LimitOffset.SQL())
+	// This will fetch all site configs.
+	if paginationArgs == nil {
+		query := sqlf.Sprintf(listSiteConfigsFmtStr, sqlf.Join(where, "AND"))
+		rows, err := s.Query(ctx, query)
+		return scanSiteConfigs(rows, err)
+	}
 
-	rows, err := s.Query(ctx, q)
+	args := paginationArgs.SQL()
+
+	if args.Where != nil {
+		where = append(where, args.Where)
+	}
+
+	query := sqlf.Sprintf(listSiteConfigsFmtStr, sqlf.Join(where, "AND"))
+	query = args.AppendOrderToQuery(query)
+	query = args.AppendLimitToQuery(query)
+
+	rows, err := s.Query(ctx, query)
 	return scanSiteConfigs(rows, err)
 }
 
+const getSiteConfigCount = `
+SELECT
+	COUNT(*)
+FROM (
+	SELECT
+		*,
+		LAG(redacted_contents) OVER (ORDER BY id) AS prev_redacted_contents
+	FROM
+		critical_and_site_config) t
+WHERE (prev_redacted_contents IS NULL
+	OR redacted_contents != prev_redacted_contents)
+AND redacted_contents IS NOT NULL
+AND type = 'site'
+`
+
 func (s *confStore) GetSiteConfigCount(ctx context.Context) (int, error) {
-	q := sqlf.Sprintf(`SELECT count(*) from critical_and_site_config WHERE type = 'site'`)
+	q := sqlf.Sprintf(getSiteConfigCount)
 
 	var count int
 	err := s.QueryRow(ctx, q).Scan(&count)
@@ -205,8 +223,8 @@ func (s *confStore) addDefault(ctx context.Context, authorUserID int32, contents
 }
 
 const createSiteConfigFmtStr = `
-INSERT INTO critical_and_site_config (type, author_user_id, contents)
-VALUES ('site', %s, %s)
+INSERT INTO critical_and_site_config (type, author_user_id, contents, redacted_contents)
+VALUES ('site', %s, %s, %s)
 RETURNING %s -- siteConfigColumns
 `
 
@@ -235,10 +253,24 @@ func (s *confStore) createIfUpToDate(ctx context.Context, lastID *int32, authorU
 		return nil, ErrNewerEdit
 	}
 
+	redactedConf, err := conf.RedactAndHashSecrets(conftypes.RawUnified{Site: contents})
+	var redactedContents string
+	if err != nil {
+		// Do not fail here. Instead continue writing to DB with an empty value for
+		// "redacted_contents".
+		s.logger.Warn(
+			"failed to redact secrets during site config creation (secrets are safely stored but diff generation in site config history will not work)",
+			log.Error(err),
+		)
+	} else {
+		redactedContents = redactedConf.Site
+	}
+
 	q := sqlf.Sprintf(
 		createSiteConfigFmtStr,
 		dbutil.NullInt32Column(authorUserID),
 		contents,
+		redactedContents,
 		sqlf.Join(siteConfigColumns, ","),
 	)
 
@@ -276,8 +308,11 @@ func scanSiteConfigRow(scanner dbutil.Scanner) (*SiteConfig, error) {
 		&s.ID,
 		&dbutil.NullInt32{N: &s.AuthorUserID},
 		&s.Contents,
+		&dbutil.NullString{S: &s.RedactedContents},
 		&s.CreatedAt,
 		&s.UpdatedAt,
 	)
 	return &s, err
 }
+
+var scanSiteConfigs = basestore.NewSliceScanner(scanSiteConfigRow)

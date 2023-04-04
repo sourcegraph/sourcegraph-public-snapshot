@@ -23,9 +23,6 @@ import (
 // github.com/sourcegraph/sourcegraph/cmd/frontend/backend) used for unit
 // testing.
 type MockReposService struct {
-	// AddFunc is an instance of a mock function object controlling the
-	// behavior of the method Add.
-	AddFunc *ReposServiceAddFunc
 	// DeleteRepositoryFromDiskFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteRepositoryFromDisk.
 	DeleteRepositoryFromDiskFunc *ReposServiceDeleteRepositoryFromDiskFunc
@@ -59,11 +56,6 @@ type MockReposService struct {
 // methods return zero values for all results, unless overwritten.
 func NewMockReposService() *MockReposService {
 	return &MockReposService{
-		AddFunc: &ReposServiceAddFunc{
-			defaultHook: func(context.Context, api.RepoName) (r0 api.RepoName, r1 error) {
-				return
-			},
-		},
 		DeleteRepositoryFromDiskFunc: &ReposServiceDeleteRepositoryFromDiskFunc{
 			defaultHook: func(context.Context, api.RepoID) (r0 error) {
 				return
@@ -116,11 +108,6 @@ func NewMockReposService() *MockReposService {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockReposService() *MockReposService {
 	return &MockReposService{
-		AddFunc: &ReposServiceAddFunc{
-			defaultHook: func(context.Context, api.RepoName) (api.RepoName, error) {
-				panic("unexpected invocation of MockReposService.Add")
-			},
-		},
 		DeleteRepositoryFromDiskFunc: &ReposServiceDeleteRepositoryFromDiskFunc{
 			defaultHook: func(context.Context, api.RepoID) error {
 				panic("unexpected invocation of MockReposService.DeleteRepositoryFromDisk")
@@ -174,9 +161,6 @@ func NewStrictMockReposService() *MockReposService {
 // overwritten.
 func NewMockReposServiceFrom(i ReposService) *MockReposService {
 	return &MockReposService{
-		AddFunc: &ReposServiceAddFunc{
-			defaultHook: i.Add,
-		},
 		DeleteRepositoryFromDiskFunc: &ReposServiceDeleteRepositoryFromDiskFunc{
 			defaultHook: i.DeleteRepositoryFromDisk,
 		},
@@ -205,113 +189,6 @@ func NewMockReposServiceFrom(i ReposService) *MockReposService {
 			defaultHook: i.ResolveRev,
 		},
 	}
-}
-
-// ReposServiceAddFunc describes the behavior when the Add method of the
-// parent MockReposService instance is invoked.
-type ReposServiceAddFunc struct {
-	defaultHook func(context.Context, api.RepoName) (api.RepoName, error)
-	hooks       []func(context.Context, api.RepoName) (api.RepoName, error)
-	history     []ReposServiceAddFuncCall
-	mutex       sync.Mutex
-}
-
-// Add delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockReposService) Add(v0 context.Context, v1 api.RepoName) (api.RepoName, error) {
-	r0, r1 := m.AddFunc.nextHook()(v0, v1)
-	m.AddFunc.appendCall(ReposServiceAddFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Add method of the
-// parent MockReposService instance is invoked and the hook queue is empty.
-func (f *ReposServiceAddFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (api.RepoName, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Add method of the parent MockReposService instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ReposServiceAddFunc) PushHook(hook func(context.Context, api.RepoName) (api.RepoName, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ReposServiceAddFunc) SetDefaultReturn(r0 api.RepoName, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName) (api.RepoName, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ReposServiceAddFunc) PushReturn(r0 api.RepoName, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName) (api.RepoName, error) {
-		return r0, r1
-	})
-}
-
-func (f *ReposServiceAddFunc) nextHook() func(context.Context, api.RepoName) (api.RepoName, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ReposServiceAddFunc) appendCall(r0 ReposServiceAddFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ReposServiceAddFuncCall objects describing
-// the invocations of this function.
-func (f *ReposServiceAddFunc) History() []ReposServiceAddFuncCall {
-	f.mutex.Lock()
-	history := make([]ReposServiceAddFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ReposServiceAddFuncCall is an object that describes an invocation of
-// method Add on an instance of MockReposService.
-type ReposServiceAddFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 api.RepoName
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ReposServiceAddFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ReposServiceAddFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // ReposServiceDeleteRepositoryFromDiskFunc describes the behavior when the

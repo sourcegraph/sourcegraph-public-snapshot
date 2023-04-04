@@ -48,7 +48,15 @@ type distributedStore struct {
 }
 
 func (d *distributedStore) Gather() ([]*dto.MetricFamily, error) {
-	reConn := redispool.Cache.Get()
+	pool, ok := redispool.Cache.Pool()
+	if !ok {
+		// Redis is disabled. This means we are using Sourcegraph App which
+		// does not expose prometheus metrics. For now that means we can skip
+		// this store doing anything.
+		return nil, nil
+	}
+
+	reConn := pool.Get()
 	defer reConn.Close()
 
 	// First, list all the keys for which we hold metrics.
@@ -90,6 +98,14 @@ func (d *distributedStore) Gather() ([]*dto.MetricFamily, error) {
 }
 
 func (d *distributedStore) Ingest(instance string, mfs []*dto.MetricFamily) error {
+	pool, ok := redispool.Cache.Pool()
+	if !ok {
+		// Redis is disabled. This means we are using Sourcegraph App which
+		// does not expose prometheus metrics. For now that means we can skip
+		// this store doing anything.
+		return nil
+	}
+
 	// First, encode the metrics to text format so we can store them.
 	var enc bytes.Buffer
 	encoder := expfmt.NewEncoder(&enc, expfmt.FmtText)
@@ -102,7 +118,7 @@ func (d *distributedStore) Ingest(instance string, mfs []*dto.MetricFamily) erro
 
 	encodedMetrics := enc.String()
 
-	reConn := redispool.Cache.Get()
+	reConn := pool.Get()
 	defer reConn.Close()
 
 	// Store the metrics and set an expiry on the key, if we haven't retrieved

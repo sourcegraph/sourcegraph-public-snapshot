@@ -13,9 +13,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -54,7 +54,7 @@ func TestSetGitHubHandlerSleepTime(t *testing.T, val time.Duration) {
 	sleepTime = val
 }
 
-func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, payload any) error {
+func (h *GitHubWebhook) handleGitHubWebhook(_ context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, payload any) error {
 	// TODO: This MUST be removed once permissions syncing jobs are database backed!
 	// If we react too quickly to a webhook, the changes may not yet have properly
 	// propagated on GitHub's system, and we'll get old results, making the
@@ -68,15 +68,15 @@ func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB,
 
 		switch e := payload.(type) {
 		case *gh.RepositoryEvent:
-			h.handleRepositoryEvent(eventContext, db, e)
+			_ = h.handleRepositoryEvent(eventContext, db, e)
 		case *gh.MemberEvent:
-			h.handleMemberEvent(eventContext, db, e, codeHostURN)
+			_ = h.handleMemberEvent(eventContext, db, e, codeHostURN)
 		case *gh.OrganizationEvent:
-			h.handleOrganizationEvent(eventContext, db, e, codeHostURN)
+			_ = h.handleOrganizationEvent(eventContext, db, e, codeHostURN)
 		case *gh.MembershipEvent:
-			h.handleMembershipEvent(eventContext, db, e, codeHostURN)
+			_ = h.handleMembershipEvent(eventContext, db, e, codeHostURN)
 		case *gh.TeamEvent:
-			h.handleTeamEvent(eventContext, e, db)
+			_ = h.handleTeamEvent(eventContext, e, db)
 		}
 	}()
 	return nil
@@ -88,46 +88,71 @@ func (h *GitHubWebhook) handleRepositoryEvent(ctx context.Context, db database.D
 		return nil
 	}
 
-	return h.getRepoAndSyncPerms(ctx, db, e)
+	return h.getRepoAndSyncPerms(ctx, db, e, database.ReasonGitHubRepoMadePrivateEvent)
 }
 
 func (h *GitHubWebhook) handleMemberEvent(ctx context.Context, db database.DB, e *gh.MemberEvent, codeHostURN extsvc.CodeHostBaseURL) error {
-	if e.GetAction() != "added" && e.GetAction() != "removed" {
+	action := e.GetAction()
+	var reason database.PermissionsSyncJobReason
+	if action == "added" {
+		reason = database.ReasonGitHubUserAddedEvent
+	} else if action == "removed" {
+		reason = database.ReasonGitHubUserRemovedEvent
+	} else {
+		// unknown event type
 		return nil
 	}
 	user := e.GetMember()
 
-	return h.getUserAndSyncPerms(ctx, db, user, codeHostURN)
+	return h.getUserAndSyncPerms(ctx, db, user, codeHostURN, reason)
 }
 
 func (h *GitHubWebhook) handleOrganizationEvent(ctx context.Context, db database.DB, e *gh.OrganizationEvent, codeHostURN extsvc.CodeHostBaseURL) error {
-	if e.GetAction() != "member_added" && e.GetAction() != "member_removed" {
+	action := e.GetAction()
+	var reason database.PermissionsSyncJobReason
+	if action == "member_added" {
+		reason = database.ReasonGitHubOrgMemberAddedEvent
+	} else if action == "member_removed" {
+		reason = database.ReasonGitHubOrgMemberRemovedEvent
+	} else {
 		return nil
 	}
 
 	user := e.GetMembership().GetUser()
 
-	return h.getUserAndSyncPerms(ctx, db, user, codeHostURN)
+	return h.getUserAndSyncPerms(ctx, db, user, codeHostURN, reason)
 }
 
 func (h *GitHubWebhook) handleMembershipEvent(ctx context.Context, db database.DB, e *gh.MembershipEvent, codeHostURN extsvc.CodeHostBaseURL) error {
-	if e.GetAction() != "added" && e.GetAction() != "removed" {
+	action := e.GetAction()
+	var reason database.PermissionsSyncJobReason
+	if action == "added" {
+		reason = database.ReasonGitHubUserMembershipAddedEvent
+	} else if action == "removed" {
+		reason = database.ReasonGitHubUserMembershipRemovedEvent
+	} else {
 		return nil
 	}
 	user := e.GetMember()
 
-	return h.getUserAndSyncPerms(ctx, db, user, codeHostURN)
+	return h.getUserAndSyncPerms(ctx, db, user, codeHostURN, reason)
 }
 
 func (h *GitHubWebhook) handleTeamEvent(ctx context.Context, e *gh.TeamEvent, db database.DB) error {
-	if e.GetAction() != "added_to_repository" && e.GetAction() != "removed_from_repository" {
+	action := e.GetAction()
+	var reason database.PermissionsSyncJobReason
+	if action == "added_to_repository" {
+		reason = database.ReasonGitHubTeamAddedToRepoEvent
+	} else if action == "removed_from_repository" {
+		reason = database.ReasonGitHubTeamRemovedFromRepoEvent
+	} else {
 		return nil
 	}
 
-	return h.getRepoAndSyncPerms(ctx, db, e)
+	return h.getRepoAndSyncPerms(ctx, db, e, reason)
 }
 
-func (h *GitHubWebhook) getUserAndSyncPerms(ctx context.Context, db database.DB, user *gh.User, codeHostURN extsvc.CodeHostBaseURL) error {
+func (h *GitHubWebhook) getUserAndSyncPerms(ctx context.Context, db database.DB, user *gh.User, codeHostURN extsvc.CodeHostBaseURL, reason database.PermissionsSyncJobReason) error {
 	externalAccounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 		ServiceID:      codeHostURN.String(),
 		AccountID:      strconv.Itoa(int(user.GetID())),
@@ -141,17 +166,16 @@ func (h *GitHubWebhook) getUserAndSyncPerms(ctx context.Context, db database.DB,
 		return errors.Newf("no github external accounts found with account id %d", user.GetID())
 	}
 
-	err = repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
-		UserIDs: []int32{externalAccounts[0].UserID},
+	permssync.SchedulePermsSync(ctx, h.logger, db, protocol.PermsSyncRequest{
+		UserIDs:      []int32{externalAccounts[0].UserID},
+		Reason:       reason,
+		ProcessAfter: time.Now().Add(sleepTime),
 	})
-	if err != nil {
-		h.logger.Error("could not schedule permissions sync for user", log.Error(err), log.Int("user ID", int(externalAccounts[0].UserID)))
-	}
 
 	return err
 }
 
-func (h *GitHubWebhook) getRepoAndSyncPerms(ctx context.Context, db database.DB, e interface{ GetRepo() *gh.Repository }) error {
+func (h *GitHubWebhook) getRepoAndSyncPerms(ctx context.Context, db database.DB, e interface{ GetRepo() *gh.Repository }, reason database.PermissionsSyncJobReason) error {
 	ghRepo := e.GetRepo()
 
 	repo, err := db.Repos().GetFirstRepoByCloneURL(ctx, strings.TrimSuffix(ghRepo.GetCloneURL(), ".git"))
@@ -159,12 +183,11 @@ func (h *GitHubWebhook) getRepoAndSyncPerms(ctx context.Context, db database.DB,
 		return err
 	}
 
-	err = repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
-		RepoIDs: []api.RepoID{repo.ID},
+	permssync.SchedulePermsSync(ctx, h.logger, db, protocol.PermsSyncRequest{
+		RepoIDs:      []api.RepoID{repo.ID},
+		Reason:       reason,
+		ProcessAfter: time.Now().Add(sleepTime),
 	})
-	if err != nil {
-		h.logger.Error("could not schedule permissions sync for repo", log.Error(err), log.Int("repo ID", int(repo.ID)))
-	}
 
-	return err
+	return nil
 }

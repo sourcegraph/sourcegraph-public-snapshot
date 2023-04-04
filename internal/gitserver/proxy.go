@@ -4,9 +4,8 @@ import (
 	"net/http"
 	"net/http/httputil"
 
-	"github.com/neelance/parallel"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
@@ -18,7 +17,7 @@ var defaultClient, _ = clientFactory.Client()
 
 // NewReverseProxy returns a new gitserver.ReverseProxy instantiated with the given
 // transport and HTTP limiter.
-func NewReverseProxy(transport http.RoundTripper, httpLimiter *parallel.Run) *ReverseProxy {
+func NewReverseProxy(transport http.RoundTripper, httpLimiter limiter.Limiter) *ReverseProxy {
 	return &ReverseProxy{
 		Transport:   transport,
 		HTTPLimiter: httpLimiter,
@@ -30,7 +29,7 @@ type ReverseProxy struct {
 	Transport http.RoundTripper
 
 	// Limits concurrency of outstanding HTTP posts
-	HTTPLimiter *parallel.Run
+	HTTPLimiter limiter.Limiter
 }
 
 // ServeHTTP creates a one-shot proxy with the given director and proxies the given request
@@ -43,11 +42,9 @@ func (p *ReverseProxy) ServeHTTP(repo api.RepoName, method, op string, director 
 		span.Finish()
 	}()
 
-	if p.HTTPLimiter != nil {
-		p.HTTPLimiter.Acquire()
-		defer p.HTTPLimiter.Release()
-		span.LogKV("event", "Acquired HTTP limiter")
-	}
+	p.HTTPLimiter.Acquire()
+	defer p.HTTPLimiter.Release()
+	span.LogKV("event", "Acquired HTTP limiter")
 
 	proxy := &httputil.ReverseProxy{
 		Director:  director,

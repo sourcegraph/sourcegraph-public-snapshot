@@ -6,12 +6,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -34,14 +35,13 @@ index deadbeef1..deadbeef2 100644
 
 func TestRanges(t *testing.T) {
 	// Set up mocks
-	mockStore := NewMockStore()
+	mockRepoStore := defaultMockRepoStore()
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
-	mockGitserverClient := NewMockGitserverClient()
-	mockGitServer := NewMockGitserverClient()
-	mockGitServer.DiffPathFunc.SetDefaultHook(func(ctx context.Context, srpc authz.SubRepoPermissionChecker, rn api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
+	mockGitserverClient := gitserver.NewMockClient()
+	mockGitserverClient.DiffPathFunc.SetDefaultHook(func(ctx context.Context, _ authz.SubRepoPermissionChecker, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*godiff.Hunk, error) {
 		if path == "sub3/changed.go" {
-			fileDiff, err := diff.ParseFileDiff([]byte(rangesDiff))
+			fileDiff, err := godiff.ParseFileDiff([]byte(rangesDiff))
 			if err != nil {
 				return nil, err
 			}
@@ -52,13 +52,13 @@ func TestRanges(t *testing.T) {
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}
-	mockRequestState.SetLocalCommitCache(mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
-	uploads := []types.Dump{
+	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
+	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
+	uploads := []uploadsshared.Dump{
 		{ID: 50, Commit: "deadbeef1", Root: "sub1/", RepositoryID: 42},
 		{ID: 51, Commit: "deadbeef1", Root: "sub2/", RepositoryID: 42},
 		{ID: 52, Commit: "deadbeef2", Root: "sub3/", RepositoryID: 42},
@@ -89,7 +89,7 @@ func TestRanges(t *testing.T) {
 	mockLsifStore.GetRangesFunc.PushReturn(ranges[1:4], nil)
 	mockLsifStore.GetRangesFunc.PushReturn(ranges[4:], nil)
 
-	mockRequest := shared.RequestArgs{
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -102,23 +102,23 @@ func TestRanges(t *testing.T) {
 		t.Fatalf("unexpected error querying ranges: %s", err)
 	}
 
-	adjustedLocation1 := types.UploadLocation{Dump: uploads[0], Path: "sub1/a.go", TargetCommit: "deadbeef", TargetRange: testRange1}
-	adjustedLocation2 := types.UploadLocation{Dump: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange2}
-	adjustedLocation3 := types.UploadLocation{Dump: uploads[1], Path: "sub2/c.go", TargetCommit: "deadbeef", TargetRange: testRange1}
-	adjustedLocation4 := types.UploadLocation{Dump: uploads[1], Path: "sub2/d.go", TargetCommit: "deadbeef", TargetRange: testRange2}
-	adjustedLocation5 := types.UploadLocation{Dump: uploads[1], Path: "sub2/e.go", TargetCommit: "deadbeef", TargetRange: testRange1}
-	adjustedLocation6 := types.UploadLocation{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange2}
-	adjustedLocation7 := types.UploadLocation{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3}
-	adjustedLocation8 := types.UploadLocation{Dump: uploads[2], Path: "sub3/a.go", TargetCommit: "deadbeef", TargetRange: testRange4}
+	adjustedLocation1 := shared.UploadLocation{Dump: uploads[0], Path: "sub1/a.go", TargetCommit: "deadbeef", TargetRange: testRange1}
+	adjustedLocation2 := shared.UploadLocation{Dump: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange2}
+	adjustedLocation3 := shared.UploadLocation{Dump: uploads[1], Path: "sub2/c.go", TargetCommit: "deadbeef", TargetRange: testRange1}
+	adjustedLocation4 := shared.UploadLocation{Dump: uploads[1], Path: "sub2/d.go", TargetCommit: "deadbeef", TargetRange: testRange2}
+	adjustedLocation5 := shared.UploadLocation{Dump: uploads[1], Path: "sub2/e.go", TargetCommit: "deadbeef", TargetRange: testRange1}
+	adjustedLocation6 := shared.UploadLocation{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange2}
+	adjustedLocation7 := shared.UploadLocation{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3}
+	adjustedLocation8 := shared.UploadLocation{Dump: uploads[2], Path: "sub3/a.go", TargetCommit: "deadbeef", TargetRange: testRange4}
 
-	expectedRanges := []shared.AdjustedCodeIntelligenceRange{
-		{Range: testRange1, HoverText: "text1", Definitions: []types.UploadLocation{}, References: []types.UploadLocation{adjustedLocation1}, Implementations: []types.UploadLocation{}},
-		{Range: testRange2, HoverText: "text2", Definitions: []types.UploadLocation{adjustedLocation2}, References: []types.UploadLocation{adjustedLocation3}, Implementations: []types.UploadLocation{}},
-		{Range: testRange3, HoverText: "text3", Definitions: []types.UploadLocation{adjustedLocation4}, References: []types.UploadLocation{adjustedLocation5}, Implementations: []types.UploadLocation{}},
-		{Range: testRange4, HoverText: "text4", Definitions: []types.UploadLocation{adjustedLocation6}, References: []types.UploadLocation{adjustedLocation7}, Implementations: []types.UploadLocation{}},
-		{Range: testRange5, HoverText: "text5", Definitions: []types.UploadLocation{adjustedLocation8}, References: []types.UploadLocation{}, Implementations: []types.UploadLocation{}},
+	expectedRanges := []AdjustedCodeIntelligenceRange{
+		{Range: testRange1, HoverText: "text1", Definitions: []shared.UploadLocation{}, References: []shared.UploadLocation{adjustedLocation1}, Implementations: []shared.UploadLocation{}},
+		{Range: testRange2, HoverText: "text2", Definitions: []shared.UploadLocation{adjustedLocation2}, References: []shared.UploadLocation{adjustedLocation3}, Implementations: []shared.UploadLocation{}},
+		{Range: testRange3, HoverText: "text3", Definitions: []shared.UploadLocation{adjustedLocation4}, References: []shared.UploadLocation{adjustedLocation5}, Implementations: []shared.UploadLocation{}},
+		{Range: testRange4, HoverText: "text4", Definitions: []shared.UploadLocation{adjustedLocation6}, References: []shared.UploadLocation{adjustedLocation7}, Implementations: []shared.UploadLocation{}},
+		{Range: testRange5, HoverText: "text5", Definitions: []shared.UploadLocation{adjustedLocation8}, References: []shared.UploadLocation{}, Implementations: []shared.UploadLocation{}},
 		// no definition expected, as the line has been changed and we filter those out from range requests
-		{Range: testRange6, HoverText: "text6", Definitions: []types.UploadLocation{}, References: []types.UploadLocation{}, Implementations: []types.UploadLocation{}},
+		{Range: testRange6, HoverText: "text6", Definitions: []shared.UploadLocation{}, References: []shared.UploadLocation{}, Implementations: []shared.UploadLocation{}},
 	}
 	if diff := cmp.Diff(expectedRanges, adjustedRanges); diff != "" {
 		t.Errorf("unexpected ranges (-want +got):\n%s", diff)

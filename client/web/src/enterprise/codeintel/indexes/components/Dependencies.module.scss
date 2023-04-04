@@ -1,0 +1,25 @@
+.list {
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--border-color-2);
+}
+
+.list-item {
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--border-color-2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    &:hover {
+        background-color: var(--subtle-bg);
+    }
+
+    &:first-of-type {
+        border-top: none;
+    }
+}
+
+.tag {
+    color: #ae6e00;
+    background-color: #ff9e0045;
+}

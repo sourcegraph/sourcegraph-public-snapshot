@@ -10,9 +10,8 @@ import (
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // batchSpecResolutionJobInsertColumns is the list of changeset_jobs columns that are
@@ -220,7 +219,7 @@ func listBatchSpecResolutionJobsQuery(opts ListBatchSpecResolutionJobsOpts) *sql
 }
 
 func scanBatchSpecResolutionJob(rj *btypes.BatchSpecResolutionJob, s dbutil.Scanner) error {
-	var executionLogs []dbworkerstore.ExecutionLogEntry
+	var executionLogs []executor.ExecutionLogEntry
 	var failureMessage string
 
 	if err := s.Scan(
@@ -246,9 +245,7 @@ func scanBatchSpecResolutionJob(rj *btypes.BatchSpecResolutionJob, s dbutil.Scan
 		rj.FailureMessage = &failureMessage
 	}
 
-	for _, entry := range executionLogs {
-		rj.ExecutionLogs = append(rj.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
-	}
+	rj.ExecutionLogs = append(rj.ExecutionLogs, executionLogs...)
 
 	return nil
 }

@@ -20,10 +20,9 @@ async function getCompletionItems(
     token: Token,
     position: number,
     fetchSuggestions: () => Promise<SearchMatch[]>,
-    options?: { globbing?: boolean; isSourcegraphDotCom?: boolean; tokens?: Token[] }
+    options?: { isSourcegraphDotCom?: boolean; tokens?: Token[] }
 ) {
     const sources = createDefaultSuggestionSources({
-        globbing: false,
         isSourcegraphDotCom: false,
         fetchSuggestions,
         ...options,
@@ -276,7 +275,10 @@ describe('codmirror completions', () => {
                             },
                         ] as SearchMatch[]
                 )
-            )?.map(({ apply }) => apply)
+            )
+                // Do not consider functions like has.owner or has.content.
+                ?.filter(({ apply }) => typeof apply === 'string')
+                .map(({ apply }) => apply)
         ).toStrictEqual(['^some/path/main\\.go$ '])
     })
 

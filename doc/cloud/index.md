@@ -7,7 +7,7 @@ Sourcegraph provisions each instance in an isolated and secure cloud environment
 ## Start a Sourcegraph Cloud trial
 
 <div>
-  <a class="cloud-cta" href="https://signup.sourcegraph.com" target="_blank" rel="noopener noreferrer">
+  <a class="cloud-cta" href="https://about.sourcegraph.com/get-started?t=enterprise" target="_blank" rel="noopener noreferrer">
     <div class="cloud-cta-copy">
       <h2>Get Sourcegraph on your code.</h2>
       <h3>A single-tenant instance managed by Sourcegraph.</h3>
@@ -65,6 +65,42 @@ All Sourcegraph features are avilable on Sourcegraph Cloud instances out-of-the-
 - Automatic monthly [upgrades](../admin/updates/index.md) and maintenance.
 - Regular reassessment of resource utilization based on your organization's unique usage to determine if costs can be reduced without impact to service. Additionally, you will automatically benefit from any committed use cloud provider discounts we receive.
 
+### Multiple region availability
+
+Sourcegraph Cloud instances are deployed in one of Google Cloud Platform data center locations:
+- North America (USA)
+- Europe (UK or Germany)
+- Asia (Japan)
+- Australia
+
+More details about the locations and data storage can be found in [our handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/multi-region/)
+
+### Private Code Host support
+
+Private Code Hosts refer to code hosts that are not publicly accessible, such as a GitHub or GitLab instance protected by a VPN.
+
+Sourcegraph Cloud connects to customer code hosts from 2 public NAT IPs. Customers can add the dedicated IPs for their Sourcegraph Cloud instance to an IP allowlist on their private code host.
+
+#### Code host on AWS without public access
+
+As part of the [Enterprise tier](https://about.sourcegraph.com/pricing), Sourcegraph Cloud offers customers that have code hosts without public access deployed on AWS a [highly available site-to-site VPN solution](https://cloud.google.com/network-connectivity/docs/vpn/tutorials/create-ha-vpn-connections-google-cloud-aws) with [AWS Private Link](https://docs.aws.amazon.com/vpc/latest/privatelink/what-is-privatelink.html) inside AWS's network, so that access to a private code host never occurs over the public internet.
+
+Solution architecture:
+<img src="https://sourcegraphstatic.com/private-code-host-solution-vpn-aws-private-link.png" class="screenshot">
+
+Advantages of the site-to-site GCP to AWS VPN include:
+- encrypted connection between Sourcegraph Cloud and customer code host
+- multiple tunnels to provide high availability between Cloud
+instance and customer code host
+
+Advantages of AWS Private Link include:
+- connectivity to customer VPC is only available inside AWS network
+-  ability to select AWS Principal (AWS Account or more granular) that can connect to customer code host
+- allows customer to control incoming connections
+- supports private DNS
+
+When a customer has private code hosts inside the AWS VPC and needs to expose it for Sourcegraph managed AWS VPC, customers can follow [AWS Documentation](https://docs.aws.amazon.com/vpc/latest/privatelink/create-endpoint-service.html)
+
 ### Health monitoring, support, and SLAs
 
 - Instance performance and health [monitored](../admin/observability/index.md) by our team's on-call engineers.
@@ -107,11 +143,50 @@ To opt out of managed SMTP, please let your Sourcegraph Account team know when r
 
 To learn more about how the Sourcegraph team operates managed SMTP internally, refer to [our handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/managed-smtp/).
 
-### Sourcegraph management access
+### Cody 
 
-[Sourcegraph management access](https://handbook.sourcegraph.com/departments/cloud/technical-docs/oidc_site_admin/) is the ability for Sourcergaph employees to grant time-bound and audit-trailed UI access to Cloud instances in the events of instance maintenance, issue troubleshooting, and customer assistance. Customer consent is guaranteed prior to human accesses.
+<aside class="experimental">
+<p>
+<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change or be removed in the future. We've released it as an experimental feature to provide a preview of functionality we're working on.
+</p>
+</aside>
 
-All Sourcegraph Cloud instances have Sourcegraph management access enabled by default, and customers may request to disable by contacting your Sourcegraph contact.
+Cody is an AI coding assistant that lives in your editor that can find, explain, and write code. Cody uses a combination of Large Language Models (LLMs), Sourcegraph search, and Sourcegraph code intelligence to provide answers that eliminate toil and keep human programmers in flow. You can think of Cody as your programmer buddy who has read through all the code in open source, all the questions on StackOverflow, and all your organization's private code, and is always there to answer questions you might have or suggest ways of doing something based on prior knowledge. Learn more from [Cody documentation](../cody/index.md) about how Cody can help you.
+
+On Cloud, Cody can be enabled by contacting your Sourcegraph account team. Once Cody has been enabled by us, you can follow the instruction below to try it out.
+
+#### Step 1: Configure the VS Code extension
+
+Now that Cody is turned on on your Sourcegraph Cloud instance, any user can configure and use the Cody VS Code extension. This does not require admin privilege.
+
+1. If you currently have a previous version of Cody installed, uninstall it and reload VS Code before proceeding to the next steps.
+1. Search for “Sourcegraph Cody” in your VS Code extension marketplace, and install it.
+
+<img width="500" alt="image" src="https://user-images.githubusercontent.com/25070988/227508342-cc6f29c0-ed91-4381-b651-16870c7c676b.png">
+
+3. Reload VS Code, and open the Cody extension. Review and accept the terms.
+
+4. Now you'll need to point the Cody extension to your Sourcegraph instance. On your instance, go to `settings` / `access token` (`https://<your-instance>.sourcegraph.com/users/<your-instance>/settings/tokens`). Generate an access token, copy it, and set it in the Cody extension.
+
+<img width="1369" alt="image" src="https://user-images.githubusercontent.com/25070988/227510686-4afcb1f9-a3a5-495f-b1bf-6d661ba53cce.png">
+
+5. In the Cody VS Code extension, set your instance URL and the access token
+    
+<img width="553" alt="image" src="https://user-images.githubusercontent.com/25070988/227510233-5ce37649-6ae3-4470-91d0-71ed6c68b7ef.png">
+
+You're all set!
+
+#### Step 2: Try Cody!
+
+A few things you can ask Cody:
+
+- "What are popular go libraries for building CLIs?"
+- Open your workspace, and ask "Do we have a React date picker component in this repository?"
+- Right click on a function, and ask Cody to explain it
+- Try any of the Cody recipes!
+
+<img width="510" alt="image" src="https://user-images.githubusercontent.com/25070988/227511383-aa60f074-817d-4875-af41-54558dfe1951.png">
+
 
 ## Requirements
 
@@ -133,7 +208,7 @@ All Sourcegraph Cloud instances have Sourcegraph management access enabled by de
 
 - The Sourcegraph instance can only be accessible via a public IP. Running it in a private network and pairing it with your private network via site-to-site VPN or VPC Peering is not yet supported.
 - Code hosts or user authentication providers running in a private network are not yet supported. They have to be publically available or they must allow incoming traffic from Sourcegraph-owned static IP addresses. We do not have proper support for other connectivity methods, e.g. site-to-site VPN, VPC peering, tunneling.
-- Instances currently run only on Google Cloud Platform in the `us-central1` region. Other regions and cloud providers (such as AWS or Azure) are not yet supported.
+- Instances currently run only on Google Cloud Platform in the [chosen regions](#multiple-region-availability). Other regions and cloud providers (such as AWS or Azure) are not yet supported.
 - Some [configuration options](../admin/config/index.md) are managed by Sourcegrpah and cannot be override by customers, e.g. feature flags, experimental features.
 
 ## Security
@@ -145,6 +220,12 @@ For all managed instances, we will provide security capabilities from Cloudflare
 Your instance will be hosted in isolated Google Cloud infrastructure. See our [employee handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/) to learn more about the cloud architecture we use. Both your team and limited Sourcegraph personnel will have application-level administrator access to the instance.
 
 Only essential Sourcegraph personnel will have access to the instance, server, code, and any other sensitive materials, such as tokens or keys. The employees or contractors with access are bound by the same terms as Sourcegraph itself. Learn more in our [security policies for Sourcegraph Cloud](https://about.sourcegraph.com/security) or [contact us](https://about.sourcegraph.com/contact/sales) with any questions or concerns. You may also request a copy of our SOC 2 Report on our [security portal](https://security.sourcegraph.com).
+
+### Sourcegraph management access
+
+[Sourcegraph management access](https://handbook.sourcegraph.com/departments/cloud/technical-docs/oidc_site_admin/) is the ability for Sourcergaph employees to grant time-bound and audit-trailed UI access to Cloud instances in the events of instance maintenance, issue troubleshooting, and customer assistance. Customer consent is guaranteed prior to human accesses.
+
+All Sourcegraph Cloud instances have Sourcegraph management access enabled by default, and customers may request to disable by contacting your Sourcegraph contact.
 
 ## Accommodating special requirements
 

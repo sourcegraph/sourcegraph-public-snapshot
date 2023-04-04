@@ -13,7 +13,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	shellquote "github.com/kballard/go-shellquote"
+	"github.com/kballard/go-shellquote"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"

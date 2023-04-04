@@ -35,10 +35,11 @@ func (r NamedRegexp) Example() string {
 }
 
 var (
-	versionBranchPattern = NamedRegexp{lazyregexp.New(`^\d+\.\d+$`), `4.1 (version branch)`}
-	tagPattern           = NamedRegexp{lazyregexp.New(`^v\d+\.\d+\.\d+$`), `v4.1.1 (tagged release)`}
-	commitPattern        = NamedRegexp{lazyregexp.New(`^[0-9A-Fa-f]{40}$`), `57b1f56787619464dc62f469127d64721b428b76 (40-character sha)`}
-	allPatterns          = []NamedRegexp{versionBranchPattern, tagPattern, commitPattern}
+	versionBranchPattern     = NamedRegexp{lazyregexp.New(`^\d+\.\d+$`), `4.1 (version branch)`}
+	tagPattern               = NamedRegexp{lazyregexp.New(`^v\d+\.\d+\.\d+$`), `v4.1.1 (tagged release)`}
+	commitPattern            = NamedRegexp{lazyregexp.New(`^[0-9A-Fa-f]{40}$`), `57b1f56787619464dc62f469127d64721b428b76 (40-character sha)`}
+	abbreviatedCommitPattern = NamedRegexp{lazyregexp.New(`^[0-9A-Fa-f]{12}$`), `57b1f5678761 (12-character sha)`}
+	allPatterns              = []NamedRegexp{versionBranchPattern, tagPattern, commitPattern, abbreviatedCommitPattern}
 )
 
 // GitHubExpectedSchemaFactory reads schema definitions from the sourcegraph/sourcegraph repository via GitHub's API.
@@ -60,7 +61,7 @@ func gcsExpectedSchemaPath(filename, version string) string {
 }
 
 // LocalExpectedSchemaFactory reads schema definitions from a local directory baked into the migrator image.
-var LocalExpectedSchemaFactory = NewExpectedSchemaFactory("Local file", []NamedRegexp{tagPattern}, localSchemaPath, readSchemaFromFile)
+var LocalExpectedSchemaFactory = NewExpectedSchemaFactory("Local file", []NamedRegexp{tagPattern}, localSchemaPath, ReadSchemaFromFile)
 
 const migratorImageDescriptionPrefix = "/schema-descriptions"
 
@@ -71,7 +72,7 @@ func localSchemaPath(filename, version string) string {
 // NewExplicitFileSchemaFactory creates a schema factory that reads a schema description from the given filename.
 // The parameters of the returned function are ignored on invocation.
 func NewExplicitFileSchemaFactory(filename string) ExpectedSchemaFactory {
-	return NewExpectedSchemaFactory("Local file", nil, func(_, _ string) string { return filename }, readSchemaFromFile)
+	return NewExpectedSchemaFactory("Local file", nil, func(_, _ string) string { return filename }, ReadSchemaFromFile)
 }
 
 // fetchSchema makes an HTTP GET request to the given URL and reads the schema description from the response.
@@ -97,8 +98,8 @@ func fetchSchema(ctx context.Context, url string) (descriptions.SchemaDescriptio
 	return schemaDescription, err
 }
 
-// readSchemaFromFile reads a schema description from the given filename.
-func readSchemaFromFile(ctx context.Context, filename string) (descriptions.SchemaDescription, error) {
+// ReadSchemaFromFile reads a schema description from the given filename.
+func ReadSchemaFromFile(ctx context.Context, filename string) (descriptions.SchemaDescription, error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return descriptions.SchemaDescription{}, err

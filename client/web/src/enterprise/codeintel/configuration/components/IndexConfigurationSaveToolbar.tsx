@@ -1,8 +1,10 @@
 import React from 'react'
 
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { SaveToolbar, SaveToolbarProps } from '../../../../components/SaveToolbar'
+
+import { ConfigurationInferButton } from './ConfigurationInferButton'
 
 export interface IndexConfigurationSaveToolbarProps {
     loading: boolean
@@ -11,7 +13,7 @@ export interface IndexConfigurationSaveToolbarProps {
 }
 
 export const IndexConfigurationSaveToolbar: React.FunctionComponent<
-    React.PropsWithChildren<SaveToolbarProps & IndexConfigurationSaveToolbarProps>
+    SaveToolbarProps & IndexConfigurationSaveToolbarProps
 > = ({ dirty, loading, saving, error, onSave, onDiscard, inferEnabled, onInfer, saveDiscardDisabled }) => (
     <SaveToolbar
         dirty={dirty}
@@ -24,11 +26,7 @@ export const IndexConfigurationSaveToolbar: React.FunctionComponent<
         {loading ? (
             <LoadingSpinner className="mt-2 ml-2" />
         ) : (
-            inferEnabled && (
-                <Button type="button" title="Infer index configuration from HEAD" variant="link" onClick={onInfer}>
-                    Infer index configuration from HEAD
-                </Button>
-            )
+            inferEnabled && <ConfigurationInferButton onClick={onInfer} />
         )}
     </SaveToolbar>
 )

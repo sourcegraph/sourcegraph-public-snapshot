@@ -75,7 +75,7 @@ func TestAddCodeMonitorHook(t *testing.T) {
 				Features:            &search.Features{},
 				OnSourcegraphDotCom: true,
 			}
-			j, err := jobutil.NewPlanJob(inputs, plan)
+			j, err := jobutil.NewPlanJob(inputs, plan, jobutil.NewUnimplementedEnterpriseJobs())
 			require.NoError(t, err)
 			addCodeMonitorHook(j, nil)
 		}
@@ -91,9 +91,9 @@ func TestAddCodeMonitorHook(t *testing.T) {
 			"type:commit a or b repo:c context:global",
 		}
 
-		for _, query := range queries {
+		for _, q := range queries {
 			t.Run("", func(t *testing.T) {
-				test(t, query)
+				test(t, q)
 			})
 		}
 	})

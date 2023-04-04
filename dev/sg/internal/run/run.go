@@ -41,7 +41,7 @@ func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cm
 	}
 	go monitor.run(pathChanges)
 
-	root, err := root.RepositoryRoot()
+	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cm
 	// binaries get installed to <repository-root>/.bin. If the binary is installed with go build, then go
 	// will create .bin directory. Some binaries (like docsite) get downloaded instead of built and therefore
 	// need the directory to exist before hand.
-	binDir := filepath.Join(root, ".bin")
+	binDir := filepath.Join(repoRoot, ".bin")
 	if err := os.Mkdir(binDir, 0755); err != nil && !os.IsExist(err) {
 		return err
 	}
@@ -69,7 +69,7 @@ func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cm
 		failures:         failures,
 		installed:        installed,
 		okayToStart:      okayToStart,
-		repositoryRoot:   root,
+		repositoryRoot:   repoRoot,
 		parentEnv:        parentEnv,
 	}
 
@@ -114,6 +114,9 @@ func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cm
 	wg.Wait()
 
 	select {
+	case <-ctx.Done():
+		printCmdError(std.Out.Output, "other", ctx.Err())
+		return ctx.Err()
 	case failure := <-failures:
 		printCmdError(std.Out.Output, failure.cmdName, failure.err)
 		return failure
@@ -312,11 +315,19 @@ func (c *cmdRunner) waitForInstallation(ctx context.Context, cmdNames map[string
 	waitingMessages := []string{
 		"Still waiting for %s to finish installing...",
 		"Yup, still waiting for %s to finish installing...",
-		"Looks like we're still waiting for %s to finish installing...",
-		"This is getting awkward now. We're still waiting for %s to finish installing...",
-		"Nothing more to say, I guess. Come on %s ...",
-		"It might be your computer? Still waiting for %s ...",
-		"Anyway... how are you? (Still waiting for %s ...)",
+		"Here's the bad news: still waiting for %s to finish installing. The good news is that we finally have a chance to talk, no?",
+		"Still waiting for %s to finish installing...",
+		"Hey, %s, there's people waiting for you, pal",
+		"Sooooo, how are ya? Yeah, waiting. I hear you. Wish %s would hurry up.",
+		"I mean, what is %s even doing?",
+		"I now expect %s to mean 'producing a miracle' with 'installing'",
+		"Still waiting for %s to finish installing...",
+		"Before this I think the longest I ever had to wait was at Disneyland in '99, but %s is now #1",
+		"Still waiting for %s to finish installing...",
+		"At this point it could be anything - does your computer still have power?",
+		"Might as well check Slack. %s is taking its time...",
+		"In German there's a saying: ein guter Käse braucht seine Zeit - a good cheese needs its time. Maybe %s is cheese?",
+		"If %s turns out to be cheese I'm gonna lose it. Hey, %s, hurry up, will ya",
 		"Still waiting for %s to finish installing...",
 	}
 	messageCount := 0
@@ -695,7 +706,7 @@ var watchIgnorePatterns = []*regexp.Regexp{
 }
 
 func watch() (<-chan string, error) {
-	root, err := root.RepositoryRoot()
+	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
 		return nil, err
 	}
@@ -703,7 +714,7 @@ func watch() (<-chan string, error) {
 	paths := make(chan string)
 	events := make(chan notify.EventInfo, 1)
 
-	if err := notify.Watch(root+"/...", events, notify.All); err != nil {
+	if err := notify.Watch(repoRoot+"/...", events, notify.All); err != nil {
 		return nil, err
 	}
 
@@ -713,7 +724,7 @@ func watch() (<-chan string, error) {
 
 	outer:
 		for event := range events {
-			path := strings.TrimPrefix(strings.TrimPrefix(event.Path(), root), "/")
+			path := strings.TrimPrefix(strings.TrimPrefix(event.Path(), repoRoot), "/")
 
 			for _, pattern := range watchIgnorePatterns {
 				if pattern.MatchString(path) {
@@ -729,7 +740,7 @@ func watch() (<-chan string, error) {
 }
 
 func Test(ctx context.Context, cmd Command, args []string, parentEnv map[string]string) error {
-	root, err := root.RepositoryRoot()
+	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
 		return err
 	}
@@ -748,7 +759,7 @@ func Test(ctx context.Context, cmd Command, args []string, parentEnv map[string]
 		cmdArgs = append(cmdArgs, cmd.DefaultArgs)
 	}
 
-	secretsEnv, err := getSecrets(ctx, cmd)
+	secretsEnv, err := getSecrets(ctx, cmd.Name, cmd.ExternalSecrets)
 	if err != nil {
 		std.Out.WriteLine(output.Styledf(output.StyleWarning, "[%s] %s %s",
 			cmd.Name, output.EmojiFailure, err.Error()))
@@ -759,12 +770,12 @@ func Test(ctx context.Context, cmd Command, args []string, parentEnv map[string]
 	}
 
 	c := exec.CommandContext(commandCtx, "bash", "-c", strings.Join(cmdArgs, " "))
-	c.Dir = root
+	c.Dir = repoRoot
 	c.Env = makeEnv(parentEnv, secretsEnv, cmd.Env)
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 
-	std.Out.WriteLine(output.Styledf(output.StylePending, "Running %s in %q...", c, root))
+	std.Out.WriteLine(output.Styledf(output.StylePending, "Running %s in %q...", c, repoRoot))
 
 	return c.Run()
 }

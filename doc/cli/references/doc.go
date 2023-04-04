@@ -4,6 +4,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"io/fs"
@@ -75,12 +76,15 @@ func get(url string, v any) error {
 	return nil
 }
 
-func build() error {
+func fetchBinary() (string, error, func()) {
+	fmt.Printf("fetching latest src-cli binary...\n")
 	dir, err := os.MkdirTemp("", "src-cli-doc-gen")
 	if err != nil {
-		return errors.Wrap(err, "creating temporary directory")
+		return "", errors.Wrap(err, "creating temporary directory"), func() {}
 	}
-	defer os.RemoveAll(dir)
+	cleanup := func() {
+		os.RemoveAll(dir)
+	}
 
 	release := struct {
 		Name   string
@@ -90,7 +94,7 @@ func build() error {
 		}
 	}{}
 	if err := get("https://api.github.com/repos/sourcegraph/src-cli/releases/latest", &release); err != nil {
-		return errors.Wrap(err, "src-cli release metadata")
+		return "", errors.Wrap(err, "src-cli release metadata"), cleanup
 	}
 
 	bin := fmt.Sprintf("src_%s_%s", runtime.GOOS, runtime.GOARCH)
@@ -103,21 +107,26 @@ func build() error {
 	}
 
 	if url == "" {
-		return errors.Newf("failed to find %s for src-cli release %s", bin, release.Name)
+		return "", errors.Newf("failed to find %s for src-cli release %s", bin, release.Name), cleanup
 	}
 
 	// more succinct to use curl than pipe http.Get into file
 	src := filepath.Join(dir, bin)
 	srcGet := exec.Command("curl", "-L", "-o", src, url)
 	if _, err := srcGet.Output(); err != nil {
-		return errors.Wrap(err, "src-cli download")
+		return "", errors.Wrap(err, "src-cli download"), cleanup
 	}
 
 	if err := os.Chmod(src, 0700); err != nil {
-		return errors.Wrap(err, "src-cli mark executable")
+		return "", errors.Wrap(err, "src-cli mark executable"), cleanup
 	}
 
-	srcDoc := exec.Command(src, "doc", "-o", ".")
+	return src, nil, cleanup
+}
+
+func generateDocs(binaryPath string) error {
+	fmt.Println("generating docs...")
+	srcDoc := exec.Command(binaryPath, "doc", "-o", ".")
 	srcDoc.Env = os.Environ()
 	// Always set this to 8 so the docs don't change when generated on
 	// different machines.
@@ -125,11 +134,14 @@ func build() error {
 	if out, err := srcDoc.CombinedOutput(); err != nil {
 		return errors.Wrapf(err, "running src doc:\n%s\n", string(out))
 	}
-
 	return nil
 }
 
+var srcCliBinaryPath = flag.String("binaryPath", "", "Optional path to a src-cli binary. If not provided the latest release of src-cli will be downloaded. This is primarily useful for automation and not generally for users.")
+
 func main() {
+	flag.Parse()
+
 	wd, err := os.Getwd()
 	if err != nil {
 		log.Fatalf("error getting working directory: %v", err)
@@ -139,7 +151,21 @@ func main() {
 		log.Fatalf("error cleaning working directory: %v", err)
 	}
 
-	if err := build(); err != nil {
-		log.Fatalf("error building documentation: %v", err)
+	var binaryPath string
+	if len(*srcCliBinaryPath) == 0 {
+		// empty path means we need to generate it
+		cliPath, err, cleanup := fetchBinary()
+		if err != nil {
+			log.Fatalf("error downloading src-cli binary: %v", err)
+		}
+		binaryPath = cliPath
+		defer cleanup()
+	} else {
+		binaryPath = *srcCliBinaryPath
+	}
+	fmt.Printf("Using src-cli path: %s", binaryPath)
+
+	if err := generateDocs(binaryPath); err != nil {
+		log.Fatalf("error generating documentation: %v:", err)
 	}
 }

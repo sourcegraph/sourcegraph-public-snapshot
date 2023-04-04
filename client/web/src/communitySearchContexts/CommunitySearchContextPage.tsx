@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 
 import { mdiSourceRepositoryMultiple, mdiGithub, mdiGitlab, mdiBitbucket } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
@@ -13,16 +13,14 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { QueryState, SearchContextInputProps, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, useObservable, Link, Card, Icon, Code, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
 import { submitSearch } from '../search/helpers'
-import { SearchPageInput } from '../search/home/SearchPageInput'
 import { useNavbarQueryState } from '../stores'
-import { ThemePreferenceProps } from '../theme'
+import { SearchPageInput } from '../storm/pages/SearchPage/SearchPageInput'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { CommunitySearchContextMetadata } from './types'
@@ -31,28 +29,23 @@ import styles from './CommunitySearchContextPage.module.scss'
 
 export interface CommunitySearchContextPageProps
     extends SettingsCascadeProps<Settings>,
-        ThemeProps,
-        ThemePreferenceProps,
         TelemetryProps,
         ExtensionsControllerProps<'executeCommand'>,
         PlatformContextProps<'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
         SearchContextInputProps,
         Pick<SearchContextProps, 'fetchSearchContextBySpec'> {
     authenticatedUser: AuthenticatedUser | null
-    location: H.Location
-    history: H.History
     isSourcegraphDotCom: boolean
 
     // CommunitySearchContext page metadata
     communitySearchContextMetadata: CommunitySearchContextMetadata
-
-    /** Whether globbing is enabled for filters. */
-    globbing: boolean
 }
 
 export const CommunitySearchContextPage: React.FunctionComponent<
     React.PropsWithChildren<CommunitySearchContextPageProps>
 > = (props: CommunitySearchContextPageProps) => {
+    const location = useLocation()
+    const navigate = useNavigate()
     const LOADING = 'loading' as const
 
     const [queryState, setQueryState] = useState<QueryState>({
@@ -85,7 +78,16 @@ export const CommunitySearchContextPage: React.FunctionComponent<
         (event?: React.MouseEvent<HTMLButtonElement>): void => {
             eventLogger.log('CommunitySearchContextSuggestionClicked')
             event?.preventDefault()
-            submitSearch({ ...props, query, caseSensitive, patternType, source: 'communitySearchContextPage' })
+            const { selectedSearchContextSpec } = props
+            submitSearch({
+                historyOrNavigate: navigate,
+                location,
+                query,
+                caseSensitive,
+                patternType,
+                selectedSearchContextSpec,
+                source: 'communitySearchContextPage',
+            })
         }
 
     return (
@@ -112,23 +114,12 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                 )}
             </div>
             <div className={styles.container}>
-                {props.communitySearchContextMetadata.lowProfile ? (
-                    <SearchPageInput
-                        {...props}
-                        queryState={queryState}
-                        setQueryState={setQueryState}
-                        selectedSearchContextSpec={props.communitySearchContextMetadata.spec}
-                        source="communitySearchContextPage"
-                    />
-                ) : (
-                    <SearchPageInput
-                        {...props}
-                        queryState={queryState}
-                        setQueryState={setQueryState}
-                        selectedSearchContextSpec={props.communitySearchContextMetadata.spec}
-                        source="communitySearchContextPage"
-                    />
-                )}
+                <SearchPageInput
+                    {...props}
+                    queryState={queryState}
+                    setQueryState={setQueryState}
+                    hardCodedSearchContextSpec={props.communitySearchContextMetadata.spec}
+                />
             </div>
             {!props.communitySearchContextMetadata.lowProfile && (
                 <div className="row">

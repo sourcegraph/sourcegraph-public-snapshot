@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"database/sql"
 	"fmt"
 	"os"
 	"sort"
@@ -13,19 +12,20 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/sourcegraph/conc/pool"
 	ogscip "github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/protobuf/proto"
 	"k8s.io/utils/lru"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/trie"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/scip"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 type scipMigrator struct {
@@ -42,7 +42,7 @@ func NewSCIPMigrator(store, codeintelStore *basestore.Store) *scipMigrator {
 	}
 }
 
-func (m *scipMigrator) ID() int                 { return 18 }
+func (m *scipMigrator) ID() int                 { return 20 }
 func (m *scipMigrator) Interval() time.Duration { return time.Second }
 
 // Progress returns the ratio between the number of SCIP upload records to SCIP+LSIF upload.
@@ -81,21 +81,23 @@ func getEnv(name string, defaultValue int) int {
 var (
 	// NOTE: modified in tests
 	scipMigratorConcurrencyLevel            = getEnv("SCIP_MIGRATOR_CONCURRENCY_LEVEL", 1)
-	scipMigratorUploadBatchSize             = getEnv("SCIP_MIGRATOR_UPLOAD_BATCH_SIZE", 32)
-	scipMigratorDocumentBatchSize           = 64
-	scipMigratorResultChunkDefaultCacheSize = 8192
+	scipMigratorUploadReaderBatchSize       = getEnv("SCIP_MIGRATOR_UPLOAD_BATCH_SIZE", 32)
+	scipMigratorResultChunkReaderCacheSize  = 8192
+	scipMigratorDocumentReaderBatchSize     = 64
+	scipMigratorDocumentWriterBatchSize     = 256
+	scipMigratorDocumentWriterMaxPayloadSum = 1024 * 1024 * 32
 )
 
 func (m *scipMigrator) Up(ctx context.Context) error {
-	ch := make(chan struct{}, scipMigratorUploadBatchSize)
-	for i := 0; i < scipMigratorUploadBatchSize; i++ {
+	ch := make(chan struct{}, scipMigratorUploadReaderBatchSize)
+	for i := 0; i < scipMigratorUploadReaderBatchSize; i++ {
 		ch <- struct{}{}
 	}
 	close(ch)
 
-	g := group.New().WithContext(ctx)
+	p := pool.New().WithContext(ctx)
 	for i := 0; i < scipMigratorConcurrencyLevel; i++ {
-		g.Go(func(ctx context.Context) error {
+		p.Go(func(ctx context.Context) error {
 			for range ch {
 				if ok, err := m.upSingle(ctx); err != nil {
 					return err
@@ -108,7 +110,7 @@ func (m *scipMigrator) Up(ctx context.Context) error {
 		})
 	}
 
-	return g.Wait()
+	return p.Wait()
 }
 
 func (m *scipMigrator) upSingle(ctx context.Context) (_ bool, err error) {
@@ -205,7 +207,7 @@ func migrateUpload(
 		return nil
 	}
 
-	resultChunkCacheSize := scipMigratorResultChunkDefaultCacheSize
+	resultChunkCacheSize := scipMigratorResultChunkReaderCacheSize
 	if numResultChunks < resultChunkCacheSize {
 		resultChunkCacheSize = numResultChunks
 	}
@@ -237,8 +239,8 @@ func migrateUpload(
 		documentsByPath, err := scanDocuments(codeintelTx.Query(ctx, sqlf.Sprintf(
 			scipMigratorScanDocumentsQuery,
 			uploadID,
-			scipMigratorDocumentBatchSize,
-			page*scipMigratorDocumentBatchSize,
+			scipMigratorDocumentReaderBatchSize,
+			page*scipMigratorDocumentReaderBatchSize,
 		)))
 		if err != nil {
 			return err
@@ -378,7 +380,7 @@ func processDocument(
 		return rangeIDs
 	}
 
-	scipDocument := types.CanonicalizeDocument(scip.ConvertLSIFDocument(
+	scipDocument := ogscip.CanonicalizeDocument(scip.ConvertLSIFDocument(
 		uploadID,
 		targetRangeFetcher,
 		indexerName,
@@ -569,7 +571,7 @@ func (s *scipWriter) InsertDocument(
 	path string,
 	scipDocument *ogscip.Document,
 ) error {
-	if s.batchPayloadSum >= MaxBatchPayloadSum {
+	if s.batchPayloadSum >= scipMigratorDocumentWriterMaxPayloadSum {
 		if err := s.flush(ctx); err != nil {
 			return err
 		}
@@ -599,7 +601,7 @@ func (s *scipWriter) InsertDocument(
 	})
 	s.batchPayloadSum += len(compressedPayload)
 
-	if len(s.batch) >= DocumentsBatchSize {
+	if len(s.batch) >= scipMigratorDocumentWriterBatchSize {
 		if err := s.flush(ctx); err != nil {
 			return err
 		}
@@ -607,9 +609,6 @@ func (s *scipWriter) InsertDocument(
 
 	return nil
 }
-
-const DocumentsBatchSize = 256
-const MaxBatchPayloadSum = 1024 * 1024 * 32
 
 func (s *scipWriter) flush(ctx context.Context) (err error) {
 	documents := s.batch
@@ -681,9 +680,9 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 	}
 
 	symbolNameMap := map[string]struct{}{}
-	invertedRangeIndexes := make([][]types.InvertedRangeIndex, 0, len(documents))
+	invertedRangeIndexes := make([][]shared.InvertedRangeIndex, 0, len(documents))
 	for _, document := range documents {
-		index := types.ExtractSymbolIndexes(document.scipDocument)
+		index := shared.ExtractSymbolIndexes(document.scipDocument)
 		invertedRangeIndexes = append(invertedRangeIndexes, index)
 
 		for _, invertedRange := range index {
@@ -852,7 +851,7 @@ const deleteLSIFDataQuery = `
 DELETE FROM %s WHERE dump_id = %s
 `
 
-func makeDocumentScanner(serializer *serializer) func(rows *sql.Rows, queryErr error) (map[string]DocumentData, error) {
+func makeDocumentScanner(serializer *serializer) func(rows basestore.Rows, queryErr error) (map[string]DocumentData, error) {
 	return basestore.NewMapScanner(func(s dbutil.Scanner) (string, DocumentData, error) {
 		var path string
 		var data MarshalledDocumentData
@@ -869,7 +868,7 @@ func makeDocumentScanner(serializer *serializer) func(rows *sql.Rows, queryErr e
 	})
 }
 
-func scanResultChunksIntoMap(serializer *serializer, f func(idx int, resultChunk ResultChunkData) error) func(rows *sql.Rows, queryErr error) error {
+func scanResultChunksIntoMap(serializer *serializer, f func(idx int, resultChunk ResultChunkData) error) func(rows basestore.Rows, queryErr error) error {
 	return basestore.NewCallbackScanner(func(s dbutil.Scanner) (bool, error) {
 		var idx int
 		var rawData []byte

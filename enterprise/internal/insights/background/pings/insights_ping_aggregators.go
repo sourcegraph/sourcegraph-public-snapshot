@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/keegancsmith/sqlf"
+
 	insightTypes "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -157,7 +159,8 @@ func (e *InsightsPingEmitter) GetInsightsPerDashboard(ctx context.Context) (type
 }
 
 func (e *InsightsPingEmitter) GetBackfillTime(ctx context.Context) ([]types.InsightsBackfillTimePing, error) {
-	rows, err := e.insightsDb.QueryContext(ctx, backfillTimeQuery, time.Now())
+	q := sqlf.Sprintf(backfillTimeQuery, time.Now())
+	rows, err := e.insightsDb.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return []types.InsightsBackfillTimePing{}, err
 	}
@@ -165,9 +168,8 @@ func (e *InsightsPingEmitter) GetBackfillTime(ctx context.Context) ([]types.Insi
 
 	results := []types.InsightsBackfillTimePing{}
 	for rows.Next() {
-		backfillTimePing := types.InsightsBackfillTimePing{}
+		backfillTimePing := types.InsightsBackfillTimePing{AllRepos: false}
 		if err := rows.Scan(
-			&backfillTimePing.AllRepos,
 			&backfillTimePing.Count,
 			&backfillTimePing.P99Seconds,
 			&backfillTimePing.P90Seconds,
@@ -215,7 +217,7 @@ const pingSeriesType = `
 CONCAT(
    CASE WHEN ((generation_method = 'search' or generation_method = 'search-compute') and generated_from_capture_groups) THEN 'capture-groups' ELSE generation_method END,
     '::',
-   CASE WHEN (cardinality(repositories) = 0 or repositories is null) THEN 'global' ELSE 'scoped' END,
+   CASE WHEN (repositories IS NOT NULL AND cardinality(repositories) > 0) THEN 'scoped' WHEN repository_criteria IS NOT NULL THEN 'repo-search' ELSE 'global' END,
     '::',
    CASE WHEN (just_in_time = true) THEN 'jit' ELSE 'recorded' END
     ) as ping_series_type
@@ -287,13 +289,20 @@ SELECT COUNT(*) FROM insight_view WHERE is_frozen = false
 `
 
 const backfillTimeQuery = `
+WITH recent_backfills as (
+	SELECT
+		isb.series_id,
+		SUM(runtime_duration)/1000000000 duration_seconds
+	FROM insight_series_backfill isb
+	  JOIN repo_iterator ri on isb.repo_iterator_id = ri.id
+	WHERE isb.state = 'completed'
+		AND ri.completed_at > date_trunc('week', %s::date)
+	GROUP BY isb.series_id
+)
 SELECT
-	COALESCE(CARDINALITY(repositories),0) = 0 AS allRepos,
 	COUNT(*),
-	ROUND(EXTRACT(EPOCH FROM COALESCE(PERCENTILE_CONT(0.99) WITHIN GROUP( ORDER BY backfill_completed_at - backfill_queued_at), '0')))::INT AS p99_seconds,
-	ROUND(EXTRACT(EPOCH FROM COALESCE(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY backfill_completed_at - backfill_queued_at), '0')))::INT AS p90_seconds,
-	ROUND(EXTRACT(EPOCH FROM COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY backfill_completed_at - backfill_queued_at), '0')))::INT AS p50_seconds
-FROM insight_series
-WHERE backfill_completed_at > ($1::timestamp - interval '7 days')
-GROUP BY allRepos;
+	ROUND(COALESCE(PERCENTILE_CONT(0.99) WITHIN GROUP( ORDER BY duration_seconds), '0'))::INT AS p99_seconds,
+	ROUND(COALESCE(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY duration_seconds), '0'))::INT AS p90_seconds,
+	ROUND(COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY duration_seconds), '0'))::INT AS p50_seconds
+FROM recent_backfills;
 `

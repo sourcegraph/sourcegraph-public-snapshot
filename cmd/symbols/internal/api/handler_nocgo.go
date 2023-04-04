@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -25,12 +26,7 @@ func addHandlers(
 	}
 
 	mux.HandleFunc("/localCodeIntel", jsonResponseHandler(internaltypes.LocalCodeIntelPayload{Symbols: []internaltypes.Symbol{}}))
-	mux.HandleFunc("/debugLocalCodeIntel", notEnabledHandler)
 	mux.HandleFunc("/symbolInfo", jsonResponseHandler(internaltypes.SymbolInfo{}))
-}
-
-func notEnabledHandler(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "feature not enabled in this build", http.StatusNotImplemented)
 }
 
 func jsonResponseHandler(v any) http.HandlerFunc {
@@ -39,4 +35,14 @@ func jsonResponseHandler(v any) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(data)
 	}
+}
+
+// LocalCodeIntel is a no-op in the non-cgo variant.
+func (s *grpcService) LocalCodeIntel(ctx context.Context, p *proto.LocalCodeIntelRequest) (*proto.LocalCodeIntelResponse, error) {
+	return &proto.LocalCodeIntelResponse{}, nil
+}
+
+// SymbolInfo is a no-op in the non-cgo variant.
+func (s *grpcService) SymbolInfo(ctx context.Context, request *proto.SymbolInfoRequest) (*proto.SymbolInfoResponse, error) {
+	return &proto.SymbolInfoResponse{}, nil
 }

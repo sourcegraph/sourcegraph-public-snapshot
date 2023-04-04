@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 
-import { Redirect } from 'react-router'
+import { Navigate } from 'react-router-dom'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
@@ -32,7 +32,7 @@ export const CreateNotebookPage: React.FunctionComponent<
 
     if (notebookOrError && !isErrorLike(notebookOrError) && notebookOrError !== LOADING) {
         telemetryService.log('SearchNotebookCreated')
-        return <Redirect to={EnterprisePageRoutes.Notebook.replace(':id', notebookOrError.id)} />
+        return <Navigate to={EnterprisePageRoutes.Notebook.replace(':id', notebookOrError.id)} replace={true} />
     }
 
     return (

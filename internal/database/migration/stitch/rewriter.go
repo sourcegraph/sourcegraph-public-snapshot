@@ -398,9 +398,9 @@ func replaceParents(contents string, parents ...int) string {
 
 // replaceParentsInDefinitionMap updates the `parents` field of the definition with the given identifier.
 func replaceParentsInDefinitionMap(definitionMap map[int]definition.Definition, id int, parents []int) {
-	definition := definitionMap[id]
-	definition.Parents = parents
-	definitionMap[id] = definition
+	def := definitionMap[id]
+	def.Parents = parents
+	definitionMap[id] = def
 }
 
 var alterExtensionPattern = lazyregexp.New(`(?:CREATE|COMMENT ON|DROP)\s+EXTENSION.*;`)

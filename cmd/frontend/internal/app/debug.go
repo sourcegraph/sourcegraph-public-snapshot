@@ -224,12 +224,12 @@ func addSentry(r *mux.Router) {
 			// We want to keep this short, the default client settings are not strict enough.
 			Timeout: 3 * time.Second,
 		}
-		url := fmt.Sprintf("%s/api/%s/envelope/", sentryHost, pID)
+		apiUrl := fmt.Sprintf("%s/api/%s/envelope/", sentryHost, pID)
 
 		// Asynchronously forward to Sentry, there's no need to keep holding this connection
 		// opened any longer.
 		go func() {
-			resp, err := client.Post(url, "text/plain;charset=UTF-8", bytes.NewReader(b))
+			resp, err := client.Post(apiUrl, "text/plain;charset=UTF-8", bytes.NewReader(b))
 			if err != nil || resp.StatusCode >= 400 {
 				logger.Warn("failed to forward", sglog.Error(err), sglog.Int("statusCode", resp.StatusCode))
 				return

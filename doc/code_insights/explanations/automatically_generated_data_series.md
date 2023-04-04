@@ -34,7 +34,7 @@ Capture groups will only display 20 returned match values to prevent extremely l
 
 ### No capture groups in filter strings 
 
-This type of Code Insight only supports capture groups in the main query string. You cannot use a capture group in a filter keywork, like a `repo:` or `file:` filter. 
+This type of Code Insight only supports capture groups in the main query string. You cannot use a capture group in a filter keyword, like a `repo:` or `file:` filter. 
 
 ### No multiline matches (<3.43)
 

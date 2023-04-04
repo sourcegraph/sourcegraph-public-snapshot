@@ -4,3 +4,4 @@ The following articles explain different aspects of [the `src` command line inte
 
 - [Environment variables](env.md)
 - [Windows support](windows.md)
+- [Installation & versioning](versioning.md)

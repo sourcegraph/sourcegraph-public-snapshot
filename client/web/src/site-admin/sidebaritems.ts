@@ -5,9 +5,13 @@ import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
+import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
+
+import { isPackagesEnabled } from './flags'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 export const analyticsGroup: SiteAdminSideBarGroup = {
+    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     header: {
         label: 'Analytics',
         icon: ChartLineVariantIcon,
@@ -49,6 +53,7 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Feedback survey',
             to: '/site-admin/surveys',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
     ],
 }
@@ -66,6 +71,7 @@ export const configurationGroup: SiteAdminSideBarGroup = {
         {
             label: 'Global settings',
             to: '/site-admin/global-settings',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Feature flags',
@@ -88,6 +94,11 @@ export const repositoriesGroup: SiteAdminSideBarGroup = {
             label: 'Repositories',
             to: '/site-admin/repositories',
         },
+        {
+            label: 'Packages',
+            to: '/site-admin/packages',
+            condition: isPackagesEnabled,
+        },
     ],
 }
 
@@ -96,10 +107,17 @@ export const usersGroup: SiteAdminSideBarGroup = {
         label: 'Users & auth',
         icon: AccountMultipleIcon,
     },
+
+    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     items: [
         {
             label: 'Users',
             to: '/site-admin/users',
+        },
+        {
+            label: 'Account requests',
+            to: '/site-admin/account-requests',
+            condition: () => checkRequestAccessAllowed(window.context),
         },
         {
             label: 'Organizations',
@@ -137,43 +155,58 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
         {
             label: 'Documentation',
             to: '/help',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Pings',
             to: '/site-admin/pings',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Report a bug',
             to: '/site-admin/report-bug',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: maintenanceGroupMigrationsItemLabel,
             to: '/site-admin/migrations',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: maintenanceGroupInstrumentationItemLabel,
             to: '/-/debug/',
             source: 'server',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: maintenanceGroupMonitoringItemLabel,
             to: '/-/debug/grafana',
             source: 'server',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: maintenanceGroupTracingItemLabel,
             to: '/-/debug/jaeger',
             source: 'server',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Outbound requests',
             to: '/site-admin/outbound-requests',
             source: 'server',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
-            label: 'Slow Requests',
+            label: 'Slow requests',
             to: '/site-admin/slow-requests',
             source: 'server',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+        },
+        {
+            label: 'Background jobs',
+            to: '/site-admin/background-jobs',
+            source: 'server',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
     ],
 }

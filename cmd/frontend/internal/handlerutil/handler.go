@@ -8,7 +8,6 @@ import (
 	"runtime"
 
 	"github.com/inconshreveable/log15"
-	"github.com/neelance/parallel"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -48,7 +47,7 @@ func (h HandlerWithErrorReturn) ServeHTTP(w http.ResponseWriter, r *http.Request
 		}
 	}()
 
-	err := collapseMultipleErrors(h.Handler(w, r))
+	err := h.Handler(w, r)
 	if err != nil {
 		status := httpErrCode(r, err)
 		reportError(r, status, err, false)
@@ -68,17 +67,4 @@ func httpErrCode(r *http.Request, err error) int {
 		return 499
 	}
 	return errcode.HTTP(err)
-}
-
-// collapseMultipleErrors returns the first err if err is a
-// parallel.Errors list of length 1. Otherwise it returns err
-// unchanged. This lets us return the proper HTTP status code for
-// single errors.
-func collapseMultipleErrors(err error) error {
-	var e parallel.Errors
-	if errors.As(err, &e) && len(e) == 1 {
-		return e[0]
-	}
-
-	return err
 }

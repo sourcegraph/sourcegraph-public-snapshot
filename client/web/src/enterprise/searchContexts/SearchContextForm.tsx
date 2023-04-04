@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
-import { RouteComponentProps, useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 import { Observable, of, throwError } from 'rxjs'
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 
@@ -16,8 +16,9 @@ import {
 } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     Container,
     Button,
@@ -34,7 +35,6 @@ import {
 
 import { AuthenticatedUser } from '../../auth'
 import { ALLOW_NAVIGATION, AwayPrompt } from '../../components/AwayPrompt'
-import { useExperimentalFeatures } from '../../stores'
 
 import { fetchRepositoriesByNames } from './backend'
 import { DeleteSearchContextModal } from './DeleteSearchContextModal'
@@ -111,9 +111,7 @@ function getSearchContextSpecPreview(selectedNamespace: SelectedNamespace, searc
 const LOADING = 'loading' as const
 
 export interface SearchContextFormProps
-    extends RouteComponentProps,
-        ThemeProps,
-        TelemetryProps,
+    extends TelemetryProps,
         Pick<SearchContextProps, 'deleteSearchContext'>,
         PlatformContextProps<'requestGraphQL'> {
     searchContext?: SearchContextFields
@@ -144,7 +142,8 @@ type RepositoriesParseResult =
 export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<SearchContextFormProps>> = props => {
     const { authenticatedUser, onSubmit, searchContext, deleteSearchContext, isSourcegraphDotCom, platformContext } =
         props
-    const history = useHistory()
+    const navigate = useNavigate()
+    const isLightTheme = useIsLightTheme()
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
@@ -290,7 +289,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                             catchError(error => [asError(error)]),
                             tap(successOrError => {
                                 if (!isErrorLike(successOrError) && successOrError !== LOADING) {
-                                    history.push('/contexts?order=updated-at-desc', ALLOW_NAVIGATION)
+                                    navigate('/contexts?order=updated-at-desc', { state: ALLOW_NAVIGATION })
                                 }
                             })
                         )
@@ -305,7 +304,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                 queryState,
                 visibility,
                 selectedNamespace,
-                history,
+                navigate,
                 searchContext,
                 contextType,
             ]
@@ -313,8 +312,8 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
     )
 
     const onCancel = useCallback(() => {
-        history.push('/contexts')
-    }, [history])
+        navigate('/contexts')
+    }, [navigate])
 
     const [showDeleteModal, setShowDeleteModal] = useState(false)
     const toggleDeleteModal = useCallback(() => setShowDeleteModal(show => !show), [setShowDeleteModal])
@@ -422,7 +421,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                         <Link
                             target="_blank"
                             rel="noopener"
-                            to="https://docs.sourcegraph.com/code_search/how-to/search_contexts#beta-query-based-search-contexts"
+                            to="/help/code_search/how-to/search_contexts#beta-query-based-search-contexts"
                         >
                             search query
                         </Link>
@@ -445,13 +444,11 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                         />
                         <div className={styles.searchContextFormQuery} data-testid="search-context-dynamic-query">
                             <LazyQueryInput
-                                isLightTheme={props.isLightTheme}
                                 patternType={SearchPatternType.regexp}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 caseSensitive={true}
                                 queryState={queryState}
                                 onChange={setQueryState}
-                                globbing={false}
                                 preventNewLine={false}
                                 applySuggestionsOnEnter={applySuggestionsOnEnter}
                             />
@@ -484,6 +481,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                         <div className={styles.searchContextFormStaticConfig}>
                             <SearchContextRepositoriesFormArea
                                 {...props}
+                                isLightTheme={isLightTheme}
                                 onChange={onRepositoriesConfigChange}
                                 validateRepositories={validateRepositories}
                                 repositories={searchContext?.repositories}

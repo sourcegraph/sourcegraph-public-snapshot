@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/conc/pool"
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -11,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 // NewAndJob creates a job that will run each of its child jobs and only
@@ -34,7 +34,7 @@ func (a *AndJob) Run(ctx context.Context, clients job.RuntimeClients, stream str
 	defer func() { finish(alert, err) }()
 
 	var (
-		g           = group.New().WithContext(ctx).WithMaxConcurrency(16)
+		p           = pool.New().WithContext(ctx).WithMaxGoroutines(16)
 		maxAlerter  search.MaxAlerter
 		limitHit    atomic.Bool
 		sentResults atomic.Bool
@@ -42,7 +42,7 @@ func (a *AndJob) Run(ctx context.Context, clients job.RuntimeClients, stream str
 	)
 	for childNum, child := range a.children {
 		childNum, child := childNum, child
-		g.Go(func(ctx context.Context) error {
+		p.Go(func(ctx context.Context) error {
 			intersectingStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 				if event.Stats.IsLimitHit {
 					limitHit.Store(true)
@@ -62,8 +62,7 @@ func (a *AndJob) Run(ctx context.Context, clients job.RuntimeClients, stream str
 		})
 	}
 
-	err = g.Wait()
-	return maxAlerter.Alert, g.Wait()
+	return maxAlerter.Alert, p.Wait()
 }
 
 func (a *AndJob) Name() string {
@@ -139,12 +138,12 @@ func (j *OrJob) Run(ctx context.Context, clients job.RuntimeClients, stream stre
 
 	var (
 		maxAlerter search.MaxAlerter
-		g          = group.New().WithContext(ctx).WithMaxConcurrency(16)
+		p          = pool.New().WithContext(ctx).WithMaxGoroutines(16)
 		merger     = result.NewMerger(len(j.children))
 	)
 	for childNum, child := range j.children {
 		childNum, child := childNum, child
-		g.Go(func(ctx context.Context) error {
+		p.Go(func(ctx context.Context) error {
 			unioningStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 				event.Results = merger.AddMatches(event.Results, childNum)
 				if len(event.Results) > 0 || !event.Stats.Zero() {
@@ -158,7 +157,7 @@ func (j *OrJob) Run(ctx context.Context, clients job.RuntimeClients, stream stre
 		})
 	}
 
-	err = g.Wait()
+	err = p.Wait()
 
 	// Send results that were only seen by some of the sources, regardless of
 	// whether we got an error from any of our children.

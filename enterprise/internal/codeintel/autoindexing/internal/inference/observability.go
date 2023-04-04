@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type operations struct {
@@ -21,7 +22,7 @@ type operations struct {
 var m = new(metrics.SingletonREDMetrics)
 
 func newOperations(observationCtx *observation.Context) *operations {
-	metrics := m.Get(func() *metrics.REDMetrics {
+	redMetrics := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
 			observationCtx.Registerer,
 			"codeintel_autoindexing_inference",
@@ -34,7 +35,13 @@ func newOperations(observationCtx *observation.Context) *operations {
 		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.autoindexing.inference.%s", name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           redMetrics,
+			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+				if errors.As(err, &LimitError{}) {
+					return observation.EmitForNone
+				}
+				return observation.EmitForDefault
+			},
 		})
 	}
 
