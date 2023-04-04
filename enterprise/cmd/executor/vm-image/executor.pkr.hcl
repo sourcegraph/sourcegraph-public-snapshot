@@ -15,6 +15,10 @@ packer {
     }
 }
 
+variable "image_family" {
+    type = string
+}
+
 variable "name" {
     type = string
 }
@@ -106,7 +110,7 @@ source "amazon-ebs" "aws" {
         Release                          = "Latest"
         Base_AMI_Name                    = "{{ .SourceAMIName }}"
         Extra                            = "{{ .SourceAMITags.TagName }}"
-        Amazon_AMI_Management_Identifier = var.name
+        Amazon_AMI_Management_Identifier = var.image_family
     }
 }
 
@@ -150,7 +154,7 @@ build {
     post-processor "amazon-ami-management" {
         only       = ["amazon-ebs.aws"]
         regions    = ["us-west-2"]
-        identifier = var.name
+        identifier = var.image_family
         keep_days  = 60
         dry_run    = true
     }
