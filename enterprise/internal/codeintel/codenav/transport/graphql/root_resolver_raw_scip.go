@@ -4,10 +4,12 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	uploadgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func (r *gitBlobLSIFDataResolver) Snapshot(ctx context.Context, args *struct{ IndexID graphql.ID }) (resolvers *[]resolverstubs.SnapshotDataResolver, err error) {
@@ -15,6 +17,11 @@ func (r *gitBlobLSIFDataResolver) Snapshot(ctx context.Context, args *struct{ In
 	if err != nil {
 		return nil, err
 	}
+
+	ctx, _, endObservation := r.operations.snapshot.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("uploadID", uploadID),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	data, err := r.codeNavSvc.SnapshotForDocument(ctx, r.requestState.RepositoryID, r.requestState.Commit, r.requestState.Path, uploadID)
 	if err != nil {

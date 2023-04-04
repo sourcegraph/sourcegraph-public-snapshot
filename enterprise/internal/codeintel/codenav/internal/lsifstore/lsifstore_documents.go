@@ -5,15 +5,23 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func (s *store) SCIPDocument(ctx context.Context, id int, path string) (_ *scip.Document, err error) {
+	ctx, _, endObservation := s.operations.scipDocument.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("path", path),
+		log.Int("uploadID", id),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	scanner := basestore.NewFirstScanner(func(dbs dbutil.Scanner) (*scip.Document, error) {
 		var compressedSCIPPayload []byte
 		if err := dbs.Scan(&compressedSCIPPayload); err != nil {

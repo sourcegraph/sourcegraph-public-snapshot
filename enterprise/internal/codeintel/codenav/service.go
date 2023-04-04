@@ -1,10 +1,10 @@
 package codenav
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"strings"
-	"unsafe"
 
 	traceLog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
@@ -973,9 +973,19 @@ func (s *Service) getRequestedCommitDiagnostic(ctx context.Context, args Request
 	}, nil
 }
 
-func (s *Service) VisibleUploadsForPath(ctx context.Context, path string, requestState RequestState) (dumps []uploadsshared.Dump, err error) {
-	// TODO: osbv
-	visibleUploads, err := s.getUploadPaths(ctx, path, requestState)
+func (s *Service) VisibleUploadsForPath(ctx context.Context, requestState RequestState) (dumps []uploadsshared.Dump, err error) {
+	ctx, _, endObservation := s.operations.visibleUploadsForPath.With(ctx, &err, observation.Args{LogFields: []traceLog.Field{
+		traceLog.String("path", requestState.Path),
+		traceLog.String("commit", requestState.Commit),
+		traceLog.Int("repositoryID", requestState.RepositoryID),
+	}})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []traceLog.Field{
+			traceLog.Int("numUploads", len(dumps)),
+		}})
+	}()
+
+	visibleUploads, err := s.getUploadPaths(ctx, requestState.Path, requestState)
 	if err != nil {
 		return nil, err
 	}
@@ -1327,6 +1337,18 @@ func (s *Service) getVisibleUpload(ctx context.Context, line, character int, upl
 }
 
 func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, commit, path string, uploadID int) (data []shared.SnapshotData, err error) {
+	ctx, _, endObservation := s.operations.snapshotForDocument.With(ctx, &err, observation.Args{LogFields: []traceLog.Field{
+		traceLog.Int("repoID", repositoryID),
+		traceLog.String("commit", commit),
+		traceLog.String("path", path),
+		traceLog.Int("uploadID", uploadID),
+	}})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []traceLog.Field{
+			traceLog.Int("snapshotSymbols", len(data)),
+		}})
+	}()
+
 	dumps, err := s.GetDumpsByIDs(ctx, []int{uploadID})
 	if err != nil {
 		return nil, err
@@ -1338,7 +1360,7 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 
 	dump := dumps[0]
 
-	document, err := s.lsifstore.SCIPDocument(ctx, dump.ID, path)
+	document, err := s.lsifstore.SCIPDocument(ctx, dump.ID, strings.TrimPrefix(path, dump.Root))
 	if err != nil || document == nil {
 		return nil, err
 	}
@@ -1353,7 +1375,8 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 		return nil, err
 	}
 
-	hunkcache, err := NewHunkCache(10)
+	// cache is keyed by repoID:sourceCommit:targetCommit:path, so we only need a size of 1
+	hunkcache, err := NewHunkCache(1)
 	if err != nil {
 		return nil, err
 	}
@@ -1370,18 +1393,15 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 	for _, occ := range document.Occurrences {
 		formatted, err := formatter.Format(occ.Symbol)
 		if err != nil {
-			fmt.Println(err)
-			continue
+			formatted = fmt.Sprintf("error formatting %q", occ.Symbol)
 		}
 
 		originalRange := scip.NewRange(occ.Range)
 
 		lineOffset := int32(linemap.positions[originalRange.Start.Line])
 		line := file[lineOffset : lineOffset+originalRange.Start.Character]
-		// also done in Go strings builder https://sourcegraph.com/github.com/golang/go@go1.19.7/-/blob/src/strings/builder.go?L48
-		lineStr := *(*string)(unsafe.Pointer(&line))
 
-		tabCount := strings.Count(lineStr, "\t")
+		tabCount := bytes.Count(line, []byte("\t"))
 
 		var snap strings.Builder
 		snap.WriteString(strings.Repeat(" ", (int(originalRange.Start.Character)-tabCount)+(tabCount*4)))
@@ -1403,8 +1423,8 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 		if err != nil {
 			return nil, err
 		}
+		// if the line was changed, then we're not providing precise codeintel for this line, so skip it
 		if !ok {
-			fmt.Println("FAILED TO TRANSLATE")
 			continue
 		}
 

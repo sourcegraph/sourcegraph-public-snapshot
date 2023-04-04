@@ -36,13 +36,6 @@ export interface BrainDotProps {
 export const BrainDot: React.FunctionComponent<BrainDotProps> = ({ repoName, commit, path }) => {
     const { data: statusData } = useRepoCodeIntelStatus({ repository: repoName })
 
-    const { data: visibleIndexes, loading: visibleIndexesLoading } = useVisibleIndexes({
-        repository: repoName,
-        commit,
-        path: path ?? '',
-    })
-
-    console.log(visibleIndexes, (visibleIndexes?.length ?? 0) > 0)
     const indexes = useMemo(() => {
         if (!statusData) {
             return []
@@ -84,11 +77,20 @@ export const BrainDot: React.FunctionComponent<BrainDotProps> = ({ repoName, com
             : ''
     }, [indexes, suggestedIndexers])
 
-    const [indexIDsForSnapshotData, setIndexIDForSnapshotData] = useSessionStorage<{ [repoName: string]: string }>(
-        'blob.preciseIndexIDForSnapshotData',
-        {}
-    )
-    const visibleIndexID = indexIDsForSnapshotData[repoName]
+    const { data: visibleIndexes, loading: visibleIndexesLoading } = useVisibleIndexes({
+        repository: repoName,
+        commit,
+        path: path ?? '',
+    })
+
+    const [indexIDsForSnapshotData, setIndexIDForSnapshotData] = useSessionStorage<{
+        [repoName: string]: string | undefined
+    }>('blob.preciseIndexIDForSnapshotData', {})
+    let visibleIndexID = indexIDsForSnapshotData[repoName]
+
+    if (!visibleIndexes?.some(value => value.id === visibleIndexID)) {
+        visibleIndexID = undefined
+    }
 
     // TODO(nsc) - add a feature flag to enable nerd controls
     // https://github.com/sourcegraph/sourcegraph/pull/49128/files#diff-04df7090c83826679f92f4ee2881b626422057a8e6b59750937e2888d74e411cL152

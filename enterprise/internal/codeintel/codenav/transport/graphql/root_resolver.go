@@ -156,8 +156,14 @@ func (r *gitBlobLSIFDataResolver) ToGitBlobLSIFData() (resolverstubs.GitBlobLSIF
 }
 
 func (r *gitBlobLSIFDataResolver) VisibleIndexes(ctx context.Context) (_ *[]resolverstubs.PreciseIndexResolver, err error) {
-	// TODO: obsv
-	visibleUploads, err := r.codeNavSvc.VisibleUploadsForPath(ctx, r.requestState.Path, r.requestState)
+	ctx, traceErrs, endObservation := r.operations.visibleIndexes.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repoID", r.requestState.RepositoryID),
+		log.String("commit", r.requestState.Commit),
+		log.String("path", r.requestState.Path),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	visibleUploads, err := r.codeNavSvc.VisibleUploadsForPath(ctx, r.requestState)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +174,7 @@ func (r *gitBlobLSIFDataResolver) VisibleIndexes(ctx context.Context) (_ *[]reso
 			ctx,
 			r.prefetcher,
 			r.locationResolver,
-			nil, // TODO: set, even though its not used
+			traceErrs,
 			dumpToUpload(u),
 			nil,
 		)

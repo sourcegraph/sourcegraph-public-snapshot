@@ -191,7 +191,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
         }, [filePath, revision, repoName, props.telemetryService])
     )
 
-    const [indexIDsForSnapshotData] = useSessionStorage<{ [repoName: string]: string }>(
+    const [indexIDsForSnapshotData] = useSessionStorage<{ [repoName: string]: string | undefined }>(
         'blob.preciseIndexIDForSnapshotData',
         {}
     )
