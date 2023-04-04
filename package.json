@@ -153,6 +153,7 @@
     "@storybook/manager-webpack5": "^6.5.14",
     "@storybook/react": "^6.5.14",
     "@storybook/theming": "^6.5.14",
+    "@tauri-apps/cli": "^1.2.3",
     "@terminus-term/to-string-loader": "^1.1.7-beta.1",
     "@testing-library/dom": "^8.13.0",
     "@testing-library/jest-dom": "^5.16.4",
