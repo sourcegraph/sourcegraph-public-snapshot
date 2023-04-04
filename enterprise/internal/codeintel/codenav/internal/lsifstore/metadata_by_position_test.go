@@ -63,3 +63,8 @@ func TestDatabaseHover(t *testing.T) {
 		})
 	}
 }
+
+func TestGetDiagnostics(t *testing.T) {
+	// NOTE: No SCIP indexer currently emit diagnostics
+	t.Skip()
+}
