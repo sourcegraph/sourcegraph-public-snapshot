@@ -1,5 +1,4 @@
 import { of } from 'rxjs'
-import { last } from 'rxjs/operators'
 
 import {
     ContentMatch,
@@ -16,9 +15,10 @@ import {
     getOwnerMatchUrl,
     StreamSearchOptions,
     aggregateStreamingSearch,
+    AggregateStreamingSearchResults,
 } from '@sourcegraph/shared/src/search/stream'
 
-import { eventLogger } from '../../tracking/eventLogger'
+import { eventLogger } from '../../../tracking/eventLogger'
 
 const sanitizeString = (str: string): string =>
     `"${str
@@ -205,41 +205,51 @@ export const buildFileName = (query?: string): string => {
     return downloadFilename
 }
 
+// If this number is too big, the search will take a very long time and likely fail
+// due to the browser terminating the connection on the streaming search request.
+// 100k felt like the right balance for this; 1 million was too big for both dotcom and S2.
+export const EXPORT_RESULT_DISPLAY_LIMIT = 100000
+
 export const downloadSearchResults = (
     sourcegraphURL: string,
     query: string,
-    options: StreamSearchOptions
-): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-        aggregateStreamingSearch(of(query), { ...options, displayLimit: 999999 })
-            .pipe(last())
-            // TODO: we have to figure out how to cancel this operation or show related progress
-            // https://github.com/sourcegraph/sourcegraph/issues/49645
-            // eslint-disable-next-line rxjs/no-ignored-subscription
-            .subscribe(
-                results => {
-                    const content = searchResultsToFileContent(results.results, sourcegraphURL)
-                    const blob = new Blob([content], { type: 'text/csv' })
-                    const url = URL.createObjectURL(blob)
+    options: StreamSearchOptions,
+    results: AggregateStreamingSearchResults | undefined,
+    shouldRerunSearch: boolean
+): Promise<void> => {
+    const resultsObservable = shouldRerunSearch
+        ? aggregateStreamingSearch(of(query), { ...options, displayLimit: EXPORT_RESULT_DISPLAY_LIMIT })
+        : of(results)
 
-                    const a = document.createElement('a')
-                    a.href = url
-                    a.style.display = 'none'
-                    a.download = buildFileName(query)
-                    a.click()
-                    eventLogger.log(
-                        'SearchExportPerformed',
-                        { count: results.results.length },
-                        { count: results.results.length }
-                    )
+    // Once we update to RxJS 7, we need to change `toPromise` to `lastValueFrom`.
+    // See https://rxjs.dev/deprecations/to-promise
+    return resultsObservable.toPromise().then(results => {
+        if (results?.state === 'error') {
+            const error = results.progress.skipped.find(skipped => skipped.reason === 'error')
+            if (error) {
+                throw new Error(`${error.title}: ${error.message}`)
+            } else {
+                throw new Error('Unknown error occured loading search results.')
+            }
+        }
 
-                    // cleanup
-                    a.remove()
-                    URL.revokeObjectURL(url)
-                    resolve()
-                },
-                error => {
-                    reject(error)
-                }
-            )
+        if (!results?.results || results?.results?.length === 0) {
+            throw new Error('No search results found.')
+        }
+
+        const content = searchResultsToFileContent(results.results, sourcegraphURL)
+        const blob = new Blob([content], { type: 'text/csv' })
+        const url = URL.createObjectURL(blob)
+
+        const a = document.createElement('a')
+        a.href = url
+        a.style.display = 'none'
+        a.download = buildFileName(query)
+        a.click()
+        eventLogger.log('SearchExportPerformed', { count: results.results.length }, { count: results.results.length })
+
+        // cleanup
+        a.remove()
+        URL.revokeObjectURL(url)
     })
+}
