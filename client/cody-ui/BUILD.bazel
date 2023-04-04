@@ -31,6 +31,7 @@ ts_project(
         "src/chat/ContextFiles.tsx",
         "src/globals.d.ts",
         "src/index.ts",
+        "src/typings.d.ts",
         "src/utils/icons.tsx",
     ],
     data = [
