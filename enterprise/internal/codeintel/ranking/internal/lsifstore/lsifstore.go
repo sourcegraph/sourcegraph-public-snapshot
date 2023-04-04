@@ -16,7 +16,6 @@ type LsifStore interface {
 	Done(err error) error
 
 	// Stream
-	ScanDocuments(ctx context.Context, id int, f func(path string, document *scip.Document) error) error
 	InsertDefinitionsAndReferencesForDocument(ctx context.Context, upload shared.ExportedUpload, rankingGraphKey string, rankingBatchSize int, f func(ctx context.Context, upload shared.ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error) error
 }
 

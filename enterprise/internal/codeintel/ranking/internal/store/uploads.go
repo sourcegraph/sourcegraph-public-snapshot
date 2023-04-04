@@ -11,11 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-var scanUploads = basestore.NewSliceScanner(func(s dbutil.Scanner) (u shared.ExportedUpload, _ error) {
-	err := s.Scan(&u.ID, &u.Repo, &u.RepoID, &u.Root, &u.ObjectPrefix)
-	return u, err
-})
-
 func (s *store) GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) (_ []shared.ExportedUpload, err error) {
 	return scanUploads(s.db.Query(ctx, sqlf.Sprintf(
 		getUploadsForRankingQuery,
@@ -76,6 +71,11 @@ FROM candidates c
 WHERE c.id IN (SELECT id FROM inserted)
 ORDER BY c.id
 `
+
+var scanUploads = basestore.NewSliceScanner(func(s dbutil.Scanner) (u shared.ExportedUpload, _ error) {
+	err := s.Scan(&u.ID, &u.Repo, &u.RepoID, &u.Root, &u.ObjectPrefix)
+	return u, err
+})
 
 func (s *store) ProcessStaleExportedUploads(
 	ctx context.Context,
