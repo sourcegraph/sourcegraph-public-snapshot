@@ -35,3 +35,33 @@
     padding-right: 20px;
     justify-content:space-between
 }
+
+// Cody sidebar styles
+.cody-sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color-2);
+    padding: 8px;
+    margin: 0 8px;
+    font-size: 14px;
+    position: sticky;
+    top: 0;
+    background-color: white;
+}
+
+
+
+.cody-sidebar {
+    background-color: var(--input-bg);
+    filter: drop-shadow(0px 0px 4px RGBA(36,41,54,.1));
+    overflow: scroll;
+}
+
+.hack {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    padding-right: 20px;
+    justify-content:space-between
+}
