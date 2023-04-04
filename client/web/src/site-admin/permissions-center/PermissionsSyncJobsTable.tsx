@@ -440,7 +440,7 @@ const TableColumns: IColumn<PermissionsSyncJob>[] = [
         header: { label: 'Total', align: 'right' },
         align: 'right',
         render: ({ permissionsFound }: PermissionsSyncJob) => (
-            <div className={classNames('text-right', permissionsFound == 0 ? styles.textTotalNumber : 'text-muted')}>
+            <div className={classNames('text-right', permissionsFound === 0 ? styles.textTotalNumber : 'text-muted')}>
                 <b>{permissionsFound}</b>
             </div>
         ),
