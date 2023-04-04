@@ -8,7 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -25,24 +25,24 @@ func TestExpireFailedRecords(t *testing.T) {
 
 	insertIndexes(t, db,
 		// young failures (none removed)
-		types.Index{ID: 1, RepositoryID: 50, Commit: makeCommit(1), FinishedAt: timePtr(now.Add(-time.Minute * 10)), State: "failed"},
-		types.Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2), FinishedAt: timePtr(now.Add(-time.Minute * 20)), State: "failed"},
-		types.Index{ID: 3, RepositoryID: 50, Commit: makeCommit(3), FinishedAt: timePtr(now.Add(-time.Minute * 20)), State: "failed"},
+		uploadsshared.Index{ID: 1, RepositoryID: 50, Commit: makeCommit(1), FinishedAt: timePtr(now.Add(-time.Minute * 10)), State: "failed"},
+		uploadsshared.Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2), FinishedAt: timePtr(now.Add(-time.Minute * 20)), State: "failed"},
+		uploadsshared.Index{ID: 3, RepositoryID: 50, Commit: makeCommit(3), FinishedAt: timePtr(now.Add(-time.Minute * 20)), State: "failed"},
 
 		// failures prior to a success (both removed)
-		types.Index{ID: 4, RepositoryID: 50, Commit: makeCommit(4), FinishedAt: timePtr(now.Add(-time.Hour * 10)), Root: "foo", State: "completed"},
-		types.Index{ID: 5, RepositoryID: 50, Commit: makeCommit(5), FinishedAt: timePtr(now.Add(-time.Hour * 12)), Root: "foo", State: "failed"},
-		types.Index{ID: 6, RepositoryID: 50, Commit: makeCommit(6), FinishedAt: timePtr(now.Add(-time.Hour * 14)), Root: "foo", State: "failed"},
+		uploadsshared.Index{ID: 4, RepositoryID: 50, Commit: makeCommit(4), FinishedAt: timePtr(now.Add(-time.Hour * 10)), Root: "foo", State: "completed"},
+		uploadsshared.Index{ID: 5, RepositoryID: 50, Commit: makeCommit(5), FinishedAt: timePtr(now.Add(-time.Hour * 12)), Root: "foo", State: "failed"},
+		uploadsshared.Index{ID: 6, RepositoryID: 50, Commit: makeCommit(6), FinishedAt: timePtr(now.Add(-time.Hour * 14)), Root: "foo", State: "failed"},
 
 		// old failures (one is left for debugging)
-		types.Index{ID: 7, RepositoryID: 51, Commit: makeCommit(7), FinishedAt: timePtr(now.Add(-time.Hour * 3)), State: "failed"},
-		types.Index{ID: 8, RepositoryID: 51, Commit: makeCommit(8), FinishedAt: timePtr(now.Add(-time.Hour * 4)), State: "failed"},
-		types.Index{ID: 9, RepositoryID: 51, Commit: makeCommit(9), FinishedAt: timePtr(now.Add(-time.Hour * 5)), State: "failed"},
+		uploadsshared.Index{ID: 7, RepositoryID: 51, Commit: makeCommit(7), FinishedAt: timePtr(now.Add(-time.Hour * 3)), State: "failed"},
+		uploadsshared.Index{ID: 8, RepositoryID: 51, Commit: makeCommit(8), FinishedAt: timePtr(now.Add(-time.Hour * 4)), State: "failed"},
+		uploadsshared.Index{ID: 9, RepositoryID: 51, Commit: makeCommit(9), FinishedAt: timePtr(now.Add(-time.Hour * 5)), State: "failed"},
 
 		// failures prior to queued uploads (one removed; queued does not reset failures)
-		types.Index{ID: 10, RepositoryID: 52, Commit: makeCommit(10), Root: "foo", State: "queued"},
-		types.Index{ID: 11, RepositoryID: 52, Commit: makeCommit(11), FinishedAt: timePtr(now.Add(-time.Hour * 12)), Root: "foo", State: "failed"},
-		types.Index{ID: 12, RepositoryID: 52, Commit: makeCommit(12), FinishedAt: timePtr(now.Add(-time.Hour * 14)), Root: "foo", State: "failed"},
+		uploadsshared.Index{ID: 10, RepositoryID: 52, Commit: makeCommit(10), Root: "foo", State: "queued"},
+		uploadsshared.Index{ID: 11, RepositoryID: 52, Commit: makeCommit(11), FinishedAt: timePtr(now.Add(-time.Hour * 12)), Root: "foo", State: "failed"},
+		uploadsshared.Index{ID: 12, RepositoryID: 52, Commit: makeCommit(12), FinishedAt: timePtr(now.Add(-time.Hour * 14)), Root: "foo", State: "failed"},
 	)
 
 	if _, _, err := store.ExpireFailedRecords(ctx, 100, time.Hour, now); err != nil {

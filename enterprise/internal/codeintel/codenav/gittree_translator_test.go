@@ -12,7 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -49,7 +49,7 @@ func TestGetTargetCommitPositionFromSourcePosition(t *testing.T) {
 		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	})
 
-	posIn := types.Position{Line: 302, Character: 15}
+	posIn := shared.Position{Line: 302, Character: 15}
 
 	args := &requestArgs{
 		repo:   &sgtypes.Repo{ID: 50},
@@ -69,7 +69,7 @@ func TestGetTargetCommitPositionFromSourcePosition(t *testing.T) {
 		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
 	}
 
-	expectedPos := types.Position{Line: 294, Character: 15}
+	expectedPos := shared.Position{Line: 294, Character: 15}
 	if diff := cmp.Diff(expectedPos, posOut); diff != "" {
 		t.Errorf("unexpected position (-want +got):\n%s", diff)
 	}
@@ -80,7 +80,7 @@ func TestGetTargetCommitPositionFromSourcePositionEmptyDiff(t *testing.T) {
 		return io.NopCloser(bytes.NewReader(nil)), nil
 	})
 
-	posIn := types.Position{Line: 10, Character: 15}
+	posIn := shared.Position{Line: 10, Character: 15}
 
 	args := &requestArgs{
 		repo:   &sgtypes.Repo{ID: 50},
@@ -114,7 +114,7 @@ func TestGetTargetCommitPositionFromSourcePositionReverse(t *testing.T) {
 		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	})
 
-	posIn := types.Position{Line: 302, Character: 15}
+	posIn := shared.Position{Line: 302, Character: 15}
 
 	args := &requestArgs{
 		repo:   &sgtypes.Repo{ID: 50},
@@ -134,7 +134,7 @@ func TestGetTargetCommitPositionFromSourcePositionReverse(t *testing.T) {
 		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
 	}
 
-	expectedPos := types.Position{Line: 294, Character: 15}
+	expectedPos := shared.Position{Line: 294, Character: 15}
 	if diff := cmp.Diff(expectedPos, posOut); diff != "" {
 		t.Errorf("unexpected position (-want +got):\n%s", diff)
 	}
@@ -150,9 +150,9 @@ func TestGetTargetCommitRangeFromSourceRange(t *testing.T) {
 		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	})
 
-	rIn := types.Range{
-		Start: types.Position{Line: 302, Character: 15},
-		End:   types.Position{Line: 305, Character: 20},
+	rIn := shared.Range{
+		Start: shared.Position{Line: 302, Character: 15},
+		End:   shared.Position{Line: 305, Character: 20},
 	}
 
 	args := &requestArgs{
@@ -173,9 +173,9 @@ func TestGetTargetCommitRangeFromSourceRange(t *testing.T) {
 		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
 	}
 
-	expectedRange := types.Range{
-		Start: types.Position{Line: 294, Character: 15},
-		End:   types.Position{Line: 297, Character: 20},
+	expectedRange := shared.Range{
+		Start: shared.Position{Line: 294, Character: 15},
+		End:   shared.Position{Line: 297, Character: 20},
 	}
 	if diff := cmp.Diff(expectedRange, rOut); diff != "" {
 		t.Errorf("unexpected position (-want +got):\n%s", diff)
@@ -187,9 +187,9 @@ func TestGetTargetCommitRangeFromSourceRangeEmptyDiff(t *testing.T) {
 		return io.NopCloser(bytes.NewReader([]byte(nil))), nil
 	})
 
-	rIn := types.Range{
-		Start: types.Position{Line: 302, Character: 15},
-		End:   types.Position{Line: 305, Character: 20},
+	rIn := shared.Range{
+		Start: shared.Position{Line: 302, Character: 15},
+		End:   shared.Position{Line: 305, Character: 20},
 	}
 
 	args := &requestArgs{
@@ -224,9 +224,9 @@ func TestGetTargetCommitRangeFromSourceRangeReverse(t *testing.T) {
 		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	})
 
-	rIn := types.Range{
-		Start: types.Position{Line: 302, Character: 15},
-		End:   types.Position{Line: 305, Character: 20},
+	rIn := shared.Range{
+		Start: shared.Position{Line: 302, Character: 15},
+		End:   shared.Position{Line: 305, Character: 20},
 	}
 
 	args := &requestArgs{
@@ -247,9 +247,9 @@ func TestGetTargetCommitRangeFromSourceRangeReverse(t *testing.T) {
 		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
 	}
 
-	expectedRange := types.Range{
-		Start: types.Position{Line: 294, Character: 15},
-		End:   types.Position{Line: 297, Character: 20},
+	expectedRange := shared.Range{
+		Start: shared.Position{Line: 294, Character: 15},
+		End:   shared.Position{Line: 297, Character: 20},
 	}
 	if diff := cmp.Diff(expectedRange, rOut); diff != "" {
 		t.Errorf("unexpected position (-want +got):\n%s", diff)
@@ -380,7 +380,7 @@ func TestRawGetTargetCommitPositionFromSourcePosition(t *testing.T) {
 			}
 			hunks := diff.Hunks
 
-			pos := types.Position{
+			pos := shared.Position{
 				Line:      testCase.line - 1, // 1-index -> 0-index
 				Character: 10,
 			}

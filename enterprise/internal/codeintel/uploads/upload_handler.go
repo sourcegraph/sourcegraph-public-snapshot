@@ -3,8 +3,8 @@ package uploads
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/uploadhandler"
 )
 
@@ -41,7 +41,7 @@ func (s *uploadHandlerShim) InsertUpload(ctx context.Context, upload uploadhandl
 		associatedIndexID = &upload.Metadata.AssociatedIndexID
 	}
 
-	return s.Store.InsertUpload(ctx, types.Upload{
+	return s.Store.InsertUpload(ctx, shared.Upload{
 		ID:                upload.ID,
 		State:             upload.State,
 		NumParts:          upload.NumParts,

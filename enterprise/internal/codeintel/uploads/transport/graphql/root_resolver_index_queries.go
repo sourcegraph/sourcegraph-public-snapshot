@@ -9,7 +9,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -109,10 +109,10 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 
 	var indexerNames []string
 	if args.IndexerKey != nil {
-		indexerNames = types.NamesForKey(*args.IndexerKey)
+		indexerNames = uploadsshared.NamesForKey(*args.IndexerKey)
 	}
 
-	var uploads []types.Upload
+	var uploads []shared.Upload
 	totalUploadCount := 0
 	if !skipUploads {
 		if uploads, totalUploadCount, err = r.uploadSvc.GetUploads(ctx, uploadsshared.GetUploadsOptions{
@@ -130,7 +130,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 		}
 	}
 
-	var indexes []types.Index
+	var indexes []uploadsshared.Index
 	totalIndexCount := 0
 	if !skipIndexes {
 		if indexes, totalIndexCount, err = r.uploadSvc.GetIndexes(ctx, uploadsshared.GetIndexesOptions{
@@ -147,12 +147,12 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 	}
 
 	type pair struct {
-		upload *types.Upload
-		index  *types.Index
+		upload *shared.Upload
+		index  *uploadsshared.Index
 	}
 	pairs := make([]pair, 0, pageSize)
-	addUpload := func(upload types.Upload) { pairs = append(pairs, pair{&upload, nil}) }
-	addIndex := func(index types.Index) { pairs = append(pairs, pair{nil, &index}) }
+	addUpload := func(upload shared.Upload) { pairs = append(pairs, pair{&upload, nil}) }
+	addIndex := func(index uploadsshared.Index) { pairs = append(pairs, pair{nil, &index}) }
 
 	uIdx := 0
 	iIdx := 0
@@ -258,7 +258,7 @@ func (r *rootResolver) IndexerKeys(ctx context.Context, args *resolverstubs.Inde
 
 	keyMap := map[string]struct{}{}
 	for _, indexer := range indexers {
-		keyMap[types.NewCodeIntelIndexerResolver(indexer, "").Key()] = struct{}{}
+		keyMap[NewCodeIntelIndexerResolver(indexer, "").Key()] = struct{}{}
 	}
 
 	var keys []string

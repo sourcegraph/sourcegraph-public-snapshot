@@ -1,8 +1,8 @@
 import { VSCodeTag } from '@vscode/webview-ui-toolkit/react'
 
-import { CodySvg, ResetSvg } from './utils/icons'
-
 import './Header.css'
+
+import { CodySvg, ResetSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
 interface HeaderProps {
     showResetButton: boolean

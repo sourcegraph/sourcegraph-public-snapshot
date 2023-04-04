@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -18,12 +18,12 @@ import (
 )
 
 var (
-	testRange1 = types.Range{Start: types.Position{Line: 11, Character: 21}, End: types.Position{Line: 31, Character: 41}}
-	testRange2 = types.Range{Start: types.Position{Line: 12, Character: 22}, End: types.Position{Line: 32, Character: 42}}
-	testRange3 = types.Range{Start: types.Position{Line: 13, Character: 23}, End: types.Position{Line: 33, Character: 43}}
-	testRange4 = types.Range{Start: types.Position{Line: 14, Character: 24}, End: types.Position{Line: 34, Character: 44}}
-	testRange5 = types.Range{Start: types.Position{Line: 15, Character: 25}, End: types.Position{Line: 35, Character: 45}}
-	testRange6 = types.Range{Start: types.Position{Line: 16, Character: 26}, End: types.Position{Line: 36, Character: 46}}
+	testRange1 = shared.Range{Start: shared.Position{Line: 11, Character: 21}, End: shared.Position{Line: 31, Character: 41}}
+	testRange2 = shared.Range{Start: shared.Position{Line: 12, Character: 22}, End: shared.Position{Line: 32, Character: 42}}
+	testRange3 = shared.Range{Start: shared.Position{Line: 13, Character: 23}, End: shared.Position{Line: 33, Character: 43}}
+	testRange4 = shared.Range{Start: shared.Position{Line: 14, Character: 24}, End: shared.Position{Line: 34, Character: 44}}
+	testRange5 = shared.Range{Start: shared.Position{Line: 15, Character: 25}, End: shared.Position{Line: 35, Character: 45}}
+	testRange6 = shared.Range{Start: shared.Position{Line: 16, Character: 26}, End: shared.Position{Line: 36, Character: 46}}
 
 	mockPath   = "s1/main.go"
 	mockCommit = "deadbeef"
@@ -44,7 +44,7 @@ func TestReferences(t *testing.T) {
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
 	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
-	uploads := []types.Dump{
+	uploads := []uploadsshared.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -66,8 +66,8 @@ func TestReferences(t *testing.T) {
 	mockLsifStore.GetReferenceLocationsFunc.PushReturn(locations[1:4], 3, nil)
 	mockLsifStore.GetReferenceLocationsFunc.PushReturn(locations[4:], 1, nil)
 
-	mockCursor := shared.ReferencesCursor{Phase: "local"}
-	mockRequest := shared.RequestArgs{
+	mockCursor := ReferencesCursor{Phase: "local"}
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -80,7 +80,7 @@ func TestReferences(t *testing.T) {
 		t.Fatalf("unexpected error querying references: %s", err)
 	}
 
-	expectedLocations := []types.UploadLocation{
+	expectedLocations := []shared.UploadLocation{
 		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
 		{Dump: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange2},
 		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
@@ -107,7 +107,7 @@ func TestReferencesWithSubRepoPermissions(t *testing.T) {
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
 	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
-	uploads := []types.Dump{
+	uploads := []uploadsshared.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -143,8 +143,8 @@ func TestReferencesWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore.GetReferenceLocationsFunc.PushReturn(locations[4:], 1, nil)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	mockCursor := shared.ReferencesCursor{Phase: "local"}
-	mockRequest := shared.RequestArgs{
+	mockCursor := ReferencesCursor{Phase: "local"}
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -157,7 +157,7 @@ func TestReferencesWithSubRepoPermissions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error querying references: %s", err)
 	}
-	expectedLocations := []types.UploadLocation{
+	expectedLocations := []shared.UploadLocation{
 		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
 		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
 	}
@@ -181,7 +181,7 @@ func TestReferencesRemote(t *testing.T) {
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
 	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
-	uploads := []types.Dump{
+	uploads := []uploadsshared.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -189,7 +189,7 @@ func TestReferencesRemote(t *testing.T) {
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
 
-	definitionUploads := []types.Dump{
+	definitionUploads := []uploadsshared.Dump{
 		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
@@ -197,7 +197,7 @@ func TestReferencesRemote(t *testing.T) {
 	}
 	mockUploadSvc.GetDumpsWithDefinitionsForMonikersFunc.PushReturn(definitionUploads, nil)
 
-	referenceUploads := []types.Dump{
+	referenceUploads := []uploadsshared.Dump{
 		{ID: 250, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 251, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 252, Commit: "deadbeef3", Root: "sub3/"},
@@ -266,8 +266,8 @@ func TestReferencesRemote(t *testing.T) {
 	// }
 	// resolver.SetUploadsDataLoader(uploads)
 
-	mockCursor := shared.ReferencesCursor{Phase: "local"}
-	mockRequest := shared.RequestArgs{
+	mockCursor := ReferencesCursor{Phase: "local"}
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -280,7 +280,7 @@ func TestReferencesRemote(t *testing.T) {
 		t.Fatalf("unexpected error querying references: %s", err)
 	}
 
-	expectedLocations := []types.UploadLocation{
+	expectedLocations := []shared.UploadLocation{
 		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
 		{Dump: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange2},
 		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
@@ -356,7 +356,7 @@ func TestReferencesRemoteWithSubRepoPermissions(t *testing.T) {
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
 	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
-	uploads := []types.Dump{
+	uploads := []uploadsshared.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -377,7 +377,7 @@ func TestReferencesRemoteWithSubRepoPermissions(t *testing.T) {
 	})
 	mockRequestState.SetAuthChecker(checker)
 
-	definitionUploads := []types.Dump{
+	definitionUploads := []uploadsshared.Dump{
 		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
@@ -385,7 +385,7 @@ func TestReferencesRemoteWithSubRepoPermissions(t *testing.T) {
 	}
 	mockUploadSvc.GetDumpsWithDefinitionsForMonikersFunc.PushReturn(definitionUploads, nil)
 
-	referenceUploads := []types.Dump{
+	referenceUploads := []uploadsshared.Dump{
 		{ID: 250, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 251, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 252, Commit: "deadbeef3", Root: "sub3/"},
@@ -447,8 +447,8 @@ func TestReferencesRemoteWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(monikerLocations[2:], 3, nil)  // refs batch 2
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	mockCursor := shared.ReferencesCursor{Phase: "local"}
-	mockRequest := shared.RequestArgs{
+	mockCursor := ReferencesCursor{Phase: "local"}
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -461,7 +461,7 @@ func TestReferencesRemoteWithSubRepoPermissions(t *testing.T) {
 		t.Fatalf("unexpected error querying references: %s", err)
 	}
 
-	expectedLocations := []types.UploadLocation{
+	expectedLocations := []shared.UploadLocation{
 		{Dump: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange2},
 		{Dump: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange4},
 		{Dump: uploads[3], Path: "sub4/b.go", TargetCommit: "deadbeef", TargetRange: testRange2},

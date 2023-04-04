@@ -19,7 +19,7 @@ go_library(
         "//enterprise/internal/codeintel/codenav/internal/lsifstore",
         "//enterprise/internal/codeintel/codenav/shared",
         "//enterprise/internal/codeintel/shared",
-        "//enterprise/internal/codeintel/shared/types",
+        "//enterprise/internal/codeintel/uploads/shared",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
@@ -57,7 +57,7 @@ go_test(
     deps = [
         "//enterprise/internal/codeintel/codenav/internal/lsifstore",
         "//enterprise/internal/codeintel/codenav/shared",
-        "//enterprise/internal/codeintel/shared/types",
+        "//enterprise/internal/codeintel/uploads/shared",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",

@@ -24,6 +24,7 @@ export type FeatureFlagName =
     | 'blob-page-switch-areas-shortcuts'
     | 'app-connect-dotcom'
     | 'sentinel'
+    | 'cody-experimental'
 
 interface OrgFlagOverride {
     orgID: string
