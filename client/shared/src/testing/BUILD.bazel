@@ -58,6 +58,7 @@ ts_project(
         "utils.ts",
     ],
     tsconfig = "//client/shared:tsconfig",
+    usePresetEnv = False,
     deps = [
         "//:node_modules/@apollo/client",
         "//:node_modules/@axe-core/puppeteer",

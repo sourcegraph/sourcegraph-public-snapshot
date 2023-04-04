@@ -8,12 +8,12 @@ import (
 	"github.com/sourcegraph/go-lsp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 )
 
-func newLocationConnectionResolver(locations []shared.UploadLocation, cursor *string, locationResolver *sharedresolvers.CachedLocationResolver) resolverstubs.LocationConnectionResolver {
+func newLocationConnectionResolver(locations []shared.UploadLocation, cursor *string, locationResolver *gitresolvers.CachedLocationResolver) resolverstubs.LocationConnectionResolver {
 	return resolverstubs.NewLazyConnectionResolver(func(ctx context.Context) ([]resolverstubs.LocationResolver, error) {
 		return resolveLocations(ctx, locationResolver, locations)
 	}, encodeCursor(cursor))
@@ -22,7 +22,7 @@ func newLocationConnectionResolver(locations []shared.UploadLocation, cursor *st
 // resolveLocations creates a slide of LocationResolvers for the given list of adjusted locations. The
 // resulting list may be smaller than the input list as any locations with a commit not known by
 // gitserver will be skipped.
-func resolveLocations(ctx context.Context, locationResolver *sharedresolvers.CachedLocationResolver, locations []shared.UploadLocation) ([]resolverstubs.LocationResolver, error) {
+func resolveLocations(ctx context.Context, locationResolver *gitresolvers.CachedLocationResolver, locations []shared.UploadLocation) ([]resolverstubs.LocationResolver, error) {
 	resolvedLocations := make([]resolverstubs.LocationResolver, 0, len(locations))
 	for i := range locations {
 		resolver, err := resolveLocation(ctx, locationResolver, locations[i])
@@ -41,7 +41,7 @@ func resolveLocations(ctx context.Context, locationResolver *sharedresolvers.Cac
 
 // resolveLocation creates a LocationResolver for the given adjusted location. This function may return a
 // nil resolver if the location's commit is not known by gitserver.
-func resolveLocation(ctx context.Context, locationResolver *sharedresolvers.CachedLocationResolver, location shared.UploadLocation) (resolverstubs.LocationResolver, error) {
+func resolveLocation(ctx context.Context, locationResolver *gitresolvers.CachedLocationResolver, location shared.UploadLocation) (resolverstubs.LocationResolver, error) {
 	treeResolver, err := locationResolver.Path(ctx, api.RepoID(location.Dump.RepositoryID), location.TargetCommit, location.Path, false)
 	if err != nil || treeResolver == nil {
 		return nil, err
@@ -55,11 +55,11 @@ func resolveLocation(ctx context.Context, locationResolver *sharedresolvers.Cach
 //
 
 type locationResolver struct {
-	resource *sharedresolvers.GitTreeEntryResolver
+	resource resolverstubs.GitTreeEntryResolver
 	lspRange *lsp.Range
 }
 
-func newLocationResolver(resource *sharedresolvers.GitTreeEntryResolver, lspRange *lsp.Range) resolverstubs.LocationResolver {
+func newLocationResolver(resource resolverstubs.GitTreeEntryResolver, lspRange *lsp.Range) resolverstubs.LocationResolver {
 	return &locationResolver{
 		resource: resource,
 		lspRange: lspRange,
@@ -80,16 +80,11 @@ func (r *locationResolver) rangeInternal() *rangeResolver {
 }
 
 func (r *locationResolver) URL(ctx context.Context) (string, error) {
-	url, err := r.resource.URL(ctx)
-	if err != nil {
-		return "", err
-	}
-	return r.urlPath(url), nil
+	return r.urlPath(r.resource.URL()), nil
 }
 
 func (r *locationResolver) CanonicalURL() string {
-	url := r.resource.CanonicalURL()
-	return r.urlPath(url)
+	return r.urlPath(r.resource.URL())
 }
 
 func (r *locationResolver) urlPath(prefix string) string {

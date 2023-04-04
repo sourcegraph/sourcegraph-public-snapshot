@@ -15,8 +15,8 @@ import (
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/ranges"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/trie"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
@@ -326,19 +326,19 @@ func (s *scipWriter) flush(ctx context.Context) error {
 
 	for i, invertedRangeIndexes := range invertedRangeIndexes {
 		for _, index := range invertedRangeIndexes {
-			definitionRanges, err := types.EncodeRanges(index.DefinitionRanges)
+			definitionRanges, err := ranges.EncodeRanges(index.DefinitionRanges)
 			if err != nil {
 				return err
 			}
-			referenceRanges, err := types.EncodeRanges(index.ReferenceRanges)
+			referenceRanges, err := ranges.EncodeRanges(index.ReferenceRanges)
 			if err != nil {
 				return err
 			}
-			implementationRanges, err := types.EncodeRanges(index.ImplementationRanges)
+			implementationRanges, err := ranges.EncodeRanges(index.ImplementationRanges)
 			if err != nil {
 				return err
 			}
-			typeDefinitionRanges, err := types.EncodeRanges(index.TypeDefinitionRanges)
+			typeDefinitionRanges, err := ranges.EncodeRanges(index.TypeDefinitionRanges)
 			if err != nil {
 				return err
 			}

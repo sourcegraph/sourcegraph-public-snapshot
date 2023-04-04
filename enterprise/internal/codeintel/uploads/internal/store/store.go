@@ -45,7 +45,7 @@ type Store interface {
 	ReindexIndexByID(ctx context.Context, id int) error
 	ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) error
 
-	// Upload record insertion
+	// Upload record insertion + processing
 	InsertUpload(ctx context.Context, upload shared.Upload) (int, error)
 	AddUploadPart(ctx context.Context, uploadID, partIndex int) error
 	MarkQueued(ctx context.Context, id int, uploadSize *int64) error
