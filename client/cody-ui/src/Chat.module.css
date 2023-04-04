@@ -117,7 +117,7 @@
 
 .chat-input {
     flex: 1;
-    border-radius: .4rem;
+    border-radius: var(--border-radius);
     resize: none;
 }
 

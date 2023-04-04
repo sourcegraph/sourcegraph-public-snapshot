@@ -43,9 +43,10 @@
 .input-row {
     position: sticky;
     bottom: 0;
-    border-top: solid 1px var(--border-color);
-    padding: 1rem 0.5rem;
-    background-color: var(--body-bg);
+    padding: 0.8rem 0.6rem;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--input-bg);
+    margin: 0 8px;
 }
 
 .chat-input {
