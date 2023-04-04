@@ -17,6 +17,7 @@ ts_config(
 ts_project(
     name = "cody-shared_lib",
     srcs = [
+        "package.json",
         "src/chat/chat.ts",
         "src/chat/client.ts",
         "src/chat/markdown.ts",
@@ -58,6 +59,7 @@ ts_project(
         "src/sourcegraph-api/graphql/index.ts",
         "src/sourcegraph-api/graphql/queries.ts",
         "src/sourcegraph-api/index.ts",
+        "src/telemetry/EventLogger.ts",
         "src/timestamp.ts",
         "src/utils.ts",
     ],
@@ -68,16 +70,15 @@ ts_project(
         "//:node_modules/@microsoft/fetch-event-source",
         "//:node_modules/@types/isomorphic-fetch",
         "//:node_modules/@types/node",
+        "//:node_modules/@types/uuid",
         "//:node_modules/isomorphic-fetch",
+        "//:node_modules/uuid",
     ],
 )
 
 npm_package(
     name = "cody-shared_pkg",
-    srcs = [
-        "package.json",
-        ":cody-shared_lib",
-    ],
+    srcs = [":cody-shared_lib"],
 )
 
 ts_project(

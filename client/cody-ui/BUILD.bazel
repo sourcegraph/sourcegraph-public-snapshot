@@ -30,8 +30,8 @@ ts_project(
         "src/chat/CodeBlocks.tsx",
         "src/chat/ContextFiles.tsx",
         "src/index.ts",
-        "src/utils/icons.tsx",
         "src/typings.d.ts",
+        "src/utils/icons.tsx",
     ],
     data = [
         ":cody-ui_styles",
