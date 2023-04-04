@@ -28,6 +28,8 @@ more closely on a program's parse tree. We use [Comby syntax](https://comby.dev/
 for structural matching. Below you'll find examples and notes for this
 language-aware search functionality.
 
+**Note**: While structural search is stable and functioning swimmingly, it is still in development. We welcome any and all suggestions from our customers for feature requests, which you can raise [here](https://github.com/sourcegraph/sourcegraph).
+
 ## Example
 
 The `fmt.Sprintf` function is a popular print function in Go. Here is a pattern
@@ -182,9 +184,15 @@ following:
   we perform a best-effort to infer the language based on matching file
   extensions, or fall back to a generic structural matcher.
 
-- **Saved search are not supported.** It is not currently possible to save
+- **Saved searches are not supported.** It is not currently possible to save
   structural searches.
 
 - **Matching blocks in indentation-sensitive languages.** It's not currently
   possible to match blocks of code that are indentation-sensitive. This is a
   feature planned for future work.
+
+- **Negative structural searches are not supported.** Structural search cannot
+  currently search for something that is _not_ there. For example, you cannot 
+  search for results that aren't `<This Component>`.
+
+**Note**: While structural search is stable, it is still in development. We welcome any and all suggestions from our customers for feature requests, which you can raise [at our public repo on GitHub](https://github.com/sourcegraph/sourcegraph).
