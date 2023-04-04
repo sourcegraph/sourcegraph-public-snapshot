@@ -51,6 +51,10 @@ export const Draft: Story<MockStatsArgs> = args => {
                             draft: args.draft,
                             open: args.open,
                             archived: args.archived,
+                            failed: args.failed,
+                            scheduled: args.scheduled,
+                            processing: args.processing,
+                            retrying: args.retrying,
                             total,
                             unpublished: args.unpublished,
                             isCompleted: calculateIsCompleted(args, total),
@@ -94,6 +98,22 @@ Draft.argTypes = {
         control: { type: 'number' },
         defaultValue: 0,
     },
+    failed: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    retrying: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    scheduled: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    processing: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
 }
 
 export const Open: Story<MockStatsArgs> = args => {
@@ -111,6 +131,10 @@ export const Open: Story<MockStatsArgs> = args => {
                             merged: args.merged,
                             draft: args.draft,
                             open: args.open,
+                            failed: args.failed,
+                            scheduled: args.scheduled,
+                            processing: args.processing,
+                            retrying: args.retrying,
                             total,
                             archived: args.archived,
                             unpublished: args.unpublished,
@@ -155,6 +179,22 @@ Open.argTypes = {
         control: { type: 'number' },
         defaultValue: 55,
     },
+    failed: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    retrying: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    scheduled: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    processing: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
 }
 
 export const OpenAndComplete: Story<MockStatsArgs> = args => {
@@ -173,6 +213,10 @@ export const OpenAndComplete: Story<MockStatsArgs> = args => {
                             draft: args.draft,
                             open: args.open,
                             archived: args.archived,
+                            failed: args.failed,
+                            scheduled: args.scheduled,
+                            processing: args.processing,
+                            retrying: args.retrying,
                             total,
                             unpublished: args.unpublished,
                             isCompleted: calculateIsCompleted(args, total),
@@ -216,6 +260,22 @@ OpenAndComplete.argTypes = {
         control: { type: 'number' },
         defaultValue: 0,
     },
+    failed: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    retrying: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    scheduled: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    processing: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
 }
 
 OpenAndComplete.storyName = 'open and complete'
@@ -236,6 +296,10 @@ export const Closed: Story<MockStatsArgs> = args => {
                             draft: args.draft,
                             open: args.open,
                             archived: args.archived,
+                            failed: args.failed,
+                            scheduled: args.scheduled,
+                            processing: args.processing,
+                            retrying: args.retrying,
                             total,
                             unpublished: args.unpublished,
                             isCompleted: calculateIsCompleted(args, total),
@@ -278,5 +342,345 @@ Closed.argTypes = {
     unpublished: {
         control: { type: 'number' },
         defaultValue: 60,
+    },
+    failed: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    retrying: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    scheduled: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    processing: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+}
+
+export const Failed: Story<MockStatsArgs> = args => {
+    const total = calculateTotal(args)
+    return (
+        <WebStory>
+            {props => (
+                <BatchChangeStatsCard
+                    {...props}
+                    batchChange={{
+                        changesetsStats: {
+                            __typename: 'ChangesetsStats',
+                            deleted: args.deleted,
+                            closed: args.closed,
+                            merged: args.merged,
+                            draft: args.draft,
+                            open: args.open,
+                            archived: args.archived,
+                            failed: args.failed,
+                            scheduled: args.scheduled,
+                            processing: args.processing,
+                            retrying: args.retrying,
+                            total,
+                            unpublished: args.unpublished,
+                            isCompleted: calculateIsCompleted(args, total),
+                            percentComplete: calculatePercentComplete(args, total),
+                        },
+                        diffStat: { added: 3000, deleted: 3000, __typename: 'DiffStat' },
+                        state: BatchChangeState.CLOSED,
+                    }}
+                />
+            )}
+        </WebStory>
+    )
+}
+
+Failed.argTypes = {
+    closed: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    deleted: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    merged: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    draft: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    open: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    archived: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    unpublished: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    failed: {
+        control: { type: 'number' },
+        defaultValue: 10,
+    },
+    retrying: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    scheduled: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    processing: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+}
+
+export const Retrying: Story<MockStatsArgs> = args => {
+    const total = calculateTotal(args)
+    return (
+        <WebStory>
+            {props => (
+                <BatchChangeStatsCard
+                    {...props}
+                    batchChange={{
+                        changesetsStats: {
+                            __typename: 'ChangesetsStats',
+                            deleted: args.deleted,
+                            closed: args.closed,
+                            merged: args.merged,
+                            draft: args.draft,
+                            open: args.open,
+                            archived: args.archived,
+                            failed: args.failed,
+                            scheduled: args.scheduled,
+                            processing: args.processing,
+                            retrying: args.retrying,
+                            total,
+                            unpublished: args.unpublished,
+                            isCompleted: calculateIsCompleted(args, total),
+                            percentComplete: calculatePercentComplete(args, total),
+                        },
+                        diffStat: { added: 3000, deleted: 3000, __typename: 'DiffStat' },
+                        state: BatchChangeState.CLOSED,
+                    }}
+                />
+            )}
+        </WebStory>
+    )
+}
+
+Retrying.argTypes = {
+    closed: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    deleted: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    merged: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    draft: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    open: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    archived: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    unpublished: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    failed: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    retrying: {
+        control: { type: 'number' },
+        defaultValue: 1,
+    },
+    scheduled: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    processing: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+}
+
+export const Scheduled: Story<MockStatsArgs> = args => {
+    const total = calculateTotal(args)
+    return (
+        <WebStory>
+            {props => (
+                <BatchChangeStatsCard
+                    {...props}
+                    batchChange={{
+                        changesetsStats: {
+                            __typename: 'ChangesetsStats',
+                            deleted: args.deleted,
+                            closed: args.closed,
+                            merged: args.merged,
+                            draft: args.draft,
+                            open: args.open,
+                            archived: args.archived,
+                            failed: args.failed,
+                            scheduled: args.scheduled,
+                            processing: args.processing,
+                            retrying: args.retrying,
+                            total,
+                            unpublished: args.unpublished,
+                            isCompleted: calculateIsCompleted(args, total),
+                            percentComplete: calculatePercentComplete(args, total),
+                        },
+                        diffStat: { added: 3000, deleted: 3000, __typename: 'DiffStat' },
+                        state: BatchChangeState.CLOSED,
+                    }}
+                />
+            )}
+        </WebStory>
+    )
+}
+
+Scheduled.argTypes = {
+    closed: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    deleted: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    merged: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    draft: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    open: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    archived: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    unpublished: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    failed: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    retrying: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    scheduled: {
+        control: { type: 'number' },
+        defaultValue: 8,
+    },
+    processing: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+}
+
+export const Processing: Story<MockStatsArgs> = args => {
+    const total = calculateTotal(args)
+    return (
+        <WebStory>
+            {props => (
+                <BatchChangeStatsCard
+                    {...props}
+                    batchChange={{
+                        changesetsStats: {
+                            __typename: 'ChangesetsStats',
+                            deleted: args.deleted,
+                            closed: args.closed,
+                            merged: args.merged,
+                            draft: args.draft,
+                            open: args.open,
+                            archived: args.archived,
+                            failed: args.failed,
+                            scheduled: args.scheduled,
+                            processing: args.processing,
+                            retrying: args.retrying,
+                            total,
+                            unpublished: args.unpublished,
+                            isCompleted: calculateIsCompleted(args, total),
+                            percentComplete: calculatePercentComplete(args, total),
+                        },
+                        diffStat: { added: 3000, deleted: 3000, __typename: 'DiffStat' },
+                        state: BatchChangeState.CLOSED,
+                    }}
+                />
+            )}
+        </WebStory>
+    )
+}
+
+Processing.argTypes = {
+    closed: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    deleted: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    merged: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    draft: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    open: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    archived: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    unpublished: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    failed: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    retrying: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    scheduled: {
+        control: { type: 'number' },
+        defaultValue: 0,
+    },
+    processing: {
+        control: { type: 'number' },
+        defaultValue: 2,
     },
 }
