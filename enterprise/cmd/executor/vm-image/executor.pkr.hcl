@@ -165,6 +165,5 @@ build {
         regions    = ["us-west-2"]
         identifier = var.image_family
         keep_days  = 60
-        dry_run    = true
     }
 }
