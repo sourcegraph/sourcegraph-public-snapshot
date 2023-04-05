@@ -24,7 +24,7 @@ The default run type.
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Build && Test
   - **Linters and static analysis**: Run sg lint
-  - **Client checks**: Puppeteer tests prep, Puppeteer tests for chrome extension, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests chunk #10, Puppeteer tests chunk #11, Puppeteer tests chunk #12, Puppeteer tests chunk #13, Puppeteer tests chunk #14, Puppeteer tests chunk #15, Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
+  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
   - **Pipeline setup**: Trigger async
   - Client PR preview
   - Upload build trace
@@ -33,7 +33,7 @@ The default run type.
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Build && Test
   - **Linters and static analysis**: GraphQL lint
-  - **Client checks**: Puppeteer tests prep, Puppeteer tests for chrome extension, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests chunk #10, Puppeteer tests chunk #11, Puppeteer tests chunk #12, Puppeteer tests chunk #13, Puppeteer tests chunk #14, Puppeteer tests chunk #15, Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
+  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
   - Upload build trace
 
 - Pipeline for `DatabaseSchema` changes:
