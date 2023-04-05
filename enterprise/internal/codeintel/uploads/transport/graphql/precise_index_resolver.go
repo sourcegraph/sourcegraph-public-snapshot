@@ -453,7 +453,7 @@ func newLSIFUploadsAuditLogsResolver(log shared.UploadLog) resolverstubs.LSIFUpl
 }
 
 func (r *lsifUploadsAuditLogResolver) Reason() *string { return r.log.Reason }
-f
+
 unc (r *lsifUploadsAuditLogResolver) ChangedColumns() (values []resolverstubs.AuditLogColumnChange) {
 	for _, transition := range r.log.TransitionColumns {
 		values = append(values, newAuditLogColumnChangeResolver(transition))
