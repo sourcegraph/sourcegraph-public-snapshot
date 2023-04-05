@@ -68,10 +68,10 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
         return true
     }
 
-    const unsetShowMore = (e: React.MouseEvent) => {
+    const unsetShowMore = (event: React.MouseEvent): void => {
         searchParams.delete('showMore')
         setSearchParams(searchParams)
-        e.preventDefault()
+        event.preventDefault()
     }
 
     const thirdPartyAuthProviders = nonBuiltinAuthProviders.filter(provider => shouldShowProvider(provider))

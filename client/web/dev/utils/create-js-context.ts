@@ -75,6 +75,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
             endpoint: ENVIRONMENT_CONFIG.CLIENT_OTEL_EXPORTER_OTLP_ENDPOINT,
         },
         embeddingsEnabled: false,
+        primaryLoginProvidersCount: 5,
         // Site-config overrides default JS context
         ...siteConfig,
     }

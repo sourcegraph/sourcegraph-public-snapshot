@@ -35,8 +35,8 @@ const authProviders: SourcegraphContext['authProviders'] = [
     },
 ]
 
-const noBuiltInAuthProviders = authProviders.filter(p => !p.isBuiltin)
-const onlyBuiltInAuthProvider = authProviders.filter(p => p.isBuiltin)
+const noBuiltInAuthProviders = authProviders.filter(provider => !provider.isBuiltin)
+const onlyBuiltInAuthProvider = authProviders.filter(provider => provider.isBuiltin)
 
 const context: SignInPageProps['context'] = {
     allowSignup: true,
