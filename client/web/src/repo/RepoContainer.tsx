@@ -27,7 +27,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
-import { Button, Icon, Link, useObservable } from '@sourcegraph/wildcard'
+import { Button, Icon, Link, Panel, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -352,9 +352,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                 />
             ))}
             <div className={classNames('w-100 d-flex flex-row')}>
-                <div
-                    className={classNames('d-flex flex-column', styles.repoContainer, isCodyActive ? 'w-75' : 'w-100')}
-                >
+                <div className={classNames('d-flex flex-column w-100', styles.repoContainer)}>
                     <div className={styles.hack}>
                         <RepoHeader
                             actionButtons={props.repoHeaderActionButtons}
@@ -371,7 +369,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                     </div>
 
                     <RepoHeaderContributionPortal
-                        position="right"
+                        position="left"
                         priority={2}
                         id="go-to-code-host"
                         {...repoHeaderContributionsLifecycleProps}
@@ -458,11 +456,9 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                     </Suspense>
                 </div>
 
-                {/* Cody sidebar
-                TODOs:
-                    - Resizable */}
+                {/* Cody sidebar*/}
                 {codyEnabled && isCodyActive && (
-                    <div className={classNames('w-25 d-flex flex-column')}>
+                    <Panel position="right" ariaLabel="Cody sidebar" maxSize={550} minSize={300} defaultSize={300}>
                         <div className={styles.codySidebar}>
                             <div className={styles.codySidebarHeader}>
                                 <div>
@@ -481,7 +477,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                                 activePath={filePath || ''}
                             />
                         </div>
-                    </div>
+                    </Panel>
                 )}
             </div>
         </>
