@@ -23,6 +23,7 @@ export type FeatureFlagName =
     | 'search-ranking'
     | 'database-permission-sync-worker'
     | 'blob-page-switch-areas-shortcuts'
+    | 'sourcegraph-operator-site-admin-hide-maintenance'
 
 interface OrgFlagOverride {
     orgID: string
