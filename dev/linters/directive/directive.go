@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
-	"golang.org/x/tools/go/loader"
+	"golang.org/x/tools/go/loader" //nolint:SA1019 //TODO(burmudar): use updated api
 	"honnef.co/go/tools/analysis/report"
 )
 
@@ -79,6 +79,13 @@ func doDirectives(pass *analysis.Pass) (interface{}, error) {
 	return ParseDirectives(pass.Files, pass.Fset), nil
 }
 
+func isStaticCheckGroupDirective(directive, analyzerName string) bool {
+	if strings.Contains(directive, "staticcheck") && strings.HasPrefix(analyzerName, "SA") {
+		return true
+	}
+	return false
+}
+
 // Directives is a fact that contains a list of directives.
 var Directives = &analysis.Analyzer{
 	Name:             "directives",
@@ -108,7 +115,13 @@ func RespectDirectives(analyzer *analysis.Analyzer) {
 					if ignorePos.Filename != nodePos.Filename || ignorePos.Line != nodePos.Line {
 						continue
 					}
-					for _, check := range strings.Split(linters[0], ",") {
+					linterDirective, _, _ := strings.Cut(linters[0], "//")
+					linterDirective = strings.TrimSpace(linterDirective)
+					if isStaticCheckGroupDirective(linterDirective, analyzer.Name) {
+						println("❌", strings.Join(linters, "|"))
+						return
+					}
+					for _, check := range strings.Split(linterDirective, ",") {
 						if strings.TrimSpace(check) == analyzer.Name {
 							return
 						}
