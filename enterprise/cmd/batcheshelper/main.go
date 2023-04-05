@@ -53,7 +53,7 @@ func doMain() error {
 	case "pre":
 		return run.Pre(ctx, logger, arguments.step, executionInput, previousResult, *workspaceFilesPath)
 	case "post":
-		return run.Post(ctx, logger, arguments.step, executionInput, previousResult)
+		return run.Post(ctx, logger, arguments.step, executionInput, previousResult, *workspaceFilesPath)
 	default:
 		return errors.Newf("invalid mode %q", arguments.mode)
 	}

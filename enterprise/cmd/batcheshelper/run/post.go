@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/log"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -17,7 +18,14 @@ import (
 )
 
 // Post TODO
-func Post(ctx context.Context, logger *log.Logger, stepIdx int, executionInput batcheslib.WorkspacesExecutionInput, previousResult execution.AfterStepResult) error {
+func Post(
+	ctx context.Context,
+	logger *log.Logger,
+	stepIdx int,
+	executionInput batcheslib.WorkspacesExecutionInput,
+	previousResult execution.AfterStepResult,
+	workspaceFilesPath string,
+) error {
 	step := executionInput.Steps[stepIdx]
 
 	// Generate the diff.
@@ -107,7 +115,7 @@ func Post(ctx context.Context, logger *log.Logger, stepIdx int, executionInput b
 		executionInput.OnlyFetchWorkspace,
 		executionInput.Steps,
 		stepIdx,
-		nil, // todo: should not be nil.
+		fileMetadataRetriever{workingDirectory: workspaceFilesPath},
 	)
 
 	k, err := key.Key()
@@ -132,4 +140,74 @@ func runGitCmd(ctx context.Context, args ...string) ([]byte, error) {
 	cmd.Dir = "repository"
 
 	return cmd.Output()
+}
+
+type fileMetadataRetriever struct {
+	workingDirectory string
+}
+
+var _ cache.MetadataRetriever = fileMetadataRetriever{}
+
+func (f fileMetadataRetriever) Get(steps []batcheslib.Step) ([]cache.MountMetadata, error) {
+	var mountsMetadata []cache.MountMetadata
+	for _, step := range steps {
+		// Build up the metadata for each mount for each step
+		for _, mount := range step.Mount {
+			metadata, err := f.getMountMetadata(f.workingDirectory, mount.Path)
+			if err != nil {
+				return nil, err
+			}
+			// A mount could be a directory containing multiple files
+			mountsMetadata = append(mountsMetadata, metadata...)
+		}
+	}
+	return mountsMetadata, nil
+}
+
+func (f fileMetadataRetriever) getMountMetadata(baseDir string, path string) ([]cache.MountMetadata, error) {
+	fullPath := path
+	if !filepath.IsAbs(path) {
+		fullPath = filepath.Join(baseDir, path)
+	}
+	info, err := os.Stat(fullPath)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, errors.Newf("path %s does not exist", path)
+	} else if err != nil {
+		return nil, err
+	}
+	var metadata []cache.MountMetadata
+	if info.IsDir() {
+		dirMetadata, err := f.getDirectoryMountMetadata(fullPath)
+		if err != nil {
+			return nil, err
+		}
+		metadata = append(metadata, dirMetadata...)
+	} else {
+		relativePath, err := filepath.Rel(f.workingDirectory, fullPath)
+		if err != nil {
+			return nil, err
+		}
+		metadata = append(metadata, cache.MountMetadata{Path: relativePath, Size: info.Size(), Modified: info.ModTime().UTC()})
+	}
+	return metadata, nil
+}
+
+// getDirectoryMountMetadata reads all the files in the directory with the given
+// path and returns the cache.MountMetadata for all of them.
+func (f fileMetadataRetriever) getDirectoryMountMetadata(path string) ([]cache.MountMetadata, error) {
+	dir, err := os.ReadDir(path)
+	if err != nil {
+		return nil, err
+	}
+	var metadata []cache.MountMetadata
+	for _, dirEntry := range dir {
+		// Go back to the very start. Need to get the FileInfo again for the new path and figure out if it is a
+		// directory or a file.
+		fileMetadata, err := f.getMountMetadata(path, dirEntry.Name())
+		if err != nil {
+			return nil, err
+		}
+		metadata = append(metadata, fileMetadata...)
+	}
+	return metadata, nil
 }
