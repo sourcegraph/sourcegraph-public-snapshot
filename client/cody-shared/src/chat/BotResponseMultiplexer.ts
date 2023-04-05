@@ -28,9 +28,7 @@ export class BufferedBotResponseSubscriber implements BotResponseSubscriber {
      * end of a turn.
      * @param callback the callback to handle content from the bot, if any.
      */
-    constructor(
-        private callback: (content: string | undefined) => Promise<void>
-    ) {}
+    constructor(private callback: (content: string | undefined) => Promise<void>) {}
 
     // BotResponseSubscriber implementation
 
@@ -68,10 +66,10 @@ export class BotResponseMultiplexer {
      * The default topic. Messages without a prefix are sent to the default
      * topic subscriber, if any.
      */
-    public static readonly DEFAULT_TOPIC = 'Assistant:'
+    public static readonly DEFAULT_TOPIC = 'Assistant'
 
     // Matches topics, or prefixes of topics
-    private static readonly TOPIC_RE = /^([A-Za-z]*)(:?)/m
+    private static readonly TOPIC_RE = /^([A-Za-z-]*)(:?)/m
 
     private subs_ = new Map<string, BotResponseSubscriber>()
 
@@ -79,7 +77,7 @@ export class BotResponseMultiplexer {
     private currentTopic_: string = BotResponseMultiplexer.DEFAULT_TOPIC
 
     // Buffers responses until topics can be parsed
-    private buffer_: string = ''
+    private buffer_ = ''
 
     /**
      * Subscribes to a topic in the bot response. Each topic can have only one
@@ -89,8 +87,8 @@ export class BotResponseMultiplexer {
      */
     public sub(topic: string, subscriber: BotResponseSubscriber): void {
         // This test needs to be kept in sync with `TOPIC_RE`
-        if (!/^[A-Za-z]+$/.test(topic)) {
-            throw new Error(`topics must be A-Za-z, was "${topic}`)
+        if (!/^[A-Za-z-]+$/.test(topic)) {
+            throw new Error(`topics must be A-Za-z-, was "${topic}`)
         }
         this.subs_.set(topic, subscriber)
     }
@@ -101,7 +99,7 @@ export class BotResponseMultiplexer {
     public async notifyTurnComplete(): Promise<void> {
         // Flush buffered content, if any
         if (this.buffer_) {
-            this.push(this.currentTopic_, this.buffer_)
+            await this.push(this.currentTopic_, this.buffer_)
         }
 
         // Reset to the default topic, ready for another turn
@@ -124,7 +122,7 @@ export class BotResponseMultiplexer {
             const match = this.buffer_.match(BotResponseMultiplexer.TOPIC_RE)
             if (match) {
                 if (typeof match.index === 'undefined') {
-                    throw new Error('unreachable')
+                    throw new TypeError('unreachable')
                 }
                 const matchEnd = match.index + match[0].length
                 const topic = match[1]
@@ -133,24 +131,35 @@ export class BotResponseMultiplexer {
                     if (this.subs_.has(topic)) {
                         // Flush the buffered content before the new topic
                         let content
-                        [content, this.buffer_] = splitAt(this.buffer_, match.index, matchEnd)
+                        ;[content, this.buffer_] = splitAt(this.buffer_, match.index, matchEnd)
                         await this.push(this.currentTopic_, content)
                         // Switch topics
                         this.currentTopic_ = topic
                     } else {
                         // The topic has no subscriber, so treat it as content.
                         let content
-                        [content, this.buffer_] = splitAt(this.buffer_, matchEnd)
+                        ;[content, this.buffer_] = splitAt(this.buffer_, matchEnd)
                         await this.push(this.currentTopic_, content)
                     }
-                } else {
+                } else if (matchEnd === this.buffer_.length) {
                     // A topic is forming, but is incomplete, so wait for more content
                     return
+                } else {
+                    // TODO: This could consume a prefix and the next thing that appears looks like a topic
+                    // There's no terminating colon, so push the whole line to the current topic
+                    let newline = this.buffer_.indexOf('\n') + 1
+                    if (!newline) {
+                        newline = this.buffer_.length
+                    }
+                    let content
+                    ;[content, this.buffer_] = splitAt(this.buffer_, newline)
+                    await this.push(this.currentTopic_, content)
                 }
             } else {
                 // No new topic is forming, so publish the in-progress content to the current topic
-                await this.push(this.currentTopic_, this.buffer_)
+                const content = this.buffer_
                 this.buffer_ = ''
+                await this.push(this.currentTopic_, content)
             }
         }
     }
@@ -166,6 +175,8 @@ export class BotResponseMultiplexer {
 
     /** Produces a prompt to describe the response format to the bot. */
     public prompt(): string {
-        return `Separate each part of the response with a blank line. Prefix each part of the response with one of ${[...this.subs_.keys()].join(': ')}:\n\n`
+        return `Separate each part of the response with a blank line. Prefix each part of the response with one of ${[
+            ...this.subs_.keys(),
+        ].join(': ')}:\n\n`
     }
 }
