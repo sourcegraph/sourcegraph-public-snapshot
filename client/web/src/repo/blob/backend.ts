@@ -51,7 +51,7 @@ interface FetchBlobOptions {
 export const fetchBlob = memoizeObservable(
     (
         options: FetchBlobOptions
-    ): Observable<(BlobFileFields & { snapshot?: { offset: number; data: string }[] }) | null> => {
+    ): Observable<(BlobFileFields & { snapshot?: { offset: number; data: string }[] | null }) | null> => {
         const {
             repoName,
             revision,
@@ -145,9 +145,14 @@ export const fetchBlob = memoizeObservable(
                     throw new Error('Commit not found')
                 }
 
-                return { snapshot: data.repository.commit.blob?.lsif?.snapshot, ...data.repository.commit.file } as
-                    | (BlobFileFields & { snapshot?: { offset: number; data: string }[] })
-                    | null
+                if (!data.repository.commit.file) {
+                    throw new Error('File not found')
+                }
+
+                return {
+                    ...data.repository.commit.file,
+                    snapshot: data.repository.commit.blob?.lsif?.snapshot,
+                }
             })
         )
     },

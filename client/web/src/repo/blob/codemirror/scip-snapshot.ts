@@ -14,15 +14,15 @@ class SCIPSnapshotDecorations extends WidgetType {
     }
 }
 
-export const scipSnapshot = (data?: { offset: number; data: string }[]): Extension => {
+export const scipSnapshot = (data?: { offset: number; data: string }[] | null): Extension => {
+    if (!data) return []
+
     const widgets = data?.map(line => {
         return Decoration.widget({
             widget: new SCIPSnapshotDecorations(line.data),
             block: true,
         }).range(line.offset, line.offset)
     })
-
-    if (!widgets) return []
 
     return [EditorView.decorations.of(Decoration.set(widgets))]
 }

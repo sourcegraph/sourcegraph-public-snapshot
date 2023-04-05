@@ -19,7 +19,6 @@ import {
     TraceSpanProvider,
     useCurrentSpan,
 } from '@sourcegraph/observability-client'
-import { updateSettings } from '@sourcegraph/shared/src/api/client/services/settings'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
@@ -45,7 +44,6 @@ import {
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeIntelligenceProps } from '../../codeintel'
-import { newSettingsGetter } from '../../codeintel/settings'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'

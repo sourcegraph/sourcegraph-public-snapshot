@@ -108,7 +108,7 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
     /** External URLs for the file */
     externalURLs?: ExternalLinkFields[]
 
-    snapshotData?: { offset: number; data: string }[]
+    snapshotData?: { offset: number; data: string }[] | null
 }
 
 const staticExtensions: Extension = [
