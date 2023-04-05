@@ -82,51 +82,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
 
-    transcript = [
-        { displayText: 'What repo do you have access to?', timestamp: '9:30', speaker: 'human', text: 'Text' },
-        {
-            displayText:
-                "I don't have access to any repositories yet. The code I have seen so far is from Sourcegraph's codebase, not from any external repositories. I need access to that repository's code to answer questions about it.",
-            timestamp: '9:32',
-            speaker: 'assistant',
-            text: 'Text',
-        },
-        {
-            displayText:
-                'This is a code snippet written in JavaScript that imports several components and modules, and then defines and styles a new component using a styling library called styled-components.',
-            timestamp: '9:30',
-            speaker: 'human',
-            text: 'Text',
-        },
-        {
-            displayText: "I don't have access to any repositories yet.",
-            timestamp: '9:32',
-            speaker: 'assistant',
-            text: 'Text',
-        },
-        {
-            displayText:
-                "I don't have access to any repositories yet. The code I have seen so far is from Sourcegraph's codebase, not from any external repositories. I need access to that repository's code to answer questions about it.",
-            timestamp: '9:32',
-            speaker: 'assistant',
-            text: 'Text',
-        },
-        {
-            displayText:
-                'This is a code snippet written in JavaScript that imports several components and modules, and then defines and styles a new component using a styling library called styled-components.',
-            timestamp: '9:30',
-            speaker: 'human',
-            text: 'Text',
-        },
-        {
-            displayText:
-                "I don't have access to any repositories yet. The code I have seen so far is from Sourcegraph's codebase, not from any external repositories. I need access to that repository's code to answer questions about it.",
-            timestamp: '9:32',
-            speaker: 'assistant',
-            text: 'Text',
-        },
-    ]
-
     const inputHandler = useCallback(
         (inputValue: string) => {
             const rowsCount = inputValue.match(/\n/g)?.length

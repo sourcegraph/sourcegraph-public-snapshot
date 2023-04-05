@@ -463,7 +463,12 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                                 </Button>
                             </div>
                         </div>
-                        <RepoRevisionSidebarCody focusKey={codyFocusKey} repoName={''} repoID={''} activePath={''} />
+                        <RepoRevisionSidebarCody
+                            focusKey={codyFocusKey}
+                            repoName={repoName}
+                            repoID={''} // Missing the ID in this context.
+                            activePath={filePath || ''}
+                        />
                     </div>
                 </div>
             )}
