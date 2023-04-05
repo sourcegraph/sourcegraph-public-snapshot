@@ -40,6 +40,7 @@ go_test(
     ],
     embed = [":command"],
     deps = [
+        "//enterprise/cmd/executor/internal/util",
         "//enterprise/internal/executor/types",
         "//internal/executor",
         "//internal/observation",
