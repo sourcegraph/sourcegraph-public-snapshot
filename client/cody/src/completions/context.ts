@@ -58,6 +58,7 @@ async function getFiles(currentEditor: vscode.TextEditor, history: History): Pro
             continue
         }
         if (tab.document.languageId !== curLang) {
+            // TODO(beyang): handle JavaScript <-> TypeScript and verify this works for C header files
             // omit files of other languages
             continue
         }
@@ -85,15 +86,16 @@ export interface JaccardMatch {
 }
 
 export function jaccardScore(targetWords: Map<string, number>, matchWords: Map<string, number>): number {
-    const intersection = [...targetWords.keys()].reduce((acc, word) => {
-        return acc + Math.min(targetWords.get(word) || 0, matchWords.get(word) || 0)
-    }, 0)
+    let intersection = 0
+    for (const [targetWord, count] of targetWords.entries()) {
+        intersection += Math.min(count, matchWords.get(targetWord) || 0)
+    }
     const unionSet = new Set([...targetWords.keys(), ...matchWords.keys()])
-
-    const union = [...unionSet].reduce((acc, word) => {
-        return acc + Math.max(targetWords.get(word) || 0, matchWords.get(word) || 0)
-    }, 0)
-    if (intersection === 0) {
+    let union = 0
+    for (const word of unionSet) {
+        union += Math.max(targetWords.get(word) || 0, matchWords.get(word) || 0)
+    }
+    if (union === 0) {
         return 0
     }
     return intersection / union
@@ -106,36 +108,33 @@ export function bestJaccardMatch(targetText: string, matchText: string, windowSi
 
     const windowWords = new Map<string, number>()
     for (let i = 0; i < Math.min(windowSize, lines.length); i++) {
-        for (const wordInThisLine of wordsForEachLine[i].keys()) {
-            windowWords.set(
-                wordInThisLine,
-                (windowWords.get(wordInThisLine) || 0) + (wordsForEachLine[i].get(wordInThisLine) || 0)
-            )
+        for (const [wordInThisLine, wordInThisLineCount] of wordsForEachLine[i].entries()) {
+            windowWords.set(wordInThisLine, (windowWords.get(wordInThisLine) || 0) + wordInThisLineCount)
         }
     }
     const bothWords = new Map<string, number>()
-    for (const word of targetWords.keys()) {
-        bothWords.set(word, Math.min(targetWords.get(word) || 0, windowWords.get(word) || 0))
+    for (const [word, wordCount] of targetWords.entries()) {
+        bothWords.set(word, Math.min(wordCount, windowWords.get(word) || 0))
     }
 
     let bestScore = jaccardScore(targetWords, windowWords)
     let bestWindow = [0, Math.min(windowSize, lines.length)]
     for (let i = 0; i < wordsForEachLine.length - windowSize; i++) {
-        for (const word of wordsForEachLine[i].keys()) {
-            windowWords.set(word, (windowWords.get(word) || 0) - (wordsForEachLine[i].get(word) || 0))
+        for (const [word, wordCount] of wordsForEachLine[i].entries()) {
+            windowWords.set(word, (windowWords.get(word) || 0) - wordCount)
             if (windowWords.get(word)! < 0) {
                 windowWords.set(word, 0)
             }
-            bothWords.set(word, (bothWords.get(word) || 0) - (wordsForEachLine[i].get(word) || 0))
+            bothWords.set(word, (bothWords.get(word) || 0) - wordCount)
             if (bothWords.get(word)! < 0) {
                 bothWords.set(word, 0)
             }
         }
-        for (const word of wordsForEachLine[i + windowSize].keys()) {
+        for (const [word, wordCount] of wordsForEachLine[i + windowSize].entries()) {
             if (windowWords.get(word) === undefined) {
                 windowWords.set(word, 0)
             }
-            windowWords.set(word, (windowWords.get(word) || 0) + (wordsForEachLine[i + windowSize].get(word) || 0))
+            windowWords.set(word, (windowWords.get(word) || 0) + wordCount)
             if (targetWords.get(word)! > 0) {
                 bothWords.set(
                     word,
