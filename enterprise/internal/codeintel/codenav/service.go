@@ -1370,7 +1370,7 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 		return nil, err
 	}
 
-	repo, err := s.repoStore.Get(ctx, api.RepoID(dump.ID))
+	repo, err := s.repoStore.Get(ctx, api.RepoID(dump.RepositoryID))
 	if err != nil {
 		return nil, err
 	}
