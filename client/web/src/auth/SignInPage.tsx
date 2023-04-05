@@ -147,7 +147,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                             variant="secondary"
                             as={Link}
                         >
-                            <Icon aria-hidden={true} svgPath={mdiKeyVariant} /> More ways to login
+                            <Icon aria-hidden={true} svgPath={mdiKeyVariant} /> Other login methods
                         </Button>
                     </div>
                 )}

@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`SignInPage renders "More ways to login" if primary provider count is low enough 1`] = `
+exports[`SignInPage renders "Other login methods" if primary provider count is low enough 1`] = `
 <DocumentFragment>
   <div
     class="signinSignupPage"
@@ -89,7 +89,7 @@ exports[`SignInPage renders "More ways to login" if primary provider count is lo
                   d="M22,18V22H18V19H15V16H12L9.74,13.74C9.19,13.91 8.61,14 8,14A6,6 0 0,1 2,8A6,6 0 0,1 8,2A6,6 0 0,1 14,8C14,8.61 13.91,9.19 13.74,9.74L22,18M7,5A2,2 0 0,0 5,7A2,2 0 0,0 7,9A2,2 0 0,0 9,7A2,2 0 0,0 7,5Z"
                 />
               </svg>
-               More ways to login
+               Other login methods
             </a>
           </div>
         </div>
@@ -342,7 +342,7 @@ exports[`SignInPage renders sign in page (dotcom) 1`] = `
                   d="M22,18V22H18V19H15V16H12L9.74,13.74C9.19,13.91 8.61,14 8,14A6,6 0 0,1 2,8A6,6 0 0,1 8,2A6,6 0 0,1 14,8C14,8.61 13.91,9.19 13.74,9.74L22,18M7,5A2,2 0 0,0 5,7A2,2 0 0,0 7,9A2,2 0 0,0 9,7A2,2 0 0,0 7,5Z"
                 />
               </svg>
-               More ways to login
+               Other login methods
             </a>
           </div>
         </div>
@@ -490,7 +490,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
                   d="M22,18V22H18V19H15V16H12L9.74,13.74C9.19,13.91 8.61,14 8,14A6,6 0 0,1 2,8A6,6 0 0,1 8,2A6,6 0 0,1 14,8C14,8.61 13.91,9.19 13.74,9.74L22,18M7,5A2,2 0 0,0 5,7A2,2 0 0,0 7,9A2,2 0 0,0 9,7A2,2 0 0,0 7,5Z"
                 />
               </svg>
-               More ways to login
+               Other login methods
             </a>
           </div>
         </div>
@@ -927,7 +927,7 @@ exports[`SignInPage renders sign in page (server) with request access link 1`] =
                   d="M22,18V22H18V19H15V16H12L9.74,13.74C9.19,13.91 8.61,14 8,14A6,6 0 0,1 2,8A6,6 0 0,1 8,2A6,6 0 0,1 14,8C14,8.61 13.91,9.19 13.74,9.74L22,18M7,5A2,2 0 0,0 5,7A2,2 0 0,0 7,9A2,2 0 0,0 9,7A2,2 0 0,0 7,5Z"
                 />
               </svg>
-               More ways to login
+               Other login methods
             </a>
           </div>
         </div>
@@ -1061,7 +1061,7 @@ exports[`SignInPage with Gerrit auth provider does not render the Gerrit provide
                   d="M22,18V22H18V19H15V16H12L9.74,13.74C9.19,13.91 8.61,14 8,14A6,6 0 0,1 2,8A6,6 0 0,1 8,2A6,6 0 0,1 14,8C14,8.61 13.91,9.19 13.74,9.74L22,18M7,5A2,2 0 0,0 5,7A2,2 0 0,0 7,9A2,2 0 0,0 9,7A2,2 0 0,0 7,5Z"
                 />
               </svg>
-               More ways to login
+               Other login methods
             </a>
           </div>
         </div>
@@ -1195,7 +1195,7 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 2 
                   d="M22,18V22H18V19H15V16H12L9.74,13.74C9.19,13.91 8.61,14 8,14A6,6 0 0,1 2,8A6,6 0 0,1 8,2A6,6 0 0,1 14,8C14,8.61 13.91,9.19 13.74,9.74L22,18M7,5A2,2 0 0,0 5,7A2,2 0 0,0 7,9A2,2 0 0,0 9,7A2,2 0 0,0 7,5Z"
                 />
               </svg>
-               More ways to login
+               Other login methods
             </a>
           </div>
         </div>
@@ -1339,7 +1339,7 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 3 
                   d="M22,18V22H18V19H15V16H12L9.74,13.74C9.19,13.91 8.61,14 8,14A6,6 0 0,1 2,8A6,6 0 0,1 8,2A6,6 0 0,1 14,8C14,8.61 13.91,9.19 13.74,9.74L22,18M7,5A2,2 0 0,0 5,7A2,2 0 0,0 7,9A2,2 0 0,0 9,7A2,2 0 0,0 7,5Z"
                 />
               </svg>
-               More ways to login
+               Other login methods
             </a>
           </div>
         </div>

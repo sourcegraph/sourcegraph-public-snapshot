@@ -69,7 +69,7 @@ describe('SignInPage', () => {
         const rendered = render('/sign-in', {})
         expect(
             within(rendered.baseElement)
-                .queryByText(txt => txt.includes('More ways to login'))
+                .queryByText(txt => txt.includes('Other login methods'))
                 ?.closest('a')
         ).toBeInTheDocument()
         expect(
@@ -105,18 +105,18 @@ describe('SignInPage', () => {
             authProviders: authProviders.filter(authProvider => authProvider.serviceType === 'builtin'),
         })
         expect(
-            within(rendered.baseElement).queryByText(txt => txt.includes('More ways to login'))
+            within(rendered.baseElement).queryByText(txt => txt.includes('Other login methods'))
         ).not.toBeInTheDocument()
 
         expect(rendered.asFragment()).toMatchSnapshot()
     })
 
-    it('renders "More ways to login" if primary provider count is low enough', () => {
+    it('renders "Other login methods" if primary provider count is low enough', () => {
         const rendered = render('/sign-in', {
             authProviders: authProviders.filter(authProvider => authProvider.serviceType !== 'builtin'),
             primaryLoginProvidersCount: 1,
         })
-        expect(within(rendered.baseElement).queryByText(txt => txt.includes('More ways to login'))).toBeInTheDocument()
+        expect(within(rendered.baseElement).queryByText(txt => txt.includes('Other login methods'))).toBeInTheDocument()
 
         expect(rendered.asFragment()).toMatchSnapshot()
     })
@@ -127,7 +127,7 @@ describe('SignInPage', () => {
             primaryLoginProvidersCount: 1,
         })
         expect(
-            within(rendered.baseElement).queryByText(txt => txt.includes('More ways to login'))
+            within(rendered.baseElement).queryByText(txt => txt.includes('Other login methods'))
         ).not.toBeInTheDocument()
 
         expect(

@@ -1890,7 +1890,7 @@
       }
     },
     "auth.primaryLoginProvidersCount": {
-      "description": "The number of auth providers that will be shown to the user on the login screen. Other providers are shown under `More ways to login` section.",
+      "description": "The number of auth providers that will be shown to the user on the login screen. Other providers are shown under `Other login methods` section.",
       "type": "integer",
       "group": "Authentication",
       "default": 3
