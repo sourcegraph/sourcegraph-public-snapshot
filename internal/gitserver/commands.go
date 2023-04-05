@@ -1022,6 +1022,9 @@ func (c *clientImplementor) LsFiles(ctx context.Context, checker authz.SubRepoPe
 // pattern in a particular commit of a repository.
 func (c *clientImplementor) ListFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, opts *protocol.ListFilesOpts) (_ []string, err error) {
 	files, err := c.ReadDir(ctx, checker, repo, commit, "", true)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading directory")
+	}
 	var filteredFiles []string
 	if opts.Pattern != nil {
 		for _, file := range files {
