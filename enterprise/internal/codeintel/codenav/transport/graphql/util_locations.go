@@ -125,9 +125,9 @@ func (r *rangeResolver) urlFragment() string {
 
 type positionResolver struct{ pos lsp.Position }
 
-func newPositionResolver(pos lsp.Position) resolverstubs.PositionResolver {
-	return &positionResolver{pos: pos}
-}
+// func newPositionResolver(pos lsp.Position) resolverstubs.PositionResolver {
+// 	return &positionResolver{pos: pos}
+// }
 
 func (r *positionResolver) Line() int32      { return int32(r.pos.Line) }
 func (r *positionResolver) Character() int32 { return int32(r.pos.Character) }
