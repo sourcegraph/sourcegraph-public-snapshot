@@ -98,8 +98,6 @@ func parseInput(inputPath string) (batcheslib.WorkspacesExecutionInput, error) {
 		return executionInput, errors.Wrapf(err, "failed to read execution input file %q", inputPath)
 	}
 
-	fmt.Println("input: ", string(input))
-
 	if err = json.Unmarshal(input, &executionInput); err != nil {
 		return executionInput, errors.Wrap(err, "failed to unmarshal execution input")
 	}
@@ -114,7 +112,6 @@ func parsePreviousStepResult(path string, step int) (execution.AfterStepResult, 
 		if err != nil {
 			return previousResult, errors.Wrap(err, "failed to read step result file")
 		}
-		fmt.Println("stepJSON: ", string(stepJSON))
 
 		if err = json.Unmarshal(stepJSON, &previousResult); err != nil {
 			return previousResult, errors.Wrap(err, "failed to unmarshal step result file")
