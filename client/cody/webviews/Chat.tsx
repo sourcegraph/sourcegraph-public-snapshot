@@ -54,6 +54,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             submitButtonComponent={SubmitButton}
             fileLinkComponent={FileLink}
             tipsRecommendations={TIPS_RECOMMENDATIONS}
+            className={styles.innerContainer}
+            transcriptContainerClassName={transcript.length > 0 ? styles.transcriptContainer : undefined}
             bubbleContentClassName={styles.bubbleContent}
             humanBubbleContentClassName={styles.humanBubbleContent}
             botBubbleContentClassName={styles.botBubbleContent}
