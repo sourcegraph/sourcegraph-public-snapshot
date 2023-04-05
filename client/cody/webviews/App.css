@@ -25,10 +25,3 @@ button {
     overflow: auto;
     flex: 1;
 }
-
-.transcript-container {
-    display: flex;
-    flex-direction: column-reverse;
-    overflow: auto;
-    flex: 1;
-}
