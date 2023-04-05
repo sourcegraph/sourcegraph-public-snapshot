@@ -266,6 +266,10 @@ func (r *batchSpecWorkspaceStepV2Resolver) Environment() ([]graphqlbackend.Batch
 	// the final env. Otherwise, we fall back to the preliminary set of env vars as determined by the
 	// resolve workspaces step.
 
+	if r.skipped {
+		return nil, nil
+	}
+
 	var env = r.stepInfo.Environment
 
 	// Not yet resolved, use the preliminary env vars.
