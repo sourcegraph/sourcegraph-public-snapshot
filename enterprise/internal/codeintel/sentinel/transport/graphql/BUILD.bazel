@@ -11,13 +11,10 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/sentinel/shared",
-        "//enterprise/internal/codeintel/shared/resolvers",
         "//enterprise/internal/codeintel/shared/resolvers/dataloader",
         "//enterprise/internal/codeintel/shared/resolvers/gitresolvers",
         "//enterprise/internal/codeintel/uploads/transport/graphql",
         "//internal/codeintel/resolvers",
-        "//internal/database",
-        "//internal/gitserver",
         "//internal/gqlutil",
         "//internal/metrics",
         "//internal/observation",
