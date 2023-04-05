@@ -29,7 +29,6 @@ type Store interface {
 	GetUploadIDsWithReferences(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData, ignoreIDs []int, repositoryID int, commit string, limit int, offset int, trace observation.TraceLogger) ([]int, int, int, error)
 	GetVisibleUploadsMatchingMonikers(ctx context.Context, repositoryID int, commit string, orderedMonikers []precise.QualifiedMonikerData, limit, offset int) (shared.PackageReferenceScanner, int, error)
 	GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) ([]shared.Dump, error)
-	ReferencesForUpload(ctx context.Context, uploadID int) (shared.PackageReferenceScanner, error)
 	GetAuditLogsForUpload(ctx context.Context, uploadID int) ([]shared.UploadLog, error)
 	DeleteUploads(ctx context.Context, opts shared.DeleteUploadsOptions) error
 	DeleteUploadByID(ctx context.Context, id int) (bool, error)
@@ -50,15 +49,18 @@ type Store interface {
 	AddUploadPart(ctx context.Context, uploadID, partIndex int) error
 	MarkQueued(ctx context.Context, id int, uploadSize *int64) error
 	MarkFailed(ctx context.Context, id int, reason string) error
-	WorkerutilStore(observationCtx *observation.Context) dbworkerstore.Store[shared.Upload]
 	DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) error
-	UpdatePackageReferences(ctx context.Context, dumpID int, references []precise.PackageReference) error
+	WorkerutilStore(observationCtx *observation.Context) dbworkerstore.Store[shared.Upload]
+
+	// Dependencies
+	ReferencesForUpload(ctx context.Context, uploadID int) (shared.PackageReferenceScanner, error)
 	UpdatePackages(ctx context.Context, dumpID int, packages []precise.Package) error
+	UpdatePackageReferences(ctx context.Context, dumpID int, references []precise.PackageReference) error
 
 	// Summary
 	GetIndexers(ctx context.Context, opts shared.GetIndexersOptions) ([]string, error)
-	GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]uploadsshared.IndexesWithRepositoryNamespace, error)
 	GetRecentUploadsSummary(ctx context.Context, repositoryID int) ([]shared.UploadsWithRepositoryNamespace, error)
+	GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]uploadsshared.IndexesWithRepositoryNamespace, error)
 	RepositoryIDsWithErrors(ctx context.Context, offset, limit int) ([]uploadsshared.RepositoryWithCount, int, error)
 	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error)
 
