@@ -45,8 +45,8 @@ export class ChatQuestion implements Recipe {
         const isCodebaseContextRequired = await intentDetector.isCodebaseContextRequired(text)
         if (isCodebaseContextRequired) {
             const codebaseContextMessages = await codebaseContext.getContextMessages(text, {
-                numCodeResults: 8,
-                numTextResults: 2,
+                numCodeResults: 12,
+                numTextResults: 3,
             })
             contextMessages.push(...codebaseContextMessages)
         }

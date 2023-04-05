@@ -28,10 +28,24 @@ export class Transcript {
         })
     }
 
+    private async getLastInteractionWithContextIndex(): Promise<number> {
+        for (let index = this.interactions.length - 1; index >= 0; index--) {
+            const hasContext = await this.interactions[index].hasContext()
+            if (hasContext) {
+                return index
+            }
+        }
+        return -1
+    }
+
     public async toPrompt(preamble: Message[] = []): Promise<Message[]> {
+        const lastInteractionWithContextIndex = await this.getLastInteractionWithContextIndex()
         const messages: Message[] = []
         for (let index = 0; index < this.interactions.length; index++) {
-            const interactionMessages = await this.interactions[index].toPrompt(index === this.interactions.length - 1)
+            // Include context messages for the last interaction that has a non-empty context.
+            const interactionMessages = await this.interactions[index].toPrompt(
+                index === lastInteractionWithContextIndex
+            )
             messages.push(...interactionMessages)
         }
 
