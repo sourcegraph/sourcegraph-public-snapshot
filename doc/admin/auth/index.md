@@ -248,7 +248,7 @@ When combined with `"allowSignup": false` or unset, an admin should first create
 Sourcegraph instance:
 
 - Authorization callback URL: `https://sourcegraph.example.com/.auth/gitlab/callback`
-- Scopes: `read_api`, `read_user`
+- Scopes: `read_user`, `read_api` (be sure to set `"apiScope": "read_api"` in the `auth.providers` config, as indicated below)
 
 Then add the following lines to your site configuration:
 
