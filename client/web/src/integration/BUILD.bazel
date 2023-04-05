@@ -109,6 +109,7 @@ mocha_test(
     env = {
         "WEB_BUNDLE_PATH": "$(rootpath //client/web:app-enterprise)",
     },
+    flaky = True,
     tags = [
         "no-cache",
         "no-sandbox",

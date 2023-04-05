@@ -32,7 +32,6 @@
 .context-files-collapsed .context-files-toggle-icon {
     display: flex;
     align-items: flex-start;
-    padding-top: 0.2rem;
 }
 
 .context-files-collapsed-text {
