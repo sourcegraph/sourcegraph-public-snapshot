@@ -2,3 +2,4 @@
 DROP TABLE IF EXISTS text_embeddings;
 DROP TABLE IF EXISTS code_embeddings;
 DROP TABLE IF EXISTS embedding_vectors;
+DROP TABLE IF EXISTS embedding_versions;

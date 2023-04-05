@@ -55,21 +55,33 @@ func (s EmbeddingsStore) HasEmbeddings(ctx context.Context, repoName api.RepoNam
 	return rev, nil
 }
 
-const insertEmbeddingFmtstr = `
-	WITH ins_vector AS (
-		INSERT INTO embedding_vectors (repo_id, embedding)
-		VALUES ($1, $2::vector)
-		RETURNING id AS embedding_id
+const upsertVersionIDFmtstr = `
+	WITH ins AS (
+		INSERT INTO embedding_versions (repo_id, revision)
+		SELECT id, $2
+		FROM repo
+		WHERE name = $1
+		ON CONFLICT (repo_id, revision) DO NOTHING
+		RETURNING id
 	)
-	INSERT INTO %s (embedding_id, repo_id, revision, file_name, start_line, end_line, rank)
-	SELECT          embedding_id, $1,      $3,       $4,        $5,         $6,       $7
-	FROM ins_vector
+	SELECT id FROM ins
+	UNION ALL
+	SELECT id
+	FROM embedding_versions AS ev
+	INNER JOIN repo AS r ON ev.repo_id = r.id
+	WHERE r.name = $1 AND ev.revision = $2
+	LIMIT 1;
+`
+
+const insertEmbeddingFmtstr = `
+	INSERT INTO %s (version_id, embedding, file_name, start_line, end_line, rank)
+	VALUES         ($1,         $2,        $3,        $4,         $5,       $6)
 `
 
 // inefficient, this should use bulk inserter instead
-func insertEmbeddings(ctx context.Context, tableName string, tx *basestore.Store, repoID api.RepoID, revision api.CommitID, embeddings []float32, meta embeddings.RepoEmbeddingRowMetadata, rank float32) error {
+func insertEmbeddings(ctx context.Context, tableName string, tx *basestore.Store, versionID int32, revision api.CommitID, embeddings []float32, meta embeddings.RepoEmbeddingRowMetadata, rank float32) error {
 	q := fmt.Sprintf(insertEmbeddingFmtstr, tableName)
-	_, err := tx.Handle().ExecContext(ctx, q, repoID, fmtVector(embeddings), revision, meta.FileName, meta.StartLine, meta.EndLine, rank)
+	_, err := tx.Handle().ExecContext(ctx, q, versionID, fmtVector(embeddings), meta.FileName, meta.StartLine, meta.EndLine, rank)
 	return err
 }
 
@@ -77,8 +89,8 @@ func (s EmbeddingsStore) UpdateEmbeddings(
 	ctx context.Context,
 	e *embeddings.RepoEmbeddingIndex,
 ) error {
-	var repoID int32
-	if err := s.Handle().QueryRowContext(ctx, "SELECT id FROM repo WHERE name = $1", e.RepoName).Scan(&repoID); err != nil {
+	var versionID int32
+	if err := s.Handle().QueryRowContext(ctx, upsertVersionIDFmtstr, e.RepoName, e.Revision).Scan(&versionID); err != nil {
 		return errors.Wrapf(err, "cannot find repo '%s'", e.RepoName)
 	}
 	return s.WithTransact(ctx, func(tx *basestore.Store) error {
@@ -89,7 +101,7 @@ func (s EmbeddingsStore) UpdateEmbeddings(
 			"text_embeddings": e.TextIndex,
 		} {
 			for i, r := range index.RowMetadata {
-				if err := insertEmbeddings(ctx, tableName, tx, api.RepoID(repoID), e.Revision, index.Embeddings[i*index.ColumnDimension:(i+1)*index.ColumnDimension], r, index.Ranks[i]); err != nil {
+				if err := insertEmbeddings(ctx, tableName, tx, versionID, e.Revision, index.Embeddings[i*index.ColumnDimension:(i+1)*index.ColumnDimension], r, index.Ranks[i]); err != nil {
 					return errors.Wrapf(err, "failed to insert embeddings %s", tableName)
 				}
 			}
@@ -98,15 +110,21 @@ func (s EmbeddingsStore) UpdateEmbeddings(
 	})
 }
 
+const findVersionIdFmtstr = `
+	SELECT id
+	FROM embedding_versions AS ev
+	INNER JOIN repo AS r ON ev.repo_id = r.id
+	WHERE repo.name = $1
+	AND ev.revision = $2
+	LIMIT 1
+`
+
 const embeddingsQueryFmtstr = `
-	SELECT m.file_name, m.start_line, m.end_line
-	FROM embedding_vectors AS v
-	INNER JOIN %s AS m ON v.id = m.embedding_id
-	INNER JOIN repo AS r ON r.id = m.repo_id
-	WHERE r.name = $1
-	AND m.revision = $2
-	ORDER BY v.embedding <=> $3::vector
-	LIMIT $4
+	SELECT v.file_name, v.start_line, v.end_line
+	FROM %s AS v
+	WHERE v.version_id = $1
+	ORDER BY v.embedding <=> $2::vector
+	LIMIT $3
 `
 
 func (s EmbeddingsStore) QueryEmbeddings(
@@ -117,8 +135,12 @@ func (s EmbeddingsStore) QueryEmbeddings(
 	query []float32,
 	n int32,
 ) ([]embeddings.RepoEmbeddingRowMetadata, error) {
+	var versionID int32
+	if err := s.Handle().QueryRowContext(ctx, findVersionIdFmtstr, repoName, revision).Scan(&versionID); err != nil {
+		return nil, errors.Wrap(err, "failed to find repo x version")
+	}
 	q := fmt.Sprintf(embeddingsQueryFmtstr, tableName)
-	rs, err := s.Handle().QueryContext(ctx, q, repoName, revision, fmtVector(query), n)
+	rs, err := s.Handle().QueryContext(ctx, q, versionID, fmtVector(query), n)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
