@@ -3,11 +3,11 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "store",
     srcs = [
+        "configurations.go",
+        "global_metadata.go",
         "observability.go",
-        "scan.go",
+        "repository_matches.go",
         "store.go",
-        "store_configuration.go",
-        "store_repos.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/store",
     visibility = ["//enterprise:__subpackages__"],
@@ -31,8 +31,10 @@ go_library(
 go_test(
     name = "store_test",
     srcs = [
-        "store_configuration_test.go",
-        "store_repo_test.go",
+        "configurations_test.go",
+        "global_metadata_test.go",
+        "repository_matches_test.go",
+        "store_test.go",
     ],
     embed = [":store"],
     tags = [

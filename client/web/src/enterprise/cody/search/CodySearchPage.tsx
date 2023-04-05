@@ -18,7 +18,7 @@ import styles from './CodySearchPage.module.scss'
 export const CodySearchPage: React.FunctionComponent<{}> = () => {
     const navigate = useNavigate()
 
-    const [codyEnabled] = useFeatureFlag('cody', false)
+    const [codyEnabled] = useFeatureFlag('cody-experimental', false)
 
     /** The value entered by the user in the query input */
     const [input, setInput] = useState('')
