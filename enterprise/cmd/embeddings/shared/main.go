@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -87,8 +88,24 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	getContextDetectionEmbeddingIndex := getCachedContextDetectionEmbeddingIndex(uploadStore)
 
+	ms := EmbeddingsStore{Store: basestore.NewWithHandle(db.Handle()), logger: log.Scoped("embeddings", "q")}
 	// Create HTTP server
-	handler := NewHandler(logger, readFile, getRepoEmbeddingIndex, getQueryEmbedding, getContextDetectionEmbeddingIndex)
+	handler := NewHandler(logger, readFile, getRepoEmbeddingIndex, getQueryEmbedding, getContextDetectionEmbeddingIndex,
+		func(ctx context.Context, repoName api.RepoName, query []float32, nCode int32, nTxt int32) (string, []embeddings.RepoEmbeddingRowMetadata, []embeddings.RepoEmbeddingRowMetadata, error) {
+			rev, err := ms.HasEmbeddings(ctx, repoName)
+			if err != nil {
+				return "", nil, nil, err
+			}
+			if rev == "" {
+				return "", nil, nil, errors.New("no revision in db")
+			}
+			txt, err := ms.QueryEmbeddings(ctx, repoName, rev, "text_embeddings", query, nTxt)
+			if err != nil {
+				return "", nil, nil, errors.Wrapf(err, "text embeddings query failed")
+			}
+			cod, err := ms.QueryEmbeddings(ctx, repoName, rev, "code_embeddings", query, nCode)
+			return rev, cod, txt, nil
+		})
 	handler = handlePanic(logger, handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
@@ -113,6 +130,7 @@ func NewHandler(
 	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
 	getQueryEmbedding getQueryEmbeddingFn,
 	getContextDetectionEmbeddingIndex getContextDetectionEmbeddingIndexFn,
+	alternativeSearch justSearchFn,
 ) http.Handler {
 	// Initialize the legacy JSON API server
 	mux := http.NewServeMux()
@@ -129,7 +147,7 @@ func NewHandler(
 			return
 		}
 
-		res, err := searchRepoEmbeddingIndex(r.Context(), logger, args, readFile, getRepoEmbeddingIndex, getQueryEmbedding)
+		res, err := searchRepoEmbeddingIndex(r.Context(), logger, args, readFile, getRepoEmbeddingIndex, getQueryEmbedding, alternativeSearch)
 		if errcode.IsNotFound(err) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

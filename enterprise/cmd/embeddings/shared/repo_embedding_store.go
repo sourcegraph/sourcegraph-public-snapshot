@@ -105,7 +105,7 @@ const embeddingsQueryFmtstr = `
 	INNER JOIN repo AS r ON r.id = m.repo_id
 	WHERE r.name = $1
 	AND m.revision = $2
-	ORDER BY m <=> $3::vector
+	ORDER BY v.embedding <=> $3::vector
 	LIMIT $4
 `
 
