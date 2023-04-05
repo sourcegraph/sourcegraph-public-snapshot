@@ -121,7 +121,7 @@ require (
 	github.com/segmentio/ksuid v1.0.4
 	github.com/sergi/go-diff v1.3.1
 	github.com/shurcooL/httpgzip v0.0.0-20190720172056-320755c1c1b0
-	github.com/slack-go/slack v0.10.1
+	github.com/slack-go/slack v0.12.1
 	github.com/smacker/go-tree-sitter v0.0.0-20220209044044-0d3022e933c3
 	github.com/snabb/sitemap v1.0.0
 	github.com/sourcegraph/go-ctags v0.0.0-20230111110657-c27675da7f71
