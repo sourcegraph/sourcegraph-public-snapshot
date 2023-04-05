@@ -55,7 +55,3 @@ func NewServices(deps ServiceDependencies) (Services, error) {
 		GitserverClient:     gitserverClient,
 	}, nil
 }
-
-func scopedContext(component string, parent *observation.Context) *observation.Context {
-	return observation.ScopedContext("codeintel", "worker", component, parent)
-}
