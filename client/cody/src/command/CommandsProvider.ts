@@ -1,9 +1,11 @@
+import * as anthropic from '@anthropic-ai/sdk'
 import * as openai from 'openai'
 import * as vscode from 'vscode'
 
 import { ChatViewProvider } from '../chat/ChatViewProvider'
 import { CodyCompletionItemProvider } from '../completions'
 import { CompletionsDocumentProvider } from '../completions/docprovider'
+import { History } from '../completions/history'
 import { getConfiguration } from '../configuration'
 import { logEvent, updateEventLogger } from '../event-logger'
 import { ExtensionApi } from '../extension-api'
@@ -113,15 +115,23 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         )
     )
 
-    if (config.experimentalSuggest && config.openaiKey) {
-        const configuration = new openai.Configuration({
-            apiKey: config.openaiKey,
-        })
-        const openaiApi = new openai.OpenAIApi(configuration)
+    if (config.experimentalSuggest) {
+        let openaiApi = null
+        let claudeApi = null
+        if (config.openaiKey) {
+            const configuration = new openai.Configuration({
+                apiKey: config.openaiKey,
+            })
+            openaiApi = new openai.OpenAIApi(configuration)
+        }
+        if (config.anthropicKey) {
+            claudeApi = new anthropic.Client(config.anthropicKey)
+        }
         const docprovider = new CompletionsDocumentProvider()
         vscode.workspace.registerTextDocumentContentProvider('cody', docprovider)
 
-        const completionsProvider = new CodyCompletionItemProvider(openaiApi, docprovider)
+        const history = new History()
+        const completionsProvider = new CodyCompletionItemProvider(claudeApi, docprovider, history)
         context.subscriptions.push(
             vscode.commands.registerCommand('cody.experimental.suggest', async () => {
                 await completionsProvider.fetchAndShowCompletions()

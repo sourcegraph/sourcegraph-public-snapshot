@@ -4,6 +4,7 @@ import * as vscode from 'vscode'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
+import { History } from '../completions/history'
 import { ExtensionApi } from '../extension-api'
 
 import * as mockServer from './mock-server'
@@ -94,5 +95,31 @@ suite('End-to-end', () => {
 
         // Clean up.
         await ensureExecuteCommand('cody.delete-access-token')
+    })
+
+    test('History', async () => {
+        const h = new History(() => null)
+        h.addItem({
+            document: {
+                uri: vscode.Uri.file('foo.ts'),
+                languageId: 'ts',
+            },
+        })
+        h.addItem({
+            document: {
+                uri: vscode.Uri.file('bar.ts'),
+                languageId: 'ts',
+            },
+        })
+        h.addItem({
+            document: {
+                uri: vscode.Uri.file('foo.ts'),
+                languageId: 'ts',
+            },
+        })
+        assert.deepStrictEqual(
+            h.lastN(20).map(h => h.document.uri.fsPath),
+            ['/foo.ts', '/bar.ts']
+        )
     })
 })
