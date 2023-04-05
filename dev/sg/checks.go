@@ -33,13 +33,8 @@ var checks = map[string]check.CheckFunc{
 	"caddy-trusted":         checkCaddyTrusted,
 	"asdf":                  check.CommandOutputContains("asdf", "version"),
 	"git":                   check.Combine(check.InPath("git"), checkGitVersion(">= 2.34.1")),
-<<<<<<< HEAD
-	"pnpm":                  check.Combine(check.InPath("pnpm"), checkPnpmVersion(">= 7.24.2")),
-	"go":                    check.Combine(check.InPath("go"), checkGoVersion("~> 1.19.6")),
-=======
 	"pnpm":                  check.Combine(check.InPath("pnpm"), checkPnpmVersion(">= 7.28.0")),
 	"go":                    check.Combine(check.InPath("go"), checkGoVersion("~> 1.19.8")),
->>>>>>> 741c453ef1 (Update to go 1.19.8 (#50341))
 	"node":                  check.Combine(check.InPath("node"), check.CommandOutputContains(`node -e "console.log(\"foobar\")"`, "foobar")),
 	"rust":                  check.Combine(check.InPath("cargo"), check.CommandOutputContains(`cargo version`, "1.58.0")),
 	"docker-installed":      check.WrapErrMessage(check.InPath("docker"), "if Docker is installed and the check fails, you might need to start Docker.app and restart terminal and 'sg setup'"),
