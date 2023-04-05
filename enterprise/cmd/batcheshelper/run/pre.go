@@ -11,6 +11,7 @@ import (
 
 	"github.com/kballard/go-shellquote"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/log"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
@@ -21,6 +22,7 @@ import (
 // Pre TODO
 func Pre(
 	ctx context.Context,
+	logger *log.Logger,
 	stepIdx int,
 	executionInput batcheslib.WorkspacesExecutionInput,
 	previousResult execution.AfterStepResult,
@@ -66,6 +68,13 @@ func Pre(
 	env, err := template.RenderStepMap(stepEnv, &stepContext)
 	if err != nil {
 		return errors.Wrap(err, "failed to render step env")
+	}
+
+	if err = logger.WriteEvent(batcheslib.LogEventOperationTaskStep, batcheslib.LogEventStatusStarted, &batcheslib.TaskStepMetadata{
+		Step: stepIdx + 1,
+		Env:  env,
+	}); err != nil {
+		return err
 	}
 
 	envPreamble := ""

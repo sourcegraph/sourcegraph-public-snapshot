@@ -1,0 +1,23 @@
+package log
+
+import (
+	"encoding/json"
+	"io"
+	"time"
+
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+)
+
+type Logger struct {
+	W io.Writer
+}
+
+func (l *Logger) WriteEvent(operation batcheslib.LogEventOperation, status batcheslib.LogEventStatus, metadata any) error {
+	e := batcheslib.LogEvent{Operation: operation, Status: status, Metadata: metadata}
+	e.Timestamp = time.Now().UTC().Truncate(time.Millisecond)
+	if err := json.NewEncoder(l.W).Encode(e); err != nil {
+		return errors.Wrap(err, "failed to encode event")
+	}
+	return nil
+}

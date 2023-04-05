@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/log"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
@@ -17,7 +17,7 @@ import (
 )
 
 // Post TODO
-func Post(ctx context.Context, stepIdx int, executionInput batcheslib.WorkspacesExecutionInput, previousResult execution.AfterStepResult) error {
+func Post(ctx context.Context, logger *log.Logger, stepIdx int, executionInput batcheslib.WorkspacesExecutionInput, previousResult execution.AfterStepResult) error {
 	step := executionInput.Steps[stepIdx]
 
 	// Generate the diff.
@@ -115,15 +115,13 @@ func Post(ctx context.Context, stepIdx int, executionInput batcheslib.Workspaces
 		return errors.Wrap(err, "failed to compute cache key")
 	}
 
-	metadata := &batcheslib.CacheAfterStepResultMetadata{
-		Key:   k,
-		Value: stepResult,
-	}
-	e := batcheslib.LogEvent{Operation: batcheslib.LogEventOperationCacheAfterStepResult, Status: batcheslib.LogEventStatusSuccess, Metadata: metadata}
-	e.Timestamp = time.Now().UTC().Truncate(time.Millisecond)
-	err = json.NewEncoder(os.Stdout).Encode(e)
+	err = logger.WriteEvent(
+		batcheslib.LogEventOperationCacheAfterStepResult,
+		batcheslib.LogEventStatusSuccess,
+		&batcheslib.CacheAfterStepResultMetadata{Key: k, Value: stepResult},
+	)
 	if err != nil {
-		return errors.Wrap(err, "failed to encode after step result event")
+		return err
 	}
 
 	return nil

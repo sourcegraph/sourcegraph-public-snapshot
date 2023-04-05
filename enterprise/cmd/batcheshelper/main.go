@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/log"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/run"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
@@ -45,12 +46,14 @@ func doMain() error {
 		return err
 	}
 
+	logger := &log.Logger{W: os.Stdout}
+
 	ctx := context.Background()
 	switch arguments.mode {
 	case "pre":
-		return run.Pre(ctx, arguments.step, executionInput, previousResult, *workspaceFilesPath)
+		return run.Pre(ctx, logger, arguments.step, executionInput, previousResult, *workspaceFilesPath)
 	case "post":
-		return run.Post(ctx, arguments.step, executionInput, previousResult)
+		return run.Post(ctx, logger, arguments.step, executionInput, previousResult)
 	default:
 		return errors.Newf("invalid mode %q", arguments.mode)
 	}
@@ -95,6 +98,8 @@ func parseInput(inputPath string) (batcheslib.WorkspacesExecutionInput, error) {
 		return executionInput, errors.Wrapf(err, "failed to read execution input file %q", inputPath)
 	}
 
+	fmt.Println("input: ", string(input))
+
 	if err = json.Unmarshal(input, &executionInput); err != nil {
 		return executionInput, errors.Wrap(err, "failed to unmarshal execution input")
 	}
@@ -109,6 +114,8 @@ func parsePreviousStepResult(path string, step int) (execution.AfterStepResult, 
 		if err != nil {
 			return previousResult, errors.Wrap(err, "failed to read step result file")
 		}
+		fmt.Println("stepJSON: ", string(stepJSON))
+
 		if err = json.Unmarshal(stepJSON, &previousResult); err != nil {
 			return previousResult, errors.Wrap(err, "failed to unmarshal step result file")
 		}
