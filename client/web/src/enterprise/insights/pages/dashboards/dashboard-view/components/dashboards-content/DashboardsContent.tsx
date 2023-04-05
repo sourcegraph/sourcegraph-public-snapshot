@@ -10,7 +10,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Button, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
-import { LimitedAccessLabel } from '../../../../../components'
+import { GridApi, LimitedAccessLabel } from '../../../../../components'
 import { CustomInsightDashboard } from '../../../../../core'
 import { useCopyURLHandler, useUiFeatures } from '../../../../../hooks'
 import { AddInsightModal } from '../add-insight-modal'
@@ -39,6 +39,7 @@ export const DashboardsContent: FC<DashboardsContentProps> = props => {
     const [copyURL, isCopied] = useCopyURLHandler()
     const [isAddInsightOpen, setAddInsightsState] = useState<boolean>(false)
     const [isDeleteDashboardActive, setDeleteDashboardActive] = useState<boolean>(false)
+    const [dashboardGridApi, setDashboardGridApi] = useState<GridApi>()
 
     useEffect(() => telemetryService.logViewEvent('Insights'), [telemetryService])
     useEffect(() => setLasVisitedDashboard(currentDashboard?.id ?? null), [currentDashboard, setLasVisitedDashboard])
@@ -60,6 +61,10 @@ export const DashboardsContent: FC<DashboardsContentProps> = props => {
             }
             case DashboardMenuAction.CopyLink: {
                 copyURL()
+                return
+            }
+            case DashboardMenuAction.ResetGridLayout: {
+                dashboardGridApi?.resetGridLayout()
                 return
             }
         }
@@ -111,6 +116,7 @@ export const DashboardsContent: FC<DashboardsContentProps> = props => {
                     telemetryService={telemetryService}
                     className={styles.insights}
                     onAddInsightRequest={() => setAddInsightsState(true)}
+                    onDashboardCreate={setDashboardGridApi}
                 />
             ) : (
                 <DashboardEmptyContent dashboards={dashboards} />
