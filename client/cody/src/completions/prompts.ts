@@ -19,12 +19,12 @@ export function messagesToText(messages: Message[]): string {
 }
 
 export interface PromptTemplate {
-    make(bytesBudget: number, prefix: string, suffix: string, snippets: ReferenceSnippet[]): string
+    make(charsBudget: number, prefix: string, suffix: string, snippets: ReferenceSnippet[]): string
     postProcess(completion: string, prefix: string): string
 }
 
 export class SingleLinePromptTemplate implements PromptTemplate {
-    make(bytesBudget: number, prefix: string, suffix: string, snippets: ReferenceSnippet[]): string {
+    make(charsBudget: number, prefix: string, suffix: string, snippets: ReferenceSnippet[]): string {
         // TODO(beyang): escape 'Human:' and 'Assistant:'
         // console.log(`>>>${prefix}<<<`)
 
@@ -81,7 +81,7 @@ export class SingleLinePromptTemplate implements PromptTemplate {
 
 export class KnowledgeBasePromptTemplate implements PromptTemplate {
     make(
-        bytesBudget: number,
+        charsBudget: number,
         prefix: string,
         suffix: string, // TODO(beyang)
         snippets: ReferenceSnippet[]
@@ -127,7 +127,7 @@ export class KnowledgeBasePromptTemplate implements PromptTemplate {
         }
 
         const promptNoSnippets = messagesToText([...referenceSnippetMessages, ...prefixMessages])
-        let remainingBytes = bytesBudget - promptNoSnippets.length - 10 // extra 10 bytes of buffer cuz who knows
+        let remainingChars = charsBudget - promptNoSnippets.length - 10 // extra 10 chars of buffer cuz who knows
         for (const snippet of snippets) {
             const snippetMessages: Message[] = [
                 {
@@ -143,13 +143,12 @@ export class KnowledgeBasePromptTemplate implements PromptTemplate {
                     text: 'Okay, I have added it to my knowledge base.',
                 },
             ]
-            const numSnippetBytes = messagesToText(snippetMessages).length + 1
-            console.log(`# numSnippetBytes: ${numSnippetBytes}, remainingBytes: ${remainingBytes}`)
-            if (numSnippetBytes > remainingBytes) {
+            const numSnippetChars = messagesToText(snippetMessages).length + 1
+            if (numSnippetChars > remainingChars) {
                 break
             }
             referenceSnippetMessages.push(...snippetMessages)
-            remainingBytes -= numSnippetBytes
+            remainingChars -= numSnippetChars
         }
 
         return messagesToText([...referenceSnippetMessages, ...prefixMessages])

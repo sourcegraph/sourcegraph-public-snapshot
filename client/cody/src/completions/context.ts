@@ -13,7 +13,7 @@ export async function getContext(
     history: History,
     targetText: string,
     windowSize: number,
-    maxBytes: number
+    maxChars: number
 ): Promise<ReferenceSnippet[]> {
     const files = await getFiles(currentEditor, history)
     const matches: ReferenceSnippet[] = []
@@ -28,13 +28,13 @@ export async function getContext(
     matches.sort((a, b) => b.score - a.score)
 
     const context: ReferenceSnippet[] = []
-    let totalBytes = 0
+    let totalChars = 0
     for (const match of matches) {
-        if (totalBytes + match.text.length > maxBytes) {
+        if (totalChars + match.text.length > maxChars) {
             break
         }
         context.push(match)
-        totalBytes += match.text.length
+        totalChars += match.text.length
     }
 
     return context

@@ -20,7 +20,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         private documentProvider: CompletionsDocumentProvider,
         private history: History,
         private contextWindowTokens = 2048, // 8001
-        private bytesPerToken = 4,
+        private charsPerToken = 4,
         private responseTokens = 200,
         private prefixPercentage = 0.6,
         private suffixPercentage = 0.1
@@ -44,8 +44,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         }
     }
 
-    private tokToByte(toks: number): number {
-        return toks * this.bytesPerToken
+    private tokToChar(toks: number): number {
+        return toks * this.charsPerToken
     }
 
     private async provideInlineCompletionItemsInner(
@@ -62,8 +62,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         const docContext = getCurrentDocContext(
             document,
             position,
-            this.tokToByte(this.maxPrefixTokens),
-            this.tokToByte(this.maxSuffixTokens)
+            this.tokToChar(this.maxPrefixTokens),
+            this.tokToChar(this.maxSuffixTokens)
         )
         if (!docContext) {
             return []
@@ -71,15 +71,13 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const { prefix, prevLine: precedingLine } = docContext
         let waitMs: number
-        // let completionPrefix = '' // text to require as the first part of the completion
-        const remainingBytes = this.tokToByte(this.promptTokens)
+        const remainingChars = this.tokToChar(this.promptTokens)
         const completers: CompletionProvider[] = []
         if (precedingLine.trim() === '') {
             // Start of line: medium debounce
-            // TODO(beyang): allow multiple lines
             waitMs = 1000
             completers.push(
-                new EndOfLineCompletionProvider(this.claude, remainingBytes, this.responseTokens, prefix, '', 2)
+                new EndOfLineCompletionProvider(this.claude, remainingChars, this.responseTokens, prefix, '', 2)
             )
         } else if (context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke || precedingLine.endsWith('.')) {
             // Do nothing
@@ -87,8 +85,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             // End of line: long debounce, complete until newline
             waitMs = 2000
             completers.push(
-                new EndOfLineCompletionProvider(this.claude, remainingBytes, this.responseTokens, prefix, '', 2),
-                new EndOfLineCompletionProvider(this.claude, remainingBytes, this.responseTokens, prefix, '\n', 2)
+                new EndOfLineCompletionProvider(this.claude, remainingChars, this.responseTokens, prefix, '', 2),
+                new EndOfLineCompletionProvider(this.claude, remainingChars, this.responseTokens, prefix, '\n', 2)
             )
         }
 
@@ -129,8 +127,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         const docContext = getCurrentDocContext(
             currentEditor.document,
             currentEditor.selection.start,
-            this.tokToByte(this.maxPrefixTokens),
-            this.tokToByte(this.maxSuffixTokens)
+            this.tokToChar(this.maxPrefixTokens),
+            this.tokToChar(this.maxSuffixTokens)
         )
         if (docContext === null) {
             console.error('not showing completions, no currently open doc')
@@ -144,7 +142,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             content: 'Complete whatever code you obtain from the user up to the end of the function or block scope.',
         }
         const l = (systemMessage.role + ': ' + systemMessage.content + '\n').length + prefix.length + 'user: \n'.length
-        const contextBytes = this.tokToByte(this.promptTokens) - l
+        const contextChars = this.tokToChar(this.promptTokens) - l
 
         const windowSize = 20
         const similarCode = await getContext(
@@ -152,14 +150,14 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             this.history,
             lastNLines(prefix, windowSize),
             windowSize,
-            contextBytes
+            contextChars
         )
 
-        const remainingBytes = this.tokToByte(this.promptTokens)
+        const remainingChars = this.tokToChar(this.promptTokens)
 
         const completer = new MultilineCompletionProvider(
             this.claude,
-            remainingBytes,
+            remainingChars,
             this.responseTokens,
             similarCode,
             prefix
@@ -282,7 +280,7 @@ interface CompletionProvider {
 export class MultilineCompletionProvider implements CompletionProvider {
     constructor(
         private claude: anthropic.Client,
-        private promptBytes: number,
+        private promptChars: number,
         private responseTokens: number,
         private snippets: ReferenceSnippet[],
         private prefix: string,
@@ -331,7 +329,7 @@ export class MultilineCompletionProvider implements CompletionProvider {
         }
 
         const promptNoSnippets = messagesToText([...referenceSnippetMessages, ...prefixMessages])
-        let remainingBytes = this.promptBytes - promptNoSnippets.length - 10 // extra 10 bytes of buffer cuz who knows
+        let remainingChars = this.promptChars - promptNoSnippets.length - 10 // extra 10 chars of buffer cuz who knows
         for (const snippet of this.snippets) {
             const snippetMessages: Message[] = [
                 {
@@ -347,13 +345,12 @@ export class MultilineCompletionProvider implements CompletionProvider {
                     text: 'Okay, I have added it to my knowledge base.',
                 },
             ]
-            const numSnippetBytes = messagesToText(snippetMessages).length + 1
-            console.log(`# numSnippetBytes: ${numSnippetBytes}, remainingBytes: ${remainingBytes}`)
-            if (numSnippetBytes > remainingBytes) {
+            const numSnippetChars = messagesToText(snippetMessages).length + 1
+            if (numSnippetChars > remainingChars) {
                 break
             }
             referenceSnippetMessages.push(...snippetMessages)
-            remainingBytes -= numSnippetBytes
+            remainingChars -= numSnippetChars
         }
 
         return messagesToText([...referenceSnippetMessages, ...prefixMessages])
@@ -369,8 +366,8 @@ export class MultilineCompletionProvider implements CompletionProvider {
     async generateCompletions(n?: number): Promise<Completion[]> {
         // Create prompt
         const prompt = this.makePrompt()
-        if (prompt.length > this.promptBytes) {
-            throw new Error('prompt length exceeded maximum alloted bytes')
+        if (prompt.length > this.promptChars) {
+            throw new Error('prompt length exceeded maximum alloted chars')
         }
 
         // Issue request
@@ -396,7 +393,7 @@ export class MultilineCompletionProvider implements CompletionProvider {
 export class EndOfLineCompletionProvider implements CompletionProvider {
     constructor(
         private claude: anthropic.Client,
-        private promptBytes: number,
+        private promptChars: number,
         private responseTokens: number,
         private prefix: string,
         // eslint-disable-next-line
@@ -473,8 +470,8 @@ export class EndOfLineCompletionProvider implements CompletionProvider {
     async generateCompletions(n?: number): Promise<Completion[]> {
         // Create prompt
         const prompt = this.makePrompt()
-        if (prompt.length > this.promptBytes) {
-            throw new Error('prompt length exceeded maximum alloted bytes')
+        if (prompt.length > this.promptChars) {
+            throw new Error('prompt length exceeded maximum alloted chars')
         }
 
         // Issue request
