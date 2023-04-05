@@ -1,11 +1,10 @@
 import { within } from '@testing-library/dom'
 import { Route, Routes } from 'react-router-dom'
 
-import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { AuthenticatedUser } from '../auth'
-import { AuthProvider, SourcegraphContext } from '../jscontext'
+import { SourcegraphContext } from '../jscontext'
 
 import { SignInPage } from './SignInPage'
 
@@ -57,7 +56,6 @@ describe('SignInPage', () => {
                                 authProviders: props.authProviders ?? authProviders,
                                 resetPasswordEnabled: true,
                                 xhrHeaders: {},
-                                experimentalFeatures: props.experimentalFeatures ?? {},
                                 primaryLoginProvidersCount: props.primaryLoginProvidersCount ?? 5,
                             }}
                         />
@@ -186,7 +184,7 @@ describe('SignInPage', () => {
         })
     })
 
-    it('renders sign in page (cloud)', () => {
+    it('renders sign in page (dotcom)', () => {
         expect(render('/sign-in', { sourcegraphDotComMode: true }).asFragment()).toMatchSnapshot()
     })
 

@@ -1,9 +1,6 @@
-import React, { ReactNode } from 'react'
-
 import { Meta, Story } from '@storybook/react'
-import { InitialEntry } from 'history'
 
-import { WebStory, WebStoryProps } from '../components/WebStory'
+import { WebStory } from '../components/WebStory'
 import { SourcegraphContext } from '../jscontext'
 
 import { SignInPage, SignInPageProps } from './SignInPage'
