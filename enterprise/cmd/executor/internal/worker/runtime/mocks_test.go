@@ -4,7 +4,7 @@
 // this repository. To add additional mocks to this or another package, add a new entry
 // to the mockgen.yaml file in the root of this repository.
 
-package workspace
+package runtime
 
 import (
 	"context"
@@ -15,6 +15,7 @@ import (
 
 	util "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	command "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	workspace "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	types "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	executor "github.com/sourcegraph/sourcegraph/internal/executor"
 )
@@ -972,7 +973,7 @@ func NewStrictMockFilesStore() *MockFilesStore {
 
 // NewMockFilesStoreFrom creates a new mock of the MockFilesStore interface.
 // All methods delegate to the given implementation, unless overwritten.
-func NewMockFilesStoreFrom(i FilesStore) *MockFilesStore {
+func NewMockFilesStoreFrom(i workspace.FilesStore) *MockFilesStore {
 	return &MockFilesStore{
 		ExistsFunc: &FilesStoreExistsFunc{
 			defaultHook: i.Exists,
@@ -1207,6 +1208,380 @@ func (c FilesStoreGetFuncCall) Args() []interface{} {
 // invocation.
 func (c FilesStoreGetFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// MockWorkspace is a mock implementation of the Workspace interface (from
+// the package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace)
+// used for unit testing.
+type MockWorkspace struct {
+	// PathFunc is an instance of a mock function object controlling the
+	// behavior of the method Path.
+	PathFunc *WorkspacePathFunc
+	// RemoveFunc is an instance of a mock function object controlling the
+	// behavior of the method Remove.
+	RemoveFunc *WorkspaceRemoveFunc
+	// ScriptFilenamesFunc is an instance of a mock function object
+	// controlling the behavior of the method ScriptFilenames.
+	ScriptFilenamesFunc *WorkspaceScriptFilenamesFunc
+}
+
+// NewMockWorkspace creates a new mock of the Workspace interface. All
+// methods return zero values for all results, unless overwritten.
+func NewMockWorkspace() *MockWorkspace {
+	return &MockWorkspace{
+		PathFunc: &WorkspacePathFunc{
+			defaultHook: func() (r0 string) {
+				return
+			},
+		},
+		RemoveFunc: &WorkspaceRemoveFunc{
+			defaultHook: func(context.Context, bool) {
+				return
+			},
+		},
+		ScriptFilenamesFunc: &WorkspaceScriptFilenamesFunc{
+			defaultHook: func() (r0 []string) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockWorkspace creates a new mock of the Workspace interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockWorkspace() *MockWorkspace {
+	return &MockWorkspace{
+		PathFunc: &WorkspacePathFunc{
+			defaultHook: func() string {
+				panic("unexpected invocation of MockWorkspace.Path")
+			},
+		},
+		RemoveFunc: &WorkspaceRemoveFunc{
+			defaultHook: func(context.Context, bool) {
+				panic("unexpected invocation of MockWorkspace.Remove")
+			},
+		},
+		ScriptFilenamesFunc: &WorkspaceScriptFilenamesFunc{
+			defaultHook: func() []string {
+				panic("unexpected invocation of MockWorkspace.ScriptFilenames")
+			},
+		},
+	}
+}
+
+// NewMockWorkspaceFrom creates a new mock of the MockWorkspace interface.
+// All methods delegate to the given implementation, unless overwritten.
+func NewMockWorkspaceFrom(i workspace.Workspace) *MockWorkspace {
+	return &MockWorkspace{
+		PathFunc: &WorkspacePathFunc{
+			defaultHook: i.Path,
+		},
+		RemoveFunc: &WorkspaceRemoveFunc{
+			defaultHook: i.Remove,
+		},
+		ScriptFilenamesFunc: &WorkspaceScriptFilenamesFunc{
+			defaultHook: i.ScriptFilenames,
+		},
+	}
+}
+
+// WorkspacePathFunc describes the behavior when the Path method of the
+// parent MockWorkspace instance is invoked.
+type WorkspacePathFunc struct {
+	defaultHook func() string
+	hooks       []func() string
+	history     []WorkspacePathFuncCall
+	mutex       sync.Mutex
+}
+
+// Path delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockWorkspace) Path() string {
+	r0 := m.PathFunc.nextHook()()
+	m.PathFunc.appendCall(WorkspacePathFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Path method of the
+// parent MockWorkspace instance is invoked and the hook queue is empty.
+func (f *WorkspacePathFunc) SetDefaultHook(hook func() string) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Path method of the parent MockWorkspace instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *WorkspacePathFunc) PushHook(hook func() string) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *WorkspacePathFunc) SetDefaultReturn(r0 string) {
+	f.SetDefaultHook(func() string {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *WorkspacePathFunc) PushReturn(r0 string) {
+	f.PushHook(func() string {
+		return r0
+	})
+}
+
+func (f *WorkspacePathFunc) nextHook() func() string {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *WorkspacePathFunc) appendCall(r0 WorkspacePathFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of WorkspacePathFuncCall objects describing
+// the invocations of this function.
+func (f *WorkspacePathFunc) History() []WorkspacePathFuncCall {
+	f.mutex.Lock()
+	history := make([]WorkspacePathFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// WorkspacePathFuncCall is an object that describes an invocation of method
+// Path on an instance of MockWorkspace.
+type WorkspacePathFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c WorkspacePathFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c WorkspacePathFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// WorkspaceRemoveFunc describes the behavior when the Remove method of the
+// parent MockWorkspace instance is invoked.
+type WorkspaceRemoveFunc struct {
+	defaultHook func(context.Context, bool)
+	hooks       []func(context.Context, bool)
+	history     []WorkspaceRemoveFuncCall
+	mutex       sync.Mutex
+}
+
+// Remove delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockWorkspace) Remove(v0 context.Context, v1 bool) {
+	m.RemoveFunc.nextHook()(v0, v1)
+	m.RemoveFunc.appendCall(WorkspaceRemoveFuncCall{v0, v1})
+	return
+}
+
+// SetDefaultHook sets function that is called when the Remove method of the
+// parent MockWorkspace instance is invoked and the hook queue is empty.
+func (f *WorkspaceRemoveFunc) SetDefaultHook(hook func(context.Context, bool)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Remove method of the parent MockWorkspace instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *WorkspaceRemoveFunc) PushHook(hook func(context.Context, bool)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *WorkspaceRemoveFunc) SetDefaultReturn() {
+	f.SetDefaultHook(func(context.Context, bool) {
+		return
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *WorkspaceRemoveFunc) PushReturn() {
+	f.PushHook(func(context.Context, bool) {
+		return
+	})
+}
+
+func (f *WorkspaceRemoveFunc) nextHook() func(context.Context, bool) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *WorkspaceRemoveFunc) appendCall(r0 WorkspaceRemoveFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of WorkspaceRemoveFuncCall objects describing
+// the invocations of this function.
+func (f *WorkspaceRemoveFunc) History() []WorkspaceRemoveFuncCall {
+	f.mutex.Lock()
+	history := make([]WorkspaceRemoveFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// WorkspaceRemoveFuncCall is an object that describes an invocation of
+// method Remove on an instance of MockWorkspace.
+type WorkspaceRemoveFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 bool
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c WorkspaceRemoveFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c WorkspaceRemoveFuncCall) Results() []interface{} {
+	return []interface{}{}
+}
+
+// WorkspaceScriptFilenamesFunc describes the behavior when the
+// ScriptFilenames method of the parent MockWorkspace instance is invoked.
+type WorkspaceScriptFilenamesFunc struct {
+	defaultHook func() []string
+	hooks       []func() []string
+	history     []WorkspaceScriptFilenamesFuncCall
+	mutex       sync.Mutex
+}
+
+// ScriptFilenames delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockWorkspace) ScriptFilenames() []string {
+	r0 := m.ScriptFilenamesFunc.nextHook()()
+	m.ScriptFilenamesFunc.appendCall(WorkspaceScriptFilenamesFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ScriptFilenames
+// method of the parent MockWorkspace instance is invoked and the hook queue
+// is empty.
+func (f *WorkspaceScriptFilenamesFunc) SetDefaultHook(hook func() []string) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ScriptFilenames method of the parent MockWorkspace instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *WorkspaceScriptFilenamesFunc) PushHook(hook func() []string) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *WorkspaceScriptFilenamesFunc) SetDefaultReturn(r0 []string) {
+	f.SetDefaultHook(func() []string {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *WorkspaceScriptFilenamesFunc) PushReturn(r0 []string) {
+	f.PushHook(func() []string {
+		return r0
+	})
+}
+
+func (f *WorkspaceScriptFilenamesFunc) nextHook() func() []string {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *WorkspaceScriptFilenamesFunc) appendCall(r0 WorkspaceScriptFilenamesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of WorkspaceScriptFilenamesFuncCall objects
+// describing the invocations of this function.
+func (f *WorkspaceScriptFilenamesFunc) History() []WorkspaceScriptFilenamesFuncCall {
+	f.mutex.Lock()
+	history := make([]WorkspaceScriptFilenamesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// WorkspaceScriptFilenamesFuncCall is an object that describes an
+// invocation of method ScriptFilenames on an instance of MockWorkspace.
+type WorkspaceScriptFilenamesFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []string
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c WorkspaceScriptFilenamesFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c WorkspaceScriptFilenamesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // MockCmdRunner is a mock implementation of the CmdRunner interface (from

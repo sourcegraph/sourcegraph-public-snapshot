@@ -25,6 +25,7 @@ type Runtime interface {
 	NewRunnerSpecs(ws workspace.Workspace, steps []types.DockerStep) ([]runner.Spec, error)
 }
 
+// RunnerOptions are the options to create a runner.
 type RunnerOptions struct {
 	Name             string
 	Path             string
@@ -37,7 +38,7 @@ func New(
 	ops *command.Operations,
 	filesStore workspace.FilesStore,
 	cloneOpts workspace.CloneOptions,
-	dockerOpts command.DockerOptions,
+	runnerOpts runner.Options,
 	runner util.CmdRunner,
 	cmd command.Command,
 ) (Runtime, error) {
@@ -49,12 +50,41 @@ func New(
 			operations:   ops,
 			filesStore:   filesStore,
 			cloneOptions: cloneOpts,
-			dockerOpts:   dockerOpts,
+			dockerOpts:   runnerOpts.DockerOptions,
 		}, nil
 	}
 
-	err := util.ValidateDockerTools(runner)
-	if err != nil {
+	if runnerOpts.FirecrackerOptions.Enabled {
+		// We explicitly want a Firecracker runtime. So validation must pass.
+		if err := util.ValidateFirecrackerTools(runner); err != nil {
+			var errMissingTools *util.ErrMissingTools
+			if errors.As(err, &errMissingTools) {
+				logger.Error("runtime 'docker' is not supported: missing required tools", log.Strings("dockerTools", errMissingTools.Tools))
+			} else {
+				logger.Error("failed to determine if docker tools are configured", log.Error(err))
+			}
+			return nil, err
+		} else if err = util.ValidateIgniteInstalled(context.Background(), runner); err != nil {
+			logger.Error("runtime 'firecracker' is not supported: ignite is not installed", log.Error(err))
+			return nil, err
+		} else if err = util.ValidateCNIInstalled(runner); err != nil {
+			logger.Error("runtime 'firecracker' is not supported: CNI plugins are not installed", log.Error(err))
+			return nil, err
+		} else {
+			logger.Info("using runtime 'firecracker'")
+			return &firecrackerRuntime{
+				cmdRunner:       runner,
+				cmd:             cmd,
+				operations:      ops,
+				filesStore:      filesStore,
+				cloneOptions:    cloneOpts,
+				firecrackerOpts: runnerOpts.FirecrackerOptions,
+			}, nil
+		}
+	}
+
+	// Default to Docker runtime.
+	if err := util.ValidateDockerTools(runner); err != nil {
 		var errMissingTools *util.ErrMissingTools
 		if errors.As(err, &errMissingTools) {
 			logger.Warn("runtime 'docker' is not supported: missing required tools", log.Strings("dockerTools", errMissingTools.Tools))
@@ -62,12 +92,12 @@ func New(
 			logger.Warn("failed to determine if docker tools are configured", log.Error(err))
 		}
 	} else {
-		logger.Info("runtime 'docker' is supported")
+		logger.Info("using runtime 'docker'")
 		return &dockerRuntime{
 			operations:   ops,
 			filesStore:   filesStore,
 			cloneOptions: cloneOpts,
-			dockerOpts:   dockerOpts,
+			dockerOpts:   runnerOpts.DockerOptions,
 			cmd:          cmd,
 		}, nil
 	}
@@ -75,11 +105,13 @@ func New(
 }
 
 // ErrNoRuntime is the error when there is no runtime configured.
-var ErrNoRuntime = errors.New("runtime is not configured: use SetupRuntime to configure the runtime")
+var ErrNoRuntime = errors.New("runtime is not configured")
 
+// Name is the name of the runtime.
 type Name string
 
 const (
-	NameDocker Name = "docker"
-	NameShell  Name = "shell"
+	NameDocker      Name = "docker"
+	NameFirecracker Name = "firecracker"
+	NameShell       Name = "shell"
 )
