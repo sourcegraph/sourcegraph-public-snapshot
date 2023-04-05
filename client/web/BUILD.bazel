@@ -1003,6 +1003,7 @@ ts_project(
         "src/hooks/useScrollManager/useScrollManager.ts",
         "src/hooks/useUrlSyncedState.ts",
         "src/hooks/useUrlSyncedString.ts",
+        "src/hooks/useUserExternalAccounts.ts",
         "src/initBuildInfo.ts",
         "src/insights/Icons.tsx",
         "src/insights/types.ts",
