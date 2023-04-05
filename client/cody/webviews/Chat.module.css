@@ -51,6 +51,11 @@
     display: flex;
     flex-direction: column-reverse;
     flex: 1;
+    overflow: auto;
+}
+
+.empty-transcript-container {
+    overflow: auto;
 }
 
 .inner-container {
