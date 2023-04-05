@@ -2329,6 +2329,8 @@ type SiteConfiguration struct {
 	AuthPasswordPolicy *AuthPasswordPolicy `json:"auth.passwordPolicy,omitempty"`
 	// AuthPasswordResetLinkExpiry description: The duration (in seconds) that a password reset link is considered valid.
 	AuthPasswordResetLinkExpiry int `json:"auth.passwordResetLinkExpiry,omitempty"`
+	// AuthPrimaryLoginProvidersCount description: The number of auth providers that will be shown to the user on the login screen. Other providers are shown under `Other login methods` section.
+	AuthPrimaryLoginProvidersCount int `json:"auth.primaryLoginProvidersCount,omitempty"`
 	// AuthProviders description: The authentication providers to use for identifying and signing in users. See instructions below for configuring SAML, OpenID Connect (including Google Workspace), and HTTP authentication proxies. Multiple authentication providers are supported (by specifying multiple elements in this array).
 	AuthProviders []AuthProviders `json:"auth.providers,omitempty"`
 	// AuthPublic description: WARNING: This option has been removed as of 3.8.
@@ -2607,6 +2609,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "auth.minPasswordLength")
 	delete(m, "auth.passwordPolicy")
 	delete(m, "auth.passwordResetLinkExpiry")
+	delete(m, "auth.primaryLoginProvidersCount")
 	delete(m, "auth.providers")
 	delete(m, "auth.public")
 	delete(m, "auth.sessionExpiry")

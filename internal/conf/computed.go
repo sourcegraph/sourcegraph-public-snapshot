@@ -334,6 +334,17 @@ func IsAccessRequestEnabled() bool {
 	return authAccessRequest == nil || authAccessRequest.Enabled == nil || *authAccessRequest.Enabled
 }
 
+// AuthPrimaryLoginProvidersCount returns the number of primary login providers
+// configured, or 3 (the default) if not explicitly configured.
+// This is only used for the UI
+func AuthPrimaryLoginProvidersCount() int {
+	c := Get().AuthPrimaryLoginProvidersCount
+	if c == 0 {
+		return 3 // default to 3
+	}
+	return c
+}
+
 // SearchSymbolsParallelism returns 20, or the site config
 // "debug.search.symbolsParallelism" value if configured.
 func SearchSymbolsParallelism() int {
