@@ -25,6 +25,7 @@ export type FeatureFlagName =
     | 'sentinel'
     | 'cody-experimental'
     | 'clone-progress-logging'
+    | 'sourcegraph-operator-site-admin-hide-maintenance'
 
 interface OrgFlagOverride {
     orgID: string
