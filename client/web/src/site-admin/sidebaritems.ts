@@ -130,14 +130,26 @@ export const usersGroup: SiteAdminSideBarGroup = {
     ],
 }
 
+export const maintenanceGroupHeaderLabel = 'Maintenance'
+
+export const maintenanceGroupMonitoringItemLabel = 'Monitoring'
+
+export const maintenanceGroupInstrumentationItemLabel = 'Instrumentation'
+
+export const maintenanceGroupUpdatesItemLabel = 'Updates'
+
+export const maintenanceGroupMigrationsItemLabel = 'Migrations'
+
+export const maintenanceGroupTracingItemLabel = 'Tracing'
+
 export const maintenanceGroup: SiteAdminSideBarGroup = {
     header: {
-        label: 'Maintenance',
+        label: maintenanceGroupHeaderLabel,
         icon: MonitorStarIcon,
     },
     items: [
         {
-            label: 'Updates',
+            label: maintenanceGroupUpdatesItemLabel,
             to: '/site-admin/updates',
         },
         {
@@ -156,24 +168,24 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
-            label: 'Migrations',
+            label: maintenanceGroupMigrationsItemLabel,
             to: '/site-admin/migrations',
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
-            label: 'Instrumentation',
+            label: maintenanceGroupInstrumentationItemLabel,
             to: '/-/debug/',
             source: 'server',
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
-            label: 'Monitoring',
+            label: maintenanceGroupMonitoringItemLabel,
             to: '/-/debug/grafana',
             source: 'server',
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
-            label: 'Tracing',
+            label: maintenanceGroupTracingItemLabel,
             to: '/-/debug/jaeger',
             source: 'server',
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
