@@ -305,6 +305,10 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
         adjustTextAreaHeight()
     }
 
+    useEffect(() => {
+        adjustTextAreaHeight()
+    }, [value])
+
     return (
         <textarea
             ref={textAreaRef}
