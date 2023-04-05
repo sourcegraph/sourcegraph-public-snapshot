@@ -10,7 +10,10 @@ rust_binary(
     ),
     deps = all_crate_deps(
         normal = True,
-    ) + ["//docker-images/syntax-highlighter/crates/sg-syntax:sg-syntax"],
+    ) + [
+        "//docker-images/syntax-highlighter/crates/sg-syntax:sg-syntax",
+        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages:scip-treesitter-languages",
+    ],
 )
 
 rust_test(
