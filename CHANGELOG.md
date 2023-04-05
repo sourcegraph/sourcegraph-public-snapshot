@@ -45,6 +45,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed CVE-2023-0464 in container images
+- Fixed CVE-2023-24532 in container images
 - Fixed an issue where Slack code monitoring notifications failed when the message was too long. [#50083](https://github.com/sourcegraph/sourcegraph/pull/50083)
 - Fixed an edge case issue with usage statistics calculations that cross over month and year boundaries.
 - Fixed the "Last incremental sync" value in user/repo permissions from displaying a wrong date if no sync had been completed yet.
