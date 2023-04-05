@@ -1,5 +1,7 @@
 import React, { useState, useCallback } from 'react'
 
+import { formatDuration } from 'date-fns'
+
 import { logger } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
 import { Text } from '@sourcegraph/wildcard'
@@ -72,7 +74,23 @@ export function useUserListActions(onEnd: (error?: any) => void): UseUserListAct
 
     const handleDeleteUsers = useCallback(
         (users: SiteUser[]) => {
-            if (confirm('Are you sure you want to delete the selected user(s)?')) {
+            const duration = window.context.userRecoveryRestrictedDurationInSeconds
+            const seconds = duration % 60
+            const minutes = Math.floor(duration / 60) % 60
+            const hours = Math.floor(duration / 60 / 60) % 24
+            const days = Math.floor(duration / 60 / 60 / 24)
+
+            const formattedDuration = formatDuration({
+                days,
+                hours,
+                minutes,
+                seconds,
+            })
+            if (
+                confirm(
+                    `Are you sure you want to delete the selected user(s)?\nYou won't be able to recover again within ${formattedDuration}.`
+                )
+            ) {
                 deleteUsers({ variables: { userIDs: users.map(user => user.id) } })
                     .then(
                         createOnSuccess(

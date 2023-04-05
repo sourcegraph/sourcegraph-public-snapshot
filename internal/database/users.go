@@ -774,6 +774,8 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 	_ = db.EventLogs().BulkInsert(ctx, logEvents)
 }
 
+var UserRecoveryRestrictedDuration = 7 * 24 * time.Hour // 7 days
+
 // RecoverUsersList recovers a list of users by their IDs.
 func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) (_ []int32, err error) {
 	tx, err := u.transact(ctx)
@@ -790,6 +792,16 @@ func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) (_ []int3
 
 	if err := tx.Exec(ctx, sqlf.Sprintf("INSERT INTO names(name, user_id) SELECT username, id FROM users WHERE id IN(%s)", idsCond)); err != nil {
 		return nil, err
+	}
+
+	// Check that all users's deletion time are not within the recovery restricted duration
+	recoveryRestrictedUsersQuery := sqlf.Sprintf("SELECT TRUE FROM users WHERE id IN (%s) AND deleted_at > NOW() - (%v * '1 second'::INTERVAL)", idsCond, UserRecoveryRestrictedDuration/time.Second)
+	exists, _, err := basestore.ScanFirstBool(tx.Query(ctx, recoveryRestrictedUsersQuery))
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, errors.Newf(`Cannot recover users that were deleted less than %s ago`, timeutil.FormatDuration(UserRecoveryRestrictedDuration))
 	}
 
 	const updateAccessTokensQuery = `

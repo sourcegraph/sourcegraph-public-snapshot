@@ -882,6 +882,9 @@ func TestUsers_Delete(t *testing.T) {
 }
 
 func TestUsers_RecoverUsers(t *testing.T) {
+	// for testing purposes we want to be able to recover recently deleted users
+	UserRecoveryRestrictedDuration = 0
+
 	if testing.Short() {
 		t.Skip()
 	}
@@ -928,6 +931,7 @@ func TestUsers_RecoverUsers(t *testing.T) {
 			t.Errorf("got %d recovered users, want 0", len(ru))
 		}
 	})
+
 	//Test reviving a user that does exist and hasn't not been deleted
 	t.Run("fails on non-deleted user", func(t *testing.T) {
 		ru, err := db.Users().RecoverUsersList(ctx, []int32{user.ID})
@@ -937,6 +941,30 @@ func TestUsers_RecoverUsers(t *testing.T) {
 		if len(ru) != 0 {
 			t.Errorf("got %d users, want 0", len(ru))
 		}
+	})
+
+	// Test reviving a user that does exist and deleted within a recovery restriction duration
+	t.Run("fails on recently deleted user", func(t *testing.T) {
+		previousUserRecoveryRestrictedDuration := UserRecoveryRestrictedDuration
+		UserRecoveryRestrictedDuration = 1 * time.Hour
+		newUser, err := db.Users().Create(ctx, NewUser{
+			Email:                 "a2@a.com",
+			Username:              "u2",
+			Password:              "p2",
+			EmailVerificationCode: "c2",
+		})
+		err = db.Users().Delete(ctx, newUser.ID)
+		if err != nil {
+			t.Errorf("got err %v, want nil", err)
+		}
+		ru, err := db.Users().RecoverUsersList(ctx, []int32{newUser.ID})
+		if err == nil {
+			t.Error("got err nil, want non-nill", err)
+		}
+		if len(ru) != 0 {
+			t.Errorf("got %d users, want 0", len(ru))
+		}
+		UserRecoveryRestrictedDuration = previousUserRecoveryRestrictedDuration
 	})
 
 	//Test reviving a user that does exist and does not have additional resources deleted in the same timeframe

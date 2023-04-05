@@ -205,6 +205,8 @@ type JSContext struct {
 	LocalFilePickerAvailable bool `json:"localFilePickerAvailable"`
 
 	SrcServeGitUrl string `json:"srcServeGitUrl"`
+
+	UserRecoveryRestrictedDurationInSeconds int `json:"userRecoveryRestrictedDurationInSeconds"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -381,6 +383,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		LocalFilePickerAvailable: deploy.IsApp() && filepicker.Available(),
 
 		SrcServeGitUrl: srcServeGitUrl,
+
+		UserRecoveryRestrictedDurationInSeconds: int(database.UserRecoveryRestrictedDuration / time.Second),
 	}
 }
 

@@ -265,6 +265,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Whether the feedback survey is enabled. */
     disableFeedbackSurvey?: boolean
+
+    /** Duration in seconds during which deleted users cannot be recovered */
+    userRecoveryRestrictedDurationInSeconds: number
 }
 
 export interface BrandAssets {

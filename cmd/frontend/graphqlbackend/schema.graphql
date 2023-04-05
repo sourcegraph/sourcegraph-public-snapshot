@@ -251,7 +251,8 @@ type Mutation {
     """
     deleteUsers(users: [ID!]!, hard: Boolean): EmptyResponse
     """
-    Bulk "recoverUser" action.
+    Restores previously soft deleted users
+    Returns error if any of the users's deletions time is within recovery restriction duration
     """
     recoverUsers(userIDs: [ID!]!): EmptyResponse
     """
