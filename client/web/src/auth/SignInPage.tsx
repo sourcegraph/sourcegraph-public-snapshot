@@ -68,10 +68,14 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
         return true
     }
 
-    const unsetShowMore = (event: React.MouseEvent): void => {
-        searchParams.delete('showMore')
+    const toggleMoreProviders = (showMore: boolean): void => {
+        const param = 'showMore'
+        if (showMore) {
+            searchParams.set(param, '')
+        } else {
+            searchParams.delete(param)
+        }
         setSearchParams(searchParams)
-        event.preventDefault()
     }
 
     const thirdPartyAuthProviders = nonBuiltinAuthProviders.filter(provider => shouldShowProvider(provider))
@@ -101,9 +105,14 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
             >
                 {showMoreProviders && (
                     <div className="mb-3 text-left">
-                        <Link to="" onClick={unsetShowMore}>
-                            <Icon aria-hidden={true} svgPath={mdiChevronLeft} /> Back
-                        </Link>
+                        <Button
+                            variant="link"
+                            className="p-0 border-0 font-weight-normal"
+                            onClick={() => toggleMoreProviders(false)}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiChevronLeft} />
+                            Back
+                        </Button>
                     </div>
                 )}
                 {builtInAuthProvider && (showMoreProviders || thirdPartyAuthProviders.length === 0) && (
@@ -141,12 +150,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                 ))}
                 {showMoreWaysToLogin && (
                     <div className="mb-2">
-                        <Button
-                            to={`${location.pathname}?showMore&${searchParams.toString()}`}
-                            display="block"
-                            variant="secondary"
-                            as={Link}
-                        >
+                        <Button display="block" variant="secondary" onClick={() => toggleMoreProviders(true)}>
                             <Icon aria-hidden={true} svgPath={mdiKeyVariant} /> Other login methods
                         </Button>
                     </div>

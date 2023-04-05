@@ -70,7 +70,7 @@ describe('SignInPage', () => {
         expect(
             within(rendered.baseElement)
                 .queryByText(txt => txt.includes('Other login methods'))
-                ?.closest('a')
+                ?.closest('button')
         ).toBeInTheDocument()
         expect(
             within(rendered.baseElement)

@@ -72,9 +72,9 @@ exports[`SignInPage renders "Other login methods" if primary provider count is l
           <div
             class="mb-2"
           >
-            <a
-              class="anchorLink btn btnSecondary btnBlock"
-              href="/sign-in?showMore&"
+            <button
+              class="btn btnSecondary btnBlock"
+              type="button"
             >
               <svg
                 aria-hidden="true"
@@ -90,7 +90,7 @@ exports[`SignInPage renders "Other login methods" if primary provider count is l
                 />
               </svg>
                Other login methods
-            </a>
+            </button>
           </div>
         </div>
         <p
@@ -160,9 +160,9 @@ exports[`SignInPage renders non-primary auth provider if primary provider count 
           <div
             class="mb-3 text-left"
           >
-            <a
-              class="anchorLink"
-              href=""
+            <button
+              class="btn btnLink p-0 border-0 font-weight-normal"
+              type="button"
             >
               <svg
                 aria-hidden="true"
@@ -177,8 +177,8 @@ exports[`SignInPage renders non-primary auth provider if primary provider count 
                   d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z"
                 />
               </svg>
-               Back
-            </a>
+              Back
+            </button>
           </div>
           <div
             class="mb-2"
@@ -325,9 +325,9 @@ exports[`SignInPage renders sign in page (dotcom) 1`] = `
           <div
             class="mb-2"
           >
-            <a
-              class="anchorLink btn btnSecondary btnBlock"
-              href="/sign-in?showMore&"
+            <button
+              class="btn btnSecondary btnBlock"
+              type="button"
             >
               <svg
                 aria-hidden="true"
@@ -343,7 +343,7 @@ exports[`SignInPage renders sign in page (dotcom) 1`] = `
                 />
               </svg>
                Other login methods
-            </a>
+            </button>
           </div>
         </div>
         <p
@@ -473,9 +473,9 @@ exports[`SignInPage renders sign in page (server) 1`] = `
           <div
             class="mb-2"
           >
-            <a
-              class="anchorLink btn btnSecondary btnBlock"
-              href="/sign-in?showMore&"
+            <button
+              class="btn btnSecondary btnBlock"
+              type="button"
             >
               <svg
                 aria-hidden="true"
@@ -491,7 +491,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
                 />
               </svg>
                Other login methods
-            </a>
+            </button>
           </div>
         </div>
         <p
@@ -561,9 +561,9 @@ exports[`SignInPage renders sign in page (server) with email form expanded 1`] =
           <div
             class="mb-3 text-left"
           >
-            <a
-              class="anchorLink"
-              href=""
+            <button
+              class="btn btnLink p-0 border-0 font-weight-normal"
+              type="button"
             >
               <svg
                 aria-hidden="true"
@@ -578,8 +578,8 @@ exports[`SignInPage renders sign in page (server) with email form expanded 1`] =
                   d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z"
                 />
               </svg>
-               Back
-            </a>
+              Back
+            </button>
           </div>
           <form
             class=""
@@ -910,9 +910,9 @@ exports[`SignInPage renders sign in page (server) with request access link 1`] =
           <div
             class="mb-2"
           >
-            <a
-              class="anchorLink btn btnSecondary btnBlock"
-              href="/sign-in?showMore&"
+            <button
+              class="btn btnSecondary btnBlock"
+              type="button"
             >
               <svg
                 aria-hidden="true"
@@ -928,7 +928,7 @@ exports[`SignInPage renders sign in page (server) with request access link 1`] =
                 />
               </svg>
                Other login methods
-            </a>
+            </button>
           </div>
         </div>
         <p
@@ -1044,9 +1044,9 @@ exports[`SignInPage with Gerrit auth provider does not render the Gerrit provide
           <div
             class="mb-2"
           >
-            <a
-              class="anchorLink btn btnSecondary btnBlock"
-              href="/sign-in?showMore&"
+            <button
+              class="btn btnSecondary btnBlock"
+              type="button"
             >
               <svg
                 aria-hidden="true"
@@ -1062,7 +1062,7 @@ exports[`SignInPage with Gerrit auth provider does not render the Gerrit provide
                 />
               </svg>
                Other login methods
-            </a>
+            </button>
           </div>
         </div>
         <p
@@ -1178,9 +1178,9 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 2 
           <div
             class="mb-2"
           >
-            <a
-              class="anchorLink btn btnSecondary btnBlock"
-              href="/sign-in?showMore&"
+            <button
+              class="btn btnSecondary btnBlock"
+              type="button"
             >
               <svg
                 aria-hidden="true"
@@ -1196,7 +1196,7 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 2 
                 />
               </svg>
                Other login methods
-            </a>
+            </button>
           </div>
         </div>
         <p
@@ -1322,9 +1322,9 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 3 
           <div
             class="mb-2"
           >
-            <a
-              class="anchorLink btn btnSecondary btnBlock"
-              href="/sign-in?showMore&sourcegraph-operator="
+            <button
+              class="btn btnSecondary btnBlock"
+              type="button"
             >
               <svg
                 aria-hidden="true"
@@ -1340,7 +1340,7 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 3 
                 />
               </svg>
                Other login methods
-            </a>
+            </button>
           </div>
         </div>
         <p
