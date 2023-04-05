@@ -986,6 +986,7 @@ ts_project(
         "src/hooks/useScrollManager/mutationObserverWithTimeout.ts",
         "src/hooks/useScrollManager/useScrollManager.ts",
         "src/hooks/useUrlSyncedState.ts",
+        "src/hooks/useUserExternalAccounts.ts",
         "src/initBuildInfo.ts",
         "src/insights/Icons.tsx",
         "src/insights/types.ts",
