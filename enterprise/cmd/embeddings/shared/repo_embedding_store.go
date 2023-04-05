@@ -1,138 +1,155 @@
 package shared
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
-	"encoding/json"
+	"fmt"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type EmbeddingsStore struct {
-	basestore.ShareableStore
+	*basestore.Store
 	logger log.Logger
 }
 
-func WrapDB(s *EmbeddingsStore, getter getRepoEmbeddingIndexFn) getRepoEmbeddingIndexFn {
-	return func(ctx context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
-		// try the database first
-		m, err := s.GetEmbeddingsByName(ctx, repoName)
-		if err != nil && !errcode.IsNotFound(err) {
-			s.logger.Error("failed to fetch embeddings", log.Error(err))
-		}
-		if err == nil && m != nil {
-			return m, nil
-		}
-		m, err = getter(ctx, repoName)
-		if err != nil {
-			return nil, err
-		}
-		// This should probably be made async as it will take time on larger repos.
-		if m != nil {
-			if err := s.UpdateEmbeddings(ctx, repoName, m); err != nil {
-				s.logger.Error("failed to update embeddings", log.Error(err))
-			}
-		}
-		return m, err
-	}
-}
+const embeddingsExistFmtstr = `
+	SELECT revision
+	FROM (
+		SELECT revision
+		FROM text_embeddings AS te
+		INNER JOIN repo AS r ON te.repo_id = r.id
+		WHERE r.name = %s
 
-const updateEmbeddingsFmtstr = `
+		UNION ALL
 
+		SELECT revision
+		FROM code_embeddings AS ce
+		INNER JOIN repo AS r ON ce.repo_id = r.id
+		WHERE r.name = %s
+	) AS revisions
+	LIMIT 1
 `
 
-func (s *EmbeddingsStore) UpdateEmbeddings(
-	ctx context.Context,
-	repoName api.RepoName,
-	data *embeddings.RepoEmbeddingIndex,
-) error {
-	codeMetadata, err := json.Marshal(data.CodeIndex.RowMetadata)
-	if err != nil {
-		return errors.Wrap(err, "code metadata did not json-serialize")
+func (s EmbeddingsStore) HasEmbeddings(ctx context.Context, repoName api.RepoName) (string, error) {
+	q := sqlf.Sprintf(
+		embeddingsExistFmtstr,
+		repoName,
+		repoName,
+	)
+	var rev string
+	err := s.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&rev)
+	if err == sql.ErrNoRows {
+		return "", nil
 	}
-	textMetadata, err := json.Marshal(data.TextIndex.RowMetadata)
 	if err != nil {
-		return errors.Wrap(err, "text metadata did not json-serialize")
+		return "", err
 	}
-	q := sqlf.Sprintf(`
-        UPDATE repo_embeddings
-        SET
-            code_index = %s,
-            code_column_dimension = %d,
-            code_row_metadata = %s,
-            code_ranks = %s,
-            text_index = %s,
-            text_column_dimension = %d,
-            text_row_metadata = %s,
-            text_ranks = %s
-        WHERE repo_id = (
-            SELECT id
-            FROM repo
-            WHERE name = %s
-        )
-    `,
-		pq.Array(data.CodeIndex.Embeddings),
-		data.CodeIndex.ColumnDimension,
-		codeMetadata,
-		pq.Array(data.CodeIndex.Ranks),
-		pq.Array(data.TextIndex.Embeddings),
-		data.TextIndex.ColumnDimension,
-		textMetadata,
-		pq.Array(data.TextIndex.Ranks),
-		repoName)
-	_, err = s.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	return rev, nil
+}
+
+const insertEmbeddingFmtstr = `
+	WITH ins_vector AS (
+		INSERT INTO embedding_vectors (repo_id, embedding)
+		VALUES ($1, $2::vector)
+		RETURNING id AS embedding_id
+	)
+	INSERT INTO %s (embedding_id, repo_id, revision, file_name, start_line, end_line, rank)
+	SELECT          embedding_id, $1,      $3,       $4,        $5,         $6,       $7
+	FROM ins_vector
+`
+
+// inefficient, this should use bulk inserter instead
+func insertEmbeddings(ctx context.Context, tableName string, tx *basestore.Store, repoID api.RepoID, revision api.CommitID, embeddings []float32, meta embeddings.RepoEmbeddingRowMetadata, rank float32) error {
+	q := fmt.Sprintf(insertEmbeddingFmtstr, tableName)
+	_, err := tx.Handle().ExecContext(ctx, q, repoID, fmtVector(embeddings), revision, meta.FileName, meta.StartLine, meta.EndLine, rank)
 	return err
 }
 
-// GetEmbeddingsByName returns the embeddings index for given repo
-// or nil, error not found
-func (s EmbeddingsStore) GetEmbeddingsByName(ctx context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
-	q := sqlf.Sprintf(`
-		SELECT
-			code_index,
-			code_column_dimension,
-			code_row_metadata,
-			code_ranks
-			text_index,
-			text_column_dimension,
-			text_row_metadata,
-			text_ranks
-		FROM repo_embeddings
-		WHERE repo_id = (
-			SELECT id
-			FROM repo
-			WHERE name = %s
-		)
-	`, repoName)
-	var index embeddings.RepoEmbeddingIndex
-	var codeMetadata, textMetadata json.RawMessage
-	err := s.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(
-		pq.Array(&index.CodeIndex.Embeddings),
-		&index.CodeIndex.ColumnDimension,
-		&codeMetadata,
-		pq.Array(&index.CodeIndex.Ranks),
-		pq.Array(&index.TextIndex),
-		&index.TextIndex.ColumnDimension,
-		&textMetadata,
-		pq.Array(&index.TextIndex.Ranks))
+func (s EmbeddingsStore) UpdateEmbeddings(
+	ctx context.Context,
+	e *embeddings.RepoEmbeddingIndex,
+) error {
+	var repoID int32
+	if err := s.Handle().QueryRowContext(ctx, "SELECT id FROM repo WHERE name = $1", e.RepoName).Scan(&repoID); err != nil {
+		return errors.Wrapf(err, "cannot find repo '%s'", e.RepoName)
+	}
+	return s.WithTransact(ctx, func(tx *basestore.Store) error {
+		// TODO drop embeddings before inserting
+		// TODO bulk insert is more efficient than going row by row
+		for tableName, index := range map[string]embeddings.EmbeddingIndex{
+			"code_embeddings": e.CodeIndex,
+			"text_embeddings": e.TextIndex,
+		} {
+			for i, r := range index.RowMetadata {
+				if err := insertEmbeddings(ctx, tableName, tx, api.RepoID(repoID), e.Revision, index.Embeddings[i*index.ColumnDimension:(i+1)*index.ColumnDimension], r, index.Ranks[i]); err != nil {
+					return errors.Wrapf(err, "failed to insert embeddings %s", tableName)
+				}
+			}
+		}
+		return nil
+	})
+}
+
+const embeddingsQueryFmtstr = `
+	SELECT m.file_name, m.start_line, m.end_line
+	FROM embedding_vectors AS v
+	INNER JOIN %s AS m ON v.id = m.embedding_id
+	INNER JOIN repo AS r ON r.id = m.repo_id
+	WHERE r.name = $1
+	AND m.revision = $2
+	ORDER BY m <=> $3::vector
+	LIMIT $4
+`
+
+func (s EmbeddingsStore) QueryEmbeddings(
+	ctx context.Context,
+	repoName api.RepoName,
+	revision string,
+	tableName string, // either text_embeddings or code_embeddings HACK HACK HACK
+	query []float32,
+	n int32,
+) ([]embeddings.RepoEmbeddingRowMetadata, error) {
+	q := fmt.Sprintf(embeddingsQueryFmtstr, tableName)
+	rs, err := s.Handle().QueryContext(ctx, q, repoName, revision, fmtVector(query), n)
 	if err == sql.ErrNoRows {
-		return nil, &embeddingsNotFoundErr{}
+		return nil, nil
 	}
-	if err := json.Unmarshal(codeMetadata, &index.CodeIndex.RowMetadata); err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal code row metadata")
+	if err != nil {
+		return nil, err
 	}
-	if err := json.Unmarshal(textMetadata, &index.TextIndex.RowMetadata); err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal text row metadata")
+	defer rs.Close()
+	var ms []embeddings.RepoEmbeddingRowMetadata
+	for rs.Next() {
+		var m embeddings.RepoEmbeddingRowMetadata
+		if err := rs.Scan(&m.FileName, &m.StartLine, &m.EndLine); err != nil {
+			return nil, err
+		}
+		ms = append(ms, m)
 	}
-	return &index, err
+	return ms, nil
+}
+
+func fmtVector(fs []float32) string {
+	var b bytes.Buffer
+	fmt.Fprint(&b, "[")
+	var notFirst bool
+	for _, f := range fs {
+		if notFirst {
+			fmt.Fprint(&b, ",")
+		}
+		fmt.Fprintf(&b, "%.9f", f)
+		notFirst = true
+	}
+	fmt.Fprint(&b, "]")
+	return b.String()
 }
 
 type embeddingsNotFoundErr struct{}

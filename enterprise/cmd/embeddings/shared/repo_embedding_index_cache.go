@@ -2,6 +2,7 @@ package shared
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -13,7 +14,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+
+	"github.com/sourcegraph/log"
 )
 
 var cacheSize = env.MustGetInt("EMBEDDINGS_REPO_INDEX_CACHE_SIZE", 5, "Number of repository embedding indexes to cache in memory.")
@@ -56,7 +60,7 @@ func (m *repoMutexMap) GetLock(repoID api.RepoID) *sync.Mutex {
 }
 
 func getCachedRepoEmbeddingIndex(
-	repoStore database.RepoStore,
+	db database.DB,
 	repoEmbeddingJobsStore repo.RepoEmbeddingJobsStore,
 	downloadRepoEmbeddingIndex downloadRepoEmbeddingIndexFn,
 ) (getRepoEmbeddingIndexFn, error) {
@@ -66,6 +70,9 @@ func getCachedRepoEmbeddingIndex(
 	}
 
 	repoMutexMap := &repoMutexMap{}
+
+	logger := log.Scoped("embeddings", "db")
+	ms := EmbeddingsStore{Store: basestore.NewWithHandle(db.Handle()), logger: logger}
 
 	getAndCacheIndex := func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName, finishedAt *time.Time) (*embeddings.RepoEmbeddingIndex, error) {
 		embeddingIndex, err := downloadRepoEmbeddingIndex(ctx, repoEmbeddingIndexName)
@@ -77,7 +84,7 @@ func getCachedRepoEmbeddingIndex(
 	}
 
 	return func(ctx context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
-		repo, err := repoStore.GetByName(ctx, repoName)
+		repo, err := db.Repos().GetByName(ctx, repoName)
 		if err != nil {
 			return nil, err
 		}
@@ -107,6 +114,17 @@ func getCachedRepoEmbeddingIndex(
 			return cacheEntry.index, nil
 		}
 		// We do not have the index in the cache. Download and cache it.
-		return getAndCacheIndex(ctx, repoEmbeddingIndexName, lastFinishedRepoEmbeddingJob.FinishedAt)
+		idx, err := getAndCacheIndex(ctx, repoEmbeddingIndexName, lastFinishedRepoEmbeddingJob.FinishedAt)
+		rev, err := ms.HasEmbeddings(ctx, repoName)
+		if err != nil {
+			fmt.Printf("failed to fetch embeddings from db %s\n", err)
+		}
+		if rev == "" && idx != nil {
+			fmt.Printf("no embeddings for %q, attempting update...\n", repoName)
+			if err := ms.UpdateEmbeddings(ctx, idx); err != nil {
+				fmt.Printf("error updating embeddings: %s", err)
+			}
+		}
+		return idx, err
 	}, nil
 }

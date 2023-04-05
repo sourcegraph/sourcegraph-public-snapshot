@@ -54,7 +54,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	go setAuthzProviders(ctx, db)
 
-	repoStore := db.Repos()
 	repoEmbeddingJobsStore := repo.NewRepoEmbeddingJobsStore(db)
 
 	// Run setup
@@ -73,7 +72,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return gitserverClient.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, repoName, revision, fileName)
 	}
 
-	getRepoEmbeddingIndex, err := getCachedRepoEmbeddingIndex(repoStore, repoEmbeddingJobsStore, func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
+	getRepoEmbeddingIndex, err := getCachedRepoEmbeddingIndex(db, repoEmbeddingJobsStore, func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
 		return embeddings.DownloadRepoEmbeddingIndex(ctx, uploadStore, string(repoEmbeddingIndexName))
 	})
 	if err != nil {
