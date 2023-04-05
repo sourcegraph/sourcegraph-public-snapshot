@@ -90,7 +90,7 @@ function linesChanged(diffString: string): [number, number] {
         )
 }
 
-const SiteConfigurationHistoryItem: FC<SiteConfigurationHistoryItemProps> = ({ node }) => {
+export const SiteConfigurationHistoryItem: FC<SiteConfigurationHistoryItemProps> = ({ node }) => {
     const [open, setOpen] = useState<boolean>(false)
     const icon = open ? mdiChevronUp : mdiChevronDown
     const [removedLines, addedLines] = linesChanged(node.diff)
