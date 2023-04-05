@@ -28,7 +28,6 @@ type Service struct {
 	store           store.Store
 	repoStore       database.RepoStore
 	inferenceSvc    InferenceService
-	repoUpdater     RepoUpdaterClient
 	gitserverClient gitserver.Client
 	indexEnqueuer   *enqueuer.IndexEnqueuer
 	jobSelector     *jobselector.JobSelector

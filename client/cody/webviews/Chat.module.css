@@ -46,3 +46,19 @@
     color: var(--vscode-input-foreground);
     background-color: var(--vscode-input-background);
 }
+
+.transcript-container {
+    display: flex;
+    flex-direction: column-reverse;
+    flex: 1;
+    overflow: auto;
+}
+
+.empty-transcript-container {
+    overflow: auto;
+}
+
+.inner-container {
+    height: 100%;
+    overflow: auto;
+}
