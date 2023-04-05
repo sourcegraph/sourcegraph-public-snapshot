@@ -113,34 +113,19 @@ func bazelBuildAndTest(optional bool, targets ...string) func(*bk.Pipeline) {
 		bk.Agent("queue", "bazel"),
 	}
 
-	for _, target := range targets {
-		// bazelBuildCmd := []string{
-		// 	"bazel",
-		// 	"--bazelrc=.bazelrc",
-		// 	"--bazelrc=.aspect/bazelrc/ci.bazelrc",
-		// 	"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
-		// 	fmt.Sprintf("build %s", target),
-		// 	"--remote_cache=$$CI_BAZEL_REMOTE_CACHE",
-		// 	"--google_credentials=/mnt/gcloud-service-account/gcloud-service-account.json",
-		// }
+	ts := strings.Join(targets, " ")
+	bazelBuildCmd := bazelRawCmd(fmt.Sprintf("build %s", ts))
+	bazelTestCmd := bazelRawCmd(
+		fmt.Sprintf("test %s", ts),
+		"--remote_cache=$$CI_BAZEL_REMOTE_CACHE",
+		"--google_credentials=/mnt/gcloud-service-account/gcloud-service-account.json",
+	)
 
-		target = "//client/web/src/end-to-end:e2e"
-		bazelTestCmd := []string{
-			"bazel",
-			"--bazelrc=.bazelrc",
-			"--bazelrc=.aspect/bazelrc/ci.bazelrc",
-			"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
-			fmt.Sprintf("test %s", target),
-			"--remote_cache=$$CI_BAZEL_REMOTE_CACHE",
-			"--google_credentials=/mnt/gcloud-service-account/gcloud-service-account.json",
-		}
-		cmds = append(
-			cmds,
-			// bk.RawCmd(strings.Join(bazelBuildCmd, " ")),
-			bk.RawCmd("dev/ci/integration/run-bazel-server.sh"),
-			bk.RawCmd(strings.Join(bazelTestCmd, " ")+" --flaky_test_attempts=1"),
-		)
-	}
+	cmds = append(
+		cmds,
+		bk.RawCmd(bazelBuildCmd),
+		bk.RawCmd(bazelTestCmd),
+	)
 
 	return func(pipeline *bk.Pipeline) {
 		if optional {
