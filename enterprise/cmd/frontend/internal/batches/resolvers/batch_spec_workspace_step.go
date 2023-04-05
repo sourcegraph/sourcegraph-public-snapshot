@@ -121,14 +121,6 @@ func (r *batchSpecWorkspaceStepV1Resolver) Environment() ([]graphqlbackend.Batch
 	return resolvers, nil
 }
 
-func newBatchSpecWorkspaceEnvironmentVariableResolver(key, value string, outerMap map[string]struct{}) graphqlbackend.BatchSpecWorkspaceEnvironmentVariableResolver {
-	var val *string
-	if _, ok := outerMap[key]; !ok {
-		val = &value
-	}
-	return &batchSpecWorkspaceEnvironmentVariableResolver{key: key, value: val}
-}
-
 func (r *batchSpecWorkspaceStepV1Resolver) OutputVariables() *[]graphqlbackend.BatchSpecWorkspaceOutputVariableResolver {
 	if r.CachedResultFound() {
 		resolvers := make([]graphqlbackend.BatchSpecWorkspaceOutputVariableResolver, 0, len(r.cachedResult.Outputs))
@@ -184,6 +176,8 @@ type batchSpecWorkspaceStepV2Resolver struct {
 
 	logEntry      executor.ExecutionLogEntry
 	logEntryFound bool
+
+	stepInfo *btypes.StepInfo
 
 	cachedResult      *execution.AfterStepResult
 	cachedResultFound bool
@@ -272,12 +266,15 @@ func (r *batchSpecWorkspaceStepV2Resolver) Environment() ([]graphqlbackend.Batch
 	// the final env. Otherwise, we fall back to the preliminary set of env vars as determined by the
 	// resolve workspaces step.
 
-	// TODO: This is only a server-side pass of the environment variables. V2 execution does not yet
-	// support rendering the actual env var values used at runtime.
-	// See the V1 resolver for what happens there.
-	env, err := r.step.Env.Resolve([]string{})
-	if err != nil {
-		return nil, err
+	var env = r.stepInfo.Environment
+
+	// Not yet resolved, use the preliminary env vars.
+	if env == nil {
+		var err error
+		env, err = r.step.Env.Resolve([]string{})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	outer := r.step.Env.OuterVars()
@@ -288,13 +285,17 @@ func (r *batchSpecWorkspaceStepV2Resolver) Environment() ([]graphqlbackend.Batch
 
 	resolvers := make([]graphqlbackend.BatchSpecWorkspaceEnvironmentVariableResolver, 0, len(env))
 	for k, v := range env {
-		var val *string
-		if _, ok := outerMap[k]; !ok {
-			val = &v
-		}
-		resolvers = append(resolvers, &batchSpecWorkspaceEnvironmentVariableResolver{key: k, value: val})
+		resolvers = append(resolvers, newBatchSpecWorkspaceEnvironmentVariableResolver(k, v, outerMap))
 	}
 	return resolvers, nil
+}
+
+func newBatchSpecWorkspaceEnvironmentVariableResolver(key, value string, outerMap map[string]struct{}) graphqlbackend.BatchSpecWorkspaceEnvironmentVariableResolver {
+	var val *string
+	if _, ok := outerMap[key]; !ok {
+		val = &value
+	}
+	return &batchSpecWorkspaceEnvironmentVariableResolver{key: key, value: val}
 }
 
 func (r *batchSpecWorkspaceStepV2Resolver) OutputVariables() *[]graphqlbackend.BatchSpecWorkspaceOutputVariableResolver {

@@ -194,6 +194,20 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers() ([]graphqlbackend.Ba
 				}
 			}
 
+			if !resolver.skipped {
+				logKeyRegex, err := regexp.Compile(fmt.Sprintf("^step\\.(docker|kubernetes)\\.step\\.%d\\.pre$", idx))
+				if err != nil {
+					return nil, err
+				}
+				e, ok := findExecutionLogEntry(r.execution, logKeyRegex)
+				if ok {
+					logLines := btypes.ParseJSONLogsFromOutput(e.Out)
+					stepInfo := &btypes.StepInfo{}
+					btypes.ParseLines(logLines, btypes.DefaultSetSafeFunc(stepInfo))
+					resolver.stepInfo = stepInfo
+				}
+			}
+
 			resolvers = append(resolvers, resolver)
 		}
 
