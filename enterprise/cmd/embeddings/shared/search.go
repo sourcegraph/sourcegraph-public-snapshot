@@ -6,6 +6,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -109,8 +110,11 @@ func searchEmbeddingIndex(
 	opts embeddings.SearchOptions,
 ) []embeddings.EmbeddingSearchResult {
 
+	start := time.Now()
 	numWorkers := runtime.GOMAXPROCS(0)
 	rows := index.SimilaritySearch(query, nResults, embeddings.WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT}, opts)
+	duration := time.Now().Sub(start)
+	fmt.Printf("QUERY IN MEMORY TOOK (1/2): %v\n", duration)
 
 	// Hydrate content
 	for idx, row := range rows {

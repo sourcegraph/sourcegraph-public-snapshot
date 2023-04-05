@@ -99,11 +99,15 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			if rev == "" {
 				return "", nil, nil, errors.New("no revision in db")
 			}
+			fmt.Println("QUERYING EMBEDDINGS")
+			start := time.Now()
 			txt, err := ms.QueryEmbeddings(ctx, repoName, rev, "text_embeddings", query, nTxt)
 			if err != nil {
 				return "", nil, nil, errors.Wrapf(err, "text embeddings query failed")
 			}
 			cod, err := ms.QueryEmbeddings(ctx, repoName, rev, "code_embeddings", query, nCode)
+			duration := time.Now().Sub(start)
+			fmt.Printf("QUERYING DB EMBEDDINGS TOOK %v\n", duration)
 			return rev, cod, txt, nil
 		})
 	handler = handlePanic(logger, handler)
