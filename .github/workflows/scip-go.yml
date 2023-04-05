@@ -1,15 +1,15 @@
-name: lsif-go
+name: scip-go
 on:
   push:
     paths:
       - '**.go'
 
 jobs:
-  lsif-go:
+  scip-go:
     # Skip running on forks
     if: github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
-    container: sourcegraph/lsif-go
+    container: sourcegraph/scip-go
     strategy:
       matrix:
         root:
@@ -20,14 +20,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      # Run lsif-go
-      - name: Run lsif-go
-        working-directory: ${{ matrix.root }}
-        # --dep-batch-size=100 avoids loading all deps into memory and getting OOM killed
-        run: lsif-go --no-animation --dep-batch-size=100
+      - name: Get src-cli
+        run:
+          curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
+          chmod +x /usr/local/bin/src
 
-      # Upload lsif-go data to Dotcom, S2, Dogfood, and Demo instances
-      - name: Upload lsif-go dump to Dotcom
+      # Run scip-go
+      - name: Run scip-go
+        working-directory: ${{ matrix.root }}
+        run: scip-go --no-animation
+
+      # Upload scip-go data to Dotcom, S2, Dogfood, and Demo instances
+      - name: Upload scip-go dump to Dotcom
         working-directory: ${{ matrix.root }}
         run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress
         env:
