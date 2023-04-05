@@ -444,11 +444,6 @@ type ArchiveOptions struct {
 	Pathspecs []gitdomain.Pathspec // if nonempty, only include these pathspecs.
 }
 
-type ListFilesOptions struct {
-	ExcludeDirs bool
-	MaxFileSize int
-}
-
 type BatchLogOptions protocol.BatchLogRequest
 
 func (opts BatchLogOptions) LogFields() []log.Field {
