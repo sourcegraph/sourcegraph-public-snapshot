@@ -19,6 +19,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -47,20 +48,18 @@ func TestHandle(t *testing.T) {
 	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
 	mockDBStore := NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
-	mockLSIFStore := NewMockLsifStore()
+	mockLSIFStore := NewMockLSIFStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 	gitserverClient := gitserver.NewMockClient()
 
 	// Set default transaction behavior
-	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
-	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
+	mockDBStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s store.Store) error) error { return f(mockDBStore) })
 
 	// Set default transaction behavior
-	mockLSIFStore.TransactFunc.SetDefaultReturn(mockLSIFStore, nil)
-	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
+	mockLSIFStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s lsifstore.Store) error) error { return f(mockLSIFStore) })
 
 	// Track writes to symbols table
-	scipWriter := NewMockSCIPWriter()
+	scipWriter := NewMockLSIFSCIPWriter()
 	mockLSIFStore.NewSCIPWriterFunc.SetDefaultReturn(scipWriter, nil)
 
 	scipWriter.InsertDocumentFunc.SetDefaultHook(func(_ context.Context, _ string, _ *scip.Document) error {
@@ -281,20 +280,16 @@ func TestHandleError(t *testing.T) {
 	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
 	mockDBStore := NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
-	mockLSIFStore := NewMockLsifStore()
+	mockLSIFStore := NewMockLSIFStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 	gitserverClient := gitserver.NewMockClient()
 
 	// Set default transaction behavior
-	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
-	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
-
-	// Set default transaction behavior
-	mockLSIFStore.TransactFunc.SetDefaultReturn(mockLSIFStore, nil)
-	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
+	mockDBStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s store.Store) error) error { return f(mockDBStore) })
+	mockLSIFStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s lsifstore.Store) error) error { return f(mockLSIFStore) })
 
 	// Track writes to symbols table
-	scipWriter := NewMockSCIPWriter()
+	scipWriter := NewMockLSIFSCIPWriter()
 	mockLSIFStore.NewSCIPWriterFunc.SetDefaultReturn(scipWriter, nil)
 
 	// Give correlation package a valid input dump
@@ -322,10 +317,6 @@ func TestHandleError(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	} else if requeued {
 		t.Errorf("unexpected requeue")
-	}
-
-	if len(mockDBStore.DoneFunc.History()) != 1 {
-		t.Errorf("unexpected number of Done calls. want=%d have=%d", 1, len(mockDBStore.DoneFunc.History()))
 	}
 
 	if len(mockUploadStore.DeleteFunc.History()) != 0 {

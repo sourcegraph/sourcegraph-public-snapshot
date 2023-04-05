@@ -347,43 +347,39 @@ func packageFromSymbol(symbolName string) (precise.Package, bool) {
 // the codeintel-db.
 func writeSCIPData(
 	ctx context.Context,
-	lsifStore lsifstore.LsifStore,
+	lsifStore lsifstore.Store,
 	upload shared.Upload,
 	correlatedSCIPData lsifstore.ProcessedSCIPData,
 	trace observation.TraceLogger,
 ) (err error) {
-	tx, err := lsifStore.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	if err := tx.InsertMetadata(ctx, upload.ID, correlatedSCIPData.Metadata); err != nil {
-		return err
-	}
-
-	scipWriter, err := tx.NewSCIPWriter(ctx, upload.ID)
-	if err != nil {
-		return err
-	}
-
-	var numDocuments uint32
-	for document := range correlatedSCIPData.Documents {
-		if err := scipWriter.InsertDocument(ctx, document.Path, document.Document); err != nil {
+	return lsifStore.WithTransaction(ctx, func(tx lsifstore.Store) error {
+		if err := tx.InsertMetadata(ctx, upload.ID, correlatedSCIPData.Metadata); err != nil {
 			return err
 		}
 
-		numDocuments += 1
-	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int64("numDocuments", int64(numDocuments)))
+		scipWriter, err := tx.NewSCIPWriter(ctx, upload.ID)
+		if err != nil {
+			return err
+		}
 
-	count, err := scipWriter.Flush(ctx)
-	if err != nil {
-		return err
-	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int64("numSymbols", int64(count)))
+		var numDocuments uint32
+		for document := range correlatedSCIPData.Documents {
+			if err := scipWriter.InsertDocument(ctx, document.Path, document.Document); err != nil {
+				return err
+			}
 
-	return nil
+			numDocuments += 1
+		}
+		trace.AddEvent("TODO Domain Owner", attribute.Int64("numDocuments", int64(numDocuments)))
+
+		count, err := scipWriter.Flush(ctx)
+		if err != nil {
+			return err
+		}
+		trace.AddEvent("TODO Domain Owner", attribute.Int64("numSymbols", int64(count)))
+
+		return nil
+	})
 }
 
 // comparePackages returns true if pi sorts lower than pj.

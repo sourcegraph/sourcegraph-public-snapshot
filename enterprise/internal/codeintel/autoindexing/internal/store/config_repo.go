@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// GetIndexConfigurationByRepositoryID returns the index configuration for a repository.
 func (s *store) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error) {
 	ctx, _, endObservation := s.operations.getIndexConfigurationByRepositoryID.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
@@ -27,13 +26,14 @@ SELECT
 	c.id,
 	c.repository_id,
 	c.data
-FROM lsif_index_configuration c WHERE c.repository_id = %s
+FROM lsif_index_configuration c
+WHERE c.repository_id = %s
 `
 
-// UpdateIndexConfigurationByRepositoryID updates the index configuration for a repository.
 func (s *store) UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) (err error) {
 	ctx, _, endObservation := s.operations.updateIndexConfigurationByRepositoryID.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
+		log.Int("dataSize", len(data)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -41,14 +41,14 @@ func (s *store) UpdateIndexConfigurationByRepositoryID(ctx context.Context, repo
 }
 
 const updateIndexConfigurationByRepositoryIDQuery = `
-INSERT INTO lsif_index_configuration (repository_id, data) VALUES (%s, %s)
-	ON CONFLICT (repository_id) DO UPDATE SET data = %s
+INSERT INTO lsif_index_configuration (repository_id, data)
+VALUES (%s, %s)
+ON CONFLICT (repository_id) DO UPDATE
+SET data = %s
 `
 
 //
 //
-
-var scanFirstIndexConfiguration = basestore.NewFirstScanner(scanIndexConfiguration)
 
 func scanIndexConfiguration(s dbutil.Scanner) (indexConfiguration shared.IndexConfiguration, err error) {
 	return indexConfiguration, s.Scan(
@@ -57,3 +57,5 @@ func scanIndexConfiguration(s dbutil.Scanner) (indexConfiguration shared.IndexCo
 		&indexConfiguration.Data,
 	)
 }
+
+var scanFirstIndexConfiguration = basestore.NewFirstScanner(scanIndexConfiguration)

@@ -16,7 +16,7 @@ const recordTypeName = "path count inputs"
 func NewSymbolExporter(
 	observationCtx *observation.Context,
 	store store.Store,
-	lsifstore lsifstore.LsifStore,
+	lsifstore lsifstore.Store,
 	interval time.Duration,
 	readBatchSize int,
 	writeBatchSize int,

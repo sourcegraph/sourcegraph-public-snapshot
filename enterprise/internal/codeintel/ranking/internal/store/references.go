@@ -20,41 +20,33 @@ func (s *store) InsertReferencesForRanking(
 	uploadID int,
 	references chan string,
 ) (err error) {
-	ctx, _, endObservation := s.operations.insertReferencesForRanking.With(
-		ctx,
-		&err,
-		observation.Args{},
-	)
+	ctx, _, endObservation := s.operations.insertReferencesForRanking.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	tx, err := s.db.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	inserter := func(inserter *batch.Inserter) error {
-		for symbols := range batchChannel(references, batchSize) {
-			if err := inserter.Insert(ctx, uploadID, pq.Array(symbols), rankingGraphKey); err != nil {
-				return err
+	return s.withTransaction(ctx, func(tx *store) error {
+		inserter := func(inserter *batch.Inserter) error {
+			for symbols := range batchChannel(references, batchSize) {
+				if err := inserter.Insert(ctx, uploadID, pq.Array(symbols), rankingGraphKey); err != nil {
+					return err
+				}
 			}
+
+			return nil
+		}
+
+		if err := batch.WithInserter(
+			ctx,
+			tx.db.Handle(),
+			"codeintel_ranking_references",
+			batch.MaxNumPostgresParameters,
+			[]string{"upload_id", "symbol_names", "graph_key"},
+			inserter,
+		); err != nil {
+			return err
 		}
 
 		return nil
-	}
-
-	if err := batch.WithInserter(
-		ctx,
-		tx.Handle(),
-		"codeintel_ranking_references",
-		batch.MaxNumPostgresParameters,
-		[]string{"upload_id", "symbol_names", "graph_key"},
-		inserter,
-	); err != nil {
-		return err
-	}
-
-	return nil
+	})
 }
 
 func (s *store) VacuumAbandonedReferences(ctx context.Context, graphKey string, batchSize int) (_ int, err error) {

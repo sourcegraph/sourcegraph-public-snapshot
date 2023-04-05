@@ -9,9 +9,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func (s *store) GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) (_ []shared.ExportedUpload, err error) {
+	ctx, _, endObservation := s.operations.getUploadsForRanking.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	return scanUploads(s.db.Query(ctx, sqlf.Sprintf(
 		getUploadsForRankingQuery,
 		graphKey,
@@ -83,31 +87,33 @@ func (s *store) ProcessStaleExportedUploads(
 	batchSize int,
 	deleter func(ctx context.Context, objectPrefix string) error,
 ) (totalDeleted int, err error) {
-	tx, err := s.db.Transact(ctx)
-	if err != nil {
-		return 0, err
-	}
-	defer func() { err = tx.Done(err) }()
+	ctx, _, endObservation := s.operations.processStaleExportedUploads.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
 
-	prefixByIDs, err := scanIntStringMap(tx.Query(ctx, sqlf.Sprintf(selectStaleExportedUploadsQuery, graphKey, batchSize)))
-	if err != nil {
-		return 0, err
-	}
-
-	ids := make([]int, 0, len(prefixByIDs))
-	for id, prefix := range prefixByIDs {
-		if err := deleter(ctx, prefix); err != nil {
-			return 0, err
+	var a int
+	err = s.withTransaction(ctx, func(tx *store) error {
+		prefixByIDs, err := scanIntStringMap(tx.db.Query(ctx, sqlf.Sprintf(selectStaleExportedUploadsQuery, graphKey, batchSize)))
+		if err != nil {
+			return err
 		}
 
-		ids = append(ids, id)
-	}
+		ids := make([]int, 0, len(prefixByIDs))
+		for id, prefix := range prefixByIDs {
+			if err := deleter(ctx, prefix); err != nil {
+				return err
+			}
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(deleteStaleExportedUploadsQuery, pq.Array(ids))); err != nil {
-		return 0, err
-	}
+			ids = append(ids, id)
+		}
 
-	return len(ids), nil
+		if err := tx.db.Exec(ctx, sqlf.Sprintf(deleteStaleExportedUploadsQuery, pq.Array(ids))); err != nil {
+			return err
+		}
+
+		a = len(ids)
+		return nil
+	})
+	return a, err
 }
 
 var scanIntStringMap = basestore.NewMapScanner(func(s dbutil.Scanner) (k int, v string, _ error) {

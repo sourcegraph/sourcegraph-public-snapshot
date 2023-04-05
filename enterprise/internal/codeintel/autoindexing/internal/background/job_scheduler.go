@@ -111,8 +111,6 @@ func (b indexSchedulerJob) handleScheduler(
 	// the backlog.
 	repositories, err := b.autoindexingSvc.GetRepositoriesForIndexScan(
 		ctx,
-		"lsif_last_index_scan",
-		"last_index_scan_at",
 		repositoryProcessDelay,
 		conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
 		repositoryMatchLimit,
@@ -208,7 +206,7 @@ func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID, p
 	}
 }
 
-func NewOnDemandScheduler(store store.Store, indexEnqueuer IndexEnqueuer, interval time.Duration, batchSize int) goroutine.BackgroundRoutine {
+func NewOnDemandScheduler(s store.Store, indexEnqueuer IndexEnqueuer, interval time.Duration, batchSize int) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
 		"codeintel.autoindexing-ondemand-scheduler", "schedule autoindexing jobs for explicitly requested repo+revhash combinations",
@@ -218,27 +216,23 @@ func NewOnDemandScheduler(store store.Store, indexEnqueuer IndexEnqueuer, interv
 				return nil
 			}
 
-			tx, err := store.Transact(ctx)
-			if err != nil {
-				return err
-			}
-			defer func() { err = tx.Done(err) }()
-
-			repoRevs, err := tx.GetQueuedRepoRev(ctx, batchSize)
-			if err != nil {
-				return err
-			}
-
-			ids := make([]int, 0, len(repoRevs))
-			for _, repoRev := range repoRevs {
-				if _, err := indexEnqueuer.QueueIndexes(ctx, repoRev.RepositoryID, repoRev.Rev, "", false, false); err != nil {
+			return s.WithTransaction(ctx, func(tx store.Store) error {
+				repoRevs, err := tx.GetQueuedRepoRev(ctx, batchSize)
+				if err != nil {
 					return err
 				}
 
-				ids = append(ids, repoRev.ID)
-			}
+				ids := make([]int, 0, len(repoRevs))
+				for _, repoRev := range repoRevs {
+					if _, err := indexEnqueuer.QueueIndexes(ctx, repoRev.RepositoryID, repoRev.Rev, "", false, false); err != nil {
+						return err
+					}
 
-			return tx.MarkRepoRevsAsProcessed(ctx, ids)
+					ids = append(ids, repoRev.ID)
+				}
+
+				return tx.MarkRepoRevsAsProcessed(ctx, ids)
+			})
 		}),
 	)
 }

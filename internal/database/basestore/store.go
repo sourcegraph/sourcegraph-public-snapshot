@@ -140,7 +140,13 @@ var ErrPanicDuringTransaction = errors.New("encountered panic during transaction
 // WithTransact executes the callback using a transaction on the store. If the callback
 // returns an error or panics, the transaction will be rolled back.
 func (s *Store) WithTransact(ctx context.Context, f func(tx *Store) error) (err error) {
-	tx, err := s.Transact(ctx)
+	return InTransaction[*Store](ctx, s, f)
+}
+
+// InTransaction executes the callback using a transaction on the given transactable store. If
+// the callback returns an error or panics, the transaction will be rolled back.
+func InTransaction[T Transactable[T]](ctx context.Context, t Transactable[T], f func(tx T) error) error {
+	tx, err := t.Transact(ctx)
 	if err != nil {
 		return err
 	}

@@ -6,14 +6,18 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// RepoCount returns the total number of policy-selectable repos.
 func (s *store) RepoCount(ctx context.Context) (_ int, err error) {
-	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(`SELECT SUM(total) FROM repo_statistics`)))
-	if err != nil {
-		return 0, err
-	}
+	ctx, _, endObservation := s.operations.repoCount.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
 
-	return count, nil
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(repoCountQuery)))
+	return count, err
 }
+
+const repoCountQuery = `
+SELECT SUM(total)
+FROM repo_statistics
+`

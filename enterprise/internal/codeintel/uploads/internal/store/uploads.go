@@ -44,43 +44,45 @@ func (s *store) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (
 		orderExpression = sqlf.Sprintf("uploaded_at DESC, id")
 	}
 
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer func() { err = tx.Done(err) }()
+	var a []shared.Upload
+	var b int
+	err = s.withTransaction(ctx, func(tx *store) error {
+		query := sqlf.Sprintf(
+			getUploadsSelectQuery,
+			buildCTEPrefix(cte),
+			tableExpr,
+			sqlf.Join(conds, " AND "),
+			orderExpression,
+			opts.Limit,
+			opts.Offset,
+		)
+		uploads, err = scanUploadComplete(tx.db.Query(ctx, query))
+		if err != nil {
+			return err
+		}
+		trace.AddEvent("TODO Domain Owner",
+			attribute.Int("numUploads", len(uploads)))
 
-	query := sqlf.Sprintf(
-		getUploadsSelectQuery,
-		buildCTEPrefix(cte),
-		tableExpr,
-		sqlf.Join(conds, " AND "),
-		orderExpression,
-		opts.Limit,
-		opts.Offset,
-	)
-	uploads, err = scanUploadComplete(tx.db.Query(ctx, query))
-	if err != nil {
-		return nil, 0, err
-	}
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("numUploads", len(uploads)))
+		countQuery := sqlf.Sprintf(
+			getUploadsCountQuery,
+			buildCTEPrefix(cte),
+			tableExpr,
+			sqlf.Join(conds, " AND "),
+		)
+		totalCount, _, err = basestore.ScanFirstInt(tx.db.Query(ctx, countQuery))
+		if err != nil {
+			return err
+		}
+		trace.AddEvent("TODO Domain Owner",
+			attribute.Int("totalCount", totalCount),
+		)
 
-	countQuery := sqlf.Sprintf(
-		getUploadsCountQuery,
-		buildCTEPrefix(cte),
-		tableExpr,
-		sqlf.Join(conds, " AND "),
-	)
-	totalCount, _, err = basestore.ScanFirstInt(tx.db.Query(ctx, countQuery))
-	if err != nil {
-		return nil, 0, err
-	}
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("totalCount", totalCount),
-	)
+		a = uploads
+		b = totalCount
+		return nil
+	})
 
-	return uploads, totalCount, nil
+	return a, b, err
 }
 
 const getUploadsSelectQuery = `
@@ -675,35 +677,31 @@ func (s *store) DeleteUploads(ctx context.Context, opts shared.DeleteUploadsOpti
 	}
 	conds = append(conds, authzConds)
 
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
+	return s.withTransaction(ctx, func(tx *store) error {
+		unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "direct delete by filter criteria request")
+		defer unset(ctx)
 
-	unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "direct delete by filter criteria request")
-	defer unset(ctx)
-
-	query := sqlf.Sprintf(
-		deleteUploadsQuery,
-		sqlf.Join(conds, " AND "),
-	)
-	repoIDs, err := basestore.ScanInts(s.db.Query(ctx, query))
-	if err != nil {
-		return err
-	}
-
-	var dirtyErr error
-	for _, repoID := range repoIDs {
-		if err := tx.SetRepositoryAsDirty(ctx, repoID); err != nil {
-			dirtyErr = err
+		query := sqlf.Sprintf(
+			deleteUploadsQuery,
+			sqlf.Join(conds, " AND "),
+		)
+		repoIDs, err := basestore.ScanInts(s.db.Query(ctx, query))
+		if err != nil {
+			return err
 		}
-	}
-	if dirtyErr != nil {
-		err = dirtyErr
-	}
 
-	return err
+		var dirtyErr error
+		for _, repoID := range repoIDs {
+			if err := tx.SetRepositoryAsDirty(ctx, repoID); err != nil {
+				dirtyErr = err
+			}
+		}
+		if dirtyErr != nil {
+			err = dirtyErr
+		}
+
+		return err
+	})
 }
 
 const deleteUploadsQuery = `
@@ -721,32 +719,37 @@ func (s *store) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error
 	ctx, _, endObservation := s.operations.deleteUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{log.Int("id", id)}})
 	defer endObservation(1, observation.Args{})
 
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return false, err
-	}
-	defer func() { err = tx.Done(err) }()
+	var a bool
+	err = s.withTransaction(ctx, func(tx *store) error {
+		unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "direct delete by ID request")
+		defer unset(ctx)
 
-	unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "direct delete by ID request")
-	defer unset(ctx)
+		repositoryID, deleted, err := basestore.ScanFirstInt(tx.db.Query(ctx, sqlf.Sprintf(deleteUploadByIDQuery, id)))
+		if err != nil {
+			return err
+		}
 
-	repositoryID, deleted, err := basestore.ScanFirstInt(tx.db.Query(ctx, sqlf.Sprintf(deleteUploadByIDQuery, id)))
-	if err != nil {
-		return false, err
-	}
-	if !deleted {
-		return false, nil
-	}
+		if deleted {
+			if err := tx.SetRepositoryAsDirty(ctx, repositoryID); err != nil {
+				return err
+			}
+			a = true
+		}
 
-	if err := tx.SetRepositoryAsDirty(ctx, repositoryID); err != nil {
-		return false, err
-	}
-
-	return true, nil
+		return nil
+	})
+	return a, err
 }
 
 const deleteUploadByIDQuery = `
-UPDATE lsif_uploads u SET state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END WHERE id = %s RETURNING repository_id
+UPDATE lsif_uploads u
+SET
+	state = CASE
+		WHEN u.state = 'completed' THEN 'deleting'
+		ELSE 'deleted'
+	END
+WHERE id = %s
+RETURNING repository_id
 `
 
 // ReindexUploads reindexes uploads matching the given filter criteria.
@@ -788,21 +791,12 @@ func (s *store) ReindexUploads(ctx context.Context, opts shared.ReindexUploadsOp
 	}
 	conds = append(conds, authzConds)
 
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.db.Done(err) }()
+	return s.withTransaction(ctx, func(tx *store) error {
+		unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "direct reindex by filter criteria request")
+		defer unset(ctx)
 
-	unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "direct reindex by filter criteria request")
-	defer unset(ctx)
-
-	err = tx.db.Exec(ctx, sqlf.Sprintf(reindexUploadsQuery, sqlf.Join(conds, " AND ")))
-	if err != nil {
-		return err
-	}
-
-	return nil
+		return tx.db.Exec(ctx, sqlf.Sprintf(reindexUploadsQuery, sqlf.Join(conds, " AND ")))
+	})
 }
 
 const reindexUploadsQuery = `
@@ -839,13 +833,7 @@ func (s *store) ReindexUploadByID(ctx context.Context, id int) (err error) {
 	}})
 	defer endObservation(1, observation.Args{})
 
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.db.Done(err) }()
-
-	return tx.db.Exec(ctx, sqlf.Sprintf(reindexUploadByIDQuery, id, id))
+	return s.db.Exec(ctx, sqlf.Sprintf(reindexUploadByIDQuery, id, id))
 }
 
 const reindexUploadByIDQuery = `

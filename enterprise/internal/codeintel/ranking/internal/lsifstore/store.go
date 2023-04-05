@@ -11,10 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type LsifStore interface {
-	Transact(ctx context.Context) (LsifStore, error)
-	Done(err error) error
-
+type Store interface {
 	// Stream
 	InsertDefinitionsAndReferencesForDocument(ctx context.Context, upload shared.ExportedUpload, rankingGraphKey string, rankingBatchSize int, f func(ctx context.Context, upload shared.ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error) error
 }
@@ -29,18 +26,22 @@ type store struct {
 	operations *operations
 }
 
-func New(observationCtx *observation.Context, db codeintelshared.CodeIntelDB) LsifStore {
-	return newStore(observationCtx, db)
-}
-
-func newStore(observationCtx *observation.Context, db codeintelshared.CodeIntelDB) *store {
+func New(observationCtx *observation.Context, db codeintelshared.CodeIntelDB) Store {
 	return &store{
 		db:         basestore.NewWithHandle(db.Handle()),
 		operations: newOperations(observationCtx),
 	}
 }
 
-func (s *store) Transact(ctx context.Context) (LsifStore, error) {
+func (s *store) WithTransaction(ctx context.Context, f func(s Store) error) error {
+	return s.withTransaction(ctx, func(s *store) error { return f(s) })
+}
+
+func (s *store) withTransaction(ctx context.Context, f func(s *store) error) error {
+	return basestore.InTransaction[*store](ctx, s, f)
+}
+
+func (s *store) Transact(ctx context.Context) (*store, error) {
 	tx, err := s.db.Transact(ctx)
 	if err != nil {
 		return nil, err
