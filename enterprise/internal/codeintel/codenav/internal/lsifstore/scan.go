@@ -7,53 +7,76 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/ranges"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
-// scanFirstDocumentData reads qualified document data from its given row object and returns
-// the first one. If no rows match the query, a false-valued flag is returned.
-func (s *store) scanFirstDocumentData(rows *sql.Rows, queryErr error) (_ QualifiedDocumentData, _ bool, err error) {
+type qualifiedDocumentData struct {
+	UploadID int
+	Path     string
+	LSIFData *precise.DocumentData
+	SCIPData *scip.Document
+}
+
+func (s *store) scanDocumentData(rows *sql.Rows, queryErr error) (_ []qualifiedDocumentData, err error) {
 	if queryErr != nil {
-		return QualifiedDocumentData{}, false, queryErr
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	var values []qualifiedDocumentData
+	for rows.Next() {
+		record, err := s.scanSingleDocumentDataObject(rows)
+		if err != nil {
+			return nil, err
+		}
+
+		values = append(values, record)
+	}
+
+	return values, nil
+}
+
+func (s *store) scanFirstDocumentData(rows *sql.Rows, queryErr error) (_ qualifiedDocumentData, _ bool, err error) {
+	if queryErr != nil {
+		return qualifiedDocumentData{}, false, queryErr
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	if rows.Next() {
 		record, err := s.scanSingleDocumentDataObject(rows)
 		if err != nil {
-			return QualifiedDocumentData{}, false, err
+			return qualifiedDocumentData{}, false, err
 		}
 
 		return record, true, nil
 	}
 
-	return QualifiedDocumentData{}, false, nil
+	return qualifiedDocumentData{}, false, nil
 }
 
-// scanSingleDocumentDataObject populates a qualified document data value from the given cursor.
-func (s *store) scanSingleDocumentDataObject(rows *sql.Rows) (QualifiedDocumentData, error) {
+func (s *store) scanSingleDocumentDataObject(rows *sql.Rows) (qualifiedDocumentData, error) {
 	var uploadID int
 	var path string
 	var compressedSCIPPayload []byte
 
 	if err := rows.Scan(&uploadID, &path, &compressedSCIPPayload); err != nil {
-		return QualifiedDocumentData{}, err
+		return qualifiedDocumentData{}, err
 	}
 
 	scipPayload, err := shared.Decompressor.Decompress(bytes.NewReader(compressedSCIPPayload))
 	if err != nil {
-		return QualifiedDocumentData{}, err
+		return qualifiedDocumentData{}, err
 	}
 
 	var data scip.Document
 	if err := proto.Unmarshal(scipPayload, &data); err != nil {
-		return QualifiedDocumentData{}, err
+		return qualifiedDocumentData{}, err
 	}
 
-	qualifiedData := QualifiedDocumentData{
+	qualifiedData := qualifiedDocumentData{
 		UploadID: uploadID,
 		Path:     path,
 		SCIPData: &data,
@@ -61,14 +84,18 @@ func (s *store) scanSingleDocumentDataObject(rows *sql.Rows) (QualifiedDocumentD
 	return qualifiedData, nil
 }
 
-// scanQualifiedMonikerLocations reads moniker locations values from the given row object.
-func (s *store) scanQualifiedMonikerLocations(rows *sql.Rows, queryErr error) (_ []QualifiedMonikerLocations, err error) {
+type qualifiedMonikerLocations struct {
+	DumpID int
+	precise.MonikerLocations
+}
+
+func (s *store) scanQualifiedMonikerLocations(rows *sql.Rows, queryErr error) (_ []qualifiedMonikerLocations, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	var values []QualifiedMonikerLocations
+	var values []qualifiedMonikerLocations
 	for rows.Next() {
 		record, err := s.scanSingleQualifiedMonikerLocationsObject(rows)
 		if err != nil {
@@ -81,20 +108,18 @@ func (s *store) scanQualifiedMonikerLocations(rows *sql.Rows, queryErr error) (_
 	return values, nil
 }
 
-// scanSingleQualifiedMonikerLocationsObject populates a qualified moniker locations value
-// from the given cursor.
-func (s *store) scanSingleQualifiedMonikerLocationsObject(rows *sql.Rows) (QualifiedMonikerLocations, error) {
+func (s *store) scanSingleQualifiedMonikerLocationsObject(rows *sql.Rows) (qualifiedMonikerLocations, error) {
 	var uri string
 	var scipPayload []byte
-	var record QualifiedMonikerLocations
+	var record qualifiedMonikerLocations
 
 	if err := rows.Scan(&record.DumpID, &record.Scheme, &record.Identifier, &scipPayload, &uri); err != nil {
-		return QualifiedMonikerLocations{}, err
+		return qualifiedMonikerLocations{}, err
 	}
 
-	ranges, err := types.DecodeRanges(scipPayload)
+	ranges, err := ranges.DecodeRanges(scipPayload)
 	if err != nil {
-		return QualifiedMonikerLocations{}, err
+		return qualifiedMonikerLocations{}, err
 	}
 
 	locations := make([]precise.LocationData, 0, len(ranges))
@@ -110,24 +135,4 @@ func (s *store) scanSingleQualifiedMonikerLocationsObject(rows *sql.Rows) (Quali
 
 	record.Locations = locations
 	return record, nil
-}
-
-// scanDocumentData reads qualified document data from the given row object.
-func (s *store) scanDocumentData(rows *sql.Rows, queryErr error) (_ []QualifiedDocumentData, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	var values []QualifiedDocumentData
-	for rows.Next() {
-		record, err := s.scanSingleDocumentDataObject(rows)
-		if err != nil {
-			return nil, err
-		}
-
-		values = append(values, record)
-	}
-
-	return values, nil
 }

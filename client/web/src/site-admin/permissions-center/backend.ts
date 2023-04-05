@@ -56,6 +56,7 @@ export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
         priority
         noPerms
         invalidateCaches
+        placeInQueue
         codeHostStates {
             ...CodeHostState
         }

@@ -1,13 +1,13 @@
 {
   "id": 154,
-  "version": 6,
+  "version": 23,
   "title": "This is a new title",
   "description": "This is a new body",
-  "state": "OPEN",
-  "open": true,
-  "closed": false,
+  "state": "DECLINED",
+  "open": false,
+  "closed": true,
   "createdDate": 1639582116883,
-  "updatedDate": 1639652359417,
+  "updatedDate": 1679586242492,
   "fromRef": {
    "id": "refs/heads/hello-world",
    "repository": {
@@ -43,8 +43,38 @@
    "approved": false,
    "status": "UNAPPROVED"
   },
-  "reviewers": [],
-  "participants": [],
+  "reviewers": [
+   {
+    "user": {
+     "name": "batch-change-buddy",
+     "emailAddress": "batch-changes@sourcegraph.com",
+     "id": 403,
+     "displayName": "Batch Change Buddy",
+     "active": true,
+     "slug": "batch-change-buddy",
+     "type": "NORMAL"
+    },
+    "lastReviewedCommit": "",
+    "role": "REVIEWER",
+    "approved": false,
+    "status": "UNAPPROVED"
+   }
+  ],
+  "participants": [
+   {
+    "user": {
+     "name": "bitbucket.system-user",
+     "id": 303,
+     "displayName": "Bitbucket",
+     "active": true,
+     "slug": "bitbucket.system-user",
+     "type": "SERVICE"
+    },
+    "role": "PARTICIPANT",
+    "approved": false,
+    "status": "UNAPPROVED"
+   }
+  ],
   "links": {
    "self": [
     {

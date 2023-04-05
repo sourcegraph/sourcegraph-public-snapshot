@@ -193,19 +193,16 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
         {
             label: 'Outbound requests',
             to: '/site-admin/outbound-requests',
-            source: 'server',
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Slow requests',
             to: '/site-admin/slow-requests',
-            source: 'server',
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Background jobs',
             to: '/site-admin/background-jobs',
-            source: 'server',
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
     ],

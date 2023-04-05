@@ -11,6 +11,7 @@ go_library(
     visibility = ["//enterprise/cmd/executor:__subpackages__"],
     deps = [
         "//enterprise/cmd/executor/internal/ignite",
+        "//enterprise/cmd/executor/internal/util",
         "//internal/goroutine",
         "//internal/observation",
         "//lib/errors",

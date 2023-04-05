@@ -19,12 +19,12 @@ export type FeatureFlagName =
     | 'accessible-symbol-tree'
     | 'accessible-file-tree-always-load-ancestors'
     | 'search-ownership'
-    | 'cody'
     | 'search-ranking'
     | 'blob-page-switch-areas-shortcuts'
     | 'app-connect-dotcom'
     | 'sentinel'
     | 'cody-experimental'
+    | 'clone-progress-logging'
     | 'sourcegraph-operator-site-admin-hide-maintenance'
 
 interface OrgFlagOverride {

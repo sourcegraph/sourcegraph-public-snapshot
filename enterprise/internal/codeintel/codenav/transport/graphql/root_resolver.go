@@ -9,6 +9,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
+	uploadsgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -23,8 +25,8 @@ type rootResolver struct {
 	gitserverClient                gitserver.Client
 	siteAdminChecker               sharedresolvers.SiteAdminChecker
 	repoStore                      database.RepoStore
-	prefetcherFactory              *sharedresolvers.PrefetcherFactory
-	locationResolverFactory        *sharedresolvers.CachedLocationResolverFactory
+	prefetcherFactory              *uploadsgraphql.PrefetcherFactory
+	locationResolverFactory        *gitresolvers.CachedLocationResolverFactory
 	maximumIndexesPerMonikerSearch int
 	hunkCache                      codenav.HunkCache
 
@@ -32,7 +34,7 @@ type rootResolver struct {
 	operations *operations
 }
 
-func NewRootResolver(observationCtx *observation.Context, svc CodeNavService, autoindexingSvc AutoIndexingService, uploadSvc UploadsService, gitserverClient gitserver.Client, siteAdminChecker sharedresolvers.SiteAdminChecker, repoStore database.RepoStore, locationResolverFactory *sharedresolvers.CachedLocationResolverFactory, prefetcherFactory *sharedresolvers.PrefetcherFactory, maxIndexSearch, hunkCacheSize int) (resolverstubs.CodeNavServiceResolver, error) {
+func NewRootResolver(observationCtx *observation.Context, svc CodeNavService, autoindexingSvc AutoIndexingService, uploadSvc UploadsService, gitserverClient gitserver.Client, siteAdminChecker sharedresolvers.SiteAdminChecker, repoStore database.RepoStore, locationResolverFactory *gitresolvers.CachedLocationResolverFactory, prefetcherFactory *uploadsgraphql.PrefetcherFactory, maxIndexSearch, hunkCacheSize int) (resolverstubs.CodeNavServiceResolver, error) {
 	hunkCache, err := codenav.NewHunkCache(hunkCacheSize)
 	if err != nil {
 		return nil, err
@@ -114,10 +116,10 @@ type gitBlobLSIFDataResolver struct {
 	gitserverClient  gitserver.Client
 	siteAdminChecker sharedresolvers.SiteAdminChecker
 	repoStore        database.RepoStore
-	prefetcher       *sharedresolvers.Prefetcher
+	prefetcher       *uploadsgraphql.Prefetcher
 
 	requestState     codenav.RequestState
-	locationResolver *sharedresolvers.CachedLocationResolver
+	locationResolver *gitresolvers.CachedLocationResolver
 	errTracer        *observation.ErrCollector
 
 	operations *operations
@@ -132,8 +134,8 @@ func newGitBlobLSIFDataResolver(
 	gitserverClient gitserver.Client,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
-	prefetcher *sharedresolvers.Prefetcher,
-	locationResolver *sharedresolvers.CachedLocationResolver,
+	prefetcher *uploadsgraphql.Prefetcher,
+	locationResolver *gitresolvers.CachedLocationResolver,
 	requestState codenav.RequestState,
 	errTracer *observation.ErrCollector,
 	operations *operations,

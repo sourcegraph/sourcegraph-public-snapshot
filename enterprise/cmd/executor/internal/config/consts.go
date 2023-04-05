@@ -76,7 +76,7 @@ var (
 	// default and chosen so that it doesn't interfere with other common applications
 	// such as docker. It also provides room for a large number of VMs.
 	CNISubnetCIDR = mustParseCIDR("10.61.0.0/16")
-	// MitGitVersionConstraint is the minimum version of git required by the executor.
+	// MinGitVersionConstraint is the minimum version of git required by the executor.
 	MinGitVersionConstraint = mustParseConstraint(">= 2.26")
 )
 

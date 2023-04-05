@@ -9,14 +9,16 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type orphanedVMJanitor struct {
-	prefix  string
-	names   *NameSet
-	metrics *metrics
+	prefix    string
+	names     *NameSet
+	metrics   *metrics
+	cmdRunner util.CmdRunner
 }
 
 var (
@@ -31,12 +33,14 @@ func NewOrphanedVMJanitor(
 	names *NameSet,
 	interval time.Duration,
 	metrics *metrics,
+	cmdRunner util.CmdRunner,
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), "executors.orphaned-vm-janitor", "deletes VMs from a previous executor instance",
 		interval, newOrphanedVMJanitor(
 			prefix,
 			names,
 			metrics,
+			cmdRunner,
 		),
 	)
 }
@@ -45,16 +49,18 @@ func newOrphanedVMJanitor(
 	prefix string,
 	names *NameSet,
 	metrics *metrics,
+	cmdRunner util.CmdRunner,
 ) *orphanedVMJanitor {
 	return &orphanedVMJanitor{
-		prefix:  prefix,
-		names:   names,
-		metrics: metrics,
+		prefix:    prefix,
+		names:     names,
+		metrics:   metrics,
+		cmdRunner: cmdRunner,
 	}
 }
 
 func (j *orphanedVMJanitor) Handle(ctx context.Context) (err error) {
-	vmsByName, err := ignite.ActiveVMsByName(ctx, j.prefix, true)
+	vmsByName, err := ignite.ActiveVMsByName(ctx, j.cmdRunner, j.prefix, true)
 	if err != nil {
 		return err
 	}
