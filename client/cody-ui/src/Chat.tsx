@@ -21,7 +21,6 @@ interface ChatProps extends ChatClassNames {
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
     onSubmit: (text: string) => void
-    textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
     tipsRecommendations?: JSX.Element[]
@@ -63,7 +62,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     inputHistory,
     setInputHistory,
     onSubmit,
-    textAreaComponent: TextArea,
     submitButtonComponent: SubmitButton,
     fileLinkComponent,
     tipsRecommendations,
@@ -257,20 +255,67 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 )}
             </div>
             <form className={classNames(styles.inputRow, inputRowClassName)}>
-                <TextArea
-                    className={classNames(styles.chatInput, chatInputClassName)}
-                    rows={inputRows}
+                <AutoResizableTextArea
                     value={formInput}
-                    autoFocus={true}
-                    required={true}
+                    onChange={setFormInput}
+                    className={classNames(styles.chatInput, chatInputClassName)}
                     onInput={({ target }) => {
                         const { value } = target as HTMLInputElement
                         inputHandler(value)
                     }}
                     onKeyDown={onChatKeyDown}
                 />
+
                 <SubmitButton className={styles.submitButton} onClick={onChatSubmit} disabled={!!messageInProgress} />
             </form>
         </div>
+    )
+}
+
+interface AutoResizableTextAreaProps {
+    value: string
+    onChange: (value: string) => void
+    onInput?: React.FormEventHandler<HTMLTextAreaElement>
+    onKeyDown?: React.KeyboardEventHandler<HTMLTextAreaElement>
+    className?: string
+}
+
+export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
+    value,
+    onChange,
+    onInput,
+    onKeyDown,
+    className,
+}) => {
+    const textAreaRef = useRef<HTMLTextAreaElement>(null)
+
+    const adjustTextAreaHeight = () => {
+        if (textAreaRef.current) {
+            textAreaRef.current.style.height = '0px'
+            const scrollHeight = textAreaRef.current.scrollHeight
+            textAreaRef.current.style.height = scrollHeight + 'px'
+
+            // Hide scroll if the textArea isn't overflowing.
+            textAreaRef.current.style.overflowY = scrollHeight < 200 ? 'hidden' : 'auto'
+        }
+    }
+
+    const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+        onChange(event.target.value)
+        adjustTextAreaHeight()
+    }
+
+    return (
+        <textarea
+            ref={textAreaRef}
+            className={className}
+            value={value}
+            onChange={handleChange}
+            rows={1}
+            autoFocus={true}
+            required={true}
+            onKeyDown={onKeyDown}
+            onInput={onInput}
+        />
     )
 }

@@ -123,16 +123,16 @@
 
 .submit-button {
     position: absolute;
-    right: 0.25rem;
-    bottom: 0.25rem;
+    right: 0.6rem;
+    bottom: 0.46rem;
     fill: currentColor;
     opacity: 0.8;
     margin: 1rem;
     background: none;
     border: none;
     cursor: pointer;
-    height: 2rem;
-    width: 1.6rem;
+    color:var(--body-color)
+
 }
 
 .submit-button:hover {

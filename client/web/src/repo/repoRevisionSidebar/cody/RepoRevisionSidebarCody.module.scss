@@ -50,9 +50,7 @@
 }
 
 .chat-input {
-    padding: 1rem 2.5rem 1rem 1rem;
-    height: 10vh;
-    box-sizing: border-box;
-    min-height: 10vh;
-    max-height: 30vh;
+    padding: .6rem 1.5rem .8rem .8rem;
+    max-height: 200px;
+    border-color: var(--border-color-2);
 }
