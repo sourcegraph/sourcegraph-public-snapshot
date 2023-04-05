@@ -1,6 +1,6 @@
 import { useQuery } from '@sourcegraph/http-client'
 
-import { ExternalAccountFields, MinExternalAccountsVariables } from '../graphql-operations'
+import { ExternalAccountFields, UserExternalAccountsWithAccountDataVariables } from '../graphql-operations'
 import { USER_EXTERNAL_ACCOUNTS } from '../user/settings/backend'
 
 type MinExternalAccount = Pick<ExternalAccountFields, 'id' | 'serviceID' | 'serviceType' | 'accountData'>
@@ -14,10 +14,12 @@ interface UserExternalAccountsResult {
 }
 
 export function useUserExternalAccounts(username: string): { data: MinExternalAccount[]; loading: boolean } {
-    const { data, loading } = useQuery<UserExternalAccountsResult, MinExternalAccountsVariables>(
+    const { data, loading } = useQuery<UserExternalAccountsResult, UserExternalAccountsWithAccountDataVariables>(
         USER_EXTERNAL_ACCOUNTS,
         {
-            variables: { username },
+            variables: {
+                username,
+            },
         }
     )
 
