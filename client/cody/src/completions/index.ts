@@ -69,7 +69,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return []
         }
 
-        const { prefix, suffix, prevLine: precedingLine } = docContext
+        const { prefix, prevLine: precedingLine } = docContext
         let waitMs: number
         // let completionPrefix = '' // text to require as the first part of the completion
         const remainingBytes = this.tokToByte(this.promptTokens)
@@ -79,7 +79,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             // TODO(beyang): allow multiple lines
             waitMs = 1000
             completers.push(
-                new EndOfLineCompletionProvider(this.claude, remainingBytes, this.responseTokens, prefix, suffix, '', 2)
+                new EndOfLineCompletionProvider(this.claude, remainingBytes, this.responseTokens, prefix, '', 2)
             )
         } else if (context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke || precedingLine.endsWith('.')) {
             // Do nothing
@@ -87,24 +87,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             // End of line: long debounce, complete until newline
             waitMs = 2000
             completers.push(
-                new EndOfLineCompletionProvider(
-                    this.claude,
-                    remainingBytes,
-                    this.responseTokens,
-                    prefix,
-                    suffix,
-                    '',
-                    2
-                ),
-                new EndOfLineCompletionProvider(
-                    this.claude,
-                    remainingBytes,
-                    this.responseTokens,
-                    prefix,
-                    suffix,
-                    '\n',
-                    2
-                )
+                new EndOfLineCompletionProvider(this.claude, remainingBytes, this.responseTokens, prefix, '', 2),
+                new EndOfLineCompletionProvider(this.claude, remainingBytes, this.responseTokens, prefix, '\n', 2)
             )
         }
 
@@ -416,7 +400,6 @@ export class EndOfLineCompletionProvider implements CompletionProvider {
         private responseTokens: number,
         private prefix: string,
         // eslint-disable-next-line
-        private suffix: string, // TODO(beyang): make use of
         private injectPrefix: string,
         private defaultN: number = 1
     ) {}

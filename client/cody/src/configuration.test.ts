@@ -15,6 +15,7 @@ describe('getConfiguration', () => {
             useContext: 'embeddings',
             experimentalSuggest: false,
             openaiKey: null,
+            anthropicKey: null,
         })
     })
 
@@ -36,6 +37,8 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.keys.openai':
                         return 'sk-XXX'
+                    case 'cody.experimental.keys.anthropic':
+                        return 'sk-YYY'
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -49,6 +52,7 @@ describe('getConfiguration', () => {
             useContext: 'keyword',
             experimentalSuggest: true,
             openaiKey: 'sk-XXX',
+            anthropicKey: 'sk-YYY',
         })
     })
 })
