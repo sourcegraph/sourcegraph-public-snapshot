@@ -27,7 +27,7 @@ func (s *Service) UploadHandlerStore() uploadhandler.DBStore[UploadMetadata] {
 }
 
 func (s *uploadHandlerShim) WithTransaction(ctx context.Context, f func(tx uploadhandler.DBStore[UploadMetadata]) error) error {
-	return nil
+	return s.Store.WithTransaction(ctx, func(tx store.Store) error { return f(&uploadHandlerShim{tx}) })
 }
 
 func (s *uploadHandlerShim) InsertUpload(ctx context.Context, upload uploadhandler.Upload[UploadMetadata]) (int, error) {
