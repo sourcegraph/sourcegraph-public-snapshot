@@ -2,8 +2,8 @@
   "$schema": "../node_modules/@tauri-apps/cli/schema.json",
   "build": {
     "beforeBuildCommand": "pnpm install",
-    "beforeDevCommand": "./node_modules/.bin/gulp --color dev",
-    "devPath": "http://localhost:3080",
+    "beforeDevCommand": "",
+    "devPath": "http://localhost:3080/sign-in?nonce=foobar&returnTo=/",
     "distDir": "client/app/assets"
   },
   "package": {
