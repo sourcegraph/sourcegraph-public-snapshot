@@ -6,7 +6,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
-	uploadsgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 )
 
 type CodeNavService interface {
@@ -23,5 +22,3 @@ type CodeNavService interface {
 type AutoIndexingService interface {
 	QueueRepoRev(ctx context.Context, repositoryID int, rev string) error
 }
-
-type UploadsService = uploadsgraphql.UploadsService
