@@ -10,6 +10,7 @@ fi
 
 # shellcheck disable=SC2086
 docker build ${BUILD_CACHE} -t "${IMAGE:-"sourcegraph/blobstore"}" . \
+  --platform linux/amd64 \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \

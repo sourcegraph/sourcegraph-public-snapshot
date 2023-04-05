@@ -81,7 +81,6 @@ RUN apk add --no-cache --verbose openjdk11
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/blobstore:server /opt/s3proxy /opt/s3proxy
 
-
 COPY ctags-install-alpine.sh /ctags-install-alpine.sh
 RUN /ctags-install-alpine.sh
 
