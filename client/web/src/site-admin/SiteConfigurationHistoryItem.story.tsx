@@ -11,15 +11,14 @@ const config: Meta = {
 
 export default config
 
-export const HistoryItemWithNoAuthor: Story = () => {
-    return (
-        <WebStory>
-            {() => (
-                <SiteConfigurationHistoryItem
-                    node={{
-                        author: null,
-                        createdAt: new Date().toISOString(),
-                        diff: `--- ID: 122
+export const HistoryItemWithNoAuthor: Story = () => (
+    <WebStory>
+        {() => (
+            <SiteConfigurationHistoryItem
+                node={{
+                    author: null,
+                    createdAt: new Date().toISOString(),
+                    diff: `--- ID: 122
 +++ ID: 123
 @@ -330,6 +330,7 @@
     "url": "https://github.com/"
@@ -29,61 +28,29 @@ export const HistoryItemWithNoAuthor: Story = () => {
     "clientID": "foo",
 -   "clientSecret": "REDACTED-DATA-CHUNK-abcd1234",
     "displayName": "GitLab",`,
-                        id: '1',
-                    }}
-                />
-            )}
-        </WebStory>
-    )
-}
+                    id: '1',
+                }}
+            />
+        )}
+    </WebStory>
+)
 
-export const HistoryItemWithAuthor: Story = () => {
-    return (
-        <WebStory>
-            {() => (
-                <SiteConfigurationHistoryItem
-                    node={{
-                        author: {
-                            __typename: 'User',
-                            id: '1',
-                            displayName: 'Jane Doe',
-                            username: 'jdoe',
-                            avatarURL: null,
-                        },
-                        createdAt: new Date().toISOString(),
-                        diff: `--- ID: 122
-+++ ID: 123
-@@ -330,6 +330,7 @@
-    "url": "https://github.com/"
-    },
-    {
-+   "apiScope": "read_api",
-    "clientID": "foo",
--   "clientSecret": "REDACTED-DATA-CHUNK-abcd1234",
-    "displayName": "GitLab",`,
-                        id: '1',
-                    }}
-                />
-            )}
-        </WebStory>
-    )
-}
+HistoryItemWithNoAuthor.storyName = 'History item with no author'
 
-export const HistoryItemWithAuthorButNoDisplayName: Story = () => {
-    return (
-        <WebStory>
-            {() => (
-                <SiteConfigurationHistoryItem
-                    node={{
-                        author: {
-                            __typename: 'User',
-                            id: '1',
-                            displayName: null,
-                            username: 'jdoe',
-                            avatarURL: null,
-                        },
-                        createdAt: new Date().toISOString(),
-                        diff: `--- ID: 122
+export const HistoryItemWithAuthor: Story = () => (
+    <WebStory>
+        {() => (
+            <SiteConfigurationHistoryItem
+                node={{
+                    author: {
+                        __typename: 'User',
+                        id: '1',
+                        displayName: 'Jane Doe',
+                        username: 'jdoe',
+                        avatarURL: null,
+                    },
+                    createdAt: new Date().toISOString(),
+                    diff: `--- ID: 122
 +++ ID: 123
 @@ -330,6 +330,7 @@
     "url": "https://github.com/"
@@ -93,29 +60,29 @@ export const HistoryItemWithAuthorButNoDisplayName: Story = () => {
     "clientID": "foo",
 -   "clientSecret": "REDACTED-DATA-CHUNK-abcd1234",
     "displayName": "GitLab",`,
-                        id: '1',
-                    }}
-                />
-            )}
-        </WebStory>
-    )
-}
+                    id: '1',
+                }}
+            />
+        )}
+    </WebStory>
+)
 
-export const HistoryItemWithAuthorWithAvatarURL: Story = () => {
-    return (
-        <WebStory>
-            {() => (
-                <SiteConfigurationHistoryItem
-                    node={{
-                        author: {
-                            __typename: 'User',
-                            id: '1',
-                            displayName: 'Beyang Liu',
-                            username: 'beyang',
-                            avatarURL: 'https://avatars2.githubusercontent.com/u/1646931?v=4',
-                        },
-                        createdAt: new Date().toISOString(),
-                        diff: `--- ID: 122
+HistoryItemWithAuthor.storyName = 'History item with author'
+
+export const HistoryItemWithAuthorButNoDisplayName: Story = () => (
+    <WebStory>
+        {() => (
+            <SiteConfigurationHistoryItem
+                node={{
+                    author: {
+                        __typename: 'User',
+                        id: '1',
+                        displayName: null,
+                        username: 'jdoe',
+                        avatarURL: null,
+                    },
+                    createdAt: new Date().toISOString(),
+                    diff: `--- ID: 122
 +++ ID: 123
 @@ -330,6 +330,7 @@
     "url": "https://github.com/"
@@ -125,10 +92,43 @@ export const HistoryItemWithAuthorWithAvatarURL: Story = () => {
     "clientID": "foo",
 -   "clientSecret": "REDACTED-DATA-CHUNK-abcd1234",
     "displayName": "GitLab",`,
+                    id: '1',
+                }}
+            />
+        )}
+    </WebStory>
+)
+
+HistoryItemWithAuthorButNoDisplayName.storyName = 'History item with author without display name'
+
+export const HistoryItemWithAuthorWithAvatarURL: Story = () => (
+    <WebStory>
+        {() => (
+            <SiteConfigurationHistoryItem
+                node={{
+                    author: {
+                        __typename: 'User',
                         id: '1',
-                    }}
-                />
-            )}
-        </WebStory>
-    )
-}
+                        displayName: 'Beyang Liu',
+                        username: 'beyang',
+                        avatarURL: 'https://avatars2.githubusercontent.com/u/1646931?v=4',
+                    },
+                    createdAt: new Date().toISOString(),
+                    diff: `--- ID: 122
++++ ID: 123
+@@ -330,6 +330,7 @@
+    "url": "https://github.com/"
+    },
+    {
++   "apiScope": "read_api",
+    "clientID": "foo",
+-   "clientSecret": "REDACTED-DATA-CHUNK-abcd1234",
+    "displayName": "GitLab",`,
+                    id: '1',
+                }}
+            />
+        )}
+    </WebStory>
+)
+
+HistoryItemWithAuthorWithAvatarURL.storyName = 'History item with author and avatar URL'
