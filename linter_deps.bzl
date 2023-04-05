@@ -154,3 +154,10 @@ def linter_dependencies():
     version = "v0.1.11",
     sum = "h1:1Z0bcmTypkL3Q4k+IDHMWTcnCliEZcaPiIe0/ymEyhQ=",
   )
+
+  go_repository(
+    name = "co_honnef_go_tools",
+    importpath = "honnef.co/go/tools",
+    version = "v0.4.3",
+    sum = "h1:o/n5/K5gXqk8Gozvs2cnL0F2S1/g1vcGCAx2vETjITw=",
+  )
