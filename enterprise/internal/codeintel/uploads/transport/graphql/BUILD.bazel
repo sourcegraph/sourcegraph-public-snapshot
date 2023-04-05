@@ -8,6 +8,7 @@ go_library(
         "indexer_resolver.go",
         "observability.go",
         "precise_index_resolver.go",
+        "precise_index_resolver_factory.go",
         "prefetcher.go",
         "prefetcher_factory.go",
         "root_resolver.go",
