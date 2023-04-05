@@ -38,7 +38,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - The ability to exclude certain file path patterns from embeddings.
-- Added a modal to show warnings and errors when exporting serach results. [#50348](https://github.com/sourcegraph/sourcegraph/pull/50348)
+- Added a modal to show warnings and errors when exporting search results. [#50348](https://github.com/sourcegraph/sourcegraph/pull/50348)
 
 ### Changed
 
