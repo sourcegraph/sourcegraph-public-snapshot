@@ -38,6 +38,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - The ability to exclude certain file path patterns from embeddings.
+- Added a modal to show warnings and errors when exporting serach results. [#50348](https://github.com/sourcegraph/sourcegraph/pull/50348)
 
 ### Changed
 
@@ -57,6 +58,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The unified permissions out of band migration reported as unfinished if there were users with no permissions [#50147](https://github.com/sourcegraph/sourcegraph/pull/50147)
 - Filenames with special characters are correctly handled in Cody's embedding service [#50023](https://github.com/sourcegraph/sourcegraph/pull/50023)
 - Structural search correctly cleans up when done preventing a goroutine leak [#50034](https://github.com/sourcegraph/sourcegraph/pull/50034)
+- Fetch search based definitions in the reference panel if no precise definitions were found [#50179](https://github.com/sourcegraph/sourcegraph/pull/50179)
 
 ### Removed
 
