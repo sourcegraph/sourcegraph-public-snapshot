@@ -1,4 +1,6 @@
-export function AskCodyIcon({ iconColor }: { iconColor: string }) {
+import React from 'react'
+
+export const AskCodyIcon = React.memo(({ iconColor }: { iconColor: string }) => {
     return (
         <svg width="22" height="22" viewBox="0 0 28 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <mask id="mask0_3_1189" maskUnits="userSpaceOnUse" x="0" y="0" width="21" height="21">
@@ -27,4 +29,4 @@ export function AskCodyIcon({ iconColor }: { iconColor: string }) {
             </g>
         </svg>
     )
-}
+})
