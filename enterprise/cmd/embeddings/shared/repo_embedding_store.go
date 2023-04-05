@@ -21,27 +21,17 @@ type EmbeddingsStore struct {
 }
 
 const embeddingsExistFmtstr = `
-	SELECT revision
-	FROM (
-		SELECT revision
-		FROM text_embeddings AS te
-		INNER JOIN repo AS r ON te.repo_id = r.id
-		WHERE r.name = %s
-
-		UNION ALL
-
-		SELECT revision
-		FROM code_embeddings AS ce
-		INNER JOIN repo AS r ON ce.repo_id = r.id
-		WHERE r.name = %s
-	) AS revisions
-	LIMIT 1
+SELECT revision
+FROM
+	embedding_versions ev
+INNER JOIN repo AS r ON ev.repo_id = r.id
+WHERE r.name = %s
+LIMIT 1
 `
 
 func (s EmbeddingsStore) HasEmbeddings(ctx context.Context, repoName api.RepoName) (string, error) {
 	q := sqlf.Sprintf(
 		embeddingsExistFmtstr,
-		repoName,
 		repoName,
 	)
 	var rev string
@@ -60,13 +50,13 @@ const upsertVersionIDFmtstr = `
 		INSERT INTO embedding_versions (repo_id, revision)
 		SELECT id, $2
 		FROM repo
-		WHERE name = $1
+		WHERE repo.name = $1
 		ON CONFLICT (repo_id, revision) DO NOTHING
-		RETURNING id
+		RETURNING embedding_versions.id
 	)
 	SELECT id FROM ins
 	UNION ALL
-	SELECT id
+	SELECT ev.id
 	FROM embedding_versions AS ev
 	INNER JOIN repo AS r ON ev.repo_id = r.id
 	WHERE r.name = $1 AND ev.revision = $2
@@ -111,10 +101,10 @@ func (s EmbeddingsStore) UpdateEmbeddings(
 }
 
 const findVersionIdFmtstr = `
-	SELECT id
+	SELECT ev.id
 	FROM embedding_versions AS ev
 	INNER JOIN repo AS r ON ev.repo_id = r.id
-	WHERE repo.name = $1
+	WHERE r.name = $1
 	AND ev.revision = $2
 	LIMIT 1
 `
@@ -123,7 +113,7 @@ const embeddingsQueryFmtstr = `
 	SELECT v.file_name, v.start_line, v.end_line
 	FROM %s AS v
 	WHERE v.version_id = $1
-	ORDER BY v.embedding <=> $2::vector
+	ORDER BY 1 - (v.embedding <=> $2::vector)
 	LIMIT $3
 `
 
@@ -171,6 +161,7 @@ func fmtVector(fs []float32) string {
 		notFirst = true
 	}
 	fmt.Fprint(&b, "]")
+	fmt.Printf("fmtVector: %s\n", b.String())
 	return b.String()
 }
 

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"runtime/debug"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -225,8 +226,8 @@ func handlePanic(logger log.Logger, next http.Handler) http.Handler {
 		defer func() {
 			if rec := recover(); rec != nil {
 				err := fmt.Sprintf("%v", rec)
+				logger.Error("recovered from panic", log.String("err", err), log.String("stack", string(debug.Stack())))
 				http.Error(w, fmt.Sprintf("%v", rec), http.StatusInternalServerError)
-				logger.Error("recovered from panic", log.String("err", err))
 			}
 		}()
 
