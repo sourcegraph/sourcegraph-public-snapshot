@@ -79,6 +79,8 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, use_xvfb 
         "BROWSER": "chrome",
         "WINDOW_WIDTH": "1280",
         "WINDOW_HEIGHT": "1024",
+        "LOG_BROWSER_CONSOLE": "false",
+
         # Enable findDom on CodeMirror
         "INTEGRATION_TESTS": "true",
 
