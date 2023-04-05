@@ -143,17 +143,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				ops.Append(prPreview())
 			}
 		}
-		if c.Diff.Has(changed.DockerImages) {
-			// Build and scan docker images
-			testBuilds := operations.NewNamedSet("Test builds")
-			scanBuilds := operations.NewNamedSet("Scan test builds")
-			for _, image := range images.SourcegraphDockerImages {
-				testBuilds.Append(buildCandidateDockerImage(image, c.Version, c.candidateImageTag(), false))
-				scanBuilds.Append(trivyScanCandidateImage(image, c.candidateImageTag()))
-			}
-			ops.Merge(testBuilds)
-			ops.Merge(scanBuilds)
-		}
 
 	case runtype.ReleaseNightly:
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
