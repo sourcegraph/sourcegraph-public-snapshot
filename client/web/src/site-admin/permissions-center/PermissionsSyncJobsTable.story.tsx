@@ -184,7 +184,9 @@ function getSyncJobs(): PermissionsSyncJob[] {
                 state,
                 subject,
                 reason,
-                state === PermissionsSyncJobState.COMPLETED && index > 10
+                state === PermissionsSyncJobState.COMPLETED && index > 10,
+                index % 4 === 0 ? 0 : index + 10,
+                index % 4 === 0 ? 0 : index + 5
             )
         )
     }
@@ -236,7 +238,9 @@ function createSyncJobMock(
     state: PermissionsSyncJobState,
     subject: subject,
     reason: reason,
-    partial: boolean = false
+    partial: boolean = false,
+    permissionsAdded: number = 1337,
+    permissionsRemoved: number = 42
 ): PermissionsSyncJob {
     return {
         __typename: 'PermissionsSyncJob',
@@ -254,9 +258,9 @@ function createSyncJobMock(
                 ? formatRFC3339(addMinutes(TIMESTAMP_MOCK, 2))
                 : null,
         processAfter: null,
-        permissionsAdded: 1337,
-        permissionsRemoved: 42,
-        permissionsFound: 1337 + 42,
+        permissionsAdded,
+        permissionsRemoved,
+        permissionsFound: permissionsAdded + permissionsRemoved,
         failureMessage: null,
         cancellationReason: null,
         ranForMs: null,
