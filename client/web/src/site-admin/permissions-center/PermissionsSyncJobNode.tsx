@@ -242,11 +242,13 @@ export const PermissionsSyncJobNumbers: React.FunctionComponent<{ job: Permissio
     added,
 }) =>
     added ? (
-        <div className="text-success text-right">
-            +<b>{job.permissionsAdded}</b>
+        <div className={classNames('text-right', job.permissionsAdded > 0 ? 'text-success' : styles.textSuccessMuted)}>
+            {job.permissionsAdded > 0 && '+'}
+            <b>{job.permissionsAdded}</b>
         </div>
     ) : (
-        <div className="text-danger text-right">
-            -<b>{job.permissionsRemoved}</b>
+        <div className={classNames('text-right', job.permissionsRemoved > 0 ? 'text-danger' : styles.textDangerMuted)}>
+            {job.permissionsRemoved > 0 && '-'}
+            <b>{job.permissionsRemoved}</b>
         </div>
     )

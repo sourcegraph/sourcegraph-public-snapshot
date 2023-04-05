@@ -34,7 +34,15 @@ All notable changes to Sourcegraph are documented in this file.
 
 - User tags are removed in favor of the newer feature flags functionality. [#49318](https://github.com/sourcegraph/sourcegraph/pull/49318)
 
--
+## 5.0.1
+
+### Added
+
+### Changed
+
+### Fixed
+
+### Removed
 
 ## 5.0.0
 
