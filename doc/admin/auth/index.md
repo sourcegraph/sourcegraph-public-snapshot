@@ -248,7 +248,7 @@ When combined with `"allowSignup": false` or unset, an admin should first create
 Sourcegraph instance:
 
 - Authorization callback URL: `https://sourcegraph.example.com/.auth/gitlab/callback`
-- Scopes: `api`, `read_user`
+- Scopes: `read_user`, `read_api` (be sure to set `"apiScope": "read_api"` in the `auth.providers` config, as indicated below)
 
 Then add the following lines to your site configuration:
 
@@ -262,6 +262,7 @@ Then add the following lines to your site configuration:
         "clientID": "replace-with-the-oauth-application-id",
         "clientSecret": "replace-with-the-oauth-secret",
         "url": "https://gitlab.example.com",
+        "apiScope": "read_api", // If not set, it defaults to "api" and the OAuth application will have to be adjusted accordingly.
         "allowSignup": false, // If not set, it defaults to true allowing any GitLab user with access to your instance to sign up.
         "allowGroups": ["group", "group/subgroup", "group/subgroup/subgroup"], // Restrict logins and sign-ups to members of groups or subgroups based on the full-path provided.
       }
