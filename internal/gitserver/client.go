@@ -15,7 +15,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/grafana/regexp"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
@@ -324,7 +323,7 @@ type Client interface {
 
 	// ListFiles returns a list of root-relative file paths matching the given
 	// pattern in a particular commit of a repository.
-	ListFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp) ([]string, error)
+	ListFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, opts *protocol.ListFilesOpts) ([]string, error)
 
 	// Commits returns all commits matching the options.
 	Commits(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, opt CommitsOptions) ([]*gitdomain.Commit, error)
@@ -443,6 +442,11 @@ type ArchiveOptions struct {
 	Treeish   string               // the tree or commit to produce an archive for
 	Format    ArchiveFormat        // format of the resulting archive (usually "tar" or "zip")
 	Pathspecs []gitdomain.Pathspec // if nonempty, only include these pathspecs.
+}
+
+type ListFilesOptions struct {
+	ExcludeDirs bool
+	MaxFileSize int
 }
 
 type BatchLogOptions protocol.BatchLogRequest

@@ -17,6 +17,7 @@ import (
 
 	"github.com/grafana/regexp"
 	godiff "github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
@@ -660,13 +661,13 @@ func TestLsFiles(t *testing.T) {
 }
 
 func TestListFiles(t *testing.T) {
-	// TODO this test doesn't actually exercise recursive listing or the
-	// pattern regex. But better than nothing.
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
 	client := NewClient()
 	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) ([]string, error) {
-		return client.ListFiles(ctx, checker, repo, "HEAD", regexp.MustCompile(""))
+		return client.ListFiles(ctx, checker, repo, "HEAD", &protocol.ListFilesOpts{
+			Pattern: regexp.MustCompile("^dir/.*$"),
+		})
 	})
 }
 
@@ -678,9 +679,10 @@ func runFileListingTest(t *testing.T,
 	t.Helper()
 	gitCommands := []string{
 		"touch file1",
-		"touch file2",
-		"touch file3",
-		"git add file1 file2 file3",
+		"mkdir dir",
+		"touch dir/file2",
+		"touch dir/file3",
+		"git add file1 dir/file2 dir/file3",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 
@@ -699,7 +701,7 @@ func runFileListingTest(t *testing.T,
 		t.Fatal(err)
 	}
 	want := []string{
-		"file1", "file2", "file3",
+		"dir/file2", "dir/file3",
 	}
 	if diff := cmp.Diff(want, files); diff != "" {
 		t.Fatal(diff)
@@ -710,7 +712,7 @@ func runFileListingTest(t *testing.T,
 		return true
 	})
 	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-		if content.Path == "file1" {
+		if content.Path == "dir/file2" {
 			return authz.Read, nil
 		}
 		return authz.None, nil
@@ -724,7 +726,7 @@ func runFileListingTest(t *testing.T,
 		t.Fatal(err)
 	}
 	want = []string{
-		"file1",
+		"dir/file2",
 	}
 	if diff := cmp.Diff(want, files); diff != "" {
 		t.Fatal(diff)
