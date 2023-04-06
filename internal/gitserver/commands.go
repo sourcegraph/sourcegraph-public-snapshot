@@ -1026,18 +1026,17 @@ func (c *clientImplementor) ListFiles(ctx context.Context, checker authz.SubRepo
 		return nil, errors.Wrap(err, "reading directory")
 	}
 	var filteredFiles []string
-	if opts.Pattern != nil {
-		for _, file := range files {
-			if file.IsDir() && !opts.IncludeDirs {
-				continue
-			} else if opts.MaxFileSizeBytes != nil && file.Size() > *opts.MaxFileSizeBytes {
-				continue
-			} else if opts.Pattern != nil && !opts.Pattern.MatchString(file.Name()) {
-				continue
-			}
 
-			filteredFiles = append(filteredFiles, file.Name())
+	for _, file := range files {
+		if file.IsDir() && !opts.IncludeDirs {
+			continue
+		} else if opts.MaxFileSizeBytes != nil && file.Size() > *opts.MaxFileSizeBytes {
+			continue
+		} else if opts.Pattern != nil && !opts.Pattern.MatchString(file.Name()) {
+			continue
 		}
+
+		filteredFiles = append(filteredFiles, file.Name())
 	}
 
 	return filterPaths(ctx, checker, repo, filteredFiles)
