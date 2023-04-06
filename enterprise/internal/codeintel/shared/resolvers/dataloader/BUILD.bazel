@@ -6,6 +6,7 @@ go_library(
         "backing_service.go",
         "cache.go",
         "dataloader.go",
+        "dataloader_factory.go",
         "factory.go",
         "identifier.go",
     ],

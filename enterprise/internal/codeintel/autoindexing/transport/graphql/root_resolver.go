@@ -2,7 +2,9 @@ package graphql
 
 import (
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/dataloader"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -13,7 +15,8 @@ import (
 type rootResolver struct {
 	autoindexSvc                AutoIndexingService
 	siteAdminChecker            sharedresolvers.SiteAdminChecker
-	prefetcherFactory           *graphql.PrefetcherFactory
+	uploadLoaderFactory         *dataloader.DataloaderFactory[int, shared.Upload]
+	indexLoaderFactory          *dataloader.DataloaderFactory[int, shared.Index]
 	locationResolverFactory     *gitresolvers.CachedLocationResolverFactory
 	preciseIndexResolverFactory *graphql.PreciseIndexResolverFactory
 	operations                  *operations
@@ -23,14 +26,16 @@ func NewRootResolver(
 	observationCtx *observation.Context,
 	autoindexSvc AutoIndexingService,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
-	prefetcherFactory *graphql.PrefetcherFactory,
+	uploadLoaderFactory *dataloader.DataloaderFactory[int, shared.Upload],
+	indexLoaderFactory *dataloader.DataloaderFactory[int, shared.Index],
 	locationResolverFactory *gitresolvers.CachedLocationResolverFactory,
 	preciseIndexResolverFactory *graphql.PreciseIndexResolverFactory,
 ) resolverstubs.AutoindexingServiceResolver {
 	return &rootResolver{
 		autoindexSvc:                autoindexSvc,
 		siteAdminChecker:            siteAdminChecker,
-		prefetcherFactory:           prefetcherFactory,
+		uploadLoaderFactory:         uploadLoaderFactory,
+		indexLoaderFactory:          indexLoaderFactory,
 		locationResolverFactory:     locationResolverFactory,
 		preciseIndexResolverFactory: preciseIndexResolverFactory,
 		operations:                  newOperations(observationCtx),

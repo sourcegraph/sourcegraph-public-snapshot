@@ -13,6 +13,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/dataloader"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsShared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -118,7 +119,8 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 		summary,
 		inferredAvailableIndexersResolver,
 		limitErr,
-		r.prefetcherFactory.Create(),
+		r.uploadLoaderFactory.Create(),
+		r.indexLoaderFactory.Create(),
 		errTracer,
 		r.preciseIndexResolverFactory,
 	), nil
@@ -288,7 +290,8 @@ type repositorySummaryResolver struct {
 	summary                     RepositorySummary
 	availableIndexers           []inferredAvailableIndexers2
 	limitErr                    error
-	prefetcher                  *Prefetcher
+	uploadLoader                *dataloader.DataLoader[int, shared.Upload]
+	indexLoader                 *dataloader.DataLoader[int, shared.Index]
 	locationResolver            *gitresolvers.CachedLocationResolver
 	errTracer                   *observation.ErrCollector
 	preciseIndexResolverFactory *PreciseIndexResolverFactory
@@ -304,7 +307,8 @@ func newRepositorySummaryResolver(
 	summary RepositorySummary,
 	availableIndexers []inferredAvailableIndexers2,
 	limitErr error,
-	prefetcher *Prefetcher,
+	uploadLoader *dataloader.DataLoader[int, shared.Upload],
+	indexLoader *dataloader.DataLoader[int, shared.Index],
 	errTracer *observation.ErrCollector,
 	preciseIndexResolverFactory *PreciseIndexResolverFactory,
 ) resolverstubs.CodeIntelRepositorySummaryResolver {
@@ -312,7 +316,8 @@ func newRepositorySummaryResolver(
 		summary:                     summary,
 		availableIndexers:           availableIndexers,
 		limitErr:                    limitErr,
-		prefetcher:                  prefetcher,
+		uploadLoader:                uploadLoader,
+		indexLoader:                 indexLoader,
 		locationResolver:            locationResolver,
 		errTracer:                   errTracer,
 		preciseIndexResolverFactory: preciseIndexResolverFactory,
@@ -334,7 +339,7 @@ func (r *repositorySummaryResolver) RecentActivity(ctx context.Context) ([]resol
 		for _, upload := range recentUploads.Uploads {
 			upload := upload
 
-			resolver, err := r.preciseIndexResolverFactory.Create(ctx, r.prefetcher, r.locationResolver, r.errTracer, &upload, nil)
+			resolver, err := r.preciseIndexResolverFactory.Create(ctx, r.uploadLoader, r.indexLoader, r.locationResolver, r.errTracer, &upload, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -353,7 +358,7 @@ func (r *repositorySummaryResolver) RecentActivity(ctx context.Context) ([]resol
 				}
 			}
 
-			resolver, err := r.preciseIndexResolverFactory.Create(ctx, r.prefetcher, r.locationResolver, r.errTracer, nil, &index)
+			resolver, err := r.preciseIndexResolverFactory.Create(ctx, r.uploadLoader, r.indexLoader, r.locationResolver, r.errTracer, nil, &index)
 			if err != nil {
 				return nil, err
 			}

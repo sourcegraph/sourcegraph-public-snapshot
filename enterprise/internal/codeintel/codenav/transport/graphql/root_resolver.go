@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
-	uploadsgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -24,7 +23,6 @@ type rootResolver struct {
 	gitserverClient                gitserver.Client
 	siteAdminChecker               sharedresolvers.SiteAdminChecker
 	repoStore                      database.RepoStore
-	prefetcherFactory              *uploadsgraphql.PrefetcherFactory
 	locationResolverFactory        *gitresolvers.CachedLocationResolverFactory
 	hunkCache                      codenav.HunkCache
 	maximumIndexesPerMonikerSearch int
@@ -38,7 +36,6 @@ func NewRootResolver(
 	gitserverClient gitserver.Client,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
-	prefetcherFactory *uploadsgraphql.PrefetcherFactory,
 	locationResolverFactory *gitresolvers.CachedLocationResolverFactory,
 	hunkCacheSize int,
 	maxIndexSearch int,
@@ -54,7 +51,6 @@ func NewRootResolver(
 		gitserverClient:                gitserverClient,
 		siteAdminChecker:               siteAdminChecker,
 		repoStore:                      repoStore,
-		prefetcherFactory:              prefetcherFactory,
 		locationResolverFactory:        locationResolverFactory,
 		hunkCache:                      hunkCache,
 		maximumIndexesPerMonikerSearch: maxIndexSearch,

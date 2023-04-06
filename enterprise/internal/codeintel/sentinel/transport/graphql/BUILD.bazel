@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "graphql",
     srcs = [
+        "dataloader.go",
         "iface.go",
         "observability.go",
         "root_resolver.go",
@@ -13,6 +14,7 @@ go_library(
         "//enterprise/internal/codeintel/sentinel/shared",
         "//enterprise/internal/codeintel/shared/resolvers/dataloader",
         "//enterprise/internal/codeintel/shared/resolvers/gitresolvers",
+        "//enterprise/internal/codeintel/uploads/shared",
         "//enterprise/internal/codeintel/uploads/transport/graphql",
         "//internal/codeintel/resolvers",
         "//internal/gqlutil",

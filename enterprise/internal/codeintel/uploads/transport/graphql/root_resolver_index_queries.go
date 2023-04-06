@@ -186,17 +186,20 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 		cursor = ""
 	}
 
-	prefetcher := r.prefetcherFactory.Create()
+	// TODO - CreateWith(set)?
+	uploadLoader := r.uploadLoaderFactory.Create()
+	indexLoader := r.indexLoaderFactory.Create()
+	locationResolverFactory := r.locationResolverFactory.Create()
 
 	for _, pair := range pairs {
 		if pair.upload != nil && pair.upload.AssociatedIndexID != nil {
-			prefetcher.MarkIndex(*pair.upload.AssociatedIndexID)
+			indexLoader.Presubmit(*pair.upload.AssociatedIndexID)
 		}
 	}
 
 	resolvers := make([]resolverstubs.PreciseIndexResolver, 0, len(pairs))
 	for _, pair := range pairs {
-		resolver, err := r.preciseIndexResolverFactory.Create(ctx, prefetcher, r.locationResolverFactory.Create(), errTracer, pair.upload, pair.index)
+		resolver, err := r.preciseIndexResolverFactory.Create(ctx, uploadLoader, indexLoader, locationResolverFactory, errTracer, pair.upload, pair.index)
 		if err != nil {
 			return nil, err
 		}
@@ -224,7 +227,12 @@ func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ r
 			return nil, err
 		}
 
-		return r.preciseIndexResolverFactory.Create(ctx, r.prefetcherFactory.Create(), r.locationResolverFactory.Create(), errTracer, &upload, nil)
+		// TODO - CreateWith(set)?
+		uploadLoader := r.uploadLoaderFactory.Create()
+		indexLoader := r.indexLoaderFactory.Create()
+		locationResolverFactory := r.locationResolverFactory.Create()
+
+		return r.preciseIndexResolverFactory.Create(ctx, uploadLoader, indexLoader, locationResolverFactory, errTracer, &upload, nil)
 	}
 	if indexID != 0 {
 		index, ok, err := r.uploadSvc.GetIndexByID(ctx, indexID)
@@ -232,7 +240,12 @@ func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ r
 			return nil, err
 		}
 
-		return r.preciseIndexResolverFactory.Create(ctx, r.prefetcherFactory.Create(), r.locationResolverFactory.Create(), errTracer, nil, &index)
+		// TODO - CreateWith(set)?
+		uploadLoader := r.uploadLoaderFactory.Create()
+		indexLoader := r.indexLoaderFactory.Create()
+		locationResolverFactory := r.locationResolverFactory.Create()
+
+		return r.preciseIndexResolverFactory.Create(ctx, uploadLoader, indexLoader, locationResolverFactory, errTracer, nil, &index)
 	}
 
 	return nil, errors.New("invalid identifier")

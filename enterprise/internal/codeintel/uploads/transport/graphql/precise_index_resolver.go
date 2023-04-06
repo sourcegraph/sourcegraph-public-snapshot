@@ -12,6 +12,7 @@ import (
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	policiesgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/transport/graphql"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/dataloader"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -42,7 +43,8 @@ func newPreciseIndexResolver(
 	uploadsSvc UploadsService,
 	policySvc PolicyService,
 	gitserverClient gitserver.Client,
-	prefetcher *Prefetcher,
+	uploadLoader *dataloader.DataLoader[int, shared.Upload],
+	indexLoader *dataloader.DataLoader[int, shared.Index],
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
 	locationResolver *gitresolvers.CachedLocationResolver,
@@ -51,7 +53,7 @@ func newPreciseIndexResolver(
 	index *uploadsshared.Index,
 ) (resolverstubs.PreciseIndexResolver, error) {
 	if index != nil && index.AssociatedUploadID != nil && upload == nil {
-		v, ok, err := prefetcher.GetUploadByID(ctx, *index.AssociatedUploadID)
+		v, ok, err := uploadLoader.GetByID(ctx, *index.AssociatedUploadID)
 		if err != nil {
 			return nil, err
 		}
@@ -62,7 +64,7 @@ func newPreciseIndexResolver(
 
 	if upload != nil {
 		if upload.AssociatedIndexID != nil {
-			v, ok, err := prefetcher.GetIndexByID(ctx, *upload.AssociatedIndexID)
+			v, ok, err := indexLoader.GetByID(ctx, *upload.AssociatedIndexID)
 			if err != nil {
 				return nil, err
 			}
