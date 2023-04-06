@@ -1,3 +1,22 @@
 extend type Query {
-    completions: String!
+    completions(input: CompletionsInput!): String!
+}
+
+input CompletionsInput {
+#    Messages          []Message `json:"messages"`
+#    Temperature       float32   `json:"temperature"`
+#    MaxTokensToSample int       `json:"maxTokensToSample"`
+#    TopK              int       `json:"topK"`
+#    TopP              float32   `json:"topP"`
+
+    messages: [Message!]!
+    temperature: Float!
+    maxTokensToSample: Int!
+    topK: Int!
+    topP: Int!
+}
+
+input Message {
+    speaker: String!
+    text: String!
 }
