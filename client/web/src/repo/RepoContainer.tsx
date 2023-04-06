@@ -2,7 +2,7 @@ import React, { FC, Suspense, useEffect, useMemo, useState } from 'react'
 
 import { mdiSourceRepository, mdiClose } from '@mdi/js'
 import classNames from 'classnames'
-import { escapeRegExp, truncate } from 'lodash'
+import { escapeRegExp } from 'lodash'
 import { Location, useLocation, Route, Routes } from 'react-router-dom'
 import { NEVER, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
@@ -342,7 +342,6 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
     const chatTitle = 'Ask Cody'
 
     const sidebarSizes = { default: 350, max: 800, min: 250 }
-    const [maxWidth, handleResize] = usePanelResize(sidebarSizes.default, isCodyActive)
 
     return (
         <>
@@ -356,7 +355,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                 />
             ))}
             <div className={classNames('w-100 d-flex flex-row')}>
-                <div style={{ maxWidth }} className={classNames('d-flex flex-column w-100', styles.repoContainer)}>
+                <div className={classNames('d-flex flex-column w-100', styles.repoContainer)}>
                     <div className={styles.hack}>
                         <RepoHeader
                             actionButtons={props.repoHeaderActionButtons}
@@ -468,7 +467,6 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                         maxSize={sidebarSizes.max}
                         minSize={sidebarSizes.min}
                         defaultSize={sidebarSizes.default}
-                        onResize={handleResize}
                     >
                         <div className={styles.codySidebar}>
                             <div className={styles.codySidebarHeader}>
@@ -533,20 +531,3 @@ function redirectToExternalHost(externalRedirectURL: string): void {
 const EmptyRepo: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage icon={RepoQuestionIcon} title="Empty repository" />
 )
-
-const usePanelResize = (initialWidth: number, isPanelOpened: boolean) => {
-    const [maxWidth, setMaxWidth] = useState(`calc(100vw - ${initialWidth}px)`)
-
-    const handleResize = (width: number) => {
-        // update maxWidth dynamically based on the panel width
-        setMaxWidth(`calc(100vw - ${width}px)`)
-    }
-
-    useEffect(() => {
-        if (!isPanelOpened) {
-            handleResize(0)
-        }
-    }, [isPanelOpened])
-
-    return [maxWidth, handleResize] as const
-}
