@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
@@ -35,14 +36,16 @@ func newQueueTelemetryOptions(ctx context.Context, runner util.CmdRunner, useFir
 		logger.Error("Failed to get git version", log.Error(err))
 	}
 
-	t.SrcCliVersion, err = util.GetSrcVersion(ctx, runner)
-	if err != nil {
-		logger.Error("Failed to get src-cli version", log.Error(err))
-	}
+	if !config.IsKubernetes() {
+		t.SrcCliVersion, err = util.GetSrcVersion(ctx, runner)
+		if err != nil {
+			logger.Error("Failed to get src-cli version", log.Error(err))
+		}
 
-	t.DockerVersion, err = util.GetDockerVersion(ctx, runner)
-	if err != nil {
-		logger.Error("Failed to get docker version", log.Error(err))
+		t.DockerVersion, err = util.GetDockerVersion(ctx, runner)
+		if err != nil {
+			logger.Error("Failed to get docker version", log.Error(err))
+		}
 	}
 
 	if useFirecracker {
@@ -63,6 +66,7 @@ func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOpt
 		RunnerOptions: runner.Options{
 			DockerOptions:      dockerOptions(c),
 			FirecrackerOptions: firecrackerOptions(c),
+			KubernetesOptions:  kubernetesOptions(c),
 		},
 		GitServicePath: "/.executors/git",
 		QueueOptions:   queueOptions(c, queueTelemetryOptions),
@@ -161,6 +165,51 @@ func endpointOptions(c *config.Config, pathPrefix string) apiclient.EndpointOpti
 		URL:        c.FrontendURL,
 		PathPrefix: pathPrefix,
 		Token:      c.FrontendAuthorizationToken,
+	}
+}
+
+func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
+	var nodeSelector map[string]string
+	if len(c.KubernetesNodeSelector) > 0 {
+		nodeSelectorValues := strings.Split(c.KubernetesNodeSelector, ",")
+		nodeSelector = make(map[string]string, len(nodeSelectorValues))
+		for _, value := range nodeSelectorValues {
+			parts := strings.Split(value, "=")
+			if len(parts) == 2 {
+				nodeSelector[parts[0]] = parts[1]
+			}
+		}
+	}
+
+	resourceLimit := command.KubernetesResource{Memory: resource.MustParse(c.KubernetesResourceLimitMemory)}
+	if c.KubernetesResourceLimitCPU != "" {
+		resourceLimit.CPU = resource.MustParse(c.KubernetesResourceLimitCPU)
+	}
+
+	resourceRequest := command.KubernetesResource{Memory: resource.MustParse(c.KubernetesResourceRequestMemory)}
+	if c.KubernetesResourceRequestCPU != "" {
+		resourceRequest.CPU = resource.MustParse(c.KubernetesResourceRequestCPU)
+	}
+
+	return runner.KubernetesOptions{
+		Enabled:    config.IsKubernetes(),
+		ConfigPath: c.KubernetesConfigPath,
+		ContainerOptions: command.KubernetesContainerOptions{
+			NodeName:     c.KubernetesNodeName,
+			NodeSelector: nodeSelector,
+			RequiredNodeAffinity: command.KubernetesNodeAffinity{
+				MatchExpressions: c.KubernetesNodeRequiredAffinityMatchExpressions,
+				MatchFields:      c.KubernetesNodeRequiredAffinityMatchFields,
+			},
+			Namespace:             c.KubernetesNamespace,
+			PersistenceVolumeName: c.KubernetesPersistenceVolumeName,
+			ResourceLimit:         resourceLimit,
+			ResourceRequest:       resourceRequest,
+			Retry: command.KubernetesRetry{
+				Attempts: c.KubernetesJobRetryBackoffLimit,
+				Backoff:  c.KubernetesJobRetryBackoffDuration,
+			},
+		},
 	}
 }
 
