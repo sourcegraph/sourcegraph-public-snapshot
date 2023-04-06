@@ -1,0 +1,19 @@
+.input {
+    border: var(--input-border-width) solid var(--input-border-color);
+    border-radius: var(--border-radius);
+    padding: 0.25rem;
+}
+
+.change {
+    border: 1px solid var(--border-color-2);
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.output {
+    * {
+        margin-bottom: 0 !important;
+    }
+}

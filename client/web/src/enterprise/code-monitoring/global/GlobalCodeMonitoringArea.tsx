@@ -19,6 +19,7 @@ interface Props extends TelemetryProps, PlatformContextProps, SettingsCascadePro
 const CodeMonitoringPage = lazyComponent(() => import('../CodeMonitoringPage'), 'CodeMonitoringPage')
 const CreateCodeMonitorPage = lazyComponent(() => import('../CreateCodeMonitorPage'), 'CreateCodeMonitorPage')
 const ManageCodeMonitorPage = lazyComponent(() => import('../ManageCodeMonitorPage'), 'ManageCodeMonitorPage')
+const CreateChangelogPage = lazyComponent(() => import('../CreateChangelogPage'), 'CreateChangelogPage')
 
 /**
  * The global code monitoring area.
@@ -31,6 +32,7 @@ export const GlobalCodeMonitoringArea: React.FunctionComponent<React.PropsWithCh
             <Routes>
                 <Route path="" element={<CodeMonitoringPage {...outerProps} />} />
                 <Route path="new" element={<CreateCodeMonitorPage {...outerProps} />} />
+                <Route path="new-changelog" element={<CreateChangelogPage {...outerProps} />} />
                 <Route path=":id" element={<ManageCodeMonitorPage {...outerProps} />} />
             </Routes>
         </Page>
