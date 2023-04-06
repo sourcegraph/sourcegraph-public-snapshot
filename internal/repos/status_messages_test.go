@@ -75,6 +75,11 @@ func TestStatusMessages(t *testing.T) {
 						Message: "Repositories will not be cloned or updated.",
 					},
 				},
+				{
+					NoRepositoriesDetected: &NoRepositoriesDetected{
+						Message: "No repositories have been added to Sourcegraph.",
+					},
+				},
 			},
 		},
 		{
