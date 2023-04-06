@@ -1,0 +1,13 @@
+FROM grafana/grafana:7.5.17@sha256:15abb652aa82eeb9f45589278b34ae6ef0e96f74c389cadde31831eb0b1ce228 as production
+
+USER root
+
+RUN apk add --upgrade \
+    'apk-tools>=2.12' \
+    'krb5-libs>=1.18.4' \
+    'libssl1.1>=1.1.1s-r0' \
+    'openssl>=1.1.1s-r0' \
+    'busybox>=1.32.1' \
+    'ncurses-libs>=6.2_p20210109-r1' \
+    'ncurses-terminfo-base>=6.2_p20210109-r1' \
+    'libtirpc>=1.3.1-r1'

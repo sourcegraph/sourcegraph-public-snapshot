@@ -2,46 +2,35 @@
 
 set -ex
 
-cd "$(dirname "${BASH_SOURCE[0]}")"
-
-# We build out of tree to prevent triggering dev watch scripts when we copy go
-# files.
 BUILDDIR=$(mktemp -d -t sgdockerbuild_XXXXXXX)
+TMP=$(mktemp -d -t sggraf_tmp_XXXXXXX)
 cleanup() {
   rm -rf "$BUILDDIR"
+  rm -rf "$TMP"
+
 }
 trap cleanup EXIT
 
-# Copy assets
-cp -R . "$BUILDDIR"
+bazel build //monitoring:generate_config \
+  --stamp \
+  --workspace_status_command=./dev/bazel_stamp_vars.sh
 
-# Build args for Go cross-compilation.
-export GO111MODULE=on
-export GOARCH=amd64
-export GOOS=linux
-export CGO_ENABLED=0
+monitoring_cfg=$(bazel cquery //monitoring:generate_config --output=files)
 
-# Cross-compile monitoring generator before building the image.
-pushd "../../monitoring"
-go build \
-  -trimpath \
-  -o "$BUILDDIR"/.bin/monitoring-generator .
+sudo cp "$monitoring_cfg" "$TMP"
+pushd "$TMP"
+unzip "monitoring.zip"
+popd
 
-# Final pre-build stage.
-pushd "$BUILDDIR"
+cp -r docker-images/grafana/entry-alpine.sh "$BUILDDIR/"
+cp -r docker-images/grafana/config "$BUILDDIR/"
+cp -r "$TMP/monitoring/grafana" "$BUILDDIR/"
 
-# Enable image build caching via CACHE=true
-BUILD_CACHE="--no-cache"
-if [[ "$CACHE" == "true" ]]; then
-  BUILD_CACHE=""
-fi
 
-# shellcheck disable=SC2086
-docker build ${BUILD_CACHE} -f Dockerfile -t "${IMAGE:-sourcegraph/grafana}" . \
+# # shellcheck disable=SC2086
+docker build -f docker-images/grafana/Dockerfile.bazel -t "${IMAGE:-sourcegraph/grafana}" "$BUILDDIR" \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
   --build-arg VERSION
 
-# cd out of $BUILDDIR for cleanup
-popd
