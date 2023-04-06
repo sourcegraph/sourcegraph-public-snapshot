@@ -12,6 +12,7 @@ import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Icon } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../../graphql-operations'
+import { eventLogger } from '../../../tracking/eventLogger'
 
 import styles from './RepoRevisionSidebarCody.module.scss'
 
@@ -25,7 +26,11 @@ export const RepoRevisionSidebarCody: React.FunctionComponent<
 
         focusKey?: string
     } & Partial<RevisionSpec>
-> = ({ repoName }) => {
+> = ({ repoName, activePath }) => {
+    useEffect(() => {
+        eventLogger.log('web:codySidebar:view', { repo: repoName })
+    }, [repoName])
+
     const config = useMemo<ClientInit['config']>(
         () => ({
             serverEndpoint: window.location.origin,
@@ -43,16 +48,20 @@ export const RepoRevisionSidebarCody: React.FunctionComponent<
     useEffect(() => {
         setMessageInProgress(null)
         setTranscript([])
-        createClient({ config, accessToken: null, setMessageInProgress, setTranscript }).then(setClient, setClient)
-    }, [config])
+        createClient({ config, accessToken: null, setMessageInProgress, setTranscript }).then(setClient, error => {
+            eventLogger.log('web:codySidebar:clientError', { repo: repoName })
+            setClient(error)
+        })
+    }, [config, repoName])
 
     const onSubmit = useCallback(
         (text: string) => {
             if (client && !isErrorLike(client)) {
+                eventLogger.log('web:codySidebar:submit', { repo: repoName, path: activePath, text })
                 client.submitMessage(text)
             }
         },
-        [client]
+        [activePath, client, repoName]
     )
 
     return (
