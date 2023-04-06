@@ -57,9 +57,19 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 		return nil, err
 	}
 
+	var allUploads []shared.Upload
+	for _, recentUpload := range recentUploads {
+		allUploads = append(allUploads, recentUpload.Uploads...)
+	}
+
 	recentIndexes, err := r.uploadSvc.GetRecentIndexesSummary(ctx, id)
 	if err != nil {
 		return nil, err
+	}
+
+	var allIndexes []shared.Index
+	for _, recentIndex := range recentIndexes {
+		allIndexes = append(allIndexes, recentIndex.Indexes...)
 	}
 
 	// Create blocklist for indexes that have already been uploaded.
@@ -114,13 +124,31 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 		LastIndexScan:           lastIndexScan,
 	}
 
+	uploadLoader := r.uploadLoaderFactory.CreateWithInitialData(allUploads)
+	indexLoader := r.indexLoaderFactory.CreateWithInitialData(allIndexes)
+	locationResolver := r.locationResolverFactory.Create()
+
+	// TODO - abstraction?
+	for _, upload := range allUploads {
+		if upload.AssociatedIndexID != nil {
+			uploadLoader.Presubmit(*upload.AssociatedIndexID)
+		}
+	}
+
+	// TODO - abstraction?
+	for _, index := range allIndexes {
+		if index.AssociatedUploadID != nil {
+			indexLoader.Presubmit(*index.AssociatedUploadID)
+		}
+	}
+
 	return newRepositorySummaryResolver(
-		r.locationResolverFactory.Create(),
+		locationResolver,
 		summary,
 		inferredAvailableIndexersResolver,
 		limitErr,
-		r.uploadLoaderFactory.Create(),
-		r.indexLoaderFactory.Create(),
+		uploadLoader,
+		indexLoader,
 		errTracer,
 		r.preciseIndexResolverFactory,
 	), nil

@@ -97,14 +97,12 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 		return nil, err
 	}
 
-	// TODO
 	uploadLoader := r.uploadLoaderFactory.Create()
-	indexLoader := r.indexLoaderFactory.Create()
+	indexLoader := r.indexLoaderFactory.CreateWithInitialData(indexes)
 	locationResolver := r.locationResolverFactory.Create()
 
+	// TODO - abstraction?
 	for _, index := range indexes {
-		indexLoader.Presubmit(index.ID)
-
 		if index.AssociatedUploadID != nil {
 			uploadLoader.Presubmit(*index.AssociatedUploadID)
 		}

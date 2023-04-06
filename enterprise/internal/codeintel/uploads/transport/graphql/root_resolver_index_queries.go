@@ -186,11 +186,11 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 		cursor = ""
 	}
 
-	// TODO - CreateWith(set)?
-	uploadLoader := r.uploadLoaderFactory.Create()
-	indexLoader := r.indexLoaderFactory.Create()
+	uploadLoader := r.uploadLoaderFactory.CreateWithInitialData(uploads)
+	indexLoader := r.indexLoaderFactory.CreateWithInitialData(indexes)
 	locationResolverFactory := r.locationResolverFactory.Create()
 
+	// TODO - abstraction?
 	for _, pair := range pairs {
 		if pair.upload != nil && pair.upload.AssociatedIndexID != nil {
 			indexLoader.Presubmit(*pair.upload.AssociatedIndexID)

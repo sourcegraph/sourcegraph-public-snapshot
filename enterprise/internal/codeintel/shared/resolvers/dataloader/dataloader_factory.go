@@ -13,3 +13,7 @@ func NewDataloaderFactory[K comparable, V Identifier[K]](backingService BackingS
 func (f *DataloaderFactory[K, V]) Create() *DataLoader[K, V] {
 	return New(f.backingService)
 }
+
+func (f *DataloaderFactory[K, V]) CreateWithInitialData(initialData []V) *DataLoader[K, V] {
+	return NewWithInitialData(f.backingService, initialData)
+}

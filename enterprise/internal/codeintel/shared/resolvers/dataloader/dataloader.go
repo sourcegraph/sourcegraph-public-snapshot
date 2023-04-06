@@ -20,11 +20,21 @@ func New[K comparable, V Identifier[K]](svc BackingService[K, V]) *DataLoader[K,
 	return dl
 }
 
+func NewWithInitialData[K comparable, V Identifier[K]](svc BackingService[K, V], initialData []V) *DataLoader[K, V] {
+	dl := New(svc)
+	dl.cache.SetAll(initialData)
+	return dl
+}
+
 func (l *DataLoader[K, V]) Presubmit(ids ...K) {
 	l.cache.Lock()
 	defer l.cache.Unlock()
 
 	for _, id := range ids {
+		if _, ok := l.cache.cache[id]; ok {
+			continue
+		}
+
 		l.ids[id] = struct{}{}
 	}
 }
