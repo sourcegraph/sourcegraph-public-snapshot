@@ -1,8 +1,8 @@
 name: scip-go
 on:
   push:
-    paths:
-      - '**.go'
+    # paths:
+      # - '**.go'
 
 jobs:
   scip-go:
