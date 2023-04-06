@@ -121,12 +121,6 @@ func execPre(ctx context.Context, stepIdx int, executionInput batcheslib.Workspa
 		return errors.Wrap(err, "failed to chmod step script file")
 	}
 
-	o, err := exec.CommandContext(ctx, "ls", "-laR", "/data").CombinedOutput()
-	if err != nil {
-		fmt.Println("ls -laR /data failed")
-	}
-	fmt.Println(string(o))
-
 	return nil
 }
 
