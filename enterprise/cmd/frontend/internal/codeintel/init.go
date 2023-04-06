@@ -53,31 +53,34 @@ func Init(
 	siteAdminChecker := sharedresolvers.NewSiteAdminChecker(db)
 	locationResolverFactory := gitresolvers.NewCachedLocationResolverFactory(repoStore, codeIntelServices.GitserverClient)
 	prefetcherFactory := uploadgraphql.NewPrefetcherFactory(codeIntelServices.UploadsService)
-
-	autoindexingRootResolver := autoindexinggraphql.NewRootResolver(
-		scopedContext("autoindexing"),
-		codeIntelServices.AutoIndexingService,
+	preciseIndexResolverFactory := uploadgraphql.NewPreciseIndexResolverFactory(
 		codeIntelServices.UploadsService,
 		codeIntelServices.PoliciesService,
 		codeIntelServices.GitserverClient,
 		siteAdminChecker,
 		repoStore,
+	)
+
+	autoindexingRootResolver := autoindexinggraphql.NewRootResolver(
+		scopedContext("autoindexing"),
+		codeIntelServices.AutoIndexingService,
+		siteAdminChecker,
 		prefetcherFactory,
 		locationResolverFactory,
+		preciseIndexResolverFactory,
 	)
 
 	codenavRootResolver, err := codenavgraphql.NewRootResolver(
 		scopedContext("codenav"),
 		codeIntelServices.CodenavService,
 		codeIntelServices.AutoIndexingService,
-		codeIntelServices.UploadsService,
 		codeIntelServices.GitserverClient,
 		siteAdminChecker,
 		repoStore,
-		locationResolverFactory,
 		prefetcherFactory,
-		ConfigInst.MaximumIndexesPerMonikerSearch,
+		locationResolverFactory,
 		ConfigInst.HunkCacheSize,
+		ConfigInst.MaximumIndexesPerMonikerSearch,
 	)
 	if err != nil {
 		return err
@@ -94,24 +97,18 @@ func Init(
 		scopedContext("upload"),
 		codeIntelServices.UploadsService,
 		codeIntelServices.AutoIndexingService,
-		codeIntelServices.PoliciesService,
-		codeIntelServices.GitserverClient,
 		siteAdminChecker,
-		repoStore,
 		prefetcherFactory,
 		locationResolverFactory,
+		preciseIndexResolverFactory,
 	)
 
 	sentinelRootResolver := sentinelgraphql.NewRootResolver(
 		scopedContext("sentinel"),
 		codeIntelServices.SentinelService,
-		codeIntelServices.UploadsService,
-		codeIntelServices.PoliciesService,
-		codeIntelServices.GitserverClient,
-		siteAdminChecker,
-		repoStore,
 		prefetcherFactory,
 		locationResolverFactory,
+		preciseIndexResolverFactory,
 	)
 
 	enterpriseServices.CodeIntelResolver = graphqlbackend.NewCodeIntelResolver(resolvers.NewCodeIntelResolver(

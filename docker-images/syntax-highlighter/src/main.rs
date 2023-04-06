@@ -50,6 +50,12 @@ fn not_found() -> JsonValue {
 
 #[launch]
 fn rocket() -> _ {
+    // load configurations on-startup instead of on-first-request.
+    // TODO: load individual languages lazily on-request instead, currently
+    // CONFIGURATIONS.get will load every configured configuration together.
+    scip_treesitter_languages::highlights::CONFIGURATIONS
+        .get(&scip_treesitter_languages::parsers::BundledParser::Go);
+
     // Only list features if QUIET != "true"
     match std::env::var("QUIET") {
         Ok(v) if v == "true" => {}

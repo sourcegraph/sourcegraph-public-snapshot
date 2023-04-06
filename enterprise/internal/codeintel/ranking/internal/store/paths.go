@@ -14,51 +14,43 @@ import (
 )
 
 func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, documentPaths chan string, batchSize int, graphKey string) (err error) {
-	ctx, _, endObservation := s.operations.insertInitialPathRanks.With(
-		ctx,
-		&err,
-		observation.Args{LogFields: []otlog.Field{
-			otlog.String("graphKey", graphKey),
-		}},
-	)
+	ctx, _, endObservation := s.operations.insertInitialPathRanks.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.String("graphKey", graphKey),
+	}})
 	defer endObservation(1, observation.Args{})
 
-	tx, err := s.db.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	inserter := func(inserter *batch.Inserter) error {
-		for paths := range batchChannel(documentPaths, batchSize) {
-			if err := inserter.Insert(ctx, pq.Array(paths)); err != nil {
-				return err
+	return s.withTransaction(ctx, func(tx *store) error {
+		inserter := func(inserter *batch.Inserter) error {
+			for paths := range batchChannel(documentPaths, batchSize) {
+				if err := inserter.Insert(ctx, pq.Array(paths)); err != nil {
+					return err
+				}
 			}
+
+			return nil
+		}
+
+		if err := tx.db.Exec(ctx, sqlf.Sprintf(createInitialPathTemporaryTableQuery)); err != nil {
+			return err
+		}
+
+		if err := batch.WithInserter(
+			ctx,
+			tx.db.Handle(),
+			"t_codeintel_initial_path_ranks",
+			batch.MaxNumPostgresParameters,
+			[]string{"document_paths"},
+			inserter,
+		); err != nil {
+			return err
+		}
+
+		if err = tx.db.Exec(ctx, sqlf.Sprintf(insertInitialPathRankCountsQuery, uploadID, graphKey)); err != nil {
+			return err
 		}
 
 		return nil
-	}
-
-	if err := tx.Exec(ctx, sqlf.Sprintf(createInitialPathTemporaryTableQuery)); err != nil {
-		return err
-	}
-
-	if err := batch.WithInserter(
-		ctx,
-		tx.Handle(),
-		"t_codeintel_initial_path_ranks",
-		batch.MaxNumPostgresParameters,
-		[]string{"document_paths"},
-		inserter,
-	); err != nil {
-		return err
-	}
-
-	if err = tx.Exec(ctx, sqlf.Sprintf(insertInitialPathRankCountsQuery, uploadID, graphKey)); err != nil {
-		return err
-	}
-
-	return nil
+	})
 }
 
 const createInitialPathTemporaryTableQuery = `

@@ -8,6 +8,7 @@ go_library(
         "observability.go",
         "repository_matches.go",
         "store.go",
+        "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/store",
     visibility = ["//enterprise:__subpackages__"],

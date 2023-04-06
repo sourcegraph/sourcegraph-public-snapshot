@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/go-version"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -16,9 +17,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// VulnerabilityMatchByID returns the vulnerability match with the given identifier.
 func (s *store) VulnerabilityMatchByID(ctx context.Context, id int) (_ shared.VulnerabilityMatch, _ bool, err error) {
-	ctx, _, endObservation := s.operations.vulnerabilityMatchByID.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.vulnerabilityMatchByID.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.Int("id", id),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	matches, _, err := scanVulnerabilityMatchesAndCount(s.db.Query(ctx, sqlf.Sprintf(vulnerabilityMatchByIDQuery, id)))
@@ -51,9 +53,14 @@ LEFT JOIN vulnerabilities vul ON vap.vulnerability_id = vul.id
 WHERE m.id = %s
 `
 
-// GetVulnerabilityMatches returns a list of vulnerability matches for the given language, severity, and/or repository name.
 func (s *store) GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) (_ []shared.VulnerabilityMatch, _ int, err error) {
-	ctx, _, endObservation := s.operations.getVulnerabilityMatches.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.getVulnerabilityMatches.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.Int("limit", args.Limit),
+		otlog.Int("offset", args.Offset),
+		otlog.String("severity", args.Severity),
+		otlog.String("language", args.Language),
+		otlog.String("repositoryName", args.RepositoryName),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	var conds []*sqlf.Query
@@ -107,26 +114,6 @@ ORDER BY m.id, vap.id, vas.id
 LIMIT %s OFFSET %s
 `
 
-var flattenMatches = func(ms []shared.VulnerabilityMatch) []shared.VulnerabilityMatch {
-	flattened := []shared.VulnerabilityMatch{}
-	for _, m := range ms {
-		i := len(flattened) - 1
-		if len(flattened) == 0 || flattened[i].ID != m.ID {
-			flattened = append(flattened, m)
-		} else {
-			if flattened[i].AffectedPackage.PackageName == "" {
-				flattened[i].AffectedPackage = m.AffectedPackage
-			} else {
-				symbols := flattened[i].AffectedPackage.AffectedSymbols
-				symbols = append(symbols, m.AffectedPackage.AffectedSymbols...)
-				flattened[i].AffectedPackage.AffectedSymbols = symbols
-			}
-		}
-	}
-
-	return flattened
-}
-
 func (s *store) GetVulnerabilityMatchesSummaryCount(ctx context.Context) (counts shared.GetVulnerabilityMatchesSummaryCounts, err error) {
 	ctx, _, endObservation := s.operations.getVulnerabilityMatchesSummaryCount.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -169,9 +156,12 @@ LEFT JOIN lsif_uploads lu ON lu.id = m.upload_id
 LEFT JOIN repo r ON r.id = lu.repository_id
 `
 
-// GetVulnerabilityMatchesCountByRepository returns the number vulnerabilities matches count by repository
 func (s *store) GetVulnerabilityMatchesCountByRepository(ctx context.Context, args shared.GetVulnerabilityMatchesCountByRepositoryArgs) (_ []shared.VulnerabilityMatchesByRepository, _ int, err error) {
-	ctx, _, endObservation := s.operations.getVulnerabilityMatchesCountByRepository.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.getVulnerabilityMatchesCountByRepository.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.Int("limit", args.Limit),
+		otlog.Int("offset", args.Offset),
+		otlog.String("repositoryName", args.RepositoryName),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	var conds []*sqlf.Query
@@ -217,147 +207,89 @@ order by count DESC
 limit %s offset %s
 `
 
-var scanVulnerabilityMatchesAndCount = func(rows basestore.Rows, queryErr error) ([]shared.VulnerabilityMatch, int, error) {
-	matches, totalCount, err := basestore.NewSliceWithCountScanner(func(s dbutil.Scanner) (match shared.VulnerabilityMatch, count int, _ error) {
-		var (
-			vap     shared.AffectedPackage
-			vas     shared.AffectedSymbol
-			vul     shared.Vulnerability
-			fixedIn string
-		)
-
-		if err := s.Scan(
-			&match.ID,
-			&match.UploadID,
-			&match.VulnerabilityID,
-			// RHS(s) of left join (may be null)
-			&dbutil.NullString{S: &vap.PackageName},
-			&dbutil.NullString{S: &vap.Language},
-			&dbutil.NullString{S: &vap.Namespace},
-			pq.Array(&vap.VersionConstraint),
-			&dbutil.NullBool{B: &vap.Fixed},
-			&dbutil.NullString{S: &fixedIn},
-			&dbutil.NullString{S: &vas.Path},
-			pq.Array(vas.Symbols),
-			&dbutil.NullString{S: &vul.Severity},
-			&count,
-		); err != nil {
-			return shared.VulnerabilityMatch{}, 0, err
-		}
-
-		if fixedIn != "" {
-			vap.FixedIn = &fixedIn
-		}
-		if vas.Path != "" {
-			vap.AffectedSymbols = append(vap.AffectedSymbols, vas)
-		}
-		if vap.PackageName != "" {
-			match.AffectedPackage = vap
-		}
-
-		return match, count, nil
-	})(rows, queryErr)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return flattenMatches(matches), totalCount, nil
-}
+//
+//
 
 func (s *store) ScanMatches(ctx context.Context, batchSize int) (numReferencesScanned int, numVulnerabilityMatches int, err error) {
-	ctx, _, endObservation := s.operations.scanMatches.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.scanMatches.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.Int("batchSize", batchSize),
+	}})
 	defer endObservation(1, observation.Args{})
 
-	tx, err := s.db.Transact(ctx)
-	if err != nil {
-		return 0, 0, err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	numScanned := 0
-	scanFilteredVulnerabilityMatches := basestore.NewFilteredSliceScanner(func(s dbutil.Scanner) (m VulnerabilityMatch, _ bool, _ error) {
-		var (
-			version            string
-			versionConstraints []string
-		)
-
-		if err := s.Scan(&m.UploadID, &m.VulnerabilityAffectedPackageID, &version, pq.Array(&versionConstraints)); err != nil {
-			return VulnerabilityMatch{}, false, err
+	var a, b int
+	err = s.db.WithTransact(ctx, func(tx *basestore.Store) error {
+		type vulnerabilityMatch struct {
+			UploadID                       int
+			VulnerabilityAffectedPackageID int
 		}
+		numScanned := 0
+		scanFilteredVulnerabilityMatches := basestore.NewFilteredSliceScanner(func(s dbutil.Scanner) (m vulnerabilityMatch, _ bool, _ error) {
+			var (
+				version            string
+				versionConstraints []string
+			)
 
-		numScanned++
-		matches, valid := versionMatchesConstraints(version, versionConstraints)
-		_ = valid // TODO - log un-parseable versions
-
-		return m, matches, nil
-	})
-
-	matches, err := scanFilteredVulnerabilityMatches(tx.Query(ctx, sqlf.Sprintf(
-		scanMatchesQuery,
-		batchSize,
-		sqlf.Join(makeSchemeTtoVulnerabilityLanguageMappingConditions(), " OR "),
-	)))
-	if err != nil {
-		return 0, 0, err
-	}
-
-	if err := tx.Exec(ctx, sqlf.Sprintf(scanMatchesTemporaryTableQuery)); err != nil {
-		return 0, 0, err
-	}
-
-	if err := batch.WithInserter(
-		ctx,
-		tx.Handle(),
-		"t_vulnerability_affected_packages",
-		batch.MaxNumPostgresParameters,
-		[]string{
-			"upload_id",
-			"vulnerability_affected_package_id",
-		},
-		func(inserter *batch.Inserter) error {
-			for _, match := range matches {
-				if err := inserter.Insert(
-					ctx,
-					match.UploadID,
-					match.VulnerabilityAffectedPackageID,
-				); err != nil {
-					return err
-				}
+			if err := s.Scan(&m.UploadID, &m.VulnerabilityAffectedPackageID, &version, pq.Array(&versionConstraints)); err != nil {
+				return vulnerabilityMatch{}, false, err
 			}
 
-			return nil
-		},
-	); err != nil {
-		return 0, 0, err
-	}
+			numScanned++
+			matches, valid := versionMatchesConstraints(version, versionConstraints)
+			_ = valid // TODO - log un-parseable versions
 
-	numMatched, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(scanMatchesUpdateQuery)))
-	if err != nil {
-		return 0, 0, err
-	}
+			return m, matches, nil
+		})
 
-	return numScanned, numMatched, nil
-}
+		matches, err := scanFilteredVulnerabilityMatches(tx.Query(ctx, sqlf.Sprintf(
+			scanMatchesQuery,
+			batchSize,
+			sqlf.Join(makeSchemeTtoVulnerabilityLanguageMappingConditions(), " OR "),
+		)))
+		if err != nil {
+			return err
+		}
 
-var scipSchemeToVulnerabilityLanguage = map[string]string{
-	"gomod": "go",
-	"npm":   "Javascript",
-	// TODO - java mapping
-}
+		if err := tx.Exec(ctx, sqlf.Sprintf(scanMatchesTemporaryTableQuery)); err != nil {
+			return err
+		}
 
-func makeSchemeTtoVulnerabilityLanguageMappingConditions() []*sqlf.Query {
-	schemes := make([]string, 0, len(scipSchemeToVulnerabilityLanguage))
-	for scheme := range scipSchemeToVulnerabilityLanguage {
-		schemes = append(schemes, scheme)
-	}
-	sort.Strings(schemes)
+		if err := batch.WithInserter(
+			ctx,
+			tx.Handle(),
+			"t_vulnerability_affected_packages",
+			batch.MaxNumPostgresParameters,
+			[]string{
+				"upload_id",
+				"vulnerability_affected_package_id",
+			},
+			func(inserter *batch.Inserter) error {
+				for _, match := range matches {
+					if err := inserter.Insert(
+						ctx,
+						match.UploadID,
+						match.VulnerabilityAffectedPackageID,
+					); err != nil {
+						return err
+					}
+				}
 
-	mappings := make([]*sqlf.Query, 0, len(schemes))
-	for _, scheme := range schemes {
-		mappings = append(mappings, sqlf.Sprintf("(r.scheme = %s AND vap.language = %s)", scheme, scipSchemeToVulnerabilityLanguage[scheme]))
-	}
+				return nil
+			},
+		); err != nil {
+			return err
+		}
 
-	return mappings
+		numMatched, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(scanMatchesUpdateQuery)))
+		if err != nil {
+			return err
+		}
+
+		a = numScanned
+		b = numMatched
+		return nil
+	})
+
+	return a, b, err
 }
 
 const scanMatchesQuery = `
@@ -420,9 +352,74 @@ WITH ins AS (
 SELECT COUNT(*) FROM ins
 `
 
-type VulnerabilityMatch struct {
-	UploadID                       int
-	VulnerabilityAffectedPackageID int
+//
+//
+
+var scanVulnerabilityMatchesAndCount = func(rows basestore.Rows, queryErr error) ([]shared.VulnerabilityMatch, int, error) {
+	matches, totalCount, err := basestore.NewSliceWithCountScanner(func(s dbutil.Scanner) (match shared.VulnerabilityMatch, count int, _ error) {
+		var (
+			vap     shared.AffectedPackage
+			vas     shared.AffectedSymbol
+			vul     shared.Vulnerability
+			fixedIn string
+		)
+
+		if err := s.Scan(
+			&match.ID,
+			&match.UploadID,
+			&match.VulnerabilityID,
+			// RHS(s) of left join (may be null)
+			&dbutil.NullString{S: &vap.PackageName},
+			&dbutil.NullString{S: &vap.Language},
+			&dbutil.NullString{S: &vap.Namespace},
+			pq.Array(&vap.VersionConstraint),
+			&dbutil.NullBool{B: &vap.Fixed},
+			&dbutil.NullString{S: &fixedIn},
+			&dbutil.NullString{S: &vas.Path},
+			pq.Array(vas.Symbols),
+			&dbutil.NullString{S: &vul.Severity},
+			&count,
+		); err != nil {
+			return shared.VulnerabilityMatch{}, 0, err
+		}
+
+		if fixedIn != "" {
+			vap.FixedIn = &fixedIn
+		}
+		if vas.Path != "" {
+			vap.AffectedSymbols = append(vap.AffectedSymbols, vas)
+		}
+		if vap.PackageName != "" {
+			match.AffectedPackage = vap
+		}
+
+		return match, count, nil
+	})(rows, queryErr)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return flattenMatches(matches), totalCount, nil
+}
+
+var flattenMatches = func(ms []shared.VulnerabilityMatch) []shared.VulnerabilityMatch {
+	flattened := []shared.VulnerabilityMatch{}
+	for _, m := range ms {
+		i := len(flattened) - 1
+		if len(flattened) == 0 || flattened[i].ID != m.ID {
+			flattened = append(flattened, m)
+		} else {
+			if flattened[i].AffectedPackage.PackageName == "" {
+				flattened[i].AffectedPackage = m.AffectedPackage
+			} else {
+				symbols := flattened[i].AffectedPackage.AffectedSymbols
+				symbols = append(symbols, m.AffectedPackage.AffectedSymbols...)
+				flattened[i].AffectedPackage.AffectedSymbols = symbols
+			}
+		}
+	}
+
+	return flattened
 }
 
 func versionMatchesConstraints(versionString string, constraints []string) (matches, valid bool) {
@@ -437,4 +434,25 @@ func versionMatchesConstraints(versionString string, constraints []string) (matc
 	}
 
 	return constraint.Check(v), true
+}
+
+var scipSchemeToVulnerabilityLanguage = map[string]string{
+	"gomod": "go",
+	"npm":   "Javascript",
+	// TODO - java mapping
+}
+
+func makeSchemeTtoVulnerabilityLanguageMappingConditions() []*sqlf.Query {
+	schemes := make([]string, 0, len(scipSchemeToVulnerabilityLanguage))
+	for scheme := range scipSchemeToVulnerabilityLanguage {
+		schemes = append(schemes, scheme)
+	}
+	sort.Strings(schemes)
+
+	mappings := make([]*sqlf.Query, 0, len(schemes))
+	for _, scheme := range schemes {
+		mappings = append(mappings, sqlf.Sprintf("(r.scheme = %s AND vap.language = %s)", scheme, scipSchemeToVulnerabilityLanguage[scheme]))
+	}
+
+	return mappings
 }

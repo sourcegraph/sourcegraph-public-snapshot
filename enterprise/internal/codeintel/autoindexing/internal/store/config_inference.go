@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -18,7 +19,6 @@ func (s *store) GetInferenceScript(ctx context.Context) (_ string, err error) {
 	if err != nil {
 		return "", err
 	}
-
 	if script == "" {
 		script = strings.TrimSpace(defaultScript) + "\n"
 	}
@@ -27,10 +27,28 @@ func (s *store) GetInferenceScript(ctx context.Context) (_ string, err error) {
 }
 
 const getInferenceScriptQuery = `
-SELECT script FROM codeintel_inference_scripts
+SELECT script
+FROM codeintel_inference_scripts
 ORDER BY insert_timestamp DESC
 LIMIT 1
 `
+
+func (s *store) SetInferenceScript(ctx context.Context, script string) (err error) {
+	ctx, _, endObservation := s.operations.setInferenceScript.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("scriptSize", len(script)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return s.db.Exec(ctx, sqlf.Sprintf(setInferenceScriptQuery, script))
+}
+
+const setInferenceScriptQuery = `
+INSERT INTO codeintel_inference_scripts (script)
+VALUES(%s)
+`
+
+//
+//
 
 const defaultScript = `
 local path = require("path")
@@ -69,16 +87,4 @@ return require("sg.autoindex.config").new({
 	-- ["sg.typescript"] = false,
 	["acme.custom"] = custom_recognizer,
 })
-`
-
-func (s *store) SetInferenceScript(ctx context.Context, script string) (err error) {
-	ctx, _, endObservation := s.operations.setInferenceScript.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.db.Exec(ctx, sqlf.Sprintf(setInferenceScriptQuery, script))
-}
-
-const setInferenceScriptQuery = `
-INSERT INTO codeintel_inference_scripts(script)
-VALUES(%s)
 `

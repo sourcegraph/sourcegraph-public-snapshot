@@ -33,7 +33,7 @@ func TestInsertMetadata(t *testing.T) {
 func TestInsertSharedDocumentsConcurrently(t *testing.T) {
 	logger := logtest.Scoped(t)
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, codeIntelDB)
+	store := newInternal(&observation.TestContext, codeIntelDB)
 	ctx := context.Background()
 
 	tx1, err := store.Transact(ctx)
@@ -113,63 +113,64 @@ func TestInsertDocumentWithSymbols(t *testing.T) {
 	store := New(&observation.TestContext, codeIntelDB)
 	ctx := context.Background()
 
-	tx, err := store.Transact(ctx)
-	if err != nil {
-		t.Fatalf("failed to start transaction: %s", err)
-	}
-	defer func() { _ = tx.Done(nil) }()
+	var n uint32
+	if err := store.WithTransaction(ctx, func(tx Store) error {
+		scipWriter24, err := tx.NewSCIPWriter(ctx, 24)
+		if err != nil {
+			t.Fatalf("failed to write SCIP symbols: %s", err)
+		}
 
-	scipWriter24, err := tx.NewSCIPWriter(ctx, 24)
-	if err != nil {
-		t.Fatalf("failed to write SCIP symbols: %s", err)
-	}
-	if err := scipWriter24.InsertDocument(
-		ctx,
-		"internal/util.go",
-		&scip.Document{
-			Symbols: []*scip.SymbolInformation{
-				{Symbol: "foo.bar.ident"},
-				{Symbol: "bar.baz.longerName"},
-				{Symbol: "baz.bonk.quux"},
-			},
-			Occurrences: []*scip.Occurrence{
-				{
-					Range:       []int32{3, 25, 3, 30},
-					Symbol:      "foo.bar.ident",
-					SymbolRoles: int32(scip.SymbolRole_Definition),
+		if err := scipWriter24.InsertDocument(
+			ctx,
+			"internal/util.go",
+			&scip.Document{
+				Symbols: []*scip.SymbolInformation{
+					{Symbol: "foo.bar.ident"},
+					{Symbol: "bar.baz.longerName"},
+					{Symbol: "baz.bonk.quux"},
 				},
-				{
-					Range:       []int32{251, 24, 251, 30},
-					Symbol:      "baz.bonk.quux",
-					SymbolRoles: int32(scip.SymbolRole_Definition),
-				},
-				{
-					Range:       []int32{4, 25, 4, 30},
-					Symbol:      "foo.bar.ident",
-					SymbolRoles: 0,
-				},
-				{
-					Range:       []int32{100, 10, 100, 20},
-					Symbol:      "bar.baz.longerName",
-					SymbolRoles: 0,
-				},
-				{
-					Range:       []int32{151, 14, 151, 20},
-					Symbol:      "baz.bonk.quux",
-					SymbolRoles: 0,
+				Occurrences: []*scip.Occurrence{
+					{
+						Range:       []int32{3, 25, 3, 30},
+						Symbol:      "foo.bar.ident",
+						SymbolRoles: int32(scip.SymbolRole_Definition),
+					},
+					{
+						Range:       []int32{251, 24, 251, 30},
+						Symbol:      "baz.bonk.quux",
+						SymbolRoles: int32(scip.SymbolRole_Definition),
+					},
+					{
+						Range:       []int32{4, 25, 4, 30},
+						Symbol:      "foo.bar.ident",
+						SymbolRoles: 0,
+					},
+					{
+						Range:       []int32{100, 10, 100, 20},
+						Symbol:      "bar.baz.longerName",
+						SymbolRoles: 0,
+					},
+					{
+						Range:       []int32{151, 14, 151, 20},
+						Symbol:      "baz.bonk.quux",
+						SymbolRoles: 0,
+					},
 				},
 			},
-		},
-	); err != nil {
-		t.Fatalf("failed to write SCIP document: %s", err)
-	}
-	n, err := scipWriter24.Flush(ctx)
-	if err != nil {
-		t.Fatalf("failed to write SCIP symbols: %s", err)
-	}
-	if err := tx.Done(nil); err != nil {
+		); err != nil {
+			t.Fatalf("failed to write SCIP document: %s", err)
+		}
+
+		n, err = scipWriter24.Flush(ctx)
+		if err != nil {
+			t.Fatalf("failed to write SCIP symbols: %s", err)
+		}
+
+		return nil
+	}); err != nil {
 		t.Fatalf("failed to commit transaction: %s", err)
 	}
+
 	if expected := uint32(3); n != expected {
 		t.Fatalf("unexpected number of symbols inserted. want=%d have=%d", expected, n)
 	}

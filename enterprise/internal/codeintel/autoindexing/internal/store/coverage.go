@@ -9,30 +9,27 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
-	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func (s *store) TopRepositoriesToConfigure(ctx context.Context, limit int) (_ []uploadsshared.RepositoryWithCount, err error) {
+func (s *store) TopRepositoriesToConfigure(ctx context.Context, limit int) (_ []shared.RepositoryWithCount, err error) {
 	ctx, _, endObservation := s.operations.topRepositoriesToConfigure.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("limit", limit),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	repositories, err := basestore.NewSliceScanner(func(s dbutil.Scanner) (rc uploadsshared.RepositoryWithCount, _ error) {
-		err := s.Scan(&rc.RepositoryID, &rc.Count)
-		return rc, err
-	})(s.db.Query(ctx, sqlf.Sprintf(topRepositoriesToConfigureQuery, pq.Array(eventNames), eventLogsWindow/time.Hour, limit)))
-	if err != nil {
-		return nil, err
-	}
-
-	return repositories, nil
+	return scanRepositoryWithCounts(s.db.Query(ctx, sqlf.Sprintf(
+		topRepositoriesToConfigureQuery,
+		pq.Array(eventLogNames),
+		eventLogsWindow/time.Hour,
+		limit,
+	)))
 }
 
-var eventNames = []string{
+var eventLogNames = []string{
 	"codeintel.searchDefinitions.xrepo",
 	"codeintel.searchDefinitions",
 	"codeintel.searchHover",
@@ -59,24 +56,19 @@ ORDER BY num_events DESC, id
 LIMIT %s
 `
 
-func (s *store) RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) (_ []uploadsshared.RepositoryWithAvailableIndexers, totalCount int, err error) {
-	ctx, _, endObservation := s.operations.repositoryIDsWithConfiguration.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+func (s *store) RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) (_ []shared.RepositoryWithAvailableIndexers, totalCount int, err error) {
+	ctx, _, endObservation := s.operations.repositoryIDsWithConfiguration.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("offset", offset),
+		log.Int("limit", limit),
+	}})
 	defer endObservation(1, observation.Args{})
 
-	return scanRepositoryWithAvailableIndexers(s.db.Query(ctx, sqlf.Sprintf(repositoriesWithConfigurationQuery, limit, offset)))
+	return scanRepositoryWithAvailableIndexersSlice(s.db.Query(ctx, sqlf.Sprintf(
+		repositoriesWithConfigurationQuery,
+		limit,
+		offset,
+	)))
 }
-
-var scanRepositoryWithAvailableIndexers = basestore.NewSliceWithCountScanner(func(s dbutil.Scanner) (rai uploadsshared.RepositoryWithAvailableIndexers, count int, _ error) {
-	var payload string
-	if err := s.Scan(&rai.RepositoryID, &payload, &count); err != nil {
-		return rai, 0, err
-	}
-	if err := json.Unmarshal([]byte(payload), &rai.AvailableIndexers); err != nil {
-		return rai, 0, err
-	}
-
-	return rai, count, nil
-})
 
 const repositoriesWithConfigurationQuery = `
 SELECT
@@ -84,13 +76,12 @@ SELECT
 	available_indexers,
 	COUNT(*) OVER() AS count
 FROM cached_available_indexers
-WHERE
-	available_indexers != '{}'::jsonb
-ORDER BY num_events DESC LIMIT %s OFFSET %s
+WHERE available_indexers != '{}'::jsonb
+ORDER BY num_events DESC
+LIMIT %s
+OFFSET %s
 `
 
-// GetLastIndexScanForRepository returns the last timestamp, if any, that the repository with the given
-// identifier was considered for auto-indexing scheduling.
 func (s *store) GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error) {
 	ctx, _, endObservation := s.operations.getLastIndexScanForRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
@@ -98,8 +89,11 @@ func (s *store) GetLastIndexScanForRepository(ctx context.Context, repositoryID 
 	defer endObservation(1, observation.Args{})
 
 	t, ok, err := basestore.ScanFirstTime(s.db.Query(ctx, sqlf.Sprintf(lastIndexScanForRepositoryQuery, repositoryID)))
-	if !ok {
+	if err != nil {
 		return nil, err
+	}
+	if !ok {
+		return nil, nil
 	}
 
 	return &t, nil
@@ -109,9 +103,11 @@ const lastIndexScanForRepositoryQuery = `
 SELECT last_index_scan_at FROM lsif_last_index_scan WHERE repository_id = %s
 `
 
-func (s *store) SetConfigurationSummary(ctx context.Context, repositoryID int, numEvents int, availableIndexers map[string]uploadsshared.AvailableIndexer) (err error) {
+func (s *store) SetConfigurationSummary(ctx context.Context, repositoryID int, numEvents int, availableIndexers map[string]shared.AvailableIndexer) (err error) {
 	ctx, _, endObservation := s.operations.setConfigurationSummary.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
+		log.Int("numEvents", numEvents),
+		log.Int("numIndexers", len(availableIndexers)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -120,15 +116,12 @@ func (s *store) SetConfigurationSummary(ctx context.Context, repositoryID int, n
 		return err
 	}
 
-	if err := s.db.Exec(ctx, sqlf.Sprintf(setConfigurationSummaryQuery, repositoryID, numEvents, payload)); err != nil {
-		return err
-	}
-
-	return nil
+	return s.db.Exec(ctx, sqlf.Sprintf(setConfigurationSummaryQuery, repositoryID, numEvents, payload))
 }
 
 const setConfigurationSummaryQuery = `
-INSERT INTO cached_available_indexers(repository_id, num_events, available_indexers) VALUES (%s, %s, %s)
+INSERT INTO cached_available_indexers (repository_id, num_events, available_indexers)
+VALUES (%s, %s, %s)
 ON CONFLICT(repository_id) DO UPDATE
 SET
 	num_events = EXCLUDED.num_events,
@@ -137,15 +130,11 @@ SET
 
 func (s *store) TruncateConfigurationSummary(ctx context.Context, numRecordsToRetain int) (err error) {
 	ctx, _, endObservation := s.operations.truncateConfigurationSummary.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("total", numRecordsToRetain),
+		log.Int("numRecordsToRetain", numRecordsToRetain),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	if err := s.db.Exec(ctx, sqlf.Sprintf(truncateConfigurationSummaryQuery, numRecordsToRetain)); err != nil {
-		return err
-	}
-
-	return nil
+	return s.db.Exec(ctx, sqlf.Sprintf(truncateConfigurationSummaryQuery, numRecordsToRetain))
 }
 
 const truncateConfigurationSummaryQuery = `
@@ -155,5 +144,29 @@ WITH safe AS (
 	ORDER BY num_events DESC
 	LIMIT %s
 )
-DELETE FROM cached_available_indexers WHERE id NOT IN (SELECT id FROM safe)
+DELETE FROM cached_available_indexers
+WHERE id NOT IN (SELECT id FROM safe)
 `
+
+//
+//
+
+func scanRepositoryWithCount(s dbutil.Scanner) (rc shared.RepositoryWithCount, _ error) {
+	return rc, s.Scan(&rc.RepositoryID, &rc.Count)
+}
+
+var scanRepositoryWithCounts = basestore.NewSliceScanner(scanRepositoryWithCount)
+
+func scanRepositoryWithAvailableIndexers(s dbutil.Scanner) (rai shared.RepositoryWithAvailableIndexers, count int, _ error) {
+	var rawPayload string
+	if err := s.Scan(&rai.RepositoryID, &rawPayload, &count); err != nil {
+		return rai, 0, err
+	}
+	if err := json.Unmarshal([]byte(rawPayload), &rai.AvailableIndexers); err != nil {
+		return rai, 0, err
+	}
+
+	return rai, count, nil
+}
+
+var scanRepositoryWithAvailableIndexersSlice = basestore.NewSliceWithCountScanner(scanRepositoryWithAvailableIndexers)

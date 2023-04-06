@@ -13,7 +13,7 @@ import (
 
 func NewFrontendDBReconciler(
 	store store.Store,
-	lsifstore lsifstore.LsifStore,
+	lsifstore lsifstore.Store,
 	interval time.Duration,
 	batchSize int,
 	observationCtx *observation.Context,
@@ -32,7 +32,7 @@ func NewFrontendDBReconciler(
 
 func NewCodeIntelDBReconciler(
 	store store.Store,
-	lsifstore lsifstore.LsifStore,
+	lsifstore lsifstore.Store,
 	interval time.Duration,
 	batchSize int,
 	observationCtx *observation.Context,
@@ -143,7 +143,7 @@ func (s *storeWrapper) FilterExists(ctx context.Context, candidateIDs []int) ([]
 }
 
 type lsifStoreWrapper struct {
-	lsifstore lsifstore.LsifStore
+	lsifstore lsifstore.Store
 }
 
 func (s *lsifStoreWrapper) Candidates(ctx context.Context, batchSize int) ([]int, error) {

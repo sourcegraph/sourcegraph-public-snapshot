@@ -21,20 +21,28 @@ import (
 type rootResolver struct {
 	svc                            CodeNavService
 	autoindexingSvc                AutoIndexingService
-	uploadSvc                      UploadsService
 	gitserverClient                gitserver.Client
 	siteAdminChecker               sharedresolvers.SiteAdminChecker
 	repoStore                      database.RepoStore
 	prefetcherFactory              *uploadsgraphql.PrefetcherFactory
 	locationResolverFactory        *gitresolvers.CachedLocationResolverFactory
-	maximumIndexesPerMonikerSearch int
 	hunkCache                      codenav.HunkCache
-
-	// Metrics
-	operations *operations
+	maximumIndexesPerMonikerSearch int
+	operations                     *operations
 }
 
-func NewRootResolver(observationCtx *observation.Context, svc CodeNavService, autoindexingSvc AutoIndexingService, uploadSvc UploadsService, gitserverClient gitserver.Client, siteAdminChecker sharedresolvers.SiteAdminChecker, repoStore database.RepoStore, locationResolverFactory *gitresolvers.CachedLocationResolverFactory, prefetcherFactory *uploadsgraphql.PrefetcherFactory, maxIndexSearch, hunkCacheSize int) (resolverstubs.CodeNavServiceResolver, error) {
+func NewRootResolver(
+	observationCtx *observation.Context,
+	svc CodeNavService,
+	autoindexingSvc AutoIndexingService,
+	gitserverClient gitserver.Client,
+	siteAdminChecker sharedresolvers.SiteAdminChecker,
+	repoStore database.RepoStore,
+	prefetcherFactory *uploadsgraphql.PrefetcherFactory,
+	locationResolverFactory *gitresolvers.CachedLocationResolverFactory,
+	hunkCacheSize int,
+	maxIndexSearch int,
+) (resolverstubs.CodeNavServiceResolver, error) {
 	hunkCache, err := codenav.NewHunkCache(hunkCacheSize)
 	if err != nil {
 		return nil, err
@@ -43,21 +51,20 @@ func NewRootResolver(observationCtx *observation.Context, svc CodeNavService, au
 	return &rootResolver{
 		svc:                            svc,
 		autoindexingSvc:                autoindexingSvc,
-		uploadSvc:                      uploadSvc,
 		gitserverClient:                gitserverClient,
 		siteAdminChecker:               siteAdminChecker,
 		repoStore:                      repoStore,
 		prefetcherFactory:              prefetcherFactory,
 		locationResolverFactory:        locationResolverFactory,
-		operations:                     newOperations(observationCtx),
 		hunkCache:                      hunkCache,
 		maximumIndexesPerMonikerSearch: maxIndexSearch,
+		operations:                     newOperations(observationCtx),
 	}, nil
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for query resolution
 func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.GitBlobLSIFDataArgs) (_ resolverstubs.GitBlobLSIFDataResolver, err error) {
-	ctx, errTracer, endObservation := r.operations.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := r.operations.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repoID", int(args.Repo.ID)),
 		log.String("commit", string(args.Commit)),
 		log.String("path", args.Path),
@@ -94,14 +101,8 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.
 
 	return newGitBlobLSIFDataResolver(
 		r.svc,
-		r.uploadSvc,
-		r.gitserverClient,
-		r.siteAdminChecker,
-		r.repoStore,
-		r.prefetcherFactory.Create(),
-		r.locationResolverFactory.Create(),
 		reqState,
-		errTracer,
+		r.locationResolverFactory.Create(),
 		r.operations,
 	), nil
 }
@@ -112,17 +113,9 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.
 // in the parent package.
 type gitBlobLSIFDataResolver struct {
 	codeNavSvc       CodeNavService
-	uploadsSvc       UploadsService
-	gitserverClient  gitserver.Client
-	siteAdminChecker sharedresolvers.SiteAdminChecker
-	repoStore        database.RepoStore
-	prefetcher       *uploadsgraphql.Prefetcher
-
 	requestState     codenav.RequestState
 	locationResolver *gitresolvers.CachedLocationResolver
-	errTracer        *observation.ErrCollector
-
-	operations *operations
+	operations       *operations
 }
 
 // NewQueryResolver creates a new QueryResolver with the given resolver that defines all code intel-specific
@@ -130,26 +123,14 @@ type gitBlobLSIFDataResolver struct {
 // to resolve all location-related values.
 func newGitBlobLSIFDataResolver(
 	codeNavSvc CodeNavService,
-	uploadsSvc UploadsService,
-	gitserverClient gitserver.Client,
-	siteAdminChecker sharedresolvers.SiteAdminChecker,
-	repoStore database.RepoStore,
-	prefetcher *uploadsgraphql.Prefetcher,
-	locationResolver *gitresolvers.CachedLocationResolver,
 	requestState codenav.RequestState,
-	errTracer *observation.ErrCollector,
+	locationResolver *gitresolvers.CachedLocationResolver,
 	operations *operations,
 ) resolverstubs.GitBlobLSIFDataResolver {
 	return &gitBlobLSIFDataResolver{
 		codeNavSvc:       codeNavSvc,
-		uploadsSvc:       uploadsSvc,
-		gitserverClient:  gitserverClient,
-		siteAdminChecker: siteAdminChecker,
-		repoStore:        repoStore,
-		prefetcher:       prefetcher,
 		requestState:     requestState,
 		locationResolver: locationResolver,
-		errTracer:        errTracer,
 		operations:       operations,
 	}
 }

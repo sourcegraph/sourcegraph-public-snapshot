@@ -20,7 +20,7 @@ rustyline = "9.1.2"
 
 sg-syntax = { path = "./crates/sg-syntax" }
 scip-treesitter = { path = "./crates/scip-treesitter" }
-
+scip-treesitter-languages = { path = "./crates/scip-treesitter-languages" }
 # March 20, 2023 - Pinned explicitly with features that match the features
 # required by rocket. Once bazel rules correctly roll up all the features,
 # we can remove this, but until then, this works just fine for building
