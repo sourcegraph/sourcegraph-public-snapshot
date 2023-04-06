@@ -24,6 +24,7 @@ Cody uses Sourcegraph to fetch relevant context to generate answers and code. Th
 1. Install [the Cody VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
   1. Set the Sourcegraph URL to be `https://sourcegraph.com`
   1. Set the access token to be the token you just created
+1. See [this section](#enabling-codebase-aware-answers) on how to enable codebase-aware answers.
 
 <img width="553" alt="Cody login screen" src="https://user-images.githubusercontent.com/25070988/227510233-5ce37649-6ae3-4470-91d0-71ed6c68b7ef.png">
 
@@ -59,7 +60,7 @@ Note that this requires site-admin privileges.
 }
 ```
 4. You're done! 
-5. (Optional). Cody can be configured to use embeddings to improve the quality of its responses. This involves sending your entire codebase to a third-party service to generate a low-dimensional semantic representation, that is used for improved context fetching. See the [embeddings](#embeddings) section for more.
+5. Cody can be configured to use embeddings to significantly improve the quality of its responses. This involves sending your entire codebase to a third-party service to generate a low-dimensional semantic representation, that is used for improved context fetching. See the [embeddings](#embeddings) section for more.
 
 ### Step 2: Configure the VS Code extension
 
@@ -80,6 +81,8 @@ Now that Cody is turned on on your Sourcegraph instance, any user can configure 
     
 <img width="553" alt="image" src="https://user-images.githubusercontent.com/25070988/227510233-5ce37649-6ae3-4470-91d0-71ed6c68b7ef.png">
 
+6. See [this section](#enabling-codebase-aware-answers) on how to enable codebase-aware answers.
+
 You're all set!
 
 ### Step 3: Try Cody!
@@ -92,6 +95,15 @@ A few things you can ask Cody:
 - Try any of the Cody recipes!
 
 <img width="510" alt="image" src="https://user-images.githubusercontent.com/25070988/227511383-aa60f074-817d-4875-af41-54558dfe1951.png">
+
+## Enabling codebase-aware answers
+
+The `Cody: Codebase` setting in VS Code enables codebase-aware answers for the Cody extension. By setting this configuration option to the repository name on your Sourcegraph instance, Cody will be able to provide more accurate and relevant answers to your coding questions, based on the context of the codebase you are currently working in.
+
+1. Open the VS Code workspace settings by pressing <kbd>Cmd/Ctrl+,</kbd>, (or File > Preferences (Settings) on Windows & Linux).
+2. Search for the `Cody: Codebase` setting.
+3. Enter the repository name as listed on your Sourcegraph instance.
+   1. For example: `github.com/sourcegraph/sourcegraph` without the `https` protocol
 
 ## Embeddings
 
@@ -107,13 +119,31 @@ Here is the config for the OpenAI Embeddings API:
   "url": "https://api.openai.com/v1/embeddings",
   "accessToken": "<token>",
   "model": "text-embedding-ada-002",
-  "dimensions": 1536
+  "dimensions": 1536,
+  "excludedFilePathPatterns": []
 }
 ```
 
 * Navigate to Site admin > Cody (`/site-admin/cody`) and schedule repositories for embedding.
 
 > NOTE: By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice). 
+
+### Excluding files from embeddings
+
+The `excludedFilePathPatterns` is a setting in the Sourcegraph embeddings configuration that allows you to exclude certain file paths from being used in generating embeddings. By specifying glob patterns that match file paths, you can exclude files that have low information value, such as test fixtures, mocks, auto-generated files, and other files that are not relevant to the codebase.
+
+To use `excludedFilePathPatterns`, add it to your embeddings site config with a list of glob patterns. For example, to exclude all SVG files, you would add the following setting to your configuration file:
+
+```json
+"embeddings": {
+  // ...
+  "excludedFilePathPatterns": [
+    "*.svg"
+  ]
+}
+```
+
+> NOTE: The `excludedFilePathPatterns` setting is only available in Sourcegraph version `5.0.1` and later.
 
 ### Storing embedding indexes
 
