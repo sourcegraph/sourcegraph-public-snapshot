@@ -1,8 +1,9 @@
 extend type Query {
-    # Returns a string of completion responses
+    """Returns a string of completion responses"""
     completions(input: CompletionsInput!): String!
 }
 
+""" Input wrapper for completions """
 input CompletionsInput {
     """List of conversation messages"""
     messages: [Message!]!
@@ -16,6 +17,7 @@ input CompletionsInput {
     topP: Int!
 }
 
+""" Message to or from the LLM """
 input Message {
     """Speaker of the message (human/assistant)"""
     speaker: SpeakerType!
@@ -23,6 +25,7 @@ input Message {
     text: String!
 }
 
+"""Speaker type, human or assistant """
 enum SpeakerType {
     HUMAN,
     ASSISTANT
