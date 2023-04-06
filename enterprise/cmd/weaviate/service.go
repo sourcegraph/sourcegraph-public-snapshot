@@ -19,8 +19,8 @@ func (s svc) Configure() (env.Config, []debugserver.Endpoint) {
 	return cfg, nil
 }
 
-func (s svc) Start(_ context.Context, observationCtx *observation.Context, ready service.ReadyFunc, c env.Config) error {
-	err := start(observationCtx, c.(*Config))
+func (s svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, c env.Config) error {
+	err := start(ctx, observationCtx, c.(*Config))
 	if err != nil {
 		return err
 	}
