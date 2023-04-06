@@ -45,7 +45,6 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 	if err := client.Stream(ctx, convertParams(args), func(event types.CompletionEvent) error {
 		// each completion is just a partial of the final result, since we're in a sync request anyway
 		// we will just wait for the final completion event
-		fmt.Println(event.Completion)
 		last = event.Completion
 		return nil
 	}); err != nil {
