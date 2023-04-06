@@ -334,11 +334,15 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         repoName,
     }
 
+    // TODO: Extract Cody panel as a component.
     const codyEnabled = useFeatureFlag('cody-experimental')
     const focusCodyShortcut = useKeyboardShortcut('focusCody')
     const [isCodyActive, setCodyActive] = useState(true)
 
     const chatTitle = 'Ask Cody'
+
+    const sidebarSizes = { default: 350, max: 800, min: 250 }
+    const [maxWidth, handleResize] = usePanelResize(sidebarSizes.default, isCodyActive)
 
     return (
         <>
@@ -352,7 +356,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                 />
             ))}
             <div className={classNames('w-100 d-flex flex-row')}>
-                <div className={classNames('d-flex flex-column w-100', styles.repoContainer)}>
+                <div style={{ maxWidth }} className={classNames('d-flex flex-column w-100', styles.repoContainer)}>
                     <div className={styles.hack}>
                         <RepoHeader
                             actionButtons={props.repoHeaderActionButtons}
@@ -458,7 +462,14 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
 
                 {/* Cody sidebar*/}
                 {codyEnabled && isCodyActive && (
-                    <Panel position="right" ariaLabel="Cody sidebar" maxSize={550} minSize={300} defaultSize={300}>
+                    <Panel
+                        position="right"
+                        ariaLabel="Cody sidebar"
+                        maxSize={sidebarSizes.max}
+                        minSize={sidebarSizes.min}
+                        defaultSize={sidebarSizes.default}
+                        onResize={handleResize}
+                    >
                         <div className={styles.codySidebar}>
                             <div className={styles.codySidebarHeader}>
                                 <div>
@@ -522,3 +533,20 @@ function redirectToExternalHost(externalRedirectURL: string): void {
 const EmptyRepo: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage icon={RepoQuestionIcon} title="Empty repository" />
 )
+
+const usePanelResize = (initialWidth: number, isPanelOpened: boolean) => {
+    const [maxWidth, setMaxWidth] = useState(`calc(100vw - ${initialWidth}px)`)
+
+    const handleResize = (width: number) => {
+        // update maxWidth dynamically based on the panel width
+        setMaxWidth(`calc(100vw - ${width}px)`)
+    }
+
+    useEffect(() => {
+        if (!isPanelOpened) {
+            handleResize(0)
+        }
+    }, [isPanelOpened])
+
+    return [maxWidth, handleResize] as const
+}
