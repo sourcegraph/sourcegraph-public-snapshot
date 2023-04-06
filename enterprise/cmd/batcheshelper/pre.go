@@ -100,7 +100,6 @@ func execPre(ctx context.Context, stepIdx int, executionInput batcheslib.Workspa
 		for path, file := range filesToMount {
 			// TODO: Does file.Name() work?
 			fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("cp", file.Name(), path))
-			fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("chmod", "+x", path))
 		}
 
 		// Mount any paths on the local system to the docker container. The paths have already been validated during parsing.
@@ -110,7 +109,6 @@ func execPre(ctx context.Context, stepIdx int, executionInput batcheslib.Workspa
 				return errors.Wrap(err, "getAbsoluteMountPath")
 			}
 			fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("cp", "-r", workspaceFilePath, mount.Mountpoint))
-			fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("chmod", "-R", "+x", mount.Mountpoint))
 		}
 	}
 
@@ -122,6 +120,12 @@ func execPre(ctx context.Context, stepIdx int, executionInput batcheslib.Workspa
 	if _, err := exec.CommandContext(ctx, "chmod", "+x", stepScriptPath).CombinedOutput(); err != nil {
 		return errors.Wrap(err, "failed to chmod step script file")
 	}
+
+	o, err := exec.CommandContext(ctx, "ls", "-laR", "/data").CombinedOutput()
+	if err != nil {
+		fmt.Println("ls -laR /data failed")
+	}
+	fmt.Println(string(o))
 
 	return nil
 }
