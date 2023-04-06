@@ -501,6 +501,10 @@ func (c *clientImplementor) lStat(ctx context.Context, checker authz.SubRepoPerm
 }
 
 func (c *clientImplementor) lsTreeUncached(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
+	if err := gitdomain.EnsureAbsoluteCommit(commit); err != nil {
+		return nil, err
+	}
+
 	// Don't call filepath.Clean(path) because ReadDir needs to pass
 	// path with a trailing slash.
 

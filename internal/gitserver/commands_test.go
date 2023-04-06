@@ -655,8 +655,8 @@ func TestLsFiles(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
 	client := NewClient()
-	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) ([]string, error) {
-		return client.LsFiles(ctx, checker, repo, "HEAD")
+	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit string) ([]string, error) {
+		return client.LsFiles(ctx, checker, repo, api.CommitID(commit))
 	})
 }
 
@@ -664,8 +664,8 @@ func TestListFiles(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
 	client := NewClient()
-	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) ([]string, error) {
-		return client.ListFiles(ctx, checker, repo, "HEAD", &protocol.ListFilesOpts{
+	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit string) ([]string, error) {
+		return client.ListFiles(ctx, checker, repo, api.CommitID(commit), &protocol.ListFilesOpts{
 			Pattern: regexp.MustCompile("file"),
 		})
 	})
@@ -674,7 +674,7 @@ func TestListFiles(t *testing.T) {
 // runFileListingTest tests the specified function which must return a list of filenames and an error. The test first
 // tests the basic case (all paths returned), then the case with sub-repo permissions specified.
 func runFileListingTest(t *testing.T,
-	listingFunctionToTest func(context.Context, authz.SubRepoPermissionChecker, api.RepoName) ([]string, error),
+	listingFunctionToTest func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string) ([]string, error),
 ) {
 	t.Helper()
 	gitCommands := []string{
@@ -686,8 +686,8 @@ func runFileListingTest(t *testing.T,
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 
-	repo := MakeGitRepository(t, gitCommands...)
-
+	repo, dir := MakeGitRepositoryAndReturnDir(t, gitCommands...)
+	headCommit := GetHeadCommitFromGitDir(t, dir)
 	ctx := context.Background()
 
 	checker := authz.NewMockSubRepoPermissionChecker()
@@ -696,7 +696,7 @@ func runFileListingTest(t *testing.T,
 		return false
 	})
 
-	files, err := listingFunctionToTest(ctx, checker, repo)
+	files, err := listingFunctionToTest(ctx, checker, repo, headCommit)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -721,7 +721,7 @@ func runFileListingTest(t *testing.T,
 	ctx = actor.WithActor(ctx, &actor.Actor{
 		UID: 1,
 	})
-	files, err = listingFunctionToTest(ctx, checker, repo)
+	files, err = listingFunctionToTest(ctx, checker, repo, headCommit)
 	if err != nil {
 		t.Fatal(err)
 	}
