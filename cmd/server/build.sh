@@ -11,11 +11,11 @@ set -eux
 OUTPUT=$(mktemp -d -t sgserver_XXXXXXX)
 TMP=$(mktemp -d -t sgserver_tmp_XXXXXXX)
 export OUTPUT
-cleanup() {
-  rm -rf "$OUTPUT"
-  rm -rf "$TMP"
-}
-trap cleanup EXIT
+# cleanup() {
+#   rm -rf "$OUTPUT"
+#   rm -rf "$TMP"
+# }
+# trap cleanup EXIT
 if [[ "$DOCKER_BAZEL" != "true" ]]; then
   parallel_run() {
     ./dev/ci/parallel_run.sh "$@"
@@ -119,7 +119,7 @@ TARGETS=(
   //cmd/worker
   //cmd/migrator
   //cmd/repo-updater
-  # //cmd/symbols
+  //cmd/symbols
   //cmd/github-proxy
   //cmd/gitserver
   //cmd/searcher
@@ -139,7 +139,6 @@ echo "--- bazel build"
 bazel build ${TARGETS[@]} \
   --stamp \
   --workspace_status_command=./dev/bazel_stamp_vars.sh \
-  --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
   --//:assets_bundle_type=oss
 
 echo "-- preparing rootfs"
@@ -163,28 +162,28 @@ unzip "monitoring.zip"
 popd
 
 echo "--- prometheus"
-cp -r docker-images/prometheus/config "$OUTPUT/sg_config_prometheus"
-cp -r "$TMP/monitoring/prometheus"/* "$OUTPUT/sg_config_prometheus/"
-mkdir "$OUTPUT/sg_prometheus_add_ons"
-cp dev/prometheus/linux/prometheus_targets.yml "$OUTPUT/sg_prometheus_add_ons"
+# cp -r docker-images/prometheus/config "$OUTPUT/sg_config_prometheus"
+# cp -r "$TMP/monitoring/prometheus"/* "$OUTPUT/sg_config_prometheus/"
+# mkdir "$OUTPUT/sg_prometheus_add_ons"
+# cp dev/prometheus/linux/prometheus_targets.yml "$OUTPUT/sg_prometheus_add_ons"
 IMAGE=sourcegraph/prometheus:server CACHE=true docker-images/prometheus/build.sh
 
-echo "--- grafana"
-cp -r docker-images/grafana/config "$OUTPUT/sg_config_grafana"
-cp -r "$TMP/monitoring/grafana/"* "$OUTPUT/sg_config_grafana/provisioning/dashboards/sourcegraph"
-cp -r dev/grafana/linux "$OUTPUT/sg_config_grafana/provisioning/datasources"
+# echo "--- grafana"
+# cp -r docker-images/grafana/config "$OUTPUT/sg_config_grafana"
+# cp -r "$TMP/monitoring/grafana/"* "$OUTPUT/sg_config_grafana/provisioning/dashboards/sourcegraph"
+# cp -r dev/grafana/linux "$OUTPUT/sg_config_grafana/provisioning/datasources"
 
-echo "--- blobstore"
-IMAGE=sourcegraph/blobstore:server docker-images/blobstore/build.sh
+# echo "--- blobstore"
+# IMAGE=sourcegraph/blobstore:server docker-images/blobstore/build.sh
 
-echo "--- build scripts"
-cp -a ./cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
-cp -a ./cmd/gitserver/p4-fusion-install-alpine.sh "$OUTPUT"
+# echo "--- build scripts"
+# cp -a ./cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
+# cp -a ./cmd/gitserver/p4-fusion-install-alpine.sh "$OUTPUT"
 
-echo "--- docker build"
-docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
-  --platform linux/amd64 \
-  --progress=plain \
-  --build-arg COMMIT_SHA \
-  --build-arg DATE \
-  --build-arg VERSION
+# echo "--- docker build"
+# docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
+#   --platform linux/amd64 \
+#   --progress=plain \
+#   --build-arg COMMIT_SHA \
+#   --build-arg DATE \
+#   --build-arg VERSION
