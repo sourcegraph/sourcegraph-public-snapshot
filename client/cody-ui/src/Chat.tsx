@@ -30,6 +30,7 @@ interface ChatProps extends ChatClassNames {
 }
 
 interface ChatClassNames {
+    transcriptContainerClassName?: string
     bubbleContentClassName?: string
     humanBubbleContentClassName?: string
     botBubbleContentClassName?: string
@@ -69,6 +70,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     tipsRecommendations,
     afterTips,
     className,
+    transcriptContainerClassName,
     bubbleContentClassName,
     humanBubbleContentClassName,
     botBubbleContentClassName,
@@ -152,7 +154,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         <div className={classNames(className, styles.innerContainer)}>
             <div
                 ref={transcriptContainerRef}
-                className={transcript.length >= 1 ? styles.transcriptContainer : styles.nonTranscriptContainer}
+                className={classNames(styles.transcriptContainer, transcriptContainerClassName)}
             >
                 {/* Show Tips view if no conversation has happened */}
                 {transcript.length === 0 && !messageInProgress && (

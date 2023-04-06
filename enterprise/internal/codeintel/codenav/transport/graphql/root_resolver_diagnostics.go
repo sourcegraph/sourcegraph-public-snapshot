@@ -6,7 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -43,10 +43,10 @@ func (r *gitBlobLSIFDataResolver) Diagnostics(ctx context.Context, args *resolve
 
 type diagnosticResolver struct {
 	diagnostic       codenav.DiagnosticAtUpload
-	locationResolver *sharedresolvers.CachedLocationResolver
+	locationResolver *gitresolvers.CachedLocationResolver
 }
 
-func newDiagnosticResolver(diagnostic codenav.DiagnosticAtUpload, locationResolver *sharedresolvers.CachedLocationResolver) resolverstubs.DiagnosticResolver {
+func newDiagnosticResolver(diagnostic codenav.DiagnosticAtUpload, locationResolver *gitresolvers.CachedLocationResolver) resolverstubs.DiagnosticResolver {
 	return &diagnosticResolver{
 		diagnostic:       diagnostic,
 		locationResolver: locationResolver,

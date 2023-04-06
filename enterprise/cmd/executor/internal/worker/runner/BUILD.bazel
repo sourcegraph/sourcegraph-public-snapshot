@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "runner",
+    srcs = [
+        "docker.go",
+        "firecracker.go",
+        "runner.go",
+        "shell.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner",
+    visibility = ["//enterprise/cmd/executor:__subpackages__"],
+    deps = [
+        "//enterprise/cmd/executor/internal/config",
+        "//enterprise/cmd/executor/internal/util",
+        "//enterprise/cmd/executor/internal/worker/command",
+        "//enterprise/internal/executor/types",
+        "//internal/lazyregexp",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "runner_test",
+    srcs = [
+        "docker_test.go",
+        "firecracker_test.go",
+        "mocks_test.go",
+        "shell_test.go",
+    ],
+    embed = [":runner"],
+    deps = [
+        "//enterprise/cmd/executor/internal/worker/command",
+        "//enterprise/internal/executor/types",
+        "//internal/executor",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

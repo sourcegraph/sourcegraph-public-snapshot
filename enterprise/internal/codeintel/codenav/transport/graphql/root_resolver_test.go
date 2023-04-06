@@ -10,7 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -23,7 +23,6 @@ import (
 
 func TestRanges(t *testing.T) {
 	mockCodeNavService := NewMockCodeNavService()
-	mockUploadsService := NewMockUploadsService()
 
 	mockRequestState := codenav.RequestState{
 		RepositoryID: 1,
@@ -34,14 +33,8 @@ func TestRanges(t *testing.T) {
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockUploadsService,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
 		mockRequestState,
-		observation.NewErrorCollector(),
+		nil,
 		mockOperations,
 	)
 
@@ -62,7 +55,6 @@ func TestRanges(t *testing.T) {
 }
 
 func TestDefinitions(t *testing.T) {
-	mockUploadsService := NewMockUploadsService()
 	mockCodeNavService := NewMockCodeNavService()
 	mockRequestState := codenav.RequestState{
 		RepositoryID: 1,
@@ -73,14 +65,8 @@ func TestDefinitions(t *testing.T) {
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockUploadsService,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
 		mockRequestState,
-		observation.NewErrorCollector(),
+		nil,
 		mockOperations,
 	)
 
@@ -101,7 +87,6 @@ func TestDefinitions(t *testing.T) {
 }
 
 func TestReferences(t *testing.T) {
-	mockUploadsService := NewMockUploadsService()
 	mockCodeNavService := NewMockCodeNavService()
 	mockRequestState := codenav.RequestState{
 		RepositoryID: 1,
@@ -112,14 +97,8 @@ func TestReferences(t *testing.T) {
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockUploadsService,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
 		mockRequestState,
-		observation.NewErrorCollector(),
+		nil,
 		mockOperations,
 	)
 
@@ -158,7 +137,6 @@ func TestReferences(t *testing.T) {
 }
 
 func TestReferencesDefaultLimit(t *testing.T) {
-	mockUploadsService := NewMockUploadsService()
 	mockCodeNavService := NewMockCodeNavService()
 	mockRequestState := codenav.RequestState{
 		RepositoryID: 1,
@@ -169,14 +147,8 @@ func TestReferencesDefaultLimit(t *testing.T) {
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockUploadsService,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
 		mockRequestState,
-		observation.NewErrorCollector(),
+		nil,
 		mockOperations,
 	)
 
@@ -201,7 +173,6 @@ func TestReferencesDefaultLimit(t *testing.T) {
 }
 
 func TestReferencesDefaultIllegalLimit(t *testing.T) {
-	mockUploadsService := NewMockUploadsService()
 	mockCodeNavService := NewMockCodeNavService()
 	mockRequestState := codenav.RequestState{
 		RepositoryID: 1,
@@ -212,14 +183,8 @@ func TestReferencesDefaultIllegalLimit(t *testing.T) {
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockUploadsService,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
 		mockRequestState,
-		observation.NewErrorCollector(),
+		nil,
 		mockOperations,
 	)
 
@@ -238,7 +203,6 @@ func TestReferencesDefaultIllegalLimit(t *testing.T) {
 }
 
 func TestHover(t *testing.T) {
-	mockUploadsService := NewMockUploadsService()
 	mockCodeNavService := NewMockCodeNavService()
 	mockRequestState := codenav.RequestState{
 		RepositoryID: 1,
@@ -249,14 +213,8 @@ func TestHover(t *testing.T) {
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockUploadsService,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
 		mockRequestState,
-		observation.NewErrorCollector(),
+		nil,
 		mockOperations,
 	)
 
@@ -278,7 +236,6 @@ func TestHover(t *testing.T) {
 }
 
 func TestDiagnostics(t *testing.T) {
-	mockUploadsService := NewMockUploadsService()
 	mockCodeNavService := NewMockCodeNavService()
 	mockRequestState := codenav.RequestState{
 		RepositoryID: 1,
@@ -289,14 +246,8 @@ func TestDiagnostics(t *testing.T) {
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockUploadsService,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
 		mockRequestState,
-		observation.NewErrorCollector(),
+		nil,
 		mockOperations,
 	)
 
@@ -318,7 +269,6 @@ func TestDiagnostics(t *testing.T) {
 }
 
 func TestDiagnosticsDefaultLimit(t *testing.T) {
-	mockUploadsService := NewMockUploadsService()
 	mockCodeNavService := NewMockCodeNavService()
 	mockRequestState := codenav.RequestState{
 		RepositoryID: 1,
@@ -329,14 +279,8 @@ func TestDiagnosticsDefaultLimit(t *testing.T) {
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockUploadsService,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
 		mockRequestState,
-		observation.NewErrorCollector(),
+		nil,
 		mockOperations,
 	)
 
@@ -355,7 +299,6 @@ func TestDiagnosticsDefaultLimit(t *testing.T) {
 }
 
 func TestDiagnosticsDefaultIllegalLimit(t *testing.T) {
-	mockUploadsService := NewMockUploadsService()
 	mockCodeNavService := NewMockCodeNavService()
 	mockRequestState := codenav.RequestState{
 		RepositoryID: 1,
@@ -366,14 +309,8 @@ func TestDiagnosticsDefaultIllegalLimit(t *testing.T) {
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
-		mockUploadsService,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
 		mockRequestState,
-		observation.NewErrorCollector(),
+		nil,
 		mockOperations,
 	)
 
@@ -401,7 +338,7 @@ func TestResolveLocations(t *testing.T) {
 		return api.CommitID(spec), nil
 	})
 
-	factory := sharedresolvers.NewCachedLocationResolverFactory(nil, repos, gsClient)
+	factory := gitresolvers.NewCachedLocationResolverFactory(repos, gsClient)
 	locationResolver := factory.Create()
 
 	r1 := shared.Range{Start: shared.Position{Line: 11, Character: 12}, End: shared.Position{Line: 13, Character: 14}}

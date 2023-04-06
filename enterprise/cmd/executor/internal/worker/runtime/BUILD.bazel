@@ -1,0 +1,48 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "runtime",
+    srcs = [
+        "docker.go",
+        "firecracker.go",
+        "runtime.go",
+        "shell.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runtime",
+    visibility = ["//enterprise/cmd/executor:__subpackages__"],
+    deps = [
+        "//enterprise/cmd/executor/internal/util",
+        "//enterprise/cmd/executor/internal/worker/command",
+        "//enterprise/cmd/executor/internal/worker/runner",
+        "//enterprise/cmd/executor/internal/worker/workspace",
+        "//enterprise/internal/executor/types",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "runtime_test",
+    srcs = [
+        "docker_test.go",
+        "firecracker_test.go",
+        "mocks_test.go",
+        "runtime_test.go",
+        "shell_test.go",
+    ],
+    embed = [":runtime"],
+    deps = [
+        "//enterprise/cmd/executor/internal/util",
+        "//enterprise/cmd/executor/internal/worker/command",
+        "//enterprise/cmd/executor/internal/worker/runner",
+        "//enterprise/cmd/executor/internal/worker/workspace",
+        "//enterprise/internal/executor/types",
+        "//internal/executor",
+        "//internal/fileutil",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

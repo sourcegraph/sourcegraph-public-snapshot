@@ -164,7 +164,8 @@ type JSContext struct {
 	AuthMinPasswordLength int                `json:"authMinPasswordLength"`
 	AuthPasswordPolicy    authPasswordPolicy `json:"authPasswordPolicy"`
 
-	AuthProviders []authProviderInfo `json:"authProviders"`
+	AuthProviders                  []authProviderInfo `json:"authProviders"`
+	AuthPrimaryLoginProvidersCount int                `json:"primaryLoginProvidersCount"`
 
 	AuthAccessRequest *schema.AuthAccessRequest `json:"authAccessRequest"`
 
@@ -342,7 +343,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		AuthMinPasswordLength: conf.AuthMinPasswordLength(),
 		AuthPasswordPolicy:    authPasswordPolicy,
 
-		AuthProviders: authProviders,
+		AuthProviders:                  authProviders,
+		AuthPrimaryLoginProvidersCount: conf.AuthPrimaryLoginProvidersCount(),
 
 		AuthAccessRequest: conf.Get().AuthAccessRequest,
 

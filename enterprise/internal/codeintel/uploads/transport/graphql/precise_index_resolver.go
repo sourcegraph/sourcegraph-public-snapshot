@@ -12,6 +12,7 @@ import (
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	policiesgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/transport/graphql"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -30,21 +31,21 @@ type preciseIndexResolver struct {
 	gitserverClient  gitserver.Client
 	siteAdminChecker sharedresolvers.SiteAdminChecker
 	repoStore        database.RepoStore
-	locationResolver *sharedresolvers.CachedLocationResolver
+	locationResolver *gitresolvers.CachedLocationResolver
 	traceErrs        *observation.ErrCollector
 	upload           *shared.Upload
 	index            *uploadsshared.Index
 }
 
-func NewPreciseIndexResolver(
+func newPreciseIndexResolver(
 	ctx context.Context,
 	uploadsSvc UploadsService,
 	policySvc PolicyService,
 	gitserverClient gitserver.Client,
-	prefetcher *sharedresolvers.Prefetcher,
+	prefetcher *Prefetcher,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
-	locationResolver *sharedresolvers.CachedLocationResolver,
+	locationResolver *gitresolvers.CachedLocationResolver,
 	traceErrs *observation.ErrCollector,
 	upload *shared.Upload,
 	index *uploadsshared.Index,
@@ -452,10 +453,12 @@ func newLSIFUploadsAuditLogsResolver(log shared.UploadLog) resolverstubs.LSIFUpl
 }
 
 func (r *lsifUploadsAuditLogResolver) Reason() *string { return r.log.Reason }
+
 func (r *lsifUploadsAuditLogResolver) ChangedColumns() (values []resolverstubs.AuditLogColumnChange) {
 	for _, transition := range r.log.TransitionColumns {
-		values = append(values, &auditLogColumnChangeResolver{transition})
+		values = append(values, newAuditLogColumnChangeResolver(transition))
 	}
+
 	return values
 }
 

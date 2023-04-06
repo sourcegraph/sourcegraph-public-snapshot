@@ -7,7 +7,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -57,7 +57,7 @@ func (r *gitBlobLSIFDataResolver) Ranges(ctx context.Context, args *resolverstub
 
 type codeIntelligenceRangeResolver struct {
 	r                codenav.AdjustedCodeIntelligenceRange
-	locationResolver *sharedresolvers.CachedLocationResolver
+	locationResolver *gitresolvers.CachedLocationResolver
 }
 
 func (r *codeIntelligenceRangeResolver) Range(ctx context.Context) (resolverstubs.RangeResolver, error) {

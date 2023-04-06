@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
@@ -10,15 +10,20 @@ import { Alert, Form, Input, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../../components/branding/BrandLogo'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
+import { eventLogger } from '../../../tracking/eventLogger'
 import { CompletionRequest, getCodyCompletionOneShot } from '../api'
 
 import searchPageStyles from '../../../storm/pages/SearchPage/SearchPageContent.module.scss'
 import styles from './CodySearchPage.module.scss'
 
 export const CodySearchPage: React.FunctionComponent<{}> = () => {
+    useEffect(() => {
+        eventLogger.logPageView('CodySearch')
+    }, [])
+
     const navigate = useNavigate()
 
-    const [codyEnabled] = useFeatureFlag('cody', false)
+    const [codyEnabled] = useFeatureFlag('cody-experimental', false)
 
     /** The value entered by the user in the query input */
     const [input, setInput] = useState('')
@@ -33,21 +38,25 @@ export const CodySearchPage: React.FunctionComponent<{}> = () => {
     const [loading, setLoading] = useState(false)
 
     const onSubmit = useCallback(() => {
+        eventLogger.log('web:codySearch:submit', { input })
         setLoading(true)
         translateToQuery(input).then(
             query => {
                 setLoading(false)
 
                 if (query) {
+                    eventLogger.log('web:codySearch:submitSucceeded', { input, translatedQuery: query })
                     navigate({
                         pathname: '/search',
                         search: buildSearchURLQuery(query, SearchPatternType.regexp, false),
                     })
                 } else {
+                    eventLogger.log('web:codySearch:submitFailed', { input, reason: 'untranslatable' })
                     setInputError('Cody does not understand this query. Try rephrasing it.')
                 }
             },
             error => {
+                eventLogger.log('web:codySearch:submitFailed', { input, reason: 'unreachable', error: error?.message })
                 setLoading(false)
                 setInputError(`Unable to reach Cody. Error: ${error?.message}`)
             }

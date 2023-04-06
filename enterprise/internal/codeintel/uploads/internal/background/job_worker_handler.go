@@ -35,7 +35,7 @@ import (
 func NewUploadProcessorWorker(
 	observationCtx *observation.Context,
 	store store.Store,
-	lsifStore lsifstore.LsifStore,
+	lsifStore lsifstore.Store,
 	gitserverClient gitserver.Client,
 	repoStore RepoStore,
 	workerStore dbworkerstore.Store[uploadsshared.Upload],
@@ -73,7 +73,7 @@ func NewUploadProcessorWorker(
 
 type handler struct {
 	store           store.Store
-	lsifStore       lsifstore.LsifStore
+	lsifStore       lsifstore.Store
 	gitserverClient gitserver.Client
 	repoStore       RepoStore
 	workerStore     dbworkerstore.Store[uploadsshared.Upload]
@@ -93,7 +93,7 @@ var (
 func NewUploadProcessorHandler(
 	observationCtx *observation.Context,
 	store store.Store,
-	lsifStore lsifstore.LsifStore,
+	lsifStore lsifstore.Store,
 	gitserverClient gitserver.Client,
 	repoStore RepoStore,
 	workerStore dbworkerstore.Store[uploadsshared.Upload],
@@ -349,13 +349,7 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 }
 
 func inTransaction(ctx context.Context, dbStore store.Store, fn func(tx store.Store) error) (err error) {
-	tx, err := dbStore.Transact(ctx)
-	if err != nil {
-		return errors.Wrap(err, "store.Transact")
-	}
-	defer func() { err = tx.Done(err) }()
-
-	return fn(tx)
+	return dbStore.WithTransaction(ctx, fn)
 }
 
 // requeueDelay is the delay between processing attempts to process a record when waiting on

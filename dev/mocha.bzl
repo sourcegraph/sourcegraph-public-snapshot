@@ -54,6 +54,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, use_xvfb 
         "--config",
         "$(location //:mocha_config)",
         "$(location :%s)/**/*.test.js" % bundle_name,
+        "--retries 4",
     ] + args
 
     args_data = [

@@ -15,12 +15,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/internal/download"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func RunInstallIgnite(cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
+func InstallIgnite(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
 	if !hostMightBeAbleToRunIgnite() {
 		return ErrNoIgniteSupport
 	}
@@ -28,7 +29,7 @@ func RunInstallIgnite(cliCtx *cli.Context, logger log.Logger, config *config.Con
 	return installIgnite(cliCtx)
 }
 
-func RunInstallCNI(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
+func InstallCNI(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, cfg *config.Config) error {
 	if !hostMightBeAbleToRunIgnite() {
 		return ErrNoIgniteSupport
 	}
@@ -36,11 +37,11 @@ func RunInstallCNI(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) e
 	return installCNIPlugins(cliCtx)
 }
 
-func RunInstallSrc(cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
-	return installSrc(cliCtx, logger, config)
+func InstallSrc(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
+	return installSrc(cliCtx, runner, logger, config)
 }
 
-func RunInstallIPTablesRules(cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
+func InstallIPTablesRules(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
 	if !hostMightBeAbleToRunIgnite() {
 		return ErrNoIgniteSupport
 	}
@@ -52,10 +53,10 @@ func RunInstallIPTablesRules(cliCtx *cli.Context, logger log.Logger, config *con
 		logger.Info("Recreating iptables entries for CNI_ADMIN chain")
 	}
 
-	return setupIPTables(recreateChain)
+	return setupIPTables(&util.RealCmdRunner{}, recreateChain)
 }
 
-func RunInstallAll(cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
+func InstallAll(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
 	logger.Info("Running executor install ignite")
 	if err := installIgnite(cliCtx); err != nil {
 		return err
@@ -67,34 +68,34 @@ func RunInstallAll(cliCtx *cli.Context, logger log.Logger, config *config.Config
 	}
 
 	logger.Info("Running executor install src-cli")
-	if err := installSrc(cliCtx, logger, config); err != nil {
+	if err := installSrc(cliCtx, runner, logger, config); err != nil {
 		return err
 	}
 
 	logger.Info("Running executor install iptables-rules")
-	if err := setupIPTables(false); err != nil {
+	if err := setupIPTables(runner, false); err != nil {
 		return err
 	}
 
 	logger.Info("Running executor install image executor-vm")
-	if err := ensureExecutorVMImage(cliCtx.Context, logger, config); err != nil {
+	if err := ensureExecutorVMImage(cliCtx.Context, runner, logger, config); err != nil {
 		return err
 	}
 
 	logger.Info("Running executor install image sandbox")
-	if err := ensureSandboxImage(cliCtx.Context, logger, config); err != nil {
+	if err := ensureSandboxImage(cliCtx.Context, runner, logger, config); err != nil {
 		return err
 	}
 
 	logger.Info("Running executor install image kernel")
-	if err := ensureKernelImage(cliCtx.Context, logger, config); err != nil {
+	if err := ensureKernelImage(cliCtx.Context, runner, logger, config); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func RunInstallImage(cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
+func InstallImage(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
 	if !hostMightBeAbleToRunIgnite() {
 		return ErrNoIgniteSupport
 	}
@@ -109,18 +110,18 @@ func RunInstallImage(cliCtx *cli.Context, logger log.Logger, config *config.Conf
 	img := strings.ToLower(cliCtx.Args().First())
 	switch img {
 	case "executor-vm":
-		return ensureExecutorVMImage(cliCtx.Context, logger, config)
+		return ensureExecutorVMImage(cliCtx.Context, runner, logger, config)
 	case "sandbox":
-		return ensureSandboxImage(cliCtx.Context, logger, config)
+		return ensureSandboxImage(cliCtx.Context, runner, logger, config)
 	case "kernel":
-		return ensureKernelImage(cliCtx.Context, logger, config)
+		return ensureKernelImage(cliCtx.Context, runner, logger, config)
 	default:
 		return errors.Newf("invalid image provided %q, expected one of executor-vm, sandbox, kernel", img)
 	}
 }
 
-func ensureExecutorVMImage(ctx context.Context, logger log.Logger, c *config.Config) error {
-	if err := validateIgniteInstalled(ctx); err != nil {
+func ensureExecutorVMImage(ctx context.Context, runner util.CmdRunner, logger log.Logger, c *config.Config) error {
+	if err := util.ValidateIgniteInstalled(ctx, runner); err != nil {
 		return err
 	}
 
@@ -139,8 +140,8 @@ func ensureExecutorVMImage(ctx context.Context, logger log.Logger, c *config.Con
 	return nil
 }
 
-func ensureKernelImage(ctx context.Context, logger log.Logger, c *config.Config) error {
-	if err := validateIgniteInstalled(ctx); err != nil {
+func ensureKernelImage(ctx context.Context, runner util.CmdRunner, logger log.Logger, c *config.Config) error {
+	if err := util.ValidateIgniteInstalled(ctx, runner); err != nil {
 		return err
 	}
 
@@ -159,8 +160,8 @@ func ensureKernelImage(ctx context.Context, logger log.Logger, c *config.Config)
 	return nil
 }
 
-func ensureSandboxImage(ctx context.Context, logger log.Logger, c *config.Config) error {
-	if err := validateIgniteInstalled(ctx); err != nil {
+func ensureSandboxImage(ctx context.Context, runner util.CmdRunner, logger log.Logger, c *config.Config) error {
+	if err := util.ValidateIgniteInstalled(ctx, runner); err != nil {
 		return err
 	}
 
@@ -178,8 +179,8 @@ func ensureSandboxImage(ctx context.Context, logger log.Logger, c *config.Config
 	return nil
 }
 
-func setupIPTables(recreateChain bool) error {
-	found, err := existsPath("iptables")
+func setupIPTables(runner util.CmdRunner, recreateChain bool) error {
+	found, err := util.ExistsPath(runner, "iptables")
 	if err != nil {
 		return errors.Wrap(err, "failed to look up iptables")
 	}
@@ -195,7 +196,7 @@ func setupIPTables(recreateChain bool) error {
 	}
 
 	if recreateChain {
-		if err := ipt.DeleteChain("filter", "CNI-ADMIN"); err != nil {
+		if err = ipt.DeleteChain("filter", "CNI-ADMIN"); err != nil {
 			return err
 		}
 	}
@@ -204,7 +205,7 @@ func setupIPTables(recreateChain bool) error {
 	if ok, err := ipt.ChainExists("filter", "CNI-ADMIN"); err != nil {
 		return err
 	} else if !ok {
-		if err := ipt.NewChain("filter", "CNI-ADMIN"); err != nil {
+		if err = ipt.NewChain("filter", "CNI-ADMIN"); err != nil {
 			return err
 		}
 	}
@@ -212,44 +213,44 @@ func setupIPTables(recreateChain bool) error {
 	// Explicitly allow DNS traffic (currently, the DNS server lives in the private
 	// networks for GCP and AWS. Ideally we'd want to use an internet-only DNS server
 	// to prevent leaking any network details).
-	if err := ipt.AppendUnique("filter", "CNI-ADMIN", "-p", "udp", "--dport", "53", "-j", "ACCEPT"); err != nil {
+	if err = ipt.AppendUnique("filter", "CNI-ADMIN", "-p", "udp", "--dport", "53", "-j", "ACCEPT"); err != nil {
 		return err
 	}
 
 	// Disallow any host-VM network traffic from the guests, except connections made
 	// FROM the host (to ssh into the guest).
-	if err := ipt.AppendUnique("filter", "INPUT", "-d", "10.61.0.0/16", "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", "ACCEPT"); err != nil {
+	if err = ipt.AppendUnique("filter", "INPUT", "-d", "10.61.0.0/16", "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", "ACCEPT"); err != nil {
 		return err
 	}
-	if err := ipt.AppendUnique("filter", "INPUT", "-s", "10.61.0.0/16", "-j", "DROP"); err != nil {
+	if err = ipt.AppendUnique("filter", "INPUT", "-s", "10.61.0.0/16", "-j", "DROP"); err != nil {
 		return err
 	}
 
 	// Disallow any inter-VM traffic.
 	// But allow to reach the gateway for internet access.
-	if err := ipt.AppendUnique("filter", "CNI-ADMIN", "-s", "10.61.0.1/32", "-d", "10.61.0.0/16", "-j", "ACCEPT"); err != nil {
+	if err = ipt.AppendUnique("filter", "CNI-ADMIN", "-s", "10.61.0.1/32", "-d", "10.61.0.0/16", "-j", "ACCEPT"); err != nil {
 		return err
 	}
-	if err := ipt.AppendUnique("filter", "CNI-ADMIN", "-d", "10.61.0.0/16", "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", "ACCEPT"); err != nil {
+	if err = ipt.AppendUnique("filter", "CNI-ADMIN", "-d", "10.61.0.0/16", "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", "ACCEPT"); err != nil {
 		return err
 	}
-	if err := ipt.AppendUnique("filter", "CNI-ADMIN", "-s", "10.61.0.0/16", "-d", "10.61.0.0/16", "-j", "DROP"); err != nil {
+	if err = ipt.AppendUnique("filter", "CNI-ADMIN", "-s", "10.61.0.0/16", "-d", "10.61.0.0/16", "-j", "DROP"); err != nil {
 		return err
 	}
 
 	// Disallow local networks access.
-	if err := ipt.AppendUnique("filter", "CNI-ADMIN", "-s", "10.61.0.0/16", "-d", "10.0.0.0/8", "-p", "tcp", "-j", "DROP"); err != nil {
+	if err = ipt.AppendUnique("filter", "CNI-ADMIN", "-s", "10.61.0.0/16", "-d", "10.0.0.0/8", "-p", "tcp", "-j", "DROP"); err != nil {
 		return err
 	}
-	if err := ipt.AppendUnique("filter", "CNI-ADMIN", "-s", "10.61.0.0/16", "-d", "192.168.0.0/16", "-p", "tcp", "-j", "DROP"); err != nil {
+	if err = ipt.AppendUnique("filter", "CNI-ADMIN", "-s", "10.61.0.0/16", "-d", "192.168.0.0/16", "-p", "tcp", "-j", "DROP"); err != nil {
 		return err
 	}
-	if err := ipt.AppendUnique("filter", "CNI-ADMIN", "-s", "10.61.0.0/16", "-d", "172.16.0.0/12", "-p", "tcp", "-j", "DROP"); err != nil {
+	if err = ipt.AppendUnique("filter", "CNI-ADMIN", "-s", "10.61.0.0/16", "-d", "172.16.0.0/12", "-p", "tcp", "-j", "DROP"); err != nil {
 		return err
 	}
 	// Disallow link-local traffic, too. This usually contains cloud provider
 	// resources that we don't want to expose.
-	if err := ipt.AppendUnique("filter", "CNI-ADMIN", "-s", "10.61.0.0/16", "-d", "169.254.0.0/16", "-j", "DROP"); err != nil {
+	if err = ipt.AppendUnique("filter", "CNI-ADMIN", "-s", "10.61.0.0/16", "-d", "169.254.0.0/16", "-j", "DROP"); err != nil {
 		return err
 	}
 
@@ -291,19 +292,19 @@ func installCNIPlugins(cliCtx *cli.Context) error {
 	return nil
 }
 
-func installSrc(cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
+func installSrc(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
 	binDir := cliCtx.Path("bin-dir")
 	if binDir == "" {
 		binDir = "/usr/local/bin"
 	}
 
-	telemetryOptions := newQueueTelemetryOptions(cliCtx.Context, config.UseFirecracker, logger)
+	telemetryOptions := newQueueTelemetryOptions(cliCtx.Context, runner, config.UseFirecracker, logger)
 	copts := queueOptions(config, telemetryOptions)
 	client, err := apiclient.NewBaseClient(copts.BaseClientOptions)
 	if err != nil {
 		return err
 	}
-	srcVersion, err := latestSrcCLIVersion(cliCtx.Context, client, copts.BaseClientOptions.EndpointOptions)
+	srcVersion, err := util.LatestSrcCLIVersion(cliCtx.Context, client, copts.BaseClientOptions.EndpointOptions)
 	if err != nil {
 		logger.Warn("Failed to fetch latest src version", log.Error(err))
 		srcVersion = srccli.MinimumVersion

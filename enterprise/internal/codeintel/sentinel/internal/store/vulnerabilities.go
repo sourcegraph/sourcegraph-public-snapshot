@@ -6,6 +6,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -15,7 +16,9 @@ import (
 )
 
 func (s *store) VulnerabilityByID(ctx context.Context, id int) (_ shared.Vulnerability, _ bool, err error) {
-	ctx, _, endObservation := s.operations.vulnerabilityByID.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.vulnerabilityByID.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.Int("id", id),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	vulnerabilities, _, err := scanVulnerabilitiesAndCount(s.db.Query(ctx, sqlf.Sprintf(getVulnerabilityByIDQuery, id)))
@@ -73,7 +76,9 @@ const vulnerabilityAffectedSymbolFields = `
 `
 
 func (s *store) GetVulnerabilitiesByIDs(ctx context.Context, ids ...int) (_ []shared.Vulnerability, err error) {
-	ctx, _, endObservation := s.operations.getVulnerabilitiesByIDs.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.getVulnerabilitiesByIDs.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.Int("numIDs", len(ids)),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	vulnerabilities, _, err := scanVulnerabilitiesAndCount(s.db.Query(ctx, sqlf.Sprintf(getVulnerabilitiesByIDsQuery, pq.Array(ids))))
@@ -94,7 +99,10 @@ ORDER BY v.id, vap.id, vas.id
 `
 
 func (s *store) GetVulnerabilities(ctx context.Context, args shared.GetVulnerabilitiesArgs) (_ []shared.Vulnerability, _ int, err error) {
-	ctx, _, endObservation := s.operations.getVulnerabilities.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.getVulnerabilities.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.Int("limit", args.Limit),
+		otlog.Int("offset", args.Offset),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	return scanVulnerabilitiesAndCount(s.db.Query(ctx, sqlf.Sprintf(getVulnerabilitiesQuery, args.Limit, args.Offset)))
@@ -121,222 +129,134 @@ LEFT JOIN vulnerability_affected_symbols vas ON vas.vulnerability_affected_packa
 ORDER BY v.id, vap.id, vas.id
 `
 
-var scanSingleVulnerabilityAndCount = func(s dbutil.Scanner) (v shared.Vulnerability, count int, _ error) {
-	var (
-		vap     shared.AffectedPackage
-		vas     shared.AffectedSymbol
-		fixedIn string
-	)
-
-	if err := s.Scan(
-		&v.ID,
-		&v.SourceID,
-		&v.Summary,
-		&v.Details,
-		pq.Array(&v.CPEs),
-		pq.Array(&v.CWEs),
-		pq.Array(&v.Aliases),
-		pq.Array(&v.Related),
-		&v.DataSource,
-		pq.Array(&v.URLs),
-		&v.Severity,
-		&v.CVSSVector,
-		&v.CVSSScore,
-		&v.PublishedAt,
-		&v.ModifiedAt,
-		&v.WithdrawnAt,
-		// RHS(s) of left join (may be null)
-		&dbutil.NullString{S: &vap.PackageName},
-		&dbutil.NullString{S: &vap.Language},
-		&dbutil.NullString{S: &vap.Namespace},
-		pq.Array(&vap.VersionConstraint),
-		&dbutil.NullBool{B: &vap.Fixed},
-		&dbutil.NullString{S: &fixedIn},
-		&dbutil.NullString{S: &vas.Path},
-		pq.Array(vas.Symbols),
-		&count,
-	); err != nil {
-		return shared.Vulnerability{}, 0, err
-	}
-
-	if fixedIn != "" {
-		vap.FixedIn = &fixedIn
-	}
-	if vas.Path != "" {
-		vap.AffectedSymbols = append(vap.AffectedSymbols, vas)
-	}
-	if vap.PackageName != "" {
-		v.AffectedPackages = append(v.AffectedPackages, vap)
-	}
-
-	return v, count, nil
-}
-
-var flattenPackages = func(packages []shared.AffectedPackage) []shared.AffectedPackage {
-	flattened := []shared.AffectedPackage{}
-	for _, pkg := range packages {
-		i := len(flattened) - 1
-		if len(flattened) == 0 || flattened[i].Namespace != pkg.Namespace || flattened[i].Language != pkg.Language || flattened[i].PackageName != pkg.PackageName {
-			flattened = append(flattened, pkg)
-		} else {
-			flattened[i].AffectedSymbols = append(flattened[i].AffectedSymbols, pkg.AffectedSymbols...)
-		}
-	}
-
-	return flattened
-}
-
-var flattenVulnerabilities = func(vs []shared.Vulnerability) []shared.Vulnerability {
-	flattened := []shared.Vulnerability{}
-	for _, v := range vs {
-		i := len(flattened) - 1
-		if len(flattened) == 0 || flattened[i].ID != v.ID {
-			flattened = append(flattened, v)
-		} else {
-			flattened[i].AffectedPackages = flattenPackages(append(flattened[i].AffectedPackages, v.AffectedPackages...))
-		}
-	}
-
-	return flattened
-}
-
-var scanVulnerabilitiesAndCount = func(rows basestore.Rows, queryErr error) ([]shared.Vulnerability, int, error) {
-	values, totalCount, err := basestore.NewSliceWithCountScanner(func(s dbutil.Scanner) (shared.Vulnerability, int, error) {
-		return scanSingleVulnerabilityAndCount(s)
-	})(rows, queryErr)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return flattenVulnerabilities(values), totalCount, nil
-}
-
 func (s *store) InsertVulnerabilities(ctx context.Context, vulnerabilities []shared.Vulnerability) (_ int, err error) {
-	ctx, _, endObservation := s.operations.insertVulnerabilities.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.insertVulnerabilities.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.Int("numVulnerabilities", len(vulnerabilities)),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	vulnerabilities = canonicalizeVulnerabilities(vulnerabilities)
 
-	tx, err := s.db.Transact(ctx)
-	if err != nil {
-		return 0, err
-	}
-	defer func() { err = tx.Done(err) }()
+	var a int
+	err = s.db.WithTransact(ctx, func(tx *basestore.Store) error {
+		if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerabilitiesTemporaryVulnerabilitiesTableQuery)); err != nil {
+			return err
+		}
+		if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerabilitiesTemporaryVulnerabilityAffectedPackagesTableQuery)); err != nil {
+			return err
+		}
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerabilitiesTemporaryVulnerabilitiesTableQuery)); err != nil {
-		return 0, err
-	}
-	if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerabilitiesTemporaryVulnerabilityAffectedPackagesTableQuery)); err != nil {
-		return 0, err
-	}
-
-	if err := batch.WithInserter(
-		ctx,
-		tx.Handle(),
-		"t_vulnerabilities",
-		batch.MaxNumPostgresParameters,
-		[]string{
-			"source_id",
-			"summary",
-			"details",
-			"cpes",
-			"cwes",
-			"aliases",
-			"related",
-			"data_source",
-			"urls",
-			"severity",
-			"cvss_vector",
-			"cvss_score",
-			"published_at",
-			"modified_at",
-			"withdrawn_at",
-		},
-		func(inserter *batch.Inserter) error {
-			for _, v := range vulnerabilities {
-				if err := inserter.Insert(
-					ctx,
-					v.SourceID,
-					v.Summary,
-					v.Details,
-					v.CPEs,
-					v.CWEs,
-					v.Aliases,
-					v.Related,
-					v.DataSource,
-					v.URLs,
-					v.Severity,
-					v.CVSSVector,
-					v.CVSSScore,
-					v.PublishedAt,
-					dbutil.NullTime{Time: v.ModifiedAt},
-					dbutil.NullTime{Time: v.WithdrawnAt},
-				); err != nil {
-					return err
-				}
-			}
-
-			return nil
-		}); err != nil {
-		return 0, err
-	}
-
-	if err := batch.WithInserter(
-		ctx,
-		tx.Handle(),
-		"t_vulnerability_affected_packages",
-		batch.MaxNumPostgresParameters,
-		[]string{
-			"source_id",
-			"package_name",
-			"language",
-			"namespace",
-			"version_constraint",
-			"fixed",
-			"fixed_in",
-			"affected_symbols",
-		},
-		func(inserter *batch.Inserter) error {
-			for _, v := range vulnerabilities {
-				for _, ap := range v.AffectedPackages {
-					serialized, err := json.Marshal(ap.AffectedSymbols)
-					if err != nil {
-						return err
-					}
-
+		if err := batch.WithInserter(
+			ctx,
+			tx.Handle(),
+			"t_vulnerabilities",
+			batch.MaxNumPostgresParameters,
+			[]string{
+				"source_id",
+				"summary",
+				"details",
+				"cpes",
+				"cwes",
+				"aliases",
+				"related",
+				"data_source",
+				"urls",
+				"severity",
+				"cvss_vector",
+				"cvss_score",
+				"published_at",
+				"modified_at",
+				"withdrawn_at",
+			},
+			func(inserter *batch.Inserter) error {
+				for _, v := range vulnerabilities {
 					if err := inserter.Insert(
 						ctx,
 						v.SourceID,
-						ap.PackageName,
-						ap.Language,
-						ap.Namespace,
-						ap.VersionConstraint,
-						ap.Fixed,
-						ap.FixedIn,
-						serialized,
+						v.Summary,
+						v.Details,
+						v.CPEs,
+						v.CWEs,
+						v.Aliases,
+						v.Related,
+						v.DataSource,
+						v.URLs,
+						v.Severity,
+						v.CVSSVector,
+						v.CVSSScore,
+						v.PublishedAt,
+						dbutil.NullTime{Time: v.ModifiedAt},
+						dbutil.NullTime{Time: v.WithdrawnAt},
 					); err != nil {
 						return err
 					}
 				}
-			}
 
-			return nil
-		}); err != nil {
-		return 0, err
-	}
+				return nil
+			}); err != nil {
+			return err
+		}
 
-	count, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(insertVulnerabilitiesUpdateQuery)))
-	if err != nil {
-		return 0, err
-	}
-	if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerabilitiesAffectedPackagesUpdateQuery)); err != nil {
-		return 0, err
-	}
-	if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerabilitiesAffectedSymbolsUpdateQuery)); err != nil {
-		return 0, err
-	}
+		if err := batch.WithInserter(
+			ctx,
+			tx.Handle(),
+			"t_vulnerability_affected_packages",
+			batch.MaxNumPostgresParameters,
+			[]string{
+				"source_id",
+				"package_name",
+				"language",
+				"namespace",
+				"version_constraint",
+				"fixed",
+				"fixed_in",
+				"affected_symbols",
+			},
+			func(inserter *batch.Inserter) error {
+				for _, v := range vulnerabilities {
+					for _, ap := range v.AffectedPackages {
+						serialized, err := json.Marshal(ap.AffectedSymbols)
+						if err != nil {
+							return err
+						}
 
-	return count, nil
+						if err := inserter.Insert(
+							ctx,
+							v.SourceID,
+							ap.PackageName,
+							ap.Language,
+							ap.Namespace,
+							ap.VersionConstraint,
+							ap.Fixed,
+							ap.FixedIn,
+							serialized,
+						); err != nil {
+							return err
+						}
+					}
+				}
+
+				return nil
+			}); err != nil {
+			return err
+		}
+
+		count, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(insertVulnerabilitiesUpdateQuery)))
+		if err != nil {
+			return err
+		}
+		if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerabilitiesAffectedPackagesUpdateQuery)); err != nil {
+			return err
+		}
+		if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerabilitiesAffectedSymbolsUpdateQuery)); err != nil {
+			return err
+		}
+
+		a = count
+		return nil
+	})
+
+	return a, err
 }
 
 const insertVulnerabilitiesTemporaryVulnerabilitiesTableQuery = `
@@ -462,6 +382,99 @@ SELECT c.id, c.path, c.symbols FROM candidates c
 -- TODO - we'd prefer to update rather than keep first write
 ON CONFLICT DO NOTHING
 `
+
+//
+//
+
+var scanSingleVulnerabilityAndCount = func(s dbutil.Scanner) (v shared.Vulnerability, count int, _ error) {
+	var (
+		vap     shared.AffectedPackage
+		vas     shared.AffectedSymbol
+		fixedIn string
+	)
+
+	if err := s.Scan(
+		&v.ID,
+		&v.SourceID,
+		&v.Summary,
+		&v.Details,
+		pq.Array(&v.CPEs),
+		pq.Array(&v.CWEs),
+		pq.Array(&v.Aliases),
+		pq.Array(&v.Related),
+		&v.DataSource,
+		pq.Array(&v.URLs),
+		&v.Severity,
+		&v.CVSSVector,
+		&v.CVSSScore,
+		&v.PublishedAt,
+		&v.ModifiedAt,
+		&v.WithdrawnAt,
+		// RHS(s) of left join (may be null)
+		&dbutil.NullString{S: &vap.PackageName},
+		&dbutil.NullString{S: &vap.Language},
+		&dbutil.NullString{S: &vap.Namespace},
+		pq.Array(&vap.VersionConstraint),
+		&dbutil.NullBool{B: &vap.Fixed},
+		&dbutil.NullString{S: &fixedIn},
+		&dbutil.NullString{S: &vas.Path},
+		pq.Array(vas.Symbols),
+		&count,
+	); err != nil {
+		return shared.Vulnerability{}, 0, err
+	}
+
+	if fixedIn != "" {
+		vap.FixedIn = &fixedIn
+	}
+	if vas.Path != "" {
+		vap.AffectedSymbols = append(vap.AffectedSymbols, vas)
+	}
+	if vap.PackageName != "" {
+		v.AffectedPackages = append(v.AffectedPackages, vap)
+	}
+
+	return v, count, nil
+}
+
+var flattenPackages = func(packages []shared.AffectedPackage) []shared.AffectedPackage {
+	flattened := []shared.AffectedPackage{}
+	for _, pkg := range packages {
+		i := len(flattened) - 1
+		if len(flattened) == 0 || flattened[i].Namespace != pkg.Namespace || flattened[i].Language != pkg.Language || flattened[i].PackageName != pkg.PackageName {
+			flattened = append(flattened, pkg)
+		} else {
+			flattened[i].AffectedSymbols = append(flattened[i].AffectedSymbols, pkg.AffectedSymbols...)
+		}
+	}
+
+	return flattened
+}
+
+var flattenVulnerabilities = func(vs []shared.Vulnerability) []shared.Vulnerability {
+	flattened := []shared.Vulnerability{}
+	for _, v := range vs {
+		i := len(flattened) - 1
+		if len(flattened) == 0 || flattened[i].ID != v.ID {
+			flattened = append(flattened, v)
+		} else {
+			flattened[i].AffectedPackages = flattenPackages(append(flattened[i].AffectedPackages, v.AffectedPackages...))
+		}
+	}
+
+	return flattened
+}
+
+var scanVulnerabilitiesAndCount = func(rows basestore.Rows, queryErr error) ([]shared.Vulnerability, int, error) {
+	values, totalCount, err := basestore.NewSliceWithCountScanner(func(s dbutil.Scanner) (shared.Vulnerability, int, error) {
+		return scanSingleVulnerabilityAndCount(s)
+	})(rows, queryErr)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return flattenVulnerabilities(values), totalCount, nil
+}
 
 func canonicalizeVulnerabilities(vs []shared.Vulnerability) []shared.Vulnerability {
 	for i, v := range vs {

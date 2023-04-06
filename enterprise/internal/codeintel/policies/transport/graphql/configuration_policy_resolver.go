@@ -7,7 +7,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -47,7 +47,7 @@ func (r *configurationPolicyResolver) Repository(ctx context.Context) (_ resolve
 		log.Int("repoID", *r.configurationPolicy.RepositoryID),
 	)
 
-	return sharedresolvers.NewRepositoryFromID(ctx, r.repoStore, *r.configurationPolicy.RepositoryID)
+	return gitresolvers.NewRepositoryFromID(ctx, r.repoStore, *r.configurationPolicy.RepositoryID)
 }
 
 func (r *configurationPolicyResolver) RepositoryPatterns() *[]string {
