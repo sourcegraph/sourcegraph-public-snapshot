@@ -110,11 +110,11 @@ const findVersionIdFmtstr = `
 `
 
 const embeddingsQueryFmtstr = `
-	SELECT v.file_name, v.start_line, v.end_line
-	FROM %s AS v
-	WHERE v.version_id = $1
-	ORDER BY v.embedding <=> $2::vector
-	LIMIT $3
+SELECT v.file_name, v.start_line, v.end_line
+FROM %s AS v
+WHERE v.version_id = $1
+ORDER BY v.embedding <=> $2::vector
+LIMIT $3
 `
 
 func (s EmbeddingsStore) QueryEmbeddings(
@@ -161,7 +161,6 @@ func fmtVector(fs []float32) string {
 		notFirst = true
 	}
 	fmt.Fprint(&b, "]")
-	fmt.Printf("fmtVector: %s\n", b.String())
 	return b.String()
 }
 
