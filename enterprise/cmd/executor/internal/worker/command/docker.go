@@ -88,7 +88,7 @@ func formatDockerCommand(hostDir string, image string, scriptPath string, spec S
 		dockerEnvFlags(spec.Env),
 		dockerEntrypointFlags,
 		image,
-		filepath.Join("/data", ScriptsPath, scriptPath),
+		fmt.Sprintf("-c \"ls -alR /data && whoami && %s\"", filepath.Join("/data", ScriptsPath, scriptPath)),
 	)
 }
 
