@@ -47,6 +47,7 @@ const fetchSCIPDocumentQuery = `
 SELECT sd.raw_scip_payload
 FROM codeintel_scip_document_lookup sid
 JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
-WHERE sid.upload_id = %s
-	AND sid.document_path = %s
+WHERE
+	sid.upload_id = %s AND
+	sid.document_path = %s
 `
