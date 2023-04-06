@@ -341,7 +341,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
 
     const chatTitle = 'Ask Cody'
 
-    const sidebarSizes = { default: 350, max: 800, min: 250 }
+    const sidebarSizes = { default: 350, max: 1200, min: 250 }
 
     return (
         <>

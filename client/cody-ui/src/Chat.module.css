@@ -31,7 +31,7 @@
 
 .bubble {
     min-width: 0;
-    max-width: min(93%, 800px);
+    max-width: min(93%, 980px);
 }
 
 .bubble-content {
