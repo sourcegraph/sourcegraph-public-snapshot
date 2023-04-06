@@ -4,7 +4,7 @@ import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settin
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
-import { SmartInsightsViewGrid, InsightContext } from '../../../../../../../components'
+import { SmartInsightsViewGrid, InsightContext, GridApi } from '../../../../../../../components'
 import { CodeInsightsBackendContext, CustomInsightDashboard } from '../../../../../../../core'
 import { EmptyCustomDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
 
@@ -12,10 +12,11 @@ interface DashboardInsightsProps extends TelemetryProps {
     currentDashboard: CustomInsightDashboard
     className?: string
     onAddInsightRequest?: () => void
+    onDashboardCreate?: (dashboardApi: GridApi) => void
 }
 
 export const DashboardInsights: FC<DashboardInsightsProps> = props => {
-    const { telemetryService, currentDashboard, className, onAddInsightRequest } = props
+    const { currentDashboard, telemetryService, className, onAddInsightRequest, onDashboardCreate } = props
 
     const { getInsights } = useContext(CodeInsightsBackendContext)
     const codeInsightsCompute = useExperimentalFeatures(settings => settings.codeInsightsCompute ?? false)
@@ -40,7 +41,13 @@ export const DashboardInsights: FC<DashboardInsightsProps> = props => {
     return (
         <InsightContext.Provider value={insightContextValue}>
             {insights.length > 0 ? (
-                <SmartInsightsViewGrid insights={insights} telemetryService={telemetryService} className={className} />
+                <SmartInsightsViewGrid
+                    id={currentDashboard.id}
+                    insights={insights}
+                    telemetryService={telemetryService}
+                    className={className}
+                    onGridCreate={onDashboardCreate}
+                />
             ) : (
                 <EmptyCustomDashboard dashboard={currentDashboard} onAddInsightRequest={onAddInsightRequest} />
             )}

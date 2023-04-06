@@ -47,32 +47,28 @@ func (s *store) UpdatePackages(ctx context.Context, dumpID int, packages []preci
 		return nil
 	}
 
-	tx, err := s.db.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
+	return s.withTransaction(ctx, func(tx *store) error {
+		// Create temporary table symmetric to lsif_packages without the dump id
+		if err := tx.db.Exec(ctx, sqlf.Sprintf(updatePackagesTemporaryTableQuery)); err != nil {
+			return err
+		}
 
-	// Create temporary table symmetric to lsif_packages without the dump id
-	if err := tx.Exec(ctx, sqlf.Sprintf(updatePackagesTemporaryTableQuery)); err != nil {
-		return err
-	}
+		// Bulk insert all the unique column values into the temporary table
+		if err := batch.InsertValues(
+			ctx,
+			tx.db.Handle(),
+			"t_lsif_packages",
+			batch.MaxNumPostgresParameters,
+			[]string{"scheme", "manager", "name", "version"},
+			loadPackagesChannel(packages),
+		); err != nil {
+			return err
+		}
 
-	// Bulk insert all the unique column values into the temporary table
-	if err := batch.InsertValues(
-		ctx,
-		tx.Handle(),
-		"t_lsif_packages",
-		batch.MaxNumPostgresParameters,
-		[]string{"scheme", "manager", "name", "version"},
-		loadPackagesChannel(packages),
-	); err != nil {
-		return err
-	}
-
-	// Insert the values from the temporary table into the target table. We select a
-	// parameterized dump id here since it is the same for all rows in this operation.
-	return tx.Exec(ctx, sqlf.Sprintf(updatePackagesInsertQuery, dumpID))
+		// Insert the values from the temporary table into the target table. We select a
+		// parameterized dump id here since it is the same for all rows in this operation.
+		return tx.db.Exec(ctx, sqlf.Sprintf(updatePackagesInsertQuery, dumpID))
+	})
 }
 
 const updatePackagesTemporaryTableQuery = `
@@ -115,32 +111,28 @@ func (s *store) UpdatePackageReferences(ctx context.Context, dumpID int, referen
 		return nil
 	}
 
-	tx, err := s.db.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
+	return s.withTransaction(ctx, func(tx *store) error {
+		// Create temporary table symmetric to lsif_references without the dump id
+		if err := tx.db.Exec(ctx, sqlf.Sprintf(updateReferencesTemporaryTableQuery)); err != nil {
+			return err
+		}
 
-	// Create temporary table symmetric to lsif_references without the dump id
-	if err := tx.Exec(ctx, sqlf.Sprintf(updateReferencesTemporaryTableQuery)); err != nil {
-		return err
-	}
+		// Bulk insert all the unique column values into the temporary table
+		if err := batch.InsertValues(
+			ctx,
+			tx.db.Handle(),
+			"t_lsif_references",
+			batch.MaxNumPostgresParameters,
+			[]string{"scheme", "manager", "name", "version"},
+			loadReferencesChannel(references),
+		); err != nil {
+			return err
+		}
 
-	// Bulk insert all the unique column values into the temporary table
-	if err := batch.InsertValues(
-		ctx,
-		tx.Handle(),
-		"t_lsif_references",
-		batch.MaxNumPostgresParameters,
-		[]string{"scheme", "manager", "name", "version"},
-		loadReferencesChannel(references),
-	); err != nil {
-		return err
-	}
-
-	// Insert the values from the temporary table into the target table. We select a
-	// parameterized dump id here since it is the same for all rows in this operation.
-	return tx.Exec(ctx, sqlf.Sprintf(updateReferencesInsertQuery, dumpID))
+		// Insert the values from the temporary table into the target table. We select a
+		// parameterized dump id here since it is the same for all rows in this operation.
+		return tx.db.Exec(ctx, sqlf.Sprintf(updateReferencesInsertQuery, dumpID))
+	})
 }
 
 const updateReferencesTemporaryTableQuery = `

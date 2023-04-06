@@ -90,88 +90,84 @@ func (s *store) UpdateUploadsVisibleToCommits(
 	})
 	defer endObservation(1, observation.Args{})
 
-	tx, err := s.db.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	// Determine the retention policy for this repository
-	maxAgeForNonStaleBranches, maxAgeForNonStaleTags, err = refineRetentionConfiguration(ctx, tx, repositoryID, maxAgeForNonStaleBranches, maxAgeForNonStaleTags)
-	if err != nil {
-		return err
-	}
-	trace.AddEvent("TODO Domain Owner",
-		attribute.String("maxAgeForNonStaleBranches", maxAgeForNonStaleBranches.String()),
-		attribute.String("maxAgeForNonStaleTags", maxAgeForNonStaleTags.String()))
-
-	// Pull all queryable upload metadata known to this repository so we can correlate
-	// it with the current  commit graph.
-	commitGraphView, err := scanCommitGraphView(tx.Query(ctx, sqlf.Sprintf(calculateVisibleUploadsCommitGraphQuery, repositoryID)))
-	if err != nil {
-		return err
-	}
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("numCommitGraphViewMetaKeys", len(commitGraphView.Meta)),
-		attribute.Int("numCommitGraphViewTokenKeys", len(commitGraphView.Tokens)))
-
-	// Determine which uploads are visible to which commits for this repository
-	graph := commitgraph.NewGraph(commitGraph, commitGraphView)
-
-	pctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	// Return a structure holding several channels that are populated by a background goroutine.
-	// When we write this data to temporary tables, we have three consumers pulling values from
-	// these channels in parallel. We need to make sure that once we return from this function that
-	// the producer routine shuts down. This prevents the producer from leaking if there is an
-	// error in one of the consumers before all values have been emitted.
-	sanitizedInput := sanitizeCommitInput(pctx, graph, refDescriptions, maxAgeForNonStaleBranches, maxAgeForNonStaleTags)
-
-	// Write the graph into temporary tables in Postgres
-	if err := s.writeVisibleUploads(ctx, sanitizedInput, tx); err != nil {
-		return err
-	}
-
-	// Persist data to permenant table: t_lsif_nearest_uploads -> lsif_nearest_uploads
-	if err := s.persistNearestUploads(ctx, repositoryID, tx); err != nil {
-		return err
-	}
-
-	// Persist data to permenant table: t_lsif_nearest_uploads_links -> lsif_nearest_uploads_links
-	if err := s.persistNearestUploadsLinks(ctx, repositoryID, tx); err != nil {
-		return err
-	}
-
-	// Persist data to permenant table: t_lsif_uploads_visible_at_tip -> lsif_uploads_visible_at_tip
-	if err := s.persistUploadsVisibleAtTip(ctx, repositoryID, tx); err != nil {
-		return err
-	}
-
-	if dirtyToken != 0 {
-		// If the user requests us to clear a dirty token, set the updated_token value to
-		// the dirty token if it wouldn't decrease the value. Dirty repositories are determined
-		// by having a non-equal dirty and update token, and we want the most recent upload
-		// token to win this write.
-		nowTimestamp := sqlf.Sprintf("transaction_timestamp()")
-		if !now.IsZero() {
-			nowTimestamp = sqlf.Sprintf("%s", now)
-		}
-		if err := tx.Exec(ctx, sqlf.Sprintf(calculateVisibleUploadsDirtyRepositoryQuery, dirtyToken, nowTimestamp, repositoryID)); err != nil {
+	return s.withTransaction(ctx, func(tx *store) error {
+		// Determine the retention policy for this repository
+		maxAgeForNonStaleBranches, maxAgeForNonStaleTags, err = refineRetentionConfiguration(ctx, tx.db, repositoryID, maxAgeForNonStaleBranches, maxAgeForNonStaleTags)
+		if err != nil {
 			return err
 		}
-	}
+		trace.AddEvent("TODO Domain Owner",
+			attribute.String("maxAgeForNonStaleBranches", maxAgeForNonStaleBranches.String()),
+			attribute.String("maxAgeForNonStaleTags", maxAgeForNonStaleTags.String()))
 
-	// All completed uploads are now visible. Mark any uploads queued for deletion as deleted as
-	// they are no longer reachable from the commit graph and cannot be used to fulfill any API
-	// requests.
-	unset, _ := tx.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "upload not reachable within the commit graph")
-	defer unset(ctx)
-	if err := tx.Exec(ctx, sqlf.Sprintf(calculateVisibleUploadsDeleteUploadsQueuedForDeletionQuery, repositoryID)); err != nil {
-		return err
-	}
+		// Pull all queryable upload metadata known to this repository so we can correlate
+		// it with the current  commit graph.
+		commitGraphView, err := scanCommitGraphView(tx.db.Query(ctx, sqlf.Sprintf(calculateVisibleUploadsCommitGraphQuery, repositoryID)))
+		if err != nil {
+			return err
+		}
+		trace.AddEvent("TODO Domain Owner",
+			attribute.Int("numCommitGraphViewMetaKeys", len(commitGraphView.Meta)),
+			attribute.Int("numCommitGraphViewTokenKeys", len(commitGraphView.Tokens)))
 
-	return nil
+		// Determine which uploads are visible to which commits for this repository
+		graph := commitgraph.NewGraph(commitGraph, commitGraphView)
+
+		pctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+
+		// Return a structure holding several channels that are populated by a background goroutine.
+		// When we write this data to temporary tables, we have three consumers pulling values from
+		// these channels in parallel. We need to make sure that once we return from this function that
+		// the producer routine shuts down. This prevents the producer from leaking if there is an
+		// error in one of the consumers before all values have been emitted.
+		sanitizedInput := sanitizeCommitInput(pctx, graph, refDescriptions, maxAgeForNonStaleBranches, maxAgeForNonStaleTags)
+
+		// Write the graph into temporary tables in Postgres
+		if err := s.writeVisibleUploads(ctx, sanitizedInput, tx.db); err != nil {
+			return err
+		}
+
+		// Persist data to permenant table: t_lsif_nearest_uploads -> lsif_nearest_uploads
+		if err := s.persistNearestUploads(ctx, repositoryID, tx.db); err != nil {
+			return err
+		}
+
+		// Persist data to permenant table: t_lsif_nearest_uploads_links -> lsif_nearest_uploads_links
+		if err := s.persistNearestUploadsLinks(ctx, repositoryID, tx.db); err != nil {
+			return err
+		}
+
+		// Persist data to permenant table: t_lsif_uploads_visible_at_tip -> lsif_uploads_visible_at_tip
+		if err := s.persistUploadsVisibleAtTip(ctx, repositoryID, tx.db); err != nil {
+			return err
+		}
+
+		if dirtyToken != 0 {
+			// If the user requests us to clear a dirty token, set the updated_token value to
+			// the dirty token if it wouldn't decrease the value. Dirty repositories are determined
+			// by having a non-equal dirty and update token, and we want the most recent upload
+			// token to win this write.
+			nowTimestamp := sqlf.Sprintf("transaction_timestamp()")
+			if !now.IsZero() {
+				nowTimestamp = sqlf.Sprintf("%s", now)
+			}
+			if err := tx.db.Exec(ctx, sqlf.Sprintf(calculateVisibleUploadsDirtyRepositoryQuery, dirtyToken, nowTimestamp, repositoryID)); err != nil {
+				return err
+			}
+		}
+
+		// All completed uploads are now visible. Mark any uploads queued for deletion as deleted as
+		// they are no longer reachable from the commit graph and cannot be used to fulfill any API
+		// requests.
+		unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "upload not reachable within the commit graph")
+		defer unset(ctx)
+		if err := tx.db.Exec(ctx, sqlf.Sprintf(calculateVisibleUploadsDeleteUploadsQueuedForDeletionQuery, repositoryID)); err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
 
 const calculateVisibleUploadsCommitGraphQuery = `

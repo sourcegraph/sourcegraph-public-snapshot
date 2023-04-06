@@ -13,14 +13,11 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsShared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -117,17 +114,13 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 	}
 
 	return newRepositorySummaryResolver(
-		r.uploadSvc,
-		r.policySvc,
-		r.gitserverClient,
-		r.siteAdminChecker,
-		r.repoStore,
 		r.locationResolverFactory.Create(),
 		summary,
 		inferredAvailableIndexersResolver,
 		limitErr,
 		r.prefetcherFactory.Create(),
 		errTracer,
+		r.preciseIndexResolverFactory,
 	), nil
 }
 
@@ -292,17 +285,13 @@ func (r *codeIntelRepositoryWithErrorResolver) Count() int32 {
 //
 
 type repositorySummaryResolver struct {
-	uploadsSvc        UploadsService
-	policySvc         PolicyService
-	gitserverClient   gitserver.Client
-	siteAdminChecker  sharedresolvers.SiteAdminChecker
-	repoStore         database.RepoStore
-	summary           RepositorySummary
-	availableIndexers []inferredAvailableIndexers2
-	limitErr          error
-	prefetcher        *Prefetcher
-	locationResolver  *gitresolvers.CachedLocationResolver
-	errTracer         *observation.ErrCollector
+	summary                     RepositorySummary
+	availableIndexers           []inferredAvailableIndexers2
+	limitErr                    error
+	prefetcher                  *Prefetcher
+	locationResolver            *gitresolvers.CachedLocationResolver
+	errTracer                   *observation.ErrCollector
+	preciseIndexResolverFactory *PreciseIndexResolverFactory
 }
 
 type inferredAvailableIndexers2 struct {
@@ -311,30 +300,22 @@ type inferredAvailableIndexers2 struct {
 }
 
 func newRepositorySummaryResolver(
-	uploadsSvc UploadsService,
-	policySvc PolicyService,
-	gitserverClient gitserver.Client,
-	siteAdminChecker sharedresolvers.SiteAdminChecker,
-	repoStore database.RepoStore,
 	locationResolver *gitresolvers.CachedLocationResolver,
 	summary RepositorySummary,
 	availableIndexers []inferredAvailableIndexers2,
 	limitErr error,
 	prefetcher *Prefetcher,
 	errTracer *observation.ErrCollector,
+	preciseIndexResolverFactory *PreciseIndexResolverFactory,
 ) resolverstubs.CodeIntelRepositorySummaryResolver {
 	return &repositorySummaryResolver{
-		uploadsSvc:        uploadsSvc,
-		policySvc:         policySvc,
-		gitserverClient:   gitserverClient,
-		siteAdminChecker:  siteAdminChecker,
-		repoStore:         repoStore,
-		summary:           summary,
-		availableIndexers: availableIndexers,
-		limitErr:          limitErr,
-		prefetcher:        prefetcher,
-		locationResolver:  locationResolver,
-		errTracer:         errTracer,
+		summary:                     summary,
+		availableIndexers:           availableIndexers,
+		limitErr:                    limitErr,
+		prefetcher:                  prefetcher,
+		locationResolver:            locationResolver,
+		errTracer:                   errTracer,
+		preciseIndexResolverFactory: preciseIndexResolverFactory,
 	}
 }
 
@@ -353,7 +334,7 @@ func (r *repositorySummaryResolver) RecentActivity(ctx context.Context) ([]resol
 		for _, upload := range recentUploads.Uploads {
 			upload := upload
 
-			resolver, err := NewPreciseIndexResolver(ctx, r.uploadsSvc, r.policySvc, r.gitserverClient, r.prefetcher, r.siteAdminChecker, r.repoStore, r.locationResolver, r.errTracer, &upload, nil)
+			resolver, err := r.preciseIndexResolverFactory.Create(ctx, r.prefetcher, r.locationResolver, r.errTracer, &upload, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -372,7 +353,7 @@ func (r *repositorySummaryResolver) RecentActivity(ctx context.Context) ([]resol
 				}
 			}
 
-			resolver, err := NewPreciseIndexResolver(ctx, r.uploadsSvc, r.policySvc, r.gitserverClient, r.prefetcher, r.siteAdminChecker, r.repoStore, r.locationResolver, r.errTracer, nil, &index)
+			resolver, err := r.preciseIndexResolverFactory.Create(ctx, r.prefetcher, r.locationResolver, r.errTracer, nil, &index)
 			if err != nil {
 				return nil, err
 			}

@@ -41,6 +41,8 @@ spec:
               value: "false"
             - name: EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY
               value: 1Gi
+            - name: EXECUTOR_DOCKER_ADD_HOST_GATEWAY
+              value: "true"
           volumeMounts:
             - mountPath: /data
               name: sg-executor-volume

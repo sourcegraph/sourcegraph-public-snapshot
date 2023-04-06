@@ -37,7 +37,7 @@ type preciseIndexResolver struct {
 	index            *uploadsshared.Index
 }
 
-func NewPreciseIndexResolver(
+func newPreciseIndexResolver(
 	ctx context.Context,
 	uploadsSvc UploadsService,
 	policySvc PolicyService,

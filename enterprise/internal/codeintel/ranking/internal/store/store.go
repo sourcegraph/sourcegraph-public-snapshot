@@ -15,9 +15,6 @@ import (
 )
 
 type Store interface {
-	Transact(ctx context.Context) (Store, error)
-	Done(err error) error
-
 	// Retrieval
 	GetStarRank(ctx context.Context, repoName api.RepoName) (float64, error)
 	GetDocumentRanks(ctx context.Context, repoName api.RepoName) (map[string]float64, bool, error)
@@ -61,10 +58,6 @@ type store struct {
 
 // New returns a new ranking store.
 func New(observationCtx *observation.Context, db database.DB) Store {
-	return newInternal(observationCtx, db)
-}
-
-func newInternal(observationCtx *observation.Context, db database.DB) *store {
 	return &store{
 		db:         basestore.NewWithHandle(db.Handle()),
 		logger:     logger.Scoped("ranking.store", ""),
@@ -72,11 +65,15 @@ func newInternal(observationCtx *observation.Context, db database.DB) *store {
 	}
 }
 
-func (s *store) Transact(ctx context.Context) (Store, error) {
-	return s.transact(ctx)
+func (s *store) WithTransaction(ctx context.Context, f func(s Store) error) error {
+	return s.withTransaction(ctx, func(s *store) error { return f(s) })
 }
 
-func (s *store) transact(ctx context.Context) (*store, error) {
+func (s *store) withTransaction(ctx context.Context, f func(s *store) error) error {
+	return basestore.InTransaction[*store](ctx, s, f)
+}
+
+func (s *store) Transact(ctx context.Context) (*store, error) {
 	tx, err := s.db.Transact(ctx)
 	if err != nil {
 		return nil, err
@@ -92,12 +89,3 @@ func (s *store) transact(ctx context.Context) (*store, error) {
 func (s *store) Done(err error) error {
 	return s.db.Done(err)
 }
-
-//
-//
-
-// TODO - configure these via envvar
-const (
-	vacuumBatchSize = 100
-	threshold       = time.Duration(1) * time.Hour
-)

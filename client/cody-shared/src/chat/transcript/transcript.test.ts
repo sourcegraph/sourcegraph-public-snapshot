@@ -244,4 +244,61 @@ describe('Transcript', () => {
         ]
         assert.deepStrictEqual(prompt, expectedPrompt)
     })
+
+    it('adds context for last interaction with non-empty context', async () => {
+        const embeddings = new MockEmbeddingsClient({
+            search: async () =>
+                Promise.resolve({
+                    codeResults: [{ fileName: 'src/main.go', startLine: 0, endLine: 1, content: 'package main' }],
+                    textResults: [{ fileName: 'docs/README.md', startLine: 0, endLine: 1, content: '# Main' }],
+                }),
+        })
+        const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) })
+        const codebaseContext = new CodebaseContext('embeddings', embeddings, defaultKeywordContextFetcher)
+
+        const chatQuestionRecipe = new ChatQuestion()
+        const transcript = new Transcript()
+
+        const firstInteraction = await chatQuestionRecipe.getInteraction(
+            'how do batch changes work in sourcegraph',
+            defaultEditor,
+            intentDetector,
+            codebaseContext
+        )
+        transcript.addInteraction(firstInteraction)
+        transcript.addAssistantResponse('Smartly.')
+
+        const secondInteraction = await chatQuestionRecipe.getInteraction(
+            'how do access tokens work in sourcegraph',
+            defaultEditor,
+            intentDetector,
+            codebaseContext
+        )
+        transcript.addInteraction(secondInteraction)
+        transcript.addAssistantResponse('By setting the Authorization header.')
+
+        const thirdInteraction = await chatQuestionRecipe.getInteraction(
+            'how do to delete them',
+            defaultEditor,
+            // We use the default intent detector to disable context fetching.
+            defaultIntentDetector,
+            codebaseContext
+        )
+        transcript.addInteraction(thirdInteraction)
+
+        const prompt = await transcript.toPrompt()
+        const expectedPrompt = [
+            { speaker: 'human', text: 'how do batch changes work in sourcegraph' },
+            { speaker: 'assistant', text: 'Smartly.' },
+            { speaker: 'human', text: 'Use the following text from file `docs/README.md`:\n# Main' },
+            { speaker: 'assistant', text: 'Ok.' },
+            { speaker: 'human', text: 'Use following code snippet from file `src/main.go`:\n```go\npackage main\n```' },
+            { speaker: 'assistant', text: 'Ok.' },
+            { speaker: 'human', text: 'how do access tokens work in sourcegraph' },
+            { speaker: 'assistant', text: 'By setting the Authorization header.' },
+            { speaker: 'human', text: 'how do to delete them' },
+            { speaker: 'assistant', text: '' },
+        ]
+        assert.deepStrictEqual(prompt, expectedPrompt)
+    })
 })

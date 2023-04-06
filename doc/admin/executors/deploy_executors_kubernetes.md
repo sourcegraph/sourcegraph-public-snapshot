@@ -18,13 +18,17 @@ available [here](https://github.com/sourcegraph/deploy-sourcegraph-helm).
 
 ### RBAC Roles
 
-Executors interact with the Kubernetes API to handle jobs. The following are the RBAC Roles needed to run Executors on Kubernetes.
+Executors interact with the Kubernetes API to handle jobs. The following are the RBAC Roles needed to run Executors on
+Kubernetes.
 
 | API Groups | Resources          | Verbs                     | Reason                                                                                    |
 |------------|--------------------|---------------------------|-------------------------------------------------------------------------------------------|
 | `batch`    | `jobs`             | `create`, `delete`, `get` | Executors create Job pods to run processes. Once Jobs are completed, they are cleaned up. |
 |            | `pods`, `pods/log` | `get`, `list`, `watch`    | Executors need to look up and steam logs from the Job Pods.                               |
 
+See
+the [example Role YAML](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/enterprise/cmd/executor/kubernetes/executor-batches.Role.yml)
+for details.
 
 ### Environment Variables
 
@@ -44,12 +48,16 @@ set on the Executor `Deployment` and will configure the `Job`s that it spawns.
 | EXECUTOR_KUBERNETES_RESOURCE_LIMIT_MEMORY                    | `12Gi`            | The maximum memory resource for Kubernetes Jobs.                                                                                       |
 | EXECUTOR_KUBERNETES_RESOURCE_REQUEST_CPU                     | N/A               | The minimum CPU resource for Kubernetes Jobs.                                                                                          |
 | EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY                  | `12Gi`            | The minimum memory resource for Kubernetes Jobs.                                                                                       |
+| KUBERNETES_JOB_RETRY_BACKOFF_LIMIT                           | `600`             | The number of attempts to try when checking if a Job has completed.                                                                    |
+| KUBERNETES_JOB_RETRY_BACKOFF_DURATION                        | `100ms`           | The duration of the backoff when checking if a Job has completed.                                                                      |
 
 See other possible Environment Variables [here](./deploy_executors_binary.md#step-2-setup-environment-variables).
 
 ### Example Configuration YAML
 
-See the [local development YAML](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/enterprise/cmd/executor/kubernetes/executor-batches.yml) for an example of how to configure the Executor in Kubernetes.
+See
+the [local development YAMLs](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/enterprise/cmd/executor/kubernetes)
+for an example of how to configure the Executor in Kubernetes.
 
 ## Deployment
 
@@ -59,13 +67,16 @@ See [RBAC Roles](#rbac-roles) for more information.
 ### Step-by-step Guide
 
 Ensure you have the following tools installed.
+
 - [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
 
 #### Deployment via kubectl (Kubernetes manifests)
 
 1. Clone the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository to your local machine.
 2. Run `cd deploy-sourcegraph/configure/executors`.
-3. Configure the [Executor environment variables](https://docs.sourcegraph.com/admin/deploy_executors_binary#step-2-setup-environment-variables) in the `executor/executor.deployment.yaml` file.
+3. Configure
+   the [Executor environment variables](https://docs.sourcegraph.com/admin/deploy_executors_binary#step-2-setup-environment-variables)
+   in the `executor/executor.deployment.yaml` file.
 4. Run  `kubectl apply -f . --recursive` to deploy all components.
 5. Confirm executors are working by checking the _Executors_ page under _Site Admin_ > _Executors_ > _Instances_ .
 
@@ -73,6 +84,7 @@ Ensure you have the following tools installed.
 
 Executors deployed on Kubernetes do not use [Firecracker](executors.md#how-it-works).
 
-If you have security concerns, consider deploying via [terraform](deploy_executors_terraform.md) or [installing the binary](deploy_executors_binary.md) directly.
+If you have security concerns, consider deploying via [terraform](deploy_executors_terraform.md)
+or [installing the binary](deploy_executors_binary.md) directly.
 
 
