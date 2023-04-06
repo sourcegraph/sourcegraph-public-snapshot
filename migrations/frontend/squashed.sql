@@ -1575,6 +1575,26 @@ CREATE SEQUENCE cm_webhooks_id_seq
 
 ALTER SEQUENCE cm_webhooks_id_seq OWNED BY cm_webhooks.id;
 
+CREATE TABLE code_embeddings (
+    id integer NOT NULL,
+    version_id integer NOT NULL,
+    embedding vector(1536) NOT NULL,
+    file_name text NOT NULL,
+    start_line integer NOT NULL,
+    end_line integer NOT NULL,
+    rank double precision NOT NULL
+);
+
+CREATE SEQUENCE code_embeddings_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE code_embeddings_id_seq OWNED BY code_embeddings.id;
+
 CREATE TABLE codeintel_autoindex_queue (
     id integer NOT NULL,
     repository_id integer NOT NULL,
@@ -1933,6 +1953,22 @@ CREATE SEQUENCE discussion_threads_target_repo_id_seq
     CACHE 1;
 
 ALTER SEQUENCE discussion_threads_target_repo_id_seq OWNED BY discussion_threads_target_repo.id;
+
+CREATE TABLE embedding_versions (
+    id integer NOT NULL,
+    repo_id integer NOT NULL,
+    revision text NOT NULL
+);
+
+CREATE SEQUENCE embedding_versions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE embedding_versions_id_seq OWNED BY embedding_versions.id;
 
 CREATE TABLE event_logs (
     id bigint NOT NULL,
@@ -3753,22 +3789,6 @@ CREATE SEQUENCE repo_embedding_jobs_id_seq
 
 ALTER SEQUENCE repo_embedding_jobs_id_seq OWNED BY repo_embedding_jobs.id;
 
-CREATE TABLE repo_embeddings (
-    id integer NOT NULL,
-    repo_id integer NOT NULL,
-    embedding vector(1536) NOT NULL
-);
-
-CREATE SEQUENCE repo_embeddings_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE repo_embeddings_id_seq OWNED BY repo_embeddings.id;
-
 CREATE SEQUENCE repo_id_seq
     START WITH 1
     INCREMENT BY 1
@@ -4073,6 +4093,26 @@ CREATE SEQUENCE temporary_settings_id_seq
     CACHE 1;
 
 ALTER SEQUENCE temporary_settings_id_seq OWNED BY temporary_settings.id;
+
+CREATE TABLE text_embeddings (
+    id integer NOT NULL,
+    version_id integer NOT NULL,
+    embedding vector(1536) NOT NULL,
+    file_name text NOT NULL,
+    start_line integer NOT NULL,
+    end_line integer NOT NULL,
+    rank double precision NOT NULL
+);
+
+CREATE SEQUENCE text_embeddings_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE text_embeddings_id_seq OWNED BY text_embeddings.id;
 
 CREATE VIEW tracking_changeset_specs_and_changesets AS
  SELECT changeset_specs.id AS changeset_spec_id,
@@ -4422,6 +4462,8 @@ ALTER TABLE ONLY cm_trigger_jobs ALTER COLUMN id SET DEFAULT nextval('cm_trigger
 
 ALTER TABLE ONLY cm_webhooks ALTER COLUMN id SET DEFAULT nextval('cm_webhooks_id_seq'::regclass);
 
+ALTER TABLE ONLY code_embeddings ALTER COLUMN id SET DEFAULT nextval('code_embeddings_id_seq'::regclass);
+
 ALTER TABLE ONLY codeintel_autoindex_queue ALTER COLUMN id SET DEFAULT nextval('codeintel_autoindex_queue_id_seq'::regclass);
 
 ALTER TABLE ONLY codeintel_initial_path_ranks ALTER COLUMN id SET DEFAULT nextval('codeintel_initial_path_ranks_id_seq'::regclass);
@@ -4455,6 +4497,8 @@ ALTER TABLE ONLY discussion_comments ALTER COLUMN id SET DEFAULT nextval('discus
 ALTER TABLE ONLY discussion_threads ALTER COLUMN id SET DEFAULT nextval('discussion_threads_id_seq'::regclass);
 
 ALTER TABLE ONLY discussion_threads_target_repo ALTER COLUMN id SET DEFAULT nextval('discussion_threads_target_repo_id_seq'::regclass);
+
+ALTER TABLE ONLY embedding_versions ALTER COLUMN id SET DEFAULT nextval('embedding_versions_id_seq'::regclass);
 
 ALTER TABLE ONLY event_logs ALTER COLUMN id SET DEFAULT nextval('event_logs_id_seq'::regclass);
 
@@ -4546,8 +4590,6 @@ ALTER TABLE ONLY repo ALTER COLUMN id SET DEFAULT nextval('repo_id_seq'::regclas
 
 ALTER TABLE ONLY repo_embedding_jobs ALTER COLUMN id SET DEFAULT nextval('repo_embedding_jobs_id_seq'::regclass);
 
-ALTER TABLE ONLY repo_embeddings ALTER COLUMN id SET DEFAULT nextval('repo_embeddings_id_seq'::regclass);
-
 ALTER TABLE ONLY roles ALTER COLUMN id SET DEFAULT nextval('roles_id_seq'::regclass);
 
 ALTER TABLE ONLY saved_searches ALTER COLUMN id SET DEFAULT nextval('saved_searches_id_seq'::regclass);
@@ -4563,6 +4605,8 @@ ALTER TABLE ONLY survey_responses ALTER COLUMN id SET DEFAULT nextval('survey_re
 ALTER TABLE ONLY teams ALTER COLUMN id SET DEFAULT nextval('teams_id_seq'::regclass);
 
 ALTER TABLE ONLY temporary_settings ALTER COLUMN id SET DEFAULT nextval('temporary_settings_id_seq'::regclass);
+
+ALTER TABLE ONLY text_embeddings ALTER COLUMN id SET DEFAULT nextval('text_embeddings_id_seq'::regclass);
 
 ALTER TABLE ONLY user_credentials ALTER COLUMN id SET DEFAULT nextval('user_credentials_id_seq'::regclass);
 
@@ -4682,6 +4726,9 @@ ALTER TABLE ONLY cm_trigger_jobs
 ALTER TABLE ONLY cm_webhooks
     ADD CONSTRAINT cm_webhooks_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY code_embeddings
+    ADD CONSTRAINT code_embeddings_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY codeintel_autoindex_queue
     ADD CONSTRAINT codeintel_autoindex_queue_pkey PRIMARY KEY (id);
 
@@ -4735,6 +4782,12 @@ ALTER TABLE ONLY discussion_threads
 
 ALTER TABLE ONLY discussion_threads_target_repo
     ADD CONSTRAINT discussion_threads_target_repo_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY embedding_versions
+    ADD CONSTRAINT embedding_versions_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY embedding_versions
+    ADD CONSTRAINT embedding_versions_repo_id_revision_key UNIQUE (repo_id, revision);
 
 ALTER TABLE ONLY event_logs_export_allowlist
     ADD CONSTRAINT event_logs_export_allowlist_pkey PRIMARY KEY (id);
@@ -4940,9 +4993,6 @@ ALTER TABLE ONLY registry_extensions
 ALTER TABLE ONLY repo_embedding_jobs
     ADD CONSTRAINT repo_embedding_jobs_pkey PRIMARY KEY (id);
 
-ALTER TABLE ONLY repo_embeddings
-    ADD CONSTRAINT repo_embeddings_pkey PRIMARY KEY (id);
-
 ALTER TABLE ONLY repo_kvps
     ADD CONSTRAINT repo_kvps_pkey PRIMARY KEY (repo_id, key) INCLUDE (value);
 
@@ -4999,6 +5049,9 @@ ALTER TABLE ONLY temporary_settings
 
 ALTER TABLE ONLY temporary_settings
     ADD CONSTRAINT temporary_settings_user_id_key UNIQUE (user_id);
+
+ALTER TABLE ONLY text_embeddings
+    ADD CONSTRAINT text_embeddings_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY user_credentials
     ADD CONSTRAINT user_credentials_domain_user_id_external_service_type_exter_key UNIQUE (domain, user_id, external_service_type, external_service_id);
@@ -5754,6 +5807,9 @@ ALTER TABLE ONLY cm_webhooks
 ALTER TABLE ONLY cm_webhooks
     ADD CONSTRAINT cm_webhooks_monitor_fkey FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY code_embeddings
+    ADD CONSTRAINT code_embeddings_version_id_fkey FOREIGN KEY (version_id) REFERENCES embedding_versions(id);
+
 ALTER TABLE ONLY codeintel_ranking_exports
     ADD CONSTRAINT codeintel_ranking_exports_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL;
 
@@ -5783,6 +5839,9 @@ ALTER TABLE ONLY discussion_threads_target_repo
 
 ALTER TABLE ONLY discussion_threads_target_repo
     ADD CONSTRAINT discussion_threads_target_repo_thread_id_fkey FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY embedding_versions
+    ADD CONSTRAINT embedding_versions_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id);
 
 ALTER TABLE ONLY executor_secret_access_logs
     ADD CONSTRAINT executor_secret_access_logs_executor_secret_id_fkey FOREIGN KEY (executor_secret_id) REFERENCES executor_secrets(id) ON DELETE CASCADE;
@@ -5973,9 +6032,6 @@ ALTER TABLE ONLY registry_extensions
 ALTER TABLE ONLY registry_extensions
     ADD CONSTRAINT registry_extensions_publisher_user_id_fkey FOREIGN KEY (publisher_user_id) REFERENCES users(id);
 
-ALTER TABLE ONLY repo_embeddings
-    ADD CONSTRAINT repo_embeddings_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
-
 ALTER TABLE ONLY repo_kvps
     ADD CONSTRAINT repo_kvps_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
@@ -6047,6 +6103,9 @@ ALTER TABLE ONLY teams
 
 ALTER TABLE ONLY temporary_settings
     ADD CONSTRAINT temporary_settings_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY text_embeddings
+    ADD CONSTRAINT text_embeddings_version_id_fkey FOREIGN KEY (version_id) REFERENCES embedding_versions(id);
 
 ALTER TABLE ONLY user_credentials
     ADD CONSTRAINT user_credentials_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;

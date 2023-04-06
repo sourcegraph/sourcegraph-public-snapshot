@@ -780,6 +780,24 @@ Webhook actions configured on code monitors
 
 **url**: The webhook URL we send the code monitor event to
 
+# Table "public.code_embeddings"
+```
+   Column   |       Type       | Collation | Nullable |                   Default                   
+------------+------------------+-----------+----------+---------------------------------------------
+ id         | integer          |           | not null | nextval('code_embeddings_id_seq'::regclass)
+ version_id | integer          |           | not null | 
+ embedding  | vector           |           | not null | 
+ file_name  | text             |           | not null | 
+ start_line | integer          |           | not null | 
+ end_line   | integer          |           | not null | 
+ rank       | double precision |           | not null | 
+Indexes:
+    "code_embeddings_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "code_embeddings_version_id_fkey" FOREIGN KEY (version_id) REFERENCES embedding_versions(id)
+
+```
+
 # Table "public.codeintel_autoindex_queue"
 ```
     Column     |           Type           | Collation | Nullable |                        Default                        
@@ -1157,6 +1175,24 @@ Foreign-key constraints:
     "discussion_threads_target_repo_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE CASCADE
 Referenced by:
     TABLE "discussion_threads" CONSTRAINT "discussion_threads_target_repo_id_fk" FOREIGN KEY (target_repo_id) REFERENCES discussion_threads_target_repo(id) ON DELETE CASCADE
+
+```
+
+# Table "public.embedding_versions"
+```
+  Column  |  Type   | Collation | Nullable |                    Default                     
+----------+---------+-----------+----------+------------------------------------------------
+ id       | integer |           | not null | nextval('embedding_versions_id_seq'::regclass)
+ repo_id  | integer |           | not null | 
+ revision | text    |           | not null | 
+Indexes:
+    "embedding_versions_pkey" PRIMARY KEY, btree (id)
+    "embedding_versions_repo_id_revision_key" UNIQUE CONSTRAINT, btree (repo_id, revision)
+Foreign-key constraints:
+    "embedding_versions_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id)
+Referenced by:
+    TABLE "code_embeddings" CONSTRAINT "code_embeddings_version_id_fkey" FOREIGN KEY (version_id) REFERENCES embedding_versions(id)
+    TABLE "text_embeddings" CONSTRAINT "text_embeddings_version_id_fkey" FOREIGN KEY (version_id) REFERENCES embedding_versions(id)
 
 ```
 
@@ -3043,12 +3079,12 @@ Referenced by:
     TABLE "cm_last_searched" CONSTRAINT "cm_last_searched_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "codeowners" CONSTRAINT "codeowners_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "embedding_versions" CONSTRAINT "embedding_versions_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id)
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "gitserver_repos" CONSTRAINT "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_retention_configuration" CONSTRAINT "lsif_retention_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "permission_sync_jobs" CONSTRAINT "permission_sync_jobs_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
-    TABLE "repo_embeddings" CONSTRAINT "repo_embeddings_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "repo_kvps" CONSTRAINT "repo_kvps_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "sub_repo_permissions" CONSTRAINT "sub_repo_permissions_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
@@ -3087,20 +3123,6 @@ Triggers:
  revision          | text                     |           | not null | 
 Indexes:
     "repo_embedding_jobs_pkey" PRIMARY KEY, btree (id)
-
-```
-
-# Table "public.repo_embeddings"
-```
-  Column   |  Type   | Collation | Nullable |                   Default                   
------------+---------+-----------+----------+---------------------------------------------
- id        | integer |           | not null | nextval('repo_embeddings_id_seq'::regclass)
- repo_id   | integer |           | not null | 
- embedding | vector  |           | not null | 
-Indexes:
-    "repo_embeddings_pkey" PRIMARY KEY, btree (id)
-Foreign-key constraints:
-    "repo_embeddings_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 
 ```
 
@@ -3491,6 +3513,24 @@ Stores per-user temporary settings used in the UI, for example, which modals hav
 **contents**: JSON-encoded temporary settings.
 
 **user_id**: The ID of the user the settings will be saved for.
+
+# Table "public.text_embeddings"
+```
+   Column   |       Type       | Collation | Nullable |                   Default                   
+------------+------------------+-----------+----------+---------------------------------------------
+ id         | integer          |           | not null | nextval('text_embeddings_id_seq'::regclass)
+ version_id | integer          |           | not null | 
+ embedding  | vector           |           | not null | 
+ file_name  | text             |           | not null | 
+ start_line | integer          |           | not null | 
+ end_line   | integer          |           | not null | 
+ rank       | double precision |           | not null | 
+Indexes:
+    "text_embeddings_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "text_embeddings_version_id_fkey" FOREIGN KEY (version_id) REFERENCES embedding_versions(id)
+
+```
 
 # Table "public.user_credentials"
 ```

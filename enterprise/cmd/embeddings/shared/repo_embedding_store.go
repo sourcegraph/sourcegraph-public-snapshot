@@ -113,7 +113,7 @@ const embeddingsQueryFmtstr = `
 	SELECT v.file_name, v.start_line, v.end_line
 	FROM %s AS v
 	WHERE v.version_id = $1
-	ORDER BY 1 - (v.embedding <=> $2::vector)
+	ORDER BY v.embedding <=> $2::vector
 	LIMIT $3
 `
 
