@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 
@@ -76,6 +77,18 @@ func NewDockerSpec(workingDir string, image string, scriptPath string, spec Spec
 }
 
 func formatDockerCommand(hostDir string, image string, scriptPath string, spec Spec, options DockerOptions) []string {
+	o, err := exec.Command("whoami").CombinedOutput()
+	if err != nil {
+		fmt.Println("whoami error", err)
+	}
+	fmt.Println("whoami", string(o))
+
+	o, err = exec.Command("ls", "-laR", filepath.Join(hostDir)).CombinedOutput()
+	if err != nil {
+		fmt.Println("ls error", err)
+	}
+	fmt.Println("ls", string(o))
+
 	return Flatten(
 		"docker",
 		dockerConfigFlag(options.ConfigPath),
