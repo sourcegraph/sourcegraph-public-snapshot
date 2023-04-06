@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -183,12 +182,6 @@ func writeFiles(ctx context.Context, store FilesStore, job types.Job, workspaceF
 		}
 
 		handle.Write([]byte(fmt.Sprintf("Wrote %s in %s\n", path, time.Since(start))))
-
-		o, err := exec.CommandContext(ctx, "ls", "-la", path).CombinedOutput()
-		if err != nil {
-			handle.Write([]byte(fmt.Sprintf("Failed to run ls -la %s: %s", path, err)))
-		}
-		handle.Write(o)
 	}
 
 	return nil
