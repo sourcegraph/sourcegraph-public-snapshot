@@ -17,24 +17,6 @@ func BazelOperations(optional bool) *operations.Set {
 	return ops
 }
 
-// BazelIncrementalMainOperations is a set of operations that only run on the main
-// branch and whose purpose is to gradually introduce invariants as we progress through
-// the migration.
-func BazelIncrementalMainOperations() *operations.Set {
-	optional := true
-
-	ops := operations.NewNamedSet("Bazel (optional)")
-	ops.Append(bazelAnalysisPhase(optional))
-	ops.Append(bazelTestWithDepends(optional, "bazel-analysis",
-		"//lib/...",
-		"//internal/...",
-		"//cmd/...",
-		"//enterprise/...",
-	))
-
-	return ops
-}
-
 func bazelRawCmd(args ...string) string {
 	pre := []string{
 		"bazel",
