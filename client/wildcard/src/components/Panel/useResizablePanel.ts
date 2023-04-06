@@ -90,6 +90,11 @@ export interface UseResizablePanelParameters {
     panelRef: React.MutableRefObject<HTMLDivElement | null>
 
     handleRef: React.MutableRefObject<HTMLDivElement | null>
+
+    /**
+     * Watch when the panel is resizing.
+     */
+    onResize?: (width: number) => void
 }
 
 export const useResizablePanel = ({
@@ -100,6 +105,7 @@ export const useResizablePanel = ({
     storageKey,
     maxSize,
     minSize,
+    onResize,
 }: UseResizablePanelParameters): PanelResizerState => {
     const sizeUpdates = useRef(new Subject<number>())
     const subscriptions = useRef(new Subscription())
@@ -115,9 +121,9 @@ export const useResizablePanel = ({
         const currentSubscriptions = subscriptions.current
 
         currentSubscriptions.add(
-            sizeUpdates.current
-                .pipe(distinctUntilChanged(), debounceTime(250))
-                .subscribe(size => savePanelSize(storageKey, size))
+            sizeUpdates.current.pipe(distinctUntilChanged(), debounceTime(250)).subscribe(size => {
+                savePanelSize(storageKey, size)
+            })
         )
 
         return () => {
@@ -146,6 +152,7 @@ export const useResizablePanel = ({
             if (isLessThanOrEqualMax(size, maxSize) && isGreaterThanOrEqualMin(size, minSize)) {
                 setPanelSize(size)
                 sizeUpdates.current.next(size)
+                onResize?.(size) // call the onResize callback function with the current panel size
             }
         }
 
