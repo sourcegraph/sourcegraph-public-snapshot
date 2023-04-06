@@ -17,6 +17,7 @@ import {
     Tooltip,
     RadioButton,
     useSessionStorage,
+    Code,
 } from '@sourcegraph/wildcard'
 
 import { INDEX_COMPLETED_STATES, INDEX_FAILURE_STATES } from '../constants'
@@ -121,7 +122,7 @@ export const BrainDot: React.FunctionComponent<BrainDotProps> = ({ repoName, com
                     <MenuDivider />
 
                     {visibleIndexesLoading && <LoadingSpinner className="mx-2" />}
-                    {visibleIndexes && visibleIndexes?.length > 0 && (
+                    {visibleIndexes && visibleIndexes.length > 0 && (
                         <MenuHeader>
                             <Tooltip content="Not intended for regular use">
                                 <span>Display debug information for uploaded index.</span>
@@ -129,6 +130,7 @@ export const BrainDot: React.FunctionComponent<BrainDotProps> = ({ repoName, com
                             {[
                                 <RadioButton
                                     id="none"
+                                    key="none"
                                     name="none"
                                     label="None"
                                     wrapperClassName="py-1"
@@ -138,27 +140,25 @@ export const BrainDot: React.FunctionComponent<BrainDotProps> = ({ repoName, com
                                         setIndexIDForSnapshotData(indexIDsForSnapshotData)
                                     }}
                                 />,
-                                ...visibleIndexes!!.map(index => {
-                                    return (
-                                        <Tooltip content={`Uploaded at ${index.uploadedAt}`} key={index.id}>
-                                            <RadioButton
-                                                id={index.id}
-                                                name={index.id}
-                                                checked={visibleIndexID === index.id}
-                                                wrapperClassName="py-1"
-                                                label={
-                                                    <>
-                                                        Index at <code>{index.inputCommit}</code>
-                                                    </>
-                                                }
-                                                onChange={() => {
-                                                    indexIDsForSnapshotData[repoName] = index.id
-                                                    setIndexIDForSnapshotData(indexIDsForSnapshotData)
-                                                }}
-                                            />
-                                        </Tooltip>
-                                    )
-                                }),
+                                ...visibleIndexes.map(index => (
+                                    <Tooltip content={`Uploaded at ${index.uploadedAt}`} key={index.id}>
+                                        <RadioButton
+                                            id={index.id}
+                                            name={index.id}
+                                            checked={visibleIndexID === index.id}
+                                            wrapperClassName="py-1"
+                                            label={
+                                                <>
+                                                    Index at <Code>{index.inputCommit.slice(0, 7)}</Code>
+                                                </>
+                                            }
+                                            onChange={() => {
+                                                indexIDsForSnapshotData[repoName] = index.id
+                                                setIndexIDForSnapshotData(indexIDsForSnapshotData)
+                                            }}
+                                        />
+                                    </Tooltip>
+                                )),
                             ]}
                         </MenuHeader>
                     )}
