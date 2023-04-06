@@ -666,7 +666,7 @@ func TestListFiles(t *testing.T) {
 	client := NewClient()
 	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) ([]string, error) {
 		return client.ListFiles(ctx, checker, repo, "HEAD", &protocol.ListFilesOpts{
-			Pattern: regexp.MustCompile("^dir/.*$"),
+			Pattern: regexp.MustCompile("file"),
 		})
 	})
 }
@@ -701,7 +701,7 @@ func runFileListingTest(t *testing.T,
 		t.Fatal(err)
 	}
 	want := []string{
-		"dir/file2", "dir/file3",
+		"dir/file2", "dir/file3", "file1",
 	}
 	if diff := cmp.Diff(want, files); diff != "" {
 		t.Fatal(diff)
