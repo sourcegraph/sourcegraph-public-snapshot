@@ -22,6 +22,7 @@ export interface AuthProvider {
         | 'gerrit'
         | 'azuredevops'
     displayName: string
+    displayPrefix?: string
     isBuiltin: boolean
     authenticationURL: string
     serviceID: string

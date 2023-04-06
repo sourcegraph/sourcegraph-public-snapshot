@@ -199,4 +199,22 @@ describe('SignInPage', () => {
 
         expect(render('/sign-in', { authenticatedUser: mockUser }).asFragment()).toMatchSnapshot()
     })
+
+    it('renders different prefix on provider buttons', () => {
+        const providers = authProviders.map(provider => ({ ...provider, displayPrefix: 'Just login through' }))
+
+        const rendered = render('/sign-in', { authProviders: providers })
+        expect(
+            within(rendered.baseElement)
+                .queryByText(txt => txt.includes('Just login through GitHub'))
+                ?.closest('a')
+        ).toBeInTheDocument()
+        expect(
+            within(rendered.baseElement)
+                .queryByText(txt => txt.includes('Just login through GitLab'))
+                ?.closest('a')
+        ).toBeInTheDocument()
+
+        expect(rendered.asFragment()).toMatchSnapshot()
+    })
 })
