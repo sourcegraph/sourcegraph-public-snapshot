@@ -5,6 +5,8 @@ set -ex
 # We build out of tree to prevent triggering dev watch scripts when we copy go
 # files.
 BUILDDIR=$(mktemp -d -t sgdockerbuild_XXXXXXX)
+TMP=$(mktemp -d -t sgprom_tmp_XXXXXXX)
+
 cleanup() {
   rm -rf "$BUILDDIR"
   rm -rf "$TMP"
@@ -16,7 +18,6 @@ BUILD_CACHE="--no-cache"
 if [[ "$CACHE" == "true" ]]; then
   BUILD_CACHE=""
 fi
-
 
 bazel build //docker-images/prometheus/cmd/prom-wrapper //monitoring:generate_config \
   --stamp \
@@ -32,7 +33,7 @@ TMP=$(mktemp -d -t sgprom_tmp_XXXXXXX)
 cp "$out" "$TMP"
 
 monitoring_cfg=$(bazel cquery //monitoring:generate_config --output=files)
-sudo cp "$monitoring_cfg" "$TMP"
+cp "$monitoring_cfg" "$TMP"
 pushd "$TMP"
 unzip "monitoring.zip"
 popd
