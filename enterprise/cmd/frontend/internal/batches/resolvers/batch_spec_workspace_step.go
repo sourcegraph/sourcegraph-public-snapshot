@@ -265,7 +265,11 @@ func (r *batchSpecWorkspaceStepV2Resolver) Environment() ([]graphqlbackend.Batch
 		return nil, nil
 	}
 
-	var env = r.stepInfo.Environment
+	var env map[string]string
+
+	if r.stepInfo != nil {
+		env = r.stepInfo.Environment
+	}
 
 	// Not yet resolved, use the preliminary env vars.
 	if env == nil {
