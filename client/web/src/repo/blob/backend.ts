@@ -18,6 +18,7 @@ const applyDefaultValuesToFetchBlobOptions = ({
     startLine = null,
     endLine = null,
     visibleIndexID = null,
+    scipSnapshot = false,
     ...options
 }: FetchBlobOptions): Required<FetchBlobOptions> => ({
     ...options,
@@ -26,6 +27,7 @@ const applyDefaultValuesToFetchBlobOptions = ({
     startLine,
     endLine,
     visibleIndexID,
+    scipSnapshot,
 })
 
 function fetchBlobCacheKey(options: FetchBlobOptions): string {
@@ -44,7 +46,7 @@ interface FetchBlobOptions {
     format?: HighlightResponseFormat
     startLine?: number | null
     endLine?: number | null
-    scipSnapshot: boolean
+    scipSnapshot?: boolean
     visibleIndexID?: string | null
 }
 
