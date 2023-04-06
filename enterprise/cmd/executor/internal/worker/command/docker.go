@@ -88,7 +88,7 @@ func formatDockerCommand(hostDir string, image string, scriptPath string, spec S
 		dockerEnvFlags(spec.Env),
 		dockerEntrypointFlags,
 		image,
-		fmt.Sprintf("whoami && %s", filepath.Join("/data", ScriptsPath, scriptPath)),
+		filepath.Join("/data", ScriptsPath, scriptPath),
 	)
 }
 
