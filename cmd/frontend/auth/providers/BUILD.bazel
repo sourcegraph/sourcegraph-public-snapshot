@@ -17,7 +17,6 @@ go_test(
     srcs = ["providers_test.go"],
     embed = [":providers"],
     deps = [
-        "//internal/encryption",
         "//internal/extsvc",
         "//schema",
         "@com_github_stretchr_testify//require",
