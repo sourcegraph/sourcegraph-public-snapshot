@@ -23,6 +23,7 @@ spec:
             - containerPort: 8080
           env:
             - name: EXECUTOR_FRONTEND_URL
+              # For development purposes. We usually run Sourcegraph in Docker.
               value: http://host.docker.internal:3082
             - name: EXECUTOR_FRONTEND_PASSWORD
               valueFrom:
@@ -41,6 +42,7 @@ spec:
               value: "false"
             - name: EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY
               value: 1Gi
+              # Since the host is 'host.docker.internal', this needs to be true.
             - name: EXECUTOR_DOCKER_ADD_HOST_GATEWAY
               value: "true"
           volumeMounts:
