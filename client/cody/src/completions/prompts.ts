@@ -36,20 +36,22 @@ export class SingleLinePromptTemplate implements PromptTemplate {
         const referenceSnippetMessages: Message[] = []
         let prefixMessages: Message[]
         if (prefixLines.length > 2) {
-            const endLine = Math.max(Math.floor(prefixLines.length / 2), prefixLines.length - 5)
+            const lastHumanLine = Math.max(Math.floor(prefixLines.length / 2), prefixLines.length - 5)
             prefixMessages = [
                 {
                     role: 'human',
                     text:
                         `Complete the following file:\n` +
                         '```' +
-                        `\n${prefixLines.slice(0, endLine).join('\n')}\n` +
+                        `\n${prefixLines.slice(0, lastHumanLine).join('\n')}\n` +
                         '```',
                 },
                 {
                     role: 'ai',
                     text:
-                        `Here is the completion of the file:\n` + '```' + `\n${prefixLines.slice(endLine).join('\n')}`,
+                        `Here is the completion of the file:\n` +
+                        '```' +
+                        `\n${prefixLines.slice(lastHumanLine).join('\n')}`,
                 },
             ]
         } else {
@@ -97,20 +99,22 @@ export class KnowledgeBasePromptTemplate implements PromptTemplate {
         const referenceSnippetMessages: Message[] = []
         let prefixMessages: Message[]
         if (prefixLines.length > 2) {
-            const endLine = Math.max(Math.floor(prefixLines.length / 2), prefixLines.length - 5)
+            const lastHumanLine = Math.max(Math.floor(prefixLines.length / 2), prefixLines.length - 5)
             prefixMessages = [
                 {
                     role: 'human',
                     text:
                         `Complete the following file:\n` +
                         '```' +
-                        `\n${prefixLines.slice(0, endLine).join('\n')}\n` +
+                        `\n${prefixLines.slice(0, lastHumanLine).join('\n')}\n` +
                         '```',
                 },
                 {
                     role: 'ai',
                     text:
-                        `Here is the completion of the file:\n` + '```' + `\n${prefixLines.slice(endLine).join('\n')}`,
+                        `Here is the completion of the file:\n` +
+                        '```' +
+                        `\n${prefixLines.slice(lastHumanLine).join('\n')}`,
                 },
             ]
         } else {

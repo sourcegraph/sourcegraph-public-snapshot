@@ -6,7 +6,10 @@ export interface HistoryItem {
 
 export class History implements vscode.Disposable {
     private window = 50
+
+    // tracks history in chronological order (latest at the end of the array)
     private history: HistoryItem[]
+
     private subscriptions: vscode.Disposable[] = []
 
     constructor(
@@ -23,9 +26,9 @@ export class History implements vscode.Disposable {
     ) {
         this.history = []
         if (register) {
-            const d = register()
-            if (d) {
-                this.subscriptions.push(d)
+            const disposable = register()
+            if (disposable) {
+                this.subscriptions.push(disposable)
             }
         }
     }
@@ -46,10 +49,13 @@ export class History implements vscode.Disposable {
         }
         this.history.push(newItem)
         if (this.history.length > this.window) {
-            this.history = this.lastN(this.window).reverse()
+            this.history.shift()
         }
     }
 
+    /**
+     * Returns the last n items of history in reverse chronological order (latest item at the front)
+     */
     public lastN(n: number, languageId?: string, ignoreUris?: vscode.Uri[]): HistoryItem[] {
         const ret: HistoryItem[] = []
         const ignoreSet = new Set(ignoreUris || [])
