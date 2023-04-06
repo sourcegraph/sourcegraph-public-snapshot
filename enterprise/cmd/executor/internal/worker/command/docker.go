@@ -83,7 +83,7 @@ func formatDockerCommand(hostDir string, image string, scriptPath string, spec S
 	}
 	fmt.Println("whoami", string(o))
 
-	o, err = exec.Command("ls", "-laR", filepath.Join(hostDir)).CombinedOutput()
+	o, err = exec.Command("ls", "-laR", hostDir).CombinedOutput()
 	if err != nil {
 		fmt.Println("ls error", err)
 	}
