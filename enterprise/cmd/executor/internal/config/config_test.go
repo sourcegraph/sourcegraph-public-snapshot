@@ -104,7 +104,6 @@ func TestConfig_Load_Defaults(t *testing.T) {
 	assert.Empty(t, cfg.QueueName)
 	assert.Equal(t, time.Second, cfg.QueuePollInterval)
 	assert.Equal(t, 1, cfg.MaximumNumJobs)
-	assert.False(t, cfg.UseFirecracker)
 	assert.Equal(t, "sourcegraph/executor-vm:insiders", cfg.FirecrackerImage)
 	assert.Equal(t, "sourcegraph/ignite-kernel:5.10.135-amd64", cfg.FirecrackerKernelImage)
 	assert.Equal(t, "sourcegraph/ignite:v0.10.5", cfg.FirecrackerSandboxImage)
