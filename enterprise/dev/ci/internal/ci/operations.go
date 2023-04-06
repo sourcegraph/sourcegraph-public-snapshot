@@ -69,7 +69,8 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		if opts.ForceBazel {
 			// If there are any Graphql changes, they are impacting the client as well.
 			clientChecks = operations.NewNamedSet("Client checks",
-				clientIntegrationTests,
+				// clientIntegrationTests is now covered by Bazel
+				// clientIntegrationTests,
 				clientChromaticTests(opts),
 				// frontendTests is now covered by Bazel
 				// frontendTests,                // ~4.5m

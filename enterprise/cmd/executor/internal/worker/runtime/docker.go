@@ -19,6 +19,8 @@ type dockerRuntime struct {
 	dockerOpts   command.DockerOptions
 }
 
+var _ Runtime = &dockerRuntime{}
+
 func (r *dockerRuntime) Name() Name {
 	return NameDocker
 }
@@ -40,7 +42,6 @@ func (r *dockerRuntime) NewRunner(ctx context.Context, logger command.Logger, op
 	if err := run.Setup(ctx); err != nil {
 		return nil, errors.Wrap(err, "failed to setup docker runner")
 	}
-
 	return run, nil
 }
 

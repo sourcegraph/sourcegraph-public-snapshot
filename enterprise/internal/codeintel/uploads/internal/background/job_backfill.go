@@ -38,36 +38,33 @@ type backfiller struct {
 // this value set. This method is used to backfill old upload records prior to this value being reliably set
 // during processing.
 func (s *backfiller) BackfillCommittedAtBatch(ctx context.Context, batchSize int) (err error) {
-	tx, err := s.store.Transact(ctx)
-	defer func() {
-		err = tx.Done(err)
-	}()
+	return s.store.WithTransaction(ctx, func(tx store.Store) error {
+		batch, err := tx.SourcedCommitsWithoutCommittedAt(ctx, batchSize)
+		if err != nil {
+			return errors.Wrap(err, "store.SourcedCommitsWithoutCommittedAt")
+		}
 
-	batch, err := tx.SourcedCommitsWithoutCommittedAt(ctx, batchSize)
-	if err != nil {
-		return errors.Wrap(err, "store.SourcedCommitsWithoutCommittedAt")
-	}
+		for _, sourcedCommits := range batch {
+			for _, commit := range sourcedCommits.Commits {
+				commitDateString, err := s.getCommitDate(ctx, sourcedCommits.RepositoryName, commit)
+				if err != nil {
+					return err
+				}
 
-	for _, sourcedCommits := range batch {
-		for _, commit := range sourcedCommits.Commits {
-			commitDateString, err := s.getCommitDate(ctx, sourcedCommits.RepositoryName, commit)
-			if err != nil {
-				return err
+				// Update commit date of all uploads attached to this this repository and commit
+				if err := tx.UpdateCommittedAt(ctx, sourcedCommits.RepositoryID, commit, commitDateString); err != nil {
+					return errors.Wrap(err, "store.UpdateCommittedAt")
+				}
 			}
 
-			// Update commit date of all uploads attached to this this repository and commit
-			if err := tx.UpdateCommittedAt(ctx, sourcedCommits.RepositoryID, commit, commitDateString); err != nil {
-				return errors.Wrap(err, "store.UpdateCommittedAt")
+			// Mark repository as dirty so the commit graph is recalculated with fresh data
+			if err := tx.SetRepositoryAsDirty(ctx, sourcedCommits.RepositoryID); err != nil {
+				return errors.Wrap(err, "store.SetRepositoryAsDirty")
 			}
 		}
 
-		// Mark repository as dirty so the commit graph is recalculated with fresh data
-		if err := tx.SetRepositoryAsDirty(ctx, sourcedCommits.RepositoryID); err != nil {
-			return errors.Wrap(err, "store.SetRepositoryAsDirty")
-		}
-	}
-
-	return nil
+		return nil
+	})
 }
 
 func (s *backfiller) getCommitDate(ctx context.Context, repositoryName, commit string) (string, error) {

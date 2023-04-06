@@ -171,7 +171,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     // isCodeInsightsEnabled selector controls appearance based on user settings flags
     const codeInsights = codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)
 
-    const [codyEnabled] = useFeatureFlag('cody')
+    const [codyEnabled] = useFeatureFlag('cody-experimental')
 
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [

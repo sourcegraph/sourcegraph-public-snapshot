@@ -82,7 +82,7 @@ func StandaloneRun(ctx context.Context, runner util.CmdRunner, logger log.Logger
 			}
 
 			// Validate all required CNI plugins are installed.
-			if err = util.ValidateCNIInstalled(); err != nil {
+			if err = util.ValidateCNIInstalled(runner); err != nil {
 				return err
 			}
 
