@@ -19,12 +19,12 @@ export const scipSnapshot = (data?: { offset: number; data: string }[] | null): 
         ? [
               EditorView.decorations.of(
                   Decoration.set(
-                      data.map(line => {
-                          return Decoration.widget({
+                      data.map(line =>
+                          Decoration.widget({
                               widget: new SCIPSnapshotDecorations(line.data),
                               block: true,
                           }).range(line.offset, line.offset)
-                      })
+                      )
                   )
               ),
           ]
