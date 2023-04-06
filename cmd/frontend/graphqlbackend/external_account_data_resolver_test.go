@@ -9,12 +9,59 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+type mockAuthnProvider struct {
+	configID providers.ConfigID
+	// serviceID string
+}
+
+func (m mockAuthnProvider) ConfigID() providers.ConfigID {
+	return m.configID
+}
+
+func (m mockAuthnProvider) Config() schema.AuthProviders {
+	return schema.AuthProviders{
+		Github: &schema.GitHubAuthProvider{
+			Type: m.configID.Type,
+		},
+	}
+}
+
+func (m mockAuthnProvider) CachedInfo() *providers.Info {
+	panic("should not be called")
+
+	// return &providers.Info{ServiceID: m.serviceID}
+}
+
+func (m mockAuthnProvider) Refresh(ctx context.Context) error {
+	panic("should not be called")
+}
+
+type mockAuthnProviderUser struct {
+	Username string `json:"username,omitempty"`
+	ID       int32  `json:"id,omitempty"`
+	Name     string `json:"name,omitempty"`
+}
+
+func (m mockAuthnProvider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
+	data, err := encryption.DecryptJSON[mockAuthnProviderUser](ctx, account.AccountData.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	return &extsvc.PublicAccountData{
+		Login:       &data.Username,
+		DisplayName: &data.Name,
+	}, nil
+}
+
 func TestExternalAccountDataResolver_PublicAccountDataFromJSON(t *testing.T) {
-	p := providers.MockAuthProvider{
+	p := mockAuthnProvider{
 		configID: providers.ConfigID{
 			Type: "foo",
 			ID:   "mockproviderID",
