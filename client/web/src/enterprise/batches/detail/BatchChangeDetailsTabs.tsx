@@ -227,6 +227,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                         queryAllChangesetIDs={queryAllChangesetIDs}
                         onlyArchived={false}
                         isExecutionEnabled={isExecutionEnabled}
+                        settingsCascade={settingsCascade}
                     />
                 </TabPanel>
                 <TabPanel>
@@ -276,6 +277,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                         onlyArchived={true}
                         refetchBatchChange={refetchBatchChange}
                         isExecutionEnabled={isExecutionEnabled}
+                        settingsCascade={settingsCascade}
                     />
                 </TabPanel>
                 <TabPanel>

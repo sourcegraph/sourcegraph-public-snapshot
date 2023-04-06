@@ -3,6 +3,7 @@ import React, { useCallback, useContext, useState } from 'react'
 import { mdiMagnify } from '@mdi/js'
 import { tap } from 'rxjs/operators'
 
+import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Container, Icon } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../../components/DismissibleAlert'
@@ -26,7 +27,7 @@ import { PreviewSelectRow } from './PreviewSelectRow'
 
 import styles from './PreviewList.module.scss'
 
-interface Props {
+interface Props extends SettingsCascadeProps<Settings> {
     batchSpecID: Scalars['ID']
     authenticatedUser: PreviewPageAuthenticatedUser
 
@@ -51,6 +52,7 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions,
     queryPublishableChangesetSpecIDs,
+    settingsCascade,
 }) => {
     const { selected, areAllVisibleSelected, isSelected, toggleSingle, toggleVisible, setVisible } =
         useContext(MultiSelectContext)
@@ -117,6 +119,7 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
                 <PreviewSelectRow
                     queryPublishableChangesetSpecIDs={queryPublishableChangesetSpecIDs}
                     queryArguments={queryArguments}
+                    settingsCascade={settingsCascade}
                 />
             ) : (
                 <PreviewFilterRow />

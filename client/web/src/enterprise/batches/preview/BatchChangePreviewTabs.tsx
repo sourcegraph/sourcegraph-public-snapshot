@@ -3,6 +3,7 @@ import React, { useCallback } from 'react'
 import { mdiSourceBranch, mdiFileDocument } from '@mdi/js'
 import { useNavigate, useLocation } from 'react-router-dom'
 
+import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge, Container, Icon, Tab, TabPanel, TabPanels } from '@sourcegraph/wildcard'
 
@@ -20,7 +21,7 @@ import { PreviewList } from './list/PreviewList'
 
 import styles from './BatchChangePreviewTabs.module.scss'
 
-export interface BatchChangePreviewProps extends TelemetryProps {
+export interface BatchChangePreviewProps extends TelemetryProps, SettingsCascadeProps<Settings> {
     batchSpecID: string
     authenticatedUser: PreviewPageAuthenticatedUser
 
@@ -45,6 +46,7 @@ export const BatchChangePreviewTabs: React.FunctionComponent<React.PropsWithChil
     queryChangesetApplyPreview,
     queryChangesetSpecFileDiffs,
     spec,
+    settingsCascade,
 }) => {
     // We track the current tab in a URL parameter so that tabs are easy to navigate to
     // and share.
@@ -100,6 +102,7 @@ export const BatchChangePreviewTabs: React.FunctionComponent<React.PropsWithChil
                         queryChangesetApplyPreview={queryChangesetApplyPreview}
                         queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                         expandChangesetDescriptions={expandChangesetDescriptions}
+                        settingsCascade={settingsCascade}
                     />
                 </TabPanel>
                 <TabPanel>

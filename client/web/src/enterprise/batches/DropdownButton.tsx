@@ -3,6 +3,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { mdiChevronDown } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 
+import { isErrorLike } from '@sourcegraph/common'
+import { Settings, SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import {
     ProductStatusBadge,
     Button,
@@ -41,7 +43,7 @@ export interface Action {
     experimental?: boolean
 }
 
-export interface Props {
+export interface Props extends SettingsCascadeProps<Settings> {
     actions: Action[]
     defaultAction?: number
     disabled?: boolean
@@ -54,6 +56,7 @@ export const DropdownButton: React.FunctionComponent<React.PropsWithChildren<Pro
     defaultAction,
     disabled,
     onLabel,
+    settingsCascade,
     placeholder = 'Select action',
 }) => {
     const [isDisabled, setIsDisabled] = useState(!!disabled)
@@ -125,6 +128,8 @@ export const DropdownButton: React.FunctionComponent<React.PropsWithChildren<Pro
         }
     })
 
+    const isRolloutConfigured = useMemo(() => checkRolloutWindowSetting(settingsCascade), [settingsCascade])
+
     return (
         <>
             {renderedElement}
@@ -184,8 +189,22 @@ const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItem
                 )}
             </H4>
             <Text className="text-wrap text-muted mb-0">
-                <small>{action.dropdownDescription}</small>
+                {action.type === 'publish' ? (
+                    <small>
+                        {action.dropdownDescription}. Rollout windowns have been set up by the admin. This means that
+                        some of the selected changeset won't be processed until a time in the future.
+                    </small>
+                ) : (
+                    <small>{action.dropdownDescription}</small>
+                )}
             </Text>
         </MenuItem>
     )
+}
+
+function checkRolloutWindowSetting(settingsCascade: SettingsCascadeOrError<Settings>): boolean {
+    if (settingsCascade.final !== null && !isErrorLike(settingsCascade.final)) {
+        return (settingsCascade.final.batchChanges?.rolloutWindows?.length > 0) as boolean
+    }
+    return true
 }

@@ -4,6 +4,7 @@ import { mdiInformationOutline } from '@mdi/js'
 import { noop } from 'lodash'
 
 import { pluralize } from '@sourcegraph/common'
+import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Button, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { BatchSpecApplyPreviewVariables, Scalars } from '../../../../graphql-operations'
@@ -51,7 +52,7 @@ const getPublicationStateFromAction = (action: Action): Scalars['PublishedValue'
     }
 }
 
-export interface PreviewSelectRowProps {
+export interface PreviewSelectRowProps extends SettingsCascadeProps<Settings> {
     queryArguments: BatchSpecApplyPreviewVariables
     /** For testing only. */
     queryPublishableChangesetSpecIDs?: typeof _queryPublishableChangesetSpecIDs
@@ -64,6 +65,7 @@ export interface PreviewSelectRowProps {
 export const PreviewSelectRow: React.FunctionComponent<React.PropsWithChildren<PreviewSelectRowProps>> = ({
     queryPublishableChangesetSpecIDs = _queryPublishableChangesetSpecIDs,
     queryArguments,
+    settingsCascade,
 }) => {
     // The user can modify the desired publication states for changesets in the preview
     // list from this dropdown selector. However, these modifications are transient and
@@ -138,7 +140,11 @@ export const PreviewSelectRow: React.FunctionComponent<React.PropsWithChildren<P
                 <div className="m-0 col col-md-auto">
                     <div className="row no-gutters">
                         <div className="col ml-0 ml-sm-2">
-                            <DropdownButton actions={actions} placeholder="Select action on apply" />
+                            <DropdownButton
+                                actions={actions}
+                                placeholder="Select action on apply"
+                                settingsCascade={settingsCascade}
+                            />
                         </div>
                     </div>
                 </div>

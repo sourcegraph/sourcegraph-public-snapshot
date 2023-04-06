@@ -4,6 +4,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { useParams } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
+import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Alert, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -120,6 +121,7 @@ export const NewBatchChangePreviewPage: FC<BatchChangePreviewPageProps> = props 
         authenticatedUser,
         telemetryService,
         queryApplyPreviewStats,
+        settingsCascade,
     } = props
 
     const { data, loading, error } = useQuery<BatchSpecByIDResult, BatchSpecByIDVariables>(BATCH_SPEC_BY_ID, {
@@ -194,6 +196,7 @@ export const NewBatchChangePreviewPage: FC<BatchChangePreviewPageProps> = props 
                         queryChangesetApplyPreview={queryChangesetApplyPreview}
                         queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                         expandChangesetDescriptions={expandChangesetDescriptions}
+                        settingsCascade={settingsCascade}
                     />
                 </div>
             </BatchChangePreviewContextProvider>

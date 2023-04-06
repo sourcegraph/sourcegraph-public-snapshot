@@ -4,6 +4,7 @@ import { mdiInformationOutline } from '@mdi/js'
 import { of } from 'rxjs'
 
 import { pluralize } from '@sourcegraph/common'
+import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Button, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { AllChangesetIDsVariables, Scalars, BulkOperationType } from '../../../../graphql-operations'
@@ -151,7 +152,7 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
     },
 }
 
-export interface ChangesetSelectRowProps {
+export interface ChangesetSelectRowProps extends SettingsCascadeProps<Settings> {
     batchChangeID: Scalars['ID']
     onSubmit: () => void
     queryArguments: Omit<AllChangesetIDsVariables, 'after'>
@@ -171,6 +172,7 @@ export const ChangesetSelectRow: React.FunctionComponent<React.PropsWithChildren
     queryArguments,
     queryAllChangesetIDs = _queryAllChangesetIDs,
     queryAvailableBulkOperations = _queryAvailableBulkOperations,
+    settingsCascade,
 }) => {
     const { areAllVisibleSelected, selected, selectAll } = useContext(MultiSelectContext)
 
@@ -246,7 +248,11 @@ export const ChangesetSelectRow: React.FunctionComponent<React.PropsWithChildren
                 <div className="m-0 col col-md-auto">
                     <div className="row no-gutters">
                         <div className="col ml-0 ml-sm-2">
-                            <DropdownButton actions={actions} placeholder="Select action" />
+                            <DropdownButton
+                                actions={actions}
+                                placeholder="Select action"
+                                settingsCascade={settingsCascade}
+                            />
                         </div>
                     </div>
                 </div>
