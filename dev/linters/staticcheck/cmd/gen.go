@@ -77,7 +77,7 @@ func writeTemplate(targetFile, templateDef string) error {
 }
 
 // We support two position arguments:
-// 1: build bazel path - file where the analyzer targets should be generated to
+// 1: buildfile path - file where the analyzer targets should be generated to
 // 2: analyzer definition path - file where a convienience analyzer array is generated that contains all the targets
 func main() {
 	targetFile := "BUILD.bazel"
