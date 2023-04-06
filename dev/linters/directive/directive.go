@@ -8,15 +8,12 @@ package directive
 // * nolint directives on a line is more accurate. We use the Slash position instead of the Node position
 // * we do extra pre-processing when parsing directives
 import (
-	"fmt"
 	"go/ast"
 	"go/token"
-	"io/ioutil"
 	"reflect"
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
-	"golang.org/x/tools/go/loader" //nolint:SA1019 //TODO(burmudar): use updated api
 	"honnef.co/go/tools/analysis/report"
 )
 
