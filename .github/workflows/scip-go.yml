@@ -30,6 +30,10 @@ jobs:
         working-directory: ${{ matrix.root }}
         run: scip-go --no-animation
 
+      - name: TODO
+        working-directory: ${{ matrix.root }}
+        run: git config --global --add safe.directory /__w/sourcegraph/sourcegraph
+
       # Upload scip-go data to Dotcom, S2, Dogfood, and Demo instances
       - name: Upload scip-go dump to Dotcom
         working-directory: ${{ matrix.root }}
