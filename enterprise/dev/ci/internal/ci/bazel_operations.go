@@ -123,6 +123,7 @@ func bazelBuildAndTest(optional bool, targets ...string) func(*bk.Pipeline) {
 
 	cmds = append(
 		cmds,
+		bk.RawCmd("dev/ci/integration/run-bazel-server.sh"),
 		bk.RawCmd(bazelBuildCmd),
 		bk.RawCmd(bazelTestCmd),
 	)
