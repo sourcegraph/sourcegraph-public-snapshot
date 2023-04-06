@@ -84,6 +84,7 @@ func TestRestoreEmbeddings(t *testing.T) {
 		"--data-only",
 		"--dbname", name,
 		"--table", "code_embeddings",
+		// pg_dump --format custom --blobs --verbose --file embeddings.dump --table code_embeddings sourcegraph
 		"/Users/cbart/embeddings.dump",
 	)
 
