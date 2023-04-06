@@ -9,7 +9,7 @@ import (
 
 func (r *siteResolver) AuthProviders(ctx context.Context) (*authProviderConnectionResolver, error) {
 	return &authProviderConnectionResolver{
-		authProviders: providers.SortedProviders(),
+		authProviders: providers.Providers(),
 	}, nil
 }
 
