@@ -2,7 +2,11 @@ package directive
 
 // This file is copied from:
 // https://sourcegraph.com/github.com/pingcap/tidb@a0f2405981960ec705bf44f12b96ca8aec1506c4/-/blob/build/linter/util/util.go
-// We copy it because we do not want to pull in the entire dependency
+// We copy it because we do not want to pull in the entire dependency.
+//
+// A few changes have been made:
+// * nolint directives on a line is more accurate. We use the Slash position instead of the Node position
+// * we do extra pre-processing when parsing directives
 import (
 	"fmt"
 	"go/ast"
@@ -21,6 +25,7 @@ type skipType int
 const (
 	skipNone skipType = iota
 	skipLinter
+	skipGroup
 	skipFile
 )
 
@@ -45,8 +50,17 @@ func parseDirective(s string) (cmd skipType, args []string) {
 		}
 		return skipNone, nil
 	}
+	// our comment directive can look like this:
+	// //nolint:staticcheck // other things
+	// or
+	// //nolint:SA10101,SA999,SA19191 // other stuff
 	s = strings.TrimPrefix(s, "//nolint:")
-	return skipLinter, []string{s}
+	// We first split on spaces and take the first part
+	parts := strings.Split(s, " ")
+	s = parts[0]
+	// our directive can specify a range of linters seperated by comma
+	parts = strings.Split(s, ",")
+	return skipLinter, parts
 }
 
 // ParseDirectives extracts all directives from a list of Go files.
@@ -79,9 +93,14 @@ func doDirectives(pass *analysis.Pass) (interface{}, error) {
 	return ParseDirectives(pass.Files, pass.Fset), nil
 }
 
-func isStaticCheckGroupDirective(directive, analyzerName string) bool {
-	if strings.Contains(directive, "staticcheck") && strings.HasPrefix(analyzerName, "SA") {
-		return true
+func skipAnalyzer(linters []string, analyzerName string) bool {
+	for _, l := range linters {
+		switch l {
+		case "staticcheck":
+			return strings.HasPrefix(analyzerName, "SA")
+		case analyzerName:
+			return true
+		}
 	}
 	return false
 }
@@ -95,7 +114,7 @@ var Directives = &analysis.Analyzer{
 	ResultType:       reflect.TypeOf([]Directive{}),
 }
 
-// SkipAnalyzer updates an analyzer from `staticcheck` and `golangci-linter` to make it work on nogo.
+// RespectDirectives updates an analyzer from `staticcheck` and `golangci-linter` to make it work on nogo.
 // They have "lint:ignore" or "nolint" to make the analyzer ignore the code.
 func RespectDirectives(analyzer *analysis.Analyzer) {
 	analyzer.Requires = append(analyzer.Requires, Directives)
@@ -110,21 +129,18 @@ func RespectDirectives(analyzer *analysis.Analyzer) {
 				linters := dir.Linters
 				switch cmd {
 				case skipLinter:
-					ignorePos := report.DisplayPosition(pass.Fset, dir.Node.Pos())
+					// we use the Directive Slash position, since that gives us the exact line where the directive is used
+					ignorePos := report.DisplayPosition(pass.Fset, dir.Directive.Slash)
 					nodePos := report.DisplayPosition(pass.Fset, diag.Pos)
 					if ignorePos.Filename != nodePos.Filename || ignorePos.Line != nodePos.Line {
+						// we're either in the wrong file for where this directive applies
+						// OR
+						// the line we're currently looking at does not match where this directive is defined
 						continue
 					}
-					linterDirective, _, _ := strings.Cut(linters[0], "//")
-					linterDirective = strings.TrimSpace(linterDirective)
-					if isStaticCheckGroupDirective(linterDirective, analyzer.Name) {
-						println("❌", strings.Join(linters, "|"))
+					// we've found a offending line that has a directive ... let's see whether we should ignore it
+					if skipAnalyzer(linters, analyzer.Name) {
 						return
-					}
-					for _, check := range strings.Split(linterDirective, ",") {
-						if strings.TrimSpace(check) == analyzer.Name {
-							return
-						}
 					}
 				case skipFile:
 					ignorePos := report.DisplayPosition(pass.Fset, dir.Node.Pos())
@@ -140,68 +156,4 @@ func RespectDirectives(analyzer *analysis.Analyzer) {
 		}
 		return oldRun(&pass)
 	}
-}
-
-// FormatCode is to format code for nogo.
-func FormatCode(code string) string {
-	if strings.Contains(code, "`") {
-		return code // TODO: properly escape or remove
-	}
-
-	return fmt.Sprintf("`%s`", code)
-}
-
-// MakeFakeLoaderPackageInfo creates a fake loader.PackageInfo for a given package.
-func MakeFakeLoaderPackageInfo(pass *analysis.Pass) *loader.PackageInfo {
-	var errs []error
-
-	typeInfo := pass.TypesInfo
-
-	return &loader.PackageInfo{
-		Pkg:                   pass.Pkg,
-		Importable:            true, // not used
-		TransitivelyErrorFree: true, // not used
-
-		// use compiled (preprocessed) go files AST;
-		// AST linters use not preprocessed go files AST
-		Files:  pass.Files,
-		Errors: errs,
-		Info:   *typeInfo,
-	}
-}
-
-// ReadFile reads a file and adds it to the FileSet
-// so that we can report errors against it using lineStart.
-func ReadFile(fset *token.FileSet, filename string) ([]byte, *token.File, error) {
-	//nolint: gosec
-	content, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return nil, nil, err
-	}
-	tf := fset.AddFile(filename, -1, len(content))
-	tf.SetLinesForContent(content)
-	return content, tf, nil
-}
-
-// FindOffset returns the offset of a given position in a file.
-func FindOffset(fileText string, line, column int) int {
-	// we count our current line and column position
-	currentCol := 1
-	currentLine := 1
-
-	for offset, ch := range fileText {
-		// see if we found where we wanted to go to
-		if currentLine == line && currentCol == column {
-			return offset
-		}
-
-		// line break - increment the line counter and reset the column
-		if ch == '\n' {
-			currentLine++
-			currentCol = 1
-		} else {
-			currentCol++
-		}
-	}
-	return -1 //not found
 }
