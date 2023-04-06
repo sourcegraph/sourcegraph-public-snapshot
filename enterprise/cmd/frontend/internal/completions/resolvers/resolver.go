@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -66,7 +67,7 @@ func convertParams(args graphqlbackend.CompletionsArgs) types.CompletionRequestP
 func convertMessages(messages []graphqlbackend.Message) (result []types.Message) {
 	for _, message := range messages {
 		result = append(result, types.Message{
-			Speaker: message.Speaker,
+			Speaker: strings.ToLower(message.Speaker),
 			Text:    message.Text,
 		})
 	}

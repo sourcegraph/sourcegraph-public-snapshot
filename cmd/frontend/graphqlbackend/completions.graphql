@@ -1,22 +1,29 @@
 extend type Query {
+    # Returns a string of completion responses
     completions(input: CompletionsInput!): String!
 }
 
 input CompletionsInput {
-#    Messages          []Message `json:"messages"`
-#    Temperature       float32   `json:"temperature"`
-#    MaxTokensToSample int       `json:"maxTokensToSample"`
-#    TopK              int       `json:"topK"`
-#    TopP              float32   `json:"topP"`
-
+    # List of conversation messages
     messages: [Message!]!
+    # Temperature for sampling - higher means more random completions
     temperature: Float!
+    # Maximum number of tokens to sample
     maxTokensToSample: Int!
+    # Number of highest probability completions to return
     topK: Int!
+    # Probability threshold for inclusion in results
     topP: Int!
 }
 
 input Message {
-    speaker: String!
+    # Speaker of the message (human/assistant)
+    speaker: SpeakerType!
+    # Text content of the message
     text: String!
+}
+
+enum SpeakerType {
+    HUMAN,
+    ASSISTANT
 }
