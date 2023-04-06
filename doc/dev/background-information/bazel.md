@@ -226,6 +226,11 @@ INFO: Build option --action_env has changed, discarding analysis cache.
 - If you added a `test --action_env=VAR`, running `bazel build [...]` will have a different `--action_env` and because the analysis cache is the same for `build` and `test` that will automatically bust the cache.
   - Use `build --test_env=VAR` instead, so that env is used only in tests, and doesn't affect builds, while avoiding to bust the cache.
 
+#### My JetBrains IDE becomes unresponsive after Bazel builds
+
+By default, JetBrains IDEs such as GoLand will try and index the files in your project workspace. If you run Bazel locally, the resulting artifacts will be indexed, which will likely hog the full heap size that the IDE is allocated.  
+There is no reason to index these files, so you can just exclude them from indexing by right-clicking artifact directories, then choosing **Mark directory as** &rarr; **Excluded** from the context menu. A restart is required to stop the indexing process. 
+
 ### Go
 
 #### It complains about some missing symbols, but I'm sure they are there since I can see my files
