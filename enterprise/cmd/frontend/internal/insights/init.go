@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	resolvers2 "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/insights/httpapi"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/insights/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
@@ -39,6 +40,7 @@ func Init(
 	}
 	enterpriseServices.InsightsResolver = resolvers.New(rawInsightsDB, db)
 	enterpriseServices.CodeInsightsDataExportHandler = httpapi.NewExportHandler(db, rawInsightsDB).ExportFunc()
+	enterpriseServices.CompletionsResolver = resolvers2.NewCompletionsResolver()
 
 	return nil
 }

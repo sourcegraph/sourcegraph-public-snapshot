@@ -15,6 +15,7 @@ import (
 	"github.com/graph-gophers/graphql-go/trace/otel"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/log"
 
 	oteltracer "go.opentelemetry.io/otel"
@@ -419,6 +420,10 @@ func NewSchemaWithOwnResolver(db database.DB, own OwnResolver) (*graphql.Schema,
 	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{OwnResolver: own})
 }
 
+func NewSchemaWithCompletionsResolver(db database.DB, completionsResolver CompletionsResolver) (*graphql.Schema, error) {
+	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{CompletionsResolver: completionsResolver})
+}
+
 func NewSchema(
 	db database.DB,
 	gitserverClient gitserver.Client,
@@ -564,6 +569,12 @@ func NewSchema(
 		}
 	}
 
+	if completionsResolver := optional.CompletionsResolver; completionsResolver != nil {
+		EnterpriseResolvers.completionsResolver = completionsResolver
+		resolver.CompletionsResolver = completionsResolver
+		schemas = append(schemas, completionSchema)
+	}
+
 	if appResolver := optional.AppResolver; appResolver != nil {
 		// Not under enterpriseResolvers, as this is a OSS schema extension.
 		resolver.AppResolver = appResolver
@@ -623,6 +634,7 @@ type OptionalResolver struct {
 	RBACResolver
 	OwnResolver
 	AppResolver
+	CompletionsResolver
 }
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
@@ -731,6 +743,7 @@ var EnterpriseResolvers = struct {
 	embeddingsResolver          EmbeddingsResolver
 	rbacResolver                RBACResolver
 	ownResolver                 OwnResolver
+	completionsResolver         CompletionsResolver
 }{}
 
 // Root returns a new schemaResolver.
