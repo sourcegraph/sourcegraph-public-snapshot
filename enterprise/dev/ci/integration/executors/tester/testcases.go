@@ -275,3 +275,7 @@ changesetTemplate:
 		CacheDisabled: true,
 	}
 }
+
+func testEnvVarBatchChange() Test {
+
+}
