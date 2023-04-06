@@ -31,17 +31,7 @@ func (s *store) HardDeleteUploadsByIDs(ctx context.Context, ids ...int) (err err
 		idQueries = append(idQueries, sqlf.Sprintf("%s", id))
 	}
 
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.db.Done(err) }()
-
-	if err := tx.db.Exec(ctx, sqlf.Sprintf(hardDeleteUploadsByIDsQuery, sqlf.Join(idQueries, ", "))); err != nil {
-		return err
-	}
-
-	return nil
+	return s.db.Exec(ctx, sqlf.Sprintf(hardDeleteUploadsByIDsQuery, sqlf.Join(idQueries, ", ")))
 }
 
 const hardDeleteUploadsByIDsQuery = `
@@ -115,30 +105,30 @@ func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Tim
 	ctx, trace, endObservation := s.operations.deleteUploadsWithoutRepository.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	tx, err := s.db.Transact(ctx)
-	if err != nil {
-		return 0, 0, err
-	}
-	defer func() { err = tx.Done(err) }()
+	var a, b int
+	err = s.withTransaction(ctx, func(tx *store) error {
+		unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "upload associated with repository not known to this instance")
+		defer unset(ctx)
 
-	unset, _ := tx.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "upload associated with repository not known to this instance")
-	defer unset(ctx)
+		query := sqlf.Sprintf(deleteUploadsWithoutRepositoryQuery, now.UTC(), deletedRepositoryGracePeriod/time.Second)
+		totalCount, repositories, err := scanCountsWithTotalCount(tx.db.Query(ctx, query))
+		if err != nil {
+			return err
+		}
 
-	query := sqlf.Sprintf(deleteUploadsWithoutRepositoryQuery, now.UTC(), deletedRepositoryGracePeriod/time.Second)
-	totalCount, repositories, err := scanCountsWithTotalCount(tx.Query(ctx, query))
-	if err != nil {
-		return 0, 0, err
-	}
+		count := 0
+		for _, numDeleted := range repositories {
+			count += numDeleted
+		}
+		trace.AddEvent("TODO Domain Owner",
+			attribute.Int("count", count),
+			attribute.Int("numRepositories", len(repositories)))
 
-	count := 0
-	for _, numDeleted := range repositories {
-		count += numDeleted
-	}
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("count", count),
-		attribute.Int("numRepositories", len(repositories)))
-
-	return totalCount, count, nil
+		a = totalCount
+		b = count
+		return nil
+	})
+	return a, b, err
 }
 
 const deleteUploadsWithoutRepositoryQuery = `
@@ -233,61 +223,61 @@ func (s *store) processStaleSourcedCommits(
 	ctx, _, endObservation := s.operations.processStaleSourcedCommits.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	tx, err := s.db.Transact(ctx)
-	if err != nil {
-		return 0, 0, err
-	}
-	defer func() { err = tx.Done(err) }()
+	var a, b int
+	err = s.withTransaction(ctx, func(tx *store) error {
+		now = now.UTC()
+		interval := int(minimumTimeSinceLastCheck / time.Second)
 
-	now = now.UTC()
-	interval := int(minimumTimeSinceLastCheck / time.Second)
-
-	staleIndexes, err := scanSourcedCommits(tx.Query(ctx, sqlf.Sprintf(
-		staleIndexSourcedCommitsQuery,
-		now,
-		interval,
-		commitResolverBatchSize,
-	)))
-	if err != nil {
-		return 0, 0, err
-	}
-
-	for _, sc := range staleIndexes {
-		var (
-			keep   []string
-			remove []string
-		)
-
-		for _, commit := range sc.Commits {
-			if ok, err := shouldDelete(ctx, sc.RepositoryID, sc.RepositoryName, commit); err != nil {
-				return 0, 0, err
-			} else if ok {
-				remove = append(remove, commit)
-			} else {
-				keep = append(keep, commit)
-			}
-		}
-
-		unset, _ := tx.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "upload associated with unknown commit")
-		defer unset(ctx)
-
-		indexesDeleted, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
-			updateSourcedCommitsQuery2,
-			sc.RepositoryID,
-			pq.Array(keep),
-			pq.Array(remove),
+		staleIndexes, err := scanSourcedCommits(tx.db.Query(ctx, sqlf.Sprintf(
+			staleIndexSourcedCommitsQuery,
 			now,
-			pq.Array(keep),
-			pq.Array(remove),
+			interval,
+			commitResolverBatchSize,
 		)))
 		if err != nil {
-			return 0, 0, err
+			return err
 		}
 
-		totalDeleted += indexesDeleted
-	}
+		for _, sc := range staleIndexes {
+			var (
+				keep   []string
+				remove []string
+			)
 
-	return len(staleIndexes), totalDeleted, nil
+			for _, commit := range sc.Commits {
+				if ok, err := shouldDelete(ctx, sc.RepositoryID, sc.RepositoryName, commit); err != nil {
+					return err
+				} else if ok {
+					remove = append(remove, commit)
+				} else {
+					keep = append(keep, commit)
+				}
+			}
+
+			unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "upload associated with unknown commit")
+			defer unset(ctx)
+
+			indexesDeleted, _, err := basestore.ScanFirstInt(tx.db.Query(ctx, sqlf.Sprintf(
+				updateSourcedCommitsQuery2,
+				sc.RepositoryID,
+				pq.Array(keep),
+				pq.Array(remove),
+				now,
+				pq.Array(keep),
+				pq.Array(remove),
+			)))
+			if err != nil {
+				return err
+			}
+
+			totalDeleted += indexesDeleted
+		}
+
+		a = len(staleIndexes)
+		b = totalDeleted
+		return nil
+	})
+	return a, b, err
 }
 
 const staleIndexSourcedCommitsQuery = `
@@ -355,28 +345,28 @@ func (s *store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Tim
 	ctx, trace, endObservation := s.operations.deleteIndexesWithoutRepository.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	tx, err := s.db.Transact(ctx)
-	if err != nil {
-		return 0, 0, err
-	}
-	defer func() { err = tx.Done(err) }()
+	var a, b int
+	err = s.withTransaction(ctx, func(tx *store) error {
+		// TODO(efritz) - this would benefit from an index on repository_id. We currently have
+		// a similar one on this index, but only for uploads that are completed or visible at tip.
+		totalCount, repositories, err := scanCountsAndTotalCount(tx.db.Query(ctx, sqlf.Sprintf(deleteIndexesWithoutRepositoryQuery, now.UTC(), deletedRepositoryGracePeriod/time.Second)))
+		if err != nil {
+			return err
+		}
 
-	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
-	// a similar one on this index, but only for uploads that are completed or visible at tip.
-	totalCount, repositories, err := scanCountsAndTotalCount(tx.Query(ctx, sqlf.Sprintf(deleteIndexesWithoutRepositoryQuery, now.UTC(), deletedRepositoryGracePeriod/time.Second)))
-	if err != nil {
-		return 0, 0, err
-	}
+		count := 0
+		for _, numDeleted := range repositories {
+			count += numDeleted
+		}
+		trace.AddEvent("scanCounts",
+			attribute.Int("count", count),
+			attribute.Int("numRepositories", len(repositories)))
 
-	count := 0
-	for _, numDeleted := range repositories {
-		count += numDeleted
-	}
-	trace.AddEvent("scanCounts",
-		attribute.Int("count", count),
-		attribute.Int("numRepositories", len(repositories)))
-
-	return totalCount, count, nil
+		a = totalCount
+		b = count
+		return nil
+	})
+	return a, b, err
 }
 
 const deleteIndexesWithoutRepositoryQuery = `
@@ -536,31 +526,30 @@ func (s *store) GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLast
 	ctx, trace, endObservation := s.operations.getStaleSourcedCommits.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	tx, err := s.db.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = tx.Done(err) }()
+	var a []SourcedCommits
+	err = s.withTransaction(ctx, func(tx *store) error {
+		now = now.UTC()
+		interval := int(minimumTimeSinceLastCheck / time.Second)
+		uploadSubquery := sqlf.Sprintf(staleSourcedCommitsSubquery, now, interval)
+		query := sqlf.Sprintf(staleSourcedCommitsQuery, uploadSubquery, limit)
 
-	now = now.UTC()
-	interval := int(minimumTimeSinceLastCheck / time.Second)
-	uploadSubquery := sqlf.Sprintf(staleSourcedCommitsSubquery, now, interval)
-	query := sqlf.Sprintf(staleSourcedCommitsQuery, uploadSubquery, limit)
+		sourcedCommits, err := scanSourcedCommits(tx.db.Query(ctx, query))
+		if err != nil {
+			return err
+		}
 
-	sourcedCommits, err := scanSourcedCommits(tx.Query(ctx, query))
-	if err != nil {
-		return nil, err
-	}
+		numCommits := 0
+		for _, commits := range sourcedCommits {
+			numCommits += len(commits.Commits)
+		}
+		trace.AddEvent("TODO Domain Owner",
+			attribute.Int("numRepositories", len(sourcedCommits)),
+			attribute.Int("numCommits", numCommits))
 
-	numCommits := 0
-	for _, commits := range sourcedCommits {
-		numCommits += len(commits.Commits)
-	}
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("numRepositories", len(sourcedCommits)),
-		attribute.Int("numCommits", numCommits))
-
-	return sourcedCommits, nil
+		a = sourcedCommits
+		return nil
+	})
+	return a, err
 }
 
 const staleSourcedCommitsQuery = `

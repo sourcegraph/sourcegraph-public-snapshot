@@ -17,13 +17,9 @@ func (s *store) InsertPathRanks(
 	derivativeGraphKey string,
 	batchSize int,
 ) (numPathRanksInserted int, numInputsProcessed int, err error) {
-	ctx, _, endObservation := s.operations.insertPathRanks.With(
-		ctx,
-		&err,
-		observation.Args{LogFields: []otlog.Field{
-			otlog.String("derivativeGraphKey", derivativeGraphKey),
-		}},
-	)
+	ctx, _, endObservation := s.operations.insertPathRanks.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.String("derivativeGraphKey", derivativeGraphKey),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	_, ok := rankingshared.GraphKeyFromDerivativeGraphKey(derivativeGraphKey)

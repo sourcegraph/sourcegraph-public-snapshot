@@ -1,5 +1,13 @@
 package store
 
+import "time"
+
+// TODO - configure these via envvar
+const (
+	vacuumBatchSize = 100
+	threshold       = time.Duration(1) * time.Hour
+)
+
 func batchChannel[T any](ch <-chan T, batchSize int) <-chan []T {
 	batches := make(chan []T)
 	go func() {
