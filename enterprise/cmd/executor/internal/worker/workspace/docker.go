@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
@@ -11,7 +12,6 @@ import (
 )
 
 type dockerWorkspace struct {
-	path            string
 	scriptFilenames []string
 	workspaceDir    string
 	logger          command.Logger
@@ -32,6 +32,10 @@ func NewDockerWorkspace(
 	if err != nil {
 		return nil, err
 	}
+	workspaceDir, err = filepath.Abs(workspaceDir)
+	if err != nil {
+		return nil, err
+	}
 
 	if job.RepositoryName != "" {
 		if err = cloneRepo(ctx, workspaceDir, job, cmd, logger, cloneOpts, operations); err != nil {
@@ -47,7 +51,6 @@ func NewDockerWorkspace(
 	}
 
 	return &dockerWorkspace{
-		path:            workspaceDir,
 		scriptFilenames: scriptPaths,
 		workspaceDir:    workspaceDir,
 		logger:          logger,
@@ -66,7 +69,7 @@ func makeTemporaryDirectory(prefix string) (string, error) {
 }
 
 func (w dockerWorkspace) Path() string {
-	return w.path
+	return w.workspaceDir
 }
 
 func (w dockerWorkspace) ScriptFilenames() []string {
