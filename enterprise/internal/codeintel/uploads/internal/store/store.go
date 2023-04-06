@@ -17,8 +17,7 @@ import (
 )
 
 type Store interface {
-	Transact(ctx context.Context) (Store, error)
-	Done(err error) error
+	WithTransaction(ctx context.Context, f func(s Store) error) error
 
 	// Upload records
 	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) ([]shared.Upload, int, error)
@@ -123,18 +122,21 @@ func New(observationCtx *observation.Context, db database.DB) Store {
 	}
 }
 
-func (s *store) Transact(ctx context.Context) (Store, error) {
-	return s.transact(ctx)
+func (s *store) WithTransaction(ctx context.Context, f func(s Store) error) error {
+	return s.withTransaction(ctx, func(s *store) error { return f(s) })
 }
 
-func (s *store) transact(ctx context.Context) (*store, error) {
+func (s *store) withTransaction(ctx context.Context, f func(s *store) error) error {
+	return basestore.InTransaction[*store](ctx, s, f)
+}
+
+func (s *store) Transact(ctx context.Context) (*store, error) {
 	tx, err := s.db.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	return &store{
-		logger:     s.logger,
 		db:         tx,
 		operations: s.operations,
 	}, nil

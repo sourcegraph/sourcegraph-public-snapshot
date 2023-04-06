@@ -93,7 +93,7 @@ func TestVacuumStaleRanks(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := newInternal(&observation.TestContext, db)
+	store := New(&observation.TestContext, db)
 
 	if _, err := db.ExecContext(ctx, `
 		INSERT INTO repo (name) VALUES ('bar'), ('baz'), ('bonk'), ('foo1'), ('foo2'), ('foo3'), ('foo4'), ('foo5')`); err != nil {
@@ -110,7 +110,7 @@ func TestVacuumStaleRanks(t *testing.T) {
 		"baz":  rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 345),
 		"bonk": rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 456),
 	} {
-		if err := store.setDocumentRanks(ctx, api.RepoName(r), nil, key); err != nil {
+		if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), api.RepoName(r), nil, key); err != nil {
 			t.Fatalf("failed to insert document ranks: %s", err)
 		}
 	}
@@ -152,13 +152,13 @@ func TestVacuumStaleRanks(t *testing.T) {
 //
 //
 
-func (s *store) setDocumentRanks(ctx context.Context, repoName api.RepoName, ranks map[string]float64, graphKey string) error {
+func setDocumentRanks(ctx context.Context, db *basestore.Store, repoName api.RepoName, ranks map[string]float64, graphKey string) error {
 	serialized, err := json.Marshal(ranks)
 	if err != nil {
 		return err
 	}
 
-	return s.db.Exec(ctx, sqlf.Sprintf(setDocumentRanksQuery, repoName, serialized, graphKey))
+	return db.Exec(ctx, sqlf.Sprintf(setDocumentRanksQuery, repoName, serialized, graphKey))
 }
 
 const setDocumentRanksQuery = `

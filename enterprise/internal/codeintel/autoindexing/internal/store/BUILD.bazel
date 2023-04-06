@@ -11,6 +11,7 @@ go_library(
         "observability.go",
         "scheduler.go",
         "store.go",
+        "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store",
     visibility = ["//enterprise:__subpackages__"],

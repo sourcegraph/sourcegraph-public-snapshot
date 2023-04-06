@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -22,7 +23,7 @@ func TestGetStarRank(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := newInternal(&observation.TestContext, db)
+	store := New(&observation.TestContext, db)
 
 	if _, err := db.ExecContext(ctx, `
 		INSERT INTO repo (name, stars)
@@ -69,14 +70,14 @@ func TestDocumentRanks(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := newInternal(&observation.TestContext, db)
+	store := New(&observation.TestContext, db)
 	repoName := api.RepoName("foo")
 
 	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name, stars) VALUES ('foo', 1000)`); err != nil {
 		t.Fatalf("failed to insert repos: %s", err)
 	}
 
-	if err := store.setDocumentRanks(ctx, repoName, map[string]float64{
+	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), repoName, map[string]float64{
 		"cmd/main.go":        2, // no longer referenced
 		"internal/secret.go": 3,
 		"internal/util.go":   4,
@@ -84,7 +85,7 @@ func TestDocumentRanks(t *testing.T) {
 	}, mockRankingGraphKey+"-123"); err != nil {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
-	if err := store.setDocumentRanks(ctx, repoName, map[string]float64{
+	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), repoName, map[string]float64{
 		"cmd/args.go":        8, // new
 		"internal/secret.go": 7, // edited
 		"internal/util.go":   6, // edited
@@ -114,19 +115,19 @@ func TestGetReferenceCountStatistics(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := newInternal(&observation.TestContext, db)
+	store := New(&observation.TestContext, db)
 
 	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo'), ('bar'), ('baz')`); err != nil {
 		t.Fatalf("failed to insert repos: %s", err)
 	}
 
-	if err := store.setDocumentRanks(ctx, api.RepoName("foo"), map[string]float64{"foo": 18, "bar": 3985, "baz": 5260}, mockRankingGraphKey); err != nil {
+	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), api.RepoName("foo"), map[string]float64{"foo": 18, "bar": 3985, "baz": 5260}, mockRankingGraphKey); err != nil {
 		t.Fatalf("failed to set document ranks: %s", err)
 	}
-	if err := store.setDocumentRanks(ctx, api.RepoName("bar"), map[string]float64{"foo": 5712, "bar": 5902, "baz": 79}, mockRankingGraphKey); err != nil {
+	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), api.RepoName("bar"), map[string]float64{"foo": 5712, "bar": 5902, "baz": 79}, mockRankingGraphKey); err != nil {
 		t.Fatalf("failed to set document ranks: %s", err)
 	}
-	if err := store.setDocumentRanks(ctx, api.RepoName("baz"), map[string]float64{"foo": 86, "bar": 89, "baz": 9, "bonk": 918, "quux": 0}, mockRankingGraphKey); err != nil {
+	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), api.RepoName("baz"), map[string]float64{"foo": 86, "bar": 89, "baz": 9, "bonk": 918, "quux": 0}, mockRankingGraphKey); err != nil {
 		t.Fatalf("failed to set document ranks: %s", err)
 	}
 
@@ -147,17 +148,17 @@ func TestLastUpdatedAt(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := newInternal(&observation.TestContext, db)
+	store := New(&observation.TestContext, db)
 
 	idFoo := api.RepoID(1)
 	idBar := api.RepoID(2)
 	if _, err := db.ExecContext(ctx, `INSERT INTO repo (id, name) VALUES (1, 'foo'), (2, 'bar'), (3, 'baz')`); err != nil {
 		t.Fatalf("failed to insert repos: %s", err)
 	}
-	if err := store.setDocumentRanks(ctx, "foo", nil, mockRankingGraphKey+"-123"); err != nil {
+	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), "foo", nil, mockRankingGraphKey+"-123"); err != nil {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
-	if err := store.setDocumentRanks(ctx, "bar", nil, mockRankingGraphKey+"-123"); err != nil {
+	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), "bar", nil, mockRankingGraphKey+"-123"); err != nil {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
 

@@ -11,9 +11,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func (s *store) GetStarRank(ctx context.Context, repoName api.RepoName) (float64, error) {
+func (s *store) GetStarRank(ctx context.Context, repoName api.RepoName) (_ float64, err error) {
+	ctx, _, endObservation := s.operations.getStarRank.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	rank, _, err := basestore.ScanFirstFloat(s.db.Query(ctx, sqlf.Sprintf(getStarRankQuery, repoName)))
 	return rank, err
 }
@@ -30,7 +34,10 @@ FROM (
 WHERE s.name = %s
 `
 
-func (s *store) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (map[string]float64, bool, error) {
+func (s *store) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string]float64, _ bool, err error) {
+	ctx, _, endObservation := s.operations.getDocumentRanks.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	pathRanksWithPrecision := map[string]float64{}
 	scanner := func(s dbutil.Scanner) (bool, error) {
 		var serialized string
@@ -67,6 +74,9 @@ WHERE
 `
 
 func (s *store) GetReferenceCountStatistics(ctx context.Context) (logmean float64, err error) {
+	ctx, _, endObservation := s.operations.getReferenceCountStatistics.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(`
 		SELECT CASE
 			WHEN COALESCE(SUM(pr.num_paths), 0) = 0
@@ -89,7 +99,10 @@ func (s *store) GetReferenceCountStatistics(ctx context.Context) (logmean float6
 	return logmean, nil
 }
 
-func (s *store) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error) {
+func (s *store) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (_ map[api.RepoID]time.Time, err error) {
+	ctx, _, endObservation := s.operations.lastUpdatedAt.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	pairs, err := scanLastUpdatedAtPairs(s.db.Query(ctx, sqlf.Sprintf(lastUpdatedAtQuery, pq.Array(repoIDs))))
 	if err != nil {
 		return nil, err

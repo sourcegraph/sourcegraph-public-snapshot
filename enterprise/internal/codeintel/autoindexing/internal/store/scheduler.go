@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -21,23 +20,31 @@ import (
 // If allowGlobalPolicies is false, then configuration policies that define neither a repository id
 // nor a non-empty set of repository patterns wl be ignored. When true, such policies apply over all
 // repositories known to the instance.
-func (s *store) GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error) {
+func (s *store) GetRepositoriesForIndexScan(
+	ctx context.Context,
+	processDelay time.Duration,
+	allowGlobalPolicies bool,
+	repositoryMatchLimit *int,
+	limit int,
+	now time.Time,
+) (_ []int, err error) {
+	var repositoryMatchLimitValue int
+	if repositoryMatchLimit != nil {
+		repositoryMatchLimitValue = *repositoryMatchLimit
+	}
+
 	ctx, _, endObservation := s.operations.getRepositoriesForIndexScan.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Bool("allowGlobalPolicies", allowGlobalPolicies),
+		log.Int("repositoryMatchLimit", repositoryMatchLimitValue),
 		log.Int("limit", limit),
 	}})
 	defer endObservation(1, observation.Args{})
 
 	queries := make([]*sqlf.Query, 0, 3)
 	if allowGlobalPolicies {
-		limitExpression := sqlf.Sprintf("")
-		if repositoryMatchLimit != nil {
-			limitExpression = sqlf.Sprintf("LIMIT %s", *repositoryMatchLimit)
-		}
-
 		queries = append(queries, sqlf.Sprintf(
 			getRepositoriesForIndexScanGlobalRepositoriesQuery,
-			limitExpression,
+			optionalLimit(repositoryMatchLimit),
 		))
 	}
 	queries = append(queries, sqlf.Sprintf(getRepositoriesForIndexScanRepositoriesWithPolicyQuery))
@@ -47,21 +54,16 @@ func (s *store) GetRepositoriesForIndexScan(ctx context.Context, table, column s
 		queries[i] = sqlf.Sprintf("(%s)", query)
 	}
 
-	replacer := strings.NewReplacer("{column_name}", column)
 	return basestore.ScanInts(s.db.Query(ctx, sqlf.Sprintf(
-		replacer.Replace(getRepositoriesForIndexScanQuery),
+		getRepositoriesForIndexScanQuery,
 		sqlf.Join(queries, " UNION ALL "),
-		quote(table),
 		now,
 		int(processDelay/time.Second),
 		limit,
-		quote(table),
 		now,
 		now,
 	)))
 }
-
-func quote(s string) *sqlf.Query { return sqlf.Sprintf(s) }
 
 const getRepositoriesForIndexScanQuery = `
 WITH
@@ -84,24 +86,24 @@ repositories_matching_policy AS (
 repositories AS (
 	SELECT rmp.id
 	FROM repositories_matching_policy rmp
-	LEFT JOIN %s lrs ON lrs.repository_id = rmp.id
+	LEFT JOIN lsif_last_index_scan lrs ON lrs.repository_id = rmp.id
 	WHERE
 		-- Records that have not been checked within the global reindex threshold are also eligible for
 		-- indexing. Note that condition here is true for a record that has never been indexed.
-		(%s - lrs.{column_name} > (%s * '1 second'::interval)) IS DISTINCT FROM FALSE OR
+		(%s - lrs.last_index_scan_at > (%s * '1 second'::interval)) IS DISTINCT FROM FALSE OR
 
 		-- Records that have received an update since their last scan are also eligible for re-indexing.
 		-- Note that last_changed is NULL unless the repository is attached to a policy for HEAD.
-		(rmp.last_changed > lrs.{column_name})
+		(rmp.last_changed > lrs.last_index_scan_at)
 	ORDER BY
-		lrs.{column_name} NULLS FIRST,
+		lrs.last_index_scan_at NULLS FIRST,
 		rmp.id -- tie breaker
 	LIMIT %s
 )
-INSERT INTO %s (repository_id, {column_name})
+INSERT INTO lsif_last_index_scan (repository_id, last_index_scan_at)
 SELECT DISTINCT r.id, %s::timestamp FROM repositories r
 ON CONFLICT (repository_id) DO UPDATE
-SET {column_name} = %s
+SET last_index_scan_at = %s
 RETURNING repository_id
 `
 
@@ -110,7 +112,7 @@ SELECT
 	r.id,
 	CASE
 		-- Return non-NULL last_changed only for policies that are attached to a HEAD commit.
-		-- We don't want to superfluously return the same repos becasue they had an update, but
+		-- We don't want to superfluously return the same repos because they had an update, but
 		-- we only (for example) index a branch that doesn't have many active commits.
 		WHEN gpd.is_head_policy THEN gr.last_changed
 		ELSE NULL
@@ -131,7 +133,7 @@ SELECT
 	r.id,
 	CASE
 		-- Return non-NULL last_changed only for policies that are attached to a HEAD commit.
-		-- We don't want to superfluously return the same repos becasue they had an update, but
+		-- We don't want to superfluously return the same repos because they had an update, but
 		-- we only (for example) index a branch that doesn't have many active commits.
 		WHEN p.type = 'GIT_COMMIT' AND p.pattern = 'HEAD' THEN gr.last_changed
 		ELSE NULL
@@ -151,7 +153,7 @@ SELECT
 	r.id,
 	CASE
 		-- Return non-NULL last_changed only for policies that are attached to a HEAD commit.
-		-- We don't want to superfluously return the same repos becasue they had an update, but
+		-- We don't want to superfluously return the same repos because they had an update, but
 		-- we only (for example) index a branch that doesn't have many active commits.
 		WHEN p.type = 'GIT_COMMIT' AND p.pattern = 'HEAD' THEN gr.last_changed
 		ELSE NULL
@@ -167,20 +169,23 @@ WHERE
 	gr.clone_status = 'cloned'
 `
 
-// GetQueuedRepoRev selects a batch of repository and revisions to be processed by the auto-indexing
-// scheduler. If in a transaction, the seleted records will remain locked until the enclosing transaction
-// has been committed or rolled back.
+//
+//
+
 func (s *store) GetQueuedRepoRev(ctx context.Context, batchSize int) (_ []RepoRev, err error) {
 	ctx, _, endObservation := s.operations.getQueuedRepoRev.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("batchSize", batchSize),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return ScanRepoRevs(s.db.Query(ctx, sqlf.Sprintf(getQueuedRepoRevQuery, batchSize)))
+	return scanRepoRevs(s.db.Query(ctx, sqlf.Sprintf(getQueuedRepoRevQuery, batchSize)))
 }
 
 const getQueuedRepoRevQuery = `
-SELECT id, repository_id, rev
+SELECT
+	id,
+	repository_id,
+	rev
 FROM codeintel_autoindex_queue
 WHERE processed_at IS NULL
 ORDER BY queued_at ASC
@@ -188,7 +193,6 @@ FOR UPDATE SKIP LOCKED
 LIMIT %s
 `
 
-// MarkRepoRevsAsProcessed sets processed_at for each matching record in codeintel_autoindex_queue.
 func (s *store) MarkRepoRevsAsProcessed(ctx context.Context, ids []int) (err error) {
 	ctx, _, endObservation := s.operations.markRepoRevsAsProcessed.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numIDs", len(ids)),
@@ -207,9 +211,9 @@ WHERE id = ANY(%s)
 //
 //
 
-var ScanRepoRevs = basestore.NewSliceScanner(scanRepoRev)
-
 func scanRepoRev(s dbutil.Scanner) (rr RepoRev, err error) {
 	err = s.Scan(&rr.ID, &rr.RepositoryID, &rr.Rev)
 	return rr, err
 }
+
+var scanRepoRevs = basestore.NewSliceScanner(scanRepoRev)

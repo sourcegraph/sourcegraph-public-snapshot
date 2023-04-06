@@ -20,7 +20,7 @@ import (
 func exportRankingGraph(
 	ctx context.Context,
 	store store.Store,
-	lsifstore lsifstore.LsifStore,
+	lsifstore lsifstore.Store,
 	logger log.Logger,
 	readBatchSize int,
 	writeBatchSize int,
