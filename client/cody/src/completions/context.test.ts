@@ -1,4 +1,4 @@
-import { bestJaccardMatch, jaccardScore, getWords } from './context'
+import { bestJaccardMatch, getWords } from './context'
 
 describe('getWords', () => {
     it('', () => {
@@ -16,48 +16,6 @@ describe('getWords', () => {
                 ['slip', 1],
             ])
         )
-    })
-})
-
-describe('jaccardScore', () => {
-    it('perfect overlap', () => {
-        const targetWords = new Map<string, number>([
-            ['foo', 1],
-            ['bar', 1],
-            ['baz', 1],
-        ])
-        const matchWords = new Map<string, number>([
-            ['foo', 1],
-            ['bar', 1],
-            ['baz', 1],
-        ])
-        expect(jaccardScore(targetWords, matchWords)).toEqual(1)
-    })
-    it('no overlap', () => {
-        const targetWords = new Map<string, number>([
-            ['foo', 1],
-            ['bar', 1],
-            ['baz', 1],
-        ])
-        const matchWords = new Map<string, number>([
-            ['qux', 1],
-            ['quux', 1],
-            ['quuz', 1],
-        ])
-        expect(jaccardScore(targetWords, matchWords)).toEqual(0)
-    })
-    it('50% overlap', () => {
-        const targetWords = new Map<string, number>([
-            ['bar', 1],
-            ['baz', 1],
-        ])
-        const matchWords = new Map<string, number>([
-            ['foo', 1],
-            ['bar', 1],
-            ['baz', 1],
-            ['qux', 1],
-        ])
-        expect(jaccardScore(targetWords, matchWords)).toEqual(0.5)
     })
 })
 
