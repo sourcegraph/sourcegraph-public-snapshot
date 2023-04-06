@@ -334,6 +334,15 @@ func TestStatusMessages(t *testing.T) {
 				}
 			}
 
+			if len(tc.repos) < 1 && tc.sourcerErr == nil {
+				externalServices := database.NewMockExternalServiceStore()
+				externalServices.GetLatestSyncErrorsFunc.SetDefaultReturn(
+					[]*database.SyncError{},
+					nil,
+				)
+				mockDB.ExternalServicesFunc.SetDefaultReturn(externalServices)
+			}
+
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
