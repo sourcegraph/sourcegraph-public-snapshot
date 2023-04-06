@@ -60,6 +60,9 @@ IMAGE=sourcegraph/grafana:server CACHE=true docker-images/grafana/build-bazel.sh
 # echo "--- blobstore"
 IMAGE=sourcegraph/blobstore:server docker-images/blobstore/build.sh
 
+echo "--- postgres exporter"
+IMAGE=sourcegraph/postgres_exporter:server CACHE=true docker-images/postgres_exporter/build.sh
+
 # echo "--- build scripts"
 cp -a ./cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
 cp -a ./cmd/gitserver/p4-fusion-install-alpine.sh "$OUTPUT"
