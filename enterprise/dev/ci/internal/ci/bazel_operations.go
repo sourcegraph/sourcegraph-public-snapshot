@@ -144,7 +144,7 @@ func bazelTest(optional bool, targets ...string) func(*bk.Pipeline) {
 		bk.Agent("queue", "bazel"),
 	}
 
-	bazelRawCmd := bazelRawCmd("test %s", strings.Join(targets, " "))
+	bazelRawCmd := bazelRawCmd(fmt.Sprintf("test %s", strings.Join(targets, " ")))
 	cmds = append(cmds, bk.RawCmd(bazelRawCmd))
 
 	return func(pipeline *bk.Pipeline) {
