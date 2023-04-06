@@ -100,6 +100,7 @@ func execPre(ctx context.Context, stepIdx int, executionInput batcheslib.Workspa
 		for path, file := range filesToMount {
 			// TODO: Does file.Name() work?
 			fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("cp", file.Name(), path))
+			fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("chmod", "+x", path))
 		}
 
 		// Mount any paths on the local system to the docker container. The paths have already been validated during parsing.
@@ -108,7 +109,8 @@ func execPre(ctx context.Context, stepIdx int, executionInput batcheslib.Workspa
 			if err != nil {
 				return errors.Wrap(err, "getAbsoluteMountPath")
 			}
-			fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("cp", workspaceFilePath, mount.Mountpoint))
+			fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("cp", "-r", workspaceFilePath, mount.Mountpoint))
+			fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("chmod", "-R", "+x", mount.Mountpoint))
 		}
 	}
 
