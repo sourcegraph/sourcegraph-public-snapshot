@@ -118,11 +118,13 @@ func getCachedRepoEmbeddingIndex(
 		rev, err := ms.HasEmbeddings(ctx, repoName)
 		if err != nil {
 			fmt.Printf("failed to fetch embeddings from db %s\n", err)
+			return nil, err
 		}
 		if rev == "" && idx != nil {
 			fmt.Printf("no embeddings for %q, attempting update...\n", repoName)
 			if err := ms.UpdateEmbeddings(ctx, idx); err != nil {
 				fmt.Printf("error updating embeddings: %s", err)
+				return nil, err
 			}
 		}
 		return idx, err
