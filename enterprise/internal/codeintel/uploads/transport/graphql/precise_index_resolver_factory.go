@@ -4,7 +4,6 @@ import (
 	"context"
 
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/dataloader"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -40,8 +39,8 @@ func NewPreciseIndexResolverFactory(
 
 func (f *PreciseIndexResolverFactory) Create(
 	ctx context.Context,
-	uploadLoader *dataloader.DataLoader[int, shared.Upload],
-	indexLoader *dataloader.DataLoader[int, shared.Index],
+	uploadLoader UploadLoader,
+	indexLoader IndexLoader,
 	locationResolver *gitresolvers.CachedLocationResolver,
 	traceErrs *observation.ErrCollector,
 	upload *shared.Upload,

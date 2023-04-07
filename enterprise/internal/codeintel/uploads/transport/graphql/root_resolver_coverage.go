@@ -13,7 +13,6 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/dataloader"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsShared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -57,19 +56,9 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 		return nil, err
 	}
 
-	var allUploads []shared.Upload
-	for _, recentUpload := range recentUploads {
-		allUploads = append(allUploads, recentUpload.Uploads...)
-	}
-
 	recentIndexes, err := r.uploadSvc.GetRecentIndexesSummary(ctx, id)
 	if err != nil {
 		return nil, err
-	}
-
-	var allIndexes []shared.Index
-	for _, recentIndex := range recentIndexes {
-		allIndexes = append(allIndexes, recentIndex.Indexes...)
 	}
 
 	// Create blocklist for indexes that have already been uploaded.
@@ -124,23 +113,26 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 		LastIndexScan:           lastIndexScan,
 	}
 
+	var allUploads []shared.Upload
+	for _, recentUpload := range recentUploads {
+		allUploads = append(allUploads, recentUpload.Uploads...)
+	}
+
+	var allIndexes []shared.Index
+	for _, recentIndex := range recentIndexes {
+		allIndexes = append(allIndexes, recentIndex.Indexes...)
+	}
+
+	// Create upload loader with data we already have, and pre-submit associated uploads from index records
 	uploadLoader := r.uploadLoaderFactory.CreateWithInitialData(allUploads)
+	PresubmitAssociatedUploads(uploadLoader, allIndexes...)
+
+	// Create index loader with data we already have, and pre-submit associated indexes from upload records
 	indexLoader := r.indexLoaderFactory.CreateWithInitialData(allIndexes)
+	PresubmitAssociatedIndexes(indexLoader, allUploads...)
+
+	// No data to load for git data (yet)
 	locationResolver := r.locationResolverFactory.Create()
-
-	// TODO - abstraction?
-	for _, upload := range allUploads {
-		if upload.AssociatedIndexID != nil {
-			uploadLoader.Presubmit(*upload.AssociatedIndexID)
-		}
-	}
-
-	// TODO - abstraction?
-	for _, index := range allIndexes {
-		if index.AssociatedUploadID != nil {
-			indexLoader.Presubmit(*index.AssociatedUploadID)
-		}
-	}
 
 	return newRepositorySummaryResolver(
 		locationResolver,
@@ -318,8 +310,8 @@ type repositorySummaryResolver struct {
 	summary                     RepositorySummary
 	availableIndexers           []inferredAvailableIndexers2
 	limitErr                    error
-	uploadLoader                *dataloader.DataLoader[int, shared.Upload]
-	indexLoader                 *dataloader.DataLoader[int, shared.Index]
+	uploadLoader                UploadLoader
+	indexLoader                 IndexLoader
 	locationResolver            *gitresolvers.CachedLocationResolver
 	errTracer                   *observation.ErrCollector
 	preciseIndexResolverFactory *PreciseIndexResolverFactory
@@ -335,8 +327,8 @@ func newRepositorySummaryResolver(
 	summary RepositorySummary,
 	availableIndexers []inferredAvailableIndexers2,
 	limitErr error,
-	uploadLoader *dataloader.DataLoader[int, shared.Upload],
-	indexLoader *dataloader.DataLoader[int, shared.Index],
+	uploadLoader UploadLoader,
+	indexLoader IndexLoader,
 	errTracer *observation.ErrCollector,
 	preciseIndexResolverFactory *PreciseIndexResolverFactory,
 ) resolverstubs.CodeIntelRepositorySummaryResolver {

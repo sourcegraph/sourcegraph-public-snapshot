@@ -7,9 +7,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/dataloader"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
-	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -18,9 +16,9 @@ import (
 
 type rootResolver struct {
 	sentinelSvc                 SentinelService
-	vulnerabilityLoaderFactory  *dataloader.DataloaderFactory[int, shared.Vulnerability]
-	uploadLoaderFactory         *dataloader.DataloaderFactory[int, uploadsshared.Upload]
-	indexLoaderFactory          *dataloader.DataloaderFactory[int, uploadsshared.Index]
+	vulnerabilityLoaderFactory  VulnerabilityLoaderFactory
+	uploadLoaderFactory         uploadsgraphql.UploadLoaderFactory
+	indexLoaderFactory          uploadsgraphql.IndexLoaderFactory
 	locationResolverFactory     *gitresolvers.CachedLocationResolverFactory
 	preciseIndexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory
 	operations                  *operations
@@ -29,8 +27,8 @@ type rootResolver struct {
 func NewRootResolver(
 	observationCtx *observation.Context,
 	sentinelSvc SentinelService,
-	uploadLoaderFactory *dataloader.DataloaderFactory[int, uploadsshared.Upload],
-	indexLoaderFactory *dataloader.DataloaderFactory[int, uploadsshared.Index],
+	uploadLoaderFactory uploadsgraphql.UploadLoaderFactory,
+	indexLoaderFactory uploadsgraphql.IndexLoaderFactory,
 	locationResolverFactory *gitresolvers.CachedLocationResolverFactory,
 	preciseIndexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory,
 ) resolverstubs.SentinelServiceResolver {
@@ -111,18 +109,14 @@ func (r *rootResolver) VulnerabilityMatches(ctx context.Context, args resolverst
 		return nil, err
 	}
 
-	// TODO
-	// Create a new prefetcher here as we only want to cache upload and index records in
-	// the same graphQL request, not across different request.
-	uploadLoader := r.uploadLoaderFactory.Create()
-	indexLoader := r.indexLoaderFactory.Create()
+	// Pre-submit vulnerability and upload ids for loading
 	vulnerabilityLoader := r.vulnerabilityLoaderFactory.Create()
-	locationResolver := r.locationResolverFactory.Create()
+	uploadLoader := r.uploadLoaderFactory.Create()
+	PresubmitMatches(vulnerabilityLoader, uploadLoader, matches...)
 
-	for _, match := range matches {
-		uploadLoader.Presubmit(match.UploadID)
-		vulnerabilityLoader.Presubmit(match.VulnerabilityID)
-	}
+	// No data to load for associated indexes or git data (yet)
+	indexLoader := r.indexLoaderFactory.Create()
+	locationResolver := r.locationResolverFactory.Create()
 
 	var resolvers []resolverstubs.VulnerabilityMatchResolver
 	for _, m := range matches {
@@ -205,9 +199,12 @@ func (r *rootResolver) VulnerabilityMatchByID(ctx context.Context, vulnerability
 		return nil, err
 	}
 
-	// TODO
+	// Pre-submit vulnerability and upload ids for loading
 	vulnerabilityLoader := r.vulnerabilityLoaderFactory.Create()
 	uploadLoader := r.uploadLoaderFactory.Create()
+	PresubmitMatches(vulnerabilityLoader, uploadLoader, match)
+
+	// No data to load for associated indexes or git data (yet)
 	indexLoader := r.indexLoaderFactory.Create()
 	locationResolver := r.locationResolverFactory.Create()
 
@@ -319,11 +316,11 @@ func (r *vulnerabilityAffectedSymbolResolver) Path() string      { return r.s.Pa
 func (r *vulnerabilityAffectedSymbolResolver) Symbols() []string { return r.s.Symbols }
 
 type vulnerabilityMatchResolver struct {
-	uploadLoader                *dataloader.DataLoader[int, uploadsshared.Upload]
-	indexLoader                 *dataloader.DataLoader[int, uploadsshared.Index]
+	uploadLoader                uploadsgraphql.UploadLoader
+	indexLoader                 uploadsgraphql.IndexLoader
 	locationResolver            *gitresolvers.CachedLocationResolver
 	errTracer                   *observation.ErrCollector
-	vulnerabilityLoader         *dataloader.DataLoader[int, shared.Vulnerability]
+	vulnerabilityLoader         VulnerabilityLoader
 	m                           shared.VulnerabilityMatch
 	preciseIndexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory
 }

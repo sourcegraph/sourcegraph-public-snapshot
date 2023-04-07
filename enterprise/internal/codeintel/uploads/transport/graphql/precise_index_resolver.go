@@ -12,7 +12,6 @@ import (
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	policiesgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/transport/graphql"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/dataloader"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -43,8 +42,8 @@ func newPreciseIndexResolver(
 	uploadsSvc UploadsService,
 	policySvc PolicyService,
 	gitserverClient gitserver.Client,
-	uploadLoader *dataloader.DataLoader[int, shared.Upload],
-	indexLoader *dataloader.DataLoader[int, shared.Index],
+	uploadLoader UploadLoader,
+	indexLoader IndexLoader,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
 	locationResolver *gitresolvers.CachedLocationResolver,

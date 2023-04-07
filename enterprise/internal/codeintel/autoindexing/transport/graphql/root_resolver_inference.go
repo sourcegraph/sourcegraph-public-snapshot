@@ -97,16 +97,15 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 		return nil, err
 	}
 
-	uploadLoader := r.uploadLoaderFactory.Create()
+	// Create index loader with data we already have
 	indexLoader := r.indexLoaderFactory.CreateWithInitialData(indexes)
-	locationResolver := r.locationResolverFactory.Create()
 
-	// TODO - abstraction?
-	for _, index := range indexes {
-		if index.AssociatedUploadID != nil {
-			uploadLoader.Presubmit(*index.AssociatedUploadID)
-		}
-	}
+	// Pre-submit associated upload ids for subsequent loading
+	uploadLoader := r.uploadLoaderFactory.Create()
+	uploadsgraphql.PresubmitAssociatedUploads(uploadLoader, indexes...)
+
+	// No data to load for git data (yet)
+	locationResolver := r.locationResolverFactory.Create()
 
 	resolvers := make([]resolverstubs.PreciseIndexResolver, 0, len(indexes))
 	for _, index := range indexes {

@@ -186,20 +186,20 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 		cursor = ""
 	}
 
+	// Create upload loader with data we already have, and pre-submit associated uploads from index records
 	uploadLoader := r.uploadLoaderFactory.CreateWithInitialData(uploads)
-	indexLoader := r.indexLoaderFactory.CreateWithInitialData(indexes)
-	locationResolverFactory := r.locationResolverFactory.Create()
+	PresubmitAssociatedUploads(uploadLoader, indexes...)
 
-	// TODO - abstraction?
-	for _, pair := range pairs {
-		if pair.upload != nil && pair.upload.AssociatedIndexID != nil {
-			indexLoader.Presubmit(*pair.upload.AssociatedIndexID)
-		}
-	}
+	// Create index loader with data we already have, and pre-submit associated indexes from upload records
+	indexLoader := r.indexLoaderFactory.CreateWithInitialData(indexes)
+	PresubmitAssociatedIndexes(indexLoader, uploads...)
+
+	// No data to load for git data (yet)
+	locationResolver := r.locationResolverFactory.Create()
 
 	resolvers := make([]resolverstubs.PreciseIndexResolver, 0, len(pairs))
 	for _, pair := range pairs {
-		resolver, err := r.preciseIndexResolverFactory.Create(ctx, uploadLoader, indexLoader, locationResolverFactory, errTracer, pair.upload, pair.index)
+		resolver, err := r.preciseIndexResolverFactory.Create(ctx, uploadLoader, indexLoader, locationResolver, errTracer, pair.upload, pair.index)
 		if err != nil {
 			return nil, err
 		}
@@ -227,9 +227,14 @@ func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ r
 			return nil, err
 		}
 
-		// TODO - CreateWith(set)?
-		uploadLoader := r.uploadLoaderFactory.Create()
+		// Create upload loader with data we already have
+		uploadLoader := r.uploadLoaderFactory.CreateWithInitialData([]shared.Upload{upload})
+
+		// Pre-submit associated index id for subsequent loading
 		indexLoader := r.indexLoaderFactory.Create()
+		PresubmitAssociatedIndexes(indexLoader, upload)
+
+		// No data to load for git data (yet)
 		locationResolverFactory := r.locationResolverFactory.Create()
 
 		return r.preciseIndexResolverFactory.Create(ctx, uploadLoader, indexLoader, locationResolverFactory, errTracer, &upload, nil)
@@ -240,9 +245,14 @@ func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ r
 			return nil, err
 		}
 
-		// TODO - CreateWith(set)?
+		// Create index loader with data we already have
+		indexLoader := r.indexLoaderFactory.CreateWithInitialData([]shared.Index{index})
+
+		// Pre-submit associated upload id for subsequent loading
 		uploadLoader := r.uploadLoaderFactory.Create()
-		indexLoader := r.indexLoaderFactory.Create()
+		PresubmitAssociatedUploads(uploadLoader, index)
+
+		// No data to load for git data (yet)
 		locationResolverFactory := r.locationResolverFactory.Create()
 
 		return r.preciseIndexResolverFactory.Create(ctx, uploadLoader, indexLoader, locationResolverFactory, errTracer, nil, &index)
