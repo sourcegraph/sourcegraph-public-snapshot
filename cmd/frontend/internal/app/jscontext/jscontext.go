@@ -171,9 +171,10 @@ type JSContext struct {
 
 	Branding *schema.Branding `json:"branding"`
 
-	BatchChangesEnabled                bool `json:"batchChangesEnabled"`
-	BatchChangesDisableWebhooksWarning bool `json:"batchChangesDisableWebhooksWarning"`
-	BatchChangesWebhookLogsEnabled     bool `json:"batchChangesWebhookLogsEnabled"`
+	BatchChangesEnabled                bool                                `json:"batchChangesEnabled"`
+	BatchChangesDisableWebhooksWarning bool                                `json:"batchChangesDisableWebhooksWarning"`
+	BatchChangesWebhookLogsEnabled     bool                                `json:"batchChangesWebhookLogsEnabled"`
+	BatchChangesRolloutWindows         *[]*schema.BatchChangeRolloutWindow `json:"batchChangesRolloutWindow"`
 
 	ExecutorsEnabled                         bool `json:"executorsEnabled"`
 	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
@@ -353,6 +354,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		BatchChangesEnabled:                enterprise.BatchChangesEnabledForUser(ctx, db) == nil,
 		BatchChangesDisableWebhooksWarning: conf.Get().BatchChangesDisableWebhooksWarning,
 		BatchChangesWebhookLogsEnabled:     webhooks.LoggingEnabled(conf.Get()),
+		BatchChangesRolloutWindows:         conf.Get().BatchChangesRolloutWindows,
 
 		ExecutorsEnabled:                         conf.ExecutorsEnabled(),
 		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
