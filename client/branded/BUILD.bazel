@@ -76,6 +76,7 @@ ts_project(
         "src/search-ui/components/RepoFileLink.tsx",
         "src/search-ui/components/RepoSearchResult.tsx",
         "src/search-ui/components/ResultContainer.tsx",
+        "src/search-ui/components/SmartSearchPreview.tsx",
         "src/search-ui/components/SearchResultStar.tsx",
         "src/search-ui/components/SymbolSearchResult.tsx",
         "src/search-ui/components/SyntaxHighlightedSearchQuery.tsx",
