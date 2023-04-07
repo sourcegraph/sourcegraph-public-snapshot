@@ -110,7 +110,7 @@ const config = {
           chunks: 'all',
         },
         [initialChunkNames.opentelemetry]: {
-          test: /[/\\]node_modules[/\\](@opentelemetry)[/\\]/,
+          test: /[/\\]node_modules[/\\](@opentelemetry|zone.js)[/\\]/,
           name: initialChunkNames.opentelemetry,
           chunks: 'all',
         },

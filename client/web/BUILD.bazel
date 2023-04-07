@@ -1898,6 +1898,7 @@ jest_test(
 # webpack dev environment -------------------
 WEBPACK_CONFIG_DEPS = [
     ":node_modules/@sourcegraph/build-config",
+    "//:node_modules/@babel/runtime",
     "//:node_modules/@pmmmwh/react-refresh-webpack-plugin",
     "//:node_modules/@sentry/webpack-plugin",
     "//:node_modules/buffer",
@@ -1964,8 +1965,33 @@ ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
     ]
 ]
 
+webpack_bundle(
+    name = "bundle-enterprise",
+    srcs = ENTERPRISE_BUNDLE_DATA_DEPS + [
+        "//:babel_config",
+        "//:browserslist",
+        "//:package_json",
+    ],
+    entry_points = {
+        "src/enterprise/main.js": "app",
+    },
+    env = {
+        "NODE_ENV": "production",
+        "ENTERPRISE": "true",
+        "INTEGRATION_TESTS": "false",
+        "WEBPACK_BUNDLE_ANALYZER": "false",
+        "WEBPACK_USE_NAMED_CHUNKS": "false",
+    },
+    output_dir = True,
+    webpack_config = "webpack.bazel.config.js",
+    deps = WEBPACK_CONFIG_DEPS,
+)
+
+# Used for integartion tests and has bigger bundle size
+# because of the inlined source-maps.
 webpack_web_app(
     name = "app-enterprise",
+    testonly = True,
     srcs = ENTERPRISE_BUNDLE_DATA_DEPS + [
         "//:babel_config",
         "//:browserslist",
@@ -2012,6 +2038,6 @@ build_test(
     name = "webpack_test",
     targets = [
         ":bundle",
-        ":app-enterprise",
+        ":bundle-enterprise",
     ],
 )
