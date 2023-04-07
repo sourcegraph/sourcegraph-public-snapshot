@@ -13,8 +13,7 @@ RUN mvn package -DskipTests && \
     cp src/main/resources/run-docker-container.sh /opt/s3proxy
 
 # Build our final Wolfi-based image
-# FROM us.gcr.io/sourcegraph-dev/wolfi-blobstore-base:latest
-FROM sourcegraph-wolfi/blobstore-base:latest-amd64
+FROM us.gcr.io/sourcegraph-dev/wolfi-blobstore-base:latest
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
