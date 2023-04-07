@@ -21,7 +21,6 @@ export interface BatchChangesSettingsAreaProps {
 export const BatchChangesSettingsArea: React.FunctionComponent<
     React.PropsWithChildren<BatchChangesSettingsAreaProps>
 > = props => {
-    console.log(window.context)
     const { batchChangesRolloutWindows } = window.context;
     return (
         <div className="test-batches-settings-page">

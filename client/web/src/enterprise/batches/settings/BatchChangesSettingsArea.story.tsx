@@ -12,7 +12,7 @@ import {
 } from '../../../graphql-operations'
 
 import { USER_CODE_HOSTS } from './backend'
-import { BatchChangesSettingsArea } from './BatchChangesSettingsArea'
+import { BatchChangesSettingsArea, RolloutWindowsConfiguration } from './BatchChangesSettingsArea'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
@@ -152,3 +152,21 @@ export const ConfigAdded: Story = () => (
 )
 
 ConfigAdded.storyName = 'Config added'
+
+export const RolloutWindowsConfigurationStory: Story = () => (
+    <WebStory>
+        {props => <RolloutWindowsConfiguration {...props} rolloutWindows={[
+            {
+                rate: 'unlimited'
+            },
+            {
+                rate: '10/hour',
+                days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+                start: '08:00',
+                end: '16:00'
+            }
+        ]} />}
+    </WebStory>
+)
+
+RolloutWindowsConfigurationStory.storyName = 'Rollout Windows configured'
