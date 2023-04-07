@@ -16,6 +16,8 @@ Currently, Cody is available for VS Code. More editors are on the way—[join th
 
 ## Cody on Sourcegraph.com
 
+> NOTE: Cody on sourcegraph.com should only be used on public code.
+
 Cody uses Sourcegraph to fetch relevant context to generate answers and code. These instructions walk through installing Cody and connecting it to sourcegraph.com. For private instances of Sourcegraph, see the section below about enabling Cody for Enterprise.
 
 1. Sign into [sourcegraph.com](https://sourcegraph.com)
