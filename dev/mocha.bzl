@@ -65,6 +65,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs)
             "//:mocha_config",
         ] + NON_BUNDLED_DEPS,
         env = dict(env, **{
+            "HEADLESS": "$$E2E_HEADLESS",
             # Add environment variable so that mocha writes its test xml
             # to the location Bazel expects.
             "MOCHA_FILE": "$$XML_OUTPUT_FILE",
