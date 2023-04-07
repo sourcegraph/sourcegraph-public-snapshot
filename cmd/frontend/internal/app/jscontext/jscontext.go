@@ -174,7 +174,7 @@ type JSContext struct {
 	BatchChangesEnabled                bool                                `json:"batchChangesEnabled"`
 	BatchChangesDisableWebhooksWarning bool                                `json:"batchChangesDisableWebhooksWarning"`
 	BatchChangesWebhookLogsEnabled     bool                                `json:"batchChangesWebhookLogsEnabled"`
-	BatchChangesRolloutWindows         *[]*schema.BatchChangeRolloutWindow `json:"batchChangesRolloutWindow"`
+	BatchChangesRolloutWindows         *[]*schema.BatchChangeRolloutWindow `json:"batchChangesRolloutWindows"`
 
 	ExecutorsEnabled                         bool `json:"executorsEnabled"`
 	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
