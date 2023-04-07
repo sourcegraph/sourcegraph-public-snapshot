@@ -9,7 +9,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
-	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -98,6 +98,7 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 	}
 
 	prefetcher := r.prefetcherFactory.Create()
+	locationResolver := r.locationResolverFactory.Create()
 
 	for _, index := range indexes {
 		prefetcher.MarkIndex(index.ID)
@@ -106,7 +107,7 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 	resolvers := make([]resolverstubs.PreciseIndexResolver, 0, len(indexes))
 	for _, index := range indexes {
 		index := index
-		resolver, err := uploadsgraphql.NewPreciseIndexResolver(ctx, r.uploadSvc, r.policySvc, r.gitserverClient, prefetcher, r.siteAdminChecker, r.repoStore, r.locationResolverFactory.Create(), traceErrs, nil, &index)
+		resolver, err := r.preciseIndexResolverFactory.Create(ctx, prefetcher, locationResolver, traceErrs, nil, &index)
 		if err != nil {
 			return nil, err
 		}
@@ -123,15 +124,15 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 type autoIndexJobDescriptionResolver struct {
 	siteAdminChecker sharedresolvers.SiteAdminChecker
 	indexJob         config.IndexJob
-	steps            []codeinteltypes.DockerStep
+	steps            []uploadsshared.DockerStep
 }
 
 func newDescriptionResolvers(siteAdminChecker sharedresolvers.SiteAdminChecker, indexConfiguration *config.IndexConfiguration) ([]resolverstubs.AutoIndexJobDescriptionResolver, error) {
 	var resolvers []resolverstubs.AutoIndexJobDescriptionResolver
 	for _, indexJob := range indexConfiguration.IndexJobs {
-		var steps []codeinteltypes.DockerStep
+		var steps []uploadsshared.DockerStep
 		for _, step := range indexJob.Steps {
-			steps = append(steps, codeinteltypes.DockerStep{
+			steps = append(steps, uploadsshared.DockerStep{
 				Root:     step.Root,
 				Image:    step.Image,
 				Commands: step.Commands,
@@ -153,7 +154,7 @@ func (r *autoIndexJobDescriptionResolver) Root() string {
 }
 
 func (r *autoIndexJobDescriptionResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
-	return codeinteltypes.NewCodeIntelIndexerResolver(r.indexJob.Indexer, r.indexJob.Indexer)
+	return uploadsgraphql.NewCodeIntelIndexerResolver(r.indexJob.Indexer, r.indexJob.Indexer)
 }
 
 func (r *autoIndexJobDescriptionResolver) ComparisonKey() string {
@@ -161,7 +162,7 @@ func (r *autoIndexJobDescriptionResolver) ComparisonKey() string {
 }
 
 func (r *autoIndexJobDescriptionResolver) Steps() resolverstubs.IndexStepsResolver {
-	return uploadsgraphql.NewIndexStepsResolver(r.siteAdminChecker, codeinteltypes.Index{
+	return uploadsgraphql.NewIndexStepsResolver(r.siteAdminChecker, uploadsshared.Index{
 		DockerSteps:      r.steps,
 		LocalSteps:       r.indexJob.LocalSteps,
 		Root:             r.indexJob.Root,

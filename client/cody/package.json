@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Sourcegraph Cody",
-  "version": "0.0.3",
+  "version": "0.0.5",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -38,7 +38,7 @@
     "vscode:prepublish": "scripts/check-rg.sh",
     "vsce:package": "pnpm --silent build && vsce package --no-dependencies -o dist/cody.vsix",
     "vsce:prerelease": "pnpm --silent build && vsce package patch --pre-release --no-dependencies -o dist/cody.vsix",
-    "vsce:publish": "vsce publish --packagePath dist/cody.vsix",
+    "release": "ts-node ./scripts/release.ts",
     "watch": "concurrently \"pnpm watch:esbuild\" \"pnpm watch:webview\"",
     "watch:esbuild": "pnpm esbuild --sourcemap --watch",
     "watch:webview": "vite build --mode development --watch"
@@ -228,14 +228,19 @@
           "type": "boolean",
           "default": false
         },
-        "cody.experimental.keys.openai": {
+        "cody.experimental.keys.anthropic": {
           "type": "string"
         }
       }
     }
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.4.2",
+    "@sourcegraph/cody-shared": "workspace:*",
     "openai": "^3.2.1",
-    "@sourcegraph/cody-shared": "workspace:*"
+    "@sourcegraph/cody-ui": "workspace:*",
+    "wink-eng-lite-web-model": "^1.5.0",
+    "wink-nlp": "^1.13.1",
+    "wink-nlp-utils": "^2.1.0"
   }
 }

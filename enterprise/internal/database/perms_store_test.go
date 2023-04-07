@@ -3273,18 +3273,14 @@ func TestPermsStore_CountUsersWithNoPerms(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 3, count)
 
-	// Mark sync jobs as completed for "alice".
-	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, state, finished_at, reason) VALUES(%d, %s, NOW(), %s)`, 1, database.PermissionsSyncJobStateCompleted, database.ReasonUserNoPermissions)
-	execQuery(t, ctx, s, q)
-
 	// Add permissions for "bob".
 	_, err = s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: 2, ExternalAccountID: 1}, []int32{1}, authz.SourceUserSync)
 	require.NoError(t, err)
 
-	// Only "david" has no permissions at this point.
+	// Only "alice" and "david" has no permissions at this point.
 	count, err = s.CountUsersWithNoPerms(ctx)
 	require.NoError(t, err)
-	require.Equal(t, 1, count)
+	require.Equal(t, 2, count)
 }
 
 func cleanupReposTable(t *testing.T, s *permsStore) {
@@ -3391,17 +3387,13 @@ func TestPermsStore_CountReposWithNoPerms(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 2, count)
 
-	// mark sync jobs as completed for "private_repo" and add permissions for "private_repo_2"
-	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, NOW(), %s)`, 1, database.ReasonRepoNoPermissions)
-	execQuery(t, ctx, s, q)
-
 	_, err = s.SetRepoPerms(ctx, 3, []authz.UserIDWithExternalAccountID{{UserID: 1, ExternalAccountID: 1}}, authz.SourceRepoSync)
 	require.NoError(t, err)
 
-	// All private repositories have permissions at this point.
+	// Private repository ID=1 has no permissions at this point.
 	count, err = s.CountReposWithNoPerms(ctx)
 	require.NoError(t, err)
-	require.Equal(t, 0, count)
+	require.Equal(t, 1, count)
 }
 
 func TestPermsStore_UserIDsWithOldestPerms(t *testing.T) {
@@ -3509,7 +3501,7 @@ func TestPermsStore_UserIDsWithOldestPerms(t *testing.T) {
 	})
 }
 
-func TestPermsStore_CountUsersWithOldestPerms(t *testing.T) {
+func TestPermsStore_CountUsersWithStalePerms(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -3550,28 +3542,28 @@ func TestPermsStore_CountUsersWithOldestPerms(t *testing.T) {
 
 	t.Run("One result when age is 10 minutes", func(t *testing.T) {
 		// Should only get user 1 back, because age is 10 minutes.
-		count, err := s.CountUsersWithOldestPerms(ctx, 10*time.Minute)
+		count, err := s.CountUsersWithStalePerms(ctx, 10*time.Minute)
 		require.NoError(t, err)
 		require.Equal(t, 1, count)
 	})
 
 	t.Run("Both users are returned when age is 1 minute, and deleted user is ignored", func(t *testing.T) {
 		// Should get both users, since the age is 1 minute only.
-		count, err := s.CountUsersWithOldestPerms(ctx, 1*time.Minute)
+		count, err := s.CountUsersWithStalePerms(ctx, 1*time.Minute)
 		require.NoError(t, err)
 		require.Equal(t, 2, count)
 	})
 
 	t.Run("Both users are returned when age is 0. Deleted users are ignored", func(t *testing.T) {
 		// Should get both users, since the and age is 0 and cutoff clause if skipped.
-		count, err := s.CountUsersWithOldestPerms(ctx, 0)
+		count, err := s.CountUsersWithStalePerms(ctx, 0)
 		require.NoError(t, err)
 		require.Equal(t, 2, count)
 	})
 
 	t.Run("Ignore users that have synced recently", func(t *testing.T) {
-		// Should get no results, since the and age is 1 hour.
-		count, err := s.CountUsersWithOldestPerms(ctx, 1*time.Hour)
+		// Should get no results, since the age is 1 hour.
+		count, err := s.CountUsersWithStalePerms(ctx, 1*time.Hour)
 		require.NoError(t, err)
 		require.Equal(t, 0, count)
 	})
@@ -3680,7 +3672,7 @@ func TestPermsStore_ReposIDsWithOldestPerms(t *testing.T) {
 	})
 }
 
-func TestPermsStore_CountReposWithOldestPerms(t *testing.T) {
+func TestPermsStore_CountReposWithStalePerms(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -3719,28 +3711,28 @@ func TestPermsStore_CountReposWithOldestPerms(t *testing.T) {
 
 	t.Run("One result when age is 10 minutes", func(t *testing.T) {
 		// Should only get private_repo_1 back, because age is 10 minutes.
-		count, err := s.CountReposWithOldestPerms(ctx, 10*time.Minute)
+		count, err := s.CountReposWithStalePerms(ctx, 10*time.Minute)
 		require.NoError(t, err)
 		require.Equal(t, 1, count)
 	})
 
 	t.Run("Both repos are returned when age is 1 minute", func(t *testing.T) {
 		// Should get both private_repo_1 and private_repo_2, since the age is 1 minute only.
-		count, err := s.CountReposWithOldestPerms(ctx, 1*time.Minute)
+		count, err := s.CountReposWithStalePerms(ctx, 1*time.Minute)
 		require.NoError(t, err)
 		require.Equal(t, 2, count)
 	})
 
 	t.Run("Both repos are returned when age is 0 and deleted repos are ignored", func(t *testing.T) {
 		// Should get both private_repo_1 and private_repo_2, since the age is 0 and cutoff clause if skipped.
-		count, err := s.CountReposWithOldestPerms(ctx, 0)
+		count, err := s.CountReposWithStalePerms(ctx, 0)
 		require.NoError(t, err)
 		require.Equal(t, 2, count)
 	})
 
 	t.Run("Ignore repos that have synced recently", func(t *testing.T) {
 		// Should get no results, since the age is 1 hour
-		count, err := s.CountReposWithOldestPerms(ctx, 1*time.Hour)
+		count, err := s.CountReposWithStalePerms(ctx, 1*time.Hour)
 		require.NoError(t, err)
 		require.Equal(t, 0, count)
 	})

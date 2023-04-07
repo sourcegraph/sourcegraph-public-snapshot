@@ -501,15 +501,6 @@
           "!go": {
             "pointer": true
           }
-        },
-        "accessRequest.enabled": {
-          "description": "Enables/disables the request access feature, which allows users to request access if built-in signup is disabled.",
-          "type": "boolean",
-          "!go": {
-            "pointer": true
-          },
-          "group": "AccessRequest",
-          "default": true
         }
       },
       "examples": [
@@ -1882,6 +1873,27 @@
       "type": "integer",
       "group": "Authentication",
       "default": 5
+    },
+    "auth.accessRequest": {
+      "description": "The config options for access requests",
+      "type": "object",
+      "group": "Authentication",
+      "properties": {
+        "enabled": {
+          "description": "Enable/disable the access request feature, which allows users to request access if built-in signup is disabled.",
+          "type": "boolean",
+          "!go": {
+            "pointer": true
+          },
+          "default": true
+        }
+      }
+    },
+    "auth.primaryLoginProvidersCount": {
+      "description": "The number of auth providers that will be shown to the user on the login screen. Other providers are shown under `Other login methods` section.",
+      "type": "integer",
+      "group": "Authentication",
+      "default": 3
     },
     "update.channel": {
       "description": "The channel on which to automatically check for Sourcegraph updates.",

@@ -84,6 +84,7 @@ ts_project(
         "sign-in.test.ts",
     ],
     tsconfig = ":tsconfig",
+    usePresetEnv = False,
     deps = [
         ":integration",
         "//:node_modules/@types/lodash",
@@ -103,11 +104,16 @@ ts_project(
 
 mocha_test(
     name = "integration-tests",
+    timeout = "long",
     data = ["//client/web:app-enterprise"],
     env = {
         "WEB_BUNDLE_PATH": "$(rootpath //client/web:app-enterprise)",
     },
-    tags = ["manual"],
+    flaky = True,
+    tags = [
+        "no-cache",
+        "no-sandbox",
+    ],
     tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
     deps = [":integration_tests"],
 )

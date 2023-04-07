@@ -16,7 +16,6 @@ go_library(
         "//cmd/frontend/backend",
         "//enterprise/internal/codeintel/policies",
         "//enterprise/internal/codeintel/shared",
-        "//enterprise/internal/codeintel/shared/types",
         "//enterprise/internal/codeintel/uploads/internal/background",
         "//enterprise/internal/codeintel/uploads/internal/lsifstore",
         "//enterprise/internal/codeintel/uploads/internal/store",
@@ -52,7 +51,6 @@ go_test(
     deps = [
         "//enterprise/internal/codeintel/policies",
         "//enterprise/internal/codeintel/policies/shared",
-        "//enterprise/internal/codeintel/shared/types",
         "//enterprise/internal/codeintel/uploads/internal/lsifstore",
         "//enterprise/internal/codeintel/uploads/internal/store",
         "//enterprise/internal/codeintel/uploads/shared",

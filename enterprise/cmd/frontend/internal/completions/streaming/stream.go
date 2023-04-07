@@ -32,7 +32,7 @@ type streamHandler struct {
 	logger log.Logger
 }
 
-func getCompletionStreamClient(provider string, accessToken string, model string) (types.CompletionStreamClient, error) {
+func GetCompletionStreamClient(provider string, accessToken string, model string) (types.CompletionStreamClient, error) {
 	switch provider {
 	case "anthropic":
 		return anthropic.NewAnthropicCompletionStreamClient(httpcli.ExternalDoer, accessToken, model), nil
@@ -79,7 +79,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		tr.Finish()
 	}()
 
-	completionStreamClient, err := getCompletionStreamClient(completionsConfig.Provider, completionsConfig.AccessToken, completionsConfig.Model)
+	completionStreamClient, err := GetCompletionStreamClient(completionsConfig.Provider, completionsConfig.AccessToken, completionsConfig.Model)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -210,6 +210,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Authentication provider instances in site config. */
     authProviders: AuthProvider[]
 
+    /** primaryLoginProvidersCount sets the max number of primary login providers on signin page */
+    primaryLoginProvidersCount: number
+
     /** What the minimum length for a password should be. */
     authMinPasswordLength: number
 
@@ -226,6 +229,8 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
         /** Require at least an upper and a lowercase character password */
         requireUpperandLowerCase?: boolean
     }
+
+    authAccessRequest?: SiteConfiguration['auth.accessRequest']
 
     /** Custom branding for the homepage and search icon. */
     branding?: {

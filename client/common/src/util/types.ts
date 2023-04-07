@@ -1,16 +1,4 @@
 /**
- * Replaces `T` with `R` if it is assignable to `M`.
- */
-type Replace<T, M, R> = T extends M ? R : T
-
-/**
- * Recursively replaces all values in `T` assignable to `M` with `R`.
- */
-export type DeepReplace<T, M, R> = {
-    [K in keyof T]: DeepReplace<Replace<T[K], M, R>, M, R>
-}
-
-/**
  * Identity-function helper to ensure a value `T` is a subtype of `U`.
  *
  * @template U The type to check for (explicitly specify this)

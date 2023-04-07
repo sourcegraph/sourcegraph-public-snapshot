@@ -1,4 +1,4 @@
-import fetch, { Response } from 'node-fetch'
+import fetch from 'isomorphic-fetch'
 
 import { isError } from '../../utils'
 
@@ -7,11 +7,12 @@ import {
     IS_CONTEXT_REQUIRED_QUERY,
     REPOSITORY_ID_QUERY,
     SEARCH_EMBEDDINGS_QUERY,
+    LOG_EVENT_MUTATION,
 } from './queries'
 
 interface APIResponse<T> {
     data?: T
-    errors?: string[]
+    errors?: { message: string; path?: string[] }[]
 }
 
 interface CurrentUserIdResponse {
@@ -25,6 +26,8 @@ interface RepositoryIdResponse {
 interface EmbeddingsSearchResponse {
     embeddingsSearch: EmbeddingsSearchResults
 }
+
+interface LogEventResponse {}
 
 export interface EmbeddingsSearchResult {
     fileName: string
@@ -47,7 +50,7 @@ function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (da
         return response
     }
     if (response.errors && response.errors.length > 0) {
-        return new Error(response.errors.join(', '))
+        return new Error(response.errors.map(({ message }) => message).join(', '))
     }
     if (!response.data) {
         return new Error('response is missing data')
@@ -56,7 +59,9 @@ function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (da
 }
 
 export class SourcegraphGraphQLAPIClient {
-    constructor(private instanceUrl: string, private accessToken: string) {}
+    private dotcomUrl = 'https://sourcegraph.com'
+
+    constructor(private instanceUrl: string, private accessToken: string | null) {}
 
     public async getCurrentUserId(): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdResponse>>(CURRENT_USER_ID_QUERY, {}).then(response =>
@@ -74,6 +79,40 @@ export class SourcegraphGraphQLAPIClient {
                 data.repository ? data.repository.id : new Error(`repository ${repoName} not found`)
             )
         )
+    }
+
+    public async logEvent(event: {
+        event: string
+        userCookieID: string
+        url: string
+        source: string
+        argument?: string | {}
+        publicArgument?: string | {}
+    }): Promise<void | Error> {
+        try {
+            if (this.instanceUrl === this.dotcomUrl) {
+                await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
+                    response => {
+                        extractDataOrError(response, data => {})
+                    }
+                )
+            } else {
+                await Promise.all([
+                    this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
+                        response => {
+                            extractDataOrError(response, data => {})
+                        }
+                    ),
+                    this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
+                        response => {
+                            extractDataOrError(response, data => {})
+                        }
+                    ),
+                ])
+            }
+        } catch (error) {
+            return error
+        }
     }
 
     public async searchEmbeddings(
@@ -96,9 +135,20 @@ export class SourcegraphGraphQLAPIClient {
         }).then(response => extractDataOrError(response, data => data.isContextRequiredForChatQuery))
     }
 
-    private async fetchSourcegraphAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
+    private fetchSourcegraphAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
         return fetch(`${this.instanceUrl}/.api/graphql`, {
-            headers: { authorization: `token ${this.accessToken}` },
+            headers: { ...(this.accessToken ? { Authorization: `token ${this.accessToken}` } : null) },
+            method: 'POST',
+            body: JSON.stringify({ query, variables }),
+        })
+            .then(verifyResponseCode)
+            .then(response => response.json() as T)
+            .catch(error => new Error(`accessing Sourcegraph GraphQL API: ${error}`))
+    }
+
+    // make an anonymous request to the dotcom API
+    private async fetchSourcegraphDotcomAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
+        return fetch(`${this.dotcomUrl}/.api/graphql`, {
             method: 'POST',
             body: JSON.stringify({ query, variables }),
         })

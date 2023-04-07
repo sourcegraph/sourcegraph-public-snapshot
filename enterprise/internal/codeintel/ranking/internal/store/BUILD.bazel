@@ -3,15 +3,22 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "store",
     srcs = [
+        "definitions.go",
+        "mapper.go",
         "observability.go",
-        "ranking.go",
+        "paths.go",
+        "reducer.go",
+        "references.go",
+        "retrieval.go",
         "store.go",
-        "store_export.go",
+        "uploads.go",
+        "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/ranking/internal/shared",
+        "//enterprise/internal/codeintel/ranking/shared",
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/api",
         "//internal/database",
@@ -31,9 +38,15 @@ go_library(
 go_test(
     name = "store_test",
     srcs = [
-        "ranking_test.go",
-        "store_export_test.go",
+        "definitions_test.go",
+        "mapper_test.go",
+        "paths_test.go",
+        "reducer_test.go",
+        "references_test.go",
+        "retrieval_test.go",
         "store_test.go",
+        "uploads_test.go",
+        "util_test.go",
     ],
     embed = [":store"],
     tags = [
@@ -42,7 +55,7 @@ go_test(
     ],
     deps = [
         "//enterprise/internal/codeintel/ranking/internal/shared",
-        "//enterprise/internal/codeintel/shared/types",
+        "//enterprise/internal/codeintel/ranking/shared",
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/api",
         "//internal/database",

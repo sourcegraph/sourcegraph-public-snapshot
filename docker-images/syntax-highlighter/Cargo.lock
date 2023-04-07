@@ -1818,6 +1818,7 @@ dependencies = [
  "rustyline",
  "scip",
  "scip-treesitter",
+ "scip-treesitter-languages",
  "serde",
  "serde_json",
  "sg-syntax",

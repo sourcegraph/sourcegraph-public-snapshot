@@ -15,8 +15,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/codeintel",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
+        "//enterprise/internal/codeintel/shared/ranges",
         "//enterprise/internal/codeintel/shared/trie",
-        "//enterprise/internal/codeintel/shared/types",
+        "//enterprise/internal/codeintel/uploads/shared",
         "//internal/database/basestore",
         "//internal/database/batch",
         "//internal/database/dbutil",

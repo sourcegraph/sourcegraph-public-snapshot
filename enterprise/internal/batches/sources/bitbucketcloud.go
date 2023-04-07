@@ -143,7 +143,12 @@ func (s BitbucketCloudSource) CloseChangeset(ctx context.Context, cs *Changeset)
 func (s BitbucketCloudSource) UpdateChangeset(ctx context.Context, cs *Changeset) error {
 	opts := s.changesetToPullRequestInput(cs)
 	targetRepo := cs.TargetRepo.Metadata.(*bitbucketcloud.Repo)
+
 	pr := cs.Metadata.(*bbcs.AnnotatedPullRequest)
+	// The endpoint for updating a bitbucket pullrequest is a PUT endpoint which means if a field isn't provided
+	// it'll override it's value to it's empty value. We always want to retain the reviewers assigned to a pull
+	// request when updating a pull request.
+	opts.Reviewers = pr.Reviewers
 
 	updated, err := s.client.UpdatePullRequest(ctx, targetRepo, pr.ID, opts)
 	if err != nil {

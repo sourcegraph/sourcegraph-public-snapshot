@@ -12,6 +12,7 @@ go_library(
     deps = [
         "//enterprise/internal/embeddings",
         "//enterprise/internal/embeddings/split",
+        "//enterprise/internal/paths",
         "//internal/api",
         "//internal/binary",
         "//internal/codeintel/types",
@@ -25,7 +26,10 @@ go_library(
 go_test(
     name = "embed_test",
     timeout = "short",
-    srcs = ["embed_test.go"],
+    srcs = [
+        "embed_test.go",
+        "files_test.go",
+    ],
     embed = [":embed"],
     deps = [
         "//enterprise/internal/embeddings/split",

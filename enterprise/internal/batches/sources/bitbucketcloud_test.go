@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -380,6 +381,10 @@ func TestBitbucketCloudSource_UpdateChangeset(t *testing.T) {
 			assert.Same(t, bbRepo, r)
 			assert.EqualValues(t, 420, i)
 			assert.Equal(t, cs.Title, pri.Title)
+
+			metadata := cs.Metadata.(*bbcs.AnnotatedPullRequest)
+			assert.Len(t, pri.Reviewers, len(metadata.Reviewers))
+
 			return nil, want
 		})
 
@@ -399,6 +404,10 @@ func TestBitbucketCloudSource_UpdateChangeset(t *testing.T) {
 			assert.Same(t, bbRepo, r)
 			assert.EqualValues(t, 420, i)
 			assert.Equal(t, cs.Title, pri.Title)
+
+			metadata := cs.Metadata.(*bbcs.AnnotatedPullRequest)
+			assert.Len(t, pri.Reviewers, len(metadata.Reviewers))
+
 			return pr, nil
 		})
 
@@ -418,6 +427,10 @@ func TestBitbucketCloudSource_UpdateChangeset(t *testing.T) {
 			assert.Same(t, bbRepo, r)
 			assert.EqualValues(t, 420, i)
 			assert.Equal(t, cs.Title, pri.Title)
+
+			metadata := cs.Metadata.(*bbcs.AnnotatedPullRequest)
+			assert.Len(t, pri.Reviewers, len(metadata.Reviewers))
+
 			return pr, nil
 		})
 
@@ -869,6 +882,18 @@ func mockBitbucketCloudChangeset() (*Changeset, *types.Repo, *bitbucketcloud.Rep
 	cs := &Changeset{
 		Changeset: &btypes.Changeset{
 			ExternalID: "42",
+			Metadata: &bbcs.AnnotatedPullRequest{
+				PullRequest: &bitbucketcloud.PullRequest{
+					Reviewers: []bitbucketcloud.Account{
+						{
+							Nickname:      "test-bbcloud-user",
+							AccountStatus: bitbucketcloud.AccountStatusActive,
+							DisplayName:   "test-bbcloud-user",
+							CreatedOn:     time.Now(),
+						},
+					},
+				},
+			},
 		},
 		RemoteRepo: repo,
 		TargetRepo: repo,

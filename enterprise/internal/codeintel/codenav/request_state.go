@@ -3,7 +3,7 @@ package codenav
 import (
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -31,7 +31,7 @@ type RequestState struct {
 }
 
 func NewRequestState(
-	uploads []types.Dump,
+	uploads []shared.Dump,
 	repoStore database.RepoStore,
 	authChecker authz.SubRepoPermissionChecker,
 	gitserverClient gitserver.Client,
@@ -56,13 +56,13 @@ func NewRequestState(
 	return *r
 }
 
-func (r RequestState) GetCacheUploads() []types.Dump {
+func (r RequestState) GetCacheUploads() []shared.Dump {
 	return r.dataLoader.uploads
 }
 
-func (r RequestState) GetCacheUploadsAtIndex(index int) types.Dump {
+func (r RequestState) GetCacheUploadsAtIndex(index int) shared.Dump {
 	if index < 0 || index >= len(r.dataLoader.uploads) {
-		return types.Dump{}
+		return shared.Dump{}
 	}
 
 	return r.dataLoader.uploads[index]
@@ -72,7 +72,7 @@ func (r *RequestState) SetAuthChecker(authChecker authz.SubRepoPermissionChecker
 	r.authChecker = authChecker
 }
 
-func (r *RequestState) SetUploadsDataLoader(uploads []types.Dump) {
+func (r *RequestState) SetUploadsDataLoader(uploads []shared.Dump) {
 	r.dataLoader = NewUploadsDataLoader()
 	for _, upload := range uploads {
 		r.dataLoader.AddUpload(upload)
@@ -100,18 +100,18 @@ func (r *RequestState) SetMaximumIndexesPerMonikerSearch(maxNumber int) {
 }
 
 type UploadsDataLoader struct {
-	uploads     []types.Dump
-	uploadsByID map[int]types.Dump
+	uploads     []shared.Dump
+	uploadsByID map[int]shared.Dump
 	cacheMutex  sync.RWMutex
 }
 
 func NewUploadsDataLoader() *UploadsDataLoader {
 	return &UploadsDataLoader{
-		uploadsByID: make(map[int]types.Dump),
+		uploadsByID: make(map[int]shared.Dump),
 	}
 }
 
-func (l *UploadsDataLoader) GetUploadFromCacheMap(id int) (types.Dump, bool) {
+func (l *UploadsDataLoader) GetUploadFromCacheMap(id int) (shared.Dump, bool) {
 	l.cacheMutex.RLock()
 	defer l.cacheMutex.RUnlock()
 
@@ -119,7 +119,7 @@ func (l *UploadsDataLoader) GetUploadFromCacheMap(id int) (types.Dump, bool) {
 	return upload, ok
 }
 
-func (l *UploadsDataLoader) SetUploadInCacheMap(uploads []types.Dump) {
+func (l *UploadsDataLoader) SetUploadInCacheMap(uploads []shared.Dump) {
 	l.cacheMutex.Lock()
 	defer l.cacheMutex.Unlock()
 
@@ -128,7 +128,7 @@ func (l *UploadsDataLoader) SetUploadInCacheMap(uploads []types.Dump) {
 	}
 }
 
-func (l *UploadsDataLoader) AddUpload(dump types.Dump) {
+func (l *UploadsDataLoader) AddUpload(dump shared.Dump) {
 	l.cacheMutex.Lock()
 	defer l.cacheMutex.Unlock()
 

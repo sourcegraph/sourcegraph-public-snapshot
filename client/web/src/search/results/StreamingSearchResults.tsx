@@ -41,6 +41,7 @@ import { DidYouMean } from '../suggestion/DidYouMean'
 import { SmartSearch, smartSearchEvent } from '../suggestion/SmartSearch'
 
 import { AggregationUIMode, SearchAggregationResult, useAggregationUIMode } from './components/aggregation'
+import { SearchResultsCsvExportModal } from './export/SearchResultsCsvExportModal'
 import { SearchAlert } from './SearchAlert'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
@@ -73,6 +74,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         searchAggregationEnabled,
         codeMonitoringEnabled,
         ownEnabled,
+        platformContext,
     } = props
 
     const location = useLocation()
@@ -103,8 +105,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const [aggregationUIMode] = useAggregationUIMode()
 
     // Local state
-    const [allExpanded, setAllExpanded] = useState(false)
-    const [showSavedSearchModal, setShowSavedSearchModal] = useState(false)
     const [showMobileSidebar, setShowMobileSidebar] = useState(false)
 
     // Derived state
@@ -275,22 +275,27 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         )
     )
 
+    // Expand/contract all results
+    const [allExpanded, setAllExpanded] = useState(false)
     const onExpandAllResultsToggle = useCallback(() => {
         setAllExpanded(oldValue => !oldValue)
         telemetryService.log(allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
     }, [allExpanded, telemetryService])
+    useEffect(() => {
+        setAllExpanded(false) // Reset expanded state when new search is started
+    }, [location.search])
 
+    // Save search
+    const [showSavedSearchModal, setShowSavedSearchModal] = useState(false)
     const onSaveQueryClick = useCallback(() => setShowSavedSearchModal(true), [])
-
     const onSaveQueryModalClose = useCallback(() => {
         setShowSavedSearchModal(false)
         telemetryService.log('SavedQueriesToggleCreating', { queries: { creating: false } })
     }, [telemetryService])
 
-    // Reset expanded state when new search is started
-    useEffect(() => {
-        setAllExpanded(false)
-    }, [location.search])
+    // Export results to CSV
+    const [showCsvExportModal, setShowCsvExportModal] = useState(false)
+    const onExportCsvClick = useCallback(() => setShowCsvExportModal(true), [])
 
     const handleSidebarSearchSubmit = useCallback(
         /**
@@ -440,6 +445,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         allExpanded={allExpanded}
                         onExpandAllResultsToggle={onExpandAllResultsToggle}
                         onSaveQueryClick={onSaveQueryClick}
+                        onExportCsvClick={onExportCsvClick}
                         onShowMobileFiltersChanged={show => setShowMobileSidebar(show)}
                         sidebarCollapsed={!!sidebarCollapsed}
                         setSidebarCollapsed={setSidebarCollapsed}
@@ -481,6 +487,16 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                                 query={submittedURLQuery}
                                 authenticatedUser={authenticatedUser}
                                 onDidCancel={onSaveQueryModalClose}
+                            />
+                        )}
+                        {showCsvExportModal && (
+                            <SearchResultsCsvExportModal
+                                query={submittedURLQuery}
+                                options={options}
+                                results={results}
+                                sourcegraphURL={platformContext.sourcegraphURL}
+                                telemetryService={telemetryService}
+                                onClose={() => setShowCsvExportModal(false)}
                             />
                         )}
                         {results?.alert && (!results?.alert.kind || !isSmartSearchAlert(results.alert.kind)) && (

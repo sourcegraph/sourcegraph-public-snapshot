@@ -171,7 +171,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     // isCodeInsightsEnabled selector controls appearance based on user settings flags
     const codeInsights = codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)
 
-    const [codyEnabled] = useFeatureFlag('cody')
+    const [codyEnabled] = useFeatureFlag('cody-experimental')
 
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
@@ -320,12 +320,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             Try Sourcegraph Enterprise
                         </ButtonLink>
                     )}
-                    {props.authenticatedUser?.siteAdmin && (
-                        <AccessRequestsGlobalNavItem
-                            isSourcegraphDotCom={isSourcegraphDotCom}
-                            context={window.context}
-                        />
-                    )}
+                    {props.authenticatedUser?.siteAdmin && <AccessRequestsGlobalNavItem />}
                     {isSourcegraphDotCom && (
                         <NavAction>
                             <Tooltip content="The Sourcegraph desktop app runs locally and works on your own private code.">

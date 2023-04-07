@@ -1005,6 +1005,7 @@ enum EventSource {
     BACKEND
     STATICWEB
     IDEEXTENSION
+    CODY
 }
 
 """
@@ -8045,6 +8046,16 @@ type GitUpdatesDisabled {
 }
 
 """
+FOR INTERNAL USE ONLY: A status message produced when there are no repositories and no sync jobs in process
+"""
+type NoRepositoriesDetected {
+    """
+    The message of this status message
+    """
+    message: String!
+}
+
+"""
 FOR INTERNAL USE ONLY: A status message produced when repositories are being
 cloned
 """
@@ -8099,7 +8110,13 @@ type IndexingProgress {
 """
 FOR INTERNAL USE ONLY: A status message
 """
-union StatusMessage = GitUpdatesDisabled | CloningProgress | ExternalServiceSyncError | SyncError | IndexingProgress
+union StatusMessage =
+      GitUpdatesDisabled
+    | NoRepositoriesDetected
+    | CloningProgress
+    | ExternalServiceSyncError
+    | SyncError
+    | IndexingProgress
 
 """
 An arbitrarily large integer encoded as a decimal string.

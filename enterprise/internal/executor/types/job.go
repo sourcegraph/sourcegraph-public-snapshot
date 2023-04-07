@@ -47,13 +47,13 @@ type Job struct {
 	VirtualMachineFiles map[string]VirtualMachineFile `json:"files"`
 
 	// DockerSteps describe a series of docker run commands to be invoked in the
-	// workspace. This may be done inside or outside of a Firecracker virtual
+	// workspace. This may be done inside or outside a Firecracker virtual
 	// machine.
 	DockerSteps []DockerStep `json:"dockerSteps"`
 
 	// CliSteps describe a series of src commands to be invoked in the workspace.
 	// These run after all docker commands have been completed successfully. This
-	// may be done inside or outside of a Firecracker virtual machine.
+	// may be done inside or outside a Firecracker virtual machine.
 	CliSteps []CliStep `json:"cliSteps"`
 
 	// RedactedValues is a map from strings to replace to their replacement in the command
@@ -263,6 +263,7 @@ type DockerStep struct {
 	Env []string `json:"env"`
 }
 
+// CliStep is a step that runs a src-cli command.
 type CliStep struct {
 	// Key is a unique identifier of the step. It can be used to retrieve the
 	// associated log entry.
@@ -288,7 +289,7 @@ type DockerAuthConfig struct {
 // DockerAuthConfigAuths maps a registry URL to an auth object.
 type DockerAuthConfigAuths map[string]DockerAuthConfigAuth
 
-// DockerAuthConfigAuth is a single registrys auth configuration.
+// DockerAuthConfigAuth is a single registry's auth configuration.
 type DockerAuthConfigAuth struct {
 	// Auth is the base64 encoded credential in the format user:password.
 	Auth []byte `json:"auth"`

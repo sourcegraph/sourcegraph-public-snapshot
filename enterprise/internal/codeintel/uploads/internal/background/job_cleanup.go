@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/background"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -163,7 +162,7 @@ func NewExpiredUploadTraversalJanitor(
 
 func NewHardDeleter(
 	store store.Store,
-	lsifStore lsifstore.LsifStore,
+	lsifStore lsifstore.Store,
 	interval time.Duration,
 	observationCtx *observation.Context,
 ) goroutine.BackgroundRoutine {
@@ -214,7 +213,7 @@ func NewHardDeleter(
 	})
 }
 
-func uploadIDs(uploads []types.Upload) []int {
+func uploadIDs(uploads []shared.Upload) []int {
 	ids := make([]int, 0, len(uploads))
 	for i := range uploads {
 		ids = append(ids, uploads[i].ID)
@@ -250,7 +249,7 @@ func NewAuditLogJanitor(
 //
 
 func NewSCIPExpirationTask(
-	lsifStore lsifstore.LsifStore,
+	lsifStore lsifstore.Store,
 	interval time.Duration,
 	unreferencedDocumentBatchSize int,
 	unreferencedDocumentMaxAge time.Duration,

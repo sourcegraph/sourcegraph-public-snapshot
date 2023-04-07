@@ -9,11 +9,10 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	logger "github.com/sourcegraph/log"
 
-	autoindexingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -25,8 +24,8 @@ import (
 type Service struct {
 	store           store.Store
 	repoStore       RepoStore
-	workerutilStore dbworkerstore.Store[types.Upload]
-	lsifstore       lsifstore.LsifStore
+	workerutilStore dbworkerstore.Store[shared.Upload]
+	lsifstore       lsifstore.Store
 	gitserverClient gitserver.Client
 	rankingBucket   *storage.BucketHandle
 	policySvc       PolicyService
@@ -41,7 +40,7 @@ func newService(
 	observationCtx *observation.Context,
 	store store.Store,
 	repoStore RepoStore,
-	lsifstore lsifstore.LsifStore,
+	lsifstore lsifstore.Store,
 	gsc gitserver.Client,
 	rankingBucket *storage.BucketHandle,
 	policySvc PolicyService,
@@ -82,15 +81,15 @@ func (s *Service) GetIndexers(ctx context.Context, opts shared.GetIndexersOption
 	return s.store.GetIndexers(ctx, opts)
 }
 
-func (s *Service) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) ([]types.Upload, int, error) {
+func (s *Service) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) ([]shared.Upload, int, error) {
 	return s.store.GetUploads(ctx, opts)
 }
 
-func (s *Service) GetUploadByID(ctx context.Context, id int) (types.Upload, bool, error) {
+func (s *Service) GetUploadByID(ctx context.Context, id int) (shared.Upload, bool, error) {
 	return s.store.GetUploadByID(ctx, id)
 }
 
-func (s *Service) GetUploadsByIDs(ctx context.Context, ids ...int) ([]types.Upload, error) {
+func (s *Service) GetUploadsByIDs(ctx context.Context, ids ...int) ([]shared.Upload, error) {
 	return s.store.GetUploadsByIDs(ctx, ids...)
 }
 
@@ -129,7 +128,7 @@ const numAncestors = 100
 // the graph. This will not always produce the full set of visible commits - some responses may not contain
 // all results while a subsequent request made after the lsif_nearest_uploads has been updated to include
 // this commit will.
-func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []types.Dump, err error) {
+func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []shared.Dump, err error) {
 	ctx, _, endObservation := s.operations.inferClosestUploads.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{log.Int("repositoryID", repositoryID), log.String("commit", commit), log.String("path", path), log.Bool("exactPath", exactPath), log.String("indexer", indexer)},
 	})
@@ -189,11 +188,11 @@ func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, com
 	return dumps, nil
 }
 
-func (s *Service) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) ([]types.Dump, error) {
+func (s *Service) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) ([]shared.Dump, error) {
 	return s.store.GetDumpsWithDefinitionsForMonikers(ctx, monikers)
 }
 
-func (s *Service) GetDumpsByIDs(ctx context.Context, ids []int) ([]types.Dump, error) {
+func (s *Service) GetDumpsByIDs(ctx context.Context, ids []int) ([]shared.Dump, error) {
 	return s.store.GetDumpsByIDs(ctx, ids)
 }
 
@@ -201,13 +200,13 @@ func (s *Service) ReferencesForUpload(ctx context.Context, uploadID int) (shared
 	return s.store.ReferencesForUpload(ctx, uploadID)
 }
 
-func (s *Service) GetAuditLogsForUpload(ctx context.Context, uploadID int) ([]types.UploadLog, error) {
+func (s *Service) GetAuditLogsForUpload(ctx context.Context, uploadID int) ([]shared.UploadLog, error) {
 	return s.store.GetAuditLogsForUpload(ctx, uploadID)
 }
 
-func (s *Service) GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error) {
-	return s.lsifstore.GetUploadDocumentsForPath(ctx, bundleID, pathPattern)
-}
+// func (s *Service) GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error) {
+// 	return s.lsifstore.GetUploadDocumentsForPath(ctx, bundleID, pathPattern)
+// }
 
 func (s *Service) GetRecentUploadsSummary(ctx context.Context, repositoryID int) ([]shared.UploadsWithRepositoryNamespace, error) {
 	return s.store.GetRecentUploadsSummary(ctx, repositoryID)
@@ -225,15 +224,15 @@ func (s *Service) ReindexUploadByID(ctx context.Context, id int) error {
 	return s.store.ReindexUploadByID(ctx, id)
 }
 
-func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) ([]types.Index, int, error) {
+func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) ([]uploadsshared.Index, int, error) {
 	return s.store.GetIndexes(ctx, opts)
 }
 
-func (s *Service) GetIndexByID(ctx context.Context, id int) (types.Index, bool, error) {
+func (s *Service) GetIndexByID(ctx context.Context, id int) (uploadsshared.Index, bool, error) {
 	return s.store.GetIndexByID(ctx, id)
 }
 
-func (s *Service) GetIndexesByIDs(ctx context.Context, ids ...int) ([]types.Index, error) {
+func (s *Service) GetIndexesByIDs(ctx context.Context, ids ...int) ([]uploadsshared.Index, error) {
 	return s.store.GetIndexesByIDs(ctx, ids...)
 }
 
@@ -253,7 +252,7 @@ func (s *Service) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexes
 	return s.store.ReindexIndexes(ctx, opts)
 }
 
-func (s *Service) GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]autoindexingshared.IndexesWithRepositoryNamespace, error) {
+func (s *Service) GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]uploadsshared.IndexesWithRepositoryNamespace, error) {
 	return s.store.GetRecentIndexesSummary(ctx, repositoryID)
 }
 
@@ -261,6 +260,6 @@ func (s *Service) NumRepositoriesWithCodeIntelligence(ctx context.Context) (int,
 	return s.store.NumRepositoriesWithCodeIntelligence(ctx)
 }
 
-func (s *Service) RepositoryIDsWithErrors(ctx context.Context, offset, limit int) ([]autoindexingshared.RepositoryWithCount, int, error) {
+func (s *Service) RepositoryIDsWithErrors(ctx context.Context, offset, limit int) ([]uploadsshared.RepositoryWithCount, int, error) {
 	return s.store.RepositoryIDsWithErrors(ctx, offset, limit)
 }

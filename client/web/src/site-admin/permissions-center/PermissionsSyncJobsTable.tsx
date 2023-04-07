@@ -90,7 +90,7 @@ const DEFAULT_FILTERS = {
     query: '',
     partial: '',
 }
-const PERMISSIONS_SYNC_JOBS_POLL_INTERVAL = 5000
+const PERMISSIONS_SYNC_JOBS_POLL_INTERVAL = 2000
 
 interface Props extends TelemetryProps {
     minimal?: boolean
@@ -440,7 +440,7 @@ const TableColumns: IColumn<PermissionsSyncJob>[] = [
         header: { label: 'Total', align: 'right' },
         align: 'right',
         render: ({ permissionsFound }: PermissionsSyncJob) => (
-            <div className="text-muted text-right">
+            <div className={classNames('text-right', permissionsFound === 0 ? styles.textTotalNumber : 'text-muted')}>
                 <b>{permissionsFound}</b>
             </div>
         ),

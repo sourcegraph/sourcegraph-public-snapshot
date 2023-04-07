@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -30,7 +30,7 @@ func (r *gitBlobLSIFDataResolver) Implementations(ctx context.Context, args *res
 		return nil, err
 	}
 
-	requestArgs := shared.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path, Line: int(args.Line), Character: int(args.Character), Limit: limit, RawCursor: rawCursor}
+	requestArgs := codenav.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path, Line: int(args.Line), Character: int(args.Character), Limit: limit, RawCursor: rawCursor}
 	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.implementations, time.Second, getObservationArgs(requestArgs))
 	defer endObservation()
 
@@ -71,23 +71,23 @@ func (r *gitBlobLSIFDataResolver) Implementations(ctx context.Context, args *res
 
 // decodeCursor is the inverse of encodeCursor. If the given encoded string is empty, then
 // a fresh cursor is returned.
-func decodeImplementationsCursor(rawEncoded string) (shared.ImplementationsCursor, error) {
+func decodeImplementationsCursor(rawEncoded string) (codenav.ImplementationsCursor, error) {
 	if rawEncoded == "" {
-		return shared.ImplementationsCursor{Phase: "local"}, nil
+		return codenav.ImplementationsCursor{Phase: "local"}, nil
 	}
 
 	raw, err := base64.RawURLEncoding.DecodeString(rawEncoded)
 	if err != nil {
-		return shared.ImplementationsCursor{}, err
+		return codenav.ImplementationsCursor{}, err
 	}
 
-	var cursor shared.ImplementationsCursor
+	var cursor codenav.ImplementationsCursor
 	err = json.Unmarshal(raw, &cursor)
 	return cursor, err
 }
 
 // encodeCursor returns an encoding of the given cursor suitable for a URL or a GraphQL token.
-func encodeImplementationsCursor(cursor shared.ImplementationsCursor) string {
+func encodeImplementationsCursor(cursor codenav.ImplementationsCursor) string {
 	rawEncoded, _ := json.Marshal(cursor)
 	return base64.RawURLEncoding.EncodeToString(rawEncoded)
 }

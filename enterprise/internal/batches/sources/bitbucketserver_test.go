@@ -386,12 +386,26 @@ func TestBitbucketServerSource_UpdateChangeset(t *testing.T) {
 		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
-	successPR := &bitbucketserver.PullRequest{ID: 154, Version: 5}
+	reviewers := []bitbucketserver.Reviewer{
+		{
+			Role:               "REVIEWER",
+			LastReviewedCommit: "7549846524f8aed2bd1c0249993ae1bf9d3c9998",
+			Approved:           false,
+			Status:             "UNAPPROVED",
+			User: &bitbucketserver.User{
+				Name: "batch-change-buddy",
+				Slug: "batch-change-buddy",
+				ID:   403,
+			},
+		},
+	}
+
+	successPR := &bitbucketserver.PullRequest{ID: 154, Version: 22, Reviewers: reviewers}
 	successPR.ToRef.Repository.Slug = "automation-testing"
 	successPR.ToRef.Repository.Project.Key = "SOUR"
 
 	// This version is too low
-	outdatedPR := &bitbucketserver.PullRequest{ID: 155, Version: 1}
+	outdatedPR := &bitbucketserver.PullRequest{ID: 155, Version: 13, Reviewers: reviewers}
 	outdatedPR.ToRef.Repository.Slug = "automation-testing"
 	outdatedPR.ToRef.Repository.Project.Key = "SOUR"
 

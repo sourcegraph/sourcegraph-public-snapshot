@@ -18,8 +18,9 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -35,7 +36,7 @@ import (
 func TestHandle(t *testing.T) {
 	setupRepoMocks(t)
 
-	upload := codeinteltypes.Upload{
+	upload := shared.Upload{
 		ID:           42,
 		Root:         "",
 		Commit:       "deadbeef",
@@ -44,23 +45,21 @@ func TestHandle(t *testing.T) {
 		ContentType:  "application/x-protobuf+scip",
 	}
 
-	mockWorkerStore := NewMockWorkerStore[codeinteltypes.Upload]()
+	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
 	mockDBStore := NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
-	mockLSIFStore := NewMockLsifStore()
+	mockLSIFStore := NewMockLSIFStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 	gitserverClient := gitserver.NewMockClient()
 
 	// Set default transaction behavior
-	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
-	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
+	mockDBStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s store.Store) error) error { return f(mockDBStore) })
 
 	// Set default transaction behavior
-	mockLSIFStore.TransactFunc.SetDefaultReturn(mockLSIFStore, nil)
-	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
+	mockLSIFStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s lsifstore.Store) error) error { return f(mockLSIFStore) })
 
 	// Track writes to symbols table
-	scipWriter := NewMockSCIPWriter()
+	scipWriter := NewMockLSIFSCIPWriter()
 	mockLSIFStore.NewSCIPWriterFunc.SetDefaultReturn(scipWriter, nil)
 
 	scipWriter.InsertDocumentFunc.SetDefaultHook(func(_ context.Context, _ string, _ *scip.Document) error {
@@ -252,7 +251,7 @@ func TestHandle(t *testing.T) {
 
 			case "template/src/util/graphql.ts":
 				foundDocument2 = true
-				if diff := cmp.Diff(testedInvertedRangeIndex, codeinteltypes.ExtractSymbolIndexes(call.Arg2)); diff != "" {
+				if diff := cmp.Diff(testedInvertedRangeIndex, shared.ExtractSymbolIndexes(call.Arg2)); diff != "" {
 					t.Errorf("unexpected inverted range index (-want +got):\n%s", diff)
 				}
 			}
@@ -269,7 +268,7 @@ func TestHandle(t *testing.T) {
 func TestHandleError(t *testing.T) {
 	setupRepoMocks(t)
 
-	upload := codeinteltypes.Upload{
+	upload := shared.Upload{
 		ID:           42,
 		Root:         "root/",
 		Commit:       "deadbeef",
@@ -278,23 +277,19 @@ func TestHandleError(t *testing.T) {
 		ContentType:  "application/x-protobuf+scip",
 	}
 
-	mockWorkerStore := NewMockWorkerStore[codeinteltypes.Upload]()
+	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
 	mockDBStore := NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
-	mockLSIFStore := NewMockLsifStore()
+	mockLSIFStore := NewMockLSIFStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 	gitserverClient := gitserver.NewMockClient()
 
 	// Set default transaction behavior
-	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
-	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
-
-	// Set default transaction behavior
-	mockLSIFStore.TransactFunc.SetDefaultReturn(mockLSIFStore, nil)
-	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
+	mockDBStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s store.Store) error) error { return f(mockDBStore) })
+	mockLSIFStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s lsifstore.Store) error) error { return f(mockLSIFStore) })
 
 	// Track writes to symbols table
-	scipWriter := NewMockSCIPWriter()
+	scipWriter := NewMockLSIFSCIPWriter()
 	mockLSIFStore.NewSCIPWriterFunc.SetDefaultReturn(scipWriter, nil)
 
 	// Give correlation package a valid input dump
@@ -324,17 +319,13 @@ func TestHandleError(t *testing.T) {
 		t.Errorf("unexpected requeue")
 	}
 
-	if len(mockDBStore.DoneFunc.History()) != 1 {
-		t.Errorf("unexpected number of Done calls. want=%d have=%d", 1, len(mockDBStore.DoneFunc.History()))
-	}
-
 	if len(mockUploadStore.DeleteFunc.History()) != 0 {
 		t.Errorf("unexpected number of Delete calls. want=%d have=%d", 0, len(mockUploadStore.DeleteFunc.History()))
 	}
 }
 
 func TestHandleCloneInProgress(t *testing.T) {
-	upload := codeinteltypes.Upload{
+	upload := shared.Upload{
 		ID:           42,
 		Root:         "root/",
 		Commit:       "deadbeef",
@@ -343,7 +334,7 @@ func TestHandleCloneInProgress(t *testing.T) {
 		ContentType:  "application/x-protobuf+scip",
 	}
 
-	mockWorkerStore := NewMockWorkerStore[codeinteltypes.Upload]()
+	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
 	mockDBStore := NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()

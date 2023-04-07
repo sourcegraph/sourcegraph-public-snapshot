@@ -8,12 +8,11 @@ import (
 )
 
 type operations struct {
-	deleteLsifDataByUploadIds                 *observation.Operation
+	insertMetadata                            *observation.Operation
+	newSCIPWriter                             *observation.Operation
 	idsWithMeta                               *observation.Operation
 	reconcileCandidates                       *observation.Operation
-	getUploadDocumentsForPath                 *observation.Operation
-	scanDocuments                             *observation.Operation
-	insertMetadata                            *observation.Operation
+	deleteLsifDataByUploadIds                 *observation.Operation
 	deleteUnreferencedDocuments               *observation.Operation
 	insertDefinitionsAndReferencesForDocument *observation.Operation
 }
@@ -39,12 +38,11 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		deleteLsifDataByUploadIds:                 op("DeleteLsifDataByUploadIds"),
+		insertMetadata:                            op("InsertMetadata"),
+		newSCIPWriter:                             op("NewSCIPWriter"),
 		idsWithMeta:                               op("IDsWithMeta"),
 		reconcileCandidates:                       op("ReconcileCandidates"),
-		getUploadDocumentsForPath:                 op("GetUploadDocumentsForPath"),
-		scanDocuments:                             op("ScanDocuments"),
-		insertMetadata:                            op("InsertMetadata"),
+		deleteLsifDataByUploadIds:                 op("DeleteLsifDataByUploadIds"),
 		deleteUnreferencedDocuments:               op("DeleteUnreferencedDocuments"),
 		insertDefinitionsAndReferencesForDocument: op("InsertDefinitionsAndReferencesForDocument"),
 	}
