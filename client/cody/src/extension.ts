@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { PromptMixin, languagePromptMixin } from '@sourcegraph/cody-shared/src/chat/recipes/prompt-mixin'
+import { PromptMixin, languagePromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 
 import { CommandsProvider } from './command/CommandsProvider'
 import { ExtensionApi } from './extension-api'

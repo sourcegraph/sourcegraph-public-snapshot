@@ -1,6 +1,6 @@
 import { ContextMessage } from '../../codebase-context/messages'
 import { Message } from '../../sourcegraph-api'
-import { PromptMixin } from '../recipes/prompt-mixin'
+import { PromptMixin } from '../../prompt/prompt-mixin'
 
 import { ChatMessage, InteractionMessage } from './messages'
 
@@ -39,13 +39,7 @@ export class Interaction {
     }
 
     public async toPrompt(includeContext: boolean): Promise<Message[]> {
-        const messages: (ContextMessage | InteractionMessage)[] = [this.humanMessage, this.assistantMessage]
-        const mixins = PromptMixin.getAll()
-        if (mixins) {
-            // Stuff the prompt mixins at the start of the human text.
-            // Note we do not reflect them in displayText.
-            messages[0].text = `${mixins}\n\n${messages[0].text}`
-        }
+        const messages: (ContextMessage | InteractionMessage)[] = [PromptMixin.mixInto(this.humanMessage), this.assistantMessage]
         if (includeContext) {
             messages.unshift(...(await this.context))
         }

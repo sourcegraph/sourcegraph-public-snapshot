@@ -2,7 +2,7 @@ import React from 'react'
 
 import ReactDOM from 'react-dom/client'
 
-import { PromptMixin, languagePromptMixin } from '@sourcegraph/cody-shared/src/chat/recipes/prompt-mixin'
+import { PromptMixin, languagePromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { App } from './App'
