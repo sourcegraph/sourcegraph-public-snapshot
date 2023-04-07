@@ -51,7 +51,7 @@ There are two steps required to enable Cody for Enterprise: enable your Sourcegr
 Note that this requires site-admin privileges.
 
 1. Cody uses one or more third-party LLM (Large Language Model) providers. Make sure you review the [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice). In particular, code snippets will be sent to a third-party language model provider when you use the Cody extension.
-2. To turn Cody on, you will need to set an access token for Sourcegraph to authentify with the third-party large language model provider (currently Anthropic but we may use different or several models over time). Reach out to your Sourcegraph Technical Advisor to get a key.
+2. To turn Cody on, you will need to set an access token for Sourcegraph to authentify with the third-party large language model provider (currently Anthropic but we may use different or several models over time). Reach out to your Sourcegraph Technical Advisor or Customer Engineer to get a key. They will create a key for you using the [anthropic console](https://console.anthropic.com/account/keys).
 3. Once you have the key, go to Site admin > Site configuration (`/site-admin/configuration`) on your instance and set:
 
 ```json
