@@ -1,31 +1,53 @@
 extend type Query {
-    """Returns a string of completion responses"""
+    """
+    Returns a string of completion responses
+    """
     completions(input: CompletionsInput!): String!
 }
 
-""" Input wrapper for completions """
+"""
+Input wrapper for completions
+"""
 input CompletionsInput {
-    """List of conversation messages"""
+    """
+    List of conversation messages
+    """
     messages: [Message!]!
-    """Temperature for sampling - higher means more random completions"""
+    """
+    Temperature for sampling - higher means more random completions
+    """
     temperature: Float!
-    """Maximum number of tokens to sample"""
+    """
+    Maximum number of tokens to sample
+    """
     maxTokensToSample: Int!
-    """Number of highest probability completions to return"""
+    """
+    Number of highest probability completions to return
+    """
     topK: Int!
-    """Probability threshold for inclusion in results"""
+    """
+    Probability threshold for inclusion in results
+    """
     topP: Int!
 }
 
-""" Message to or from the LLM """
+"""
+Message to or from the LLM
+"""
 input Message {
-    """Speaker of the message (human/assistant)"""
+    """
+    Speaker of the message (human/assistant)
+    """
     speaker: SpeakerType!
-    """Text content of the message"""
+    """
+    Text content of the message
+    """
     text: String!
 }
 
-"""Speaker type, human or assistant """
+"""
+Speaker type, human or assistant
+"""
 enum SpeakerType {
     HUMAN,
     ASSISTANT

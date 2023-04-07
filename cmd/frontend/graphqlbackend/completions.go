@@ -1,6 +1,6 @@
 package graphqlbackend
 
-import "golang.org/x/net/context"
+import "context"
 
 type CompletionsResolver interface {
 	Completions(ctx context.Context, args CompletionsArgs) (string, error)
