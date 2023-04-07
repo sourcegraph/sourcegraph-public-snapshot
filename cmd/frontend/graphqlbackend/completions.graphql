@@ -49,6 +49,6 @@ input Message {
 Speaker type, human or assistant
 """
 enum SpeakerType {
-    HUMAN,
+    HUMAN
     ASSISTANT
 }
