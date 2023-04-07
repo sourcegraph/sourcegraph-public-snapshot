@@ -31,6 +31,7 @@ go_library(
         "code_monitors.go",
         "codeintel.go",
         "commit_search_result.go",
+        "completions.go",
         "compute.go",
         "default_settings.go",
         "doc.go",
@@ -189,6 +190,8 @@ go_library(
         "own.graphql",
         "embeddings.graphql",
         "app.graphql",
+        "codeintel.graphql",
+        "completions.graphql",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend",
     deps = [
