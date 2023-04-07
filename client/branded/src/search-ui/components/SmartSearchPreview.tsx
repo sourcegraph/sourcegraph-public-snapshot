@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 
+import { mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { of } from 'rxjs'
 
-import { SmartSearchListItem } from '@sourcegraph/shared/src/components/SmartSearchListItem'
+import { formatSearchParameters } from '@sourcegraph/common'
 import { SearchMode, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
-import { Icon, H3, H2, Text, Button, useObservable } from '@sourcegraph/wildcard'
+import { Icon, H3, H2, Text, Button, Link, createLinkUrl, useObservable } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
 import { LATEST_VERSION, aggregateStreamingSearch, ProposedQuery } from '../../../../shared/src/search/stream'
 import { smartSearchIconSvgPath } from '../input/toggles/SmartSearchToggle'
+
+import { SyntaxHighlightedSearchQuery } from './SyntaxHighlightedSearchQuery'
 
 import styles from './SmartSearchPreview.module.scss'
 
@@ -97,7 +100,34 @@ export const SmartSearchPreview: React.FunctionComponent<SmartSearchPreviewProps
 
                     <ul className={classNames('list-unstyled px-0 mb-2')}>
                         {results?.alert?.proposedQueries?.map(item => (
-                            <SmartSearchListItem proposedQuery={item} previewStyle={true} key={item.query} />
+                            <li key={item.query} className="py-2">
+                                <Link
+                                    to={createLinkUrl({
+                                        pathname: '/search',
+                                        search: formatSearchParameters(new URLSearchParams({ q: item.query })),
+                                    })}
+                                    className="text-decoration-none"
+                                >
+                                    <Text className="mb-0">
+                                        <span className="text-muted">{processDescription(item.description || '')}</span>
+                                        <Icon svgPath={mdiArrowRight} aria-hidden={true} className="mx-2 text-body" />
+                                        <span className="p-1 bg-code'">
+                                            <SyntaxHighlightedSearchQuery
+                                                query={item.query}
+                                                searchPatternType={SearchPatternType.standard}
+                                            />
+                                        </span>
+                                        {item.annotations
+                                            ?.filter(({ name }) => name === 'ResultCount')
+                                            ?.map(({ name, value }) => (
+                                                <span key={name} className="text-muted ml-2">
+                                                    {' '}
+                                                    ({value})
+                                                </span>
+                                            ))}
+                                    </Text>
+                                </Link>
+                            </li>
                         ))}
                     </ul>
 
@@ -111,6 +141,13 @@ export const SmartSearchPreview: React.FunctionComponent<SmartSearchPreviewProps
             )}
         </div>
     )
+}
+
+const processDescription = (description: string): string => {
+    const split = description.split(' ⚬ ')
+
+    split[0] = split[0][0].toUpperCase() + split[0].slice(1)
+    return split.join(', ')
 }
 
 interface EnableSmartSearchProps {
