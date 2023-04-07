@@ -40,7 +40,6 @@ interface RolloutWindowsConfigurationProps {
     rolloutWindows: BatchChangeRolloutWindow[]
 }
 
-// export const prettifySystemRole = (role: string): string => startCase(role.replace(/_/g, ' ').toLowerCase())
 export const RolloutWindowsConfiguration: React.FunctionComponent<React.PropsWithChildren<RolloutWindowsConfigurationProps>> = ({ rolloutWindows }) => (
     <Container className="mb-3">
         <H3>Rollout Windows</H3>
