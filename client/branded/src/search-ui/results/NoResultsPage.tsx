@@ -51,7 +51,7 @@ interface NoResultsPageProps extends TelemetryProps, Pick<SearchContextProps, 's
     showQueryExamples?: boolean
     setQueryState?: (query: QueryState) => void
     setSearchMode?: (mode: SearchMode) => void
-    submitSearch: (parameters: SubmitSearchParameters) => void
+    submitSearch?: (parameters: SubmitSearchParameters) => void
     searchQueryFromURL?: string
     caseSensitive?: boolean
     selectedSearchContextSpec?: string

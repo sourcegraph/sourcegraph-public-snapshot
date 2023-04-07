@@ -91,7 +91,8 @@ export const SmartSearchPreview: React.FunctionComponent<SmartSearchPreviewProps
             {results?.state === 'complete' && !!results?.alert?.proposedQueries && (
                 <>
                     <H3 as={H2}>
-                        However, Smart Smart found {resultNumber >= 500 ? `${resultNumber}+` : resultNumber} results:
+                        However, Smart Smart found {Number(resultNumber) >= 500 ? `${resultNumber}+` : resultNumber}{' '}
+                        results:
                     </H3>
 
                     <ul className={classNames('list-unstyled px-0 mb-2')}>
