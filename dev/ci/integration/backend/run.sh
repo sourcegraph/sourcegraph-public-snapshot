@@ -9,5 +9,9 @@ set -ex
 echo "--- test.sh"
 
 # Backend integration tests requires a GitHub Enterprise Token
-GITHUB_TOKEN=$GHE_GITHUB_TOKEN
-GITHUB_TOKEN=$GITHUB_TOKEN ./dev/ci/integration/run-integration.sh "${root_dir}/dev/ci/integration/backend/test.sh"
+set +x
+# Hotfix (Owner: @mucles)
+GITHUB_TOKEN="$(gcloud secrets versions access latest --secret=QA_GITHUB_TOKEN --quiet --project=sourcegraph-ci)"
+export GITHUB_TOKEN
+set -x
+./dev/ci/integration/run-integration.sh "${root_dir}/dev/ci/integration/backend/test.sh"
