@@ -452,6 +452,15 @@ commands:
       INTEGRATION_TESTS: true
       NODE_ENV: production
 
+  cody-slack:
+    description: Start Cody-Slack locally server locally
+    cmd: pnpm --filter @sourcegraph/cody-slack run start
+    env:
+      SLACK_APP_TOKEN: XXX
+      SLACK_SIGNING_SECRET: XXX
+      SLACK_BOT_TOKEN: XXX
+      SOURCEGRAPH_ACCESS_TOKEN: XXX
+
   docsite:
     description: Docsite instance serving the docs
     cmd: .bin/docsite_${DOCSITE_VERSION} -config doc/docsite.json serve -http=localhost:5080

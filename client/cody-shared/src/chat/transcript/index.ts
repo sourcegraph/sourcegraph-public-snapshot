@@ -15,7 +15,7 @@ export class Transcript {
         this.interactions.push(interaction)
     }
 
-    private getLastInteraction(): Interaction | null {
+    public getLastInteraction(): Interaction | null {
         return this.interactions.length > 0 ? this.interactions[this.interactions.length - 1] : null
     }
 
