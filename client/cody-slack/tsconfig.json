@@ -1,14 +1,14 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "sourceMap": true,
-    "rootDir": ".",
+    "module": "commonjs",
     "sourceRoot": "src",
-    "outDir": "out",
-    "jsx": "react-jsx",
+    "rootDir": ".",
+    "outDir": "./out",
+    "baseUrl": "./src",
   },
   "include": ["src", "package.json", ".eslintrc.js", "jest.config.js"],
-  "exclude": ["out"],
+  "exclude": ["out", "dist"],
   "references": [
     {
       "path": "../cody-shared",

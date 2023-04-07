@@ -31,6 +31,7 @@ ts_project(
         "src/slack/message-interaction.ts",
         "src/slack/preamble.ts",
     ],
+    tsconfig = ":tsconfig",
     deps = [
         ":node_modules/@slack/bolt",
         ":node_modules/@slack/web-api",
@@ -44,5 +45,8 @@ ts_project(
 
 npm_package(
     name = "cody-slack_pkg",
-    srcs = [":cody-slack"],
+    srcs = [
+        "package.json",
+        ":cody-slack",
+    ],
 )
