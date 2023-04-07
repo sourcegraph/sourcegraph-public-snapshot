@@ -97,6 +97,8 @@ public class SettingsConfigurable implements Configurable {
         }
         aSettings.isUrlNotificationDismissed = mySettingsComponent.isUrlNotificationDismissed();
 
+        pSettings.llmPrompt = mySettingsComponent.getLlmPrompt();
+
         publisher.afterAction(context);
     }
 

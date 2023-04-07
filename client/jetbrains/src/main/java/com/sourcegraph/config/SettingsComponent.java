@@ -40,6 +40,8 @@ public class SettingsComponent {
     private JBTextField remoteUrlReplacementsTextField;
     private JBCheckBox isUrlNotificationDismissedCheckBox;
 
+    private JBTextField llmPromptField;
+
     public JComponent getPreferredFocusedComponent() {
         return defaultBranchNameTextField;
     }
@@ -49,9 +51,15 @@ public class SettingsComponent {
         JPanel userAuthenticationPanel = createAuthenticationPanel();
         JPanel navigationSettingsPanel = createNavigationSettingsPanel();
 
+
+        llmPromptField = new JBTextField();
+        JPanel llmSettingsPanel = FormBuilder.createFormBuilder()
+            .addLabeledComponent("LLM Prompt", llmPromptField).getPanel();
+
         panel = FormBuilder.createFormBuilder()
             .addComponent(userAuthenticationPanel)
             .addComponent(navigationSettingsPanel)
+            .addComponent(llmSettingsPanel)
             .addComponentFillVertically(new JPanel(), 0)
             .getPanel();
     }
@@ -207,6 +215,10 @@ public class SettingsComponent {
         return defaultBranchNameTextField.getText();
     }
 
+    public String getLlmPrompt() {
+        return llmPromptField.getText();
+    }
+
     public void setDefaultBranchName(@NotNull String value) {
         defaultBranchNameTextField.setText(value);
     }
@@ -307,6 +319,9 @@ public class SettingsComponent {
             .addComponent(isUrlNotificationDismissedCheckBox, 10)
             .getPanel();
         navigationSettingsPanel.setBorder(IdeBorderFactory.createTitledBorder("Navigation Settings", true, JBUI.insetsTop(8)));
+
+
+
         return navigationSettingsPanel;
     }
 }

@@ -32,6 +32,9 @@ public class SourcegraphProjectService implements PersistentStateComponent<Sourc
     @Nullable
     public String lastSearchContextSpec;
 
+    @Nullable
+    public String llmPrompt;
+
     @NotNull
     public static SourcegraphProjectService getInstance(@NotNull Project project) {
         return project.getService(SourcegraphProjectService.class);

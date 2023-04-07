@@ -29,6 +29,7 @@ intellij {
 dependencies {
     testImplementation(platform("org.junit:junit-bom:5.7.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+    implementation("com.theokanning.openai-gpt3-java:service:0.12.0")
 }
 
 tasks {
@@ -50,6 +51,7 @@ tasks {
     patchPluginXml {
         version.set(properties("pluginVersion"))
         sinceBuild.set(properties("pluginSinceBuild"))
+        untilBuild.set(properties("pluginUntilBuild"))
 
         // Extract the <!-- Plugin description --> section from README.md and provide for the plugin's manifest
         pluginDescription.set(

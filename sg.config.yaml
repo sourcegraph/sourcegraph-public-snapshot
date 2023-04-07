@@ -1212,7 +1212,6 @@ commandsets:
       - gitserver-0
       - gitserver-1
       - searcher
-      - symbols
       - caddy
       - docsite
       - syntax-highlighter

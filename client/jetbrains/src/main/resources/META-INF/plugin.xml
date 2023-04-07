@@ -6,6 +6,7 @@
     <depends>com.intellij.modules.platform</depends>
     <depends optional="true" config-file="plugin-git.xml">Git4Idea</depends>
     <depends optional="true" config-file="plugin-perforce.xml">PerforceDirectPlugin</depends>
+    <depends optional="true" config-file="plugin-java.xml">com.intellij.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <projectService serviceImplementation="com.sourcegraph.config.SourcegraphProjectService"/>
@@ -82,6 +83,11 @@
             description="Log in to Sourcegraph"
             icon="/icons/sourcegraphLogo.svg">
         </action>
+        <action id="com.sourcegraph.jody.RefactorAction" class="com.sourcegraph.jody.RefactorAction"
+                text="RefactorWithJody">
+            <keyboard-shortcut first-keystroke="alt f" keymap="$default"/>
+            <add-to-group group-id="FindMenuGroup"/>
+        </action>
 
         <group id="SourcegraphEditor" icon="/icons/sourcegraphLogo.svg" popup="true" text="Sourcegraph"
                searchable="false">
@@ -90,7 +96,10 @@
             <reference ref="sourcegraph.searchRepository"/>
             <reference ref="sourcegraph.openFile"/>
             <reference ref="sourcegraph.copy"/>
+            <reference ref="com.sourcegraph.jody.RefactorAction"/>
+
             <add-to-group anchor="last" group-id="EditorPopupMenu"/>
         </group>
+
     </actions>
 </idea-plugin>

@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class GraphQlResponse {
     private final int statusCode;
-    private final String body;
+    public final String body;
 
     public GraphQlResponse(int statusCode, String body) {
         this.statusCode = statusCode;
