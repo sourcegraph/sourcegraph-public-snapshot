@@ -35,9 +35,12 @@ After installing, we recommend the following:
 
 ## Cody on Sourcegraph Cloud
 
-On Sourcegraph Cloud, Cody is a managed service and you do not need to follow the self-hosted installation guide. Cody can be enabled on demand by contacting your account manager.
+On Sourcegraph Cloud, Cody is a managed service and you do not need to follow the step 1 of the self-hosted guide. 
 
-Learn more from [Cody on Cloud](../cloud/index.md#cody)
+1. Cody can be enabled on demand on your Sourcegraph instance by contacting your account manager. The Sourcegraph team will refer to the [handbook](https://handbook.sourcegraph.com/departments/cloud/#managed-instance-requests).
+1. Users can then configure the [VS Code extension](#step-2-configure-the-vs-code-extension)
+
+Learn more from [Cody on Cloud](../cloud/index.md#cody).
 
 ## Cody on your self-hosted Sourcegraph Enterprise instance
 
