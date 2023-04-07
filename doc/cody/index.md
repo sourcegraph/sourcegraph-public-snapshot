@@ -14,7 +14,7 @@ Cody is in private alpha (tagged as an [experimental](../doc/admin/beta_and_expe
 
 Currently, Cody is available for VS Code. More editors are on the way—[join the Discord](https://discord.gg/8wJF5EdAyA) to inquire about your editor of choice.
 
-## Cody on Sourcegraph.com
+## Cody on Sourcegraph.com (public code only)
 
 > NOTE: Cody on sourcegraph.com should only be used on public code.
 
