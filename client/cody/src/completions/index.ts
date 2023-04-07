@@ -97,7 +97,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const waiter = new Promise<void>(resolve => setTimeout(() => resolve(), waitMs))
 
-        const results = (await Promise.all(completers.map(c => c.generateCompletions()))).flatMap(c => c)
+        const results = (await Promise.all(completers.map(c => c.generateCompletions()))).flat()
         await waiter
         return results.map(r => new vscode.InlineCompletionItem(r.content))
     }
@@ -264,7 +264,7 @@ async function batchClaude(
     for (let i = 0; i < n; i++) {
         responses.push(claude.complete(params))
     }
-    return await Promise.all(responses)
+    return Promise.all(responses)
 }
 
 export interface Completion {
@@ -304,7 +304,7 @@ export class MultilineCompletionProvider implements CompletionProvider {
                 {
                     role: 'human',
                     text:
-                        `Complete the following file:\n` +
+                        'Complete the following file:\n' +
                         '```' +
                         `\n${prefixLines.slice(0, endLine).join('\n')}\n` +
                         '```',
@@ -312,7 +312,7 @@ export class MultilineCompletionProvider implements CompletionProvider {
                 {
                     role: 'ai',
                     text:
-                        `Here is the completion of the file:\n` + '```' + `\n${prefixLines.slice(endLine).join('\n')}`,
+                        'Here is the completion of the file:\n' + '```' + `\n${prefixLines.slice(endLine).join('\n')}`,
                 },
             ]
         } else {
@@ -323,7 +323,7 @@ export class MultilineCompletionProvider implements CompletionProvider {
                 },
                 {
                     role: 'ai',
-                    text: `Here is some code:\n` + '```' + `\n${prefix}`,
+                    text: 'Here is some code:\n' + '```' + `\n${prefix}`,
                 },
             ]
         }
@@ -396,7 +396,6 @@ export class EndOfLineCompletionProvider implements CompletionProvider {
         private promptChars: number,
         private responseTokens: number,
         private prefix: string,
-        // eslint-disable-next-line
         private injectPrefix: string,
         private defaultN: number = 1
     ) {}
@@ -416,7 +415,7 @@ export class EndOfLineCompletionProvider implements CompletionProvider {
                 {
                     role: 'human',
                     text:
-                        `Complete the following file:\n` +
+                        'Complete the following file:\n' +
                         '```' +
                         `\n${prefixLines.slice(0, endLine).join('\n')}\n` +
                         '```',
@@ -424,7 +423,7 @@ export class EndOfLineCompletionProvider implements CompletionProvider {
                 {
                     role: 'ai',
                     text:
-                        `Here is the completion of the file:\n` +
+                        'Here is the completion of the file:\n' +
                         '```' +
                         `\n${prefixLines.slice(endLine).join('\n')}${this.injectPrefix}`,
                 },
@@ -437,7 +436,7 @@ export class EndOfLineCompletionProvider implements CompletionProvider {
                 },
                 {
                     role: 'ai',
-                    text: `Here is some code:\n` + '```' + `\n${this.prefix}${this.injectPrefix}`,
+                    text: 'Here is some code:\n' + '```' + `\n${this.prefix}${this.injectPrefix}`,
                 },
             ]
         }
@@ -449,9 +448,9 @@ export class EndOfLineCompletionProvider implements CompletionProvider {
         // Sometimes Claude omits an extra space
         if (
             completion.length > 0 &&
-            completion[0] === ' ' &&
+            completion.startsWith(' ') &&
             this.prefix.length > 0 &&
-            this.prefix[this.prefix.length - 1] === ' '
+            this.prefix.endsWith(' ')
         ) {
             completion = completion.slice(1)
         }

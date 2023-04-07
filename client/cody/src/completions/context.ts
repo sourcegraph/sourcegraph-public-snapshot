@@ -1,8 +1,7 @@
 import * as vscode from 'vscode'
+import winkUtils from 'wink-nlp-utils'
 
 import { History } from './history'
-
-const winkUtils = require('wink-nlp-utils')
 
 export interface ReferenceSnippet extends JaccardMatch {
     filename: string
@@ -107,7 +106,7 @@ export function jaccardDistance(left: number, right: number, intersection: numbe
  * @returns
  */
 export function bestJaccardMatch(targetText: string, matchText: string, windowSize: number): JaccardMatch | null {
-    const wordCount = (words: Map<string, number>) => {
+    const wordCount = (words: Map<string, number>): number => {
         let count = 0
         for (const v of words.values()) {
             count += v
@@ -207,7 +206,7 @@ export function bestJaccardMatch(targetText: string, matchText: string, windowSi
 }
 
 export function getWords(s: string): Map<string, number> {
-    let frequencyCounter = new Map<string, number>()
+    const frequencyCounter = new Map<string, number>()
     const words = winkUtils.string.tokenize0(s)
 
     const filteredWords = winkUtils.tokens.removeWords(words)

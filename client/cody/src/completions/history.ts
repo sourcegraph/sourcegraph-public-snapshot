@@ -13,8 +13,7 @@ export class History implements vscode.Disposable {
     private subscriptions: vscode.Disposable[] = []
 
     constructor(
-        register: () => vscode.Disposable | null = () => {
-            return vscode.window.onDidChangeActiveTextEditor(event => {
+        register: () => vscode.Disposable | null = () => vscode.window.onDidChangeActiveTextEditor(event => {
                 if (!event?.document.uri) {
                     return
                 }
@@ -22,7 +21,6 @@ export class History implements vscode.Disposable {
                     document: event.document,
                 })
             })
-        }
     ) {
         this.history = []
         if (register) {

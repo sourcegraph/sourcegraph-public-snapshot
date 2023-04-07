@@ -41,7 +41,7 @@ export class SingleLinePromptTemplate implements PromptTemplate {
                 {
                     role: 'human',
                     text:
-                        `Complete the following file:\n` +
+                        'Complete the following file:\n' +
                         '```' +
                         `\n${prefixLines.slice(0, lastHumanLine).join('\n')}\n` +
                         '```',
@@ -49,7 +49,7 @@ export class SingleLinePromptTemplate implements PromptTemplate {
                 {
                     role: 'ai',
                     text:
-                        `Here is the completion of the file:\n` +
+                        'Here is the completion of the file:\n' +
                         '```' +
                         `\n${prefixLines.slice(lastHumanLine).join('\n')}`,
                 },
@@ -62,7 +62,7 @@ export class SingleLinePromptTemplate implements PromptTemplate {
                 },
                 {
                     role: 'ai',
-                    text: `Here is some code:\n` + '```' + `\n${prefix}`,
+                    text: 'Here is some code:\n' + '```' + `\n${prefix}`,
                 },
             ]
         }
@@ -70,7 +70,7 @@ export class SingleLinePromptTemplate implements PromptTemplate {
         return messagesToText([...referenceSnippetMessages, ...prefixMessages])
     }
     postProcess(completion: string, prefix: string): string {
-        if (completion.length > 0 && completion[0] === ' ' && prefix.length > 0 && prefix[prefix.length - 1] === ' ') {
+        if (completion.length > 0 && completion.startsWith(' ') && prefix.length > 0 && prefix.endsWith(' ')) {
             completion = completion.slice(1)
         }
         const endBlockIndex = completion.indexOf('```')
@@ -104,7 +104,7 @@ export class KnowledgeBasePromptTemplate implements PromptTemplate {
                 {
                     role: 'human',
                     text:
-                        `Complete the following file:\n` +
+                        'Complete the following file:\n' +
                         '```' +
                         `\n${prefixLines.slice(0, lastHumanLine).join('\n')}\n` +
                         '```',
@@ -112,7 +112,7 @@ export class KnowledgeBasePromptTemplate implements PromptTemplate {
                 {
                     role: 'ai',
                     text:
-                        `Here is the completion of the file:\n` +
+                        'Here is the completion of the file:\n' +
                         '```' +
                         `\n${prefixLines.slice(lastHumanLine).join('\n')}`,
                 },
@@ -125,7 +125,7 @@ export class KnowledgeBasePromptTemplate implements PromptTemplate {
                 },
                 {
                     role: 'ai',
-                    text: `Here is some code:\n` + '```' + `\n${prefix}`,
+                    text: 'Here is some code:\n' + '```' + `\n${prefix}`,
                 },
             ]
         }
