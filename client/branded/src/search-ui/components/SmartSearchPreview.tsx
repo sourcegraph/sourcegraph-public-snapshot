@@ -4,14 +4,13 @@ import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { of } from 'rxjs'
 
+import { SmartSearchListItem } from '@sourcegraph/shared/src/components/SmartSearchListItem'
 import { SearchMode, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { Icon, H3, H2, Text, Button, useObservable } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
 import { LATEST_VERSION, aggregateStreamingSearch, ProposedQuery } from '../../../../shared/src/search/stream'
 import { smartSearchIconSvgPath } from '../input/toggles/SmartSearchToggle'
-
-import { SmartSearchListItem } from './SmartSearchListItem'
 
 import styles from './SmartSearchPreview.module.scss'
 

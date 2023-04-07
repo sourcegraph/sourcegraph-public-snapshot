@@ -1,13 +1,13 @@
 import { mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
 
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded/src/search-ui/components/SyntaxHighlightedSearchQuery'
 import { formatSearchParameters } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { ProposedQuery } from '@sourcegraph/shared/src/search/stream'
 import { Link, createLinkUrl, Icon, Text } from '@sourcegraph/wildcard'
 
-import styles from './SmartSearchPreview.module.scss'
+import styles from './SmartSearchListItem.module.scss'
 
 interface SmartSearchListItemProps {
     proposedQuery: ProposedQuery
