@@ -14,7 +14,6 @@ go_library(
         "//enterprise/internal/codeintel/sentinel/shared",
         "//enterprise/internal/codeintel/shared/resolvers/dataloader",
         "//enterprise/internal/codeintel/shared/resolvers/gitresolvers",
-        "//enterprise/internal/codeintel/uploads/shared",
         "//enterprise/internal/codeintel/uploads/transport/graphql",
         "//internal/codeintel/resolvers",
         "//internal/gqlutil",

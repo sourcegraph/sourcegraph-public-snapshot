@@ -19,6 +19,7 @@ type operations struct {
 	getBulkMonikerLocations    *observation.Operation
 	getHover                   *observation.Operation
 	getDiagnostics             *observation.Operation
+	scipDocument               *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -53,5 +54,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getBulkMonikerLocations:    op("GetBulkMonikerLocations"),
 		getHover:                   op("GetHover"),
 		getDiagnostics:             op("GetDiagnostics"),
+		scipDocument:               op("SCIPDocument"),
 	}
 }

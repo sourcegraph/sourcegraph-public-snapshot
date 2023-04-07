@@ -5,10 +5,10 @@ go_library(
     srcs = [
         "backing_service.go",
         "cache.go",
-        "dataloader.go",
-        "dataloader_factory.go",
         "factory.go",
         "identifier.go",
+        "loader.go",
+        "loader_factory.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/dataloader",
     visibility = ["//enterprise:__subpackages__"],

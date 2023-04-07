@@ -1,11 +1,14 @@
 package codenav
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"strings"
 
 	traceLog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/lsifstore"
@@ -970,6 +973,30 @@ func (s *Service) getRequestedCommitDiagnostic(ctx context.Context, args Request
 	}, nil
 }
 
+func (s *Service) VisibleUploadsForPath(ctx context.Context, requestState RequestState) (dumps []uploadsshared.Dump, err error) {
+	ctx, _, endObservation := s.operations.visibleUploadsForPath.With(ctx, &err, observation.Args{LogFields: []traceLog.Field{
+		traceLog.String("path", requestState.Path),
+		traceLog.String("commit", requestState.Commit),
+		traceLog.Int("repositoryID", requestState.RepositoryID),
+	}})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []traceLog.Field{
+			traceLog.Int("numUploads", len(dumps)),
+		}})
+	}()
+
+	visibleUploads, err := s.getUploadPaths(ctx, requestState.Path, requestState)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, upload := range visibleUploads {
+		dumps = append(dumps, upload.Upload)
+	}
+
+	return
+}
+
 // getUploadPaths adjusts the current target path for each upload visible from the current target
 // commit. If an upload cannot be adjusted, it will be omitted from the returned slice.
 func (s *Service) getUploadPaths(ctx context.Context, path string, requestState RequestState) ([]visibleUpload, error) {
@@ -1307,4 +1334,105 @@ func (s *Service) getVisibleUpload(ctx context.Context, line, character int, upl
 		TargetPosition:        targetPosition,
 		TargetPathWithoutRoot: strings.TrimPrefix(targetPath, upload.Root),
 	}, true, nil
+}
+
+func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, commit, path string, uploadID int) (data []shared.SnapshotData, err error) {
+	ctx, _, endObservation := s.operations.snapshotForDocument.With(ctx, &err, observation.Args{LogFields: []traceLog.Field{
+		traceLog.Int("repoID", repositoryID),
+		traceLog.String("commit", commit),
+		traceLog.String("path", path),
+		traceLog.Int("uploadID", uploadID),
+	}})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []traceLog.Field{
+			traceLog.Int("snapshotSymbols", len(data)),
+		}})
+	}()
+
+	dumps, err := s.GetDumpsByIDs(ctx, []int{uploadID})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(dumps) == 0 {
+		return nil, nil
+	}
+
+	dump := dumps[0]
+
+	document, err := s.lsifstore.SCIPDocument(ctx, dump.ID, strings.TrimPrefix(path, dump.Root))
+	if err != nil || document == nil {
+		return nil, err
+	}
+
+	file, err := s.gitserver.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, api.RepoName(dump.RepositoryName), api.CommitID(dump.Commit), path)
+	if err != nil {
+		return nil, err
+	}
+
+	repo, err := s.repoStore.Get(ctx, api.RepoID(dump.RepositoryID))
+	if err != nil {
+		return nil, err
+	}
+
+	// cache is keyed by repoID:sourceCommit:targetCommit:path, so we only need a size of 1
+	hunkcache, err := NewHunkCache(1)
+	if err != nil {
+		return nil, err
+	}
+	gittranslator := NewGitTreeTranslator(s.gitserver, &requestArgs{
+		repo:   repo,
+		commit: commit,
+		path:   path,
+	}, hunkcache)
+
+	linemap := newLinemap(string(file))
+	formatter := scip.LenientVerboseSymbolFormatter
+	// symtab := document.SymbolTable()
+
+	for _, occ := range document.Occurrences {
+		formatted, err := formatter.Format(occ.Symbol)
+		if err != nil {
+			formatted = fmt.Sprintf("error formatting %q", occ.Symbol)
+		}
+
+		originalRange := scip.NewRange(occ.Range)
+
+		lineOffset := int32(linemap.positions[originalRange.Start.Line])
+		line := file[lineOffset : lineOffset+originalRange.Start.Character]
+
+		tabCount := bytes.Count(line, []byte("\t"))
+
+		var snap strings.Builder
+		snap.WriteString(strings.Repeat(" ", (int(originalRange.Start.Character)-tabCount)+(tabCount*4)))
+		snap.WriteString(strings.Repeat("^", int(originalRange.End.Character-originalRange.Start.Character)))
+		snap.WriteRune(' ')
+
+		if occ.SymbolRoles&int32(scip.SymbolRole_Definition) > 0 {
+			snap.WriteString("definition")
+		} else {
+			snap.WriteString("reference")
+		}
+		snap.WriteRune(' ')
+		snap.WriteString(formatted)
+
+		_, newRange, ok, err := gittranslator.GetTargetCommitPositionFromSourcePosition(ctx, dump.Commit, shared.Position{
+			Line:      int(originalRange.Start.Line),
+			Character: int(originalRange.Start.Character),
+		}, false)
+		if err != nil {
+			return nil, err
+		}
+		// if the line was changed, then we're not providing precise codeintel for this line, so skip it
+		if !ok {
+			continue
+		}
+
+		data = append(data, shared.SnapshotData{
+			DocumentOffset: linemap.positions[newRange.Line+1],
+			Symbol:         snap.String(),
+		})
+	}
+
+	return
 }

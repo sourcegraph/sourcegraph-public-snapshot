@@ -30,3 +30,7 @@
 .braindot-danger::after {
     background-color: var(--danger);
 }
+
+input[type='radio'] + label {
+    vertical-align: sub;
+}

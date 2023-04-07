@@ -38,6 +38,11 @@ type UploadLocation struct {
 	TargetRange  Range
 }
 
+type SnapshotData struct {
+	DocumentOffset int
+	Symbol         string
+}
+
 type Range struct {
 	Start Position
 	End   Position

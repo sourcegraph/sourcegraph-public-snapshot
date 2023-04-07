@@ -56,17 +56,6 @@ export function mergeContributions(contributions: Evaluated<Contributions>[]): E
                 // noop
             }
         }
-        if (contribution.views) {
-            try {
-                if (!merged.views) {
-                    merged.views = [...contribution.views]
-                } else {
-                    merged.views = [...merged.views, ...contribution.views]
-                }
-            } catch {
-                // noop
-            }
-        }
         if (contribution.searchFilters) {
             try {
                 if (!merged.searchFilters) {

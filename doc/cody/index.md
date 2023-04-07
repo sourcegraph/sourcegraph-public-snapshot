@@ -35,11 +35,20 @@ After installing, we recommend the following:
 
 ## Cody on Sourcegraph Cloud
 
-On Sourcegraph Cloud, Cody is a managed service and you do not need to follow the self-hosted installation guide. Cody can be enabled on demand by contacting your account manager.
+On Sourcegraph Cloud, Cody is a managed service and you do not need to follow the step 1 of the self-hosted guide. 
 
-Learn more from [Cody on Cloud](../cloud/index.md#cody)
+1. Cody can be enabled on demand on your Sourcegraph instance by contacting your account manager. The Sourcegraph team will refer to the [handbook](https://handbook.sourcegraph.com/departments/cloud/#managed-instance-requests).
+1. Users can then configure the [VS Code extension](#step-2-configure-the-vs-code-extension)
+
+Learn more from [Cody on Cloud](../cloud/index.md#cody).
 
 ## Cody on your self-hosted Sourcegraph Enterprise instance
+
+### Prerequisites
+
+- Sourcegraph 5.0.1 or above.
+- An Anthropic API key, that you can get from your Technical Advisor or Customer Engineer. 
+- (Optionally), an OpenAI API key for embeddings.
 
 There are two steps required to enable Cody for Enterprise: enable your Sourcegraph instance and configure the VS Code extension.
 
@@ -48,7 +57,7 @@ There are two steps required to enable Cody for Enterprise: enable your Sourcegr
 Note that this requires site-admin privileges.
 
 1. Cody uses one or more third-party LLM (Large Language Model) providers. Make sure you review the [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice). In particular, code snippets will be sent to a third-party language model provider when you use the Cody extension.
-2. To turn Cody on, you will need to set an access token for Sourcegraph to authentify with the third-party large language model provider (currently Anthropic but we may use different or several models over time). Reach out to your Sourcegraph Technical Advisor to get a key.
+2. To turn Cody on, you will need to set an access token for Sourcegraph to authentify with the third-party large language model provider (currently Anthropic but we may use different or several models over time). Reach out to your Sourcegraph Technical Advisor or Customer Engineer to get a key. They will create a key for you using the [anthropic console](https://console.anthropic.com/account/keys).
 3. Once you have the key, go to Site admin > Site configuration (`/site-admin/configuration`) on your instance and set:
 
 ```json
