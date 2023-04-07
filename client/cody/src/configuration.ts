@@ -10,7 +10,6 @@ export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'ge
         debug: config.get('cody.debug', false),
         useContext: config.get<ConfigurationUseContext>('cody.useContext') || 'embeddings',
         experimentalSuggest: config.get('cody.experimental.suggestions', false),
-        openaiKey: config.get('cody.experimental.keys.openai', null),
         anthropicKey: config.get('cody.experimental.keys.anthropic', null),
     }
 }

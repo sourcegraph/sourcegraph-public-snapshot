@@ -228,9 +228,6 @@
           "type": "boolean",
           "default": false
         },
-        "cody.experimental.keys.openai": {
-          "type": "string"
-        },
         "cody.experimental.keys.anthropic": {
           "type": "string"
         }
