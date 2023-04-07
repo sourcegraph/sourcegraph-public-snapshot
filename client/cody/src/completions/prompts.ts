@@ -24,7 +24,7 @@ export interface PromptTemplate {
 }
 
 export class SingleLinePromptTemplate implements PromptTemplate {
-    make(charsBudget: number, prefix: string, suffix: string, snippets: ReferenceSnippet[]): string {
+    public make(charsBudget: number, prefix: string, suffix: string, snippets: ReferenceSnippet[]): string {
         // TODO(beyang): escape 'Human:' and 'Assistant:'
         // console.log(`>>>${prefix}<<<`)
 
@@ -62,14 +62,14 @@ export class SingleLinePromptTemplate implements PromptTemplate {
                 },
                 {
                     role: 'ai',
-                    text: 'Here is some code:\n' + '```' + `\n${prefix}`,
+                    text: `Here is some code:\n\`\`\`\n${prefix}`,
                 },
             ]
         }
 
         return messagesToText([...referenceSnippetMessages, ...prefixMessages])
     }
-    postProcess(completion: string, prefix: string): string {
+    public postProcess(completion: string, prefix: string): string {
         if (completion.length > 0 && completion.startsWith(' ') && prefix.length > 0 && prefix.endsWith(' ')) {
             completion = completion.slice(1)
         }
@@ -82,7 +82,7 @@ export class SingleLinePromptTemplate implements PromptTemplate {
 }
 
 export class KnowledgeBasePromptTemplate implements PromptTemplate {
-    make(
+    public make(
         charsBudget: number,
         prefix: string,
         suffix: string, // TODO(beyang)
@@ -125,7 +125,7 @@ export class KnowledgeBasePromptTemplate implements PromptTemplate {
                 },
                 {
                     role: 'ai',
-                    text: 'Here is some code:\n' + '```' + `\n${prefix}`,
+                    text: `Here is some code:\n\`\`\`\n${prefix}`,
                 },
             ]
         }
@@ -158,7 +158,7 @@ export class KnowledgeBasePromptTemplate implements PromptTemplate {
         return messagesToText([...referenceSnippetMessages, ...prefixMessages])
     }
 
-    postProcess(completion: string): string {
+    public postProcess(completion: string): string {
         const endBlockIndex = completion.indexOf('```')
         if (endBlockIndex !== -1) {
             return completion.slice(0, endBlockIndex).trimEnd()

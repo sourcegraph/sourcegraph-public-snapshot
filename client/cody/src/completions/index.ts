@@ -39,7 +39,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         try {
             return await this.provideInlineCompletionItemsInner(document, position, context, token)
         } catch (error) {
-            vscode.window.showErrorMessage(`Error in provideInlineCompletionItems: ${error}`)
+            await vscode.window.showErrorMessage(`Error in provideInlineCompletionItems: ${error}`)
             return []
         }
     }
@@ -171,7 +171,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                 llmOptions: null,
             })
         } catch (error) {
-            vscode.window.showErrorMessage(`Error in provideInlineCompletionItems: ${error}`)
+            await vscode.window.showErrorMessage(`Error in provideInlineCompletionItems: ${error}`)
         }
     }
 }
@@ -311,8 +311,7 @@ export class MultilineCompletionProvider implements CompletionProvider {
                 },
                 {
                     role: 'ai',
-                    text:
-                        'Here is the completion of the file:\n' + '```' + `\n${prefixLines.slice(endLine).join('\n')}`,
+                    text: `Here is the completion of the file:\n\`\`\`\n${prefixLines.slice(endLine).join('\n')}`,
                 },
             ]
         } else {
@@ -323,7 +322,7 @@ export class MultilineCompletionProvider implements CompletionProvider {
                 },
                 {
                     role: 'ai',
-                    text: 'Here is some code:\n' + '```' + `\n${prefix}`,
+                    text: `Here is some code:\n\`\`\`\n${prefix}`,
                 },
             ]
         }
@@ -355,7 +354,7 @@ export class MultilineCompletionProvider implements CompletionProvider {
 
         return messagesToText([...referenceSnippetMessages, ...prefixMessages])
     }
-    private postProcess(completion: string) {
+    private postProcess(completion: string): string {
         const endBlockIndex = completion.indexOf('```')
         if (endBlockIndex !== -1) {
             return completion.slice(0, endBlockIndex).trimEnd()
@@ -363,7 +362,7 @@ export class MultilineCompletionProvider implements CompletionProvider {
         return completion.trimEnd()
     }
 
-    async generateCompletions(n?: number): Promise<Completion[]> {
+    public async generateCompletions(n?: number): Promise<Completion[]> {
         // Create prompt
         const prompt = this.makePrompt()
         if (prompt.length > this.promptChars) {
@@ -436,7 +435,7 @@ export class EndOfLineCompletionProvider implements CompletionProvider {
                 },
                 {
                     role: 'ai',
-                    text: 'Here is some code:\n' + '```' + `\n${this.prefix}${this.injectPrefix}`,
+                    text: `Here is some code:\n\`\`\`\n${this.prefix}${this.injectPrefix}`,
                 },
             ]
         }
@@ -444,7 +443,7 @@ export class EndOfLineCompletionProvider implements CompletionProvider {
         return messagesToText([...referenceSnippetMessages, ...prefixMessages])
     }
 
-    private postProcess(completion: string) {
+    private postProcess(completion: string): string {
         // Sometimes Claude omits an extra space
         if (
             completion.length > 0 &&
@@ -466,7 +465,7 @@ export class EndOfLineCompletionProvider implements CompletionProvider {
         return completion.trimEnd()
     }
 
-    async generateCompletions(n?: number): Promise<Completion[]> {
+    public async generateCompletions(n?: number): Promise<Completion[]> {
         // Create prompt
         const prompt = this.makePrompt()
         if (prompt.length > this.promptChars) {

@@ -97,7 +97,7 @@ suite('End-to-end', () => {
         await ensureExecuteCommand('cody.delete-access-token')
     })
 
-    test('History', async () => {
+    test('History', () => {
         const h = new History(() => null)
         h.addItem({
             document: {
