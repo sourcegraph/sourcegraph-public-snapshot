@@ -115,7 +115,13 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         (event: React.KeyboardEvent<HTMLDivElement>): void => {
             // Submit input on Enter press (without shift) and
             // trim the formInput to make sure input value is not empty.
-            if (event.key === 'Enter' && !event.shiftKey && formInput && formInput.trim()) {
+            if (
+                event.key === 'Enter' &&
+                !event.shiftKey &&
+                !event.nativeEvent.isComposing &&
+                formInput &&
+                formInput.trim()
+            ) {
                 event.preventDefault()
                 event.stopPropagation()
                 onChatSubmit()
