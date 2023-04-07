@@ -3,16 +3,14 @@ import React, { useCallback, useEffect } from 'react'
 import { mdiClose, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
-import { SmartSearchPreview } from '@sourcegraph/branded/src/search-ui/components/SmartSearchPreview'
-import { QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
+import { QueryState, SearchContextProps, SearchMode, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { NoResultsSectionID as SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { SmartSearchPreview } from '@sourcegraph/web/src/search/suggestion/SmartSearchPreview'
 import { Button, Link, Icon, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { QueryExamples } from '../components/QueryExamples'
+import { SmartSearchPreview } from '../components/SmartSearchPreview'
 
 import { AnnotatedSearchInput } from './AnnotatedSearchExample'
 
@@ -52,6 +50,10 @@ interface NoResultsPageProps extends TelemetryProps, Pick<SearchContextProps, 's
     showSearchContext: boolean
     showQueryExamples?: boolean
     setQueryState?: (query: QueryState) => void
+    setSearchMode?: (mode: SearchMode) => void
+    submitSearch: (parameters: SubmitSearchParameters) => void
+    searchQueryFromURL?: string
+    caseSensitive?: boolean
     selectedSearchContextSpec?: string
 }
 
@@ -63,6 +65,10 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
     showSearchContext,
     showQueryExamples,
     setQueryState,
+    setSearchMode,
+    submitSearch,
+    caseSensitive,
+    searchQueryFromURL,
     selectedSearchContextSpec,
 }) => {
     const [hiddenSectionIDs, setHiddenSectionIds] = useTemporarySetting('search.hiddenNoResultsSections')
@@ -83,7 +89,14 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
 
     return (
         <div className={styles.root}>
-            <SmartSearchPreview />
+            {setSearchMode && submitSearch && typeof caseSensitive == 'boolean' && searchQueryFromURL && (
+                <SmartSearchPreview
+                    setSearchMode={setSearchMode}
+                    submitSearch={submitSearch}
+                    caseSensitive={caseSensitive}
+                    searchQueryFromURL={searchQueryFromURL}
+                />
+            )}
 
             {showQueryExamples && setQueryState && (
                 <>

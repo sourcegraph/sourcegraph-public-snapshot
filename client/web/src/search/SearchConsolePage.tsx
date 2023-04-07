@@ -23,8 +23,10 @@ import { PageTitle } from '../components/PageTitle'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { SearchPatternType } from '../graphql-operations'
 import { OwnConfigProps } from '../own/OwnConfigProps'
+import { setSearchMode, useNavbarQueryState } from '../stores'
 
 import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
+import { submitSearch } from './helpers'
 
 import styles from './SearchConsolePage.module.scss'
 
@@ -57,6 +59,9 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
         () => parseSearchURLPatternType(location.search) || SearchPatternType.structural,
         [location.search]
     )
+
+    const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
+    const submittedURLQuery = useNavbarQueryState(state => state.searchQueryFromURL)
 
     const triggerSearch = useCallback(() => {
         navigate('/search/console?q=' + encodeURIComponent(searchQuery.value))
@@ -131,6 +136,10 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                                 allExpanded={false}
                                 results={results}
                                 executedQuery={location.search}
+                                setSearchMode={setSearchMode}
+                                submitSearch={submitSearch}
+                                caseSensitive={caseSensitive}
+                                searchQueryFromURL={submittedURLQuery}
                             />
                         ))}
                 </div>

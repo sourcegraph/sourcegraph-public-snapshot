@@ -1,46 +1,46 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 
 import classNames from 'classnames'
-import { useHistory } from 'react-router'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { of } from 'rxjs'
 
 import { smartSearchIconSvgPath } from '@sourcegraph/branded'
-import { SearchMode } from '@sourcegraph/shared/src/search'
+import { SearchMode, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { Icon, H3, H2, Text, Button, useObservable } from '@sourcegraph/wildcard'
 
-<<<<<<<< HEAD:client/branded/src/search-ui/components/SmartSearchPreview.tsx
-import { submitSearch } from '../../../../web/src/search/helpers'
-import { useNavbarQueryState, setSearchMode } from '../../../../web/src/stores'
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
 import { LATEST_VERSION, aggregateStreamingSearch, ProposedQuery } from '../../../../shared/src/search/stream'
-========
-import { SearchPatternType } from '../../../../shared/src/graphql-operations'
-import { LATEST_VERSION, aggregateStreamingSearch, ProposedQuery } from '../../../../shared/src/search/stream'
-import { useNavbarQueryState, setSearchMode } from '../../stores'
-import { submitSearch } from '../helpers'
->>>>>>>> 8332d924d0bef7df0af435bbc5eca09f7f4d8de9:client/web/src/search/suggestion/SmartSearchPreview.tsx
 
 import { SmartSearchListItem } from './SmartSearchListItem'
 
 import styles from './SmartSearchPreview.module.scss'
 
-export const SmartSearchPreview: React.FunctionComponent<{}> = () => {
-    const [resultNumber, setResultNumber] = useState<number | string>(0)
+interface SmartSearchPreviewProps {
+    setSearchMode: (mode: SearchMode) => void
+    submitSearch: (parameters: SubmitSearchParameters) => void
+    searchQueryFromURL: string
+    caseSensitive: boolean
+}
 
-    const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
-    const query = useNavbarQueryState(state => state.searchQueryFromURL)
+export const SmartSearchPreview: React.FunctionComponent<SmartSearchPreviewProps> = ({
+    setSearchMode,
+    submitSearch,
+    searchQueryFromURL,
+    caseSensitive,
+}) => {
+    const [resultNumber, setResultNumber] = useState<number | string>(0)
 
     const results = useObservable(
         useMemo(
             () =>
-                aggregateStreamingSearch(of(query), {
+                aggregateStreamingSearch(of(searchQueryFromURL), {
                     version: LATEST_VERSION,
                     patternType: SearchPatternType.standard,
                     caseSensitive,
                     trace: undefined,
                     searchMode: SearchMode.SmartSearch,
                 }),
-            [query, caseSensitive]
+            [searchQueryFromURL, caseSensitive]
         )
     )
 
@@ -101,7 +101,12 @@ export const SmartSearchPreview: React.FunctionComponent<{}> = () => {
                         ))}
                     </ul>
 
-                    <EnableSmartSearch query={query} caseSensitive={caseSensitive} />
+                    <EnableSmartSearch
+                        setSearchMode={setSearchMode}
+                        submitSearch={submitSearch}
+                        query={searchQueryFromURL}
+                        caseSensitive={caseSensitive}
+                    />
                 </>
             )}
         </div>
@@ -111,25 +116,31 @@ export const SmartSearchPreview: React.FunctionComponent<{}> = () => {
 interface EnableSmartSearchProps {
     query: string
     caseSensitive: boolean
+    setSearchMode: (mode: SearchMode) => void
+    submitSearch: (parameters: SubmitSearchParameters) => void
 }
 
 const EnableSmartSearch: React.FunctionComponent<React.PropsWithChildren<EnableSmartSearchProps>> = ({
     query,
     caseSensitive,
+    setSearchMode,
+    submitSearch,
 }) => {
-    const history = useHistory()
+    const navigate = useNavigate()
+    const location = useLocation()
 
     const enableSmartSearch = useCallback((): void => {
         setSearchMode(SearchMode.SmartSearch)
         submitSearch({
-            history,
+            historyOrNavigate: navigate,
+            location,
             query,
             patternType: SearchPatternType.standard,
             caseSensitive,
             searchMode: SearchMode.SmartSearch,
             source: 'smartSearchDisabled',
         })
-    }, [query, history, caseSensitive])
+    }, [query, navigate, location, caseSensitive])
 
     return (
         <Text className="text-muted d-flex align-items-center mt-2">

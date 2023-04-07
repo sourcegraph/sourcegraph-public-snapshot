@@ -10,7 +10,13 @@ import { FilePrefetcher, PrefetchableFile } from '@sourcegraph/shared/src/compon
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { BuildSearchQueryURLParameters, QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
+import {
+    BuildSearchQueryURLParameters,
+    QueryState,
+    SearchContextProps,
+    SearchMode,
+    SubmitSearchParameters,
+} from '@sourcegraph/shared/src/search'
 import {
     AggregateStreamingSearchResults,
     getMatchUrl,
@@ -75,6 +81,11 @@ export interface StreamingSearchResultsListProps
     setQueryState?: (queryState: QueryState) => void
     buildSearchURLQueryFromQueryState?: (queryParameters: BuildSearchQueryURLParameters) => string
 
+    setSearchMode?: (mode: SearchMode) => void
+    submitSearch?: (parameters: SubmitSearchParameters) => void
+    searchQueryFromURL?: string
+    caseSensitive?: boolean
+
     selectedSearchContextSpec?: string
 
     /**
@@ -106,6 +117,10 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     queryState,
     setQueryState,
     buildSearchURLQueryFromQueryState,
+    setSearchMode,
+    submitSearch,
+    caseSensitive,
+    searchQueryFromURL,
     logSearchResultClicked,
 }) => {
     const resultsNumber = results?.results.length || 0
@@ -282,6 +297,10 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 showSearchContext={searchContextsEnabled}
                                 showQueryExamples={showQueryExamplesOnNoResultsPage}
                                 setQueryState={setQueryState}
+                                setSearchMode={setSearchMode}
+                                submitSearch={submitSearch}
+                                caseSensitive={caseSensitive}
+                                searchQueryFromURL={searchQueryFromURL}
                             />
                         )}
                     </>

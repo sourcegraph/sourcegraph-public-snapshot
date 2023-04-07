@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useMemo, useState } from 'react'
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -10,7 +10,7 @@ import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { QueryUpdate, SearchContextProps } from '@sourcegraph/shared/src/search'
+import { QueryUpdate, SearchContextProps, SearchMode, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { sanitizeQueryForTelemetry, updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 import {
@@ -33,7 +33,7 @@ import { CodeInsightsProps } from '../../insights/types'
 import { OwnConfigProps } from '../../own/OwnConfigProps'
 import { fetchBlob, usePrefetchBlobFormat } from '../../repo/blob/backend'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
-import { buildSearchURLQueryFromQueryState, useNavbarQueryState, useNotepad } from '../../stores'
+import { buildSearchURLQueryFromQueryState, setSearchMode, useNavbarQueryState, useNotepad } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { submitSearch } from '../helpers'
 import { useRecentSearches } from '../input/useRecentSearches'
@@ -533,6 +533,10 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             queryState={queryState}
                             setQueryState={setQueryState}
                             buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
+                            setSearchMode={setSearchMode}
+                            submitSearch={submitSearch}
+                            caseSensitive={caseSensitive}
+                            searchQueryFromURL={submittedURLQuery}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                             logSearchResultClicked={logSearchResultClicked}
                         />
