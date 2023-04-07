@@ -67,7 +67,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 
 	var dependencyOf int
 	if args.DependencyOf != nil {
-		v, v2, err := unmarshalPreciseIndexGQLID(graphql.ID(*args.DependencyOf))
+		v, v2, err := UnmarshalPreciseIndexGQLID(graphql.ID(*args.DependencyOf))
 		if err != nil {
 			return nil, err
 		}
@@ -80,7 +80,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 	}
 	var dependentOf int
 	if args.DependentOf != nil {
-		v, v2, err := unmarshalPreciseIndexGQLID(graphql.ID(*args.DependentOf))
+		v, v2, err := UnmarshalPreciseIndexGQLID(graphql.ID(*args.DependentOf))
 		if err != nil {
 			return nil, err
 		}
@@ -213,7 +213,7 @@ func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ r
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	uploadID, indexID, err := unmarshalPreciseIndexGQLID(id)
+	uploadID, indexID, err := UnmarshalPreciseIndexGQLID(id)
 	if err != nil {
 		return nil, err
 	}
