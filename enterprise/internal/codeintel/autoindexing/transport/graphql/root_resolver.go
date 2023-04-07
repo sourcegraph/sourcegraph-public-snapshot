@@ -451,9 +451,6 @@ func (r *rootResolver) CodeIntelSummary(ctx context.Context) (_ resolverstubs.Co
 	return sharedresolvers.NewSummaryResolver(r.autoindexSvc, r.locationResolverFactory.Create()), nil
 }
 
-// For mocking in tests
-var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
-
 func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ resolverstubs.CodeIntelRepositorySummaryResolver, err error) {
 	ctx, errTracer, endObservation := r.operations.repositorySummary.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoID", string(id)),
