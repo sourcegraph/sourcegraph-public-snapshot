@@ -52,8 +52,7 @@ func Init(
 	repoStore := db.Repos()
 	siteAdminChecker := sharedresolvers.NewSiteAdminChecker(db)
 	locationResolverFactory := gitresolvers.NewCachedLocationResolverFactory(repoStore, codeIntelServices.GitserverClient)
-	uploadLoaderFactory := uploadgraphql.NewUploadLoaderFactory(codeIntelServices.UploadsService)
-	indexLoaderFactory := uploadgraphql.NewIndexLoaderFactory(codeIntelServices.UploadsService)
+	prefetcherFactory := uploadgraphql.NewPrefetcherFactory(codeIntelServices.UploadsService)
 	preciseIndexResolverFactory := uploadgraphql.NewPreciseIndexResolverFactory(
 		codeIntelServices.UploadsService,
 		codeIntelServices.PoliciesService,
@@ -66,8 +65,7 @@ func Init(
 		scopedContext("autoindexing"),
 		codeIntelServices.AutoIndexingService,
 		siteAdminChecker,
-		uploadLoaderFactory,
-		indexLoaderFactory,
+		prefetcherFactory,
 		locationResolverFactory,
 		preciseIndexResolverFactory,
 	)
@@ -79,8 +77,7 @@ func Init(
 		codeIntelServices.GitserverClient,
 		siteAdminChecker,
 		repoStore,
-		uploadLoaderFactory,
-		indexLoaderFactory,
+		prefetcherFactory,
 		preciseIndexResolverFactory,
 		locationResolverFactory,
 		ConfigInst.HunkCacheSize,
@@ -102,8 +99,7 @@ func Init(
 		codeIntelServices.UploadsService,
 		codeIntelServices.AutoIndexingService,
 		siteAdminChecker,
-		uploadLoaderFactory,
-		indexLoaderFactory,
+		prefetcherFactory,
 		locationResolverFactory,
 		preciseIndexResolverFactory,
 	)
@@ -111,8 +107,7 @@ func Init(
 	sentinelRootResolver := sentinelgraphql.NewRootResolver(
 		scopedContext("sentinel"),
 		codeIntelServices.SentinelService,
-		uploadLoaderFactory,
-		indexLoaderFactory,
+		prefetcherFactory,
 		locationResolverFactory,
 		preciseIndexResolverFactory,
 	)
