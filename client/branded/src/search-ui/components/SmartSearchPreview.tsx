@@ -4,12 +4,12 @@ import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { of } from 'rxjs'
 
-import { smartSearchIconSvgPath } from '@sourcegraph/branded'
 import { SearchMode, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { Icon, H3, H2, Text, Button, useObservable } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
 import { LATEST_VERSION, aggregateStreamingSearch, ProposedQuery } from '../../../../shared/src/search/stream'
+import { smartSearchIconSvgPath } from '../input/toggles/SmartSearchToggle'
 
 import { SmartSearchListItem } from './SmartSearchListItem'
 
@@ -140,7 +140,7 @@ const EnableSmartSearch: React.FunctionComponent<React.PropsWithChildren<EnableS
             searchMode: SearchMode.SmartSearch,
             source: 'smartSearchDisabled',
         })
-    }, [query, navigate, location, caseSensitive])
+    }, [query, navigate, location, caseSensitive, setSearchMode, submitSearch])
 
     return (
         <Text className="text-muted d-flex align-items-center mt-2">

@@ -89,7 +89,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
 
     return (
         <div className={styles.root}>
-            {setSearchMode && submitSearch && typeof caseSensitive == 'boolean' && searchQueryFromURL && (
+            {setSearchMode && submitSearch && typeof caseSensitive === 'boolean' && searchQueryFromURL && (
                 <SmartSearchPreview
                     setSearchMode={setSearchMode}
                     submitSearch={submitSearch}
