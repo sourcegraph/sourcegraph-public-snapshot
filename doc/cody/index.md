@@ -44,6 +44,12 @@ Learn more from [Cody on Cloud](../cloud/index.md#cody).
 
 ## Cody on your self-hosted Sourcegraph Enterprise instance
 
+### Prerequisites
+
+- Sourcegraph 5.0.1 or above.
+- An Anthropic API key, that you can get from your Technical Advisor or Customer Engineer. 
+- (Optionally), an OpenAI API key for embeddings.
+
 There are two steps required to enable Cody for Enterprise: enable your Sourcegraph instance and configure the VS Code extension.
 
 ### Step 1: Enable Cody on your Sourcegraph instance
