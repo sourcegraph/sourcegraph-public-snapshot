@@ -17,5 +17,8 @@
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "test": "jest"
   },
-  "dependencies": {"@sourcegraph/cody-shared": "workspace:*"}
+  "dependencies": {
+    "@sourcegraph/cody-shared": "workspace:*",
+    "@sourcegraph/wildcard": "workspace:*"
+  }
 }
