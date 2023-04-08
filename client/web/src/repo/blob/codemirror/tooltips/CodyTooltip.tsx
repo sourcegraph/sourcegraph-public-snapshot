@@ -5,7 +5,7 @@ import ReactDOM from 'react-dom/client'
 import { CodyRecipesWidget } from '@sourcegraph/cody-ui/src/widgets/CodyRecipesWidget'
 
 /**
- * Add a extension to CodeMirror editor extensions to display the Cody widget
+ * Add a extension to CodeMirror extensions to display the Cody widget
  * when some code is selected in the editor.
  */
 export function codyWidgetExtension(): StateField<readonly Tooltip[]> {

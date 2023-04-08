@@ -16,6 +16,7 @@ interface RecipesProps {
 export function Recipes({ recipes, onSelect }: RecipesProps) {
     const containerRef = useRef<HTMLDivElement>(null)
 
+    // TODO: It is necessary? Check later.
     // Only show Recipe components that fit the available width.
     const visibleRecipes = useRecipesResize({
         recipes,
