@@ -1,6 +1,8 @@
+import classNames from 'classnames'
+
 import { Button, Icon } from '@sourcegraph/wildcard'
 
-import './Recipes.scss'
+import styles from './Recipes.module.css'
 
 export interface RecipeProps {
     title: string
@@ -10,7 +12,7 @@ export interface RecipeProps {
 
 export function Recipe({ title = 'Undefined', icon, onClick }: RecipeProps) {
     return (
-        <Button variant="secondary" outline={true} className="recipeWrapper" onClick={onClick}>
+        <Button variant="secondary" outline={true} className={classNames(styles.recipeWrapper)} onClick={onClick}>
             {icon && <Icon aria-hidden={true} svgPath={icon} />} {title}
         </Button>
     )

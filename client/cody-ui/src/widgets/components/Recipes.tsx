@@ -1,10 +1,12 @@
 import React, { useRef } from 'react'
 
-import './Recipes.scss'
+import classNames from 'classnames'
 
 import { AskCodyIcon } from '../../icons/AskCodyIcon'
 
 import { useRecipesResize } from './useRecipesResize'
+
+import styles from './Recipes.module.css'
 
 interface RecipesProps {
     recipes: Recipe[]
@@ -21,9 +23,9 @@ export function Recipes({ recipes, onSelect }: RecipesProps) {
     })
 
     return (
-        <div className="recipesWrapper" ref={containerRef}>
+        <div className={classNames(styles.recipesWrapper)} ref={containerRef}>
             <AskCodyIcon />
-            {visibleRecipes.map((recipe, index) => React.cloneElement(recipe, { key: index }))}
+            {recipes.map((recipe, index) => React.cloneElement(recipe, { key: index }))}
         </div>
     )
 }
