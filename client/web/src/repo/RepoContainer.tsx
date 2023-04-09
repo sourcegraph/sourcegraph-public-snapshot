@@ -1,4 +1,4 @@
-import React, { FC, Suspense, useEffect, useMemo, useState } from 'react'
+import React, { FC, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiSourceRepository, mdiClose } from '@mdi/js'
 import classNames from 'classnames'
@@ -8,6 +8,8 @@ import { NEVER, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
+import { Client, createClient, ClientInit } from '@sourcegraph/cody-shared/src/chat/client'
+import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { asError, ErrorLike, isErrorLike, logger, repeatUntil } from '@sourcegraph/common'
 import {
     isCloneInProgressErrorLike,
@@ -43,6 +45,7 @@ import { OwnConfigProps } from '../own/OwnConfigProps'
 import { searchQueryForRepoRevision, SearchStreamingProps } from '../search'
 import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
 import { useNavbarQueryState } from '../stores'
+import { eventLogger } from '../tracking/eventLogger'
 import { RouteV6Descriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
@@ -184,6 +187,41 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                     ),
             [repoName, revision]
         )
+    )
+
+    /**
+     * Cody client.
+     */
+    const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
+    const [transcript, setTranscript] = useState<ChatMessage[]>([])
+
+    const config = useMemo<ClientInit['config']>(
+        () => ({
+            serverEndpoint: window.location.origin,
+            useContext: 'embeddings',
+            codebase: repoName,
+        }),
+        [repoName]
+    )
+
+    const [client, setClient] = useState<Client | ErrorLike>()
+    useEffect(() => {
+        setMessageInProgress(null)
+        setTranscript([])
+        createClient({ config, accessToken: null, setMessageInProgress, setTranscript }).then(setClient, error => {
+            eventLogger.log('web:codySidebar:clientError', { repo: repoName })
+            setClient(error)
+        })
+    }, [config, repoName])
+
+    const onSubmit = useCallback(
+        (text: string) => {
+            if (client && !isErrorLike(client)) {
+                eventLogger.log('web:codySidebar:submit', { repo: repoName, path: filePath, text })
+                client.submitMessage(text)
+            }
+        },
+        [filePath, client, repoName]
     )
 
     /**
@@ -484,6 +522,9 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                                 repoID={''} // Missing the ID in this context.
                                 repoName={repoName}
                                 activePath={filePath || ''}
+                                onSubmit={onSubmit}
+                                messageInProgress={messageInProgress}
+                                transcript={transcript}
                             />
                         </div>
                     </Panel>

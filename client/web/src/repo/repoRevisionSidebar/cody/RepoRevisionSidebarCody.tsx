@@ -2,12 +2,10 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiSend } from '@mdi/js'
 
-import { Client, createClient, ClientInit } from '@sourcegraph/cody-shared/src/chat/client'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Chat, ChatUISubmitButtonProps } from '@sourcegraph/cody-ui/src/Chat'
 import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
 import { Terms } from '@sourcegraph/cody-ui/src/Terms'
-import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Icon } from '@sourcegraph/wildcard'
 
@@ -20,49 +18,19 @@ export const RepoRevisionSidebarCody: React.FunctionComponent<
     {
         repoName: string
         repoID: Scalars['ID']
-
-        /** The path of the file or directory currently shown in the content area */
         activePath: string
-
         focusKey?: string
+        onSubmit: (text: string) => void
+        messageInProgress: ChatMessage | null
+        transcript: ChatMessage[]
     } & Partial<RevisionSpec>
-> = ({ repoName, activePath }) => {
+> = ({ repoName, activePath, onSubmit, messageInProgress, transcript }) => {
     useEffect(() => {
         eventLogger.log('web:codySidebar:view', { repo: repoName })
     }, [repoName])
 
-    const config = useMemo<ClientInit['config']>(
-        () => ({
-            serverEndpoint: window.location.origin,
-            useContext: 'embeddings',
-            codebase: repoName,
-        }),
-        [repoName]
-    )
-    const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
-    const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
-
-    const [client, setClient] = useState<Client | ErrorLike>()
-    useEffect(() => {
-        setMessageInProgress(null)
-        setTranscript([])
-        createClient({ config, accessToken: null, setMessageInProgress, setTranscript }).then(setClient, error => {
-            eventLogger.log('web:codySidebar:clientError', { repo: repoName })
-            setClient(error)
-        })
-    }, [config, repoName])
-
-    const onSubmit = useCallback(
-        (text: string) => {
-            if (client && !isErrorLike(client)) {
-                eventLogger.log('web:codySidebar:submit', { repo: repoName, path: activePath, text })
-                client.submitMessage(text)
-            }
-        },
-        [activePath, client, repoName]
-    )
 
     return (
         <Chat
