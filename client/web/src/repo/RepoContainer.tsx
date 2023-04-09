@@ -224,6 +224,15 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         [filePath, client, repoName]
     )
 
+    // TODO: Extract Cody panel as a component.
+    const codyEnabled = useFeatureFlag('cody-experimental')
+    const focusCodyShortcut = useKeyboardShortcut('focusCody')
+    const [isCodyActive, setCodyActive] = useState(true)
+
+    const chatTitle = 'Ask Cody'
+
+    const sidebarSizes = { default: 350, max: 1200, min: 250 }
+
     /**
      * A long time ago, we fetched `repo` in a separate GraphQL query.
      * This GraphQL query was merged into the `resolveRevision` query to
@@ -371,15 +380,6 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         onDidUpdateExternalLinks: setExternalLinks,
         repoName,
     }
-
-    // TODO: Extract Cody panel as a component.
-    const codyEnabled = useFeatureFlag('cody-experimental')
-    const focusCodyShortcut = useKeyboardShortcut('focusCody')
-    const [isCodyActive, setCodyActive] = useState(true)
-
-    const chatTitle = 'Ask Cody'
-
-    const sidebarSizes = { default: 350, max: 1200, min: 250 }
 
     return (
         <>
