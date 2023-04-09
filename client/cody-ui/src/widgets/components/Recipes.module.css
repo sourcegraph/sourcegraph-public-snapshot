@@ -23,3 +23,7 @@
     flex-shrink: 0;
     font-weight: 400;
   }
+
+  .recipeMenuWrapper {
+    font-size: 0.83rem;
+  }
