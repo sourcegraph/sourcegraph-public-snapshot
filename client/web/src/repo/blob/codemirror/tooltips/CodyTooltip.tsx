@@ -1,6 +1,5 @@
 import { EditorState, StateField } from '@codemirror/state'
 import { Tooltip, showTooltip } from '@codemirror/view'
-import { debounce } from 'lodash'
 import ReactDOM from 'react-dom/client'
 
 import { CodyRecipesWidget } from '@sourcegraph/cody-ui/src/widgets/CodyRecipesWidget'
@@ -12,8 +11,8 @@ import { CodyRecipesWidget } from '@sourcegraph/cody-ui/src/widgets/CodyRecipesW
 export function codyWidgetExtension(): StateField<readonly Tooltip[]> {
     return StateField.define<readonly Tooltip[]>({
         create: getCodyWidget,
-        update(tooltips, transaction) {
-            if (transaction.selection) return getCodyWidget(transaction.state)
+        update(tooltips, tr) {
+            if (tr.selection) return getCodyWidget(tr.state)
             return tooltips
         },
 

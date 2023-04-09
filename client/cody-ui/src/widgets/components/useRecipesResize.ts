@@ -1,7 +1,7 @@
-import { useEffect, useState, RefObject, ReactNode } from 'react'
+import { useEffect, useState, RefObject } from 'react'
 
 interface UseRecipesResizeObserverParams {
-    recipes: ReactNode[]
+    recipes: Recipe[]
     containerRef: RefObject<HTMLDivElement>
 }
 
