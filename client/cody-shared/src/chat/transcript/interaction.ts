@@ -1,6 +1,6 @@
 import { ContextMessage } from '../../codebase-context/messages'
-import { Message } from '../../sourcegraph-api'
 import { PromptMixin } from '../../prompt/prompt-mixin'
+import { Message } from '../../sourcegraph-api'
 
 import { ChatMessage, InteractionMessage } from './messages'
 
@@ -39,7 +39,10 @@ export class Interaction {
     }
 
     public async toPrompt(includeContext: boolean): Promise<Message[]> {
-        const messages: (ContextMessage | InteractionMessage)[] = [PromptMixin.mixInto(this.humanMessage), this.assistantMessage]
+        const messages: (ContextMessage | InteractionMessage)[] = [
+            PromptMixin.mixInto(this.humanMessage),
+            this.assistantMessage,
+        ]
         if (includeContext) {
             messages.unshift(...(await this.context))
         }

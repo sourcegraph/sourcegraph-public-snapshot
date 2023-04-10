@@ -11,13 +11,13 @@ export class PromptMixin {
 
     // Prepends all of the mixins to `humanMessage`. Modifies and returns `humanMessage`.
     public static mixInto(humanMessage: InteractionMessage): InteractionMessage {
-	const mixins = this.mixins_.map(mixin => mixin.prompt).join('\n\n')
+        const mixins = this.mixins_.map(mixin => mixin.prompt).join('\n\n')
         if (mixins) {
             // Stuff the prompt mixins at the start of the human text.
             // Note we do not reflect them in displayText.
             humanMessage.text = `${mixins}\n\n${humanMessage.text}`
         }
-	return humanMessage
+        return humanMessage
     }
 
     // Creates a mixin with the given, fixed prompt to insert.
