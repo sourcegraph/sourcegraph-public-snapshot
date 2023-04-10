@@ -11,6 +11,9 @@ function lastNLines(text: string, n: number): string {
     const lines = text.split('\n')
     return lines.slice(Math.max(0, lines.length - n)).join('\n')
 }
+
+const estimatedLLMResponseLatencyMS = 700
+
 export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
     private promptTokens: number
     private maxPrefixTokens: number
@@ -36,6 +39,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         context: vscode.InlineCompletionContext,
         token: vscode.CancellationToken
     ): Promise<vscode.InlineCompletionItem[]> {
+        console.log('# provideInlineCompletionItems')
         try {
             return await this.provideInlineCompletionItemsInner(document, position, context, token)
         } catch (error) {
@@ -75,15 +79,16 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         const completers: CompletionProvider[] = []
         if (precedingLine.trim() === '') {
             // Start of line: medium debounce
-            waitMs = 1000
+            waitMs = 1500
             completers.push(
                 new EndOfLineCompletionProvider(this.claude, remainingChars, this.responseTokens, prefix, '', 2)
             )
         } else if (context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke || precedingLine.endsWith('.')) {
             // Do nothing
+            return []
         } else {
             // End of line: long debounce, complete until newline
-            waitMs = 2000
+            waitMs = 3000
             completers.push(
                 new EndOfLineCompletionProvider(this.claude, remainingChars, this.responseTokens, prefix, '', 2),
                 new EndOfLineCompletionProvider(this.claude, remainingChars, this.responseTokens, prefix, '\n', 2)
@@ -95,10 +100,11 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         // TODO(beyang): trigger on context quality (better context means longer completion)
 
-        const waiter = new Promise<void>(resolve => setTimeout(() => resolve(), waitMs))
-
-        const results = (await Promise.all(completers.map(c => c.generateCompletions()))).flat()
+        const waiter = new Promise<void>(resolve =>
+            setTimeout(() => resolve(), Math.max(0, waitMs - estimatedLLMResponseLatencyMS))
+        )
         await waiter
+        const results = (await Promise.all(completers.map(c => c.generateCompletions()))).flat()
         return results.map(r => new vscode.InlineCompletionItem(r.content))
     }
 
