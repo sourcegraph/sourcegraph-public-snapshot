@@ -140,6 +140,12 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		}
 	}
 
+	skipped, err := batcheslib.SkippedStepsForRepo(batchSpec.Spec, string(repo.Name), workspace.FileMatches)
+	if err != nil {
+		return apiclient.Job{}, err
+	}
+	executionInput.SkippedSteps = skipped
+
 	// Marshal the execution input into JSON and add it to the files passed to
 	// the VM.
 	marshaledInput, err := json.Marshal(executionInput)
@@ -165,7 +171,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 	}
 
 	// If we only want to fetch the workspace, we add a sparse checkout pattern.
-	sparseCheckout := []string{}
+	var sparseCheckout []string
 	if workspace.OnlyFetchWorkspace {
 		sparseCheckout = []string{
 			fmt.Sprintf("%s/*", workspace.Path),
@@ -191,7 +197,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		// Find the step to start with.
 		startStep := 0
 
-		dockerSteps := []apiclient.DockerStep{}
+		var dockerSteps []apiclient.DockerStep
 
 		if executionInput.CachedStepResultFound {
 			cacheEntry := executionInput.CachedStepResult
@@ -222,14 +228,9 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 			}
 		}
 
-		skipped, err := batcheslib.SkippedStepsForRepo(batchSpec.Spec, string(repo.Name), workspace.FileMatches)
-		if err != nil {
-			return apiclient.Job{}, err
-		}
-
 		for i := startStep; i < len(batchSpec.Spec.Steps); i++ {
 			// Skip statically skipped steps.
-			if _, skipped := skipped[i]; skipped {
+			if _, skip := skipped[i]; skip {
 				continue
 			}
 

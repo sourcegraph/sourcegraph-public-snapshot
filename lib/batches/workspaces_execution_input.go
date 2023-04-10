@@ -19,6 +19,7 @@ type WorkspacesExecutionInput struct {
 	// CachedStepResult is only required for V1 executions.
 	// TODO: Remove me once V2 is the only execution format.
 	CachedStepResult execution.AfterStepResult `json:"cachedStepResult,omitempty"`
+	SkippedSteps     map[int]struct{}          `json:"skippedSteps"`
 }
 
 type WorkspaceRepo struct {

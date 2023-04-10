@@ -41,7 +41,7 @@ func doMain() error {
 		return err
 	}
 
-	previousResult, err := parsePreviousStepResult(*previousPath, arguments.step)
+	previousResult, err := parsePreviousStepResult(*previousPath, arguments.step, executionInput.SkippedSteps)
 	if err != nil {
 		return err
 	}
@@ -104,10 +104,11 @@ func parseInput(inputPath string) (batcheslib.WorkspacesExecutionInput, error) {
 	return executionInput, nil
 }
 
-func parsePreviousStepResult(path string, step int) (execution.AfterStepResult, error) {
+func parsePreviousStepResult(path string, step int, skippedSteps map[int]struct{}) (execution.AfterStepResult, error) {
 	var previousResult execution.AfterStepResult
 	if step > 0 {
-		stepResultPath := filepath.Join(path, fmt.Sprintf("step%d.json", step-1))
+		previousStepIndex := getPreviousStepIndex(step, skippedSteps)
+		stepResultPath := filepath.Join(path, fmt.Sprintf("step%d.json", previousStepIndex))
 		stepJSON, err := os.ReadFile(stepResultPath)
 		if err != nil {
 			return previousResult, errors.Wrap(err, "failed to read step result file")
@@ -118,4 +119,13 @@ func parsePreviousStepResult(path string, step int) (execution.AfterStepResult, 
 		}
 	}
 	return previousResult, nil
+}
+
+func getPreviousStepIndex(step int, skippedSteps map[int]struct{}) int {
+	for i := step - 1; i >= 0; i-- {
+		if _, ok := skippedSteps[i]; !ok {
+			return i
+		}
+	}
+	return -1
 }
