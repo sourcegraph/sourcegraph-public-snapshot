@@ -149,7 +149,11 @@ func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 	// Open connections for each address
 	after.grpcConns = make(map[string]connAndErr, len(after.Addresses))
 	for _, addr := range after.Addresses {
-		conn, err := defaults.Dial(addr)
+		conn, err := defaults.Dial(
+			addr,
+			// Allow large messages to accomodate large diffs
+			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(64*1024*1024)),
+		)
 		after.grpcConns[addr] = connAndErr{conn: conn, err: err}
 	}
 
