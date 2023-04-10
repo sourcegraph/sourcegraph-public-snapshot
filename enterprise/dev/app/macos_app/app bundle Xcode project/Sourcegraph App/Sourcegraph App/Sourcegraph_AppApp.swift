@@ -7,6 +7,39 @@
 
 import SwiftUI
 import Cocoa
+import Sparkle
+
+// Sparkle
+// This view model class publishes when new updates can be checked by the user
+final class CheckForUpdatesViewModel: ObservableObject {
+    @Published var canCheckForUpdates = false
+
+    init(updater: SPUUpdater) {
+        updater.publisher(for: \.canCheckForUpdates)
+            .assign(to: &$canCheckForUpdates)
+    }
+}
+
+// Sparkle
+// This is the view for the Check for Updates menu item
+// Note this intermediate view is necessary for the disabled state on the menu item to work properly before Monterey.
+// See https://stackoverflow.com/questions/68553092/menu-not-updating-swiftui-bug for more info
+struct CheckForUpdatesView: View {
+    @ObservedObject private var checkForUpdatesViewModel: CheckForUpdatesViewModel
+    private let updater: SPUUpdater
+    
+    init(updater: SPUUpdater) {
+        self.updater = updater
+        
+        // Create our view model for our CheckForUpdatesView
+        self.checkForUpdatesViewModel = CheckForUpdatesViewModel(updater: updater)
+    }
+    
+    var body: some View {
+        Button("Check for Updates…", action: updater.checkForUpdates)
+            .disabled(!checkForUpdatesViewModel.canCheckForUpdates)
+    }
+}
 
 func checkAppIsRunning() -> Bool {
     guard let url = URL(string: "http://127.0.0.1:3080/sign-in?returnTo=%2Fsearch") else { fatalError("Missing URL") }
@@ -154,9 +187,17 @@ func StopApp() {
 
 @main
 struct Sourcegraph_AppApp: App {
+    // Sparkle
+    private let updaterController: SPUStandardUpdaterController
+    
     init() {
-        // placeholder to put stuff to run when the app starts
+        // Sparkle
+        // If you want to start the updater manually, pass false to startingUpdater and call .startUpdater() later
+        // This is where you can also pass an updater delegate if you need one
+        updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+        
         do {
+            // launch Sourcegraph when the app starts up
             try StartApp()
         } catch {
             print(error.localizedDescription)
@@ -168,6 +209,11 @@ struct Sourcegraph_AppApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+        }
+        .commands {
+            CommandGroup(after: .appInfo) {
+                CheckForUpdatesView(updater: updaterController.updater)
+            }
         }
         // 13.0+
 //        MenuBarExtra("Sourcegraph App Menu Bar Extra", image: "wildcard-black") {

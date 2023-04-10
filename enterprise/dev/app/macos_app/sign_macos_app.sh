@@ -9,7 +9,6 @@
 # - APPLE_DEV_ID_APPLICATION_PASSWORD - password for the cert file. Required.
 #   - comes from Secrets in CI
 # - artifact (optional) - path to app bundle
-#   - defaults to ${PWD}/Sourcegraph App.app
 # - signature (optional) - path to destination, if different from artifact
 #   - no default, not used if not present
 
@@ -57,7 +56,10 @@ done
 
 exedir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-app_name="$(basename "${app_bundle_path}" .app)"
+# set up the code signing Docker image
+"${exedir}/setup_codesign.sh" || exit 1
+
+app_name="$(basename "${app_bundle_path}")"
 
 workdir=$(dirname "${app_bundle_path}")
 
@@ -80,8 +82,8 @@ workdir=$(dirname "${app_bundle_path}")
 # assume that since these are all executables, they should all end up as 555
 files_to_sign=()
 while IFS= read -r f; do
-  [ "$(file "${workdir}/${app_name}.app/${f}" | grep -c Mach-O)" -gt 0 ] && files_to_sign+=("${f}")
-done < <(cd "${workdir}/${app_name}.app" && find . -type f)
+  [ "$(file "${workdir}/${app_name}/${f}" | grep -c Mach-O)" -gt 0 ] && files_to_sign+=("${f}")
+done < <(cd "${workdir}/${app_name}" && find . -type f)
 for f in "${files_to_sign[@]}"; do
   # I get the occasional "Error: I/O error: Operation not permitted (os error 1)" error when signing the files
   # which is probably happening because the file permissions are out of sync. It always works the second try,
@@ -89,11 +91,11 @@ for f in "${files_to_sign[@]}"; do
   rc=0
   # shellcheck disable=SC2034
   for try in 1 2 3; do
-    chmod 777 "${workdir}/${app_name}.app/${f}"
+    chmod 777 "${workdir}/${app_name}/${f}"
     docker run --rm \
-      -v "${exedir}/macos_app/macos.entitlements:/entitle/macos.entitlements" \
+      -v "${exedir}/macos.entitlements:/entitle/macos.entitlements" \
       -v "${application_cert_path}:/certs/cert.p12" \
-      -v "${workdir}/${app_name}.app:/sign" \
+      -v "${workdir}/${app_name}:/sign" \
       -w "/sign" \
       sourcegraph/apple-codesign:0.22.0 \
       sign \
@@ -116,7 +118,7 @@ rc=0
 # shellcheck disable=SC2034
 for try in 1 2 3; do
   docker run --rm \
-    -v "${exedir}/macos_app/macos.entitlements:/entitle/macos.entitlements" \
+    -v "${exedir}/macos.entitlements:/entitle/macos.entitlements" \
     -v "${application_cert_path}:/certs/cert.p12" \
     -v "${workdir}:/sign" \
     -w "/sign" \
@@ -126,7 +128,7 @@ for try in 1 2 3; do
     --p12-file "/certs/cert.p12" \
     --p12-password "${APPLE_DEV_ID_APPLICATION_PASSWORD}" \
     --code-signature-flags runtime \
-    "/sign/${app_name}.app"
+    "/sign/${app_name}"
   rc=$?
   [[ ${rc:-0} -eq 0 ]] && break
 done
@@ -134,7 +136,7 @@ done
 
 # close down permissions on the executables after signing
 for f in "${files_to_sign[@]}"; do
-  chmod 555 "${workdir}/${app_name}.app/${f}"
+  chmod 555 "${workdir}/${app_name}/${f}"
 done
 
 # put that thing back where it came from or so help me!
@@ -143,7 +145,7 @@ done
     # when running in buildkite, and the original bundle was not in a host mount dir,
     # copy the signed app back from the temp dir
     rm -rf "${app_bundle_path}"
-    mv "${workdir}/${app_name}.app" "${app_bundle_path}" || exit 1
+    mv "${workdir}/${app_name}" "${app_bundle_path}" || exit 1
   }
 }
 

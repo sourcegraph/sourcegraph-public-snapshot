@@ -5,12 +5,14 @@
 # INPUT ENVIRONMENT VARIABLES
 # - VERSION - required in order to find the binary on GCS and is stored in the app for use when detecting new versions
 #   - defaults to 0.0.0
+# - app_name (optional) - the name of the app bundle
+#   - defaults to "Sourcegraph App.app"
 # - artifact (optional) - path to binary file
 #   - if not supplied, downloads from GCS to ${PWD}/sourcegraph
 # - signature (optional) - path to destination app bundle
 #   - defaults to ${PWD}/${app_name}
-# - app_name (optional) - the name of the app bundle
-#   - defaults to "Sourcegraph App.app"
+# - app_template_path (optional) - file path to the app bundle template
+#   - if not set, will download the current version of the template from GCS
 
 # VERSION should come from the environment
 VERSION=${VERSION:-0.0.0}
@@ -79,7 +81,7 @@ fi
 # copy in the launcher shell script
 # the destination name needs to match what the app bundle executable expects
 # which used to be controlled by Platypus, but is now a Xcode project
-cp "${exedir}/macos_app/app_bundle/sourcegraph_launcher.sh" "${app_name}/Contents/Resources/sourcegraph_launcher.sh" || exit 1
+cp "${exedir}/app_bundle/sourcegraph_launcher.sh" "${app_name}/Contents/Resources/sourcegraph_launcher.sh" || exit 1
 chmod 555 "${app_name}/Contents/Resources/sourcegraph_launcher.sh" || exit 1
 
 # copy in the sourcegraph binary

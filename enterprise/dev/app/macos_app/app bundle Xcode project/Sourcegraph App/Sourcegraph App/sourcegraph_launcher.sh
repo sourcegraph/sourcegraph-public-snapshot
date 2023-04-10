@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
 
+### THIS IS A SCRIPT FOR DEVELOPMENT OF THE APP TEMPLATE      ###
+### it is not the actual launcher script                      ###
+### it's used for testing the app template as it is developed ###
+### and will be replaced by the actual launcher script        ###
+### when the app is built                                     ###
+
 exedir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 mkdir -p "${HOME}/Library/Application Support/sourcegraph-sp"
 
 log="${HOME}/Library/Application Support/sourcegraph-sp/sourcegraph.log"
-for x in $(seq 1 20); do
+for x in $(seq 1 200); do
   sleep 0.1
   echo "line ${x}" | tee -a "${log}"
 done

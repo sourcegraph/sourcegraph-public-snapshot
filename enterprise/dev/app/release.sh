@@ -93,6 +93,6 @@ docker run --rm \
 ### and build, sign and notarize a macOS app bundle
 ### everything is downloaded from the GCS versioned bucket,
 ### uploaded back to GCS, and replicated in a "latest" bucket
-"${ROOTDIR}/enterprise/dev/app/post-process_macos_artifacts.sh" || exit 1
+"${ROOTDIR}/enterprise/dev/app/macos_app/post-process_macos_artifacts.sh" || exit 1
 
 exit 0

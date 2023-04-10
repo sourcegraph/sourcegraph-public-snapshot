@@ -61,8 +61,8 @@ while IFS= read -r gcs_file; do
     exit 1
   }
 
-  artifact="${PWD}/${zip_file_name}/sourcegraph" \
-    "${exedir}/sign_macos_binary.sh" || {
+  info "signing the macOS standalone executable"
+  "${exedir}/sign_macos_artifact.sh" "${PWD}/${zip_file_name}/sourcegraph" || {
     error "failed signing ${zip_file_name}/sourcegraph"
     exit 1
   }
@@ -92,7 +92,8 @@ while IFS= read -r gcs_file; do
     exit 1
   }
   rm -f "${zip_file_name}.zip"
-  ### limit binary signing to only the universal binary because the arch-specific ones are for Homebrew
+  ### Limit binary signing to only the universal binary because the arch-specific ones are for Homebrew
+  ### Keep the loop structure in case that changes
 done < <(gsutil ls "gs://sourcegraph-app-releases/${VERSION}/sourcegraph_${VERSION}_darwin_all.zip")
 
 # the macOS universal binary should have been left by the binary signing process
@@ -123,6 +124,7 @@ artifact="${PWD}/Sourcegraph App.app" \
 info "notarizing macOS App bundle"
 
 # this one can take awhile - 5+ minutes
+# most of the wait is uploading the app bundle
 "${exedir}/notarize_macos_artifact.sh" \
   --staple \
   "${PWD}/Sourcegraph App.app" || {
@@ -146,7 +148,7 @@ gsutil cp "sourcegraph_${VERSION}_macOS_universal_app_bundle.zip" checksums.txt 
 command -v hdiutil 1>/dev/null 2>&1 && command -v osascript 1>/dev/null 2>&1 && {
 
   info "creating the macOS dmg container"
-  "${exedir}/macos_app/create_sourcegraph_app_dmg.sh" "${PWD}/Sourcegraph App.app" || exit 1
+  "${exedir}/create_sourcegraph_app_dmg.sh" "${PWD}/Sourcegraph App.app" || exit 1
 
   # sign the dmg
   info "signing the macOS dmg container"

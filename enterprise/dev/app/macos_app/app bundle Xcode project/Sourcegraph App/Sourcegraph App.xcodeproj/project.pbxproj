@@ -14,9 +14,10 @@
 		93341AB1299713FA0030F58F /* Sourcegraph_AppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93341AB0299713FA0030F58F /* Sourcegraph_AppTests.swift */; };
 		93341ABB299713FA0030F58F /* Sourcegraph_AppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93341ABA299713FA0030F58F /* Sourcegraph_AppUITests.swift */; };
 		93341ABD299713FA0030F58F /* Sourcegraph_AppUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93341ABC299713FA0030F58F /* Sourcegraph_AppUITestsLaunchTests.swift */; };
+		9336F50229D20D700033F40A /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 9336F50129D20D700033F40A /* Sparkle */; };
 		93E4DF0629C1601300500D3C /* sourcegraph_launcher.sh in Resources */ = {isa = PBXBuildFile; fileRef = 93E4DF0529C1601300500D3C /* sourcegraph_launcher.sh */; };
-		93E4DF0829C3643C00500D3C /* uninstall.sh in Resources */ = {isa = PBXBuildFile; fileRef = 93E4DF0729C3643C00500D3C /* uninstall.sh */; };
 		93E4DF1029CBAB2700500D3C /* mock-http-server.py in Resources */ = {isa = PBXBuildFile; fileRef = 93E4DF0F29CBAB2700500D3C /* mock-http-server.py */; };
+		93E4DF1229CE383900500D3C /* version.txt in Resources */ = {isa = PBXBuildFile; fileRef = 93E4DF1129CE383900500D3C /* version.txt */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -48,11 +49,12 @@
 		93341AB6299713FA0030F58F /* Sourcegraph AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Sourcegraph AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		93341ABA299713FA0030F58F /* Sourcegraph_AppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sourcegraph_AppUITests.swift; sourceTree = "<group>"; };
 		93341ABC299713FA0030F58F /* Sourcegraph_AppUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sourcegraph_AppUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		9336F50329D21C760033F40A /* Sourcegraph-App-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Sourcegraph-App-Info.plist"; sourceTree = SOURCE_ROOT; };
 		93E4DF0529C1601300500D3C /* sourcegraph_launcher.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = sourcegraph_launcher.sh; sourceTree = "<group>"; };
-		93E4DF0729C3643C00500D3C /* uninstall.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = uninstall.sh; sourceTree = "<group>"; };
 		93E4DF0A29C3CB6900500D3C /* build_app_bundle_template.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = build_app_bundle_template.sh; sourceTree = "<group>"; };
 		93E4DF0E29C8CD6500500D3C /* Sourcegraph AppDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Sourcegraph AppDebug.entitlements"; sourceTree = "<group>"; };
 		93E4DF0F29CBAB2700500D3C /* mock-http-server.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "mock-http-server.py"; sourceTree = "<group>"; };
+		93E4DF1129CE383900500D3C /* version.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = version.txt; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,6 +62,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9336F50229D20D700033F40A /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -103,11 +106,12 @@
 		93341A9D299713F90030F58F /* Sourcegraph App */ = {
 			isa = PBXGroup;
 			children = (
+				9336F50329D21C760033F40A /* Sourcegraph-App-Info.plist */,
 				93E4DF0E29C8CD6500500D3C /* Sourcegraph AppDebug.entitlements */,
 				93E4DF0529C1601300500D3C /* sourcegraph_launcher.sh */,
-				93E4DF0729C3643C00500D3C /* uninstall.sh */,
 				93341A9E299713F90030F58F /* Sourcegraph_AppApp.swift */,
 				93341AA0299713F90030F58F /* ContentView.swift */,
+				93E4DF1129CE383900500D3C /* version.txt */,
 				93341AA2299713FA0030F58F /* Assets.xcassets */,
 				93341AA7299713FA0030F58F /* Sourcegraph_App.entitlements */,
 				93341AA4299713FA0030F58F /* Preview Content */,
@@ -158,6 +162,9 @@
 			dependencies = (
 			);
 			name = "Sourcegraph App";
+			packageProductDependencies = (
+				9336F50129D20D700033F40A /* Sparkle */,
+			);
 			productName = "Sourcegraph App";
 			productReference = 93341A9B299713F90030F58F /* Sourcegraph App.app */;
 			productType = "com.apple.product-type.application";
@@ -232,6 +239,9 @@
 				Base,
 			);
 			mainGroup = 93341A92299713F90030F58F;
+			packageReferences = (
+				9336F50029D20D700033F40A /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			productRefGroup = 93341A9C299713F90030F58F /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -251,8 +261,8 @@
 				93341AA6299713FA0030F58F /* Preview Assets.xcassets in Resources */,
 				93341AA3299713FA0030F58F /* Assets.xcassets in Resources */,
 				93E4DF0629C1601300500D3C /* sourcegraph_launcher.sh in Resources */,
+				93E4DF1229CE383900500D3C /* version.txt in Resources */,
 				93E4DF1029CBAB2700500D3C /* mock-http-server.py in Resources */,
-				93E4DF0829C3643C00500D3C /* uninstall.sh in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -448,9 +458,10 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Sourcegraph-App-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Sourcegraph App";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Sourcegraph, Inc.";
 				"INFOPLIST_KEY_NSHumanReadableCopyright[sdk=*]" = "Sourcegraph, Inc.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -481,9 +492,10 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Sourcegraph-App-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Sourcegraph App";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Sourcegraph, Inc.";
 				"INFOPLIST_KEY_NSHumanReadableCopyright[sdk=*]" = "Sourcegraph, Inc.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -610,6 +622,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		9336F50029D20D700033F40A /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		9336F50129D20D700033F40A /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9336F50029D20D700033F40A /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 93341A93299713F90030F58F /* Project object */;
 }

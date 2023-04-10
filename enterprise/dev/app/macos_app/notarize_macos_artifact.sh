@@ -46,7 +46,7 @@ while [ ${#} -gt 0 ]; do
       staple="--staple"
       ;;
     --help)
-      echo "$(basename "${BASH_SOURCE[0]}") [--staple] [<file path>]" 1>&2
+      echo "$(basename "${BASH_SOURCE[0]}") [--staple] [<artifact path>]" 1>&2
       exit 1
       ;;
     *)
@@ -67,6 +67,11 @@ done
   exit 1
 }
 
+exedir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+
+# set up the code signing Docker image
+"${exedir}/setup_codesign.sh" || exit 1
+
 artifact_name="$(basename "${artifact_path}")"
 
 workdir=$(dirname "${artifact_path}")
@@ -75,7 +80,7 @@ workdir=$(dirname "${artifact_path}")
 # When in buildkite, the whole workdir will get cleaned up; setting that trap will replace this one
 trap "rm -rf \"${workdir}/private_keys\"" EXIT
 
-[ -n "${BUILDKITE-}" ] && {
+[ -z "${BUILDKITE-}" ] || {
   # In Buildkite, we're running in a Docker container, so `docker run -v` needs to refer to a
   # directory on our Docker host, not in our container. Use the /mnt/tmp directory, which is shared
   # between `dind` (the Docker-in-Docker host) and our container.
@@ -99,7 +104,7 @@ docker run --rm \
   "/sign/${artifact_name}" || exit 1
 
 # put that thing back where it came from or so help me!
-[ -n "${BUILDKITE-}" ] && {
+[ -z "${BUILDKITE-}" ] || {
   [[ ${artifact_path} = /mnt/* ]] || {
     # when running in buildkite, and the original bundle was not in a host mount dir,
     # copy the notarized artifact back from the temp dir
@@ -110,7 +115,7 @@ docker run --rm \
 
 # goreleaser support: if an output location is defined, copy the signed artifact there
 # shellcheck disable=SC2154
-[ -n "${signature}" ] && {
+[ -z "${signature}" ] || {
   cp -R "${artifact_path}" "${signature}" || exit 1
 }
 
