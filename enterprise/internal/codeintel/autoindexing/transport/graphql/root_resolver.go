@@ -494,29 +494,32 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 		blocklist[key] = struct{}{}
 	}
 
-	commit := "HEAD"
 	var limitErr error
-
-	indexJobs, err := r.autoindexSvc.InferIndexJobsFromRepositoryStructure(ctx, repoID, commit, "", false)
-	if err != nil {
-		if !errors.As(err, &inference.LimitError{}) {
-			return nil, err
-		}
-
-		limitErr = errors.Append(limitErr, err)
-	}
-	// indexJobHints, err := r.autoindexSvc.InferIndexJobHintsFromRepositoryStructure(ctx, repoID, commit)
-	// if err != nil {
-	// 	if !errors.As(err, &inference.LimitError{}) {
-	// 		return nil, err
-	// 	}
-
-	// 	limitErr = errors.Append(limitErr, err)
-	// }
-
 	inferredAvailableIndexers := map[string]shared.AvailableIndexer{}
-	inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobs, blocklist, inferredAvailableIndexers)
-	// inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
+
+	if autoIndexingEnabled() {
+		commit := "HEAD"
+
+		indexJobs, err := r.autoindexSvc.InferIndexJobsFromRepositoryStructure(ctx, repoID, commit, "", false)
+		if err != nil {
+			if !errors.As(err, &inference.LimitError{}) {
+				return nil, err
+			}
+
+			limitErr = errors.Append(limitErr, err)
+		}
+		// indexJobHints, err := r.autoindexSvc.InferIndexJobHintsFromRepositoryStructure(ctx, repoID, commit)
+		// if err != nil {
+		// 	if !errors.As(err, &inference.LimitError{}) {
+		// 		return nil, err
+		// 	}
+
+		// 	limitErr = errors.Append(limitErr, err)
+		// }
+
+		inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobs, blocklist, inferredAvailableIndexers)
+		// inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
+	}
 
 	inferredAvailableIndexersResolver := make([]sharedresolvers.InferredAvailableIndexers, 0, len(inferredAvailableIndexers))
 	for _, indexer := range inferredAvailableIndexers {
