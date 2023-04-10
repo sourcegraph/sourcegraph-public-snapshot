@@ -98,6 +98,7 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 	}
 
 	prefetcher := r.prefetcherFactory.Create()
+	locationResolver := r.locationResolverFactory.Create()
 
 	for _, index := range indexes {
 		prefetcher.MarkIndex(index.ID)
@@ -106,7 +107,7 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 	resolvers := make([]resolverstubs.PreciseIndexResolver, 0, len(indexes))
 	for _, index := range indexes {
 		index := index
-		resolver, err := uploadsgraphql.NewPreciseIndexResolver(ctx, r.uploadSvc, r.policySvc, r.gitserverClient, prefetcher, r.siteAdminChecker, r.repoStore, r.locationResolverFactory.Create(), traceErrs, nil, &index)
+		resolver, err := r.preciseIndexResolverFactory.Create(ctx, prefetcher, locationResolver, traceErrs, nil, &index)
 		if err != nil {
 			return nil, err
 		}

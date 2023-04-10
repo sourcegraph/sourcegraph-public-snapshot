@@ -5,12 +5,24 @@ import { ChatMessage, InteractionMessage } from './messages'
 
 export class Interaction {
     private cachedContextFileNames: string[] = []
+    private context: Promise<ContextMessage[]>
 
     constructor(
         private humanMessage: InteractionMessage,
         private assistantMessage: InteractionMessage,
-        private context: Promise<ContextMessage[]>
-    ) {}
+        context: Promise<ContextMessage[]>
+    ) {
+        this.context = context.then(messages => {
+            const contextFileNames = messages
+                .map(message => message.fileName)
+                .filter((fileName): fileName is string => !!fileName)
+
+            // Cache the context files so we don't have to block the UI when calling `toChat` by waiting for the context to resolve.
+            this.cachedContextFileNames = [...new Set<string>(contextFileNames)].sort((a, b) => a.localeCompare(b))
+
+            return messages
+        })
+    }
 
     public getAssistantMessage(): InteractionMessage {
         return this.assistantMessage
@@ -20,18 +32,14 @@ export class Interaction {
         this.assistantMessage = assistantMessage
     }
 
+    public async hasContext(): Promise<boolean> {
+        const contextMessages = await this.context
+        return contextMessages.length > 0
+    }
+
     public async toPrompt(includeContext: boolean): Promise<Message[]> {
         if (includeContext) {
-            const contextMessages = await this.context.then(messages => {
-                const contextFileNames = messages
-                    .map(message => message.fileName)
-                    .filter((fileName): fileName is string => !!fileName)
-
-                // Cache the context files so we don't have to block the UI when calling `toChat` by waiting for the context to resolve.
-                this.cachedContextFileNames = [...new Set<string>(contextFileNames)].sort((a, b) => a.localeCompare(b))
-
-                return messages
-            })
+            const contextMessages = await this.context
             return [...contextMessages, this.humanMessage, this.assistantMessage].map(toPromptMessage)
         }
         return [this.humanMessage, this.assistantMessage].map(toPromptMessage)

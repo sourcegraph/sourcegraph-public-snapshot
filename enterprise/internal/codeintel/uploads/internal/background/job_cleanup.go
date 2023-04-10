@@ -162,7 +162,7 @@ func NewExpiredUploadTraversalJanitor(
 
 func NewHardDeleter(
 	store store.Store,
-	lsifStore lsifstore.LsifStore,
+	lsifStore lsifstore.Store,
 	interval time.Duration,
 	observationCtx *observation.Context,
 ) goroutine.BackgroundRoutine {
@@ -249,7 +249,7 @@ func NewAuditLogJanitor(
 //
 
 func NewSCIPExpirationTask(
-	lsifStore lsifstore.LsifStore,
+	lsifStore lsifstore.Store,
 	interval time.Duration,
 	unreferencedDocumentBatchSize int,
 	unreferencedDocumentMaxAge time.Duration,

@@ -8,14 +8,12 @@ import (
 )
 
 type operations struct {
-	// Configurations
-	getConfigurationPolicies      *observation.Operation
-	getConfigurationPolicyByID    *observation.Operation
-	createConfigurationPolicy     *observation.Operation
-	updateConfigurationPolicy     *observation.Operation
-	deleteConfigurationPolicyByID *observation.Operation
-
-	// Repositories
+	repoCount                                   *observation.Operation
+	getConfigurationPolicies                    *observation.Operation
+	getConfigurationPolicyByID                  *observation.Operation
+	createConfigurationPolicy                   *observation.Operation
+	updateConfigurationPolicy                   *observation.Operation
+	deleteConfigurationPolicyByID               *observation.Operation
 	getRepoIDsByGlobPatterns                    *observation.Operation
 	updateReposMatchingPatterns                 *observation.Operation
 	selectPoliciesForRepositoryMembershipUpdate *observation.Operation
@@ -42,16 +40,14 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		// Configurations
-		getConfigurationPolicies:      op("GetConfigurationPolicies"),
-		getConfigurationPolicyByID:    op("GetConfigurationPolicyByID"),
-		createConfigurationPolicy:     op("CreateConfigurationPolicy"),
-		updateConfigurationPolicy:     op("UpdateConfigurationPolicy"),
-		deleteConfigurationPolicyByID: op("DeleteConfigurationPolicyByID"),
-
-		// Repositories
-		updateReposMatchingPatterns:                 op("UpdateReposMatchingPatterns"),
+		repoCount:                                   op("RepoCount"),
+		getConfigurationPolicies:                    op("GetConfigurationPolicies"),
+		getConfigurationPolicyByID:                  op("GetConfigurationPolicyByID"),
+		createConfigurationPolicy:                   op("CreateConfigurationPolicy"),
+		updateConfigurationPolicy:                   op("UpdateConfigurationPolicy"),
+		deleteConfigurationPolicyByID:               op("DeleteConfigurationPolicyByID"),
 		getRepoIDsByGlobPatterns:                    op("GetRepoIDsByGlobPatterns"),
+		updateReposMatchingPatterns:                 op("UpdateReposMatchingPatterns"),
 		selectPoliciesForRepositoryMembershipUpdate: op("SelectPoliciesForRepositoryMembershipUpdate"),
 	}
 }

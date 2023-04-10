@@ -18,7 +18,7 @@ import (
 
 type Service struct {
 	store      store.Store
-	lsifstore  lsifstore.LsifStore
+	lsifstore  lsifstore.Store
 	getConf    conftypes.SiteConfigQuerier
 	operations *operations
 	logger     log.Logger
@@ -27,7 +27,7 @@ type Service struct {
 func newService(
 	observationCtx *observation.Context,
 	store store.Store,
-	lsifStore lsifstore.LsifStore,
+	lsifStore lsifstore.Store,
 	getConf conftypes.SiteConfigQuerier,
 ) *Service {
 	return &Service{

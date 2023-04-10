@@ -35,7 +35,6 @@ type store struct {
 	operations *operations
 }
 
-// New returns a new policies store.
 func New(observationCtx *observation.Context, db database.DB) Store {
 	return &store{
 		db:         basestore.NewWithHandle(db.Handle()),

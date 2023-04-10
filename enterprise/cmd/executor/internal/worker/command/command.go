@@ -40,6 +40,8 @@ type RealCommand struct {
 	Logger    log.Logger
 }
 
+var _ Command = &RealCommand{}
+
 type Spec struct {
 	Key       string
 	Command   []string
@@ -136,6 +138,7 @@ func validateCommand(command []string) error {
 	return ErrIllegalCommand
 }
 
+// ErrIllegalCommand is returned when a command is not allowed to be run.
 var ErrIllegalCommand = errors.New("illegal command")
 
 func (c *RealCommand) prepCommand(ctx context.Context, options Spec) (cmd *exec.Cmd, stdout, stderr io.ReadCloser, err error) {

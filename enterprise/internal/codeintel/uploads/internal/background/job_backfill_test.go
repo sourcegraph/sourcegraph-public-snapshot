@@ -24,8 +24,7 @@ func TestBackfillCommittedAtBatch(t *testing.T) {
 	}
 
 	// Return self for txn
-	store.TransactFunc.SetDefaultReturn(store, nil)
-	store.DoneFunc.SetDefaultHook(func(err error) error { return err })
+	store.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s shared.Store) error) error { return f(store) })
 
 	n := 50
 	t0 := time.Unix(1587396557, 0).UTC()
@@ -99,8 +98,7 @@ func TestBackfillCommittedAtBatchUnknownCommits(t *testing.T) {
 	}
 
 	// Return self for txn
-	store.TransactFunc.SetDefaultReturn(store, nil)
-	store.DoneFunc.SetDefaultHook(func(err error) error { return err })
+	store.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s shared.Store) error) error { return f(store) })
 
 	n := 50
 	t0 := time.Unix(1587396557, 0).UTC()

@@ -28,4 +28,5 @@ md5sum <"$artifact"
 tar c \
   --exclude='./enterprise/cmd/executor/docker-mirror' \
   --exclude='./enterprise/cmd/executor/docker-image' \
+  --exclude='./enterprise/cmd/executor/kubernetes' \
   ./enterprise/cmd/executor | md5sum

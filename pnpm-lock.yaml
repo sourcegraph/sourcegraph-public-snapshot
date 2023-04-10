@@ -177,7 +177,6 @@ importers:
       '@types/sinon': 9.0.4
       '@types/socket.io-client': 1.4.33
       '@types/speed-measure-webpack-plugin': 1.3.4
-      '@types/stopword': ^2.0.0
       '@types/stream-json': ^1.7.3
       '@types/svgo': 2.6.0
       '@types/testing-library__jest-dom': 5.9.5
@@ -365,7 +364,6 @@ importers:
       socket.io-client: ^4.5.2
       sourcegraph: workspace:*
       speed-measure-webpack-plugin: ^1.5.0
-      stopword: ^2.0.7
       storybook-addon-designs: ^6.3.1
       storybook-dark-mode: ^2.0.4
       stream-browserify: ^3.0.0
@@ -541,7 +539,6 @@ importers:
       resize-observer-polyfill: 1.5.1
       rxjs: 6.6.7
       semver: 7.3.8
-      stopword: 2.0.7
       stream-http: 3.2.0
       stream-json: 1.7.5
       tagged-template-noop: 2.1.1
@@ -685,7 +682,6 @@ importers:
       '@types/sinon': 9.0.4
       '@types/socket.io-client': 1.4.33
       '@types/speed-measure-webpack-plugin': 1.3.4_pdcrf7mb3dfag2zju4x4octu4a
-      '@types/stopword': 2.0.0
       '@types/stream-json': 1.7.3
       '@types/svgo': 2.6.0
       '@types/testing-library__jest-dom': 5.9.5
@@ -921,13 +917,21 @@ importers:
 
   client/cody:
     specifiers:
+      '@anthropic-ai/sdk': ^0.4.2
       '@sourcegraph/cody-shared': workspace:*
       '@sourcegraph/cody-ui': workspace:*
       openai: ^3.2.1
+      wink-eng-lite-web-model: ^1.5.0
+      wink-nlp: ^1.13.1
+      wink-nlp-utils: ^2.1.0
     dependencies:
+      '@anthropic-ai/sdk': 0.4.2
       '@sourcegraph/cody-shared': link:../cody-shared
       '@sourcegraph/cody-ui': link:../cody-ui
       openai: 3.2.1
+      wink-eng-lite-web-model: 1.5.0_wink-nlp@1.13.1
+      wink-nlp: 1.13.1
+      wink-nlp-utils: 2.1.0
 
   client/cody-shared:
     specifiers:
@@ -1202,6 +1206,15 @@ packages:
     dependencies:
       '@jridgewell/gen-mapping': 0.1.1
       '@jridgewell/trace-mapping': 0.3.17
+
+  /@anthropic-ai/sdk/0.4.2:
+    resolution: {integrity: sha512-L/uhXDxPNWKIUV3V2v+97XyVVjY2P6vhxpdNFqmZEKUKy6FqVwcfPPHcckH6ixyQ5+j/Zq4A6eybc7ewc2+WjQ==}
+    dependencies:
+      '@fortaine/fetch-event-source': 3.0.6
+      cross-fetch: 3.1.5
+    transitivePeerDependencies:
+      - encoding
+    dev: false
 
   /@apidevtools/json-schema-ref-parser/9.0.6:
     resolution: {integrity: sha512-M3YgsLjI0lZxvrpeGVk9Ap032W6TPQkH6pRAZz81Ac3WUNF79VQooAFnp8umjvVzUmD93NkogxEwbSce7qMsUg==}
@@ -3814,6 +3827,11 @@ packages:
       '@figspec/components': 1.0.0
       react: 18.1.0
     dev: true
+
+  /@fortaine/fetch-event-source/3.0.6:
+    resolution: {integrity: sha512-621GAuLMvKtyZQ3IA6nlDWhV1V/7PGOTNIGLUifxt0KzM+dZIweJ6F3XvQF3QnqeNfS1N7WQ0Kil1Di/lhChEw==}
+    engines: {node: '>=16.15'}
+    dev: false
 
   /@gql2ts/from-query/1.9.0_graphql@14.7.0:
     resolution: {integrity: sha512-hfH2Oq3ikHu+zKE4b9kdGbzEqFiX+VxIg0nhgpY5iUgl975cAtTFhAdwfzr/jKdZhC9Ad5dE1CPrjEA+G7hzMg==}
@@ -9525,10 +9543,6 @@ packages:
     resolution: {integrity: sha512-Hl219/BT5fLAaz6NDkSuhzasy49dwQS/DSdu4MdggFB8zcXv7vflBI3xp7FEmkmdDkBUI2bPUNeMttp2knYdxw==}
     dev: false
 
-  /@types/stopword/2.0.0:
-    resolution: {integrity: sha512-R9g+FLEFzxRANryn5f2Beg7WMMopGBNI6Ghi3+8WrOZL7C063db0VuVrEpbKrML8o6sOryNN81ms9waSJITJqw==}
-    dev: true
-
   /@types/stream-chain/2.0.1:
     resolution: {integrity: sha512-D+Id9XpcBpampptkegH7WMsEk6fUdf9LlCIX7UhLydILsqDin4L0QT7ryJR0oycwC7OqohIzdfcMHVZ34ezNGg==}
     dependencies:
@@ -13100,7 +13114,6 @@ packages:
       node-fetch: 2.6.7
     transitivePeerDependencies:
       - encoding
-    dev: true
 
   /cross-spawn/5.1.0:
     resolution: {integrity: sha512-pTgQJ5KC0d2hcY8eyL1IzlBPYjTkyH72XRZPnLyKus2mBfNjQs3klqbJU2VILqZryAZUt9JOb3h/mWMy23/f5A==}
@@ -14640,7 +14653,6 @@ packages:
 
   /emoji-regex/9.2.2:
     resolution: {integrity: sha512-L18DaJsXSUk2+42pv8mLs5jJT2hqFkFE4j21wOmgbUqsZ2hL72NsUU785g9RXgo3s0ZNgVl42TiHp3ZtOv/Vyg==}
-    dev: true
 
   /emojis-list/3.0.0:
     resolution: {integrity: sha512-/kyM18EfinwXZbno9FyUGeFh87KC8HRQBQGildHZbEuRyWFOmv1U10o9BBp8XVZDVNNuQKyIGIu5ZYAAXJ0V2Q==}
@@ -26164,10 +26176,6 @@ packages:
     resolution: {integrity: sha512-2bacd1TXzqOEsqRa+eEWkRdOSznwptrs4gqFcpMq5tOtmJUGPZd10W5Lam6wQ4YQ/+qjQt4e9u35yXCF6mrlfQ==}
     dev: true
 
-  /stopword/2.0.7:
-    resolution: {integrity: sha512-s+uLKAxrproCLrq0Wcd3JAIjlJLx6l80b2Rzt0u8+ra5SzGkHnNG8PS3DfGmYk2TrKePDVLL4SdKYwKpgSLc+w==}
-    dev: false
-
   /store2/2.12.0:
     resolution: {integrity: sha512-7t+/wpKLanLzSnQPX8WAcuLCCeuSHoWdQuh9SB3xD0kNOM38DNf+0Oa+wmvxmYueRzkmh6IcdKFtvTa+ecgPDw==}
 
@@ -29027,6 +29035,55 @@ packages:
     dependencies:
       execa: 1.0.0
     dev: true
+
+  /wink-distance/2.0.2:
+    resolution: {integrity: sha512-pyEhUB/OKFYcgOC4J6E+c+gwVA/8qg2s5n49mIcUsJZM5iDSa17uOxRQXR4rvfp+gbj55K/I08FwjFBwb6fq3g==}
+    dependencies:
+      wink-helpers: 2.0.0
+      wink-jaro-distance: 2.0.0
+    dev: false
+
+  /wink-eng-lite-web-model/1.5.0_wink-nlp@1.13.1:
+    resolution: {integrity: sha512-5t27uqKRpQVyjb+ztIabmD2m76ct+5NP9e3TVxla4GBQzgPJnAHCynPw4KQa42BNn5xxi7b7E9P3akSFiYWHbg==}
+    engines: {node: '>=16.0.0'}
+    peerDependencies:
+      wink-nlp: '>1.8.1'
+    dependencies:
+      wink-nlp: 1.13.1
+    dev: false
+
+  /wink-helpers/2.0.0:
+    resolution: {integrity: sha512-I/ZzXrHcNRXuoeFJmp2vMVqDI6UCK02Tds1WP4kSGAmx520gjL1BObVzF7d2ps24tyHIly9ngdB2jwhlFUjPvg==}
+    dev: false
+
+  /wink-jaro-distance/2.0.0:
+    resolution: {integrity: sha512-9bcUaXCi9N8iYpGWbFkf83OsBkg17r4hEyxusEzl+nnReLRPqxhB9YNeRn3g54SYnVRNXP029lY3HDsbdxTAuA==}
+    dev: false
+
+  /wink-nlp-utils/2.1.0:
+    resolution: {integrity: sha512-b7PcRhEBNxQmsmht70jLOkwYUyie3da4/cgEXL+CumYO5b/nwV+W7fuMXToh5BtGq1RABznmc2TGTp1Qf/JUXg==}
+    dependencies:
+      wink-distance: 2.0.2
+      wink-eng-lite-web-model: 1.5.0_wink-nlp@1.13.1
+      wink-helpers: 2.0.0
+      wink-nlp: 1.13.1
+      wink-porter2-stemmer: 2.0.1
+      wink-tokenizer: 5.3.0
+    dev: false
+
+  /wink-nlp/1.13.1:
+    resolution: {integrity: sha512-JhZpPhGxUhGhqSykManCHkRRUU07LgqiAnG14HT7ZS4p3rKnanKJwl1NSwenEmUIwr4aEik3BWLoEF49xkrsyQ==}
+    dev: false
+
+  /wink-porter2-stemmer/2.0.1:
+    resolution: {integrity: sha512-0g+RkkqhRXFmSpJQStVXW5N/WsshWpJXsoDRW7DwVkGI2uDT6IBCoq3xdH5p6IHLaC6ygk7RWUsUx4alKxoagQ==}
+    dev: false
+
+  /wink-tokenizer/5.3.0:
+    resolution: {integrity: sha512-O/yAw0g3FmSgeeQuYAJJfP7fVPB4A6ay0018qASh79aWmIOyPYy4j4r9EQT8xBjicja6lCLvgRVAybmEBaATQA==}
+    dependencies:
+      emoji-regex: 9.2.2
+    dev: false
 
   /word-wrap/1.2.3:
     resolution: {integrity: sha512-Hz/mrNwitNRh/HUAtM/VT/5VH+ygD6DV7mYKZAtHOrbs8U7lvPS6xf7EJKMF0uW1KJCl0H701g3ZGus+muE5vQ==}

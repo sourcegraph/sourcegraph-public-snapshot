@@ -1889,6 +1889,12 @@
         }
       }
     },
+    "auth.primaryLoginProvidersCount": {
+      "description": "The number of auth providers that will be shown to the user on the login screen. Other providers are shown under `Other login methods` section.",
+      "type": "integer",
+      "group": "Authentication",
+      "default": 3
+    },
     "update.channel": {
       "description": "The channel on which to automatically check for Sourcegraph updates.",
       "type": ["string"],

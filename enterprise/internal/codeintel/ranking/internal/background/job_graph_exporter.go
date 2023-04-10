@@ -16,7 +16,7 @@ const recordTypeName = "path count inputs"
 func NewSymbolExporter(
 	observationCtx *observation.Context,
 	store store.Store,
-	lsifstore lsifstore.LsifStore,
+	lsifstore lsifstore.Store,
 	interval time.Duration,
 	readBatchSize int,
 	writeBatchSize int,
@@ -116,7 +116,7 @@ func NewAbandonedDefinitionsJanitor(
 		Interval:    interval,
 		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
-			numDeleted, err := vacuumStaleGraphs(ctx, store)
+			numDeleted, err := vacuumAbandonedDefinitions(ctx, store)
 			return numDeleted, numDeleted, err
 		},
 	})
@@ -135,7 +135,7 @@ func NewAbandonedReferencesJanitor(
 		Interval:    interval,
 		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
-			numDeleted, err := vacuumStaleGraphs(ctx, store)
+			numDeleted, err := vacuumAbandonedReferences(ctx, store)
 			return numDeleted, numDeleted, err
 		},
 	})
@@ -154,7 +154,7 @@ func NewAbandonedInitialCountsJanitor(
 		Interval:    interval,
 		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
-			numDeleted, err := vacuumStaleGraphs(ctx, store)
+			numDeleted, err := vacuumAbandonedInitialPathCounts(ctx, store)
 			return numDeleted, numDeleted, err
 		},
 	})

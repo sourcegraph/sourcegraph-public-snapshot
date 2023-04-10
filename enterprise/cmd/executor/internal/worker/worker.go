@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runtime"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -32,11 +33,6 @@ type Options struct {
 	// this executor instance. Different values for executors running on the same host
 	// (as in dev) will allow the janitors not to see each other's jobs as orphans.
 	VMPrefix string
-
-	// KeepWorkspaces prevents deletion of a workspace after a job completes. Setting
-	// this value to true will continually use more and more disk, so it should only
-	// be used as a debugging mechanism.
-	KeepWorkspaces bool
 
 	// QueueName is the name of the queue to process work from. Having this configurable
 	// allows us to have multiple worker pools with different resource requirements and
@@ -107,11 +103,10 @@ func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, op
 	}
 
 	// Configure the supported runtimes
-	// TODO: uncomment when firecracker runtime is complete
-	//jobRuntime, err := runtime.New(observationCtx.Logger, commandOps, filesClient, cloneOptions, options.RunnerOptions.DockerOptions, cmdRunner, cmd)
-	//if err != nil {
-	//	return nil, err
-	//}
+	jobRuntime, err := runtime.New(observationCtx.Logger, commandOps, filesClient, cloneOptions, options.RunnerOptions, cmdRunner, cmd)
+	if err != nil {
+		return nil, err
+	}
 
 	h := &handler{
 		nameSet:      nameSet,
@@ -122,8 +117,7 @@ func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, op
 		options:      options,
 		cloneOptions: cloneOptions,
 		operations:   commandOps,
-		// TODO: uncomment when firecracker runtime is complete
-		//jobRuntime: jobRuntime,
+		jobRuntime:   jobRuntime,
 	}
 
 	return workerutil.NewWorker[types.Job](context.Background(), queueClient, h, options.WorkerOptions), nil

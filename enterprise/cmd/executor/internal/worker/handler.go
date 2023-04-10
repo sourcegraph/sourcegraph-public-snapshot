@@ -112,7 +112,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 	if err != nil {
 		return errors.Wrap(err, "creating workspace")
 	}
-	defer ws.Remove(ctx, h.options.KeepWorkspaces)
+	defer ws.Remove(ctx, h.options.RunnerOptions.FirecrackerOptions.KeepWorkspaces)
 
 	// Before we setup a VM (and after we teardown), mark the name as in-use so that
 	// the janitor process cleaning up orphaned VMs doesn't try to stop/remove the one
@@ -146,6 +146,8 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 	// Run all the things.
 	logger.Info("Running commands")
 	for _, spec := range commands {
+		spec.Queue = h.options.QueueName
+		spec.JobID = job.ID
 		if err := runtimeRunner.Run(ctx, spec); err != nil {
 			return errors.Wrapf(err, "running command %q", spec.CommandSpec.Key)
 		}
@@ -196,7 +198,7 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger c
 	if err != nil {
 		return errors.Wrap(err, "failed to prepare workspace")
 	}
-	defer ws.Remove(ctx, h.options.KeepWorkspaces)
+	defer ws.Remove(ctx, h.options.RunnerOptions.FirecrackerOptions.KeepWorkspaces)
 
 	// Before we setup a VM (and after we teardown), mark the name as in-use so that
 	// the janitor process cleaning up orphaned VMs doesn't try to stop/remove the one
@@ -293,7 +295,7 @@ func (h *handler) prepareWorkspace(
 			h.filesStore,
 			job,
 			h.options.RunnerOptions.DockerOptions.Resources.DiskSpace,
-			h.options.KeepWorkspaces,
+			h.options.RunnerOptions.FirecrackerOptions.KeepWorkspaces,
 			h.cmdRunner,
 			cmd,
 			commandLogger,

@@ -10,14 +10,18 @@ import (
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 )
 
 type fakeCmdRunner struct {
 	mock.Mock
 }
 
+var _ util.CmdRunner = &fakeCmdRunner{}
+
 func (f *fakeCmdRunner) CommandContext(ctx context.Context, name string, args ...string) *exec.Cmd {
-	panic("not neeeded")
+	panic("not needed")
 }
 
 func (f *fakeCmdRunner) CombinedOutput(ctx context.Context, name string, args ...string) ([]byte, error) {
@@ -54,4 +58,8 @@ func TestExecCommandHelper(t *testing.T) {
 func (f *fakeCmdRunner) LookPath(file string) (string, error) {
 	args := f.Called(file)
 	return args.String(0), args.Error(1)
+}
+
+func (f *fakeCmdRunner) Stat(filename string) (os.FileInfo, error) {
+	panic("not needed")
 }

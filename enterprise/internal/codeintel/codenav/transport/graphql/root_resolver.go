@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -21,20 +22,30 @@ import (
 type rootResolver struct {
 	svc                            CodeNavService
 	autoindexingSvc                AutoIndexingService
-	uploadSvc                      UploadsService
 	gitserverClient                gitserver.Client
 	siteAdminChecker               sharedresolvers.SiteAdminChecker
 	repoStore                      database.RepoStore
 	prefetcherFactory              *uploadsgraphql.PrefetcherFactory
 	locationResolverFactory        *gitresolvers.CachedLocationResolverFactory
-	maximumIndexesPerMonikerSearch int
 	hunkCache                      codenav.HunkCache
-
-	// Metrics
-	operations *operations
+	indexResolverFactory           *uploadsgraphql.PreciseIndexResolverFactory
+	maximumIndexesPerMonikerSearch int
+	operations                     *operations
 }
 
-func NewRootResolver(observationCtx *observation.Context, svc CodeNavService, autoindexingSvc AutoIndexingService, uploadSvc UploadsService, gitserverClient gitserver.Client, siteAdminChecker sharedresolvers.SiteAdminChecker, repoStore database.RepoStore, locationResolverFactory *gitresolvers.CachedLocationResolverFactory, prefetcherFactory *uploadsgraphql.PrefetcherFactory, maxIndexSearch, hunkCacheSize int) (resolverstubs.CodeNavServiceResolver, error) {
+func NewRootResolver(
+	observationCtx *observation.Context,
+	svc CodeNavService,
+	autoindexingSvc AutoIndexingService,
+	gitserverClient gitserver.Client,
+	siteAdminChecker sharedresolvers.SiteAdminChecker,
+	repoStore database.RepoStore,
+	prefetcherFactory *uploadsgraphql.PrefetcherFactory,
+	indexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory,
+	locationResolverFactory *gitresolvers.CachedLocationResolverFactory,
+	maxIndexSearch int,
+	hunkCacheSize int,
+) (resolverstubs.CodeNavServiceResolver, error) {
 	hunkCache, err := codenav.NewHunkCache(hunkCacheSize)
 	if err != nil {
 		return nil, err
@@ -43,21 +54,21 @@ func NewRootResolver(observationCtx *observation.Context, svc CodeNavService, au
 	return &rootResolver{
 		svc:                            svc,
 		autoindexingSvc:                autoindexingSvc,
-		uploadSvc:                      uploadSvc,
 		gitserverClient:                gitserverClient,
 		siteAdminChecker:               siteAdminChecker,
 		repoStore:                      repoStore,
 		prefetcherFactory:              prefetcherFactory,
+		indexResolverFactory:           indexResolverFactory,
 		locationResolverFactory:        locationResolverFactory,
-		operations:                     newOperations(observationCtx),
 		hunkCache:                      hunkCache,
 		maximumIndexesPerMonikerSearch: maxIndexSearch,
+		operations:                     newOperations(observationCtx),
 	}, nil
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for query resolution
 func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.GitBlobLSIFDataArgs) (_ resolverstubs.GitBlobLSIFDataResolver, err error) {
-	ctx, errTracer, endObservation := r.operations.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := r.operations.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repoID", int(args.Repo.ID)),
 		log.String("commit", string(args.Commit)),
 		log.String("path", args.Path),
@@ -94,14 +105,10 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.
 
 	return newGitBlobLSIFDataResolver(
 		r.svc,
-		r.uploadSvc,
-		r.gitserverClient,
-		r.siteAdminChecker,
-		r.repoStore,
+		r.indexResolverFactory,
+		reqState,
 		r.prefetcherFactory.Create(),
 		r.locationResolverFactory.Create(),
-		reqState,
-		errTracer,
 		r.operations,
 	), nil
 }
@@ -111,18 +118,12 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.
 // All code intel-specific behavior is delegated to the underlying resolver instance, which is defined
 // in the parent package.
 type gitBlobLSIFDataResolver struct {
-	codeNavSvc       CodeNavService
-	uploadsSvc       UploadsService
-	gitserverClient  gitserver.Client
-	siteAdminChecker sharedresolvers.SiteAdminChecker
-	repoStore        database.RepoStore
-	prefetcher       *uploadsgraphql.Prefetcher
-
-	requestState     codenav.RequestState
-	locationResolver *gitresolvers.CachedLocationResolver
-	errTracer        *observation.ErrCollector
-
-	operations *operations
+	codeNavSvc           CodeNavService
+	indexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory
+	requestState         codenav.RequestState
+	prefetcher           *uploadsgraphql.Prefetcher
+	locationResolver     *gitresolvers.CachedLocationResolver
+	operations           *operations
 }
 
 // NewQueryResolver creates a new QueryResolver with the given resolver that defines all code intel-specific
@@ -130,27 +131,19 @@ type gitBlobLSIFDataResolver struct {
 // to resolve all location-related values.
 func newGitBlobLSIFDataResolver(
 	codeNavSvc CodeNavService,
-	uploadsSvc UploadsService,
-	gitserverClient gitserver.Client,
-	siteAdminChecker sharedresolvers.SiteAdminChecker,
-	repoStore database.RepoStore,
+	indexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory,
+	requestState codenav.RequestState,
 	prefetcher *uploadsgraphql.Prefetcher,
 	locationResolver *gitresolvers.CachedLocationResolver,
-	requestState codenav.RequestState,
-	errTracer *observation.ErrCollector,
 	operations *operations,
 ) resolverstubs.GitBlobLSIFDataResolver {
 	return &gitBlobLSIFDataResolver{
-		codeNavSvc:       codeNavSvc,
-		uploadsSvc:       uploadsSvc,
-		gitserverClient:  gitserverClient,
-		siteAdminChecker: siteAdminChecker,
-		repoStore:        repoStore,
-		prefetcher:       prefetcher,
-		requestState:     requestState,
-		locationResolver: locationResolver,
-		errTracer:        errTracer,
-		operations:       operations,
+		codeNavSvc:           codeNavSvc,
+		prefetcher:           prefetcher,
+		indexResolverFactory: indexResolverFactory,
+		requestState:         requestState,
+		locationResolver:     locationResolver,
+		operations:           operations,
 	}
 }
 
@@ -160,4 +153,57 @@ func (r *gitBlobLSIFDataResolver) ToGitTreeLSIFData() (resolverstubs.GitTreeLSIF
 
 func (r *gitBlobLSIFDataResolver) ToGitBlobLSIFData() (resolverstubs.GitBlobLSIFDataResolver, bool) {
 	return r, true
+}
+
+func (r *gitBlobLSIFDataResolver) VisibleIndexes(ctx context.Context) (_ *[]resolverstubs.PreciseIndexResolver, err error) {
+	ctx, traceErrs, endObservation := r.operations.visibleIndexes.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repoID", r.requestState.RepositoryID),
+		log.String("commit", r.requestState.Commit),
+		log.String("path", r.requestState.Path),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	visibleUploads, err := r.codeNavSvc.VisibleUploadsForPath(ctx, r.requestState)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvers := make([]resolverstubs.PreciseIndexResolver, 0, len(visibleUploads))
+	for _, u := range visibleUploads {
+		resolver, err := r.indexResolverFactory.Create(
+			ctx,
+			r.prefetcher,
+			r.locationResolver,
+			traceErrs,
+			dumpToUpload(u),
+			nil,
+		)
+		if err != nil {
+			return nil, err
+		}
+		resolvers = append(resolvers, resolver)
+	}
+
+	return &resolvers, nil
+}
+
+func dumpToUpload(expected uploadsshared.Dump) *uploadsshared.Upload {
+	return &uploadsshared.Upload{
+		ID:                expected.ID,
+		Commit:            expected.Commit,
+		Root:              expected.Root,
+		UploadedAt:        expected.UploadedAt,
+		State:             expected.State,
+		FailureMessage:    expected.FailureMessage,
+		StartedAt:         expected.StartedAt,
+		FinishedAt:        expected.FinishedAt,
+		ProcessAfter:      expected.ProcessAfter,
+		NumResets:         expected.NumResets,
+		NumFailures:       expected.NumFailures,
+		RepositoryID:      expected.RepositoryID,
+		RepositoryName:    expected.RepositoryName,
+		Indexer:           expected.Indexer,
+		IndexerVersion:    expected.IndexerVersion,
+		AssociatedIndexID: expected.AssociatedIndexID,
+	}
 }

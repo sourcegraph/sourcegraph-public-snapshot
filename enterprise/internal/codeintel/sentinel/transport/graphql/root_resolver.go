@@ -7,52 +7,37 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/dataloader"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type rootResolver struct {
-	sentinelSvc             SentinelService
-	uploadSvc               uploadsgraphql.UploadsService
-	policySvc               uploadsgraphql.PolicyService
-	gitserverClient         gitserver.Client
-	siteAdminChecker        sharedresolvers.SiteAdminChecker
-	repoStore               database.RepoStore
-	prefetcherFactory       *uploadsgraphql.PrefetcherFactory
-	bulkLoaderFactory       *bulkLoaderFactory
-	locationResolverFactory *gitresolvers.CachedLocationResolverFactory
-	operations              *operations
+	sentinelSvc                 SentinelService
+	bulkLoaderFactory           *bulkLoaderFactory
+	prefetcherFactory           *uploadsgraphql.PrefetcherFactory
+	locationResolverFactory     *gitresolvers.CachedLocationResolverFactory
+	preciseIndexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory
+	operations                  *operations
 }
 
 func NewRootResolver(
 	observationCtx *observation.Context,
 	sentinelSvc SentinelService,
-	uploadSvc uploadsgraphql.UploadsService,
-	policySvc uploadsgraphql.PolicyService,
-	gitserverClient gitserver.Client,
-	siteAdminChecker sharedresolvers.SiteAdminChecker,
-	repoStore database.RepoStore,
 	prefetcherFactory *uploadsgraphql.PrefetcherFactory,
 	locationResolverFactory *gitresolvers.CachedLocationResolverFactory,
+	preciseIndexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory,
 ) resolverstubs.SentinelServiceResolver {
 	return &rootResolver{
-		sentinelSvc:             sentinelSvc,
-		uploadSvc:               uploadSvc,
-		policySvc:               policySvc,
-		gitserverClient:         gitserverClient,
-		siteAdminChecker:        siteAdminChecker,
-		repoStore:               repoStore,
-		prefetcherFactory:       prefetcherFactory,
-		bulkLoaderFactory:       &bulkLoaderFactory{sentinelSvc},
-		locationResolverFactory: locationResolverFactory,
-		operations:              newOperations(observationCtx),
+		sentinelSvc:                 sentinelSvc,
+		bulkLoaderFactory:           &bulkLoaderFactory{sentinelSvc},
+		prefetcherFactory:           prefetcherFactory,
+		locationResolverFactory:     locationResolverFactory,
+		preciseIndexResolverFactory: preciseIndexResolverFactory,
+		operations:                  newOperations(observationCtx),
 	}
 }
 
@@ -136,11 +121,6 @@ func (r *rootResolver) VulnerabilityMatches(ctx context.Context, args resolverst
 	var resolvers []resolverstubs.VulnerabilityMatchResolver
 	for _, m := range matches {
 		resolvers = append(resolvers, &vulnerabilityMatchResolver{
-			uploadsSvc:       r.uploadSvc,
-			sentinelSvc:      r.sentinelSvc,
-			policySvc:        r.policySvc,
-			gitserverClient:  r.gitserverClient,
-			siteAdminChecker: r.siteAdminChecker,
 			prefetcher:       prefetcher,
 			locationResolver: locationResolver,
 			errTracer:        errTracer,
@@ -166,7 +146,7 @@ func (r *rootResolver) VulnerabilityMatchesCountByRepository(ctx context.Context
 		repositoryName = *args.RepositoryName
 	}
 
-	vulerabilityCounts, totalCount, err := r.sentinelSvc.GetVulnerabilityMatchesCountByRepository(ctx, shared.GetVulnerabilityMatchesCountByRepositoryArgs{
+	vulnerabilityCounts, totalCount, err := r.sentinelSvc.GetVulnerabilityMatchesCountByRepository(ctx, shared.GetVulnerabilityMatchesCountByRepositoryArgs{
 		Limit:          int(limit),
 		Offset:         int(offset),
 		RepositoryName: repositoryName,
@@ -176,7 +156,7 @@ func (r *rootResolver) VulnerabilityMatchesCountByRepository(ctx context.Context
 	}
 
 	var resolvers []resolverstubs.VulnerabilityMatchCountByRepositoryResolver
-	for _, v := range vulerabilityCounts {
+	for _, v := range vulnerabilityCounts {
 		resolvers = append(resolvers, &vulnerabilityMatchCountByRepositoryResolver{v: v})
 	}
 
@@ -219,17 +199,12 @@ func (r *rootResolver) VulnerabilityMatchByID(ctx context.Context, vulnerability
 	}
 
 	return &vulnerabilityMatchResolver{
-		uploadsSvc:       r.uploadSvc,
-		sentinelSvc:      r.sentinelSvc,
-		policySvc:        r.policySvc,
-		gitserverClient:  r.gitserverClient,
-		siteAdminChecker: r.siteAdminChecker,
-		repoStore:        r.repoStore,
-		prefetcher:       r.prefetcherFactory.Create(),
-		locationResolver: r.locationResolverFactory.Create(),
-		errTracer:        errTracer,
-		bulkLoader:       r.bulkLoaderFactory.Create(),
-		m:                match,
+		prefetcher:                  r.prefetcherFactory.Create(),
+		locationResolver:            r.locationResolverFactory.Create(),
+		errTracer:                   errTracer,
+		bulkLoader:                  r.bulkLoaderFactory.Create(),
+		m:                           match,
+		preciseIndexResolverFactory: r.preciseIndexResolverFactory,
 	}, nil
 }
 
@@ -360,17 +335,12 @@ func (l *bulkLoader) GetVulnerabilityByID(ctx context.Context, id int) (shared.V
 }
 
 type vulnerabilityMatchResolver struct {
-	sentinelSvc      SentinelService
-	uploadsSvc       uploadsgraphql.UploadsService
-	policySvc        uploadsgraphql.PolicyService
-	gitserverClient  gitserver.Client
-	siteAdminChecker sharedresolvers.SiteAdminChecker
-	repoStore        database.RepoStore
-	prefetcher       *uploadsgraphql.Prefetcher
-	locationResolver *gitresolvers.CachedLocationResolver
-	errTracer        *observation.ErrCollector
-	bulkLoader       *bulkLoader
-	m                shared.VulnerabilityMatch
+	prefetcher                  *uploadsgraphql.Prefetcher
+	locationResolver            *gitresolvers.CachedLocationResolver
+	errTracer                   *observation.ErrCollector
+	bulkLoader                  *bulkLoader
+	m                           shared.VulnerabilityMatch
+	preciseIndexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory
 }
 
 func (r *vulnerabilityMatchResolver) ID() graphql.ID {
@@ -396,19 +366,7 @@ func (r *vulnerabilityMatchResolver) PreciseIndex(ctx context.Context) (resolver
 		return nil, err
 	}
 
-	return uploadsgraphql.NewPreciseIndexResolver(
-		ctx,
-		r.uploadsSvc,
-		r.policySvc,
-		r.gitserverClient,
-		r.prefetcher,
-		r.siteAdminChecker,
-		r.repoStore,
-		r.locationResolver,
-		r.errTracer,
-		&upload,
-		nil,
-	)
+	return r.preciseIndexResolverFactory.Create(ctx, r.prefetcher, r.locationResolver, r.errTracer, &upload, nil)
 }
 
 //
