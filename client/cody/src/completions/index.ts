@@ -39,7 +39,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         context: vscode.InlineCompletionContext,
         token: vscode.CancellationToken
     ): Promise<vscode.InlineCompletionItem[]> {
-        console.log('# provideInlineCompletionItems')
         try {
             return await this.provideInlineCompletionItemsInner(document, position, context, token)
         } catch (error) {
