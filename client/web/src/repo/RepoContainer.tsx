@@ -1,4 +1,4 @@
-import React, { FC, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import React, { FC, Suspense, useEffect, useMemo, useState } from 'react'
 
 import { mdiSourceRepository, mdiClose } from '@mdi/js'
 import classNames from 'classnames'
@@ -8,8 +8,7 @@ import { NEVER, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
-import { Client, createClient, ClientInit } from '@sourcegraph/cody-shared/src/chat/client'
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ClientInit } from '@sourcegraph/cody-shared/src/chat/client'
 import { asError, ErrorLike, isErrorLike, logger, repeatUntil } from '@sourcegraph/common'
 import {
     isCloneInProgressErrorLike,
@@ -45,7 +44,7 @@ import { OwnConfigProps } from '../own/OwnConfigProps'
 import { searchQueryForRepoRevision, SearchStreamingProps } from '../search'
 import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
 import { useNavbarQueryState } from '../stores'
-import { eventLogger } from '../tracking/eventLogger'
+import { useChatStoreState } from '../stores/codyChat'
 import { RouteV6Descriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
@@ -192,8 +191,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
     /**
      * Cody client.
      */
-    const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
-    const [transcript, setTranscript] = useState<ChatMessage[]>([])
+    const { initializeClient, onSubmit, messageInProgress, transcript } = useChatStoreState()
 
     const config = useMemo<ClientInit['config']>(
         () => ({
@@ -204,25 +202,18 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         [repoName]
     )
 
-    const [client, setClient] = useState<Client | ErrorLike>()
     useEffect(() => {
-        setMessageInProgress(null)
-        setTranscript([])
-        createClient({ config, accessToken: null, setMessageInProgress, setTranscript }).then(setClient, error => {
-            eventLogger.log('web:codySidebar:clientError', { repo: repoName })
-            setClient(error)
-        })
+        initializeClient(config)
     }, [config, repoName])
 
-    const onSubmit = useCallback(
-        (text: string) => {
-            if (client && !isErrorLike(client)) {
-                eventLogger.log('web:codySidebar:submit', { repo: repoName, path: filePath, text })
-                client.submitMessage(text)
-            }
-        },
-        [filePath, client, repoName]
-    )
+    // TODO: Extract Cody panel as a component.
+    const codyEnabled = useFeatureFlag('cody-experimental')
+    const focusCodyShortcut = useKeyboardShortcut('focusCody')
+    const [isCodyActive, setCodyActive] = useState(true)
+
+    const chatTitle = 'Ask Cody'
+
+    const sidebarSizes = { default: 350, max: 1200, min: 250 }
 
     // TODO: Extract Cody panel as a component.
     const codyEnabled = useFeatureFlag('cody-experimental')
