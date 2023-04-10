@@ -135,6 +135,7 @@ func TestConfig_Load_Defaults(t *testing.T) {
 	assert.Equal(t, "12Gi", cfg.KubernetesResourceRequestMemory)
 	assert.Equal(t, 600, cfg.KubernetesJobRetryBackoffLimit)
 	assert.Equal(t, 100*time.Millisecond, cfg.KubernetesJobRetryBackoffDuration)
+	assert.False(t, cfg.KubernetesKeepJobs)
 }
 
 func TestConfig_Validate(t *testing.T) {

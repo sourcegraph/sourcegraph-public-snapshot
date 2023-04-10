@@ -209,6 +209,7 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 				Attempts: c.KubernetesJobRetryBackoffLimit,
 				Backoff:  c.KubernetesJobRetryBackoffDuration,
 			},
+			KeepJobs: c.KubernetesKeepJobs,
 		},
 	}
 }

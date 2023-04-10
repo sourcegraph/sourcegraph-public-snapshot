@@ -45,6 +45,8 @@ spec:
               # Since the host is 'host.docker.internal', this needs to be true.
             - name: EXECUTOR_DOCKER_ADD_HOST_GATEWAY
               value: "true"
+            - name: KUBERNETES_KEEP_JOBS
+              value: "true"
           volumeMounts:
             - mountPath: /data
               name: sg-executor-volume
