@@ -13,6 +13,11 @@ type getContextDetectionEmbeddingIndexFn func(ctx context.Context) (*embeddings.
 
 const MIN_NO_CONTEXT_SIMILARITY_DIFF = float32(0.02)
 
+var CONTEXT_MESSAGES_REGEXPS = []*lazyregexp.Regexp{
+	lazyregexp.New(`(what|where|how) (is|do|does)`),
+	lazyregexp.New(`in (the|my) (code|codebase|repo|repository)`),
+}
+
 var NO_CONTEXT_MESSAGES_REGEXPS = []*lazyregexp.Regexp{
 	lazyregexp.New(`(previous|above)\s+(message|code|text)`),
 	lazyregexp.New(
@@ -37,6 +42,12 @@ func isContextRequiredForChatQuery(
 	for _, regexp := range NO_CONTEXT_MESSAGES_REGEXPS {
 		if submatches := regexp.FindStringSubmatch(queryLower); len(submatches) > 0 {
 			return false, nil
+		}
+	}
+
+	for _, regexp := range CONTEXT_MESSAGES_REGEXPS {
+		if submatches := regexp.FindStringSubmatch(queryLower); len(submatches) > 0 {
+			return true, nil
 		}
 	}
 
