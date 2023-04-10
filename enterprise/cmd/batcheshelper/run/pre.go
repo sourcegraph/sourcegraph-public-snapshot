@@ -3,6 +3,7 @@ package run
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -33,34 +34,14 @@ func Pre(
 		return errors.Wrap(err, "getting working directory")
 	}
 
-	step := executionInput.Steps[stepIdx]
-
-	changes, err := git.ChangesInDiff(previousResult.Diff)
+	stepContext, err := getStepContext(executionInput, previousResult)
 	if err != nil {
-		return errors.Wrap(err, "failed to compute changes")
-	}
-
-	outputs := previousResult.Outputs
-	if outputs == nil {
-		outputs = make(map[string]any)
-	}
-	stepContext := template.StepContext{
-		BatchChange: executionInput.BatchChangeAttributes,
-		Repository: template.Repository{
-			Name:        executionInput.Repository.Name,
-			Branch:      executionInput.Branch.Name,
-			FileMatches: executionInput.SearchResultPaths,
-		},
-		Outputs: outputs,
-		Steps: template.StepsContext{
-			Path:    executionInput.Path,
-			Changes: changes,
-		},
-		PreviousStep: previousResult,
+		return err
 	}
 
 	// Render the step.Env variables as templates.
 	// Resolve step.Env given the current environment.
+	step := executionInput.Steps[stepIdx]
 	stepEnv, err := step.Env.Resolve(os.Environ())
 	if err != nil {
 		return errors.Wrap(err, "failed to resolve step env")
@@ -97,11 +78,28 @@ func Pre(
 		return errors.Wrap(err, "failed to evaluate step condition")
 	}
 	if !cond {
+		if err = logger.WriteEvent(batcheslib.LogEventOperationTaskStepSkipped, batcheslib.LogEventStatusProgress, &batcheslib.TaskStepMetadata{
+			Step: stepIdx + 1,
+		}); err != nil {
+			return err
+		}
+		fmt.Println("Skipping step")
+		stepResult := execution.AfterStepResult{
+			Version: 2,
+			Skipped: true,
+		}
+		stepResultBytes, err := json.Marshal(stepResult)
+		if err != nil {
+			return errors.Wrap(err, "marshalling step result")
+		}
+		if err = os.WriteFile(fmt.Sprintf("step%d.json", stepIdx), stepResultBytes, os.ModePerm); err != nil {
+			return errors.Wrap(err, "failed to write step result file")
+		}
 		// Step is skipped.
 		// TODO: This should somehow communicate to the executor "don't run this step".
 		// For now, we simply don't run the script but that will require to still pull
 		// the image which is a performance annoyance.
-		runScript = *bytes.NewBufferString("exit 0")
+		os.Exit(0)
 	} else {
 		tmpFileDir := filepath.Join(wd, fmt.Sprintf("step%dfiles", stepIdx))
 		if err = os.Mkdir(tmpFileDir, os.ModePerm); err != nil {
@@ -140,6 +138,33 @@ func Pre(
 	}
 
 	return nil
+}
+
+func getStepContext(executionInput batcheslib.WorkspacesExecutionInput, previousResult execution.AfterStepResult) (template.StepContext, error) {
+	changes, err := git.ChangesInDiff(previousResult.Diff)
+	if err != nil {
+		return template.StepContext{}, errors.Wrap(err, "failed to compute changes")
+	}
+
+	outputs := previousResult.Outputs
+	if outputs == nil {
+		outputs = make(map[string]any)
+	}
+	stepContext := template.StepContext{
+		BatchChange: executionInput.BatchChangeAttributes,
+		Repository: template.Repository{
+			Name:        executionInput.Repository.Name,
+			Branch:      executionInput.Branch.Name,
+			FileMatches: executionInput.SearchResultPaths,
+		},
+		Outputs: outputs,
+		Steps: template.StepsContext{
+			Path:    executionInput.Path,
+			Changes: changes,
+		},
+		PreviousStep: previousResult,
+	}
+	return stepContext, nil
 }
 
 // createFilesToMount creates temporary files with the contents of Step.Files

@@ -33,6 +33,7 @@ type Runner interface {
 type Spec struct {
 	JobID       int
 	Queue       string
+	Index       int
 	CommandSpec command.Spec
 	Image       string
 	ScriptPath  string

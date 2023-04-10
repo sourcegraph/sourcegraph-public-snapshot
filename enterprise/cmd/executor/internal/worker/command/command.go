@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log"
 	"golang.org/x/sync/errgroup"
 
@@ -113,6 +114,10 @@ func (c *RealCommand) Run(ctx context.Context, cmdLogger Logger, spec Spec) (err
 		return err
 	}
 	if exitCode != 0 {
+		if exitCode == -1 {
+			return ErrStepSkipped
+		}
+
 		// If is context cancellation, forward the ctx.Err().
 		if err = ctx.Err(); err != nil {
 			return err
@@ -191,13 +196,20 @@ func readIntoBuffer(prefix string, w io.WriteCloser, r io.Reader) error {
 	// TODO: Tweak this value as needed.
 	scanner.Buffer(buf, maxBuffer)
 	for scanner.Scan() {
-		_, err := fmt.Fprintf(w, "%s: %s\n", prefix, scanner.Text())
+		text := scanner.Text()
+		_, err := fmt.Fprintf(w, "%s: %s\n", prefix, text)
 		if err != nil {
 			return err
+		}
+		if textRegexSkipped.MatchString(text) {
+			return ErrStepSkipped
 		}
 	}
 	return scanner.Err()
 }
+
+var textRegexSkipped = regexp.MustCompile("Skipping step")
+var ErrStepSkipped = errors.New("step skipped")
 
 const maxBuffer = 100 * 1024 * 1024
 
@@ -209,11 +221,16 @@ func startCommand(ctx context.Context, cmd *exec.Cmd, pipeReaderWaitGroup *errgr
 		return 0, errors.Wrap(err, "starting command")
 	}
 
+	stepSkipped := false
 	select {
 	case <-ctx.Done():
 	case err := <-watchErrGroup(pipeReaderWaitGroup):
 		if err != nil {
-			return 0, errors.Wrap(err, "reading process pipes")
+			if errors.Is(err, ErrStepSkipped) {
+				stepSkipped = true
+			} else {
+				return 0, errors.Wrap(err, "reading process pipes")
+			}
 		}
 	}
 
@@ -224,6 +241,10 @@ func startCommand(ctx context.Context, cmd *exec.Cmd, pipeReaderWaitGroup *errgr
 		}
 
 		return 0, errors.Wrap(err, "waiting for command")
+	}
+
+	if stepSkipped {
+		return -1, nil
 	}
 
 	// All good, command ran successfully.

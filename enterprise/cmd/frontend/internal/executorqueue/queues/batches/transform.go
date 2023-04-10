@@ -228,12 +228,12 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		}
 
 		for i := startStep; i < len(batchSpec.Spec.Steps); i++ {
-			step := batchSpec.Spec.Steps[i]
-
 			// Skip statically skipped steps.
 			if _, skipped := skipped[i]; skipped {
 				continue
 			}
+
+			step := batchSpec.Spec.Steps[i]
 
 			runDir := srcRepoDir
 			if workspace.Path != "" {
@@ -245,7 +245,10 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 				return apiclient.Job{}, err
 			}
 
+			index := i
+
 			dockerSteps = append(dockerSteps, apiclient.DockerStep{
+				Index: &index,
 				Key:   fmt.Sprintf("step.%d.pre", i),
 				Image: helperImage,
 				Env:   secretEnvVars,
@@ -258,6 +261,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 			})
 
 			dockerSteps = append(dockerSteps, apiclient.DockerStep{
+				Index: &index,
 				Key:   fmt.Sprintf("step.%d.run", i),
 				Image: step.Container,
 				Dir:   runDir,
@@ -273,6 +277,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 
 			// This step gets the diff, reads stdout and stderr, renders the outputs and builds the AfterStepResult.
 			dockerSteps = append(dockerSteps, apiclient.DockerStep{
+				Index: &index,
 				Key:   fmt.Sprintf("step.%d.post", i),
 				Image: helperImage,
 				Env:   secretEnvVars,

@@ -205,6 +205,9 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers() ([]graphqlbackend.Ba
 					stepInfo := &btypes.StepInfo{}
 					btypes.ParseLines(logLines, btypes.DefaultSetSafeFunc(stepInfo))
 					resolver.stepInfo = stepInfo
+					if resolver.stepInfo.Skipped {
+						resolver.skipped = true
+					}
 				}
 			}
 

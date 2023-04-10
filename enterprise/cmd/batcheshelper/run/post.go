@@ -96,11 +96,11 @@ func Post(
 	}
 
 	// Serialize the step result to disk.
-	cntnt, err := json.Marshal(stepResult)
+	stepResultBytes, err := json.Marshal(stepResult)
 	if err != nil {
 		return errors.Wrap(err, "marshalling step result")
 	}
-	if err = os.WriteFile(fmt.Sprintf("step%d.json", stepIdx), cntnt, os.ModePerm); err != nil {
+	if err = os.WriteFile(fmt.Sprintf("step%d.json", stepIdx), stepResultBytes, os.ModePerm); err != nil {
 		return errors.Wrap(err, "failed to write step result file")
 	}
 
