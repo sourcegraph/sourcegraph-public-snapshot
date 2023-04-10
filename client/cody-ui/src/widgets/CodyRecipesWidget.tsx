@@ -1,15 +1,8 @@
 import { useMemo, useState, useEffect } from 'react'
 
-import {
-    mdiBulletinBoard,
-    mdiCardBulletedOutline,
-    mdiClipboardTextClockOutline,
-    mdiDotsHorizontal,
-    mdiDotsVertical,
-    mdiProgressPencil,
-    mdiScrewdriver,
-    mdiTranslate,
-} from '@mdi/js'
+import { mdiCardBulletedOutline, mdiDotsVertical, mdiProgressPencil, mdiTranslate } from '@mdi/js'
+
+import { useChatStoreState } from '../../../web/src/stores/codyChat'
 
 import { Recipe } from './components/Recipe'
 import { RecipeAction } from './components/RecipeAction'
@@ -26,12 +19,18 @@ export const CodyRecipesWidget = ({ selection }: CodyRecipesWidgetProps): JSX.El
         setSelectedCode(selection)
     }, [selection])
 
+    const { onSubmit } = useChatStoreState()
+
+    const submit = () => {
+        onSubmit('Explain the following code at a high level:\n```\n' + selectedCode + '\n```\n')
+    }
+
     const recipesWidget = useMemo(
         () => (
             <Recipes>
                 <Recipe title="Explain" icon={mdiCardBulletedOutline}>
                     <RecipeAction title="Detailed" />
-                    <RecipeAction title="High level" />
+                    <RecipeAction title="High level" onClick={submit} />
                 </Recipe>
 
                 <Recipe title="Generate" icon={mdiProgressPencil}>
