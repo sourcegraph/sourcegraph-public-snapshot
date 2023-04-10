@@ -177,7 +177,6 @@ importers:
       '@types/sinon': 9.0.4
       '@types/socket.io-client': 1.4.33
       '@types/speed-measure-webpack-plugin': 1.3.4
-      '@types/stopword': ^2.0.0
       '@types/stream-json': ^1.7.3
       '@types/svgo': 2.6.0
       '@types/testing-library__jest-dom': 5.9.5
@@ -365,7 +364,6 @@ importers:
       socket.io-client: ^4.5.2
       sourcegraph: workspace:*
       speed-measure-webpack-plugin: ^1.5.0
-      stopword: ^2.0.7
       storybook-addon-designs: ^6.3.1
       storybook-dark-mode: ^2.0.4
       stream-browserify: ^3.0.0
@@ -541,7 +539,6 @@ importers:
       resize-observer-polyfill: 1.5.1
       rxjs: 6.6.7
       semver: 7.3.8
-      stopword: 2.0.7
       stream-http: 3.2.0
       stream-json: 1.7.5
       tagged-template-noop: 2.1.1
@@ -685,7 +682,6 @@ importers:
       '@types/sinon': 9.0.4
       '@types/socket.io-client': 1.4.33
       '@types/speed-measure-webpack-plugin': 1.3.4_pdcrf7mb3dfag2zju4x4octu4a
-      '@types/stopword': 2.0.0
       '@types/stream-json': 1.7.3
       '@types/svgo': 2.6.0
       '@types/testing-library__jest-dom': 5.9.5
@@ -9526,10 +9522,6 @@ packages:
   /@types/stack-utils/2.0.1:
     resolution: {integrity: sha512-Hl219/BT5fLAaz6NDkSuhzasy49dwQS/DSdu4MdggFB8zcXv7vflBI3xp7FEmkmdDkBUI2bPUNeMttp2knYdxw==}
     dev: false
-
-  /@types/stopword/2.0.0:
-    resolution: {integrity: sha512-R9g+FLEFzxRANryn5f2Beg7WMMopGBNI6Ghi3+8WrOZL7C063db0VuVrEpbKrML8o6sOryNN81ms9waSJITJqw==}
-    dev: true
 
   /@types/stream-chain/2.0.1:
     resolution: {integrity: sha512-D+Id9XpcBpampptkegH7WMsEk6fUdf9LlCIX7UhLydILsqDin4L0QT7ryJR0oycwC7OqohIzdfcMHVZ34ezNGg==}
@@ -26162,10 +26154,6 @@ packages:
   /stdin/0.0.1:
     resolution: {integrity: sha512-2bacd1TXzqOEsqRa+eEWkRdOSznwptrs4gqFcpMq5tOtmJUGPZd10W5Lam6wQ4YQ/+qjQt4e9u35yXCF6mrlfQ==}
     dev: true
-
-  /stopword/2.0.7:
-    resolution: {integrity: sha512-s+uLKAxrproCLrq0Wcd3JAIjlJLx6l80b2Rzt0u8+ra5SzGkHnNG8PS3DfGmYk2TrKePDVLL4SdKYwKpgSLc+w==}
-    dev: false
 
   /store2/2.12.0:
     resolution: {integrity: sha512-7t+/wpKLanLzSnQPX8WAcuLCCeuSHoWdQuh9SB3xD0kNOM38DNf+0Oa+wmvxmYueRzkmh6IcdKFtvTa+ecgPDw==}
