@@ -4,7 +4,6 @@
 # This allows the base image to be substituted for a GCP image that ships metrics to managed Prometheus. Default base image is regular upstream Prometheus
 #	https://cloud.google.com/stackdriver/docs/managed-prometheus/setup-unmanaged#run-gmp
 # To upgrade Prometheus or Alertmanager, see https://docs.sourcegraph.com/dev/background-information/observability/prometheus#upgrading-prometheus-or-alertmanager
-# TODO: Assuming everything works, leave these as-is for now.
 ARG BASE_IMAGE="prom/prometheus:v2.42.0@sha256:5689a4360cf1479bbad944b1311a90b495546c498c46f48e44fa7e5ac6412191"
 # https://github.com/hadolint/hadolint/issues/339
 # hadolint ignore=DL3006
@@ -12,21 +11,18 @@ FROM ${BASE_IMAGE} AS prom_upstream
 FROM prom/alertmanager:v0.25.0@sha256:db8303fa05341f5dc6b19b36a97325cd1b8307254ed9042a2c554af71f3c0284 AS am_upstream
 
 # Build monitoring definitions
-# TODO: Run in an empty container
-FROM sourcegraph/alpine-3.14:211375_2023-04-02_5.0-05ccd1762636@sha256:cd5089e0b0f7e5a5cd18996f5acd23cfa2bde33f6b7ffb9ace47f552941f0be2 AS monitoring_builder
+FROM cgr.dev/chainguard/bash:latest AS monitoring_builder
 RUN mkdir -p '/generated/prometheus'
 COPY ./.bin/monitoring-generator /bin/monitoring-generator
 RUN PROMETHEUS_DIR='/generated/prometheus' GRAFANA_DIR='' DOCS_DIR='' NO_PRUNE=true /bin/monitoring-generator
 RUN ls '/generated/prometheus'
 
 # Prepare final image
-# hadolint ignore=DL3007
-# TODO: Try switching to sourcegraph-base
-FROM quay.io/prometheus/busybox-linux-amd64:latest
+FROM us.gcr.io/sourcegraph-dev/wolfi-sourcegraph-base:latest
 
 # Should reflect versions above
-LABEL com.sourcegraph.prometheus.version=v2.38.0
-LABEL com.sourcegraph.alertmanager.version=v0.24.0
+LABEL com.sourcegraph.prometheus.version=v2.42.0
+LABEL com.sourcegraph.alertmanager.version=v0.25.0
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -58,20 +54,8 @@ COPY --from=am_upstream /bin/alertmanager /bin/alertmanager
 
 RUN ln -s /usr/share/prometheus/console_libraries /usr/share/prometheus/consoles/ /etc/prometheus/
 
-# TODO(uwe): remove "USER root" line once https://github.com/prometheus/prometheus/issues/3441 is resolved
-#
-# This is needed currently because the upstream image has us running as "nobody"
-# which cannot create the sourcegraph user below.
-USER root
-# Add the sourcegraph group, user, and create the home directory.
-#
-# We use a static GID/UID assignment to ensure files can be chown'd to this
-# user on the host machine (where this user does not exist).
-# See https://github.com/sourcegraph/sourcegraph/issues/1884
-#
-# Note: This mirrors what we do in e.g. our base alpine image: https://github.com/sourcegraph/sourcegraph/blob/main/docker-images/alpine/Dockerfile#L10-L15
-# TODO: Can remove some of this
-RUN addgroup -g 101 -S sourcegraph && adduser -u 100 -S -G sourcegraph -h /home/sourcegraph sourcegraph
+
+# Add required directories and switch to sourcegraph user
 RUN mkdir -p /prometheus && chown -R sourcegraph:sourcegraph /prometheus
 RUN mkdir -p /alertmanager && chown -R sourcegraph:sourcegraph /alertmanager
 USER sourcegraph
