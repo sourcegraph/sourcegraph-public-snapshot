@@ -177,7 +177,7 @@ func matchedStringFromProto(p *proto.CommitMatch_MatchedString) result.MatchedSt
 		ranges = append(ranges, rangeFromProto(rr))
 	}
 	return result.MatchedString{
-		Content:       p.Content,
+		Content:       p.GetContent(),
 		MatchedRanges: ranges,
 	}
 }
@@ -202,8 +202,8 @@ func rangeToProto(r result.Range) *proto.CommitMatch_Range {
 
 func rangeFromProto(p *proto.CommitMatch_Range) result.Range {
 	return result.Range{
-		Start: locationFromProto(p.Start),
-		End:   locationFromProto(p.End),
+		Start: locationFromProto(p.GetStart()),
+		End:   locationFromProto(p.GetEnd()),
 	}
 }
 
@@ -217,9 +217,9 @@ func locationToProto(l result.Location) *proto.CommitMatch_Location {
 
 func locationFromProto(p *proto.CommitMatch_Location) result.Location {
 	return result.Location{
-		Offset: int(p.Offset),
-		Line:   int(p.Line),
-		Column: int(p.Column),
+		Offset: int(p.GetOffset()),
+		Line:   int(p.GetLine()),
+		Column: int(p.GetColumn()),
 	}
 }
 
