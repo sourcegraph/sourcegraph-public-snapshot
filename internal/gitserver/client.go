@@ -676,7 +676,7 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 		client := proto.NewGitserverServiceClient(conn)
 		cs, err := client.Search(ctx, args.ToProto())
 		if err != nil {
-			return false, err
+			return false, convertGitserverError(err)
 		}
 
 		limitHit := false
