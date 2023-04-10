@@ -146,6 +146,8 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 	// Run all the things.
 	logger.Info("Running commands")
 	for _, spec := range commands {
+		spec.Queue = h.options.QueueName
+		spec.JobID = job.ID
 		if err := runtimeRunner.Run(ctx, spec); err != nil {
 			return errors.Wrapf(err, "running command %q", spec.CommandSpec.Key)
 		}
