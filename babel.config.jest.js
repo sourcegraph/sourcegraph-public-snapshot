@@ -29,7 +29,7 @@ module.exports = api => {
     presets: [
       // Can't put this in plugins because it needs to run as the last plugin.
       ...(instrument ? [{ plugins: [['babel-plugin-istanbul', { cwd: path.resolve(__dirname) }]] }] : []),
-      '@babel/preset-env',
     ],
+    plugins: ['@babel/plugin-transform-modules-commonjs'],
   }
 }

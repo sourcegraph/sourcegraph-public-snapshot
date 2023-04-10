@@ -346,6 +346,7 @@
   },
   "dependencies": {
     "@apollo/client": "^3.8.0-alpha.7",
+    "@babel/plugin-transform-modules-commonjs": "^7.21.2",
     "@codemirror/autocomplete": "^6.1.0",
     "@codemirror/commands": "^6.0.1",
     "@codemirror/lang-json": "^6.0.0",

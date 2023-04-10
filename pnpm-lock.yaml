@@ -18,6 +18,7 @@ importers:
       '@axe-core/puppeteer': ^4.4.2
       '@babel/cli': ^7.20.7
       '@babel/core': ^7.20.5
+      '@babel/plugin-transform-modules-commonjs': ^7.21.2
       '@babel/plugin-transform-runtime': ^7.21.0
       '@babel/plugin-transform-typescript': ^7.20.2
       '@babel/preset-env': ^7.20.2
@@ -413,6 +414,7 @@ importers:
       zustand: ^3.6.9
     dependencies:
       '@apollo/client': 3.8.0-alpha.7_e3n27dif46whwrj4763pirjq24
+      '@babel/plugin-transform-modules-commonjs': 7.21.2_@babel+core@7.21.0
       '@codemirror/autocomplete': 6.1.0_42luzusa22g3gmuqmbrrjz6ypm
       '@codemirror/commands': 6.0.1
       '@codemirror/lang-json': 6.0.0
@@ -2458,19 +2460,6 @@ packages:
     transitivePeerDependencies:
       - supports-color
 
-  /@babel/plugin-transform-modules-commonjs/7.19.6_@babel+core@7.21.0:
-    resolution: {integrity: sha512-8PIa1ym4XRTKuSsOUXqDG0YaOlEuTVvHMe5JCfgBMOtHvJKw/4NGovEGN33viISshG/rZNVrACiBmPQLvWN8xQ==}
-    engines: {node: '>=6.9.0'}
-    peerDependencies:
-      '@babel/core': ^7.0.0-0
-    dependencies:
-      '@babel/core': 7.21.0
-      '@babel/helper-module-transforms': 7.21.2
-      '@babel/helper-plugin-utils': 7.20.2
-      '@babel/helper-simple-access': 7.20.2
-    transitivePeerDependencies:
-      - supports-color
-
   /@babel/plugin-transform-modules-commonjs/7.21.2_@babel+core@7.21.0:
     resolution: {integrity: sha512-Cln+Yy04Gxua7iPdj6nOV96smLGjpElir5YwzF0LBPKoPlLDNJePNlrGGaybAJkd0zKRnOVXOgizSqPYMNYkzA==}
     engines: {node: '>=6.9.0'}
@@ -2483,7 +2472,6 @@ packages:
       '@babel/helper-simple-access': 7.20.2
     transitivePeerDependencies:
       - supports-color
-    dev: false
 
   /@babel/plugin-transform-modules-systemjs/7.19.6_@babel+core@7.21.0:
     resolution: {integrity: sha512-fqGLBepcc3kErfR9R3DnVpURmckXP7gj7bAlrTQyBxrigFqszZCkFkcoxzCp2v32XmwXLvbw+8Yq9/b+QqksjQ==}
@@ -2846,7 +2834,7 @@ packages:
       '@babel/plugin-transform-literals': 7.18.9_@babel+core@7.21.0
       '@babel/plugin-transform-member-expression-literals': 7.18.6_@babel+core@7.21.0
       '@babel/plugin-transform-modules-amd': 7.19.6_@babel+core@7.21.0
-      '@babel/plugin-transform-modules-commonjs': 7.19.6_@babel+core@7.21.0
+      '@babel/plugin-transform-modules-commonjs': 7.21.2_@babel+core@7.21.0
       '@babel/plugin-transform-modules-systemjs': 7.19.6_@babel+core@7.21.0
       '@babel/plugin-transform-modules-umd': 7.18.6_@babel+core@7.21.0
       '@babel/plugin-transform-named-capturing-groups-regex': 7.20.5_@babel+core@7.21.0
@@ -11462,7 +11450,7 @@ packages:
       '@babel/plugin-transform-function-name': 7.18.9_@babel+core@7.21.0
       '@babel/plugin-transform-literals': 7.18.9_@babel+core@7.21.0
       '@babel/plugin-transform-member-expression-literals': 7.18.6_@babel+core@7.21.0
-      '@babel/plugin-transform-modules-commonjs': 7.19.6_@babel+core@7.21.0
+      '@babel/plugin-transform-modules-commonjs': 7.21.2_@babel+core@7.21.0
       '@babel/plugin-transform-object-super': 7.18.6_@babel+core@7.21.0
       '@babel/plugin-transform-parameters': 7.20.5_@babel+core@7.21.0
       '@babel/plugin-transform-property-literals': 7.18.6_@babel+core@7.21.0

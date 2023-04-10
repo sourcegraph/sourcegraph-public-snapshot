@@ -61,7 +61,7 @@ const config = {
       'babel-jest',
       {
         root: rootDir,
-        configFile: path.join(rootDir, 'babel.config.js'),
+        configFile: path.join(rootDir, IS_BAZEL ? 'babel.config.jest.js' : 'babel.config.js'),
       },
     ],
   },
