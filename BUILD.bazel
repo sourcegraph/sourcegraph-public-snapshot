@@ -134,7 +134,7 @@ js_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        ":babel_config_jest",
+        ":babel_config",
         "//:node_modules/@testing-library/jest-dom",
         "//:node_modules/abort-controller",
         "//:node_modules/babel-jest",

@@ -1991,7 +1991,6 @@ webpack_bundle(
 # because of the inlined source-maps.
 webpack_web_app(
     name = "app-enterprise",
-    testonly = True,
     srcs = ENTERPRISE_BUNDLE_DATA_DEPS + [
         "//:babel_config",
         "//:browserslist",
