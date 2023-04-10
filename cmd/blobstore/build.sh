@@ -10,6 +10,13 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# Enable image build caching via CACHE=true
+BUILD_CACHE="--no-cache"
+if [[ "$CACHE" == "true" ]]; then
+  BUILD_CACHE=""
+fi
+
+
 if [[ "$DOCKER_BAZEL" == "true" ]]; then
 
   bazel build //cmd/gitserver \
@@ -20,7 +27,7 @@ if [[ "$DOCKER_BAZEL" == "true" ]]; then
   out=$(bazel cquery //cmd/blobstore --output=files)
   cp "$out" "$OUTPUT"
 
-  docker build -f cmd/blobstore/Dockerfile -t "$IMAGE" "$OUTPUT" \
+  docker build "${BUILD_CACHE}" -f cmd/blobstore/Dockerfile -t "$IMAGE" "$OUTPUT" \
     --progress=plain \
     --build-arg COMMIT_SHA \
     --build-arg DATE \

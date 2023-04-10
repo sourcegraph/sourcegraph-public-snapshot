@@ -51,23 +51,24 @@ for TARGET in "${TARGETS[@]}"; do
   echo "copying $TARGET"
 done
 
-echo "--- prometheus"
+# 
+# echo "--- prometheus"
 IMAGE=sourcegraph/prometheus:server CACHE=true docker-images/prometheus/build-bazel.sh
 
-# echo "--- grafana"
+# # echo "--- grafana"
 IMAGE=sourcegraph/grafana:server CACHE=true docker-images/grafana/build-bazel.sh
 
-# echo "--- blobstore"
-IMAGE=sourcegraph/blobstore:server docker-images/blobstore/build.sh
+# # echo "--- blobstore"
+IMAGE=sourcegraph/blobstore:server CACHE=true docker-images/blobstore/build.sh
 
-echo "--- postgres exporter"
+# echo "--- postgres exporter"
 IMAGE=sourcegraph/postgres_exporter:server CACHE=true docker-images/postgres_exporter/build.sh
 
-# echo "--- build scripts"
+# # echo "--- build scripts"
 cp -a ./cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
 cp -a ./cmd/gitserver/p4-fusion-install-alpine.sh "$OUTPUT"
 
-echo "--- docker build"
+# echo "--- docker build"
 docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --platform linux/amd64 \
   --progress=plain \
