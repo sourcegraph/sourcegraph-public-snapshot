@@ -21,3 +21,5 @@ build --test_env=ENABLE_BAZEL_PACKAGES_LOAD_HACK=true
 # Force bundle settings depending on targets.
 # build --//:assets_bundle_type=oss
 # build --//:assets_bundle_type=enterprise
+
+build --incompatible_enable_cc_toolchain_resolution

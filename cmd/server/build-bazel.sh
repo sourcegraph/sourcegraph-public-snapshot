@@ -22,7 +22,6 @@ TARGETS=(
   //cmd/worker
   //cmd/migrator
   //cmd/repo-updater
-  //cmd/symbols
   //cmd/github-proxy
   //cmd/gitserver
   //cmd/searcher
@@ -41,6 +40,11 @@ bazel build "${TARGETS[@]}" \
   --workspace_status_command=./dev/bazel_stamp_vars.sh \
   --//:assets_bundle_type=oss
 
+bazel build \
+  --platforms @zig_sdk//platform:linux_amd64 \
+  --extra_toolchains @zig_sdk//toolchain:linux_amd64_musl \
+  //cmd/symbols
+
 echo "-- preparing rootfs"
 cp -a ./cmd/server/rootfs/. "$OUTPUT"
 export BINDIR="$OUTPUT/usr/local/bin"
@@ -51,7 +55,9 @@ for TARGET in "${TARGETS[@]}"; do
   echo "copying $TARGET"
 done
 
-# 
+symbol=$(bazel cquery //cmd/symbols --output=files)
+cp "$symbol" "$BINDIR"
+
 # echo "--- prometheus"
 IMAGE=sourcegraph/prometheus:server CACHE=true docker-images/prometheus/build-bazel.sh
 
