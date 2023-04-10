@@ -14,14 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func Validate(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
+func Validate(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, conf *config.Config) error {
 	// First, validate the config is valid.
-	if err := config.Validate(); err != nil {
-		return err
-	}
-
-	// Then, validate all tools that are required are installed.
-	if err := util.ValidateRequiredTools(runner, config.UseFirecracker); err != nil {
+	if err := conf.Validate(); err != nil {
 		return err
 	}
 
@@ -30,30 +25,37 @@ func Validate(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, con
 		return err
 	}
 
-	telemetryOptions := newQueueTelemetryOptions(cliCtx.Context, runner, config.UseFirecracker, logger)
-	copts := queueOptions(config, telemetryOptions)
-	client, err := apiclient.NewBaseClient(copts.BaseClientOptions)
+	telemetryOptions := newQueueTelemetryOptions(cliCtx.Context, runner, conf.UseFirecracker, logger)
+	copts := queueOptions(conf, telemetryOptions)
+	client, err := apiclient.NewBaseClient(logger, copts.BaseClientOptions)
 	if err != nil {
 		return err
 	}
 
-	// Validate frontend access token returns status 200.
-	if err = validateAuthorizationToken(cliCtx.Context, copts.BaseClientOptions); err != nil {
-		return err
-	}
-
-	// Validate src-cli is of a good version, rely on the connected instance to tell
-	// us what "good" means.
-	if err = util.ValidateSrcCLIVersion(cliCtx.Context, runner, client, copts.BaseClientOptions.EndpointOptions); err != nil {
-		if errors.Is(err, util.ErrSrcPatchBehind) {
-			// This is ok. The patch just doesn't match but still works.
-			logger.Warn("A newer patch release version of src-cli is available, consider running executor install src-cli to upgrade", log.Error(err))
-		} else {
+	if !config.IsKubernetes() {
+		// Then, validate all tools that are required are installed.
+		if err = util.ValidateRequiredTools(runner, conf.UseFirecracker); err != nil {
 			return err
+		}
+
+		// Validate src-cli is of a good version, rely on the connected instance to tell
+		// us what "good" means.
+		if err = util.ValidateSrcCLIVersion(cliCtx.Context, runner, client, copts.BaseClientOptions.EndpointOptions); err != nil {
+			if errors.Is(err, util.ErrSrcPatchBehind) {
+				// This is ok. The patch just doesn't match but still works.
+				logger.Warn("A newer patch release version of src-cli is available, consider running executor install src-cli to upgrade", log.Error(err))
+			} else {
+				return err
+			}
 		}
 	}
 
-	if config.UseFirecracker {
+	// Validate frontend access token returns status 200.
+	if err = validateAuthorizationToken(cliCtx.Context, client); err != nil {
+		return err
+	}
+
+	if conf.UseFirecracker {
 		// Validate ignite is installed.
 		if err = util.ValidateIgniteInstalled(cliCtx.Context, runner); err != nil {
 			return err
@@ -74,13 +76,7 @@ func Validate(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, con
 
 var authorizationFailedErr = errors.New("failed to authorize with frontend, is executors.accessToken set correctly in the site-config?")
 
-func validateAuthorizationToken(ctx context.Context, options apiclient.BaseClientOptions) error {
-	options.EndpointOptions.PathPrefix = ""
-	client, err := apiclient.NewBaseClient(options)
-	if err != nil {
-		return err
-	}
-
+func validateAuthorizationToken(ctx context.Context, client *apiclient.BaseClient) error {
 	req, err := client.NewJSONRequest(http.MethodGet, ".executors/test/auth", nil)
 	if err != nil {
 		return err

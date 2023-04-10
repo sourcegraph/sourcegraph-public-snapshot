@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "config.go",
         "consts.go",
+        "kubernetes.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config",
     visibility = ["//enterprise/cmd/executor:__subpackages__"],
@@ -18,12 +19,23 @@ go_library(
         "@com_github_c2h5oh_datasize//:datasize",
         "@com_github_google_uuid//:uuid",
         "@com_github_masterminds_semver//:semver",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_client_go//util/homedir",
     ],
 )
 
 go_test(
     name = "config_test",
-    srcs = ["config_test.go"],
-    embed = [":config"],
-    deps = ["//lib/errors"],
+    srcs = [
+        "config_test.go",
+        "kubernetes_test.go",
+    ],
+    deps = [
+        ":config",
+        "//internal/env",
+        "//lib/errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//core/v1:core",
+    ],
 )
