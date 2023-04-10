@@ -33,6 +33,8 @@ module.exports = api => {
         '@babel/preset-env',
         {
           targets: {
+            // We only run jest tests in node. All the browser related transformations
+            // are already completed on the previous transpilation step.
             node: '16',
           },
         },

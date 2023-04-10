@@ -154,8 +154,6 @@ js_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//:node_modules/@babel/plugin-transform-modules-commonjs",
-        "//:node_modules/@babel/plugin-transform-runtime",
         "//:node_modules/@babel/preset-env",
         "//:node_modules/@babel/runtime",
         "//:node_modules/signale",
