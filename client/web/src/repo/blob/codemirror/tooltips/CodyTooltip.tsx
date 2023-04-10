@@ -1,6 +1,5 @@
 import { EditorState, StateField } from '@codemirror/state'
 import { Tooltip, showTooltip } from '@codemirror/view'
-import { debounce } from 'lodash'
 import ReactDOM from 'react-dom/client'
 
 import { CodyRecipesWidget } from '@sourcegraph/cody-ui/src/widgets/CodyRecipesWidget'
@@ -30,6 +29,8 @@ function getCodyWidget(state: EditorState): readonly Tooltip[] {
 
         // If something is selected, render the widget.
         if (head !== anchor) {
+            const selectedText = state.sliceDoc(range.from, range.to)
+
             return [
                 {
                     pos: head,
@@ -40,7 +41,7 @@ function getCodyWidget(state: EditorState): readonly Tooltip[] {
                         let dom = document.createElement('div')
                         dom.style.background = 'transparent'
 
-                        ReactDOM.createRoot(dom).render(<CodyRecipesWidget />)
+                        ReactDOM.createRoot(dom).render(<CodyRecipesWidget selection={selectedText} />)
                         return { dom }
                     },
                 },
