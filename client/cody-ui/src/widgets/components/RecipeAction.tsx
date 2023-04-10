@@ -6,11 +6,19 @@ import styles from './Recipes.module.css'
 
 export interface RecipeActionProps {
     title: string
+    onClick?: () => void
 }
 
-export const RecipeAction = ({ title }: RecipeActionProps): JSX.Element => {
+export const RecipeAction = ({ title, onClick }: RecipeActionProps): JSX.Element => {
     return (
-        <MenuItem className={classNames(styles.recipeMenuWrapper)} onSelect={() => alert('Clicked!')}>
+        <MenuItem
+            className={classNames(styles.recipeMenuWrapper)}
+            onSelect={() => {
+                if (onClick) {
+                    onClick()
+                }
+            }}
+        >
             {title}
         </MenuItem>
     )
