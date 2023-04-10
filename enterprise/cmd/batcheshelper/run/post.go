@@ -29,6 +29,9 @@ func Post(
 	step := executionInput.Steps[stepIdx]
 
 	// Generate the diff.
+	if _, err := runGitCmd(ctx, "git", "config", "--global", "--add", "safe.directory", "/data/repository"); err != nil {
+		return errors.Wrap(err, "git config --global --add safe.directory failed")
+	}
 	if _, err := runGitCmd(ctx, "git", "add", "--all"); err != nil {
 		return errors.Wrap(err, "git add --all failed")
 	}

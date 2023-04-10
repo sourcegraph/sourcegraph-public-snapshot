@@ -99,7 +99,7 @@ export const enterpriseRoutes: RouteObject[] = [
     },
     {
         path: EnterprisePageRoutes.CodySearch,
-        element: <CodySearchPage />,
+        element: <LegacyRoute render={props => <CodySearchPage {...props} />} />,
     },
     {
         path: EnterprisePageRoutes.Own,

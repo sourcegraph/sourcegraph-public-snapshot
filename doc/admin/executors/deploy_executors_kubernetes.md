@@ -50,6 +50,7 @@ set on the Executor `Deployment` and will configure the `Job`s that it spawns.
 | EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY                  | `12Gi`            | The minimum memory resource for Kubernetes Jobs.                                                                                       |
 | KUBERNETES_JOB_RETRY_BACKOFF_LIMIT                           | `600`             | The number of attempts to try when checking if a Job has completed.                                                                    |
 | KUBERNETES_JOB_RETRY_BACKOFF_DURATION                        | `100ms`           | The duration of the backoff when checking if a Job has completed.                                                                      |
+| KUBERNETES_KEEP_JOBS                                         | `false`           | If true, Kubernetes jobs will not be deleted after they complete. Useful for debugging.                                                |
 
 See other possible Environment Variables [here](./deploy_executors_binary.md#step-2-setup-environment-variables).
 

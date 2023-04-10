@@ -65,6 +65,7 @@ type Config struct {
 	KubernetesResourceRequestMemory                string
 	KubernetesJobRetryBackoffLimit                 int
 	KubernetesJobRetryBackoffDuration              time.Duration
+	KubernetesKeepJobs                             bool
 
 	dockerAuthConfigStr                                          string
 	dockerAuthConfigUnmarshalError                               error
@@ -123,6 +124,7 @@ func (c *Config) Load() {
 	c.dockerAuthConfigStr = c.GetOptional("EXECUTOR_DOCKER_AUTH_CONFIG", "The content of the docker config file including auth for services. If using firecracker, only static credentials are supported, not credential stores nor credential helpers.")
 	c.KubernetesJobRetryBackoffLimit = c.GetInt("KUBERNETES_JOB_RETRY_BACKOFF_LIMIT", "600", "The number of retries before giving up on a Kubernetes job.")
 	c.KubernetesJobRetryBackoffDuration = c.GetInterval("KUBERNETES_JOB_RETRY_BACKOFF_DURATION", "100ms", "The duration to wait before retrying a Kubernetes job.")
+	c.KubernetesKeepJobs = c.GetBool("KUBERNETES_KEEP_JOBS", "false", "If true, Kubernetes jobs will not be deleted after they complete. Useful for debugging.")
 
 	if c.dockerAuthConfigStr != "" {
 		c.dockerAuthConfigUnmarshalError = json.Unmarshal([]byte(c.dockerAuthConfigStr), &c.DockerAuthConfig)

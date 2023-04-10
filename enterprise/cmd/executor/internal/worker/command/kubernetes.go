@@ -36,6 +36,7 @@ type KubernetesContainerOptions struct {
 	ResourceLimit         KubernetesResource
 	ResourceRequest       KubernetesResource
 	Retry                 KubernetesRetry
+	KeepJobs              bool
 }
 
 // KubernetesNodeAffinity contains the Kubernetes node affinity for a Job.

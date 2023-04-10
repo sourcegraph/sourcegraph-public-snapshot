@@ -56,13 +56,15 @@ func (r *kubernetesRunner) TempDir() string {
 }
 
 func (r *kubernetesRunner) Teardown(ctx context.Context) error {
-	for _, name := range r.jobNames {
-		if err := r.cmd.DeleteJob(ctx, r.options.Namespace, name); err != nil {
-			r.internalLogger.Error(
-				"Failed to delete kubernetes job",
-				log.String("jobName", name),
-				log.Error(err),
-			)
+	if !r.options.KeepJobs {
+		for _, name := range r.jobNames {
+			if err := r.cmd.DeleteJob(ctx, r.options.Namespace, name); err != nil {
+				r.internalLogger.Error(
+					"Failed to delete kubernetes job",
+					log.String("jobName", name),
+					log.Error(err),
+				)
+			}
 		}
 	}
 
