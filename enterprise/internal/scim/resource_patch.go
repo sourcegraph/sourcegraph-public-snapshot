@@ -205,10 +205,10 @@ func ensureSinglePrimaryItem(changedItems []interface{}, attributes scim.Resourc
 }
 
 // applyChangeToAttributes applies a change to a resource (for example, sets its userName).
-func applyChangeToAttributes(attributes scim.ResourceAttributes, rawPath string, value interface{}) (changed bool) {
+func applyChangeToAttributes(attributes scim.ResourceAttributes, rawPath string, value interface{}) {
 	// Ignore nil values
 	if value == nil {
-		return false
+		return
 	}
 
 	// Convert rawPath to path
@@ -226,22 +226,22 @@ func applyChangeToAttributes(attributes scim.ResourceAttributes, rawPath string,
 			}
 			m[subAttrName] = value
 			attributes[path.AttributeName] = m
-			return true
+			return
 		}
 		// It doesn't exist → add new attribute
 		attributes[path.AttributeName] = map[string]interface{}{subAttrName: value}
-		return true
+		return
 	}
 
 	// Add new root attribute if it doesn't exist
 	_, ok := attributes[rawPath]
 	if !ok {
 		attributes[rawPath] = value
-		return true
+		return
 	}
 
 	// Update existing sub-attribute or root attribute
-	return applyAttributeChange(attributes, rawPath, value, "replace")
+	applyAttributeChange(attributes, rawPath, value, "replace")
 }
 
 // applyAttributeChange applies a change to an _existing_ resource attribute (for example, userName).
