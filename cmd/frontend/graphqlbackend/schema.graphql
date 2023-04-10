@@ -3649,6 +3649,11 @@ type Repository implements Node & GenericSearchResultInterface {
     The size of repo when cloned on disk
     """
     diskSizeBytes: BigInt
+
+    """
+    Returns true if embeddings for the repo are generated.
+    """
+    embeddingExists: Boolean!
 }
 
 """

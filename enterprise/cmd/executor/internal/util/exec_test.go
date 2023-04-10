@@ -21,7 +21,7 @@ type fakeCmdRunner struct {
 var _ util.CmdRunner = &fakeCmdRunner{}
 
 func (f *fakeCmdRunner) CommandContext(ctx context.Context, name string, args ...string) *exec.Cmd {
-	panic("not neeeded")
+	panic("not needed")
 }
 
 func (f *fakeCmdRunner) CombinedOutput(ctx context.Context, name string, args ...string) ([]byte, error) {

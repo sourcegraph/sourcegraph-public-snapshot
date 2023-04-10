@@ -30,14 +30,21 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	repoStore := db.Repos()
 
 	ctx := context.Background()
 
 	createdRepo := &types.Repo{Name: "github.com/soucegraph/sourcegraph", URI: "github.com/soucegraph/sourcegraph", ExternalRepo: api.ExternalRepoSpec{}}
-	err := db.Repos().Create(ctx, createdRepo)
+	err := repoStore.Create(ctx, createdRepo)
 	require.NoError(t, err)
 
 	store := NewRepoEmbeddingJobsStore(db)
+
+	// no job exists
+	exists, err := repoStore.RepoEmbeddingExists(ctx, createdRepo.ID)
+	require.NoError(t, err)
+	require.Equal(t, exists, false)
+
 	// Create two repo embedding jobs.
 	id1, err := store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "deadbeef")
 	require.NoError(t, err)
@@ -52,6 +59,11 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 	first := 10
 	jobs, err := store.ListRepoEmbeddingJobs(ctx, &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true})
 	require.NoError(t, err)
+
+	// only queued job exists
+	exists, err = repoStore.RepoEmbeddingExists(ctx, createdRepo.ID)
+	require.NoError(t, err)
+	require.Equal(t, exists, false)
 
 	// Expect to get the two repo embedding jobs in the list.
 	require.Equal(t, 2, len(jobs))
@@ -70,4 +82,9 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, id2, lastCompletedJob.ID)
+
+	// completed job present
+	exists, err = repoStore.RepoEmbeddingExists(ctx, createdRepo.ID)
+	require.NoError(t, err)
+	require.Equal(t, exists, true)
 }
