@@ -921,13 +921,21 @@ importers:
 
   client/cody:
     specifiers:
+      '@anthropic-ai/sdk': ^0.4.2
       '@sourcegraph/cody-shared': workspace:*
       '@sourcegraph/cody-ui': workspace:*
       openai: ^3.2.1
+      wink-eng-lite-web-model: ^1.5.0
+      wink-nlp: ^1.13.1
+      wink-nlp-utils: ^2.1.0
     dependencies:
+      '@anthropic-ai/sdk': 0.4.2
       '@sourcegraph/cody-shared': link:../cody-shared
       '@sourcegraph/cody-ui': link:../cody-ui
       openai: 3.2.1
+      wink-eng-lite-web-model: 1.5.0_wink-nlp@1.13.1
+      wink-nlp: 1.13.1
+      wink-nlp-utils: 2.1.0
 
   client/cody-shared:
     specifiers:
@@ -1202,6 +1210,15 @@ packages:
     dependencies:
       '@jridgewell/gen-mapping': 0.1.1
       '@jridgewell/trace-mapping': 0.3.17
+
+  /@anthropic-ai/sdk/0.4.2:
+    resolution: {integrity: sha512-L/uhXDxPNWKIUV3V2v+97XyVVjY2P6vhxpdNFqmZEKUKy6FqVwcfPPHcckH6ixyQ5+j/Zq4A6eybc7ewc2+WjQ==}
+    dependencies:
+      '@fortaine/fetch-event-source': 3.0.6
+      cross-fetch: 3.1.5
+    transitivePeerDependencies:
+      - encoding
+    dev: false
 
   /@apidevtools/json-schema-ref-parser/9.0.6:
     resolution: {integrity: sha512-M3YgsLjI0lZxvrpeGVk9Ap032W6TPQkH6pRAZz81Ac3WUNF79VQooAFnp8umjvVzUmD93NkogxEwbSce7qMsUg==}
@@ -3814,6 +3831,11 @@ packages:
       '@figspec/components': 1.0.0
       react: 18.1.0
     dev: true
+
+  /@fortaine/fetch-event-source/3.0.6:
+    resolution: {integrity: sha512-621GAuLMvKtyZQ3IA6nlDWhV1V/7PGOTNIGLUifxt0KzM+dZIweJ6F3XvQF3QnqeNfS1N7WQ0Kil1Di/lhChEw==}
+    engines: {node: '>=16.15'}
+    dev: false
 
   /@gql2ts/from-query/1.9.0_graphql@14.7.0:
     resolution: {integrity: sha512-hfH2Oq3ikHu+zKE4b9kdGbzEqFiX+VxIg0nhgpY5iUgl975cAtTFhAdwfzr/jKdZhC9Ad5dE1CPrjEA+G7hzMg==}
@@ -13100,7 +13122,6 @@ packages:
       node-fetch: 2.6.7
     transitivePeerDependencies:
       - encoding
-    dev: true
 
   /cross-spawn/5.1.0:
     resolution: {integrity: sha512-pTgQJ5KC0d2hcY8eyL1IzlBPYjTkyH72XRZPnLyKus2mBfNjQs3klqbJU2VILqZryAZUt9JOb3h/mWMy23/f5A==}
@@ -14640,7 +14661,6 @@ packages:
 
   /emoji-regex/9.2.2:
     resolution: {integrity: sha512-L18DaJsXSUk2+42pv8mLs5jJT2hqFkFE4j21wOmgbUqsZ2hL72NsUU785g9RXgo3s0ZNgVl42TiHp3ZtOv/Vyg==}
-    dev: true
 
   /emojis-list/3.0.0:
     resolution: {integrity: sha512-/kyM18EfinwXZbno9FyUGeFh87KC8HRQBQGildHZbEuRyWFOmv1U10o9BBp8XVZDVNNuQKyIGIu5ZYAAXJ0V2Q==}
@@ -29027,6 +29047,55 @@ packages:
     dependencies:
       execa: 1.0.0
     dev: true
+
+  /wink-distance/2.0.2:
+    resolution: {integrity: sha512-pyEhUB/OKFYcgOC4J6E+c+gwVA/8qg2s5n49mIcUsJZM5iDSa17uOxRQXR4rvfp+gbj55K/I08FwjFBwb6fq3g==}
+    dependencies:
+      wink-helpers: 2.0.0
+      wink-jaro-distance: 2.0.0
+    dev: false
+
+  /wink-eng-lite-web-model/1.5.0_wink-nlp@1.13.1:
+    resolution: {integrity: sha512-5t27uqKRpQVyjb+ztIabmD2m76ct+5NP9e3TVxla4GBQzgPJnAHCynPw4KQa42BNn5xxi7b7E9P3akSFiYWHbg==}
+    engines: {node: '>=16.0.0'}
+    peerDependencies:
+      wink-nlp: '>1.8.1'
+    dependencies:
+      wink-nlp: 1.13.1
+    dev: false
+
+  /wink-helpers/2.0.0:
+    resolution: {integrity: sha512-I/ZzXrHcNRXuoeFJmp2vMVqDI6UCK02Tds1WP4kSGAmx520gjL1BObVzF7d2ps24tyHIly9ngdB2jwhlFUjPvg==}
+    dev: false
+
+  /wink-jaro-distance/2.0.0:
+    resolution: {integrity: sha512-9bcUaXCi9N8iYpGWbFkf83OsBkg17r4hEyxusEzl+nnReLRPqxhB9YNeRn3g54SYnVRNXP029lY3HDsbdxTAuA==}
+    dev: false
+
+  /wink-nlp-utils/2.1.0:
+    resolution: {integrity: sha512-b7PcRhEBNxQmsmht70jLOkwYUyie3da4/cgEXL+CumYO5b/nwV+W7fuMXToh5BtGq1RABznmc2TGTp1Qf/JUXg==}
+    dependencies:
+      wink-distance: 2.0.2
+      wink-eng-lite-web-model: 1.5.0_wink-nlp@1.13.1
+      wink-helpers: 2.0.0
+      wink-nlp: 1.13.1
+      wink-porter2-stemmer: 2.0.1
+      wink-tokenizer: 5.3.0
+    dev: false
+
+  /wink-nlp/1.13.1:
+    resolution: {integrity: sha512-JhZpPhGxUhGhqSykManCHkRRUU07LgqiAnG14HT7ZS4p3rKnanKJwl1NSwenEmUIwr4aEik3BWLoEF49xkrsyQ==}
+    dev: false
+
+  /wink-porter2-stemmer/2.0.1:
+    resolution: {integrity: sha512-0g+RkkqhRXFmSpJQStVXW5N/WsshWpJXsoDRW7DwVkGI2uDT6IBCoq3xdH5p6IHLaC6ygk7RWUsUx4alKxoagQ==}
+    dev: false
+
+  /wink-tokenizer/5.3.0:
+    resolution: {integrity: sha512-O/yAw0g3FmSgeeQuYAJJfP7fVPB4A6ay0018qASh79aWmIOyPYy4j4r9EQT8xBjicja6lCLvgRVAybmEBaATQA==}
+    dependencies:
+      emoji-regex: 9.2.2
+    dev: false
 
   /word-wrap/1.2.3:
     resolution: {integrity: sha512-Hz/mrNwitNRh/HUAtM/VT/5VH+ygD6DV7mYKZAtHOrbs8U7lvPS6xf7EJKMF0uW1KJCl0H701g3ZGus+muE5vQ==}

@@ -39,6 +39,7 @@ import {
     Text,
     useEventObservable,
     useObservable,
+    useSessionStorage,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -188,6 +189,11 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
         }, [filePath, revision, repoName, props.telemetryService])
     )
 
+    const [indexIDsForSnapshotData] = useSessionStorage<{ [repoName: string]: string | undefined }>(
+        'blob.preciseIndexIDForSnapshotData',
+        {}
+    )
+
     /**
      * Fetches formatted, but un-highlighted, blob content.
      * Intention is to use this whilst we wait for syntax highlighting,
@@ -203,6 +209,8 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                         revision,
                         filePath,
                         format: HighlightResponseFormat.HTML_PLAINTEXT,
+                        scipSnapshot: indexIDsForSnapshotData[repoName] !== undefined,
+                        visibleIndexID: indexIDsForSnapshotData[repoName],
                     }).pipe(
                         map(blob => {
                             if (blob === null) {
@@ -229,7 +237,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                         })
                     )
                 ),
-            [filePath, mode, repoName, revision, span]
+            [filePath, mode, repoName, revision, span, indexIDsForSnapshotData]
         )
     )
 
@@ -255,6 +263,8 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                             format: enableCodeMirror
                                 ? HighlightResponseFormat.JSON_SCIP
                                 : HighlightResponseFormat.HTML_HIGHLIGHT,
+                            scipSnapshot: indexIDsForSnapshotData[repoName] !== undefined,
+                            visibleIndexID: indexIDsForSnapshotData[repoName],
                         })
                     ),
                     map(blob => {
@@ -283,12 +293,13 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                             aborted: blob.highlight.aborted,
                             lfs: blob.__typename === 'GitBlob' ? blob.lfs : undefined,
                             externalURLs: blob.__typename === 'GitBlob' ? blob.externalURLs : undefined,
+                            snapshotData: blob.snapshot,
                         }
                         return blobInfo
                     }),
                     catchError((error): [ErrorLike] => [asError(error)])
                 ),
-            [repoName, revision, filePath, enableCodeMirror, mode]
+            [repoName, revision, filePath, enableCodeMirror, mode, indexIDsForSnapshotData]
         )
     )
 

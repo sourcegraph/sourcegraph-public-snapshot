@@ -7,5 +7,5 @@ export interface Configuration {
     debug: boolean
     useContext: ConfigurationUseContext
     experimentalSuggest: boolean
-    openaiKey: string | null
+    anthropicKey: string | null
 }

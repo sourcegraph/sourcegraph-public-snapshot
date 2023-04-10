@@ -144,7 +144,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                             {provider.serviceType === 'azuredevops' && (
                                 <Icon aria-hidden={true} svgPath={mdiMicrosoftAzureDevops} />
                             )}{' '}
-                            {provider.displayPrefix ?? 'Continue with'} {provider.displayName}
+                            Continue with {provider.displayName}
                         </Button>
                     </div>
                 ))}
