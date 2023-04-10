@@ -20,4 +20,3 @@ RUN apk add --no-cache \
     'git>=2.39.2-r0' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main
 
 COPY batcheshelper /usr/local/bin/
-USER sourcegraph
