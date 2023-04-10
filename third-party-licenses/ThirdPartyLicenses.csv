@@ -1,5 +1,6 @@
 package_manager,name,version,licenses,homepage,approved
 PNPM,@ampproject/remapping,2.2.0,Apache 2.0,"",Approved
+PNPM,@anthropic-ai/sdk,0.4.2,MIT,"",Approved
 PNPM,@apidevtools/json-schema-ref-parser,9.0.6,MIT,"",Approved
 PNPM,@apollo/client,3.8.0-alpha.7,MIT,"",Approved
 PNPM,@arcanis/slice-ansi,1.1.1,MIT,"",Approved
@@ -158,6 +159,7 @@ PNPM,@esbuild/linux-x64,0.17.8,MIT,"",Approved
 PNPM,@eslint/eslintrc,1.4.1,MIT,"",Approved
 PNPM,@figspec/components,1.0.0,MIT,"",Approved
 PNPM,@figspec/react,1.0.0,MIT,"",Approved
+PNPM,@fortaine/fetch-event-source,3.0.6,MIT,"",Approved
 PNPM,@gql2ts/from-query,1.9.0,ISC,"",Approved
 PNPM,@gql2ts/from-schema,1.10.1,ISC,"",Approved
 PNPM,@gql2ts/language-typescript,1.9.0,ISC,"",Approved
@@ -545,6 +547,7 @@ PNPM,@types/http-cache-semantics,4.0.0,MIT,"",Approved
 PNPM,@types/http-proxy,1.17.9,MIT,"",Approved
 PNPM,@types/is-function,1.0.0,MIT,"",Approved
 PNPM,@types/is-stream,1.1.0,MIT,"",Approved
+PNPM,@types/isomorphic-fetch,0.0.36,MIT,"",Approved
 PNPM,@types/istanbul-lib-coverage,2.0.4,MIT,"",Approved
 PNPM,@types/istanbul-lib-report,3.0.0,MIT,"",Approved
 PNPM,@types/istanbul-reports,3.0.1,MIT,"",Approved
@@ -1628,9 +1631,9 @@ Go,github.com/sourcegraph/log,v0.0.0-20230203201409-49ac5ad3f2ce,Apache 2.0,gith
 Go,github.com/sourcegraph/mountinfo,v0.0.0-20230106004439-7026e28cef67,Apache 2.0,github.com/sourcegraph/mountinfo,Approved
 Go,github.com/sourcegraph/oauth2,v0.0.0-20210825125341-77c1d99ece3c,New BSD,github.com/sourcegraph/oauth2,Approved
 Go,github.com/sourcegraph/run,v0.12.0,Apache 2.0,github.com/sourcegraph/run,Approved
-Go,github.com/sourcegraph/scip,v0.2.4-0.20221213205653-aa0e511dcfef,Apache 2.0,github.com/sourcegraph/scip,Approved
+Go,github.com/sourcegraph/scip,v0.2.4-0.20230403145725-e720fb88e6fd,Apache 2.0,github.com/sourcegraph/scip,Approved
 Go,github.com/sourcegraph/yaml,v1.0.1-0.20200714132230-56936252f152,MIT,github.com/sourcegraph/yaml,Approved
-Go,github.com/sourcegraph/zoekt,v0.0.0-20230328081101-02541e61dd57,Apache 2.0,github.com/sourcegraph/zoekt,Approved
+Go,github.com/sourcegraph/zoekt,v0.0.0-20230405161007-b247fb51dece,Apache 2.0,github.com/sourcegraph/zoekt,Approved
 Go,github.com/stretchr/testify,v1.8.2,MIT,github.com/stretchr/testify,Approved
 Go,github.com/throttled/throttled/v2,v2.9.0,New BSD,github.com/throttled/throttled,Approved
 Go,github.com/tidwall/gjson,v1.14.0,MIT,github.com/tidwall/gjson,Approved
@@ -3011,6 +3014,14 @@ PNPM,widest-line,2.0.1,MIT,"",Approved
 PNPM,wildcard,2.0.0,MIT,"",Approved
 PNPM,wildcard-mock-link,2.0.1,ISC,"",Approved
 PNPM,windows-release,3.2.0,MIT,"",Approved
+PNPM,wink-distance,2.0.2,MIT,"",Approved
+PNPM,wink-eng-lite-web-model,1.5.0,MIT,"",Approved
+PNPM,wink-helpers,2.0.0,MIT,"",Approved
+PNPM,wink-jaro-distance,2.0.0,MIT,"",Approved
+PNPM,wink-nlp,1.13.1,MIT,"",Approved
+PNPM,wink-nlp-utils,2.1.0,MIT,"",Approved
+PNPM,wink-porter2-stemmer,2.0.1,MIT,"",Approved
+PNPM,wink-tokenizer,5.3.0,MIT,"",Approved
 PNPM,word-wrap,1.2.3,MIT,"",Approved
 PNPM,wordwrap,1.0.0,MIT,"",Approved
 PNPM,worker-loader,3.0.8,MIT,"",Approved
