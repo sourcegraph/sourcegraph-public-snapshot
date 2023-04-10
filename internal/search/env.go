@@ -91,7 +91,10 @@ func reposAtEndpoint(dial func(string) zoekt.Streamer) func(context.Context, str
 func getIndexedDialer() backend.ZoektDialer {
 	indexedDialerOnce.Do(func() {
 		indexedDialer = backend.NewCachedZoektDialer(func(endpoint string) zoekt.Streamer {
-			return backend.NewCachedSearcher(conf.Get().ServiceConnections().ZoektListTTL, backend.ZoektDial(endpoint))
+			return backend.NewCachedSearcher(
+				conf.Get().ServiceConnections().ZoektListTTL,
+				backend.ZoektDialHTTP(endpoint),
+			)
 		})
 	})
 	return indexedDialer

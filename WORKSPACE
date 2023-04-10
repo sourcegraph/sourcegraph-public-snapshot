@@ -1,3 +1,8 @@
+local_repository(
+    name = "com_github_sourcegraph_zoekt",
+    path = "/Users/camdencheek/src/sourcegraph/zoekt",
+)
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
@@ -251,3 +256,5 @@ crates_repository(
 load("@crate_index//:defs.bzl", "crate_repositories")
 
 crate_repositories()
+
+

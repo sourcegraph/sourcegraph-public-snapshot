@@ -3,8 +3,10 @@ package backend
 import (
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/zoekt"
+	"github.com/sourcegraph/zoekt/grpc/v1"
 	"github.com/sourcegraph/zoekt/rpc"
 	zoektstream "github.com/sourcegraph/zoekt/stream"
 )
@@ -89,12 +91,31 @@ func (c *cachedStreamerCloser) Close() {
 
 // ZoektDial connects to a Searcher HTTP RPC server at address (host:port).
 func ZoektDial(endpoint string) zoekt.Streamer {
+	return &switchableZoektGRPCClient{
+		httpClient: ZoektDialHTTP(endpoint),
+		grpcClient: ZoektDialGRPC(endpoint),
+	}
+}
+
+// ZoektDialHTTP connects to a Searcher HTTP RPC server at address (host:port).
+func ZoektDialHTTP(endpoint string) zoekt.Streamer {
 	client := rpc.Client(endpoint)
 	streamClient := &zoektStream{
 		Searcher: client,
 		Client:   zoektstream.NewClient("http://"+endpoint, zoektHTTPClient),
 	}
 	return NewMeteredSearcher(endpoint, streamClient)
+}
+
+func ZoektDialGRPC(endpoint string) zoekt.Streamer {
+	conn, err := defaults.Dial(endpoint)
+	if err != nil {
+		panic("dial failure: " + err.Error())
+	}
+	return NewMeteredSearcher(endpoint, &zoektGRPCClient{
+		endpoint: endpoint,
+		client:   v1.NewWebserverServiceClient(conn),
+	})
 }
 
 type zoektStream struct {
