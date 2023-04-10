@@ -1249,6 +1249,7 @@ ts_project(
         "src/repo/repoHeaderActionButtons.tsx",
         "src/repo/repoRevisionContainerRoutes.tsx",
         "src/repo/repoRevisionSidebar/cody/RepoRevisionSidebarCody.tsx",
+        "src/repo/repoRevisionSidebar/cody/backend.tsx",
         "src/repo/settings/RepoSettingsArea.tsx",
         "src/repo/settings/RepoSettingsIndexPage.tsx",
         "src/repo/settings/RepoSettingsMirrorPage.tsx",

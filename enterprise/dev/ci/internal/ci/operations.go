@@ -914,7 +914,7 @@ func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) 
 				folder := app
 				if app == "blobstore2" {
 					// experiment: cmd/blobstore is a Go rewrite of docker-images/blobstore. While
-					// it is incomplete, we do not want cmd/blobstore/Dockerfile to get publishe
+					// it is incomplete, we do not want cmd/blobstore/Dockerfile to get published
 					// under the same name.
 					// https://github.com/sourcegraph/sourcegraph/issues/45594
 					// TODO(blobstore): remove this when making Go blobstore the default
