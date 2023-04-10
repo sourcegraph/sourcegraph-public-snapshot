@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "document_metadata.go",
         "locations_by_position.go",
+        "lsifstore_documents.go",
         "metadata_by_position.go",
         "observability.go",
         "scan.go",
@@ -20,6 +21,7 @@ go_library(
         "//enterprise/internal/codeintel/shared/ranges",
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/database/basestore",
+        "//internal/database/dbutil",
         "//internal/metrics",
         "//internal/observation",
         "//lib/codeintel/precise",

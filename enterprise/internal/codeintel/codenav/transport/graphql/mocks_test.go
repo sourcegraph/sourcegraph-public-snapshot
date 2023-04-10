@@ -202,6 +202,12 @@ type MockCodeNavService struct {
 	// GetStencilFunc is an instance of a mock function object controlling
 	// the behavior of the method GetStencil.
 	GetStencilFunc *CodeNavServiceGetStencilFunc
+	// SnapshotForDocumentFunc is an instance of a mock function object
+	// controlling the behavior of the method SnapshotForDocument.
+	SnapshotForDocumentFunc *CodeNavServiceSnapshotForDocumentFunc
+	// VisibleUploadsForPathFunc is an instance of a mock function object
+	// controlling the behavior of the method VisibleUploadsForPath.
+	VisibleUploadsForPathFunc *CodeNavServiceVisibleUploadsForPathFunc
 }
 
 // NewMockCodeNavService creates a new mock of the CodeNavService interface.
@@ -245,6 +251,16 @@ func NewMockCodeNavService() *MockCodeNavService {
 		},
 		GetStencilFunc: &CodeNavServiceGetStencilFunc{
 			defaultHook: func(context.Context, codenav.RequestArgs, codenav.RequestState) (r0 []shared1.Range, r1 error) {
+				return
+			},
+		},
+		SnapshotForDocumentFunc: &CodeNavServiceSnapshotForDocumentFunc{
+			defaultHook: func(context.Context, int, string, string, int) (r0 []shared1.SnapshotData, r1 error) {
+				return
+			},
+		},
+		VisibleUploadsForPathFunc: &CodeNavServiceVisibleUploadsForPathFunc{
+			defaultHook: func(context.Context, codenav.RequestState) (r0 []shared.Dump, r1 error) {
 				return
 			},
 		},
@@ -295,6 +311,16 @@ func NewStrictMockCodeNavService() *MockCodeNavService {
 				panic("unexpected invocation of MockCodeNavService.GetStencil")
 			},
 		},
+		SnapshotForDocumentFunc: &CodeNavServiceSnapshotForDocumentFunc{
+			defaultHook: func(context.Context, int, string, string, int) ([]shared1.SnapshotData, error) {
+				panic("unexpected invocation of MockCodeNavService.SnapshotForDocument")
+			},
+		},
+		VisibleUploadsForPathFunc: &CodeNavServiceVisibleUploadsForPathFunc{
+			defaultHook: func(context.Context, codenav.RequestState) ([]shared.Dump, error) {
+				panic("unexpected invocation of MockCodeNavService.VisibleUploadsForPath")
+			},
+		},
 	}
 }
 
@@ -326,6 +352,12 @@ func NewMockCodeNavServiceFrom(i CodeNavService) *MockCodeNavService {
 		},
 		GetStencilFunc: &CodeNavServiceGetStencilFunc{
 			defaultHook: i.GetStencil,
+		},
+		SnapshotForDocumentFunc: &CodeNavServiceSnapshotForDocumentFunc{
+			defaultHook: i.SnapshotForDocument,
+		},
+		VisibleUploadsForPathFunc: &CodeNavServiceVisibleUploadsForPathFunc{
+			defaultHook: i.VisibleUploadsForPath,
 		},
 	}
 }
@@ -1261,5 +1293,236 @@ func (c CodeNavServiceGetStencilFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c CodeNavServiceGetStencilFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeNavServiceSnapshotForDocumentFunc describes the behavior when the
+// SnapshotForDocument method of the parent MockCodeNavService instance is
+// invoked.
+type CodeNavServiceSnapshotForDocumentFunc struct {
+	defaultHook func(context.Context, int, string, string, int) ([]shared1.SnapshotData, error)
+	hooks       []func(context.Context, int, string, string, int) ([]shared1.SnapshotData, error)
+	history     []CodeNavServiceSnapshotForDocumentFuncCall
+	mutex       sync.Mutex
+}
+
+// SnapshotForDocument delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeNavService) SnapshotForDocument(v0 context.Context, v1 int, v2 string, v3 string, v4 int) ([]shared1.SnapshotData, error) {
+	r0, r1 := m.SnapshotForDocumentFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.SnapshotForDocumentFunc.appendCall(CodeNavServiceSnapshotForDocumentFuncCall{v0, v1, v2, v3, v4, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the SnapshotForDocument
+// method of the parent MockCodeNavService instance is invoked and the hook
+// queue is empty.
+func (f *CodeNavServiceSnapshotForDocumentFunc) SetDefaultHook(hook func(context.Context, int, string, string, int) ([]shared1.SnapshotData, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SnapshotForDocument method of the parent MockCodeNavService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeNavServiceSnapshotForDocumentFunc) PushHook(hook func(context.Context, int, string, string, int) ([]shared1.SnapshotData, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavServiceSnapshotForDocumentFunc) SetDefaultReturn(r0 []shared1.SnapshotData, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, string, int) ([]shared1.SnapshotData, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavServiceSnapshotForDocumentFunc) PushReturn(r0 []shared1.SnapshotData, r1 error) {
+	f.PushHook(func(context.Context, int, string, string, int) ([]shared1.SnapshotData, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeNavServiceSnapshotForDocumentFunc) nextHook() func(context.Context, int, string, string, int) ([]shared1.SnapshotData, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavServiceSnapshotForDocumentFunc) appendCall(r0 CodeNavServiceSnapshotForDocumentFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavServiceSnapshotForDocumentFuncCall
+// objects describing the invocations of this function.
+func (f *CodeNavServiceSnapshotForDocumentFunc) History() []CodeNavServiceSnapshotForDocumentFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavServiceSnapshotForDocumentFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavServiceSnapshotForDocumentFuncCall is an object that describes an
+// invocation of method SnapshotForDocument on an instance of
+// MockCodeNavService.
+type CodeNavServiceSnapshotForDocumentFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared1.SnapshotData
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavServiceSnapshotForDocumentFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavServiceSnapshotForDocumentFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeNavServiceVisibleUploadsForPathFunc describes the behavior when the
+// VisibleUploadsForPath method of the parent MockCodeNavService instance is
+// invoked.
+type CodeNavServiceVisibleUploadsForPathFunc struct {
+	defaultHook func(context.Context, codenav.RequestState) ([]shared.Dump, error)
+	hooks       []func(context.Context, codenav.RequestState) ([]shared.Dump, error)
+	history     []CodeNavServiceVisibleUploadsForPathFuncCall
+	mutex       sync.Mutex
+}
+
+// VisibleUploadsForPath delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockCodeNavService) VisibleUploadsForPath(v0 context.Context, v1 codenav.RequestState) ([]shared.Dump, error) {
+	r0, r1 := m.VisibleUploadsForPathFunc.nextHook()(v0, v1)
+	m.VisibleUploadsForPathFunc.appendCall(CodeNavServiceVisibleUploadsForPathFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// VisibleUploadsForPath method of the parent MockCodeNavService instance is
+// invoked and the hook queue is empty.
+func (f *CodeNavServiceVisibleUploadsForPathFunc) SetDefaultHook(hook func(context.Context, codenav.RequestState) ([]shared.Dump, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// VisibleUploadsForPath method of the parent MockCodeNavService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeNavServiceVisibleUploadsForPathFunc) PushHook(hook func(context.Context, codenav.RequestState) ([]shared.Dump, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavServiceVisibleUploadsForPathFunc) SetDefaultReturn(r0 []shared.Dump, r1 error) {
+	f.SetDefaultHook(func(context.Context, codenav.RequestState) ([]shared.Dump, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavServiceVisibleUploadsForPathFunc) PushReturn(r0 []shared.Dump, r1 error) {
+	f.PushHook(func(context.Context, codenav.RequestState) ([]shared.Dump, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeNavServiceVisibleUploadsForPathFunc) nextHook() func(context.Context, codenav.RequestState) ([]shared.Dump, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavServiceVisibleUploadsForPathFunc) appendCall(r0 CodeNavServiceVisibleUploadsForPathFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavServiceVisibleUploadsForPathFuncCall
+// objects describing the invocations of this function.
+func (f *CodeNavServiceVisibleUploadsForPathFunc) History() []CodeNavServiceVisibleUploadsForPathFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavServiceVisibleUploadsForPathFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavServiceVisibleUploadsForPathFuncCall is an object that describes
+// an invocation of method VisibleUploadsForPath on an instance of
+// MockCodeNavService.
+type CodeNavServiceVisibleUploadsForPathFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 codenav.RequestState
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.Dump
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavServiceVisibleUploadsForPathFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavServiceVisibleUploadsForPathFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
