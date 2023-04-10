@@ -15,7 +15,7 @@ const fileExtRipgrepParams = ['-Tmarkdown', '-Tyaml', '-Tjson', '-g', '!*.lock',
  * - A term is uniquely defined by its stem.
  * - We keep the originals around for detecting exact matches.
  * - The prefix is the greatest common prefix of the stem and all the originals.
- *   For example, if the original is "cody" and the stem is "codi", the prefix is "cod"
+ * For example, if the original is "cody" and the stem is "codi", the prefix is "cod"
  * - The count is the number of times the keyword appears in the document/query.
  */
 interface Term {
