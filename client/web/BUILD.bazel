@@ -602,6 +602,7 @@ ts_project(
         "src/enterprise/cody/api.ts",
         "src/enterprise/cody/icon.ts",
         "src/enterprise/cody/search/CodySearchPage.tsx",
+        "src/enterprise/cody/search/translateToQuery.ts",
         "src/enterprise/dotcom/productSubscriptions/AccountEmailAddresses.tsx",
         "src/enterprise/dotcom/productSubscriptions/AccountName.tsx",
         "src/enterprise/dotcom/productSubscriptions/ProductLicenseValidity.tsx",
