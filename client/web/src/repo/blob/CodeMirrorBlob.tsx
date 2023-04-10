@@ -47,7 +47,6 @@ import { pin, updatePin, selectOccurrence } from './codemirror/token-selection/c
 import { tokenSelectionExtension } from './codemirror/token-selection/extension'
 import { languageSupport } from './codemirror/token-selection/languageSupport'
 import { selectionFromLocation } from './codemirror/token-selection/selections'
-import { codyWidgetExtension } from './codemirror/tooltips/CodyTooltip'
 import { isValidLineRange } from './codemirror/utils'
 import { setBlobEditView } from './use-blob-store'
 
@@ -290,7 +289,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             }),
             scipSnapshot(blobInfo.snapshotData),
             codeFoldingExtension(),
-            codyWidgetExtension(),
             navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : tokenSelectionExtension(),
             syntaxHighlight.of(blobInfo),
             languageSupport.of(blobInfo),
