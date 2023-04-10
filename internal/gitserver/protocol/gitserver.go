@@ -177,7 +177,7 @@ func matchedStringFromProto(p *proto.CommitMatch_MatchedString) result.MatchedSt
 		ranges = append(ranges, rangeFromProto(rr))
 	}
 	return result.MatchedString{
-		Content:       p.Content,
+		Content:       p.GetContent(),
 		MatchedRanges: ranges,
 	}
 }
