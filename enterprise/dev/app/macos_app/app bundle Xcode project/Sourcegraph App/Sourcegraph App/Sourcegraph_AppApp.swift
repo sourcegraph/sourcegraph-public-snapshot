@@ -83,6 +83,7 @@ func appIsRunning() -> Bool {
     return appTask.isRunning && checkAppIsRunning()
 }
 
+// currently not used, but potentially useful for checking service status
 // https://stackoverflow.com/a/65162953
 //let port = UInt16(10000)
 //print(isPortOpen(port:port)

@@ -93,6 +93,14 @@ chmod 555 "${app_name}/Contents/Resources/sourcegraph" || exit 1
 # would probably be better to store it in Info.plist, but that might need `defaults`, requiring macOS
 printf '%s' "${VERSION}" >"${app_name}/Contents/Resources/version.txt"
 
+# set the version so that Sparkle updater can use it
+# relies on the app template having an Info.plist in XML format
+# and with the text `BUNDLE_VERSION` in the appropriate places,
+# which should be managed by `build_app_bundle_template.sh` in the Xcode project
+sed "s/BUNDLE_VERSION/${VERSION}/g" "${app_name}/Contents/Info.plist" >"${app_name}/Contents/Info.plist.2"
+grep "<string>${VERSION}</string>" "${app_name}/Contents/Info.plist.2" >/dev/null 2>&1 &&
+  mv "${app_name}/Contents/Info.plist.2" "${app_name}/Contents/Info.plist"
+
 # put the app in a place where it can be picked up
 # preserve the ability to run as part of the goreleaser process
 # by using the "signature" name template

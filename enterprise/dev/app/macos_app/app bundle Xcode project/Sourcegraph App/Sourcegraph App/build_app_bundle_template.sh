@@ -80,7 +80,6 @@ cp src "${app_name}/Contents/Resources/src" || {
     exit 1
 }
 
-
 [ -f "${PWD}/universal-ctags" ] || {
   curl -fsSLO "https://storage.googleapis.com/sourcegraph_app_macos_dependencies/universal-ctags-universal-${ctags_version}.tar.gz"
   tar -xvzf "universal-ctags-universal-${ctags_version}.tar.gz"
@@ -90,6 +89,17 @@ cp universal-ctags "${app_name}/Contents/Resources/universal-ctags" || {
     error "unable to add universal-ctags to the app bundle"
     exit 1
 }
+
+# ensure that the CFBundleVersion and CFBundleShortVersionString
+# are the static value BUNDLE_VERSION
+# and the plist is in XML format
+# so that programmatic bundle builds can update the version for Sparkle updater
+# without requiring property list tools
+defaults write "${PWD}/${app_name}/Contents/Info" CFBundleVersion BUNDLE_VERSION
+defaults write "${PWD}/${app_name}/Contents/Info" CFBundleShortVersionString BUNDLE_VERSION
+# using defaults will convert the plist into binary format; convert it back to XML
+defaults export "${PWD}/${app_name}/Contents/Info" - >Info.plist.xml && \
+    mv Info.plist.xml "${app_name}/Contents/Info.plist"
 
 tar -cvzf "${app_name}-template.tar.gz" "${app_name}" || {
     error "unable to archive the app bundle"
