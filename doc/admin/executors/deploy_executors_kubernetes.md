@@ -54,6 +54,14 @@ set on the Executor `Deployment` and will configure the `Job`s that it spawns.
 
 See other possible Environment Variables [here](./deploy_executors_binary.md#step-2-setup-environment-variables).
 
+### Firewall Rules
+
+The following are Firewall rules that are _highly recommended_ when running Executors on Kubernetes in a Cloud
+Environment.
+
+- Disable access to internal resources.
+- Disable access to `169.254.169.254` (AWS Instance Metadata Service).
+
 ### Example Configuration YAML
 
 See
