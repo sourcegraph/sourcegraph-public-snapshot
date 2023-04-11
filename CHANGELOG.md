@@ -17,9 +17,14 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
-- Fixed `src admin create` returning token to stderr instead of stdout.
-
 ### Removed
+
+## 5.0.3
+
+### Fixed
+
+- Fixed `src admin create` returning token to stderr instead of stdout. [963](https://github.com/sourcegraph/src-cli/pull/963)
+- Fixed `src validate install` failure with Sourcegraph v5.0.0. [964](https://github.com/sourcegraph/src-cli/pull/964)
 
 ## 5.0.2
 
