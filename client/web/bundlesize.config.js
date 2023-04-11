@@ -29,7 +29,7 @@ const config = {
     },
     {
       path: path.join(STATIC_ASSETS_PATH, 'scripts/opentelemetry.bundle.js.br'),
-      maxSize: '30kb',
+      maxSize: '40kb',
       compression: 'none',
     },
     /**

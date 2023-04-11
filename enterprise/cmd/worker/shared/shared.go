@@ -48,7 +48,6 @@ var additionalJobs = map[string]job.Job{
 	"codeintel-policies-repository-matcher":       codeintel.NewPoliciesRepositoryMatcherJob(),
 	"codeintel-autoindexing-summary-builder":      codeintel.NewAutoindexingSummaryBuilder(),
 	"codeintel-autoindexing-dependency-scheduler": codeintel.NewAutoindexingDependencySchedulerJob(),
-	"codeintel-autoindexing-janitor":              codeintel.NewAutoindexingJanitorJob(),
 	"codeintel-autoindexing-scheduler":            codeintel.NewAutoindexingSchedulerJob(),
 	"codeintel-commitgraph-updater":               codeintel.NewCommitGraphUpdaterJob(),
 	"codeintel-metrics-reporter":                  codeintel.NewMetricsReporterJob(),

@@ -197,3 +197,9 @@ If you would like to allow your Sourcegraph instance to control the creation and
 ### Environment variables for the `embeddings` service
 
 - `EMBEDDINGS_REPO_INDEX_CACHE_SIZE`: Number of repository embedding indexes to cache in memory (the default cache size is 5). Increasing the cache size will improve the search performance but require more memory resources.
+
+
+## Turning Cody off
+
+To turn Cody off, set `embeddings` and `completions` site-admin settings to `enabled:false` (or remove them altogether).
+
