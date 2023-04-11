@@ -1,4 +1,3 @@
-import { BotResponseMultiplexer } from '../chat/bot-response-multiplexer'
 import { RecipeContext } from '../chat/recipes/recipe'
 import { CodebaseContext } from '../codebase-context'
 import { ActiveTextEditor, ActiveTextEditorSelection, ActiveTextEditorVisibleContent, Editor } from '../editor'
@@ -85,6 +84,5 @@ export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
         intentDetector: args.intentDetector || defaultIntentDetector,
         codebaseContext:
             args.codebaseContext || new CodebaseContext('none', defaultEmbeddingsClient, defaultKeywordContextFetcher),
-        responseMultiplexer: args.responseMultiplexer || new BotResponseMultiplexer(),
     }
 }
