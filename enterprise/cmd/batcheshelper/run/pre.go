@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Pre TODO
+// Pre prepares the workspace for the Batch Change step.
 func Pre(
 	ctx context.Context,
 	logger *log.Logger,
@@ -29,47 +29,18 @@ func Pre(
 	previousResult execution.AfterStepResult,
 	workspaceFilesPath string,
 ) error {
-	wd, err := os.Getwd()
-	if err != nil {
-		return errors.Wrap(err, "getting working directory")
-	}
-
-	stepContext, err := getStepContext(executionInput, previousResult)
-	if err != nil {
-		return err
-	}
-
-	// Render the step.Env variables as templates.
 	// Resolve step.Env given the current environment.
 	step := executionInput.Steps[stepIdx]
 	stepEnv, err := step.Env.Resolve(os.Environ())
 	if err != nil {
 		return errors.Wrap(err, "failed to resolve step env")
 	}
-	env, err := template.RenderStepMap(stepEnv, &stepContext)
+	stepContext, err := getStepContext(executionInput, previousResult)
 	if err != nil {
-		return errors.Wrap(err, "failed to render step env")
-	}
-
-	if err = logger.WriteEvent(batcheslib.LogEventOperationTaskStep, batcheslib.LogEventStatusStarted, &batcheslib.TaskStepMetadata{
-		Step: stepIdx + 1,
-		Env:  env,
-	}); err != nil {
 		return err
 	}
 
-	envPreamble := ""
-	for k, v := range env {
-		envPreamble += shellquote.Join("export", fmt.Sprintf("%s=%s", k, v))
-		envPreamble += "\n"
-	}
-
-	// Render the step.Run template.
-	var runScript bytes.Buffer
-	if err = template.RenderStepTemplate("step-run", step.Run, &runScript, &stepContext); err != nil {
-		return errors.Wrap(err, "failed to render step.run")
-	}
-
+	// Configures copying of the files to be used by the step.
 	var fileMountsPreamble string
 
 	// Check if the step needs to be skipped.
@@ -77,13 +48,17 @@ func Pre(
 	if err != nil {
 		return errors.Wrap(err, "failed to evaluate step condition")
 	}
+
 	if !cond {
+		// Write the skip event to the log.
 		if err = logger.WriteEvent(batcheslib.LogEventOperationTaskStepSkipped, batcheslib.LogEventStatusProgress, &batcheslib.TaskStepMetadata{
 			Step: stepIdx + 1,
 		}); err != nil {
 			return err
 		}
 		fmt.Println("Skipping step")
+
+		// Write the step result file with the skipped flag set.
 		stepResult := execution.AfterStepResult{
 			Version: 2,
 			Skipped: true,
@@ -95,12 +70,14 @@ func Pre(
 		if err = os.WriteFile(fmt.Sprintf("step%d.json", stepIdx), stepResultBytes, os.ModePerm); err != nil {
 			return errors.Wrap(err, "failed to write step result file")
 		}
-		// Step is skipped.
-		// TODO: This should somehow communicate to the executor "don't run this step".
-		// For now, we simply don't run the script but that will require to still pull
-		// the image which is a performance annoyance.
+
+		// Bail out early.
 		os.Exit(0)
 	} else {
+		wd, err := os.Getwd()
+		if err != nil {
+			return errors.Wrap(err, "getting working directory")
+		}
 		tmpFileDir := filepath.Join(wd, fmt.Sprintf("step%dfiles", stepIdx))
 		if err = os.Mkdir(tmpFileDir, os.ModePerm); err != nil {
 			return errors.Wrap(err, "failed to create directory for file mounts")
@@ -126,6 +103,33 @@ func Pre(
 			fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("cp", "-r", workspaceFilePath, mount.Mountpoint))
 			fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("chmod", "-R", "+x", mount.Mountpoint))
 		}
+	}
+
+	// Render the step.Env template.
+	env, err := template.RenderStepMap(stepEnv, &stepContext)
+	if err != nil {
+		return errors.Wrap(err, "failed to render step env")
+	}
+
+	// Write the event to the log. Ensure environment variables will be rendered.
+	if err = logger.WriteEvent(batcheslib.LogEventOperationTaskStep, batcheslib.LogEventStatusStarted, &batcheslib.TaskStepMetadata{
+		Step: stepIdx + 1,
+		Env:  env,
+	}); err != nil {
+		return err
+	}
+
+	// Render the step.Run template.
+	var runScript bytes.Buffer
+	if err = template.RenderStepTemplate("step-run", step.Run, &runScript, &stepContext); err != nil {
+		return errors.Wrap(err, "failed to render step.run")
+	}
+
+	// Create the environment preamble for the step script.
+	envPreamble := ""
+	for k, v := range env {
+		envPreamble += shellquote.Join("export", fmt.Sprintf("%s=%s", k, v))
+		envPreamble += "\n"
 	}
 
 	stepScriptPath := fmt.Sprintf("step%d.sh", stepIdx)

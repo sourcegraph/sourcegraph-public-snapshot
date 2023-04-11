@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Post TODO
+// Post processes the workspace after the Batch Change step.
 func Post(
 	ctx context.Context,
 	logger *log.Logger,
@@ -26,18 +26,18 @@ func Post(
 	previousResult execution.AfterStepResult,
 	workspaceFilesPath string,
 ) error {
-	step := executionInput.Steps[stepIdx]
+	// Sometimes the files belong to different users. Mark the repository directory as safe.
+	if _, err := runGitCmd(ctx, "config", "--global", "--add", "safe.directory", "/data/repository"); err != nil {
+		return errors.Wrap(err, "failed to mark repository directory as safe")
+	}
 
 	// Generate the diff.
-	if _, err := runGitCmd(ctx, "git", "config", "--global", "--add", "safe.directory", "/data/repository"); err != nil {
-		return errors.Wrap(err, "git config --global --add safe.directory failed")
+	if _, err := runGitCmd(ctx, "add", "--all"); err != nil {
+		return errors.Wrap(err, "failed to add all files to git")
 	}
-	if _, err := runGitCmd(ctx, "git", "add", "--all"); err != nil {
-		return errors.Wrap(err, "git add --all failed")
-	}
-	diff, err := runGitCmd(ctx, "git", "diff", "--cached", "--no-prefix", "--binary")
+	diff, err := runGitCmd(ctx, "diff", "--cached", "--no-prefix", "--binary")
 	if err != nil {
-		return errors.Wrap(err, "git diff --cached --no-prefix --binary failed")
+		return errors.Wrap(err, "failed to generate diff")
 	}
 
 	// Read the stdout of the current step.
@@ -45,6 +45,7 @@ func Post(
 	if err != nil {
 		return errors.Wrap(err, "failed to read stdout file")
 	}
+
 	// Read the stderr of the current step.
 	stderr, err := os.ReadFile(fmt.Sprintf("stderr%d.log", stepIdx))
 	if err != nil {
@@ -68,9 +69,6 @@ func Post(
 		return errors.Wrap(err, "failed to get changes in diff")
 	}
 	outputs := previousResult.Outputs
-	if outputs == nil {
-		outputs = make(map[string]any)
-	}
 	stepContext := template.StepContext{
 		BatchChange: executionInput.BatchChangeAttributes,
 		Repository: template.Repository{
@@ -88,6 +86,7 @@ func Post(
 	}
 
 	// Render and evaluate outputs.
+	step := executionInput.Steps[stepIdx]
 	if err = batcheslib.SetOutputs(step.Outputs, outputs, &stepContext); err != nil {
 		return errors.Wrap(err, "setting outputs")
 	}
@@ -104,6 +103,7 @@ func Post(
 		return errors.Wrap(err, "failed to write step result file")
 	}
 
+	// Build and write the cache key
 	key := cache.KeyForWorkspace(
 		&executionInput.BatchChangeAttributes,
 		batcheslib.Repository{
@@ -139,7 +139,7 @@ func Post(
 }
 
 func runGitCmd(ctx context.Context, args ...string) ([]byte, error) {
-	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Dir = "repository"
 
 	return cmd.Output()
