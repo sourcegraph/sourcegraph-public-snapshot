@@ -279,7 +279,7 @@ interface Alert {
 // Same key values from internal/search/alert.go
 export type AnnotationName = 'ResultCount'
 
-interface ProposedQuery {
+export interface ProposedQuery {
     description?: string | null
     annotations?: { name: AnnotationName; value: string }[]
     query: string

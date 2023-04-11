@@ -45,7 +45,7 @@ func (r *indexStepsResolver) PreIndex() []resolverstubs.PreIndexStepResolver {
 			resolvers = append(resolvers, newPreIndexStepResolver(r.siteAdminChecker, step, &entry))
 			// This is here for backwards compatibility for records that were created before
 			// named keys for steps existed.
-		} else if entry, ok := r.findExecutionLogEntry(regexp.MustCompile(fmt.Sprintf("step\\.(docker|kuberntes)\\.%d", i))); ok {
+		} else if entry, ok := r.findExecutionLogEntry(regexp.MustCompile(fmt.Sprintf("step\\.(docker|kubernetes)\\.%d", i))); ok {
 			resolvers = append(resolvers, newPreIndexStepResolver(r.siteAdminChecker, step, &entry))
 		} else {
 			resolvers = append(resolvers, newPreIndexStepResolver(r.siteAdminChecker, step, nil))
@@ -62,7 +62,7 @@ func (r *indexStepsResolver) Index() resolverstubs.IndexStepResolver {
 
 	// This is here for backwards compatibility for records that were created before
 	// named keys for steps existed.
-	logKeyRegex := regexp.MustCompile(fmt.Sprintf("^step\\.(docker|kuberentes)\\.%d", len(r.index.DockerSteps)))
+	logKeyRegex := regexp.MustCompile(fmt.Sprintf("^step\\.(docker|kubernetes)\\.%d", len(r.index.DockerSteps)))
 	if entry, ok := r.findExecutionLogEntry(logKeyRegex); ok {
 		return newIndexStepResolver(r.siteAdminChecker, r.index, &entry)
 	}
