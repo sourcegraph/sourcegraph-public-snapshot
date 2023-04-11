@@ -5,6 +5,8 @@ client/phabricator/scripts/loader.js
 client/browser/build
 **/package.json
 **/coverage
+# Prettier complains incorrectly about syntax errors.
+**/*.sql
 internal/database/schema*.md
 internal/database/schema*.json
 internal/database/migration/shared/data/**/*.json
