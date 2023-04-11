@@ -62,6 +62,18 @@ mkdir -p "${sgdir}"
 # and the process will be able to find it - it looks for './ui'
 cd "${DIR}" || exit 1
 
+# try to find Docker
+# macOS sanitizes the PATH; see if it's still available, and if not, try a couple of known locations
+# TODO see if we can find the user's ksh and/or bash profile scripts and source those
+command -v docker 2>/dev/null 1>&2 || {
+  for d in /usr/local/bin /opt/homebrew/bin; do
+    [ -x "${d}/docker" ] && {
+      export PATH="${d}/docker:${PATH}"
+      break
+    }
+  done
+}
+
 # make sure all of the binaries in here are available on PATH
 export PATH="${RESOURCES}:${PATH}"
 
