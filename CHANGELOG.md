@@ -21,6 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Documentation for GitHub fine-grained access tokens. [#50274](https://github.com/sourcegraph/sourcegraph/pull/50274)
 - Code Insight dashboards retain size and order of the cards. [#50301](https://github.com/sourcegraph/sourcegraph/pull/50301)
 - The LLM completions endpoint is now exposed through a GraphQL query in addition to the streaming endpoint [#50455](https://github.com/sourcegraph/sourcegraph/pull/50455)
+- SCIM user provisioning support for Deactivate/Reactivation of users. [#49961](https://github.com/sourcegraph/sourcegraph/issues/49961)
 
 ### Changed
 
