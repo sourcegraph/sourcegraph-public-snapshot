@@ -29,7 +29,16 @@ module.exports = api => {
     presets: [
       // Can't put this in plugins because it needs to run as the last plugin.
       ...(instrument ? [{ plugins: [['babel-plugin-istanbul', { cwd: path.resolve(__dirname) }]] }] : []),
-      '@babel/preset-env',
+      [
+        '@babel/preset-env',
+        {
+          targets: {
+            // We only run jest tests in node. All the browser related transformations
+            // are already completed on the previous transpilation step.
+            node: '16',
+          },
+        },
+      ],
     ],
   }
 }
