@@ -182,7 +182,10 @@ export class CodeIntelTooltip implements Tooltip {
 // Returns true if this event is "regular", meaning the user is not holding down
 // modifier keys or clicking with a non-main button.
 function isRegularEvent(event: MouseEvent<HTMLElement> | KeyboardEvent<HTMLElement>): boolean {
-    const mouseEvent = event as MouseEvent
-    const isMainButton = mouseEvent?.button === 0 || mouseEvent?.button === undefined
-    return isMainButton && !event.metaKey && !event.shiftKey && !event.ctrlKey
+    return (
+        ('button' in event ? event.button === MOUSE_MAIN_BUTTON : true) &&
+        !event.metaKey &&
+        !event.shiftKey &&
+        !event.ctrlKey
+    )
 }
