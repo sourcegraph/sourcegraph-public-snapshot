@@ -195,6 +195,15 @@ js_library(
     ],
 )
 
+js_library(
+    name = "graphql_schema_config",
+    srcs = [
+        "graphql-schema-linter.config.js",
+        ".graphqlrc.yml",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 # Go
 
 # nogo config
@@ -218,5 +227,4 @@ nogo(
 
 exports_files([
     "go.mod",
-    "graphql-schema-linter.config.js",
 ])
