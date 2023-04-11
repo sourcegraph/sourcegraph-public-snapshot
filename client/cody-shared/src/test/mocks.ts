@@ -61,6 +61,10 @@ export class MockEditor implements Editor {
         return this.mocks.getActiveTextEditorVisibleContent?.() ?? null
     }
 
+    public replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
+        return this.mocks.replaceSelection?.(fileName, selectedText, replacement) ?? Promise.resolve()
+    }
+
     public showQuickPick(labels: string[]): Promise<string | undefined> {
         return this.mocks.showQuickPick?.(labels) ?? Promise.resolve(undefined)
     }

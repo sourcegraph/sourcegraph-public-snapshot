@@ -70,6 +70,9 @@ export async function createClient({
         getWorkspaceRootPath() {
             return null
         },
+        async replaceSelection(_fileName, _selectedText, _replacement) {
+            return Promise.reject()
+        },
         async showQuickPick(labels) {
             return window.prompt(`Choose: ${labels.join(', ')}`, labels[0]) || undefined
         },

@@ -4,6 +4,7 @@
 export interface BotResponseSubscriber {
     /**
      * Processes incremental content from the bot. This may be called multiple times during a turn.
+     *
      * @param content the incremental text from the bot that was addressed to the subscriber
      */
     onResponse(content: string): Promise<void>
@@ -49,6 +50,7 @@ export class BufferedBotResponseSubscriber implements BotResponseSubscriber {
  *
  * For example, `splitAt('banana!', 2) => ['ba', 'nana!']`
  * but `splitAt('banana!', 2, 4) => ['ba', 'na!']`
+ *
  * @param str the string to split.
  * @param startIndex the index to break the left substring from the rest.
  * @param endIndex the index to break the right substring from the rest, for
@@ -141,6 +143,8 @@ export class BotResponseMultiplexer {
      * @param response the text of the next incremental response from the bot.
      */
     public async publish(response: string): Promise<void> {
+        console.log(response, [...this.subs_.keys()])
+
         // This is basically a loose parser of an XML-like language which forwards
         // incremental content to subscribers which handle specific tags. The parser
         // is forgiving if tags are not closed in the right order.

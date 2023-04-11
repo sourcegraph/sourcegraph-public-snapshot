@@ -102,6 +102,10 @@
         "title": "Ask Cody: Improve Variable Names"
       },
       {
+        "command": "cody.recipe.replace",
+        "title": "Ask Cody: Replace Instructions in Selection"
+      },
+      {
         "command": "cody.set-access-token",
         "title": "Cody: Set Access Token"
       },
@@ -155,6 +159,10 @@
         },
         {
           "command": "cody.recipe.git-history",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.recipe.replace",
           "when": "cody.activated"
         },
         {
