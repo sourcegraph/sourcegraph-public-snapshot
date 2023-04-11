@@ -24,7 +24,7 @@ Run the following command to build the image.
 
 ```bash
 # Build the image in enterprise/cmd/executor-kubernetes
-IMAGE=executor-kubernetes ../../executor-kuberentes/build.sh
+IMAGE=executor-kubernetes ../../executor-kubernetes/build.sh
 ```
 
 ## Secrets
