@@ -39,7 +39,14 @@ There are two modes that this script can run in: `pre` and `post`.
 
 ### pre
 
-The `pre` mode ...
+The `pre` mode prepares the workspace for the Batch Change step to be executed. This includes,
+
+- Setting up Environment Variables
+- Evaluating step condition
+- Writing File Mounts
+- Writing Workspace Files
+
+#### Example Command
 
 ```shell
 batcheshelper pre 0
@@ -47,7 +54,13 @@ batcheshelper pre 0
 
 ### post
 
-The `post` mode ...
+The `post` mode determines the changes that were made to the workspace by the Batch Change step. The mode will,
+
+- Generate a `git` diff
+- Write the Batch Change step logs to a result file
+- Generate a Cache Key
+
+#### Example Command
 
 ```shell
 batcheshelper pre 0
