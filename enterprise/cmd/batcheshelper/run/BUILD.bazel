@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "run",
@@ -17,5 +17,13 @@ go_library(
         "//lib/batches/template",
         "//lib/errors",
         "@com_github_kballard_go_shellquote//:go-shellquote",
+    ],
+)
+
+go_test(
+    name = "run_test",
+    srcs = [
+        "post_test.go",
+        "pre_test.go",
     ],
 )
