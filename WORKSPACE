@@ -268,10 +268,10 @@ rules_format_dependencies()
 # If you didn't already register a toolchain providing nodejs, do that:
 load("@rules_nodejs//nodejs:repositories.bzl", "DEFAULT_NODE_VERSION", "nodejs_register_toolchains")
 
-nodejs_register_toolchains(
-    name = "node",
-    node_version = DEFAULT_NODE_VERSION,
-)
+# nodejs_register_toolchains(
+#     name = "node",
+#     node_version = DEFAULT_NODE_VERSION,
+# )
 
 load("@aspect_rules_format//format:dependencies.bzl", "parse_dependencies")
 
