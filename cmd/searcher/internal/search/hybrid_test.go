@@ -118,7 +118,7 @@ Hello world example in go`, typeFile},
 		MaxTotalPathsLength: 100_000,
 
 		Store:   s,
-		Indexed: backend.ZoektDialHTTP(zoektURL),
+		Indexed: backend.ZoektDial(zoektURL),
 		Log:     logtest.Scoped(t),
 	})
 	defer ts.Close()

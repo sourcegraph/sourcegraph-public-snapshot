@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"io"
 
 	"github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/zoekt"
@@ -110,7 +111,7 @@ func (z *zoektGRPCClient) Close()         {}
 func (z *zoektGRPCClient) String() string { return z.endpoint }
 
 func convertError(err error) error {
-	if err == nil {
+	if err == nil || err == io.EOF {
 		return nil
 	}
 

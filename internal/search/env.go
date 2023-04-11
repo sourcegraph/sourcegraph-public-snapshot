@@ -93,7 +93,7 @@ func getIndexedDialer() backend.ZoektDialer {
 		indexedDialer = backend.NewCachedZoektDialer(func(endpoint string) zoekt.Streamer {
 			return backend.NewCachedSearcher(
 				conf.Get().ServiceConnections().ZoektListTTL,
-				backend.ZoektDialHTTP(endpoint),
+				backend.ZoektDial(endpoint),
 			)
 		})
 	})
