@@ -230,12 +230,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             return
         }
 
-        const interaction = await recipe.getInteraction(
-            humanChatInput,
-            this.editor,
-            this.intentDetector,
-            this.codebaseContext
-        )
+        const interaction = await recipe.getInteraction(humanChatInput, {
+            editor: this.editor,
+            intentDetector: this.intentDetector,
+            codebaseContext: this.codebaseContext,
+            responseMultiplexer: null,
+        })
         if (!interaction) {
             return
         }
