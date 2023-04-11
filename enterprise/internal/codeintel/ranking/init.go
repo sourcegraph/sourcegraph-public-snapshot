@@ -2,6 +2,10 @@ package ranking
 
 import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/background"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/background/exporter"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/background/janitor"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/background/mapper"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/background/reducer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
@@ -24,85 +28,43 @@ func NewService(
 	)
 }
 
+var (
+	ExporterConfigInst = &exporter.Config{}
+	MapperConfigInst   = &mapper.Config{}
+	ReducerConfigInst  = &reducer.Config{}
+	JanitorConfigInst  = &janitor.Config{}
+)
+
 func NewSymbolExporter(observationCtx *observation.Context, rankingService *Service) goroutine.BackgroundRoutine {
 	return background.NewSymbolExporter(
-		observationCtx,
+		scopedContext("exporter", observationCtx),
 		rankingService.store,
 		rankingService.lsifstore,
-		ConfigInst.SymbolExporterInterval,
-		ConfigInst.SymbolExporterReadBatchSize,
-		ConfigInst.SymbolExporterWriteBatchSize,
+		ExporterConfigInst,
 	)
 }
 
-func NewSymbolJanitor(observationCtx *observation.Context, rankingService *Service) []goroutine.BackgroundRoutine {
-	return []goroutine.BackgroundRoutine{
-		background.NewSymbolDefinitionsJanitor(
-			observationCtx,
-			rankingService.store,
-			ConfigInst.SymbolExporterInterval,
-		),
-		background.NewSymbolReferencesJanitor(
-			observationCtx,
-			rankingService.store,
-			ConfigInst.SymbolExporterInterval,
-		),
-		background.NewSymbolInitialPathsJanitor(
-			observationCtx,
-			rankingService.store,
-			ConfigInst.SymbolExporterInterval,
-		),
-		background.NewAbandonedDefinitionsJanitor(
-			observationCtx,
-			rankingService.store,
-			ConfigInst.SymbolExporterInterval,
-		),
-		background.NewAbandonedReferencesJanitor(
-			observationCtx,
-			rankingService.store,
-			ConfigInst.SymbolExporterInterval,
-		),
-		background.NewAbandonedInitialCountsJanitor(
-			observationCtx,
-			rankingService.store,
-			ConfigInst.SymbolExporterInterval,
-		),
-		background.NewRankCountsJanitor(
-			observationCtx,
-			rankingService.store,
-			ConfigInst.SymbolExporterInterval,
-		),
-		background.NewRankJanitor(
-			observationCtx,
-			rankingService.store,
-			ConfigInst.SymbolExporterInterval,
-		),
-	}
-}
-
 func NewMapper(observationCtx *observation.Context, rankingService *Service) []goroutine.BackgroundRoutine {
-	return []goroutine.BackgroundRoutine{
-		background.NewMapper(
-			observationCtx,
-			rankingService.store,
-			ConfigInst.SymbolExporterInterval,
-			ConfigInst.MapperBatchSize,
-		),
-		background.NewSeedMapper(
-			observationCtx,
-			rankingService.store,
-			ConfigInst.SymbolExporterInterval,
-			ConfigInst.MapperBatchSize,
-		),
-	}
+	return background.NewMapper(
+		scopedContext("mapper", observationCtx),
+		rankingService.store,
+		MapperConfigInst,
+	)
 }
 
 func NewReducer(observationCtx *observation.Context, rankingService *Service) goroutine.BackgroundRoutine {
 	return background.NewReducer(
-		observationCtx,
+		scopedContext("reducer", observationCtx),
 		rankingService.store,
-		ConfigInst.SymbolExporterInterval,
-		ConfigInst.ReducerBatchSize,
+		ReducerConfigInst,
+	)
+}
+
+func NewSymbolJanitor(observationCtx *observation.Context, rankingService *Service) []goroutine.BackgroundRoutine {
+	return background.NewSymbolJanitor(
+		scopedContext("janitor", observationCtx),
+		rankingService.store,
+		JanitorConfigInst,
 	)
 }
 
