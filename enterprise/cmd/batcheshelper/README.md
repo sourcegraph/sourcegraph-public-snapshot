@@ -20,10 +20,10 @@ OPTIONS:
 
 ### Arguments
 
-| Argument | Place  | Description                       | Example Value         |
-|----------|--------|-----------------------------------|-----------------------|
-| Mode     | First  | The mode to run the script in.    | `pre` or `post`       |
-| Step     | Second | The step that is being processed. | `0`, `1`, `5`, etc... |
+| Argument | Placement | Description                       | Example Value         |
+|----------|-----------|-----------------------------------|-----------------------|
+| Mode     | First     | The mode to run the script in.    | `pre` or `post`       |
+| Step     | Second    | The step that is being processed. | `0`, `1`, `2`, etc... |
 
 ### Options
 
