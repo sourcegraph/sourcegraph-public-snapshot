@@ -136,13 +136,12 @@ func (c *Client) CreateMergeRequest(ctx context.Context, project *Project, opts 
 		if code == http.StatusConflict {
 			return nil, ErrMergeRequestAlreadyExists
 		}
-		errcode.MaybeMakeNonRetryable(code, err)
 
 		if aerr := c.convertToArchivedError(ctx, err, project); aerr != nil {
 			return nil, aerr
 		}
 
-		return nil, errors.Wrap(err, "sending request to create a merge request")
+		return nil, errors.Wrap(errcode.MaybeMakeNonRetryable(code, err), "sending request to create a merge request")
 	}
 
 	return resp, nil

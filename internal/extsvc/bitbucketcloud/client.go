@@ -234,7 +234,7 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) (code in
 	defer ht.Finish()
 
 	if err = c.rateLimit.Wait(ctx); err != nil {
-		return err
+		return code, err
 	}
 
 	// Because we have no external rate limiting data for Bitbucket Cloud, we do an exponential

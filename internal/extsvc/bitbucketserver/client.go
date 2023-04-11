@@ -596,9 +596,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 				Existing: pr,
 			}
 		}
-
-		errcode.MaybeMakeNonRetryable(code, err)
-		return err
+		return errcode.MaybeMakeNonRetryable(code, err)
 	}
 	return nil
 }
