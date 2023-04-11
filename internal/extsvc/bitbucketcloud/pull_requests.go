@@ -44,10 +44,7 @@ func (c *client) CreatePullRequest(ctx context.Context, repo *Repo, input PullRe
 	var pr PullRequest
 	if code, err := c.do(ctx, req, &pr); err != nil {
 		return nil, errors.Wrap(err, "sending request")
-
-		if code <= 400 && code < 200 {
-			return nil, errcode.MakeNonRetryable(err)
-		}
+		errcode.MaybeMakeNonRetryable(code, err)
 	}
 	return &pr, nil
 }

@@ -597,9 +597,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 			}
 		}
 
-		if code >= 400 || code < 200 {
-			return errcode.MakeNonRetryable(err)
-		}
+		errcode.MaybeMakeNonRetryable(code, err)
 		return err
 	}
 	return nil
