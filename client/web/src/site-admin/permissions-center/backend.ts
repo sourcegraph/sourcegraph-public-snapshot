@@ -124,3 +124,17 @@ export const CANCEL_PERMISSIONS_SYNC_JOB = gql`
         cancelPermissionsSyncJob(job: $job)
     }
 `
+
+export const PERMISSIONS_SYNC_JOBS_STATS = gql`
+    query PermissionsSyncJobsStats {
+        permissionsSyncingStats {
+            queueSize
+            usersWithLatestJobFailing
+            reposWithLatestJobFailing
+            usersWithNoPermissions
+            reposWithNoPermissions
+            usersWithStalePermissions
+            reposWithStalePermissions
+        }
+    }
+`

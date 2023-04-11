@@ -9,7 +9,7 @@ import { capitalize, noop } from 'lodash'
 import { animated, useSpring } from 'react-spring'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { useMutation } from '@sourcegraph/http-client'
+import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { convertREMToPX } from '@sourcegraph/shared/src/components/utils/size'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -51,13 +51,17 @@ import {
     ScheduleRepoPermissionsSyncVariables,
     ScheduleUserPermissionsSyncResult,
     ScheduleUserPermissionsSyncVariables,
+    PermissionsSyncJobsStatsResult,
+    PermissionsSyncJobsStatsVariables,
 } from '../../graphql-operations'
 import { useURLSyncedState } from '../../hooks'
+import { ValueLegendItem } from '../analytics/components/ValueLegendList'
 import { IColumn, Table } from '../UserManagement/components/Table'
 
 import {
     CANCEL_PERMISSIONS_SYNC_JOB,
     PERMISSIONS_SYNC_JOBS_QUERY,
+    PERMISSIONS_SYNC_JOBS_STATS,
     TRIGGER_REPO_SYNC,
     TRIGGER_USER_SYNC,
 } from './backend'
@@ -114,6 +118,10 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
     const [showModal, setShowModal] = useState<boolean>(false)
     const [selectedJob, setSelectedJob] = useState<PermissionsSyncJob | undefined>(undefined)
 
+    const { data } = useQuery<PermissionsSyncJobsStatsResult, PermissionsSyncJobsStatsVariables>(
+        PERMISSIONS_SYNC_JOBS_STATS,
+        {}
+    )
     const { connection, loading, startPolling, stopPolling, error, variables, ...paginationProps } =
         usePageSwitcherPagination<PermissionsSyncJobsResult, PermissionsSyncJobsVariables, PermissionsSyncJob>({
             query: PERMISSIONS_SYNC_JOBS_QUERY,
@@ -302,9 +310,66 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 className={classNames(styles.pageHeader, 'mb-3')}
             />
             {showModal && selectedJob && renderModal(selectedJob, () => setShowModal(false))}
+            <Container className="mb-1">
+                {data && (
+                    <div className={styles.statsBox}>
+                        <div className="d-flex">
+                            <ValueLegendItem
+                                value={data.permissionsSyncingStats?.queueSize}
+                                className={classNames(styles.stat)}
+                                description="Queued"
+                                color="var(--body-color)"
+                                tooltip="The number of permissions sync jobs in the queue."
+                            />
+                            <ValueLegendItem
+                                value={data.permissionsSyncingStats?.usersWithLatestJobFailing}
+                                className={classNames(styles.stat)}
+                                description="Failing users"
+                                color="var(--body-color)"
+                                tooltip="The number of users with latest permissions sync job failing."
+                            />
+                            <ValueLegendItem
+                                value={data.permissionsSyncingStats?.usersWithNoPermissions}
+                                className={classNames(styles.stat)}
+                                description="No perms users"
+                                color="var(--body-color)"
+                                tooltip="The number of users with no permissions."
+                            />
+                            <ValueLegendItem
+                                value={data.permissionsSyncingStats?.usersWithStalePermissions}
+                                className={classNames(styles.stat)}
+                                description="Outdated users"
+                                color="var(--body-color)"
+                                tooltip="The number of users with old permissions."
+                            />
+                            <ValueLegendItem
+                                value={data.permissionsSyncingStats?.reposWithLatestJobFailing}
+                                className={classNames(styles.stat)}
+                                description="Failing repos"
+                                color="var(--body-color)"
+                                tooltip="The number of repos with latest permissions sync job failing."
+                            />
+                            <ValueLegendItem
+                                value={data.permissionsSyncingStats?.reposWithNoPermissions}
+                                className={classNames(styles.stat)}
+                                description="No perms repos"
+                                color="var(--body-color)"
+                                tooltip="The number of repos with no permissions."
+                            />
+                            <ValueLegendItem
+                                value={data.permissionsSyncingStats?.reposWithStalePermissions}
+                                className={classNames(styles.stat)}
+                                description="Outdated repos"
+                                color="var(--body-color)"
+                                tooltip="The number of repos with old permissions."
+                            />
+                        </div>
+                    </div>
+                )}
+            </Container>
             <Container>
                 {error && <ConnectionError errors={[error.message]} />}
-                {!connection && <ConnectionLoading />}
+                {!connection && !error && <ConnectionLoading />}
                 {connection?.nodes && (
                     <div className={styles.filtersGrid}>
                         <PermissionsSyncJobReasonGroupPicker value={filters.reason} onChange={setReason} />
