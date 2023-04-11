@@ -7,11 +7,13 @@ Sourcegraph is currently migrating to Bazel as its build system and this page is
 - 2023-04-03 Bazel steps are required to pass on all PR builds.
   - Run `bazel run :update-gazelle-repos` if you changed the `go.mod`.
   - Run `bazel configure` after making all your changes in the PR and commit the updated/added `BUILD.bazel`
-  - Add `[no-bazel]` in your commit description if you want to bypass Bazel.
+  - Add `[no-bazel]` in your commit description if you want to bypass Bazel. 
+    - ⚠️  see [what to do after using `[no-bazel]`](#i-just-used-no-bazel-to-merge-my-pr)
 - 2023-04-06 Bazel steps are required to pass on main.
   - Run `bazel run :update-gazelle-repos` if you changed the `go.mod`.
   - Run `bazel configure` after making all your changes in the PR and commit the updated/added `BUILD.bazel`
   - Add `[no-bazel]` in your commit description if you want to bypass Bazel.
+    - ⚠️  see [what to do after using `[no-bazel]`](#i-just-used-no-bazel-to-merge-my-pr)
 - 2023-04-10 You cannot opt out of Bazel anymore
 
 The above timeline affects the following CI jobs:
@@ -212,6 +214,12 @@ So when a change is detected, `iBazel` will build the affected target and it wil
 ## FAQ
 
 ### General
+
+#### I just used `[no-bazel]` to merge my PR 
+
+While using `[no-bazel]` will enable you to get your pull request merged, the subsequent builds will be with Bazel unless they also have that flag. 
+
+Therefore you need to follow-up quickly with a fix to ensure `main` is not broken. 
 
 #### The analysis cache is being busted because of `--action_env`
 

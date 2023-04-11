@@ -1,14 +1,17 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
+import { mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Alert, Form, Input, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Alert, Form, Input, LoadingSpinner, Text, Badge, Link, Tooltip, Icon } from '@sourcegraph/wildcard'
 
+import { CodyIcon } from '../../../cody/CodyIcon'
 import { BrandLogo } from '../../../components/branding/BrandLogo'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { useURLSyncedString } from '../../../hooks/useUrlSyncedString'
@@ -19,8 +22,14 @@ import { translateToQuery } from './translateToQuery'
 import searchPageStyles from '../../../storm/pages/SearchPage/SearchPageContent.module.scss'
 import styles from './CodySearchPage.module.scss'
 
-export const CodySearchPage: React.FunctionComponent<{ authenticatedUser: AuthenticatedUser | null }> = ({
+interface CodeSearchPageProps {
+    authenticatedUser: AuthenticatedUser | null
+    telemetryService: TelemetryService
+}
+
+export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({
     authenticatedUser,
+    telemetryService,
 }) => {
     useEffect(() => {
         eventLogger.logPageView('CodySearch')
@@ -28,7 +37,7 @@ export const CodySearchPage: React.FunctionComponent<{ authenticatedUser: Authen
 
     const navigate = useNavigate()
 
-    const [codyEnabled] = useFeatureFlag('cody-experimental', false)
+    const [codyEnabled] = useFeatureFlag('cody-experimental', true)
 
     /** The value entered by the user in the query input */
     // const [input, setInput] = useState('')
@@ -74,6 +83,21 @@ export const CodySearchPage: React.FunctionComponent<{ authenticatedUser: Authen
     return (
         <div className={classNames('d-flex flex-column align-items-center px-3', searchPageStyles.searchPage)}>
             <BrandLogo className={searchPageStyles.logo} isLightTheme={isLightTheme} variant="logo" />
+            <div className="d-sm-flex flex-row text-center">
+                <div className={classNames(styles.slogan, 'text-muted mt-3 mr-sm-2 pr-2')}>
+                    Searching millions of public repositories
+                </div>
+                <div className="mt-3">
+                    <Tooltip content="The Sourcegraph desktop app runs locally and works on your own private code.">
+                        <Link
+                            to="https://about.sourcegraph.com/app"
+                            onClick={() => telemetryService.log('ClickedOnAppCTA', { location: 'HomeAboveSearch' })}
+                        >
+                            Download Sourcegraph app <Icon svgPath={mdiArrowRight} aria-hidden={true} />
+                        </Link>
+                    </Tooltip>
+                </div>
+            </div>
             {codyEnabled ? (
                 <SearchInput
                     value={input}
@@ -117,7 +141,20 @@ const SearchInput: React.FunctionComponent<{
 
     return (
         <Form onSubmit={onSubmit} className={className}>
-            <Input inputClassName={styles.input} value={value} onInput={onInput} disabled={loading} autoFocus={true} />
+            <Input
+                inputClassName={styles.input}
+                value={value}
+                onInput={onInput}
+                disabled={loading}
+                autoFocus={true}
+                placeholder="Search for code or files in natural language..."
+            />
+            <div className="align-items-center d-flex mt-4 justify-content-center">
+                <Text className="text-muted mb-0 mr-2" size="small">
+                    Powered by Cody <CodyIcon />
+                </Text>
+                <Badge variant="warning">Experimental</Badge>
+            </div>
             {error ? (
                 <Alert variant="danger" className="mt-2 w-100">
                     {error}

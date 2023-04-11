@@ -1,6 +1,3 @@
-import { CodebaseContext } from '../../codebase-context'
-import { Editor } from '../../editor'
-import { IntentDetector } from '../../intent-detector'
 import { MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { getShortTimestamp } from '../../timestamp'
@@ -12,20 +9,15 @@ import {
     getContextMessagesFromSelection,
     getFileExtension,
 } from './helpers'
-import { Recipe } from './recipe'
+import { Recipe, RecipeContext } from './recipe'
 
 export class GenerateDocstring implements Recipe {
     public getID(): string {
         return 'generate-docstring'
     }
 
-    public async getInteraction(
-        _humanChatInput: string,
-        editor: Editor,
-        _intentDetector: IntentDetector,
-        codebaseContext: CodebaseContext
-    ): Promise<Interaction | null> {
-        const selection = editor.getActiveTextEditorSelection()
+    public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const selection = context.editor.getActiveTextEditorSelection()
         if (!selection) {
             return Promise.resolve(null)
         }
@@ -72,7 +64,7 @@ export class GenerateDocstring implements Recipe {
                 truncatedPrecedingText,
                 truncatedFollowingText,
                 selection.fileName,
-                codebaseContext
+                context.codebaseContext
             )
         )
     }
