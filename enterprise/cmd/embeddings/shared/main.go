@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"github.com/weaviate/weaviate-go-client/v4/weaviate"
+	"github.com/weaviate/weaviate-go-client/v4/weaviate/graphql"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -108,6 +110,16 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	return nil
 }
 
+type WeaviateResponse struct {
+	Data struct {
+		Get []struct {
+			Filename   string `json:"filename"`
+			Repository string `json:"repository"`
+			Type       string `json:"type"`
+		} `json:"Get"`
+	} `json:"Data"`
+}
+
 func NewHandler(
 	logger log.Logger,
 	readFile readFileFn,
@@ -117,6 +129,70 @@ func NewHandler(
 ) http.Handler {
 	// Initialize the legacy JSON API server
 	mux := http.NewServeMux()
+
+	mux.HandleFunc("/search2", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
+			return
+		}
+
+		var args embeddings.EmbeddingsSearchParameters
+		err := json.NewDecoder(r.Body).Decode(&args)
+		if err != nil {
+			http.Error(w, "could not parse request body", http.StatusBadRequest)
+			return
+		}
+
+		client, err := weaviate.NewClient(weaviate.Config{
+			Host:   "localhost:8181",
+			Scheme: "http",
+		})
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var alpha float32 = 0.7
+		hybridArgs := (&graphql.HybridArgumentBuilder{}).WithAlpha(alpha).WithQuery(args.Query)
+		fields := []graphql.Field{{Name: "content"}, {Name: "filename"}, {Name: "type"}}
+		builder := client.GraphQL().Get().WithClassName("Code").WithHybrid(hybridArgs).WithFields(fields...).WithLimit(10)
+
+		res, err := builder.Do(r.Context())
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		get := res.Data["Get"].(map[string]interface{})
+		code := get["Code"].([]interface{})
+
+		logger.Info("len(code)", log.Int("len", len(code)))
+
+		var codeResults []embeddings.EmbeddingSearchResult
+		for _, c := range code {
+			cMap := c.(map[string]interface{})
+			filename := cMap["filename"].(string)
+			content := cMap["content"].(string)
+			codeResults = append(codeResults, embeddings.EmbeddingSearchResult{
+				RepoEmbeddingRowMetadata: embeddings.RepoEmbeddingRowMetadata{
+					FileName:  filename,
+					StartLine: 0,
+					EndLine:   0,
+				},
+				Content: content,
+				Debug:   "",
+			})
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		err = json.NewEncoder(w).Encode(embeddings.EmbeddingSearchResults{CodeResults: codeResults})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	})
+
 	mux.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)

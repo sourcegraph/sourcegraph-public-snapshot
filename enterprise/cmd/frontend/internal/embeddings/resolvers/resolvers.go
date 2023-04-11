@@ -3,6 +3,8 @@ package resolvers
 import (
 	"context"
 
+	"github.com/weaviate/weaviate-go-client/v4/weaviate"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -25,6 +27,7 @@ func NewResolver(
 	embeddingsClient *embeddings.Client,
 	repoStore repobg.RepoEmbeddingJobsStore,
 	contextDetectionStore contextdetectionbg.ContextDetectionEmbeddingJobsStore,
+	weaviateClient *weaviate.Client,
 ) graphqlbackend.EmbeddingsResolver {
 	return &Resolver{
 		db:                        db,
@@ -32,6 +35,7 @@ func NewResolver(
 		embeddingsClient:          embeddingsClient,
 		repoEmbeddingJobsStore:    repoStore,
 		contextDetectionJobsStore: contextDetectionStore,
+		weaviateClient:            weaviateClient,
 	}
 }
 
@@ -41,6 +45,7 @@ type Resolver struct {
 	embeddingsClient          *embeddings.Client
 	repoEmbeddingJobsStore    repobg.RepoEmbeddingJobsStore
 	contextDetectionJobsStore contextdetectionbg.ContextDetectionEmbeddingJobsStore
+	weaviateClient            *weaviate.Client
 }
 
 func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.EmbeddingsSearchInputArgs) (graphqlbackend.EmbeddingsSearchResultsResolver, error) {

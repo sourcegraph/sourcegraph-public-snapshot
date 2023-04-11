@@ -16,6 +16,7 @@ import (
 
 type readFile func(fileName string) ([]byte, error)
 
+// TODO (stefan): use the same chunking logic as in the current embeddings code
 func EmbedRepo(
 	ctx context.Context,
 	logger log.Logger,

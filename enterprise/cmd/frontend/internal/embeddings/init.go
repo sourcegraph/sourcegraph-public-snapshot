@@ -2,6 +2,9 @@ package embeddings
 
 import (
 	"context"
+	"time"
+
+	"github.com/weaviate/weaviate-go-client/v4/weaviate"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/embeddings/resolvers"
@@ -27,6 +30,12 @@ func Init(
 	contextDetectionEmbeddingsStore := contextdetection.NewContextDetectionEmbeddingJobsStore(db)
 	gitserverClient := gitserver.NewClient()
 	embeddingsClient := embeddings.NewClient()
-	enterpriseServices.EmbeddingsResolver = resolvers.NewResolver(db, gitserverClient, embeddingsClient, repoEmbeddingsStore, contextDetectionEmbeddingsStore)
+	// TODO (stefan): Do we need the StartupTimeout?
+	weaviateClient, err := weaviate.NewClient(weaviate.Config{Host: "localhost:8181", Scheme: "http", StartupTimeout: time.Second * 10})
+	if err != nil {
+		panic(err)
+	}
+
+	enterpriseServices.EmbeddingsResolver = resolvers.NewResolver(db, gitserverClient, embeddingsClient, repoEmbeddingsStore, contextDetectionEmbeddingsStore, weaviateClient)
 	return nil
 }
