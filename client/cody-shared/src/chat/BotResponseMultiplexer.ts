@@ -222,8 +222,8 @@ export class BotResponseMultiplexer {
 
     /** Produces a prompt to describe the response format to the bot. */
     public prompt(): string {
-        return `Separate each part of the response with a blank line. Prefix each part of the response with one of ${[
-            ...this.subs_.keys(),
-        ].join(': ')}:\n\n`
+        return `Enclose each part of the response in one of the relevant tags: ${[...this.subs_.keys()]
+            .map(topic => `<${topic}>`)
+            .join(', ')}:\n\n`
     }
 }
