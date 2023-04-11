@@ -107,13 +107,18 @@ func parseInput(inputPath string) (batcheslib.WorkspacesExecutionInput, error) {
 func parsePreviousStepResult(path string, step int, skippedSteps map[int]struct{}) (execution.AfterStepResult, error) {
 	var previousResult execution.AfterStepResult
 	if step > 0 {
+		// Get the last actually executed step index.
 		previousStepIndex := getPreviousStepIndex(step, skippedSteps)
+		if previousStepIndex == -1 {
+			return previousResult, errors.New("failed to find previous step")
+		}
+
+		// Read the previous step's result file.
 		stepResultPath := filepath.Join(path, fmt.Sprintf("step%d.json", previousStepIndex))
 		stepJSON, err := os.ReadFile(stepResultPath)
 		if err != nil {
 			return previousResult, errors.Wrap(err, "failed to read step result file")
 		}
-
 		if err = json.Unmarshal(stepJSON, &previousResult); err != nil {
 			return previousResult, errors.Wrap(err, "failed to unmarshal step result file")
 		}
