@@ -216,4 +216,7 @@ nogo(
     ] + STATIC_CHECK_ANALYZERS,
 )
 
-exports_files(["go.mod"])
+exports_files([
+    "go.mod",
+    "graphql-schema-linter.config.js",
+])
