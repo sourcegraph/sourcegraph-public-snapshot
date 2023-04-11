@@ -77,7 +77,7 @@ func (s *permissionsSyncJobConnectionStore) resolveSubject(ctx context.Context, 
 		if err != nil {
 			return nil, err
 		}
-		userResolver = graphqlbackend.NewUserResolver(s.db, user)
+		userResolver = graphqlbackend.NewUserResolver(ctx, s.db, user)
 	} else {
 		repo, err := s.db.Repos().Get(ctx, api.RepoID(job.RepositoryID))
 		if err != nil {
@@ -106,7 +106,7 @@ func (s *permissionsSyncJobConnectionStore) UnmarshalCursor(cursor string, _ dat
 }
 
 func (s *permissionsSyncJobConnectionStore) getListArgs(pageArgs *database.PaginationArgs) database.ListPermissionSyncJobOpts {
-	opts := database.ListPermissionSyncJobOpts{}
+	opts := database.ListPermissionSyncJobOpts{WithPlaceInQueue: true}
 	if pageArgs != nil {
 		opts.PaginationArgs = pageArgs
 	}
@@ -115,6 +115,9 @@ func (s *permissionsSyncJobConnectionStore) getListArgs(pageArgs *database.Pagin
 	}
 	if s.args.State != nil {
 		opts.State = *s.args.State
+	}
+	if s.args.Partial != nil {
+		opts.PartialSuccess = *s.args.Partial
 	}
 	if s.args.UserID != nil {
 		if userID, err := graphqlbackend.UnmarshalUserID(*s.args.UserID); err == nil {
@@ -251,6 +254,14 @@ func (p *permissionsSyncJobResolver) CodeHostStates() []graphqlbackend.CodeHostS
 		resolvers = append(resolvers, codeHostStateResolver{state: state})
 	}
 	return resolvers
+}
+
+func (p *permissionsSyncJobResolver) PartialSuccess() bool {
+	return p.job.IsPartialSuccess
+}
+
+func (p *permissionsSyncJobResolver) PlaceInQueue() *int32 {
+	return p.job.PlaceInQueue
 }
 
 type codeHostStateResolver struct {

@@ -3,7 +3,7 @@
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@npm//:@babel/cli/package_json.bzl", "bin")
 
-def babel(name, srcs, module = None, **kwargs):
+def babel(name, srcs, module = None, usePresetEnv = True, **kwargs):
     """A wrapper around Babel CLI
 
     Args:
@@ -12,6 +12,9 @@ def babel(name, srcs, module = None, **kwargs):
         srcs: A list of sources
 
         module: If specified, sets BABEL_MODULE environment variable to this value
+
+        usePresetEnv: Controls if we transpile TS sources with babel-preset-env.
+        If set to False, sets the DISABLE_PRESET_ENV environment variable to "true".
 
         **kwargs: Additional arguments to pass to the rule
     """
@@ -55,7 +58,6 @@ def babel(name, srcs, module = None, **kwargs):
         native.package_name(),
         "--config-file",
         "{}/$(location {})".format(execroot, "//:babel_config"),
-        "--presets=@babel/preset-typescript",
         "--source-maps",
         "true" if source_map else "false",
         "--extensions",
@@ -68,12 +70,16 @@ def babel(name, srcs, module = None, **kwargs):
     if module != None:
         env["BABEL_MODULE"] = module
 
+    if usePresetEnv == False:
+        env["DISABLE_PRESET_ENV"] = "true"
+
     bin.babel(
         name = "{}_lib".format(name),
         progress_message = "Compiling {}:{}".format(native.package_name(), name),
         srcs = ts_srcs + [
             "//:babel_config",
             "//:package_json",
+            "//:browserslist",
         ],
         outs = outs,
         args = args,

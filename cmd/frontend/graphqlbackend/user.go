@@ -6,7 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 
 	"github.com/sourcegraph/log"
 
@@ -57,7 +57,7 @@ func (r *schemaResolver) User(
 		}
 		return nil, err
 	}
-	return NewUserResolver(r.db, user), nil
+	return NewUserResolver(ctx, r.db, user), nil
 }
 
 // UserResolver implements the GraphQL User type.
@@ -65,14 +65,29 @@ type UserResolver struct {
 	logger log.Logger
 	db     database.DB
 	user   *types.User
+	// actor containing current user (derived from request context), which lets us
+	// skip fetching actor from context in every resolver function and save DB calls,
+	// because user is fetched in actor only once.
+	actor *actor.Actor
 }
 
 // NewUserResolver returns a new UserResolver with given user object.
-func NewUserResolver(db database.DB, user *types.User) *UserResolver {
+func NewUserResolver(ctx context.Context, db database.DB, user *types.User) *UserResolver {
 	return &UserResolver{
 		db:     db,
 		user:   user,
 		logger: log.Scoped("userResolver", "resolves a specific user").With(log.String("user", user.Username)),
+		actor:  actor.FromContext(ctx),
+	}
+}
+
+// newUserResolverFromActor returns a new UserResolver with given user object.
+func newUserResolverFromActor(a *actor.Actor, db database.DB, user *types.User) *UserResolver {
+	return &UserResolver{
+		db:     db,
+		user:   user,
+		logger: log.Scoped("userResolver", "resolves a specific user").With(log.String("user", user.Username)),
+		actor:  a,
 	}
 }
 
@@ -93,7 +108,7 @@ func UserByIDInt32(ctx context.Context, db database.DB, id int32) (*UserResolver
 	if err != nil {
 		return nil, err
 	}
-	return NewUserResolver(db, user), nil
+	return NewUserResolver(ctx, db, user), nil
 }
 
 func (r *UserResolver) ID() graphql.ID { return MarshalUserID(r.user.ID) }
@@ -112,7 +127,7 @@ func (r *UserResolver) DatabaseID() int32 { return r.user.ID }
 // Deprecated: use Emails instead.
 func (r *UserResolver) Email(ctx context.Context) (string, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to access the email address.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
 		return "", err
 	}
 
@@ -166,13 +181,13 @@ func (r *UserResolver) LatestSettings(ctx context.Context) (*settingsResolver, e
 	// 🚨 SECURITY: Only the authenticated user can view their settings on
 	// Sourcegraph.com.
 	if envvar.SourcegraphDotComMode() {
-		if err := auth.CheckSameUser(ctx, r.user.ID); err != nil {
+		if err := auth.CheckSameUserFromActor(r.actor, r.user.ID); err != nil {
 			return nil, err
 		}
 	} else {
 		// 🚨 SECURITY: Only the user and admins are allowed to access the user's
 		// settings, because they may contain secrets or other sensitive data.
-		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+		if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
 			return nil, err
 		}
 	}
@@ -193,9 +208,9 @@ func (r *UserResolver) SettingsCascade() *settingsCascade {
 
 func (r *UserResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }
 
-func (r *UserResolver) SiteAdmin(ctx context.Context) (bool, error) {
+func (r *UserResolver) SiteAdmin() (bool, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to determine if the user is a site admin.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
 		return false, err
 	}
 
@@ -259,8 +274,15 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 		DisplayName: args.DisplayName,
 		AvatarURL:   args.AvatarURL,
 	}
-	if args.Username != nil && viewerIsChangingUsername(ctx, r.db, userID, *args.Username) {
-		if !viewerCanChangeUsername(ctx, r.db, userID) {
+	user, err := r.db.Users().GetByID(ctx, userID)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting user from the database")
+	}
+
+	// If user is changing their username, we need to verify if this action can be
+	// done.
+	if args.Username != nil && user.Username != *args.Username {
+		if !viewerCanChangeUsername(actor.FromContext(ctx), r.db, userID) {
 			return nil, errors.Errorf("unable to change username because auth.enableUsernameChanges is false in site configuration")
 		}
 		update.Username = *args.Username
@@ -281,13 +303,13 @@ func CurrentUser(ctx context.Context, db database.DB) (*UserResolver, error) {
 		}
 		return nil, err
 	}
-	return NewUserResolver(db, user), nil
+	return newUserResolverFromActor(actor.FromActualUser(user), db, user), nil
 }
 
 func (r *UserResolver) Organizations(ctx context.Context) (*orgConnectionStaticResolver, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
 	// organisations.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
 	orgs, err := r.db.Orgs().GetByUserID(ctx, r.user.ID)
@@ -301,17 +323,9 @@ func (r *UserResolver) Organizations(ctx context.Context) (*orgConnectionStaticR
 	return &c, nil
 }
 
-func (r *UserResolver) Tags(ctx context.Context) ([]string, error) {
-	// 🚨 SECURITY: Only the user and admins are allowed to access the user's tags.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
-		return nil, err
-	}
-	return r.user.Tags, nil
-}
-
 func (r *UserResolver) SurveyResponses(ctx context.Context) ([]*surveyResponseResolver, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to access the user's survey responses.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
 
@@ -319,21 +333,21 @@ func (r *UserResolver) SurveyResponses(ctx context.Context) ([]*surveyResponseRe
 	if err != nil {
 		return nil, err
 	}
-	surveyResponseResolvers := []*surveyResponseResolver{}
+	surveyResponseResolvers := make([]*surveyResponseResolver, 0, len(responses))
 	for _, response := range responses {
 		surveyResponseResolvers = append(surveyResponseResolvers, &surveyResponseResolver{r.db, response})
 	}
 	return surveyResponseResolvers, nil
 }
 
-func (r *UserResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
+func (r *UserResolver) ViewerCanAdminister() (bool, error) {
 	// 🚨 SECURITY: Only the authenticated user can administrate themselves on
 	// Sourcegraph.com.
 	var err error
 	if envvar.SourcegraphDotComMode() {
-		err = auth.CheckSameUser(ctx, r.user.ID)
+		err = auth.CheckSameUserFromActor(r.actor, r.user.ID)
 	} else {
-		err = auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID)
+		err = auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID)
 	}
 	if errcode.IsUnauthorized(err) {
 		return false, nil
@@ -464,8 +478,8 @@ func (r *schemaResolver) SetSearchable(ctx context.Context, args *struct{ Search
 }
 
 // ViewerCanChangeUsername returns if the current user can change the username of the user.
-func (r *UserResolver) ViewerCanChangeUsername(ctx context.Context) bool {
-	return viewerCanChangeUsername(ctx, r.db, r.user.ID)
+func (r *UserResolver) ViewerCanChangeUsername() bool {
+	return viewerCanChangeUsername(r.actor, r.db, r.user.ID)
 }
 
 func (r *UserResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
@@ -479,7 +493,7 @@ func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatc
 	return EnterpriseResolvers.batchChangesResolver.BatchChangesCodeHosts(ctx, args)
 }
 
-func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error) {
+func (r *UserResolver) Roles(_ context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error) {
 	if envvar.SourcegraphDotComMode() {
 		return nil, errors.New("roles are not available on sourcegraph.com")
 	}
@@ -497,9 +511,9 @@ func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (*graphqlu
 	)
 }
 
-func (r *UserResolver) Permissions(ctx context.Context) (*graphqlutil.ConnectionResolver[PermissionResolver], error) {
+func (r *UserResolver) Permissions() (*graphqlutil.ConnectionResolver[PermissionResolver], error) {
 	userID := r.user.ID
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, userID); err != nil {
 		return nil, err
 	}
 	connectionStore := &permisionConnectionStore{
@@ -515,36 +529,19 @@ func (r *UserResolver) Permissions(ctx context.Context) (*graphqlutil.Connection
 	)
 }
 
-func viewerCanChangeUsername(ctx context.Context, db database.DB, userID int32) bool {
-	if err := auth.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
+func viewerCanChangeUsername(a *actor.Actor, db database.DB, userID int32) bool {
+	if err := auth.CheckSiteAdminOrSameUserFromActor(a, db, userID); err != nil {
 		return false
 	}
 	if conf.Get().AuthEnableUsernameChanges {
 		return true
 	}
 	// 🚨 SECURITY: Only site admins are allowed to change a user's username when auth.enableUsernameChanges == false.
-	return auth.CheckCurrentUserIsSiteAdmin(ctx, db) == nil
-}
-
-// Users may be trying to change their own username, or someone else's.
-//
-// The subjectUserID value represents the decoded user ID from the incoming
-// update request, and the proposedUsername is the value that would be applied
-// to that subject's record if all security checks pass.
-//
-// If that subject's username is different from the proposed one, then a
-// change is being attempted and may be rejected by viewerCanChangeUsername.
-func viewerIsChangingUsername(ctx context.Context, db database.DB, subjectUserID int32, proposedUsername string) bool {
-	subject, err := db.Users().GetByID(ctx, subjectUserID)
-	if err != nil {
-		log15.Warn("viewerIsChangingUsername", "error", err)
-		return true
-	}
-	return subject.Username != proposedUsername
+	return auth.CheckCurrentActorIsSiteAdmin(a, db) == nil
 }
 
 func (r *UserResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (MonitorConnectionResolver, error) {
-	if err := auth.CheckSameUser(ctx, r.user.ID); err != nil {
+	if err := auth.CheckSameUserFromActor(r.actor, r.user.ID); err != nil {
 		return nil, err
 	}
 	return EnterpriseResolvers.codeMonitorsResolver.Monitors(ctx, r.user.ID, args)

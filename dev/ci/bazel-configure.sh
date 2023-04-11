@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 # We run :gazelle since currently `bazel configure` tries to execute something with go and it doesn't exist on the bazel agent
-echo "--- Running bazel run :gazelle"
-bazel --bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc run :gazelle
+echo "--- Running bazel configure"
+bazel --bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc configure
 
 echo "--- Checking if BUILD.bazel files were updated"
 git diff --exit-code

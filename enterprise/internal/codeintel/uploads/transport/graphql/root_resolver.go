@@ -1,70 +1,38 @@
 package graphql
 
 import (
-	"context"
-
-	"github.com/graph-gophers/graphql-go"
-	"github.com/opentracing/opentracing-go/log"
-
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type rootResolver struct {
-	autoindexSvc            AutoIndexingService
-	uploadSvc               UploadsService
-	policySvc               PolicyService
-	gitserverClient         gitserver.Client
-	operations              *operations
-	siteAdminChecker        sharedresolvers.SiteAdminChecker
-	repoStore               database.RepoStore
-	prefetcherFactory       *sharedresolvers.PrefetcherFactory
-	locationResolverFactory *sharedresolvers.CachedLocationResolverFactory
+	uploadSvc                   UploadsService
+	autoindexSvc                AutoIndexingService
+	siteAdminChecker            sharedresolvers.SiteAdminChecker
+	prefetcherFactory           *PrefetcherFactory
+	locationResolverFactory     *gitresolvers.CachedLocationResolverFactory
+	preciseIndexResolverFactory *PreciseIndexResolverFactory
+	operations                  *operations
 }
 
 func NewRootResolver(
 	observationCtx *observation.Context,
 	uploadSvc UploadsService,
 	autoindexSvc AutoIndexingService,
-	policySvc PolicyService,
-	gitserverClient gitserver.Client,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
-	repoStore database.RepoStore,
-	prefetcherFactory *sharedresolvers.PrefetcherFactory,
-	locationResolverFactory *sharedresolvers.CachedLocationResolverFactory,
+	prefetcherFactory *PrefetcherFactory,
+	locationResolverFactory *gitresolvers.CachedLocationResolverFactory,
+	preciseIndexResolverFactory *PreciseIndexResolverFactory,
 ) resolverstubs.UploadsServiceResolver {
 	return &rootResolver{
-		autoindexSvc:            autoindexSvc,
-		uploadSvc:               uploadSvc,
-		policySvc:               policySvc,
-		gitserverClient:         gitserverClient,
-		operations:              newOperations(observationCtx),
-		siteAdminChecker:        siteAdminChecker,
-		repoStore:               repoStore,
-		prefetcherFactory:       prefetcherFactory,
-		locationResolverFactory: locationResolverFactory,
+		uploadSvc:                   uploadSvc,
+		autoindexSvc:                autoindexSvc,
+		siteAdminChecker:            siteAdminChecker,
+		prefetcherFactory:           prefetcherFactory,
+		locationResolverFactory:     locationResolverFactory,
+		preciseIndexResolverFactory: preciseIndexResolverFactory,
+		operations:                  newOperations(observationCtx),
 	}
-}
-
-// 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is already authenticated
-func (r *rootResolver) CommitGraph(ctx context.Context, repoID graphql.ID) (_ resolverstubs.CodeIntelligenceCommitGraphResolver, err error) {
-	ctx, _, endObservation := r.operations.commitGraph.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repoID", string(repoID)),
-	}})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
-
-	repositoryID, err := resolverstubs.UnmarshalID[int](repoID)
-	if err != nil {
-		return nil, err
-	}
-
-	stale, updatedAt, err := r.uploadSvc.GetCommitGraphMetadata(ctx, repositoryID)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewCommitGraphResolver(stale, updatedAt), nil
 }

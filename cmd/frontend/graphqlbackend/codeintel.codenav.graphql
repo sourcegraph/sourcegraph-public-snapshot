@@ -200,6 +200,30 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
+
+    """
+    The indexes that could provide precise code intelligence for the current blob.
+    """
+    visibleIndexes: [PreciseIndex!]
+
+    """
+    SCIP snapshot data (similar to the additional information from the `scip snapshot` command) for each SCIP Occurrence.
+    """
+    snapshot(indexID: ID!): [SnapshotData!]
+}
+
+"""
+The SCIP snapshot decoration for a single SCIP Occurrence.
+"""
+type SnapshotData {
+    """
+    The byte offset in the document immediately after the line the occurrence is on.
+    """
+    offset: Int!
+    """
+    The formatted SCIP symbol string.
+    """
+    data: String!
 }
 
 """

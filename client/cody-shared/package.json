@@ -16,5 +16,8 @@
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "test": "jest"
+  },
+  "dependencies": {
+    "@sourcegraph/common": "workspace:*"
   }
 }

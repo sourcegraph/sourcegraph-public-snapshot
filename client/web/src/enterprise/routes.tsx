@@ -7,6 +7,8 @@ import { LegacyRoute } from '../LegacyRouteContext'
 import { routes } from '../routes'
 import { EnterprisePageRoutes } from '../routes.constants'
 
+import { isSentinelEnabled } from './sentinel/utils/isSentinelEnabled'
+
 const GlobalNotebooksArea = lazyComponent(() => import('../notebooks/GlobalNotebooksArea'), 'GlobalNotebooksArea')
 const GlobalBatchChangesArea = lazyComponent(
     () => import('./batches/global/GlobalBatchChangesArea'),
@@ -21,6 +23,7 @@ const SearchContextsListPage = lazyComponent(
     () => import('./searchContexts/SearchContextsListPage'),
     'SearchContextsListPage'
 )
+const SentinelRouter = lazyComponent(() => import('./sentinel/SentinelRouter'), 'SentinelRouter')
 const CreateSearchContextPage = lazyComponent(
     () => import('./searchContexts/CreateSearchContextPage'),
     'CreateSearchContextPage'
@@ -62,6 +65,15 @@ export const enterpriseRoutes: RouteObject[] = [
         ),
     },
     {
+        path: EnterprisePageRoutes.Sentinel,
+        element: (
+            <LegacyRoute
+                render={props => <SentinelRouter {...props} />}
+                condition={props => isSentinelEnabled(props)}
+            />
+        ),
+    },
+    {
         path: EnterprisePageRoutes.Contexts,
         element: <LegacyRoute render={props => <SearchContextsListPage {...props} />} />,
     },
@@ -87,7 +99,7 @@ export const enterpriseRoutes: RouteObject[] = [
     },
     {
         path: EnterprisePageRoutes.CodySearch,
-        element: <CodySearchPage />,
+        element: <LegacyRoute render={props => <CodySearchPage {...props} />} />,
     },
     {
         path: EnterprisePageRoutes.Own,

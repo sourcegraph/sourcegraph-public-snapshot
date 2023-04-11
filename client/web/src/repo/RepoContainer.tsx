@@ -376,7 +376,12 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                 >
                     {({ actionType }) =>
                         props.brainDot && actionType === 'nav' ? (
-                            <props.brainDot key="code-intelligence-status" repoName={repoName} />
+                            <props.brainDot
+                                key="code-intelligence-status"
+                                repoName={repoName}
+                                path={filePath}
+                                commit={resolvedRevision?.commitID ?? ''}
+                            />
                         ) : null
                     }
                 </RepoHeaderContributionPortal>

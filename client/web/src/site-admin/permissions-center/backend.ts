@@ -56,9 +56,11 @@ export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
         priority
         noPerms
         invalidateCaches
+        placeInQueue
         codeHostStates {
             ...CodeHostState
         }
+        partialSuccess
     }
 
     query PermissionsSyncJobs(
@@ -72,6 +74,7 @@ export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
         $query: String
         $userID: ID
         $repoID: ID
+        $partial: Boolean
     ) {
         permissionsSyncJobs(
             first: $first
@@ -84,6 +87,7 @@ export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
             query: $query
             userID: $userID
             repoID: $repoID
+            partial: $partial
         ) {
             totalCount
             pageInfo {

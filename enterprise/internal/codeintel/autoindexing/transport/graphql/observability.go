@@ -8,23 +8,12 @@ import (
 )
 
 type operations struct {
-	preciseIndexes                        *observation.Operation
-	preciseIndexByID                      *observation.Operation
-	deletePreciseIndex                    *observation.Operation
-	deletePreciseIndexes                  *observation.Operation
-	reindexPreciseIndex                   *observation.Operation
-	reindexPreciseIndexes                 *observation.Operation
-	indexConfiguration                    *observation.Operation
-	updateIndexConfiguration              *observation.Operation
 	codeIntelligenceInferenceScript       *observation.Operation
-	updateCodeIntelligenceInferenceScript *observation.Operation
-	summary                               *observation.Operation
-	repositorySummary                     *observation.Operation
-	getRecentIndexesSummary               *observation.Operation
-	getLastIndexScanForRepository         *observation.Operation
-	gitBlobCodeIntelInfo                  *observation.Operation
+	indexConfiguration                    *observation.Operation
 	inferAutoIndexJobsForRepo             *observation.Operation
 	queueAutoIndexJobsForRepo             *observation.Operation
+	updateCodeIntelligenceInferenceScript *observation.Operation
+	updateRepositoryIndexConfiguration    *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -44,22 +33,11 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		preciseIndexes:                        op("PreciseIndexes"),
-		preciseIndexByID:                      op("PreciseIndexByID"),
-		deletePreciseIndex:                    op("DeletePreciseIndex"),
-		deletePreciseIndexes:                  op("DeletePreciseIndexes"),
-		reindexPreciseIndex:                   op("ReindexPreciseIndex"),
-		reindexPreciseIndexes:                 op("ReindexPreciseIndexes"),
-		indexConfiguration:                    op("IndexConfiguration"),
-		updateIndexConfiguration:              op("UpdateIndexConfiguration"),
 		codeIntelligenceInferenceScript:       op("CodeIntelligenceInferenceScript"),
-		updateCodeIntelligenceInferenceScript: op("UpdateCodeIntelligenceInferenceScript"),
-		summary:                               op("Summary"),
-		repositorySummary:                     op("RepositorySummary"),
-		getRecentIndexesSummary:               op("GetRecentIndexesSummary"),
-		getLastIndexScanForRepository:         op("GetLastIndexScanForRepository"),
-		gitBlobCodeIntelInfo:                  op("GitBlobCodeIntelInfo"),
+		indexConfiguration:                    op("IndexConfiguration"),
 		inferAutoIndexJobsForRepo:             op("InferAutoIndexJobsForRepo"),
 		queueAutoIndexJobsForRepo:             op("QueueAutoIndexJobsForRepo"),
+		updateCodeIntelligenceInferenceScript: op("UpdateCodeIntelligenceInferenceScript"),
+		updateRepositoryIndexConfiguration:    op("UpdateRepositoryIndexConfiguration"),
 	}
 }

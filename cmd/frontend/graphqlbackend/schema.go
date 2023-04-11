@@ -89,3 +89,8 @@ var ownSchema string
 //
 //go:embed app.graphql
 var appSchema string
+
+// completionSchema is the Sourcegraph Completions raw graqhql schema.
+//
+//go:embed completions.graphql
+var completionSchema string

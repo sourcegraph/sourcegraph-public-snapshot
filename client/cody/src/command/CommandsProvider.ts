@@ -1,29 +1,20 @@
-import * as openai from 'openai'
+import * as anthropic from '@anthropic-ai/sdk'
 import * as vscode from 'vscode'
 
 import { ChatViewProvider } from '../chat/ChatViewProvider'
 import { CodyCompletionItemProvider } from '../completions'
 import { CompletionsDocumentProvider } from '../completions/docprovider'
+import { History } from '../completions/history'
 import { getConfiguration } from '../configuration'
+import { logEvent, updateEventLogger } from '../event-logger'
 import { ExtensionApi } from '../extension-api'
+import { sanitizeCodebase, sanitizeServerEndpoint } from '../sanitize'
+import { CODY_ACCESS_TOKEN_SECRET, InMemorySecretStorage, SecretStorage, VSCodeSecretStorage } from '../secret-storage'
 
-import { CODY_ACCESS_TOKEN_SECRET, InMemorySecretStorage, SecretStorage, VSCodeSecretStorage } from './secret-storage'
+import { LocalStorage } from './LocalStorageProvider'
 
 function getSecretStorage(context: vscode.ExtensionContext): SecretStorage {
     return process.env.CODY_TESTING === 'true' ? new InMemorySecretStorage() : new VSCodeSecretStorage(context.secrets)
-}
-
-function sanitizeCodebase(codebase: string | undefined): string {
-    if (!codebase) {
-        return ''
-    }
-    const protocolRegexp = /^(https?):\/\//
-    return codebase.replace(protocolRegexp, '')
-}
-
-function sanitizeServerEndpoint(serverEndpoint: string): string {
-    const trailingSlashRegexp = /\/$/
-    return serverEndpoint.trim().replace(trailingSlashRegexp, '')
 }
 
 // Registers Commands and Webview at extension start up
@@ -32,7 +23,10 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
     const extensionApi = new ExtensionApi()
 
     const secretStorage = getSecretStorage(context)
+    const localStorage = new LocalStorage(context.globalState)
     const config = getConfiguration(vscode.workspace.getConfiguration())
+
+    await updateEventLogger(config, secretStorage, localStorage)
 
     // Create chat webview
     const chatProvider = await ChatViewProvider.create(
@@ -41,10 +35,13 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         sanitizeServerEndpoint(config.serverEndpoint),
         config.useContext,
         config.debug,
-        secretStorage
+        secretStorage,
+        localStorage
     )
 
-    vscode.window.registerWebviewViewProvider('cody.chat', chatProvider)
+    vscode.window.registerWebviewViewProvider('cody.chat', chatProvider, {
+        webviewOptions: { retainContextWhenHidden: true },
+    })
 
     await vscode.commands.executeCommand('setContext', 'cody.activated', true)
 
@@ -53,33 +50,50 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
     disposables.push(
         // Toggle Chat
         vscode.commands.registerCommand('cody.toggle-enabled', async () => {
-            const config = vscode.workspace.getConfiguration()
-            await config.update('cody.enabled', !config.get('cody.enabled'), vscode.ConfigurationTarget.Global)
+            const workspaceConfig = vscode.workspace.getConfiguration()
+            const config = getConfiguration(workspaceConfig)
+
+            await workspaceConfig.update(
+                'cody.enabled',
+                !workspaceConfig.get('cody.enabled'),
+                vscode.ConfigurationTarget.Global
+            )
+            logEvent(
+                'CodyVSCodeExtension:codyToggleEnabled:clicked',
+                { serverEndpoint: config.serverEndpoint },
+                { serverEndpoint: config.serverEndpoint }
+            )
         }),
         // Access token
         vscode.commands.registerCommand('cody.set-access-token', async (args: any[]) => {
+            const config = getConfiguration(vscode.workspace.getConfiguration())
             const tokenInput = args?.length ? (args[0] as string) : await vscode.window.showInputBox()
             if (tokenInput === undefined || tokenInput === '') {
                 return
             }
             await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, tokenInput)
+            logEvent(
+                'CodyVSCodeExtension:codySetAccessToken:clicked',
+                { serverEndpoint: config.serverEndpoint },
+                { serverEndpoint: config.serverEndpoint }
+            )
         }),
-        vscode.commands.registerCommand('cody.delete-access-token', async () =>
-            secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-        ),
+        vscode.commands.registerCommand('cody.delete-access-token', async () => {
+            const config = getConfiguration(vscode.workspace.getConfiguration())
+            await secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
+            logEvent(
+                'CodyVSCodeExtension:codyDeleteAccessToken:clicked',
+                { serverEndpoint: config.serverEndpoint },
+                { serverEndpoint: config.serverEndpoint }
+            )
+        }),
         // TOS
-        vscode.commands.registerCommand('cody.accept-tos', async version => {
-            if (typeof version !== 'number') {
-                // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                vscode.window.showErrorMessage(`TOS version was not a number: ${version}`)
-                return
-            }
-            await context.globalState.update('cody.tos-version-accepted', version)
-        }),
-        vscode.commands.registerCommand('cody.get-accepted-tos-version', async () => {
-            const version = await context.globalState.get('cody.tos-version-accepted')
-            return version
-        }),
+        vscode.commands.registerCommand('cody.accept-tos', version =>
+            localStorage.set('cody.tos-version-accepted', version)
+        ),
+        vscode.commands.registerCommand('cody.get-accepted-tos-version', () =>
+            localStorage.get('cody.tos-version-accepted')
+        ),
         // Commands
         vscode.commands.registerCommand('cody.recipe.explain-code', async () => executeRecipe('explain-code-detailed')),
         vscode.commands.registerCommand('cody.recipe.explain-code-high-level', async () =>
@@ -100,15 +114,16 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         )
     )
 
-    if (config.experimentalSuggest && config.openaiKey) {
-        const configuration = new openai.Configuration({
-            apiKey: config.openaiKey,
-        })
-        const openaiApi = new openai.OpenAIApi(configuration)
+    if (config.experimentalSuggest) {
+        let claudeApi = null
+        if (config.anthropicKey) {
+            claudeApi = new anthropic.Client(config.anthropicKey)
+        }
         const docprovider = new CompletionsDocumentProvider()
         vscode.workspace.registerTextDocumentContentProvider('cody', docprovider)
 
-        const completionsProvider = new CodyCompletionItemProvider(openaiApi, docprovider)
+        const history = new History()
+        const completionsProvider = new CodyCompletionItemProvider(claudeApi, docprovider, history)
         context.subscriptions.push(
             vscode.commands.registerCommand('cody.experimental.suggest', async () => {
                 await completionsProvider.fetchAndShowCompletions()
@@ -124,6 +139,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         vscode.workspace.onDidChangeConfiguration(async event => {
             if (event.affectsConfiguration('cody') || event.affectsConfiguration('sourcegraph')) {
                 const config = getConfiguration(vscode.workspace.getConfiguration())
+                await updateEventLogger(config, secretStorage, localStorage)
                 await chatProvider.onConfigChange(
                     'endpoint',
                     sanitizeCodebase(config.codebase),
@@ -137,11 +153,14 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         secretStorage.onDidChange(async key => {
             if (key === CODY_ACCESS_TOKEN_SECRET) {
                 const config = getConfiguration(vscode.workspace.getConfiguration())
-                await chatProvider.onConfigChange(
-                    'token',
-                    sanitizeCodebase(config.codebase),
-                    sanitizeServerEndpoint(config.serverEndpoint)
-                )
+                await updateEventLogger(config, secretStorage, localStorage)
+                await chatProvider
+                    .onConfigChange(
+                        'token',
+                        sanitizeCodebase(config.codebase),
+                        sanitizeServerEndpoint(config.serverEndpoint)
+                    )
+                    .catch(error => console.error(error))
             }
         })
     )

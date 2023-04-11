@@ -19,22 +19,39 @@ export class Transcript {
         return this.interactions.length > 0 ? this.interactions[this.interactions.length - 1] : null
     }
 
-    public addAssistantResponse(text: string, displayText: string): void {
+    public addAssistantResponse(text: string): void {
         this.getLastInteraction()?.setAssistantMessage({
             speaker: 'assistant',
             text,
-            displayText,
+            displayText: text,
             timestamp: getShortTimestamp(),
         })
     }
 
-    public async toPrompt(): Promise<Message[]> {
+    private async getLastInteractionWithContextIndex(): Promise<number> {
+        for (let index = this.interactions.length - 1; index >= 0; index--) {
+            const hasContext = await this.interactions[index].hasContext()
+            if (hasContext) {
+                return index
+            }
+        }
+        return -1
+    }
+
+    public async toPrompt(preamble: Message[] = []): Promise<Message[]> {
+        const lastInteractionWithContextIndex = await this.getLastInteractionWithContextIndex()
         const messages: Message[] = []
         for (let index = 0; index < this.interactions.length; index++) {
-            const interactionMessages = await this.interactions[index].toPrompt(index === this.interactions.length - 1)
+            // Include context messages for the last interaction that has a non-empty context.
+            const interactionMessages = await this.interactions[index].toPrompt(
+                index === lastInteractionWithContextIndex
+            )
             messages.push(...interactionMessages)
         }
-        return truncatePrompt(messages)
+
+        const preambleTokensUsage = preamble.reduce((acc, message) => acc + estimateTokensUsage(message), 0)
+        const truncatedMessages = truncatePrompt(messages, MAX_AVAILABLE_PROMPT_LENGTH - preambleTokensUsage)
+        return [...preamble, ...truncatedMessages]
     }
 
     public toChat(): ChatMessage[] {
@@ -46,9 +63,9 @@ export class Transcript {
     }
 }
 
-function truncatePrompt(messages: Message[]): Message[] {
+function truncatePrompt(messages: Message[], maxTokens: number): Message[] {
     const newPromptMessages = []
-    let availablePromptTokensBudget = MAX_AVAILABLE_PROMPT_LENGTH
+    let availablePromptTokensBudget = maxTokens
     for (let i = messages.length - 1; i >= 1; i -= 2) {
         const humanMessage = messages[i - 1]
         const botMessage = messages[i]

@@ -4,52 +4,44 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
-type AutoIndexingService interface {
-	sharedresolvers.AutoIndexingService
-
-	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error)
-	GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []shared.IndexesWithRepositoryNamespace, err error)
-	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
-	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) (err error)
-
-	GetInferenceScript(ctx context.Context) (script string, err error)
-	SetInferenceScript(ctx context.Context, script string) (err error)
-
-	InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) ([]config.IndexJob, error)
-	InferIndexConfiguration(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) (_ *config.IndexConfiguration, hints []config.IndexJobHint, err error)
-	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force bool, bypassLimit bool) (_ []types.Index, err error)
-
-	GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error)
-	GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error)
-	SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error)
-}
-
 type UploadsService interface {
-	sharedresolvers.UploadsService
-
-	GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error)
+	GetIndexesByIDs(ctx context.Context, ids ...int) (_ []shared.Index, err error)
+	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []shared.Upload, err error)
+	GetIndexes(ctx context.Context, opts uploadshared.GetIndexesOptions) (_ []uploadsshared.Index, _ int, err error)
+	GetUploads(ctx context.Context, opts uploadshared.GetUploadsOptions) (uploads []shared.Upload, totalCount int, err error)
+	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []shared.UploadLog, err error)
+	GetIndexByID(ctx context.Context, id int) (_ uploadsshared.Index, _ bool, err error)
 	DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
 	DeleteIndexes(ctx context.Context, opts uploadshared.DeleteIndexesOptions) (err error)
 	ReindexIndexByID(ctx context.Context, id int) (err error)
 	ReindexIndexes(ctx context.Context, opts uploadshared.ReindexIndexesOptions) (err error)
-
-	GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
-	GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []uploadshared.UploadsWithRepositoryNamespace, err error)
 	GetIndexers(ctx context.Context, opts uploadshared.GetIndexersOptions) ([]string, error)
-	GetUploadByID(ctx context.Context, id int) (_ types.Upload, _ bool, err error)
+	GetUploadByID(ctx context.Context, id int) (_ shared.Upload, _ bool, err error)
 	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
 	DeleteUploads(ctx context.Context, opts uploadshared.DeleteUploadsOptions) (err error)
 	ReindexUploads(ctx context.Context, opts uploadshared.ReindexUploadsOptions) error
 	ReindexUploadByID(ctx context.Context, id int) error
 	GetCommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, err error)
+	GetRecentUploadsSummary(ctx context.Context, repositoryID int) ([]uploadshared.UploadsWithRepositoryNamespace, error)
+	GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
+	GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]uploadshared.IndexesWithRepositoryNamespace, error)
+	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error)
+	RepositoryIDsWithErrors(ctx context.Context, offset, limit int) (_ []uploadshared.RepositoryWithCount, totalCount int, err error)
 }
 
-type PolicyService = sharedresolvers.PolicyService
+type AutoIndexingService interface {
+	RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) (_ []uploadshared.RepositoryWithAvailableIndexers, totalCount int, err error)
+	InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) ([]config.IndexJob, error)
+	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
+}
+
+type PolicyService interface {
+	GetRetentionPolicyOverview(ctx context.Context, upload shared.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []policiesshared.RetentionPolicyMatchCandidate, totalCount int, err error)
+}

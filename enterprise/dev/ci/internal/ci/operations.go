@@ -69,7 +69,8 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		if opts.ForceBazel {
 			// If there are any Graphql changes, they are impacting the client as well.
 			clientChecks = operations.NewNamedSet("Client checks",
-				clientIntegrationTests,
+				// clientIntegrationTests is now covered by Bazel
+				// clientIntegrationTests,
 				clientChromaticTests(opts),
 				// frontendTests is now covered by Bazel
 				// frontendTests,                // ~4.5m
@@ -653,6 +654,15 @@ func addVsceReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("pnpm --filter @sourcegraph/vscode run release"))
 }
 
+// Release the Cody extension.
+func addCodyReleaseSteps(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":vscode::robot_face: Cody release",
+		withPnpmCache(),
+		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
+		bk.Cmd("pnpm generate"),
+		bk.Cmd("pnpm --filter cody-ai run release"))
+}
+
 // Release a snapshot of App.
 func addAppReleaseSteps(c Config, insiders bool) operations.Operation {
 	// The version scheme we use for App is one of:
@@ -904,7 +914,7 @@ func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) 
 				folder := app
 				if app == "blobstore2" {
 					// experiment: cmd/blobstore is a Go rewrite of docker-images/blobstore. While
-					// it is incomplete, we do not want cmd/blobstore/Dockerfile to get publishe
+					// it is incomplete, we do not want cmd/blobstore/Dockerfile to get published
 					// under the same name.
 					// https://github.com/sourcegraph/sourcegraph/issues/45594
 					// TODO(blobstore): remove this when making Go blobstore the default

@@ -12,14 +12,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/lsifstore"
 	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/shared"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 func exportRankingGraph(
 	ctx context.Context,
 	store store.Store,
-	lsifstore lsifstore.LsifStore,
+	lsifstore lsifstore.Store,
 	logger log.Logger,
 	readBatchSize int,
 	writeBatchSize int,
@@ -40,7 +41,7 @@ func exportRankingGraph(
 
 	for _, upload := range uploads {
 		documentPaths := []string{}
-		if err := lsifstore.InsertDefinitionsAndReferencesForDocument(ctx, upload, graphKey, writeBatchSize, func(ctx context.Context, upload shared.ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error {
+		if err := lsifstore.InsertDefinitionsAndReferencesForDocument(ctx, upload, graphKey, writeBatchSize, func(ctx context.Context, upload uploadsshared.ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error {
 			documentPaths = append(documentPaths, path)
 			numDefinitions, numReferences, err := setDefinitionsAndReferencesForUpload(ctx, store, upload, rankingBatchSize, rankingGraphKey, path, document)
 			numDefinitionsInserted += numDefinitions
@@ -92,7 +93,7 @@ const skipPrefix = "lsif ."
 func setDefinitionsAndReferencesForUpload(
 	ctx context.Context,
 	store store.Store,
-	upload shared.ExportedUpload,
+	upload uploadsshared.ExportedUpload,
 	batchSize int,
 	rankingGraphKey, path string,
 	document *scip.Document,
@@ -137,7 +138,7 @@ func setDefinitionsAndReferencesForUpload(
 func setDefinitionsForUpload(
 	ctx context.Context,
 	store store.Store,
-	upload shared.ExportedUpload,
+	upload uploadsshared.ExportedUpload,
 	rankingGraphKey, path string,
 	document *scip.Document,
 ) (map[string]struct{}, error) {

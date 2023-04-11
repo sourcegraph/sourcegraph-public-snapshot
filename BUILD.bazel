@@ -6,6 +6,7 @@ load("@bazel_gazelle//:def.bzl", "gazelle", "gazelle_binary")
 load("@io_bazel_rules_go//proto:compiler.bzl", "go_proto_compiler")
 load("@io_bazel_rules_go//proto/wkt:well_known_types.bzl", "WELL_KNOWN_TYPES_APIV2")
 load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//dev/linters/staticcheck:analyzers.bzl", "STATIC_CHECK_ANALYZERS")
 
 # Gazelle config
 #
@@ -152,6 +153,7 @@ js_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:node_modules/@babel/preset-env",
+        "//:node_modules/@babel/runtime",
         "//:node_modules/signale",
     ],
 )
@@ -166,10 +168,12 @@ js_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "//:node_modules/@babel/plugin-transform-runtime",
         "//:node_modules/@babel/plugin-transform-typescript",
         "//:node_modules/@babel/preset-env",
         "//:node_modules/@babel/preset-react",
         "//:node_modules/@babel/preset-typescript",
+        "//:node_modules/@babel/runtime",
         "//:node_modules/babel-plugin-lodash",
         "//:node_modules/babel-plugin-webpack-chunkname",
         "//:node_modules/semver",
@@ -209,7 +213,7 @@ nogo(
         "//dev/linters/forbidigo",
         "//dev/linters/gocritic",
         "//dev/linters/ineffassign",
-    ],
+    ] + STATIC_CHECK_ANALYZERS,
 )
 
 exports_files(["go.mod"])

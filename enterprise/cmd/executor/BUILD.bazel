@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//enterprise/cmd/executor/internal/config",
         "//enterprise/cmd/executor/internal/run",
+        "//enterprise/cmd/executor/internal/util",
         "//internal/env",
         "//internal/hostname",
         "//internal/logging",

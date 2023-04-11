@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/run"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
@@ -32,9 +33,11 @@ func main() {
 
 	logger := log.Scoped("executor", "the executor service polls the public Sourcegraph frontend API for work to perform")
 
-	makeActionHandler := func(handler func(cliCtx *cli.Context, logger log.Logger, config *config.Config) error) func(*cli.Context) error {
+	runner := &util.RealCmdRunner{}
+
+	makeActionHandler := func(handler func(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error) func(*cli.Context) error {
 		return func(ctx *cli.Context) error {
-			return handler(ctx, logger, cfg)
+			return handler(ctx, runner, logger, cfg)
 		}
 	}
 
@@ -62,12 +65,12 @@ func main() {
 						Required: false,
 					},
 				},
-				Action: makeActionHandler(run.RunRun),
+				Action: makeActionHandler(run.Run),
 			},
 			{
 				Name:   "validate",
 				Usage:  "Validate the environment is set up correctly.",
-				Action: makeActionHandler(run.RunValidate),
+				Action: makeActionHandler(run.Validate),
 			},
 			{
 				Name:  "install",
@@ -84,17 +87,17 @@ func main() {
 								Required:    false,
 							},
 						},
-						Action: makeActionHandler(run.RunInstallIgnite),
+						Action: makeActionHandler(run.InstallIgnite),
 					},
 					{
 						Name:   "image",
 						Usage:  "Ensures required runtime images are pulled and imported properly. Firecracker only.",
-						Action: makeActionHandler(run.RunInstallImage),
+						Action: makeActionHandler(run.InstallImage),
 					},
 					{
 						Name:   "cni",
 						Usage:  "Installs CNI plugins required for executor VMs. Firecracker only.",
-						Action: makeActionHandler(run.RunInstallCNI),
+						Action: makeActionHandler(run.InstallCNI),
 					},
 					{
 						Name:  "src-cli",
@@ -107,7 +110,7 @@ func main() {
 								Required:    false,
 							},
 						},
-						Action: makeActionHandler(run.RunInstallSrc),
+						Action: makeActionHandler(run.InstallSrc),
 					},
 					{
 						Name:  "iptables-rules",
@@ -119,12 +122,12 @@ func main() {
 								Required: false,
 							},
 						},
-						Action: makeActionHandler(run.RunInstallIPTablesRules),
+						Action: makeActionHandler(run.InstallIPTablesRules),
 					},
 					{
 						Name:   "all",
 						Usage:  "Runs all installers listed above.",
-						Action: makeActionHandler(run.RunInstallAll),
+						Action: makeActionHandler(run.InstallAll),
 					},
 				},
 			},
@@ -150,7 +153,7 @@ func main() {
 						Required: false,
 					},
 				},
-				Action: makeActionHandler(run.RunTestVM),
+				Action: makeActionHandler(run.TestVM),
 			},
 		},
 	}

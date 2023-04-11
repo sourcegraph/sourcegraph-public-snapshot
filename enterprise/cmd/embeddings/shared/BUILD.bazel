@@ -31,6 +31,7 @@ go_library(
         "//internal/database/connections/live",
         "//internal/debugserver",
         "//internal/env",
+        "//internal/errcode",
         "//internal/gitserver",
         "//internal/goroutine",
         "//internal/honey",
@@ -50,7 +51,10 @@ go_library(
 go_test(
     name = "shared_test",
     timeout = "short",
-    srcs = ["repo_embedding_index_cache_test.go"],
+    srcs = [
+        "context_detection_test.go",
+        "repo_embedding_index_cache_test.go",
+    ],
     embed = [":shared"],
     deps = [
         "//enterprise/internal/embeddings",

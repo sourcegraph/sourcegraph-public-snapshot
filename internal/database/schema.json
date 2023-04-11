@@ -18546,6 +18546,19 @@
           "Comment": ""
         },
         {
+          "Name": "is_partial_success",
+          "Index": 26,
+          "TypeName": "boolean",
+          "IsNullable": true,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "last_heartbeat_at",
           "Index": 11,
           "TypeName": "timestamp with time zone",

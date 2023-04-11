@@ -53,6 +53,9 @@ export interface SearchResultsInfoBarProps
     // Saved queries
     onSaveQueryClick: () => void
 
+    // Download CSV of search results
+    onExportCsvClick: () => void
+
     className?: string
 
     stats: JSX.Element
@@ -162,10 +165,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                 )}
                 <ul className="nav align-items-center">
                     <SearchActionsMenu
-                        query={props.query}
-                        options={props.options}
-                        patternType={props.patternType}
-                        sourcegraphURL={props.platformContext.sourcegraphURL}
                         authenticatedUser={props.authenticatedUser}
                         createActions={createActions}
                         createCodeMonitorAction={createCodeMonitorAction}
@@ -174,7 +173,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                         allExpanded={props.allExpanded}
                         onExpandAllResultsToggle={props.onExpandAllResultsToggle}
                         onSaveQueryClick={props.onSaveQueryClick}
-                        telemetryService={props.telemetryService}
+                        onExportCsvClick={props.onExportCsvClick}
                     />
                 </ul>
 

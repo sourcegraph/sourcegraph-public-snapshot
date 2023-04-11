@@ -37,6 +37,7 @@ type LocationHandler = (locations: Location[]) => void
 interface UseSearchBasedCodeIntelResult {
     fetch: (onReferences: LocationHandler, onDefinitions: LocationHandler) => void
     fetchReferences: (onReferences: LocationHandler) => void
+    fetchDefinitions: (onDefinitions: LocationHandler) => void
     loading: boolean
     error?: ErrorLike
 }
@@ -84,11 +85,10 @@ export const useSearchBasedCodeIntel = (options: UseSearchBasedCodeIntelOptions)
         [options]
     )
 
-    const fetch = useCallback(
-        (onReferences: LocationHandler, onDefinitions: LocationHandler) => {
-            fetchReferences(onReferences)
-
+    const fetchDefinitions = useCallback(
+        (onDefinitions: LocationHandler) => {
             setLoadingDefinitions(true)
+
             searchBasedDefinitions(options)
                 .then(definitions => {
                     onDefinitions(definitions)
@@ -99,13 +99,22 @@ export const useSearchBasedCodeIntel = (options: UseSearchBasedCodeIntelOptions)
                     setLoadingDefinitions(false)
                 })
         },
-        [options, fetchReferences]
+        [options]
+    )
+
+    const fetch = useCallback(
+        (onReferences: LocationHandler, onDefinitions: LocationHandler) => {
+            fetchReferences(onReferences)
+            fetchDefinitions(onDefinitions)
+        },
+        [fetchReferences, fetchDefinitions]
     )
 
     const errors = [definitionsError, referencesError].filter(isDefined)
     return {
         fetch,
         fetchReferences,
+        fetchDefinitions,
         loading: loadingReferences || loadingDefinitions,
         error: createAggregateError(errors),
     }

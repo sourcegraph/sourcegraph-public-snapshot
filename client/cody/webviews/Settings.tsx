@@ -1,8 +1,8 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
-import './Settings.css'
+import { View } from './NavBar'
 
-import { View } from './utils/types'
+import './Settings.css'
 
 interface SettingsProps {
     onLogout: () => void
@@ -15,6 +15,9 @@ export const Settings: React.FunctionComponent<React.PropsWithChildren<SettingsP
             <div className="settings">
                 <VSCodeButton className="logout-button" type="button" onClick={() => setView('about')}>
                     About
+                </VSCodeButton>
+                <VSCodeButton className="logout-button" type="button" onClick={() => setView('history')}>
+                    Chat History
                 </VSCodeButton>
                 <VSCodeButton className="logout-button" type="button" onClick={onLogout}>
                     Logout

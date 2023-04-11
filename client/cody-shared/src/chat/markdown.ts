@@ -1,27 +1,16 @@
-import { marked } from 'marked'
-import sanitize from 'sanitize-html'
+import { registerHighlightContributions, renderMarkdown as renderMarkdownCommon } from '@sourcegraph/common'
 
-import { highlightCode, registerHighlightContributions } from './highlight'
-
-const sanitizeOptions = {
-    ...sanitize.defaults,
-    allowedAttributes: {
-        ...sanitize.defaults.allowedAttributes,
-        a: [
-            ...sanitize.defaults.allowedAttributes.a,
-            'title',
-            'class',
-            { name: 'rel', values: ['noopener', 'noreferrer'] },
-        ],
-        // Allow highlight.js styles, e.g.
-        // <span class="hljs-keyword">
-        // <code class="language-javascript">
-        span: ['class'],
-        code: ['class'],
-    },
-}
-
-export function renderMarkdown(text: string): string {
+/**
+ * Render Markdown to safe HTML.
+ *
+ * NOTE: This only works when called in an environment with the DOM. In the VS Code extension, it
+ * only works in the webview context, not in the extension host context, because the latter lacks a
+ * DOM. We could use isomorphic-dompurify for that, but that adds needless complexity for now. If
+ * that becomes necessary, we can add that.
+ */
+export function renderMarkdown(markdown: string): string {
     registerHighlightContributions()
-    return sanitize(marked.parse(text, { gfm: true, highlight: highlightCode, breaks: true }), sanitizeOptions)
+
+    // Add Cody-specific Markdown rendering if needed.
+    return renderMarkdownCommon(markdown)
 }

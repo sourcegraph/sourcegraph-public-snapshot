@@ -15,10 +15,9 @@ import (
 	sentinelgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/lsifuploadstore"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
 	uploadgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 	uploadshttp "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/http"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -50,39 +49,39 @@ func Init(
 		return uploadshttp.GetHandler(codeIntelServices.UploadsService, db, codeIntelServices.GitserverClient, uploadStore, withCodeHostAuth)
 	}
 
-	cloneURLToRepoName := func(ctx context.Context, submoduleURL string) (api.RepoName, error) {
-		return cloneurls.RepoSourceCloneURLToRepoName(ctx, db, submoduleURL)
-	}
 	repoStore := db.Repos()
 	siteAdminChecker := sharedresolvers.NewSiteAdminChecker(db)
-	locationResolverFactory := sharedresolvers.NewCachedLocationResolverFactory(cloneURLToRepoName, repoStore, codeIntelServices.GitserverClient)
-	prefetcherFactory := sharedresolvers.NewPrefetcherFactory(codeIntelServices.AutoIndexingService, codeIntelServices.UploadsService)
-
-	autoindexingRootResolver := autoindexinggraphql.NewRootResolver(
-		scopedContext("autoindexing"),
-		codeIntelServices.AutoIndexingService,
+	locationResolverFactory := gitresolvers.NewCachedLocationResolverFactory(repoStore, codeIntelServices.GitserverClient)
+	prefetcherFactory := uploadgraphql.NewPrefetcherFactory(codeIntelServices.UploadsService)
+	preciseIndexResolverFactory := uploadgraphql.NewPreciseIndexResolverFactory(
 		codeIntelServices.UploadsService,
 		codeIntelServices.PoliciesService,
 		codeIntelServices.GitserverClient,
 		siteAdminChecker,
 		repoStore,
+	)
+
+	autoindexingRootResolver := autoindexinggraphql.NewRootResolver(
+		scopedContext("autoindexing"),
+		codeIntelServices.AutoIndexingService,
+		siteAdminChecker,
 		prefetcherFactory,
 		locationResolverFactory,
+		preciseIndexResolverFactory,
 	)
 
 	codenavRootResolver, err := codenavgraphql.NewRootResolver(
 		scopedContext("codenav"),
 		codeIntelServices.CodenavService,
 		codeIntelServices.AutoIndexingService,
-		codeIntelServices.UploadsService,
-		codeIntelServices.PoliciesService,
 		codeIntelServices.GitserverClient,
 		siteAdminChecker,
 		repoStore,
-		locationResolverFactory,
 		prefetcherFactory,
-		ConfigInst.MaximumIndexesPerMonikerSearch,
+		preciseIndexResolverFactory,
+		locationResolverFactory,
 		ConfigInst.HunkCacheSize,
+		ConfigInst.MaximumIndexesPerMonikerSearch,
 	)
 	if err != nil {
 		return err
@@ -99,24 +98,18 @@ func Init(
 		scopedContext("upload"),
 		codeIntelServices.UploadsService,
 		codeIntelServices.AutoIndexingService,
-		codeIntelServices.PoliciesService,
-		codeIntelServices.GitserverClient,
 		siteAdminChecker,
-		repoStore,
 		prefetcherFactory,
 		locationResolverFactory,
+		preciseIndexResolverFactory,
 	)
 
 	sentinelRootResolver := sentinelgraphql.NewRootResolver(
 		scopedContext("sentinel"),
 		codeIntelServices.SentinelService,
-		codeIntelServices.UploadsService,
-		codeIntelServices.PoliciesService,
-		codeIntelServices.GitserverClient,
-		siteAdminChecker,
-		repoStore,
 		prefetcherFactory,
 		locationResolverFactory,
+		preciseIndexResolverFactory,
 	)
 
 	enterpriseServices.CodeIntelResolver = graphqlbackend.NewCodeIntelResolver(resolvers.NewCodeIntelResolver(

@@ -1,5 +1,6 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("//dev:defs.bzl", "ts_project")
+load("//dev:mocha.bzl", "mocha_test")
 
 # integration/ does not contain a src/
 # gazelle:js_files **/*.{ts,tsx}
@@ -83,6 +84,7 @@ ts_project(
         "sign-in.test.ts",
     ],
     tsconfig = ":tsconfig",
+    usePresetEnv = False,
     deps = [
         ":integration",
         "//:node_modules/@types/lodash",
@@ -98,4 +100,20 @@ ts_project(
         "//client/web:node_modules/@sourcegraph/common",
         "//client/web:node_modules/@sourcegraph/shared",
     ],
+)
+
+mocha_test(
+    name = "integration-tests",
+    timeout = "long",
+    data = ["//client/web:app-enterprise"],
+    env = {
+        "WEB_BUNDLE_PATH": "$(rootpath //client/web:app-enterprise)",
+    },
+    flaky = True,
+    tags = [
+        "no-cache",
+        "no-sandbox",
+    ],
+    tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
+    deps = [":integration_tests"],
 )

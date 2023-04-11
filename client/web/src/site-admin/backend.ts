@@ -110,6 +110,7 @@ const mirrorRepositoryInfoFieldsFragment = gql`
     fragment MirrorRepositoryInfoFields on MirrorRepositoryInfo {
         cloned
         cloneInProgress
+        cloneProgress @include(if: $displayCloneProgress)
         updatedAt
         nextSyncAt
         isCorrupted
@@ -164,6 +165,7 @@ export const REPOSITORIES_QUERY = gql`
         $orderBy: RepositoryOrderBy
         $descending: Boolean
         $externalService: ID
+        $displayCloneProgress: Boolean = false
     ) {
         repositories(
             first: $first
@@ -733,6 +735,12 @@ export const STATUS_AND_REPO_STATS = gql`
                 message
             }
 
+            ... on NoRepositoriesDetected {
+                __typename
+
+                message
+            }
+
             ... on CloningProgress {
                 __typename
 
@@ -974,7 +982,13 @@ const siteAdminPackageFieldsFragment = gql`
 `
 
 export const PACKAGES_QUERY = gql`
-    query Packages($kind: PackageRepoReferenceKind, $name: String, $first: Int!, $after: String) {
+    query Packages(
+        $kind: PackageRepoReferenceKind
+        $name: String
+        $first: Int!
+        $after: String
+        $displayCloneProgress: Boolean = false
+    ) {
         packageRepoReferences(kind: $kind, name: $name, first: $first, after: $after) {
             nodes {
                 ...SiteAdminPackageFields
@@ -1019,6 +1033,7 @@ export const SITE_CONFIGURATION_CHANGE_CONNECTION_QUERY = gql`
             id
             username
             displayName
+            avatarURL
         }
         diff
         createdAt

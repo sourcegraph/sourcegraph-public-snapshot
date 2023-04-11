@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -18,7 +18,7 @@ type externalEmitter[T workerutil.Record] struct {
 	allocation QueueAllocation
 }
 
-var _ goroutine.Handler = &externalEmitter[types.Index]{}
+var _ goroutine.Handler = &externalEmitter[uploadsshared.Index]{}
 
 type reporter interface {
 	ReportCount(ctx context.Context, queueName string, count int)

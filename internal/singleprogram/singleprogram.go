@@ -123,6 +123,9 @@ func Init(logger log.Logger) {
 	// is safe to do.
 	setDefaultEnv(logger, "EXECUTOR_FRONTEND_URL", "http://localhost:3080")
 	setDefaultEnv(logger, "EXECUTOR_FRONTEND_PASSWORD", confdefaults.AppInMemoryExecutorPassword)
+	// Required because we set "executors.frontendURL": "http://host.docker.internal:3080" in site
+	// configuration.
+	setDefaultEnv(logger, "EXECUTOR_DOCKER_ADD_HOST_GATEWAY", "true")
 
 	// TODO(single-binary): HACK: This is a hack to workaround the fact that the 2nd time you run `sourcegraph`
 	// OOB migration validation fails:

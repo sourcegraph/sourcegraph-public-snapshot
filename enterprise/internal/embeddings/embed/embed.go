@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/split"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/binary"
 )
@@ -30,6 +31,7 @@ func EmbedRepo(
 	repoName api.RepoName,
 	revision api.CommitID,
 	fileNames []string,
+	excludedFilePathPatterns []*paths.GlobPattern,
 	client EmbeddingsClient,
 	splitOptions split.SplitOptions,
 	readFile readFile,
@@ -37,9 +39,13 @@ func EmbedRepo(
 ) (*embeddings.RepoEmbeddingIndex, error) {
 	codeFileNames, textFileNames := []string{}, []string{}
 	for _, fileName := range fileNames {
+		if isExcludedFilePath(fileName, excludedFilePathPatterns) {
+			continue
+		}
+
 		if isValidTextFile(fileName) {
 			textFileNames = append(textFileNames, fileName)
-		} else if isValidCodeFile(fileName) {
+		} else {
 			codeFileNames = append(codeFileNames, fileName)
 		}
 	}
@@ -62,8 +68,8 @@ func EmbedRepo(
 	return &embeddings.RepoEmbeddingIndex{RepoName: repoName, Revision: revision, CodeIndex: codeIndex, TextIndex: textIndex}, nil
 }
 
-func createEmptyEmbeddingIndex(columnDimension int) embeddings.EmbeddingIndex[embeddings.RepoEmbeddingRowMetadata] {
-	return embeddings.EmbeddingIndex[embeddings.RepoEmbeddingRowMetadata]{
+func createEmptyEmbeddingIndex(columnDimension int) embeddings.EmbeddingIndex {
+	return embeddings.EmbeddingIndex{
 		Embeddings:      []float32{},
 		RowMetadata:     []embeddings.RepoEmbeddingRowMetadata{},
 		ColumnDimension: columnDimension,
@@ -80,7 +86,7 @@ func embedFiles(
 	readFile readFile,
 	maxEmbeddingVectors int,
 	repoPathRanks types.RepoPathRanks,
-) (embeddings.EmbeddingIndex[embeddings.RepoEmbeddingRowMetadata], error) {
+) (embeddings.EmbeddingIndex, error) {
 	dimensions, err := client.GetDimensions()
 	if err != nil {
 		return createEmptyEmbeddingIndex(dimensions), err
@@ -90,7 +96,7 @@ func embedFiles(
 		return createEmptyEmbeddingIndex(dimensions), nil
 	}
 
-	index := embeddings.EmbeddingIndex[embeddings.RepoEmbeddingRowMetadata]{
+	index := embeddings.EmbeddingIndex{
 		Embeddings:      make([]float32, 0, len(fileNames)*dimensions),
 		RowMetadata:     make([]embeddings.RepoEmbeddingRowMetadata, 0, len(fileNames)),
 		ColumnDimension: dimensions,
@@ -139,7 +145,7 @@ func embedFiles(
 			continue
 		}
 		content := string(contentBytes)
-		if !isEmbeddableFile(fileName, content) {
+		if !isEmbeddableFileContent(content) {
 			continue
 		}
 

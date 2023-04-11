@@ -40,7 +40,7 @@ type Provider interface {
 	// Refresh refreshes the provider's information with an external service, if any.
 	Refresh(ctx context.Context) error
 
-	// Provides basic external account from this auth provider
+	// ExternalAccountInfo provides basic external account from this auth provider
 	ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error)
 }
 

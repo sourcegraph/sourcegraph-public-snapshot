@@ -15,6 +15,7 @@ func (p *phabricatorRepoResolver) Name() string {
 }
 
 // TODO(chris): Remove URI in favor of Name.
+
 func (p *phabricatorRepoResolver) URI() string {
 	return string(p.PhabricatorRepo.Name)
 }

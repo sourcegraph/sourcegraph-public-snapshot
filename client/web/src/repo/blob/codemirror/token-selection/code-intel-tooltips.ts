@@ -213,7 +213,7 @@ async function hoverRequest(
     params: TextDocumentPositionParameters
 ): Promise<HoverResult> {
     const api = await getOrCreateCodeIntelAPI(view.state.facet(blobPropsFacet).platformContext)
-    const hover = await api.getHover(params).toPromise()
+    const hover = await api.getHover(params)
 
     let markdownContents: string =
         hover === null || hover === undefined || hover.contents.length === 0
@@ -222,10 +222,20 @@ async function hoverRequest(
                   .map(({ value }) => value)
                   .join('\n\n----\n\n')
                   .trimEnd()
+    const precise = isPrecise(hover)
+    if (!precise && markdownContents.length > 0 && !isInteractiveOccurrence(occurrence)) {
+        // Don't show search-based results for non-interactive tokens. For example, we don't
+        // want to show results for keyword tokens or string literals.
+        return {
+            isPrecise: false,
+            markdownContents: '',
+            hoverMerged: null,
+        }
+    }
     if (markdownContents === '' && isInteractiveOccurrence(occurrence)) {
         markdownContents = 'No hover information available'
     }
-    return { markdownContents, hoverMerged: hover, isPrecise: isPrecise(hover) }
+    return { markdownContents, hoverMerged: hover, isPrecise: precise }
 }
 
 function isPrecise(hover: HoverMerged | null | undefined): boolean {
