@@ -16,6 +16,7 @@ const MIN_NO_CONTEXT_SIMILARITY_DIFF = float32(0.02)
 var CONTEXT_MESSAGES_REGEXPS = []*lazyregexp.Regexp{
 	lazyregexp.New(`(what|where|how) (are|do|does|is)`),
 	lazyregexp.New(`in (the|my) (code|codebase|repo|repository)`),
+	lazyregexp.New(`(what|which) (directory|file|folder|path)(s?)`),
 }
 
 var NO_CONTEXT_MESSAGES_REGEXPS = []*lazyregexp.Regexp{
