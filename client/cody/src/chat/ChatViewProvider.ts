@@ -234,6 +234,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             editor: this.editor,
             intentDetector: this.intentDetector,
             codebaseContext: this.codebaseContext,
+            responseMultiplexer: null,
         })
         if (!interaction) {
             return
