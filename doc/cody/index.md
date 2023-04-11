@@ -201,5 +201,5 @@ If you would like to allow your Sourcegraph instance to control the creation and
 
 ## Turning Cody off
 
-To turn Cody off, set `embeddings` and `completions` site-admin settings to `enabled:false` (or remove them altogether.
+To turn Cody off, set `embeddings` and `completions` site-admin settings to `enabled:false` (or remove them altogether).
 
