@@ -28,7 +28,7 @@ const createTempTable = `
 	CREATE TABLE IF NOT EXISTS %s (
 		id SERIAL PRIMARY KEY,
 		version_id INTEGER NOT NULL REFERENCES embedding_versions(id),
-		embedding vector(1536) NOT NULL,
+		embedding vector(768) NOT NULL,
 		file_name TEXT NOT NULL,
 		start_line INTEGER NOT NULL,
 		end_line INTEGER NOT NULL,
@@ -48,6 +48,10 @@ const copyRestFmtstr = `
 	SELECT id, version_id, embedding, '', 0, 0, 0.0
 	FROM code_embeddings
 	WHERE id NOT IN (SELECT id FROM embeddings_test)
+`
+
+const dropIndex = `
+	DROP INDEX IF EXISTS embeddings_train_idx
 `
 
 const indexTrainingSet = `
@@ -150,9 +154,9 @@ func TestRestoreEmbeddings(t *testing.T) {
 	var index *embeddings.RepoEmbeddingIndex
 	func() {
 		// MEGAREPO!
-		//f, err := os.Open("/Users/cbart/.sourcegraph-dev/data/blobstore-go/buckets/embeddings/github_com_sgtest_megarepo_b825625a0feb5dc46656b300e77b7d8e.embeddingindex")
+		f, err := os.Open("/Users/cbart/.sourcegraph-dev/data/blobstore-go/buckets/embeddings/data/embeddings/github_com_sgtest_megarepo_b825625a0feb5dc46656b300e77b7d8e.embeddingindex")
 		// SOURCEGRAPH
-		f, err := os.Open("/Users/cbart/.sourcegraph-dev/data/blobstore-go/buckets/embeddings/github_com_sourcegraph_sourcegraph_cf360e12ff91b2fc199e75aef4ff6744.embeddingindex")
+		//f, err := os.Open("/Users/cbart/.sourcegraph-dev/data/blobstore-go/buckets/embeddings/github_com_sourcegraph_sourcegraph_cf360e12ff91b2fc199e75aef4ff6744.embeddingindex")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -192,10 +196,10 @@ func TestRestoreEmbeddings(t *testing.T) {
 	var testSetSampleSizePercent = 10 // how many embeddings to select as test set, 10 is 10% == 0.10
 	var queryK = 8                    // looking for K nearest neighbors
 	// how many clusters does index train
-	var numTrainedClusters = count / 1000
-	if count > 1000*1000 {
-		numTrainedClusters = int(math.Sqrt(float64(count)))
-	}
+	// var numTrainedClusters = count / 1000
+	// if count > 1000*1000 {
+	// 	numTrainedClusters = int(math.Sqrt(float64(count)))
+	// }
 	var numTests = 100
 
 	if _, err := db.Handle().ExecContext(ctx, fmt.Sprintf(createTempTable, "embeddings_test")); err != nil {
@@ -211,105 +215,120 @@ func TestRestoreEmbeddings(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := db.Handle().ExecContext(ctx, fmt.Sprintf(indexTrainingSet, numTrainedClusters)); err != nil {
-		t.Fatal(err)
-	}
-
-	var recall float32 = 0.0
-	for numProbes := 1; numProbes < numTrainedClusters && recall < 0.95; numProbes = 2 * numProbes {
-		t.Run(fmt.Sprintf("probes=%d", numProbes), func(t *testing.T) {
-			// Get a test set
-			var queries []string
-			func() {
-				qs, err := db.Handle().QueryContext(ctx, `SELECT embedding FROM embeddings_test ORDER BY RANDOM() LIMIT $1`, numTests)
-				if err != nil {
-					t.Fatal(err)
-				}
-				defer qs.Close()
-				for qs.Next() {
-					var q string
-					if err := qs.Scan(&q); err != nil {
-						t.Fatal(err)
-					}
-					queries = append(queries, q)
-				}
-			}()
-
-			// For each of the sampled queries count true positives. True positive / total neighbors is recall.
-			var truePositives int
-			var seqScanTimesMs []int
-			var indexScanTimesMs []int
-			for _, q := range queries {
-				query := q
-				// KNN without an index
-				actualNearestNeighbors := map[int]bool{}
-				if err := db.WithTransact(ctx, func(tx database.DB) error {
-					if _, err := tx.Handle().ExecContext(ctx, `SET LOCAL enable_indexscan = off`); err != nil {
-						return err
-					}
-					if _, err := tx.Handle().ExecContext(ctx, `SET LOCAL enable_indexonlyscan = off`); err != nil {
-						return err
-					}
-					if _, err := tx.Handle().ExecContext(ctx, `SET LOCAL enable_bitmapscan = off`); err != nil {
-						return err
-					}
-					start := time.Now()
-					rs, err := tx.Handle().QueryContext(ctx, knn, query, queryK)
-					if err != nil {
-						return err
-					}
-					defer rs.Close()
-					for rs.Next() {
-						var id int
-						if err := rs.Scan(&id); err != nil {
-							return err
-						}
-						actualNearestNeighbors[id] = true
-					}
-					seqScanTimesMs = append(seqScanTimesMs, int(time.Now().Sub(start).Milliseconds()))
-					return nil
-				}); err != nil {
-					t.Fatal(err)
-				}
-
-				indexedNearestNeighbors := map[int]bool{}
-				if err := db.WithTransact(ctx, func(tx database.DB) error {
-					if _, err := tx.Handle().ExecContext(ctx, `SET LOCAL enable_seqscan = off`); err != nil {
-						return err
-					}
-					if _, err := tx.Handle().ExecContext(ctx, fmt.Sprintf(`SET LOCAL ivfflat.probes = %d`, numProbes)); err != nil {
-						return err
-					}
-					start := time.Now()
-					rs, err := tx.Handle().QueryContext(ctx, knn, query, queryK)
-					if err != nil {
-						return err
-					}
-					defer rs.Close()
-					for rs.Next() {
-						var id int
-						if err := rs.Scan(&id); err != nil {
-							return err
-						}
-						indexedNearestNeighbors[id] = true
-					}
-					indexScanTimesMs = append(indexScanTimesMs, int(time.Now().Sub(start).Milliseconds()))
-					return nil
-				}); err != nil {
-					t.Fatal(err)
-				}
-
-				for i := range actualNearestNeighbors {
-					if indexedNearestNeighbors[i] {
-						truePositives++
-					}
-				}
+	for name, numTrainedClusters := range map[string]int{
+		"0.25 sqrt(vectors)": int(0.25 * math.Sqrt(float64(count))),
+		"0.5  sqrt(vectors)": int(0.5 * math.Sqrt(float64(count))),
+		"     sqrt(vectors)": int(math.Sqrt(float64(count))),
+		"2    sqrt(vectors)": int(2.0 * math.Sqrt(float64(count))),
+		"4    sqrt(vectors)": int(4.0 * math.Sqrt(float64(count))),
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := db.Handle().ExecContext(ctx, dropIndex); err != nil {
+				t.Fatal(err)
 			}
-			recall = float32(truePositives) / float32(queryK*numTests)
-			t.Logf("parameters: k=%d probes=%d clusters=%d", queryK, numProbes, numTrainedClusters)
-			t.Logf("recall: %.2f (%d/%d)", recall, truePositives, queryK*numTests)
-			t.Logf("using seq scan (ms): med = %d, 90th = %d, max = %d", median(seqScanTimesMs), percentile(seqScanTimesMs, 0.9), max(seqScanTimesMs))
-			t.Logf("using idx scan (ms): med = %d, 90th = %d, max = %d", median(indexScanTimesMs), percentile(indexScanTimesMs, 0.9), max(indexScanTimesMs))
+			start := time.Now()
+			if _, err := db.Handle().ExecContext(ctx, fmt.Sprintf(indexTrainingSet, numTrainedClusters)); err != nil {
+				t.Fatal(err)
+			}
+			t.Logf("indexing took %.1fs", time.Now().Sub(start).Seconds())
+
+			var recall float32 = 0.0
+			for numProbes := 1; numProbes < numTrainedClusters && recall < 0.95; numProbes = 2 * numProbes {
+				t.Run(fmt.Sprintf("probes=%d", numProbes), func(t *testing.T) {
+					// Get a test set
+					var queries []string
+					func() {
+						qs, err := db.Handle().QueryContext(ctx, `SELECT embedding FROM embeddings_test ORDER BY RANDOM() LIMIT $1`, numTests)
+						if err != nil {
+							t.Fatal(err)
+						}
+						defer qs.Close()
+						for qs.Next() {
+							var q string
+							if err := qs.Scan(&q); err != nil {
+								t.Fatal(err)
+							}
+							queries = append(queries, q)
+						}
+					}()
+
+					// For each of the sampled queries count true positives. True positive / total neighbors is recall.
+					var truePositives int
+					var seqScanTimesMs []int
+					var indexScanTimesMs []int
+					for _, q := range queries {
+						query := q
+						// KNN without an index
+						actualNearestNeighbors := map[int]bool{}
+						if err := db.WithTransact(ctx, func(tx database.DB) error {
+							if _, err := tx.Handle().ExecContext(ctx, `SET LOCAL enable_indexscan = off`); err != nil {
+								return err
+							}
+							if _, err := tx.Handle().ExecContext(ctx, `SET LOCAL enable_indexonlyscan = off`); err != nil {
+								return err
+							}
+							if _, err := tx.Handle().ExecContext(ctx, `SET LOCAL enable_bitmapscan = off`); err != nil {
+								return err
+							}
+							start := time.Now()
+							rs, err := tx.Handle().QueryContext(ctx, knn, query, queryK)
+							if err != nil {
+								return err
+							}
+							defer rs.Close()
+							for rs.Next() {
+								var id int
+								if err := rs.Scan(&id); err != nil {
+									return err
+								}
+								actualNearestNeighbors[id] = true
+							}
+							seqScanTimesMs = append(seqScanTimesMs, int(time.Now().Sub(start).Milliseconds()))
+							return nil
+						}); err != nil {
+							t.Fatal(err)
+						}
+
+						indexedNearestNeighbors := map[int]bool{}
+						if err := db.WithTransact(ctx, func(tx database.DB) error {
+							if _, err := tx.Handle().ExecContext(ctx, `SET LOCAL enable_seqscan = off`); err != nil {
+								return err
+							}
+							if _, err := tx.Handle().ExecContext(ctx, fmt.Sprintf(`SET LOCAL ivfflat.probes = %d`, numProbes)); err != nil {
+								return err
+							}
+							start := time.Now()
+							rs, err := tx.Handle().QueryContext(ctx, knn, query, queryK)
+							if err != nil {
+								return err
+							}
+							defer rs.Close()
+							for rs.Next() {
+								var id int
+								if err := rs.Scan(&id); err != nil {
+									return err
+								}
+								indexedNearestNeighbors[id] = true
+							}
+							indexScanTimesMs = append(indexScanTimesMs, int(time.Now().Sub(start).Milliseconds()))
+							return nil
+						}); err != nil {
+							t.Fatal(err)
+						}
+
+						for i := range actualNearestNeighbors {
+							if indexedNearestNeighbors[i] {
+								truePositives++
+							}
+						}
+					}
+					recall = float32(truePositives) / float32(queryK*numTests)
+					t.Logf("parameters: k=%d probes=%d clusters=%d", queryK, numProbes, numTrainedClusters)
+					t.Logf("recall: %.2f (%d/%d)", recall, truePositives, queryK*numTests)
+					t.Logf("using seq scan (ms): med = %d, 90th = %d, max = %d", median(seqScanTimesMs), percentile(seqScanTimesMs, 0.9), max(seqScanTimesMs))
+					t.Logf("using idx scan (ms): med = %d, 90th = %d, max = %d", median(indexScanTimesMs), percentile(indexScanTimesMs, 0.9), max(indexScanTimesMs))
+				})
+			}
 		})
 	}
 }

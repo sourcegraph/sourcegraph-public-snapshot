@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS embedding_versions (
 CREATE TABLE IF NOT EXISTS text_embeddings (
     id SERIAL PRIMARY KEY,
     version_id INTEGER NOT NULL REFERENCES embedding_versions(id),
-    embedding vector(1536) NOT NULL,
+    embedding vector(768) NOT NULL,
     file_name TEXT NOT NULL,
     start_line INTEGER NOT NULL,
     end_line INTEGER NOT NULL,
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS text_embeddings (
 CREATE TABLE IF NOT EXISTS code_embeddings (
     id SERIAL PRIMARY KEY,
     version_id INTEGER NOT NULL REFERENCES embedding_versions(id),
-    embedding vector(1536) NOT NULL,
+    embedding vector(768) NOT NULL,
     file_name TEXT NOT NULL,
     start_line INTEGER NOT NULL,
     end_line INTEGER NOT NULL,
