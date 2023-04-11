@@ -26,17 +26,19 @@ export class BufferedBotResponseSubscriber implements BotResponseSubscriber {
      * turn with the bot's entire output provided in one shot. If the topic
      * was not mentioned, `callback` is called with `undefined` signifying the
      * end of a turn.
+     *
      * @param callback the callback to handle content from the bot, if any.
      */
     constructor(private callback: (content: string | undefined) => Promise<void>) {}
 
     // BotResponseSubscriber implementation
 
-    async onResponse(content: string) {
+    public onResponse(content: string): Promise<void> {
         this.buffer_.push(content)
+        return Promise.resolve()
     }
 
-    async onTurnComplete(): Promise<void> {
+    public async onTurnComplete(): Promise<void> {
         await this.callback(this.buffer_.length ? this.buffer_.join('') : undefined)
         this.buffer_ = []
     }
@@ -54,7 +56,23 @@ export class BufferedBotResponseSubscriber implements BotResponseSubscriber {
  * @returns an array with the two substring pieces.
  */
 function splitAt(str: string, startIndex: number, endIndex?: number): [string, string] {
-    return [str.substring(0, startIndex), str.substring(typeof endIndex === 'undefined' ? startIndex : endIndex)]
+    return [str.slice(0, startIndex), str.slice(typeof endIndex === 'undefined' ? startIndex : endIndex)]
+}
+
+/**
+ * Extracts the tag name from something that looks like a simple XML tag. This is
+ * how BotResponseMultiplexer informs the LLM to address specific topics.
+ *
+ * @param tag the tag, including angle brackets, to extract the topic name from.
+ * @returns the topic name.
+ */
+function topicName(tag: string): string {
+    // TODO: Consider allowing the LLM to put junk in tags like attributes, space, etc.
+    const match = tag.match(/^<\/?([A-Za-z-]+)>$/)
+    if (!match) {
+        throw new Error(`topic tag "${tag}" is malformed`)
+    }
+    return match[1]
 }
 
 /**
@@ -63,25 +81,30 @@ function splitAt(str: string, startIndex: number, endIndex?: number): [string, s
  */
 export class BotResponseMultiplexer {
     /**
-     * The default topic. Messages without a prefix are sent to the default
+     * The default topic. Messages without a specific topic are sent to the default
      * topic subscriber, if any.
      */
     public static readonly DEFAULT_TOPIC = 'Assistant'
 
-    // Matches topics, or prefixes of topics
-    private static readonly TOPIC_RE = /^([A-Za-z-]*)(:?)/m
+    // Matches topic open or close tags
+    private static readonly TOPIC_RE = /<$|<\/?([A-Za-z-]?$|[A-Za-z-]+>?)/m
 
     private subs_ = new Map<string, BotResponseSubscriber>()
 
-    // The topic currently being addressed by the bot
-    private currentTopic_: string = BotResponseMultiplexer.DEFAULT_TOPIC
+    // The topic currently being addressed by the bot. A stack.
+    private topics_: string[] = []
+
+    // Gets the topic on the top of the topic stack.
+    private get currentTopic(): string {
+        return this.topics_.at(-1) || BotResponseMultiplexer.DEFAULT_TOPIC
+    }
 
     // Buffers responses until topics can be parsed
     private buffer_ = ''
 
     /**
-     * Subscribes to a topic in the bot response. Each topic can have only one
-     * subscriber at a time. New subscribers overwrite old ones.
+     * Subscribes to a topic in the bot response. Each topic can have only one subscriber at a time. New subscribers overwrite old ones.
+     *
      * @param topic the string prefix to subscribe to.
      * @param subscriber the handler for the content produced by the bot.
      */
@@ -99,12 +122,13 @@ export class BotResponseMultiplexer {
     public async notifyTurnComplete(): Promise<void> {
         // Flush buffered content, if any
         if (this.buffer_) {
-            await this.push(this.currentTopic_, this.buffer_)
+            const content = this.buffer_
+            this.buffer_ = ''
+            await this.publishInTopic(this.currentTopic, content)
         }
 
         // Reset to the default topic, ready for another turn
-        this.currentTopic_ = BotResponseMultiplexer.DEFAULT_TOPIC
-        this.buffer_ = ''
+        this.topics_ = []
 
         // Let subscribers react to the end of the turn.
         await Promise.all([...this.subs_.values()].map(subscriber => subscriber.onTurnComplete()))
@@ -113,59 +137,82 @@ export class BotResponseMultiplexer {
     /**
      * Parses part of a compound response from the bot and forwards as much as possible to
      * subscribers.
+     *
      * @param response the text of the next incremental response from the bot.
      */
     public async publish(response: string): Promise<void> {
+        // This is basically a loose parser of an XML-like language which forwards
+        // incremental content to subscribers which handle specific tags. The parser
+        // is forgiving if tags are not closed in the right order.
+
         this.buffer_ += response
+        let last
         while (this.buffer_) {
-            // Look for something that could be a new topic.
+            if (typeof last !== 'undefined' && last === this.buffer_.length) {
+                throw new Error(`did not make progress parsing: ${this.buffer_}`)
+            }
+            last = this.buffer_.length
+            // Look for something that could be a topic.
             const match = this.buffer_.match(BotResponseMultiplexer.TOPIC_RE)
-            if (match) {
-                if (typeof match.index === 'undefined') {
-                    throw new TypeError('unreachable')
-                }
-                const matchEnd = match.index + match[0].length
-                const topic = match[1]
-                const completeTopic = match[2] === ':'
-                if (completeTopic) {
-                    if (this.subs_.has(topic)) {
-                        // Flush the buffered content before the new topic
-                        let content
-                        ;[content, this.buffer_] = splitAt(this.buffer_, match.index, matchEnd)
-                        await this.push(this.currentTopic_, content)
-                        // Switch topics
-                        this.currentTopic_ = topic
-                    } else {
-                        // The topic has no subscriber, so treat it as content.
-                        let content
-                        ;[content, this.buffer_] = splitAt(this.buffer_, matchEnd)
-                        await this.push(this.currentTopic_, content)
-                    }
-                } else if (matchEnd === this.buffer_.length) {
-                    // A topic is forming, but is incomplete, so wait for more content
+            if (!match) {
+                // No topic change is forming, so publish the in-progress content to the current topic
+                await this.publishBufferUpTo(this.buffer_.length)
+                return
+            }
+            if (typeof match.index === 'undefined') {
+                throw new TypeError('unreachable')
+            }
+            if (match.index) {
+                // Flush the content before the start (end) topic tag
+                await this.publishBufferUpTo(match.index)
+                continue // spin again to get a match with resynced indices
+            }
+            const matchEnd = match.index + match[0].length
+            const tagIsOpenTag = match[0].length >= 2 && match[0].at(1) !== '/'
+            const tagIsComplete = match[0].at(-1) === '>'
+            if (!tagIsComplete) {
+                if (matchEnd === this.buffer_.length) {
+                    // We must wait for more content to see how this plays out.
                     return
-                } else {
-                    // TODO: This could consume a prefix and the next thing that appears looks like a topic
-                    // There's no terminating colon, so push the whole line to the current topic
-                    let newline = this.buffer_.indexOf('\n') + 1
-                    if (!newline) {
-                        newline = this.buffer_.length
-                    }
-                    let content
-                    ;[content, this.buffer_] = splitAt(this.buffer_, newline)
-                    await this.push(this.currentTopic_, content)
                 }
+                // The tag is incomplete, but there's content after it, for
+                // example: "<--insert coin", match will be "<--insert". Treat
+                // it as content.
+                await this.publishBufferUpTo(matchEnd)
+                continue
+            }
+            // The tag is complete.
+            const topic = topicName(match[0])
+            if (!this.subs_.has(topic)) {
+                // There are no subscribers for this topic, so treat it as content.
+                await this.publishBufferUpTo(matchEnd)
+                continue
+            }
+            this.buffer_ = this.buffer_.slice(matchEnd) // Consume the close tag
+            if (tagIsOpenTag) {
+                // Handle a new topic
+                this.topics_.push(topic)
             } else {
-                // No new topic is forming, so publish the in-progress content to the current topic
-                const content = this.buffer_
-                this.buffer_ = ''
-                await this.push(this.currentTopic_, content)
+                // Handle the end of a topic: Pop the topic stack until we find a match.
+                // TODO: Is this the right heuristic?
+                while (this.topics_.length) {
+                    if (this.topics_.pop() === topic) {
+                        break
+                    }
+                }
             }
         }
     }
 
+    // Publishes the content of `buffer_` up to `index` in the current topic. Discards the published content.
+    private publishBufferUpTo(index: number): Promise<void> {
+        let content
+        ;[content, this.buffer_] = splitAt(this.buffer_, index)
+        return this.publishInTopic(this.currentTopic, content)
+    }
+
     // Publishes one specific topic to its subscriber, if any.
-    private async push(topic: string, content: string): Promise<void> {
+    private async publishInTopic(topic: string, content: string): Promise<void> {
         const sub = this.subs_.get(topic)
         if (!sub) {
             return
