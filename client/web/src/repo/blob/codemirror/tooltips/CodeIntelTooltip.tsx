@@ -16,6 +16,7 @@ import { HovercardView, HoverData } from '../hovercard'
 import { rangeToCmSelection } from '../occurrence-utils'
 import { DefinitionResult, goToDefinitionAtOccurrence } from '../token-selection/definition'
 import { modifierClickDescription } from '../token-selection/modifier-click'
+import { MOUSE_MAIN_BUTTON } from '../utils'
 
 export interface HoverResult {
     markdownContents: string
