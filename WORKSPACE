@@ -74,6 +74,13 @@ http_archive(
     urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.19.0/rules_rust-v0.19.0.tar.gz"],
 )
 
+http_archive(
+    name = "aspect_rules_format",
+    sha256 = "c8d04f68082c0eeac2777e15f65048ece2f17d632023bdcc511602f8c5faf177",
+    strip_prefix = "bazel-super-formatter-2.0.0",
+    url = "https://github.com/aspect-build/bazel-super-formatter/archive/refs/tags/v2.0.0.tar.gz",
+)
+
 # rules_js setup ================================
 load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
 
@@ -251,3 +258,46 @@ crates_repository(
 load("@crate_index//:defs.bzl", "crate_repositories")
 
 crate_repositories()
+
+## Formatter setup
+
+load("@aspect_rules_format//format:repositories.bzl", "rules_format_dependencies")
+
+rules_format_dependencies()
+
+# If you didn't already register a toolchain providing nodejs, do that:
+load("@rules_nodejs//nodejs:repositories.bzl", "DEFAULT_NODE_VERSION", "nodejs_register_toolchains")
+
+nodejs_register_toolchains(
+    name = "node",
+    node_version = DEFAULT_NODE_VERSION,
+)
+
+load("@aspect_rules_format//format:dependencies.bzl", "parse_dependencies")
+
+parse_dependencies()
+
+# Installs toolchains for running programs under Node, Python, etc.
+# Be sure to register your own toolchains before this.
+# Most users should do this LAST in their WORKSPACE to avoid getting our versions of
+# things like the Go toolchain rather than the one you intended.
+load("@aspect_rules_format//format:toolchains.bzl", "format_register_toolchains")
+
+format_register_toolchains()
+
+# If Python formatting is enabled, you'll need to uncomment the following as well.
+#
+# load("@rules_python//python:repositories.bzl", "python_register_toolchains")
+#
+# python_register_toolchains(
+#     name = "python3",
+#     python_version = "3.10",
+# )
+#
+# load("@rules_python//python/pip_install:repositories.bzl", "pip_install_dependencies")
+#
+# pip_install_dependencies()
+#
+# load("@aspect_rules_format//:requirements.bzl", install_black = "install_deps")
+#
+# install_black()
