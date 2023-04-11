@@ -81,7 +81,6 @@ RUN apk add --no-cache --verbose openjdk11
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/blobstore:server /opt/s3proxy /opt/s3proxy
 
-
 COPY ctags-install-alpine.sh /ctags-install-alpine.sh
 RUN /ctags-install-alpine.sh
 
@@ -97,6 +96,8 @@ COPY --from=sourcegraph/prometheus:server /bin/prometheus /bin
 COPY --from=sourcegraph/prometheus:server /prometheus.sh /prometheus.sh
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/prometheus:server /usr/share/prometheus /usr/share/prometheus
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/prometheus:server /sg_config_prometheus /sg_config_prometheus
 
 RUN set -ex && \
     addgroup -S grafana && \
@@ -121,7 +122,7 @@ COPY --from=coursier /usr/local/bin/coursier /usr/local/bin/coursier
 RUN wget -O - https://github.com/jtilander/p4d/raw/4600d741720f85d77852dcca7c182e96ad613358/lib/lib-x64.tgz | tar zx --directory /
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/grafana:server /sg_config_grafana/provisioning/dashboards /sg_config_grafana/provisioning/dashboards
+COPY --from=sourcegraph/grafana:server /sg_config_grafana /sg_config_grafana
 
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/postgres_exporter:server /usr/local/bin/postgres_exporter /usr/local/bin/postgres_exporter

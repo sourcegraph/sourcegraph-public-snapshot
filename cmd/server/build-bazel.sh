@@ -28,6 +28,7 @@ TARGETS=(
   //cmd/server
   # https://github.com/sourcegraph/s3proxy is still the default for now.
   # //cmd/blobstore
+  //cmd/symbols
   @com_github_sourcegraph_zoekt//cmd/zoekt-archive-index
   @com_github_sourcegraph_zoekt//cmd/zoekt-git-index
   @com_github_sourcegraph_zoekt//cmd/zoekt-sourcegraph-indexserver
@@ -35,15 +36,13 @@ TARGETS=(
 )
 
 echo "--- bazel build"
+
 bazel build "${TARGETS[@]}" \
   --stamp \
   --workspace_status_command=./dev/bazel_stamp_vars.sh \
-  --//:assets_bundle_type=oss
-
-bazel build \
+  --//:assets_bundle_type=oss \
   --platforms @zig_sdk//platform:linux_amd64 \
-  --extra_toolchains @zig_sdk//toolchain:linux_amd64_musl \
-  //cmd/symbols
+  --extra_toolchains @zig_sdk//toolchain:linux_amd64_musl
 
 echo "-- preparing rootfs"
 cp -a ./cmd/server/rootfs/. "$OUTPUT"
@@ -54,9 +53,6 @@ for TARGET in "${TARGETS[@]}"; do
   cp "$out" "$BINDIR"
   echo "copying $TARGET"
 done
-
-symbol=$(bazel cquery //cmd/symbols --output=files)
-cp "$symbol" "$BINDIR"
 
 # echo "--- prometheus"
 IMAGE=sourcegraph/prometheus:server CACHE=true docker-images/prometheus/build-bazel.sh
@@ -75,7 +71,7 @@ cp -a ./cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
 cp -a ./cmd/gitserver/p4-fusion-install-alpine.sh "$OUTPUT"
 
 # echo "--- docker build"
-docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
+docker build -f cmd/server/Dockerfile.bazel -t "$IMAGE" "$OUTPUT" \
   --platform linux/amd64 \
   --progress=plain \
   --build-arg COMMIT_SHA \
