@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/log"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/run"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/util"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -115,7 +116,7 @@ func parsePreviousStepResult(path string, step int, skippedSteps map[int]struct{
 		}
 
 		// Read the previous step's result file.
-		stepResultPath := filepath.Join(path, fmt.Sprintf("step%d.json", previousStepIndex))
+		stepResultPath := filepath.Join(path, util.StepJSONFile(previousStepIndex))
 		stepJSON, err := os.ReadFile(stepResultPath)
 		if err != nil {
 			return previousResult, errors.Wrap(err, "failed to read step result file")
