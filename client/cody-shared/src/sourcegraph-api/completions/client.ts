@@ -7,9 +7,12 @@ export abstract class SourcegraphCompletionsClient {
         instanceUrl: string,
         protected accessToken: string | null,
         protected mode: 'development' | 'production',
-        protected customHeaders: object
+        protected customHeaders?: object
     ) {
         this.completionsEndpoint = new URL('/.api/completions/stream', instanceUrl).href
+        if (customHeaders === undefined) {
+            this.customHeaders = {}
+        }
     }
 
     protected sendEvents(events: Event[], cb: CompletionCallbacks): void {
