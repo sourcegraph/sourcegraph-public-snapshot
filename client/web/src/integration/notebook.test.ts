@@ -472,7 +472,8 @@ describe('Search Notebook', () => {
         }
     })
 
-    it('Should export a notebook as Markdown file and import it back', async () => {
+    // TODO: Enable this test once we have a way to mock the file download in Bazel.
+    it.skip('Should export a notebook as Markdown file and import it back', async () => {
         testContext.overrideGraphQL({
             ...commonSearchGraphQLResults,
             FetchNotebook: ({ id }) => ({
