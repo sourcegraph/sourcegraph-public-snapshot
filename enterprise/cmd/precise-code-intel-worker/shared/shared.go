@@ -99,7 +99,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	})
 
 	// Go!
-	goroutine.MonitorBackgroundRoutines(ctx, worker, server)
+	goroutine.MonitorBackgroundRoutines(ctx, append(worker, server)...)
 
 	return nil
 }
