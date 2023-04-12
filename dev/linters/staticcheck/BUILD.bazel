@@ -13,7 +13,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1000"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -27,7 +27,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1001"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -41,7 +41,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1002"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -55,7 +55,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1003"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -69,7 +69,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1004"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -83,7 +83,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1005"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -97,7 +97,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1006"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -111,7 +111,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1007"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -125,7 +125,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1008"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -139,7 +139,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1010"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -153,7 +153,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1011"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -167,7 +167,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1012"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -181,7 +181,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1013"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -195,7 +195,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1014"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -209,7 +209,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1015"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -223,7 +223,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1016"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -237,7 +237,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1017"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -251,7 +251,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1018"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -265,7 +265,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1019"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -279,7 +279,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1020"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -293,7 +293,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1021"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -307,7 +307,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1023"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -321,7 +321,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1024"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -335,7 +335,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1025"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -349,7 +349,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1026"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -363,7 +363,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1027"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -377,7 +377,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1028"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -391,7 +391,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1029"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -405,7 +405,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA1030"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -419,7 +419,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA2000"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -433,7 +433,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA2001"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -447,7 +447,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA2002"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -461,7 +461,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA2003"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -475,7 +475,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA3000"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -489,7 +489,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA3001"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -503,7 +503,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4000"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -517,7 +517,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4001"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -531,7 +531,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4003"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -545,7 +545,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4004"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -559,7 +559,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4005"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -573,7 +573,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4006"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -587,7 +587,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4008"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -601,7 +601,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4009"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -615,7 +615,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4010"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -629,7 +629,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4011"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -643,7 +643,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4012"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -657,7 +657,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4013"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -671,7 +671,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4014"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -685,7 +685,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4015"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -699,7 +699,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4016"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -713,7 +713,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4017"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -727,7 +727,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4018"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -741,7 +741,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4019"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -755,7 +755,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4020"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -769,7 +769,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4021"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -783,7 +783,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4022"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -797,7 +797,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4023"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -811,7 +811,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4024"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -825,7 +825,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4025"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -839,7 +839,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4026"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -853,7 +853,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4027"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -867,7 +867,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4028"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -881,7 +881,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4029"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -895,7 +895,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4030"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -909,7 +909,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA4031"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -923,7 +923,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA5000"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -937,7 +937,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA5001"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -951,7 +951,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA5002"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -965,7 +965,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA5003"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -979,7 +979,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA5004"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -993,7 +993,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA5005"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -1007,7 +1007,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA5007"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -1021,7 +1021,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA5008"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -1035,7 +1035,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA5009"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -1049,7 +1049,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA5010"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -1063,7 +1063,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA5011"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -1077,7 +1077,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA5012"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -1091,7 +1091,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA6000"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -1105,7 +1105,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA6001"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -1119,7 +1119,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA6002"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -1133,7 +1133,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA6003"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -1147,7 +1147,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA6005"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -1161,7 +1161,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA9001"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -1175,7 +1175,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA9002"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -1189,7 +1189,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA9003"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -1203,7 +1203,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA9004"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -1217,7 +1217,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA9005"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -1231,7 +1231,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA9006"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -1245,7 +1245,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA9007"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -1259,7 +1259,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "SA9008"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -1272,7 +1272,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/linters/staticcheck",
     visibility = ["//visibility:public"],
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
