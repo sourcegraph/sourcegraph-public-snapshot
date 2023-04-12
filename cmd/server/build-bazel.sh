@@ -51,10 +51,10 @@ ENTERPRISE_TARGETS=(
 )
 
 if "$ENTERPRISE"; then
-  TARGETS=(${ENTERPRISE_TARGETS[@]})
+  TARGETS="(${ENTERPRISE_TARGETS[*]})"
   BUNDLE=enterprise
 else
-  TARGETS=(${OSS_TARGETS[@]})
+  TARGETS="(${OSS_TARGETS[*]})"
   BUNDLE=oss
 fi
 
@@ -71,7 +71,7 @@ cp -a ./cmd/server/rootfs/. "$OUTPUT"
 export BINDIR="$OUTPUT/usr/local/bin"
 mkdir -p "$BINDIR"
 for TARGET in "${TARGETS[@]}"; do
-  out=$(bazel cquery $TARGET --output=files)
+  out=$(bazel cquery "$TARGET" --output=files)
   cp "$out" "$BINDIR"
   echo "copying $TARGET"
 done
