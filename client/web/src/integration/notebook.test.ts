@@ -523,12 +523,11 @@ describe('Search Notebook', () => {
 query
 \`\`\`
 
-https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@main/-/blob/client/web/index.ts?L2-10
+${process.env.SOURCEGRAPH_BASE_URL}/github.com/sourcegraph/sourcegraph@main/-/blob/client/web/index.ts?L2-10
 
-https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/client/web/index.ts?L1:1-1:3#symbolName=func&symbolContainerName=class&symbolKind=FUNCTION&lineContext=3
+${process.env.SOURCEGRAPH_BASE_URL}/github.com/sourcegraph/sourcegraph@branch/-/blob/client/web/index.ts?L1:1-1:3#symbolName=func&symbolContainerName=class&symbolKind=FUNCTION&lineContext=3
 `
 
-        console.log('downloadPath', downloadPath)
         await driver.page.client().send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
@@ -539,7 +538,6 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
         await driver.page.waitForTimeout(1000)
 
         const exportedNotebookPath = path.resolve(downloadPath, 'Exported.snb.md')
-        console.log('readdirSync', fs.readdirSync(downloadPath))
         // eslint-disable-next-line no-sync
         expect(fs.existsSync(exportedNotebookPath)).toBeTruthy()
 
