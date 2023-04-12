@@ -42,7 +42,7 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 	backfillStore := NewBackfillStore(db)
 
 	name := "backfill_in_progress_worker"
-
+	maxRetries := 3
 	workerStore := dbworkerstore.New(config.ObservationCtx, db.Handle(), dbworkerstore.Options[*BaseJob]{
 		Name:              fmt.Sprintf("%s_store", name),
 		TableName:         "insights_background_jobs",
@@ -53,7 +53,7 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 		MaxNumResets:      100,
 		StalledMaxAge:     time.Second * 30,
 		RetryAfter:        time.Second * 30,
-		MaxNumRetries:     3,
+		MaxNumRetries:     maxRetries,
 	})
 
 	handlerConfig := newHandlerConfig()
@@ -67,6 +67,7 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 		repoStore:          config.RepoStore,
 		clock:              glock.NewRealClock(),
 		config:             handlerConfig,
+		maxRetries:         maxRetries,
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, workerutil.Handler[*BaseJob](task), workerutil.WorkerOptions{
@@ -117,6 +118,7 @@ type inProgressHandler struct {
 	insightsStore      store.Interface
 	backfillRunner     pipeline.Backfiller
 	config             handlerConfig
+	maxRetries         int
 
 	clock glock.Clock
 }
@@ -156,12 +158,23 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, job *
 
 	interrupt, err := h.doExecution(ctx, execution)
 	if err != nil {
-		return err
+		return h.fail(ctx, err, job, execution.backfill)
 	}
 	if interrupt {
-		return h.doInterrupt(ctx, job)
+		err = h.doInterrupt(ctx, job)
+		if err != nil {
+			return h.fail(ctx, err, job, execution.backfill)
+		}
 	}
 	return nil
+}
+
+func (h *inProgressHandler) fail(ctx context.Context, err error, job *BaseJob, backfill *SeriesBackfill) error {
+	if job.NumFailures+1 >= h.maxRetries {
+		_ = backfill.SetFailed(ctx, h.backfillStore)
+		h.workerStore.MarkFailed(ctx, job.ID, err.Error(), dbworkerstore.MarkFinalOptions{})
+	}
+	return err
 }
 
 type nextNFunc func(pageSize int, config iterator.IterationConfig) ([]api.RepoID, bool, iterator.FinishNFunc)

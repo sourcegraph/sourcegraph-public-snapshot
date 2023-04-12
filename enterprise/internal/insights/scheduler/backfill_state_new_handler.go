@@ -34,6 +34,7 @@ type newBackfillHandler struct {
 	repoIterator    discovery.SeriesRepoIterator
 	costAnalyzer    priority.QueryAnalyzer
 	timeseriesStore store.Interface
+	maxRetries      int
 }
 
 // makeNewBackfillWorker makes a new Worker, Resetter and Store to handle the queue of Backfill jobs that are in the state of "New"
@@ -42,7 +43,7 @@ func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*worke
 	backfillStore := NewBackfillStore(insightsDB)
 
 	name := "backfill_new_backfill_worker"
-
+	maxRetries := 3
 	workerStore := dbworkerstore.New(config.ObservationCtx, insightsDB.Handle(), dbworkerstore.Options[*BaseJob]{
 		Name:              fmt.Sprintf("%s_store", name),
 		TableName:         "insights_background_jobs",
@@ -53,7 +54,7 @@ func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*worke
 		MaxNumResets:      100,
 		StalledMaxAge:     time.Second * 30,
 		RetryAfter:        time.Second * 30,
-		MaxNumRetries:     3,
+		MaxNumRetries:     maxRetries,
 	})
 
 	task := newBackfillHandler{
@@ -63,6 +64,7 @@ func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*worke
 		repoIterator:    discovery.NewSeriesRepoIterator(config.AllRepoIterator, config.RepoStore, config.RepoQueryExecutor),
 		costAnalyzer:    *config.CostAnalyzer,
 		timeseriesStore: config.InsightStore,
+		maxRetries:      maxRetries,
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, workerutil.Handler[*BaseJob](&task), workerutil.WorkerOptions{
@@ -87,7 +89,6 @@ var _ workerutil.Handler[*BaseJob] = &newBackfillHandler{}
 
 func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, job *BaseJob) (err error) {
 	logger.Info("newBackfillHandler called", log.Int("recordId", job.RecordID()))
-
 	// setup transactions
 	tx, err := h.backfillStore.Transact(ctx)
 	if err != nil {
@@ -98,30 +99,31 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, job 
 	// load backfill and series
 	backfill, err := tx.LoadBackfill(ctx, job.backfillId)
 	if err != nil {
-		return errors.Wrap(err, "loadBackfill")
+		// if the backfill can't be loaded we can't fail it
+		return err
 	}
 	series, err := h.seriesReader.GetDataSeriesByID(ctx, backfill.SeriesId)
 	if err != nil {
-		return errors.Wrap(err, "GetDataSeriesByID")
+		return h.fail(ctx, errors.Wrap(err, "GetDataSeriesByID"), job, backfill)
 	}
 
 	// set backfill repo scope
 	repoIds := []int32{}
 	reposIterator, err := h.repoIterator.ForSeries(ctx, series)
 	if err != nil {
-		return errors.Wrap(err, "repoIterator.SeriesRepoIterator")
+		return h.fail(ctx, errors.Wrap(err, "repoIterator.SeriesRepoIterator"), job, backfill)
 	}
 	err = reposIterator.ForEach(ctx, func(repoName string, id api.RepoID) error {
 		repoIds = append(repoIds, int32(id))
 		return nil
 	})
 	if err != nil {
-		return errors.Wrap(err, "reposIterator.ForEach")
+		return h.fail(ctx, errors.Wrap(err, "reposIterator.ForEach"), job, backfill)
 	}
 
 	queryPlan, err := parseQuery(*series)
 	if err != nil {
-		return errors.Wrap(err, "parseQuery")
+		return h.fail(ctx, errors.Wrap(err, "parseQuery"), job, backfill)
 	}
 
 	cost := h.costAnalyzer.Cost(&priority.QueryObject{
@@ -129,9 +131,10 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, job 
 		NumberOfRepositories: int64(len(repoIds)),
 	})
 
+	captureBackfill := *backfill
 	backfill, err = backfill.SetScope(ctx, tx, repoIds, cost)
 	if err != nil {
-		return errors.Wrap(err, "backfill.SetScope")
+		return h.fail(ctx, errors.Wrap(err, "backfill.SetScope"), job, &captureBackfill)
 	}
 
 	sampleTimes := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
@@ -145,26 +148,34 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, job 
 			RecordingTimes:  timeseries.MakeRecordingsFromTimes(sampleTimes, false),
 		},
 	}); err != nil {
-		return errors.Wrap(err, "NewBackfillHandler.SetInsightSeriesRecordingTimes")
+		return h.fail(ctx, errors.Wrap(err, "NewBackfillHandler.SetInsightSeriesRecordingTimes"), job, backfill)
 	}
 
 	// update series state
 	err = backfill.setState(ctx, tx, BackfillStateProcessing)
 	if err != nil {
-		return errors.Wrap(err, "backfill.setState")
-	}
+		return h.fail(ctx, errors.Wrap(err, "backfill.setState"), job, backfill)
 
+	}
 	// enqueue backfill for next step in processing
 	err = enqueueBackfill(ctx, tx.Handle(), backfill)
 	if err != nil {
-		return errors.Wrap(err, "backfill.enqueueBackfill")
+		return h.fail(ctx, errors.Wrap(err, "backfill.enqueueBackfill"), job, backfill)
 	}
 	// We have to manually manipulate the queue record here to ensure that the new job is written in the same tx
 	// that this job is marked complete. This is how we will ensure there is no desync if the mark complete operation
 	// fails after we've already queued up a new job.
 	_, err = h.workerStore.MarkComplete(ctx, job.RecordID(), dbworkerstore.MarkFinalOptions{})
 	if err != nil {
-		return errors.Wrap(err, "backfill.MarkComplete")
+		return h.fail(ctx, errors.Wrap(err, "backfill.MarkComplete"), job, backfill)
+	}
+	return err
+}
+
+func (h *newBackfillHandler) fail(ctx context.Context, err error, job *BaseJob, backfill *SeriesBackfill) error {
+	if job.NumFailures+1 >= h.maxRetries {
+		_ = backfill.SetFailed(ctx, h.backfillStore)
+		h.workerStore.MarkFailed(ctx, job.ID, err.Error(), dbworkerstore.MarkFinalOptions{})
 	}
 	return err
 }
