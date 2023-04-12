@@ -52,14 +52,17 @@ ENTERPRISE_TARGETS=(
 
 if "$ENTERPRISE"; then
   TARGETS=(${ENTERPRISE_TARGETS[@]})
+  BUNDLE=enterprise
 else
   TARGETS=(${OSS_TARGETS[@]})
+  BUNDLE=oss
 fi
 
 echo "--- bazel build"
 bazel build "${TARGETS[@]}" \
   --stamp \
   --workspace_status_command=./dev/bazel_stamp_vars.sh \
+  --//:assets_bundle_type="$BUNDLE" \
   --platforms @zig_sdk//platform:linux_amd64 \
   --extra_toolchains @zig_sdk//toolchain:linux_amd64_musl
 
