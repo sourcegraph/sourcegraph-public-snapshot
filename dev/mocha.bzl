@@ -24,6 +24,7 @@ NON_BUNDLED = [
 NON_BUNDLED_DEPS = [
     "//:node_modules/jsonc-parser",
     "//:node_modules/puppeteer",
+    "//:node_modules/@axe-core/puppeteer",
     "//:node_modules/axe-core",
     "//client/web:node_modules/@sourcegraph/build-config",
 ]

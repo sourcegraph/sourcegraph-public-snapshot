@@ -104,7 +104,7 @@ ts_project(
 
 mocha_test(
     name = "integration-tests",
-    timeout = "long",
+    timeout = "moderate",
     args = [
         "--parallel",
         "--jobs 16",
