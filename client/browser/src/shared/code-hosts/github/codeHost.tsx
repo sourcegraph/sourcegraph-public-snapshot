@@ -162,7 +162,7 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
     // new GitHub UI
     const container =
         codeViewElement.querySelector('#repos-sticky-header')?.childNodes[0]?.childNodes[0]?.childNodes[1]
-            ?.childNodes[1] // we have to use this level of nesting when selecting a target container because #repos-sticky-header children don't have specific classes or ids
+            ?.childNodes[2] // we have to use this level of nesting when selecting a target container because #repos-sticky-header children don't have specific classes or ids
     if (container instanceof HTMLElement) {
         container.prepend(mountElement)
         return mountElement
@@ -181,7 +181,6 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
 
 /**
  * Matches the modern single-file code view, or snippets embedded in comments.
- *
  */
 const fileLineContainerResolver: ViewResolver<CodeView> = {
     selector: getSelectorFor('blobContainer'),
@@ -299,7 +298,11 @@ export const checkIsGitHub = (): boolean => checkIsGitHubDotCom() || checkIsGitH
 const OPEN_ON_SOURCEGRAPH_ID = 'open-on-sourcegraph'
 
 export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLElement): HTMLElement | null => {
-    const pageheadActions = querySelectorOrSelf(container, '.pagehead-actions')
+    const isGlobalNavigationUpdateFeaturePreviewEnabled = !!querySelectorOrSelf(container, 'header.AppHeader')
+    const pageheadActions = querySelectorOrSelf(
+        container,
+        isGlobalNavigationUpdateFeaturePreviewEnabled ? '.AppHeader-globalBar-end' : '.pagehead-actions'
+    )
     // If ran on page that isn't under a repository namespace.
     if (!pageheadActions || pageheadActions.children.length === 0) {
         return null
@@ -310,7 +313,7 @@ export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLE
         return mount
     }
     // Create new
-    mount = document.createElement('li')
+    mount = document.createElement(isGlobalNavigationUpdateFeaturePreviewEnabled ? 'div' : 'li')
     mount.id = OPEN_ON_SOURCEGRAPH_ID
     pageheadActions.prepend(mount)
     return mount
