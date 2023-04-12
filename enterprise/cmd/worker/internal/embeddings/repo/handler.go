@@ -57,11 +57,9 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		return err
 	}
 
-	mfs := int64(maxFileSize)
 	validFiles, err := h.gitserverClient.ListFiles(ctx, nil, repo.Name, record.Revision, &protocol.ListFilesOpts{
-		Pattern:          matchEverythingRegexp,
 		IncludeDirs:      false,
-		MaxFileSizeBytes: &mfs,
+		MaxFileSizeBytes: maxFileSize,
 	})
 	if err != nil {
 		return err

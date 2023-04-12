@@ -15,7 +15,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grafana/regexp"
 	godiff "github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 
@@ -665,9 +664,7 @@ func TestListFiles(t *testing.T) {
 	defer ResetClientMocks()
 	client := NewClient()
 	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit string) ([]string, error) {
-		return client.ListFiles(ctx, checker, repo, api.CommitID(commit), &protocol.ListFilesOpts{
-			Pattern: regexp.MustCompile("file"),
-		})
+		return client.ListFiles(ctx, checker, repo, api.CommitID(commit), &protocol.ListFilesOpts{})
 	})
 }
 

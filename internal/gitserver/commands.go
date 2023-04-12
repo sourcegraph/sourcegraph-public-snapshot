@@ -1034,9 +1034,7 @@ func (c *clientImplementor) ListFiles(ctx context.Context, checker authz.SubRepo
 	for _, file := range files {
 		if file.IsDir() && !opts.IncludeDirs {
 			continue
-		} else if opts.MaxFileSizeBytes != nil && file.Size() > *opts.MaxFileSizeBytes {
-			continue
-		} else if opts.Pattern != nil && !opts.Pattern.MatchString(file.Name()) {
+		} else if opts.MaxFileSizeBytes != 0 && file.Size() > opts.MaxFileSizeBytes {
 			continue
 		}
 

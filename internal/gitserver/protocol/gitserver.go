@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/grafana/regexp"
-
 	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -263,9 +261,8 @@ type ExecRequest struct {
 
 // ListFilesOpts specifies options when calling gitserverClient.ListFiles.
 type ListFilesOpts struct {
-	Pattern          *regexp.Regexp
 	IncludeDirs      bool
-	MaxFileSizeBytes *int64
+	MaxFileSizeBytes int64
 }
 
 // BatchLogRequest is a request to execute a `git log` command inside a set of
