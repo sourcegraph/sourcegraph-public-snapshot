@@ -1,9 +1,9 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "directive",
-    srcs = ["directive.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/dev/linters/directive",
+    name = "nolint",
+    srcs = ["nolint.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/linters/nolint",
     visibility = ["//visibility:public"],
     deps = [
         "@co_honnef_go_tools//analysis/report",

@@ -1,4 +1,4 @@
-package directive
+package nolint
 
 // This file is copied from:
 // https://sourcegraph.com/github.com/pingcap/tidb@a0f2405981960ec705bf44f12b96ca8aec1506c4/-/blob/build/linter/util/util.go
@@ -60,8 +60,8 @@ func parseDirective(s string) (cmd skipType, args []string) {
 	return skipLinter, parts
 }
 
-// ParseDirectives extracts all directives from a list of Go files.
-func ParseDirectives(files []*ast.File, fset *token.FileSet) []Directive {
+// parseDirectives extracts all directives from a list of Go files.
+func parseDirectives(files []*ast.File, fset *token.FileSet) []Directive {
 	var dirs []Directive
 	for _, f := range files {
 		cm := ast.NewCommentMap(fset, f, f.Comments)
@@ -87,7 +87,7 @@ func ParseDirectives(files []*ast.File, fset *token.FileSet) []Directive {
 }
 
 func doDirectives(pass *analysis.Pass) (interface{}, error) {
-	return ParseDirectives(pass.Files, pass.Fset), nil
+	return parseDirectives(pass.Files, pass.Fset), nil
 }
 
 func skipAnalyzer(linters []string, analyzerName string) bool {
@@ -111,9 +111,19 @@ var Directives = &analysis.Analyzer{
 	ResultType:       reflect.TypeOf([]Directive{}),
 }
 
-// RespectDirectives updates an analyzer from `staticcheck` and `golangci-linter` to make it work on nogo.
+// Wrap wraps a Analyzer and so that it will respect nolint directives
+//
+// It does this by replacing the run method with a method that first inspects
+// whether there is a comment directive to skip the analyzer for this particular
+// issue.
+func Wrap(analyzer *analysis.Analyzer) *analysis.Analyzer {
+	respectNolintDirectives(analyzer)
+	return analyzer
+}
+
+// respectNolintDirectives updates an analyzer from `staticcheck` and `golangci-linter` to make it work on nogo.
 // They have "lint:ignore" or "nolint" to make the analyzer ignore the code.
-func RespectDirectives(analyzer *analysis.Analyzer) {
+func respectNolintDirectives(analyzer *analysis.Analyzer) {
 	analyzer.Requires = append(analyzer.Requires, Directives)
 	oldRun := analyzer.Run
 	analyzer.Run = func(p *analysis.Pass) (interface{}, error) {
