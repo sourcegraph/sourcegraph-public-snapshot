@@ -17,7 +17,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/ui/assets",
     visibility = ["//visibility:public"],
     deps = ["//lib/errors"],
-    embedsrcs = ["copy_bundle_dist"],
 )
 
 filegroup(

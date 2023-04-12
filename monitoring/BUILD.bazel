@@ -22,10 +22,10 @@ genrule(
     name = "generate_config",
     srcs = [],
     outs = ["monitoring.zip"],
-    tools = ["//monitoring:monitoring"],
     cmd = """
         $(location //monitoring:monitoring) generate \
                 --all.dir monitoring && \
         zip -r $@ monitoring
         """,
+    tools = ["//monitoring"],
 )
