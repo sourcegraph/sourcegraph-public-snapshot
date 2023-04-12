@@ -26,8 +26,7 @@ func bazelRawCmd(args ...string) string {
 	}
 
 	post := []string{
-		"--remote_cache=$$CI_BAZEL_REMOTE_CACHE",
-		"--google_credentials=/mnt/gcloud-service-account/gcloud-service-account.json",
+		"--remote_cache=grpc://ci-bazel-remote-cache:9092",
 	}
 
 	rawCmd := append(pre, args...)
