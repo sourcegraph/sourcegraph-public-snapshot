@@ -4,6 +4,4 @@
 set -ex
 cd "$(dirname "${BASH_SOURCE[0]}")"/../../..
 
-
-
 ENTERPRISE=true ./cmd/server/build-bazel.sh
