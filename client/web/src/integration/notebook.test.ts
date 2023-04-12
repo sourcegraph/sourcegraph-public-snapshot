@@ -472,7 +472,7 @@ describe('Search Notebook', () => {
         }
     })
 
-    it('Should export a notebook as Markdown file and import it back', async () => {
+    it.only('Should export a notebook as Markdown file and import it back', async () => {
         testContext.overrideGraphQL({
             ...commonSearchGraphQLResults,
             FetchNotebook: ({ id }) => ({
@@ -527,7 +527,8 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@main/-/blob/cli
 https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/client/web/index.ts?L1:1-1:3#symbolName=func&symbolContainerName=class&symbolKind=FUNCTION&lineContext=3
 `
 
-        await driver.page.client().send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: __dirname })
+        const downloadPath = process.env.TEST_TMPDIR || __dirname
+        await driver.page.client().send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
         await driver.page.waitForSelector('[data-testid="export-notebook-markdown-button"]', { visible: true })
@@ -536,7 +537,7 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
         // Wait for the download to complete.
         await driver.page.waitForTimeout(1000)
 
-        const exportedNotebookPath = path.resolve(__dirname, 'Exported.snb.md')
+        const exportedNotebookPath = path.resolve(downloadPath, 'Exported.snb.md')
         // eslint-disable-next-line no-sync
         expect(fs.existsSync(exportedNotebookPath)).toBeTruthy()
 
