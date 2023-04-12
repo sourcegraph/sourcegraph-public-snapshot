@@ -8,6 +8,7 @@ import { start } from './main'
 import { getConfiguration } from './configuration'
 import { ExtensionApi } from './extension-api'
 import { CODY_ACCESS_TOKEN_SECRET, VSCodeSecretStorage } from './secret-storage'
+import path from 'path'
 
 let client: LanguageClient
 
@@ -27,11 +28,11 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
 
     let serverOptions: ServerOptions = {
         run: {
-            command: '/home/pjlast/go/bin/llmsp',
+            command: path.join(context.extensionPath, "resources", "bin", "llmsp"),
             transport: TransportKind.stdio,
         },
         debug: {
-            command: '/home/pjlast/go/bin/llmsp',
+            command: path.join(context.extensionPath, "resources", "bin", "llmsp"),
             transport: TransportKind.stdio,
         },
     }
