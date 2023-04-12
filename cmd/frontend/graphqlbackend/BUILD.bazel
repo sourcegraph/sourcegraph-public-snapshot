@@ -1,6 +1,7 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("@npm//:graphql-schema-linter/package_json.bzl", linter_bin = "bin")
 load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_library", "js_run_binary")
-load("@aspect_bazel_lib//lib:directory_path.bzl", "directory_path")
+# load("@aspect_bazel_lib//lib:directory_path.bzl", "directory_path")
 # load("@build_bazel_rules_nodejs//:index.bzl", "nodejs_binary")
 
 package(default_visibility = [
@@ -16,28 +17,36 @@ js_library(
     ]),
 )
 
-directory_path(
-    name = "graphql_schema_lint_path",
-    directory = "//:node_modules/graphql-schema-linter/dir",
-    path = "lib/cli.js",
+linter_bin.graphql_schema_linter(
+    name = "graphql_schema_lint",
+    srcs = ["//:graphql_schema_config"] + glob(["*.graphql"]),
+    out_dirs = ["$(location .)"]
 )
 
-js_binary(
-    name = "graphql_schema_linter",
-    copy_data_to_bin = False,
-    data = ["//:graphql_schema_config","//:node_modules/graphql-schema-linter" ],
-    entry_point = ":graphql_schema_lint_path",
-    log_level = "info",
-)
+# directory_path(
+#     name = "graphql_schema_lint_path",
+#     directory = "//:node_modules/graphql-schema-linter/dir",
+#     path = "lib/cli.js",
+# )
+#
+# js_binary(
+#     name = "graphql_schema_linter",
+#     copy_data_to_bin = False,
+#     data = ["//:graphql_schema_config","//:node_modules/graphql-schema-linter" ],
+#     entry_point = ":graphql_schema_lint_path",
+#     log_level = "info",
+# )
+#
+# js_run_binary(
+#   name ="graphql_schema_lint",
+#   srcs = glob(["*.graphql"]),
+#   progress_message = "linting the shit out of graphql: %{input}",
+#   tool = ":graphql_schema_linter",
+#   allow_execroot_entry_point_with_no_copy_data_to_bin = True,
+#   stdout = "graphql_schema_linter_results.out",
+# )
 
-js_run_binary(
-  name ="graphql_schema_lint",
-  srcs = glob(["*.graphql"]),
-  progress_message = "linting the shit out of graphql: %{input}",
-  tool = ":graphql_schema_linter",
-  allow_execroot_entry_point_with_no_copy_data_to_bin = True,
-  stdout = "graphql_schema_linter_results.out",
-)
+
 
 go_library(
     name = "graphqlbackend",
