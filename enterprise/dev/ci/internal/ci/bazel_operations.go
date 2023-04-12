@@ -196,7 +196,6 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 			bk.DependsOn("bazel-tests"),
 			bk.Env("DOCKER_BAZEL", "true"),
 			bk.Env("VERSION", version),
-			bk.Env("CACHE", "true"),
 			bk.Agent("queue", "bazel"),
 		)
 
