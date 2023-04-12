@@ -191,7 +191,7 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 		}
 		key = key + ":candidate"
 		cmds = append(cmds,
-			bk.Key(key),
+			// bk.Key(key),
 			bk.Env("DOCKER_BAZEL", "true"),
 			bk.Env("VERSION", version),
 			bk.Agent("queue", "bazel"),
@@ -283,6 +283,6 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 				// bk.AutomaticRetryStatus(3, 222),
 			)
 		}
-		pipeline.AddStep(fmt.Sprintf(":docker: :construction: Build %s", strings.Join(apps, " ")), cmds...)
+		pipeline.AddStep(":docker: :construction: Build Ricky", cmds...)
 	}
 }
