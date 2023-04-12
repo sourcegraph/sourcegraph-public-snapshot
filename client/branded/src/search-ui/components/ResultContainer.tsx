@@ -23,6 +23,7 @@ export interface ResultContainerProps {
     className?: string
     rankingDebug?: string
     onResultClicked?: () => void
+    keyValuePairs?: Record<string, string>
 }
 
 const accessibleResultType: Record<SearchMatch['type'], string> = {
@@ -33,6 +34,25 @@ const accessibleResultType: Record<SearchMatch['type'], string> = {
     commit: 'commit',
     person: 'person',
     team: 'team',
+}
+
+const RepoKVPs: React.FunctionComponent<{ keyValuePairs?: Record<string, string>; className?: string }> = ({
+    keyValuePairs,
+    className,
+}) => {
+    if (!keyValuePairs) {
+        return null
+    }
+    return (
+        <div className={classNames(styles.repoKvps, className, 'd-flex align-items-center flex-wrap')}>
+            {Object.entries(keyValuePairs).map(([key, value]) => (
+                <span className="d-flex align-items-center justify-content-center" key={`${key}:${value}`}>
+                    <span className={styles.repoKvpsKey}>{key}</span>
+                    <span className={styles.repoKvpsValue}>{value}</span>
+                </span>
+            ))}
+        </div>
+    )
 }
 
 /**
@@ -55,6 +75,7 @@ export const ResultContainer: ForwardReferenceExoticComponent<
         rankingDebug,
         as: Component = 'div',
         onResultClicked,
+        keyValuePairs,
     } = props
 
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
@@ -81,13 +102,16 @@ export const ResultContainer: ForwardReferenceExoticComponent<
                     >
                         {title}
                     </div>
-                    {formattedRepositoryStarCount && (
-                        <span className="d-flex align-items-center">
-                            <SearchResultStar aria-label={`${repoStars} stars`} />
-                            <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
-                        </span>
-                    )}
+                    <div className="d-flex">
+                        {formattedRepositoryStarCount && (
+                            <span className="d-flex align-items-center">
+                                <SearchResultStar aria-label={`${repoStars} stars`} />
+                                <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
+                            </span>
+                        )}
+                    </div>
                 </div>
+                <RepoKVPs keyValuePairs={keyValuePairs} className="justify-content-end mb-2" />
                 {rankingDebug && <div>{rankingDebug}</div>}
                 <div className={classNames(styles.result, resultClassName)}>{children}</div>
             </article>

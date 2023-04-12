@@ -134,6 +134,7 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
             repoStars={result.repoStars}
             className={classNames(searchResultStyles.copyButtonContainer, containerClassName)}
             resultClassName={styles.symbolsOverride}
+            keyValuePairs={result.keyValuePairs}
         >
             <div className={styles.symbols}>
                 {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}

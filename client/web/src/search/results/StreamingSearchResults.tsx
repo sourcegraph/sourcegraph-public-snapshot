@@ -86,6 +86,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const prefetchBlobFormat = usePrefetchBlobFormat()
     const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership', false)
     const enableOwnershipSearch = ownEnabled && ownFeatureFlagEnabled
+    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', false)
 
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
 
@@ -523,6 +524,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         <StreamingSearchResultsList
                             {...props}
                             enableOwnershipSearch={enableOwnershipSearch}
+                            enableRepositoryMetadata={enableRepositoryMetadata}
                             results={results}
                             allExpanded={allExpanded}
                             executedQuery={location.search}

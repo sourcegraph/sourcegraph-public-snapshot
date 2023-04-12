@@ -93,6 +93,8 @@ export interface StreamingSearchResultsListProps
      * It's passed the index of the result in the list and the result type.
      */
     logSearchResultClicked?: (index: number, type: string) => void
+
+    enableRepositoryMetadata?: boolean
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<
@@ -122,6 +124,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     caseSensitive,
     searchQueryFromURL,
     logSearchResultClicked,
+    enableRepositoryMetadata,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
@@ -129,7 +132,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     const [rootRef, setRootRef] = useState<HTMLElement | null>(null)
 
     const renderResult = useCallback(
-        (result: SearchMatch, index: number): JSX.Element => {
+        (searchResult: SearchMatch, index: number): JSX.Element => {
+            const result = enableRepositoryMetadata ? searchResult : { ...searchResult, keyValuePairs: undefined }
             function renderResultContent(): JSX.Element {
                 switch (result.type) {
                     case 'content':
@@ -242,6 +246,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             )
         },
         [
+            enableRepositoryMetadata,
             prefetchFileEnabled,
             prefetchFile,
             location,

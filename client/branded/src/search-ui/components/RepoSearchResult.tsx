@@ -81,6 +81,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
             repoName={result.repository}
             repoStars={result.repoStars}
             className={containerClassName}
+            keyValuePairs={result.keyValuePairs}
             as={as}
         >
             <div data-testid="search-repo-result">
