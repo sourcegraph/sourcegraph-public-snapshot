@@ -53,16 +53,6 @@
             <script type="module" src="https://esm.sh/@markprompt/web@0.2.2-beta34" defer></script>
 
             <script>
-
-                document.addEventListener("DOMContentLoaded", function(event) {
-                    const markprompt = localStorage.getItem('markprompt') !== null
-                    const markpromptButton = document.getElementById("markprompt-button");
-                    const searchForm = document.getElementById("search-form");
-
-                    markpromptButton.style.display = markprompt ? 'block' : 'none';
-                    searchForm.style.display = markprompt ? 'none' : 'block';
-                });
-
                 function showMarkprompt() {
                     const elem = document.getElementById("markprompt-container");
                     elem.style.opacity = 1;
@@ -184,6 +174,14 @@
                 </div>
             </div>
             <script>
+
+                const markprompt = localStorage.getItem('markprompt') !== null
+                const markpromptButton = document.getElementById("markprompt-button");
+                const searchForm = document.getElementById("search-form");
+
+                markpromptButton.style.display = markprompt ? 'block' : 'none';
+                searchForm.style.display = markprompt ? 'none' : 'block';
+
                 const component = document.getElementsByTagName('markprompt-content')[0];
                 component.getRefFromId = (id) => {
                     const parts = id.split("/")
