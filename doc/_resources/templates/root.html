@@ -50,7 +50,7 @@
                 }
             </script>
 
-            <script type="module" src="https://esm.sh/@markprompt/web@0.2.2-beta33" defer></script>
+            <script type="module" src="https://esm.sh/@markprompt/web@0.2.2-beta34" defer></script>
 
             <script>
 
@@ -77,7 +77,8 @@
 
                     const markpromptComponent = document.getElementsByTagName('markprompt-content')[0];
                     if (markpromptComponent) {
-                        markpromptComponent.clearInputAndFocus()
+                        markpromptComponent.reset()
+                        markpromptComponent.focus()
                     }
                 }
 
