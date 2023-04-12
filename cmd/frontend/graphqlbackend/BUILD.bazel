@@ -1,4 +1,5 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("@npm//:graphql-schema-linter/package_json.bzl", linter_bin = "bin")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 
 package(default_visibility = [
@@ -12,6 +13,12 @@ js_library(
     srcs = glob([
         "*.graphql",
     ]),
+)
+
+linter_bin.graphql_schema_linter_test(
+    name = "graphql_schema_lint_test",
+    size = "small",
+    data = ["//:graphql_schema_config"] + glob(["*.graphql"]),
 )
 
 go_library(
