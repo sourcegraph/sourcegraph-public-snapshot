@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"fmt"
+	"log"
 	"text/template"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -9,24 +11,35 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 )
 
+const (
+	sourceRepository = "github.com/sourcegraph/automation-testing"
+	sourceRef        = "executors-e2e"
+	authorName       = "sourcegraph"
+	authorEmail      = "sourcegraph@sourcegraph.com"
+	changeSetBody    = "My first batch change!"
+	container        = "alpine:3"
+)
+
 func testHelloWorldBatchChange() Test {
-	batchSpec := generateBatchSpec(batchSpecParams{
+	batchSpecPs := batchSpecParams{
 		NameContent:             "hello-world",
 		Description:             "Add Hello World to READMEs",
 		RunCommand:              "IFS=$'\\n'; echo Hello World | tee -a $(find -name README.md)",
 		ChangeSetTemplateTitle:  "Hello World",
 		ChangeSetTemplateBranch: "hello-world",
-		CommitMessageContent:    "Hello World",
-	})
+		CommitMessage:           "Append Hello World to all README.md files",
+	}
+	batchSpec := generateBatchSpec(batchSpecPs)
 
-	expectedDiff := generateDiff(diffParams{
+	diffPs := diffParams{
 		READMEObjectHash:         "89e55af",
 		ExamplesREADMEObjectHash: "a32cc2f",
 		Project3READMEObjectHash: "f49f17d",
 		Project1READMEObjectHash: "6284591",
 		Project2READMEObjectHash: "9445efe",
 		HelloWorldMessage:        "Hello World",
-	})
+	}
+	expectedDiff := generateDiff(diffPs)
 
 	expectedState := gqltestutil.BatchSpecDeep{
 		State: "COMPLETED",
@@ -36,20 +49,20 @@ func testHelloWorldBatchChange() Test {
 				{
 					Type: "BRANCH",
 					Description: gqltestutil.ChangesetSpecDescription{
-						BaseRepository: gqltestutil.ChangesetRepository{Name: "github.com/sourcegraph/automation-testing"},
-						BaseRef:        "executors-e2e",
+						BaseRepository: gqltestutil.ChangesetRepository{Name: sourceRepository},
+						BaseRef:        sourceRef,
 						BaseRev:        "1c94aaf85d51e9d016b8ce4639b9f022d94c52e6",
-						HeadRef:        "hello-world",
-						Title:          "Hello World",
-						Body:           "My first batch change!",
+						HeadRef:        batchSpecPs.ChangeSetTemplateBranch,
+						Title:          batchSpecPs.ChangeSetTemplateTitle,
+						Body:           changeSetBody,
 						Commits: []gqltestutil.ChangesetSpecCommit{
 							{
-								Message: "Append Hello World to all README.md files",
-								Subject: "Append Hello World to all README.md files",
+								Message: batchSpecPs.CommitMessage,
+								Subject: batchSpecPs.CommitMessage,
 								Body:    "",
 								Author: gqltestutil.ChangesetSpecCommitAuthor{
-									Name:  "sourcegraph",
-									Email: "sourcegraph@sourcegraph.com",
+									Name:  authorName,
+									Email: authorEmail,
 								},
 							},
 						},
@@ -77,9 +90,9 @@ func testHelloWorldBatchChange() Test {
 							Added:   5,
 							Deleted: 5,
 						},
-						Repository: gqltestutil.ChangesetRepository{Name: "github.com/sourcegraph/automation-testing"},
+						Repository: gqltestutil.ChangesetRepository{Name: sourceRepository},
 						Branch: gqltestutil.WorkspaceBranch{
-							Name: "executors-e2e",
+							Name: sourceRef,
 						},
 						ChangesetSpecs: []gqltestutil.WorkspaceChangesetSpec{
 							{},
@@ -146,8 +159,8 @@ func testHelloWorldBatchChange() Test {
 						Steps: []gqltestutil.BatchSpecWorkspaceStep{
 							{
 								Number:    1,
-								Run:       "IFS=$'\\n'; echo Hello World | tee -a $(find -name README.md)",
-								Container: "alpine:3",
+								Run:       batchSpecPs.RunCommand,
+								Container: container,
 								OutputLines: gqltestutil.WorkspaceOutputLines{
 									Nodes: []string{
 										"stderr: WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested",
@@ -187,7 +200,7 @@ func testHelloWorldBatchChange() Test {
 		ExpectedCacheEntries: map[string]execution.AfterStepResult{
 			"d4ndKwesInT_CAoLz8351A-step-0": {
 				Version: 2,
-				Stdout:  "Hello World\n",
+				Stdout:  fmt.Sprintf("%s\n", diffPs.HelloWorldMessage),
 				Diff:    []byte(expectedDiff),
 				Outputs: map[string]any{},
 			},
@@ -201,13 +214,13 @@ func testHelloWorldBatchChange() Test {
 				BaseRepoID:        1,
 				UserID:            1,
 				BaseRev:           "1c94aaf85d51e9d016b8ce4639b9f022d94c52e6",
-				BaseRef:           "executors-e2e",
-				HeadRef:           "refs/heads/hello-world",
-				Title:             "Hello World",
-				Body:              "My first batch change!",
-				CommitMessage:     "Append Hello World to all README.md files",
-				CommitAuthorName:  "sourcegraph",
-				CommitAuthorEmail: "sourcegraph@sourcegraph.com",
+				BaseRef:           sourceRef,
+				HeadRef:           fmt.Sprintf("refs/heads/%s", batchSpecPs.ChangeSetTemplateBranch),
+				Title:             batchSpecPs.ChangeSetTemplateTitle,
+				Body:              changeSetBody,
+				CommitMessage:     batchSpecPs.CommitMessage,
+				CommitAuthorName:  authorName,
+				CommitAuthorEmail: authorEmail,
 				Diff:              []byte(expectedDiff),
 			},
 		},
@@ -217,24 +230,34 @@ func testHelloWorldBatchChange() Test {
 }
 
 func testEnvObjectBatchChange() Test {
-	batchSpec := generateBatchSpec(batchSpecParams{
-		NameContent:             "env-object",
-		Description:             "Add the value of an environment variable object to READMEs",
-		RunCommand:              "IFS=$'\\n'; echo $MESSAGE | tee -a $(find -name README.md)\n",
-		AdditionalKeyValues:     map[string]string{"env": "MESSAGE: Hello world from an env object!"},
+	batchSpecPs := batchSpecParams{
+		NameContent: "env-object",
+		Description: "Add the value of an environment variable object to READMEs",
+		RunCommand:  "IFS=$'\\n'; echo $MESSAGE | tee -a $(find -name README.md)",
+		AdditionalKeyValues: []specStepBlock{
+			{
+				BlockName: "env",
+				KeyValues: []keyValue{
+					{Key: "MESSAGE", Value: "Hello world from an env object!"},
+				},
+			},
+		},
 		ChangeSetTemplateTitle:  "Hello World from env object",
 		ChangeSetTemplateBranch: "env-object",
-		CommitMessageContent:    "an env object",
-	})
+		CommitMessage:           "Append an env object to all README.md files",
+	}
+	batchSpec := generateBatchSpec(batchSpecPs)
+	log.Printf("Generated batch spec:\n%s", batchSpec)
 
-	expectedDiff := generateDiff(diffParams{
+	diffPs := diffParams{
 		READMEObjectHash:         "23aa51b",
 		ExamplesREADMEObjectHash: "3705d13",
 		Project3READMEObjectHash: "140c423",
 		Project1READMEObjectHash: "3075ce8",
 		Project2READMEObjectHash: "0fb42ff",
 		HelloWorldMessage:        "Hello world from an env object!",
-	})
+	}
+	expectedDiff := generateDiff(diffPs)
 
 	expectedState := gqltestutil.BatchSpecDeep{
 		State: "COMPLETED",
@@ -244,20 +267,20 @@ func testEnvObjectBatchChange() Test {
 				{
 					Type: "BRANCH",
 					Description: gqltestutil.ChangesetSpecDescription{
-						BaseRepository: gqltestutil.ChangesetRepository{Name: "github.com/sourcegraph/automation-testing"},
-						BaseRef:        "executors-e2e",
+						BaseRepository: gqltestutil.ChangesetRepository{Name: sourceRepository},
+						BaseRef:        sourceRef,
 						BaseRev:        "1c94aaf85d51e9d016b8ce4639b9f022d94c52e6",
-						HeadRef:        "env-object",
-						Title:          "Hello World from env object",
-						Body:           "My first batch change!",
+						HeadRef:        batchSpecPs.ChangeSetTemplateBranch,
+						Title:          batchSpecPs.ChangeSetTemplateTitle,
+						Body:           changeSetBody,
 						Commits: []gqltestutil.ChangesetSpecCommit{
 							{
-								Message: "Append an env object to all README.md files",
-								Subject: "Append an env object to all README.md files",
+								Message: batchSpecPs.CommitMessage,
+								Subject: batchSpecPs.CommitMessage,
 								Body:    "",
 								Author: gqltestutil.ChangesetSpecCommitAuthor{
-									Name:  "sourcegraph",
-									Email: "sourcegraph@sourcegraph.com",
+									Name:  authorName,
+									Email: authorEmail,
 								},
 							},
 						},
@@ -285,9 +308,9 @@ func testEnvObjectBatchChange() Test {
 							Added:   5,
 							Deleted: 5,
 						},
-						Repository: gqltestutil.ChangesetRepository{Name: "github.com/sourcegraph/automation-testing"},
+						Repository: gqltestutil.ChangesetRepository{Name: sourceRepository},
 						Branch: gqltestutil.WorkspaceBranch{
-							Name: "executors-e2e",
+							Name: sourceRef,
 						},
 						ChangesetSpecs: []gqltestutil.WorkspaceChangesetSpec{
 							{},
@@ -354,8 +377,8 @@ func testEnvObjectBatchChange() Test {
 						Steps: []gqltestutil.BatchSpecWorkspaceStep{
 							{
 								Number:    1,
-								Run:       "IFS=$'\\n'; echo $MESSAGE | tee -a $(find -name README.md)",
-								Container: "alpine:3",
+								Run:       batchSpecPs.RunCommand,
+								Container: container,
 								OutputLines: gqltestutil.WorkspaceOutputLines{
 									Nodes: []string{
 										"stderr: WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested",
@@ -367,8 +390,8 @@ func testEnvObjectBatchChange() Test {
 								ExitCode: 0,
 								Environment: []gqltestutil.WorkspaceEnvironmentVariable{
 									{
-										Name:  "MESSAGE",
-										Value: "Hello world from an env object!",
+										Name:  batchSpecPs.AdditionalKeyValues[0].KeyValues[0].Key,
+										Value: batchSpecPs.AdditionalKeyValues[0].KeyValues[0].Value,
 									},
 								},
 								OutputVariables: []gqltestutil.WorkspaceOutputVariable{},
@@ -400,7 +423,7 @@ func testEnvObjectBatchChange() Test {
 		ExpectedCacheEntries: map[string]execution.AfterStepResult{
 			"IZ_d2HAMbc9BDhI2uWpavA-step-0": {
 				Version: 2,
-				Stdout:  "Hello world from an env object!\n",
+				Stdout:  fmt.Sprintf("%s\n", diffPs.HelloWorldMessage),
 				Diff:    []byte(expectedDiff),
 				Outputs: map[string]any{},
 			},
@@ -414,13 +437,13 @@ func testEnvObjectBatchChange() Test {
 				BaseRepoID:        1,
 				UserID:            1,
 				BaseRev:           "1c94aaf85d51e9d016b8ce4639b9f022d94c52e6",
-				BaseRef:           "executors-e2e",
-				HeadRef:           "refs/heads/env-object",
-				Title:             "Hello World from env object",
-				Body:              "My first batch change!",
-				CommitMessage:     "Append an env object to all README.md files",
-				CommitAuthorName:  "sourcegraph",
-				CommitAuthorEmail: "sourcegraph@sourcegraph.com",
+				BaseRef:           sourceRef,
+				HeadRef:           fmt.Sprintf("refs/heads/%s", batchSpecPs.ChangeSetTemplateBranch),
+				Title:             batchSpecPs.ChangeSetTemplateTitle,
+				Body:              changeSetBody,
+				CommitMessage:     batchSpecPs.CommitMessage,
+				CommitAuthorName:  authorName,
+				CommitAuthorEmail: authorEmail,
 				Diff:              []byte(expectedDiff),
 			},
 		},
@@ -593,14 +616,24 @@ index b1e1cdd..{{.Project2READMEObjectHash}} 100644
 	return buf.String()
 }
 
+type keyValue struct {
+	Key   string
+	Value string
+}
+
+type specStepBlock struct {
+	BlockName string
+	KeyValues []keyValue
+}
+
 type batchSpecParams struct {
 	NameContent             string
 	Description             string
 	RunCommand              string
-	AdditionalKeyValues     map[string]string
+	AdditionalKeyValues     []specStepBlock
 	ChangeSetTemplateTitle  string
 	ChangeSetTemplateBranch string
-	CommitMessageContent    string
+	CommitMessage           string
 }
 
 func generateBatchSpec(params batchSpecParams) string {
@@ -616,9 +649,11 @@ on:
 steps:
   - run: {{.RunCommand}}
     container: alpine:3
-{{range $key, $value := .AdditionalKeyValues}}
-    {{$key}}:
-      {{$value}}
+{{range .AdditionalKeyValues}}
+    {{.BlockName}}:
+    {{range .KeyValues}}
+      {{.Key}}: {{.Value}}
+    {{end}}
 {{end}}
 
 changesetTemplate:
@@ -626,7 +661,7 @@ changesetTemplate:
   body: My first batch change!
   branch: {{.ChangeSetTemplateBranch}} # Push the commit to this branch.
   commit:
-    message: Append {{.CommitMessageContent}} to all README.md files
+    message: {{.CommitMessage}}
 `
 
 	tmpl, err := template.New("batchSpecTemplate").Parse(batchSpecTemplateString)
