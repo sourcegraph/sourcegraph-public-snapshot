@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//enterprise/cmd/batcheshelper/log",
         "//enterprise/cmd/batcheshelper/run",
+        "//enterprise/cmd/batcheshelper/util",
         "//lib/batches",
         "//lib/batches/execution",
         "//lib/errors",
@@ -25,6 +26,7 @@ go_test(
     srcs = ["main_test.go"],
     embed = [":batcheshelper_lib"],
     deps = [
+        "//lib/batches/execution",
         "//lib/errors",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",

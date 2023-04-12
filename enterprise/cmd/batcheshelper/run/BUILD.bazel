@@ -10,6 +10,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//enterprise/cmd/batcheshelper/log",
+        "//enterprise/cmd/batcheshelper/util",
         "//lib/batches",
         "//lib/batches/execution",
         "//lib/batches/execution/cache",
@@ -25,5 +26,14 @@ go_test(
     srcs = [
         "post_test.go",
         "pre_test.go",
+    ],
+    deps = [
+        ":run",
+        "//enterprise/cmd/batcheshelper/log",
+        "//lib/batches",
+        "//lib/batches/env",
+        "//lib/batches/execution",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )
