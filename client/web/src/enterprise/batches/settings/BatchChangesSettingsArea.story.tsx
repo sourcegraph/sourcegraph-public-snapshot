@@ -155,17 +155,22 @@ ConfigAdded.storyName = 'Config added'
 
 export const RolloutWindowsConfigurationStory: Story = () => (
     <WebStory>
-        {props => <RolloutWindowsConfiguration {...props} rolloutWindows={[
-            {
-                rate: 'unlimited'
-            },
-            {
-                rate: '10/hour',
-                days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
-                start: '08:00',
-                end: '16:00'
-            }
-        ]} />}
+        {props => (
+            <RolloutWindowsConfiguration
+                {...props}
+                rolloutWindows={[
+                    {
+                        rate: 'unlimited',
+                    },
+                    {
+                        rate: '10/hour',
+                        days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+                        start: '08:00',
+                        end: '16:00',
+                    },
+                ]}
+            />
+        )}
     </WebStory>
 )
 
