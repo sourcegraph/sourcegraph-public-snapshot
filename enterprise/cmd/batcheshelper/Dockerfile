@@ -21,6 +21,6 @@ RUN apk add --no-cache \
     # TODO(DevX) for now, we disable this, because the latest release of curl on edge
     # segfaults on 3.14 and the latest git on edge depends on it. We'll be releasing a fix before the patch release.
     # DRI: @jhchabran
-    'git>=2.38.0' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.17/main \
+    'git>=2.38.0' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.17/main
 
 COPY batcheshelper /usr/local/bin/
