@@ -115,7 +115,6 @@ mocha_test(
     },
     flaky = True,
     tags = [
-        "no-cache",
         "no-sandbox",
     ],
     tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
