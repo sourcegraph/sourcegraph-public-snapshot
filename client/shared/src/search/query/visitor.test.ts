@@ -38,48 +38,46 @@ describe('visit()', () => {
             [
               {
                 "type": "operator",
-                "operands": [
-                  {
-                    "type": "sequence",
-                    "nodes": [
-                      {
-                        "type": "parameter",
-                        "field": "repo",
-                        "value": "foo",
-                        "negated": false,
-                        "range": {
-                          "start": 0,
-                          "end": 8
-                        }
-                      },
-                      {
-                        "type": "pattern",
-                        "kind": 1,
-                        "value": "pattern-bar",
-                        "quoted": false,
-                        "negated": false,
-                        "range": {
-                          "start": 9,
-                          "end": 20
-                        }
+                "left": {
+                  "type": "sequence",
+                  "nodes": [
+                    {
+                      "type": "parameter",
+                      "field": "repo",
+                      "value": "foo",
+                      "quoted": false,
+                      "negated": false,
+                      "range": {
+                        "start": 0,
+                        "end": 8
                       }
-                    ],
-                    "range": {
-                      "start": 0,
-                      "end": 20
+                    },
+                    {
+                      "type": "pattern",
+                      "kind": 1,
+                      "value": "pattern-bar",
+                      "range": {
+                        "start": 9,
+                        "end": 20
+                      }
                     }
-                  },
-                  {
-                    "type": "parameter",
-                    "field": "file",
-                    "value": "baz",
-                    "negated": false,
-                    "range": {
-                      "start": 24,
-                      "end": 32
-                    }
+                  ],
+                  "range": {
+                    "start": 0,
+                    "end": 20
                   }
-                ],
+                },
+                "right": {
+                  "type": "parameter",
+                  "field": "file",
+                  "value": "baz",
+                  "quoted": false,
+                  "negated": false,
+                  "range": {
+                    "start": 24,
+                    "end": 32
+                  }
+                },
                 "kind": "OR",
                 "range": {
                   "start": 0,
@@ -93,6 +91,7 @@ describe('visit()', () => {
                     "type": "parameter",
                     "field": "repo",
                     "value": "foo",
+                    "quoted": false,
                     "negated": false,
                     "range": {
                       "start": 0,
@@ -103,8 +102,6 @@ describe('visit()', () => {
                     "type": "pattern",
                     "kind": 1,
                     "value": "pattern-bar",
-                    "quoted": false,
-                    "negated": false,
                     "range": {
                       "start": 9,
                       "end": 20
@@ -121,6 +118,7 @@ describe('visit()', () => {
                 "field": "repo",
                 "value": "foo",
                 "negated": false,
+                "quoted": false,
                 "range": {
                   "start": 0,
                   "end": 8
@@ -130,8 +128,6 @@ describe('visit()', () => {
                 "type": "pattern",
                 "value": "pattern-bar",
                 "kind": 1,
-                "negated": false,
-                "quoted": false,
                 "range": {
                   "start": 9,
                   "end": 20
@@ -142,6 +138,7 @@ describe('visit()', () => {
                 "field": "file",
                 "value": "baz",
                 "negated": false,
+                "quoted": false,
                 "range": {
                   "start": 24,
                   "end": 32
