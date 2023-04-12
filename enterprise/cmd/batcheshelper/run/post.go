@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/log"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/util"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
@@ -135,7 +136,8 @@ func Post(
 		return err
 	}
 
-	return nil
+	// Cleanup the workspace.
+	return cleanupWorkspace(stepIdx, workspaceFilesPath)
 }
 
 func runGitCmd(ctx context.Context, args ...string) ([]byte, error) {
@@ -213,4 +215,16 @@ func (f fileMetadataRetriever) getDirectoryMountMetadata(path string) ([]cache.M
 		metadata = append(metadata, fileMetadata...)
 	}
 	return metadata, nil
+}
+
+func cleanupWorkspace(step int, workspaceFilesPath string) error {
+	wd, err := os.Getwd()
+	if err != nil {
+		return errors.Wrap(err, "getting working directory")
+	}
+	tmpFileDir := util.FilesMountPath(wd, step)
+	if err = os.RemoveAll(tmpFileDir); err != nil {
+		return errors.Wrap(err, "removing files mount")
+	}
+	return os.RemoveAll(workspaceFilesPath)
 }
