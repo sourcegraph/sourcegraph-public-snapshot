@@ -30,10 +30,12 @@ go_test(
     deps = [
         ":run",
         "//enterprise/cmd/batcheshelper/log",
+        "//enterprise/cmd/batcheshelper/util",
         "//lib/batches",
         "//lib/batches/env",
         "//lib/batches/execution",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//mock",
         "@com_github_stretchr_testify//require",
     ],
 )
