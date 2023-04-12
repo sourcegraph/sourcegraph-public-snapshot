@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-
+use once_cell::sync::OnceCell;
 use paste::paste;
 use scip::types::SyntaxKind;
 use scip_macros::include_scip_query;
@@ -72,101 +71,126 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("variable.module",         SyntaxKind::IdentifierModule),
 ];
 
-/// Add a language highlight configuration to the CONFIGURATIONS global.
-///
-/// This makes it so you don't have to understand how configurations are added,
-/// just add the name of filetype that you want.
-macro_rules! create_configurations {
-    ( $($name: tt),* ) => {{
-        use crate::parsers::BundledParser;
+fn get_highlight_names() -> Vec<&'static str> {
+    MATCHES_TO_SYNTAX_KINDS
+        .iter()
+        .map(|hl| hl.0)
+        .collect::<Vec<&str>>()
+}
 
-        let mut m = HashMap::new();
-        let highlight_names = MATCHES_TO_SYNTAX_KINDS.iter().map(|hl| hl.0).collect::<Vec<&str>>();
-
-        $(
-            {
+macro_rules! make_configuration {
+    ($fn_name:ident, $name:ty) => {
+        fn $fn_name() -> &'static HighlightConfiguration {
+            static INSTANCE: OnceCell<HighlightConfiguration> = OnceCell::new();
+            INSTANCE.get_or_init(|| {
+                let highlight_names = get_highlight_names();
                 // Create HighlightConfiguration language
                 let mut lang = HighlightConfiguration::new(
                     paste! { BundledParser::$name.get_language() },
                     include_scip_query!($name, "highlights"),
                     include_scip_query!($name, "injections"),
                     include_scip_query!($name, "locals"),
-                ).expect(stringify!("parser for '{}' must be compiled", $name));
+                )
+                .expect(stringify!("parser for '{}' must be compiled", $name));
 
                 // Associate highlights with configuration
                 lang.configure(&highlight_names);
-
-                // Insert into configurations, so we only create once at startup.
-                m.insert(BundledParser::$name, lang);
-            }
-        )*
-
-        // Manually insert the typescript and tsx languages because the
-        // tree-sitter-typescript crate doesn't have a language() function.
-        {
-            let highlights = vec![
-                include_scip_query!("typescript", "highlights"),
-                include_scip_query!("javascript", "highlights"),
-            ];
-            let mut lang = HighlightConfiguration::new(
-                BundledParser::Typescript.get_language(),
-                &highlights.join("\n"),
-                include_scip_query!("typescript", "injections"),
-                include_scip_query!("typescript", "locals"),
-            ).expect("parser for 'typescript' must be compiled");
-            lang.configure(&highlight_names);
-            m.insert(BundledParser::Typescript, lang);
+                lang
+            })
         }
-        {
-            let highlights = vec![
-                include_scip_query!("tsx", "highlights"),
-                include_scip_query!("typescript", "highlights"),
-                include_scip_query!("javascript", "highlights"),
-            ];
-            let mut lang = HighlightConfiguration::new(
-                BundledParser::Tsx.get_language(),
-                &highlights.join("\n"),
-                include_scip_query!("tsx", "injections"),
-                include_scip_query!("tsx", "locals"),
-            ).expect("parser for 'tsx' must be compiled");
-            lang.configure(&highlight_names);
-            m.insert(BundledParser::Tsx, lang);
-        }
-
-        m
-    }}
-}
-
-lazy_static::lazy_static! {
-    pub static ref CONFIGURATIONS: HashMap<BundledParser, HighlightConfiguration> = {
-        // NOTE: typescript/tsx crates are included, even though not listed below.
-
-        // You can add any new crate::parsers::Parser variants here.
-        create_configurations!(
-            C,
-            Cpp,
-            C_Sharp,
-            Go,
-            Java,
-            Javascript,
-            Jsonnet,
-            Kotlin,
-            Nickel,
-            Perl,
-            Pod,
-            Python,
-            Ruby,
-            Rust,
-            Scala,
-            Sql,
-            Xlsg,
-            Zig
-        )
     };
 }
 
+// Add a language highlight configuration to the CONFIGURATIONS global.
+make_configuration!(get_configuration_c, C);
+make_configuration!(get_configuration_cpp, Cpp);
+make_configuration!(get_configuration_c_sharp, C_Sharp);
+make_configuration!(get_configuration_go, Go);
+make_configuration!(get_configuration_java, Java);
+make_configuration!(get_configuration_javascript, Javascript);
+make_configuration!(get_configuration_jsonnet, Jsonnet);
+make_configuration!(get_configuration_kotlin, Kotlin);
+make_configuration!(get_configuration_nickel, Nickel);
+make_configuration!(get_configuration_perl, Perl);
+make_configuration!(get_configuration_pod, Pod);
+make_configuration!(get_configuration_python, Python);
+make_configuration!(get_configuration_ruby, Ruby);
+make_configuration!(get_configuration_rust, Rust);
+make_configuration!(get_configuration_scala, Scala);
+make_configuration!(get_configuration_sql, Sql);
+make_configuration!(get_configuration_xlsg, Xlsg);
+make_configuration!(get_configuration_zig, Zig);
+
+// For languages that have special one-off cases for their highlighters and queries,
+// you can manually specify them here.
+fn get_configuration_typescript() -> &'static HighlightConfiguration {
+    static INSTANCE: OnceCell<HighlightConfiguration> = OnceCell::new();
+    INSTANCE.get_or_init(|| {
+        let highlight_names = get_highlight_names();
+
+        let highlights = vec![
+            include_scip_query!("typescript", "highlights"),
+            include_scip_query!("javascript", "highlights"),
+        ];
+        let mut lang = HighlightConfiguration::new(
+            BundledParser::Typescript.get_language(),
+            &highlights.join("\n"),
+            include_scip_query!("typescript", "injections"),
+            include_scip_query!("typescript", "locals"),
+        )
+        .expect("parser for 'typescript' must be compiled");
+
+        lang.configure(&highlight_names);
+        lang
+    })
+}
+
+fn get_configuration_tsx() -> &'static HighlightConfiguration {
+    static INSTANCE: OnceCell<HighlightConfiguration> = OnceCell::new();
+    INSTANCE.get_or_init(|| {
+        let highlight_names = get_highlight_names();
+
+        let highlights = vec![
+            include_scip_query!("tsx", "highlights"),
+            include_scip_query!("typescript", "highlights"),
+            include_scip_query!("javascript", "highlights"),
+        ];
+        let mut lang = HighlightConfiguration::new(
+            BundledParser::Tsx.get_language(),
+            &highlights.join("\n"),
+            include_scip_query!("tsx", "injections"),
+            include_scip_query!("tsx", "locals"),
+        )
+        .expect("parser for 'tsx' must be compiled");
+
+        lang.configure(&highlight_names);
+        lang
+    })
+}
+
 pub fn get_highlighting_configuration(filetype: &str) -> Option<&'static HighlightConfiguration> {
-    BundledParser::get_parser(filetype).and_then(|parser| CONFIGURATIONS.get(&parser))
+    BundledParser::get_parser(filetype).map(|parser| match parser {
+        BundledParser::C => get_configuration_c(),
+        BundledParser::Cpp => get_configuration_cpp(),
+        BundledParser::C_Sharp => get_configuration_c_sharp(),
+        BundledParser::Go => get_configuration_go(),
+        BundledParser::Java => get_configuration_java(),
+        BundledParser::Javascript => get_configuration_javascript(),
+        BundledParser::Jsonnet => get_configuration_jsonnet(),
+        BundledParser::Kotlin => get_configuration_kotlin(),
+        BundledParser::Nickel => get_configuration_nickel(),
+        BundledParser::Perl => get_configuration_perl(),
+        BundledParser::Pod => get_configuration_pod(),
+        BundledParser::Python => get_configuration_python(),
+        BundledParser::Ruby => get_configuration_ruby(),
+        BundledParser::Rust => get_configuration_rust(),
+        BundledParser::Scala => get_configuration_scala(),
+        BundledParser::Sql => get_configuration_sql(),
+        BundledParser::Xlsg => get_configuration_xlsg(),
+        BundledParser::Typescript => get_configuration_typescript(),
+        BundledParser::Tsx => get_configuration_tsx(),
+        BundledParser::Zig => get_configuration_zig(),
+    })
 }
 
 pub fn get_syntax_kind_for_hl(hl: Highlight) -> SyntaxKind {

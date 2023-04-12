@@ -1778,7 +1778,7 @@ dependencies = [
 name = "scip-treesitter-languages"
 version = "0.1.0"
 dependencies = [
- "lazy_static",
+ "once_cell",
  "paste",
  "scip",
  "scip-macros",
@@ -1870,7 +1870,6 @@ dependencies = [
  "anyhow",
  "base64",
  "insta",
- "lazy_static",
  "libloading",
  "once_cell",
  "paste",

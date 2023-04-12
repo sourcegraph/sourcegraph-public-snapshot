@@ -47,6 +47,7 @@ members = [
 anyhow = "1"
 clap = { version = "4.1.11", features = [ "derive" ] }
 itertools = "0.10.5"
+once_cell = "1.13.0"
 rocket = { version = "0.5.0-rc.1", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
