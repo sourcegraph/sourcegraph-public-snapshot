@@ -1,5 +1,21 @@
 import { ScanResult, scanSearchQuery } from './scanner'
-import { Token, KeywordKind, CharacterRange, Filter, Pattern } from './token'
+import { Token, KeywordKind, CharacterRange, PatternKind } from './token'
+
+export interface Pattern {
+    type: 'pattern'
+    kind: PatternKind
+    value: string
+    range: CharacterRange
+}
+
+export interface Parameter {
+    type: 'parameter'
+    field: string
+    value: string
+    quoted: boolean
+    negated: boolean
+    range: CharacterRange
+}
 
 /**
  * A Sequence represent a sequence of nodes, i.e. 'a b c'. While such as
@@ -33,7 +49,7 @@ export interface Operator {
     groupRange?: CharacterRange
 }
 
-export type Node = Sequence | Operator | Filter | Pattern
+export type Node = Sequence | Operator | Parameter | Pattern
 
 interface ParseError {
     type: 'error'
@@ -105,8 +121,16 @@ const createOperator = (
 const tokenToLeafNode = (token: Token): ParseResult => {
     switch (token.type) {
         case 'pattern':
+            return createNode({ type: 'pattern', kind: token.kind, value: token.value, range: token.range })
         case 'filter':
-            return createNode(token)
+            return createNode({
+                type: 'parameter',
+                field: token.field.value,
+                value: token.value?.value ?? '',
+                quoted: token.value?.quoted ?? false,
+                negated: token.negated,
+                range: token.range,
+            })
     }
     return { type: 'error', expected: 'a convertable token to tree node' }
 }

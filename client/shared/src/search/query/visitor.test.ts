@@ -15,20 +15,20 @@ expect.addSnapshotSerializer({
 const collect = (input: string): Node[] => {
     const visitedNodes: Node[] = []
     const visitors: Visitors = {
-        visitOperator(operands: Node[], kind: OperatorKind, range, groupRange) {
-            visitedNodes.push({ type: 'operator', operands, kind, range, groupRange })
+        visitOperator(left, right, kind: OperatorKind, range, groupRange) {
+            visitedNodes.push({ type: 'operator', left, right, kind, range, groupRange })
         },
         visitSequence(nodes: Node[], range) {
             visitedNodes.push({ type: 'sequence', nodes, range })
         },
-        visitParameter(field, value, negated, range) {
-            visitedNodes.push({ type: 'parameter', field, value, negated, range })
+        visitParameter(field, value, negated, quoted, range) {
+            visitedNodes.push({ type: 'parameter', field, value, negated, quoted, range })
         },
-        visitPattern(value, kind, negated, quoted, range) {
-            visitedNodes.push({ type: 'pattern', value, kind, negated, quoted, range })
+        visitPattern(value, kind, range) {
+            visitedNodes.push({ type: 'pattern', value, kind, range })
         },
     }
-    visit((parseSearchQuery(input) as ParseSuccess).nodes, visitors)
+    visit([(parseSearchQuery(input) as ParseSuccess).node], visitors)
     return visitedNodes
 }
 

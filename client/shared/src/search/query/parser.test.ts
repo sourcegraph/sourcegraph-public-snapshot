@@ -8,65 +8,48 @@ expect.addSnapshotSerializer({
 export const parse = (input: string): Node => (parseSearchQuery(input) as ParseSuccess).node
 
 describe('parseSearchQuery', () => {
-    test('query with leaves', () =>
+    test('query with leaves', () => {
         expect(parse('repo:foo a b c')).toMatchInlineSnapshot(`
             {
               "type": "sequence",
               "nodes": [
                 {
-                  "type": "filter",
+                  "type": "parameter",
+                  "field": "repo",
+                  "value": "foo",
+                  "quoted": false,
+                  "negated": false,
                   "range": {
                     "start": 0,
                     "end": 8
-                  },
-                  "field": {
-                    "type": "literal",
-                    "value": "repo",
-                    "range": {
-                      "start": 0,
-                      "end": 4
-                    }
-                  },
-                  "value": {
-                    "type": "literal",
-                    "value": "foo",
-                    "range": {
-                      "start": 5,
-                      "end": 8
-                    },
-                    "quoted": false
-                  },
-                  "negated": false
+                  }
                 },
                 {
                   "type": "pattern",
+                  "kind": 1,
+                  "value": "a",
                   "range": {
                     "start": 9,
                     "end": 10
-                  },
-                  "kind": 1,
-                  "value": "a",
-                  "delimited": false
+                  }
                 },
                 {
                   "type": "pattern",
+                  "kind": 1,
+                  "value": "b",
                   "range": {
                     "start": 11,
                     "end": 12
-                  },
-                  "kind": 1,
-                  "value": "b",
-                  "delimited": false
+                  }
                 },
                 {
                   "type": "pattern",
+                  "kind": 1,
+                  "value": "c",
                   "range": {
                     "start": 13,
                     "end": 14
-                  },
-                  "kind": 1,
-                  "value": "c",
-                  "delimited": false
+                  }
                 }
               ],
               "range": {
@@ -74,7 +57,58 @@ describe('parseSearchQuery', () => {
                 "end": 14
               }
             }
-        `))
+        `)
+
+        expect(parse('repo:"foo bar" a b c')).toMatchInlineSnapshot(`
+            {
+              "type": "sequence",
+              "nodes": [
+                {
+                  "type": "parameter",
+                  "field": "repo",
+                  "value": "foo bar",
+                  "quoted": true,
+                  "negated": false,
+                  "range": {
+                    "start": 0,
+                    "end": 14
+                  }
+                },
+                {
+                  "type": "pattern",
+                  "kind": 1,
+                  "value": "a",
+                  "range": {
+                    "start": 15,
+                    "end": 16
+                  }
+                },
+                {
+                  "type": "pattern",
+                  "kind": 1,
+                  "value": "b",
+                  "range": {
+                    "start": 17,
+                    "end": 18
+                  }
+                },
+                {
+                  "type": "pattern",
+                  "kind": 1,
+                  "value": "c",
+                  "range": {
+                    "start": 19,
+                    "end": 20
+                  }
+                }
+              ],
+              "range": {
+                "start": 0,
+                "end": 20
+              }
+            }
+        `)
+    })
 
     test('query with and', () =>
         expect(parse('a b and c')).toMatchInlineSnapshot(`
@@ -85,23 +119,21 @@ describe('parseSearchQuery', () => {
                 "nodes": [
                   {
                     "type": "pattern",
+                    "kind": 1,
+                    "value": "a",
                     "range": {
                       "start": 0,
                       "end": 1
-                    },
-                    "kind": 1,
-                    "value": "a",
-                    "delimited": false
+                    }
                   },
                   {
                     "type": "pattern",
+                    "kind": 1,
+                    "value": "b",
                     "range": {
                       "start": 2,
                       "end": 3
-                    },
-                    "kind": 1,
-                    "value": "b",
-                    "delimited": false
+                    }
                   }
                 ],
                 "range": {
@@ -111,13 +143,12 @@ describe('parseSearchQuery', () => {
               },
               "right": {
                 "type": "pattern",
+                "kind": 1,
+                "value": "c",
                 "range": {
                   "start": 8,
                   "end": 9
-                },
-                "kind": 1,
-                "value": "c",
-                "delimited": false
+                }
               },
               "kind": "AND",
               "range": {
@@ -133,23 +164,21 @@ describe('parseSearchQuery', () => {
               "type": "operator",
               "left": {
                 "type": "pattern",
+                "kind": 1,
+                "value": "a",
                 "range": {
                   "start": 0,
                   "end": 1
-                },
-                "kind": 1,
-                "value": "a",
-                "delimited": false
+                }
               },
               "right": {
                 "type": "pattern",
+                "kind": 1,
+                "value": "b",
                 "range": {
                   "start": 5,
                   "end": 6
-                },
-                "kind": 1,
-                "value": "b",
-                "delimited": false
+                }
               },
               "kind": "OR",
               "range": {
@@ -166,13 +195,12 @@ describe('parseSearchQuery', () => {
               "left": null,
               "right": {
                 "type": "pattern",
+                "kind": 1,
+                "value": "a",
                 "range": {
                   "start": 4,
                   "end": 5
-                },
-                "kind": 1,
-                "value": "a",
-                "delimited": false
+                }
               },
               "kind": "NOT",
               "range": {
@@ -188,38 +216,35 @@ describe('parseSearchQuery', () => {
               "type": "operator",
               "left": {
                 "type": "pattern",
+                "kind": 1,
+                "value": "a",
                 "range": {
                   "start": 0,
                   "end": 1
-                },
-                "kind": 1,
-                "value": "a",
-                "delimited": false
+                }
               },
               "right": {
                 "type": "operator",
                 "left": {
                   "type": "pattern",
+                  "kind": 1,
+                  "value": "b",
                   "range": {
                     "start": 5,
                     "end": 6
-                  },
-                  "kind": 1,
-                  "value": "b",
-                  "delimited": false
+                  }
                 },
                 "right": {
                   "type": "operator",
                   "left": null,
                   "right": {
                     "type": "pattern",
+                    "kind": 1,
+                    "value": "c",
                     "range": {
                       "start": 15,
                       "end": 16
-                    },
-                    "kind": 1,
-                    "value": "c",
-                    "delimited": false
+                    }
                   },
                   "kind": "NOT",
                   "range": {
@@ -247,35 +272,32 @@ describe('parseSearchQuery', () => {
               "type": "operator",
               "left": {
                 "type": "pattern",
+                "kind": 1,
+                "value": "a",
                 "range": {
                   "start": 0,
                   "end": 1
-                },
-                "kind": 1,
-                "value": "a",
-                "delimited": false
+                }
               },
               "right": {
                 "type": "operator",
                 "left": {
                   "type": "pattern",
+                  "kind": 1,
+                  "value": "b",
                   "range": {
                     "start": 7,
                     "end": 8
-                  },
-                  "kind": 1,
-                  "value": "b",
-                  "delimited": false
+                  }
                 },
                 "right": {
                   "type": "pattern",
+                  "kind": 1,
+                  "value": "c",
                   "range": {
                     "start": 12,
                     "end": 13
-                  },
-                  "kind": 1,
-                  "value": "c",
-                  "delimited": false
+                  }
                 },
                 "kind": "OR",
                 "range": {
@@ -302,23 +324,21 @@ describe('parseSearchQuery', () => {
                 "type": "operator",
                 "left": {
                   "type": "pattern",
+                  "kind": 1,
+                  "value": "a",
                   "range": {
                     "start": 1,
                     "end": 2
-                  },
-                  "kind": 1,
-                  "value": "a",
-                  "delimited": false
+                  }
                 },
                 "right": {
                   "type": "pattern",
+                  "kind": 1,
+                  "value": "b",
                   "range": {
                     "start": 6,
                     "end": 7
-                  },
-                  "kind": 1,
-                  "value": "b",
-                  "delimited": false
+                  }
                 },
                 "kind": "OR",
                 "range": {
@@ -332,13 +352,12 @@ describe('parseSearchQuery', () => {
               },
               "right": {
                 "type": "pattern",
+                "kind": 1,
+                "value": "c",
                 "range": {
                   "start": 13,
                   "end": 14
-                },
-                "kind": 1,
-                "value": "c",
-                "delimited": false
+                }
               },
               "kind": "AND",
               "range": {
@@ -358,23 +377,21 @@ describe('parseSearchQuery', () => {
                   "type": "operator",
                   "left": {
                     "type": "pattern",
+                    "kind": 1,
+                    "value": "a",
                     "range": {
                       "start": 5,
                       "end": 6
-                    },
-                    "kind": 1,
-                    "value": "a",
-                    "delimited": false
+                    }
                   },
                   "right": {
                     "type": "pattern",
+                    "kind": 1,
+                    "value": "b",
                     "range": {
                       "start": 10,
                       "end": 11
-                    },
-                    "kind": 1,
-                    "value": "b",
-                    "delimited": false
+                    }
                   },
                   "kind": "OR",
                   "range": {
@@ -394,13 +411,12 @@ describe('parseSearchQuery', () => {
               },
               "right": {
                 "type": "pattern",
+                "kind": 1,
+                "value": "c",
                 "range": {
                   "start": 17,
                   "end": 18
-                },
-                "kind": 1,
-                "value": "c",
-                "delimited": false
+                }
               },
               "kind": "AND",
               "range": {
@@ -419,23 +435,21 @@ describe('parseSearchQuery', () => {
                   "type": "operator",
                   "left": {
                     "type": "pattern",
+                    "kind": 1,
+                    "value": "a",
                     "range": {
                       "start": 5,
                       "end": 6
-                    },
-                    "kind": 1,
-                    "value": "a",
-                    "delimited": false
+                    }
                   },
                   "right": {
                     "type": "pattern",
+                    "kind": 1,
+                    "value": "b",
                     "range": {
                       "start": 11,
                       "end": 12
-                    },
-                    "kind": 1,
-                    "value": "b",
-                    "delimited": false
+                    }
                   },
                   "kind": "AND",
                   "range": {
@@ -455,13 +469,12 @@ describe('parseSearchQuery', () => {
               },
               "right": {
                 "type": "pattern",
+                "kind": 1,
+                "value": "c",
                 "range": {
                   "start": 17,
                   "end": 18
-                },
-                "kind": 1,
-                "value": "c",
-                "delimited": false
+                }
               },
               "kind": "OR",
               "range": {
@@ -478,35 +491,32 @@ describe('parseSearchQuery', () => {
               "type": "operator",
               "left": {
                 "type": "pattern",
+                "kind": 1,
+                "value": "a",
                 "range": {
                   "start": 1,
                   "end": 2
-                },
-                "kind": 1,
-                "value": "a",
-                "delimited": false
+                }
               },
               "right": {
                 "type": "operator",
                 "left": {
                   "type": "pattern",
+                  "kind": 1,
+                  "value": "b",
                   "range": {
                     "start": 8,
                     "end": 9
-                  },
-                  "kind": 1,
-                  "value": "b",
-                  "delimited": false
+                  }
                 },
                 "right": {
                   "type": "pattern",
+                  "kind": 1,
+                  "value": "c",
                   "range": {
                     "start": 13,
                     "end": 14
-                  },
-                  "kind": 1,
-                  "value": "c",
-                  "delimited": false
+                  }
                 },
                 "kind": "OR",
                 "range": {
@@ -539,23 +549,21 @@ describe('parseSearchQuery', () => {
                   "type": "operator",
                   "left": {
                     "type": "pattern",
+                    "kind": 1,
+                    "value": "a",
                     "range": {
                       "start": 1,
                       "end": 2
-                    },
-                    "kind": 1,
-                    "value": "a",
-                    "delimited": false
+                    }
                   },
                   "right": {
                     "type": "pattern",
+                    "kind": 1,
+                    "value": "b",
                     "range": {
                       "start": 7,
                       "end": 8
-                    },
-                    "kind": 1,
-                    "value": "b",
-                    "delimited": false
+                    }
                   },
                   "kind": "AND",
                   "range": {
@@ -569,23 +577,21 @@ describe('parseSearchQuery', () => {
                 },
                 {
                   "type": "pattern",
+                  "kind": 1,
+                  "value": "c",
                   "range": {
                     "start": 10,
                     "end": 11
-                  },
-                  "kind": 1,
-                  "value": "c",
-                  "delimited": false
+                  }
                 },
                 {
                   "type": "pattern",
+                  "kind": 1,
+                  "value": "d",
                   "range": {
                     "start": 12,
                     "end": 13
-                  },
-                  "kind": 1,
-                  "value": "d",
-                  "delimited": false
+                  }
                 }
               ],
               "range": {
@@ -604,23 +610,21 @@ describe('parseSearchQuery', () => {
                 "nodes": [
                   {
                     "type": "pattern",
+                    "kind": 1,
+                    "value": "aaa",
                     "range": {
                       "start": 0,
                       "end": 3
-                    },
-                    "kind": 1,
-                    "value": "aaa",
-                    "delimited": false
+                    }
                   },
                   {
                     "type": "pattern",
+                    "kind": 1,
+                    "value": "bbb",
                     "range": {
                       "start": 4,
                       "end": 7
-                    },
-                    "kind": 1,
-                    "value": "bbb",
-                    "delimited": false
+                    }
                   }
                 ],
                 "range": {
@@ -630,13 +634,12 @@ describe('parseSearchQuery', () => {
               },
               "right": {
                 "type": "pattern",
+                "kind": 1,
+                "value": "ccc",
                 "range": {
                   "start": 11,
                   "end": 14
-                },
-                "kind": 1,
-                "value": "ccc",
-                "delimited": false
+                }
               },
               "kind": "OR",
               "range": {
@@ -655,23 +658,21 @@ describe('parseSearchQuery', () => {
                 "nodes": [
                   {
                     "type": "pattern",
+                    "kind": 1,
+                    "value": "aaa",
                     "range": {
                       "start": 1,
                       "end": 4
-                    },
-                    "kind": 1,
-                    "value": "aaa",
-                    "delimited": false
+                    }
                   },
                   {
                     "type": "pattern",
+                    "kind": 1,
+                    "value": "bbb",
                     "range": {
                       "start": 5,
                       "end": 8
-                    },
-                    "kind": 1,
-                    "value": "bbb",
-                    "delimited": false
+                    }
                   }
                 ],
                 "range": {
@@ -681,13 +682,12 @@ describe('parseSearchQuery', () => {
               },
               "right": {
                 "type": "pattern",
+                "kind": 1,
+                "value": "ccc",
                 "range": {
                   "start": 13,
                   "end": 16
-                },
-                "kind": 1,
-                "value": "ccc",
-                "delimited": false
+                }
               },
               "kind": "AND",
               "range": {

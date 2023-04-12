@@ -16,16 +16,17 @@ import {
     queryRenderer,
 } from '@sourcegraph/branded/src/search-ui/experimental'
 import { getQueryInformation } from '@sourcegraph/branded/src/search-ui/input/codemirror/parsedQuery'
-import { isDefined } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
+import { getRelevantTokens } from '@sourcegraph/shared/src/search/query/analyze'
 import { regexInsertText } from '@sourcegraph/shared/src/search/query/completion-utils'
 import { FILTERS, FilterType, isNegatableFilter, ResolvedFilter } from '@sourcegraph/shared/src/search/query/filters'
-import { Node, OperatorKind } from '@sourcegraph/shared/src/search/query/parser'
+import { Node, Parameter } from '@sourcegraph/shared/src/search/query/parser'
 import { predicateCompletion } from '@sourcegraph/shared/src/search/query/predicates'
+import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { selectorHasFields } from '@sourcegraph/shared/src/search/query/selectFilter'
-import { CharacterRange, Filter, KeywordKind, PatternKind, Token } from '@sourcegraph/shared/src/search/query/token'
+import { CharacterRange, Filter, KeywordKind, Token } from '@sourcegraph/shared/src/search/query/token'
 import { isFilterOfType, resolveFilterMemoized } from '@sourcegraph/shared/src/search/query/utils'
 import { getSymbolIconSVGPath } from '@sourcegraph/shared/src/symbols/symbolIcons'
 
@@ -868,10 +869,9 @@ function createCaches({
                     ? buildSuggestionQuery(
                           parsedQuery,
                           { start: position, end: position },
-                          token =>
-                              token.type === 'parameter' &&
-                              !!token.value &&
-                              resolveFilterMemoized(token.field)?.type === FilterType.context
+                          node =>
+                              isNonEmptyParameter(node) &&
+                              resolveFilterMemoized(node.field)?.type === FilterType.context
                       )
                     : '',
             queryKey: (value, dataCacheKey = '') => `${dataCacheKey} type:repo count:50 repo:${value}`,
@@ -936,10 +936,7 @@ function createCaches({
                     ? buildSuggestionQuery(
                           parsedQuery,
                           { start: position, end: position },
-                          token =>
-                              token.type === 'parameter' &&
-                              !!token.value &&
-                              containsFilterType(fileFilters, token.field)
+                          node => isNonEmptyParameter(node) && containsFilterType(fileFilters, node.field)
                       )
                     : '',
             queryKey: (value, dataCacheKey = '') => `${dataCacheKey} type:file count:50 file:${value}`,
@@ -979,10 +976,7 @@ function createCaches({
                     ? buildSuggestionQuery(
                           parsedQuery,
                           { start: position, end: position },
-                          token =>
-                              token.type === 'parameter' &&
-                              !!token.value &&
-                              containsFilterType(symbolFilters, token.field)
+                          node => isNonEmptyParameter(node) && containsFilterType(symbolFilters, node.field)
                       )
                     : '',
             queryKey: (value, dataCacheKey = '') => `${dataCacheKey} type:symbol count:50 ${value}`,
@@ -1129,124 +1123,12 @@ class Cache<T, U, E extends any[] = []> {
     }
 }
 
-const placeholderRange: CharacterRange = { start: 0, end: 0 }
-
-/**
- * This function processes a given query in a top-down manner and removes any
- * patterns and filters that cannot affect the token at the target character
- * range.
- * This is relatively straighforward: We only keep tokens that represent
- * whitelisted filters and which are direct children of an AND branch.
- * Everything else is discarded.
- */
 function buildSuggestionQuery(query: Node, target: CharacterRange, filter: (node: Node) => boolean): string {
-    function processNode(node: Node): Node | null {
-        switch (node.type) {
-            case 'parameter':
-            case 'pattern':
-                return filter(node) ? node : null
-            case 'sequence': {
-                const nodes = node.nodes.map(processNode).filter(isDefined)
-                return nodes.length > 0 ? { type: 'sequence', nodes, range: placeholderRange } : null
-            }
-            case 'operator': {
-                switch (node.kind) {
-                    case OperatorKind.Or: {
-                        // If one operand contains the target branche we only
-                        // need to keep that operand (the other branch is
-                        // irrelevant). But if no operand contains the target
-                        // range we need to process all nodes and assume that
-                        // this token is ANDed at some level with the target
-                        // range.
-                        //
-                        // Examples:
-                        //
-                        // filter:a filter:b OR filter:|
-                        // ^^^^^^^^^^^^^^^^^
-                        //      discard
-                        //
-                        // (filter:a or filter:b) filter:|
-                        // ^^^^^^^^^^^^^^^^^^^^^^
-                        // needs to be preserved
-                        const operand = node.operands.find(
-                            node => node.range.start <= target.start && node.range.end >= target.end
-                        )
-
-                        if (operand) {
-                            return processNode(operand)
-                        }
-                        // NOTE: Intentional fallthrough since the logic is the
-                        // same.
-                    }
-                    case OperatorKind.And: {
-                        const operands = node.operands.map(processNode).filter(isDefined)
-                        switch (operands.length) {
-                            case 0:
-                                return null
-                            case 1:
-                                return operands[0]
-                            default:
-                                return {
-                                    type: 'operator',
-                                    // needs to be node.kind to properly handle
-                                    // fallthrough case.
-                                    kind: node.kind,
-                                    operands,
-                                    range: placeholderRange,
-                                }
-                        }
-                    }
-                    case OperatorKind.Not: {
-                        if (node.operands.length === 0) {
-                            return null
-                        }
-                        const operand = processNode(node.operands[0])
-                        if (!operand) {
-                            return null
-                        }
-                        return { type: 'operator', kind: node.kind, operands: [operand], range: placeholderRange }
-                    }
-                }
-            }
-        }
-    }
-
-    const result = processNode(query)
-    return result ? printParsedQuery(result).join('') : ''
+    return stringHuman(getRelevantTokens(query, target, filter))
 }
 
-function printParsedQuery(node: Node, buffer: string[] = []): string[] {
-    switch (node.type) {
-        case 'pattern':
-            // TODO: quoted, negated, ...
-            switch (node.kind) {
-                case PatternKind.Regexp:
-                    buffer.push('/', node.value, '/')
-                    return buffer
-                default:
-                    buffer.push(node.value)
-                    return buffer
-            }
-        case 'parameter': {
-            buffer.push(node.field, ':', node.value)
-            return buffer
-        }
-        case 'sequence': {
-            for (const operand of node.nodes) {
-                printParsedQuery(operand, buffer)
-                buffer.push(' ')
-            }
-            return buffer
-        }
-        case 'operator': {
-            buffer.push(
-                ' (',
-                node.operands.map(operand => printParsedQuery(operand).join('')).join(` ${node.kind} `),
-                ') '
-            )
-            return buffer
-        }
-    }
+function isNonEmptyParameter(node: Node): node is Parameter {
+    return node.type === 'parameter' && !!node.value
 }
 
 function containsFilterType(filterTypes: Set<FilterType>, filterType: string): boolean {

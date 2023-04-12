@@ -7,17 +7,16 @@ import { CharacterRange, KeywordKind, Token } from './token'
 const placeholderRange: CharacterRange = { start: 0, end: 0 }
 
 /**
- * This function processes a given query in a top-down manner and removes any
- * patterns and filters that cannot affect the token at the target character
- * range.
- * This is relatively straighforward: We only keep tokens that represent
- * whitelisted filters and which are direct children of an AND branch.
- * Everything else is discarded.
+ * getRelevantTokens processes a given query in a top-down manner and removes any
+ * patterns and filters that cannot affect the token at the target character range.
+ * This function also accepts a filter callback to control which tokens should be
+ * included (it's possible to filter the returned token list instead but that makes
+ * handling operators more complicated).
  */
 export function getRelevantTokens(query: Node, target: CharacterRange, filter: (node: Node) => boolean): Token[] {
     function processNode(node: Node): Node | null {
         switch (node.type) {
-            case 'filter':
+            case 'parameter':
             case 'pattern':
                 return filter(node) ? node : null
             case 'sequence': {
@@ -106,16 +105,25 @@ function tokenize(node: Node | null): Token[] {
     switch (node?.type) {
         case undefined:
             return []
-        case 'filter':
+        case 'parameter':
+            return [
+                {
+                    type: 'filter',
+                    field: { type: 'literal', value: node.field, quoted: false, range: placeholderRange },
+                    value: { type: 'literal', value: node.value, quoted: node.quoted, range: placeholderRange },
+                    negated: node.negated,
+                    range: placeholderRange,
+                },
+            ]
         case 'pattern':
             return [node]
         case 'sequence': {
             const tokens: Token[] = []
-            for (let i = 0; i < node.nodes.length; i++) {
+            for (const child of node.nodes) {
                 if (tokens.length > 0) {
                     tokens.push({ type: 'whitespace', range: placeholderRange })
                 }
-                tokens.push(...tokenize(node.nodes[i]))
+                tokens.push(...tokenize(child))
             }
             return tokens
         }
