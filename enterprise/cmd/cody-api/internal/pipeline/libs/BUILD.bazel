@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "libs",
+    srcs = [
+        "embeddings.go",
+        "git.go",
+        "keywords.go",
+        "llm.go",
+        "log.go",
+        "time.go",
+        "user.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-api/internal/pipeline/libs",
+    visibility = ["//enterprise/cmd/cody-api:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/authz",
+        "//internal/gitserver",
+        "//internal/luasandbox/util",
+        "@com_github_yuin_gopher_lua//:gopher-lua",
+        "@com_layeh_gopher_luar//:gopher-luar",
+    ],
+)

@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-api/internal/pipeline"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-api/internal/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -53,6 +54,7 @@ func makeHandler(logger log.Logger) http.Handler {
 	mux.Handle("/healthz", handleHealthCheck(logger))
 	mux.Handle("/completions/final", streaming.NewCompletionsFinalHandler(logger))
 	mux.Handle("/completions/stream", streaming.NewCompletionsStreamHandler(logger))
+	mux.Handle("/pipeline", pipeline.NewPipelineHandler(logger))
 
 	return mux
 }

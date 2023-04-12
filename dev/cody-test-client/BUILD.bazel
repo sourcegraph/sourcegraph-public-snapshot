@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "cody-test-client_lib",
+    srcs = [
+        "capabilities.go",
+        "config.go",
+        "main.go",
+        "pipeline.go",
+        "reader.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/cody-test-client",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//lib/errors",
+        "@org_golang_x_net//websocket",
+    ],
+)
+
+go_binary(
+    name = "cody-test-client",
+    embed = [":cody-test-client_lib"],
+    visibility = ["//visibility:public"],
+)

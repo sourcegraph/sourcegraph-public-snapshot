@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "pipeline",
+    srcs = [
+        "handler.go",
+        "iface.go",
+        "libs.go",
+        "pipeline.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-api/internal/pipeline",
+    visibility = ["//enterprise/cmd/cody-api:__subpackages__"],
+    deps = [
+        "//enterprise/cmd/cody-api/internal/pipeline/libs",
+        "//enterprise/cmd/cody-api/internal/pipeline/lua",
+        "//internal/luasandbox",
+        "//internal/luasandbox/util",
+        "//internal/memo",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_yuin_gopher_lua//:gopher-lua",
+        "@org_golang_x_net//websocket",
+    ],
+)

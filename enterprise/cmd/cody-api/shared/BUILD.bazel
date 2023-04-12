@@ -9,6 +9,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-api/shared",
     visibility = ["//visibility:public"],
     deps = [
+        "//enterprise/cmd/cody-api/internal/pipeline",
         "//enterprise/cmd/cody-api/internal/streaming",
         "//internal/actor",
         "//internal/conf",
