@@ -17,8 +17,9 @@ echo "--- docker symbols build"
 # Required due to use of RUN --mount=type=cache in Dockerfile.
 export DOCKER_BUILDKIT=1
 
-docker build -f cmd/symbols/Dockerfile -t symbols-build "$(pwd)" \
+docker build -f cmd/symbols/Dockerfile.wolfi -t symbols-build "$(pwd)" \
   --target=symbols-build \
+  --platform="${PLATFORM:-linux/amd64}" \ # TODO(will): This is required for server image to build, but will break local builds
   --progress=plain \
   --build-arg VERSION \
   --build-arg PKG="${PKG:-github.com/sourcegraph/sourcegraph/cmd/symbols}"
