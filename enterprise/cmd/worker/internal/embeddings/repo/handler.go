@@ -95,7 +95,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 
 	err = sgweaviate.EmbedRepo(ctx, logger, repo.Name, record.Revision, validFiles, excludedGlobPatterns, client, func(fileName string) ([]byte, error) {
 		return h.gitserverClient.ReadFile(ctx, nil, repo.Name, record.Revision, fileName)
-	})
+	}, splitOptions)
 	if err != nil {
 		logger.Error("could not embed repo", log.Error(err))
 		return err

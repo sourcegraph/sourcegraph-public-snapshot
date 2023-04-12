@@ -94,6 +94,8 @@ var class = &models.Class{
 		{Name: "type", DataType: []string{"string"}}, // text or code
 		{Name: "repository", DataType: []string{"string"}},
 		{Name: "revision", DataType: []string{"string"}},
+		{Name: "start_line", DataType: []string{"int"}},
+		{Name: "end_line", DataType: []string{"int"}},
 	},
 	Vectorizer: "text2vec-openai",
 }

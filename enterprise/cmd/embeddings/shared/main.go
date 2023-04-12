@@ -10,7 +10,9 @@ import (
 
 	"github.com/sourcegraph/log"
 	"github.com/weaviate/weaviate-go-client/v4/weaviate"
+	"github.com/weaviate/weaviate-go-client/v4/weaviate/filters"
 	"github.com/weaviate/weaviate-go-client/v4/weaviate/graphql"
+	"github.com/weaviate/weaviate/entities/models"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -136,57 +138,21 @@ func NewHandler(
 			return
 		}
 
-		var args embeddings.EmbeddingsSearchParameters
-		err := json.NewDecoder(r.Body).Decode(&args)
+		var searchOpts embeddings.EmbeddingsSearchParameters
+		err := json.NewDecoder(r.Body).Decode(&searchOpts)
 		if err != nil {
 			http.Error(w, "could not parse request body", http.StatusBadRequest)
 			return
 		}
 
-		client, err := weaviate.NewClient(weaviate.Config{
-			Host:   "localhost:8181",
-			Scheme: "http",
-		})
-
+		srs, err := search(r.Context(), searchOpts)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
-		}
-
-		var alpha float32 = 0.7
-		hybridArgs := (&graphql.HybridArgumentBuilder{}).WithAlpha(alpha).WithQuery(args.Query)
-		fields := []graphql.Field{{Name: "content"}, {Name: "filename"}, {Name: "type"}}
-		builder := client.GraphQL().Get().WithClassName("Code").WithHybrid(hybridArgs).WithFields(fields...).WithLimit(10)
-
-		res, err := builder.Do(r.Context())
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		get := res.Data["Get"].(map[string]interface{})
-		code := get["Code"].([]interface{})
-
-		logger.Info("len(code)", log.Int("len", len(code)))
-
-		var codeResults []embeddings.EmbeddingSearchResult
-		for _, c := range code {
-			cMap := c.(map[string]interface{})
-			filename := cMap["filename"].(string)
-			content := cMap["content"].(string)
-			codeResults = append(codeResults, embeddings.EmbeddingSearchResult{
-				RepoEmbeddingRowMetadata: embeddings.RepoEmbeddingRowMetadata{
-					FileName:  filename,
-					StartLine: 0,
-					EndLine:   0,
-				},
-				Content: content,
-				Debug:   "",
-			})
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		err = json.NewEncoder(w).Encode(embeddings.EmbeddingSearchResults{CodeResults: codeResults})
+		err = json.NewEncoder(w).Encode(srs)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -246,6 +212,75 @@ func NewHandler(
 	})
 
 	return mux
+}
+
+func search(ctx context.Context, args embeddings.EmbeddingsSearchParameters) (*embeddings.EmbeddingSearchResults, error) {
+	client, err := weaviate.NewClient(weaviate.Config{
+		Host:   "localhost:8181",
+		Scheme: "http",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	extractResults := func(res *models.GraphQLResponse) []embeddings.EmbeddingSearchResult {
+		get := res.Data["Get"].(map[string]interface{})
+		code := get["Code"].([]interface{})
+		srs := make([]embeddings.EmbeddingSearchResult, 0, len(code))
+		for _, c := range code {
+			cMap := c.(map[string]interface{})
+			content := cMap["content"].(string)
+			srs = append(srs, embeddings.EmbeddingSearchResult{
+				RepoEmbeddingRowMetadata: embeddings.RepoEmbeddingRowMetadata{
+					FileName:  cMap["filename"].(string),
+					StartLine: int(cMap["start_line"].(float64)),
+					EndLine:   int(cMap["end_line"].(float64)),
+				},
+				Content: content,
+				Debug:   "",
+			})
+		}
+		return srs
+	}
+
+	// Alpha is the weight of the embeddings in the hybrid search. The higher the
+	// alpha, the more the embeddings are used.
+	var alpha float32 = 0.7
+	hybridArgs := (&graphql.HybridArgumentBuilder{}).WithAlpha(alpha).WithQuery(args.Query)
+	wantFields := []graphql.Field{
+		{Name: "content"},
+		{Name: "filename"},
+		{Name: "start_line"},
+		{Name: "end_line"},
+	}
+
+	// I don't know whether it is possible to do this in one query, so I'm doing it in two.
+	isCode := filters.Where().
+		WithPath([]string{"type"}).
+		WithOperator(filters.Equal).
+		WithValueString("code")
+	codeBuilder := client.GraphQL().Get().WithClassName("Code").WithHybrid(hybridArgs).WithFields(wantFields...).WithWhere(isCode).WithLimit(args.CodeResultsCount)
+	codeRes, err := codeBuilder.Do(ctx)
+	if err != nil {
+		return nil, err
+	}
+	codeResults := extractResults(codeRes)
+
+	isText := filters.Where().
+		WithPath([]string{"type"}).
+		WithOperator(filters.Equal).
+		WithValueString("text")
+	textBuilder := client.GraphQL().Get().WithClassName("Code").WithHybrid(hybridArgs).WithFields(wantFields...).WithWhere(isText).WithLimit(args.TextResultsCount)
+	textRes, err := textBuilder.Do(ctx)
+	if err != nil {
+		return nil, err
+	}
+	textResults := extractResults(textRes)
+
+	return &embeddings.EmbeddingSearchResults{
+		CodeResults: codeResults,
+		TextResults: textResults,
+	}, nil
 }
 
 func mustInitializeFrontendDB(observationCtx *observation.Context) *sql.DB {

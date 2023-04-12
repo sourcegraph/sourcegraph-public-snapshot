@@ -10,6 +10,7 @@ import (
 	"github.com/weaviate/weaviate-go-client/v4/weaviate"
 	"github.com/weaviate/weaviate/entities/models"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/split"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
@@ -26,6 +27,7 @@ func EmbedRepo(
 	excludedFilePathPatterns []*paths.GlobPattern,
 	client *weaviate.Client,
 	readFile readFile,
+	splitOptions split.SplitOptions,
 ) error {
 
 	batchSize := 100
@@ -47,27 +49,33 @@ func EmbedRepo(
 			return err
 		}
 
-		cnt++
-		logger.Info("adding object")
-		batch.WithObjects(&models.Object{
-			Class:              "Code",
-			LastUpdateTimeUnix: 0,
-			Properties: map[string]string{
-				"filename":   fileName,
-				"content":    string(b),
-				"repository": string(repoName),
-				"type":       typ,
-				"revision":   string(revision),
-			},
-		})
+		chunks := split.SplitIntoEmbeddableChunks(string(b), fileName, splitOptions)
+		for _, chunk := range chunks {
+			cnt++
+			logger.Info("adding object")
+			batch.WithObjects(&models.Object{
+				Class: "Code",
+				Properties: map[string]interface{}{
+					"filename":   chunk.FileName,
+					"content":    chunk.Content,
+					"repository": string(repoName),
+					"type":       typ,
+					"revision":   string(revision),
+					"start_line": chunk.StartLine,
+					"end_line":   chunk.EndLine,
+				},
+			})
 
-		if cnt%batchSize == 0 {
-			_, err := batch.Do(ctx)
-			if err != nil {
-				return err
+			if cnt%batchSize == 0 {
+				_, err := batch.Do(ctx)
+				if err != nil {
+					return err
+				}
+				cnt = 0
 			}
-			cnt = 0
+
 		}
+
 	}
 
 	if cnt > 0 {
