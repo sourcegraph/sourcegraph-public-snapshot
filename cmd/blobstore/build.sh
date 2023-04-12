@@ -16,10 +16,9 @@ if [[ "$CACHE" == "true" ]]; then
   BUILD_CACHE=""
 fi
 
-
 if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
 
-  bazel build //cmd/gitserver \
+  bazel build //cmd/blobstore \
     --stamp \
     --workspace_status_command=./dev/bazel_stamp_vars.sh \
     --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64
