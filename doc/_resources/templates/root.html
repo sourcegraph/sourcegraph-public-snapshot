@@ -50,7 +50,7 @@
                 }
             </script>
 
-            <script type="module" src="https://esm.sh/@markprompt/web@0.2.2-beta31"></script>
+            <script type="module" src="https://esm.sh/@markprompt/web@0.2.2-beta33"></script>
 
             <script>
 
@@ -74,6 +74,11 @@
                     requestAnimationFrame((time) => {
                         document.querySelector("#markprompt-dialog").classList.add("dialog-slide-up");
                     });
+
+                    const markpromptComponent = document.getElementsByTagName('markprompt-content')[0];
+                    if (markpromptComponent) {
+                        markpromptComponent.clearInputAndFocus()
+                    }
                 }
 
                 function dismissMarkprompt() {
@@ -107,7 +112,7 @@
                     </a></h1>
                     <div
                         id="markprompt-button"
-                        style="padding: calc(0.5*var(--spacing)) calc(1*var(--spacing));">
+                        style="padding: calc(0.5*var(--spacing)) calc(1*var(--spacing)); display: none">
                         <button style="color: var(--text-color); border: solid 1px var(--input-border-color); border-radius: 4px; background-color: var(--body-bg); width: 100%; justify-self: center; font-size: 1.0rem; cursor:pointer;" onclick="showMarkprompt()">
                             <div style="margin-bottom: 0; position: relative; display: flex; gap:0.5rem; padding: calc(0.5*var(--spacing)) 4px; width: 100%;">
                                 <svg class="search-icon" style="color: var(--link-color);" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M21.172 24l-7.387-7.387c-1.388.874-3.024 1.387-4.785 1.387-4.971 0-9-4.029-9-9s4.029-9 9-9 9 4.029 9 9c0 1.761-.514 3.398-1.387 4.785l7.387 7.387-2.828 2.828zm-12.172-8c3.859 0 7-3.14 7-7s-3.141-7-7-7-7 3.14-7 7 3.141 7 7 7z"/></svg>
