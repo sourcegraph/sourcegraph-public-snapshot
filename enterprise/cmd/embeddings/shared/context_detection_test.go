@@ -25,19 +25,25 @@ func TestIsContextRequiredForChatQuery(t *testing.T) {
 		{
 			name:      "query matches no context regex",
 			query:     "that answer looks incorrect",
-			embedding: []float32{0.0, 0.0}, // unused
+			embedding: []float32{0.0, 1.0}, // unused
 			want:      false,
 		},
 		{
 			name:      "query matches context regex",
 			query:     "where is the cody plugin code?",
-			embedding: []float32{0.0, 0.0}, // unused
+			embedding: []float32{1.0, 0.0}, // unused
 			want:      true,
 		},
 		{
-			name:      "another query that matches context regex",
+			name:      "query that matches context regex 2",
 			query:     "is the zoekt package used in my repo",
-			embedding: []float32{0.0, 0.0}, // unused
+			embedding: []float32{1.0, 0.0}, // unused
+			want:      true,
+		},
+		{
+			name:      "query matches context regex 3",
+			query:     "what directory contains the cody plugin",
+			embedding: []float32{1.0, 0.0}, // unused
 			want:      true,
 		},
 		{
