@@ -40,7 +40,7 @@ RUN apk add --no-cache \
     # backported fix for 3.14 https://security.alpinelinux.org/vuln/CVE-2023-22490
     # Minimal version requirement to address vulnerabilities
     # https://github.blog/2023-02-14-git-security-vulnerabilities-announced-3/
-    'git>=2.39.2-r0' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main \
+    'git>=2.40.0-r1' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main \
     git-lfs \
     git-p4 \
     && apk add --no-cache  \
