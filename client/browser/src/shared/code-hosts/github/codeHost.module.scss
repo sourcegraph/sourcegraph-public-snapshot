@@ -34,7 +34,7 @@
     text-align: right;
 }
 
-/* "Old" GitHub (not logged in user or GHE) blob header */
+/* Old GitHub code view blob header */
 :global(.js-blob-header) {
     .code-view-toolbar {
         margin-right: 4px;
@@ -68,7 +68,7 @@
     align-items: center;
 }
 
-/* New GitHub UI: View repo on Sourcegraph link when global navigation update feature preview is disabled */
+/* New GitHub code view: view repo on Sourcegraph link when global navigation update feature preview is disabled */
 :global(.pagehead-actions .open-on-sourcegraph) {
     .icon {
         /* Center link icon */

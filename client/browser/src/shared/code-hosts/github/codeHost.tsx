@@ -159,7 +159,7 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
     mountElement.style.alignItems = 'center'
     mountElement.className = className
 
-    // new GitHub UI
+    // new GitHub code view: https://docs.github.com/en/repositories/working-with-files/managing-files/navigating-files-with-the-new-code-view
     const container =
         codeViewElement.querySelector('#repos-sticky-header')?.childNodes[0]?.childNodes[0]?.childNodes[1]
             ?.childNodes[2] // we have to use this level of nesting when selecting a target container because #repos-sticky-header children don't have specific classes or ids
@@ -168,7 +168,7 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
         return mountElement
     }
 
-    // old GitHub UI (e.g., GHE)
+    // old GitHub code view (aka new code view feature disabled: https://docs.github.com/en/repositories/working-with-files/managing-files/navigating-files-with-the-new-code-view)
     const rawURLLink = codeViewElement.querySelector('#raw-url')
     const buttonGroup = rawURLLink?.closest('.BtnGroup')
     if (buttonGroup?.parentNode) {
