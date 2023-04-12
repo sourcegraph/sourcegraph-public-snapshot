@@ -2,6 +2,8 @@
 
 set -ex
 
+cd "$(dirname "${BASH_SOURCE[0]}")/../.."
+
 # We build out of tree to prevent triggering dev watch scripts when we copy go
 # files.
 BUILDDIR=$(mktemp -d -t sgdockerbuild_XXXXXXX)
