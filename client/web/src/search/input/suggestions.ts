@@ -280,7 +280,12 @@ function toFileSuggestion(result: FzfResultItem<File>, from: number, to?: number
 /**
  * Converts a File value to a (jump) target suggestion.
  */
-function toSymbolSuggestion({ item, positions }: FzfResultItem<CodeSymbol>, from: number, to?: number): Option {
+function toSymbolSuggestion(
+    { item, positions }: FzfResultItem<CodeSymbol>,
+    includeType: boolean,
+    from: number,
+    to?: number
+): Option {
     return {
         label: item.name,
         matches: positions,
@@ -288,7 +293,7 @@ function toSymbolSuggestion({ item, positions }: FzfResultItem<CodeSymbol>, from
         kind: 'symbol',
         action: {
             type: 'completion',
-            insertValue: `type:symbol ${item.name} `,
+            insertValue: (includeType ? 'type:symbol ' : '') + item.name + ' ',
             from,
             to,
         },
@@ -780,13 +785,21 @@ function symbolSuggestions(cache: Caches['symbol']): InternalSource {
             return null
         }
 
+        const includeType =
+            !parsedQuery ||
+            getRelevantTokens(
+                parsedQuery,
+                token.range,
+                node => node.type === 'parameter' && resolveFilterMemoized(node.field)?.type === FilterType.type
+            ).length === 0
+
         return cache.query(
             token.value,
             results => [
                 {
                     title: 'Symbols',
                     options: limitUniqueOptions(results, DEFAULT_SUGGESTIONS_HIGH_PRI_LIST_SIZE, result =>
-                        toSymbolSuggestion(result, token.range.start)
+                        toSymbolSuggestion(result, includeType, token.range.start)
                     ),
                 },
             ],
