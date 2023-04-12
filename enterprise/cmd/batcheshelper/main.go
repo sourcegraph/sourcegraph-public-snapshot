@@ -110,7 +110,8 @@ func parsePreviousStepResult(path string, step int, skippedSteps map[int]struct{
 		// Get the last actually executed step index.
 		previousStepIndex := getPreviousStepIndex(step, skippedSteps)
 		if previousStepIndex == -1 {
-			return previousResult, errors.New("failed to find previous step")
+			// No previous step was executed.
+			return previousResult, nil
 		}
 
 		// Read the previous step's result file.
@@ -127,6 +128,9 @@ func parsePreviousStepResult(path string, step int, skippedSteps map[int]struct{
 }
 
 func getPreviousStepIndex(step int, skippedSteps map[int]struct{}) int {
+	if skippedSteps == nil {
+		return step - 1
+	}
 	for i := step - 1; i >= 0; i-- {
 		if _, ok := skippedSteps[i]; !ok {
 			return i
