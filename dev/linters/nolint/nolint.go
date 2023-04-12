@@ -121,7 +121,7 @@ func Wrap(analyzer *analysis.Analyzer) *analysis.Analyzer {
 	return analyzer
 }
 
-// respectNolintDirectives updates an analyzer from `staticcheck` and `golangci-linter` to make it work on nogo.
+// respectNolintDirectives updates an analyzer to make it work on nogo.
 // They have "lint:ignore" or "nolint" to make the analyzer ignore the code.
 func respectNolintDirectives(analyzer *analysis.Analyzer) {
 	analyzer.Requires = append(analyzer.Requires, Directives)
