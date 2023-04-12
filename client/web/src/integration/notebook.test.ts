@@ -69,6 +69,7 @@ const viewerSettings: Partial<WebGraphQlOperations & SharedGraphQlOperations> = 
 }
 
 const now = new Date()
+const downloadPath = process.env.TEST_TMPDIR || __dirname
 
 const notebookFixture = (id: string, title: string, blocks: NotebookFields['blocks']): NotebookFields => ({
     __typename: 'Notebook',
@@ -464,7 +465,7 @@ describe('Search Notebook', () => {
     })
 
     afterEach(() => {
-        const exportedNotebookPath = path.resolve(__dirname, 'Exported.snb.md')
+        const exportedNotebookPath = path.resolve(downloadPath, 'Exported.snb.md')
         // eslint-disable-next-line no-sync
         if (fs.existsSync(exportedNotebookPath)) {
             // eslint-disable-next-line no-sync
@@ -527,7 +528,6 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@main/-/blob/cli
 https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/client/web/index.ts?L1:1-1:3#symbolName=func&symbolContainerName=class&symbolKind=FUNCTION&lineContext=3
 `
 
-        const downloadPath = process.env.TEST_TMPDIR || __dirname
         console.log('downloadPath', downloadPath)
         await driver.page.client().send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath })
 
