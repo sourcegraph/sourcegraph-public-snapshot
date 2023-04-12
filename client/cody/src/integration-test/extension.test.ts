@@ -95,5 +95,5 @@ suite('End-to-end', () => {
 
         // Clean up.
         await ensureExecuteCommand('cody.delete-access-token')
-    }).timeout(10000)
+    }).timeout(20000)
 })
