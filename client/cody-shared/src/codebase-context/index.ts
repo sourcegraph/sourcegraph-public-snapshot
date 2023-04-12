@@ -1,5 +1,3 @@
-import path from 'path'
-
 import { EmbeddingsSearch } from '../embeddings'
 import { KeywordContextFetcher } from '../keyword-context'
 import { isMarkdownFile, populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
