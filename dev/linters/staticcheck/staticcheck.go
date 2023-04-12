@@ -6,7 +6,7 @@ import (
 	"honnef.co/go/tools/analysis/lint"
 	"honnef.co/go/tools/staticcheck"
 
-	"github.com/sourcegraph/sourcegraph/dev/linters/directive"
+	"github.com/sourcegraph/sourcegraph/dev/linters/nolint"
 )
 
 var StaticCheckAnalyzers []*lint.Analyzer = staticcheck.Analyzers
@@ -16,9 +16,7 @@ var Analyzer *analysis.Analyzer = GetAnalyzerByName(AnalyzerName)
 func GetAnalyzerByName(name string) *analysis.Analyzer {
 	for _, a := range StaticCheckAnalyzers {
 		if a.Analyzer.Name == name {
-			//Wrap the analyzer so that it respects nolint directives
-			directive.RespectDirectives(a.Analyzer)
-			return a.Analyzer
+			return nolint.Wrap(a.Analyzer)
 		}
 	}
 	return nil
