@@ -127,6 +127,7 @@ func bazelTest(optional bool, targets ...string) func(*bk.Pipeline) {
 		bk.Env("CI_BAZEL_REMOTE_CACHE", bazelRemoteCacheURL),
 		bk.DependsOn("bazel-configure"),
 		bk.Agent("queue", "bazel"),
+		bk.Key("bazel-tests"),
 	}
 
 	bazelRawCmd := bazelRawCmd(fmt.Sprintf("test %s", strings.Join(targets, " ")))
@@ -191,7 +192,8 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 		}
 		key = key + ":candidate"
 		cmds = append(cmds,
-			// bk.Key(key),
+			bk.Key("bazel-docker"),
+			bk.DependsOn("bazel-tests"),
 			bk.Env("DOCKER_BAZEL", "true"),
 			bk.Env("VERSION", version),
 			bk.Agent("queue", "bazel"),
@@ -221,8 +223,8 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 			localImage := "sourcegraph/" + image + ":" + version
 
 			cmds = append(cmds,
+				bk.RawCmd(fmt.Sprintf(`echo "--- Building candidate %s image..."`, app)),
 				bk.RawCmd("export IMAGE='"+localImage+"'"),
-				bk.RawCmd(fmt.Sprintf(`echo "Building candidate %s image..."`, app)),
 			)
 
 			if _, err := os.Stat(filepath.Join("docker-images", app)); err == nil {
@@ -273,6 +275,7 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 
 			devImage := images.DevRegistryImage(app, tag)
 			cmds = append(cmds,
+				bk.RawCmd(fmt.Sprintf(`echo "--- Tagging and Pushing candidate %s image..."`, app)),
 				// Retag the local image for dev registry
 				bk.RawCmd(fmt.Sprintf("docker tag %s %s", localImage, devImage)),
 				// Publish tagged image
