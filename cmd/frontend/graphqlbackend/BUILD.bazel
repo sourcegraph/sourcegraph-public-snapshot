@@ -1,6 +1,6 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 load("@npm//:graphql-schema-linter/package_json.bzl", linter_bin = "bin")
-load("@aspect_rules_js//js:defs.bzl", "js_library" )
+load("@aspect_rules_js//js:defs.bzl", "js_library")
 
 package(default_visibility = [
     "//client/shared:__subpackages__",

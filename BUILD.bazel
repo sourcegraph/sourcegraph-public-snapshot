@@ -198,8 +198,8 @@ js_library(
 js_library(
     name = "graphql_schema_config",
     srcs = [
-        "graphql-schema-linter.config.js",
         ".graphqlrc.yml",
+        "graphql-schema-linter.config.js",
     ],
     visibility = ["//visibility:public"],
 )
