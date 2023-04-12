@@ -17,7 +17,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-TARGETS=(
+OSS_TARGETS=(
   //cmd/frontend
   //cmd/worker
   //cmd/migrator
@@ -35,12 +35,31 @@ TARGETS=(
   @com_github_sourcegraph_zoekt//cmd/zoekt-webserver
 )
 
-echo "--- bazel build"
+ENTERPRISE_TARGETS=(
+  //enterprise/cmd/frontend
+  //enterprise/cmd/gitserver
+  //enterprise/cmd/worker
+  //enterprise/cmd/migrator
+  //enterprise/cmd/repo-updater
+  //enterprise/cmd/symbols
+  //enterprise/cmd/precise-code-intel-worker
+  //enterprise/cmd/server
+  @com_github_sourcegraph_zoekt//cmd/zoekt-archive-index
+  @com_github_sourcegraph_zoekt//cmd/zoekt-git-index
+  @com_github_sourcegraph_zoekt//cmd/zoekt-sourcegraph-indexserver
+  @com_github_sourcegraph_zoekt//cmd/zoekt-webserver
+)
 
+if "$ENTERPRISE"; then
+  TARGETS=(${ENTERPRISE_TARGETS[@]})
+else
+  TARGETS=(${OSS_TARGETS[@]})
+fi
+
+echo "--- bazel build"
 bazel build "${TARGETS[@]}" \
   --stamp \
   --workspace_status_command=./dev/bazel_stamp_vars.sh \
-  --//:assets_bundle_type=oss \
   --platforms @zig_sdk//platform:linux_amd64 \
   --extra_toolchains @zig_sdk//toolchain:linux_amd64_musl
 
@@ -54,23 +73,23 @@ for TARGET in "${TARGETS[@]}"; do
   echo "copying $TARGET"
 done
 
-# echo "--- prometheus"
+echo "--- prometheus"
 IMAGE=sourcegraph/prometheus:server CACHE=true docker-images/prometheus/build-bazel.sh
 
-# # echo "--- grafana"
+echo "--- grafana"
 IMAGE=sourcegraph/grafana:server CACHE=true docker-images/grafana/build-bazel.sh
 
-# # echo "--- blobstore"
+echo "--- blobstore"
 IMAGE=sourcegraph/blobstore:server CACHE=true docker-images/blobstore/build.sh
 
-# echo "--- postgres exporter"
+echo "--- postgres exporter"
 IMAGE=sourcegraph/postgres_exporter:server CACHE=true docker-images/postgres_exporter/build.sh
 
-# # echo "--- build scripts"
+echo "--- build scripts"
 cp -a ./cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
 cp -a ./cmd/gitserver/p4-fusion-install-alpine.sh "$OUTPUT"
 
-# echo "--- docker build"
+echo "--- docker build"
 docker build -f cmd/server/Dockerfile.bazel -t "$IMAGE" "$OUTPUT" \
   --platform linux/amd64 \
   --progress=plain \
