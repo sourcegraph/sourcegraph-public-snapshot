@@ -22,6 +22,8 @@ type operations struct {
 	diagnostics     *observation.Operation
 	stencil         *observation.Operation
 	ranges          *observation.Operation
+	snapshot        *observation.Operation
+	visibleIndexes  *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -49,6 +51,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 		diagnostics:     op("Diagnostics"),
 		stencil:         op("Stencil"),
 		ranges:          op("Ranges"),
+		snapshot:        op("Snapshot"),
+		visibleIndexes:  op("VisibleIndexes"),
 	}
 }
 

@@ -67,7 +67,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 
 	var dependencyOf int
 	if args.DependencyOf != nil {
-		v, v2, err := unmarshalPreciseIndexGQLID(graphql.ID(*args.DependencyOf))
+		v, v2, err := UnmarshalPreciseIndexGQLID(graphql.ID(*args.DependencyOf))
 		if err != nil {
 			return nil, err
 		}
@@ -80,7 +80,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 	}
 	var dependentOf int
 	if args.DependentOf != nil {
-		v, v2, err := unmarshalPreciseIndexGQLID(graphql.ID(*args.DependentOf))
+		v, v2, err := UnmarshalPreciseIndexGQLID(graphql.ID(*args.DependentOf))
 		if err != nil {
 			return nil, err
 		}
@@ -186,17 +186,20 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 		cursor = ""
 	}
 
-	prefetcher := r.prefetcherFactory.Create()
+	// Create upload loader with data we already have, and pre-submit associated uploads from index records
+	uploadLoader := r.uploadLoaderFactory.CreateWithInitialData(uploads)
+	PresubmitAssociatedUploads(uploadLoader, indexes...)
 
-	for _, pair := range pairs {
-		if pair.upload != nil && pair.upload.AssociatedIndexID != nil {
-			prefetcher.MarkIndex(*pair.upload.AssociatedIndexID)
-		}
-	}
+	// Create index loader with data we already have, and pre-submit associated indexes from upload records
+	indexLoader := r.indexLoaderFactory.CreateWithInitialData(indexes)
+	PresubmitAssociatedIndexes(indexLoader, uploads...)
+
+	// No data to load for git data (yet)
+	locationResolver := r.locationResolverFactory.Create()
 
 	resolvers := make([]resolverstubs.PreciseIndexResolver, 0, len(pairs))
 	for _, pair := range pairs {
-		resolver, err := r.preciseIndexResolverFactory.Create(ctx, prefetcher, r.locationResolverFactory.Create(), errTracer, pair.upload, pair.index)
+		resolver, err := r.preciseIndexResolverFactory.Create(ctx, uploadLoader, indexLoader, locationResolver, errTracer, pair.upload, pair.index)
 		if err != nil {
 			return nil, err
 		}
@@ -213,7 +216,7 @@ func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ r
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	uploadID, indexID, err := unmarshalPreciseIndexGQLID(id)
+	uploadID, indexID, err := UnmarshalPreciseIndexGQLID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +227,17 @@ func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ r
 			return nil, err
 		}
 
-		return r.preciseIndexResolverFactory.Create(ctx, r.prefetcherFactory.Create(), r.locationResolverFactory.Create(), errTracer, &upload, nil)
+		// Create upload loader with data we already have
+		uploadLoader := r.uploadLoaderFactory.CreateWithInitialData([]shared.Upload{upload})
+
+		// Pre-submit associated index id for subsequent loading
+		indexLoader := r.indexLoaderFactory.Create()
+		PresubmitAssociatedIndexes(indexLoader, upload)
+
+		// No data to load for git data (yet)
+		locationResolverFactory := r.locationResolverFactory.Create()
+
+		return r.preciseIndexResolverFactory.Create(ctx, uploadLoader, indexLoader, locationResolverFactory, errTracer, &upload, nil)
 	}
 	if indexID != 0 {
 		index, ok, err := r.uploadSvc.GetIndexByID(ctx, indexID)
@@ -232,7 +245,17 @@ func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ r
 			return nil, err
 		}
 
-		return r.preciseIndexResolverFactory.Create(ctx, r.prefetcherFactory.Create(), r.locationResolverFactory.Create(), errTracer, nil, &index)
+		// Create index loader with data we already have
+		indexLoader := r.indexLoaderFactory.CreateWithInitialData([]shared.Index{index})
+
+		// Pre-submit associated upload id for subsequent loading
+		uploadLoader := r.uploadLoaderFactory.Create()
+		PresubmitAssociatedUploads(uploadLoader, index)
+
+		// No data to load for git data (yet)
+		locationResolverFactory := r.locationResolverFactory.Create()
+
+		return r.preciseIndexResolverFactory.Create(ctx, uploadLoader, indexLoader, locationResolverFactory, errTracer, nil, &index)
 	}
 
 	return nil, errors.New("invalid identifier")

@@ -48,6 +48,7 @@ ts_project(
         "src/intent-detector/index.ts",
         "src/keyword-context/index.ts",
         "src/prompt/constants.ts",
+        "src/prompt/prompt-mixin.ts",
         "src/prompt/templates.ts",
         "src/prompt/truncation.ts",
         "src/sourcegraph-api/completions/browserClient.ts",

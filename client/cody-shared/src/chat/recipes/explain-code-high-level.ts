@@ -1,26 +1,18 @@
-import { CodebaseContext } from '../../codebase-context'
-import { Editor } from '../../editor'
-import { IntentDetector } from '../../intent-detector'
 import { MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { getShortTimestamp } from '../../timestamp'
 import { Interaction } from '../transcript/interaction'
 
 import { getContextMessagesFromSelection, getNormalizedLanguageName, MARKDOWN_FORMAT_PROMPT } from './helpers'
-import { Recipe } from './recipe'
+import { Recipe, RecipeContext } from './recipe'
 
 export class ExplainCodeHighLevel implements Recipe {
     public getID(): string {
         return 'explain-code-high-level'
     }
 
-    public async getInteraction(
-        _humanChatInput: string,
-        editor: Editor,
-        _intentDetector: IntentDetector,
-        codebaseContext: CodebaseContext
-    ): Promise<Interaction | null> {
-        const selection = editor.getActiveTextEditorSelection()
+    public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const selection = context.editor.getActiveTextEditorSelection()
         if (!selection) {
             return Promise.resolve(null)
         }
@@ -42,7 +34,7 @@ export class ExplainCodeHighLevel implements Recipe {
                 truncatedPrecedingText,
                 truncatedFollowingText,
                 selection.fileName,
-                codebaseContext
+                context.codebaseContext
             )
         )
     }

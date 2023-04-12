@@ -62,7 +62,7 @@ func StandaloneRun(ctx context.Context, runner util.CmdRunner, logger log.Logger
 		// TODO: Validate access token.
 		// Validate src-cli is of a good version, rely on the connected instance to tell
 		// us what "good" means.
-		client, err := apiclient.NewBaseClient(opts.QueueOptions.BaseClientOptions)
+		client, err := apiclient.NewBaseClient(logger, opts.QueueOptions.BaseClientOptions)
 		if err != nil {
 			return err
 		}
@@ -103,6 +103,7 @@ func StandaloneRun(ctx context.Context, runner util.CmdRunner, logger log.Logger
 
 	if cfg.UseFirecracker {
 		routines = append(routines, janitor.NewOrphanedVMJanitor(
+			log.Scoped("orphaned-vm-janitor", "deletes VMs from a previous executor instance"),
 			cfg.VMPrefix,
 			nameSet,
 			cfg.CleanupTaskInterval,

@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
@@ -85,6 +86,14 @@ func (r *RepositoryResolver) ID() graphql.ID {
 
 func (r *RepositoryResolver) IDInt32() api.RepoID {
 	return r.RepoMatch.ID
+}
+
+func (r *RepositoryResolver) EmbeddingExists(ctx context.Context) (bool, error) {
+	if !conf.EmbeddingsEnabled() {
+		return false, nil
+	}
+
+	return r.db.Repos().RepoEmbeddingExists(ctx, r.IDInt32())
 }
 
 func MarshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }

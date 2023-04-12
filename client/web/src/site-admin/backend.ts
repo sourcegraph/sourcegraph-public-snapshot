@@ -735,6 +735,12 @@ export const STATUS_AND_REPO_STATS = gql`
                 message
             }
 
+            ... on NoRepositoriesDetected {
+                __typename
+
+                message
+            }
+
             ... on CloningProgress {
                 __typename
 
