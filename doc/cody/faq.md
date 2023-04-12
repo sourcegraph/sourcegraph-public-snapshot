@@ -47,6 +47,6 @@ In the future, here are the steps that Sourcegraph will follow:
 - Cody has one third-party dependency, which is Anthropic's Claude API.
 - Cody can optionally use OpenAI to generate embeddings, that are then used to improve the quality of its context snippets, but this is not required.
 
-#### What's Anthropic's retention policy?
+#### What's the retention policy for Anthropic/OpenAI?
 
 See our [terms](https://about.sourcegraph.com/terms/cody-notice).
