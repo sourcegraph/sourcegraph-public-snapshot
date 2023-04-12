@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
@@ -29,10 +28,6 @@ func NewDockerWorkspace(
 	operations *command.Operations,
 ) (Workspace, error) {
 	workspaceDir, err := makeTemporaryDirectory("workspace-" + strconv.Itoa(job.ID))
-	if err != nil {
-		return nil, err
-	}
-	workspaceDir, err = filepath.Abs(workspaceDir)
 	if err != nil {
 		return nil, err
 	}
