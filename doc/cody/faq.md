@@ -49,4 +49,4 @@ In the future, here are the steps that Sourcegraph will follow:
 
 #### What's Anthropic's retention policy?
 
-Cody uses a third-party large language model service provided by Anthropic. Anthropic has a zero-retention policy. Code snippets are only processed by Anthropic the length of time required to return the answer, and are removed permanently after that.
+See our [terms](https://about.sourcegraph.com/terms/cody-notice).
