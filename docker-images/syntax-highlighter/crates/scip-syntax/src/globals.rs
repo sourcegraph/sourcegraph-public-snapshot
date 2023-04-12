@@ -12,9 +12,6 @@ pub struct Root<'a> {
     pub children: Vec<Matched<'a>>,
 }
 
-// #[derive(Debug)]
-// pub struct Namespace {}
-
 pub struct Scope<'a> {
     pub definer: Node<'a>,
     pub scope: Node<'a>,
@@ -87,14 +84,6 @@ impl<'a> Matched<'a> {
             Matched::Global(m) => &m.node,
         }
     }
-
-    // pub fn children(&self) -> &Vec<Matched<'a>> {
-    //     match self {
-    //         Matched::Root(m) => &m.children,
-    //         Matched::Scope(s) => &s.children,
-    //         Matched::Global(_) => todo!(),
-    //     }
-    // }
 
     pub fn insert(&mut self, m: Matched<'a>) {
         match self {

@@ -11,6 +11,7 @@ clap.workspace = true
 protobuf.workspace = true
 scip.workspace = true
 tree-sitter.workspace = true
+serde.workspace = true
 
 scip-macros = { path = "../scip-macros" }
 scip-treesitter = { path = "../scip-treesitter" }

@@ -38,7 +38,6 @@ members = [
     "crates/scip-syntax",
     "crates/scip-treesitter",
     "crates/scip-treesitter-languages",
-    # "crates/ctags",
 ]
 
 [workspace.dependencies]
@@ -55,6 +54,7 @@ tree-sitter-highlight = "0.20"
 # Since there is no version tag, we pin the dependency to a specific revision
 scip = { git = "https://github.com/sourcegraph/scip", rev="3856df76147ca4b86df7821a881594358d4ba870" }
 protobuf = "3"
+
 
 
 [profile.release]
