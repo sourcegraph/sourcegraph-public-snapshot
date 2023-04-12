@@ -10,7 +10,7 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json; charset=utf-8',
-                ...(this.accessToken ? { Authorization: `token ${this.accessToken}` } : null),
+                ...(this.accessToken ? { Authorization: `token ${this.accessToken}`, ...this.customHeaders } : null),
             },
             body: JSON.stringify(params),
             signal: abort.signal,

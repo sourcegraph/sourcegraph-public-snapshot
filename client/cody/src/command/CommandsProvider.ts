@@ -36,7 +36,8 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         config.useContext,
         config.debug,
         secretStorage,
-        localStorage
+        localStorage,
+        config.customHeaders
     )
 
     vscode.window.registerWebviewViewProvider('cody.chat', chatProvider, {

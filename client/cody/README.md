@@ -74,12 +74,13 @@ Setting the codebase will edit the `.vscode/settings.json` file in your reposito
 
 This extension contributes the following settings:
 
-| Setting             | Description                                                                                                                  | Example                              |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| cody.enabled        | Enable or disable Cody.                                                                                                      | true/false                           |
-| cody.serverEndpoint | URL of the Sourcegraph instance.                                                                                             | "https://example.sourcegraph.com"    |
-| cody.codebase       | Name of the repository opened in the current workspace. Use the same repository name as listed on your Sourcegraph instance. | "github.com/sourcegraph/sourcegraph" |
-| cody.useContext     | Context source for Cody. One of: "embeddings", "keyword", "blended", or "none".                                              | "embeddings"                         |
+| Setting             | Description                                                                                                                  | Example                                                      |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| cody.enabled        | Enable or disable Cody.                                                                                                      | true/false                                                   |
+| cody.serverEndpoint | URL of the Sourcegraph instance.                                                                                             | "https://example.sourcegraph.com"                            |
+| cody.codebase       | Name of the repository opened in the current workspace. Use the same repository name as listed on your Sourcegraph instance. | "github.com/sourcegraph/sourcegraph"                         |
+| cody.useContext     | Context source for Cody. One of: "embeddings", "keyword", "blended", or "none".                                              | "embeddings"                                                 |
+| cody.customHeaders  | Takes object, where each value pair will be added to the request headers made to your Sourcegraph instance.                  | {"Cache-Control": "no-cache", "Proxy-Authenticate": "Basic"} |
 
 ## Development
 

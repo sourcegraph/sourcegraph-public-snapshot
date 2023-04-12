@@ -26,8 +26,8 @@ import { sanitizeServerEndpoint } from '../sanitize'
 import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../secret-storage'
 import { TestSupport } from '../test-support'
 
-async function isValidLogin(serverEndpoint: string, accessToken: string): Promise<boolean> {
-    const client = new SourcegraphGraphQLAPIClient(sanitizeServerEndpoint(serverEndpoint), accessToken)
+async function isValidLogin(serverEndpoint: string, accessToken: string, customHeaders: object): Promise<boolean> {
+    const client = new SourcegraphGraphQLAPIClient(sanitizeServerEndpoint(serverEndpoint), accessToken, customHeaders)
     const userId = await client.getCurrentUserId()
     return !isError(userId)
 }
@@ -56,7 +56,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         private contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
         private rgPath: string,
         private mode: 'development' | 'production',
-        private localStorage: LocalStorage
+        private localStorage: LocalStorage,
+        private customHeaders: object
     ) {
         if (TestSupport.instance) {
             TestSupport.instance.chatViewProvider.set(this)
@@ -72,7 +73,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
         debug: boolean,
         secretStorage: SecretStorage,
-        localStorage: LocalStorage
+        localStorage: LocalStorage,
+        customHeaders: object
     ): Promise<ChatViewProvider> {
         const mode = debug ? 'development' : 'production'
         const rgPath = await getRgPath(extensionPath)
@@ -85,7 +87,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             editor,
             secretStorage,
             contextType,
-            mode
+            mode,
+            customHeaders
         )
         return new ChatViewProvider(
             extensionPath,
@@ -100,7 +103,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             contextType,
             rgPath,
             mode,
-            localStorage
+            localStorage,
+            customHeaders
         )
     }
 
@@ -125,7 +129,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 await this.acceptTOS(message.version)
                 break
             case 'settings': {
-                const isValid = await isValidLogin(message.serverEndpoint, message.accessToken)
+                const isValid = await isValidLogin(message.serverEndpoint, message.accessToken, this.customHeaders)
                 if (isValid) {
                     await updateConfiguration('serverEndpoint', message.serverEndpoint)
                     await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
@@ -373,7 +377,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     this.editor,
                     this.secretStorage,
                     this.contextType,
-                    this.mode
+                    this.mode,
+                    this.customHeaders
                 )
 
                 this.codebase = codebase

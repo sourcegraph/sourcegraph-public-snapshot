@@ -14,7 +14,11 @@ export async function updateEventLogger(
     localStorage: LocalStorage
 ): Promise<void> {
     const accessToken = await getAccessToken(secretStorage)
-    const gqlAPIClient = new SourcegraphGraphQLAPIClient(sanitizeServerEndpoint(config.serverEndpoint), accessToken)
+    const gqlAPIClient = new SourcegraphGraphQLAPIClient(
+        sanitizeServerEndpoint(config.serverEndpoint),
+        accessToken,
+        config.customHeaders
+    )
     eventLogger = await EventLogger.create(localStorage, gqlAPIClient)
 }
 
