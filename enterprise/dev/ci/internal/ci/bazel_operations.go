@@ -221,8 +221,8 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 			localImage := "sourcegraph/" + image + ":" + version
 
 			cmds = append(cmds,
-				bk.Cmd("export IMAGE='"+localImage+"'"),
-				bk.Cmd(fmt.Sprintf(`echo "Building candidate %s image..."`, app)),
+				bk.RawCmd("export IMAGE='"+localImage+"'"),
+				bk.RawCmd(fmt.Sprintf(`echo "Building candidate %s image..."`, app)),
 			)
 
 			if _, err := os.Stat(filepath.Join("docker-images", app)); err == nil {
@@ -235,8 +235,8 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 				}
 
 				cmds = append(cmds,
-					bk.Cmd("ls -lah "+buildScriptPath),
-					bk.Cmd(buildScriptPath),
+					bk.RawCmd("ls -lah "+buildScriptPath),
+					bk.RawCmd(buildScriptPath),
 				)
 			} else {
 				// Building Docker images located under $REPO_ROOT/cmd/
@@ -274,9 +274,9 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 			devImage := images.DevRegistryImage(app, tag)
 			cmds = append(cmds,
 				// Retag the local image for dev registry
-				bk.Cmd(fmt.Sprintf("docker tag %s %s", localImage, devImage)),
+				bk.RawCmd(fmt.Sprintf("docker tag %s %s", localImage, devImage)),
 				// Publish tagged image
-				bk.Cmd(fmt.Sprintf("docker push %s || exit 10", devImage)),
+				bk.RawCmd(fmt.Sprintf("docker push %s || exit 10", devImage)),
 				// Retry in case of flakes when pushing
 				// bk.AutomaticRetryStatus(3, 10),
 				// Retry in case of flakes when pushing
