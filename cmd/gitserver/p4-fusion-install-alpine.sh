@@ -16,8 +16,7 @@ cleanup() {
 
 trap cleanup EXIT
 
-test_p4_fusion() {
-  # Test that p4-fusion runs and is on the path
+test_p4_fusion() { # Test that p4-fusion runs and is on the path
   echo "--- p4-fusion test"
   ldd "$(which p4-fusion)"
   p4-fusion >/dev/null
