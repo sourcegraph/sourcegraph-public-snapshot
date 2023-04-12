@@ -221,7 +221,7 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 			localImage := "sourcegraph/" + image + ":" + version
 
 			cmds = append(cmds,
-				bk.Cmd("export IMAGE "+localImage),
+				bk.Cmd("export IMAGE='"+localImage+"'"),
 				bk.Cmd(fmt.Sprintf(`echo "Building candidate %s image..."`, app)),
 			)
 
