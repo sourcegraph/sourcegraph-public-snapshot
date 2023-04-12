@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"strings"
 	"text/template"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -15,6 +14,7 @@ func testHelloWorldBatchChange() Test {
 		NameContent:             "hello-world",
 		Description:             "Add Hello World to READMEs",
 		RunCommand:              "IFS=$'\\n'; echo Hello World | tee -a $(find -name README.md)",
+		ChangeSetTemplateTitle:  "Hello World",
 		ChangeSetTemplateBranch: "hello-world",
 		CommitMessageContent:    "Hello World",
 	})
@@ -217,86 +217,24 @@ func testHelloWorldBatchChange() Test {
 }
 
 func testEnvObjectBatchChange() Test {
-	batchSpec := `
-name: e2e-test-batch-change-env-object
-description: Add the value of an environment variable object to READMEs
+	batchSpec := generateBatchSpec(batchSpecParams{
+		NameContent:             "env-object",
+		Description:             "Add the value of an environment variable object to READMEs",
+		RunCommand:              "IFS=$'\\n'; echo $MESSAGE | tee -a $(find -name README.md)\n",
+		AdditionalKeyValues:     map[string]string{"env": "MESSAGE: Hello world from an env object!"},
+		ChangeSetTemplateTitle:  "Hello World from env object",
+		ChangeSetTemplateBranch: "env-object",
+		CommitMessageContent:    "an env object",
+	})
 
-on:
-  - repository: github.com/sourcegraph/automation-testing
-    # This branch is never changing - hopefully.
-    branch: executors-e2e
-
-steps:
-  - run: IFS=$'\n'; echo $MESSAGE | tee -a $(find -name README.md)
-    container: alpine:3
-    env:
-      MESSAGE: Hello world from an env object!
-
-changesetTemplate:
-  title: Hello World from env object
-  body: My first batch change!
-  branch: env-object # Push the commit to this branch.
-  commit:
-    message: Append an env object to all README.md files
-`
-
-	expectedDiff := strings.Join([]string{
-		"diff --git README.md README.md",
-		"index 1914491..23aa51b 100644",
-		"--- README.md",
-		"+++ README.md",
-		"@@ -3,4 +3,4 @@ This repository is used to test opening and closing pull request with Automation",
-		" ",
-		" (c) Copyright Sourcegraph 2013-2020.",
-		" (c) Copyright Sourcegraph 2013-2020.",
-		"-(c) Copyright Sourcegraph 2013-2020.",
-		"\\ No newline at end of file",
-		"+(c) Copyright Sourcegraph 2013-2020.Hello world from an env object!",
-		"diff --git examples/README.md examples/README.md",
-		"index 40452a9..3705d13 100644",
-		"--- examples/README.md",
-		"+++ examples/README.md",
-		"@@ -5,4 +5,4 @@ This folder contains examples",
-		" (This is a test message, ignore)",
-		" ",
-		" (c) Copyright Sourcegraph 2013-2020.",
-		"-(c) Copyright Sourcegraph 2013-2020.",
-		"\\ No newline at end of file",
-		"+(c) Copyright Sourcegraph 2013-2020.Hello world from an env object!",
-		"diff --git examples/project3/README.md examples/project3/README.md",
-		"index 272d9ea..140c423 100644",
-		"--- examples/project3/README.md",
-		"+++ examples/project3/README.md",
-		"@@ -1,4 +1,4 @@",
-		" # project3",
-		" ",
-		" (c) Copyright Sourcegraph 2013-2020.",
-		"-(c) Copyright Sourcegraph 2013-2020.",
-		"\\ No newline at end of file",
-		"+(c) Copyright Sourcegraph 2013-2020.Hello world from an env object!",
-		"diff --git project1/README.md project1/README.md",
-		"index 8a5f437..3075ce8 100644",
-		"--- project1/README.md",
-		"+++ project1/README.md",
-		"@@ -3,4 +3,4 @@",
-		" This is project 1.",
-		" ",
-		" (c) Copyright Sourcegraph 2013-2020.",
-		"-(c) Copyright Sourcegraph 2013-2020.",
-		"\\ No newline at end of file",
-		"+(c) Copyright Sourcegraph 2013-2020.Hello world from an env object!",
-		"diff --git project2/README.md project2/README.md",
-		"index b1e1cdd..0fb42ff 100644",
-		"--- project2/README.md",
-		"+++ project2/README.md",
-		"@@ -1,3 +1,3 @@",
-		" This is a starter template for [Learn Next.js](https://nextjs.org/learn).",
-		" (c) Copyright Sourcegraph 2013-2020.",
-		"-(c) Copyright Sourcegraph 2013-2020.",
-		"\\ No newline at end of file",
-		"+(c) Copyright Sourcegraph 2013-2020.Hello world from an env object!",
-		"",
-	}, "\n")
+	expectedDiff := generateDiff(diffParams{
+		READMEObjectHash:         "23aa51b",
+		ExamplesREADMEObjectHash: "3705d13",
+		Project3READMEObjectHash: "140c423",
+		Project1READMEObjectHash: "3075ce8",
+		Project2READMEObjectHash: "0fb42ff",
+		HelloWorldMessage:        "Hello world from an env object!",
+	})
 
 	expectedState := gqltestutil.BatchSpecDeep{
 		State: "COMPLETED",
@@ -659,6 +597,8 @@ type batchSpecParams struct {
 	NameContent             string
 	Description             string
 	RunCommand              string
+	AdditionalKeyValues     map[string]string
+	ChangeSetTemplateTitle  string
 	ChangeSetTemplateBranch string
 	CommitMessageContent    string
 }
@@ -676,9 +616,13 @@ on:
 steps:
   - run: {{.RunCommand}}
     container: alpine:3
+{{range $key, $value := .AdditionalKeyValues}}
+    {{$key}}:
+      {{$value}}
+{{end}}
 
 changesetTemplate:
-  title: Hello World
+  title: {{.ChangeSetTemplateTitle}}
   body: My first batch change!
   branch: {{.ChangeSetTemplateBranch}} # Push the commit to this branch.
   commit:
