@@ -6,16 +6,6 @@
 
 - Compatibility with IntelliJ 2023.1
 
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
-
 ## [2.1.2]
 
 ### Added
