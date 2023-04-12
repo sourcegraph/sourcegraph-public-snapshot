@@ -528,6 +528,7 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
 `
 
         const downloadPath = process.env.TEST_TMPDIR || __dirname
+        console.log('downloadPath', downloadPath)
         await driver.page.client().send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
