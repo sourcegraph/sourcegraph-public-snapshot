@@ -23,7 +23,7 @@ export class Transcript {
         this.getLastInteraction()?.setAssistantMessage({
             speaker: 'assistant',
             text,
-            displayText: displayText ? displayText : text,
+            displayText: displayText ?? text,
             timestamp: getShortTimestamp(),
         })
     }

@@ -24,13 +24,11 @@ Quoted  <span class="token-file token-not-hallucinated">"file/path.js"</span> . 
 \`\`\`
 `
 
-const validFilePaths = ['file/path.js']
+const validFilePaths = new Set(['file/path.js'])
 
 describe('Hallucinations detector', () => {
     it('highlights hallucinated file paths', async () => {
-        const { text } = await highlightTokens(markdownText, filePath => {
-            return Promise.resolve(validFilePaths.includes(filePath))
-        })
+        const { text } = await highlightTokens(markdownText, filePath => Promise.resolve(validFilePaths.has(filePath)))
         assert.deepStrictEqual(text, expectedHighlightedTokensText)
     })
 })

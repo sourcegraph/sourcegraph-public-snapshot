@@ -51,7 +51,7 @@ function getHighlightedTokenHTML(token: HighlightedToken): string {
     return ` <span class="token-${token.type} token-${isHallucinatedClassName}">${token.outerValue.trim()}</span> `
 }
 
-function deduplicateTokens(tokens: HighlightedToken[]) {
+function deduplicateTokens(tokens: HighlightedToken[]): HighlightedToken[] {
     const deduplicatedTokens: HighlightedToken[] = []
     const values = new Set<string>()
     for (const token of tokens) {
@@ -110,7 +110,7 @@ const filePathRegexpParts = [
 const filePathRegexp = new RegExp(filePathRegexpParts.join(''), 'g')
 
 function isFilePathLike(text: string): boolean {
-    const parts = text.split(/[\/\\]/)
+    const parts = text.split(/[/\\]/)
     if (parts[0].includes('.com') || parts[0].startsWith('http')) {
         // Probably a URL.
         return false
