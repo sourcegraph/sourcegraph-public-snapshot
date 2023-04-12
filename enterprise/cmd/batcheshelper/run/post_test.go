@@ -24,7 +24,7 @@ import (
 func TestPost(t *testing.T) {
 	tests := []struct {
 		name           string
-		setupFunc      func(t *testing.T, dir string, workspaceFileDir string)
+		setupFunc      func(t *testing.T, dir string, workspaceFileDir string, executionInput batcheslib.WorkspacesExecutionInput)
 		mockFunc       func(runner *fakeCmdRunner)
 		step           int
 		executionInput batcheslib.WorkspacesExecutionInput
@@ -85,6 +85,124 @@ func TestPost(t *testing.T) {
 				)
 			},
 		},
+		{
+			name: "File Mounts",
+			setupFunc: func(t *testing.T, dir string, workspaceFileDir string, executionInput batcheslib.WorkspacesExecutionInput) {
+				err := os.Mkdir(filepath.Join(dir, "step0files"), os.ModePerm)
+				require.NoError(t, err)
+				err = os.WriteFile(filepath.Join(dir, "step0files", "file1.txt"), []byte("hello world"), os.ModePerm)
+				require.NoError(t, err)
+			},
+			mockFunc: func(runner *fakeCmdRunner) {
+				runner.On("Git", mock.Anything, "", []string{"config", "--global", "--add", "safe.directory", "/data/repository"}).
+					Return("", nil)
+				runner.On("Git", mock.Anything, "repository", []string{"add", "--all"}).
+					Return("", nil)
+				runner.On("Git", mock.Anything, "repository", []string{"diff", "--cached", "--no-prefix", "--binary"}).
+					Return("git diff", nil)
+			},
+			step: 0,
+			executionInput: batcheslib.WorkspacesExecutionInput{
+				Steps: []batcheslib.Step{
+					{
+						Run: "echo hello world",
+						Files: map[string]string{
+							"file1.txt": "hello world",
+						},
+					},
+				},
+			},
+			previousResult: execution.AfterStepResult{},
+			stdoutLogs:     "hello world",
+			stderrLogs:     "error",
+			assertFunc: func(t *testing.T, logEntries []batcheslib.LogEvent, dir string, runner *fakeCmdRunner) {
+				require.Len(t, logEntries, 1)
+				assert.Equal(t, "4qXjs4-Arh1VpWWfWhqm3A-step-0", logEntries[0].Metadata.(*batcheslib.CacheAfterStepResultMetadata).Key)
+
+				entries, err := os.ReadDir(dir)
+				require.NoError(t, err)
+				require.Len(t, entries, 3)
+				b, err := os.ReadFile(filepath.Join(dir, "step0.json"))
+				require.NoError(t, err)
+				var result execution.AfterStepResult
+				err = json.Unmarshal(b, &result)
+				require.NoError(t, err)
+				assert.Equal(
+					t,
+					execution.AfterStepResult{
+						Version: 2,
+						Stdout:  "hello world",
+						Stderr:  "error",
+						Diff:    []byte("git diff"),
+						Outputs: make(map[string]interface{}),
+					},
+					result,
+				)
+
+				_, err = os.Stat(filepath.Join(dir, "step0files"))
+				require.Error(t, err)
+				assert.True(t, os.IsNotExist(err))
+			},
+		},
+		{
+			name: "Workspace Files",
+			setupFunc: func(t *testing.T, dir string, workspaceFileDir string, executionInput batcheslib.WorkspacesExecutionInput) {
+				path := filepath.Join(workspaceFileDir, "file1.txt")
+				err := os.WriteFile(path, []byte("hello world"), os.ModePerm)
+				require.NoError(t, err)
+				executionInput.Steps[0].Mount = []batcheslib.Mount{
+					{
+						Mountpoint: "/foo/file1.txt",
+						Path:       path,
+					},
+				}
+			},
+			mockFunc: func(runner *fakeCmdRunner) {
+				runner.On("Git", mock.Anything, "", []string{"config", "--global", "--add", "safe.directory", "/data/repository"}).
+					Return("", nil)
+				runner.On("Git", mock.Anything, "repository", []string{"add", "--all"}).
+					Return("", nil)
+				runner.On("Git", mock.Anything, "repository", []string{"diff", "--cached", "--no-prefix", "--binary"}).
+					Return("git diff", nil)
+			},
+			step: 0,
+			executionInput: batcheslib.WorkspacesExecutionInput{
+				Steps: []batcheslib.Step{
+					{Run: "echo hello world"},
+				},
+			},
+			previousResult: execution.AfterStepResult{},
+			stdoutLogs:     "hello world",
+			stderrLogs:     "error",
+			assertFunc: func(t *testing.T, logEntries []batcheslib.LogEvent, dir string, runner *fakeCmdRunner) {
+				require.Len(t, logEntries, 1)
+				assert.Regexp(t, ".*-step-0$", logEntries[0].Metadata.(*batcheslib.CacheAfterStepResultMetadata).Key)
+
+				entries, err := os.ReadDir(dir)
+				require.NoError(t, err)
+				require.Len(t, entries, 3)
+				b, err := os.ReadFile(filepath.Join(dir, "step0.json"))
+				require.NoError(t, err)
+				var result execution.AfterStepResult
+				err = json.Unmarshal(b, &result)
+				require.NoError(t, err)
+				assert.Equal(
+					t,
+					execution.AfterStepResult{
+						Version: 2,
+						Stdout:  "hello world",
+						Stderr:  "error",
+						Diff:    []byte("git diff"),
+						Outputs: make(map[string]interface{}),
+					},
+					result,
+				)
+
+				_, err = os.Stat(filepath.Join(dir, "workspaceFiles"))
+				require.Error(t, err)
+				assert.True(t, os.IsNotExist(err))
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -102,7 +220,7 @@ func TestPost(t *testing.T) {
 			require.NoError(t, err)
 
 			if test.setupFunc != nil {
-				test.setupFunc(t, dir, workspaceFilesDir)
+				test.setupFunc(t, dir, workspaceFilesDir, test.executionInput)
 			}
 
 			runner := new(fakeCmdRunner)
