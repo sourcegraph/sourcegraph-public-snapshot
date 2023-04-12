@@ -155,6 +155,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ops.Merge(scanBuilds)
 		}
 
+		// TODO(JH) TEMP
+		ops.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImages, c.Version, c.candidateImageTag(), false))
+
 	case runtype.ReleaseNightly:
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
 
@@ -294,33 +297,39 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
 			triggerAsync(buildOptions)))
 
-		// Slow image builds
-		imageBuildOps := operations.NewNamedSet("Image builds")
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			// Only upload sourcemaps for the "frontend" image, on the Main branch build
-			uploadSourcemaps := false
-			if c.RunType.Is(runtype.MainBranch) && dockerImage == "frontend" {
-				uploadSourcemaps = true
-			}
-			imageBuildOps.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), uploadSourcemaps))
-		}
 		// Executor VM image
 		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorVMImage)
-		if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease) {
-			imageBuildOps.Append(buildExecutorVM(c, skipHashCompare))
-			imageBuildOps.Append(buildExecutorBinary(c))
-			if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
-				imageBuildOps.Append(buildExecutorDockerMirror(c))
+		// Slow image builds
+		imageBuildOps := operations.NewNamedSet("Image builds")
+		if c.MessageFlags.NoBazel {
+			for _, dockerImage := range images.SourcegraphDockerImages {
+				// Only upload sourcemaps for the "frontend" image, on the Main branch build
+				uploadSourcemaps := false
+				if c.RunType.Is(runtype.MainBranch) && dockerImage == "frontend" {
+					uploadSourcemaps = true
+				}
+				imageBuildOps.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), uploadSourcemaps))
 			}
+			// Executor VM image
+			// skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorVMImage)
+			if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease) {
+				imageBuildOps.Append(buildExecutorVM(c, skipHashCompare))
+				imageBuildOps.Append(buildExecutorBinary(c))
+				if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
+					imageBuildOps.Append(buildExecutorDockerMirror(c))
+				}
+			}
+		} else {
+			imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImages, c.Version, c.candidateImageTag(), false))
 		}
 		ops.Merge(imageBuildOps)
 
 		// Trivy security scans
-		imageScanOps := operations.NewNamedSet("Image security scans")
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			imageScanOps.Append(trivyScanCandidateImage(dockerImage, c.candidateImageTag()))
-		}
-		ops.Merge(imageScanOps)
+		// imageScanOps := operations.NewNamedSet("Image security scans")
+		// for _, dockerImage := range images.SourcegraphDockerImages {
+		// 	imageScanOps.Append(trivyScanCandidateImage(dockerImage, c.candidateImageTag()))
+		// }
+		// ops.Merge(imageScanOps)
 
 		// Core tests
 		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
@@ -349,19 +358,19 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Append(wait)
 
 		// Add final artifacts
-		publishOps := operations.NewNamedSet("Publish images")
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			publishOps.Append(publishFinalDockerImage(c, dockerImage))
-		}
-		// Executor VM image
-		if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease) {
-			publishOps.Append(publishExecutorVM(c, skipHashCompare))
-			publishOps.Append(publishExecutorBinary(c))
-			if c.RunType.Is(runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
-				publishOps.Append(publishExecutorDockerMirror(c))
-			}
-		}
-		ops.Merge(publishOps)
+		// publishOps := operations.NewNamedSet("Publish images")
+		// for _, dockerImage := range images.SourcegraphDockerImages {
+		// 	publishOps.Append(publishFinalDockerImage(c, dockerImage))
+		// }
+		// // Executor VM image
+		// if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease) {
+		// 	publishOps.Append(publishExecutorVM(c, skipHashCompare))
+		// 	publishOps.Append(publishExecutorBinary(c))
+		// 	if c.RunType.Is(runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
+		// 		publishOps.Append(publishExecutorDockerMirror(c))
+		// 	}
+		// }
+		// ops.Merge(publishOps)
 	}
 
 	ops.Append(
