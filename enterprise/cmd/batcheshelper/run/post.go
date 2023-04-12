@@ -17,7 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const gitDir = "repository"
+const (
+	gitDir = "repository"
+)
 
 // Post processes the workspace after the Batch Change step.
 func Post(
