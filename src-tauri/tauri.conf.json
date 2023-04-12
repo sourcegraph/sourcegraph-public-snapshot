@@ -1,10 +1,10 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/schema.json",
   "build": {
-    "beforeBuildCommand": "pnpm install",
+    "beforeBuildCommand": "",
     "beforeDevCommand": "",
     "devPath": "http://localhost:3080/sign-in?nonce=foobar&returnTo=/",
-    "distDir": "client/app/assets"
+    "distDir": "http://localhost:3080/sign-in?nonce=foobar&returnTo=/"
   },
   "package": {
     "productName": "sourcegraph",
@@ -12,7 +12,12 @@
   },
   "tauri": {
     "allowlist": {
-      "all": false
+      "shell": {
+        "sidecar": true,
+        "scope": [
+          { "name": "../.bin/backend", "sidecar": true }
+        ]
+      }
     },
     "bundle": {
       "active": true,
@@ -21,7 +26,9 @@
       "deb": {
         "depends": []
       },
-      "externalBin": [],
+      "externalBin": [
+        "../.bin/backend"
+      ],
       "icon": [
         "icons/32x32.png",
         "icons/128x128.png",
@@ -29,7 +36,7 @@
         "icons/icon.icns",
         "icons/icon.ico"
       ],
-      "identifier": "com.tauri.dev",
+      "identifier": "com.sourcegraph.app",
       "longDescription": "",
       "macOS": {
         "entitlements": null,
