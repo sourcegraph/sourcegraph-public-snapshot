@@ -539,6 +539,7 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
         await driver.page.waitForTimeout(1000)
 
         const exportedNotebookPath = path.resolve(downloadPath, 'Exported.snb.md')
+        console.log('readdirSync', fs.readdirSync(downloadPath))
         // eslint-disable-next-line no-sync
         expect(fs.existsSync(exportedNotebookPath)).toBeTruthy()
 
