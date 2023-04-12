@@ -185,12 +185,12 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{}
 
-		var key string
-		for _, app := range apps {
-			name := strings.ReplaceAll(app, ".", "-")
-			key = key + "_" + name
-		}
-		key = key + ":candidate"
+		// var key string
+		// for _, app := range apps {
+		// 	name := strings.ReplaceAll(app, ".", "-")
+		// 	key = key + "_" + name
+		// }
+		// key = key + ":candidate"
 		cmds = append(cmds,
 			bk.Key("bazel-docker"),
 			bk.DependsOn("bazel-tests"),
