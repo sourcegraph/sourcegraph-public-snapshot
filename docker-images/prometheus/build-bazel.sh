@@ -39,7 +39,6 @@ cp -r "$TMP/monitoring/prometheus"/* "$BUILDDIR/sg_config_prometheus"
 mkdir "$BUILDDIR/sg_prometheus_add_ons"
 cp dev/prometheus/linux/prometheus_targets.yml "$BUILDDIR/sg_prometheus_add_ons"
 
-
 docker build ${BUILD_CACHE} -f docker-images/prometheus/Dockerfile.bazel -t "${IMAGE:-sourcegraph/prometheus}" "$BUILDDIR" \
   --platform linux/amd64 \
   --progress=plain \
