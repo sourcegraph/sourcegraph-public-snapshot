@@ -86,6 +86,7 @@ ts_project(
         "src/search/GlobalKeyboardListeners.ts",
         "src/search/StatusBar.tsx",
         "src/search/index.tsx",
+        "src/search/compat/fetchSearchContexts.ts",
         "src/search/input/JetBrainsSearchBox.tsx",
         "src/search/input/JetBrainsToggles.tsx",
         "src/search/java-to-js-bridge.ts",
