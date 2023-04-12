@@ -13,12 +13,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Enable image build caching via CACHE=true
-BUILD_CACHE="--no-cache"
-if [[ "$CACHE" == "true" ]]; then
-  BUILD_CACHE=""
-fi
-
 bazel build //docker-images/prometheus/cmd/prom-wrapper //monitoring:generate_config \
   --stamp \
   --workspace_status_command=./dev/bazel_stamp_vars.sh
@@ -39,7 +33,7 @@ cp -r "$TMP/monitoring/prometheus"/* "$BUILDDIR/sg_config_prometheus"
 mkdir "$BUILDDIR/sg_prometheus_add_ons"
 cp dev/prometheus/linux/prometheus_targets.yml "$BUILDDIR/sg_prometheus_add_ons"
 
-docker build ${BUILD_CACHE} -f docker-images/prometheus/Dockerfile.bazel -t "${IMAGE:-sourcegraph/prometheus}" "$BUILDDIR" \
+docker build -f docker-images/prometheus/Dockerfile.bazel -t "${IMAGE:-sourcegraph/prometheus}" "$BUILDDIR" \
   --platform linux/amd64 \
   --progress=plain \
   --build-arg BASE_IMAGE \

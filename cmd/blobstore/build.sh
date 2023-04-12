@@ -10,14 +10,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Enable image build caching via CACHE=true
-BUILD_CACHE="--no-cache"
-if [[ "$CACHE" == "true" ]]; then
-  BUILD_CACHE=""
-fi
-
 if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
-
   bazel build //cmd/blobstore \
     --stamp \
     --workspace_status_command=./dev/bazel_stamp_vars.sh \
@@ -26,7 +19,7 @@ if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
   out=$(bazel cquery //cmd/blobstore --output=files)
   cp "$out" "$OUTPUT"
 
-  docker build "${BUILD_CACHE}" -f cmd/blobstore/Dockerfile -t "$IMAGE" "$OUTPUT" \
+  docker build -f cmd/blobstore/Dockerfile -t "$IMAGE" "$OUTPUT" \
     --progress=plain \
     --build-arg COMMIT_SHA \
     --build-arg DATE \
