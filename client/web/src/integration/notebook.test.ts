@@ -472,7 +472,7 @@ describe('Search Notebook', () => {
         }
     })
 
-    it.only('Should export a notebook as Markdown file and import it back', async () => {
+    it('Should export a notebook as Markdown file and import it back', async () => {
         testContext.overrideGraphQL({
             ...commonSearchGraphQLResults,
             FetchNotebook: ({ id }) => ({
