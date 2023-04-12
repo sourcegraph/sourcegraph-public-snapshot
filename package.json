@@ -487,6 +487,7 @@
     "util": "^0.12.5",
     "utility-types": "^3.10.0",
     "uuid": "^8.3.0",
+    "vscode-languageclient": "^8.1.0",
     "vscode-uri": "^3.0.7",
     "webext-domain-permission-toggle": "^1.0.1",
     "webextension-polyfill": "^0.6.0",

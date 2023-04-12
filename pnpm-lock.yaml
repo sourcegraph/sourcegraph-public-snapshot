@@ -394,6 +394,7 @@ importers:
       uuid: ^8.3.0
       vite: ^4.1.4
       vsce: ^2.7.0
+      vscode-languageclient: ^8.1.0
       vscode-uri: ^3.0.7
       webext-domain-permission-toggle: ^1.0.1
       webextension-polyfill: ^0.6.0
@@ -553,6 +554,7 @@ importers:
       util: 0.12.5
       utility-types: 3.10.0
       uuid: 8.3.2
+      vscode-languageclient: 8.1.0
       vscode-uri: 3.0.7
       webext-domain-permission-toggle: 1.0.1
       webextension-polyfill: 0.6.0
@@ -923,6 +925,7 @@ importers:
       '@sourcegraph/cody-shared': workspace:*
       '@sourcegraph/cody-ui': workspace:*
       openai: ^3.2.1
+      vscode-languageclient: ^8.1.0
       wink-eng-lite-web-model: ^1.5.0
       wink-nlp: ^1.13.1
       wink-nlp-utils: ^2.1.0
@@ -931,6 +934,7 @@ importers:
       '@sourcegraph/cody-shared': link:../cody-shared
       '@sourcegraph/cody-ui': link:../cody-ui
       openai: 3.2.1
+      vscode-languageclient: 8.1.0
       wink-eng-lite-web-model: 1.5.0_wink-nlp@1.13.1
       wink-nlp: 1.13.1
       wink-nlp-utils: 2.1.0
@@ -11254,6 +11258,12 @@ packages:
       balanced-match: 1.0.0
       concat-map: 0.0.1
 
+  /brace-expansion/2.0.1:
+    resolution: {integrity: sha512-XnAIvQ8eM+kC6aULx6wuQiwVsnzsi9d3WxzV3FpWTGA19F621kwdbsAcFKXgKUHZWsy+mY6iL1sHTxWEFCytDA==}
+    dependencies:
+      balanced-match: 1.0.0
+    dev: false
+
   /braces/2.3.2:
     resolution: {integrity: sha512-aNdbnj9P8PjdXU4ybaWLK2IF3jc/EoDYbC7AazW6to3TRsfXxscC9UXOB5iDiEQrkyIbWp2SLQda4+QAa7nc3w==}
     engines: {node: '>=0.10.0'}
@@ -16498,7 +16508,7 @@ packages:
     dependencies:
       graphql: 15.4.0
       nullthrows: 1.1.1
-      vscode-languageserver-types: 3.17.2
+      vscode-languageserver-types: 3.17.3
     dev: false
 
   /graphql-request/5.0.0_graphql@15.4.0:
@@ -20823,6 +20833,13 @@ packages:
     dependencies:
       brace-expansion: 1.1.11
     dev: true
+
+  /minimatch/5.1.6:
+    resolution: {integrity: sha512-lKwV/1brpG6mBUFHtb7NUmtABCb2WZZmm2wNiOA5hAb8VdCS4B3dtMWyvcoViccwAW/COERjXLt0zP1zXUN26g==}
+    engines: {node: '>=10'}
+    dependencies:
+      brace-expansion: 2.0.1
+    dev: false
 
   /minimist-options/4.1.0:
     resolution: {integrity: sha512-Q4r8ghd80yhO/0j1O3B2BjweX3fiHg9cdOwjJd2J76Q135c+NDxGCqdYKQ1SKBuFfgWbAUzBfvYjPUEeNgqN1A==}
@@ -27844,12 +27861,37 @@ packages:
       yazl: 2.5.1
     dev: true
 
+  /vscode-jsonrpc/8.1.0:
+    resolution: {integrity: sha512-6TDy/abTQk+zDGYazgbIPc+4JoXdwC8NHU9Pbn4UJP1fehUyZmM4RHp5IthX7A6L5KS30PRui+j+tbbMMMafdw==}
+    engines: {node: '>=14.0.0'}
+    dev: false
+
+  /vscode-languageclient/8.1.0:
+    resolution: {integrity: sha512-GL4QdbYUF/XxQlAsvYWZRV3V34kOkpRlvV60/72ghHfsYFnS/v2MANZ9P6sHmxFcZKOse8O+L9G7Czg0NUWing==}
+    engines: {vscode: ^1.67.0}
+    dependencies:
+      minimatch: 5.1.6
+      semver: 7.3.8
+      vscode-languageserver-protocol: 3.17.3
+    dev: false
+
+  /vscode-languageserver-protocol/3.17.3:
+    resolution: {integrity: sha512-924/h0AqsMtA5yK22GgMtCYiMdCOtWTSGgUOkgEDX+wk2b0x4sAfLiO4NxBxqbiVtz7K7/1/RgVrVI0NClZwqA==}
+    dependencies:
+      vscode-jsonrpc: 8.1.0
+      vscode-languageserver-types: 3.17.3
+    dev: false
+
   /vscode-languageserver-textdocument/1.0.2:
     resolution: {integrity: sha512-T7uPC18+f8mYE4lbVZwb3OSmvwTZm3cuFhrdx9Bn2l11lmp3SvSuSVjy2JtvrghzjAo4G6Trqny2m9XGnFnWVA==}
     dev: false
 
   /vscode-languageserver-types/3.17.2:
     resolution: {integrity: sha512-zHhCWatviizPIq9B7Vh9uvrH6x3sK8itC84HkamnBWoDFJtzBf7SWlpLCZUit72b3os45h6RWQNC9xHRDF8dRA==}
+    dev: false
+
+  /vscode-languageserver-types/3.17.3:
+    resolution: {integrity: sha512-SYU4z1dL0PyIMd4Vj8YOqFvHu7Hz/enbWtpfnVbJHU4Nd1YNYx8u0ennumc6h48GQNeOLxmwySmnADouT/AuZA==}
     dev: false
 
   /vscode-uri/3.0.7:
