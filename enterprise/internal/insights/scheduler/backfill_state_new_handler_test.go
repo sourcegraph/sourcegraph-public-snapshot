@@ -73,6 +73,7 @@ func Test_MovesBackfillFromNewToProcessing(t *testing.T) {
 		repoIterator:    discovery.NewSeriesRepoIterator(nil, repos, repoQueryExecutor),
 		costAnalyzer:    *config.CostAnalyzer,
 		timeseriesStore: seriesStore,
+		maxRetries:      3,
 	}
 	err = handler.Handle(ctx, logger, newDequeue)
 	require.NoError(t, err)
@@ -150,6 +151,7 @@ func Test_MovesBackfillFromNewToProcessing_ScopedInsight(t *testing.T) {
 		repoIterator:    discovery.NewSeriesRepoIterator(nil, repos, repoQueryExecutor),
 		costAnalyzer:    *config.CostAnalyzer,
 		timeseriesStore: seriesStore,
+		maxRetries:      3,
 	}
 	err = handler.Handle(ctx, logger, newDequeue)
 	require.NoError(t, err)
@@ -173,4 +175,66 @@ func Test_MovesBackfillFromNewToProcessing_ScopedInsight(t *testing.T) {
 	if len(recordingTimes.RecordingTimes) == 0 {
 		t.Fatal(errors.New("recording times should have been saved after success"))
 	}
+}
+
+func Test_MovesBackfillToErrored_ScopedInsight(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
+	repos := database.NewMockRepoStore()
+	repos.ListFunc.SetDefaultReturn([]*itypes.Repo{}, errors.New("the repo store should not be called"))
+	now := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+	clock := glock.NewMockClockAt(now)
+	bfs := newBackfillStoreWithClock(insightsDB, clock)
+	insightsStore := store.NewInsightStore(insightsDB)
+	permStore := store.NewInsightPermissionStore(database.NewMockDB())
+	seriesStore := store.New(insightsDB, permStore)
+	repoQueryExecutor := NewMockRepoQueryExecutor()
+	repoQueryExecutor.ExecuteRepoListFunc.SetDefaultReturn(nil, errors.New("test error"))
+	config := JobMonitorConfig{
+		InsightsDB:        insightsDB,
+		RepoStore:         repos,
+		ObservationCtx:    &observation.TestContext,
+		CostAnalyzer:      priority.NewQueryAnalyzer(),
+		InsightStore:      seriesStore,
+		RepoQueryExecutor: repoQueryExecutor,
+	}
+	var err error
+	monitor := NewBackgroundJobMonitor(ctx, config)
+
+	repoCriteria := "repo:sourcegraph"
+	series, err := insightsStore.CreateSeries(ctx, types.InsightSeries{
+		SeriesID:            "series1",
+		Query:               "asdf",
+		SampleIntervalUnit:  string(types.Month),
+		RepositoryCriteria:  &repoCriteria,
+		SampleIntervalValue: 1,
+		GenerationMethod:    types.Search,
+	})
+	require.NoError(t, err)
+
+	backfill, err := bfs.NewBackfill(ctx, series)
+	require.NoError(t, err)
+
+	err = enqueueBackfill(ctx, bfs.Handle(), backfill)
+	require.NoError(t, err)
+
+	newDequeue, _, err := monitor.newBackfillStore.Dequeue(ctx, "test", nil)
+	require.NoError(t, err)
+	handler := newBackfillHandler{
+		workerStore:     monitor.newBackfillStore,
+		backfillStore:   bfs,
+		seriesReader:    store.NewInsightStore(insightsDB),
+		repoIterator:    discovery.NewSeriesRepoIterator(nil, repos, repoQueryExecutor),
+		costAnalyzer:    *config.CostAnalyzer,
+		timeseriesStore: seriesStore,
+		maxRetries:      1,
+	}
+	err = handler.Handle(ctx, logger, newDequeue)
+	require.Error(t, err)
+
+	handledBackfill, err := bfs.LoadBackfill(ctx, backfill.Id)
+	require.NoError(t, err)
+	require.Equal(t, BackfillStateFailed, handledBackfill.State)
+
 }
