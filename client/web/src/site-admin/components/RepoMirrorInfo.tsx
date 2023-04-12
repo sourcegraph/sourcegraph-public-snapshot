@@ -37,7 +37,7 @@ export const RepoMirrorInfo: React.FunctionComponent<
                         )}
                         {mirrorInfo.cloneInProgress ? (
                             <>
-                                {' '}
+                                <br />
                                 <Code>{mirrorInfo.cloneProgress}</Code>
                             </>
                         ) : (
