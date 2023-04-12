@@ -31,7 +31,7 @@ go_library(
     visibility = ["//visibility:public"],
     x_defs = {"AnalyzerName": "{{.Analyzer.Name}}"},
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",
@@ -44,7 +44,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/linters/staticcheck",
     visibility = ["//visibility:public"],
     deps = [
-        "//dev/linters/directive",
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//analysis/lint",
         "@co_honnef_go_tools//staticcheck",
         "@org_golang_x_tools//go/analysis",

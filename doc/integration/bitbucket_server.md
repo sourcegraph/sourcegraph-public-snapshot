@@ -52,6 +52,30 @@ The site admin should also set `alerts.codeHostIntegrationMessaging` in [global 
 }
 ```
 
+#### I am seeing Content Security Policy violations, what should I do?
+
+If you have a Content Security Policy (CSP) setup in place and have encountered issues, you may need to adjust the CSP for our Bitbucket Server plugin.
+
+To ensure the proper functioning of our Bitbucket Server plugin, add your Sourcegraph instance URL to the following CSP directives:
+
+- `script-src`
+- `style-src`
+- `connect-src`
+- `frame-src`
+
+Here's an example of how to add your Sourcegraph instance URL to the required CSP directives. In this case, the instance URL is `example.com`. Make sure not to remove any existing values in the directives; just append the Sourcegraph URL.
+
+```
+script-src 'self' 'unsafe-inline' example.com;
+style-src 'self' 'unsafe-inline' example.com;
+connect-src 'self' example.com;
+frame-src 'self' example.com;
+```
+
+It is not ideal to include `unsafe-inline` here for `script-src`, but it is the recommended approach from Bitbucket. This is a [known issue](https://community.developer.atlassian.com/t/bitbucket-connect-library-uses-eval-preveting-to-use-csp-without-unsafe-inline-as-required/60522) with Bitbucket that is unrelated to our plugin.
+
+By following these steps, you should be able to resolve the CSP violations for our Bitbucket Server plugin. If you have any questions or need further assistance, please feel free to reach out to our support team.
+
 ### Updating
 
 In order to update the plugin, follow the same steps as for installing it, which are described in the [bitbucket-server-plugin](https://github.com/sourcegraph/bitbucket-server-plugin) repository.
