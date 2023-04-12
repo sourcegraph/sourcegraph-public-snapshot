@@ -74,10 +74,6 @@ PACKAGES+=("$server_pkg")
 
 parallel_run go_build {} ::: "${PACKAGES[@]}"
 
-echo "--- build scripts"
-cp -a ./cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
-cp -a ./cmd/gitserver/p4-fusion-install-alpine.sh "$OUTPUT"
-
 echo "--- monitoring generation"
 # For code generation we need to match the local machine so we can run the generator
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -90,7 +86,7 @@ echo "--- prometheus"
 cp -r docker-images/prometheus/config "$OUTPUT/sg_config_prometheus"
 mkdir "$OUTPUT/sg_prometheus_add_ons"
 cp dev/prometheus/linux/prometheus_targets.yml "$OUTPUT/sg_prometheus_add_ons"
-IMAGE=sourcegraph/prometheus:server CACHE=true docker-images/prometheus/build.sh
+IMAGE=sourcegraph/prometheus:server CACHE=true docker-images/prometheus/build-wolfi.sh
 
 echo "--- grafana"
 cp -r docker-images/grafana/config "$OUTPUT/sg_config_grafana"
@@ -98,10 +94,10 @@ cp -r dev/grafana/linux "$OUTPUT/sg_config_grafana/provisioning/datasources"
 IMAGE=sourcegraph/grafana:server CACHE=true docker-images/grafana/build.sh
 
 echo "--- postgres exporter"
-IMAGE=sourcegraph/postgres_exporter:server CACHE=true docker-images/postgres_exporter/build.sh
+IMAGE=sourcegraph/postgres_exporter:server CACHE=true docker-images/postgres_exporter/build-wolfi.sh
 
 echo "--- blobstore"
-IMAGE=sourcegraph/blobstore:server docker-images/blobstore/build.sh
+IMAGE=sourcegraph/blobstore:server docker-images/blobstore/build-wolfi.sh
 
 echo "--- docker build"
 docker build -f cmd/server/Dockerfile.wolfi -t "$IMAGE" "$OUTPUT" \

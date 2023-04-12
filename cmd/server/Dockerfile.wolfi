@@ -4,7 +4,8 @@
 
 # TODO: This is untested and WIP
 
-FROM sourcegraph-wolfi/server-base:latest
+FROM us.gcr.io/sourcegraph-dev/wolfi-server-base:latest
+# FROM --platform=x86_64 sourcegraph-wolfi/server-base:latest-amd64
 
 # TODO(security): This container should not be running as root!
 #
@@ -26,13 +27,13 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 # IMPORTANT: If you update the syntax-highlighter version below, you MUST confirm
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/sourcegraph/blob/main/docker-images/syntax-highlighter/Dockerfile)
 # have been appropriately set in cmd/server/shared/shared.go.
+# TODO: Update this to use the correct syntax-highlighter build
 # hadolint ignore=DL3022
-COPY --from=docker.io/sourcegraph/syntax-highlighter:186324_2022-12-01_02d3b4384446 /syntax_highlighter /usr/local/bin/
+COPY --from=us.gcr.io/sourcegraph-dev/wolfi-syntax-highlighter:latest /usr/local/bin/syntax_highlighter /usr/local/bin/
 
 
 # install blobstore (keep this up to date with the upstream Docker image
 # referenced in docker-images/)
-RUN apk add --no-cache --verbose openjdk11
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/blobstore:server /opt/s3proxy /opt/s3proxy
 
@@ -52,21 +53,21 @@ COPY --from=sourcegraph/prometheus:server /usr/share/prometheus /usr/share/prome
 
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/grafana:server /usr/share/grafana /usr/share/grafana
-
-COPY . /
-
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/grafana:server /sg_config_grafana/provisioning/dashboards /sg_config_grafana/provisioning/dashboards
 
-# hadolint ignore=DL3022
-COPY --from=sourcegraph/postgres_exporter:server /usr/local/bin/postgres_exporter /usr/local/bin/postgres_exporter
+COPY . /
 
-RUN echo "hosts: files dns" > /etc/nsswitch.conf
-
+# TODO: Check
 # symbols is cgo, ensure we have the requisite dynamic libraries
 RUN env SANITY_CHECK=true /usr/local/bin/symbols
 
 WORKDIR /
 
-ENV GO111MODULES=on LANG=en_US.utf8
+# TODO: Nginx expects these directories but doesn't create them by default, figure out why
+RUN mkdir /var/lib/nginx/tmp /var/run
+
+# TODO: Check all paths in script still line up
+ENV GO111MODULES=on
+# ENV LANG=en_US.utf8 # TODO: Not setting this seems to fix a postgres startup issue
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/server"]
