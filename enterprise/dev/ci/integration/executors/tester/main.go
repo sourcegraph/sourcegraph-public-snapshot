@@ -71,6 +71,7 @@ func main() {
 	// TODO: Just one basic test for now, we want to extend this more later.
 	testCases := []Test{
 		testHelloWorldBatchChange(),
+		testEnvObjectBatchChange(),
 	}
 
 	for _, t := range testCases {

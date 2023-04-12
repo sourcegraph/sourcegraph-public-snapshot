@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
@@ -12,6 +13,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
+	"github.com/kr/pretty"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -149,6 +151,8 @@ func RunTest(ctx context.Context, client *gqltestutil.Client, bstore *store.Stor
 
 	if diff := cmp.Diff(*gqlResp, test.ExpectedState, compareBatchSpecDeepCmpopts()...); diff != "" {
 		log.Printf("Batch spec diff detected: %s\n", diff)
+		d2 := strings.Join(pretty.Diff(*gqlResp, test.ExpectedState), "\n")
+		log.Printf("Batch spec diff detected:\n%s", d2)
 		return errors.New("batch spec not in expected state")
 	}
 
@@ -204,8 +208,13 @@ const cleanupBatchChangesDB = `
 DELETE FROM batch_changes;
 DELETE FROM executor_secrets;
 DELETE FROM batch_specs;
+ALTER SEQUENCE batch_specs_id_seq RESTART;
+UPDATE batch_specs SET id = DEFAULT;
 DELETE FROM batch_spec_workspace_execution_last_dequeues;
 DELETE FROM batch_spec_workspace_files;
+DELETE FROM batch_spec_execution_cache_entries;
+ALTER SEQUENCE batch_spec_execution_cache_entries_id_seq RESTART;
+UPDATE batch_spec_execution_cache_entries SET id = DEFAULT;
 DELETE FROM changeset_specs;
 `
 
