@@ -1049,7 +1049,10 @@ type UsersListOptions struct {
 	// ExcludeSourcegraphOperators indicates whether to exclude Sourcegraph Operator
 	// user accounts.
 	ExcludeSourcegraphOperators bool
-	// includeDeleted indicates whether to include soft deleted user accounts
+	// includeDeleted indicates whether to include soft deleted user accounts.
+	//
+	// The intention is that external consumers should not need to interact with soft deleted users but
+	// internally there are valid reasons to include them.
 	includeDeleted bool
 
 	*LimitOffset
