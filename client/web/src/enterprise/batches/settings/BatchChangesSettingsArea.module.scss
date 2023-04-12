@@ -16,17 +16,17 @@
             padding-top: 1rem;
             border-top: 1px solid var(--border-color);
         }
+    }
 
-        &__frequency {
-            margin: 0;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-        }
+    &__list-item-frequency {
+        margin: 0;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+    }
 
-        &__frequency-icon {
-            font-size: 1.5rem;
-            margin-right: 0.25rem;
-        }
+    &__list-item-frequency-icon {
+        font-size: 1.5rem;
+        margin-right: 0.25rem;
     }
 }
