@@ -55,9 +55,6 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 
 	// Simple, fast-ish linter checks
 	linterOps := operations.NewNamedSet("Linters and static analysis")
-	if diff.Has(changed.GraphQL) {
-		linterOps.Append(addGraphQLLint)
-	}
 	if targets := changed.GetLinterTargets(diff); len(targets) > 0 {
 		linterOps.Append(addSgLints(targets))
 	}
@@ -206,13 +203,6 @@ func addCIScriptsTests(pipeline *bk.Pipeline) {
 //		bk.Cmd("dev/ci/ci-checkov.sh"),
 //		bk.SoftFail(222))
 // }
-
-// pnpm ~41s + ~1s
-func addGraphQLLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lipstick: :graphql: GraphQL lint",
-		withPnpmCache(),
-		bk.Cmd("dev/ci/pnpm-run.sh lint:graphql"))
-}
 
 // Adds Typescript check.
 func addTypescriptCheck(pipeline *bk.Pipeline) {
