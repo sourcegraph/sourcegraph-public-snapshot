@@ -11,7 +11,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-bazel build //monitoring:generate_config \
+./dev/ci/bazel.sh build //monitoring:generate_config \
   --stamp \
   --workspace_status_command=./dev/bazel_stamp_vars.sh
 

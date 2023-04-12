@@ -136,7 +136,7 @@ TARGETS=(
 )
 
 echo "--- bazel build"
-bazel build ${TARGETS[@]} \
+./dev/ci/bazel.sh build "${TARGETS[@]}" \
   --stamp \
   --workspace_status_command=./dev/bazel_stamp_vars.sh \
   --//:assets_bundle_type=oss
@@ -146,7 +146,7 @@ cp -a ./cmd/server/rootfs/. "$OUTPUT"
 export BINDIR="$OUTPUT/usr/local/bin"
 mkdir -p "$BINDIR"
 for TARGET in "${TARGETS[@]}"; do
-  out=$(bazel cquery $TARGET --output=files)
+  out=$(bazel cquery "$TARGET" --output=files)
   cp "$out" "$BINDIR"
   echo "copying $TARGET"
 done
@@ -156,7 +156,7 @@ rm -f "$BINDIR/monitoring.zip"
 
 TMP=$(mktemp -d -t sgserver_tmp_XXXXXXX)
 monitoring_cfg=$(bazel cquery //monitoring:generate_config --output=files)
-cp "$monitoring_cfg" $TMP
+cp "$monitoring_cfg" "$TMP"
 pushd "$TMP"
 unzip "monitoring.zip"
 popd

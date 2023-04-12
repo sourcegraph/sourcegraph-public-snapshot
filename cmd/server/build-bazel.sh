@@ -59,7 +59,7 @@ else
 fi
 
 echo "--- bazel build"
-bazel build "${TARGETS[@]}" \
+./dev/ci/bazel.sh build "${TARGETS[@]}" \
   --stamp \
   --workspace_status_command=./dev/bazel_stamp_vars.sh \
   --//:assets_bundle_type="$BUNDLE" \

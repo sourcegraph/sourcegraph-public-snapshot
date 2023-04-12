@@ -13,7 +13,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-bazel build //docker-images/prometheus/cmd/prom-wrapper //monitoring:generate_config \
+./dev/ci/bazel.sh build //docker-images/prometheus/cmd/prom-wrapper //monitoring:generate_config \
   --stamp \
   --workspace_status_command=./dev/bazel_stamp_vars.sh
 
