@@ -35,7 +35,7 @@ export const RepoMirrorInfo: React.FunctionComponent<
                                 </Tooltip>
                             </>
                         )}
-                        {mirrorInfo.cloneInProgress ? (
+                        {mirrorInfo.cloneInProgress && (mirrorInfo.cloneProgress ?? '').trim() !== '' ? (
                             <>
                                 <br />
                                 <Code>{mirrorInfo.cloneProgress}</Code>
