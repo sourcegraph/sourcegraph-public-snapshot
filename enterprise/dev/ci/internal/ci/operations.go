@@ -585,6 +585,7 @@ func backendIntegrationTests(candidateImageTag string) operations.Operation {
 				bk.Env("IMAGE",
 					images.DevRegistryImage("server", candidateImageTag)),
 				bk.Env("SG_FEATURE_FLAG_GRPC", strconv.FormatBool(enableGRPC)),
+				bk.Env("PERFORCE_PORT", "perforce-tests.sgdev.org:1666"),
 				bk.Cmd("dev/ci/integration/backend/run.sh"),
 				bk.ArtifactPaths("./*.log"))
 		}
