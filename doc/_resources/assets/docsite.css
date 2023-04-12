@@ -13,7 +13,6 @@ The document content can set class names and IDs on elements (for example, Markd
 */
 
 :root {
-    --prompt-bg-color: brown;
     /* You cannot use vars in media queries, so these are used just for reference. */
     --breakpoint-sm: 640px;
     --breakpoint-md: 768px;
