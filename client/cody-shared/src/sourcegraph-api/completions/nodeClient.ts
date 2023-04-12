@@ -18,6 +18,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 headers: {
                     'Content-Type': 'application/json',
                     ...(this.accessToken ? { Authorization: `token ${this.accessToken}` } : null),
+                    ...this.customHeaders,
                 },
                 // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
                 rejectUnauthorized: this.mode === 'production',
