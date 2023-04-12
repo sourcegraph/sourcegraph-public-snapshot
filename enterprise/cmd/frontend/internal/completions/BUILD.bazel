@@ -7,12 +7,14 @@ go_library(
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/enterprise",
-        "//enterprise/cmd/frontend/internal/completions/resolvers",
-        "//enterprise/cmd/frontend/internal/completions/streaming",
+        "//cmd/frontend/envvar",
+        "//cmd/frontend/graphqlbackend",
         "//enterprise/internal/codeintel",
+        "//enterprise/internal/cody",
+        "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/observation",
-        "@com_github_sourcegraph_log//:log",
+        "//lib/errors",
     ],
 )

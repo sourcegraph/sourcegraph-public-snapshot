@@ -3,7 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "types",
     srcs = ["types.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/types",
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-api/internal/types",
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = ["//lib/errors"],
 )

@@ -7,5 +7,6 @@
   { "Name": "precise-code-intel-worker", "Host": "127.0.0.1:6088" },
   { "Name": "worker", "Host": "127.0.0.1:6089" },
   { "Name": "worker-executors", "Host": "127.0.0.1:6969" },
-  { "Name": "embeddings", "Host": "127.0.0.1:6099" }
+  { "Name": "embeddings", "Host": "127.0.0.1:6099" },
+  { "Name": "cody-api", "Host": "127.0.0.1:6077" }
 ]

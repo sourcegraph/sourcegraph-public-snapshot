@@ -34,6 +34,8 @@ Available comamndsets in `sg.config.yaml`:
 * batches 🦡
 * codeintel
 * codeintel-bazel
+* cody-api
+* cody-internal
 * dotcom
 * embeddings
 * enterprise
@@ -100,6 +102,7 @@ Available commands in `sg.config.yaml`:
 * codeintel-executor
 * codeintel-executor-firecracker
 * codeintel-worker
+* cody-api
 * debug-env: Debug env vars
 * docsite: Docsite instance serving the docs
 * embeddings

@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-api/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )

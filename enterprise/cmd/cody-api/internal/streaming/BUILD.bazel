@@ -2,14 +2,14 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "streaming",
-    srcs = ["stream.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/streaming",
+    srcs = ["handler.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-api/internal/streaming",
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/envvar",
-        "//enterprise/cmd/frontend/internal/completions/streaming/anthropic",
-        "//enterprise/cmd/frontend/internal/completions/streaming/openai",
-        "//enterprise/cmd/frontend/internal/completions/types",
+        "//enterprise/cmd/cody-api/internal/streaming/anthropic",
+        "//enterprise/cmd/cody-api/internal/streaming/openai",
+        "//enterprise/cmd/cody-api/internal/types",
         "//enterprise/internal/cody",
         "//internal/conf",
         "//internal/httpcli",

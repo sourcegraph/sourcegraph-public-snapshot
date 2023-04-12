@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -590,6 +591,12 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 		logger.Error("failed to get embeddings endpoints for service connections", log.Error(err))
 	}
 
+	codyAPIsMap := computeCodyAPIsEndpoints()
+	codyAPIAddrs, err := codyAPIsMap.Endpoints()
+	if err != nil {
+		logger.Error("failed to get cody-apis endpoints for service connections", log.Error(err))
+	}
+
 	return conftypes.ServiceConnections{
 		GitServers:           gitAddrs,
 		PostgresDSN:          serviceConnectionsVal.PostgresDSN,
@@ -598,6 +605,7 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 		Searchers:            searcherAddrs,
 		Symbols:              symbolsAddrs,
 		Embeddings:           embeddingsAddrs,
+		CodyAPIs:             codyAPIAddrs,
 		Zoekts:               zoektAddrs,
 		ZoektListTTL:         indexedListTTL,
 	}
@@ -615,6 +623,9 @@ var (
 
 	embeddingsURLsOnce sync.Once
 	embeddingsURLs     *endpoint.Map
+
+	codyAPIAddrOnce sync.Once
+	codyAPIEndpoint *endpoint.Map
 
 	indexedListTTL = func() time.Duration {
 		ttl, _ := time.ParseDuration(env.Get("SRC_INDEXED_SEARCH_LIST_CACHE_TTL", "", "Indexed search list cache TTL"))
@@ -681,6 +692,28 @@ func embeddingsAddr(environ []string) (string, error) {
 
 	// Not set, use the default (non-service discovery on embeddings)
 	return "http://embeddings:9991", nil
+}
+
+func computeCodyAPIsEndpoints() *endpoint.Map {
+	codyAPIAddrOnce.Do(func() {
+		addr, err := codyAPIURL(os.Environ())
+		if err != nil {
+			codyAPIEndpoint = endpoint.Empty(errors.Wrap(err, "failed to parse CODY_API_URL"))
+		} else {
+			codyAPIEndpoint = endpoint.New(addr)
+		}
+	})
+	return codyAPIEndpoint
+}
+
+func codyAPIURL(environ []string) (string, error) {
+	if addr, ok := getEnv(environ, "CODY_API_URL"); ok {
+		_, err := url.Parse(addr)
+		return addr, err
+	}
+
+	// Not set, use the default (service discovery on cody-api)
+	return "k8s+http://cody-api:4100", nil
 }
 
 func LoadConfig() {

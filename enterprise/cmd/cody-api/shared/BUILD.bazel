@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "shared",
+    srcs = [
+        "server.go",
+        "service.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-api/shared",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//enterprise/cmd/cody-api/internal/streaming",
+        "//internal/actor",
+        "//internal/conf",
+        "//internal/debugserver",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/httpserver",
+        "//internal/instrumentation",
+        "//internal/observation",
+        "//internal/service",
+        "//internal/trace",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

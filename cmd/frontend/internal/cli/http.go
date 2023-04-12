@@ -2,6 +2,9 @@ package cli
 
 import (
 	"net/http"
+	"net/http/httputil"
+	"net/url"
+	"runtime"
 	"strings"
 
 	"github.com/NYTimes/gziphandler"
@@ -98,6 +101,7 @@ func newExternalHTTPHandler(
 	sm := http.NewServeMux()
 	sm.Handle("/.api/", secureHeadersMiddleware(apiHandler, crossOriginPolicyAPI))
 	sm.Handle("/.executors/", secureHeadersMiddleware(executorProxyHandler, crossOriginPolicyNever))
+	sm.Handle("/.cody/", secureHeadersMiddleware(makeCodyAPIHandler(logger, codyAPIBaseURL(logger)), crossOriginPolicyAPI))
 	sm.Handle("/", secureHeadersMiddleware(appHandler, crossOriginPolicyNever))
 	const urlPathPrefix = "/.assets"
 	// The asset handler should be wrapped into a middleware that enables cross-origin requests
@@ -353,4 +357,56 @@ func isTrustedOrigin(r *http.Request) bool {
 	}
 
 	return isExtensionRequest || isCORSAllowedRequest
+}
+
+func makeCodyAPIHandler(logger log.Logger, codyAPIBaseURL *url.URL) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if codyAPIBaseURL == nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("no cody-api endpoint is available"))
+			return
+		}
+
+		p := httputil.ReverseProxy{
+			Director: func(r *http.Request) {
+				r.URL = &url.URL{
+					Scheme:   codyAPIBaseURL.Scheme,
+					Host:     codyAPIBaseURL.Host,
+					Path:     strings.TrimPrefix(r.URL.Path, "/.cody"),
+					RawQuery: r.URL.RawQuery,
+				}
+			},
+		}
+		defer func() {
+			e := recover()
+			if e != nil {
+				if e == http.ErrAbortHandler {
+					logger.Warn("failed to read cody-api response")
+				} else {
+					const size = 64 << 10
+					buf := make([]byte, size)
+					buf = buf[:runtime.Stack(buf, false)]
+					logger.Error("reverseproxy: panic reading response", log.String("stack", string(buf)))
+				}
+			}
+		}()
+		p.ServeHTTP(w, r)
+	})
+}
+
+func codyAPIBaseURL(logger log.Logger) *url.URL {
+	addrs, err := computeCodyAPIsEndpoints().Endpoints()
+	if err != nil {
+		logger.Error("failed to get cody-api endpoints for service connections", log.Error(err))
+		return nil
+	}
+
+	codyAPIBaseURL, err := url.Parse(addrs[0])
+	if err != nil {
+		// Note: unreachable due to computeCodyAPIsEndpoints()'s implementation
+		logger.Error("failed to parse cody-api endpoints for service connections", log.Error(err))
+		return nil
+	}
+
+	return codyAPIBaseURL
 }

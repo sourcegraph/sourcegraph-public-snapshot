@@ -92,6 +92,7 @@ var DeploySourcegraphDockerImages = []string{
 	"batcheshelper",
 	"opentelemetry-collector",
 	"embeddings",
+	"cody-api",
 	"dind",
 	"bundled-executor",
 }

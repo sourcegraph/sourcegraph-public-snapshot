@@ -38,6 +38,7 @@ env:
   REDIS_ENDPOINT: 127.0.0.1:6379
   SYMBOLS_URL: http://localhost:3184
   EMBEDDINGS_URL: http://localhost:9991
+  CODY_API_URL: http://localhost:4100
   SRC_SYNTECT_SERVER: http://localhost:9238
   SRC_FRONTEND_INTERNAL: localhost:3090
   GRAFANA_SERVER_URL: http://localhost:3370
@@ -65,6 +66,7 @@ env:
       { "Name": "worker", "Host": "127.0.0.1:6089" },
       { "Name": "worker-executors", "Host": "127.0.0.1:6996" },
       { "Name": "embeddings", "Host": "127.0.0.1:6099" },
+      { "Name": "cody-api", "Host": "127.0.0.1:6077" },
       { "Name": "zoekt-index-0", "Host": "127.0.0.1:6072" },
       { "Name": "zoekt-index-1", "Host": "127.0.0.1:6073" },
       { "Name": "zoekt-web-0", "Host": "127.0.0.1:3070", "DefaultPath": "/debug/requests/" },
@@ -383,6 +385,20 @@ commands:
       - internal
       - enterprise/cmd/embeddings
       - enterprise/internal/embeddings
+
+  cody-api:
+    cmd: .bin/cody-api
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/cody-api github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-api
+    checkBinary: .bin/cody-api
+    watch:
+      - lib
+      - internal
+      - enterprise/cmd/cody-api
+      - enterprise/internal
 
   searcher:
     cmd: .bin/searcher
@@ -1276,7 +1292,7 @@ commandsets:
       - batches-executor
       - batcheshelper-builder
 
-  embeddings:
+  cody-internal: &cody-internal
     requiresDevPrivate: true
     checks:
       - docker
@@ -1284,7 +1300,6 @@ commandsets:
       - postgres
       - git
     commands:
-      - embeddings
       - frontend
       - worker
       - repo-updater
@@ -1302,6 +1317,14 @@ commandsets:
       - zoekt-web-0
       - zoekt-web-1
       - blobstore
+      - embeddings
+      - cody-api
+
+  # cody-internal aliases
+  embeddings:
+    <<: *cody-internal
+  cody-api:
+    <<: *cody-internal
 
   iam:
     requiresDevPrivate: true

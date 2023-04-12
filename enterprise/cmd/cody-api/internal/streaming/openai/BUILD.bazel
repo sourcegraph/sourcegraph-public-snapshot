@@ -6,10 +6,10 @@ go_library(
         "decoder.go",
         "openai.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/streaming/openai",
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-api/internal/streaming/openai",
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
-        "//enterprise/cmd/frontend/internal/completions/types",
+        "//enterprise/cmd/cody-api/internal/types",
         "//internal/httpcli",
         "//lib/errors",
     ],
