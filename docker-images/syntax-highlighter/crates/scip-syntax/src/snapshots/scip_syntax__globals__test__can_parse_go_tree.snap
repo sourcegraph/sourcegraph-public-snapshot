@@ -1,6 +1,6 @@
 ---
-source: crates/scip-syntax/src/matches.rs
-assertion_line: 341
+source: crates/scip-syntax/src/globals.rs
+assertion_line: 330
 expression: dumped
 ---
   package example
