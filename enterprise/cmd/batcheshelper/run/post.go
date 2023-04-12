@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/log"
@@ -18,37 +17,41 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const gitDir = "repository"
+
 // Post processes the workspace after the Batch Change step.
 func Post(
 	ctx context.Context,
 	logger *log.Logger,
+	runner util.CmdRunner,
 	stepIdx int,
 	executionInput batcheslib.WorkspacesExecutionInput,
 	previousResult execution.AfterStepResult,
+	workingDirectory string,
 	workspaceFilesPath string,
 ) error {
 	// Sometimes the files belong to different users. Mark the repository directory as safe.
-	if _, err := runGitCmd(ctx, "config", "--global", "--add", "safe.directory", "/data/repository"); err != nil {
+	if _, err := runner.Git(ctx, "", "config", "--global", "--add", "safe.directory", "/data/repository"); err != nil {
 		return errors.Wrap(err, "failed to mark repository directory as safe")
 	}
 
 	// Generate the diff.
-	if _, err := runGitCmd(ctx, "add", "--all"); err != nil {
+	if _, err := runner.Git(ctx, gitDir, "add", "--all"); err != nil {
 		return errors.Wrap(err, "failed to add all files to git")
 	}
-	diff, err := runGitCmd(ctx, "diff", "--cached", "--no-prefix", "--binary")
+	diff, err := runner.Git(ctx, gitDir, "diff", "--cached", "--no-prefix", "--binary")
 	if err != nil {
 		return errors.Wrap(err, "failed to generate diff")
 	}
 
 	// Read the stdout of the current step.
-	stdout, err := os.ReadFile(fmt.Sprintf("stdout%d.log", stepIdx))
+	stdout, err := os.ReadFile(filepath.Join(workingDirectory, fmt.Sprintf("stdout%d.log", stepIdx)))
 	if err != nil {
 		return errors.Wrap(err, "failed to read stdout file")
 	}
 
 	// Read the stderr of the current step.
-	stderr, err := os.ReadFile(fmt.Sprintf("stderr%d.log", stepIdx))
+	stderr, err := os.ReadFile(filepath.Join(workingDirectory, fmt.Sprintf("stderr%d.log", stepIdx)))
 	if err != nil {
 		return errors.Wrap(err, "failed to read stderr file")
 	}
@@ -100,7 +103,7 @@ func Post(
 	if err != nil {
 		return errors.Wrap(err, "marshalling step result")
 	}
-	if err = os.WriteFile(fmt.Sprintf("step%d.json", stepIdx), stepResultBytes, os.ModePerm); err != nil {
+	if err = os.WriteFile(filepath.Join(workingDirectory, util.StepJSONFile(stepIdx)), stepResultBytes, os.ModePerm); err != nil {
 		return errors.Wrap(err, "failed to write step result file")
 	}
 
@@ -137,14 +140,7 @@ func Post(
 	}
 
 	// Cleanup the workspace.
-	return cleanupWorkspace(stepIdx, workspaceFilesPath)
-}
-
-func runGitCmd(ctx context.Context, args ...string) ([]byte, error) {
-	cmd := exec.CommandContext(ctx, "git", args...)
-	cmd.Dir = "repository"
-
-	return cmd.Output()
+	return cleanupWorkspace(workingDirectory, stepIdx, workspaceFilesPath)
 }
 
 type fileMetadataRetriever struct {
@@ -217,13 +213,9 @@ func (f fileMetadataRetriever) getDirectoryMountMetadata(path string) ([]cache.M
 	return metadata, nil
 }
 
-func cleanupWorkspace(step int, workspaceFilesPath string) error {
-	wd, err := os.Getwd()
-	if err != nil {
-		return errors.Wrap(err, "getting working directory")
-	}
-	tmpFileDir := util.FilesMountPath(wd, step)
-	if err = os.RemoveAll(tmpFileDir); err != nil {
+func cleanupWorkspace(workingDirectory string, step int, workspaceFilesPath string) error {
+	tmpFileDir := util.FilesMountPath(workingDirectory, step)
+	if err := os.RemoveAll(tmpFileDir); err != nil {
 		return errors.Wrap(err, "removing files mount")
 	}
 	return os.RemoveAll(workspaceFilesPath)

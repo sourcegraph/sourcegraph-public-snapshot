@@ -49,16 +49,16 @@ func doMain() error {
 
 	logger := &log.Logger{W: os.Stdout}
 
+	wd, err := os.Getwd()
+	if err != nil {
+		return errors.Wrap(err, "getting working directory")
+	}
 	ctx := context.Background()
 	switch arguments.mode {
 	case "pre":
-		wd, err := os.Getwd()
-		if err != nil {
-			return errors.Wrap(err, "getting working directory")
-		}
 		return run.Pre(ctx, logger, arguments.step, executionInput, previousResult, wd, *workspaceFilesPath)
 	case "post":
-		return run.Post(ctx, logger, arguments.step, executionInput, previousResult, *workspaceFilesPath)
+		return run.Post(ctx, logger, &util.RealCmdRunner{}, arguments.step, executionInput, previousResult, wd, *workspaceFilesPath)
 	default:
 		return errors.Newf("invalid mode %q", arguments.mode)
 	}
